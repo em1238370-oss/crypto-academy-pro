@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Crypto Coach - Crypto Academy Pro</title>
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
+   <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
+   <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
+   <link rel="stylesheet" href="styles.css">
+   <script src="scripts/table-modules.js" defer></script>
+</head>
+<body>
+   <div class="page">
+       <div class="content">
+           <!-- Крипто-элементы фона (анимированные) -->
+           <div class="crypto-elements">
+               <!-- Плавающие блокчейн-блоки -->
+               <div class="blockchain-block block-1"></div>
+               <div class="blockchain-block block-2"></div>
+               <div class="blockchain-block block-3"></div>
+               <!-- Частицы данных -->
+               <div class="data-particle particle-1"></div>
+               <div class="data-particle particle-2"></div>
+               <div class="data-particle particle-3"></div>
+               <div class="data-particle particle-4"></div>
+               <div class="data-particle particle-5"></div>
+               <!-- Светящиеся точки (ноды сети) -->
+               <div class="network-node node-1"></div>
+               <div class="network-node node-2"></div>
+               <div class="network-node node-3"></div>
+               <div class="network-node node-4"></div>
+           </div>
+           
+           <!-- Заголовок -->
+           <div class="crypto-coach-container">
+               <h1>Crypto Coach: HODL Hard,<br>Love Soft!</h1>
+           </div>
+           
+           <!-- Новый текст -->
+           <div class="crypto-text-block">
+               <div class="intro-text">
+                   Welcome to <span class="highlight">Coach Crypto</span>, your gateway to mastering the exciting world of cryptocurrency! This section provides a solid foundation, equipping you with the essential knowledge to navigate the crypto space confidently. The best way to truly understand crypto is through hands-on experience—learning by doing sticks like nothing else. <span class="highlight">Coach Crypto</span> offers the tools, insights, and guidance to experiment, practice, and grow. While we'll help you deepen your understanding and sharpen your skills, the real magic happens when you apply what you learn and discover through your own journey. This is your playground to explore, make mistakes, and unlock the potential of crypto—start here and experiment boldly!<br><br><span class="highlight">⚠ IMPORTANT NOTICE:</span> The modules presented here are designed for training and development purposes only. Any advice, suggestions, or strategies offered are educational tools meant to enhance your understanding. October 10th proved to us all in crypto that it's impossible to calculate everything—cryptocurrency markets are unpredictable and volatile. You must evaluate all risks yourself and manage your risk accordingly. Any actions you take based on information or suggestions in these modules are entirely your own responsibility. In case of any loss, the responsibility lies solely with you. Trade at your own risk.
+               </div>
+           </div>
+           
+           <!-- Таблица с модулями -->
+           <div class="crypto-table-block">
+               <div class="modules-container">
+                   <h1 class="main-title">Master Crypto with Coach Crypto: Unlock the Secrets</h1>
+
+                   <!-- Module A: Interactive Trading Simulator -->
+                   <div class="drawer-container">
+                       <div class="drawer" id="drawerA">
+                           <div class="drawer-header" onclick="toggleDrawerWithInit('drawerA')">
+                               <h2>A. Interactive Trading Simulator <span style="background: rgba(255, 0, 0, 0.3); padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; margin-left: 15px; color: #ff0000;">FREE</span></h2>
+                               <span class="drawer-icon">▼</span>
+                           </div>
+                           <div class="drawer-content">
+                               <h3 style="color: #ffffff; margin-bottom: 20px;">Virtual environment for trading practice without real money</h3>
+                               
+                               <div class="portfolio-section">
+                                   <h3>Your Portfolio</h3>
+                                   <div class="portfolio-value" id="portfolioValue">$10,000.00</div>
+                                   <div class="profit-loss" id="profitLoss">
+                                       <span id="profitLossValue">+$0.00</span> (<span id="profitLossPercent">0.00%</span>)
+                                   </div>
+                               </div>
+
+                               <div class="section-title">Select Coins to Invest In</div>
+                               <div class="coins-grid" id="coinsGrid"></div>
+
+                               <div class="section-title">Selected Coins</div>
+                               <div id="selectedCoinsList" class="selected-coins-list"></div>
+
+                               <div class="ai-recommendations">
+                                   <h4>AI Recommendations Based on Market Analysis</h4>
+                                   <div id="recommendationsContent">
+                                       <p style="color: #cccccc;">Select coins to get AI recommendations</p>
+                                   </div>
+                               </div>
+
+                               <div class="leaderboard">
+                                   <h4>Leaderboard</h4>
+                                   <div id="leaderboardContent">
+                                       <p style="color: #cccccc;">No participants yet</p>
+                                   </div>
+                                   <button class="btn btn-red" onclick="saveScore()">Save Score</button>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+
+                   <!-- Module B: Personalized Mentor Panel -->
+                   <div class="drawer-container">
+                       <div class="drawer" id="drawerB">
+                           <div class="drawer-header" onclick="toggleDrawerWithInit('drawerB')">
+                               <h2>B. Personalized Crypto Mentor Panel <span style="background: rgba(255, 0, 0, 0.3); padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; margin-left: 15px; color: #ff6666;">PAID</span> <span id="paymentStatus" style="display: none; width: 12px; height: 12px; background: #ff0000; border-radius: 50%; margin-left: 10px; animation: pulseGlow 2s infinite;"></span></h2>
+                               <span class="drawer-icon">▼</span>
+                           </div>
+                           <div class="drawer-content">
+                               <h3 style="color: #ffffff; margin-bottom: 20px;">Dynamic interface that adapts to your profile</h3>
+                               
+                               <div class="profile-section">
+                                   <h4>Profile Settings</h4>
+                                   <div class="form-group">
+                                       <label>Experience Level:</label>
+                                       <select id="experienceLevel" onchange="updateAdvice()">
+                                           <option value="beginner">Beginner</option>
+                                           <option value="intermediate">Intermediate</option>
+                                           <option value="expert">Expert</option>
+                                       </select>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Risk Level: <span id="riskValue">50%</span></label>
+                                       <input type="range" id="riskLevel" min="0" max="100" value="50" oninput="updateRiskDisplay(); updateAdvice();">
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Goal:</label>
+                                       <select id="goal" onchange="updateAdvice()">
+                                           <option value="short">Short-term Profit</option>
+                                           <option value="long">Long-term Growth</option>
+                                       </select>
+                                   </div>
+                                   <button class="btn btn-black" onclick="updateAdvice()">Apply Settings</button>
+                               </div>
+
+                               <div class="daily-advice">
+                                   <h4>Your Personal Advice for Today</h4>
+                                   <div class="advice-text" id="adviceContent">
+                                       Configure your profile to get personalized advice
+                                   </div>
+                               </div>
+
+                               <div class="mood-section">
+                                   <h4>Mood Check</h4>
+                                   <div class="form-group">
+                                       <label>Describe your current mood:</label>
+                                       <textarea id="moodText" rows="4" placeholder="For example: feeling cautious due to market volatility..."></textarea>
+                                   </div>
+                                   <button class="btn btn-red" onclick="analyzeMood()">AI Mood Analysis</button>
+                                   <div id="moodResult" class="mood-result" style="display: none;"></div>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+
+                   <!-- Module C: Crypto Experiment Lab -->
+                   <div class="drawer-container">
+                       <div class="drawer" id="drawerC">
+                           <div class="drawer-header" onclick="toggleDrawerWithInit('drawerC')">
+                               <h2>C. Crypto Experiment Lab <span style="background: rgba(255, 0, 0, 0.3); padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; margin-left: 15px; color: #ff6666;">PAID</span></h2>
+                               <span class="drawer-icon">▼</span>
+                           </div>
+                           <div class="drawer-content">
+                               <h3 style="color: #ffffff; margin-bottom: 20px;">Interactive zone for testing hypotheses and experimenting with cryptocurrency strategies</h3>
+                               
+                               <div class="section-box">
+                                   <h4>Create New Experiment</h4>
+                                   <div class="form-group">
+                                       <label>Your Deposit ($):</label>
+                                       <input type="number" id="userDeposit" placeholder="e.g.: 10000" min="0" step="100" value="10000" style="width: 100%;">
+                                       <small style="color: #888;">Enter your starting capital</small>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Experiment Name:</label>
+                                       <input type="text" id="experimentName" placeholder="e.g.: BTC drop scenario 20%">
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Select Coin:</label>
+                                       <select id="experimentCoin">
+                                           <option value="BTC">Bitcoin (BTC)</option>
+                                           <option value="ETH">Ethereum (ETH)</option>
+                                           <option value="BNB">Binance Coin (BNB)</option>
+                                           <option value="SOL">Solana (SOL)</option>
+                                           <option value="ADA">Cardano (ADA)</option>
+                                           <option value="XRP">Ripple (XRP)</option>
+                                           <option value="ENA">Ethena (ENA)</option>
+                                           <option value="FARTCOIN">Fartcoin (FARTCOIN)</option>
+                                           <option value="PEPE">Pepe (PEPE)</option>
+                                           <option value="AVAX">Avalanche (AVAX)</option>
+                                           <option value="NEAR">NEAR Protocol (NEAR)</option>
+                                           <option value="ONDO">Ondo (ONDO)</option>
+                                           <option value="WLD">Worldcoin (WLD)</option>
+                                           <option value="ARB">Arbitrum (ARB)</option>
+                                           <option value="APT">Aptos (APT)</option>
+                                           <option value="LDO">Lido DAO (LDO)</option>
+                                           <option value="VIRTAUL">Virtual (VIRTAUL)</option>
+                                           <option value="UNI">Uniswap (UNI)</option>
+                                           <option value="SBIB1000">Shiba 1000 (SBIB1000)</option>
+                                           <option value="WLFI">Wifi (WLFI)</option>
+                                           <option value="IJU">Iju (IJU)</option>
+                                           <option value="SOMI">Somi (SOMI)</option>
+                                           <option value="IP">IP Coin (IP)</option>
+                                           <option value="APE">ApeCoin (APE)</option>
+                                           <option value="DOGE">Dogecoin (DOGE)</option>
+                                           <option value="SUI">Sui (SUI)</option>
+                                   <option value="WIF">dogwifhat (WIF)</option>
+                                   <option value="AAVE">Aave (AAVE)</option>
+                                   <option value="PENGU">Pudgy Penguins (PENGU)</option>
+                                   <option value="SEI">Sei (SEI)</option>
+                                   <option value="GALA">Gala (GALA)</option>
+                                   <option value="TON">Toncoin (TON)</option>
+                                   <option value="MYX">Myx (MYX)</option>
+                                   <option value="ATOM">Cosmos (ATOM)</option>
+                                       </select>
+                                   </div>
+                                   <div class="form-group" style="background: rgba(255, 165, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 165, 0, 0.3);">
+                                       <label style="margin-bottom: 10px;">🤖 Strategy Generator from Text:</label>
+                                       <textarea id="strategyText" rows="3" placeholder="e.g.: If BTC drops 30%, I want to sell half, wait for -50% and buy back" style="width: 100%; margin-bottom: 10px;"></textarea>
+                                       <button class="btn btn-black" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 0;" onclick="generateStrategyFromText()">Convert to Strategy</button>
+                                       <div id="generatedStrategyResult" style="margin-top: 10px; font-size: 0.9rem;"></div>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Scenario Description:</label>
+                                       <textarea id="experimentScenario" rows="3" placeholder="e.g.: What if BTC drops 20%? How will this affect my portfolio?"></textarea>
+                                   </div>
+                                   <div class="form-group" style="background: rgba(255, 0, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 0, 0, 0.3);">
+                                       <label style="margin-bottom: 10px;">🤖 AI Scenario Generator:</label>
+                                       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                           <button class="btn btn-black" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 0;" onclick="loadAIScenario('bearish')">CRASH -50% (Hardcore)</button>
+                                           <button class="btn btn-black" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 0;" onclick="loadAIScenario('altcrash')">BULLRUN +150%</button>
+                                           <button class="btn btn-black" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 0;" onclick="loadAIScenario('regulatory')">Regulatory Shock -35%</button>
+                                       </div>
+                                       <small style="color: #888; margin-top: 10px; display: block;">💡 AI will create a detailed strategy with specific numbers and actions</small>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Price Change (%): <span id="priceChangeValue">0%</span></label>
+                                       <input type="range" id="priceChange" min="-70" max="200" value="0" oninput="updatePriceChangeDisplay(); updateCorrelations()">
+                                   </div>
+                                   <div class="form-group" style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 255, 0, 0.3);">
+                                       <label style="margin-bottom: 10px;">
+                                           <input type="checkbox" id="correlationsEnabled" onchange="updateCorrelations()" style="margin-right: 10px;">
+                                           Smart Correlations (auto-fill)
+                                       </label>
+                                       <div id="correlationsSuggestions" style="margin-top: 10px; font-size: 0.9rem; color: #888;"></div>
+                                   </div>
+                                   <button class="btn btn-red" onclick="runExperiment()">Run Experiment</button>
+                                   <button class="btn btn-red" onclick="startSurvivalMode()" style="background: linear-gradient(135deg, #ff3333, #cc0000); margin-top: 10px; width: 100%;">🔥 SURVIVAL MODE</button>
+                               </div>
+
+                               <div class="section-box" id="survivalModeBox" style="display: none;">
+                                   <h4>🔥 SURVIVAL MODE</h4>
+                                   <div id="survivalTimer" style="font-size: 3rem; text-align: center; color: #ff0000; margin: 20px 0;"></div>
+                                   <div id="survivalEvent" style="background: rgba(255, 0, 0, 0.3); padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;"></div>
+                                   <div id="survivalActions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 600px; margin: 0 auto;">
+                                       <button class="btn btn-red" onclick="survivalAction('sell30')" style="background: linear-gradient(135deg, #00ff00, #00cc00);">[1] [1] Sell 30% BTC</button>
+                                       <button class="btn btn-red" onclick="survivalAction('buydip')" style="background: linear-gradient(135deg, #ff0000, #cc0000);">[2] [2] Buy SOL dip</button>
+                                       <button class="btn btn-red" onclick="survivalAction('donothing')" style="background: linear-gradient(135deg, #ffa500, #ff8000);">[3] [3] Do nothing</button>
+                                       <button class="btn btn-red" onclick="survivalAction('panicsell')" style="background: linear-gradient(135deg, #000000, #330000);">[4] [4] Panic sell everything</button>
+                                   </div>
+                                   <div id="survivalResult" style="margin-top: 20px;"></div>
+                               </div>
+
+                               <div class="section-box" id="experimentResults" style="display: none;">
+                                   <h4>🔴 Live Result with AI Advice</h4>
+                                   <div class="result-box" id="experimentAnalysis"></div>
+                                   <div class="result-box" id="aiAdviceBox" style="background: rgba(255, 165, 0, 0.2); border-color: #ffa500; margin-top: 15px;"></div>
+                                   <div class="chart-container" id="experimentChart">Graphic visualization will appear here</div>
+                                   <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                                       <button class="btn btn-black" onclick="saveExperiment()">Save to Archive</button>
+                                       <button class="btn btn-black" onclick="shareExperiment()">Share</button>
+                                       <button class="btn btn-black" onclick="createBotStrategy()">Create Bot</button>
+                                   </div>
+                               </div>
+
+                               <div class="section-box">
+                                   <h4>Your Experiment Archive</h4>
+                                   <div class="section-title">Saved Experiments</div>
+                                   <div id="experimentArchive"></div>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+
+                   <!-- Module D: Individual Strategy Constructor -->
+                   <div class="drawer-container">
+                       <div class="drawer" id="drawerD">
+                           <div class="drawer-header" onclick="toggleDrawerWithInit('drawerD')">
+                               <h2>D. Individual Strategy Builder <span style="background: rgba(255, 0, 0, 0.3); padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; margin-left: 15px; color: #ff6666;">PAID</span></h2>
+                               <span class="drawer-icon">▼</span>
+                           </div>
+                           <div class="drawer-content">
+                               <h3 style="color: #ffffff; margin-bottom: 20px;">Step-by-step tool for creating personalized trading/investment strategies</h3>
+                               
+                               <div class="section-box">
+                                   <h4>Strategy Setup</h4>
+                                   <div class="form-group">
+                                       <label>Preferred Assets (select multiple):</label>
+                                       <select id="preferredAssets" multiple style="height: 250px;">
+                                           <option value="BTC">Bitcoin (BTC)</option>
+                                           <option value="ETH">Ethereum (ETH)</option>
+                                           <option value="BNB">Binance Coin (BNB)</option>
+                                           <option value="SOL">Solana (SOL)</option>
+                                           <option value="ADA">Cardano (ADA)</option>
+                                           <option value="XRP">Ripple (XRP)</option>
+                                           <option value="ENA">Ethena (ENA)</option>
+                                           <option value="FARTCOIN">Fartcoin (FARTCOIN)</option>
+                                           <option value="PEPE">Pepe (PEPE)</option>
+                                           <option value="AVAX">Avalanche (AVAX)</option>
+                                           <option value="NEAR">NEAR Protocol (NEAR)</option>
+                                           <option value="ONDO">Ondo (ONDO)</option>
+                                           <option value="WLD">Worldcoin (WLD)</option>
+                                           <option value="ARB">Arbitrum (ARB)</option>
+                                           <option value="APT">Aptos (APT)</option>
+                                           <option value="LDO">Lido DAO (LDO)</option>
+                                           <option value="VIRTAUL">Virtual (VIRTAUL)</option>
+                                           <option value="UNI">Uniswap (UNI)</option>
+                                           <option value="BIB1000">Shiba 1000 (BIB1000)</option>
+                                           <option value="WLFI">Wifi (WLFI)</option>
+                                           <option value="IJU">Iju (IJU)</option>
+                                           <option value="SOMI">Somi (SOMI)</option>
+                                           <option value="IP">IP Coin (IP)</option>
+                                           <option value="APE">ApeCoin (APE)</option>
+                                           <option value="DOGE">Dogecoin (DOGE)</option>
+                                           <option value="SUI">Sui (SUI)</option>
+                                           <option value="WIF">dogwifhat (WIF)</option>
+                                           <option value="AAVE">Aave (AAVE)</option>
+                                           <option value="PENGU">Pudgy Penguins (PENGU)</option>
+                                           <option value="SEI">Sei (SEI)</option>
+                                           <option value="GALA">Gala (GALA)</option>
+                                           <option value="TON">Toncoin (TON)</option>
+                                           <option value="MYX">Myx (MYX)</option>
+                                           <option value="ATOM">Cosmos (ATOM)</option>
+                                       </select>
+                                       <small style="color: #888;">Hold Ctrl/Cmd to select multiple</small>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Time Horizon:</label>
+                                       <select id="timeHorizon">
+                                           <option value="days">Days (Short-term)</option>
+                                           <option value="weeks">Weeks (Medium-term)</option>
+                                           <option value="months">Months (Long-term)</option>
+                                           <option value="years">Years (Very long-term)</option>
+                                       </select>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Risk Appetite: <span id="riskAppetiteValue">50%</span></label>
+                                       <input type="range" id="riskAppetite" min="0" max="100" value="50" oninput="updateRiskAppetiteDisplay()">
+                                   </div>
+                                   <button class="btn btn-red" onclick="generateStrategies()">Generate Strategies</button>
+                               </div>
+
+                               <div class="section-box" id="strategiesResult" style="display: none;">
+                                   <h4>Your Personalized Strategies</h4>
+                                   <div id="strategiesList"></div>
+                                   <div style="margin-top: 20px;">
+                                       <button class="btn btn-black" onclick="testStressScenario()">Strategy Stress Test (Market Crash)</button>
+                                       <div id="stressTestResult" style="display: none; margin-top: 15px;" class="result-box"></div>
+                                   </div>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+           </div>
+       </div>
+   </div>
+   
+   <!-- Chat Widget - ВСЕГДА В ПРАВОМ НИЖНЕМ УГЛУ ЭКРАНА -->
+   <div class="chat-widget" id="chatWidget" style="position: fixed !important; bottom: 20px !important; right: 20px !important; top: auto !important; left: auto !important; z-index: 2147483647 !important; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; margin: 0 !important; padding: 0 !important; transform: none !important; width: auto !important; height: auto !important;">
+       <button class="chat-button" id="chatButton" aria-label="Open chat" style="display: flex !important; visibility: visible !important; opacity: 1 !important; position: relative !important; width: 62px !important; height: 62px !important; border-radius: 50% !important; background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%) !important; border: 2px solid #3a3a3a !important; cursor: pointer !important; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important; align-items: center !important; justify-content: center !important; pointer-events: auto !important; margin: 0 !important; padding: 0 !important;">
+           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width: 31px !important; height: 31px !important; fill: #FFFFFF !important; display: block !important;">
+               <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+           </svg>
+       </button>
+       <div class="chat-container" id="chatContainer" aria-live="polite">
+           <div class="chat-header">
+               <h3>
+                   <span class="status-dot" aria-hidden="true"></span>
+                   Crypto AI Assistant
+               </h3>
+               <button class="close-chat" id="closeChat" aria-label="Close chat">&times;</button>
+           </div>
+           <div class="chat-subscription-section" id="subscriptionSection">
+               <div class="chat-timer-display" id="timerDisplay">24:00</div>
+           </div>
+           <div class="chat-expired-overlay hidden" id="chatExpiredOverlay">
+               <div class="chat-expired-content">
+                   <p class="chat-expired-text">Subscribe to continue using this amazing bot for $10/month</p>
+                   <div class="payment-method-buttons">
+                       <button class="chat-expired-btn payment-method-btn" data-method="crypto" type="button" data-original-text="💳 Pay with Crypto (USDT)">
+                           💳 Pay with Crypto (USDT)
+                       </button>
+                       <button class="chat-expired-btn payment-method-btn" data-method="card" type="button" data-original-text="🏦 Pay with Card">
+                           🏦 Pay with Card
+                       </button>
+                   </div>
+               </div>
+           </div>
+           <div class="chat-messages" id="chatMessages">
+               <div class="message bot">
+                   <div class="message-avatar" aria-hidden="true">🤖</div>
+                   <div class="message-content">
+                       Hey! I'm your Crypto AI Assistant powered by Mistral AI 🚀 I understand all crypto terms, slang, and even "dumb" questions! Ask me anything about Bitcoin, DeFi, NFTs, trading, security, or crypto culture (HODL, FOMO, FUD, moon, lambo, degen, WAGMI)!
+                       <div class="quick-questions">
+                           <button class="quick-question-btn" data-question="What is HODL?">What is HODL?</button>
+                           <button class="quick-question-btn" data-question="Explain DeFi">Explain DeFi</button>
+                           <button class="quick-question-btn" data-question="What is a whale?">What is a whale?</button>
+                           <button class="quick-question-btn" data-question="Wen moon?">Wen moon? 🚀</button>
+                           <button class="quick-question-btn" data-question="What are rug pulls?">Rug pulls?</button>
+                       </div>
+                   </div>
+               </div>
+           </div>
+           <div class="chat-input-container">
+               <div class="chat-input-wrapper">
+                   <input type="text" class="chat-input" id="chatInput" placeholder="Ask about crypto..." autocomplete="off">
+                   <button class="send-button" id="sendButton" aria-label="Send message">
+                       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                           <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                       </svg>
+                   </button>
+               </div>
+           </div>
+       </div>
+   </div>
+   
+   <script src="../../scripts/chatbot.js?v=30"></script>
+   <script src="scripts/table-modules.js" defer></script>
+   
+   <!-- Дополнительный скрипт для ГАРАНТИИ видимости чата -->
+   <script>
+       (function() {
+           function forceChatPosition() {
+               const chatWidget = document.getElementById('chatWidget');
+               if (!chatWidget) {
+                   console.warn('Chat widget not found!');
+                   return;
+               }
+               
+               // КРИТИЧНО: Перемещаем чат в body, если он не там
+               if (chatWidget.parentElement !== document.body) {
+                   console.log('Moving chat to body from:', chatWidget.parentElement?.tagName);
+                   document.body.appendChild(chatWidget);
+               }
+               
+               // ПРИНУДИТЕЛЬНО устанавливаем все стили
+               chatWidget.style.setProperty('position', 'fixed', 'important');
+               chatWidget.style.setProperty('bottom', '20px', 'important');
+               chatWidget.style.setProperty('right', '20px', 'important');
+               chatWidget.style.setProperty('top', 'auto', 'important');
+               chatWidget.style.setProperty('left', 'auto', 'important');
+               chatWidget.style.setProperty('z-index', '2147483647', 'important');
+               chatWidget.style.setProperty('display', 'block', 'important');
+               chatWidget.style.setProperty('visibility', 'visible', 'important');
+               chatWidget.style.setProperty('opacity', '1', 'important');
+               chatWidget.style.setProperty('pointer-events', 'auto', 'important');
+               chatWidget.style.setProperty('margin', '0', 'important');
+               chatWidget.style.setProperty('padding', '0', 'important');
+               chatWidget.style.setProperty('transform', 'none', 'important');
+               
+               // Проверяем computed стили
+               const computed = window.getComputedStyle(chatWidget);
+               if (computed.position !== 'fixed') {
+                   console.error('ERROR: Position is NOT fixed!', computed.position);
+                   // Еще раз принудительно
+                   chatWidget.style.position = 'fixed';
+               }
+               
+               // Проверяем, что чат виден
+               const rect = chatWidget.getBoundingClientRect();
+               const isVisible = rect.bottom <= window.innerHeight && rect.right <= window.innerWidth;
+               if (!isVisible) {
+                   console.warn('Chat might not be visible!', rect);
+               }
+           }
+           
+           // Выполняем МНОЖЕСТВО раз для гарантии
+           forceChatPosition();
+           
+           // При загрузке DOM
+           if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', function() {
+                   forceChatPosition();
+                   setTimeout(forceChatPosition, 100);
+                   setTimeout(forceChatPosition, 500);
+               });
+           } else {
+               setTimeout(forceChatPosition, 100);
+               setTimeout(forceChatPosition, 500);
+           }
+           
+           // При полной загрузке страницы
+           window.addEventListener('load', function() {
+               forceChatPosition();
+               setTimeout(forceChatPosition, 100);
+           });
+           
+           // При прокрутке - КАЖДЫЙ РАЗ
+           let scrollTimeout;
+           window.addEventListener('scroll', function() {
+               forceChatPosition();
+               clearTimeout(scrollTimeout);
+               scrollTimeout = setTimeout(forceChatPosition, 50);
+           }, { passive: true });
+           
+           // При изменении размера окна
+           window.addEventListener('resize', forceChatPosition);
+           
+           // Периодически проверяем КАЖДЫЕ 50ms (чаще!)
+           setInterval(forceChatPosition, 50);
+           
+           // MutationObserver для отслеживания изменений DOM
+           setTimeout(function() {
+               const observer = new MutationObserver(function(mutations) {
+                   forceChatPosition();
+               });
+               observer.observe(document.body, {
+                   childList: true,
+                   subtree: true,
+                   attributes: true,
+                   attributeFilter: ['style', 'class']
+               });
+               console.log('✅ MutationObserver started for chat');
+           }, 1000);
+           
+           console.log('✅ Chat position force script loaded');
+       })();
+   </script>
+</body>
+</html>
+

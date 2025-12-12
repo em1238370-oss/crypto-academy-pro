@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Chat Test - Crypto Website</title>
+   <link rel="stylesheet" href="styles.css">
+   <style>
+       body {
+           margin: 0;
+           padding: 20px;
+           background: #0a0a0a;
+           color: white;
+           font-family: 'Raleway', sans-serif;
+       }
+       .test-info {
+           max-width: 800px;
+           margin: 0 auto 30px;
+           padding: 20px;
+           background: rgba(255,255,255,0.05);
+           border-radius: 8px;
+           border: 1px solid rgba(255,255,255,0.1);
+       }
+       .test-info h1 {
+           margin-top: 0;
+           color: #fff;
+       }
+       .test-info p {
+           margin: 10px 0;
+           line-height: 1.6;
+       }
+       .status {
+           padding: 10px;
+           border-radius: 5px;
+           margin: 10px 0;
+       }
+       .status.success {
+           background: rgba(76, 175, 80, 0.2);
+           border: 1px solid #4CAF50;
+           color: #4CAF50;
+       }
+       .status.error {
+           background: rgba(244, 67, 54, 0.2);
+           border: 1px solid #f44336;
+           color: #f44336;
+       }
+   </style>
+</head>
+<body>
+   <div class="test-info">
+       <h1>🧪 Chat Test Page</h1>
+       <p><strong>This is a standalone test page for the chat widget.</strong></p>
+       <p>If the chat doesn't work here, check the browser console (F12) for errors.</p>
+       <div id="status" class="status">Loading...</div>
+   </div>
+
+   <!-- Chat Widget -->
+   <div id="chatWidget" class="chat-widget">
+       <button id="chatButton" class="chat-button" aria-label="Open chat">
+           💬
+       </button>
+       <div id="chatContainer" class="chat-container">
+           <div class="chat-header">
+               <h3>Crypto Assistant</h3>
+               <button id="closeChat" class="close-chat">×</button>
+           </div>
+           <div id="chatMessages" class="chat-messages"></div>
+           <div id="subscriptionSection" class="subscription-section hidden">
+               <div class="subscription-timer">
+                   <span id="timerText">24:00</span>
+               </div>
+           </div>
+           <div id="chatExpiredOverlay" class="chat-expired-overlay hidden">
+               <div class="chat-expired-content">
+                   <p class="chat-expired-text">Free trial expired. Subscribe to continue using the chat.</p>
+                   <div class="payment-method-buttons">
+                       <button class="payment-method-btn" data-method="crypto">Pay with Crypto</button>
+                       <button class="payment-method-btn" data-method="card">Pay with Card</button>
+                   </div>
+               </div>
+           </div>
+           <div id="chatInputContainer" class="chat-input-container">
+               <div class="chat-input-wrapper">
+                   <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." autocomplete="off">
+                   <button id="sendButton" class="send-button">→</button>
+               </div>
+           </div>
+       </div>
+   </div>
+
+   <script src="scripts/chatbot.js?v=39"></script>
+   <script>
+       // Test status
+       window.addEventListener('load', () => {
+           const statusDiv = document.getElementById('status');
+           const chatInput = document.getElementById('chatInput');
+           const sendButton = document.getElementById('sendButton');
+           
+           let status = [];
+           
+           // Check if elements exist
+           if (chatInput) {
+               status.push('✅ Chat input found');
+           } else {
+               status.push('❌ Chat input NOT found');
+           }
+           
+           if (sendButton) {
+               status.push('✅ Send button found');
+           } else {
+               status.push('❌ Send button NOT found');
+           }
+           
+           // Check API
+           fetch('http://192.168.1.142:4000/api/status?userId=testuser')
+               .then(res => res.json())
+               .then(data => {
+                   status.push('✅ API is working');
+                   statusDiv.className = 'status success';
+                   statusDiv.innerHTML = status.join('<br>');
+               })
+               .catch(err => {
+                   status.push('❌ API error: ' + err.message);
+                   statusDiv.className = 'status error';
+                   statusDiv.innerHTML = status.join('<br>');
+               });
+       });
+   </script>
+</body>
+</html>
+

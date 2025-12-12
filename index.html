@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Crypto Academy Pro</title>
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
+   <link rel="stylesheet" href="styles.css">
+</head>
+<body style="margin: 0; padding: 0; position: relative;">
+   <div class="page">
+       <!-- Крипто-элементы фона - деловой стиль -->
+       <div class="crypto-background-elements">
+           <!-- Блокчейн-сетка (деловая) -->
+           <div class="blockchain-grid"></div>
+           <!-- Блокчейн-блоки (сдержанные) -->
+           <div class="blockchain-block block-1"></div>
+           <div class="blockchain-block block-2"></div>
+           <div class="blockchain-block block-3"></div>
+           <!-- Данные транзакций (деловые) -->
+           <div class="transaction-data data-1">0x1a2b3c4d5e6f...</div>
+           <div class="transaction-data data-2">0x7g8h9i0j1k2l...</div>
+           <div class="transaction-data data-3">0x3m4n5o6p7q8r...</div>
+           <div class="transaction-data data-4">0x9s0t1u2v3w4x...</div>
+           <div class="transaction-data data-5">0x5y6z7a8b9c0d...</div>
+           <!-- График цены (деловой) -->
+           <div class="price-chart-line chart-1"></div>
+           <div class="price-chart-line chart-2"></div>
+           <div class="price-chart-line chart-3"></div>
+           <!-- Блокчейн-соединения (тонкие линии) -->
+           <div class="blockchain-connection-line conn-1"></div>
+           <div class="blockchain-connection-line conn-2"></div>
+           <div class="blockchain-connection-line conn-3"></div>
+           <div class="blockchain-connection-line conn-4"></div>
+           <!-- Деловые индикаторы -->
+           <div class="business-indicator indicator-1"></div>
+           <div class="business-indicator indicator-2"></div>
+           <div class="business-indicator indicator-3"></div>
+           <!-- Деловые линии данных -->
+           <div class="data-line line-1"></div>
+           <div class="data-line line-2"></div>
+           <div class="data-line line-3"></div>
+       </div>
+       
+       <section class="hero">
+           <div class="floating-text">Crypto: Not Just <span>Madness</span></div>
+       </section>
+       
+       <!-- Текст после заголовка -->
+       <section class="main-text-section">
+           <div class="overlay-text">
+               Step into the vast world of cryptocurrency with confidence. Our platform cuts through the noise, offering you clear, powerful tools to explore, learn, and make informed decisions. All you need is discipline and a bit of your time. Start for free today, and if you love it, keep going! Money is somewhere nearby.
+           </div>
+       </section>
+       
+       <section class="subscription-banner" id="subscriptionBanner" style="display: none;">
+           <div class="subscription-info">
+               <h3 class="subscription-title">Crypto Academy Pro Subscription</h3>
+               <p class="subscription-message" id="subscriptionText">
+                   You have active free access. Use it to try out the academy tools.
+               </p>
+           </div>
+           <button class="subscription-pay-btn" id="payCryptoButton" type="button">
+               Pay with Crypto
+           </button>
+       </section>
+       <section class="explore-section">
+           <a href="sub-sites/news/index.html" target="_blank" class="menu-item free">
+               <h3>News</h3>
+               <p>Stay updated with the latest crypto news.</p>
+           </a>
+           <a href="sub-sites/risk-distribution/index.html" target="_blank" class="menu-item free">
+               <h3>Risk Distribution</h3>
+               <p>Manage your risks with smart tools.</p>
+           </a>
+           <a href="http://192.168.1.142:4000/sub-sites/crypto-basics/index.html" class="menu-item free" target="_blank">
+               <h3>Crypto Basics</h3>
+               <p>Learn the basics of cryptocurrency.</p>
+           </a>
+           <a href="sub-sites/crypto-coach/index.html" class="menu-item paid" target="_blank">
+               <h3>Crypto Coach</h3>
+               <p>Personalized advice (Free trial, then $10/mo).</p>
+           </a>
+           <a href="#" class="menu-item paid">
+               <h3>Smart Alerts</h3>
+               <p>Smart notifications (Free trial, then $10/mo).</p>
+           </a>
+           <a href="#" class="menu-item paid">
+               <h3>Cross Wallet</h3>
+               <p>Manage wallets (Free trial, then $10/mo).</p>
+           </a>
+           <a href="#" class="menu-item premium">
+               <h3>AI Emotional Tracker</h3>
+               <p>AI emotional pattern analysis (Premium $25/mo).</p>
+           </a>
+           <a href="#" class="menu-item premium">
+               <h3>Investor Psychology Profile</h3>
+               <p>AI investor psychology analysis (Premium $25/mo).</p>
+           </a>
+           <a href="#" class="menu-item premium">
+               <h3>Predictive AI Simulator</h3>
+               <p>AI scenario forecasts (Premium $25/mo).</p>
+           </a>
+           <a href="#" class="oval-item">
+               <h3>Crafting Websites with Passion: My Why & How You Can Fuel My Journey</h3>
+           </a>
+       </section>
+   </div>
+   
+   <div class="payment-backdrop hidden" id="paymentBackdrop"></div>
+   <div class="payment-modal hidden" id="paymentModal" role="dialog" aria-modal="true" aria-labelledby="paymentModalTitle">
+       <button class="payment-close" id="paymentCloseButton" aria-label="Close window">&times;</button>
+       <h3 id="paymentModalTitle">Subscription Payment</h3>
+       <p class="payment-description">
+           Transfer the specified amount to the address below. Your subscription will be activated automatically after the transaction is confirmed by the network.
+       </p>
+       <dl class="payment-details">
+           <div>
+               <dt>Amount</dt>
+               <dd id="paymentAmount">—</dd>
+           </div>
+           <div>
+               <dt>Address</dt>
+               <dd id="paymentAddress">
+                   <span class="payment-address-text">—</span>
+                   <button class="copy-btn" id="copyAddressButton" type="button">Copy</button>
+               </dd>
+           </div>
+           <div>
+               <dt>Invoice</dt>
+               <dd id="paymentInvoiceId">—</dd>
+           </div>
+       </dl>
+       <a class="payment-link" id="paymentLink" href="#" target="_blank" rel="noopener noreferrer">
+           Open Payment Page
+       </a>
+       <p class="payment-note">
+           After successful payment, the status will update automatically. If the window was closed accidentally, you can create a new invoice.
+       </p>
+   </div>
+   <div class="subscription-overlay hidden" id="subscriptionOverlay">
+       <div class="subscription-overlay-content">
+           <p class="subscription-overlay-text">Subscribe to continue using this amazing bot for $10/month</p>
+           <button class="subscription-overlay-btn" id="subscriptionOverlayButton" type="button">
+               Subscribe for $10/month
+           </button>
+       </div>
+   </div>
+   </div>
+</div>
+   
+   <!-- Chat Widget - ВСЕГДА В ПРАВОМ НИЖНЕМ УГЛУ ЭКРАНА, ВНЕ .page, НА УРОВНЕ body -->
+   <div class="chat-widget" id="chatWidget" style="position: fixed !important; bottom: 20px !important; right: 20px !important; top: auto !important; left: auto !important; z-index: 2147483647 !important; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; margin: 0 !important; padding: 0 !important; transform: none !important; width: auto !important; height: auto !important;">
+       <button class="chat-button" id="chatButton" aria-label="Open chat" style="display: flex !important; visibility: visible !important; opacity: 1 !important; position: relative !important; width: 62px !important; height: 62px !important; border-radius: 50% !important; background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%) !important; border: 2px solid #3a3a3a !important; cursor: pointer !important; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important; align-items: center !important; justify-content: center !important; pointer-events: auto !important; margin: 0 !important; padding: 0 !important;">
+           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width: 31px !important; height: 31px !important; fill: #FFFFFF !important; display: block !important;">
+               <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+           </svg>
+       </button>
+       <div class="chat-container" id="chatContainer" aria-live="polite">
+           <div class="chat-header">
+               <h3>
+                   <span class="status-dot" aria-hidden="true"></span>
+                   Crypto AI Assistant
+               </h3>
+               <button class="close-chat" id="closeChat" aria-label="Close chat">&times;</button>
+           </div>
+           <div class="chat-subscription-section" id="subscriptionSection">
+               <div class="chat-timer-display" id="timerDisplay">24:00</div>
+           </div>
+           <div class="chat-expired-overlay hidden" id="chatExpiredOverlay">
+               <div class="chat-expired-content">
+                   <p class="chat-expired-text">Subscribe to continue using this amazing bot for $10/month</p>
+                   <div class="payment-method-buttons">
+                       <button class="chat-expired-btn payment-method-btn" data-method="crypto" type="button" data-original-text="💳 Pay with Crypto (USDT)">
+                           💳 Pay with Crypto (USDT)
+                       </button>
+                       <button class="chat-expired-btn payment-method-btn" data-method="card" type="button" data-original-text="💳 Pay with Card (Visa/Mastercard)">
+                           💳 Pay with Card (Visa/Mastercard)
+                       </button>
+                   </div>
+               </div>
+           </div>
+           <div class="chat-messages" id="chatMessages">
+               <div class="message bot">
+                   <div class="message-avatar" aria-hidden="true">🇺🇸</div>
+                   <div class="message-content">
+                       Hey! I'm your Crypto AI Assistant powered by Mistral AI 🚀 I understand all crypto terms, slang, and even "dumb" questions! Ask me anything about Bitcoin, DeFi, NFTs, trading, security, or crypto culture (HODL, FOMO, FUD, moon, lambo, degen, WAGMI)!
+                       <div class="quick-questions">
+                           <button class="quick-question-btn" data-question="What is HODL?">What is HODL?</button>
+                           <button class="quick-question-btn" data-question="Explain DeFi">Explain DeFi</button>
+                           <button class="quick-question-btn" data-question="What is a whale?">What is a whale?</button>
+                           <button class="quick-question-btn" data-question="Wen moon?">Wen moon? 🚀</button>
+                           <button class="quick-question-btn" data-question="What are rug pulls?">Rug pulls?</button>
+                       </div>
+                   </div>
+               </div>
+           </div>
+           <div class="chat-input-container">
+               <div class="chat-input-wrapper">
+                   <input type="text" class="chat-input" id="chatInput" placeholder="Ask about crypto..." autocomplete="off">
+                   <button class="send-button" id="sendButton" aria-label="Send message">
+                       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                           <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                       </svg>
+                   </button>
+               </div>
+           </div>
+       </div>
+   </div>
+   
+   <script src="scripts/scroll-optimizer.js"></script>
+   <script src="scripts/chatbot.js?v=39"></script>
+   
+   <!-- Дополнительный скрипт для ГАРАНТИИ видимости чата -->
+   <script>
+       (function() {
+           function forceChatPosition() {
+               const chatWidget = document.getElementById('chatWidget');
+               if (!chatWidget) {
+                   console.warn('Chat widget not found!');
+                   return;
+               }
+               
+               // КРИТИЧНО: Перемещаем чат в body, если он не там
+               if (chatWidget.parentElement !== document.body) {
+                   console.log('Moving chat to body from:', chatWidget.parentElement?.tagName);
+                   document.body.appendChild(chatWidget);
+               }
+               
+               // ПРИНУДИТЕЛЬНО устанавливаем все стили
+               chatWidget.style.setProperty('position', 'fixed', 'important');
+               chatWidget.style.setProperty('bottom', '20px', 'important');
+               chatWidget.style.setProperty('right', '20px', 'important');
+               chatWidget.style.setProperty('top', 'auto', 'important');
+               chatWidget.style.setProperty('left', 'auto', 'important');
+               chatWidget.style.setProperty('z-index', '2147483647', 'important');
+               chatWidget.style.setProperty('display', 'block', 'important');
+               chatWidget.style.setProperty('visibility', 'visible', 'important');
+               chatWidget.style.setProperty('opacity', '1', 'important');
+               chatWidget.style.setProperty('pointer-events', 'auto', 'important');
+               chatWidget.style.setProperty('margin', '0', 'important');
+               chatWidget.style.setProperty('padding', '0', 'important');
+               chatWidget.style.setProperty('transform', 'none', 'important');
+               
+               // Проверяем computed стили
+               const computed = window.getComputedStyle(chatWidget);
+               if (computed.position !== 'fixed') {
+                   console.error('ERROR: Position is NOT fixed!', computed.position);
+                   // Еще раз принудительно
+                   chatWidget.style.position = 'fixed';
+               }
+               
+               // Проверяем, что чат виден
+               const rect = chatWidget.getBoundingClientRect();
+               const isVisible = rect.bottom <= window.innerHeight && rect.right <= window.innerWidth;
+               if (!isVisible) {
+                   console.warn('Chat might not be visible!', rect);
+               }
+           }
+           
+           // Выполняем МНОЖЕСТВО раз для гарантии
+           forceChatPosition();
+           
+           // При загрузке DOM
+           if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', function() {
+                   forceChatPosition();
+                   setTimeout(forceChatPosition, 100);
+                   setTimeout(forceChatPosition, 500);
+               });
+           } else {
+               setTimeout(forceChatPosition, 100);
+               setTimeout(forceChatPosition, 500);
+           }
+           
+           // При полной загрузке страницы
+           window.addEventListener('load', function() {
+               forceChatPosition();
+               setTimeout(forceChatPosition, 100);
+           });
+           
+           // При прокрутке - КАЖДЫЙ РАЗ
+           let scrollTimeout;
+           window.addEventListener('scroll', function() {
+               forceChatPosition();
+               clearTimeout(scrollTimeout);
+               scrollTimeout = setTimeout(forceChatPosition, 50);
+           }, { passive: true });
+           
+           // При изменении размера окна
+           window.addEventListener('resize', forceChatPosition);
+           
+           // Периодически проверяем КАЖДЫЕ 50ms (чаще!)
+           setInterval(forceChatPosition, 50);
+           
+           // MutationObserver для отслеживания изменений DOM
+           setTimeout(function() {
+               const observer = new MutationObserver(function(mutations) {
+                   forceChatPosition();
+               });
+               observer.observe(document.body, {
+                   childList: true,
+                   subtree: true,
+                   attributes: true,
+                   attributeFilter: ['style', 'class']
+               });
+               console.log('✅ MutationObserver started for chat');
+           }, 1000);
+           
+           console.log('✅ Chat position force script loaded');
+       })();
+   </script>
+</body>
+</html>

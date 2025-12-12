@@ -1,0 +1,3096 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+* {
+   margin: 0;
+   padding: 0;
+   box-sizing: border-box;
+}
+
+body {
+   font-family: 'Poppins', sans-serif;
+   background-image: 
+       linear-gradient(rgba(255, 79, 197, 0.04) 1px, transparent 1px),
+       linear-gradient(90deg, rgba(122, 0, 255, 0.04) 1px, transparent 1px),
+       url('assets/crypto-academy-bg-v2.png');
+   background-repeat: repeat, repeat, no-repeat;
+   background-position: 0 0, 0 0, center top;
+   background-size: 50px 50px, 50px 50px, 1750px 9000px;
+   background-attachment: fixed, fixed, scroll;
+   background-color: #000000;
+   min-height: 100vh;
+   position: relative;
+   overflow-x: hidden;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+   transform: translateZ(0);
+   backface-visibility: hidden;
+   /* Гарантируем, что fixed элементы работают правильно */
+   transform: none !important;
+   will-change: auto !important;
+}
+
+body::before {
+   content: '';
+   position: fixed;
+   inset: -40px;
+   background: radial-gradient(circle at 20% 20%, rgba(120, 0, 72, 0.45), transparent 60%),
+       radial-gradient(circle at 80% 10%, rgba(141, 31, 170, 0.4), transparent 55%),
+       radial-gradient(circle at 30% 85%, rgba(112, 0, 92, 0.35), transparent 55%),
+       linear-gradient(160deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.8));
+   pointer-events: none;
+   z-index: 0;
+   filter: none;
+   transform: translateZ(0);
+   will-change: auto;
+   backface-visibility: hidden;
+}
+
+body::after {
+   content: '';
+   position: fixed;
+   inset: 0;
+   background: rgba(0, 0, 0, 0.35);
+   pointer-events: none;
+   z-index: 0;
+}
+
+/* Крипто-элементы фона - розово-фиолетовая тема */
+.crypto-background-elements {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.crypto-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(40px);
+    animation: crypto-float 20s ease-in-out infinite;
+    opacity: 0.5 !important;
+}
+
+.crypto-orb.orb-1 {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255, 79, 197, 0.4), rgba(122, 0, 255, 0.3));
+    top: 15%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.crypto-orb.orb-2 {
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, rgba(122, 0, 255, 0.4), rgba(255, 79, 197, 0.3));
+    bottom: 20%;
+    right: 15%;
+    animation-delay: 7s;
+}
+
+.crypto-orb.orb-3 {
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(167, 3, 96, 0.4), rgba(122, 0, 255, 0.3));
+    top: 50%;
+    right: 25%;
+    animation-delay: 14s;
+}
+
+.crypto-connection {
+    position: absolute;
+    top: 20%;
+    left: 20%;
+    width: 400px;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 79, 197, 0.2) 20%, 
+        rgba(122, 0, 255, 0.2) 50%, 
+        rgba(255, 79, 197, 0.2) 80%, 
+        transparent);
+    transform: rotate(25deg);
+    animation: connection-pulse 8s ease-in-out infinite;
+    filter: blur(1px);
+}
+
+@keyframes crypto-float {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.5 !important;
+    }
+    33% {
+        transform: translate(50px, -30px) scale(1.1);
+        opacity: 0.2;
+    }
+    66% {
+        transform: translate(-30px, 50px) scale(0.9);
+        opacity: 0.18;
+    }
+}
+
+@keyframes connection-pulse {
+    0%, 100% {
+        opacity: 0.2;
+        transform: rotate(25deg) scaleX(1);
+    }
+    50% {
+        opacity: 0.3;
+        transform: rotate(25deg) scaleX(1.2);
+    }
+}
+
+/* Крипто-элементы фона - розово-фиолетовая тема */
+.crypto-background-elements {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.crypto-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(40px);
+    animation: crypto-float 20s ease-in-out infinite;
+    opacity: 0.5 !important;
+}
+
+.crypto-orb.orb-1 {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255, 79, 197, 0.4), rgba(122, 0, 255, 0.3));
+    top: 15%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.crypto-orb.orb-2 {
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, rgba(122, 0, 255, 0.4), rgba(255, 79, 197, 0.3));
+    bottom: 20%;
+    right: 15%;
+    animation-delay: 7s;
+}
+
+.crypto-orb.orb-3 {
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(167, 3, 96, 0.4), rgba(122, 0, 255, 0.3));
+    top: 50%;
+    right: 25%;
+    animation-delay: 14s;
+}
+
+.crypto-connection {
+    position: absolute;
+    top: 20%;
+    left: 20%;
+    width: 400px;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 79, 197, 0.2) 20%, 
+        rgba(122, 0, 255, 0.2) 50%, 
+        rgba(255, 79, 197, 0.2) 80%, 
+        transparent);
+    transform: rotate(25deg);
+    animation: connection-pulse 8s ease-in-out infinite;
+    filter: blur(1px);
+}
+
+@keyframes crypto-float {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.5 !important;
+    }
+    33% {
+        transform: translate(50px, -30px) scale(1.1);
+        opacity: 0.2;
+    }
+    66% {
+        transform: translate(-30px, 50px) scale(0.9);
+        opacity: 0.18;
+    }
+}
+
+@keyframes connection-pulse {
+    0%, 100% {
+        opacity: 0.2;
+        transform: rotate(25deg) scaleX(1);
+    }
+    50% {
+        opacity: 0.3;
+        transform: rotate(25deg) scaleX(1.2);
+    }
+}
+
+/* Блокчейн-сетка в розово-фиолетовых тонах */
+body {
+    background-image: 
+        linear-gradient(rgba(255, 79, 197, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(122, 0, 255, 0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+}
+
+.page {
+   display: flex;
+   flex-direction: column;
+   min-height: 100vh;
+   position: relative;
+   z-index: 1;
+   /* Гарантируем, что fixed элементы вне .page работают правильно */
+   transform: none !important;
+}
+
+.page {
+   display: flex;
+   flex-direction: column;
+   min-height: 100vh;
+   position: relative;
+   z-index: 1;
+}
+
+.hero {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   text-align: center;
+   padding: 60px 20px;
+   min-height: 100vh;
+}
+
+.scroll-section {
+   flex: 1;
+   overflow-y: auto;
+   padding: 40px 20px 60px;
+}
+
+.section-header {
+   text-align: center;
+   margin-bottom: 30px;
+}
+
+.section-header h2 {
+   color: #FFFFFF;
+   font-size: 40px;
+   font-weight: 700;
+}
+
+.floating-text {
+   font-family: 'Raleway', sans-serif;
+   font-size: 175px;
+   color: #FFFFFF;
+   font-weight: 700;
+   line-height: 1.4;
+   text-align: center;
+   max-width: 90vw;
+   margin: 0 auto;
+   animation: float 6s ease-in-out infinite;
+   will-change: transform;
+   transform: translateZ(0);
+   backface-visibility: hidden;
+}
+
+.floating-text span {
+   font-style: italic;
+}
+
+@keyframes float {
+   0% {
+       transform: translate(0, 0);
+   }
+
+   50% {
+       transform: translate(20px, -20px);
+   }
+
+   100% {
+       transform: translate(0, 0);
+   }
+}
+
+.overlay-section {
+   display: flex !important;
+   justify-content: center;
+   padding: 0 20px;
+   margin-top: 6cm;
+   will-change: auto;
+   transform: translateZ(0);
+   contain: layout style paint;
+   visibility: visible !important;
+   opacity: 1 !important;
+   position: relative;
+   z-index: 5;
+}
+
+.overlay-text {
+   font-family: 'Raleway', sans-serif;
+   font-size: 67px;
+   color: #FFFFFF !important;
+   font-weight: 700;
+   line-height: 1.4;
+   text-align: left;
+   margin-left: 20px;
+   max-width: 80%;
+   opacity: 1 !important;
+   visibility: visible !important;
+   display: block !important;
+   /* Упрощенный стиль - без анимаций */
+   animation: none !important;
+   will-change: auto !important;
+   transform: none !important;
+   backface-visibility: visible !important;
+   position: relative;
+   z-index: 10;
+   margin: 0 auto;
+   padding: 20px;
+   text-shadow: 0 0 15px rgba(167, 3, 96, 0.6), 0 0 25px rgba(167, 3, 96, 0.4);
+}
+
+@keyframes pulseGlow {
+   0%, 100% {
+       text-shadow: 0 0 8px rgba(167, 3, 96, 0.5), 0 0 12px rgba(167, 3, 96, 0.3);
+   }
+   50% {
+       text-shadow: 0 0 25px rgba(167, 3, 96, 1), 0 0 35px rgba(167, 3, 96, 0.8), 0 0 45px rgba(167, 3, 96, 0.5);
+   }
+}
+
+html {
+   scroll-behavior: smooth;
+}
+
+/* Секция для текста после заголовка */
+.main-text-section {
+   padding: 0 20px;
+   margin-top: 10cm;
+   margin-bottom: 0;
+   margin-left: 1cm;
+   text-align: center;
+   position: relative;
+   z-index: 1;
+   display: block;
+}
+
+.main-text-section .overlay-text {
+   font-family: 'Raleway', sans-serif;
+   font-size: 67px;
+   color: #FFFFFF;
+   font-weight: 700;
+   line-height: 1.4;
+   text-align: center;
+   margin: 0 auto;
+   max-width: 80%;
+   /* Упрощенный стиль - без анимаций и проблемных свойств */
+   opacity: 1;
+   visibility: visible;
+   display: block;
+   padding: 0;
+   position: relative;
+   /* Убираем все что может вызывать глюки */
+   animation: none !important;
+   will-change: auto !important;
+   transform: none !important;
+   backface-visibility: visible !important;
+   contain: none !important;
+   text-shadow: 0 0 15px rgba(167, 3, 96, 0.6), 0 0 25px rgba(167, 3, 96, 0.4);
+   text-rendering: optimizeLegibility;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Круги начинаются через 5 см после текста */
+.explore-section {
+   padding: 50px 20px 150px;
+   text-align: center;
+   min-height: 100vh;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   gap: 250px;
+   margin-top: 5cm;
+   margin-bottom: 0;
+   overflow: visible !important;
+   position: relative;
+}
+
+.menu-item,
+.oval-item {
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   align-items: center;
+   text-decoration: none;
+   color: #FFFFFF;
+   background: transparent;
+   border: 9px solid #630038;
+   transition: transform 0.3s ease, box-shadow 0.3s ease;
+   cursor: pointer;
+   box-sizing: border-box;
+   will-change: transform;
+   margin: 0 auto;
+   transform-origin: center;
+   backface-visibility: hidden;
+   transform: translateX(calc(-18px + 1cm));
+   overflow: visible !important;
+   position: relative;
+   z-index: 1;
+}
+
+.menu-item {
+   width: 400px;
+   height: 400px;
+   border-radius: 50%;
+}
+
+.oval-item {
+   width: 600px;
+   height: 250px;
+   border-radius: 50%;
+   padding: 20px;
+}
+
+.menu-item h3,
+.oval-item h3 {
+   font-size: 45px;
+   font-weight: bold;
+   margin: 10px 0;
+   transition: font-size 0.25s ease;
+   text-align: center;
+   color: #FFFFFF;
+}
+
+.oval-item h3 {
+   font-size: 35px;
+   line-height: 1.2;
+}
+
+.menu-item:hover,
+.oval-item:hover {
+   transform: translateX(calc(-18px + 1cm)) scale(1.65);
+   z-index: 100 !important;
+   position: relative;
+   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.34);
+   overflow: visible !important;
+}
+
+.menu-item:hover h3 {
+   font-size: 64px;
+}
+
+.oval-item:hover h3 {
+   font-size: 52px;
+}
+
+.menu-item p,
+.oval-item p {
+   font-size: 0;
+   margin: 10px 0;
+   opacity: 0;
+   transition: font-size 0.3s ease, opacity 0.3s ease;
+   max-height: 0;
+   color: #FFFFFF;
+}
+
+.menu-item:hover p,
+.oval-item:hover p {
+   font-size: 14px;
+   opacity: 1;
+   max-height: 100px;
+}
+
+.subscription-banner {
+   margin: 80px auto 40px;
+   padding: 24px 32px;
+   max-width: 960px;
+   width: calc(100% - 40px);
+   border: 1px solid rgba(255, 255, 255, 0.18);
+   border-radius: 20px;
+   background: rgba(0, 0, 0, 0.55);
+   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 24px;
+   backdrop-filter: blur(14px);
+   transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.subscription-banner.hidden {
+   opacity: 0;
+   pointer-events: none;
+   transform: translateY(20px);
+   display: none;
+}
+
+.subscription-info {
+   flex: 1;
+}
+
+.subscription-title {
+   font-size: 28px;
+   color: #FFFFFF;
+   margin-bottom: 8px;
+}
+
+.subscription-message {
+   font-size: 16px;
+   color: rgba(255, 255, 255, 0.78);
+   line-height: 1.5;
+}
+
+.subscription-pay-btn {
+   padding: 14px 26px;
+   border-radius: 40px;
+   border: none;
+   font-size: 16px;
+   font-weight: 600;
+   cursor: pointer;
+   background: linear-gradient(130deg, #ff4fc5, #7a00ff);
+   color: #FFFFFF;
+   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.subscription-pay-btn:hover:not(:disabled) {
+   transform: translateY(-2px);
+   box-shadow: 0 12px 30px rgba(122, 0, 255, 0.35);
+}
+
+.subscription-pay-btn:disabled {
+   opacity: 0.6;
+   cursor: progress;
+}
+
+/* Chat Subscription Section - Inside Chat Widget */
+.chat-subscription-section {
+   padding: 15px 20px;
+   background: transparent;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   text-align: center;
+}
+
+.chat-subscription-section.hidden {
+   display: none;
+}
+
+.chat-timer-display {
+   font-size: 20px;
+   font-weight: 700;
+   color: #FFFFFF;
+   font-family: 'Raleway', sans-serif;
+   letter-spacing: 2px;
+   margin: 0;
+   text-align: center;
+   width: 100%;
+}
+
+/* Chat Expired Overlay - Black screen inside chat */
+.chat-expired-overlay {
+    pointer-events: none; /* Allow clicks to pass through to chat */
+   position: absolute;
+   inset: 0;
+   background: #000000;
+   display: flex;
+   align-items: flex-start;
+   justify-content: center;
+   z-index: 10;
+   padding: 40px 20px 40px;
+   padding-top: 127px;
+}
+
+.chat-expired-overlay.hidden {
+   display: none;
+}
+
+.chat-expired-content {
+   text-align: center;
+   width: 100%;
+   max-width: 400px;
+   margin: 0 auto;
+   padding: 0 20px;
+   pointer-events: auto !important; /* Allow clicks on payment buttons */
+   position: relative;
+   z-index: 10001;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: flex-start;
+   margin-top: 0;
+}
+
+.chat-expired-text {
+   font-size: 22px;
+   font-weight: 700;
+   color: #FFFFFF;
+   font-family: 'Raleway', sans-serif;
+   margin-bottom: 40px;
+   line-height: 1.5;
+   text-align: center;
+   width: 100%;
+}
+
+.chat-expired-btn {
+   padding: 12px 28px;
+   border-radius: 8px;
+   border: none;
+   font-size: 16px;
+   font-weight: 700;
+   font-family: 'Raleway', sans-serif;
+   cursor: pointer;
+   background: #2a2a2a;
+   color: #FFFFFF;
+   border: 1px solid #3a3a3a;
+   transition: all 0.2s ease;
+   width: 100%;
+   max-width: 300px;
+}
+
+.chat-expired-btn:hover {
+   background: #3a3a3a;
+   border-color: #4a4a4a;
+   transform: translateY(-2px);
+}
+
+.chat-expired-btn:active {
+   transform: translateY(0);
+}
+
+.chat-expired-btn:disabled {
+   opacity: 0.6;
+   cursor: not-allowed;
+}
+
+.payment-method-buttons {
+   display: flex;
+   flex-direction: column;
+   gap: 35px;
+   width: 100%;
+   max-width: 300px;
+   margin: 0 auto;
+   align-items: center;
+   justify-content: center;
+}
+
+.payment-method-btn {
+   padding: 12px 28px;
+   border-radius: 8px;
+   border: none;
+   font-size: 16px;
+   font-weight: 700;
+   pointer-events: auto !important;
+   cursor: pointer !important;
+   font-family: 'Raleway', sans-serif;
+   cursor: pointer;
+   pointer-events: auto !important;
+   position: relative;
+   z-index: 10004;
+   background: #2a2a2a;
+   color: #FFFFFF;
+   border: 1px solid #3a3a3a;
+   transition: all 0.2s ease;
+   width: 100%;
+}
+
+.payment-method-btn:hover:not(:disabled) {
+   background: #3a3a3a;
+   border-color: #4a4a4a;
+   transform: translateY(-2px);
+   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+.payment-method-btn:active:not(:disabled) {
+   transform: translateY(0);
+}
+
+.payment-method-btn:disabled {
+   opacity: 0.6;
+   cursor: not-allowed;
+}
+
+/* Subscription Overlay - Black Screen */
+.subscription-overlay {
+   position: fixed;
+   inset: 0;
+   background: #000000;
+   z-index: 2000;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   opacity: 1;
+   transition: opacity 0.3s ease;
+}
+
+.subscription-overlay.hidden {
+   opacity: 0;
+   pointer-events: none;
+   display: none;
+}
+
+.subscription-overlay-content {
+   text-align: center;
+   padding: 40px;
+}
+
+.subscription-overlay-text {
+   font-size: 24px;
+   font-weight: 700;
+   color: #FFFFFF;
+   font-family: 'Raleway', sans-serif;
+   margin-bottom: 30px;
+   line-height: 1.5;
+}
+
+.subscription-overlay-btn {
+   padding: 14px 32px;
+   border-radius: 8px;
+   border: none;
+   font-size: 18px;
+   font-weight: 700;
+   font-family: 'Raleway', sans-serif;
+   cursor: pointer;
+   background: #2a2a2a;
+   color: #FFFFFF;
+   border: 1px solid #3a3a3a;
+   transition: all 0.2s ease;
+}
+
+.subscription-overlay-btn:hover {
+   background: #3a3a3a;
+   border-color: #4a4a4a;
+   transform: translateY(-2px);
+}
+
+.subscription-overlay-btn:active {
+   transform: translateY(0);
+}
+
+.main-content {
+   padding: 0;
+}
+
+.crypto-form {
+   display: flex;
+   flex-direction: column;
+   gap: 25px;
+}
+
+.form-group {
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+}
+
+.form-group label {
+   font-weight: 600;
+   color: #FFFFFF;
+   font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group select {
+   padding: 14px 16px;
+   border: 1px solid rgba(255, 255, 255, 0.15);
+   border-radius: 12px;
+   font-size: 1rem;
+   transition: all 0.2s ease;
+   background: rgba(255, 255, 255, 0.08);
+   color: #FFFFFF;
+   outline: none;
+}
+
+.form-group input[type="range"] {
+   height: 6px;
+   padding: 0;
+   background: linear-gradient(90deg, #6A1B9A, #1A237E);
+   border: none;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+   border-color: rgba(255, 255, 255, 0.35);
+   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.07);
+}
+
+.form-group input::placeholder {
+   color: rgba(255, 255, 255, 0.6);
+}
+
+.submit-btn {
+   background: linear-gradient(135deg, #1A237E, #6A1B9A);
+   color: #FFFFFF;
+   border: none;
+   padding: 16px;
+   border-radius: 12px;
+   font-size: 1rem;
+   font-weight: 700;
+   cursor: pointer;
+   transition: transform 0.2s ease, box-shadow 0.2s ease;
+   margin-top: 10px;
+}
+
+.submit-btn:hover {
+   transform: translateY(-2px);
+   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.submit-btn:active {
+   transform: translateY(-1px);
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+   .hero {
+       padding: 40px 16px;
+   }
+
+   .hero h1 {
+       font-size: 26px;
+   }
+
+   .section-header h2 {
+       font-size: 32px;
+   }
+
+   .subscription-banner {
+       flex-direction: column;
+       align-items: flex-start;
+   }
+
+   .subscription-pay-btn {
+       width: 100%;
+   }
+}
+
+.payment-backdrop {
+   position: fixed;
+   inset: 0;
+   background: rgba(0, 0, 0, 0.65);
+   z-index: 1200;
+   opacity: 1;
+   transition: opacity 0.3s ease;
+}
+
+.payment-backdrop.hidden {
+   opacity: 0;
+   pointer-events: none;
+   display: none;
+}
+
+.payment-modal {
+   position: fixed;
+   inset: 50% auto auto 50%;
+   transform: translate(-50%, -50%);
+   max-width: 480px;
+   width: calc(100% - 40px);
+   background: rgba(10, 10, 10, 0.92);
+   border: 1px solid rgba(255, 255, 255, 0.18);
+   border-radius: 20px;
+   padding: 28px 28px 32px;
+   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+   z-index: 1300;
+   color: #FFFFFF;
+   backdrop-filter: blur(18px);
+   transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.payment-modal.hidden {
+   opacity: 0;
+   pointer-events: none;
+   transform: translate(-50%, -40%);
+   display: none;
+}
+
+.payment-close {
+   position: absolute;
+   top: 14px;
+   right: 16px;
+   background: none;
+   border: none;
+   color: rgba(255, 255, 255, 0.65);
+   font-size: 28px;
+   cursor: pointer;
+   transition: color 0.2s ease;
+}
+
+.payment-close:hover {
+   color: #FFFFFF;
+}
+
+.payment-description {
+   font-size: 15px;
+   line-height: 1.6;
+   color: rgba(255, 255, 255, 0.78);
+   margin-bottom: 18px;
+}
+
+.payment-details {
+   margin: 0 0 24px;
+   padding: 0;
+}
+
+.payment-details div {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 16px;
+   padding: 10px 0;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.payment-details dt {
+   font-weight: 600;
+   color: rgba(255, 255, 255, 0.85);
+}
+
+.payment-details dd {
+   margin: 0;
+   font-family: 'Poppins', sans-serif;
+   font-size: 15px;
+   color: rgba(255, 255, 255, 0.9);
+   text-align: right;
+   word-break: break-all;
+}
+
+.copy-btn {
+   margin-left: 12px;
+   padding: 6px 14px;
+   border-radius: 16px;
+   border: 1px solid rgba(255, 255, 255, 0.25);
+   background: transparent;
+   color: #FFFFFF;
+   cursor: pointer;
+   transition: background 0.2s ease, color 0.2s ease;
+}
+
+.copy-btn:hover {
+   background: rgba(255, 255, 255, 0.2);
+}
+
+.payment-link {
+   display: inline-block;
+   width: 100%;
+   text-align: center;
+   padding: 12px 20px;
+   border-radius: 16px;
+   background: linear-gradient(120deg, #ff4fc5, #7a00ff);
+   color: #FFFFFF;
+   text-decoration: none;
+   font-weight: 600;
+   transition: transform 0.2s ease, box-shadow 0.2s ease;
+   margin: 16px 0;
+}
+
+.payment-link.hidden {
+   display: none;
+}
+
+.payment-link:hover {
+   transform: translateY(-1px);
+   box-shadow: 0 12px 24px rgba(122, 0, 255, 0.35);
+}
+
+.payment-note {
+   margin-top: 18px;
+   font-size: 13px;
+   color: rgba(255, 255, 255, 0.6);
+   line-height: 1.6;
+}
+
+/* Animation for form elements */
+@keyframes fadeInUp {
+   from {
+       opacity: 0;
+       transform: translateY(30px);
+   }
+
+   to {
+       opacity: 1;
+       transform: translateY(0);
+   }
+}
+
+.form-group {
+   animation: fadeInUp 0.6s ease forwards;
+}
+
+.form-group:nth-child(1) {
+   animation-delay: 0.1s;
+}
+
+.form-group:nth-child(2) {
+   animation-delay: 0.2s;
+}
+
+.form-group:nth-child(3) {
+   animation-delay: 0.3s;
+}
+
+.submit-btn {
+   animation: fadeInUp 0.6s ease 0.4s forwards;
+}
+
+/* Chat widget - ALWAYS FIXED IN BOTTOM RIGHT CORNER OF VIEWPORT */
+.chat-widget {
+   position: fixed !important;
+   bottom: 20px !important;
+   right: 20px !important;
+   top: auto !important;
+   left: auto !important;
+   z-index: 2147483647 !important;
+   display: block !important;
+   visibility: visible !important;
+   opacity: 1 !important;
+   pointer-events: auto !important;
+   margin: 0 !important;
+   padding: 0 !important;
+   transform: none !important;
+   will-change: auto !important;
+   contain: none !important;
+}
+
+.chat-button {
+   width: 62px !important;
+   height: 62px !important;
+   border-radius: 50% !important;
+   background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%) !important;
+   border: 2px solid #3a3a3a !important;
+   cursor: pointer !important;
+   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+   display: flex !important;
+   align-items: center !important;
+   justify-content: center !important;
+   transition: all 0.3s ease !important;
+   position: relative !important;
+   animation: chat-float 3s ease-in-out infinite !important;
+   visibility: visible !important;
+   opacity: 1 !important;
+}
+
+@keyframes chat-float {
+   0%,
+   100% {
+       transform: translateY(0);
+   }
+
+   50% {
+       transform: translateY(-10px);
+   }
+}
+
+.chat-button:hover {
+   transform: scale(1.15) translateY(-5px);
+   box-shadow: 0 6px 25px rgba(255, 255, 255, 0.2);
+   border-color: #4a4a4a;
+}
+
+.chat-button:active {
+   transform: scale(0.95);
+}
+
+.chat-button svg {
+   width: 31px;
+   height: 31px;
+   fill: #FFFFFF;
+}
+
+.chat-button::before {
+   content: '';
+   position: absolute;
+   top: -5px;
+   right: -5px;
+   width: 12px;
+   height: 12px;
+   background: #888888;
+   border-radius: 50%;
+   border: 2px solid #1a1a1a;
+   animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+   0%,
+   100% {
+       transform: scale(1);
+       opacity: 1;
+   }
+
+   50% {
+       transform: scale(1.2);
+       opacity: 0.6;
+   }
+}
+
+.chat-container {
+   position: fixed !important;
+   bottom: 90px !important;
+   right: 20px !important;
+   width: 420px !important;
+   height: 600px !important;
+   background: #1a1a1a !important;
+   border: 1px solid #2a2a2a !important;
+   border-radius: 15px !important;
+   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important;
+   display: none !important;
+   flex-direction: column !important;
+   overflow: hidden !important;
+   animation: chat-slide-up 0.3s ease !important;
+   z-index: 10001 !important;
+   pointer-events: auto !important;
+}
+
+.chat-container.active {
+   display: flex !important;
+   visibility: visible !important;
+   opacity: 1 !important;
+}
+
+@keyframes chat-slide-up {
+   0% {
+       opacity: 0;
+       transform: translateY(30px) scale(0.8);
+   }
+
+   100% {
+       opacity: 1;
+       transform: translateY(0) scale(1);
+   }
+}
+
+.chat-header {
+   background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+   color: #cccccc;
+   padding: 22px;
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   border-bottom: 1px solid #3a3a3a;
+}
+
+.chat-header h3 {
+   font-size: 1.3em;
+   display: flex;
+   align-items: center;
+   gap: 10px;
+}
+
+.status-dot {
+   width: 8px;
+   height: 8px;
+   background: #888888;
+   border-radius: 50%;
+   animation: chat-pulse 2s infinite;
+}
+
+@keyframes chat-pulse {
+   0%,
+   100% {
+       opacity: 1;
+   }
+
+   50% {
+       opacity: 0.5;
+   }
+}
+
+.close-chat {
+   background: none;
+   border: none;
+   color: #FFFFFF;
+   font-size: 26px;
+   cursor: pointer;
+   width: 34px;
+   height: 34px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   border-radius: 5px;
+   transition: background 0.3s ease;
+}
+
+.close-chat:hover {
+   background: rgba(255, 255, 255, 0.2);
+}
+
+.chat-messages {
+   flex: 1;
+   padding: 22px;
+   overflow-y: auto;
+   background: #0a0a0a;
+   display: flex !important;
+   flex-direction: column !important;
+   width: 100% !important;
+   box-sizing: border-box;
+}
+
+.message {
+   margin-bottom: 16px;
+   display: flex !important;
+   gap: 9px;
+   animation: chat-fade-in 0.3s ease;
+   align-items: flex-start;
+   width: 100% !important;
+   flex-direction: row !important;
+   flex-wrap: nowrap !important;
+}
+
+@keyframes chat-fade-in {
+   from {
+       opacity: 0;
+       transform: translateY(10px);
+   }
+
+   to {
+       opacity: 1;
+       transform: translateY(0);
+   }
+}
+
+.message.bot {
+   flex-direction: row;
+   justify-content: flex-start;
+}
+
+.message.user {
+   flex-direction: row-reverse;
+   justify-content: flex-end;
+}
+
+.message-avatar {
+   width: 38px;
+   height: 38px;
+   border-radius: 50%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-size: 22px;
+   flex-shrink: 0;
+   background: transparent;
+   border: none;
+}
+
+.message-content {
+   max-width: 70% !important;
+   min-width: 0;
+   padding: 13px 17px;
+   border-radius: 15px;
+   line-height: 1.55;
+   font-size: 14.5px;
+   word-wrap: break-word;
+   display: block !important;
+   color: #cccccc;
+   flex-shrink: 1;
+   box-sizing: border-box;
+}
+
+.message.bot .message-content {
+   background: #2a2a2a;
+   border: 1px solid #3a3a3a;
+   border-bottom-left-radius: 5px;
+}
+
+.message.user .message-content {
+   background: #1a1a1a;
+   border: 1px solid #3a3a3a;
+   border-bottom-right-radius: 5px;
+}
+
+.message-sources {
+   margin-top: 8px;
+   padding-top: 8px;
+   border-top: 1px solid #3a3a3a;
+   font-size: 12px;
+}
+
+.message-sources a {
+   color: #888888;
+   text-decoration: none;
+   display: block;
+   margin: 4px 0;
+   transition: color 0.2s ease;
+}
+
+.message-sources a:hover {
+   color: #cccccc;
+   text-decoration: underline;
+}
+
+.message-sources a::before {
+   content: "🔗 ";
+   margin-right: 4px;
+}
+
+.chat-input-container {
+   pointer-events: auto !important;
+   z-index: 10003 !important;
+   position: relative !important;
+   padding: 22px !important;
+   background: #1a1a1a !important;
+   border-top: 1px solid #3a3a3a !important;
+   pointer-events: auto !important;
+   z-index: 10002 !important;
+   position: relative !important;
+}
+
+.chat-input-wrapper {
+   display: flex !important;
+   gap: 10px !important;
+   pointer-events: auto !important;
+   z-index: 10002 !important;
+   position: relative !important;
+}
+
+.chat-input {
+   flex: 1 !important;
+   padding: 13px 17px !important;
+   border: 2px solid #3a3a3a !important;
+   border-radius: 25px !important;
+   font-size: 14.5px !important;
+   outline: none !important;
+   background: #0a0a0a !important;
+   color: #cccccc !important;
+   transition: border-color 0.3s ease !important;
+   pointer-events: auto !important;
+   z-index: 10003 !important;
+   position: relative !important;
+   cursor: text !important;
+}
+
+.chat-input::placeholder {
+   color: #666666;
+}
+
+.chat-input:focus {
+   border-color: #5a5a5a;
+}
+
+.send-button {
+   width: 48px;
+   height: 48px;
+   border-radius: 50%;
+   background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+   border: 2px solid #3a3a3a;
+   cursor: pointer;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   transition: all 0.2s ease;
+}
+
+.send-button:hover {
+   transform: scale(1.1);
+   box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+   border-color: #4a4a4a;
+}
+
+.send-button:active {
+   transform: scale(0.95);
+}
+
+.send-button svg {
+   width: 21px;
+   height: 21px;
+   fill: #FFFFFF;
+}
+
+.typing-indicator {
+   display: none;
+   padding: 12px 16px;
+   background: #2a2a2a;
+   border: 1px solid #3a3a3a;
+   border-radius: 15px;
+   border-bottom-left-radius: 5px;
+   width: fit-content;
+}
+
+.typing-indicator.active {
+   display: block;
+}
+
+.typing-dots {
+   display: flex;
+   gap: 4px;
+}
+
+.typing-dots span {
+   width: 8px;
+   height: 8px;
+   background: #666666;
+   border-radius: 50%;
+   animation: chat-typing 1.4s infinite;
+}
+
+.typing-dots span:nth-child(2) {
+   animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+   animation-delay: 0.4s;
+}
+
+@keyframes chat-typing {
+   0%,
+   60%,
+   100% {
+       transform: translateY(0);
+   }
+
+   30% {
+       transform: translateY(-10px);
+   }
+}
+
+.quick-questions {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 8px;
+   margin-top: 10px;
+}
+
+.quick-question-btn {
+   padding: 9px 15px;
+   background: #2a2a2a;
+   border: 1px solid #3a3a3a;
+   border-radius: 20px;
+   font-size: 12.5px;
+   cursor: pointer;
+   transition: all 0.3s ease;
+   color: #888888;
+   font-weight: 500;
+}
+
+.quick-question-btn:hover {
+   background: #3a3a3a;
+   color: #cccccc;
+   border-color: #4a4a4a;
+   transform: translateY(-2px);
+   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
+}
+
+.quick-question-btn:active {
+   transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+   .chat-container {
+       width: calc(100vw - 40px);
+       height: calc(100vh - 120px);
+       right: 20px;
+   }
+}
+
+/* Блокчейн-блоки - деловой стиль */
+.blockchain-block {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border: 1px solid rgba(100, 150, 255, 0.3);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    animation: block-float 20s ease-in-out infinite;
+    box-shadow: 
+        0 0 10px rgba(100, 150, 255, 0.2),
+        inset 0 0 10px rgba(50, 100, 200, 0.1);
+    z-index: 1;
+}
+
+.blockchain-block::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(100, 150, 255, 0.4), transparent);
+    animation: block-glow 4s ease-in-out infinite;
+}
+
+.blockchain-block::after {
+    content: '₿';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 28px;
+    color: rgba(150, 200, 255, 0.5);
+    font-weight: 700;
+    text-shadow: 0 0 5px rgba(100, 150, 255, 0.3);
+}
+
+.blockchain-block.block-1 {
+    border-color: rgba(100, 150, 255, 0.3);
+    top: 25%;
+    left: 8%;
+    animation-delay: 0s;
+}
+
+.blockchain-block.block-2 {
+    border-color: rgba(80, 130, 230, 0.3);
+    bottom: 30%;
+    right: 12%;
+    animation-delay: 7s;
+}
+
+.blockchain-block.block-3 {
+    border-color: rgba(90, 140, 240, 0.3);
+    top: 60%;
+    left: 15%;
+    animation-delay: 14s;
+    width: 60px;
+    height: 60px;
+}
+
+.blockchain-block.block-3::after {
+    font-size: 22px;
+    content: 'Ξ';
+}
+
+@keyframes block-float {
+    0%, 100% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 0.8;
+    }
+    33% {
+        transform: translate(20px, -15px) rotate(5deg);
+        opacity: 1;
+    }
+    66% {
+        transform: translate(-15px, 20px) rotate(-5deg);
+        opacity: 0.9;
+    }
+}
+
+@keyframes block-glow {
+    0%, 100% {
+        opacity: 0.2;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ========== ДЕЛОВЫЕ КРИПТО-ЭФФЕКТЫ ========== */
+
+/* Блокчейн-сетка (деловая) */
+.blockchain-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+        linear-gradient(rgba(100, 150, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(80, 130, 230, 0.08) 1px, transparent 1px);
+    background-size: 100px 100px;
+    animation: grid-shift 30s linear infinite;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.4;
+}
+
+@keyframes grid-shift {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 100px 100px;
+    }
+}
+
+/* Данные транзакций (деловые) */
+.transaction-data {
+    position: absolute;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: 400;
+    color: rgba(150, 200, 255, 0.4);
+    text-shadow: 0 0 5px rgba(100, 150, 255, 0.2);
+    animation: data-fade 12s ease-in-out infinite;
+    z-index: 1;
+    pointer-events: none;
+    letter-spacing: 1px;
+}
+
+.transaction-data.data-1 {
+    top: 15%;
+    left: 5%;
+    animation-delay: 0s;
+}
+
+.transaction-data.data-2 {
+    top: 70%;
+    right: 5%;
+    animation-delay: 4s;
+}
+
+.transaction-data.data-3 {
+    bottom: 20%;
+    left: 50%;
+    animation-delay: 8s;
+}
+
+@keyframes data-fade {
+    0%, 100% {
+        opacity: 0.3;
+        transform: translateY(0);
+    }
+    50% {
+        opacity: 0.6;
+        transform: translateY(-10px);
+    }
+}
+
+/* График цены (деловой) */
+.price-chart-line {
+    position: absolute;
+    width: 300px;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent,
+        rgba(100, 150, 255, 0.3) 20%,
+        rgba(80, 130, 230, 0.3) 50%,
+        rgba(100, 150, 255, 0.3) 80%,
+        transparent);
+    border-radius: 1px;
+    animation: chart-pulse 15s ease-in-out infinite;
+    z-index: 1;
+    pointer-events: none;
+    filter: blur(0.5px);
+}
+
+.price-chart-line.chart-1 {
+    top: 30%;
+    left: 10%;
+    transform: rotate(15deg);
+    animation-delay: 0s;
+}
+
+.price-chart-line.chart-2 {
+    bottom: 25%;
+    right: 10%;
+    transform: rotate(-20deg);
+    animation-delay: 7s;
+    width: 350px;
+}
+
+.price-chart-line.chart-3 {
+    top: 55%;
+    left: 50%;
+    transform: rotate(5deg);
+    animation-delay: 10s;
+    width: 320px;
+}
+
+@keyframes chart-pulse {
+    0%, 100% {
+        opacity: 0.3;
+        transform: rotate(var(--rotation, 0deg)) scaleX(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: rotate(var(--rotation, 0deg)) scaleX(1.1);
+    }
+}
+
+/* Блокчейн-соединения (тонкие линии) */
+.blockchain-connection-line {
+    position: absolute;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(100, 150, 255, 0.25) 30%, 
+        rgba(80, 130, 230, 0.25) 50%, 
+        rgba(100, 150, 255, 0.25) 70%, 
+        transparent);
+    animation: connection-fade 18s ease-in-out infinite;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.blockchain-connection-line.conn-1 {
+    width: 400px;
+    top: 40%;
+    left: 8%;
+    transform: rotate(20deg);
+    animation-delay: 0s;
+}
+
+.blockchain-connection-line.conn-2 {
+    width: 350px;
+    bottom: 35%;
+    right: 8%;
+    transform: rotate(-25deg);
+    animation-delay: 6s;
+}
+
+.blockchain-connection-line.conn-3 {
+    width: 380px;
+    top: 65%;
+    left: 50%;
+    transform: rotate(10deg);
+    animation-delay: 12s;
+}
+
+.blockchain-connection-line.conn-4 {
+    width: 300px;
+    top: 20%;
+    right: 20%;
+    transform: rotate(-15deg);
+    animation-delay: 9s;
+}
+
+@keyframes connection-fade {
+    0%, 100% {
+        opacity: 0.2;
+        transform: rotate(var(--rotation, 0deg)) scaleX(1);
+    }
+    50% {
+        opacity: 0.4;
+        transform: rotate(var(--rotation, 0deg)) scaleX(1.2);
+    }
+}
+
+/* Деловые индикаторы */
+.business-indicator {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(100, 150, 255, 0.5);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(100, 150, 255, 0.4);
+    animation: indicator-pulse 6s ease-in-out infinite;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.business-indicator.indicator-1 {
+    top: 18%;
+    left: 12%;
+    animation-delay: 0s;
+}
+
+.business-indicator.indicator-2 {
+    top: 45%;
+    right: 15%;
+    animation-delay: 2s;
+}
+
+.business-indicator.indicator-3 {
+    bottom: 30%;
+    left: 25%;
+    animation-delay: 4s;
+}
+
+@keyframes indicator-pulse {
+    0%, 100% {
+        opacity: 0.4;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.3);
+    }
+}
+
+/* Деловые линии данных */
+.data-line {
+    position: absolute;
+    width: 200px;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent,
+        rgba(100, 150, 255, 0.2) 50%,
+        transparent);
+    animation: line-fade 10s ease-in-out infinite;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.data-line.line-1 {
+    top: 35%;
+    left: 5%;
+    transform: rotate(30deg);
+    animation-delay: 0s;
+}
+
+.data-line.line-2 {
+    top: 60%;
+    right: 5%;
+    transform: rotate(-35deg);
+    animation-delay: 3s;
+}
+
+.data-line.line-3 {
+    bottom: 15%;
+    left: 40%;
+    transform: rotate(10deg);
+    animation-delay: 6s;
+}
+
+@keyframes line-fade {
+    0%, 100% {
+        opacity: 0.2;
+        transform: rotate(var(--rotation, 0deg)) scaleX(1);
+    }
+    50% {
+        opacity: 0.4;
+        transform: rotate(var(--rotation, 0deg)) scaleX(1.2);
+    }
+}
+
+/* Крипто-частицы - летающие элементы */
+.crypto-particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: radial-gradient(circle, rgba(255, 79, 197, 0.8), rgba(122, 0, 255, 0.4));
+    border-radius: 50%;
+    box-shadow: 0 0 15px rgba(255, 79, 197, 0.6);
+    animation: particle-float 12s ease-in-out infinite;
+}
+
+.crypto-particle.particle-1 {
+    top: 20%;
+    left: 20%;
+    animation-delay: 0s;
+}
+
+.crypto-particle.particle-2 {
+    top: 40%;
+    right: 25%;
+    animation-delay: 2s;
+    width: 8px;
+    height: 8px;
+}
+
+.crypto-particle.particle-3 {
+    bottom: 25%;
+    left: 30%;
+    animation-delay: 4s;
+}
+
+.crypto-particle.particle-4 {
+    top: 70%;
+    right: 20%;
+    animation-delay: 6s;
+    width: 5px;
+    height: 5px;
+}
+
+.crypto-particle.particle-5 {
+    top: 50%;
+    left: 50%;
+    animation-delay: 8s;
+}
+
+@keyframes particle-float {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.6;
+    }
+    25% {
+        transform: translate(40px, -30px) scale(1.2);
+        opacity: 0.9;
+    }
+    50% {
+        transform: translate(-30px, 40px) scale(0.8);
+        opacity: 0.7;
+    }
+    75% {
+        transform: translate(30px, 30px) scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* Усиливаем видимость орбов */
+.crypto-orb.orb-1 {
+    opacity: 0.6 !important;
+}
+
+.crypto-orb.orb-2 {
+    opacity: 0.55 !important;
+}
+
+.crypto-orb.orb-3 {
+    opacity: 0.5 !important;
+}
+
+/* Яркие крипто-элементы для заметности */
+.crypto-glow-circle {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 79, 197, 0.3), transparent 70%);
+    filter: blur(30px);
+    animation: glow-pulse 4s ease-in-out infinite;
+    z-index: 0;
+}
+
+.crypto-glow-circle.glow-1 {
+    top: 10%;
+    right: 20%;
+    animation-delay: 0s;
+}
+
+.crypto-glow-circle.glow-2 {
+    bottom: 15%;
+    left: 15%;
+    animation-delay: 2s;
+    background: radial-gradient(circle, rgba(122, 0, 255, 0.3), transparent 70%);
+}
+
+.crypto-pulse-ring {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    border: 3px solid;
+    border-radius: 50%;
+    animation: ring-pulse 3s ease-in-out infinite;
+    z-index: 0;
+}
+
+.crypto-pulse-ring.ring-1 {
+    border-color: rgba(255, 79, 197, 0.5);
+    top: 30%;
+    left: 5%;
+    animation-delay: 0s;
+}
+
+.crypto-pulse-ring.ring-2 {
+    border-color: rgba(122, 0, 255, 0.5);
+    bottom: 25%;
+    right: 8%;
+    animation-delay: 1.5s;
+}
+
+@keyframes glow-pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+    50% {
+        transform: scale(1.3);
+        opacity: 0.5;
+    }
+}
+
+@keyframes ring-pulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+}
+
+/* Дополнительные яркие эффекты для заметности */
+body::before {
+    background: 
+        radial-gradient(circle at 20% 20%, rgba(120, 0, 72, 0.45), transparent 60%),
+        radial-gradient(circle at 80% 10%, rgba(141, 31, 170, 0.4), transparent 55%),
+        radial-gradient(circle at 30% 85%, rgba(112, 0, 92, 0.35), transparent 55%),
+        radial-gradient(circle at 70% 70%, rgba(255, 79, 197, 0.2), transparent 50%),
+        radial-gradient(circle at 10% 50%, rgba(122, 0, 255, 0.2), transparent 50%),
+        linear-gradient(160deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.8));
+}
+
+/* Усиливаем блокчейн-сетку */
+body {
+    background-image: 
+        linear-gradient(rgba(255, 79, 197, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(122, 0, 255, 0.06) 1px, transparent 1px),
+        url('assets/crypto-academy-bg-v2.png');
+}
+
+/* Больше пульсирующих кругов */
+.crypto-glow-circle.glow-3 {
+    top: 50%;
+    left: 10%;
+    animation-delay: 1s;
+    background: radial-gradient(circle, rgba(255, 79, 197, 0.4), transparent 70%);
+    width: 120px;
+    height: 120px;
+}
+
+.crypto-glow-circle.glow-4 {
+    top: 70%;
+    right: 25%;
+    animation-delay: 3s;
+    background: radial-gradient(circle, rgba(122, 0, 255, 0.4), transparent 70%);
+    width: 180px;
+    height: 180px;
+}
+
+.crypto-glow-circle.glow-5 {
+    bottom: 10%;
+    left: 30%;
+    animation-delay: 4s;
+    background: radial-gradient(circle, rgba(255, 79, 197, 0.35), transparent 70%);
+    width: 140px;
+    height: 140px;
+}
+
+/* Больше пульсирующих колец */
+.crypto-pulse-ring.ring-3 {
+    border-color: rgba(255, 79, 197, 0.6);
+    top: 15%;
+    right: 30%;
+    animation-delay: 3s;
+    width: 150px;
+    height: 150px;
+}
+
+.crypto-pulse-ring.ring-4 {
+    border-color: rgba(122, 0, 255, 0.6);
+    top: 60%;
+    left: 25%;
+    animation-delay: 4.5s;
+    width: 180px;
+    height: 180px;
+}
+
+/* Летающие крипто-монеты */
+.crypto-coin {
+    position: absolute;
+    font-size: 40px;
+    font-weight: 700;
+    color: rgba(255, 79, 197, 0.8);
+    text-shadow: 
+        0 0 20px rgba(255, 79, 197, 0.8),
+        0 0 40px rgba(255, 79, 197, 0.5);
+    animation: coin-float 15s ease-in-out infinite;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.crypto-coin.coin-1 {
+    top: 8%;
+    left: 8%;
+    animation-delay: 0s;
+}
+
+.crypto-coin.coin-2 {
+    top: 8%;
+    right: 8%;
+    animation-delay: 2s;
+    color: rgba(122, 0, 255, 0.8);
+    text-shadow: 
+        0 0 20px rgba(122, 0, 255, 0.8),
+        0 0 40px rgba(122, 0, 255, 0.5);
+}
+
+.crypto-coin.coin-3 {
+    bottom: 8%;
+    left: 8%;
+    animation-delay: 4s;
+    font-size: 35px;
+}
+
+.crypto-coin.coin-4 {
+    bottom: 8%;
+    right: 8%;
+    animation-delay: 6s;
+    color: rgba(122, 0, 255, 0.8);
+    text-shadow: 
+        0 0 20px rgba(122, 0, 255, 0.8),
+        0 0 40px rgba(122, 0, 255, 0.5);
+    font-size: 45px;
+}
+
+.crypto-coin.coin-5 {
+    top: 15%;
+    left: 25%;
+    animation-delay: 8s;
+    font-size: 38px;
+}
+
+.crypto-coin.coin-6 {
+    top: 15%;
+    right: 25%;
+    animation-delay: 10s;
+    color: rgba(122, 0, 255, 0.8);
+    text-shadow: 
+        0 0 20px rgba(122, 0, 255, 0.8),
+        0 0 40px rgba(122, 0, 255, 0.5);
+}
+
+.crypto-coin.coin-7 {
+    bottom: 15%;
+    left: 25%;
+    animation-delay: 12s;
+    font-size: 42px;
+}
+
+.crypto-coin.coin-8 {
+    bottom: 15%;
+    right: 25%;
+    animation-delay: 14s;
+    color: rgba(122, 0, 255, 0.8);
+    text-shadow: 
+        0 0 20px rgba(122, 0, 255, 0.8),
+        0 0 40px rgba(122, 0, 255, 0.5);
+    font-size: 36px;
+}
+
+@keyframes coin-float {
+    0%, 100% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+        opacity: 0.7;
+    }
+    25% {
+        transform: translate(50px, -40px) rotate(90deg) scale(1.2);
+        opacity: 1;
+    }
+    50% {
+        transform: translate(-40px, 50px) rotate(180deg) scale(0.9);
+        opacity: 0.8;
+    }
+    75% {
+        transform: translate(40px, 40px) rotate(270deg) scale(1.1);
+        opacity: 0.9;
+    }
+}
+
+/* Делаем орбы еще ярче */
+.crypto-orb.orb-1 {
+    opacity: 0.7 !important;
+    filter: blur(35px);
+}
+
+.crypto-orb.orb-2 {
+    opacity: 0.65 !important;
+    filter: blur(35px);
+}
+
+.crypto-orb.orb-3 {
+    opacity: 0.6 !important;
+    filter: blur(35px);
+}
+
+/* Усиливаем пульсирующие круги */
+.crypto-glow-circle {
+    opacity: 0.6 !important;
+}
+
+.crypto-glow-circle.glow-1 {
+    opacity: 0.7 !important;
+}
+
+.crypto-glow-circle.glow-2 {
+    opacity: 0.65 !important;
+}
+
+/* Дополнительные летающие монеты BNB, ADA, SOL (оставлено 11 из 16) */
+.crypto-coin.coin-9 {
+    top: 25%;
+    left: 45%;
+    animation-delay: 16s;
+    color: rgba(255, 193, 7, 0.9);
+    text-shadow: 
+        0 0 20px rgba(255, 193, 7, 0.8),
+        0 0 40px rgba(255, 193, 7, 0.5);
+    font-size: 32px;
+}
+
+.crypto-coin.coin-10 {
+    top: 25%;
+    right: 45%;
+    animation-delay: 18s;
+    color: rgba(0, 172, 193, 0.9);
+    text-shadow: 
+        0 0 20px rgba(0, 172, 193, 0.8),
+        0 0 40px rgba(0, 172, 193, 0.5);
+    font-size: 34px;
+}
+
+.crypto-coin.coin-11 {
+    top: 50%;
+    left: 8%;
+    animation-delay: 20s;
+    font-size: 40px;
+}
+
+/* ========== НОВЫЕ КРИПТО-ЭФФЕКТЫ (БЕЗ ГЕОМЕТРИИ) ========== */
+
+/* Блокчейн-цепочка (связанные блоки) */
+.blockchain-chain {
+    position: absolute;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    animation: chain-float 16s ease-in-out infinite;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.blockchain-chain.chain-1 {
+    top: 10%;
+    left: 5%;
+    animation-delay: 0s;
+}
+
+.blockchain-chain.chain-2 {
+    bottom: 15%;
+    right: 5%;
+    animation-delay: 8s;
+    flex-direction: row-reverse;
+}
+
+.chain-link {
+    width: 50px;
+    height: 50px;
+    border: 2px solid rgba(255, 79, 197, 0.6);
+    border-radius: 8px;
+    background: rgba(255, 79, 197, 0.1);
+    position: relative;
+    animation: link-pulse 3s ease-in-out infinite;
+    box-shadow: 0 0 15px rgba(255, 79, 197, 0.4);
+}
+
+.chain-link::before {
+    content: '₿';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: rgba(255, 79, 197, 0.8);
+    text-shadow: 0 0 10px rgba(255, 79, 197, 0.8);
+}
+
+.chain-link:nth-child(2)::before {
+    content: 'Ξ';
+    color: rgba(122, 0, 255, 0.8);
+    text-shadow: 0 0 10px rgba(122, 0, 255, 0.8);
+}
+
+.chain-link:nth-child(3)::before {
+    content: '₿';
+}
+
+@keyframes chain-float {
+    0%, 100% {
+        transform: translate(0, 0);
+        opacity: 0.7;
+    }
+    50% {
+        transform: translate(40px, -30px);
+        opacity: 1;
+    }
+}
+
+@keyframes link-pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 15px rgba(255, 79, 197, 0.4);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 25px rgba(255, 79, 197, 0.7);
+    }
+}
+
+/* Крипто-данные (летающие хеши) */
+.crypto-hash {
+    position: absolute;
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: rgba(255, 79, 197, 0.7);
+    text-shadow: 
+        0 0 15px rgba(255, 79, 197, 0.8),
+        0 0 30px rgba(255, 79, 197, 0.5);
+    animation: hash-drift 22s ease-in-out infinite;
+    z-index: 1;
+    pointer-events: none;
+    letter-spacing: 2px;
+}
+
+.crypto-hash.hash-1 {
+    top: 8%;
+    left: 3%;
+    animation-delay: 0s;
+}
+
+.crypto-hash.hash-2 {
+    top: 75%;
+    right: 3%;
+    animation-delay: 5s;
+    color: rgba(122, 0, 255, 0.7);
+    text-shadow: 
+        0 0 15px rgba(122, 0, 255, 0.8),
+        0 0 30px rgba(122, 0, 255, 0.5);
+}
+
+.crypto-hash.hash-3 {
+    bottom: 10%;
+    left: 8%;
+    animation-delay: 10s;
+    font-size: 16px;
+}
+
+
+@keyframes hash-drift {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.6;
+    }
+    25% {
+        transform: translate(80px, -70px) scale(1.2);
+        opacity: 0.9;
+    }
+    50% {
+        transform: translate(-70px, 80px) scale(0.9);
+        opacity: 0.5;
+    }
+    75% {
+        transform: translate(70px, 70px) scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* Крипто-волны (данные блокчейна) */
+.crypto-wave {
+    position: absolute;
+    width: 300px;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent,
+        rgba(255, 79, 197, 0.5) 20%,
+        rgba(122, 0, 255, 0.5) 50%,
+        rgba(255, 79, 197, 0.5) 80%,
+        transparent);
+    border-radius: 2px;
+    animation: wave-flow 14s ease-in-out infinite;
+    z-index: 1;
+    pointer-events: none;
+    filter: blur(1.5px);
+    box-shadow: 0 0 20px rgba(255, 79, 197, 0.4);
+}
+
+.crypto-wave.wave-1 {
+    top: 15%;
+    left: 2%;
+    transform: rotate(20deg);
+    animation-delay: 0s;
+}
+
+.crypto-wave.wave-2 {
+    bottom: 10%;
+    right: 2%;
+    transform: rotate(-25deg);
+    animation-delay: 7s;
+    width: 400px;
+}
+
+@keyframes wave-flow {
+    0%, 100% {
+        opacity: 0.4;
+        transform: rotate(var(--rotation, 0deg)) scaleX(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: rotate(var(--rotation, 0deg)) scaleX(1.4);
+    }
+}
+
+/* Дополнительные крипто-символы */
+.crypto-symbol {
+    position: absolute;
+    font-size: 50px;
+    font-weight: 700;
+    color: rgba(255, 79, 197, 0.7);
+    text-shadow: 
+        0 0 25px rgba(255, 79, 197, 0.8),
+        0 0 50px rgba(255, 79, 197, 0.5);
+    animation: symbol-drift 20s ease-in-out infinite;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.crypto-symbol.symbol-1 {
+    top: 10%;
+    left: 5%;
+    animation-delay: 0s;
+    color: rgba(255, 79, 197, 0.7);
+}
+
+.crypto-symbol.symbol-2 {
+    top: 10%;
+    right: 5%;
+    animation-delay: 4s;
+    color: rgba(122, 0, 255, 0.7);
+    text-shadow: 
+        0 0 25px rgba(122, 0, 255, 0.8),
+        0 0 50px rgba(122, 0, 255, 0.5);
+    font-size: 45px;
+}
+
+.crypto-symbol.symbol-3 {
+    bottom: 10%;
+    left: 5%;
+    animation-delay: 8s;
+    font-size: 48px;
+}
+
+.crypto-symbol.symbol-4 {
+    top: 50%;
+    right: 5%;
+    animation-delay: 12s;
+    color: rgba(255, 193, 7, 0.8);
+    text-shadow: 
+        0 0 25px rgba(255, 193, 7, 0.8),
+        0 0 50px rgba(255, 193, 7, 0.5);
+    font-size: 42px;
+}
+
+.crypto-symbol.symbol-5 {
+    bottom: 10%;
+    right: 5%;
+    animation-delay: 16s;
+    color: rgba(0, 255, 163, 0.8);
+    text-shadow: 
+        0 0 25px rgba(0, 255, 163, 0.8),
+        0 0 50px rgba(0, 255, 163, 0.5);
+    font-size: 40px;
+}
+
+
+@keyframes symbol-drift {
+    0%, 100% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+        opacity: 0.6;
+    }
+    25% {
+        transform: translate(70px, -60px) rotate(90deg) scale(1.3);
+        opacity: 0.9;
+    }
+    50% {
+        transform: translate(-60px, 70px) rotate(180deg) scale(0.8);
+        opacity: 0.5;
+    }
+    75% {
+        transform: translate(60px, 60px) rotate(270deg) scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+/* Крипто-частицы данных */
+.data-particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: radial-gradient(circle, rgba(255, 79, 197, 0.9), rgba(122, 0, 255, 0.5));
+    border-radius: 50%;
+    animation: data-float 14s ease-in-out infinite;
+    z-index: 1;
+    pointer-events: none;
+    box-shadow: 0 0 15px rgba(255, 79, 197, 0.6);
+}
+
+.data-particle.particle-data-1 {
+    top: 30%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.data-particle.particle-data-2 {
+    top: 30%;
+    right: 10%;
+    animation-delay: 2s;
+    width: 10px;
+    height: 10px;
+    background: radial-gradient(circle, rgba(122, 0, 255, 0.9), rgba(255, 79, 197, 0.5));
+    box-shadow: 0 0 15px rgba(122, 0, 255, 0.6);
+}
+
+.data-particle.particle-data-3 {
+    bottom: 30%;
+    left: 50%;
+    animation-delay: 4s;
+    width: 6px;
+    height: 6px;
+}
+
+
+@keyframes data-float {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.7;
+    }
+    25% {
+        transform: translate(50px, -45px) scale(1.3);
+        opacity: 1;
+    }
+    50% {
+        transform: translate(-45px, 50px) scale(0.8);
+        opacity: 0.5;
+    }
+    75% {
+        transform: translate(45px, 45px) scale(1.2);
+        opacity: 0.9;
+    }
+}
+
+/* Крипто-свечение (энергия блокчейна) */
+.crypto-energy {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 79, 197, 0.3), transparent 70%);
+    animation: energy-pulse 8s ease-in-out infinite;
+    z-index: 0;
+    pointer-events: none;
+    filter: blur(25px);
+}
+
+.crypto-energy.energy-1 {
+    top: 20%;
+    left: 20%;
+    animation-delay: 0s;
+}
+
+.crypto-energy.energy-2 {
+    bottom: 20%;
+    right: 20%;
+    animation-delay: 2.5s;
+    background: radial-gradient(circle, rgba(122, 0, 255, 0.3), transparent 70%);
+    width: 150px;
+    height: 150px;
+}
+
+
+@keyframes energy-pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.4;
+    }
+    50% {
+        transform: scale(1.4);
+        opacity: 0.7;
+    }
+}
+
+/* GPU ускорение для новых крипто-эффектов */
+.blockchain-chain,
+.crypto-hash,
+.crypto-wave,
+.crypto-symbol,
+.data-particle,
+.crypto-energy {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* Стили для текстовых монет (BNB, ADA, SOL) */
+.crypto-coin.coin-5,
+.crypto-coin.coin-8,
+.crypto-coin.coin-13 {
+    color: rgba(255, 193, 7, 0.9) !important;
+    text-shadow: 
+        0 0 20px rgba(255, 193, 7, 0.8),
+        0 0 40px rgba(255, 193, 7, 0.5) !important;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.crypto-coin.coin-6,
+.crypto-coin.coin-9,
+.crypto-coin.coin-14 {
+    color: rgba(0, 172, 193, 0.9) !important;
+    text-shadow: 
+        0 0 20px rgba(0, 172, 193, 0.8),
+        0 0 40px rgba(0, 172, 193, 0.5) !important;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.crypto-coin.coin-7,
+.crypto-coin.coin-10,
+.crypto-coin.coin-15 {
+    color: rgba(0, 255, 163, 0.9) !important;
+    text-shadow: 
+        0 0 20px rgba(0, 255, 163, 0.8),
+        0 0 40px rgba(0, 255, 163, 0.5) !important;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+/* Оптимизация производительности - уменьшаем количество анимаций при скролле */
+@media (prefers-reduced-motion: no-preference) {
+    .crypto-background-elements {
+        contain: layout style paint;
+    }
+}
+
+/* Отключаем тяжелые эффекты на мобильных */
+@media (max-width: 768px) {
+    .crypto-orb,
+    .crypto-glow-circle,
+    .crypto-pulse-ring {
+        animation-duration: 30s !important;
+    }
+    
+    .crypto-coin {
+        animation-duration: 20s !important;
+    }
+    
+    .blockchain-block {
+        animation-duration: 25s !important;
+    }
+}
+
+/* Оптимизация backdrop-filter */
+.blockchain-block {
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+/* Используем GPU ускорение */
+.crypto-coin,
+.blockchain-block,
+.crypto-particle,
+.blockchain-chain,
+.crypto-hash,
+.crypto-wave,
+.crypto-symbol,
+.data-particle,
+.crypto-energy {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* Критическая оптимизация - уменьшаем blur для производительности */
+.crypto-orb {
+    filter: blur(30px) !important;
+}
+
+.crypto-glow-circle {
+    filter: blur(20px) !important;
+}
+
+/* Оптимизация скролла - используем contain */
+.page {
+    contain: none;
+    overflow: visible !important;
+}
+
+.hero,
+.overlay-section,
+.explore-section {
+    contain: none;
+    will-change: auto;
+    overflow: visible !important;
+}
+
+/* Отключаем анимации при скролле для лучшей производительности */
+@media (prefers-reduced-motion: no-preference) {
+    /* Уменьшаем количество одновременно анимируемых элементов */
+    .crypto-background-elements > * {
+        animation-play-state: running;
+    }
+}
+
+/* Оптимизация для плавного скролла */
+html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Уменьшаем сложность backdrop-filter */
+.blockchain-block {
+    backdrop-filter: blur(2px) !important;
+    -webkit-backdrop-filter: blur(2px) !important;
+}
+
+/* Оптимизация фона */
+body::before {
+    will-change: auto !important;
+    transform: translateZ(0) !important;
+}
+
+/* Радикальная оптимизация - уменьшаем количество элементов */
+@media (max-width: 1400px) {
+    .crypto-coin:nth-child(n+11),
+    .crypto-glow-circle:nth-child(n+4),
+    .crypto-pulse-ring:nth-child(n+3) {
+        display: none !important;
+    }
+}
+
+/* Отключаем тяжелые эффекты при скролле */
+.scrolling .crypto-background-elements > * {
+    animation-play-state: paused !important;
+    will-change: auto !important;
+}
+
+/* Упрощаем анимации */
+.crypto-orb,
+.crypto-glow-circle,
+.crypto-pulse-ring {
+    animation-timing-function: linear !important;
+}
+
+/* Убираем лишние эффекты для производительности */
+.crypto-connection {
+    display: none;
+}
+
+/* Упрощаем блокчейн-блоки */
+.blockchain-block {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Уменьшаем количество частиц */
+.crypto-particle:nth-child(n+4) {
+    display: none !important;
+}
+
+/* КРИТИЧЕСКАЯ ОПТИМИЗАЦИЯ - отключаем все при скролле */
+body.scrolling .crypto-background-elements > * {
+    animation: none !important;
+    transform: none !important;
+    opacity: 0.3 !important;
+    will-change: auto !important;
+}
+
+body.scrolling .crypto-orb,
+body.scrolling .crypto-glow-circle,
+body.scrolling .crypto-pulse-ring,
+body.scrolling .crypto-coin,
+body.scrolling .blockchain-block,
+body.scrolling .crypto-particle {
+    animation: none !important;
+    transform: translateZ(0) !important;
+}
+
+/* Убираем blur при скролле - это очень тяжело */
+body.scrolling .crypto-orb,
+body.scrolling .crypto-glow-circle {
+    filter: none !important;
+}
+
+/* Упрощаем фон при скролле */
+body.scrolling body::before {
+    filter: blur(4px) !important;
+}
+
+/* Отключаем все backdrop-filter при скролле */
+body.scrolling .blockchain-block {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Уменьшаем количество элементов на всех экранах */
+.crypto-coin:nth-child(n+6),
+.crypto-glow-circle:nth-child(n+3),
+.crypto-pulse-ring:nth-child(n+2),
+.crypto-particle:nth-child(n+3) {
+    display: none !important;
+}
+
+/* Убираем connection полностью */
+.crypto-connection {
+    display: none !important;
+}
+
+/* Упрощаем орбы - убираем blur */
+.crypto-orb {
+    filter: none !important;
+    opacity: 0.2 !important;
+}
+
+/* Упрощаем круги */
+.crypto-glow-circle {
+    filter: none !important;
+    opacity: 0.15 !important;
+}
+
+/* МАКСИМАЛЬНАЯ ОПТИМИЗАЦИЯ - отключаем ВСЕ анимации */
+.crypto-background-elements > * {
+    animation: none !important;
+    will-change: auto !important;
+}
+
+/* Делаем все элементы статичными */
+.crypto-orb,
+.crypto-glow-circle,
+.crypto-pulse-ring,
+.crypto-coin,
+.blockchain-block,
+.crypto-particle,
+.crypto-connection {
+    animation: none !important;
+    transform: none !important;
+    will-change: auto !important;
+}
+
+/* Убираем все blur эффекты */
+.crypto-orb,
+.crypto-glow-circle {
+    filter: none !important;
+}
+
+/* Упрощаем фон - убираем blur при скролле */
+body::before {
+    filter: blur(4px) !important;
+    will-change: auto !important;
+}
+
+/* Отключаем backdrop-filter везде */
+.blockchain-block {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Убираем все лишние элементы */
+.crypto-connection,
+.blockchain-block,
+.crypto-particle,
+.crypto-glow-circle,
+.crypto-pulse-ring,
+.crypto-coin {
+    display: none !important;
+}
+
+/* Оставляем только 2 статичных орба */
+.crypto-orb.orb-1,
+.crypto-orb.orb-2 {
+    display: block !important;
+    opacity: 0.15 !important;
+    filter: none !important;
+    animation: none !important;
+    transform: none !important;
+}
+
+.crypto-orb.orb-3 {
+    display: none !important;
+}
+
+/* КРИТИЧЕСКАЯ ОПТИМИЗАЦИЯ СКРОЛЛА - убираем все что может вызывать лаги */
+.hero,
+.overlay-section {
+    contain: layout style paint;
+    will-change: auto;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Отключаем все анимации при скролле */
+html {
+    scroll-behavior: auto;
+}
+
+/* Упрощаем фон при скролле */
+body {
+    background-attachment: scroll !important;
+}
+
+/* Убираем все transform и filter при скролле */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Отключаем все keyframes анимации */
+@keyframes float,
+@keyframes pulseGlow {
+    0%, 100% {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+    -webkit-backdrop-filter: none !important;
+}
+
+/* ТОЧЕЧНАЯ ОПТИМИЗАЦИЯ - исправляем искажения без ущерба для дизайна */
+.hero,
+.overlay-section,
+.explore-section {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: scroll-position;
+    contain: none;
+    overflow: visible !important;
+}
+
+/* Исправляем искажения текста */
+.floating-text,
+.overlay-text {
+    text-rendering: optimizeSpeed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Исправляем искажения кругляшков */
+.menu-item,
+.oval-item {
+    transform: translateX(calc(-18px + 1cm)) translateZ(0);
+    backface-visibility: hidden;
+    will-change: transform;
+}
+
+.menu-item:hover,
+.oval-item:hover {
+    transform: translateX(calc(-18px + 1cm)) scale(1.65) translateZ(0);
+}
+
+/* Убираем искажения фона при скролле */
+body::before {
+    will-change: auto !important;
+}
+
+/* Оптимизация скролла без ущерба для визуала */
+html {
+    scroll-behavior: smooth;
+}
+
+/* ИСПРАВЛЕНИЕ ИСКАЖЕНИЙ - точечная оптимизация */
+.hero {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: scroll-position;
+}
+
+.overlay-section {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: scroll-position;
+}
+
+.explore-section {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* Исправляем искажения кругляшков */
+.menu-item,
+.oval-item {
+    transform: translateX(calc(-18px + 1cm)) translateZ(0) !important;
+    backface-visibility: hidden;
+}
+
+.menu-item:hover,
+.oval-item:hover {
+    transform: translateX(calc(-18px + 1cm)) scale(1.65) translateZ(0) !important;
+}
+
+/* Убираем искажения при скролле - упрощаем фон */
+body::before {
+    will-change: auto !important;
+    transform: translateZ(0) !important;
+}
+
+/* ВОССТАНОВЛЕНИЕ ВСЕХ ЭЛЕМЕНТОВ - возвращаем все что было убрано */
+.crypto-orb,
+.crypto-glow-circle,
+.crypto-pulse-ring,
+.crypto-coin,
+.blockchain-block,
+.crypto-particle {
+    display: block !important;
+    animation-play-state: running !important;
+}
+
+/* Восстанавливаем орбы */
+.crypto-orb {
+    opacity: 0.4 !important;
+    filter: blur(30px) !important;
+    animation: crypto-float 20s ease-in-out infinite !important;
+}
+
+.crypto-orb.orb-1 {
+    opacity: 0.5 !important;
+}
+
+.crypto-orb.orb-2 {
+    opacity: 0.45 !important;
+}
+
+.crypto-orb.orb-3 {
+    opacity: 0.4 !important;
+    display: block !important;
+}
+
+/* Восстанавливаем пульсирующие круги */
+.crypto-glow-circle {
+    display: block !important;
+    opacity: 0.4 !important;
+    filter: blur(20px) !important;
+    animation: glow-pulse 4s ease-in-out infinite !important;
+}
+
+/* Восстанавливаем пульсирующие кольца */
+.crypto-pulse-ring {
+    display: block !important;
+    animation: ring-pulse 3s ease-in-out infinite !important;
+}
+
+/* Восстанавливаем блокчейн-блоки */
+.blockchain-block {
+    display: block !important;
+    animation: block-float 15s ease-in-out infinite !important;
+    backdrop-filter: blur(2px) !important;
+}
+
+/* Восстанавливаем частицы */
+.crypto-particle {
+    display: block !important;
+    animation: particle-float 12s ease-in-out infinite !important;
+}
+
+/* Восстанавливаем все монеты */
+.crypto-coin {
+    display: block !important;
+    animation: coin-float 15s ease-in-out infinite !important;
+}
+
+/* Правильные цвета для монет */
+.crypto-coin.coin-5,
+.crypto-coin.coin-8,
+.crypto-coin.coin-13 {
+    color: rgba(255, 193, 7, 0.9) !important;
+    text-shadow: 
+        0 0 20px rgba(255, 193, 7, 0.8),
+        0 0 40px rgba(255, 193, 7, 0.5) !important;
+}
+
+.crypto-coin.coin-6,
+.crypto-coin.coin-9,
+.crypto-coin.coin-14 {
+    color: rgba(0, 172, 193, 0.9) !important;
+    text-shadow: 
+        0 0 20px rgba(0, 172, 193, 0.8),
+        0 0 40px rgba(0, 172, 193, 0.5) !important;
+}
+
+.crypto-coin.coin-7,
+.crypto-coin.coin-10,
+.crypto-coin.coin-15 {
+    color: rgba(0, 255, 163, 0.9) !important;
+    text-shadow: 
+        0 0 20px rgba(0, 255, 163, 0.8),
+        0 0 40px rgba(0, 255, 163, 0.5) !important;
+}

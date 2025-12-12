@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Crypto Basics</title>
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">
+   <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+   <div class="page">
+       <!-- Unique Crypto Learning Background Elements -->
+       <div class="crypto-learning-elements">
+           <!-- Floating geometric shapes with crypto symbols -->
+           <div class="floating-shape shape-1">
+               <div class="shape-content">₿</div>
+           </div>
+           <div class="floating-shape shape-2">
+               <div class="shape-content">Ξ</div>
+           </div>
+           <div class="floating-shape shape-3">
+               <div class="shape-content">101</div>
+           </div>
+           <!-- Data waves (knowledge flow) -->
+           <div class="data-wave wave-1"></div>
+           <div class="data-wave wave-2"></div>
+           <div class="data-wave wave-3"></div>
+           <!-- Knowledge network nodes -->
+           <div class="knowledge-node node-1"></div>
+           <div class="knowledge-node node-2"></div>
+           <div class="knowledge-node node-3"></div>
+           <div class="knowledge-node node-4"></div>
+           <div class="knowledge-node node-5"></div>
+           <!-- Connection lines between nodes -->
+           <div class="knowledge-connection conn-1"></div>
+           <div class="knowledge-connection conn-2"></div>
+           <div class="knowledge-connection conn-3"></div>
+           <!-- Floating numbers and formulas -->
+           <div class="floating-number num-1">0x</div>
+           <div class="floating-number num-2">256</div>
+           <div class="floating-number num-3">21M</div>
+           <!-- Holographic crypto symbols -->
+           <div class="hologram-symbol holo-1">BLOCKCHAIN</div>
+           <div class="hologram-symbol holo-2">WALLET</div>
+       </div>
+       
+       <div class="content">
+           <div class="crypto-101-wrapper">
+               <div class="crypto-101-container">
+                   <h1>Crypto <span class="italic">101</span>:<br>Unlock the <span class="italic">Basics</span></h1>
+               </div>
+           </div>
+           
+           <div class="crypto-basics-wrapper">
+               <div class="overlay-text">
+                   Cryptocurrency can seem tricky, but learning the basics helps you dive in with confidence. Things like blockchain—a shared, secure record of transactions—set the stage for understanding crypto. Knowing about cryptocurrencies like Bitcoin, the first digital money that works without banks, shows you how they can change finance. Wallets are also key; they use special codes called private and public keys to keep your money safe. This basic knowledge helps you sort through tons of info, avoid scams, and make smart choices, so you can explore the crypto world and focus on what excites you.
+               </div>
+           </div>
+           
+           <!-- Cryptocurrency Course -->
+           <div class="course-container">
+               <h1 class="course-title">Ride the Crypto Wave: Start Smart, Stay Safe!</h1>
+               
+               <!-- Course content will be inserted here via JavaScript or directly in HTML -->
+               <div id="course-content"></div>
+           </div>
+       </div>
+   </div>
+   
+   <div class="chat-widget" id="chatWidget">
+       <button class="chat-button" id="chatButton">
+           <svg viewBox="0 0 24 24">
+               <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+           </svg>
+       </button>
+       <div class="chat-container" id="chatContainer">
+           <div class="chat-header">
+               <h3><span class="status-dot"></span>Crypto AI Assistant</h3>
+               <button class="close-chat" id="closeChat">&times;</button>
+           </div>
+           <div class="chat-subscription-section" id="subscriptionSection">
+               <div class="chat-timer-display" id="timerDisplay">24:00</div>
+           </div>
+           <div class="chat-expired-overlay hidden" id="chatExpiredOverlay">
+               <div class="chat-expired-content">
+                   <p class="chat-expired-text">Subscribe to continue using this amazing bot for $10/month</p>
+                   <div class="payment-method-buttons">
+                       <button class="chat-expired-btn payment-method-btn" data-method="crypto">💳 Pay with Crypto (USDT)</button>
+                       <button class="chat-expired-btn payment-method-btn" data-method="card">🏦 Pay with Card</button>
+                   </div>
+               </div>
+           </div>
+           <div class="chat-messages" id="chatMessages">
+               <div class="message bot">
+                   <div class="message-avatar">🇺🇸</div>
+                   <div class="message-content">
+                       Hey! I'm your Crypto AI Assistant powered by Mistral AI 🚀
+                       <div class="quick-questions">
+                           <button class="quick-question-btn" data-question="What is HODL?">What is HODL?</button>
+                           <button class="quick-question-btn" data-question="Explain DeFi">Explain DeFi</button>
+                           <button class="quick-question-btn" data-question="What is a whale?">What is a whale?</button>
+                           <button class="quick-question-btn" data-question="Wen moon?">Wen moon? 🚀</button>
+                           <button class="quick-question-btn" data-question="What are rug pulls?">Rug pulls?</button>
+                       </div>
+                   </div>
+               </div>
+           </div>
+           <div class="chat-input-container">
+               <div class="chat-input-wrapper">
+                   <input type="text" class="chat-input" id="chatInput" placeholder="Ask about crypto...">
+                   <button class="send-button" id="sendButton">
+                       <svg viewBox="0 0 24 24">
+                           <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                       </svg>
+                   </button>
+               </div>
+           </div>
+       </div>
+   </div>
+   
+   <script src="../../scripts/chatbot.js?v=30"></script>
+   <script src="course.js"></script>
+   <script>
+       (function() {
+           function forceChatPosition() {
+               const chatWidget = document.getElementById('chatWidget');
+               if (!chatWidget) return;
+               if (chatWidget.parentElement !== document.body) {
+                   document.body.appendChild(chatWidget);
+               }
+               chatWidget.style.setProperty('position', 'fixed', 'important');
+               chatWidget.style.setProperty('bottom', '20px', 'important');
+               chatWidget.style.setProperty('right', '20px', 'important');
+               chatWidget.style.setProperty('z-index', '2147483647', 'important');
+           }
+           forceChatPosition();
+           if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', forceChatPosition);
+           }
+           window.addEventListener('load', forceChatPosition);
+           window.addEventListener('scroll', forceChatPosition, { passive: true });
+           window.addEventListener('resize', forceChatPosition);
+           setInterval(forceChatPosition, 50);
+       })();
+       
+       // Load course content
+       document.addEventListener('DOMContentLoaded', function() {
+           const courseContent = document.getElementById('course-content');
+           if (courseContent) {
+               // Load course content from external file
+               fetch('course-content.html')
+                   .then(response => response.text())
+                   .then(html => {
+                       // Create a temporary div to parse the HTML
+                       const tempDiv = document.createElement('div');
+                       tempDiv.innerHTML = html;
+                       
+                       // Extract and add styles to head
+                       const styles = tempDiv.querySelectorAll('style');
+                       styles.forEach(style => {
+                           if (!document.getElementById('course-styles')) {
+                               style.id = 'course-styles';
+                               document.head.appendChild(style);
+                           }
+                       });
+                       
+                       // Extract body content (the actual course content)
+                       const bodyContent = tempDiv.querySelector('body');
+                       if (bodyContent) {
+                           courseContent.innerHTML = bodyContent.innerHTML;
+                       } else {
+                           // If no body tag, use the container directly
+                           const container = tempDiv.querySelector('.container');
+                           if (container) {
+                               courseContent.innerHTML = container.outerHTML;
+                           } else {
+                               courseContent.innerHTML = tempDiv.innerHTML;
+                           }
+                       }
+                       
+                       // Extract and execute scripts
+                       const scripts = tempDiv.querySelectorAll('script');
+                       scripts.forEach(oldScript => {
+                           const newScript = document.createElement('script');
+                           if (oldScript.src) {
+                               newScript.src = oldScript.src;
+                           } else {
+                               newScript.textContent = oldScript.textContent;
+                           }
+                           document.body.appendChild(newScript);
+                       });
+                       
+                       // Re-initialize lesson items after content is loaded
+                       setTimeout(() => {
+                           const lessonItems = document.querySelectorAll('.lesson-item');
+                           lessonItems.forEach(item => {
+                               const content = item.querySelector('.lesson-content');
+                               const arrow = item.querySelector('.lesson-arrow');
+                               if (content && arrow) {
+                                   content.style.display = 'none';
+                                   arrow.textContent = '▼';
+                               }
+                           });
+                       }, 100);
+                   })
+                   .catch(error => {
+                       console.error('Error loading course content:', error);
+                       courseContent.innerHTML = '<p style="color: white; text-align: center; padding: 40px;">Course content will be available soon.</p>';
+                   });
+           }
+       });
+   </script>
+</body>
+</html>

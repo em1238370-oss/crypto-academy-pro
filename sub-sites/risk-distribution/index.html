@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Risk Distribution - Crypto Academy Pro</title>
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
+   <link href="https://fonts.googleapis.com/css2?family=TT+Firs+Neue:wght@400;700&display=swap" rel="stylesheet">
+   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+   <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+   <div class="page">
+       <div class="content">
+           <div class="crypto-risk-wrapper">
+               <div class="crypto-risk-container">
+                   <h1>Balance The <span class="italic">Storm</span>: Crypto <span class="italic">Risk</span> Guide</h1>
+               </div>
+           </div>
+           
+           <div class="risk-text-wrapper">
+               <div class="overlay-text">
+                   Risk management is the cornerstone of success—not just in trading, sports, or cryptocurrency, but in any endeavor where uncertainty reigns. You could analyze charts a thousand times, craft the most brilliant strategies, and still fall short without a disciplined approach to risk. Even with relentless effort, neglecting this vital principle dooms your efforts to failure. Embrace the wisdom of risk management, and let this tool guide you—or consider exploring other resources to refine your skills.
+               </div>
+           </div>
+           
+           <div class="floating-text-wrapper">
+               <div class="floating-text">Why Risk Distribution Matters</div>
+           </div>
+           
+           <div class="crypto-storm-wrapper">
+               <div class="storm-text">
+                   Crypto markets are a brutal rollercoaster—prices can skyrocket or crash in hours, wiping out gains or entire portfolios. You can spend a thousand hours analyzing charts, crafting strategies, and studying trends, but without solid risk management, it's all just noise. Ignoring it turns trading into a reckless gamble, like rolling dice in a casino. Smart risk management isn't optional—it's your lifeline. It protects your capital, keeps your strategy on track, and gives you the control and confidence to navigate the chaos. One lucky trade might feel like a win, but relying on luck isn't trading; it's gambling. And in crypto, the house always wins unless you're disciplined. Use tailored risk management plans to stay sharp and survive the storm.
+               </div>
+           </div>
+           
+           <div class="risk-calculator-wrapper">
+               <div class="risk-calculator-container">
+                   <h1>Risk Management Strategy Calculator</h1>
+                   
+                   <div class="api-key-group">
+                       <label for="apiKey">Google API Key (for AI explanations)</label>
+                       <input type="password" id="apiKey" value="AIzaSyA_aPJUNEl8Hpe032jW2d0ZLRmJQ0A13qs">
+                       <div class="api-key-info">Enter your Google API key to get AI-powered explanations for strategy recommendations</div>
+                   </div>
+
+                   <form id="strategyForm">
+                       <div class="form-wrapper">
+                           <div class="form-group">
+                               <label for="deposit">Your Deposit ($)</label>
+                               <input type="number" id="deposit" placeholder="Enter amount" min="0" step="100">
+                           </div>
+
+                           <div class="form-group">
+                               <label for="risk">Your Risk Level (0-100%)</label>
+                               <div class="slider-container">
+                                   <input type="range" id="risk" min="0" max="100" step="10" value="0">
+                                   <span class="slider-value">Current Risk: <span id="riskValue">0</span>%</span>
+                               </div>
+                           </div>
+
+                           <div class="form-group">
+                               <label for="goal">Your Goal</label>
+                               <select id="goal">
+                                   <option value="Savings">Savings</option>
+                                   <option value="Growth">Growth</option>
+                                   <option value="Retirement">Retirement</option>
+                               </select>
+                           </div>
+                       </div>
+
+                       <div class="button-wrapper">
+                           <button type="button" onclick="getStrategies()">Get Strategies</button>
+                       </div>
+                   </form>
+
+                   <div class="results hidden" id="results">
+                       <h2>Your Strategies</h2>
+                       <div class="strategy-info" id="strategyInfo"></div>
+                       <div class="strategies">
+                           <div class="strategies-grid" id="strategiesOutput"></div>
+                       </div>
+                   </div>
+               </div>
+           </div>
+       </div>
+   </div>
+   
+   <!-- Chat Widget - ВСЕГДА В ПРАВОМ НИЖНЕМ УГЛУ ЭКРАНА -->
+   <div class="chat-widget" id="chatWidget" style="position: fixed !important; bottom: 20px !important; right: 20px !important; top: auto !important; left: auto !important; z-index: 2147483647 !important; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; margin: 0 !important; padding: 0 !important; transform: none !important; width: auto !important; height: auto !important;">
+       <button class="chat-button" id="chatButton" aria-label="Open chat" style="display: flex !important; visibility: visible !important; opacity: 1 !important; position: relative !important; width: 62px !important; height: 62px !important; border-radius: 50% !important; background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%) !important; border: 2px solid #3a3a3a !important; cursor: pointer !important; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important; align-items: center !important; justify-content: center !important; pointer-events: auto !important; margin: 0 !important; padding: 0 !important;">
+           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width: 31px !important; height: 31px !important; fill: #FFFFFF !important; display: block !important;">
+               <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+           </svg>
+       </button>
+       <div class="chat-container" id="chatContainer" aria-live="polite">
+           <div class="chat-header">
+               <h3>
+                   <span class="status-dot" aria-hidden="true"></span>
+                   Crypto AI Assistant
+               </h3>
+               <button class="close-chat" id="closeChat" aria-label="Close chat">&times;</button>
+           </div>
+           <div class="chat-subscription-section" id="subscriptionSection">
+               <div class="chat-timer-display" id="timerDisplay">24:00</div>
+           </div>
+           <div class="chat-expired-overlay hidden" id="chatExpiredOverlay">
+               <div class="chat-expired-content">
+                   <p class="chat-expired-text">Subscribe to continue using this amazing bot for $10/month</p>
+                   <div class="payment-method-buttons">
+                       <button class="chat-expired-btn payment-method-btn" data-method="crypto" type="button" data-original-text="💳 Pay with Crypto (USDT)">
+                           💳 Pay with Crypto (USDT)
+                       </button>
+                       <button class="chat-expired-btn payment-method-btn" data-method="card" type="button" data-original-text="🏦 Pay with Card">
+                           🏦 Pay with Card
+                       </button>
+                   </div>
+               </div>
+           </div>
+           <div class="chat-messages" id="chatMessages">
+               <div class="message bot">
+                   <div class="message-avatar" aria-hidden="true">🤖</div>
+                   <div class="message-content">
+                       Hey! I'm your Crypto AI Assistant powered by Mistral AI 🚀 I understand all crypto terms, slang, and even "dumb" questions! Ask me anything about Bitcoin, DeFi, NFTs, trading, security, or crypto culture (HODL, FOMO, FUD, moon, lambo, degen, WAGMI)!
+                       <div class="quick-questions">
+                           <button class="quick-question-btn" data-question="What is HODL?">What is HODL?</button>
+                           <button class="quick-question-btn" data-question="Explain DeFi">Explain DeFi</button>
+                           <button class="quick-question-btn" data-question="What is a whale?">What is a whale?</button>
+                           <button class="quick-question-btn" data-question="Wen moon?">Wen moon? 🚀</button>
+                           <button class="quick-question-btn" data-question="What are rug pulls?">Rug pulls?</button>
+                       </div>
+                   </div>
+               </div>
+           </div>
+           <div class="chat-input-container">
+               <div class="chat-input-wrapper">
+                   <input type="text" class="chat-input" id="chatInput" placeholder="Ask about crypto..." autocomplete="off">
+                   <button class="send-button" id="sendButton" aria-label="Send message">
+                       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                           <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                       </svg>
+                   </button>
+               </div>
+           </div>
+       </div>
+   </div>
+
+   <script>
+       // Update risk slider value display
+       const riskSlider = document.getElementById('risk');
+       const riskValue = document.getElementById('riskValue');
+       
+       riskSlider.addEventListener('input', function() {
+           riskValue.textContent = this.value;
+       });
+
+       // Strategy database
+       const strategies = {
+           low: {
+               Savings: {
+                   A: "60% Stablecoins, 20% BTC, 20% ETH",
+                   B: "50% Stablecoins, 25% BTC, 25% USDT",
+                   C: "70% Stablecoins, 15% BTC, 15% ETH"
+               },
+               Growth: {
+                   A: "50% BTC, 30% ETH, 20% Stablecoins",
+                   B: "40% BTC, 40% ETH, 20% ALT",
+                   C: "60% BTC, 20% ETH, 20% Stablecoins"
+               },
+               Retirement: {
+                   A: "70% Stablecoins, 15% BTC, 15% ETH",
+                   B: "65% Stablecoins, 20% BTC, 15% ALT",
+                   C: "75% Stablecoins, 12% BTC, 13% ETH"
+               }
+           },
+           medium: {
+               Savings: {
+                   A: "40% Stablecoins, 40% BTC, 20% ALT",
+                   B: "30% Stablecoins, 50% ETH, 20% BTC",
+                   C: "45% Stablecoins, 35% BTC, 20% ETH"
+               },
+               Growth: {
+                   A: "30% BTC, 40% ETH, 30% ALT",
+                   B: "25% BTC, 45% ETH, 30% ALT",
+                   C: "35% BTC, 35% ETH, 30% ALT"
+               },
+               Retirement: {
+                   A: "50% Stablecoins, 30% BTC, 20% ETH",
+                   B: "45% Stablecoins, 35% BTC, 20% ALT",
+                   C: "55% Stablecoins, 25% BTC, 20% ETH"
+               }
+           },
+           high: {
+               Savings: {
+                   A: "20% Stablecoins, 40% BTC, 40% ALT",
+                   B: "15% Stablecoins, 45% ETH, 40% ALT",
+                   C: "25% Stablecoins, 35% BTC, 40% ALT"
+               },
+               Growth: {
+                   A: "20% BTC, 40% ETH, 40% ALT",
+                   B: "15% BTC, 45% ETH, 40% ALT",
+                   C: "25% BTC, 35% ETH, 40% ALT"
+               },
+               Retirement: {
+                   A: "30% Stablecoins, 35% BTC, 35% ALT",
+                   B: "25% Stablecoins, 40% BTC, 35% ETH",
+                   C: "35% Stablecoins, 30% BTC, 35% ALT"
+               }
+           }
+       };
+
+       function getRiskCategory(riskLevel) {
+           if (riskLevel >= 0 && riskLevel <= 30) {
+               return 'low';
+           } else if (riskLevel >= 31 && riskLevel <= 70) {
+               return 'medium';
+           } else {
+               return 'high';
+           }
+       }
+
+       // Generate static explanation based on strategy
+       function generateAIExplanation(strategyText, riskCategory, goal, deposit, risk, strategyKey) {
+           // Unique explanations for each strategy (A, B, C) based on risk category and goal
+           const explanations = {
+               low: {
+                   Savings: {
+                       A: "This balanced conservative approach allocates 60% to stablecoins for maximum safety, with equal 20% positions in BTC and ETH. It's ideal for risk-averse savers who want minimal volatility while maintaining some exposure to blue-chip cryptocurrencies for potential long-term appreciation.",
+                       B: "This variation emphasizes liquidity with 50% in stablecoins and includes USDT alongside BTC for enhanced stability. The 25% BTC position provides a solid store-of-value component, making it perfect for savers prioritizing capital preservation with easy access to funds.",
+                       C: "The most conservative option with 70% in stablecoins, this strategy minimizes risk exposure while keeping small 15% positions in BTC and ETH. It's designed for ultra-cautious savers who prioritize safety above all else but still want minimal crypto market participation."
+                   },
+                   Growth: {
+                       A: "This growth-focused yet conservative strategy leads with 50% BTC as the foundation, 30% ETH for innovation exposure, and 20% stablecoins as a safety net. It balances steady Bitcoin appreciation potential with Ethereum's ecosystem growth while maintaining downside protection.",
+                       B: "A diversified growth approach with equal 40% allocations to BTC and ETH, plus 20% in promising altcoins. This strategy captures growth across multiple crypto sectors while keeping risk controlled through blue-chip dominance and diversification.",
+                       C: "The most Bitcoin-heavy option at 60%, this strategy treats BTC as the primary growth driver with 20% each in ETH and stablecoins. It's perfect for conservative growth investors who believe in Bitcoin's long-term dominance and want maximum exposure to digital gold."
+                   },
+                   Retirement: {
+                       A: "This ultra-stable retirement strategy allocates 70% to stablecoins for maximum security, with minimal 15% positions in BTC and ETH. It's designed for near-retirees or conservative long-term planners who prioritize capital preservation over growth.",
+                       B: "A slightly more engaged approach with 65% stablecoins, 20% BTC, and 15% altcoins. This provides retirement security while maintaining modest exposure to established and emerging cryptocurrencies for potential long-term appreciation over decades.",
+                       C: "The most conservative retirement option at 75% stablecoins, this strategy minimizes volatility to protect your retirement nest egg. The 12-13% positions in BTC and ETH offer minimal crypto exposure for potential appreciation without significant risk."
+                   }
+               },
+               medium: {
+                   Savings: {
+                       A: "This balanced strategy splits evenly between safety (40% stablecoins) and growth (40% BTC, 20% ALT). It's ideal for moderate savers who want meaningful crypto exposure while maintaining a substantial safety cushion for peace of mind.",
+                       B: "An Ethereum-focused variation with 50% ETH, 30% stablecoins, and 20% BTC. This strategy bets on Ethereum's ecosystem growth and smart contract dominance while keeping significant stable assets. Perfect for savers bullish on ETH's long-term potential.",
+                       C: "The most Bitcoin-centric option with 45% stablecoins and 35% BTC, plus 20% ETH. This emphasizes Bitcoin as the primary savings vehicle while maintaining substantial stablecoin reserves, ideal for moderate savers who view BTC as digital savings."
+                   },
+                   Growth: {
+                       A: "A balanced growth portfolio with 30% BTC, 40% ETH, and 30% altcoins. This strategy diversifies across crypto's major asset classes, with emphasis on Ethereum's innovation potential and significant altcoin exposure for maximum upside.",
+                       B: "This variation leans into Ethereum dominance with 45% ETH, complemented by 25% BTC and 30% altcoins. It's designed for growth investors who believe in smart contract platforms and want substantial exposure to emerging altcoin opportunities.",
+                       C: "The most Bitcoin-heavy growth strategy at 35% BTC, with equal 35% ETH and 30% altcoins. This balances Bitcoin's store-of-value properties with Ethereum's innovation and altcoin growth potential, perfect for moderate-risk growth seekers."
+                   },
+                   Retirement: {
+                       A: "This balanced retirement approach maintains 50% stablecoins for security, with 30% BTC and 20% ETH providing growth potential. It's designed for mid-career retirement planners who can tolerate moderate volatility for better long-term returns.",
+                       B: "A Bitcoin-focused variation with 45% stablecoins, 35% BTC, and 20% altcoins. This strategy emphasizes Bitcoin's long-term value appreciation while maintaining substantial stability and some altcoin exposure for enhanced growth over decades.",
+                       C: "The most conservative medium-risk option with 55% stablecoins, 25% BTC, and 20% ETH. This prioritizes stability while maintaining meaningful exposure to top cryptocurrencies, ideal for cautious long-term retirement investors."
+                   }
+               },
+               high: {
+                   Savings: {
+                       A: "This aggressive savings strategy allocates 80% to growth assets (40% BTC, 40% ALT) with only 20% stablecoins. It's designed for high-risk savers who prioritize maximum growth potential and can withstand significant short-term volatility.",
+                       B: "An Ethereum and altcoin-focused variation with 45% ETH, 40% ALT, and just 15% stablecoins. This strategy maximizes exposure to innovation and emerging opportunities, perfect for aggressive savers betting on ecosystem growth beyond Bitcoin.",
+                       C: "The most Bitcoin-balanced high-risk option with 35% BTC, 40% ALT, and 25% stablecoins. This maintains Bitcoin as a relative anchor while pursuing aggressive altcoin growth, suitable for risk-tolerant savers wanting some BTC stability."
+                   },
+                   Growth: {
+                       A: "An aggressive growth portfolio with 20% BTC, 40% ETH, and 40% altcoins. This strategy maximizes exposure to high-growth assets with minimal Bitcoin, betting heavily on Ethereum and altcoin ecosystems for maximum appreciation potential.",
+                       B: "The most aggressive option with only 15% BTC, 45% ETH, and 40% altcoins. This portfolio goes all-in on innovation and emerging opportunities, designed for aggressive investors confident in smart contract platforms and altcoin potential.",
+                       C: "A more Bitcoin-balanced aggressive approach with 25% BTC, 35% ETH, and 40% altcoins. This maintains moderate Bitcoin exposure while still pursuing aggressive growth through Ethereum and altcoins, ideal for high-risk investors wanting some BTC foundation."
+                   },
+                   Retirement: {
+                       A: "This aggressive retirement strategy maintains 30% stablecoins with 35% each in BTC and altcoins. Designed for young investors with 30+ years until retirement, it maximizes growth potential while keeping some stability for extreme market downturns.",
+                       B: "A Bitcoin and stability-focused variation with 25% stablecoins, 40% BTC, and 35% ETH. This strategy uses Bitcoin as the core retirement asset with substantial Ethereum exposure, perfect for aggressive long-term planners bullish on BTC dominance.",
+                       C: "The most stable high-risk option with 35% stablecoins, 30% BTC, and 35% altcoins. This maintains the highest safety cushion in the aggressive category while still pursuing meaningful growth through Bitcoin and altcoin exposure over decades."
+                   }
+               }
+           };
+
+           return explanations[riskCategory][goal][strategyKey];
+       }
+
+       async function getStrategies() {
+           const deposit = document.getElementById('deposit').value;
+           const risk = parseInt(document.getElementById('risk').value);
+           const goal = document.getElementById('goal').value;
+
+           // Validate deposit
+           if (!deposit || deposit <= 0) {
+               alert('Please enter a valid deposit amount');
+               return;
+           }
+
+           // Get risk category
+           const riskCategory = getRiskCategory(risk);
+           
+           // Get strategies for this combination
+           const strategiesForGoal = strategies[riskCategory][goal];
+           
+           // Build info header
+           const infoOutput = `Deposit: $${parseFloat(deposit).toLocaleString()} | Risk Level: ${risk}% (${riskCategory.toUpperCase()}) | Goal: ${goal}`;
+           document.getElementById('strategyInfo').innerHTML = infoOutput;
+           
+           // Build strategies output with loading state for WHY sections
+           let output = '';
+           const strategyKeys = ['A', 'B', 'C'];
+           
+           strategyKeys.forEach((key, index) => {
+               output += `<div class="strategy" id="strategy-${index}">`;
+               output += `<div class="strategy-title">Strategy ${key}</div>`;
+               output += `<div class="strategy-allocation">${strategiesForGoal[key]}</div>`;
+               
+               // Add WHY section
+               output += `<div class="why-section">`;
+               output += `<div class="why-title">💡 WHY this strategy?</div>`;
+               output += `<div class="why-content" id="why-${index}"></div>`;
+               output += `</div>`;
+               
+               output += `</div>`;
+           });
+           
+           // Display results
+           document.getElementById('strategiesOutput').innerHTML = output;
+           document.getElementById('results').classList.remove('hidden');
+           
+           // Generate explanations for each strategy
+           strategyKeys.forEach((key, index) => {
+               const explanation = generateAIExplanation(
+                   strategiesForGoal[key],
+                   riskCategory,
+                   goal,
+                   deposit,
+                   risk,
+                   key  // Pass strategy key (A, B, or C) for unique explanations
+               );
+               const whyElement = document.getElementById(`why-${index}`);
+               if (whyElement) {
+                   whyElement.innerHTML = explanation;
+               }
+           });
+       }
+   </script>
+   
+   <script src="../../scripts/chatbot.js?v=30"></script>
+   
+   <!-- Дополнительный скрипт для ГАРАНТИИ видимости чата -->
+   <script>
+       (function() {
+           function forceChatPosition() {
+               const chatWidget = document.getElementById('chatWidget');
+               if (!chatWidget) {
+                   console.warn('Chat widget not found!');
+                   return;
+               }
+               
+               // КРИТИЧНО: Перемещаем чат в body, если он не там
+               if (chatWidget.parentElement !== document.body) {
+                   console.log('Moving chat to body from:', chatWidget.parentElement?.tagName);
+                   document.body.appendChild(chatWidget);
+               }
+               
+               // ПРИНУДИТЕЛЬНО устанавливаем все стили
+               chatWidget.style.setProperty('position', 'fixed', 'important');
+               chatWidget.style.setProperty('bottom', '20px', 'important');
+               chatWidget.style.setProperty('right', '20px', 'important');
+               chatWidget.style.setProperty('top', 'auto', 'important');
+               chatWidget.style.setProperty('left', 'auto', 'important');
+               chatWidget.style.setProperty('z-index', '2147483647', 'important');
+               chatWidget.style.setProperty('display', 'block', 'important');
+               chatWidget.style.setProperty('visibility', 'visible', 'important');
+               chatWidget.style.setProperty('opacity', '1', 'important');
+               chatWidget.style.setProperty('pointer-events', 'auto', 'important');
+               chatWidget.style.setProperty('margin', '0', 'important');
+               chatWidget.style.setProperty('padding', '0', 'important');
+               chatWidget.style.setProperty('transform', 'none', 'important');
+               
+               // Проверяем computed стили
+               const computed = window.getComputedStyle(chatWidget);
+               if (computed.position !== 'fixed') {
+                   console.error('ERROR: Position is NOT fixed!', computed.position);
+                   // Еще раз принудительно
+                   chatWidget.style.position = 'fixed';
+               }
+               
+               // Проверяем, что чат виден
+               const rect = chatWidget.getBoundingClientRect();
+               const isVisible = rect.bottom <= window.innerHeight && rect.right <= window.innerWidth;
+               if (!isVisible) {
+                   console.warn('Chat might not be visible!', rect);
+               }
+           }
+           
+           // Выполняем МНОЖЕСТВО раз для гарантии
+           forceChatPosition();
+           
+           // При загрузке DOM
+           if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', function() {
+                   forceChatPosition();
+                   setTimeout(forceChatPosition, 100);
+                   setTimeout(forceChatPosition, 500);
+               });
+           } else {
+               setTimeout(forceChatPosition, 100);
+               setTimeout(forceChatPosition, 500);
+           }
+           
+           // При полной загрузке страницы
+           window.addEventListener('load', function() {
+               forceChatPosition();
+               setTimeout(forceChatPosition, 100);
+           });
+           
+           // При прокрутке - КАЖДЫЙ РАЗ
+           let scrollTimeout;
+           window.addEventListener('scroll', function() {
+               forceChatPosition();
+               clearTimeout(scrollTimeout);
+               scrollTimeout = setTimeout(forceChatPosition, 50);
+           }, { passive: true });
+           
+           // При изменении размера окна
+           window.addEventListener('resize', forceChatPosition);
+           
+           // Периодически проверяем КАЖДЫЕ 50ms (чаще!)
+           setInterval(forceChatPosition, 50);
+           
+           // MutationObserver для отслеживания изменений DOM
+           setTimeout(function() {
+               const observer = new MutationObserver(function(mutations) {
+                   forceChatPosition();
+               });
+               observer.observe(document.body, {
+                   childList: true,
+                   subtree: true,
+                   attributes: true,
+                   attributeFilter: ['style', 'class']
+               });
+               console.log('✅ MutationObserver started for chat');
+           }, 1000);
+           
+           console.log('✅ Chat position force script loaded');
+       })();
+   </script>
+</body>
+</html>
+
