@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=6.0">
+    <link rel="stylesheet" href="styles.css?v=7.0">
    <script src="scripts/table-modules.js" defer></script>
 </head>
 <body>
@@ -594,6 +594,76 @@
                    if (hoverTimeout) cancelAnimationFrame(hoverTimeout);
                    observer.disconnect();
                });
+               
+               // ПРИНУДИТЕЛЬНОЕ УДАЛЕНИЕ БЛОКА СТАТИСТИКИ
+               function forceRemoveStats() {
+                   const statsBlocks = document.querySelectorAll('.learning-stats, [class*="learning-stats"], [class*="stat-item"]');
+                   statsBlocks.forEach(block => {
+                       block.remove();
+                   });
+                   
+                   // Также удаляем через поиск по содержимому
+                   const allDivs = document.querySelectorAll('.crypto-text-block > div');
+                   allDivs.forEach(div => {
+                       const text = div.textContent || '';
+                       if (text.includes('Lessons Read') || text.includes('Skills Learned') || text.includes('Experience Points') || 
+                           text.includes('LESSONS READ') || text.includes('SKILLS LEARNED') || text.includes('EXPERIENCE POINTS')) {
+                           div.remove();
+                       }
+                   });
+               }
+               
+               // Удаляем сразу и периодически проверяем
+               forceRemoveStats();
+               setTimeout(forceRemoveStats, 100);
+               setTimeout(forceRemoveStats, 500);
+               setTimeout(forceRemoveStats, 1000);
+               setTimeout(forceRemoveStats, 2000);
+               
+               // Используем MutationObserver для отслеживания появления блока
+               const statsObserver = new MutationObserver(function(mutations) {
+                   forceRemoveStats();
+               });
+               
+               const textBlock = document.querySelector('.crypto-text-block');
+               if (textBlock) {
+                   statsObserver.observe(textBlock, {
+                       childList: true,
+                       subtree: true
+                   });
+               }
+           }
+       })();
+   </script>
+   
+   <!-- ДОПОЛНИТЕЛЬНЫЙ СКРИПТ ДЛЯ ГАРАНТИРОВАННОГО УДАЛЕНИЯ СТАТИСТИКИ -->
+   <script>
+       (function() {
+           function removeStatsBlock() {
+               // Удаляем по классу
+               const stats = document.querySelectorAll('.learning-stats');
+               stats.forEach(el => el.remove());
+               
+               // Удаляем по содержимому
+               const allElements = document.querySelectorAll('*');
+               allElements.forEach(el => {
+                   const text = el.textContent || '';
+                   if ((text.includes('Lessons Read') || text.includes('SKILLS LEARNED') || text.includes('EXPERIENCE POINTS')) && 
+                       el.children.length >= 3) {
+                       el.remove();
+                   }
+               });
+           }
+           
+           // Удаляем при загрузке
+           if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', function() {
+                   removeStatsBlock();
+                   setInterval(removeStatsBlock, 1000);
+               });
+           } else {
+               removeStatsBlock();
+               setInterval(removeStatsBlock, 1000);
            }
        })();
    </script>

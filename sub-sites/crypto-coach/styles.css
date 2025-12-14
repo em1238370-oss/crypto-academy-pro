@@ -454,12 +454,17 @@ body::after {
     white-space: nowrap;
 }
 
-/* Скрываем блок статистики, если он где-то остался */
+/* Скрываем блок статистики, если он где-то остался - АГРЕССИВНОЕ СКРЫТИЕ */
 .learning-stats,
 .stat-item,
 .stat-icon,
 .stat-value,
-.stat-label {
+.stat-label,
+div[class*="learning-stats"],
+div[class*="stat-item"],
+div[class*="stat-icon"],
+div[class*="stat-value"],
+div[class*="stat-label"] {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
@@ -468,6 +473,22 @@ body::after {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    z-index: -9999 !important;
+    pointer-events: none !important;
+}
+
+/* Скрываем родительский контейнер статистики */
+.crypto-text-block > .learning-stats,
+.crypto-text-block > div:has(.stat-item),
+.crypto-text-block > div:has(.stat-icon) {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* Эффект "накопления опыта" при клике на ключевые слова */
