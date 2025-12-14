@@ -8377,6 +8377,9 @@
             if (modal) {
                 modal.classList.add('active');
                 document.body.style.overflow = 'hidden';
+                console.log('Subscription modal opened');
+            } else {
+                console.error('Subscription modal not found!');
             }
         }
 
@@ -8386,21 +8389,28 @@
             if (modal) {
                 modal.classList.remove('active');
                 document.body.style.overflow = '';
+                console.log('Subscription modal closed');
             }
         }
 
         // Handle crypto payment
-        function handleCryptoPayment() {
+        function handleCryptoPayment(e) {
+            if (e) e.preventDefault();
             // TODO: Implement crypto payment integration
+            console.log('Crypto payment clicked');
             alert('Crypto payment integration coming soon!');
             // window.location.href = '/payment/crypto';
+            return false;
         }
 
         // Handle card payment
-        function handleCardPayment() {
+        function handleCardPayment(e) {
+            if (e) e.preventDefault();
             // TODO: Implement card payment integration
+            console.log('Card payment clicked');
             alert('Card payment integration coming soon!');
             // window.location.href = '/payment/card';
+            return false;
         }
 
         function toggleLesson(element) {
@@ -8423,6 +8433,7 @@
                 // Check if lesson is paid and user doesn't have subscription
                 if (badge && !hasActiveSubscription()) {
                     // Show subscription modal instead of opening lesson
+                    console.log('Paid lesson clicked, showing subscription modal');
                     showSubscriptionModal();
                     return;
                 }
@@ -8461,15 +8472,18 @@
             
             // Close all paid lessons (2-6) by default
             const lessonItems = document.querySelectorAll('.lesson-item');
+            console.log('Total lessons found:', lessonItems.length);
             lessonItems.forEach((item, index) => {
                 // Skip first lesson (index 0) - it's free
                 if (index > 0) {
                     const content = item.querySelector('.lesson-content');
                     const arrow = item.querySelector('.lesson-arrow');
+                    const badge = item.querySelector('.lesson-badge.paid');
                     if (content && arrow) {
                         content.style.display = 'none';
                         arrow.textContent = '▼';
                         item.classList.remove('active');
+                        console.log('Closed lesson', index + 1, badge ? '(PAID)' : '(FREE)');
                     }
                 }
             });
@@ -10120,11 +10134,11 @@
                 $15<span>/month</span>
             </div>
             <div class="subscription-buttons">
-                <a href="#" class="subscription-btn subscription-btn-crypto" onclick="handleCryptoPayment()">
+                <a href="#" class="subscription-btn subscription-btn-crypto" onclick="return handleCryptoPayment(event)">
                     <span>💳</span>
                     Pay with Cryptocurrency
                 </a>
-                <a href="#" class="subscription-btn subscription-btn-card" onclick="handleCardPayment()">
+                <a href="#" class="subscription-btn subscription-btn-card" onclick="return handleCardPayment(event)">
                     <span>💳</span>
                     Pay with Card
                 </a>
