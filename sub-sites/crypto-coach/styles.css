@@ -464,7 +464,14 @@ div[class*="learning-stats"],
 div[class*="stat-item"],
 div[class*="stat-icon"],
 div[class*="stat-value"],
-div[class*="stat-label"] {
+div[class*="stat-label"],
+/* Скрываем ВСЕ элементы, содержащие текст статистики */
+div:has-text("Lessons Read"),
+div:has-text("SKILLS LEARNED"),
+div:has-text("EXPERIENCE POINTS"),
+div:has-text("Lessons Read"),
+div:has-text("Skills Learned"),
+div:has-text("Experience Points") {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
@@ -478,17 +485,28 @@ div[class*="stat-label"] {
     top: -9999px !important;
     z-index: -9999 !important;
     pointer-events: none !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
 }
 
 /* Скрываем родительский контейнер статистики */
 .crypto-text-block > .learning-stats,
 .crypto-text-block > div:has(.stat-item),
-.crypto-text-block > div:has(.stat-icon) {
+.crypto-text-block > div:has(.stat-icon),
+.crypto-text-block > div:has-text("Lessons Read"),
+.crypto-text-block > div:has-text("SKILLS LEARNED"),
+.crypto-text-block > div:has-text("EXPERIENCE POINTS") {
     display: none !important;
     visibility: hidden !important;
     height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Скрываем ВСЕ div после intro-text, которые содержат статистику */
+.crypto-text-block > div:not(.skill-level-indicator):not(.intro-text) {
+    display: none !important;
 }
 
 /* Эффект "накопления опыта" при клике на ключевые слова */
