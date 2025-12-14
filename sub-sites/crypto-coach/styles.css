@@ -137,31 +137,30 @@ body::after {
 
 /* Новый текстовый блок (10 см ниже заголовка) */
 .crypto-text-block {
-    position: relative;
-    margin-top: 10cm;
-    margin-left: auto;
-    margin-right: auto;
-    z-index: 2;
-    text-align: left;
-    width: 100%;
-    max-width: calc(1200px + 8cm); /* Было 1200px + 6cm, теперь +8cm (расширено на 1 см справа и слева) */
-    color: #ffffff;
-    padding: 40px 20px;
+    position: relative !important;
+    margin-top: 10cm !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    z-index: 2 !important;
+    text-align: left !important;
+    width: 100% !important;
+    max-width: calc(1200px + 8cm) !important; /* Было 1200px + 6cm, теперь +8cm (расширено на 1 см справа и слева) */
+    color: #ffffff !important;
+    padding: 40px 20px !important;
     /* Уникальный дизайн с эффектом прокачки */
-    background: linear-gradient(135deg, rgba(202, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(202, 0, 0, 0.05) 100%);
-    border: 2px solid transparent;
-    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(202, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(202, 0, 0, 0.05) 100%) !important;
+    border: 2px solid transparent !important;
+    border-radius: 20px !important;
     box-shadow: 
         0 0 30px rgba(202, 0, 0, 0.2),
-        inset 0 0 50px rgba(202, 0, 0, 0.05);
+        inset 0 0 50px rgba(202, 0, 0, 0.05) !important;
     /* Анимированная граница */
-    background-clip: padding-box;
-    position: relative;
-    overflow: hidden;
+    background-clip: padding-box !important;
+    overflow: hidden !important;
     /* Оптимизация для плавности */
-    will-change: transform;
-    transform: translateZ(0);
-    backface-visibility: hidden;
+    will-change: transform !important;
+    transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
 }
 
 /* Анимированная граница (эффект прокачки) */
