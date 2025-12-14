@@ -454,6 +454,22 @@ body::after {
     white-space: nowrap;
 }
 
+/* Скрываем блок статистики, если он где-то остался */
+.learning-stats,
+.stat-item,
+.stat-icon,
+.stat-value,
+.stat-label {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
 /* Эффект "накопления опыта" при клике на ключевые слова */
 .crypto-text-block .highlight[data-skill] {
     position: relative;
