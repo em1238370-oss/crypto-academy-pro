@@ -10,46 +10,91 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=10.0">
-   <!-- СКРИПТ УДАЛЕНИЯ СТАТИСТИКИ ЗАГРУЖАЕТСЯ ПЕРВЫМ И СРАЗУ -->
+    <link rel="stylesheet" href="styles.css?v=11.0">
+   <!-- СКРИПТ УДАЛЕНИЯ СТАТИСТИКИ - МАКСИМАЛЬНО АГРЕССИВНЫЙ -->
    <script>
        (function() {
            'use strict';
-           function killStats() {
-               // Удаляем ВСЕ элементы со статистикой
-               document.querySelectorAll('*').forEach(el => {
+           function killStatsBlock() {
+               // Удаляем ВСЕ элементы, которые содержат текст статистики
+               const allElements = document.querySelectorAll('*');
+               allElements.forEach(el => {
                    const text = (el.textContent || '').trim();
-                   const hasStats = (text.includes('Lessons Read') || text.includes('LESSONS READ') || 
-                                   text.includes('Skills Learned') || text.includes('SKILLS LEARNED') || 
-                                   text.includes('Experience Points') || text.includes('EXPERIENCE POINTS')) &&
-                                  (text.includes('📚') || text.includes('⚡') || text.includes('🎯') || 
-                                   el.classList.contains('learning-stats') || el.classList.contains('stat-item'));
-                   if (hasStats && el.children.length >= 2) {
+                   // Проверяем наличие текста статистики И иконок
+                   if ((text.includes('Lessons Read') || text.includes('LESSONS READ') || 
+                        text.includes('Skills Learned') || text.includes('SKILLS LEARNED') || 
+                        text.includes('Experience Points') || text.includes('EXPERIENCE POINTS')) &&
+                       (text.includes('📚') || text.includes('⚡') || text.includes('🎯') || 
+                        el.classList.contains('learning-stats') || el.classList.contains('stat-item') ||
+                        el.querySelector('.stat-item') || el.querySelector('.stat-icon'))) {
+                       // Удаляем элемент
                        el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; margin: 0 !important; padding: 0 !important; position: absolute !important; left: -9999px !important; pointer-events: none !important;';
-                       el.remove();
+                       try { el.remove(); } catch(e) {}
                    }
                });
+               
                // Удаляем по классам
-               document.querySelectorAll('.learning-stats, .stat-item, [class*="stat-item"], [class*="learning-stats"]').forEach(el => {
+               document.querySelectorAll('.learning-stats, .stat-item, [class*="stat-item"], [class*="learning-stats"], [class*="stat-icon"], [class*="stat-value"], [class*="stat-label"]').forEach(el => {
                    el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; margin: 0 !important; padding: 0 !important; position: absolute !important; left: -9999px !important; pointer-events: none !important;';
-                   el.remove();
+                   try { el.remove(); } catch(e) {}
+               });
+               
+               // Удаляем ВСЕ div внутри crypto-text-block, кроме skill-level-indicator и intro-text
+               const textBlock = document.querySelector('.crypto-text-block');
+               if (textBlock) {
+                   const allDivs = textBlock.querySelectorAll('> div');
+                   allDivs.forEach(div => {
+                       if (!div.classList.contains('skill-level-indicator') && 
+                           !div.classList.contains('intro-text') &&
+                           !div.querySelector('style')) {
+                           const divText = (div.textContent || '').trim();
+                           if (divText.includes('Lessons') || divText.includes('Skills') || divText.includes('Experience') ||
+                               divText.includes('📚') || divText.includes('⚡') || divText.includes('🎯')) {
+                               div.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; margin: 0 !important; padding: 0 !important; position: absolute !important; left: -9999px !important; pointer-events: none !important;';
+                               try { div.remove(); } catch(e) {}
+                           }
+                       }
+                   });
+               }
+           }
+           
+           // Удаляем СРАЗУ
+           killStatsBlock();
+           
+           // Удаляем каждые 10ms для максимальной агрессивности
+           setInterval(killStatsBlock, 10);
+           
+           // MutationObserver для всего документа - отслеживает ВСЕ изменения
+           const observer = new MutationObserver(function(mutations) {
+               killStatsBlock();
+           });
+           
+           // Начинаем наблюдение сразу
+           if (document.documentElement) {
+               observer.observe(document.documentElement, {
+                   childList: true,
+                   subtree: true,
+                   attributes: true,
+                   attributeFilter: ['class', 'style']
                });
            }
-           // Удаляем СРАЗУ
-           killStats();
-           // Удаляем каждые 50ms
-           setInterval(killStats, 50);
-           // MutationObserver для всего документа
-           if (document.body) {
-               new MutationObserver(killStats).observe(document.body, {childList: true, subtree: true});
-           }
+           
            // При загрузке DOM
            if (document.readyState === 'loading') {
                document.addEventListener('DOMContentLoaded', function() {
-                   killStats();
-                   setInterval(killStats, 50);
+                   killStatsBlock();
+                   setInterval(killStatsBlock, 10);
                });
+           } else {
+               killStatsBlock();
+               setInterval(killStatsBlock, 10);
            }
+           
+           // При полной загрузке
+           window.addEventListener('load', function() {
+               killStatsBlock();
+               setInterval(killStatsBlock, 10);
+           });
        })();
    </script>
    <script src="scripts/table-modules.js" defer></script>
