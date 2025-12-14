@@ -391,6 +391,170 @@ body::after {
     }
 }
 
+/* Индикатор уровня навыка */
+.skill-level-indicator {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    border: 1px solid rgba(202, 0, 0, 0.3);
+}
+
+.skill-level-label {
+    color: #ffffff;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.8;
+}
+
+.skill-level-bar {
+    position: relative;
+    width: 100%;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 2px solid rgba(202, 0, 0, 0.3);
+}
+
+.skill-level-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, rgba(202, 0, 0, 0.6), rgba(255, 0, 0, 0.8), rgba(202, 0, 0, 0.6));
+    border-radius: 15px;
+    animation: skillProgressFill 3s ease-in-out infinite;
+    box-shadow: 0 0 15px rgba(202, 0, 0, 0.5);
+    transition: width 0.5s ease;
+}
+
+@keyframes skillProgressFill {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(202, 0, 0, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(202, 0, 0, 0.7), 0 0 35px rgba(255, 0, 0, 0.5);
+    }
+}
+
+.skill-level-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 0.85rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    z-index: 2;
+    white-space: nowrap;
+}
+
+/* Статистика обучения */
+.learning-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(202, 0, 0, 0.2);
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.stat-item {
+    text-align: center;
+    flex: 1;
+    min-width: 120px;
+    padding: 15px;
+    background: rgba(202, 0, 0, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(202, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    background: rgba(202, 0, 0, 0.1);
+    border-color: rgba(202, 0, 0, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(202, 0, 0, 0.2);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    animation: statPulse 2s ease-in-out infinite;
+}
+
+@keyframes statPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ca0000;
+    margin-bottom: 5px;
+    text-shadow: 0 0 10px rgba(202, 0, 0, 0.5);
+    font-family: 'Telegraf', monospace;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Эффект "накопления опыта" при клике на ключевые слова */
+.crypto-text-block .highlight[data-skill] {
+    position: relative;
+    cursor: pointer;
+}
+
+.crypto-text-block .highlight[data-skill]::before {
+    content: '+10 XP';
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    color: #ffd700;
+    font-size: 0.7rem;
+    font-weight: bold;
+    opacity: 0;
+    pointer-events: none;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+    transition: all 0.6s ease-out;
+    z-index: 10;
+}
+
+.crypto-text-block .highlight[data-skill].xp-gained::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-20px);
+    animation: xpFloat 1s ease-out forwards;
+}
+
+@keyframes xpFloat {
+    0% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-20px) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-50px) scale(1.2);
+    }
+}
+
 @keyframes flicker {
     0% {
         text-shadow: 0 0 0px rgba(202, 0, 0, 0.25);

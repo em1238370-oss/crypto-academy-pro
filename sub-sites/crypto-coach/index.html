@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=3.0">
+    <link rel="stylesheet" href="styles.css?v=4.0">
    <script src="scripts/table-modules.js" defer></script>
 </head>
 <body>
@@ -42,8 +42,36 @@
            
            <!-- Новый текст -->
            <div class="crypto-text-block">
+               <!-- Индикатор уровня навыка -->
+               <div class="skill-level-indicator">
+                   <div class="skill-level-label">Your Crypto Skill Level</div>
+                   <div class="skill-level-bar">
+                       <div class="skill-level-fill" id="skillLevelFill"></div>
+                       <div class="skill-level-text" id="skillLevelText">Level 1 - Beginner</div>
+                   </div>
+               </div>
+               
                <div class="intro-text">
-                   Welcome to <span class="highlight" data-word="coach">Coach Crypto</span>, your gateway to mastering the exciting world of cryptocurrency! This section provides a solid foundation, equipping you with the essential knowledge to navigate the crypto space confidently. The best way to truly understand crypto is through <span class="highlight" data-word="hands-on">hands-on experience</span>—learning by doing sticks like nothing else. <span class="highlight" data-word="coach">Coach Crypto</span> offers the tools, insights, and guidance to experiment, practice, and grow. While we'll help you deepen your understanding and sharpen your skills, the real magic happens when you apply what you learn and discover through your own journey. This is your <span class="highlight" data-word="playground">playground</span> to explore, make mistakes, and unlock the potential of crypto—start here and experiment boldly!<br><br><span class="highlight warning-notice" data-word="warning">⚠ IMPORTANT NOTICE:</span> The modules presented here are designed for training and development purposes only. Any advice, suggestions, or strategies offered are educational tools meant to enhance your understanding. October 10th proved to us all in crypto that it's impossible to calculate everything—cryptocurrency markets are unpredictable and volatile. You must evaluate all risks yourself and manage your risk accordingly. Any actions you take based on information or suggestions in these modules are entirely your own responsibility. In case of any loss, the responsibility lies solely with you. Trade at your own risk.
+                   Welcome to <span class="highlight" data-word="coach" data-skill="coaching">Coach Crypto</span>, your gateway to mastering the exciting world of cryptocurrency! This section provides a solid foundation, equipping you with the essential knowledge to navigate the crypto space confidently. The best way to truly understand crypto is through <span class="highlight" data-word="hands-on" data-skill="practice">hands-on experience</span>—learning by doing sticks like nothing else. <span class="highlight" data-word="coach" data-skill="coaching">Coach Crypto</span> offers the tools, insights, and guidance to experiment, practice, and grow. While we'll help you deepen your understanding and sharpen your skills, the real magic happens when you apply what you learn and discover through your own journey. This is your <span class="highlight" data-word="playground" data-skill="exploration">playground</span> to explore, make mistakes, and unlock the potential of crypto—start here and experiment boldly!<br><br><span class="highlight warning-notice" data-word="warning">⚠ IMPORTANT NOTICE:</span> The modules presented here are designed for training and development purposes only. Any advice, suggestions, or strategies offered are educational tools meant to enhance your understanding. October 10th proved to us all in crypto that it's impossible to calculate everything—cryptocurrency markets are unpredictable and volatile. You must evaluate all risks yourself and manage your risk accordingly. Any actions you take based on information or suggestions in these modules are entirely your own responsibility. In case of any loss, the responsibility lies solely with you. Trade at your own risk.
+               </div>
+               
+               <!-- Статистика обучения -->
+               <div class="learning-stats">
+                   <div class="stat-item">
+                       <div class="stat-icon">📚</div>
+                       <div class="stat-value" id="lessonsRead">0</div>
+                       <div class="stat-label">Lessons Read</div>
+                   </div>
+                   <div class="stat-item">
+                       <div class="stat-icon">⚡</div>
+                       <div class="stat-value" id="skillsLearned">0</div>
+                       <div class="stat-label">Skills Learned</div>
+                   </div>
+                   <div class="stat-item">
+                       <div class="stat-icon">🎯</div>
+                       <div class="stat-value" id="experiencePoints">0</div>
+                       <div class="stat-label">Experience Points</div>
+                   </div>
                </div>
            </div>
            
@@ -519,6 +547,106 @@
                
                // Запускаем эффект прокачки после загрузки
                setTimeout(updateSkills, 2000);
+               
+               // Система опыта и статистики
+               let experiencePoints = parseInt(localStorage.getItem('cryptoCoachXP') || '0');
+               let lessonsRead = parseInt(localStorage.getItem('cryptoCoachLessons') || '0');
+               let skillsLearned = parseInt(localStorage.getItem('cryptoCoachSkills') || '0');
+               
+               // Обновляем статистику
+               function updateStats() {
+                   const xpEl = document.getElementById('experiencePoints');
+                   const lessonsEl = document.getElementById('lessonsRead');
+                   const skillsEl = document.getElementById('skillsLearned');
+                   
+                   if (xpEl) {
+                       animateValue(xpEl, 0, experiencePoints, 1000);
+                   }
+                   if (lessonsEl) {
+                       animateValue(lessonsEl, 0, lessonsRead, 1000);
+                   }
+                   if (skillsEl) {
+                       animateValue(skillsEl, 0, skillsLearned, 1000);
+                   }
+                   
+                   // Обновляем уровень навыка
+                   updateSkillLevel();
+               }
+               
+               // Анимация числа
+               function animateValue(element, start, end, duration) {
+                   let startTimestamp = null;
+                   const step = (timestamp) => {
+                       if (!startTimestamp) startTimestamp = timestamp;
+                       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                       element.textContent = Math.floor(progress * (end - start) + start);
+                       if (progress < 1) {
+                           requestAnimationFrame(step);
+                       } else {
+                           element.textContent = end;
+                       }
+                   };
+                   requestAnimationFrame(step);
+               }
+               
+               // Обновление уровня навыка
+               function updateSkillLevel() {
+                   const levelFill = document.getElementById('skillLevelFill');
+                   const levelText = document.getElementById('skillLevelText');
+                   
+                   if (!levelFill || !levelText) return;
+                   
+                   // Вычисляем уровень на основе опыта
+                   const level = Math.floor(experiencePoints / 100) + 1;
+                   const levelProgress = (experiencePoints % 100);
+                   const levelNames = ['Beginner', 'Novice', 'Intermediate', 'Advanced', 'Expert', 'Master', 'Legend'];
+                   const levelName = levelNames[Math.min(level - 1, levelNames.length - 1)] || 'Beginner';
+                   
+                   levelFill.style.width = levelProgress + '%';
+                   levelText.textContent = `Level ${level} - ${levelName}`;
+               }
+               
+               // Обработчик клика на ключевые слова для получения опыта
+               highlights.forEach(highlight => {
+                   if (highlight.dataset.skill) {
+                       highlight.addEventListener('click', function() {
+                           // Добавляем опыт
+                           experiencePoints += 10;
+                           skillsLearned += 1;
+                           localStorage.setItem('cryptoCoachXP', experiencePoints);
+                           localStorage.setItem('cryptoCoachSkills', skillsLearned);
+                           
+                           // Показываем эффект получения опыта
+                           this.classList.add('xp-gained');
+                           setTimeout(() => {
+                               this.classList.remove('xp-gained');
+                           }, 1000);
+                           
+                           // Обновляем статистику
+                           updateStats();
+                           
+                           // Эффект прокачки
+                           this.classList.add('skill-level-up');
+                           setTimeout(() => {
+                               this.classList.remove('skill-level-up');
+                           }, 1000);
+                       });
+                   }
+               });
+               
+               // Инициализация статистики
+               setTimeout(updateStats, 500);
+               
+               // Автоматическое увеличение опыта при взаимодействии со страницей
+               let interactionCount = 0;
+               document.addEventListener('click', function() {
+                   interactionCount++;
+                   if (interactionCount % 5 === 0) {
+                       experiencePoints += 1;
+                       localStorage.setItem('cryptoCoachXP', experiencePoints);
+                       updateSkillLevel();
+                   }
+               }, { passive: true });
                
                // Очистка при размонтировании (предотвращение утечек памяти)
                window.addEventListener('beforeunload', function() {
