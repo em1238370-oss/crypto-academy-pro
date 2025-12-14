@@ -43,7 +43,7 @@
            <!-- Новый текст -->
            <div class="crypto-text-block">
                <div class="intro-text">
-                   Welcome to <span class="highlight">Coach Crypto</span>, your gateway to mastering the exciting world of cryptocurrency! This section provides a solid foundation, equipping you with the essential knowledge to navigate the crypto space confidently. The best way to truly understand crypto is through hands-on experience—learning by doing sticks like nothing else. <span class="highlight">Coach Crypto</span> offers the tools, insights, and guidance to experiment, practice, and grow. While we'll help you deepen your understanding and sharpen your skills, the real magic happens when you apply what you learn and discover through your own journey. This is your playground to explore, make mistakes, and unlock the potential of crypto—start here and experiment boldly!<br><br><span class="highlight">⚠ IMPORTANT NOTICE:</span> The modules presented here are designed for training and development purposes only. Any advice, suggestions, or strategies offered are educational tools meant to enhance your understanding. October 10th proved to us all in crypto that it's impossible to calculate everything—cryptocurrency markets are unpredictable and volatile. You must evaluate all risks yourself and manage your risk accordingly. Any actions you take based on information or suggestions in these modules are entirely your own responsibility. In case of any loss, the responsibility lies solely with you. Trade at your own risk.
+                   Welcome to <span class="highlight" data-word="coach">Coach Crypto</span>, your gateway to mastering the exciting world of cryptocurrency! This section provides a solid foundation, equipping you with the essential knowledge to navigate the crypto space confidently. The best way to truly understand crypto is through <span class="highlight" data-word="hands-on">hands-on experience</span>—learning by doing sticks like nothing else. <span class="highlight" data-word="coach">Coach Crypto</span> offers the tools, insights, and guidance to experiment, practice, and grow. While we'll help you deepen your understanding and sharpen your skills, the real magic happens when you apply what you learn and discover through your own journey. This is your <span class="highlight" data-word="playground">playground</span> to explore, make mistakes, and unlock the potential of crypto—start here and experiment boldly!<br><br><span class="highlight warning-notice" data-word="warning">⚠ IMPORTANT NOTICE:</span> The modules presented here are designed for training and development purposes only. Any advice, suggestions, or strategies offered are educational tools meant to enhance your understanding. October 10th proved to us all in crypto that it's impossible to calculate everything—cryptocurrency markets are unpredictable and volatile. You must evaluate all risks yourself and manage your risk accordingly. Any actions you take based on information or suggestions in these modules are entirely your own responsibility. In case of any loss, the responsibility lies solely with you. Trade at your own risk.
                </div>
            </div>
            
@@ -421,6 +421,77 @@
    
    <script src="../../scripts/chatbot.js?v=30"></script>
    <script src="scripts/table-modules.js" defer></script>
+   
+   <!-- Интерактивные эффекты для текста -->
+   <script>
+       (function() {
+           'use strict';
+           
+           // Ждем загрузки DOM
+           if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', initTextEffects);
+           } else {
+               initTextEffects();
+           }
+           
+           function initTextEffects() {
+               const introText = document.querySelector('.intro-text');
+               if (!introText) return;
+               
+               // Анимация появления слов с задержкой
+               const highlights = introText.querySelectorAll('.highlight');
+               highlights.forEach((highlight, index) => {
+                   highlight.style.animationDelay = `${0.5 + index * 0.2}s`;
+                   highlight.style.opacity = '0';
+                   highlight.style.transform = 'translateY(10px)';
+                   
+                   setTimeout(() => {
+                       highlight.style.transition = 'all 0.6s ease-out';
+                       highlight.style.opacity = '1';
+                       highlight.style.transform = 'translateY(0)';
+                   }, 500 + index * 200);
+               });
+               
+               // Эффект при наведении на весь текст
+               introText.addEventListener('mouseenter', function() {
+                   this.style.transition = 'all 0.3s ease';
+                   this.style.transform = 'scale(1.01)';
+               });
+               
+               introText.addEventListener('mouseleave', function() {
+                   this.style.transform = 'scale(1)';
+               });
+               
+               // Плавное появление при прокрутке (Intersection Observer)
+               const observerOptions = {
+                   threshold: 0.2,
+                   rootMargin: '0px 0px -100px 0px'
+               };
+               
+               const observer = new IntersectionObserver(function(entries) {
+                   entries.forEach(entry => {
+                       if (entry.isIntersecting) {
+                           entry.target.style.opacity = '1';
+                           entry.target.style.transform = 'translateY(0)';
+                       }
+                   });
+               }, observerOptions);
+               
+               observer.observe(introText);
+               
+               // Периодическая пульсация для важных слов
+               setInterval(() => {
+                   const randomHighlight = highlights[Math.floor(Math.random() * highlights.length)];
+                   if (randomHighlight) {
+                       randomHighlight.style.animation = 'none';
+                       setTimeout(() => {
+                           randomHighlight.style.animation = 'flicker 4s infinite, pulseGlow 3s ease-in-out infinite';
+                       }, 10);
+                   }
+               }, 5000);
+           }
+       })();
+   </script>
    
    <!-- Дополнительный скрипт для ГАРАНТИИ видимости чата -->
    <script>
