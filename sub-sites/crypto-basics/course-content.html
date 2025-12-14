@@ -74,88 +74,235 @@
         }
 
         .lesson-item {
-            margin-bottom: 20px;
-            background: transparent;
-            border-radius: 12px;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 0 24px rgba(255, 255, 255, 0.06);
-            transition: transform 0.3s ease;
-            border: 2px solid white;
+            box-shadow: 
+                0 4px 20px rgba(0, 0, 0, 0.15),
+                0 0 1px rgba(255, 255, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .lesson-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                rgba(102, 126, 234, 0.6) 0%, 
+                rgba(118, 75, 162, 0.6) 50%, 
+                rgba(102, 126, 234, 0.6) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .lesson-item:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 
+                0 8px 30px rgba(0, 0, 0, 0.2),
+                0 0 2px rgba(255, 255, 255, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .lesson-item:hover::before {
+            opacity: 1;
         }
 
         .lesson-header {
             display: flex;
             align-items: center;
-            padding: 20px 25px;
+            padding: 24px 28px;
             cursor: pointer;
             background: transparent;
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .lesson-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.1) 50%, 
+                transparent 100%);
         }
 
         .lesson-header:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
         }
 
         .lesson-number {
-            width: 50px;
-            height: 50px;
+            width: 56px;
+            height: 56px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
+            border-radius: 12px;
             font-weight: bold;
-            font-size: 1.2em;
-            margin-right: 20px;
-            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+            font-size: 1.3em;
+            margin-right: 24px;
+            box-shadow: 
+                0 4px 15px rgba(102, 126, 234, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lesson-number::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, 
+                transparent 30%, 
+                rgba(255, 255, 255, 0.1) 50%, 
+                transparent 70%);
+            transform: rotate(45deg);
+            transition: all 0.5s ease;
+        }
+
+        .lesson-header:hover .lesson-number {
+            transform: scale(1.05);
+            box-shadow: 
+                0 6px 20px rgba(102, 126, 234, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.15);
+        }
+
+        .lesson-header:hover .lesson-number::before {
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
         }
 
         .lesson-title-wrapper {
             flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .lesson-title {
             font-size: 1.3em;
             color: white;
             font-weight: 600;
+            letter-spacing: -0.02em;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .lesson-badge {
             display: inline-block;
-            background: #48bb78; /* Green for FREE */
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
             color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75em;
-            margin-left: 10px;
-            font-weight: bold;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.7em;
+            margin-left: 0;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 
+                0 2px 8px rgba(72, 187, 120, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .lesson-badge.paid {
-            background: #ef4444; /* Red for PAID */
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 
+                0 2px 8px rgba(239, 68, 68, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
         .lesson-arrow {
             font-size: 1.5em;
+            color: rgba(102, 126, 234, 0.8);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .lesson-header:hover .lesson-arrow {
             color: #667eea;
-            transition: transform 0.3s ease;
+            background: rgba(102, 126, 234, 0.2);
+            transform: scale(1.1);
+        }
+
+        .lesson-item:has(.lesson-content[style*="block"]) .lesson-header {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%);
+        }
+
+        .lesson-item:has(.lesson-content[style*="block"]) .lesson-arrow {
+            transform: rotate(180deg);
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.25);
+        }
+
+        .lesson-item:has(.lesson-content[style*="block"]) {
+            border-color: rgba(102, 126, 234, 0.3);
+            box-shadow: 
+                0 6px 25px rgba(0, 0, 0, 0.18),
+                0 0 2px rgba(102, 126, 234, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .lesson-item:has(.lesson-content[style*="block"])::before {
+            opacity: 1;
         }
 
 
         .lesson-content {
             display: none;
-            background: transparent;
-            border-top: 2px solid white;
+            background: linear-gradient(180deg, 
+                rgba(255, 255, 255, 0.02) 0%, 
+                transparent 100%);
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            position: relative;
+        }
+
+        .lesson-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(102, 126, 234, 0.3) 50%, 
+                transparent 100%);
         }
 
         .lesson-content-inner {
-            padding: 30px;
+            padding: 32px 30px;
             color: white;
+            position: relative;
         }
 
         #mining-game {
