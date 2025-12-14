@@ -454,68 +454,6 @@ body::after {
     white-space: nowrap;
 }
 
-/* Статистика обучения */
-.learning-stats {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 30px;
-    padding: 20px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 12px;
-    border: 1px solid rgba(202, 0, 0, 0.2);
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-.stat-item {
-    text-align: center;
-    flex: 1;
-    min-width: 120px;
-    padding: 15px;
-    background: rgba(202, 0, 0, 0.05);
-    border-radius: 8px;
-    border: 1px solid rgba(202, 0, 0, 0.2);
-    transition: all 0.3s ease;
-}
-
-.stat-item:hover {
-    background: rgba(202, 0, 0, 0.1);
-    border-color: rgba(202, 0, 0, 0.4);
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(202, 0, 0, 0.2);
-}
-
-.stat-icon {
-    font-size: 2rem;
-    margin-bottom: 8px;
-    animation: statPulse 2s ease-in-out infinite;
-}
-
-@keyframes statPulse {
-    0%, 100% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.1);
-    }
-}
-
-.stat-value {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #ca0000;
-    margin-bottom: 5px;
-    text-shadow: 0 0 10px rgba(202, 0, 0, 0.5);
-    font-family: 'Telegraf', monospace;
-}
-
-.stat-label {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.7);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
 /* Эффект "накопления опыта" при клике на ключевые слова */
 .crypto-text-block .highlight[data-skill] {
     position: relative;
