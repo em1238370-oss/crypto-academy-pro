@@ -236,10 +236,10 @@ body::after {
 
 @keyframes warningPulse {
     0%, 100% {
-        text-shadow: 0 0 8px rgba(202, 0, 0, 0.6), 0 0 15px rgba(255, 0, 0, 0.5);
+        text-shadow: 0 0 4px rgba(202, 0, 0, 0.3), 0 0 8px rgba(255, 0, 0, 0.25);
     }
     50% {
-        text-shadow: 0 0 15px rgba(202, 0, 0, 0.6), 0 0 25px rgba(255, 0, 0, 0.5), 0 0 35px rgba(255, 51, 51, 0.4);
+        text-shadow: 0 0 8px rgba(202, 0, 0, 0.3), 0 0 12px rgba(255, 0, 0, 0.25), 0 0 18px rgba(255, 51, 51, 0.2);
     }
 }
 
@@ -284,14 +284,14 @@ body::after {
     /* Эффект свечения при наведении */
     transition: all 0.3s ease;
     cursor: default;
-    /* Эффект прокачки - индикатор уровня (уменьшена яркость на 5%) */
+    /* Эффект прокачки - индикатор уровня (яркость уменьшена в 2 раза) */
     padding: 2px 8px;
     border-radius: 4px;
     background: linear-gradient(
         135deg,
-        rgba(202, 0, 0, 0.05) 0%,
-        rgba(202, 0, 0, 0.15) 50%,
-        rgba(202, 0, 0, 0.05) 100%
+        rgba(202, 0, 0, 0.025) 0%,
+        rgba(202, 0, 0, 0.075) 50%,
+        rgba(202, 0, 0, 0.025) 100%
     );
     /* Оптимизация */
     will-change: transform, text-shadow;
@@ -299,18 +299,18 @@ body::after {
 }
 
 .crypto-text-block .highlight:hover {
-    text-shadow: 0 0 8px rgba(202, 0, 0, 0.5), 0 0 12px rgba(255, 0, 0, 0.4), 0 0 18px rgba(255, 51, 51, 0.3);
+    text-shadow: 0 0 4px rgba(202, 0, 0, 0.3), 0 0 6px rgba(255, 0, 0, 0.2), 0 0 9px rgba(255, 51, 51, 0.15);
     transform: scale(1.05) translateZ(0);
     background: linear-gradient(
         135deg,
-        rgba(202, 0, 0, 0.15) 0%,
-        rgba(202, 0, 0, 0.35) 50%,
-        rgba(202, 0, 0, 0.15) 100%
+        rgba(202, 0, 0, 0.075) 0%,
+        rgba(202, 0, 0, 0.175) 50%,
+        rgba(202, 0, 0, 0.075) 100%
     );
-    box-shadow: 0 0 15px rgba(202, 0, 0, 0.3);
+    box-shadow: 0 0 8px rgba(202, 0, 0, 0.2);
 }
 
-/* Эффект "прокачки" - полоска прогресса под словом */
+/* Эффект "прокачки" - полоска прогресса под словом (яркость уменьшена в 2 раза) */
 .crypto-text-block .highlight::after {
     content: '';
     position: absolute;
@@ -318,10 +318,10 @@ body::after {
     left: 0;
     width: 0;
     height: 3px;
-    background: linear-gradient(90deg, #ca0000, #ff3333, #ca0000);
+    background: linear-gradient(90deg, rgba(202, 0, 0, 0.35), rgba(255, 51, 51, 0.35), rgba(202, 0, 0, 0.35));
     border-radius: 2px;
     animation: skillProgress 3s ease-in-out infinite;
-    box-shadow: 0 0 10px rgba(202, 0, 0, 0.8);
+    box-shadow: 0 0 4px rgba(202, 0, 0, 0.3);
 }
 
 @keyframes skillProgress {
@@ -331,7 +331,7 @@ body::after {
     }
     50% {
         width: 100%;
-        opacity: 1;
+        opacity: 0.5; /* Уменьшена яркость в 2 раза */
     }
     100% {
         width: 100%;
@@ -339,7 +339,7 @@ body::after {
     }
 }
 
-/* Пульсирующая анимация для важных слов (уменьшена яркость на 5%) */
+/* Пульсирующая анимация для важных слов (яркость уменьшена в 2 раза) */
 .crypto-text-block .highlight::before {
     content: '';
     position: absolute;
@@ -347,7 +347,7 @@ body::after {
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle, rgba(202, 0, 0, 0.25) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(202, 0, 0, 0.125) 0%, transparent 70%);
     border-radius: 4px;
     opacity: 0;
     animation: pulseGlow 3s ease-in-out infinite;
@@ -360,7 +360,7 @@ body::after {
         transform: scale(1);
     }
     50% {
-        opacity: 0.6;
+        opacity: 0.3;
         transform: scale(1.1);
     }
 }
@@ -373,33 +373,33 @@ body::after {
 @keyframes skillLevelUp {
     0% {
         transform: scale(1) translateZ(0);
-        text-shadow: 0 0 8px rgba(202, 0, 0, 0.6);
+        text-shadow: 0 0 4px rgba(202, 0, 0, 0.3);
     }
     50% {
         transform: scale(1.15) translateZ(0);
-        text-shadow: 0 0 20px rgba(202, 0, 0, 0.5), 0 0 35px rgba(255, 0, 0, 0.4), 0 0 50px rgba(255, 51, 51, 0.3);
+        text-shadow: 0 0 10px rgba(202, 0, 0, 0.25), 0 0 18px rgba(255, 0, 0, 0.2), 0 0 25px rgba(255, 51, 51, 0.15);
         background: linear-gradient(
             135deg,
-            rgba(202, 0, 0, 0.35) 0%,
-            rgba(255, 0, 0, 0.55) 50%,
-            rgba(202, 0, 0, 0.35) 100%
+            rgba(202, 0, 0, 0.175) 0%,
+            rgba(255, 0, 0, 0.275) 50%,
+            rgba(202, 0, 0, 0.175) 100%
         );
     }
     100% {
         transform: scale(1) translateZ(0);
-        text-shadow: 0 0 12px rgba(202, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.4);
+        text-shadow: 0 0 6px rgba(202, 0, 0, 0.25), 0 0 10px rgba(255, 0, 0, 0.2);
     }
 }
 
 @keyframes flicker {
     0% {
-        text-shadow: 0 0 0px rgba(202, 0, 0, 0.5);
+        text-shadow: 0 0 0px rgba(202, 0, 0, 0.25);
     }
     50% {
-        text-shadow: 0 0 8px rgba(202, 0, 0, 0.5), 0 0 15px rgba(202, 0, 0, 0.4);
+        text-shadow: 0 0 4px rgba(202, 0, 0, 0.25), 0 0 8px rgba(202, 0, 0, 0.2);
     }
     100% {
-        text-shadow: 0 0 0px rgba(202, 0, 0, 0.5);
+        text-shadow: 0 0 0px rgba(202, 0, 0, 0.25);
     }
 }
 
