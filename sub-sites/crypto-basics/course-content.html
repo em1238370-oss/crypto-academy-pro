@@ -432,6 +432,14 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
+        .lesson-badge.paid.subscribed {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            box-shadow: 
+                0 2px 8px rgba(72, 187, 120, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                0 0 15px rgba(72, 187, 120, 0.2);
+        }
+
         .lesson-header:hover .lesson-badge {
             transform: scale(1.05);
         }
@@ -8371,6 +8379,27 @@
             return localStorage.getItem('crypto_academy_subscription') === 'active';
         }
 
+        // Update subscription badges color
+        function updateSubscriptionBadges() {
+            const isSubscribed = hasActiveSubscription();
+            const paidBadges = document.querySelectorAll('.lesson-badge.paid');
+            paidBadges.forEach(badge => {
+                if (isSubscribed) {
+                    badge.classList.add('subscribed');
+                } else {
+                    badge.classList.remove('subscribed');
+                }
+            });
+        }
+
+        // Activate subscription (call this after successful payment)
+        function activateSubscription() {
+            localStorage.setItem('crypto_academy_subscription', 'active');
+            updateSubscriptionBadges();
+            closeSubscriptionModal();
+            console.log('Subscription activated!');
+        }
+
         // Show subscription modal
         function showSubscriptionModal() {
             const modal = document.getElementById('subscriptionModal');
@@ -8396,20 +8425,26 @@
         // Handle crypto payment
         function handleCryptoPayment(e) {
             if (e) e.preventDefault();
-            // TODO: Implement crypto payment integration
             console.log('Crypto payment clicked');
-            alert('Crypto payment integration coming soon!');
-            // window.location.href = '/payment/crypto';
+            // TODO: Replace with actual payment integration
+            // For testing: uncomment the line below to simulate payment
+            // activateSubscription();
+            
+            // Redirect to payment page
+            window.location.href = '/payment/crypto?amount=15&period=month';
             return false;
         }
 
         // Handle card payment
         function handleCardPayment(e) {
             if (e) e.preventDefault();
-            // TODO: Implement card payment integration
             console.log('Card payment clicked');
-            alert('Card payment integration coming soon!');
-            // window.location.href = '/payment/card';
+            // TODO: Replace with actual payment integration
+            // For testing: uncomment the line below to simulate payment
+            // activateSubscription();
+            
+            // Redirect to payment page
+            window.location.href = '/payment/card?amount=15&period=month';
             return false;
         }
 
@@ -8470,16 +8505,23 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Crypto lessons page loaded successfully');
             
-            // Close all paid lessons (2-6) by default
+            // Open first lesson (free) by default, close all paid lessons (2-6)
             const lessonItems = document.querySelectorAll('.lesson-item');
             console.log('Total lessons found:', lessonItems.length);
             lessonItems.forEach((item, index) => {
-                // Skip first lesson (index 0) - it's free
-                if (index > 0) {
-                    const content = item.querySelector('.lesson-content');
-                    const arrow = item.querySelector('.lesson-arrow');
-                    const badge = item.querySelector('.lesson-badge.paid');
-                    if (content && arrow) {
+                const content = item.querySelector('.lesson-content');
+                const arrow = item.querySelector('.lesson-arrow');
+                const badge = item.querySelector('.lesson-badge.paid');
+                
+                if (content && arrow) {
+                    if (index === 0) {
+                        // First lesson is free - open it
+                        content.style.display = 'block';
+                        arrow.textContent = '▲';
+                        item.classList.add('active');
+                        console.log('Opened lesson 1 (FREE)');
+                    } else {
+                        // Close all paid lessons (2-6)
                         content.style.display = 'none';
                         arrow.textContent = '▼';
                         item.classList.remove('active');
@@ -8487,6 +8529,9 @@
                     }
                 }
             });
+            
+            // Update badge colors based on subscription status
+            updateSubscriptionBadges();
             
             // Close modal when clicking outside
             const modal = document.getElementById('subscriptionModal');
@@ -10128,7 +10173,7 @@
             <div class="subscription-modal-icon">🔒</div>
             <h2 class="subscription-modal-title">Unlock Premium Content</h2>
             <p class="subscription-modal-text">
-                To continue learning the knowledge that will help you deeply understand the crypto market, subscribe to unlock all premium lessons and gain access to advanced trading strategies, DeFi protocols, and market analysis.
+                To continue learning and gain the knowledge that will help you deeply understand the crypto market and master the fundamentals that everyone interested in cryptocurrency needs, subscribe to unlock all premium lessons. Get access to advanced trading strategies, DeFi protocols, market analysis, and comprehensive guides that will take your crypto knowledge to the next level.
             </p>
             <div class="subscription-price">
                 $15<span>/month</span>
