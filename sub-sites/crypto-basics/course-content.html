@@ -588,6 +588,192 @@
             position: relative;
         }
 
+        /* Subscription Modal Styles */
+        .subscription-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .subscription-modal.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .subscription-modal-content {
+            background: linear-gradient(135deg, 
+                rgba(79, 195, 247, 0.15) 0%, 
+                rgba(33, 150, 243, 0.1) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid rgba(79, 195, 247, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.4),
+                0 0 40px rgba(79, 195, 247, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+        }
+
+        @keyframes slideUp {
+            from { 
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .subscription-modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(79, 195, 247, 0.8) 50%, 
+                transparent 100%);
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 0 20px rgba(79, 195, 247, 0.5);
+        }
+
+        .subscription-modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        .subscription-modal-close:hover {
+            background: rgba(79, 195, 247, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .subscription-modal-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px rgba(79, 195, 247, 0.5));
+        }
+
+        .subscription-modal-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(79, 195, 247, 0.3);
+        }
+
+        .subscription-modal-text {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .subscription-price {
+            font-size: 36px;
+            font-weight: 700;
+            color: rgba(79, 195, 247, 1);
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(79, 195, 247, 0.5);
+        }
+
+        .subscription-price span {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 400;
+        }
+
+        .subscription-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .subscription-btn {
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .subscription-btn-crypto {
+            background: linear-gradient(135deg, rgba(79, 195, 247, 0.3) 0%, rgba(33, 150, 243, 0.3) 100%);
+            border-color: rgba(79, 195, 247, 0.5);
+            color: white;
+            box-shadow: 
+                0 4px 15px rgba(79, 195, 247, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .subscription-btn-crypto:hover {
+            background: linear-gradient(135deg, rgba(79, 195, 247, 0.5) 0%, rgba(33, 150, 243, 0.5) 100%);
+            box-shadow: 
+                0 6px 25px rgba(79, 195, 247, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .subscription-btn-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: white;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .subscription-btn-card:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+            box-shadow: 
+                0 6px 25px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
         #mining-game {
             width: 100%;
             max-width: 100%;
@@ -8178,6 +8364,45 @@
     </div>
 
     <script>
+        // Check if user has active subscription
+        function hasActiveSubscription() {
+            // This will be replaced with actual subscription check from backend
+            // For now, return false to show modal
+            return localStorage.getItem('crypto_academy_subscription') === 'active';
+        }
+
+        // Show subscription modal
+        function showSubscriptionModal() {
+            const modal = document.getElementById('subscriptionModal');
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        // Close subscription modal
+        function closeSubscriptionModal() {
+            const modal = document.getElementById('subscriptionModal');
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Handle crypto payment
+        function handleCryptoPayment() {
+            // TODO: Implement crypto payment integration
+            alert('Crypto payment integration coming soon!');
+            // window.location.href = '/payment/crypto';
+        }
+
+        // Handle card payment
+        function handleCardPayment() {
+            // TODO: Implement card payment integration
+            alert('Card payment integration coming soon!');
+            // window.location.href = '/payment/card';
+        }
+
         function toggleLesson(element) {
             try {
                 const lessonItem = element.closest('.lesson-item');
@@ -8188,9 +8413,17 @@
                 
                 const content = lessonItem.querySelector('.lesson-content');
                 const arrow = element.querySelector('.lesson-arrow');
+                const badge = lessonItem.querySelector('.lesson-badge.paid');
                 
                 if (!content || !arrow) {
                     console.error('Content or arrow not found');
+                    return;
+                }
+                
+                // Check if lesson is paid and user doesn't have subscription
+                if (badge && !hasActiveSubscription()) {
+                    // Show subscription modal instead of opening lesson
+                    showSubscriptionModal();
                     return;
                 }
                 
@@ -8226,8 +8459,39 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Crypto lessons page loaded successfully');
             
-            // Initialize any required elements
+            // Close all paid lessons (2-6) by default
             const lessonItems = document.querySelectorAll('.lesson-item');
+            lessonItems.forEach((item, index) => {
+                // Skip first lesson (index 0) - it's free
+                if (index > 0) {
+                    const content = item.querySelector('.lesson-content');
+                    const arrow = item.querySelector('.lesson-arrow');
+                    if (content && arrow) {
+                        content.style.display = 'none';
+                        arrow.textContent = '▼';
+                        item.classList.remove('active');
+                    }
+                }
+            });
+            
+            // Close modal when clicking outside
+            const modal = document.getElementById('subscriptionModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeSubscriptionModal();
+                    }
+                });
+            }
+            
+            // Close modal on Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeSubscriptionModal();
+                }
+            });
+            
+            // Initialize any required elements
             console.log('Found', lessonItems.length, 'lesson items');
             
             // Ensure all lesson content is hidden initially
@@ -9842,6 +10106,31 @@
             }
         });
     </script>
+
+    <!-- Subscription Modal -->
+    <div id="subscriptionModal" class="subscription-modal">
+        <div class="subscription-modal-content">
+            <button class="subscription-modal-close" onclick="closeSubscriptionModal()">×</button>
+            <div class="subscription-modal-icon">🔒</div>
+            <h2 class="subscription-modal-title">Unlock Premium Content</h2>
+            <p class="subscription-modal-text">
+                To continue learning the knowledge that will help you deeply understand the crypto market, subscribe to unlock all premium lessons and gain access to advanced trading strategies, DeFi protocols, and market analysis.
+            </p>
+            <div class="subscription-price">
+                $15<span>/month</span>
+            </div>
+            <div class="subscription-buttons">
+                <a href="#" class="subscription-btn subscription-btn-crypto" onclick="handleCryptoPayment()">
+                    <span>💳</span>
+                    Pay with Cryptocurrency
+                </a>
+                <a href="#" class="subscription-btn subscription-btn-card" onclick="handleCardPayment()">
+                    <span>💳</span>
+                    Pay with Card
+                </a>
+            </div>
+        </div>
+    </div>
 
 </body>
 
