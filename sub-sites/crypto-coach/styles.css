@@ -236,10 +236,10 @@ body::after {
 
 @keyframes warningPulse {
     0%, 100% {
-        text-shadow: 0 0 10px #ca0000, 0 0 20px #ff0000;
+        text-shadow: 0 0 8px rgba(202, 0, 0, 0.6), 0 0 15px rgba(255, 0, 0, 0.5);
     }
     50% {
-        text-shadow: 0 0 20px #ca0000, 0 0 30px #ff0000, 0 0 40px #ff3333;
+        text-shadow: 0 0 15px rgba(202, 0, 0, 0.6), 0 0 25px rgba(255, 0, 0, 0.5), 0 0 35px rgba(255, 51, 51, 0.4);
     }
 }
 
@@ -284,14 +284,14 @@ body::after {
     /* Эффект свечения при наведении */
     transition: all 0.3s ease;
     cursor: default;
-    /* Эффект прокачки - индикатор уровня */
+    /* Эффект прокачки - индикатор уровня (уменьшена яркость на 5%) */
     padding: 2px 8px;
     border-radius: 4px;
     background: linear-gradient(
         135deg,
-        rgba(202, 0, 0, 0.1) 0%,
-        rgba(202, 0, 0, 0.2) 50%,
-        rgba(202, 0, 0, 0.1) 100%
+        rgba(202, 0, 0, 0.05) 0%,
+        rgba(202, 0, 0, 0.15) 50%,
+        rgba(202, 0, 0, 0.05) 100%
     );
     /* Оптимизация */
     will-change: transform, text-shadow;
@@ -299,15 +299,15 @@ body::after {
 }
 
 .crypto-text-block .highlight:hover {
-    text-shadow: 0 0 15px #ca0000, 0 0 25px #ff0000, 0 0 35px #ff3333;
+    text-shadow: 0 0 8px rgba(202, 0, 0, 0.5), 0 0 12px rgba(255, 0, 0, 0.4), 0 0 18px rgba(255, 51, 51, 0.3);
     transform: scale(1.05) translateZ(0);
     background: linear-gradient(
         135deg,
-        rgba(202, 0, 0, 0.2) 0%,
-        rgba(202, 0, 0, 0.4) 50%,
-        rgba(202, 0, 0, 0.2) 100%
+        rgba(202, 0, 0, 0.15) 0%,
+        rgba(202, 0, 0, 0.35) 50%,
+        rgba(202, 0, 0, 0.15) 100%
     );
-    box-shadow: 0 0 20px rgba(202, 0, 0, 0.4);
+    box-shadow: 0 0 15px rgba(202, 0, 0, 0.3);
 }
 
 /* Эффект "прокачки" - полоска прогресса под словом */
@@ -339,7 +339,7 @@ body::after {
     }
 }
 
-/* Пульсирующая анимация для важных слов */
+/* Пульсирующая анимация для важных слов (уменьшена яркость на 5%) */
 .crypto-text-block .highlight::before {
     content: '';
     position: absolute;
@@ -347,7 +347,7 @@ body::after {
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle, rgba(202, 0, 0, 0.3) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(202, 0, 0, 0.25) 0%, transparent 70%);
     border-radius: 4px;
     opacity: 0;
     animation: pulseGlow 3s ease-in-out infinite;
@@ -365,7 +365,7 @@ body::after {
     }
 }
 
-/* Эффект "прокачки навыка" - уровень повышается */
+/* Эффект "прокачки навыка" - уровень повышается (уменьшена яркость на 5%) */
 .crypto-text-block .highlight.skill-level-up {
     animation: skillLevelUp 1s ease-out;
 }
@@ -373,33 +373,33 @@ body::after {
 @keyframes skillLevelUp {
     0% {
         transform: scale(1) translateZ(0);
-        text-shadow: 0 0 10px #ca0000;
+        text-shadow: 0 0 8px rgba(202, 0, 0, 0.6);
     }
     50% {
         transform: scale(1.15) translateZ(0);
-        text-shadow: 0 0 30px #ca0000, 0 0 50px #ff0000, 0 0 70px #ff3333;
+        text-shadow: 0 0 20px rgba(202, 0, 0, 0.5), 0 0 35px rgba(255, 0, 0, 0.4), 0 0 50px rgba(255, 51, 51, 0.3);
         background: linear-gradient(
             135deg,
-            rgba(202, 0, 0, 0.4) 0%,
-            rgba(255, 0, 0, 0.6) 50%,
-            rgba(202, 0, 0, 0.4) 100%
+            rgba(202, 0, 0, 0.35) 0%,
+            rgba(255, 0, 0, 0.55) 50%,
+            rgba(202, 0, 0, 0.35) 100%
         );
     }
     100% {
         transform: scale(1) translateZ(0);
-        text-shadow: 0 0 15px #ca0000, 0 0 25px #ff0000;
+        text-shadow: 0 0 12px rgba(202, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.4);
     }
 }
 
 @keyframes flicker {
     0% {
-        text-shadow: 0 0 0px #ca0000;
+        text-shadow: 0 0 0px rgba(202, 0, 0, 0.5);
     }
     50% {
-        text-shadow: 0 0 10px #ca0000, 0 0 20px #ca0000;
+        text-shadow: 0 0 8px rgba(202, 0, 0, 0.5), 0 0 15px rgba(202, 0, 0, 0.4);
     }
     100% {
-        text-shadow: 0 0 0px #ca0000;
+        text-shadow: 0 0 0px rgba(202, 0, 0, 0.5);
     }
 }
 
