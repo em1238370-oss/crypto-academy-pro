@@ -146,9 +146,87 @@ body::after {
     width: 100%;
     max-width: calc(1200px + 8cm); /* Было 1200px + 6cm, теперь +8cm (расширено на 1 см справа и слева) */
     color: #ffffff;
-    padding: 0 20px;
-    /* Эффект появления при прокрутке */
-    will-change: opacity, transform;
+    padding: 40px 20px;
+    /* Уникальный дизайн с эффектом прокачки */
+    background: linear-gradient(135deg, rgba(202, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(202, 0, 0, 0.05) 100%);
+    border: 2px solid transparent;
+    border-radius: 20px;
+    box-shadow: 
+        0 0 30px rgba(202, 0, 0, 0.2),
+        inset 0 0 50px rgba(202, 0, 0, 0.05);
+    /* Анимированная граница */
+    background-clip: padding-box;
+    position: relative;
+    overflow: hidden;
+    /* Оптимизация для плавности */
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* Анимированная граница (эффект прокачки) */
+.crypto-text-block::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(202, 0, 0, 0.3),
+        transparent
+    );
+    animation: progressScan 8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes progressScan {
+    0% {
+        left: -100%;
+    }
+    50% {
+        left: 100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Светящиеся углы */
+.crypto-text-block::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 20px;
+    padding: 2px;
+    background: linear-gradient(
+        135deg,
+        rgba(202, 0, 0, 0.5) 0%,
+        transparent 25%,
+        transparent 75%,
+        rgba(202, 0, 0, 0.5) 100%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: borderGlow 4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes borderGlow {
+    0%, 100% {
+        opacity: 0.3;
+    }
+    50% {
+        opacity: 0.8;
+    }
 }
 
 /* Специальный стиль для предупреждения */
@@ -178,6 +256,12 @@ body::after {
     transform: translateY(30px);
     animation: textFadeIn 1.2s ease-out forwards;
     animation-delay: 0.3s;
+    position: relative;
+    z-index: 2;
+    /* Эффект глубины текста */
+    text-shadow: 
+        0 2px 10px rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(202, 0, 0, 0.2);
 }
 
 /* Анимация появления текста */
@@ -201,11 +285,59 @@ body::after {
     /* Эффект свечения при наведении */
     transition: all 0.3s ease;
     cursor: default;
+    /* Эффект прокачки - индикатор уровня */
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: linear-gradient(
+        135deg,
+        rgba(202, 0, 0, 0.1) 0%,
+        rgba(202, 0, 0, 0.2) 50%,
+        rgba(202, 0, 0, 0.1) 100%
+    );
+    /* Оптимизация */
+    will-change: transform, text-shadow;
+    transform: translateZ(0);
 }
 
 .crypto-text-block .highlight:hover {
     text-shadow: 0 0 15px #ca0000, 0 0 25px #ff0000, 0 0 35px #ff3333;
-    transform: scale(1.05);
+    transform: scale(1.05) translateZ(0);
+    background: linear-gradient(
+        135deg,
+        rgba(202, 0, 0, 0.2) 0%,
+        rgba(202, 0, 0, 0.4) 50%,
+        rgba(202, 0, 0, 0.2) 100%
+    );
+    box-shadow: 0 0 20px rgba(202, 0, 0, 0.4);
+}
+
+/* Эффект "прокачки" - полоска прогресса под словом */
+.crypto-text-block .highlight::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #ca0000, #ff3333, #ca0000);
+    border-radius: 2px;
+    animation: skillProgress 3s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(202, 0, 0, 0.8);
+}
+
+@keyframes skillProgress {
+    0% {
+        width: 0;
+        opacity: 0;
+    }
+    50% {
+        width: 100%;
+        opacity: 1;
+    }
+    100% {
+        width: 100%;
+        opacity: 0;
+    }
 }
 
 /* Пульсирующая анимация для важных слов */
@@ -231,6 +363,32 @@ body::after {
     50% {
         opacity: 0.6;
         transform: scale(1.1);
+    }
+}
+
+/* Эффект "прокачки навыка" - уровень повышается */
+.crypto-text-block .highlight.skill-level-up {
+    animation: skillLevelUp 1s ease-out;
+}
+
+@keyframes skillLevelUp {
+    0% {
+        transform: scale(1) translateZ(0);
+        text-shadow: 0 0 10px #ca0000;
+    }
+    50% {
+        transform: scale(1.15) translateZ(0);
+        text-shadow: 0 0 30px #ca0000, 0 0 50px #ff0000, 0 0 70px #ff3333;
+        background: linear-gradient(
+            135deg,
+            rgba(202, 0, 0, 0.4) 0%,
+            rgba(255, 0, 0, 0.6) 50%,
+            rgba(202, 0, 0, 0.4) 100%
+        );
+    }
+    100% {
+        transform: scale(1) translateZ(0);
+        text-shadow: 0 0 15px #ca0000, 0 0 25px #ff0000;
     }
 }
 

@@ -422,10 +422,13 @@
    <script src="../../scripts/chatbot.js?v=30"></script>
    <script src="scripts/table-modules.js" defer></script>
    
-   <!-- Интерактивные эффекты для текста -->
+   <!-- Интерактивные эффекты для текста с эффектом прокачки -->
    <script>
        (function() {
            'use strict';
+           
+           // Оптимизация: используем requestAnimationFrame для плавности
+           let animationFrameId = null;
            
            // Ждем загрузки DOM
            if (document.readyState === 'loading') {
@@ -436,59 +439,93 @@
            
            function initTextEffects() {
                const introText = document.querySelector('.intro-text');
-               if (!introText) return;
+               const textBlock = document.querySelector('.crypto-text-block');
+               if (!introText || !textBlock) return;
                
-               // Анимация появления слов с задержкой
+               // Анимация появления слов с задержкой (оптимизировано)
                const highlights = introText.querySelectorAll('.highlight');
                highlights.forEach((highlight, index) => {
-                   highlight.style.animationDelay = `${0.5 + index * 0.2}s`;
+                   // Используем CSS переменные для оптимизации
+                   highlight.style.setProperty('--delay', `${0.5 + index * 0.2}s`);
                    highlight.style.opacity = '0';
-                   highlight.style.transform = 'translateY(10px)';
+                   highlight.style.transform = 'translateY(10px) translateZ(0)';
                    
-                   setTimeout(() => {
-                       highlight.style.transition = 'all 0.6s ease-out';
-                       highlight.style.opacity = '1';
-                       highlight.style.transform = 'translateY(0)';
-                   }, 500 + index * 200);
+                   // Используем requestAnimationFrame для плавности
+                   requestAnimationFrame(() => {
+                       setTimeout(() => {
+                           highlight.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+                           highlight.style.opacity = '1';
+                           highlight.style.transform = 'translateY(0) translateZ(0)';
+                       }, 500 + index * 200);
+                   });
                });
                
-               // Эффект при наведении на весь текст
-               introText.addEventListener('mouseenter', function() {
-                   this.style.transition = 'all 0.3s ease';
-                   this.style.transform = 'scale(1.01)';
+               // Эффект при наведении на весь блок (оптимизировано)
+               let hoverTimeout = null;
+               textBlock.addEventListener('mouseenter', function() {
+                   if (hoverTimeout) cancelAnimationFrame(hoverTimeout);
+                   hoverTimeout = requestAnimationFrame(() => {
+                       this.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
+                       this.style.transform = 'translateY(-5px) translateZ(0)';
+                       this.style.boxShadow = '0 10px 40px rgba(202, 0, 0, 0.3), 0 0 60px rgba(202, 0, 0, 0.2)';
+                   });
                });
                
-               introText.addEventListener('mouseleave', function() {
-                   this.style.transform = 'scale(1)';
+               textBlock.addEventListener('mouseleave', function() {
+                   if (hoverTimeout) cancelAnimationFrame(hoverTimeout);
+                   hoverTimeout = requestAnimationFrame(() => {
+                       this.style.transform = 'translateY(0) translateZ(0)';
+                       this.style.boxShadow = '0 0 30px rgba(202, 0, 0, 0.2), inset 0 0 50px rgba(202, 0, 0, 0.05)';
+                   });
                });
                
-               // Плавное появление при прокрутке (Intersection Observer)
+               // Плавное появление при прокрутке (Intersection Observer - оптимизировано)
                const observerOptions = {
-                   threshold: 0.2,
-                   rootMargin: '0px 0px -100px 0px'
+                   threshold: 0.1,
+                   rootMargin: '0px 0px -50px 0px'
                };
                
                const observer = new IntersectionObserver(function(entries) {
                    entries.forEach(entry => {
                        if (entry.isIntersecting) {
-                           entry.target.style.opacity = '1';
-                           entry.target.style.transform = 'translateY(0)';
+                           requestAnimationFrame(() => {
+                               entry.target.style.opacity = '1';
+                               entry.target.style.transform = 'translateY(0) translateZ(0)';
+                           });
                        }
                    });
                }, observerOptions);
                
                observer.observe(introText);
                
-               // Периодическая пульсация для важных слов
-               setInterval(() => {
-                   const randomHighlight = highlights[Math.floor(Math.random() * highlights.length)];
-                   if (randomHighlight) {
-                       randomHighlight.style.animation = 'none';
-                       setTimeout(() => {
-                           randomHighlight.style.animation = 'flicker 4s infinite, pulseGlow 3s ease-in-out infinite';
-                       }, 10);
-                   }
-               }, 5000);
+               // Эффект "прокачки навыков" - периодическое обновление (оптимизировано)
+               let skillUpdateInterval = null;
+               function updateSkills() {
+                   if (skillUpdateInterval) return; // Предотвращаем множественные интервалы
+                   
+                   skillUpdateInterval = setInterval(() => {
+                       requestAnimationFrame(() => {
+                           const randomHighlight = highlights[Math.floor(Math.random() * highlights.length)];
+                           if (randomHighlight) {
+                               // Добавляем класс для эффекта прокачки
+                               randomHighlight.classList.add('skill-level-up');
+                               setTimeout(() => {
+                                   randomHighlight.classList.remove('skill-level-up');
+                               }, 1000);
+                           }
+                       });
+                   }, 6000); // Каждые 6 секунд
+               }
+               
+               // Запускаем эффект прокачки после загрузки
+               setTimeout(updateSkills, 2000);
+               
+               // Очистка при размонтировании (предотвращение утечек памяти)
+               window.addEventListener('beforeunload', function() {
+                   if (skillUpdateInterval) clearInterval(skillUpdateInterval);
+                   if (hoverTimeout) cancelAnimationFrame(hoverTimeout);
+                   observer.disconnect();
+               });
            }
        })();
    </script>
