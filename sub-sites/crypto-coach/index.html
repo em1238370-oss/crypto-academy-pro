@@ -10,7 +10,48 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=8.0">
+    <link rel="stylesheet" href="styles.css?v=9.0">
+   <!-- СКРИПТ УДАЛЕНИЯ СТАТИСТИКИ ЗАГРУЖАЕТСЯ ПЕРВЫМ И СРАЗУ -->
+   <script>
+       (function() {
+           'use strict';
+           function killStats() {
+               // Удаляем ВСЕ элементы со статистикой
+               document.querySelectorAll('*').forEach(el => {
+                   const text = (el.textContent || '').trim();
+                   const hasStats = (text.includes('Lessons Read') || text.includes('LESSONS READ') || 
+                                   text.includes('Skills Learned') || text.includes('SKILLS LEARNED') || 
+                                   text.includes('Experience Points') || text.includes('EXPERIENCE POINTS')) &&
+                                  (text.includes('📚') || text.includes('⚡') || text.includes('🎯') || 
+                                   el.classList.contains('learning-stats') || el.classList.contains('stat-item'));
+                   if (hasStats && el.children.length >= 2) {
+                       el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; margin: 0 !important; padding: 0 !important; position: absolute !important; left: -9999px !important; pointer-events: none !important;';
+                       el.remove();
+                   }
+               });
+               // Удаляем по классам
+               document.querySelectorAll('.learning-stats, .stat-item, [class*="stat-item"], [class*="learning-stats"]').forEach(el => {
+                   el.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; height: 0 !important; width: 0 !important; margin: 0 !important; padding: 0 !important; position: absolute !important; left: -9999px !important; pointer-events: none !important;';
+                   el.remove();
+               });
+           }
+           // Удаляем СРАЗУ
+           killStats();
+           // Удаляем каждые 50ms
+           setInterval(killStats, 50);
+           // MutationObserver для всего документа
+           if (document.body) {
+               new MutationObserver(killStats).observe(document.body, {childList: true, subtree: true});
+           }
+           // При загрузке DOM
+           if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', function() {
+                   killStats();
+                   setInterval(killStats, 50);
+               });
+           }
+       })();
+   </script>
    <script src="scripts/table-modules.js" defer></script>
 </head>
 <body>
@@ -75,6 +116,7 @@
                <div class="intro-text">
                    Welcome to <span class="highlight" data-word="coach" data-skill="coaching">Coach Crypto</span>, your gateway to mastering the exciting world of cryptocurrency! This section provides a solid foundation, equipping you with the essential knowledge to navigate the crypto space confidently. The best way to truly understand crypto is through <span class="highlight" data-word="hands-on" data-skill="practice">hands-on experience</span>—learning by doing sticks like nothing else. <span class="highlight" data-word="coach" data-skill="coaching">Coach Crypto</span> offers the tools, insights, and guidance to experiment, practice, and grow. While we'll help you deepen your understanding and sharpen your skills, the real magic happens when you apply what you learn and discover through your own journey. This is your <span class="highlight" data-word="playground" data-skill="exploration">playground</span> to explore, make mistakes, and unlock the potential of crypto—start here and experiment boldly!<br><br><span class="highlight warning-notice" data-word="warning">⚠ IMPORTANT NOTICE:</span> The modules presented here are designed for training and development purposes only. Any advice, suggestions, or strategies offered are educational tools meant to enhance your understanding. October 10th proved to us all in crypto that it's impossible to calculate everything—cryptocurrency markets are unpredictable and volatile. You must evaluate all risks yourself and manage your risk accordingly. Any actions you take based on information or suggestions in these modules are entirely your own responsibility. In case of any loss, the responsibility lies solely with you. Trade at your own risk.
                </div>
+               <!-- БЛОК СТАТИСТИКИ УДАЛЕН - НЕ ДОБАВЛЯТЬ ОБРАТНО -->
            </div>
            
            <!-- Таблица с модулями -->
