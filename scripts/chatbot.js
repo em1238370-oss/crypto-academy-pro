@@ -6,7 +6,7 @@
 
 
 
-const API_BASE_URL = window.__API_BASE_URL__ || 'http://localhost:4000';
+const API_BASE_URL = window.__API_BASE_URL__ || (window.location.hostname === 'localhost' ? 'http://localhost:4000' : window.location.origin);
 
 
 
