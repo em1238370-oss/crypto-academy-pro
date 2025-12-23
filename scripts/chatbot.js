@@ -801,7 +801,10 @@ async function handlePayWithCryptoDirect(event) {
 
            headers: { 'Content-Type': 'application/json' },
 
-           body: JSON.stringify({ userId })
+           body: JSON.stringify({ 
+               userId,
+               paymentMethod: paymentMethod // 'crypto' or 'card' or 'any'
+           })
 
        });
 

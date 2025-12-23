@@ -702,7 +702,7 @@ app.post('/api/payments/yookassa/callback', express.json(), (req, res) => {
 
 // NOWPayments invoice creation endpoint (international brand, Russia-friendly, accepts cards + crypto)
 app.post('/api/payments/nowpayments/invoice', async (req, res) => {
- const { userId, amount, description } = req.body;
+ const { userId, amount, description, paymentMethod } = req.body;
 
  if (!userId) {
    return res.status(400).json({ error: 'userId is required' });
@@ -724,23 +724,41 @@ app.post('/api/payments/nowpayments/invoice', async (req, res) => {
  // NOWPayments API format
  // For card payments, NOWPayments automatically enables cards if account is verified
  // Cards (Visa, Mastercard) are available through their payment page
+ // 
+ // IMPORTANT: pay_currency handling based on NOWPayments API documentation:
+ // - If omitted: user can choose any payment method (cards + crypto) - BEST OPTION
+ // - If empty string "": may cause "pay_currency is required" error
+ // - If specific currency (e.g., "usdt"): only that crypto currency
+ // 
+ // Strategy: Omit pay_currency completely to allow both cards and crypto
+ const userPaymentMethod = paymentMethod || 'any'; // 'crypto', 'card', or 'any'
+ 
  const payload = {
    price_amount: invoiceAmount,
    price_currency: 'usd',
-   pay_currency: '', // Empty string allows user to choose any currency (including cards)
-   // NOWPayments requires pay_currency to be a string (not null, not omitted)
-   // Empty string means user can choose any payment method
    order_id: orderId,
    order_description: description || `Subscription - $${invoiceAmount.toFixed(2)}`,
    ipn_callback_url: callbackUrl,
    success_url: successUrl,
    cancel_url: cancelUrl,
-   // Card payments are automatically enabled if account is verified
    is_fixed_rate: false,
    is_fee_paid_by_user: false
  };
+ 
+ // Only add pay_currency if user specifically wants crypto-only payment
+ // If omitted completely, NOWPayments shows all available payment methods (cards + crypto)
+ if (userPaymentMethod === 'crypto') {
+   payload.pay_currency = 'usdt'; // USDT for crypto payments
+   // Note: This will show only crypto options, not cards
+ } else {
+   // For 'any' or 'card': omit pay_currency completely
+   // This allows user to choose between cards and crypto on NOWPayments payment page
+   // DO NOT add pay_currency field at all
+ }
 
  console.log('Creating NOWPayments invoice with payload:', { ...payload, order_id: orderId });
+ console.log('Payment method requested:', userPaymentMethod);
+ console.log('pay_currency in payload:', payload.pay_currency || 'OMITTED (allows cards + crypto)');
 
  try {
    const apiUrl = 'https://api.nowpayments.io/v1/payment';
