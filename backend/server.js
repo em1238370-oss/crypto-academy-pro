@@ -747,14 +747,21 @@ app.post('/api/payments/nowpayments/invoice', async (req, res) => {
  
  // IMPORTANT: pay_currency is REQUIRED by NOWPayments API
  // 
- // SIMPLE SOLUTION: Always use 'usd' as pay_currency
- // This allows:
- // 1. Direct card payments in USD (no conversion needed)
- // 2. User can switch to USDT or any other crypto on NOWPayments payment page
+ // NEW APPROACH: Use correct USDT currency code based on blockchain
+ // NOWPayments requires specific codes:
+ // - 'usdterc20' for USDT on Ethereum network
+ // - 'usdttrc20' for USDT on Tron network
+ // - 'usdt' may not work and causes "Can not get estimate" error
  // 
- // This avoids "Can not get estimate" errors because no conversion is needed for USD->USD
- // User can manually select USDT on the payment page if they want crypto
- payload.pay_currency = 'usd';
+ // Try USDT on Tron (TRC20) first as it's cheaper and faster
+ // If user wants card payment, they can choose it on NOWPayments page
+ if (userPaymentMethod === 'card') {
+   // For cards: use 'usd' to allow direct card payment
+   payload.pay_currency = 'usd';
+ } else {
+   // For crypto: use USDT on Tron network (most common and cheapest)
+   payload.pay_currency = 'usdttrc20';
+ }
 
  console.log('Creating NOWPayments invoice with payload:', { ...payload, order_id: orderId });
  console.log('Payment method requested:', userPaymentMethod);
