@@ -17,6 +17,8 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
 
 const app = express();
 app.use(cors());
+// Store raw body for NOWPayments webhook signature verification
+app.use('/api/payments/nowpayments/callback', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
 // Disable strict CSP headers that block inline scripts
@@ -725,7 +727,9 @@ app.post('/api/payments/nowpayments/invoice', async (req, res) => {
  const payload = {
    price_amount: invoiceAmount,
    price_currency: 'usd',
-   pay_currency: null, // null means user can choose any supported currency (including cards)
+   // pay_currency: omit this field to allow user to choose any currency (including cards)
+   // If we set it to null, API returns error "pay_currency must be a string"
+   // If we omit it completely, user can choose any payment method
    order_id: orderId,
    order_description: description || `Subscription - $${invoiceAmount.toFixed(2)}`,
    ipn_callback_url: callbackUrl,
@@ -806,12 +810,37 @@ app.post('/api/payments/nowpayments/invoice', async (req, res) => {
 });
 
 // NOWPayments callback endpoint
-app.post('/api/payments/nowpayments/callback', express.json(), (req, res) => {
+app.post('/api/payments/nowpayments/callback', express.raw({ type: 'application/json' }), (req, res) => {
  if (!nowpaymentsIpnSecret) {
    return res.status(500).json({ error: 'nowpayments_not_configured' });
  }
 
- const { payment_id, payment_status, order_id } = req.body;
+ // Verify IPN signature for security
+ const signature = req.headers['x-nowpayments-sig'];
+ const rawBody = req.body.toString();
+ 
+ if (signature && nowpaymentsIpnSecret) {
+   const expectedSignature = crypto
+     .createHmac('sha512', nowpaymentsIpnSecret)
+     .update(rawBody)
+     .digest('hex');
+   
+   if (signature !== expectedSignature) {
+     console.error('❌ NOWPayments IPN signature verification failed');
+     return res.status(401).json({ error: 'invalid_signature' });
+   }
+ }
+
+ // Parse JSON body
+ let body;
+ try {
+   body = JSON.parse(rawBody);
+ } catch (e) {
+   console.error('Failed to parse NOWPayments callback body:', e);
+   return res.status(400).json({ error: 'invalid_json' });
+ }
+
+ const { payment_id, payment_status, order_id } = body;
  console.log('NOWPayments callback received:', { payment_id, payment_status, order_id });
 
  if (!order_id) {
