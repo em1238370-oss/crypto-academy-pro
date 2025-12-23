@@ -69,34 +69,42 @@
        </div>
    </div>
    
-   <div class="chat-widget" id="chatWidget">
-       <button class="chat-button" id="chatButton">
-           <svg viewBox="0 0 24 24">
+   <!-- Chat Widget - ВСЕГДА В ПРАВОМ НИЖНЕМ УГЛУ ЭКРАНА, ВНЕ .page, НА УРОВНЕ body -->
+   <div class="chat-widget" id="chatWidget" style="position: fixed !important; bottom: 20px !important; right: 20px !important; top: auto !important; left: auto !important; z-index: 2147483647 !important; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; margin: 0 !important; padding: 0 !important; transform: none !important; width: auto !important; height: auto !important;">
+       <button class="chat-button" id="chatButton" aria-label="Open chat" style="display: flex !important; visibility: visible !important; opacity: 1 !important; position: relative !important; width: 62px !important; height: 62px !important; border-radius: 50% !important; background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%) !important; border: 2px solid #3a3a3a !important; cursor: pointer !important; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important; align-items: center !important; justify-content: center !important; pointer-events: auto !important; margin: 0 !important; padding: 0 !important;">
+           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width: 31px !important; height: 31px !important; fill: #FFFFFF !important; display: block !important;">
                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
            </svg>
        </button>
-       <div class="chat-container" id="chatContainer">
+       <div class="chat-container" id="chatContainer" aria-live="polite">
            <div class="chat-header">
-               <h3><span class="status-dot"></span>Crypto AI Assistant</h3>
-               <button class="close-chat" id="closeChat">&times;</button>
+               <h3>
+                   <span class="status-dot" aria-hidden="true"></span>
+                   Crypto AI Assistant
+               </h3>
+               <button class="close-chat" id="closeChat" aria-label="Close chat">&times;</button>
            </div>
            <div class="chat-subscription-section" id="subscriptionSection">
                <div class="chat-timer-display" id="timerDisplay">24:00</div>
            </div>
            <div class="chat-expired-overlay hidden" id="chatExpiredOverlay">
                <div class="chat-expired-content">
-                   <p class="chat-expired-text">Subscribe to continue using this amazing bot for $15/month</p>
+                   <p class="chat-expired-text">Subscribe to continue using this amazing bot for $10/month</p>
                    <div class="payment-method-buttons">
-                       <button class="chat-expired-btn payment-method-btn" data-method="crypto">💳 Pay with Crypto (USDT)</button>
-                       <button class="chat-expired-btn payment-method-btn" data-method="card">🏦 Pay with Card</button>
+                       <button class="chat-expired-btn payment-method-btn" data-method="crypto" type="button" data-original-text="💳 Pay with Crypto (USDT)">
+                           💳 Pay with Crypto (USDT)
+                       </button>
+                       <button class="chat-expired-btn payment-method-btn" data-method="card" type="button" data-original-text="💳 Pay with Card (Visa/Mastercard)">
+                           💳 Pay with Card (Visa/Mastercard)
+                       </button>
                    </div>
                </div>
            </div>
            <div class="chat-messages" id="chatMessages">
                <div class="message bot">
-                   <div class="message-avatar">🇺🇸</div>
+                   <div class="message-avatar" aria-hidden="true">🇺🇸</div>
                    <div class="message-content">
-                       Hey! I'm your Crypto AI Assistant powered by Mistral AI 🚀
+                       Hey! I'm your Crypto AI Assistant powered by Mistral AI 🚀 I understand all crypto terms, slang, and even "dumb" questions! Ask me anything about Bitcoin, DeFi, NFTs, trading, security, or crypto culture (HODL, FOMO, FUD, moon, lambo, degen, WAGMI)!
                        <div class="quick-questions">
                            <button class="quick-question-btn" data-question="What is HODL?">What is HODL?</button>
                            <button class="quick-question-btn" data-question="Explain DeFi">Explain DeFi</button>
@@ -109,9 +117,9 @@
            </div>
            <div class="chat-input-container">
                <div class="chat-input-wrapper">
-                   <input type="text" class="chat-input" id="chatInput" placeholder="Ask about crypto...">
-                   <button class="send-button" id="sendButton">
-                       <svg viewBox="0 0 24 24">
+                   <input type="text" class="chat-input" id="chatInput" placeholder="Ask about crypto..." autocomplete="off">
+                   <button class="send-button" id="sendButton" aria-label="Send message">
+                       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                        </svg>
                    </button>
@@ -147,7 +155,7 @@
    
    <!-- Load course.js FIRST so toggleLesson is available immediately -->
    <script src="course.js"></script>
-   <script src="../../scripts/chatbot.js?v=30"></script>
+   <script src="../../scripts/chatbot.js?v=31"></script>
    <script>
        // Close subscription modal when clicking outside
        window.addEventListener('click', function(event) {
@@ -165,26 +173,120 @@
        });
    </script>
    <script>
+       // ПРИНУДИТЕЛЬНАЯ ИНИЦИАЛИЗАЦИЯ ЧАТА
        (function() {
-           function forceChatPosition() {
+           function initChatWidget() {
                const chatWidget = document.getElementById('chatWidget');
-               if (!chatWidget) return;
+               const chatButton = document.getElementById('chatButton');
+               const chatContainer = document.getElementById('chatContainer');
+               const closeChat = document.getElementById('closeChat');
+               
+               if (!chatWidget || !chatButton || !chatContainer) {
+                   console.warn('Chat elements not found, retrying...');
+                   setTimeout(initChatWidget, 100);
+                   return;
+               }
+               
+               // Перемещаем чат в body если нужно
                if (chatWidget.parentElement !== document.body) {
                    document.body.appendChild(chatWidget);
                }
-               chatWidget.style.setProperty('position', 'fixed', 'important');
-               chatWidget.style.setProperty('bottom', '20px', 'important');
-               chatWidget.style.setProperty('right', '20px', 'important');
-               chatWidget.style.setProperty('z-index', '2147483647', 'important');
+               
+               // Принудительно устанавливаем стили
+               chatWidget.style.cssText = 'position: fixed !important; bottom: 20px !important; right: 20px !important; z-index: 2147483647 !important; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important;';
+               chatButton.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; cursor: pointer !important; width: 62px !important; height: 62px !important; border-radius: 50% !important; background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%) !important; border: 2px solid #3a3a3a !important; align-items: center !important; justify-content: center !important; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;';
+               
+               // Удаляем все старые обработчики и добавляем новый
+               const newButton = chatButton.cloneNode(true);
+               chatButton.parentNode.replaceChild(newButton, chatButton);
+               const newChatButton = document.getElementById('chatButton');
+               
+               // Добавляем обработчик открытия/закрытия
+               newChatButton.addEventListener('click', function(e) {
+                   e.preventDefault();
+                   e.stopPropagation();
+                   console.log('✅ Chat button clicked!');
+                   
+                   if (chatContainer.classList.contains('active')) {
+                       chatContainer.classList.remove('active');
+                       chatContainer.style.display = 'none';
+                   } else {
+                       chatContainer.classList.add('active');
+                       chatContainer.style.cssText = 'position: fixed !important; bottom: 90px !important; right: 20px !important; width: 420px !important; height: 600px !important; background: #1a1a1a !important; border: 1px solid #2a2a2a !important; border-radius: 15px !important; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; z-index: 2147483646 !important; visibility: visible !important; opacity: 1 !important;';
+                       
+                       // СИНХРОНИЗАЦИЯ: Сразу показываем экран оплаты при открытии чата (как на главной странице)
+                       setTimeout(() => {
+                           const subscriptionSection = document.getElementById('subscriptionSection');
+                           const chatExpiredOverlay = document.getElementById('chatExpiredOverlay');
+                           const chatMessages = document.getElementById('chatMessages');
+                           const chatInputContainer = document.querySelector('.chat-input-container');
+                           
+                           if (subscriptionSection && chatExpiredOverlay) {
+                               // Скрываем таймер
+                               subscriptionSection.classList.add('hidden');
+                               subscriptionSection.style.display = 'none';
+                               
+                               // Показываем экран оплаты
+                               chatExpiredOverlay.classList.remove('hidden');
+                               chatExpiredOverlay.style.display = 'flex';
+                               chatExpiredOverlay.style.visibility = 'visible';
+                               chatExpiredOverlay.style.opacity = '1';
+                               
+                               // Убеждаемся что кнопки оплаты доступны
+                               const paymentButtons = chatExpiredOverlay.querySelectorAll('.payment-method-btn');
+                               paymentButtons.forEach(btn => {
+                                   btn.style.pointerEvents = 'auto';
+                                   btn.disabled = false;
+                               });
+                               
+                               // Чат остается доступным - показываем сообщения и поле ввода
+                               if (chatMessages) {
+                                   chatMessages.style.display = 'flex';
+                               }
+                               if (chatInputContainer) {
+                                   chatInputContainer.style.display = 'block';
+                               }
+                               
+                               console.log('✅ Payment screen shown (synchronized with main page)');
+                           }
+                       }, 100);
+                   }
+               });
+               
+               // Обработчик закрытия
+               if (closeChat) {
+                   closeChat.addEventListener('click', function(e) {
+                       e.preventDefault();
+                       e.stopPropagation();
+                       chatContainer.classList.remove('active');
+                       chatContainer.style.display = 'none';
+                   });
+               }
+               
+               console.log('✅ Chat widget initialized successfully');
            }
-           forceChatPosition();
+           
+           // Множественные попытки инициализации
+           initChatWidget();
+           
            if (document.readyState === 'loading') {
-               document.addEventListener('DOMContentLoaded', forceChatPosition);
+               document.addEventListener('DOMContentLoaded', initChatWidget);
            }
-           window.addEventListener('load', forceChatPosition);
-           window.addEventListener('scroll', forceChatPosition, { passive: true });
-           window.addEventListener('resize', forceChatPosition);
-           setInterval(forceChatPosition, 50);
+           
+           window.addEventListener('load', initChatWidget);
+           
+           // Периодическая проверка
+           setTimeout(initChatWidget, 500);
+           setTimeout(initChatWidget, 1000);
+           setTimeout(initChatWidget, 2000);
+           
+           // Проверка каждые 2 секунды на случай динамической загрузки
+           setInterval(function() {
+               const chatButton = document.getElementById('chatButton');
+               if (chatButton && !chatButton.onclick) {
+                   initChatWidget();
+               }
+           }, 2000);
        })();
        
        // Load course content
@@ -323,3 +425,4 @@
    </script>
 </body>
 </html>
+
