@@ -1677,8 +1677,14 @@ div:has-text("Experience Points") {
     background: rgba(255, 0, 0, 0.1);
     border: 1px solid rgba(255, 0, 0, 0.3);
     border-radius: 10px;
-    padding: 20px;
+    padding: 30px;
     margin-top: 20px;
+    min-height: auto !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow-y: visible !important;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .ai-recommendations h4 {
@@ -1687,11 +1693,87 @@ div:has-text("Experience Points") {
 }
 
 .recommendation-item {
-    background: rgba(0, 0, 0, 0.5);
-    padding: 15px;
-    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 25px;
+    border-radius: 12px;
     margin-bottom: 10px;
-    border-left: 4px solid #ffffff;
+    border-left: 4px solid #ffd700;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+    min-height: auto !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow-y: visible !important;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.recommendation-item p {
+    color: #ffffff !important;
+    font-weight: bold !important;
+    line-height: 1.9;
+    margin: 10px 0;
+    font-size: 1.05em !important;
+    text-align: left !important;
+}
+
+.recommendation-item h3,
+.recommendation-item h4,
+.recommendation-item h5 {
+    color: #ffd700 !important;
+    font-weight: bold !important;
+    margin-top: 20px;
+    margin-bottom: 15px;
+    text-align: left !important;
+}
+
+.recommendation-item h3 {
+    font-size: 1.4em !important;
+}
+
+.recommendation-item h4 {
+    font-size: 1.3em !important;
+}
+
+.recommendation-item h5 {
+    font-size: 1.2em !important;
+}
+
+.recommendation-item strong {
+    color: #ffd700 !important;
+    font-weight: bold !important;
+    font-size: 1.1em !important;
+}
+
+.recommendation-item em {
+    color: #ffaaaa !important;
+    font-style: italic !important;
+}
+
+.recommendation-item div {
+    margin: 10px 0;
+    padding: 8px 0;
+    text-align: left !important;
+}
+
+.ai-recommendations p {
+    color: #ffffff !important;
+    font-weight: bold !important;
+    text-align: left !important;
+}
+
+#recommendationsContent {
+    min-height: auto !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow-y: visible !important;
+    width: 100%;
+    text-align: left !important;
+}
+
+#recommendationsContent p {
+    color: #ffffff !important;
+    font-weight: bold !important;
+    text-align: left !important;
 }
 
 .leaderboard {

@@ -85,7 +85,7 @@
            </div>
            <div class="chat-expired-overlay hidden" id="chatExpiredOverlay">
                <div class="chat-expired-content">
-                   <p class="chat-expired-text">Subscribe to continue using this amazing bot for $10/month</p>
+                   <p class="chat-expired-text">Subscribe to continue using this amazing bot for $15/month</p>
                    <div class="payment-method-buttons">
                        <button class="chat-expired-btn payment-method-btn" data-method="crypto">💳 Pay with Crypto (USDT)</button>
                        <button class="chat-expired-btn payment-method-btn" data-method="card">🏦 Pay with Card</button>
@@ -120,8 +120,50 @@
        </div>
    </div>
    
-   <script src="../../scripts/chatbot.js?v=30"></script>
+   <!-- Subscription Modal -->
+   <div id="subscriptionModal" class="subscription-modal" style="display: none;">
+       <div class="subscription-modal-content">
+           <button class="subscription-modal-close" onclick="closeSubscriptionModal()">&times;</button>
+           <div class="subscription-modal-header">
+               <h2>🚀 Unlock Premium Lessons</h2>
+           </div>
+           <div class="subscription-modal-body">
+               <p class="subscription-modal-text">
+                   <strong>Want real tools, not just words?</strong><br><br>
+                   <span id="subscriptionDescriptionText">Learn the market through tools and experience, not just words. Simple explanations with visual diagrams make everything easy to understand.</span><br><br>
+                   <strong>Subscribe for $15/month</strong> to unlock lessons 2-6!
+               </p>
+               <div class="subscription-modal-buttons">
+                   <button class="subscription-pay-btn crypto-btn" onclick="payWithCrypto()">
+                       💳 Pay with Crypto (USDT)
+                   </button>
+                   <button class="subscription-pay-btn card-btn" onclick="payWithCard()">
+                       🏦 Pay with Card (Visa/Mastercard)
+                   </button>
+               </div>
+           </div>
+       </div>
+   </div>
+   
+   <!-- Load course.js FIRST so toggleLesson is available immediately -->
    <script src="course.js"></script>
+   <script src="../../scripts/chatbot.js?v=30"></script>
+   <script>
+       // Close subscription modal when clicking outside
+       window.addEventListener('click', function(event) {
+           const modal = document.getElementById('subscriptionModal');
+           if (event.target === modal) {
+               closeSubscriptionModal();
+           }
+       });
+       
+       // Close modal with Escape key
+       document.addEventListener('keydown', function(event) {
+           if (event.key === 'Escape') {
+               closeSubscriptionModal();
+           }
+       });
+   </script>
    <script>
        (function() {
            function forceChatPosition() {
@@ -147,6 +189,14 @@
        
        // Load course content
        document.addEventListener('DOMContentLoaded', function() {
+           // Ensure toggleLesson is available before loading content
+           if (typeof window.toggleLesson !== 'function') {
+               console.error('toggleLesson is not defined! Waiting...');
+               setTimeout(arguments.callee, 100);
+               return;
+           }
+           console.log('toggleLesson is available, loading content...');
+           
            const courseContent = document.getElementById('course-content');
            if (courseContent) {
                // Load course content from external file
@@ -170,19 +220,34 @@
                        const bodyContent = tempDiv.querySelector('body');
                        if (bodyContent) {
                            courseContent.innerHTML = bodyContent.innerHTML;
+                           console.log('✅ Loaded content from body, length:', bodyContent.innerHTML.length);
                        } else {
                            // If no body tag, use the container directly
                            const container = tempDiv.querySelector('.container');
                            if (container) {
                                courseContent.innerHTML = container.outerHTML;
+                               console.log('✅ Loaded content from container, length:', container.outerHTML.length);
                            } else {
                                courseContent.innerHTML = tempDiv.innerHTML;
+                               console.log('✅ Loaded content from tempDiv, length:', tempDiv.innerHTML.length);
                            }
                        }
                        
-                       // Extract and execute scripts
+                       // Verify content was loaded
+                       const loadedLessons = courseContent.querySelectorAll('.lesson-item');
+                       console.log('📚 Loaded', loadedLessons.length, 'lesson items');
+                       if (loadedLessons.length === 0) {
+                           console.error('❌ NO LESSON ITEMS FOUND AFTER LOADING!');
+                       }
+                       
+                       // Extract and execute scripts - but skip if they would conflict
                        const scripts = tempDiv.querySelectorAll('script');
                        scripts.forEach(oldScript => {
+                           // Skip scripts that might conflict
+                           if (oldScript.src && oldScript.src.includes('course.js')) {
+                               console.log('Skipping duplicate course.js');
+                               return;
+                           }
                            const newScript = document.createElement('script');
                            if (oldScript.src) {
                                newScript.src = oldScript.src;
@@ -193,17 +258,61 @@
                        });
                        
                        // Re-initialize lesson items after content is loaded
-                       setTimeout(() => {
+                       setTimeout(async () => {
                            const lessonItems = document.querySelectorAll('.lesson-item');
-                           lessonItems.forEach(item => {
+                           console.log('Found', lessonItems.length, 'lesson items after content load');
+                           
+                           if (lessonItems.length === 0) {
+                               console.warn('No lesson items found, retrying...');
+                               setTimeout(arguments.callee, 500);
+                               return;
+                           }
+                           
+                           // Ensure toggleLesson is available
+                           if (typeof window.toggleLesson !== 'function') {
+                               console.error('toggleLesson is not available!');
+                           } else {
+                               console.log('toggleLesson is available');
+                           }
+                           
+                           lessonItems.forEach((item, index) => {
                                const content = item.querySelector('.lesson-content');
                                const arrow = item.querySelector('.lesson-arrow');
+                               const header = item.querySelector('.lesson-header');
+                               
                                if (content && arrow) {
                                    content.style.display = 'none';
                                    arrow.textContent = '▼';
                                }
+                               
+                               // Ensure onclick is set and event listener works
+                               if (header) {
+                                   // Set onclick attribute
+                                   // Remove any existing event listeners by cloning
+                                   const newHeader = header.cloneNode(true);
+                                   header.parentNode.replaceChild(newHeader, header);
+                                   const updatedHeader = item.querySelector('.lesson-header');
+                                   
+                                   // Set onclick only (no duplicate listeners)
+                                   if (updatedHeader) {
+                                       updatedHeader.setAttribute('onclick', 'window.toggleLesson(this, event)');
+                                   }
+                               }
                            });
-                       }, 100);
+                           
+                           // Fetch subscription status and block paid lessons after content is loaded
+                           if (typeof window.fetchSubscriptionStatus === 'function' && typeof window.blockPaidLessons === 'function') {
+                               console.log('Fetching subscription status and blocking lessons...');
+                               await window.fetchSubscriptionStatus();
+                               window.blockPaidLessons();
+                               console.log('Blocking complete');
+                           } else {
+                               console.error('Functions not available:', {
+                                   fetchSubscriptionStatus: typeof window.fetchSubscriptionStatus,
+                                   blockPaidLessons: typeof window.blockPaidLessons
+                               });
+                           }
+                       }, 1500);
                    })
                    .catch(error => {
                        console.error('Error loading course content:', error);

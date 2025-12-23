@@ -93,8 +93,9 @@
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             position: relative;
-            will-change: transform, box-shadow;
-            transform: translateZ(0);
+            z-index: 1; /* Lower than title (z-index: 100) to prevent blocking */
+            will-change: box-shadow;
+            transform: none !important; /* Prevent any transform that could move the block */
         }
 
         /* Блокчейн-паттерн (сетка) */
@@ -138,7 +139,8 @@
         }
 
         .lesson-item:hover {
-            transform: translateY(-4px) scale(1.01);
+            /* Removed translateY and scale to prevent blocking the title above */
+            /* Only visual effects (shadow, border, background) without position changes */
             box-shadow: 
                 0 12px 40px rgba(0, 0, 0, 0.3),
                 0 0 20px rgba(79, 195, 247, 0.3),
@@ -1427,7 +1429,7 @@
     <div class="container">
         <!-- Lesson 1: Free -->
         <div class="lesson-item">
-            <div class="lesson-header" onclick="toggleLesson(this)">
+            <div class="lesson-header" onclick="window.toggleLesson(this, event)">
                 <div class="lesson-number">1</div>
                 <div class="lesson-title-wrapper">
                     <span class="lesson-title">Introduction to Cryptocurrencies</span>
@@ -2434,7 +2436,7 @@
 
         <!-- Lesson 2: How Blockchain Works (Paid) -->
         <div class="lesson-item">
-            <div class="lesson-header" onclick="toggleLesson(this)">
+            <div class="lesson-header" onclick="window.toggleLesson(this, event)">
                 <div class="lesson-number">2</div>
                 <div class="lesson-title-wrapper">
                     <span class="lesson-title">How Blockchain Works</span>
@@ -3378,7 +3380,7 @@
 
         <!-- Lesson 3: Crypto Wallets (Paid) -->
         <div class="lesson-item">
-            <div class="lesson-header" onclick="toggleLesson(this)">
+            <div class="lesson-header" onclick="window.toggleLesson(this, event)">
                 <div class="lesson-number">3</div>
                 <div class="lesson-title-wrapper">
                     <span class="lesson-title">Crypto Wallets</span>
@@ -4522,7 +4524,7 @@
 
         <!-- Lesson 4: Trading and Investing (Paid) -->
         <div class="lesson-item">
-            <div class="lesson-header" onclick="toggleLesson(this)">
+            <div class="lesson-header" onclick="window.toggleLesson(this, event)">
                 <div class="lesson-number">4</div>
                 <div class="lesson-title-wrapper">
                     <span class="lesson-title">Trading and Investing</span>
@@ -5401,7 +5403,7 @@
 
         <!-- Lesson 5: Altcoins and DeFi -->
         <div class="lesson-item">
-            <div class="lesson-header" onclick="toggleLesson(this)">
+            <div class="lesson-header" onclick="window.toggleLesson(this, event)">
                 <div class="lesson-number">5</div>
                 <div class="lesson-title-wrapper">
                     <span class="lesson-title">Altcoins and DeFi</span>
@@ -7557,7 +7559,7 @@
 
         <!-- Lesson 6: The Future of Cryptocurrencies -->
         <div class="lesson-item">
-            <div class="lesson-header" onclick="toggleLesson(this)">
+            <div class="lesson-header" onclick="window.toggleLesson(this, event)">
                 <div class="lesson-number">6</div>
                 <div class="lesson-title-wrapper">
                     <span class="lesson-title">The Future of Cryptocurrencies</span>

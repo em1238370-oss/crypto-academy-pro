@@ -180,7 +180,7 @@ async function getAIRecommendations() {
     
     if (!recommendationsContent) return;
     
-    recommendationsContent.innerHTML = '<p style="color: #cccccc;">🤖 Fetching real-time market data and analyzing...</p>';
+    recommendationsContent.innerHTML = '<p style="color: #ffffff; font-weight: bold;">🤖 Fetching real-time market data and analyzing...</p>';
 
     try {
         let priceData = [];
@@ -215,11 +215,81 @@ async function getAIRecommendations() {
             }
         }
         
-        const priceInfoText = priceData.map(d => 
-            `${d.symbol}: Current Price: $${d.price}, Market Cap: ${d.marketCap}, 24h Volume: ${d.volume24h}, 24h Change: ${d.priceChange24h}`
+        // Формируем информацию о портфеле с процентами
+        const portfolioInfo = Object.keys(selectedCoins).map(coin => {
+            const percentage = selectedCoins[coin].percentage || 0;
+            const coinData = priceData.find(d => d.symbol === coin);
+            return coinData ? {
+                symbol: coin,
+                percentage: percentage,
+                price: coinData.price,
+                marketCap: coinData.marketCap,
+                volume24h: coinData.volume24h,
+                priceChange24h: coinData.priceChange24h
+            } : null;
+        }).filter(Boolean);
+        
+        const portfolioText = portfolioInfo.map(coin => 
+            `${coin.symbol} (${coin.percentage}% of portfolio): Price $${coin.price}, Market Cap ${coin.marketCap}, 24h Volume ${coin.volume24h}, 24h Change ${coin.priceChange24h}%`
         ).join('\n\n');
         
-        const prompt = `You are an expert cryptocurrency investment advisor. Analyze these coins: ${coins}. Market data: ${priceInfoText}. Provide investment recommendations.`;
+        const prompt = `You are an expert cryptocurrency investment advisor and portfolio strategist. 
+
+USER'S PORTFOLIO ALLOCATION:
+${portfolioText}
+
+YOUR TASK - Provide a UNIQUE, DETAILED analysis in this EXACT format with clear sections:
+
+1. PORTFOLIO OVERVIEW:
+   - Quick summary of the portfolio composition
+   - Overall risk assessment
+   - Portfolio balance analysis
+
+2. COIN COMPARISON (Compare all selected coins):
+   - Which coins complement each other? Why?
+   - Which coins might conflict? Why?
+   - Best coin combinations for this portfolio
+   - Relative strengths and weaknesses of each coin
+
+3. TIME-BASED RECOMMENDATIONS (For each coin):
+
+   SHORT-TERM (1-7 days):
+   - Immediate actions to take
+   - Entry points for buying
+   - Quick profit-taking opportunities
+   - Day trading opportunities if applicable
+
+   MEDIUM-TERM (1-3 months):
+   - Price targets to watch
+   - When to accumulate more
+   - When to take partial profits
+   - Portfolio rebalancing suggestions
+
+   LONG-TERM (6+ months):
+   - Strategic hold recommendations
+   - Major price milestones
+   - When to exit completely
+   - Long-term growth potential
+
+4. KEY INSIGHTS FOR EACH COIN:
+   - Market cap analysis (what it means for this coin)
+   - Volume analysis (liquidity and trading ease)
+   - Price momentum (bullish/bearish signals)
+   - Unique characteristics of this coin
+
+5. ACTIONABLE RECOMMENDATIONS:
+   For each coin, provide SPECIFIC advice:
+   - WHEN TO BUY: Exact conditions, price levels, or indicators
+   - WHEN TO SELL: Specific targets, percentages, or exit conditions
+   - PORTFOLIO ADJUSTMENT: Increase/decrease percentage? Why?
+
+6. OVERALL STRATEGY:
+   - Portfolio balance assessment
+   - Risk management advice
+   - Opportunity identification
+   - Next steps
+
+IMPORTANT: Format your response with clear sections, use bullet points, and make it easy to read. Be specific with numbers and conditions.`;
 
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -230,11 +300,11 @@ async function getAIRecommendations() {
             body: JSON.stringify({
                 model: 'mistral-small',
                 messages: [
-                    { role: 'system', content: 'You are an expert cryptocurrency investment advisor.' },
+                    { role: 'system', content: 'You are an expert cryptocurrency investment advisor and portfolio strategist. You provide detailed, actionable, and unique investment advice based on real market data. Always be specific with numbers and conditions.' },
                     { role: 'user', content: prompt }
                 ],
-                temperature: 0.7,
-                max_tokens: 800
+                temperature: 0.8,
+                max_tokens: 1500
             })
         });
 
@@ -242,18 +312,39 @@ async function getAIRecommendations() {
         
         if (data.choices && data.choices[0]) {
             let recommendations = data.choices[0].message.content.trim();
-            recommendations = recommendations.replace(/\*\*(.*?)\*\*/g, '$1');
-            recommendations = recommendations.replace(/\*(.*?)\*/g, '$1');
+            
+            // Форматируем текст для красивого отображения
+            // Заменяем markdown на HTML
+            recommendations = recommendations
+                .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #ffd700; font-size: 1.1em;">$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em style="color: #ffaaaa;">$1</em>')
+                .replace(/^### (.*$)/gim, '<h5 style="color: #ffd700; font-size: 1.2em; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 5px; text-align: left;">$1</h5>')
+                .replace(/^## (.*$)/gim, '<h4 style="color: #ffd700; font-size: 1.3em; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid rgba(255, 215, 0, 0.5); padding-bottom: 8px; text-align: left;">$1</h4>')
+                .replace(/^# (.*$)/gim, '<h3 style="color: #ffd700; font-size: 1.4em; margin-top: 30px; margin-bottom: 20px; border-bottom: 3px solid rgba(255, 215, 0, 0.6); padding-bottom: 10px; text-align: left;">$1</h3>')
+                .replace(/^(\d+\.\s+.*$)/gim, '<div style="margin: 15px 0; padding-left: 10px; border-left: 3px solid rgba(255, 215, 0, 0.5); text-align: left;"><strong style="color: #ffd700;">$1</strong></div>')
+                .replace(/^[-•]\s+(.*$)/gim, '<div style="margin: 8px 0; padding-left: 20px; position: relative; text-align: left;"><span style="position: absolute; left: 0; color: #ffd700;">▸</span> $1</div>')
+                .replace(/\n\n/g, '</p><p style="margin: 15px 0; text-align: left;">')
+                .replace(/\n/g, '<br>');
+            
+            // Добавляем иконки для временных рамок
+            recommendations = recommendations
+                .replace(/SHORT-TERM|Short-term|1-7 days/gi, '<span style="color: #ff6b6b; font-weight: bold;">⚡ SHORT-TERM (1-7 days)</span>')
+                .replace(/MEDIUM-TERM|Medium-term|1-3 months/gi, '<span style="color: #ffa500; font-weight: bold;">📅 MEDIUM-TERM (1-3 months)</span>')
+                .replace(/LONG-TERM|Long-term|6\+ months/gi, '<span style="color: #4ecdc4; font-weight: bold;">🎯 LONG-TERM (6+ months)</span>')
+                .replace(/WHEN TO BUY|Buy/gi, '<span style="color: #51cf66; font-weight: bold;">🟢 BUY:</span>')
+                .replace(/WHEN TO SELL|Sell/gi, '<span style="color: #ff6b6b; font-weight: bold;">🔴 SELL:</span>');
             
             recommendationsContent.innerHTML = `
                 <div class="recommendation-item">
-                    <p style="line-height: 1.8;">${recommendations}</p>
+                    <div style="color: #ffffff; font-weight: bold; line-height: 1.9; font-size: 1.05em; text-align: left; width: 100%;">
+                        <p style="margin: 15px 0; text-align: left;">${recommendations}</p>
+                    </div>
                 </div>
             `;
         }
     } catch (error) {
         console.error('AI Error:', error);
-        recommendationsContent.innerHTML = '<p style="color: #ff6666;">Error connecting to AI</p>';
+        recommendationsContent.innerHTML = '<p style="color: #ffffff; font-weight: bold;">Error connecting to AI</p>';
     }
 }
 
