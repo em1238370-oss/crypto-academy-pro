@@ -782,12 +782,18 @@ async function handlePayWithCryptoDirect(event) {
 
       
 
-       // Use different endpoints for crypto and card payments
-       // NOWPayments is used for both cards and crypto (international brand, accepts US, European & Russian cards)
-       // NOWPayments accepts Russian passports for KYC verification
-       // NOWPayments supports both card payments (Visa, Mastercard) and crypto payments (USDT, Bitcoin, etc.)
-       // Use NOWPayments for all payments (cards and crypto)
-       const endpoint = `${API_BASE_URL}/api/payments/nowpayments/invoice`;
+       // NEW APPROACH: Use different payment providers based on payment method
+       // - For CRYPTO: Use CryptoCloud (already working, supports USDT)
+       // - For CARDS: Use NOWPayments (for card payments)
+       // This avoids all the pay_currency issues with NOWPayments
+       let endpoint;
+       if (paymentMethod === 'crypto') {
+           // Use CryptoCloud for crypto payments (USDT, Bitcoin, etc.)
+           endpoint = `${API_BASE_URL}/api/payments/cryptocloud/invoice`;
+       } else {
+           // Use NOWPayments for card payments (Visa, Mastercard)
+           endpoint = `${API_BASE_URL}/api/payments/nowpayments/invoice`;
+       }
 
       
 
