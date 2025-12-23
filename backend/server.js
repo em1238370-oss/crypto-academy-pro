@@ -727,9 +727,9 @@ app.post('/api/payments/nowpayments/invoice', async (req, res) => {
  const payload = {
    price_amount: invoiceAmount,
    price_currency: 'usd',
-   // pay_currency: omit this field to allow user to choose any currency (including cards)
-   // If we set it to null, API returns error "pay_currency must be a string"
-   // If we omit it completely, user can choose any payment method
+   pay_currency: '', // Empty string allows user to choose any currency (including cards)
+   // NOWPayments requires pay_currency to be a string (not null, not omitted)
+   // Empty string means user can choose any payment method
    order_id: orderId,
    order_description: description || `Subscription - $${invoiceAmount.toFixed(2)}`,
    ipn_callback_url: callbackUrl,
