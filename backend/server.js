@@ -745,20 +745,24 @@ app.post('/api/payments/nowpayments/invoice', async (req, res) => {
    is_fee_paid_by_user: false
  };
  
- // IMPORTANT: Do NOT set pay_currency to avoid "Can not get estimate" errors
- // When pay_currency is omitted, NOWPayments allows user to choose:
- // - Card payment (Visa/Mastercard) - pays in USD directly
- // - Any cryptocurrency (USDT, BTC, ETH, etc.) - user chooses
+ // IMPORTANT: pay_currency is REQUIRED by NOWPayments API
+ // Strategy based on payment method:
+ // - For 'card' or 'any': use 'usd' (same as price_currency) - allows card payments
+ // - For 'crypto': use 'usdt' - but this may cause "Can not get estimate" error
  // 
- // Setting pay_currency to 'usdt' causes "Can not get estimate from USD to USDT" error
- // because NOWPayments tries to convert USD to USDT but can't get the exchange rate
- // 
- // Solution: Omit pay_currency completely - user can choose USDT or any other crypto on payment page
- // DO NOT add pay_currency field at all for any payment method
+ // If 'usdt' causes estimate error, user can still choose USDT on payment page
+ // by switching from the default currency
+ if (userPaymentMethod === 'crypto') {
+   payload.pay_currency = 'usdt'; // Try USDT for crypto payments
+ } else {
+   // For cards: use 'usd' to allow direct card payment
+   // User can still switch to crypto (USDT) on NOWPayments payment page
+   payload.pay_currency = 'usd';
+ }
 
  console.log('Creating NOWPayments invoice with payload:', { ...payload, order_id: orderId });
  console.log('Payment method requested:', userPaymentMethod);
- console.log('pay_currency in payload:', payload.pay_currency || 'OMITTED (allows cards + crypto)');
+ console.log('pay_currency set to:', payload.pay_currency);
 
  try {
    const apiUrl = 'https://api.nowpayments.io/v1/payment';
