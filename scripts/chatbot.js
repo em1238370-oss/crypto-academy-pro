@@ -782,18 +782,10 @@ async function handlePayWithCryptoDirect(event) {
 
       
 
-       // NEW APPROACH: Use different payment providers based on payment method
-       // - For CRYPTO: Use CryptoCloud (already working, supports USDT)
-       // - For CARDS: Use NOWPayments (for card payments)
-       // This avoids all the pay_currency issues with NOWPayments
-       let endpoint;
-       if (paymentMethod === 'crypto') {
-           // Use CryptoCloud for crypto payments (USDT, Bitcoin, etc.)
-           endpoint = `${API_BASE_URL}/api/payments/cryptocloud/invoice`;
-       } else {
-           // Use NOWPayments for card payments (Visa, Mastercard)
-           endpoint = `${API_BASE_URL}/api/payments/nowpayments/invoice`;
-       }
+       // Use NOWPayments for both crypto and card payments
+       // NOWPayments supports both payment methods (cards + crypto)
+       // This is the only payment provider we use for all payment types
+       const endpoint = `${API_BASE_URL}/api/payments/nowpayments/invoice`;
 
       
 
