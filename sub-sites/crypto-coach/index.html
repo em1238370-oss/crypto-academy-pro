@@ -114,7 +114,25 @@
                                       </select>
                                   </div>
                                   <div id="portfolioGraphContainer" style="display: none; margin-bottom: 20px;">
-                                      <canvas id="portfolioGraph" style="max-height: 300px;"></canvas>
+                                      <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                                          <label style="color: #ffffff; font-size: 0.95rem; margin-right: 10px;">Time Range:</label>
+                                          <button class="time-range-btn" data-range="30m" onclick="changeTimeRange('30m')" style="padding: 8px 15px; background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); border-radius: 5px; color: #ffffff; cursor: pointer; font-size: 0.9rem;">30 min</button>
+                                          <button class="time-range-btn" data-range="2h" onclick="changeTimeRange('2h')" style="padding: 8px 15px; background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); border-radius: 5px; color: #ffffff; cursor: pointer; font-size: 0.9rem;">2 hours</button>
+                                          <button class="time-range-btn" data-range="8h" onclick="changeTimeRange('8h')" style="padding: 8px 15px; background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); border-radius: 5px; color: #ffffff; cursor: pointer; font-size: 0.9rem;">8 hours</button>
+                                          <button class="time-range-btn active" data-range="2d" onclick="changeTimeRange('2d')" style="padding: 8px 15px; background: rgba(255, 0, 0, 0.5); border: 2px solid #ff0000; border-radius: 5px; color: #ffffff; cursor: pointer; font-size: 0.9rem; font-weight: bold;">2 days</button>
+                                      </div>
+                                      <div style="position: relative; overflow-x: auto; overflow-y: hidden;">
+                                          <canvas id="portfolioGraph" style="max-height: 400px; min-width: 600px;"></canvas>
+                                      </div>
+                                      <div id="graphScrollContainer" style="margin-top: 10px; display: none;">
+                                          <input type="range" id="graphScrollSlider" min="0" max="100" value="0" 
+                                                 style="width: 100%; height: 8px; background: rgba(255, 0, 0, 0.2); border-radius: 5px; outline: none; cursor: pointer;"
+                                                 oninput="scrollGraph(this.value)">
+                                          <div style="display: flex; justify-content: space-between; color: #cccccc; font-size: 0.85em; margin-top: 5px;">
+                                              <span id="scrollStart">Start</span>
+                                              <span id="scrollEnd">End</span>
+                                          </div>
+                                      </div>
                                   </div>
                                    <div id="leaderboardContent">
                                       <p style="color: #cccccc; text-align: center; padding: 20px;">Save your portfolio to start tracking its performance!</p>

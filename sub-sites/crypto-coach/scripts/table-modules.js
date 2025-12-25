@@ -600,6 +600,8 @@ function updateRiskDisplay() {
 }
 
 let portfolioChart = null;
+let currentTimeRange = '2d'; // По умолчанию 2 дня
+let currentPortfolioName = null;
 
 async function savePortfolio() {
     const portfolioNameInput = document.getElementById('portfolioName');
@@ -923,6 +925,112 @@ async function loadPortfolioGraph(portfolioName) {
             }
         }
     });
+    
+    // Проверяем, нужен ли ползунок для прокрутки
+    updateGraphScrollSlider(filteredHistory.length);
+}
+
+// Фильтрует историю по выбранному временному интервалу
+function filterHistoryByTimeRange(history, timeRange) {
+    if (!history || history.length === 0) return [];
+    
+    const now = new Date();
+    let timeLimit;
+    
+    switch(timeRange) {
+        case '30m':
+            timeLimit = new Date(now.getTime() - 30 * 60 * 1000); // 30 минут
+            break;
+        case '2h':
+            timeLimit = new Date(now.getTime() - 2 * 60 * 60 * 1000); // 2 часа
+            break;
+        case '8h':
+            timeLimit = new Date(now.getTime() - 8 * 60 * 60 * 1000); // 8 часов
+            break;
+        case '2d':
+            timeLimit = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000); // 2 дня
+            break;
+        default:
+            timeLimit = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000); // По умолчанию 2 дня
+    }
+    
+    return history.filter(entry => {
+        const entryDate = new Date(entry.timestamp);
+        return entryDate >= timeLimit;
+    });
+}
+
+// Изменяет временной интервал графика
+function changeTimeRange(range) {
+    currentTimeRange = range;
+    
+    // Обновляем активную кнопку
+    document.querySelectorAll('.time-range-btn').forEach(btn => {
+        if (btn.dataset.range === range) {
+            btn.classList.add('active');
+            btn.style.background = 'rgba(255, 0, 0, 0.5)';
+            btn.style.border = '2px solid #ff0000';
+            btn.style.fontWeight = 'bold';
+        } else {
+            btn.classList.remove('active');
+            btn.style.background = 'rgba(255, 0, 0, 0.3)';
+            btn.style.border = '1px solid rgba(255, 0, 0, 0.5)';
+            btn.style.fontWeight = 'normal';
+        }
+    });
+    
+    // Перезагружаем график с новым интервалом
+    if (currentPortfolioName) {
+        loadPortfolioGraph(currentPortfolioName);
+    }
+}
+
+// Обновляет ползунок для прокрутки графика
+function updateGraphScrollSlider(dataPoints) {
+    const scrollContainer = document.getElementById('graphScrollContainer');
+    const slider = document.getElementById('graphScrollSlider');
+    
+    // Если точек данных больше 20, показываем ползунок
+    if (dataPoints > 20 && scrollContainer && slider) {
+        scrollContainer.style.display = 'block';
+        slider.max = dataPoints - 20; // Показываем по 20 точек за раз
+        slider.value = Math.max(0, dataPoints - 20); // Начинаем с конца
+        scrollGraph(slider.value);
+    } else if (scrollContainer) {
+        scrollContainer.style.display = 'none';
+    }
+}
+
+// Прокручивает график
+function scrollGraph(sliderValue) {
+    if (!portfolioChart || !currentPortfolioName) return;
+    
+    const savedPortfolios = JSON.parse(localStorage.getItem('savedPortfolios') || '{}');
+    const portfolio = savedPortfolios[currentPortfolioName];
+    
+    if (!portfolio) return;
+    
+    const filteredHistory = filterHistoryByTimeRange(portfolio.history, currentTimeRange);
+    const startIndex = parseInt(sliderValue);
+    const visiblePoints = 20; // Показываем 20 точек за раз
+    const endIndex = Math.min(startIndex + visiblePoints, filteredHistory.length);
+    
+    const visibleHistory = filteredHistory.slice(startIndex, endIndex);
+    const labels = visibleHistory.map(h => h.dateLabel);
+    const values = visibleHistory.map(h => h.value);
+    
+    // Обновляем график
+    portfolioChart.data.labels = labels;
+    portfolioChart.data.datasets[0].data = values;
+    portfolioChart.update('none'); // Обновляем без анимации
+    
+    // Обновляем метки ползунка
+    const scrollStart = document.getElementById('scrollStart');
+    const scrollEnd = document.getElementById('scrollEnd');
+    if (scrollStart && scrollEnd && visibleHistory.length > 0) {
+        scrollStart.textContent = visibleHistory[0].dateLabel;
+        scrollEnd.textContent = visibleHistory[visibleHistory.length - 1].dateLabel;
+    }
 }
 
 function displayLeaderboard() {
