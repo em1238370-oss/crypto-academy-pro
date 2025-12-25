@@ -413,6 +413,190 @@
                                        💾 Save Stress Level
                                    </button>
                                </div>
+
+                               <!-- Pre-Trade Mental Check -->
+                               <div class="pre-trade-check" style="
+                                   background: linear-gradient(135deg, rgba(255, 0, 0, 0.1) 0%, rgba(255, 100, 0, 0.15) 100%);
+                                   border: 2px solid rgba(255, 0, 0, 0.3);
+                                   border-radius: 12px;
+                                   padding: 25px;
+                                   margin-bottom: 25px;
+                                   box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+                               ">
+                                   <h4 style="color: #ffffff; margin-bottom: 20px; font-size: 1.4rem; text-align: center;">🧘 Pre-Trade Mental Check</h4>
+                                   <p style="color: #cccccc; text-align: center; margin-bottom: 25px; font-size: 1rem; line-height: 1.6;">
+                                       Complete this checklist before making any trading decisions to ensure you're in the right mental state.
+                                   </p>
+                                   <div id="preTradeChecklist" style="
+                                       background: rgba(0, 0, 0, 0.4);
+                                       border-radius: 10px;
+                                       padding: 20px;
+                                       margin-bottom: 20px;
+                                   ">
+                                       <div class="checklist-item" style="margin-bottom: 15px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid rgba(255, 0, 0, 0.5);">
+                                           <label style="display: flex; align-items: center; gap: 12px; color: #ffffff; cursor: pointer; font-size: 1rem;">
+                                               <input type="checkbox" class="mental-check" data-check="sleep" style="width: 20px; height: 20px; cursor: pointer;">
+                                               <span>I got enough sleep (7+ hours) and feel rested</span>
+                                           </label>
+                                       </div>
+                                       <div class="checklist-item" style="margin-bottom: 15px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid rgba(255, 0, 0, 0.5);">
+                                           <label style="display: flex; align-items: center; gap: 12px; color: #ffffff; cursor: pointer; font-size: 1rem;">
+                                               <input type="checkbox" class="mental-check" data-check="sober" style="width: 20px; height: 20px; cursor: pointer;">
+                                               <span>I am completely sober (no alcohol, drugs, or medications affecting judgment)</span>
+                                           </label>
+                                       </div>
+                                       <div class="checklist-item" style="margin-bottom: 15px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid rgba(255, 0, 0, 0.5);">
+                                           <label style="display: flex; align-items: center; gap: 12px; color: #ffffff; cursor: pointer; font-size: 1rem;">
+                                               <input type="checkbox" class="mental-check" data-check="calm" style="width: 20px; height: 20px; cursor: pointer;">
+                                               <span>I feel calm and emotionally stable (not anxious, angry, or euphoric)</span>
+                                           </label>
+                                       </div>
+                                       <div class="checklist-item" style="margin-bottom: 15px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid rgba(255, 0, 0, 0.5);">
+                                           <label style="display: flex; align-items: center; gap: 12px; color: #ffffff; cursor: pointer; font-size: 1rem;">
+                                               <input type="checkbox" class="mental-check" data-check="focused" style="width: 20px; height: 20px; cursor: pointer;">
+                                               <span>I can focus clearly and am not distracted by external factors</span>
+                                           </label>
+                                       </div>
+                                       <div class="checklist-item" style="margin-bottom: 15px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid rgba(255, 0, 0, 0.5);">
+                                           <label style="display: flex; align-items: center; gap: 12px; color: #ffffff; cursor: pointer; font-size: 1rem;">
+                                               <input type="checkbox" class="mental-check" data-check="pressure" style="width: 20px; height: 20px; cursor: pointer;">
+                                               <span>I don't need this money urgently (no financial pressure)</span>
+                                           </label>
+                                       </div>
+                                       <div class="checklist-item" style="margin-bottom: 15px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid rgba(255, 0, 0, 0.5);">
+                                           <label style="display: flex; align-items: center; gap: 12px; color: #ffffff; cursor: pointer; font-size: 1rem;">
+                                               <input type="checkbox" class="mental-check" data-check="analyzed" style="width: 20px; height: 20px; cursor: pointer;">
+                                               <span>I have analyzed the market and have a clear trading plan</span>
+                                           </label>
+                                       </div>
+                                   </div>
+                                   <div id="preTradeResult" style="
+                                       padding: 20px;
+                                       background: rgba(0, 0, 0, 0.5);
+                                       border-radius: 10px;
+                                       margin-bottom: 20px;
+                                       display: none;
+                                       border-left: 4px solid #ff0000;
+                                   ">
+                                       <div style="text-align: center; margin-bottom: 15px;">
+                                           <div id="readinessScore" style="font-size: 3rem; font-weight: bold; color: #ff0000; margin-bottom: 5px;">0%</div>
+                                           <div id="readinessLabel" style="color: #ffffff; font-size: 1.2rem; font-weight: bold;">Not Ready</div>
+                                       </div>
+                                       <div id="readinessRecommendations" style="color: #ffffff; line-height: 1.8; margin-top: 15px;"></div>
+                                   </div>
+                                   <button class="btn btn-red" onclick="checkReadiness()" style="padding: 12px 30px; font-size: 1.1rem; font-weight: bold; width: 100%;">
+                                       ✅ Check My Readiness
+                                   </button>
+                               </div>
+
+                               <!-- Cognitive Bias Detector -->
+                               <div class="bias-detector" style="
+                                   background: linear-gradient(135deg, rgba(255, 0, 0, 0.1) 0%, rgba(255, 100, 0, 0.15) 100%);
+                                   border: 2px solid rgba(255, 0, 0, 0.3);
+                                   border-radius: 12px;
+                                   padding: 25px;
+                                   margin-bottom: 25px;
+                                   box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+                               ">
+                                   <h4 style="color: #ffffff; margin-bottom: 20px; font-size: 1.4rem; text-align: center;">🎯 Cognitive Bias Detector</h4>
+                                   <p style="color: #cccccc; text-align: center; margin-bottom: 25px; font-size: 1rem; line-height: 1.6;">
+                                       Describe a recent trading decision you made. AI will analyze it for cognitive biases and provide insights.
+                                   </p>
+                                   <div class="form-group" style="margin-bottom: 20px;">
+                                       <label style="color: #ffffff; display: block; margin-bottom: 10px; font-size: 1.1rem;">Describe your trading decision:</label>
+                                       <textarea id="tradingDecision" rows="5" placeholder="Example: I bought BTC at $50,000 because I saw it was going up and didn't want to miss out. I held it even when it dropped to $45,000 because I was sure it would recover..." 
+                                                 style="width: 100%; padding: 15px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 8px; color: #ffffff; font-size: 1rem; resize: vertical; box-sizing: border-box;"></textarea>
+                                   </div>
+                                   <button class="btn btn-red" onclick="detectBiases()" style="padding: 12px 30px; font-size: 1.1rem; font-weight: bold; width: 100%; margin-bottom: 20px;">
+                                       🔍 Detect Cognitive Biases
+                                   </button>
+                                   <div id="biasResult" style="
+                                       padding: 20px;
+                                       background: rgba(0, 0, 0, 0.5);
+                                       border-radius: 10px;
+                                       display: none;
+                                       border-left: 4px solid #ffd700;
+                                   ">
+                                       <div style="color: #ffffff; line-height: 1.8;">
+                                           <div id="biasAnalysis" style="margin-bottom: 15px;"></div>
+                                           <div id="biasRecommendations" style="padding-top: 15px; border-top: 1px solid rgba(255, 0, 0, 0.3);"></div>
+                                       </div>
+                                   </div>
+                               </div>
+
+                               <!-- Trading Time Optimizer -->
+                               <div class="time-optimizer" style="
+                                   background: linear-gradient(135deg, rgba(255, 0, 0, 0.1) 0%, rgba(255, 100, 0, 0.15) 100%);
+                                   border: 2px solid rgba(255, 0, 0, 0.3);
+                                   border-radius: 12px;
+                                   padding: 25px;
+                                   margin-bottom: 25px;
+                                   box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+                               ">
+                                   <h4 style="color: #ffffff; margin-bottom: 20px; font-size: 1.4rem; text-align: center;">⏰ Trading Time Optimizer</h4>
+                                   <p style="color: #cccccc; text-align: center; margin-bottom: 25px; font-size: 1rem; line-height: 1.6;">
+                                       Track when you make your best trading decisions to find your optimal trading time.
+                                   </p>
+                                   <div style="margin-bottom: 20px;">
+                                       <label style="color: #ffffff; display: block; margin-bottom: 15px; font-size: 1.1rem;">When did you make this trade?</label>
+                                       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                           <div>
+                                               <label style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px; display: block;">Time of Day:</label>
+                                               <select id="tradeTime" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 8px; color: #ffffff; font-size: 1rem;">
+                                                   <option value="morning">Morning (6 AM - 12 PM)</option>
+                                                   <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
+                                                   <option value="evening">Evening (6 PM - 12 AM)</option>
+                                                   <option value="night">Night (12 AM - 6 AM)</option>
+                                               </select>
+                                           </div>
+                                           <div>
+                                               <label style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px; display: block;">How many hours have you been trading today?</label>
+                                               <input type="number" id="tradingHours" min="0" max="24" value="0" 
+                                                      style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 8px; color: #ffffff; font-size: 1rem;">
+                                           </div>
+                                       </div>
+                                       <div style="margin-bottom: 15px;">
+                                           <label style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px; display: block;">Was this trade successful?</label>
+                                           <div style="display: flex; gap: 15px;">
+                                               <label style="display: flex; align-items: center; gap: 8px; color: #ffffff; cursor: pointer;">
+                                                   <input type="radio" name="tradeSuccess" value="yes" style="width: 18px; height: 18px; cursor: pointer;">
+                                                   <span>✅ Successful</span>
+                                               </label>
+                                               <label style="display: flex; align-items: center; gap: 8px; color: #ffffff; cursor: pointer;">
+                                                   <input type="radio" name="tradeSuccess" value="no" style="width: 18px; height: 18px; cursor: pointer;">
+                                                   <span>❌ Unsuccessful</span>
+                                               </label>
+                                           </div>
+                                       </div>
+                                       <button class="btn btn-red" onclick="recordTradingTime()" style="padding: 12px 30px; font-size: 1.1rem; font-weight: bold; width: 100%; margin-bottom: 20px;">
+                                       📊 Record Trading Time
+                                   </button>
+                                   </div>
+                                   <div id="timeOptimizerResult" style="
+                                       padding: 20px;
+                                       background: rgba(0, 0, 0, 0.5);
+                                       border-radius: 10px;
+                                       display: none;
+                                       border-left: 4px solid #00ff00;
+                                   ">
+                                       <div style="color: #ffffff; line-height: 1.8;">
+                                           <div style="margin-bottom: 15px;">
+                                               <strong style="color: #ffd700; font-size: 1.2rem;">🎯 Your Optimal Trading Time:</strong>
+                                               <div id="optimalTime" style="font-size: 1.5rem; font-weight: bold; color: #00ff00; margin-top: 10px;">-</div>
+                                           </div>
+                                           <div id="timeRecommendations" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 0, 0, 0.3);"></div>
+                                       </div>
+                                   </div>
+                                   <div id="timeHistory" style="
+                                       background: rgba(0, 0, 0, 0.4);
+                                       border-radius: 10px;
+                                       padding: 20px;
+                                       margin-top: 20px;
+                                   ">
+                                       <div style="color: #ffffff; margin-bottom: 15px; font-weight: bold;">Trading Performance by Time:</div>
+                                       <canvas id="timeChart" style="width: 100%; height: 200px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
+                                   </div>
+                               </div>
                            </div>
                        </div>
                    </div>

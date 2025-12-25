@@ -849,11 +849,352 @@ function drawStressChart() {
     });
 }
 
+// Pre-Trade Mental Check
+function checkReadiness() {
+    const checks = document.querySelectorAll('.mental-check');
+    const preTradeResult = document.getElementById('preTradeResult');
+    const readinessScore = document.getElementById('readinessScore');
+    const readinessLabel = document.getElementById('readinessLabel');
+    const readinessRecommendations = document.getElementById('readinessRecommendations');
+    
+    if (!preTradeResult) return;
+    
+    let checkedCount = 0;
+    const totalChecks = checks.length;
+    const missingChecks = [];
+    
+    checks.forEach(check => {
+        if (check.checked) {
+            checkedCount++;
+        } else {
+            const label = check.closest('label')?.querySelector('span')?.textContent || '';
+            missingChecks.push(label);
+        }
+    });
+    
+    const score = Math.round((checkedCount / totalChecks) * 100);
+    
+    // Update score display
+    if (readinessScore) {
+        readinessScore.textContent = score + '%';
+        if (score >= 80) {
+            readinessScore.style.color = '#00ff00';
+        } else if (score >= 60) {
+            readinessScore.style.color = '#ffd700';
+        } else if (score >= 40) {
+            readinessScore.style.color = '#ffaa00';
+        } else {
+            readinessScore.style.color = '#ff0000';
+        }
+    }
+    
+    // Update label
+    if (readinessLabel) {
+        if (score >= 80) {
+            readinessLabel.textContent = '✅ Ready to Trade';
+            readinessLabel.style.color = '#00ff00';
+        } else if (score >= 60) {
+            readinessLabel.textContent = '⚠️ Proceed with Caution';
+            readinessLabel.style.color = '#ffd700';
+        } else {
+            readinessLabel.textContent = '🚫 NOT Ready - Do NOT Trade';
+            readinessLabel.style.color = '#ff0000';
+        }
+    }
+    
+    // Recommendations
+    if (readinessRecommendations) {
+        let recommendations = '';
+        if (score >= 80) {
+            recommendations = '<div style="color: #00ff00; font-weight: bold;">✅ You are in good mental state to make trading decisions. Proceed with your trading plan.</div>';
+        } else if (score >= 60) {
+            recommendations = '<div style="color: #ffd700; font-weight: bold;">⚠️ You are partially ready. Consider waiting or being extra cautious.</div>';
+            if (missingChecks.length > 0) {
+                recommendations += '<div style="margin-top: 10px; color: #ffaa00;">Missing checks:</div><ul style="margin-top: 5px; padding-left: 20px;">';
+                missingChecks.forEach(check => {
+                    recommendations += `<li style="margin-bottom: 5px;">${check}</li>`;
+                });
+                recommendations += '</ul>';
+            }
+        } else {
+            recommendations = '<div style="color: #ff0000; font-weight: bold;">🚫 You are NOT ready to trade. Please address the following before making any trading decisions:</div>';
+            recommendations += '<ul style="margin-top: 10px; padding-left: 20px;">';
+            missingChecks.forEach(check => {
+                recommendations += `<li style="margin-bottom: 8px; color: #ff6666;">${check}</li>`;
+            });
+            recommendations += '</ul>';
+            recommendations += '<div style="margin-top: 15px; padding: 10px; background: rgba(255, 0, 0, 0.2); border-radius: 5px; color: #ffffff;">⚠️ Trading in this state significantly increases your risk of making emotional, poor decisions.</div>';
+        }
+        readinessRecommendations.innerHTML = recommendations;
+    }
+    
+    preTradeResult.style.display = 'block';
+    preTradeResult.style.borderLeftColor = score >= 80 ? '#00ff00' : score >= 60 ? '#ffd700' : '#ff0000';
+}
+
+// Cognitive Bias Detector
+async function detectBiases() {
+    const decisionText = document.getElementById('tradingDecision')?.value;
+    const biasResult = document.getElementById('biasResult');
+    const biasAnalysis = document.getElementById('biasAnalysis');
+    const biasRecommendations = document.getElementById('biasRecommendations');
+    
+    if (!biasResult) return;
+    
+    if (!decisionText || !decisionText.trim()) {
+        alert('Please describe your trading decision');
+        return;
+    }
+    
+    biasResult.style.display = 'block';
+    biasAnalysis.innerHTML = '<em style="color: #ff6666;">🤖 AI is analyzing your decision for cognitive biases...</em>';
+    biasRecommendations.innerHTML = '';
+    
+    try {
+        const prompt = `The user described a trading decision: "${decisionText}"
+
+You are an expert in behavioral finance and cognitive psychology. Analyze this decision and identify:
+1. What cognitive biases are present (anchoring, confirmation bias, loss aversion, FOMO, overconfidence, etc.)
+2. How these biases affected the decision
+3. Specific recommendations to avoid these biases in the future
+
+Format your response clearly with sections.`;
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'mistral-small',
+                messages: [
+                    { role: 'system', content: 'You are an expert in behavioral finance, cognitive psychology, and trading psychology. You help traders identify and overcome cognitive biases.' },
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0.7,
+                max_tokens: 600
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.choices && data.choices[0]) {
+            const analysis = data.choices[0].message.content.trim();
+            
+            // Split analysis and recommendations
+            const parts = analysis.split(/(?:recommendations?|suggestions?|advice)/i);
+            
+            if (parts.length > 1) {
+                biasAnalysis.innerHTML = `<div style="color: #ffffff; line-height: 1.8;"><strong style="color: #ffd700;">🔍 Detected Biases:</strong><br>${parts[0].replace(/\n/g, '<br>')}</div>`;
+                biasRecommendations.innerHTML = `<div style="color: #ffffff; line-height: 1.8; margin-top: 15px;"><strong style="color: #00ff00;">💡 Recommendations:</strong><br>${parts.slice(1).join(' ').replace(/\n/g, '<br>')}</div>`;
+            } else {
+                biasAnalysis.innerHTML = `<div style="color: #ffffff; line-height: 1.8;">${analysis.replace(/\n/g, '<br>')}</div>`;
+            }
+        }
+    } catch (error) {
+        console.error('AI Error:', error);
+        biasAnalysis.innerHTML = '<p style="color: #ff6666;">Error connecting to AI. Please try again.</p>';
+    }
+}
+
+// Trading Time Optimizer
+let tradingTimeHistory = JSON.parse(localStorage.getItem('tradingTimeHistory') || '[]');
+
+function recordTradingTime() {
+    const tradeTime = document.getElementById('tradeTime')?.value;
+    const tradingHours = parseInt(document.getElementById('tradingHours')?.value || 0);
+    const success = document.querySelector('input[name="tradeSuccess"]:checked')?.value;
+    
+    if (!success) {
+        alert('Please indicate if the trade was successful');
+        return;
+    }
+    
+    const entry = {
+        timestamp: Date.now(),
+        date: new Date().toLocaleDateString(),
+        time: tradeTime,
+        hours: tradingHours,
+        success: success === 'yes'
+    };
+    
+    tradingTimeHistory.push(entry);
+    
+    // Keep only last 30 entries
+    if (tradingTimeHistory.length > 30) {
+        tradingTimeHistory = tradingTimeHistory.slice(-30);
+    }
+    
+    localStorage.setItem('tradingTimeHistory', JSON.stringify(tradingTimeHistory));
+    
+    analyzeTradingTime();
+    drawTimeChart();
+    
+    alert('Trading time recorded!');
+}
+
+function analyzeTradingTime() {
+    const timeOptimizerResult = document.getElementById('timeOptimizerResult');
+    const optimalTime = document.getElementById('optimalTime');
+    const timeRecommendations = document.getElementById('timeRecommendations');
+    
+    if (!timeOptimizerResult || tradingTimeHistory.length === 0) return;
+    
+    // Analyze success rate by time of day
+    const timeStats = {
+        morning: { total: 0, successful: 0 },
+        afternoon: { total: 0, successful: 0 },
+        evening: { total: 0, successful: 0 },
+        night: { total: 0, successful: 0 }
+    };
+    
+    tradingTimeHistory.forEach(entry => {
+        if (timeStats[entry.time]) {
+            timeStats[entry.time].total++;
+            if (entry.success) {
+                timeStats[entry.time].successful++;
+            }
+        }
+    });
+    
+    // Calculate success rates
+    const successRates = {};
+    Object.keys(timeStats).forEach(time => {
+        if (timeStats[time].total > 0) {
+            successRates[time] = (timeStats[time].successful / timeStats[time].total) * 100;
+        }
+    });
+    
+    // Find optimal time
+    let bestTime = '';
+    let bestRate = 0;
+    Object.keys(successRates).forEach(time => {
+        if (successRates[time] > bestRate) {
+            bestRate = successRates[time];
+            bestTime = time;
+        }
+    });
+    
+    const timeLabels = {
+        morning: 'Morning (6 AM - 12 PM)',
+        afternoon: 'Afternoon (12 PM - 6 PM)',
+        evening: 'Evening (6 PM - 12 AM)',
+        night: 'Night (12 AM - 6 AM)'
+    };
+    
+    if (optimalTime) {
+        if (bestTime && bestRate > 0) {
+            optimalTime.textContent = timeLabels[bestTime];
+            optimalTime.style.color = '#00ff00';
+        } else {
+            optimalTime.textContent = 'Need more data';
+            optimalTime.style.color = '#ffd700';
+        }
+    }
+    
+    // Recommendations
+    if (timeRecommendations) {
+        let recommendations = '';
+        
+        if (bestTime && bestRate > 0) {
+            recommendations += `<div style="color: #00ff00; font-weight: bold; margin-bottom: 10px;">✅ Your best trading time is <strong>${timeLabels[bestTime]}</strong> with ${bestRate.toFixed(1)}% success rate.</div>`;
+        }
+        
+        // Analyze trading hours
+        const avgHours = tradingTimeHistory.reduce((sum, e) => sum + e.hours, 0) / tradingTimeHistory.length;
+        if (avgHours > 6) {
+            recommendations += `<div style="color: #ffaa00; margin-top: 10px;">⚠️ You average ${avgHours.toFixed(1)} hours of trading per day. Consider taking breaks to maintain focus.</div>`;
+        }
+        
+        // Success rate by hours
+        const shortTrades = tradingTimeHistory.filter(e => e.hours < 2);
+        const longTrades = tradingTimeHistory.filter(e => e.hours >= 2);
+        
+        if (shortTrades.length > 0 && longTrades.length > 0) {
+            const shortSuccess = (shortTrades.filter(e => e.success).length / shortTrades.length) * 100;
+            const longSuccess = (longTrades.filter(e => e.success).length / longTrades.length) * 100;
+            
+            if (shortSuccess > longSuccess) {
+                recommendations += `<div style="color: #00ff00; margin-top: 10px;">💡 You perform better when trading for less than 2 hours. Consider shorter trading sessions.</div>`;
+            } else if (longSuccess > shortSuccess) {
+                recommendations += `<div style="color: #00ff00; margin-top: 10px;">💡 You perform better with longer trading sessions. Take your time to analyze.</div>`;
+            }
+        }
+        
+        if (!recommendations) {
+            recommendations = '<div style="color: #cccccc;">Record more trades to get personalized recommendations.</div>';
+        }
+        
+        timeRecommendations.innerHTML = recommendations;
+    }
+    
+    timeOptimizerResult.style.display = 'block';
+}
+
+function drawTimeChart() {
+    const canvas = document.getElementById('timeChart');
+    if (!canvas || tradingTimeHistory.length === 0) return;
+    
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth;
+    canvas.height = 200;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Group by time of day
+    const timeStats = {
+        morning: { total: 0, successful: 0 },
+        afternoon: { total: 0, successful: 0 },
+        evening: { total: 0, successful: 0 },
+        night: { total: 0, successful: 0 }
+    };
+    
+    tradingTimeHistory.forEach(entry => {
+        if (timeStats[entry.time]) {
+            timeStats[entry.time].total++;
+            if (entry.success) {
+                timeStats[entry.time].successful++;
+            }
+        }
+    });
+    
+    const times = ['morning', 'afternoon', 'evening', 'night'];
+    const labels = ['Morning', 'Afternoon', 'Evening', 'Night'];
+    const padding = 40;
+    const chartWidth = canvas.width - (padding * 2);
+    const chartHeight = canvas.height - (padding * 2);
+    const barWidth = chartWidth / times.length;
+    
+    // Draw bars
+    times.forEach((time, index) => {
+        const stats = timeStats[time];
+        const successRate = stats.total > 0 ? (stats.successful / stats.total) * 100 : 0;
+        const barHeight = (successRate / 100) * chartHeight;
+        const x = padding + (index * barWidth) + (barWidth * 0.2);
+        const y = padding + chartHeight - barHeight;
+        const w = barWidth * 0.6;
+        
+        // Color based on success rate
+        ctx.fillStyle = successRate >= 70 ? '#00ff00' : successRate >= 50 ? '#ffd700' : '#ff6666';
+        ctx.fillRect(x, y, w, barHeight);
+        
+        // Label
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(labels[index], x + w/2, padding + chartHeight + 15);
+        ctx.fillText(successRate.toFixed(0) + '%', x + w/2, y - 5);
+    });
+}
+
 // Initialize on load
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         fetchMarketSentiment();
         drawStressChart();
+        analyzeTradingTime();
+        drawTimeChart();
     }, 1000);
 });
 
