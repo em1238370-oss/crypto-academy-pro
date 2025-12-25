@@ -202,12 +202,45 @@ async function getAIRecommendations() {
                 
                 const priceInfo = await priceResponse.json();
                 if (priceInfo) {
+                    // Получаем расширенные данные
+                    const currentPrice = priceInfo.rate || 0;
+                    const marketCap = priceInfo.cap || 0;
+                    const volume24h = priceInfo.volume || 0;
+                    const priceChange24h = priceInfo.delta?.day || 0;
+                    const priceChange7d = priceInfo.delta?.week || 0;
+                    const priceChange30d = priceInfo.delta?.month || 0;
+                    const allTimeHigh = priceInfo.allTimeHighUSD || currentPrice;
+                    const allTimeLow = priceInfo.allTimeLowUSD || currentPrice;
+                    
+                    // Вычисляем волатильность и тренд
+                    const volatility = Math.abs(priceChange24h);
+                    const trend = priceChange24h > 0 ? 'bullish' : priceChange24h < 0 ? 'bearish' : 'neutral';
+                    const distanceFromATH = ((currentPrice - allTimeHigh) / allTimeHigh * 100).toFixed(2);
+                    const distanceFromATL = ((currentPrice - allTimeLow) / allTimeLow * 100).toFixed(2);
+                    
+                    // Анализ объема (высокий/средний/низкий)
+                    const volumeRatio = volume24h / marketCap;
+                    let volumeAnalysis = 'low';
+                    if (volumeRatio > 0.1) volumeAnalysis = 'very high';
+                    else if (volumeRatio > 0.05) volumeAnalysis = 'high';
+                    else if (volumeRatio > 0.02) volumeAnalysis = 'moderate';
+                    
                     priceData.push({
                         symbol: coinSymbol,
-                        price: priceInfo.rate?.toFixed(6) || 'N/A',
-                        marketCap: priceInfo.cap ? `$${(priceInfo.cap / 1000000).toFixed(2)}M` : 'N/A',
-                        volume24h: priceInfo.volume ? `$${(priceInfo.volume / 1000000).toFixed(2)}M` : 'N/A',
-                        priceChange24h: priceInfo.delta?.day ? `${priceInfo.delta.day.toFixed(2)}%` : 'N/A'
+                        price: currentPrice.toFixed(6),
+                        marketCap: marketCap > 0 ? `$${(marketCap / 1000000).toFixed(2)}M` : 'N/A',
+                        volume24h: volume24h > 0 ? `$${(volume24h / 1000000).toFixed(2)}M` : 'N/A',
+                        priceChange24h: `${priceChange24h.toFixed(2)}%`,
+                        priceChange7d: `${priceChange7d.toFixed(2)}%`,
+                        priceChange30d: `${priceChange30d.toFixed(2)}%`,
+                        allTimeHigh: allTimeHigh.toFixed(6),
+                        allTimeLow: allTimeLow.toFixed(6),
+                        distanceFromATH: distanceFromATH,
+                        distanceFromATL: distanceFromATL,
+                        volatility: volatility.toFixed(2),
+                        trend: trend,
+                        volumeAnalysis: volumeAnalysis,
+                        timestamp: new Date().toISOString() // Временная метка для актуальности
                     });
                 }
             } catch (e) {
@@ -229,16 +262,33 @@ async function getAIRecommendations() {
             } : null;
         }).filter(Boolean);
         
-        const portfolioText = portfolioInfo.map(coin => 
-            `${coin.symbol} (${coin.percentage}% of portfolio): Price $${coin.price}, Market Cap ${coin.marketCap}, 24h Volume ${coin.volume24h}, 24h Change ${coin.priceChange24h}%`
-        ).join('\n\n');
+        // Формируем детальную информацию с графиками и трендами
+        const portfolioText = portfolioInfo.map(coin => {
+            const coinData = priceData.find(d => d.symbol === coin.symbol);
+            if (!coinData) return null;
+            
+            return `${coin.symbol} (${coin.percentage}% of portfolio):
+📊 CURRENT MARKET DATA (Real-time as of ${new Date().toLocaleString()}):
+- Current Price: $${coin.price}
+- Market Cap: ${coin.marketCap}
+- 24h Volume: ${coin.volume24h} (${coinData.volumeAnalysis} liquidity)
+- Price Changes: 24h ${coin.priceChange24h}, 7d ${coinData.priceChange7d}, 30d ${coinData.priceChange30d}
+- Trend: ${coinData.trend.toUpperCase()} (Volatility: ${coinData.volatility}%)
+- All-Time High: $${coinData.allTimeHigh} (Current price is ${coinData.distanceFromATH}% below ATH)
+- All-Time Low: $${coinData.allTimeLow} (Current price is ${coinData.distanceFromATL}% above ATL)
+- Price Position: ${parseFloat(coinData.distanceFromATH) > -20 ? 'Near ATH - potential resistance' : parseFloat(coinData.distanceFromATH) < -50 ? 'Far from ATH - potential opportunity' : 'Mid-range'}`
+        }).filter(Boolean).join('\n\n');
         
-        const prompt = `You are an expert cryptocurrency investment advisor and portfolio strategist. 
+        const prompt = `You are an expert cryptocurrency investment advisor and portfolio strategist with access to REAL-TIME market data and price charts.
 
-USER'S PORTFOLIO ALLOCATION:
+⚠️ CRITICAL: All data provided is CURRENT and REAL-TIME as of the moment the user is viewing this. Use these EXACT numbers and trends in your analysis.
+
+USER'S PORTFOLIO ALLOCATION WITH REAL-TIME MARKET DATA:
 ${portfolioText}
 
-YOUR TASK - Provide a UNIQUE, DETAILED analysis in this EXACT format with clear sections:
+YOUR TASK - Provide a UNIQUE, DETAILED, and ACTIONABLE analysis based on CURRENT market conditions. Use the EXACT price data, trends, and volume information provided above. Analyze price charts, trends, and market dynamics in real-time.
+
+FORMAT YOUR RESPONSE with these EXACT sections:
 
 1. PORTFOLIO OVERVIEW:
    - Quick summary of the portfolio composition
@@ -271,17 +321,20 @@ YOUR TASK - Provide a UNIQUE, DETAILED analysis in this EXACT format with clear 
    - When to exit completely
    - Long-term growth potential
 
-4. KEY INSIGHTS FOR EACH COIN:
-   - Market cap analysis (what it means for this coin)
-   - Volume analysis (liquidity and trading ease)
-   - Price momentum (bullish/bearish signals)
-   - Unique characteristics of this coin
+4. REAL-TIME MARKET ANALYSIS FOR EACH COIN:
+   - Current price position relative to ATH/ATL (use exact percentages provided)
+   - Volume analysis: ${portfolioInfo.map(c => `${c.symbol} has ${priceData.find(d => d.symbol === c.symbol)?.volumeAnalysis || 'unknown'} liquidity`).join(', ')}
+   - Price momentum: Analyze the 24h, 7d, and 30d changes to identify trends
+   - Volatility assessment: Is the coin stable or highly volatile right now?
+   - Chart pattern analysis: Based on price changes, is it forming support/resistance?
+   - Unique characteristics and current market sentiment
 
-5. ACTIONABLE RECOMMENDATIONS:
-   For each coin, provide SPECIFIC advice:
-   - WHEN TO BUY: Exact conditions, price levels, or indicators
-   - WHEN TO SELL: Specific targets, percentages, or exit conditions
-   - PORTFOLIO ADJUSTMENT: Increase/decrease percentage? Why?
+5. ACTIONABLE RECOMMENDATIONS BASED ON CURRENT PRICES:
+   For each coin, provide SPECIFIC advice using CURRENT prices:
+   - WHEN TO BUY: Based on current price $X, buy if it drops to $Y (X% below current) OR if it breaks above $Z (resistance level)
+   - WHEN TO SELL: Based on current price $X, take profits at $Y (X% above current) OR set stop-loss at $Z
+   - PORTFOLIO ADJUSTMENT: Increase/decrease percentage? Why? (Consider current trend and distance from ATH)
+   - ENTRY STRATEGY: Dollar-cost averaging or lump sum? Based on current volatility
 
 6. OVERALL STRATEGY:
    - Portfolio balance assessment
@@ -289,7 +342,19 @@ YOUR TASK - Provide a UNIQUE, DETAILED analysis in this EXACT format with clear 
    - Opportunity identification
    - Next steps
 
-IMPORTANT: Format your response with clear sections, use bullet points, and make it easy to read. Be specific with numbers and conditions.`;
+6. MARKET TIMING INSIGHTS:
+   - Best time to enter based on current trends
+   - Risk assessment based on current volatility
+   - Market sentiment analysis (bullish/bearish/neutral)
+   - Correlation between selected coins (do they move together or independently?)
+
+IMPORTANT: 
+- Use the EXACT current prices and percentages provided above
+- Reference the real-time data (24h, 7d, 30d changes) in your analysis
+- Mention the distance from ATH/ATL when relevant
+- Be specific with numbers: "Buy at $X" not "Buy when price drops"
+- Format your response with clear sections, use bullet points, and make it easy to read
+- Add timestamps or "as of now" references to emphasize real-time analysis`;
 
         const response = await fetch(API_URL, {
             method: 'POST',
