@@ -606,7 +606,7 @@ Format your response clearly with sections.`;
             const analysis = data.choices[0].message.content.trim();
             
             // Extract mood score (0-100) from analysis
-            const scoreMatch = analysis.match(/(\d+)\s*(?:out of 100|/100|points?)/i);
+            const scoreMatch = analysis.match(/(\d+)\s*(?:out of 100|\/100|points?)/i);
             if (scoreMatch) {
                 currentMoodScore = parseInt(scoreMatch[1]);
             } else {
