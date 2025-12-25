@@ -599,19 +599,98 @@ function updateRiskDisplay() {
     if (riskValue) riskValue.textContent = riskLevel + '%';
 }
 
-function saveScore() {
+async function saveScore() {
     const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
-    const score = portfolioValue;
     const username = prompt('Enter your name:') || 'Anonymous';
     
-    leaderboard.push({ username, score, date: new Date().toLocaleDateString() });
-    leaderboard.sort((a, b) => b.score - a.score);
+    // Получаем текущие данные портфолио
+    const initialDeposit = portfolioValue;
+    const portfolioComposition = Object.keys(selectedCoins).map(coin => ({
+        symbol: coin,
+        percentage: selectedCoins[coin].percentage || 0
+    })).filter(coin => coin.percentage > 0);
     
+    // Вычисляем текущую стоимость портфолио на основе реальных цен
+    let currentPortfolioValue = initialDeposit;
+    let portfolioDetails = [];
+    
+    if (portfolioComposition.length > 0) {
+        try {
+            for (const coin of portfolioComposition) {
+                try {
+                    const priceResponse = await fetch(`${LIVECOINWATCH_URL}/${coin.symbol}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': LIVECOINWATCH_KEY
+                        },
+                        body: JSON.stringify({
+                            currency: 'USD',
+                            meta: true
+                        })
+                    });
+                    
+                    const priceInfo = await priceResponse.json();
+                    if (priceInfo && priceInfo.rate) {
+                        const coinValue = (initialDeposit * coin.percentage / 100);
+                        const priceChange = priceInfo.delta?.day || 0;
+                        const currentCoinValue = coinValue * (1 + priceChange / 100);
+                        currentPortfolioValue += (currentCoinValue - coinValue);
+                        
+                        portfolioDetails.push({
+                            symbol: coin.symbol,
+                            percentage: coin.percentage,
+                            price: priceInfo.rate.toFixed(6),
+                            priceChange24h: priceChange.toFixed(2) + '%',
+                            value: coinValue.toFixed(2),
+                            currentValue: currentCoinValue.toFixed(2)
+                        });
+                    }
+                } catch (e) {
+                    console.log(`Could not fetch price for ${coin.symbol}`);
+                }
+            }
+        } catch (e) {
+            console.log('Error calculating portfolio value');
+        }
+    }
+    
+    // Вычисляем прибыль/убыток
+    const profitLoss = currentPortfolioValue - initialDeposit;
+    const profitLossPercent = initialDeposit > 0 ? ((profitLoss / initialDeposit) * 100).toFixed(2) : 0;
+    
+    // Сохраняем полную информацию о портфолио
+    const portfolioEntry = {
+        username: username,
+        initialDeposit: initialDeposit,
+        currentValue: currentPortfolioValue.toFixed(2),
+        profitLoss: profitLoss.toFixed(2),
+        profitLossPercent: profitLossPercent,
+        portfolioComposition: portfolioComposition,
+        portfolioDetails: portfolioDetails,
+        date: new Date().toLocaleString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        }),
+        timestamp: Date.now()
+    };
+    
+    leaderboard.push(portfolioEntry);
+    // Сортируем по текущей стоимости портфолио (с учетом прибыли/убытка)
+    leaderboard.sort((a, b) => parseFloat(b.currentValue) - parseFloat(a.currentValue));
+    
+    // Оставляем только топ-10
     if (leaderboard.length > 10) leaderboard.pop();
     
     localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
     
     displayLeaderboard();
+    
+    // Показываем подтверждение
+    alert(`✅ Portfolio saved!\n\nInitial: $${initialDeposit.toFixed(2)}\nCurrent: $${currentPortfolioValue.toFixed(2)}\n${profitLoss >= 0 ? 'Profit' : 'Loss'}: ${profitLoss >= 0 ? '+' : ''}$${profitLoss.toFixed(2)} (${profitLossPercent >= 0 ? '+' : ''}${profitLossPercent}%)`);
 }
 
 function displayLeaderboard() {
@@ -621,16 +700,71 @@ function displayLeaderboard() {
     if (!leaderboardContent) return;
     
     if (leaderboard.length === 0) {
-        leaderboardContent.innerHTML = '<p style="color: #cccccc;">No participants yet</p>';
+        leaderboardContent.innerHTML = '<p style="color: #cccccc; text-align: center; padding: 20px;">No portfolios saved yet. Create your portfolio and save it to see your ranking!</p>';
         return;
     }
 
-    leaderboardContent.innerHTML = leaderboard.map((item, index) => `
-        <div class="leaderboard-item">
-            <span>#${index + 1} ${item.username}</span>
-            <span><strong>$${item.score.toFixed(2)}</strong></span>
-        </div>
-    `).join('');
+    leaderboardContent.innerHTML = leaderboard.map((item, index) => {
+        const isProfit = parseFloat(item.profitLoss || 0) >= 0;
+        const profitLossColor = isProfit ? '#51cf66' : '#ff6b6b';
+        const profitLossSign = isProfit ? '+' : '';
+        
+        // Формируем список монет
+        const coinsList = item.portfolioComposition && item.portfolioComposition.length > 0
+            ? item.portfolioComposition.map(c => `${c.symbol} (${c.percentage}%)`).join(', ')
+            : 'No coins selected';
+        
+        return `
+            <div class="leaderboard-item" style="
+                background: rgba(0, 0, 0, 0.5);
+                padding: 15px;
+                border-radius: 8px;
+                margin-bottom: 12px;
+                border-left: 4px solid ${index === 0 ? '#ffd700' : index === 1 ? '#c0c0c0' : index === 2 ? '#cd7f32' : 'rgba(255, 0, 0, 0.5)'};
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="
+                            font-size: 1.3em;
+                            font-weight: bold;
+                            color: ${index === 0 ? '#ffd700' : index === 1 ? '#c0c0c0' : index === 2 ? '#cd7f32' : '#ffffff'};
+                            min-width: 30px;
+                        ">#${index + 1}</span>
+                        <span style="color: #ffffff; font-weight: bold; font-size: 1.1em;">${item.username}</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: #ffffff; font-size: 1.2em; font-weight: bold;">
+                            $${parseFloat(item.currentValue || item.score || 0).toFixed(2)}
+                        </div>
+                        <div style="color: ${profitLossColor}; font-size: 0.9em; font-weight: bold;">
+                            ${profitLossSign}$${parseFloat(item.profitLoss || 0).toFixed(2)} 
+                            (${profitLossSign}${parseFloat(item.profitLossPercent || 0).toFixed(2)}%)
+                        </div>
+                    </div>
+                </div>
+                <div style="
+                    margin-top: 10px;
+                    padding-top: 10px;
+                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    font-size: 0.9em;
+                    color: #cccccc;
+                ">
+                    <div style="margin-bottom: 5px;">
+                        <strong style="color: #ffaaaa;">Initial Deposit:</strong> 
+                        <span style="color: #ffffff;">$${parseFloat(item.initialDeposit || item.score || 0).toFixed(2)}</span>
+                    </div>
+                    <div style="margin-bottom: 5px;">
+                        <strong style="color: #ffaaaa;">Portfolio:</strong> 
+                        <span style="color: #ffffff;">${coinsList}</span>
+                    </div>
+                    <div style="color: #999999; font-size: 0.85em;">
+                        📅 ${item.date || 'Unknown date'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 function checkPaymentStatus() {
