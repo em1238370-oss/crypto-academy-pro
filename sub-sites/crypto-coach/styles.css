@@ -1340,12 +1340,17 @@ div:has-text("Experience Points") {
     color: #ffffff;
     margin-bottom: 50px;
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    position: relative;
+    z-index: 100 !important; /* Заголовок всегда поверх открытых блоков */
+    pointer-events: none; /* Позволяет кликам проходить сквозь заголовок */
 }
 
 /* Drawer Module Styles */
 .drawer-container {
     margin-bottom: 60px;
     perspective: 1000px;
+    position: relative;
+    z-index: 1; /* Блоки ниже заголовка */
 }
 
 .drawer {
@@ -1359,8 +1364,9 @@ div:has-text("Experience Points") {
 }
 
 .drawer.open {
-    transform: translateY(-15px) scale(1.03);
+    transform: scale(1.02); /* Убрали translateY, чтобы блок не поднимался вверх */
     box-shadow: 0 25px 70px rgba(255, 0, 0, 0.5);
+    margin-top: 20px; /* Добавили отступ сверху, чтобы не перекрывать заголовок */
 }
 
 .drawer::before {
