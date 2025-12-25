@@ -599,9 +599,35 @@ function updateRiskDisplay() {
     if (riskValue) riskValue.textContent = riskLevel + '%';
 }
 
-async function saveScore() {
-    const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
-    const username = prompt('Enter your name:') || 'Anonymous';
+let portfolioChart = null;
+
+async function savePortfolio() {
+    const portfolioNameInput = document.getElementById('portfolioName');
+    const portfolioName = portfolioNameInput?.value?.trim() || prompt('Enter portfolio name:') || 'My Portfolio';
+    
+    if (!portfolioName) {
+        alert('Please enter a portfolio name!');
+        return;
+    }
+    
+    const savedPortfolios = JSON.parse(localStorage.getItem('savedPortfolios') || '{}');
+    
+    // Проверяем, существует ли уже портфолио с таким именем
+    if (savedPortfolios[portfolioName]) {
+        if (!confirm(`Portfolio "${portfolioName}" already exists. Do you want to update it?`)) {
+            return;
+        }
+    }
+    
+    // Инициализируем портфолио, если его еще нет
+    if (!savedPortfolios[portfolioName]) {
+        savedPortfolios[portfolioName] = {
+            name: portfolioName,
+            initialDeposit: portfolioValue,
+            portfolioComposition: [],
+            history: [] // История изменений стоимости
+        };
+    }
     
     // Получаем текущие данные портфолио
     const initialDeposit = portfolioValue;
@@ -732,7 +758,7 @@ function displayLeaderboard() {
                             min-width: 30px;
                         ">#${index + 1}</span>
                         <span style="color: #ffffff; font-weight: bold; font-size: 1.1em;">${item.username}</span>
-                    </div>
+        </div>
                     <div style="text-align: right;">
                         <div style="color: #ffffff; font-size: 1.2em; font-weight: bold;">
                             $${parseFloat(item.currentValue || item.score || 0).toFixed(2)}

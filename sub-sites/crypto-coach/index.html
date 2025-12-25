@@ -11,6 +11,8 @@
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
     <link rel="stylesheet" href="styles.css?v=13.0">
+   <!-- Chart.js for portfolio graphs -->
+   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
    <script src="scripts/table-modules.js" defer></script>
 </head>
 <body>
@@ -72,17 +74,17 @@
                            <div class="drawer-content">
                                <h3 style="color: #ffffff; margin-bottom: 20px;">Virtual environment for trading practice without real money</h3>
                                
-                              <div class="portfolio-section">
-                                  <h3>Your Portfolio</h3>
+                               <div class="portfolio-section">
+                                   <h3>Your Portfolio</h3>
                                   <div class="portfolio-input-wrapper">
                                       <label for="portfolioInput" style="display: block; color: #ffffff; margin-bottom: 10px; font-size: 1rem; line-height: 1.5;">Enter your portfolio value:</label>
                                       <input type="number" id="portfolioInput" class="portfolio-input" value="10000" min="1" step="0.01" placeholder="Enter amount">
-                                      <div class="portfolio-value" id="portfolioValue">$10,000.00</div>
+                                   <div class="portfolio-value" id="portfolioValue">$10,000.00</div>
                                   </div>
                                   <div class="profit-loss" id="profitLoss" style="margin-top: 15px; line-height: 1.6;">
-                                      <span id="profitLossValue">+$0.00</span> (<span id="profitLossPercent">0.00%</span>)
-                                  </div>
-                              </div>
+                                       <span id="profitLossValue">+$0.00</span> (<span id="profitLossPercent">0.00%</span>)
+                                   </div>
+                               </div>
 
                                <div class="section-title">Select Coins to Invest In</div>
                                <div class="coins-grid" id="coinsGrid"></div>
@@ -98,11 +100,25 @@
                                </div>
 
                                <div class="leaderboard">
-                                   <h4>Leaderboard</h4>
+                                  <h4>My Portfolio Tracker</h4>
+                                  <div id="portfolioSelector" style="margin-bottom: 20px;">
+                                      <label for="portfolioName" style="display: block; color: #ffffff; margin-bottom: 10px; font-size: 1rem;">Portfolio Name:</label>
+                                      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                          <input type="text" id="portfolioName" placeholder="Enter portfolio name (e.g., My Crypto Portfolio)" 
+                                                 style="flex: 1; padding: 10px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 8px; color: #ffffff; font-size: 1rem;">
+                                          <button class="btn btn-red" onclick="savePortfolio()" style="padding: 10px 20px;">Save Portfolio</button>
+                                      </div>
+                                      <select id="savedPortfolioSelect" onchange="loadPortfolioGraph(this.value)" 
+                                              style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 8px; color: #ffffff; font-size: 1rem; margin-bottom: 15px;">
+                                          <option value="">Select a saved portfolio...</option>
+                                      </select>
+                                  </div>
+                                  <div id="portfolioGraphContainer" style="display: none; margin-bottom: 20px;">
+                                      <canvas id="portfolioGraph" style="max-height: 300px;"></canvas>
+                                  </div>
                                    <div id="leaderboardContent">
-                                       <p style="color: #cccccc;">No participants yet</p>
+                                      <p style="color: #cccccc; text-align: center; padding: 20px;">Save your portfolio to start tracking its performance!</p>
                                    </div>
-                                   <button class="btn btn-red" onclick="saveScore()">Save Score</button>
                                </div>
                            </div>
                        </div>
