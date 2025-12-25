@@ -1892,6 +1892,28 @@ div:has-text("Experience Points") {
     justify-content: space-between;
 }
 
+/* Portfolio Graph Styles */
+#portfolioGraphContainer {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+#portfolioGraph {
+    max-height: 400px;
+}
+
+#portfolioSelector input[type="text"],
+#portfolioSelector select {
+    color: #ffffff;
+}
+
+#portfolioSelector input[type="text"]::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
 /* Module B - Mentor Panel Styles */
 .profile-section {
     background: rgba(255, 0, 0, 0.1);

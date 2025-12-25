@@ -681,42 +681,248 @@ async function savePortfolio() {
         }
     }
     
+    if (portfolioComposition.length === 0) {
+        alert('Please select at least one coin for your portfolio!');
+        return;
+    }
+    
     // Вычисляем прибыль/убыток
     const profitLoss = currentPortfolioValue - initialDeposit;
     const profitLossPercent = initialDeposit > 0 ? ((profitLoss / initialDeposit) * 100).toFixed(2) : 0;
     
-    // Сохраняем полную информацию о портфолио
-    const portfolioEntry = {
-        username: username,
-        initialDeposit: initialDeposit,
-        currentValue: currentPortfolioValue.toFixed(2),
-        profitLoss: profitLoss.toFixed(2),
-        profitLossPercent: profitLossPercent,
-        portfolioComposition: portfolioComposition,
-        portfolioDetails: portfolioDetails,
-        date: new Date().toLocaleString('en-US', { 
-            year: 'numeric', 
+    const now = new Date();
+    const timestamp = now.toISOString();
+    const dateLabel = now.toLocaleString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+    
+    // Обновляем состав портфолио
+    savedPortfolios[portfolioName].portfolioComposition = portfolioComposition;
+    
+    // Добавляем новую точку в историю
+    savedPortfolios[portfolioName].history.push({
+        timestamp: timestamp,
+        dateLabel: dateLabel,
+        value: parseFloat(currentPortfolioValue.toFixed(2)),
+        profitLoss: parseFloat(profitLoss.toFixed(2)),
+        profitLossPercent: parseFloat(profitLossPercent)
+    });
+    
+    // Сохраняем
+    localStorage.setItem('savedPortfolios', JSON.stringify(savedPortfolios));
+    
+    // Обновляем список портфолио
+    updatePortfolioSelector();
+    
+    // Показываем график
+    loadPortfolioGraph(portfolioName);
+    
+    // Очищаем поле ввода
+    if (portfolioNameInput) portfolioNameInput.value = '';
+    
+    // Показываем подтверждение
+    alert(`✅ Portfolio "${portfolioName}" saved!\n\nInitial: $${initialDeposit.toFixed(2)}\nCurrent: $${currentPortfolioValue.toFixed(2)}\n${profitLoss >= 0 ? 'Profit' : 'Loss'}: ${profitLoss >= 0 ? '+' : ''}$${profitLoss.toFixed(2)} (${profitLossPercent >= 0 ? '+' : ''}${profitLossPercent}%)`);
+}
+
+function updatePortfolioSelector() {
+    const selector = document.getElementById('savedPortfolioSelect');
+    if (!selector) return;
+    
+    const savedPortfolios = JSON.parse(localStorage.getItem('savedPortfolios') || '{}');
+    const portfolioNames = Object.keys(savedPortfolios);
+    
+    selector.innerHTML = '<option value="">Select a saved portfolio...</option>';
+    
+    portfolioNames.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        selector.appendChild(option);
+    });
+}
+
+async function loadPortfolioGraph(portfolioName) {
+    if (!portfolioName) {
+        const container = document.getElementById('portfolioGraphContainer');
+        if (container) container.style.display = 'none';
+        return;
+    }
+    
+    const savedPortfolios = JSON.parse(localStorage.getItem('savedPortfolios') || '{}');
+    const portfolio = savedPortfolios[portfolioName];
+    
+    if (!portfolio || !portfolio.history || portfolio.history.length === 0) {
+        alert('No history data for this portfolio yet. Save it first to start tracking!');
+        return;
+    }
+    
+    // Вычисляем текущую стоимость портфолио
+    const initialDeposit = portfolio.initialDeposit;
+    const portfolioComposition = portfolio.portfolioComposition;
+    let currentPortfolioValue = initialDeposit;
+    
+    if (portfolioComposition && portfolioComposition.length > 0) {
+        try {
+            for (const coin of portfolioComposition) {
+                try {
+                    const priceResponse = await fetch(`${LIVECOINWATCH_URL}/${coin.symbol}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': LIVECOINWATCH_KEY
+                        },
+                        body: JSON.stringify({
+                            currency: 'USD',
+                            meta: true
+                        })
+                    });
+                    
+                    const priceInfo = await priceResponse.json();
+                    if (priceInfo && priceInfo.rate) {
+                        const coinValue = (initialDeposit * coin.percentage / 100);
+                        const priceChange = priceInfo.delta?.day || 0;
+                        const currentCoinValue = coinValue * (1 + priceChange / 100);
+                        currentPortfolioValue += (currentCoinValue - coinValue);
+                    }
+                } catch (e) {
+                    console.log(`Could not fetch price for ${coin.symbol}`);
+                }
+            }
+        } catch (e) {
+            console.log('Error calculating current portfolio value');
+        }
+    }
+    
+    // Добавляем текущую точку, если она отличается от последней
+    const now = new Date();
+    const lastEntry = portfolio.history[portfolio.history.length - 1];
+    const timeDiff = now - new Date(lastEntry.timestamp);
+    
+    // Обновляем только если прошло больше 5 минут
+    if (timeDiff > 5 * 60 * 1000) {
+        const dateLabel = now.toLocaleString('en-US', { 
             month: 'short', 
             day: 'numeric', 
             hour: '2-digit', 
             minute: '2-digit' 
-        }),
-        timestamp: Date.now()
-    };
+        });
+        
+        portfolio.history.push({
+            timestamp: now.toISOString(),
+            dateLabel: dateLabel,
+            value: parseFloat(currentPortfolioValue.toFixed(2)),
+            profitLoss: parseFloat((currentPortfolioValue - initialDeposit).toFixed(2)),
+            profitLossPercent: parseFloat(((currentPortfolioValue - initialDeposit) / initialDeposit * 100).toFixed(2))
+        });
+        
+        savedPortfolios[portfolioName] = portfolio;
+        localStorage.setItem('savedPortfolios', JSON.stringify(savedPortfolios));
+    }
     
-    leaderboard.push(portfolioEntry);
-    // Сортируем по текущей стоимости портфолио (с учетом прибыли/убытка)
-    leaderboard.sort((a, b) => parseFloat(b.currentValue) - parseFloat(a.currentValue));
+    // Подготавливаем данные для графика
+    const labels = portfolio.history.map(h => h.dateLabel);
+    const values = portfolio.history.map(h => h.value);
     
-    // Оставляем только топ-10
-    if (leaderboard.length > 10) leaderboard.pop();
+    // Показываем контейнер графика
+    const container = document.getElementById('portfolioGraphContainer');
+    if (container) container.style.display = 'block';
     
-    localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+    // Создаем или обновляем график
+    const canvas = document.getElementById('portfolioGraph');
+    if (!canvas) return;
     
-    displayLeaderboard();
+    const ctx = canvas.getContext('2d');
     
-    // Показываем подтверждение
-    alert(`✅ Portfolio saved!\n\nInitial: $${initialDeposit.toFixed(2)}\nCurrent: $${currentPortfolioValue.toFixed(2)}\n${profitLoss >= 0 ? 'Profit' : 'Loss'}: ${profitLoss >= 0 ? '+' : ''}$${profitLoss.toFixed(2)} (${profitLossPercent >= 0 ? '+' : ''}${profitLossPercent}%)`);
+    if (portfolioChart) {
+        portfolioChart.destroy();
+    }
+    
+    portfolioChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Portfolio Value ($)',
+                data: values,
+                borderColor: '#ff0000',
+                backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointBackgroundColor: '#ff0000',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: '#ff6666',
+                pointHoverBorderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        color: '#ffffff',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#ff0000',
+                    borderWidth: 2,
+                    callbacks: {
+                        label: function(context) {
+                            const index = context.dataIndex;
+                            const entry = portfolio.history[index];
+                            return [
+                                `Value: $${entry.value.toFixed(2)}`,
+                                `Profit/Loss: ${entry.profitLoss >= 0 ? '+' : ''}$${entry.profitLoss.toFixed(2)}`,
+                                `Change: ${entry.profitLossPercent >= 0 ? '+' : ''}${entry.profitLossPercent.toFixed(2)}%`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: '#ffffff',
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                y: {
+                    ticks: {
+                        color: '#ffffff',
+                        font: {
+                            size: 11
+                        },
+                        callback: function(value) {
+                            return '$' + value.toFixed(0);
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
 }
 
 function displayLeaderboard() {
@@ -1309,7 +1515,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updatePortfolioValue();
     setTimeout(() => {
         updateRiskDisplay();
-        displayLeaderboard();
+        updatePortfolioSelector();
         checkPaymentStatus();
         updatePriceChangeDisplay();
         updateRiskAppetiteDisplay();
