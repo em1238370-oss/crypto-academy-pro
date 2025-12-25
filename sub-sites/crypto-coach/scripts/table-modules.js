@@ -1644,10 +1644,23 @@ async function initMarketHeatmap() {
     const heatmapContainer = document.getElementById('marketHeatmap');
     if (!heatmapContainer) return;
     
-    // Show top 20 coins for heatmap
-    const topCoins = availableCoins.slice(0, 20);
+    // Clear container first
+    heatmapContainer.innerHTML = '';
+    
+    // Remove duplicates from availableCoins and get unique coins
+    const uniqueCoins = [...new Set(availableCoins)];
+    
+    // Show top 30 unique coins for heatmap
+    const topCoins = uniqueCoins.slice(0, 30);
+    
+    // Track processed coins to avoid duplicates
+    const processedCoins = new Set();
     
     for (const coin of topCoins) {
+        // Skip if already processed
+        if (processedCoins.has(coin)) continue;
+        processedCoins.add(coin);
+        
         try {
             const response = await fetch(LIVECOINWATCH_URL, {
                 method: 'POST',
@@ -1662,20 +1675,32 @@ async function initMarketHeatmap() {
                 const data = await response.json();
                 const change24h = data.delta?.day || 0;
                 
+                // Green for positive/zero, red for negative
+                const isPositive = change24h >= 0;
+                const bgColor = isPositive ? 'rgba(0, 255, 0, 0.25)' : 'rgba(255, 0, 0, 0.25)';
+                const borderColor = isPositive ? 'rgba(0, 255, 0, 0.7)' : 'rgba(255, 0, 0, 0.7)';
+                const textColor = isPositive ? '#00ff00' : '#ff0000';
+                
                 const coinElement = document.createElement('div');
                 coinElement.style.cssText = `
-                    background: ${change24h >= 0 ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)'};
-                    border: 2px solid ${change24h >= 0 ? 'rgba(0, 255, 0, 0.6)' : 'rgba(255, 0, 0, 0.6)'};
-                    border-radius: 8px;
-                    padding: 10px;
+                    background: ${bgColor};
+                    border: 2px solid ${borderColor};
+                    border-radius: 10px;
+                    padding: 15px;
                     text-align: center;
                     cursor: pointer;
                     transition: all 0.3s ease;
+                    min-width: 110px;
+                    min-height: 80px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
                 `;
                 coinElement.innerHTML = `
-                    <div style="color: #ffffff; font-weight: bold; font-size: 0.9rem; margin-bottom: 5px;">${coin}</div>
-                    <div style="color: ${change24h >= 0 ? '#00ff00' : '#ff0000'}; font-size: 0.85rem; font-weight: bold;">
-                        ${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%
+                    <div style="color: #ffffff; font-weight: bold; font-size: 1rem; margin-bottom: 8px;">${coin}</div>
+                    <div style="color: ${textColor}; font-size: 0.95rem; font-weight: bold;">
+                        ${isPositive ? '+' : ''}${change24h.toFixed(2)}%
                     </div>
                 `;
                 coinElement.onclick = () => {
@@ -1687,11 +1712,13 @@ async function initMarketHeatmap() {
                 };
                 coinElement.onmouseenter = () => {
                     coinElement.style.transform = 'scale(1.1)';
-                    coinElement.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.5)';
+                    coinElement.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.6)';
+                    coinElement.style.zIndex = '10';
                 };
                 coinElement.onmouseleave = () => {
                     coinElement.style.transform = 'scale(1)';
                     coinElement.style.boxShadow = 'none';
+                    coinElement.style.zIndex = '1';
                 };
                 
                 heatmapContainer.appendChild(coinElement);
