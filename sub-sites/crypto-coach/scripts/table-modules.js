@@ -849,7 +849,9 @@ function drawStressChart() {
     });
 }
 
-// Pre-Trade Mental Check
+// Pre-Trade Mental Check with Blocking System
+let blockCount = parseInt(localStorage.getItem('preTradeBlockCount') || '0');
+
 function checkReadiness() {
     const checks = document.querySelectorAll('.mental-check');
     const preTradeResult = document.getElementById('preTradeResult');
@@ -874,6 +876,79 @@ function checkReadiness() {
     
     const score = Math.round((checkedCount / totalChecks) * 100);
     
+    // BLOCKING SYSTEM: If score < 50%, block the module
+    if (score < 50) {
+        // Determine block duration: 3 hours for first time, 6 hours for repeat
+        const blockDuration = blockCount === 0 ? 3 * 60 * 60 * 1000 : 6 * 60 * 60 * 1000; // 3 hours or 6 hours in milliseconds
+        const blockUntil = Date.now() + blockDuration;
+        
+        // Save block info
+        localStorage.setItem('preTradeBlockUntil', blockUntil.toString());
+        blockCount++;
+        localStorage.setItem('preTradeBlockCount', blockCount.toString());
+        
+        // Update score display
+        if (readinessScore) {
+            readinessScore.textContent = score + '%';
+            readinessScore.style.color = '#ff0000';
+        }
+        
+        // Update label with blocking info
+        if (readinessLabel) {
+            const hours = blockCount === 1 ? '3' : '6';
+            readinessLabel.textContent = `🚫 BLOCKED for ${hours} hours`;
+            readinessLabel.style.color = '#ff0000';
+        }
+        
+        // Show blocking message
+        if (readinessRecommendations) {
+            const hours = blockCount === 1 ? '3' : '6';
+            recommendations = `
+                <div style="color: #ff0000; font-weight: bold; font-size: 1.2rem; margin-bottom: 15px;">
+                    🚫 MODULE BLOCKED
+                </div>
+                <div style="color: #ffffff; line-height: 1.8; margin-bottom: 15px;">
+                    You failed the readiness check (${score}% - less than 50%). 
+                    This module is now <strong style="color: #ff0000;">blocked for ${hours} hours</strong> to protect you from making poor trading decisions.
+                </div>
+                <div style="color: #ffaa00; padding: 15px; background: rgba(255, 0, 0, 0.2); border-radius: 8px; border-left: 4px solid #ff0000;">
+                    <strong>Why?</strong> Trading when you're not mentally ready significantly increases your risk of:
+                    <ul style="margin-top: 10px; padding-left: 20px;">
+                        <li>Making emotional decisions</li>
+                        <li>Taking excessive risks</li>
+                        <li>Suffering significant losses</li>
+                    </ul>
+                </div>
+                <div style="color: #cccccc; margin-top: 15px; font-size: 0.9rem;">
+                    Block will be lifted at: <span id="blockUntilTime" style="color: #ffd700; font-weight: bold;"></span>
+                </div>
+            `;
+            readinessRecommendations.innerHTML = recommendations;
+            
+            // Show block until time
+            const blockUntilTime = new Date(blockUntil);
+            const timeElement = document.getElementById('blockUntilTime');
+            if (timeElement) {
+                timeElement.textContent = blockUntilTime.toLocaleString();
+            }
+        }
+        
+        preTradeResult.style.display = 'block';
+        preTradeResult.style.borderLeftColor = '#ff0000';
+        
+        // Block the entire module
+        blockModuleB();
+        
+        return;
+    }
+    
+    // If passed (score >= 50%), reset block count
+    if (score >= 50) {
+        blockCount = 0;
+        localStorage.setItem('preTradeBlockCount', '0');
+        localStorage.removeItem('preTradeBlockUntil');
+    }
+    
     // Update score display
     if (readinessScore) {
         readinessScore.textContent = score + '%';
@@ -881,10 +956,8 @@ function checkReadiness() {
             readinessScore.style.color = '#00ff00';
         } else if (score >= 60) {
             readinessScore.style.color = '#ffd700';
-        } else if (score >= 40) {
-            readinessScore.style.color = '#ffaa00';
         } else {
-            readinessScore.style.color = '#ff0000';
+            readinessScore.style.color = '#ffaa00';
         }
     }
     
@@ -897,8 +970,8 @@ function checkReadiness() {
             readinessLabel.textContent = '⚠️ Proceed with Caution';
             readinessLabel.style.color = '#ffd700';
         } else {
-            readinessLabel.textContent = '🚫 NOT Ready - Do NOT Trade';
-            readinessLabel.style.color = '#ff0000';
+            readinessLabel.textContent = '⚠️ Partially Ready';
+            readinessLabel.style.color = '#ffaa00';
         }
     }
     
@@ -917,19 +990,146 @@ function checkReadiness() {
                 recommendations += '</ul>';
             }
         } else {
-            recommendations = '<div style="color: #ff0000; font-weight: bold;">🚫 You are NOT ready to trade. Please address the following before making any trading decisions:</div>';
+            recommendations = '<div style="color: #ffaa00; font-weight: bold;">⚠️ You are partially ready. Please address the following:</div>';
             recommendations += '<ul style="margin-top: 10px; padding-left: 20px;">';
             missingChecks.forEach(check => {
-                recommendations += `<li style="margin-bottom: 8px; color: #ff6666;">${check}</li>`;
+                recommendations += `<li style="margin-bottom: 8px; color: #ffaa00;">${check}</li>`;
             });
             recommendations += '</ul>';
-            recommendations += '<div style="margin-top: 15px; padding: 10px; background: rgba(255, 0, 0, 0.2); border-radius: 5px; color: #ffffff;">⚠️ Trading in this state significantly increases your risk of making emotional, poor decisions.</div>';
         }
         readinessRecommendations.innerHTML = recommendations;
     }
     
     preTradeResult.style.display = 'block';
-    preTradeResult.style.borderLeftColor = score >= 80 ? '#00ff00' : score >= 60 ? '#ffd700' : '#ff0000';
+    preTradeResult.style.borderLeftColor = score >= 80 ? '#00ff00' : score >= 60 ? '#ffd700' : '#ffaa00';
+}
+
+function blockModuleB() {
+    const drawerB = document.getElementById('drawerB');
+    const drawerContent = drawerB?.querySelector('.drawer-content');
+    
+    if (!drawerB || !drawerContent) return;
+    
+    // Close drawer if open
+    drawerB.classList.remove('open');
+    
+    // Disable the drawer header
+    const drawerHeader = drawerB.querySelector('.drawer-header');
+    if (drawerHeader) {
+        drawerHeader.style.opacity = '0.5';
+        drawerHeader.style.cursor = 'not-allowed';
+        drawerHeader.onclick = null;
+    }
+    
+    // Show blocking overlay
+    let blockingOverlay = document.getElementById('moduleBBlockingOverlay');
+    if (!blockingOverlay) {
+        blockingOverlay = document.createElement('div');
+        blockingOverlay.id = 'moduleBBlockingOverlay';
+        blockingOverlay.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 40px;
+            text-align: center;
+        `;
+        drawerB.style.position = 'relative';
+        drawerB.appendChild(blockingOverlay);
+    }
+    
+    const blockUntil = parseInt(localStorage.getItem('preTradeBlockUntil') || '0');
+    const timeRemaining = Math.max(0, blockUntil - Date.now());
+    const hours = Math.floor(timeRemaining / (60 * 60 * 1000));
+    const minutes = Math.floor((timeRemaining % (60 * 60 * 1000)) / (60 * 1000));
+    
+    blockingOverlay.innerHTML = `
+        <div style="font-size: 4rem; margin-bottom: 20px;">🚫</div>
+        <div style="color: #ff0000; font-size: 2rem; font-weight: bold; margin-bottom: 15px;">MODULE BLOCKED</div>
+        <div style="color: #ffffff; font-size: 1.2rem; margin-bottom: 20px; line-height: 1.6;">
+            You failed the readiness check. This module is blocked to protect you from making poor trading decisions.
+        </div>
+        <div style="color: #ffd700; font-size: 1.5rem; font-weight: bold; margin-bottom: 20px;">
+            Time remaining: ${hours}h ${minutes}m
+        </div>
+        <div style="color: #cccccc; font-size: 1rem; line-height: 1.6;">
+            The block will be automatically lifted when the timer reaches zero.
+        </div>
+    `;
+    
+    // Start countdown timer
+    startBlockCountdown();
+}
+
+function startBlockCountdown() {
+    const countdownInterval = setInterval(() => {
+        const blockUntil = parseInt(localStorage.getItem('preTradeBlockUntil') || '0');
+        const timeRemaining = Math.max(0, blockUntil - Date.now());
+        
+        if (timeRemaining <= 0) {
+            // Block expired, unblock module
+            clearInterval(countdownInterval);
+            unblockModuleB();
+            return;
+        }
+        
+        const hours = Math.floor(timeRemaining / (60 * 60 * 1000));
+        const minutes = Math.floor((timeRemaining % (60 * 60 * 1000)) / (60 * 1000));
+        const seconds = Math.floor((timeRemaining % (60 * 1000)) / 1000);
+        
+        const blockingOverlay = document.getElementById('moduleBBlockingOverlay');
+        if (blockingOverlay) {
+            const timeElement = blockingOverlay.querySelector('div[style*="Time remaining"]');
+            if (timeElement) {
+                timeElement.innerHTML = `Time remaining: ${hours}h ${minutes}m ${seconds}s`;
+            }
+        }
+    }, 1000);
+}
+
+function unblockModuleB() {
+    const drawerB = document.getElementById('drawerB');
+    const drawerHeader = drawerB?.querySelector('.drawer-header');
+    const blockingOverlay = document.getElementById('moduleBBlockingOverlay');
+    
+    if (blockingOverlay) {
+        blockingOverlay.remove();
+    }
+    
+    if (drawerHeader) {
+        drawerHeader.style.opacity = '1';
+        drawerHeader.style.cursor = 'pointer';
+        drawerHeader.onclick = () => toggleDrawerWithInit('drawerB');
+    }
+    
+    // Reset block count after successful unblock
+    blockCount = 0;
+    localStorage.setItem('preTradeBlockCount', '0');
+    localStorage.removeItem('preTradeBlockUntil');
+}
+
+function checkModuleBBlockStatus() {
+    const blockUntil = parseInt(localStorage.getItem('preTradeBlockUntil') || '0');
+    
+    if (blockUntil > Date.now()) {
+        // Still blocked
+        blockModuleB();
+        return true;
+    } else if (blockUntil > 0) {
+        // Block expired
+        unblockModuleB();
+        return false;
+    }
+    
+    return false;
 }
 
 // Cognitive Bias Detector
@@ -1195,8 +1395,21 @@ document.addEventListener('DOMContentLoaded', function() {
         drawStressChart();
         analyzeTradingTime();
         drawTimeChart();
+        checkModuleBBlockStatus(); // Check if module B is blocked
     }, 1000);
 });
+
+// Check block status when drawer is opened
+const originalToggleDrawerWithInit = toggleDrawerWithInit;
+toggleDrawerWithInit = function(drawerId) {
+    if (drawerId === 'drawerB') {
+        if (checkModuleBBlockStatus()) {
+            // Module is blocked, don't open
+            return;
+        }
+    }
+    originalToggleDrawerWithInit(drawerId);
+};
 
 // Legacy function for compatibility
 async function analyzeMood() {
