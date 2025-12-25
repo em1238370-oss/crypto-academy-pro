@@ -1364,7 +1364,7 @@ div:has-text("Experience Points") {
     position: relative;
 }
 
-/* Уникальный дизайн для FREE блока (drawerA) */
+/* Уникальный дизайн для FREE блока (drawerA) - ЗОЛОТОЙ когда закрыт */
 #drawerA {
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(20, 10, 0, 0.8) 100%);
     border: 3px solid rgba(255, 215, 0, 0.6);
@@ -1373,6 +1373,7 @@ div:has-text("Experience Points") {
         0 0 30px rgba(255, 215, 0, 0.3),
         inset 0 0 20px rgba(255, 215, 0, 0.1);
     position: relative;
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 #drawerA::before {
@@ -1393,6 +1394,7 @@ div:has-text("Experience Points") {
     z-index: -1;
     animation: goldShimmer 3s ease-in-out infinite;
     opacity: 0.7;
+    transition: opacity 0.5s ease;
 }
 
 #drawerA::after {
@@ -1405,6 +1407,7 @@ div:has-text("Experience Points") {
     background: radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.2) 0%, transparent 70%);
     pointer-events: none;
     z-index: 0;
+    transition: opacity 0.5s ease;
 }
 
 @keyframes goldShimmer {
@@ -1413,15 +1416,24 @@ div:has-text("Experience Points") {
     100% { background-position: 0% 50%; }
 }
 
+/* Когда блок открыт - становится КРАСНЫМ как другие блоки */
 #drawerA.open {
     transform: scale(1.02);
-    box-shadow: 
-        0 25px 70px rgba(255, 0, 0, 0.5),
-        0 0 50px rgba(255, 215, 0, 0.5),
-        0 0 80px rgba(255, 215, 0, 0.3),
-        inset 0 0 30px rgba(255, 215, 0, 0.15);
+    background: rgba(0, 0, 0, 0.6); /* Стандартный фон как у других блоков */
+    border: 2px solid rgba(255, 0, 0, 0.3); /* Красная рамка как у других */
+    box-shadow: 0 25px 70px rgba(255, 0, 0, 0.5); /* Красное свечение */
     margin-top: 20px;
-    border-color: rgba(255, 215, 0, 0.8);
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Скрываем золотые эффекты когда блок открыт */
+#drawerA.open::before {
+    opacity: 0;
+    animation: none;
+}
+
+#drawerA.open::after {
+    opacity: 0;
 }
 
 .drawer.open {
@@ -1460,13 +1472,14 @@ div:has-text("Experience Points") {
     z-index: 2;
 }
 
-/* Уникальный дизайн заголовка для FREE блока */
+/* Уникальный дизайн заголовка для FREE блока - ЗОЛОТОЙ когда закрыт */
 #drawerA .drawer-header {
     background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 200, 0, 0.25) 100%);
     border-bottom: 3px solid rgba(255, 215, 0, 0.5);
     box-shadow: 0 2px 15px rgba(255, 215, 0, 0.3);
     position: relative;
     overflow: hidden;
+    transition: all 0.5s ease;
 }
 
 #drawerA .drawer-header::before {
@@ -1478,6 +1491,7 @@ div:has-text("Experience Points") {
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
     animation: headerShine 3s infinite;
+    transition: opacity 0.5s ease;
 }
 
 @keyframes headerShine {
@@ -1489,6 +1503,24 @@ div:has-text("Experience Points") {
     background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(255, 200, 0, 0.35) 100%);
     box-shadow: 0 4px 20px rgba(255, 215, 0, 0.5);
     transform: translateY(0);
+}
+
+/* Когда блок открыт - заголовок становится КРАСНЫМ как у других блоков */
+#drawerA.open .drawer-header {
+    background: rgba(255, 0, 0, 0.2); /* Стандартный красный фон */
+    border-bottom: 2px solid rgba(255, 0, 0, 0.3); /* Красная граница */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.5s ease;
+}
+
+#drawerA.open .drawer-header::before {
+    opacity: 0;
+    animation: none;
+}
+
+#drawerA.open .drawer-header:hover {
+    background: rgba(255, 0, 0, 0.3); /* Красный hover */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .drawer-header:hover {
