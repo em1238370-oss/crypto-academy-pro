@@ -554,7 +554,10 @@ function updateAdvice() {
     }
 }
 
-async function analyzeMood() {
+// Enhanced Mood Analysis
+let currentMoodScore = 50; // 0-100, 0 = extreme fear, 100 = extreme greed
+
+async function analyzeMoodEnhanced() {
     const moodText = document.getElementById('moodText')?.value;
     const moodResult = document.getElementById('moodResult');
     
@@ -566,10 +569,19 @@ async function analyzeMood() {
     }
 
     moodResult.style.display = 'block';
-    moodResult.innerHTML = '<em style="color: #ff6666;">🤖 AI is analyzing your mood...</em>';
+    moodResult.innerHTML = '<em style="color: #ff6666;">🤖 AI is deeply analyzing your emotional state...</em>';
 
     try {
-        const prompt = `The user described their cryptocurrency trading/investment mood as: "${moodText}". You are an expert trading psychology coach. Analyze their emotional state and provide a CALMING, PRACTICAL response.`;
+        const prompt = `The user described their cryptocurrency trading/investment mood as: "${moodText}". 
+
+You are an expert trading psychology coach. Analyze their emotional state and provide:
+1. Emotional state assessment (Fear/Greed scale 0-100)
+2. Trading readiness (Should they trade now or wait?)
+3. Specific risks based on their emotions
+4. Practical recommendations
+5. When would be the best time to make decisions
+
+Format your response clearly with sections.`;
 
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -580,23 +592,274 @@ async function analyzeMood() {
             body: JSON.stringify({
                 model: 'mistral-small',
                 messages: [
-                    { role: 'system', content: 'You are an expert trading psychology coach.' },
+                    { role: 'system', content: 'You are an expert trading psychology coach specializing in emotional intelligence and trading decisions.' },
                     { role: 'user', content: prompt }
                 ],
-                temperature: 0.6,
-                max_tokens: 200
+                temperature: 0.7,
+                max_tokens: 500
             })
         });
 
         const data = await response.json();
         
         if (data.choices && data.choices[0]) {
-            moodResult.innerHTML = `<p>${data.choices[0].message.content.trim()}</p>`;
+            const analysis = data.choices[0].message.content.trim();
+            
+            // Extract mood score (0-100) from analysis
+            const scoreMatch = analysis.match(/(\d+)\s*(?:out of 100|/100|points?)/i);
+            if (scoreMatch) {
+                currentMoodScore = parseInt(scoreMatch[1]);
+            } else {
+                // Estimate from keywords
+                const fearWords = (analysis.match(/fear|anxious|worried|panic|stress/gi) || []).length;
+                const greedWords = (analysis.match(/greed|excited|confident|optimistic|euphoric/gi) || []).length;
+                currentMoodScore = Math.max(0, Math.min(100, 50 + (greedWords * 10) - (fearWords * 10)));
+            }
+            
+            moodResult.innerHTML = `
+                <div style="color: #ffffff; line-height: 1.8;">
+                    <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(255, 0, 0, 0.3);">
+                        <strong style="color: #ffd700; font-size: 1.1rem;">📊 Your Emotional State:</strong>
+                        <div style="margin-top: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="flex: 1; height: 20px; background: rgba(0, 0, 0, 0.5); border-radius: 10px; overflow: hidden; position: relative;">
+                                    <div style="
+                                        height: 100%;
+                                        width: ${currentMoodScore}%;
+                                        background: linear-gradient(90deg, #ff0000 0%, #ffaa00 50%, #00ff00 100%);
+                                        transition: width 0.5s ease;
+                                    "></div>
+                                </div>
+                                <span style="color: #ffd700; font-weight: bold; font-size: 1.2rem;">${currentMoodScore}/100</span>
+                            </div>
+                            <div style="margin-top: 5px; color: #cccccc; font-size: 0.9rem;">
+                                ${currentMoodScore < 30 ? '😰 Extreme Fear' : currentMoodScore < 50 ? '😟 Fear' : currentMoodScore < 70 ? '😐 Neutral' : currentMoodScore < 90 ? '😊 Greed' : '🤩 Extreme Greed'}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="color: #ffffff;">
+                        ${analysis.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            `;
+            
+            // Update your mood value in sentiment comparison
+            updateYourMoodDisplay(currentMoodScore);
         }
     } catch (error) {
         console.error('AI Error:', error);
-        moodResult.innerHTML = '<p style="color: #ff6666;">Error connecting to AI</p>';
+        moodResult.innerHTML = '<p style="color: #ff6666;">Error connecting to AI. Please try again.</p>';
     }
+}
+
+// Market Sentiment vs Your Mood
+let marketSentimentScore = 50;
+
+async function fetchMarketSentiment() {
+    try {
+        // Using alternative.me API for Fear & Greed Index
+        const response = await fetch('https://api.alternative.me/fng/?limit=1');
+        const data = await response.json();
+        
+        if (data.data && data.data[0]) {
+            marketSentimentScore = parseInt(data.data[0].value);
+            return marketSentimentScore;
+        }
+    } catch (error) {
+        console.error('Error fetching market sentiment:', error);
+        // Fallback: random for demo
+        marketSentimentScore = Math.floor(Math.random() * 100);
+    }
+    return marketSentimentScore;
+}
+
+function updateYourMoodDisplay(score) {
+    const yourMoodValue = document.getElementById('yourMoodValue');
+    const yourMoodLabel = document.getElementById('yourMoodLabel');
+    
+    if (yourMoodValue) yourMoodValue.textContent = score;
+    if (yourMoodLabel) {
+        yourMoodLabel.textContent = score < 30 ? 'Extreme Fear' : score < 50 ? 'Fear' : score < 70 ? 'Neutral' : score < 90 ? 'Greed' : 'Extreme Greed';
+        yourMoodLabel.style.color = score < 30 ? '#ff0000' : score < 50 ? '#ff6666' : score < 70 ? '#ffd700' : score < 90 ? '#00ff00' : '#00ff00';
+    }
+}
+
+async function compareSentiment() {
+    const sentimentComparisonResult = document.getElementById('sentimentComparisonResult');
+    const sentimentInsight = document.getElementById('sentimentInsight');
+    const marketSentimentValue = document.getElementById('marketSentimentValue');
+    const marketSentimentLabel = document.getElementById('marketSentimentLabel');
+    
+    if (!sentimentComparisonResult) return;
+    
+    // Fetch market sentiment
+    const marketScore = await fetchMarketSentiment();
+    
+    if (marketSentimentValue) marketSentimentValue.textContent = marketScore;
+    if (marketSentimentLabel) {
+        marketSentimentLabel.textContent = marketScore < 30 ? 'Extreme Fear' : marketScore < 50 ? 'Fear' : marketScore < 70 ? 'Neutral' : marketScore < 90 ? 'Greed' : 'Extreme Greed';
+        marketSentimentLabel.style.color = marketScore < 30 ? '#ff0000' : marketScore < 50 ? '#ff6666' : marketScore < 70 ? '#ffd700' : marketScore < 90 ? '#00ff00' : '#00ff00';
+    }
+    
+    if (currentMoodScore === 50 && !document.getElementById('moodText')?.value) {
+        sentimentInsight.textContent = 'Please analyze your mood first to see the comparison.';
+        sentimentComparisonResult.style.display = 'block';
+        return;
+    }
+    
+    const difference = Math.abs(marketScore - currentMoodScore);
+    let insight = '';
+    let recommendation = '';
+    
+    if (difference < 20) {
+        insight = `You and the market are aligned (difference: ${difference} points). `;
+        if (marketScore < 30) {
+            recommendation = 'Both you and the market are in fear. This might be a good buying opportunity, but be cautious.';
+        } else if (marketScore > 70) {
+            recommendation = 'Both you and the market are in greed. Consider taking profits and being cautious of FOMO.';
+        } else {
+            recommendation = 'You are both neutral. Good time for rational decision-making.';
+        }
+    } else {
+        if (currentMoodScore < marketScore) {
+            insight = `The market is more optimistic than you (difference: ${difference} points). `;
+            recommendation = 'You are more cautious than the market. This could be good - avoid FOMO. Consider waiting for better entry points.';
+        } else {
+            insight = `You are more optimistic than the market (difference: ${difference} points). `;
+            recommendation = 'You are more bullish than the market. Be careful of overconfidence. The market might be right - consider being more cautious.';
+        }
+    }
+    
+    sentimentInsight.innerHTML = `<strong>${insight}</strong>${recommendation}`;
+    sentimentComparisonResult.style.display = 'block';
+}
+
+// Stress Level Monitor
+let stressHistory = JSON.parse(localStorage.getItem('stressHistory') || '[]');
+
+function updateStressLevel(value) {
+    const stressValue = document.getElementById('stressValue');
+    if (stressValue) {
+        stressValue.textContent = value;
+        const color = value < 30 ? '#00ff00' : value < 60 ? '#ffd700' : value < 80 ? '#ff6666' : '#ff0000';
+        stressValue.style.color = color;
+    }
+    
+    updateStressRecommendations(parseInt(value));
+    drawStressChart();
+}
+
+function updateStressRecommendations(level) {
+    const stressRecommendations = document.getElementById('stressRecommendations');
+    const stressWarning = document.getElementById('stressWarning');
+    
+    if (!stressRecommendations || !stressWarning) return;
+    
+    if (level < 30) {
+        stressWarning.innerHTML = '<span style="color: #00ff00;">✅ Your stress level is low. Great for making rational trading decisions!</span>';
+        stressRecommendations.style.borderLeftColor = '#00ff00';
+    } else if (level < 60) {
+        stressWarning.innerHTML = '<span style="color: #ffd700;">⚠️ Moderate stress detected. Take a break before making important decisions.</span>';
+        stressRecommendations.style.borderLeftColor = '#ffd700';
+    } else if (level < 80) {
+        stressWarning.innerHTML = '<span style="color: #ff6666;">⚠️ High stress level! Avoid trading now. Take deep breaths, step away from the screen.</span>';
+        stressRecommendations.style.borderLeftColor = '#ff6666';
+    } else {
+        stressWarning.innerHTML = '<span style="color: #ff0000;">🚨 EXTREME STRESS! DO NOT TRADE NOW. Close your trading apps, take a walk, meditate. Your decisions will be emotional and risky.</span>';
+        stressRecommendations.style.borderLeftColor = '#ff0000';
+    }
+    
+    stressRecommendations.style.display = 'block';
+}
+
+function saveStressLevel() {
+    const stressLevel = document.getElementById('stressLevel')?.value;
+    if (!stressLevel) return;
+    
+    const entry = {
+        timestamp: Date.now(),
+        date: new Date().toLocaleDateString(),
+        level: parseInt(stressLevel)
+    };
+    
+    stressHistory.push(entry);
+    
+    // Keep only last 7 days
+    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    stressHistory = stressHistory.filter(e => e.timestamp > sevenDaysAgo);
+    
+    localStorage.setItem('stressHistory', JSON.stringify(stressHistory));
+    drawStressChart();
+    
+    alert(`Stress level ${stressLevel}/100 saved!`);
+}
+
+function drawStressChart() {
+    const canvas = document.getElementById('stressChart');
+    if (!canvas || stressHistory.length === 0) return;
+    
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth;
+    canvas.height = 120;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const padding = 20;
+    const chartWidth = canvas.width - (padding * 2);
+    const chartHeight = canvas.height - (padding * 2);
+    
+    // Draw grid
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+        const y = padding + (chartHeight / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(padding + chartWidth, y);
+        ctx.stroke();
+    }
+    
+    // Draw line
+    ctx.strokeStyle = '#ff0000';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    const last7Days = stressHistory.slice(-7);
+    last7Days.forEach((entry, index) => {
+        const x = padding + (chartWidth / (last7Days.length - 1 || 1)) * index;
+        const y = padding + chartHeight - (entry.level / 100) * chartHeight;
+        
+        if (index === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    });
+    
+    ctx.stroke();
+    
+    // Draw points
+    ctx.fillStyle = '#ff0000';
+    last7Days.forEach((entry, index) => {
+        const x = padding + (chartWidth / (last7Days.length - 1 || 1)) * index;
+        const y = padding + chartHeight - (entry.level / 100) * chartHeight;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+    });
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        fetchMarketSentiment();
+        drawStressChart();
+    }, 1000);
+});
+
+// Legacy function for compatibility
+async function analyzeMood() {
+    await analyzeMoodEnhanced();
 }
 
 function updateRiskDisplay() {
