@@ -1593,17 +1593,57 @@ div:has-text("Experience Points") {
     padding: 20px;
     border-radius: 10px;
     border: 1px solid rgba(255, 0, 0, 0.3);
+    line-height: 1.6; /* Улучшенное расстояние между строчками */
 }
 
 .portfolio-section h3 {
     color: #ffffff;
+    margin-bottom: 20px; /* Увеличен отступ */
+    line-height: 1.5;
+}
+
+.portfolio-input-wrapper {
     margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.portfolio-input {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px 15px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(255, 0, 0, 0.3);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+    line-height: 1.5;
+}
+
+.portfolio-input:focus {
+    outline: none;
+    border-color: #ff0000;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.portfolio-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .portfolio-value {
     font-size: 2rem;
     font-weight: bold;
     color: #ff0000;
+    margin-top: 10px;
+    line-height: 1.4;
+}
+
+.profit-loss {
+    line-height: 1.6;
+    color: #ffffff;
 }
 
 .profit-loss {

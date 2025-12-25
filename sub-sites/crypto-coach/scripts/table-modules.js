@@ -943,8 +943,39 @@ function testStressScenario() {
     `;
 }
 
+// Update portfolio value from input
+function updatePortfolioValue() {
+    const portfolioInput = document.getElementById('portfolioInput');
+    const portfolioValueDisplay = document.getElementById('portfolioValue');
+    
+    if (portfolioInput && portfolioValueDisplay) {
+        portfolioInput.addEventListener('input', function() {
+            const value = parseFloat(this.value) || 0;
+            portfolioValue = value;
+            portfolioValueDisplay.textContent = '$' + value.toLocaleString('en-US', { 
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2 
+            });
+            
+            // Recalculate profit/loss if coins are selected
+            if (Object.keys(selectedCoins).length > 0) {
+                updateSelectedCoinsList();
+            }
+        });
+        
+        // Initial update
+        const initialValue = parseFloat(portfolioInput.value) || 10000;
+        portfolioValue = initialValue;
+        portfolioValueDisplay.textContent = '$' + initialValue.toLocaleString('en-US', { 
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2 
+        });
+    }
+}
+
 // Initialize on load
 document.addEventListener('DOMContentLoaded', function() {
+    updatePortfolioValue();
     setTimeout(() => {
         updateRiskDisplay();
         displayLeaderboard();
