@@ -159,6 +159,9 @@ function updateSelectedCoins() {
     if (activeCoins.length > 0) {
         getAIRecommendations();
     }
+    
+    // Update portfolio health score when coins change
+    calculatePortfolioHealth();
 }
 
 function removeCoinFromList(coinSymbol) {
