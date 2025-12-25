@@ -824,9 +824,15 @@ async function loadPortfolioGraph(portfolioName) {
         localStorage.setItem('savedPortfolios', JSON.stringify(savedPortfolios));
     }
     
+    // Сохраняем текущее имя портфолио
+    currentPortfolioName = portfolioName;
+    
+    // Фильтруем историю по выбранному временному интервалу
+    const filteredHistory = filterHistoryByTimeRange(portfolio.history, currentTimeRange);
+    
     // Подготавливаем данные для графика
-    const labels = portfolio.history.map(h => h.dateLabel);
-    const values = portfolio.history.map(h => h.value);
+    const labels = filteredHistory.map(h => h.dateLabel);
+    const values = filteredHistory.map(h => h.value);
     
     // Показываем контейнер графика
     const container = document.getElementById('portfolioGraphContainer');
@@ -886,7 +892,8 @@ async function loadPortfolioGraph(portfolioName) {
                     callbacks: {
                         label: function(context) {
                             const index = context.dataIndex;
-                            const entry = portfolio.history[index];
+                            const entry = filteredHistory[index];
+                            if (!entry) return '';
                             return [
                                 `Value: $${entry.value.toFixed(2)}`,
                                 `Profit/Loss: ${entry.profitLoss >= 0 ? '+' : ''}$${entry.profitLoss.toFixed(2)}`,
@@ -1011,11 +1018,15 @@ function scrollGraph(sliderValue) {
     if (!portfolio) return;
     
     const filteredHistory = filterHistoryByTimeRange(portfolio.history, currentTimeRange);
+    if (!filteredHistory || filteredHistory.length === 0) return;
+    
     const startIndex = parseInt(sliderValue);
     const visiblePoints = 20; // Показываем 20 точек за раз
     const endIndex = Math.min(startIndex + visiblePoints, filteredHistory.length);
     
     const visibleHistory = filteredHistory.slice(startIndex, endIndex);
+    if (visibleHistory.length === 0) return;
+    
     const labels = visibleHistory.map(h => h.dateLabel);
     const values = visibleHistory.map(h => h.value);
     
