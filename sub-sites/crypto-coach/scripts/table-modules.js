@@ -336,17 +336,17 @@ FORMAT YOUR RESPONSE with these EXACT sections:
    - PORTFOLIO ADJUSTMENT: Increase/decrease percentage? Why? (Consider current trend and distance from ATH)
    - ENTRY STRATEGY: Dollar-cost averaging or lump sum? Based on current volatility
 
-6. OVERALL STRATEGY:
-   - Portfolio balance assessment
-   - Risk management advice
-   - Opportunity identification
-   - Next steps
-
 6. MARKET TIMING INSIGHTS:
    - Best time to enter based on current trends
    - Risk assessment based on current volatility
    - Market sentiment analysis (bullish/bearish/neutral)
    - Correlation between selected coins (do they move together or independently?)
+
+7. OVERALL STRATEGY:
+   - Portfolio balance assessment based on current market conditions
+   - Risk management advice using real-time volatility data
+   - Opportunity identification from current price positions
+   - Next steps with specific action items
 
 IMPORTANT: 
 - Use the EXACT current prices and percentages provided above
