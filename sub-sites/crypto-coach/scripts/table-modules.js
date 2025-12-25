@@ -399,11 +399,117 @@ IMPORTANT:
                 .replace(/WHEN TO BUY|Buy/gi, '<span style="color: #51cf66; font-weight: bold;">🟢 BUY:</span>')
                 .replace(/WHEN TO SELL|Sell/gi, '<span style="color: #ff6b6b; font-weight: bold;">🔴 SELL:</span>');
             
+            // Добавляем временную метку актуальности данных
+            const timestamp = new Date().toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit',
+                timeZoneName: 'short'
+            });
+            
+            // Красивый дисклеймер
+            const disclaimer = `
+                <div class="ai-disclaimer" style="
+                    margin-top: 30px;
+                    padding: 20px;
+                    background: linear-gradient(135deg, rgba(202, 0, 0, 0.15) 0%, rgba(139, 0, 0, 0.2) 100%);
+                    border: 2px solid rgba(255, 0, 0, 0.4);
+                    border-left: 5px solid #ff0000;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 15px rgba(255, 0, 0, 0.2), inset 0 0 20px rgba(255, 0, 0, 0.1);
+                    position: relative;
+                    overflow: hidden;
+                ">
+                    <div style="
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        height: 3px;
+                        background: linear-gradient(90deg, transparent, rgba(255, 0, 0, 0.6), transparent);
+                        animation: shimmer 3s infinite;
+                    "></div>
+                    <div style="
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 15px;
+                    ">
+                        <div style="
+                            font-size: 2em;
+                            line-height: 1;
+                            color: #ff0000;
+                            text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+                        ">⚠️</div>
+                        <div style="flex: 1;">
+                            <h5 style="
+                                color: #ff0000;
+                                font-size: 1.2em;
+                                font-weight: bold;
+                                margin: 0 0 12px 0;
+                                text-shadow: 0 0 8px rgba(255, 0, 0, 0.3);
+                            ">⚠️ IMPORTANT DISCLAIMER: NOT FINANCIAL ADVICE</h5>
+                            <p style="
+                                color: #ffffff;
+                                font-size: 1.05em;
+                                line-height: 1.8;
+                                margin: 0;
+                                text-align: left;
+                                font-weight: 500;
+                            ">
+                                <strong style="color: #ffaaaa;">This analysis is for educational and training purposes only.</strong> 
+                                It is <strong style="color: #ff6666;">NOT financial advice</strong> and should not be considered as such. 
+                                Cryptocurrency markets are <strong style="color: #ff0000;">highly unpredictable and volatile</strong>, 
+                                making it <strong style="color: #ff0000;">impossible to predict future price movements with certainty</strong>.
+                            </p>
+                            <p style="
+                                color: #ffaaaa;
+                                font-size: 1em;
+                                line-height: 1.8;
+                                margin: 15px 0 0 0;
+                                text-align: left;
+                                font-style: italic;
+                                border-top: 1px solid rgba(255, 0, 0, 0.3);
+                                padding-top: 15px;
+                            ">
+                                <strong style="color: #ff0000;">Real-world proof:</strong> On October 10th, cryptocurrency prices 
+                                plummeted to their lowest levels in mere minutes, demonstrating that <strong style="color: #ff0000;">no one can 
+                                accurately forecast market movements</strong>. Such sudden crashes can occur at any moment, 
+                                regardless of technical analysis or market indicators.
+                            </p>
+                            <p style="
+                                color: #ffffff;
+                                font-size: 1em;
+                                line-height: 1.8;
+                                margin: 15px 0 0 0;
+                                text-align: left;
+                                font-weight: 500;
+                            ">
+                                <strong style="color: #ff6666;">Always conduct your own research (DYOR)</strong>, assess your risk 
+                                tolerance, and never invest more than you can afford to lose. <strong style="color: #ff0000;">All trading 
+                                decisions are your sole responsibility</strong>, and any losses incurred are entirely your own.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <style>
+                    @keyframes shimmer {
+                        0% { transform: translateX(-100%); }
+                        100% { transform: translateX(100%); }
+                    }
+                </style>
+            `;
+            
             recommendationsContent.innerHTML = `
                 <div class="recommendation-item">
+                    <div style="color: #ffd700; font-size: 0.9em; margin-bottom: 15px; padding: 8px; background: rgba(255, 215, 0, 0.1); border-radius: 5px; text-align: center;">
+                        📊 Real-time analysis as of ${timestamp} | Data from live market feeds
+                    </div>
                     <div style="color: #ffffff; font-weight: bold; line-height: 1.9; font-size: 1.05em; text-align: left; width: 100%;">
                         <p style="margin: 15px 0; text-align: left;">${recommendations}</p>
                     </div>
+                    ${disclaimer}
                 </div>
             `;
         }
