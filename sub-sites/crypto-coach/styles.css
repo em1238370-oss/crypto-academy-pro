@@ -1746,12 +1746,10 @@ div:has-text("Experience Points") {
     border-radius: 10px;
     padding: 30px;
     margin-top: 20px;
-    min-height: auto !important;
-    max-height: none !important;
-    height: auto !important;
-    overflow-y: visible !important;
     width: 100%;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
 .ai-recommendations h4 {
@@ -1766,12 +1764,15 @@ div:has-text("Experience Points") {
     margin-bottom: 10px;
     border-left: 4px solid #ffd700;
     box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
-    min-height: auto !important;
-    max-height: none !important;
-    height: auto !important;
-    overflow-y: visible !important;
+    min-height: auto;
+    max-height: none;
+    height: auto;
+    overflow-y: visible;
+    overflow-x: hidden;
     width: 100%;
     box-sizing: border-box;
+    word-wrap: break-word; /* Перенос длинных слов */
+    word-break: break-word; /* Перенос при необходимости */
 }
 
 .recommendation-item p {
@@ -1829,12 +1830,38 @@ div:has-text("Experience Points") {
 }
 
 #recommendationsContent {
-    min-height: auto !important;
-    max-height: none !important;
-    height: auto !important;
-    overflow-y: visible !important;
+    min-height: 100px;
+    max-height: 1500px; /* Максимальная высота для скролла */
+    height: auto;
+    overflow-y: auto !important; /* Включаем скролл */
+    overflow-x: hidden;
     width: 100%;
     text-align: left !important;
+    padding-right: 10px; /* Отступ для скроллбара */
+    /* Стилизация скроллбара */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 0, 0, 0.6) rgba(0, 0, 0, 0.2);
+}
+
+/* Стилизация скроллбара для WebKit браузеров (Chrome, Safari) */
+#recommendationsContent::-webkit-scrollbar {
+    width: 14px;
+}
+
+#recommendationsContent::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    margin: 5px 0;
+}
+
+#recommendationsContent::-webkit-scrollbar-thumb {
+    background: rgba(255, 0, 0, 0.6);
+    border-radius: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+#recommendationsContent::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 0, 0, 0.8);
 }
 
 #recommendationsContent p {
