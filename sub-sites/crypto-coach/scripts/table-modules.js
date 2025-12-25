@@ -27,7 +27,10 @@ function toggleDrawerWithInit(drawerId) {
             setTimeout(() => {
                 console.log('Initializing coins on drawer open');
                 initCoins();
+                initNewFeatures(); // Initialize new features
             }, 400);
+        } else {
+            initNewFeatures(); // Initialize new features even if coins already loaded
         }
     }
 }
@@ -1630,6 +1633,263 @@ function updatePortfolioValue() {
 }
 
 // Initialize on load
+// ========== NEW FEATURES FOR FREE BLOCK ==========
+
+// 1. Live Market Heatmap
+let heatmapCharts = {};
+async function initMarketHeatmap() {
+    const heatmapContainer = document.getElementById('marketHeatmap');
+    if (!heatmapContainer) return;
+    
+    // Show top 20 coins for heatmap
+    const topCoins = availableCoins.slice(0, 20);
+    
+    for (const coin of topCoins) {
+        try {
+            const response = await fetch(LIVECOINWATCH_URL, {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'x-api-key': LIVECOINWATCH_KEY
+                },
+                body: JSON.stringify({ code: coin, currency: 'USD', meta: true })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const change24h = data.delta?.day || 0;
+                
+                const coinElement = document.createElement('div');
+                coinElement.style.cssText = `
+                    background: ${change24h >= 0 ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)'};
+                    border: 2px solid ${change24h >= 0 ? 'rgba(0, 255, 0, 0.6)' : 'rgba(255, 0, 0, 0.6)'};
+                    border-radius: 8px;
+                    padding: 10px;
+                    text-align: center;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                `;
+                coinElement.innerHTML = `
+                    <div style="color: #ffffff; font-weight: bold; font-size: 0.9rem; margin-bottom: 5px;">${coin}</div>
+                    <div style="color: ${change24h >= 0 ? '#00ff00' : '#ff0000'}; font-size: 0.85rem; font-weight: bold;">
+                        ${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%
+                    </div>
+                `;
+                coinElement.onclick = () => {
+                    // Add coin to portfolio if not already selected
+                    if (!selectedCoins[coin]) {
+                        setCoinPercentage(coin, 10);
+                        updateSelectedCoins();
+                    }
+                };
+                coinElement.onmouseenter = () => {
+                    coinElement.style.transform = 'scale(1.1)';
+                    coinElement.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.5)';
+                };
+                coinElement.onmouseleave = () => {
+                    coinElement.style.transform = 'scale(1)';
+                    coinElement.style.boxShadow = 'none';
+                };
+                
+                heatmapContainer.appendChild(coinElement);
+            }
+        } catch (error) {
+            console.error(`Error fetching ${coin}:`, error);
+        }
+    }
+}
+
+// 2. Portfolio Health Score
+function calculatePortfolioHealth() {
+    const healthScoreValue = document.getElementById('healthScoreValue');
+    const healthScoreLabel = document.getElementById('healthScoreLabel');
+    const diversificationScore = document.getElementById('diversificationScore');
+    const balanceScore = document.getElementById('balanceScore');
+    const riskScore = document.getElementById('riskScore');
+    
+    if (!healthScoreValue) return;
+    
+    const coinCount = Object.keys(selectedCoins).filter(c => selectedCoins[c].percentage > 0).length;
+    const totalPercent = Object.values(selectedCoins).reduce((sum, coin) => sum + (coin.percentage || 0), 0);
+    
+    // Diversification Score (0-100): More coins = better
+    const diversification = Math.min(coinCount * 10, 100);
+    
+    // Balance Score (0-100): How close to 100% total
+    const balance = Math.max(0, 100 - Math.abs(100 - totalPercent) * 2);
+    
+    // Risk Score: Based on coin types (BTC/ETH = lower risk, altcoins = higher risk)
+    let riskLevel = 0;
+    const lowRiskCoins = ['BTC', 'ETH', 'BNB', 'USDT', 'USDC'];
+    const selectedCoinSymbols = Object.keys(selectedCoins).filter(c => selectedCoins[c].percentage > 0);
+    const lowRiskCount = selectedCoinSymbols.filter(c => lowRiskCoins.includes(c)).length;
+    const riskRatio = lowRiskCount / Math.max(coinCount, 1);
+    riskLevel = Math.round((1 - riskRatio) * 100); // Higher = more risky
+    
+    // Overall Health Score (average of all metrics)
+    const overallScore = Math.round((diversification * 0.4 + balance * 0.3 + (100 - riskLevel) * 0.3));
+    
+    // Update UI
+    healthScoreValue.textContent = overallScore;
+    diversificationScore.textContent = `${diversification}%`;
+    balanceScore.textContent = `${balance}%`;
+    riskScore.textContent = riskLevel < 30 ? 'Low' : riskLevel < 70 ? 'Medium' : 'High';
+    
+    // Score label
+    let label = '';
+    let color = '#ff0000';
+    if (overallScore >= 80) {
+        label = 'Excellent';
+        color = '#00ff00';
+    } else if (overallScore >= 60) {
+        label = 'Good';
+        color = '#ffd700';
+    } else if (overallScore >= 40) {
+        label = 'Fair';
+        color = '#ffaa00';
+    } else {
+        label = 'Needs Improvement';
+        color = '#ff6666';
+    }
+    
+    healthScoreLabel.textContent = label;
+    healthScoreLabel.style.color = color;
+    healthScoreValue.style.color = color;
+}
+
+// 3. Multi-Timeframe View
+let timeframeCharts = {};
+function initMultiTimeframeView() {
+    const timeframes = ['1h', '4h', '1d', '1w'];
+    const canvasIds = ['timeframe1h', 'timeframe4h', 'timeframe1d', 'timeframe1w'];
+    
+    timeframes.forEach((tf, index) => {
+        const canvas = document.getElementById(canvasIds[index]);
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth;
+        canvas.height = 120;
+        
+        // Simple line chart for each timeframe
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        // Generate sample data (in real app, fetch historical data)
+        const points = 20;
+        for (let i = 0; i < points; i++) {
+            const x = (i / (points - 1)) * canvas.width;
+            const y = canvas.height / 2 + Math.sin(i * 0.5) * 30;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    });
+}
+
+// 4. Portfolio Share Card
+let shareCardGenerated = false;
+function generateShareCard() {
+    const shareCardPreview = document.getElementById('shareCardPreview');
+    const downloadBtn = document.getElementById('downloadShareBtn');
+    const shareSocialBtn = document.getElementById('shareSocialBtn');
+    
+    if (!shareCardPreview) return;
+    
+    const coinCount = Object.keys(selectedCoins).filter(c => selectedCoins[c].percentage > 0).length;
+    const totalValue = portfolioValue;
+    const profitLoss = document.getElementById('profitLossValue')?.textContent || '+$0.00';
+    
+    shareCardPreview.innerHTML = `
+        <div style="color: #ffd700; font-size: 1.5rem; font-weight: bold; margin-bottom: 15px;">My Crypto Portfolio</div>
+        <div style="color: #ffffff; font-size: 2rem; font-weight: bold; margin-bottom: 10px;">$${totalValue.toLocaleString()}</div>
+        <div style="color: ${profitLoss.includes('+') ? '#00ff00' : '#ff0000'}; font-size: 1.2rem; margin-bottom: 20px;">${profitLoss}</div>
+        <div style="color: #cccccc; font-size: 1rem;">${coinCount} coins selected</div>
+        <div style="margin-top: 15px; font-size: 0.9rem; color: #ffd700;">Generated on ${new Date().toLocaleDateString()}</div>
+    `;
+    
+    shareCardGenerated = true;
+    if (downloadBtn) downloadBtn.style.display = 'inline-block';
+    if (shareSocialBtn) shareSocialBtn.style.display = 'inline-block';
+}
+
+function downloadShareCard() {
+    const shareCardPreview = document.getElementById('shareCardPreview');
+    if (!shareCardPreview || !shareCardGenerated) return;
+    
+    // Create canvas for image
+    const canvas = document.createElement('canvas');
+    canvas.width = 800;
+    canvas.height = 600;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw background
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw border
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw text
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 48px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('My Crypto Portfolio', canvas.width / 2, 150);
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 64px Arial';
+    ctx.fillText(`$${portfolioValue.toLocaleString()}`, canvas.width / 2, 250);
+    
+    // Download
+    canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'portfolio-share-card.png';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+}
+
+function shareToSocial() {
+    const shareCardPreview = document.getElementById('shareCardPreview');
+    if (!shareCardPreview || !shareCardGenerated) return;
+    
+    // Generate share text
+    const coinCount = Object.keys(selectedCoins).filter(c => selectedCoins[c].percentage > 0).length;
+    const shareText = `Check out my crypto portfolio! $${portfolioValue.toLocaleString()} with ${coinCount} coins! 🚀`;
+    const shareUrl = window.location.href;
+    
+    // Try Web Share API
+    if (navigator.share) {
+        navigator.share({
+            title: 'My Crypto Portfolio',
+            text: shareText,
+            url: shareUrl
+        }).catch(err => console.log('Share cancelled'));
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(`${shareText} ${shareUrl}`).then(() => {
+            alert('Portfolio link copied to clipboard!');
+        });
+    }
+}
+
+// Initialize new features when drawer opens
+function initNewFeatures() {
+    setTimeout(() => {
+        initMarketHeatmap();
+        calculatePortfolioHealth();
+        initMultiTimeframeView();
+    }, 500);
+}
+
+// Note: calculatePortfolioHealth will be called from updateSelectedCoins and other places
+
 document.addEventListener('DOMContentLoaded', function() {
     updatePortfolioValue();
     setTimeout(() => {

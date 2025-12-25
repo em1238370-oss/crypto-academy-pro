@@ -99,6 +99,82 @@
                                   <div class="profit-loss" id="profitLoss" style="margin-top: 15px; line-height: 1.6;">
                                        <span id="profitLossValue">+$0.00</span> (<span id="profitLossPercent">0.00%</span>)
                                    </div>
+                                   
+                                   <!-- Portfolio Health Score -->
+                                   <div class="portfolio-health-score" style="
+                                       margin-top: 25px;
+                                       padding: 20px;
+                                       background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 200, 0, 0.15) 100%);
+                                       border: 2px solid rgba(255, 215, 0, 0.4);
+                                       border-radius: 12px;
+                                       box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+                                   ">
+                                       <h4 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; text-align: center;">🎯 Portfolio Health Score</h4>
+                                       <div style="text-align: center; margin-bottom: 15px;">
+                                           <div id="healthScoreValue" style="
+                                               font-size: 3rem;
+                                               font-weight: bold;
+                                               color: #ffd700;
+                                               text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+                                               margin-bottom: 5px;
+                                           ">0</div>
+                                           <div id="healthScoreLabel" style="
+                                               font-size: 1.1rem;
+                                               color: #ffffff;
+                                               font-weight: 500;
+                                           ">Calculating...</div>
+                                       </div>
+                                       <div id="healthMetrics" style="
+                                           display: grid;
+                                           grid-template-columns: repeat(3, 1fr);
+                                           gap: 10px;
+                                           margin-top: 15px;
+                                       ">
+                                           <div class="health-metric" style="
+                                               text-align: center;
+                                               padding: 10px;
+                                               background: rgba(0, 0, 0, 0.3);
+                                               border-radius: 8px;
+                                           ">
+                                               <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px;">Diversification</div>
+                                               <div id="diversificationScore" style="color: #ffffff; font-weight: bold;">-</div>
+                                           </div>
+                                           <div class="health-metric" style="
+                                               text-align: center;
+                                               padding: 10px;
+                                               background: rgba(0, 0, 0, 0.3);
+                                               border-radius: 8px;
+                                           ">
+                                               <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px;">Balance</div>
+                                               <div id="balanceScore" style="color: #ffffff; font-weight: bold;">-</div>
+                                           </div>
+                                           <div class="health-metric" style="
+                                               text-align: center;
+                                               padding: 10px;
+                                               background: rgba(0, 0, 0, 0.3);
+                                               border-radius: 8px;
+                                           ">
+                                               <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px;">Risk Level</div>
+                                               <div id="riskScore" style="color: #ffffff; font-weight: bold;">-</div>
+                                           </div>
+                                       </div>
+                                   </div>
+                               </div>
+
+                               <!-- Live Market Heatmap -->
+                               <div class="market-heatmap-section" style="margin-bottom: 30px;">
+                                   <h4 style="color: #ffffff; margin-bottom: 15px; font-size: 1.3rem;">📊 Live Market Heatmap</h4>
+                                   <div id="marketHeatmap" style="
+                                       background: rgba(0, 0, 0, 0.5);
+                                       border: 2px solid rgba(255, 215, 0, 0.3);
+                                       border-radius: 12px;
+                                       padding: 20px;
+                                       display: grid;
+                                       grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                                       gap: 10px;
+                                       max-height: 300px;
+                                       overflow-y: auto;
+                                   "></div>
                                </div>
 
                                <div class="section-title">Select Coins to Invest In</div>
@@ -129,6 +205,29 @@
                                       </select>
                                   </div>
                                   <div id="portfolioGraphContainer" style="display: none; margin-bottom: 20px;">
+                                      <!-- Multi-Timeframe View -->
+                                      <div class="multi-timeframe-section" style="margin-bottom: 20px;">
+                                          <h4 style="color: #ffffff; margin-bottom: 15px; font-size: 1.2rem; text-align: center;">📈 Multi-Timeframe View</h4>
+                                          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
+                                              <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; padding: 10px;">
+                                                  <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px; text-align: center;">1 Hour</div>
+                                                  <canvas id="timeframe1h" style="width: 100%; height: 120px;"></canvas>
+                                              </div>
+                                              <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; padding: 10px;">
+                                                  <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px; text-align: center;">4 Hours</div>
+                                                  <canvas id="timeframe4h" style="width: 100%; height: 120px;"></canvas>
+                                              </div>
+                                              <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; padding: 10px;">
+                                                  <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px; text-align: center;">1 Day</div>
+                                                  <canvas id="timeframe1d" style="width: 100%; height: 120px;"></canvas>
+                                              </div>
+                                              <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; padding: 10px;">
+                                                  <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px; text-align: center;">1 Week</div>
+                                                  <canvas id="timeframe1w" style="width: 100%; height: 120px;"></canvas>
+                                              </div>
+                                          </div>
+                                      </div>
+                                      
                                       <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                                           <label style="color: #ffffff; font-size: 0.95rem; margin-right: 10px;">Time Range:</label>
                                           <button class="time-range-btn" data-range="30m" onclick="changeTimeRange('30m')" style="padding: 8px 15px; background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); border-radius: 5px; color: #ffffff; cursor: pointer; font-size: 0.9rem;">30 min</button>
@@ -151,6 +250,42 @@
                                   </div>
                                    <div id="leaderboardContent">
                                       <p style="color: #cccccc; text-align: center; padding: 20px;">Save your portfolio to start tracking its performance!</p>
+                                   </div>
+                                   
+                                   <!-- Portfolio Share Card -->
+                                   <div class="portfolio-share-section" style="
+                                       margin-top: 30px;
+                                       padding: 25px;
+                                       background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 200, 0, 0.15) 100%);
+                                       border: 2px solid rgba(255, 215, 0, 0.4);
+                                       border-radius: 15px;
+                                       box-shadow: 0 0 25px rgba(255, 215, 0, 0.2);
+                                   ">
+                                       <h4 style="color: #ffd700; margin-bottom: 20px; font-size: 1.3rem; text-align: center;">📱 Share Your Portfolio</h4>
+                                       <div id="shareCardPreview" style="
+                                           background: rgba(0, 0, 0, 0.6);
+                                           border: 2px solid rgba(255, 215, 0, 0.3);
+                                           border-radius: 12px;
+                                           padding: 20px;
+                                           margin-bottom: 20px;
+                                           text-align: center;
+                                           min-height: 200px;
+                                           display: flex;
+                                           flex-direction: column;
+                                           justify-content: center;
+                                           align-items: center;
+                                       ">
+                                           <div style="color: #ffffff; font-size: 1.1rem; margin-bottom: 10px;">Create a portfolio to generate share card</div>
+                                       </div>
+                                       <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                                           <button onclick="generateShareCard()" class="btn btn-red" style="padding: 12px 25px; font-size: 1rem;">Generate Share Card</button>
+                                           <button onclick="downloadShareCard()" id="downloadShareBtn" class="btn btn-red" style="padding: 12px 25px; font-size: 1rem; display: none;">Download Image</button>
+                                           <button onclick="shareToSocial()" id="shareSocialBtn" class="btn btn-red" style="padding: 12px 25px; font-size: 1rem; display: none;">Share to Social</button>
+                                       </div>
+                                       <div id="shareQRCode" style="margin-top: 20px; text-align: center; display: none;">
+                                           <div style="color: #ffffff; margin-bottom: 10px; font-size: 0.9rem;">Scan QR Code to view portfolio:</div>
+                                           <canvas id="qrCanvas" style="background: #ffffff; padding: 10px; border-radius: 8px;"></canvas>
+                                       </div>
                                    </div>
                                </div>
                            </div>
