@@ -108,7 +108,7 @@ body::after {
     position: relative;
     z-index: 1;
     min-height: 100vh;
-    padding-top: calc(50vh - 60px - 2cm); /* Центрируем заголовок по вертикали при загрузке, поднимаем на 2 см выше */
+    padding-top: calc(50vh - 60px - 5cm); /* Центрируем заголовок по вертикали при загрузке, поднимаем на 5 см выше */
 }
 
 /* Заголовок Crypto Coach */
@@ -116,6 +116,7 @@ body::after {
     text-align: center;
     position: relative;
     margin: 0 auto;
+    margin-top: -1cm; /* Дополнительно поднимаем заголовок на 1 см */
     z-index: 2;
     display: flex;
     justify-content: center;
