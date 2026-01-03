@@ -1,90 +1,106 @@
 # Crypto Academy Pro
 
-AI-powered cryptocurrency assistant website with subscription system.
+## 🌐 Live Site
+**URL:** https://crypto-academy-pro.onrender.com/
+
+## 📋 Overview
+Crypto Academy Pro is a comprehensive cryptocurrency education and portfolio management platform. It provides users with tools to learn about crypto, manage their portfolios, track market news, and get AI-powered advice.
+
+## 📚 Complete Documentation
+
+### 📖 Quick Access
+- **[DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md)** - Complete documentation index and navigation
+
+### English Documentation
+Full documentation in English is available in [`docs/en/`](./docs/en/):
+- [01_PROJECT_OVERVIEW.md](./docs/en/01_PROJECT_OVERVIEW.md) - Project overview, goals, philosophy
+- [02_MAIN_MENU.md](./docs/en/02_MAIN_MENU.md) - Landing page and navigation
+- [03_FEATURES_DETAILED.md](./docs/en/03_FEATURES_DETAILED.md) - Detailed feature descriptions
+- [04_API_REFERENCE.md](./docs/en/04_API_REFERENCE.md) - Backend API endpoints
+- [05_PAYMENT_INTEGRATION.md](./docs/en/05_PAYMENT_INTEGRATION.md) - Payment system integration
+- [06_ARCHITECTURE.md](./docs/en/06_ARCHITECTURE.md) - System architecture
+- [07_DEVELOPMENT_GUIDE.md](./docs/en/07_DEVELOPMENT_GUIDE.md) - Development instructions
+- [08_DEPLOYMENT.md](./docs/en/08_DEPLOYMENT.md) - Deployment guide
+
+### Русская Документация (Russian Documentation)
+Полная документация на русском языке доступна в [`docs/ru/`](./docs/ru/):
+- [01_ОБЗОР_ПРОЕКТА.md](./docs/ru/01_ОБЗОР_ПРОЕКТА.md) - Обзор проекта, цели, философия
+- [02_ГЛАВНОЕ_МЕНЮ.md](./docs/ru/02_ГЛАВНОЕ_МЕНЮ.md) - Главная страница и навигация
+- [03_ФУНКЦИИ_ПОДРОБНО.md](./docs/ru/03_ФУНКЦИИ_ПОДРОБНО.md) - Подробное описание функций
+
+## 🏗️ Project Structure
+
+```
+crypto-academy-pro/
+├── index.html          # Main landing page
+├── server.js           # Express backend server
+├── styles.css          # Main stylesheet
+├── scripts/            # JavaScript modules
+│   ├── chatbot.js     # AI chat widget
+│   └── scroll-optimizer.js
+├── sub-sites/         # Feature modules
+│   ├── news/          # Crypto news aggregator
+│   ├── crypto-basics/  # Educational course
+│   ├── crypto-coach/   # Portfolio advisor
+│   └── risk-distribution/ # Risk management tools
+├── docs/               # Complete documentation
+│   ├── en/            # English documentation
+│   └── ru/            # Russian documentation
+└── backend/           # Additional backend services
+```
 
 ## 🚀 Quick Start
 
-### 1. Install Dependencies
+### Prerequisites
+- Node.js 18+
+- npm or yarn
 
+### Installation
 ```bash
 npm install
 ```
 
-### 2. Configure Environment Variables
+### Environment Variables
+See `.env.example` for required variables:
+- `MISTRAL_API_KEY` - AI chat functionality
+- `CRYPTOCLOUD_API_KEY` & `CRYPTOCLOUD_SHOP_ID` - Crypto payments
+- `CLOUDPAYMENTS_PUBLIC_ID` & `CLOUDPAYMENTS_API_SECRET` - Card payments
+- `APP_BASE_URL` - Application base URL
 
-Copy `.env.example` to `.env` and fill in your API keys:
-
+### Run Locally
 ```bash
-cp .env.example .env
+node server.js
 ```
+Server runs on port 4000 by default.
 
-Edit `.env` and add your:
-- `MISTRAL_API_KEY` - For AI chat responses
-- `CRYPTOCLOUD_API_KEY` and `CRYPTOCLOUD_SHOP_ID` - For crypto payments
-- `CLOUDPAYMENTS_PUBLIC_ID` and `CLOUDPAYMENTS_API_SECRET` - For card payments (optional)
+## 🎯 Main Features
 
-### 3. Start the Server
+- **Free Features:**
+  - News aggregator
+  - Risk distribution calculator
+  - Crypto basics course
 
-```bash
-npm start
-```
+- **Paid Features ($15/mo):**
+  - Crypto Coach (personalized advice)
+  - Smart Alerts
+  - Cross Wallet management
 
-The website will be available at:
-- **Frontend**: http://localhost:4000/index.html (or just http://localhost:4000)
-- **API**: http://localhost:4000/api/...
+- **Premium Features ($25/mo):**
+  - AI Emotional Tracker
+  - Investor Psychology Profile
+  - Predictive AI Simulator
 
-## 📁 Project Structure
+## 💬 AI Chat Assistant
+Powered by Mistral AI, provides real-time crypto advice and answers questions about cryptocurrency.
 
-```
-crypto-website/
-├── index.html          # Main HTML page
-├── styles.css          # All styles
-├── server.js           # Backend server (API + static files)
-├── scripts/
-│   └── chatbot.js      # Frontend chat logic
-├── package.json        # Dependencies
-├── .env.example        # Environment variables template
-└── .env               # Your actual API keys (not in git)
-```
+## 💳 Subscription System
+- Free trial: 24 hours
+- Monthly subscription: $10/month
+- Payment methods: Crypto (USDT) or Card (Visa/Mastercard)
 
-## 🌐 Deploying for Public Access
+## 📖 Related Projects
+- **crypto-mailer** - Portfolio alert system with email notifications
 
-### Option 1: Deploy to Vercel/Netlify (Frontend) + Railway/Render (Backend)
+---
 
-**Backend (Railway/Render):**
-1. Push code to GitHub
-2. Connect to Railway or Render
-3. Set environment variables in dashboard
-4. Deploy
-
-**Frontend:**
-- The server already serves static files, so you can deploy the whole project as one app
-- Or use Vercel/Netlify and set `API_BASE_URL` environment variable
-
-### Option 2: Single Server Deployment (Recommended)
-
-Deploy everything to one server (Railway, Render, Heroku, etc.):
-
-1. Push code to GitHub
-2. Connect repository to hosting service
-3. Set environment variables
-4. Deploy
-
-The server will serve both:
-- Static files (HTML, CSS, JS) at root
-- API endpoints at `/api/*`
-
-## 🔧 Configuration
-
-- `PORT` - Server port (default: 4000)
-- `APP_BASE_URL` - Your public URL (for payment callbacks)
-- `SUBSCRIPTION_PRICE_USD` - Subscription price (default: $10)
-- `SUBSCRIPTION_PERIOD_DAYS` - Subscription duration (default: 30 days)
-- `FREE_TRIAL_HOURS` - Free trial duration (default: 24 hours)
-
-## 📝 Notes
-
-- The chatbot automatically detects the API URL based on the current domain
-- For localhost, it uses `http://localhost:4000`
-- For production, it uses the current origin (same domain)
-
+**For detailed information, see [DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md) or browse the [docs/](./docs/) folder.**
