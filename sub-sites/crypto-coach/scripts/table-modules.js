@@ -1993,27 +1993,94 @@ async function aiScenarioBuilder() {
         return;
     }
     
-    resultDiv.innerHTML = '<em style="color: #ff6666;">🤖 AI generating detailed scenario...</em>';
+    resultDiv.innerHTML = '<em style="color: #ff6666;">🤖 AI analyzing current market data and generating scenario...</em>';
     
     try {
         const coin = document.getElementById('experimentCoin')?.value || 'BTC';
         const deposit = parseFloat(document.getElementById('userDeposit')?.value || 10000);
-        const currentPrice = await getRealTimePrice(coin) || 50000;
         
-        const prompt = `User scenario: "${input}". 
+        // Получаем АКТУАЛЬНУЮ цену в реальном времени
+        resultDiv.innerHTML = '<em style="color: #ff6666;">📊 Fetching real-time price data...</em>';
+        const currentPrice = await getRealTimePrice(coin);
         
-Coin: ${coin} (current price: $${currentPrice.toFixed(2)})
-Portfolio: $${deposit.toFixed(2)}
+        if (!currentPrice) {
+            resultDiv.innerHTML = '<em style="color: #ff6666;">❌ Error: Could not fetch current price. Please try again.</em>';
+            return;
+        }
+        
+        // Извлекаем процент изменения из текста пользователя (если есть)
+        const percentMatch = input.match(/(?:drop|fall|crash|упад|падени|снижени)[\s\w]*?(\d+)%/i) || 
+                            input.match(/(?:rise|grow|increase|рост|повышени)[\s\w]*?(\d+)%/i) ||
+                            input.match(/(?:на|by|на|до)[\s]*(-?\d+)%/i);
+        
+        let projectedPrice = null;
+        let priceChangePercent = null;
+        
+        if (percentMatch) {
+            priceChangePercent = parseFloat(percentMatch[1]);
+            if (input.toLowerCase().includes('drop') || input.toLowerCase().includes('fall') || 
+                input.toLowerCase().includes('crash') || input.toLowerCase().includes('упад') ||
+                input.toLowerCase().includes('падени') || input.toLowerCase().includes('снижени') ||
+                priceChangePercent < 0) {
+                // Падение
+                projectedPrice = currentPrice * (1 - Math.abs(priceChangePercent) / 100);
+            } else {
+                // Рост
+                projectedPrice = currentPrice * (1 + Math.abs(priceChangePercent) / 100);
+            }
+        }
+        
+        // Формируем четкий промпт с АКТУАЛЬНЫМИ данными
+        const priceInfo = projectedPrice ? 
+            `\n\n⚠️ CRITICAL PRICE CALCULATION:
+- CURRENT REAL-TIME PRICE: $${currentPrice.toFixed(2)} (fetched from LiveCoinWatch API at ${new Date().toLocaleTimeString()})
+- PRICE CHANGE: ${priceChangePercent > 0 ? '+' : ''}${priceChangePercent}%
+- PROJECTED PRICE: $${projectedPrice.toFixed(2)}
+\nYOU MUST USE THESE EXACT PRICES IN YOUR RESPONSE. DO NOT USE OLD OR INCORRECT PRICES.` :
+            `\n\n⚠️ CRITICAL: CURRENT REAL-TIME PRICE: $${currentPrice.toFixed(2)} (fetched from LiveCoinWatch API at ${new Date().toLocaleTimeString()})
+YOU MUST USE THIS EXACT PRICE IN YOUR RESPONSE. DO NOT USE OLD OR INCORRECT PRICES.`;
+        
+        const prompt = `User scenario description: "${input}"
 
-Create a DETAILED professional scenario with:
-- Specific numbers and percentages
-- Step-by-step timeline (day by day)
-- Exact actions to take at each stage
-- Portfolio impact calculations
-- Risk assessment
-- Best case / worst case / realistic case scenarios
+CURRENT MARKET DATA (REAL-TIME):
+- Coin: ${coin}
+- Current Real-Time Price: $${currentPrice.toFixed(2)} (fetched from LiveCoinWatch API)
+- Portfolio Value: $${deposit.toFixed(2)}
+${priceInfo}
 
-Format as structured text with dates, numbers, and clear recommendations.`;
+YOUR TASK: Create a STRUCTURED professional scenario analysis. DO NOT create day-by-day timeline. Instead, provide:
+
+1. **WHY THIS COULD HAPPEN** (Main reasons/causes):
+   - List 3-5 key factors that could trigger this scenario
+   - Explain market conditions, events, or catalysts
+
+2. **WHAT WILL HAPPEN** (Main consequences):
+   - Impact on ${coin} price (use EXACT current price: $${currentPrice.toFixed(2)})
+   ${projectedPrice ? `- If price changes by ${priceChangePercent}%, new price will be: $${projectedPrice.toFixed(2)}` : ''}
+   - Impact on altcoins and overall crypto market
+   - Impact on trading volume and liquidity
+   - Market sentiment changes
+
+3. **KEY FACTS & NUMBERS** (Important data points):
+   - Specific price levels to watch
+   - Support and resistance levels
+   - Expected volatility
+   - Timeframe estimates (not day-by-day, but overall timeframe)
+
+4. **RECOMMENDATIONS** (What to do):
+   - Portfolio adjustments
+   - Entry/exit points
+   - Risk management strategies
+   - Best case / worst case / realistic scenarios
+
+IMPORTANT:
+- Use ONLY the current price provided: $${currentPrice.toFixed(2)}
+- Calculate all future prices based on this EXACT current price
+- Be specific with numbers and percentages
+- Focus on MAIN FACTS, not daily details
+- Format clearly with sections and bullet points`;
+        
+        resultDiv.innerHTML = '<em style="color: #ff6666;">🤖 AI generating structured scenario analysis...</em>';
         
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -2024,11 +2091,11 @@ Format as structured text with dates, numbers, and clear recommendations.`;
             body: JSON.stringify({
                 model: 'mistral-small',
                 messages: [
-                    { role: 'system', content: 'You are a professional crypto trader-analyst with 10+ years of experience. Create extremely detailed trading scenarios with specific figures, percentages, dates, and actionable recommendations.' },
+                    { role: 'system', content: 'You are a professional crypto market analyst. You ALWAYS use the EXACT current prices provided. You create structured, fact-based scenarios focusing on main causes, consequences, and recommendations. You do NOT create day-by-day timelines unless specifically requested.' },
                     { role: 'user', content: prompt }
                 ],
-                temperature: 0.8,
-                max_tokens: 800
+                temperature: 0.7,
+                max_tokens: 1000
             })
         });
         
@@ -2043,7 +2110,10 @@ Format as structured text with dates, numbers, and clear recommendations.`;
             
             resultDiv.innerHTML = `
                 <div style="background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 8px; color: #00ff00; border: 1px solid rgba(0, 255, 0, 0.3); font-size: 0.95rem; line-height: 1.6;">
-                    <strong style="color: #00ff00; font-size: 1.1rem;">✅ Detailed Scenario Generated:</strong><br>
+                    <div style="background: rgba(0, 255, 0, 0.1); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #00ff00;">
+                        <strong style="color: #00ff00; font-size: 1.1rem;">✅ Scenario Analysis Generated</strong><br>
+                        <small style="color: #cccccc;">Current ${coin} Price: <strong style="color: #00ff00;">$${currentPrice.toFixed(2)}</strong> (Real-time)</small>
+                    </div>
                     <div style="margin-top: 15px; white-space: pre-wrap; color: #ffffff;">${scenario}</div>
                 </div>
             `;
