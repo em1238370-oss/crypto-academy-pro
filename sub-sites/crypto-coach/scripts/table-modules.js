@@ -1965,10 +1965,74 @@ async function getRealTimePrice(coinSymbol) {
             })
         });
         
+        if (!response.ok) {
+            console.error(`API Error: ${response.status} ${response.statusText}`);
+            // Попробуем альтернативный способ
+            return await getRealTimePriceAlternative(coinSymbol);
+        }
+        
         const data = await response.json();
-        return data.rate || null;
+        
+        if (data && data.rate) {
+            return data.rate;
+        } else {
+            console.error('No rate in response:', data);
+            return await getRealTimePriceAlternative(coinSymbol);
+        }
     } catch (e) {
-        console.log(`Could not fetch price for ${coinSymbol}`);
+        console.error(`Error fetching price for ${coinSymbol}:`, e);
+        // Попробуем альтернативный способ
+        return await getRealTimePriceAlternative(coinSymbol);
+    }
+}
+
+// Альтернативный способ получения цены через CoinGecko (бесплатный API)
+async function getRealTimePriceAlternative(coinSymbol) {
+    try {
+        // Маппинг символов для CoinGecko
+        const coinGeckoMap = {
+            'BTC': 'bitcoin',
+            'ETH': 'ethereum',
+            'BNB': 'binancecoin',
+            'SOL': 'solana',
+            'ADA': 'cardano',
+            'XRP': 'ripple',
+            'DOGE': 'dogecoin',
+            'AVAX': 'avalanche-2',
+            'NEAR': 'near',
+            'ARB': 'arbitrum',
+            'APT': 'aptos',
+            'UNI': 'uniswap',
+            'SUI': 'sui',
+            'WIF': 'dogwifcoin',
+            'AAVE': 'aave',
+            'TON': 'the-open-network',
+            'ATOM': 'cosmos'
+        };
+        
+        const coinGeckoId = coinGeckoMap[coinSymbol] || coinSymbol.toLowerCase();
+        
+        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=usd`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            console.error(`CoinGecko API Error: ${response.status}`);
+            return null;
+        }
+        
+        const data = await response.json();
+        
+        if (data && data[coinGeckoId] && data[coinGeckoId].usd) {
+            return data[coinGeckoId].usd;
+        }
+        
+        return null;
+    } catch (e) {
+        console.error(`CoinGecko fallback error for ${coinSymbol}:`, e);
         return null;
     }
 }
@@ -2000,12 +2064,51 @@ async function aiScenarioBuilder() {
         const deposit = parseFloat(document.getElementById('userDeposit')?.value || 10000);
         
         // Получаем АКТУАЛЬНУЮ цену в реальном времени
-        resultDiv.innerHTML = '<em style="color: #ff6666;">📊 Fetching real-time price data...</em>';
-        const currentPrice = await getRealTimePrice(coin);
+        resultDiv.innerHTML = '<em style="color: #ff6666;">📊 Fetching real-time price data from API...</em>';
+        let currentPrice = await getRealTimePrice(coin);
         
+        // Если не получили цену, пробуем еще раз с задержкой
         if (!currentPrice) {
-            resultDiv.innerHTML = '<em style="color: #ff6666;">❌ Error: Could not fetch current price. Please try again.</em>';
-            return;
+            resultDiv.innerHTML = '<em style="color: #ffa500;">⚠️ Retrying price fetch with alternative method...</em>';
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            currentPrice = await getRealTimePrice(coin);
+        }
+        
+        // Если все еще нет цены, используем примерную цену и предупреждаем пользователя
+        if (!currentPrice) {
+            // Примерные цены для основных монет (fallback)
+            const approximatePrices = {
+                'BTC': 92000,
+                'ETH': 3500,
+                'BNB': 600,
+                'SOL': 150,
+                'ADA': 0.6,
+                'XRP': 0.6,
+                'DOGE': 0.15,
+                'AVAX': 40,
+                'NEAR': 7,
+                'ARB': 1.5,
+                'APT': 10,
+                'UNI': 10,
+                'SUI': 2,
+                'WIF': 3,
+                'AAVE': 100,
+                'TON': 6,
+                'ATOM': 10
+            };
+            
+            const fallbackPrice = approximatePrices[coin] || 50000;
+            currentPrice = fallbackPrice;
+            
+            resultDiv.innerHTML = `
+                <div style="background: rgba(255, 165, 0, 0.2); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 165, 0, 0.5); margin-bottom: 15px;">
+                    <strong style="color: #ffa500;">⚠️ Price API temporarily unavailable</strong><br>
+                    <small style="color: #cccccc;">Using approximate price for ${coin}: $${fallbackPrice.toFixed(2)}. Results may not be 100% accurate.</small>
+                </div>
+                <em style="color: #ff6666;">🤖 Generating scenario with approximate price...</em>
+            `;
+        } else {
+            resultDiv.innerHTML = '<em style="color: #00ff00;">✅ Price fetched successfully! 🤖 Generating scenario...</em>';
         }
         
         // Извлекаем процент изменения из текста пользователя (если есть)
