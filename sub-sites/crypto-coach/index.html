@@ -665,11 +665,11 @@
                                        <label>Scenario Description:</label>
                                        <textarea id="experimentScenario" rows="3" placeholder="e.g.: What if BTC drops 20%? How will this affect my portfolio?"></textarea>
                                    </div>
-                                   <div class="form-group" style="background: rgba(255, 165, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 165, 0, 0.3);">
-                                       <label style="margin-bottom: 10px;">🎯 AI Scenario Builder (Universal):</label>
-                                       <textarea id="aiScenarioInput" rows="3" placeholder="Describe any scenario: crashes, bull runs, regulatory events, custom situations..." style="width: 100%; margin-bottom: 10px;"></textarea>
-                                       <button class="btn btn-black" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 0;" onclick="aiScenarioBuilder()">🤖 Generate Detailed Scenario</button>
-                                       <div id="aiScenarioResult" style="margin-top: 10px; font-size: 0.9rem;"></div>
+                                   <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 20px;">
+                                       <label style="margin-bottom: 15px; color: #ffffff; font-size: 1.1rem; font-weight: 600; display: block;">AI Scenario Builder (Universal)</label>
+                                       <textarea id="aiScenarioInput" rows="4" placeholder="Describe any scenario: crashes, bull runs, regulatory events, custom situations..." style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: #ffffff; font-size: 1rem; margin-bottom: 15px; resize: vertical; font-family: inherit; box-sizing: border-box;"></textarea>
+                                       <button class="btn btn-red" style="padding: 12px 25px; font-size: 1rem; font-weight: 600; width: 100%; margin-top: 0;" onclick="aiScenarioBuilder()">Generate Detailed Scenario</button>
+                                       <div id="aiScenarioResult" style="margin-top: 20px; font-size: 1rem; line-height: 1.7;"></div>
                                    </div>
                                    <div class="form-group">
                                        <label>Price Change (%): <span id="priceChangeValue">0%</span></label>

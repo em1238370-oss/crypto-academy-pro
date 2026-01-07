@@ -2123,14 +2123,14 @@ async function aiScenarioBuilder() {
         return;
     }
     
-    resultDiv.innerHTML = '<em style="color: #ff6666;">🤖 AI analyzing current market data and generating scenario...</em>';
+    resultDiv.innerHTML = '<div style="color: #ffffff; font-weight: 500;">AI analyzing current market data and generating scenario...</div>';
     
     try {
         const coin = document.getElementById('experimentCoin')?.value || 'BTC';
         const deposit = parseFloat(document.getElementById('userDeposit')?.value || 10000);
         
         // Получаем РАСШИРЕННЫЕ рыночные данные
-        resultDiv.innerHTML = '<em style="color: #ff6666;">📊 Collecting comprehensive market data (prices, volumes, trends)...</em>';
+        resultDiv.innerHTML = '<div style="color: #ffffff; font-weight: 500;">Collecting comprehensive market data (prices, volumes, trends)...</div>';
         const marketData = await getExtendedMarketData(coin);
         
         let currentPrice = marketData.mainCoin?.price;
@@ -2176,14 +2176,14 @@ async function aiScenarioBuilder() {
             currentPrice = fallbackPrice;
             
             resultDiv.innerHTML = `
-                <div style="background: rgba(255, 165, 0, 0.2); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 165, 0, 0.5); margin-bottom: 15px;">
-                    <strong style="color: #ffa500;">⚠️ Price API temporarily unavailable</strong><br>
-                    <small style="color: #cccccc;">Using approximate price for ${coin}: $${fallbackPrice.toFixed(2)}. Results may not be 100% accurate.</small>
+                <div style="background: rgba(255, 165, 0, 0.15); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 165, 0, 0.4); margin-bottom: 15px;">
+                    <div style="color: #ffa500; font-weight: 600; margin-bottom: 5px;">Price API temporarily unavailable</div>
+                    <div style="color: #cccccc; font-size: 0.9rem;">Using approximate price for ${coin}: $${fallbackPrice.toFixed(2)}. Results may not be 100% accurate.</div>
                 </div>
-                <em style="color: #ff6666;">🤖 Generating scenario with approximate price...</em>
+                <div style="color: #ff6666; font-style: italic;">Generating scenario with approximate price...</div>
             `;
         } else {
-            resultDiv.innerHTML = '<em style="color: #00ff00;">✅ Price fetched successfully! 🤖 Generating scenario...</em>';
+            resultDiv.innerHTML = '<div style="color: #00ff00; font-weight: 500;">Price fetched successfully! Generating scenario...</div>';
         }
         
         // Извлекаем процент изменения из текста пользователя (если есть)
@@ -2309,7 +2309,7 @@ IMPORTANT INSTRUCTIONS:
 - Format clearly with sections, bullet points, and clear headings
 - Make it comprehensive but readable`;
         
-        resultDiv.innerHTML = '<em style="color: #ff6666;">🤖 AI generating structured scenario analysis...</em>';
+        resultDiv.innerHTML = '<div style="color: #ffffff; font-weight: 500;">AI generating structured scenario analysis...</div>';
         
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -2331,25 +2331,36 @@ IMPORTANT INSTRUCTIONS:
         const data = await response.json();
         
         if (data.choices && data.choices[0]) {
-            const scenario = data.choices[0].message.content.trim();
+            let scenario = data.choices[0].message.content.trim();
+            
+            // Убираем все звёздочки (markdown форматирование)
+            scenario = scenario.replace(/\*\*/g, ''); // Убираем **bold**
+            scenario = scenario.replace(/\*/g, ''); // Убираем одиночные *
+            scenario = scenario.replace(/##/g, ''); // Убираем ## заголовки
+            scenario = scenario.replace(/#/g, ''); // Убираем # заголовки
+            
+            // Форматируем текст для лучшей читаемости
+            scenario = scenario.replace(/\n\n\n+/g, '\n\n'); // Убираем лишние переносы строк
             
             // Auto-fill experiment scenario field
             const experimentScenario = document.getElementById('experimentScenario');
             if (experimentScenario) experimentScenario.value = scenario;
             
             resultDiv.innerHTML = `
-                <div style="background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 8px; color: #00ff00; border: 1px solid rgba(0, 255, 0, 0.3); font-size: 0.95rem; line-height: 1.6;">
-                    <div style="background: rgba(0, 255, 0, 0.1); padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #00ff00;">
-                        <strong style="color: #00ff00; font-size: 1.1rem;">✅ Scenario Analysis Generated</strong><br>
-                        <small style="color: #cccccc;">Current ${coin} Price: <strong style="color: #00ff00;">$${currentPrice.toFixed(2)}</strong> (Real-time)</small>
+                <div style="background: rgba(0, 0, 0, 0.6); padding: 25px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); margin-top: 20px;">
+                    <div style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid rgba(0, 255, 0, 0.6);">
+                        <div style="color: #00ff00; font-size: 1.2rem; font-weight: 600; margin-bottom: 8px;">Scenario Analysis Generated</div>
+                        <div style="color: #cccccc; font-size: 0.95rem;">Current ${coin} Price: <span style="color: #00ff00; font-weight: 600;">$${currentPrice.toFixed(2)}</span> (Real-time)</div>
                     </div>
-                    <div style="margin-top: 15px; white-space: pre-wrap; color: #ffffff;">${scenario}</div>
+                    <div style="color: #ffffff; white-space: pre-wrap; font-size: 1rem; line-height: 1.8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;">
+                        ${scenario}
+                    </div>
                 </div>
             `;
         }
     } catch (error) {
         console.error('AI Error:', error);
-        resultDiv.innerHTML = '<em style="color: #ff6666;">Error connecting to AI. Please try again.</em>';
+        resultDiv.innerHTML = '<div style="color: #ff6666; font-weight: 500; padding: 15px; background: rgba(255, 0, 0, 0.1); border-radius: 8px; border: 1px solid rgba(255, 0, 0, 0.3);">Error connecting to AI. Please try again.</div>';
     }
 }
 
