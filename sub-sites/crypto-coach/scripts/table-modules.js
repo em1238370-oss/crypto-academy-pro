@@ -1953,7 +1953,10 @@ function checkPaymentStatus() {
 // Fetch real-time price for Module C
 async function getRealTimePrice(coinSymbol) {
     try {
-        const response = await fetch(`${LIVECOINWATCH_URL}/${coinSymbol}`, {
+        // LiveCoinWatch API требует символ в нижнем регистре
+        const coinSymbolLower = coinSymbol.toLowerCase();
+        
+        const response = await fetch(`${LIVECOINWATCH_URL}/${coinSymbolLower}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1966,21 +1969,24 @@ async function getRealTimePrice(coinSymbol) {
         });
         
         if (!response.ok) {
-            console.error(`API Error: ${response.status} ${response.statusText}`);
+            const errorText = await response.text();
+            console.error(`LiveCoinWatch API Error (${response.status}):`, errorText);
             // Попробуем альтернативный способ
             return await getRealTimePriceAlternative(coinSymbol);
         }
         
         const data = await response.json();
         
+        // LiveCoinWatch возвращает цену в поле 'rate'
         if (data && data.rate) {
+            console.log(`✅ LiveCoinWatch: ${coinSymbol} = $${data.rate}`);
             return data.rate;
         } else {
-            console.error('No rate in response:', data);
+            console.error('No rate in LiveCoinWatch response:', data);
             return await getRealTimePriceAlternative(coinSymbol);
         }
     } catch (e) {
-        console.error(`Error fetching price for ${coinSymbol}:`, e);
+        console.error(`Error fetching price from LiveCoinWatch for ${coinSymbol}:`, e);
         // Попробуем альтернативный способ
         return await getRealTimePriceAlternative(coinSymbol);
     }
