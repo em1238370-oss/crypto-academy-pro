@@ -2126,7 +2126,7 @@ async function aiScenarioBuilder() {
     resultDiv.innerHTML = '<div style="color: #ffffff; font-weight: 500;">AI analyzing current market data and generating scenario...</div>';
     
     try {
-        const coin = document.getElementById('experimentCoin')?.value || 'BTC';
+    const coin = document.getElementById('experimentCoin')?.value || 'BTC';
         const deposit = parseFloat(document.getElementById('userDeposit')?.value || 10000);
         
         // Получаем РАСШИРЕННЫЕ рыночные данные
@@ -2327,7 +2327,7 @@ IMPORTANT INSTRUCTIONS:
                 max_tokens: 4000
             })
         });
-        
+
         const data = await response.json();
         
         if (data.choices && data.choices[0]) {
@@ -2428,10 +2428,10 @@ async function runBacktesting() {
         alert('Please enter a strategy to test');
         return;
     }
-    
+
     resultsDiv.style.display = 'block';
     resultsDiv.innerHTML = '<em style="color: #ff6666;">🔄 Running backtest on historical data...</em>';
-    
+
     try {
         // Simulate backtesting (in real implementation, use historical API data)
         const coin = document.getElementById('experimentCoin')?.value || 'BTC';
@@ -2588,7 +2588,7 @@ async function loadPredictiveDashboard() {
     
     try {
         const currentPrice = await getRealTimePrice(coin) || 50000;
-        
+
         // Get Fear & Greed Index (mock for now)
         const fearGreedIndex = 50 + Math.floor(Math.random() * 50); // 50-100
         
@@ -2608,7 +2608,7 @@ For each timeframe, provide:
 - Specific buy/sell recommendations with price levels
 
 Format as structured analysis.`;
-        
+
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
@@ -2625,7 +2625,7 @@ Format as structured analysis.`;
                 max_tokens: 700
             })
         });
-        
+
         const data = await response.json();
         const predictions = data.choices && data.choices[0] ? data.choices[0].message.content.trim() : 'Analysis in progress...';
         
@@ -2638,9 +2638,9 @@ Format as structured analysis.`;
                 </div>
                 <div style="background: rgba(0, 0, 0, 0.5); padding: 15px; border-radius: 8px; white-space: pre-wrap; color: #ffffff; line-height: 1.6; font-size: 0.95rem;">
                     ${predictions}
-                </div>
             </div>
-        `;
+                    </div>
+                `;
     } catch (error) {
         console.error('Predictive Analytics Error:', error);
         dashboardDiv.innerHTML = '<em style="color: #ff6666;">Error loading predictions. Please try again.</em>';
@@ -2651,10 +2651,10 @@ async function runExperiment() {
     const name = document.getElementById('experimentName')?.value;
     const coin = document.getElementById('experimentCoin')?.value;
     const scenario = document.getElementById('experimentScenario')?.value;
-    const priceChange = document.getElementById('priceChange')?.value;
+    const priceChange = parseFloat(document.getElementById('priceChange')?.value || 0);
 
-    if (!name || !scenario) {
-        alert('Please fill in the experiment name and scenario description');
+    if (!name) {
+        alert('Please fill in the experiment name');
         return;
     }
 
@@ -2665,41 +2665,151 @@ async function runExperiment() {
     if (resultsDiv) resultsDiv.style.display = 'block';
     if (analysisDiv) analysisDiv.innerHTML = '<em style="color: #ff6666;">🔄 Getting current coin price...</em>';
 
+    try {
     const currentPrice = await getRealTimePrice(coin);
     const displayPrice = currentPrice || 50000;
     
     const newPrice = displayPrice * (1 + priceChange / 100);
     const userDeposit = parseFloat(document.getElementById('userDeposit')?.value || 10000);
-    const portfolioLoss = Math.abs(priceChange > 0 ? 0 : priceChange * 0.01 * userDeposit);
+        const portfolioValue = userDeposit * (1 + priceChange / 100);
+        const portfolioChange = portfolioValue - userDeposit;
+        const portfolioChangePercent = (portfolioChange / userDeposit * 100).toFixed(2);
+
+        // Получаем результат AI Scenario Builder (если есть)
+        const aiResultDiv = document.getElementById('aiScenarioResult');
+        let aiAnalysis = '';
+        if (aiResultDiv && aiResultDiv.innerHTML && aiResultDiv.innerHTML.trim().length > 50) {
+            // Извлекаем текст из AI результата
+            const aiText = aiResultDiv.innerText || aiResultDiv.textContent || '';
+            if (aiText.length > 100) {
+                aiAnalysis = `
+                    <div style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid rgba(0, 255, 0, 0.6); margin-top: 15px;">
+                        <h5 style="color: #00ff00; margin-bottom: 10px;">🤖 AI Scenario Analysis:</h5>
+                        <div style="color: #ffffff; max-height: 300px; overflow-y: auto; line-height: 1.6;">
+                            ${aiText.substring(0, 500)}${aiText.length > 500 ? '...' : ''}
+                        </div>
+                        <small style="color: #888; margin-top: 10px; display: block;">💡 Full analysis available above in AI Scenario Builder</small>
+                    </div>
+                `;
+            }
+        }
 
     if (analysisDiv) {
         analysisDiv.innerHTML = `
-            <h5 style="color: #ff0000; margin-bottom: 10px;">${name}</h5>
-            <p><strong>Coin:</strong> ${coin}</p>
-            <p><strong>Current price:</strong> <span style="color: #00ff00;">$${displayPrice.toFixed(6)}</span></p>
-            <p><strong>Price change:</strong> <span style="color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}">${priceChange}%</span></p>
-            <p><strong>Projected price:</strong> $${newPrice.toFixed(6)}</p>
-            ${priceChange < 0 ? `<p><strong>Loss:</strong> <span style="color: #ff6666;">-$${portfolioLoss.toFixed(2)}</span></p>` : ''}
+                <div style="background: rgba(0, 0, 0, 0.6); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15);">
+                    <h5 style="color: #ff0000; margin-bottom: 15px; font-size: 1.3rem;">📊 ${name}</h5>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px;">
+                            <small style="color: #888; display: block; margin-bottom: 5px;">Coin</small>
+                            <strong style="color: #ffffff; font-size: 1.1rem;">${coin}</strong>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px;">
+                            <small style="color: #888; display: block; margin-bottom: 5px;">Current Price</small>
+                            <strong style="color: #00ff00; font-size: 1.1rem;">$${displayPrice.toFixed(2)}</strong>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px;">
+                            <small style="color: #888; display: block; margin-bottom: 5px;">Price Change</small>
+                            <strong style="color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.1rem;">${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%</strong>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px;">
+                            <small style="color: #888; display: block; margin-bottom: 5px;">Projected Price</small>
+                            <strong style="color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.1rem;">$${newPrice.toFixed(2)}</strong>
+                        </div>
+                    </div>
+
+                    <div style="background: ${priceChange >= 0 ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)'}; padding: 15px; border-radius: 8px; border-left: 4px solid ${priceChange >= 0 ? 'rgba(0, 255, 0, 0.6)' : 'rgba(255, 0, 0, 0.6)'}; margin-bottom: 15px;">
+                        <h5 style="color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; margin-bottom: 10px;">💰 Portfolio Impact:</h5>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="color: #ffffff;">Starting Capital:</span>
+                            <strong style="color: #ffffff;">$${userDeposit.toFixed(2)}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="color: #ffffff;">Projected Value:</span>
+                            <strong style="color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.2rem;">$${portfolioValue.toFixed(2)}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #ffffff;">Total Change:</span>
+                            <strong style="color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.2rem;">${priceChange >= 0 ? '+' : ''}$${Math.abs(portfolioChange).toFixed(2)} (${portfolioChangePercent >= 0 ? '+' : ''}${portfolioChangePercent}%)</strong>
+                        </div>
+                    </div>
+
+                    ${scenario ? `
+                    <div style="background: rgba(255, 165, 0, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid rgba(255, 165, 0, 0.6); margin-bottom: 15px;">
+                        <h5 style="color: #ffa500; margin-bottom: 10px;">📝 Scenario Description:</h5>
+                        <p style="color: #ffffff; line-height: 1.6;">${scenario}</p>
+                    </div>
+                    ` : ''}
+
+                    ${aiAnalysis}
+                </div>
         `;
     }
 
     const aiAdviceDiv = document.getElementById('aiAdviceBox');
     if (aiAdviceDiv) {
+            let advice = '';
+            if (priceChange < -30) {
+                advice = '⚠️ CRITICAL DROP: Consider taking immediate action. This is a severe market decline. Review your risk management strategy and consider stop-loss orders or partial exit to protect capital.';
+            } else if (priceChange < -15) {
+                advice = '📉 SIGNIFICANT DROP: Market is experiencing notable decline. Monitor closely, consider DCA (Dollar Cost Averaging) if holding long-term, or partial profit-taking if needed.';
+            } else if (priceChange < 0) {
+                advice = '📊 MINOR CORRECTION: Small market pullback. Stick to your strategy unless fundamental factors change. Good opportunity to evaluate entry points.';
+            } else if (priceChange < 20) {
+                advice = '📈 POSITIVE MOVEMENT: Moderate gains observed. Consider taking partial profits if holding large positions, or holding if trend is strong.';
+            } else {
+                advice = '🚀 STRONG GROWTH: Significant market appreciation. Consider profit-taking strategy, rebalancing portfolio, or trailing stop-loss to protect gains.';
+            }
+
         aiAdviceDiv.innerHTML = `
-            <h5 style="color: #ffa500; margin-bottom: 10px;">🤖 AI advice:</h5>
-            <p>${priceChange < -15 ? 'Consider selling 25% to protect capital.' : priceChange < 0 ? 'Small correction. Stick to your strategy.' : 'Positive scenario. Consider taking partial profit.'}</p>
+                <div style="background: rgba(255, 165, 0, 0.15); padding: 15px; border-radius: 8px;">
+                    <h5 style="color: #ffa500; margin-bottom: 10px;">🤖 AI Actionable Advice:</h5>
+                    <p style="color: #ffffff; line-height: 1.7; margin-bottom: 10px;">${advice}</p>
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                        <small style="color: #888;">💡 Tip: Use AI Scenario Builder above for detailed market analysis and recommendations</small>
+                    </div>
+                </div>
         `;
     }
 
     if (chartDiv) {
+            // Создаем простую визуализацию
+            const isPositive = priceChange >= 0;
+            const color = isPositive ? '#00ff00' : '#ff6666';
+            const arrow = isPositive ? '↗' : '↘';
+            
         chartDiv.innerHTML = `
-            <div style="text-align: center; width: 100%;">
-                <p style="color: #ff6666; font-size: 1.2rem;">Price movement simulation</p>
-                <div style="margin-top: 20px; color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 2rem;">
-                    ${priceChange >= 0 ? '↗' : '↘'} ${Math.abs(priceChange)}%
+                <div style="background: rgba(0, 0, 0, 0.6); padding: 30px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); text-align: center;">
+                    <h5 style="color: #ffffff; margin-bottom: 20px; font-size: 1.2rem;">📊 Price Movement Visualization</h5>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px;">
+                        <div style="text-align: right;">
+                            <div style="color: #888; font-size: 0.9rem; margin-bottom: 5px;">Current</div>
+                            <div style="color: #00ff00; font-size: 1.5rem; font-weight: bold;">$${displayPrice.toFixed(2)}</div>
+                        </div>
+                        <div style="color: ${color}; font-size: 3rem; font-weight: bold;">
+                            ${arrow}
+                        </div>
+                        <div style="text-align: left;">
+                            <div style="color: #888; font-size: 0.9rem; margin-bottom: 5px;">Projected</div>
+                            <div style="color: ${color}; font-size: 1.5rem; font-weight: bold;">$${newPrice.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    <div style="background: ${color}20; padding: 15px; border-radius: 8px; border: 1px solid ${color}60;">
+                        <div style="color: ${color}; font-size: 2.5rem; font-weight: bold; margin-bottom: 10px;">
+                            ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%
+                        </div>
+                        <div style="color: #ffffff; font-size: 0.9rem;">
+                            ${isPositive ? 'Portfolio Gain' : 'Portfolio Loss'}: ${priceChange >= 0 ? '+' : ''}$${Math.abs(portfolioChange).toFixed(2)}
+                        </div>
                 </div>
             </div>
         `;
+        }
+    } catch (error) {
+        console.error('Error running experiment:', error);
+        if (analysisDiv) {
+            analysisDiv.innerHTML = `<div style="color: #ff6666; padding: 15px; background: rgba(255, 0, 0, 0.1); border-radius: 8px;">Error: Could not run experiment. Please try again.</div>`;
+        }
     }
 }
 
