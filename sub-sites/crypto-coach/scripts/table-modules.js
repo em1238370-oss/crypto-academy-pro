@@ -2051,7 +2051,67 @@ function updatePriceChangeDisplay() {
 
 // ========== MODULE C: NEW FUNCTIONS ==========
 
-// 1. AI Scenario Builder (Universal) - Replaces loadAIScenario and generateStrategyFromText
+// Функция для получения расширенных рыночных данных
+async function getExtendedMarketData(coinSymbol) {
+    const marketData = {
+        mainCoin: null,
+        topCoins: {},
+        marketContext: {}
+    };
+    
+    try {
+        // Получаем данные основной монеты
+        const coinLower = coinSymbol.toLowerCase();
+        const response = await fetch(`${LIVECOINWATCH_URL}/${coinLower}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': LIVECOINWATCH_KEY
+            },
+            body: JSON.stringify({
+                currency: 'USD',
+                meta: true
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            marketData.mainCoin = {
+                symbol: coinSymbol,
+                price: data.rate || null,
+                marketCap: data.cap || null,
+                volume24h: data.volume || null,
+                change24h: data.delta?.day || 0,
+                change7d: data.delta?.week || 0,
+                change30d: data.delta?.month || 0,
+                allTimeHigh: data.allTimeHighUSD || null,
+                allTimeLow: data.allTimeLowUSD || null
+            };
+        }
+    } catch (e) {
+        console.error('Error fetching main coin data:', e);
+    }
+    
+    // Получаем данные топ-5 монет для контекста рынка
+    const topCoinsList = coinSymbol === 'BTC' ? ['ETH', 'BNB', 'SOL', 'XRP', 'ADA'] : 
+                         coinSymbol === 'ETH' ? ['BTC', 'BNB', 'SOL', 'ADA', 'XRP'] :
+                         ['BTC', 'ETH', 'BNB', 'SOL', 'ADA'];
+    
+    for (const topCoin of topCoinsList) {
+        try {
+            const price = await getRealTimePrice(topCoin);
+            if (price) {
+                marketData.topCoins[topCoin] = price;
+            }
+        } catch (e) {
+            // Пропускаем если не получилось
+        }
+    }
+    
+    return marketData;
+}
+
+// 1. AI Scenario Builder (Universal) - Enhanced with deep market analysis
 async function aiScenarioBuilder() {
     const input = document.getElementById('aiScenarioInput')?.value;
     const resultDiv = document.getElementById('aiScenarioResult');
@@ -2069,9 +2129,18 @@ async function aiScenarioBuilder() {
         const coin = document.getElementById('experimentCoin')?.value || 'BTC';
         const deposit = parseFloat(document.getElementById('userDeposit')?.value || 10000);
         
-        // Получаем АКТУАЛЬНУЮ цену в реальном времени
-        resultDiv.innerHTML = '<em style="color: #ff6666;">📊 Fetching real-time price data from API...</em>';
-        let currentPrice = await getRealTimePrice(coin);
+        // Получаем РАСШИРЕННЫЕ рыночные данные
+        resultDiv.innerHTML = '<em style="color: #ff6666;">📊 Collecting comprehensive market data (prices, volumes, trends)...</em>';
+        const marketData = await getExtendedMarketData(coin);
+        
+        let currentPrice = marketData.mainCoin?.price;
+        
+        // Если не получили цену, пробуем еще раз
+        if (!currentPrice) {
+            resultDiv.innerHTML = '<em style="color: #ffa500;">⚠️ Retrying price fetch with alternative method...</em>';
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            currentPrice = await getRealTimePrice(coin);
+        }
         
         // Если не получили цену, пробуем еще раз с задержкой
         if (!currentPrice) {
@@ -2139,7 +2208,24 @@ async function aiScenarioBuilder() {
             }
         }
         
-        // Формируем четкий промпт с АКТУАЛЬНЫМИ данными
+        // Формируем расширенный промпт с глубоким анализом рынка
+        const marketContext = marketData.mainCoin ? `
+MARKET CONTEXT FOR ${coin}:
+- Current Price: $${marketData.mainCoin.price.toFixed(2)}
+- Market Cap: $${marketData.mainCoin.marketCap ? (marketData.mainCoin.marketCap / 1000000000).toFixed(2) + 'B' : 'N/A'}
+- 24h Volume: $${marketData.mainCoin.volume24h ? (marketData.mainCoin.volume24h / 1000000).toFixed(2) + 'M' : 'N/A'}
+- 24h Change: ${marketData.mainCoin.change24h > 0 ? '+' : ''}${marketData.mainCoin.change24h.toFixed(2)}%
+- 7d Change: ${marketData.mainCoin.change7d > 0 ? '+' : ''}${marketData.mainCoin.change7d.toFixed(2)}%
+- 30d Change: ${marketData.mainCoin.change30d > 0 ? '+' : ''}${marketData.mainCoin.change30d.toFixed(2)}%
+- All-Time High: $${marketData.mainCoin.allTimeHigh ? marketData.mainCoin.allTimeHigh.toFixed(2) : 'N/A'}
+- Distance from ATH: ${marketData.mainCoin.allTimeHigh ? ((marketData.mainCoin.price - marketData.mainCoin.allTimeHigh) / marketData.mainCoin.allTimeHigh * 100).toFixed(2) + '%' : 'N/A'}
+` : '';
+
+        const topCoinsContext = Object.keys(marketData.topCoins).length > 0 ? `
+TOP CRYPTOCURRENCIES MARKET CONTEXT (for comparison):
+${Object.entries(marketData.topCoins).map(([symbol, price]) => `- ${symbol}: $${price.toFixed(2)}`).join('\n')}
+` : '';
+
         const priceInfo = projectedPrice ? 
             `\n\n⚠️ CRITICAL PRICE CALCULATION:
 - CURRENT REAL-TIME PRICE: $${currentPrice.toFixed(2)} (fetched from LiveCoinWatch API at ${new Date().toLocaleTimeString()})
@@ -2149,45 +2235,79 @@ async function aiScenarioBuilder() {
             `\n\n⚠️ CRITICAL: CURRENT REAL-TIME PRICE: $${currentPrice.toFixed(2)} (fetched from LiveCoinWatch API at ${new Date().toLocaleTimeString()})
 YOU MUST USE THIS EXACT PRICE IN YOUR RESPONSE. DO NOT USE OLD OR INCORRECT PRICES.`;
         
-        const prompt = `User scenario description: "${input}"
+        const prompt = `You are an EXPERT cryptocurrency market analyst with 15+ years of experience. You have deep knowledge of:
+- Market cycles, historical patterns, and correlations
+- Technical analysis, support/resistance levels, and chart patterns
+- Market psychology, sentiment, and behavioral finance
+- Macroeconomic factors affecting crypto markets
+- Regulatory impacts and institutional adoption
+- DeFi, NFT, and emerging crypto sectors
+
+User scenario question: "${input}"
+
+${marketContext}
+${topCoinsContext}
 
 CURRENT MARKET DATA (REAL-TIME):
-- Coin: ${coin}
+- Focus Coin: ${coin}
 - Current Real-Time Price: $${currentPrice.toFixed(2)} (fetched from LiveCoinWatch API)
 - Portfolio Value: $${deposit.toFixed(2)}
 ${priceInfo}
 
-YOUR TASK: Create a STRUCTURED professional scenario analysis. DO NOT create day-by-day timeline. Instead, provide:
+YOUR TASK: Provide a COMPREHENSIVE, DEEP, and EDUCATIONAL analysis that expands the user's understanding. Answer their question thoroughly and provide additional insights they might not have considered.
 
-1. **WHY THIS COULD HAPPEN** (Main reasons/causes):
-   - List 3-5 key factors that could trigger this scenario
-   - Explain market conditions, events, or catalysts
+Structure your response as follows:
 
-2. **WHAT WILL HAPPEN** (Main consequences):
-   - Impact on ${coin} price (use EXACT current price: $${currentPrice.toFixed(2)})
+1. **WHY THIS COULD HAPPEN** (Root causes & catalysts):
+   - List 5-7 key factors (macroeconomic, technical, fundamental, regulatory, psychological)
+   - Explain HOW each factor could trigger this scenario
+   - Reference similar historical events if relevant (e.g., "Similar to the 2018 bear market when...")
+   - Discuss market conditions that would make this more or less likely
+
+2. **WHAT WILL HAPPEN** (Comprehensive consequences):
+   - Impact on ${coin} specifically (use EXACT current price: $${currentPrice.toFixed(2)})
    ${projectedPrice ? `- If price changes by ${priceChangePercent}%, new price will be: $${projectedPrice.toFixed(2)}` : ''}
-   - Impact on altcoins and overall crypto market
-   - Impact on trading volume and liquidity
-   - Market sentiment changes
+   - Impact on different altcoin sectors (Layer 1s, DeFi, Meme coins, Stablecoins, etc.)
+   - Impact on overall crypto market structure
+   - Impact on trading volume, liquidity, and market depth
+   - Impact on market sentiment (Fear & Greed Index, social media, institutional interest)
+   - Potential cascading effects (liquidations, margin calls, exchange issues)
+   - Correlation effects with traditional markets (stocks, bonds, commodities)
 
-3. **KEY FACTS & NUMBERS** (Important data points):
-   - Specific price levels to watch
-   - Support and resistance levels
-   - Expected volatility
-   - Timeframe estimates (not day-by-day, but overall timeframe)
+3. **KEY FACTS & NUMBERS** (Critical data points):
+   - Specific price levels to watch (support, resistance, psychological levels)
+   - Expected volatility ranges
+   - Volume patterns to monitor
+   - Timeframe estimates (short-term, medium-term, long-term)
+   - Historical precedents and their outcomes
+   - Market cap implications
+   - Trading volume implications
 
-4. **RECOMMENDATIONS** (What to do):
-   - Portfolio adjustments
-   - Entry/exit points
-   - Risk management strategies
-   - Best case / worst case / realistic scenarios
+4. **DEEPER INSIGHTS** (Expand user's understanding):
+   - What sectors/coins might outperform or underperform in this scenario?
+   - What would be contrarian opportunities?
+   - How would this affect different types of investors (HODLers, traders, institutions)?
+   - What technical indicators would be most relevant?
+   - What fundamental factors would matter most?
 
-IMPORTANT:
+5. **RECOMMENDATIONS** (Actionable advice):
+   - Portfolio adjustments (specific allocations)
+   - Entry/exit points with price targets
+   - Risk management strategies (stop-losses, position sizing, diversification)
+   - Best case / worst case / realistic scenarios with probabilities
+   - What to monitor/watch for
+   - When to reassess the situation
+
+IMPORTANT INSTRUCTIONS:
 - Use ONLY the current price provided: $${currentPrice.toFixed(2)}
 - Calculate all future prices based on this EXACT current price
-- Be specific with numbers and percentages
-- Focus on MAIN FACTS, not daily details
-- Format clearly with sections and bullet points`;
+- Be specific with numbers, percentages, and timeframes
+- Reference historical events when relevant (e.g., "Similar to May 2021 when...")
+- Explain WHY things happen, not just WHAT happens
+- Provide educational insights that help the user understand market dynamics better
+- Consider multiple perspectives and scenarios
+- Format clearly with sections, bullet points, and clear headings
+- Make it comprehensive but readable`;
         
         resultDiv.innerHTML = '<em style="color: #ff6666;">🤖 AI generating structured scenario analysis...</em>';
         
@@ -2200,11 +2320,11 @@ IMPORTANT:
             body: JSON.stringify({
                 model: 'mistral-small',
                 messages: [
-                    { role: 'system', content: 'You are a professional crypto market analyst. You ALWAYS use the EXACT current prices provided. You create structured, fact-based scenarios focusing on main causes, consequences, and recommendations. You do NOT create day-by-day timelines unless specifically requested.' },
+                    { role: 'system', content: 'You are an EXPERT cryptocurrency market analyst with 15+ years of experience. You provide DEEP, COMPREHENSIVE, and EDUCATIONAL analysis. You ALWAYS use EXACT current prices provided. You reference historical events, explain market dynamics, and expand users\' understanding. You create structured, fact-based scenarios with multiple perspectives. You do NOT create day-by-day timelines unless specifically requested. Your goal is to help users understand WHY things happen, not just WHAT happens.' },
                     { role: 'user', content: prompt }
                 ],
-                temperature: 0.7,
-                max_tokens: 1000
+                temperature: 0.8,
+                max_tokens: 2000
             })
         });
         
