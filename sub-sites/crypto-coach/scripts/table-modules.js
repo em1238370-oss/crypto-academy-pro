@@ -2144,7 +2144,7 @@ async function aiScenarioBuilder() {
         
         // Если не получили цену, пробуем еще раз с задержкой
         if (!currentPrice) {
-            resultDiv.innerHTML = '<em style="color: #ffa500;">⚠️ Retrying price fetch with alternative method...</em>';
+            resultDiv.innerHTML = '<div style="color: #ffa500; font-weight: 500;">Retrying price fetch with alternative method...</div>';
             await new Promise(resolve => setTimeout(resolve, 1000));
             currentPrice = await getRealTimePrice(coin);
         }
@@ -2324,7 +2324,7 @@ IMPORTANT INSTRUCTIONS:
                     { role: 'user', content: prompt }
                 ],
                 temperature: 0.8,
-                max_tokens: 2000
+                max_tokens: 4000
             })
         });
         
@@ -2347,12 +2347,12 @@ IMPORTANT INSTRUCTIONS:
             if (experimentScenario) experimentScenario.value = scenario;
             
             resultDiv.innerHTML = `
-                <div style="background: rgba(0, 0, 0, 0.6); padding: 25px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); margin-top: 20px;">
+                <div style="background: rgba(0, 0, 0, 0.6); padding: 25px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); margin-top: 20px; max-height: 500px; overflow-y: auto;">
                     <div style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid rgba(0, 255, 0, 0.6);">
                         <div style="color: #00ff00; font-size: 1.2rem; font-weight: 600; margin-bottom: 8px;">Scenario Analysis Generated</div>
                         <div style="color: #cccccc; font-size: 0.95rem;">Current ${coin} Price: <span style="color: #00ff00; font-weight: 600;">$${currentPrice.toFixed(2)}</span> (Real-time)</div>
                     </div>
-                    <div style="color: #ffffff; white-space: pre-wrap; font-size: 1rem; line-height: 1.8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;">
+                    <div style="color: #ffffff; white-space: pre-wrap; font-size: 1rem; line-height: 1.8; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; max-height: 450px; overflow-y: auto; overflow-x: hidden; padding-right: 15px;">
                         ${scenario}
                     </div>
                 </div>
