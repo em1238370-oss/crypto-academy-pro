@@ -40,6 +40,9 @@ const API_KEY = 'hfDsgAHIsiU6tKZOSTqAL5pazYPjA8SO';
 const API_URL = 'https://api.mistral.ai/v1/chat/completions';
 const LIVECOINWATCH_KEY = '84d685c4-2905-4fc2-91fc-ba7b696eb966';
 const LIVECOINWATCH_URL = 'https://api.livecoinwatch.com/coins/single';
+const COINDESK_API_KEY = 'b95bf2a20ad97017d5c32c1a6196ebb881402326735f3eb2f6689a09b1741a45';
+const COINDESK_API_URL = 'https://api.coindesk.com/v1';
+const ALTERNATIVE_ME_FNG_URL = 'https://api.alternative.me/fng/';
 
 // Available coins
 const availableCoins = [
@@ -2051,12 +2054,59 @@ function updatePriceChangeDisplay() {
 
 // ========== MODULE C: NEW FUNCTIONS ==========
 
+// Функция для получения Fear & Greed Index (бесплатный API, без ключа)
+async function getFearAndGreedIndex() {
+    try {
+        const response = await fetch(ALTERNATIVE_ME_FNG_URL);
+        if (!response.ok) return null;
+        
+        const data = await response.json();
+        if (data && data.data && data.data[0]) {
+            return {
+                value: data.data[0].value,
+                classification: data.data[0].value_classification,
+                timestamp: data.data[0].timestamp
+            };
+        }
+        return null;
+    } catch (e) {
+        console.error('Error fetching Fear & Greed Index:', e);
+        return null;
+    }
+}
+
+// Функция для получения данных из CoinDesk API
+async function getCoinDeskData(coinSymbol) {
+    try {
+        // Пример запроса к CoinDesk API (нужно проверить точный endpoint)
+        // CoinDesk API может иметь разные endpoints, нужно проверить документацию
+        const response = await fetch(`${COINDESK_API_URL}/indices/latest?symbol=${coinSymbol}`, {
+            headers: {
+                'X-API-Key': COINDESK_API_KEY
+            }
+        });
+        
+        if (!response.ok) {
+            console.error('CoinDesk API Error:', response.status);
+            return null;
+        }
+        
+        const data = await response.json();
+        return data;
+    } catch (e) {
+        console.error('Error fetching CoinDesk data:', e);
+        return null;
+    }
+}
+
 // Функция для получения расширенных рыночных данных
 async function getExtendedMarketData(coinSymbol) {
     const marketData = {
         mainCoin: null,
         topCoins: {},
-        marketContext: {}
+        marketContext: {},
+        fearAndGreed: null,
+        coinDeskData: null
     };
     
     try {
@@ -2106,6 +2156,20 @@ async function getExtendedMarketData(coinSymbol) {
         } catch (e) {
             // Пропускаем если не получилось
         }
+    }
+    
+    // Получаем Fear & Greed Index (бесплатный API)
+    try {
+        marketData.fearAndGreed = await getFearAndGreedIndex();
+    } catch (e) {
+        console.error('Error fetching Fear & Greed:', e);
+    }
+    
+    // Получаем данные из CoinDesk API (если доступно)
+    try {
+        marketData.coinDeskData = await getCoinDeskData(coinSymbol);
+    } catch (e) {
+        console.error('Error fetching CoinDesk data:', e);
     }
     
     return marketData;
@@ -2226,6 +2290,18 @@ TOP CRYPTOCURRENCIES MARKET CONTEXT (for comparison):
 ${Object.entries(marketData.topCoins).map(([symbol, price]) => `- ${symbol}: $${price.toFixed(2)}`).join('\n')}
 ` : '';
 
+        // Добавляем Fear & Greed Index в контекст
+        const fearAndGreedContext = marketData.fearAndGreed ? `
+MARKET SENTIMENT (Fear & Greed Index):
+- Current Index: ${marketData.fearAndGreed.value}/100
+- Classification: ${marketData.fearAndGreed.classification}
+- Interpretation: ${marketData.fearAndGreed.value < 25 ? 'Extreme Fear - Market is very bearish, potential buying opportunity' : 
+                    marketData.fearAndGreed.value < 45 ? 'Fear - Market is bearish, cautious sentiment' :
+                    marketData.fearAndGreed.value < 55 ? 'Neutral - Balanced market sentiment' :
+                    marketData.fearAndGreed.value < 75 ? 'Greed - Market is bullish, optimistic sentiment' :
+                    'Extreme Greed - Market is very bullish, potential selling opportunity'}
+` : '';
+
         const priceInfo = projectedPrice ? 
             `\n\n⚠️ CRITICAL PRICE CALCULATION:
 - CURRENT REAL-TIME PRICE: $${currentPrice.toFixed(2)} (fetched from LiveCoinWatch API at ${new Date().toLocaleTimeString()})
@@ -2247,6 +2323,7 @@ User scenario question: "${input}"
 
 ${marketContext}
 ${topCoinsContext}
+${fearAndGreedContext}
 
 CURRENT MARKET DATA (REAL-TIME):
 - Focus Coin: ${coin}
