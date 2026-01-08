@@ -47,6 +47,11 @@ const ALTERNATIVE_ME_FNG_URL = 'https://api.alternative.me/fng/';
 // Когда будет ключ, раскомментируйте и добавьте ключ:
 // const GLASSNODE_API_KEY = 'YOUR_GLASSNODE_API_KEY_HERE';
 const GLASSNODE_API_URL = 'https://api.glassnode.com/v1';
+// LunarCrush API - социальные сигналы (Twitter, Reddit, упоминания)
+// Получите ключ на https://lunarcrush.com/developers/api
+// Добавьте ключ здесь когда получите:
+const LUNARCRUSH_API_KEY = ''; // Добавьте ваш ключ здесь
+const LUNARCRUSH_API_URL = 'https://lunarcrush.com/api3';
 
 // Available coins
 const availableCoins = [
@@ -2087,6 +2092,73 @@ async function getGlassnodeData(coinSymbol, metric = 'addresses/active_count') {
     return null; // Пока нет ключа
 }
 
+// Функция для получения социальных сигналов из LunarCrush API
+// Предоставляет: Galaxy Score, AltRank, Social Volume, Social Dominance, упоминания в Twitter/Reddit
+async function getLunarCrushData(coinSymbol) {
+    if (!LUNARCRUSH_API_KEY || LUNARCRUSH_API_KEY === '') {
+        return null; // Нет ключа
+    }
+    
+    try {
+        // Маппинг символов для LunarCrush
+        const lunarCrushMap = {
+            'BTC': 'bitcoin',
+            'ETH': 'ethereum',
+            'BNB': 'binancecoin',
+            'SOL': 'solana',
+            'ADA': 'cardano',
+            'XRP': 'ripple',
+            'DOGE': 'dogecoin',
+            'AVAX': 'avalanche',
+            'NEAR': 'near',
+            'ARB': 'arbitrum',
+            'APT': 'aptos',
+            'UNI': 'uniswap',
+            'SUI': 'sui',
+            'WIF': 'dogwifhat',
+            'AAVE': 'aave',
+            'TON': 'toncoin',
+            'ATOM': 'cosmos'
+        };
+        
+        const coinId = lunarCrushMap[coinSymbol] || coinSymbol.toLowerCase();
+        
+        // Получаем данные о монете (Galaxy Score, Social Volume, и др.)
+        const response = await fetch(`${LUNARCRUSH_API_URL}/coins?key=${LUNARCRUSH_API_KEY}&symbol=${coinId}&data=market_data,social_data`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            console.error('LunarCrush API Error:', response.status);
+            return null;
+        }
+        
+        const data = await response.json();
+        
+        if (data && data.data && data.data.length > 0) {
+            const coinData = data.data[0];
+            return {
+                galaxyScore: coinData.galaxy_score || null,
+                altRank: coinData.alt_rank || null,
+                socialVolume: coinData.social_volume || null,
+                socialDominance: coinData.social_dominance || null,
+                twitterMentions: coinData.twitter_mentions || null,
+                redditMentions: coinData.reddit_mentions || null,
+                socialScore: coinData.social_score || null,
+                marketCap: coinData.market_cap || null
+            };
+        }
+        
+        return null;
+    } catch (e) {
+        console.error('Error fetching LunarCrush data:', e);
+        return null;
+    }
+}
+
 // Функция для получения Fear & Greed Index (бесплатный API, без ключа)
 async function getFearAndGreedIndex() {
     try {
@@ -2213,6 +2285,13 @@ async function getExtendedMarketData(coinSymbol) {
         // marketData.glassnodeSOPR = await getGlassnodeData(coinSymbol, 'indicators/sopr');
     } catch (e) {
         console.error('Error fetching Glassnode data:', e);
+    }
+    
+    // Получаем социальные сигналы из LunarCrush API (если есть ключ)
+    try {
+        marketData.lunarCrushData = await getLunarCrushData(coinSymbol);
+    } catch (e) {
+        console.error('Error fetching LunarCrush data:', e);
     }
     
     return marketData;
@@ -2345,6 +2424,22 @@ MARKET SENTIMENT (Fear & Greed Index):
                     'Extreme Greed - Market is very bullish, potential selling opportunity'}
 ` : '';
 
+        // Добавляем социальные сигналы из LunarCrush в контекст
+        const lunarCrushContext = marketData.lunarCrushData ? `
+SOCIAL SIGNALS (LunarCrush):
+- Galaxy Score: ${marketData.lunarCrushData.galaxyScore || 'N/A'}/100 (comprehensive ranking)
+- AltRank: ${marketData.lunarCrushData.altRank || 'N/A'} (altcoin ranking)
+- Social Volume: ${marketData.lunarCrushData.socialVolume || 'N/A'} (mentions across platforms)
+- Social Dominance: ${marketData.lunarCrushData.socialDominance ? (marketData.lunarCrushData.socialDominance * 100).toFixed(2) + '%' : 'N/A'} (share of crypto social mentions)
+- Twitter Mentions: ${marketData.lunarCrushData.twitterMentions || 'N/A'}
+- Reddit Mentions: ${marketData.lunarCrushData.redditMentions || 'N/A'}
+- Social Score: ${marketData.lunarCrushData.socialScore || 'N/A'}/100
+- Interpretation: ${marketData.lunarCrushData.galaxyScore ? 
+    (marketData.lunarCrushData.galaxyScore > 75 ? 'Very High Social Activity - Strong community interest' :
+     marketData.lunarCrushData.galaxyScore > 50 ? 'Moderate Social Activity - Normal community engagement' :
+     'Low Social Activity - Limited community interest') : 'N/A'}
+` : '';
+
         const priceInfo = projectedPrice ? 
             `\n\n⚠️ CRITICAL PRICE CALCULATION:
 - CURRENT REAL-TIME PRICE: $${currentPrice.toFixed(2)} (fetched from LiveCoinWatch API at ${new Date().toLocaleTimeString()})
@@ -2367,6 +2462,7 @@ User scenario question: "${input}"
 ${marketContext}
 ${topCoinsContext}
 ${fearAndGreedContext}
+${lunarCrushContext}
 
 CURRENT MARKET DATA (REAL-TIME):
 - Focus Coin: ${coin}
