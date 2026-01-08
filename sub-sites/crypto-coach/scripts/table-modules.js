@@ -43,6 +43,10 @@ const LIVECOINWATCH_URL = 'https://api.livecoinwatch.com/coins/single';
 const COINDESK_API_KEY = 'b95bf2a20ad97017d5c32c1a6196ebb881402326735f3eb2f6689a09b1741a45';
 const COINDESK_API_URL = 'https://api.coindesk.com/v1';
 const ALTERNATIVE_ME_FNG_URL = 'https://api.alternative.me/fng/';
+// Glassnode API (требует Professional план - от $999/месяц)
+// Когда будет ключ, раскомментируйте и добавьте ключ:
+// const GLASSNODE_API_KEY = 'YOUR_GLASSNODE_API_KEY_HERE';
+const GLASSNODE_API_URL = 'https://api.glassnode.com/v1';
 
 // Available coins
 const availableCoins = [
@@ -2054,6 +2058,35 @@ function updatePriceChangeDisplay() {
 
 // ========== MODULE C: NEW FUNCTIONS ==========
 
+// Функция для получения данных из Glassnode API (Basic Metrics - Tier 1)
+// Доступные метрики: Active Addresses, SOPR, Fees, Fear & Greed Index, и др.
+// Требует Professional план (от $999/месяц) для API доступа
+async function getGlassnodeData(coinSymbol, metric = 'addresses/active_count') {
+    // Раскомментируйте когда будет API ключ:
+    /*
+    try {
+        const coinLower = coinSymbol.toLowerCase();
+        const response = await fetch(`${GLASSNODE_API_URL}/metrics/${metric}?a=${coinLower}&i=24h&f=json`, {
+            headers: {
+                'X-Api-Key': GLASSNODE_API_KEY
+            }
+        });
+        
+        if (!response.ok) {
+            console.error('Glassnode API Error:', response.status);
+            return null;
+        }
+        
+        const data = await response.json();
+        return data;
+    } catch (e) {
+        console.error('Error fetching Glassnode data:', e);
+        return null;
+    }
+    */
+    return null; // Пока нет ключа
+}
+
 // Функция для получения Fear & Greed Index (бесплатный API, без ключа)
 async function getFearAndGreedIndex() {
     try {
@@ -2170,6 +2203,16 @@ async function getExtendedMarketData(coinSymbol) {
         marketData.coinDeskData = await getCoinDeskData(coinSymbol);
     } catch (e) {
         console.error('Error fetching CoinDesk data:', e);
+    }
+    
+    // Получаем данные из Glassnode API (если есть ключ)
+    // Доступные метрики: Active Addresses, SOPR, Fees, и др.
+    try {
+        // Раскомментируйте когда будет Glassnode API ключ:
+        // marketData.glassnodeData = await getGlassnodeData(coinSymbol, 'addresses/active_count');
+        // marketData.glassnodeSOPR = await getGlassnodeData(coinSymbol, 'indicators/sopr');
+    } catch (e) {
+        console.error('Error fetching Glassnode data:', e);
     }
     
     return marketData;
