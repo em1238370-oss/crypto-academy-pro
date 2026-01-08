@@ -48,9 +48,7 @@ const ALTERNATIVE_ME_FNG_URL = 'https://api.alternative.me/fng/';
 // const GLASSNODE_API_KEY = 'YOUR_GLASSNODE_API_KEY_HERE';
 const GLASSNODE_API_URL = 'https://api.glassnode.com/v1';
 // LunarCrush API - социальные сигналы (Twitter, Reddit, упоминания)
-// Получите ключ на https://lunarcrush.com/developers/api
-// Добавьте ключ здесь когда получите:
-const LUNARCRUSH_API_KEY = ''; // Добавьте ваш ключ здесь
+const LUNARCRUSH_API_KEY = 'w737qzurjyq5nt2yyma6t91d0rmk5tgbi7uhebv7m';
 const LUNARCRUSH_API_URL = 'https://lunarcrush.com/api3';
 
 // Available coins
