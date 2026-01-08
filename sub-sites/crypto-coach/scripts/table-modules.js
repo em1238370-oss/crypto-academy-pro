@@ -2447,13 +2447,16 @@ SOCIAL SIGNALS (LunarCrush):
             `\n\n⚠️ CRITICAL: CURRENT REAL-TIME PRICE: $${currentPrice.toFixed(2)} (fetched from LiveCoinWatch API at ${new Date().toLocaleTimeString()})
 YOU MUST USE THIS EXACT PRICE IN YOUR RESPONSE. DO NOT USE OLD OR INCORRECT PRICES.`;
         
-        const prompt = `You are an EXPERT cryptocurrency market analyst with 15+ years of experience. You have deep knowledge of:
+        const prompt = `You are an EXPERT cryptocurrency market analyst with 15+ years of experience. You have DEEP expertise in:
 - Market cycles, historical patterns, and correlations
 - Technical analysis, support/resistance levels, and chart patterns
-- Market psychology, sentiment, and behavioral finance
-- Macroeconomic factors affecting crypto markets
+- BEHAVIORAL ECONOMICS and MARKET PSYCHOLOGY (herd behavior, FOMO, panic selling, euphoria, confirmation bias, loss aversion, anchoring)
+- MACROECONOMIC FACTORS (inflation, interest rates, monetary policy, fiscal policy, GDP growth, unemployment, currency devaluation, central bank actions)
+- PSYCHOLOGICAL FACTORS (investor sentiment, crowd psychology, social media influence, media narratives, institutional vs retail behavior)
+- Market sentiment, sentiment indicators, and behavioral finance
 - Regulatory impacts and institutional adoption
 - DeFi, NFT, and emerging crypto sectors
+- Global economic trends and their impact on risk assets
 
 User scenario question: "${input}"
 
@@ -2468,60 +2471,142 @@ CURRENT MARKET DATA (REAL-TIME):
 - Portfolio Value: $${deposit.toFixed(2)}
 ${priceInfo}
 
-YOUR TASK: Provide a COMPREHENSIVE, DEEP, and EDUCATIONAL analysis that expands the user's understanding. Answer their question thoroughly and provide additional insights they might not have considered.
+YOUR TASK: Provide a COMPREHENSIVE, DEEP, and EDUCATIONAL analysis that expands the user's understanding. Focus HEAVILY on ECONOMIC and PSYCHOLOGICAL factors that drive market movements. Answer their question thoroughly and provide additional insights they might not have considered.
 
 Structure your response as follows:
 
-1. **WHY THIS COULD HAPPEN** (Root causes & catalysts):
-   - List 5-7 key factors (macroeconomic, technical, fundamental, regulatory, psychological)
-   - Explain HOW each factor could trigger this scenario
-   - Reference similar historical events if relevant (e.g., "Similar to the 2018 bear market when...")
-   - Discuss market conditions that would make this more or less likely
+1. **WHY THIS COULD HAPPEN** (Root causes & catalysts - DEEP ECONOMIC & PSYCHOLOGICAL ANALYSIS):
+   
+   A. MACROECONOMIC FACTORS (30% of analysis):
+   - Federal Reserve policy (interest rate changes, quantitative easing/tightening, forward guidance)
+   - Inflation trends and their impact on risk assets vs safe havens
+   - Global economic growth/recession indicators (GDP, unemployment, consumer confidence)
+   - Currency markets (USD strength/weakness, DXY index, currency devaluation)
+   - Government fiscal policy (stimulus, austerity, debt levels)
+   - Central bank actions worldwide (ECB, BOJ, PBOC policies)
+   - Geopolitical tensions and their economic impact
+   - Commodity prices (oil, gold) and their correlation with crypto
+   - Bond markets (yield curves, treasury rates, risk-free rate)
+   - Stock market correlation (S&P 500, NASDAQ, risk-on vs risk-off sentiment)
+   - Explain HOW each macroeconomic factor could trigger this scenario
+   - Reference historical events (e.g., "Similar to 2018 when Fed raised rates..." or "Like 2020 COVID crash when...")
+   
+   B. PSYCHOLOGICAL FACTORS (30% of analysis):
+   - Herd behavior and mass psychology (how crowd emotions drive markets)
+   - FOMO (Fear Of Missing Out) and its role in bull markets
+   - Panic selling and capitulation events (what triggers them, how they manifest)
+   - Euphoria and irrational exuberance (signs, stages, consequences)
+   - Confirmation bias (how investors see what they want to see)
+   - Loss aversion (why people hold losers too long, sell winners too early)
+   - Anchoring bias (how past prices affect current decisions)
+   - Social media influence (Twitter, Reddit, TikTok trends and their impact)
+   - Media narratives and their power to shape sentiment
+   - Institutional vs retail investor psychology (different behaviors, different impacts)
+   - Fear & Greed Index interpretation (what it means, how it affects behavior)
+   - Social signals analysis (what high/low social volume means psychologically)
+   - Explain HOW each psychological factor could trigger this scenario
+   - Reference behavioral patterns (e.g., "This mirrors the 2017 FOMO cycle when..." or "Similar to the 2021 euphoria phase...")
+   
+   C. TECHNICAL & FUNDAMENTAL FACTORS (20% of analysis):
+   - Technical analysis (support/resistance, chart patterns, indicators)
+   - Fundamental factors (adoption, network activity, development progress)
+   - Regulatory impacts
+   - Institutional adoption
+   
+   D. MARKET CONDITIONS (20% of analysis):
+   - Current market structure and liquidity
+   - Correlation with traditional markets
+   - Market conditions that would make this scenario more or less likely
 
-2. **WHAT WILL HAPPEN** (Comprehensive consequences):
+2. **WHAT WILL HAPPEN** (Comprehensive consequences - WITH PSYCHOLOGICAL & ECONOMIC IMPACT):
    - Impact on ${coin} specifically (use EXACT current price: $${currentPrice.toFixed(2)})
    ${projectedPrice ? `- If price changes by ${priceChangePercent}%, new price will be: $${projectedPrice.toFixed(2)}` : ''}
+   - PSYCHOLOGICAL REACTIONS: How will investors react emotionally? (panic, euphoria, denial, acceptance)
+   - ECONOMIC CONSEQUENCES: How will this affect global liquidity, risk appetite, capital flows?
    - Impact on different altcoin sectors (Layer 1s, DeFi, Meme coins, Stablecoins, etc.)
    - Impact on overall crypto market structure
    - Impact on trading volume, liquidity, and market depth
    - Impact on market sentiment (Fear & Greed Index, social media, institutional interest)
+   - BEHAVIORAL CASCADE: How will one group's actions trigger reactions in others? (retail → institutions → whales)
    - Potential cascading effects (liquidations, margin calls, exchange issues)
    - Correlation effects with traditional markets (stocks, bonds, commodities)
+   - MACROECONOMIC SPILLOVER: How will this affect broader economy? (if significant enough)
 
-3. **KEY FACTS & NUMBERS** (Critical data points):
-   - Specific price levels to watch (support, resistance, psychological levels)
-   - Expected volatility ranges
-   - Volume patterns to monitor
-   - Timeframe estimates (short-term, medium-term, long-term)
-   - Historical precedents and their outcomes
-   - Market cap implications
-   - Trading volume implications
+3. **ECONOMIC & PSYCHOLOGICAL INDICATORS TO WATCH** (Critical data points):
+   - MACROECONOMIC INDICATORS:
+     * Federal Reserve meeting dates and decisions
+     * CPI (Consumer Price Index) releases
+     * GDP growth rates
+     * Unemployment data
+     * DXY (Dollar Index) movements
+     * Bond yields (10-year Treasury, 2-year Treasury)
+     * Stock market indices (S&P 500, NASDAQ correlation)
+   - PSYCHOLOGICAL INDICATORS:
+     * Fear & Greed Index trends
+     * Social media sentiment (Twitter, Reddit mentions, trending topics)
+     * Google Trends for crypto-related searches
+     * Options market sentiment (put/call ratios)
+     * Funding rates on derivatives exchanges
+     * Exchange flows (inflows/outflows from exchanges)
+   - TECHNICAL LEVELS:
+     * Specific price levels to watch (support, resistance, psychological levels like round numbers)
+     * Expected volatility ranges
+     * Volume patterns to monitor
+   - TIMEFRAMES:
+     * Short-term, medium-term, long-term estimates
+   - HISTORICAL PRECEDENTS:
+     * Similar economic/psychological conditions in the past and their outcomes
+   - MARKET STRUCTURE:
+     * Market cap implications
+     * Trading volume implications
 
-4. **DEEPER INSIGHTS** (Expand user's understanding):
-   - What sectors/coins might outperform or underperform in this scenario?
-   - What would be contrarian opportunities?
-   - How would this affect different types of investors (HODLers, traders, institutions)?
-   - What technical indicators would be most relevant?
-   - What fundamental factors would matter most?
+4. **DEEPER INSIGHTS** (Expand user's understanding - ECONOMIC & PSYCHOLOGICAL PERSPECTIVE):
+   - ECONOMIC PERSPECTIVE:
+     * How does this scenario fit into broader economic cycles?
+     * What macroeconomic conditions would make this more/less likely?
+     * How do interest rates, inflation, and monetary policy affect crypto in this scenario?
+     * What role does global liquidity play?
+   - PSYCHOLOGICAL PERSPECTIVE:
+     * What sectors/coins might outperform or underperform in this scenario? (and WHY psychologically)
+     * What would be contrarian opportunities? (going against the crowd)
+     * How would this affect different types of investors psychologically? (HODLers vs traders vs institutions)
+     * What psychological traps should investors avoid?
+     * How does social media amplify or dampen market movements?
+   - BEHAVIORAL PATTERNS:
+     * What technical indicators would be most relevant? (and why they work psychologically)
+     * What fundamental factors would matter most? (and how they affect investor psychology)
 
-5. **RECOMMENDATIONS** (Actionable advice):
-   - Portfolio adjustments (specific allocations)
-   - Entry/exit points with price targets
-   - Risk management strategies (stop-losses, position sizing, diversification)
-   - Best case / worst case / realistic scenarios with probabilities
-   - What to monitor/watch for
-   - When to reassess the situation
+5. **RECOMMENDATIONS** (Actionable advice - WITH PSYCHOLOGICAL & ECONOMIC CONTEXT):
+   - PORTFOLIO STRATEGY (considering economic cycles and psychological biases):
+     * Portfolio adjustments (specific allocations)
+     * Entry/exit points with price targets
+     * How to avoid psychological traps (FOMO, panic, greed)
+   - RISK MANAGEMENT (behavioral finance approach):
+     * Risk management strategies (stop-losses, position sizing, diversification)
+     * How to manage emotions during volatile periods
+     * When to reassess vs when to stick to the plan
+   - SCENARIO PLANNING:
+     * Best case / worst case / realistic scenarios with probabilities
+     * Economic conditions that would change the scenario
+     * Psychological triggers to watch for
+   - MONITORING:
+     * What economic indicators to monitor/watch for
+     * What psychological signals to watch for (sentiment shifts, social media trends)
+     * When to reassess the situation
 
 IMPORTANT INSTRUCTIONS:
 - Use ONLY the current price provided: $${currentPrice.toFixed(2)}
 - Calculate all future prices based on this EXACT current price
 - Be specific with numbers, percentages, and timeframes
-- Reference historical events when relevant (e.g., "Similar to May 2021 when...")
-- Explain WHY things happen, not just WHAT happens
+- Reference historical events when relevant (e.g., "Similar to May 2021 when..." or "Like the 2018 bear market when Fed raised rates...")
+- Explain WHY things happen from ECONOMIC and PSYCHOLOGICAL perspectives, not just WHAT happens
+- Focus HEAVILY on behavioral economics and market psychology (this is CRITICAL)
+- Explain macroeconomic factors in detail (Fed policy, inflation, interest rates, etc.)
 - Provide educational insights that help the user understand market dynamics better
 - Consider multiple perspectives and scenarios
 - Format clearly with sections, bullet points, and clear headings
-- Make it comprehensive but readable`;
+- Make it comprehensive but readable
+- REMOVE all markdown formatting (**, *, #) and emojis from your response`;
         
         resultDiv.innerHTML = '<div style="color: #ffffff; font-weight: 500;">AI generating structured scenario analysis...</div>';
         
@@ -2534,7 +2619,7 @@ IMPORTANT INSTRUCTIONS:
             body: JSON.stringify({
                 model: 'mistral-small',
                 messages: [
-                    { role: 'system', content: 'You are an EXPERT cryptocurrency market analyst with 15+ years of experience. You provide DEEP, COMPREHENSIVE, and EDUCATIONAL analysis. You ALWAYS use EXACT current prices provided. You reference historical events, explain market dynamics, and expand users\' understanding. You create structured, fact-based scenarios with multiple perspectives. You do NOT create day-by-day timelines unless specifically requested. Your goal is to help users understand WHY things happen, not just WHAT happens.' },
+                    { role: 'system', content: 'You are an EXPERT cryptocurrency market analyst with 15+ years of experience specializing in BEHAVIORAL ECONOMICS and MACROECONOMIC ANALYSIS. You provide DEEP, COMPREHENSIVE, and EDUCATIONAL analysis with HEAVY FOCUS on ECONOMIC FACTORS (Federal Reserve policy, interest rates, inflation, monetary policy, fiscal policy, global liquidity, economic cycles) and PSYCHOLOGICAL FACTORS (herd behavior, FOMO, panic selling, euphoria, confirmation bias, loss aversion, social media influence, investor sentiment, crowd psychology). You ALWAYS use EXACT current prices provided. You reference historical events, explain market dynamics from economic and psychological perspectives, and expand users\' understanding. You create structured, fact-based scenarios with multiple perspectives. You do NOT create day-by-day timelines unless specifically requested. Your PRIMARY GOAL is to help users understand WHY things happen from ECONOMIC and PSYCHOLOGICAL perspectives, not just WHAT happens. You explain how macroeconomic conditions and investor psychology drive market movements.' },
                     { role: 'user', content: prompt }
                 ],
                 temperature: 0.8,
