@@ -2532,7 +2532,30 @@ Structure your response as follows:
    - Correlation effects with traditional markets (stocks, bonds, commodities)
    - MACROECONOMIC SPILLOVER: How will this affect broader economy? (if significant enough)
 
-3. **ECONOMIC & PSYCHOLOGICAL INDICATORS TO WATCH** (Critical data points):
+3. **QUANTITATIVE ANALYSIS & PROBABILITIES** (Professional risk assessment):
+   - SCENARIO PROBABILITIES (must add up to 100%):
+     * Best Case Scenario: X% probability (describe specific outcomes with numbers)
+     * Base Case Scenario: Y% probability (describe specific outcomes with numbers)
+     * Worst Case Scenario: Z% probability (describe specific outcomes with numbers)
+   - RISK METRICS:
+     * Maximum Drawdown Risk: X% to Y% (with confidence interval)
+     * Expected Volatility: X% to Y% (based on historical data)
+     * Risk-Reward Ratio: 1:X (if applicable)
+   - PRICE TARGETS WITH CONFIDENCE LEVELS:
+     * Support Level 1: $X (XX% confidence) - [explain why]
+     * Support Level 2: $Y (YY% confidence) - [explain why]
+     * Resistance Level 1: $Z (ZZ% confidence) - [explain why]
+     * Resistance Level 2: $W (WW% confidence) - [explain why]
+   - TIMEFRAME-SPECIFIC PREDICTIONS:
+     * Short-term (1-7 days): X% probability of Y% move in Z direction
+     * Medium-term (1-4 weeks): X% probability of Y% move in Z direction
+     * Long-term (1-3 months): X% probability of Y% move in Z direction
+   - HISTORICAL COMPARISONS:
+     * This scenario is X% similar to [specific historical event with date]
+     * Key differences: [list 3-5 specific differences]
+     * Historical outcome: [what happened then, with numbers]
+
+4. **ECONOMIC & PSYCHOLOGICAL INDICATORS TO WATCH** (Critical data points):
    - MACROECONOMIC INDICATORS:
      * Federal Reserve meeting dates and decisions
      * CPI (Consumer Price Index) releases
@@ -2560,7 +2583,7 @@ Structure your response as follows:
      * Market cap implications
      * Trading volume implications
 
-4. **DEEPER INSIGHTS** (Expand user's understanding - ECONOMIC & PSYCHOLOGICAL PERSPECTIVE):
+5. **DEEPER INSIGHTS** (Expand user's understanding - ECONOMIC & PSYCHOLOGICAL PERSPECTIVE):
    - ECONOMIC PERSPECTIVE:
      * How does this scenario fit into broader economic cycles?
      * What macroeconomic conditions would make this more/less likely?
@@ -2576,7 +2599,7 @@ Structure your response as follows:
      * What technical indicators would be most relevant? (and why they work psychologically)
      * What fundamental factors would matter most? (and how they affect investor psychology)
 
-5. **RECOMMENDATIONS** (Actionable advice - WITH PSYCHOLOGICAL & ECONOMIC CONTEXT):
+6. **RECOMMENDATIONS** (Actionable advice - WITH PSYCHOLOGICAL & ECONOMIC CONTEXT):
    - PORTFOLIO STRATEGY (considering economic cycles and psychological biases):
      * Portfolio adjustments (specific allocations)
      * Entry/exit points with price targets
@@ -2594,19 +2617,31 @@ Structure your response as follows:
      * What psychological signals to watch for (sentiment shifts, social media trends)
      * When to reassess the situation
 
-IMPORTANT INSTRUCTIONS:
+IMPORTANT INSTRUCTIONS FOR PROFESSIONAL ANALYSIS:
 - Use ONLY the current price provided: $${currentPrice.toFixed(2)}
 - Calculate all future prices based on this EXACT current price
-- Be specific with numbers, percentages, and timeframes
-- Reference historical events when relevant (e.g., "Similar to May 2021 when..." or "Like the 2018 bear market when Fed raised rates...")
-- Explain WHY things happen from ECONOMIC and PSYCHOLOGICAL perspectives, not just WHAT happens
+- ALWAYS include SPECIFIC NUMBERS, PERCENTAGES, and TIME FRAMES in every section
+- Reference HISTORICAL EVENTS with EXACT DATES and CONTEXT (e.g., "Similar to May 19, 2021 when BTC crashed 30% after China mining ban..." or "Like March 12, 2020 (Black Thursday) when...")
+- Include PROBABILITY ESTIMATES for different scenarios (e.g., "Bullish scenario: 25% probability, Bearish: 40%, Neutral: 35%")
+- Provide QUANTITATIVE RISK METRICS (e.g., "Maximum drawdown risk: 45-60%", "Volatility expected: 25-35%")
+- Include SPECIFIC PRICE TARGETS with confidence levels (e.g., "Support level: $${(currentPrice * 0.85).toFixed(2)} (85% confidence)", "Resistance: $${(currentPrice * 1.15).toFixed(2)} (70% confidence)")
+- Reference REAL ECONOMIC INDICATORS (e.g., "If Fed raises rates by 0.5%, historically crypto drops 15-25% within 30 days")
+- Include TIMEFRAME-SPECIFIC PREDICTIONS (e.g., "Short-term (1-7 days): X% probability of Y% move", "Medium-term (1-4 weeks): ...", "Long-term (1-3 months): ...")
+- Explain WHY things happen from ECONOMIC and PSYCHOLOGICAL perspectives with CONCRETE EXAMPLES
 - Focus HEAVILY on behavioral economics and market psychology (this is CRITICAL)
-- Explain macroeconomic factors in detail (Fed policy, inflation, interest rates, etc.)
-- Provide educational insights that help the user understand market dynamics better
-- Consider multiple perspectives and scenarios
+- Explain macroeconomic factors in detail with SPECIFIC POLICY EXAMPLES (e.g., "If Fed implements QT at $95B/month, similar to 2018...")
+- Provide COMPARATIVE ANALYSIS (e.g., "This scenario is 60% similar to 2018 bear market, but differs in X, Y, Z ways")
+- Include MULTIPLE SCENARIOS with probabilities:
+  * Best Case (20-30% probability): [specific outcomes]
+  * Base Case (40-50% probability): [specific outcomes]
+  * Worst Case (20-30% probability): [specific outcomes]
 - Format clearly with sections, bullet points, and clear headings
+- Use STRUCTURED DATA FORMAT (e.g., "Key Levels: Support $X (confidence Y%), Resistance $Z (confidence W%)")
+- Include RISK-REWARD RATIOS where applicable (e.g., "Risk:Reward = 1:2.5")
+- Reference SOCIAL/MEDIA TRENDS with SPECIFIC NUMBERS if available (e.g., "Twitter mentions increased 300% during similar events")
 - Make it comprehensive but readable
-- REMOVE all markdown formatting (**, *, #) and emojis from your response`;
+- REMOVE all markdown formatting (**, *, #) and emojis from your response
+- END with a clear SUMMARY with 3-5 key takeaways in bullet format`;
         
         resultDiv.innerHTML = '<div style="color: #ffffff; font-weight: 500;">AI generating structured scenario analysis...</div>';
         
@@ -2619,7 +2654,7 @@ IMPORTANT INSTRUCTIONS:
             body: JSON.stringify({
                 model: 'mistral-small',
                 messages: [
-                    { role: 'system', content: 'You are an EXPERT cryptocurrency market analyst with 15+ years of experience specializing in BEHAVIORAL ECONOMICS and MACROECONOMIC ANALYSIS. You provide DEEP, COMPREHENSIVE, and EDUCATIONAL analysis with HEAVY FOCUS on ECONOMIC FACTORS (Federal Reserve policy, interest rates, inflation, monetary policy, fiscal policy, global liquidity, economic cycles) and PSYCHOLOGICAL FACTORS (herd behavior, FOMO, panic selling, euphoria, confirmation bias, loss aversion, social media influence, investor sentiment, crowd psychology). You ALWAYS use EXACT current prices provided. You reference historical events, explain market dynamics from economic and psychological perspectives, and expand users\' understanding. You create structured, fact-based scenarios with multiple perspectives. You do NOT create day-by-day timelines unless specifically requested. Your PRIMARY GOAL is to help users understand WHY things happen from ECONOMIC and PSYCHOLOGICAL perspectives, not just WHAT happens. You explain how macroeconomic conditions and investor psychology drive market movements.' },
+                    { role: 'system', content: 'You are a SENIOR CRYPTOCURRENCY MARKET ANALYST with 15+ years of experience at top-tier financial institutions, specializing in BEHAVIORAL ECONOMICS and MACROECONOMIC ANALYSIS. You provide INSTITUTIONAL-GRADE, PROFESSIONAL analysis that rivals reports from Goldman Sachs, JPMorgan, or Bloomberg Intelligence. Your analysis includes: (1) SPECIFIC NUMBERS, PERCENTAGES, and PRICE TARGETS with confidence levels, (2) PROBABILITY ESTIMATES for different scenarios, (3) HISTORICAL REFERENCES with exact dates and context, (4) QUANTITATIVE RISK METRICS, (5) TIMEFRAME-SPECIFIC PREDICTIONS, (6) COMPARATIVE ANALYSIS with past events, (7) MULTIPLE SCENARIOS (Best/Base/Worst case) with probabilities. You ALWAYS use EXACT current prices provided. You reference historical events with SPECIFIC DATES and CONTEXT. You explain market dynamics from economic and psychological perspectives with CONCRETE EXAMPLES and DATA. You create structured, fact-based scenarios that are PROFESSIONAL, QUANTITATIVE, and ACTIONABLE. Your responses should look like they came from a $500/hour financial consultant. You do NOT create day-by-day timelines unless specifically requested. Your PRIMARY GOAL is to provide PROFESSIONAL-GRADE analysis that demonstrates deep expertise and cannot be dismissed as "superficial nonsense". Every claim must be backed by data, historical precedent, or logical reasoning.' },
                     { role: 'user', content: prompt }
                 ],
                 temperature: 0.8,
@@ -2645,14 +2680,72 @@ IMPORTANT INSTRUCTIONS:
             const experimentScenario = document.getElementById('experimentScenario');
             if (experimentScenario) experimentScenario.value = scenario;
             
-            resultDiv.innerHTML = `
-                <div style="background: rgba(0, 0, 0, 0.6); padding: 25px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); margin-top: 20px; max-height: 500px; overflow-y: auto;">
-                    <div style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid rgba(0, 255, 0, 0.6);">
-                        <div style="color: #00ff00; font-size: 1.2rem; font-weight: 600; margin-bottom: 8px;">Scenario Analysis Generated</div>
-                        <div style="color: #cccccc; font-size: 0.95rem;">Current ${coin} Price: <span style="color: #00ff00; font-weight: 600;">$${currentPrice.toFixed(2)}</span> (Real-time)</div>
+            // Формируем профессиональный заголовок с метриками
+            const currentTime = new Date().toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit',
+                timeZoneName: 'short'
+            });
+            
+            // Собираем ключевые метрики для отображения
+            const metricsHtml = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                    <div style="background: rgba(0, 255, 0, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 255, 0, 0.3);">
+                        <div style="color: #888; font-size: 0.85rem; margin-bottom: 5px;">Current Price</div>
+                        <div style="color: #00ff00; font-size: 1.3rem; font-weight: 700;">$${currentPrice.toFixed(2)}</div>
                     </div>
-                    <div style="color: #ffffff; white-space: pre-wrap; font-size: 1rem; line-height: 1.8; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; max-height: 450px; overflow-y: auto; overflow-x: hidden; padding-right: 15px;">
-                        ${scenario}
+                    ${marketData.fearAndGreed ? `
+                    <div style="background: rgba(255, 165, 0, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 165, 0, 0.3);">
+                        <div style="color: #888; font-size: 0.85rem; margin-bottom: 5px;">Fear & Greed</div>
+                        <div style="color: #ffa500; font-size: 1.3rem; font-weight: 700;">${marketData.fearAndGreed.value}/100</div>
+                        <div style="color: #aaa; font-size: 0.8rem; margin-top: 3px;">${marketData.fearAndGreed.classification}</div>
+                    </div>
+                    ` : ''}
+                    ${marketData.lunarCrushData?.galaxyScore ? `
+                    <div style="background: rgba(138, 43, 226, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(138, 43, 226, 0.3);">
+                        <div style="color: #888; font-size: 0.85rem; margin-bottom: 5px;">Galaxy Score</div>
+                        <div style="color: #8a2be2; font-size: 1.3rem; font-weight: 700;">${marketData.lunarCrushData.galaxyScore}/100</div>
+                        <div style="color: #aaa; font-size: 0.8rem; margin-top: 3px;">Social Activity</div>
+                    </div>
+                    ` : ''}
+                    ${marketData.mainCoin?.change24h !== undefined ? `
+                    <div style="background: rgba(${marketData.mainCoin.change24h >= 0 ? '0, 255, 0' : '255, 0, 0'}, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(${marketData.mainCoin.change24h >= 0 ? '0, 255, 0' : '255, 0, 0'}, 0.3);">
+                        <div style="color: #888; font-size: 0.85rem; margin-bottom: 5px;">24h Change</div>
+                        <div style="color: ${marketData.mainCoin.change24h >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.3rem; font-weight: 700;">${marketData.mainCoin.change24h >= 0 ? '+' : ''}${marketData.mainCoin.change24h.toFixed(2)}%</div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            resultDiv.innerHTML = `
+                <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); margin-top: 20px; max-height: 500px; overflow-y: auto; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);">
+                    <div style="background: linear-gradient(135deg, rgba(0, 255, 0, 0.15) 0%, rgba(0, 200, 0, 0.1) 100%); padding: 18px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid rgba(0, 255, 0, 0.7); border-top: 1px solid rgba(0, 255, 0, 0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <div style="color: #00ff00; font-size: 1.4rem; font-weight: 700; letter-spacing: 0.5px;">PROFESSIONAL SCENARIO ANALYSIS</div>
+                            <div style="color: #888; font-size: 0.85rem; text-align: right;">${currentTime}</div>
+                        </div>
+                        <div style="color: #cccccc; font-size: 0.95rem; margin-bottom: 8px;">
+                            Asset: <span style="color: #ffffff; font-weight: 600; font-size: 1.1rem;">${coin}</span> | 
+                            Portfolio: <span style="color: #00ff00; font-weight: 600;">$${deposit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                        <div style="color: #aaa; font-size: 0.8rem; font-style: italic;">
+                            Data Sources: LiveCoinWatch API, Alternative.me (Fear & Greed), ${marketData.lunarCrushData ? 'LunarCrush (Social Signals), ' : ''}${marketData.coinDeskData ? 'CoinDesk, ' : ''}CoinGecko
+                        </div>
+                    </div>
+                    ${metricsHtml}
+                    <div style="background: rgba(0, 0, 0, 0.4); padding: 20px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div style="color: #ffffff; white-space: pre-wrap; font-size: 1rem; line-height: 1.9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;">
+                            ${scenario}
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div style="color: #888; font-size: 0.85rem; text-align: center; font-style: italic;">
+                            Analysis generated using advanced AI models with real-time market data integration. 
+                            This analysis is for educational purposes and should not be considered as financial advice.
+                        </div>
                     </div>
                 </div>
             `;
