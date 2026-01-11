@@ -108,7 +108,7 @@ body::after {
     position: relative;
     z-index: 1;
     min-height: 100vh;
-    padding-top: calc(50vh - 60px - 2cm); /* Центрируем заголовок по вертикали при загрузке, поднимаем на 2 см выше */
+    padding-top: calc(50vh - 60px - 4cm); /* Центрируем заголовок по вертикали при загрузке, поднимаем на 4 см выше */
 }
 
 /* Заголовок Crypto Coach */
@@ -2137,4 +2137,32 @@ div:has-text("Experience Points") {
     .coins-grid {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
+}
+
+
+/* AI Scenario Builder - фиксированная высота с прокруткой */
+#aiScenarioResult {
+    max-height: 500px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 15px !important;
+    margin-bottom: 20px !important;
+}
+
+#aiScenarioResult::-webkit-scrollbar {
+    width: 10px;
+}
+
+#aiScenarioResult::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+}
+
+#aiScenarioResult::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 5px;
+}
+
+#aiScenarioResult::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.6);
 }

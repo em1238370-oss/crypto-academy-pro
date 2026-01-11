@@ -661,24 +661,16 @@
                                    <option value="ATOM">Cosmos (ATOM)</option>
                                        </select>
                                    </div>
-                                   <div class="form-group" style="background: rgba(255, 165, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 165, 0, 0.3);">
-                                       <label style="margin-bottom: 10px;">🤖 Strategy Generator from Text:</label>
-                                       <textarea id="strategyText" rows="3" placeholder="e.g.: If BTC drops 30%, I want to sell half, wait for -50% and buy back" style="width: 100%; margin-bottom: 10px;"></textarea>
-                                       <button class="btn btn-black" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 0;" onclick="generateStrategyFromText()">Convert to Strategy</button>
-                                       <div id="generatedStrategyResult" style="margin-top: 10px; font-size: 0.9rem;"></div>
-                                   </div>
+
                                    <div class="form-group">
                                        <label>Scenario Description:</label>
                                        <textarea id="experimentScenario" rows="3" placeholder="e.g.: What if BTC drops 20%? How will this affect my portfolio?"></textarea>
                                    </div>
-                                   <div class="form-group" style="background: rgba(255, 0, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 0, 0, 0.3);">
-                                       <label style="margin-bottom: 10px;">🤖 AI Scenario Generator:</label>
-                                       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                           <button class="btn btn-black" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 0;" onclick="loadAIScenario('bearish')">CRASH -50% (Hardcore)</button>
-                                           <button class="btn btn-black" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 0;" onclick="loadAIScenario('altcrash')">BULLRUN +150%</button>
-                                           <button class="btn btn-black" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 0;" onclick="loadAIScenario('regulatory')">Regulatory Shock -35%</button>
-                                       </div>
-                                       <small style="color: #888; margin-top: 10px; display: block;">💡 AI will create a detailed strategy with specific numbers and actions</small>
+                                   <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 20px;">
+                                       <label style="margin-bottom: 15px; color: #ffffff; font-size: 1.1rem; font-weight: 600; display: block;">AI Scenario Builder (Universal)</label>
+                                       <textarea id="aiScenarioInput" rows="4" placeholder="Describe any scenario: crashes, bull runs, regulatory events, custom situations..." style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: #ffffff; font-size: 1rem; margin-bottom: 15px; resize: vertical; font-family: inherit; box-sizing: border-box;"></textarea>
+                                       <button class="btn btn-red" style="padding: 12px 25px; font-size: 1rem; font-weight: 600; width: 100%; margin-top: 0;" onclick="aiScenarioBuilder()">Generate Detailed Scenario</button>
+                                       <div id="aiScenarioResult" style="margin-top: 20px; font-size: 1rem; line-height: 1.7; max-height: 500px; overflow-y: auto; overflow-x: hidden; padding-right: 10px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.2);"></div>
                                    </div>
                                    <div class="form-group">
                                        <label>Price Change (%): <span id="priceChangeValue">0%</span></label>
@@ -692,20 +684,71 @@
                                        <div id="correlationsSuggestions" style="margin-top: 10px; font-size: 0.9rem; color: #888;"></div>
                                    </div>
                                    <button class="btn btn-red" onclick="runExperiment()">Run Experiment</button>
-                                   <button class="btn btn-red" onclick="startSurvivalMode()" style="background: linear-gradient(135deg, #ff3333, #cc0000); margin-top: 10px; width: 100%;">🔥 SURVIVAL MODE</button>
                                </div>
 
-                               <div class="section-box" id="survivalModeBox" style="display: none;">
-                                   <h4>🔥 SURVIVAL MODE</h4>
-                                   <div id="survivalTimer" style="font-size: 3rem; text-align: center; color: #ff0000; margin: 20px 0;"></div>
-                                   <div id="survivalEvent" style="background: rgba(255, 0, 0, 0.3); padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;"></div>
-                                   <div id="survivalActions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 600px; margin: 0 auto;">
-                                       <button class="btn btn-red" onclick="survivalAction('sell30')" style="background: linear-gradient(135deg, #00ff00, #00cc00);">[1] [1] Sell 30% BTC</button>
-                                       <button class="btn btn-red" onclick="survivalAction('buydip')" style="background: linear-gradient(135deg, #ff0000, #cc0000);">[2] [2] Buy SOL dip</button>
-                                       <button class="btn btn-red" onclick="survivalAction('donothing')" style="background: linear-gradient(135deg, #ffa500, #ff8000);">[3] [3] Do nothing</button>
-                                       <button class="btn btn-red" onclick="survivalAction('panicsell')" style="background: linear-gradient(135deg, #000000, #330000);">[4] [4] Panic sell everything</button>
+                               <!-- NEW FUNCTIONS: Backtesting Engine, Strategy Optimizer, Predictive Analytics -->
+                               <div class="section-box" style="margin-top: 20px;">
+                                   <h4>📊 Backtesting Engine</h4>
+                                   <p style="color: #cccccc; margin-bottom: 15px;">Test your strategies on historical data</p>
+                                   <div class="form-group">
+                                       <label>Strategy Description:</label>
+                                       <textarea id="backtestStrategy" rows="2" placeholder="e.g.: Buy when BTC drops 10%, sell when +20%"></textarea>
                                    </div>
-                                   <div id="survivalResult" style="margin-top: 20px;"></div>
+                                   <div class="form-group">
+                                       <label>Time Period:</label>
+                                       <select id="backtestPeriod">
+                                           <option value="30">Last 30 days</option>
+                                           <option value="90">Last 3 months</option>
+                                           <option value="180">Last 6 months</option>
+                                           <option value="365">Last year</option>
+                                       </select>
+                                   </div>
+                                   <button class="btn btn-red" onclick="runBacktesting()">Run Backtesting</button>
+                                   <div id="backtestResults" style="margin-top: 20px; display: none;"></div>
+                               </div>
+
+                               <div class="section-box" style="margin-top: 20px;">
+                                   <h4>🎯 Strategy Optimizer</h4>
+                                   <p style="color: #cccccc; margin-bottom: 15px;">Find optimal parameters for your strategy</p>
+                                   <div class="form-group">
+                                       <label>Strategy Template:</label>
+                                       <input type="text" id="strategyTemplate" placeholder="e.g.: Buy on drop X%, sell on rise Y%" style="width: 100%;">
+                                       <small style="color: #888;">Use X and Y as variables to optimize</small>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>X Range (Buy %):</label>
+                                       <div style="display: flex; gap: 10px;">
+                                           <input type="number" id="xMin" placeholder="Min" value="-25" style="flex: 1;">
+                                           <input type="number" id="xMax" placeholder="Max" value="-5" style="flex: 1;">
+                                           <input type="number" id="xStep" placeholder="Step" value="5" style="flex: 1;">
+                                       </div>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Y Range (Sell %):</label>
+                                       <div style="display: flex; gap: 10px;">
+                                           <input type="number" id="yMin" placeholder="Min" value="10" style="flex: 1;">
+                                           <input type="number" id="yMax" placeholder="Max" value="30" style="flex: 1;">
+                                           <input type="number" id="yStep" placeholder="Step" value="5" style="flex: 1;">
+                                       </div>
+                                   </div>
+                                   <button class="btn btn-red" onclick="optimizeStrategy()">🔍 Optimize Strategy</button>
+                                   <div id="optimizerResults" style="margin-top: 20px; display: none;"></div>
+                               </div>
+
+                               <div class="section-box" style="margin-top: 20px;">
+                                   <h4>🔮 Predictive Analytics Dashboard</h4>
+                                   <p style="color: #cccccc; margin-bottom: 15px;">AI-powered price predictions and recommendations</p>
+                                   <div class="form-group">
+                                       <label>Select Coin for Prediction:</label>
+                                       <select id="predictCoin">
+                                           <option value="BTC">Bitcoin (BTC)</option>
+                                           <option value="ETH">Ethereum (ETH)</option>
+                                           <option value="SOL">Solana (SOL)</option>
+                                           <option value="BNB">Binance Coin (BNB)</option>
+                                       </select>
+                                   </div>
+                                   <button class="btn btn-red" onclick="loadPredictiveDashboard()">📊 Load Predictions</button>
+                                   <div id="predictiveDashboard" style="margin-top: 20px; display: none;"></div>
                                </div>
 
                                <div class="section-box" id="experimentResults" style="display: none;">
@@ -873,7 +916,8 @@
        </div>
    </div>
    
-   <script src="../../scripts/chatbot.js?v=31"></script>
+   <script src="../../scripts/scroll-optimizer.js"></script>
+   <script src="../../scripts/chatbot.js?v=39"></script>
    
    <!-- Интерактивные эффекты для текста с эффектом прокачки -->
    <script>
