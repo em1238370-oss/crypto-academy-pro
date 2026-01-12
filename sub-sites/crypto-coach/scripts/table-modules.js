@@ -40,16 +40,6 @@ const API_KEY = 'hfDsgAHIsiU6tKZOSTqAL5pazYPjA8SO';
 const API_URL = 'https://api.mistral.ai/v1/chat/completions';
 const LIVECOINWATCH_KEY = '84d685c4-2905-4fc2-91fc-ba7b696eb966';
 const LIVECOINWATCH_URL = 'https://api.livecoinwatch.com/coins/single';
-const COINDESK_API_KEY = 'b95bf2a20ad97017d5c32c1a6196ebb881402326735f3eb2f6689a09b1741a45';
-const COINDESK_API_URL = 'https://api.coindesk.com/v1';
-const ALTERNATIVE_ME_FNG_URL = 'https://api.alternative.me/fng/';
-// Glassnode API (требует Professional план - от $999/месяц)
-// Когда будет ключ, раскомментируйте и добавьте ключ:
-// const GLASSNODE_API_KEY = 'YOUR_GLASSNODE_API_KEY_HERE';
-const GLASSNODE_API_URL = 'https://api.glassnode.com/v1';
-// LunarCrush API - социальные сигналы (Twitter, Reddit, упоминания)
-const LUNARCRUSH_API_KEY = 'w737qzurjyq5nt2yyma6t91d0rmk5tgbi7uhebv7m';
-const LUNARCRUSH_API_URL = 'https://lunarcrush.com/api3';
 
 // Available coins
 const availableCoins = [
@@ -1963,10 +1953,7 @@ function checkPaymentStatus() {
 // Fetch real-time price for Module C
 async function getRealTimePrice(coinSymbol) {
     try {
-        // LiveCoinWatch API требует символ в нижнем регистре
-        const coinSymbolLower = coinSymbol.toLowerCase();
-        
-        const response = await fetch(`${LIVECOINWATCH_URL}/${coinSymbolLower}`, {
+        const response = await fetch(`${LIVECOINWATCH_URL}/${coinSymbol}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1978,77 +1965,10 @@ async function getRealTimePrice(coinSymbol) {
             })
         });
         
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`LiveCoinWatch API Error (${response.status}):`, errorText);
-            // Попробуем альтернативный способ
-            return await getRealTimePriceAlternative(coinSymbol);
-        }
-        
         const data = await response.json();
-        
-        // LiveCoinWatch возвращает цену в поле 'rate'
-        if (data && data.rate) {
-            console.log(`✅ LiveCoinWatch: ${coinSymbol} = $${data.rate}`);
-            return data.rate;
-        } else {
-            console.error('No rate in LiveCoinWatch response:', data);
-            return await getRealTimePriceAlternative(coinSymbol);
-        }
+        return data.rate || null;
     } catch (e) {
-        console.error(`Error fetching price from LiveCoinWatch for ${coinSymbol}:`, e);
-        // Попробуем альтернативный способ
-        return await getRealTimePriceAlternative(coinSymbol);
-    }
-}
-
-// Альтернативный способ получения цены через CoinGecko (бесплатный API)
-async function getRealTimePriceAlternative(coinSymbol) {
-    try {
-        // Маппинг символов для CoinGecko
-        const coinGeckoMap = {
-            'BTC': 'bitcoin',
-            'ETH': 'ethereum',
-            'BNB': 'binancecoin',
-            'SOL': 'solana',
-            'ADA': 'cardano',
-            'XRP': 'ripple',
-            'DOGE': 'dogecoin',
-            'AVAX': 'avalanche-2',
-            'NEAR': 'near',
-            'ARB': 'arbitrum',
-            'APT': 'aptos',
-            'UNI': 'uniswap',
-            'SUI': 'sui',
-            'WIF': 'dogwifcoin',
-            'AAVE': 'aave',
-            'TON': 'the-open-network',
-            'ATOM': 'cosmos'
-        };
-        
-        const coinGeckoId = coinGeckoMap[coinSymbol] || coinSymbol.toLowerCase();
-        
-        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=usd`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (!response.ok) {
-            console.error(`CoinGecko API Error: ${response.status}`);
-            return null;
-        }
-        
-        const data = await response.json();
-        
-        if (data && data[coinGeckoId] && data[coinGeckoId].usd) {
-            return data[coinGeckoId].usd;
-        }
-        
-        return null;
-    } catch (e) {
-        console.error(`CoinGecko fallback error for ${coinSymbol}:`, e);
+        console.log(`Could not fetch price for ${coinSymbol}`);
         return null;
     }
 }
@@ -2059,592 +1979,43 @@ function updatePriceChangeDisplay() {
     if (priceChangeValue) priceChangeValue.textContent = value + '%';
 }
 
-// ========== MODULE C: NEW FUNCTIONS ==========
-
-// Функция для получения данных из Glassnode API (Basic Metrics - Tier 1)
-// Доступные метрики: Active Addresses, SOPR, Fees, Fear & Greed Index, и др.
-// Требует Professional план (от $999/месяц) для API доступа
-async function getGlassnodeData(coinSymbol, metric = 'addresses/active_count') {
-    // Раскомментируйте когда будет API ключ:
-    /*
-    try {
-        const coinLower = coinSymbol.toLowerCase();
-        const response = await fetch(`${GLASSNODE_API_URL}/metrics/${metric}?a=${coinLower}&i=24h&f=json`, {
-            headers: {
-                'X-Api-Key': GLASSNODE_API_KEY
-            }
-        });
-        
-        if (!response.ok) {
-            console.error('Glassnode API Error:', response.status);
-            return null;
-        }
-        
-        const data = await response.json();
-        return data;
-    } catch (e) {
-        console.error('Error fetching Glassnode data:', e);
-        return null;
-    }
-    */
-    return null; // Пока нет ключа
-}
-
-// Функция для получения социальных сигналов из LunarCrush API
-// Предоставляет: Galaxy Score, AltRank, Social Volume, Social Dominance, упоминания в Twitter/Reddit
-async function getLunarCrushData(coinSymbol) {
-    if (!LUNARCRUSH_API_KEY || LUNARCRUSH_API_KEY === '') {
-        return null; // Нет ключа
-    }
-    
-    try {
-        // Маппинг символов для LunarCrush
-        const lunarCrushMap = {
-            'BTC': 'bitcoin',
-            'ETH': 'ethereum',
-            'BNB': 'binancecoin',
-            'SOL': 'solana',
-            'ADA': 'cardano',
-            'XRP': 'ripple',
-            'DOGE': 'dogecoin',
-            'AVAX': 'avalanche',
-            'NEAR': 'near',
-            'ARB': 'arbitrum',
-            'APT': 'aptos',
-            'UNI': 'uniswap',
-            'SUI': 'sui',
-            'WIF': 'dogwifhat',
-            'AAVE': 'aave',
-            'TON': 'toncoin',
-            'ATOM': 'cosmos'
-        };
-        
-        const coinId = lunarCrushMap[coinSymbol] || coinSymbol.toLowerCase();
-        
-        // Получаем данные о монете (Galaxy Score, Social Volume, и др.)
-        const response = await fetch(`${LUNARCRUSH_API_URL}/coins?key=${LUNARCRUSH_API_KEY}&symbol=${coinId}&data=market_data,social_data`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (!response.ok) {
-            console.error('LunarCrush API Error:', response.status);
-            return null;
-        }
-        
-        const data = await response.json();
-        
-        if (data && data.data && data.data.length > 0) {
-            const coinData = data.data[0];
-            return {
-                galaxyScore: coinData.galaxy_score || null,
-                altRank: coinData.alt_rank || null,
-                socialVolume: coinData.social_volume || null,
-                socialDominance: coinData.social_dominance || null,
-                twitterMentions: coinData.twitter_mentions || null,
-                redditMentions: coinData.reddit_mentions || null,
-                socialScore: coinData.social_score || null,
-                marketCap: coinData.market_cap || null
-            };
-        }
-        
-        return null;
-    } catch (e) {
-        console.error('Error fetching LunarCrush data:', e);
-        return null;
-    }
-}
-
-// Функция для получения Fear & Greed Index (бесплатный API, без ключа)
-async function getFearAndGreedIndex() {
-    try {
-        const response = await fetch(ALTERNATIVE_ME_FNG_URL);
-        if (!response.ok) return null;
-        
-        const data = await response.json();
-        if (data && data.data && data.data[0]) {
-            return {
-                value: data.data[0].value,
-                classification: data.data[0].value_classification,
-                timestamp: data.data[0].timestamp
-            };
-        }
-        return null;
-    } catch (e) {
-        console.error('Error fetching Fear & Greed Index:', e);
-        return null;
-    }
-}
-
-// Функция для получения данных из CoinDesk API
-async function getCoinDeskData(coinSymbol) {
-    try {
-        // Пример запроса к CoinDesk API (нужно проверить точный endpoint)
-        // CoinDesk API может иметь разные endpoints, нужно проверить документацию
-        const response = await fetch(`${COINDESK_API_URL}/indices/latest?symbol=${coinSymbol}`, {
-            headers: {
-                'X-API-Key': COINDESK_API_KEY
-            }
-        });
-        
-        if (!response.ok) {
-            console.error('CoinDesk API Error:', response.status);
-            return null;
-        }
-        
-        const data = await response.json();
-        return data;
-    } catch (e) {
-        console.error('Error fetching CoinDesk data:', e);
-        return null;
-    }
-}
-
-// Функция для получения расширенных рыночных данных
-async function getExtendedMarketData(coinSymbol) {
-    const marketData = {
-        mainCoin: null,
-        topCoins: {},
-        marketContext: {},
-        fearAndGreed: null,
-        coinDeskData: null
+// Load AI Scenario
+async function loadAIScenario(type) {
+    const scenarios = {
+        'bearish': { name: 'CRASH -50% (Hardcore)', description: 'CRASH -50% - PANIC MODE', priceChange: -50 },
+        'altcrash': { name: 'BULLRUN +150%', description: 'BULLRUN +150% - MAXIMIZATION', priceChange: 150 },
+        'regulatory': { name: 'REGULATORY SHOCK -35%', description: 'REGULATORY SHOCK -35% - READY?', priceChange: -35 }
     };
+
+    const scenario = scenarios[type];
+    const experimentName = document.getElementById('experimentName');
+    const priceChange = document.getElementById('priceChange');
     
-    try {
-        // Получаем данные основной монеты
-        const coinLower = coinSymbol.toLowerCase();
-        const response = await fetch(`${LIVECOINWATCH_URL}/${coinLower}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': LIVECOINWATCH_KEY
-            },
-            body: JSON.stringify({
-                currency: 'USD',
-                meta: true
-            })
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            marketData.mainCoin = {
-                symbol: coinSymbol,
-                price: data.rate || null,
-                marketCap: data.cap || null,
-                volume24h: data.volume || null,
-                change24h: data.delta?.day || 0,
-                change7d: data.delta?.week || 0,
-                change30d: data.delta?.month || 0,
-                allTimeHigh: data.allTimeHighUSD || null,
-                allTimeLow: data.allTimeLowUSD || null
-            };
-        }
-    } catch (e) {
-        console.error('Error fetching main coin data:', e);
+    if (experimentName) experimentName.value = scenario.name;
+    if (priceChange) {
+        priceChange.value = scenario.priceChange;
+        updatePriceChangeDisplay();
+        updateCorrelations();
     }
+
+    const coin = document.getElementById('experimentCoin')?.value || 'BTC';
+    const currentPrice = await getRealTimePrice(coin) || 50000;
     
-    // Получаем данные топ-5 монет для контекста рынка
-    const topCoinsList = coinSymbol === 'BTC' ? ['ETH', 'BNB', 'SOL', 'XRP', 'ADA'] : 
-                         coinSymbol === 'ETH' ? ['BTC', 'BNB', 'SOL', 'ADA', 'XRP'] :
-                         ['BTC', 'ETH', 'BNB', 'SOL', 'ADA'];
-    
-    for (const topCoin of topCoinsList) {
-        try {
-            const price = await getRealTimePrice(topCoin);
-            if (price) {
-                marketData.topCoins[topCoin] = price;
-            }
-        } catch (e) {
-            // Пропускаем если не получилось
-        }
-    }
-    
-    // Получаем Fear & Greed Index (бесплатный API)
-    try {
-        marketData.fearAndGreed = await getFearAndGreedIndex();
-    } catch (e) {
-        console.error('Error fetching Fear & Greed:', e);
-    }
-    
-    // Получаем данные из CoinDesk API (если доступно)
-    try {
-        marketData.coinDeskData = await getCoinDeskData(coinSymbol);
-    } catch (e) {
-        console.error('Error fetching CoinDesk data:', e);
-    }
-    
-    // Получаем данные из Glassnode API (если есть ключ)
-    // Доступные метрики: Active Addresses, SOPR, Fees, и др.
-    try {
-        // Раскомментируйте когда будет Glassnode API ключ:
-        // marketData.glassnodeData = await getGlassnodeData(coinSymbol, 'addresses/active_count');
-        // marketData.glassnodeSOPR = await getGlassnodeData(coinSymbol, 'indicators/sopr');
-    } catch (e) {
-        console.error('Error fetching Glassnode data:', e);
-    }
-    
-    // Получаем социальные сигналы из LunarCrush API (если есть ключ)
-    try {
-        marketData.lunarCrushData = await getLunarCrushData(coinSymbol);
-    } catch (e) {
-        console.error('Error fetching LunarCrush data:', e);
-    }
-    
-    return marketData;
+    const detailedScenario = await generateDetailedScenario(type, currentPrice, coin);
+    const experimentScenario = document.getElementById('experimentScenario');
+    if (experimentScenario) experimentScenario.value = detailedScenario;
 }
 
-// 1. AI Scenario Builder (Universal) - Enhanced with deep market analysis
-async function aiScenarioBuilder() {
-    const input = document.getElementById('aiScenarioInput')?.value;
-    const resultDiv = document.getElementById('aiScenarioResult');
-    
-    if (!resultDiv) return;
-    
-    if (!input || !input.trim()) {
-        alert('Please describe your scenario');
-        return;
-    }
-    
-    resultDiv.innerHTML = '<div style="color: #ffffff; font-weight: 500;">AI analyzing current market data and generating scenario...</div>';
+async function generateDetailedScenario(type, currentPrice, coinSymbol) {
+    const scenarios = {
+        'bearish': { trigger: -50, prompt: `Generate CRASH -50% SCENARIO for ${coinSymbol} (current price: $${currentPrice.toFixed(2)}). Create a DETAILED survival strategy with NUMBERS.` },
+        'altcrash': { trigger: 150, prompt: `Generate BULLRUN +150% SCENARIO for ${coinSymbol} (current price: $${currentPrice.toFixed(2)}). Create a DETAILED profit maximization strategy.` },
+        'regulatory': { trigger: -35, prompt: `Generate REGULATORY SHOCK -35% for ${coinSymbol} (current price: $${currentPrice.toFixed(2)}). Create a strategy for protection from regulatory risk.` }
+    };
+
+    const scenario = scenarios[type];
     
     try {
-    const coin = document.getElementById('experimentCoin')?.value || 'BTC';
-        const deposit = parseFloat(document.getElementById('userDeposit')?.value || 10000);
-        
-        // Получаем РАСШИРЕННЫЕ рыночные данные
-        resultDiv.innerHTML = '<div style="color: #ffffff; font-weight: 500;">Collecting comprehensive market data (prices, volumes, trends)...</div>';
-        const marketData = await getExtendedMarketData(coin);
-        
-        let currentPrice = marketData.mainCoin?.price;
-        
-        // Если не получили цену, пробуем еще раз
-        if (!currentPrice) {
-            resultDiv.innerHTML = '<em style="color: #ffa500;">⚠️ Retrying price fetch with alternative method...</em>';
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            currentPrice = await getRealTimePrice(coin);
-        }
-        
-        // Если не получили цену, пробуем еще раз с задержкой
-        if (!currentPrice) {
-            resultDiv.innerHTML = '<div style="color: #ffa500; font-weight: 500;">Retrying price fetch with alternative method...</div>';
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            currentPrice = await getRealTimePrice(coin);
-        }
-        
-        // Если все еще нет цены, используем примерную цену и предупреждаем пользователя
-        if (!currentPrice) {
-            // Примерные цены для основных монет (fallback)
-            const approximatePrices = {
-                'BTC': 92000,
-                'ETH': 3500,
-                'BNB': 600,
-                'SOL': 150,
-                'ADA': 0.6,
-                'XRP': 0.6,
-                'DOGE': 0.15,
-                'AVAX': 40,
-                'NEAR': 7,
-                'ARB': 1.5,
-                'APT': 10,
-                'UNI': 10,
-                'SUI': 2,
-                'WIF': 3,
-                'AAVE': 100,
-                'TON': 6,
-                'ATOM': 10
-            };
-            
-            const fallbackPrice = approximatePrices[coin] || 50000;
-            currentPrice = fallbackPrice;
-            
-            resultDiv.innerHTML = `
-                <div style="background: rgba(255, 165, 0, 0.15); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 165, 0, 0.4); margin-bottom: 15px;">
-                    <div style="color: #ffa500; font-weight: 600; margin-bottom: 5px;">Price API temporarily unavailable</div>
-                    <div style="color: #cccccc; font-size: 0.9rem;">Using approximate price for ${coin}: $${fallbackPrice.toFixed(2)}. Results may not be 100% accurate.</div>
-                </div>
-                <div style="color: #ff6666; font-style: italic;">Generating scenario with approximate price...</div>
-            `;
-        } else {
-            resultDiv.innerHTML = '<div style="color: #00ff00; font-weight: 500;">Price fetched successfully! Generating scenario...</div>';
-        }
-        
-        // Извлекаем процент изменения из текста пользователя (если есть)
-        const percentMatch = input.match(/(?:drop|fall|crash|упад|падени|снижени)[\s\w]*?(\d+)%/i) || 
-                            input.match(/(?:rise|grow|increase|рост|повышени)[\s\w]*?(\d+)%/i) ||
-                            input.match(/(?:на|by|на|до)[\s]*(-?\d+)%/i);
-        
-        let projectedPrice = null;
-        let priceChangePercent = null;
-        
-        if (percentMatch) {
-            priceChangePercent = parseFloat(percentMatch[1]);
-            if (input.toLowerCase().includes('drop') || input.toLowerCase().includes('fall') || 
-                input.toLowerCase().includes('crash') || input.toLowerCase().includes('упад') ||
-                input.toLowerCase().includes('падени') || input.toLowerCase().includes('снижени') ||
-                priceChangePercent < 0) {
-                // Падение
-                projectedPrice = currentPrice * (1 - Math.abs(priceChangePercent) / 100);
-            } else {
-                // Рост
-                projectedPrice = currentPrice * (1 + Math.abs(priceChangePercent) / 100);
-            }
-        }
-        
-        // Формируем расширенный промпт с глубоким анализом рынка
-        const marketContext = marketData.mainCoin ? `
-MARKET CONTEXT FOR ${coin}:
-- Current Price: $${marketData.mainCoin.price.toFixed(2)}
-- Market Cap: $${marketData.mainCoin.marketCap ? (marketData.mainCoin.marketCap / 1000000000).toFixed(2) + 'B' : 'N/A'}
-- 24h Volume: $${marketData.mainCoin.volume24h ? (marketData.mainCoin.volume24h / 1000000).toFixed(2) + 'M' : 'N/A'}
-- 24h Change: ${marketData.mainCoin.change24h > 0 ? '+' : ''}${marketData.mainCoin.change24h.toFixed(2)}%
-- 7d Change: ${marketData.mainCoin.change7d > 0 ? '+' : ''}${marketData.mainCoin.change7d.toFixed(2)}%
-- 30d Change: ${marketData.mainCoin.change30d > 0 ? '+' : ''}${marketData.mainCoin.change30d.toFixed(2)}%
-- All-Time High: $${marketData.mainCoin.allTimeHigh ? marketData.mainCoin.allTimeHigh.toFixed(2) : 'N/A'}
-- Distance from ATH: ${marketData.mainCoin.allTimeHigh ? ((marketData.mainCoin.price - marketData.mainCoin.allTimeHigh) / marketData.mainCoin.allTimeHigh * 100).toFixed(2) + '%' : 'N/A'}
-` : '';
-
-        const topCoinsContext = Object.keys(marketData.topCoins).length > 0 ? `
-TOP CRYPTOCURRENCIES MARKET CONTEXT (for comparison):
-${Object.entries(marketData.topCoins).map(([symbol, price]) => `- ${symbol}: $${price.toFixed(2)}`).join('\n')}
-` : '';
-
-        // Добавляем Fear & Greed Index в контекст
-        const fearAndGreedContext = marketData.fearAndGreed ? `
-MARKET SENTIMENT (Fear & Greed Index):
-- Current Index: ${marketData.fearAndGreed.value}/100
-- Classification: ${marketData.fearAndGreed.classification}
-- Interpretation: ${marketData.fearAndGreed.value < 25 ? 'Extreme Fear - Market is very bearish, potential buying opportunity' : 
-                    marketData.fearAndGreed.value < 45 ? 'Fear - Market is bearish, cautious sentiment' :
-                    marketData.fearAndGreed.value < 55 ? 'Neutral - Balanced market sentiment' :
-                    marketData.fearAndGreed.value < 75 ? 'Greed - Market is bullish, optimistic sentiment' :
-                    'Extreme Greed - Market is very bullish, potential selling opportunity'}
-` : '';
-
-        // Добавляем социальные сигналы из LunarCrush в контекст
-        const lunarCrushContext = marketData.lunarCrushData ? `
-SOCIAL SIGNALS (LunarCrush):
-- Galaxy Score: ${marketData.lunarCrushData.galaxyScore || 'N/A'}/100 (comprehensive ranking)
-- AltRank: ${marketData.lunarCrushData.altRank || 'N/A'} (altcoin ranking)
-- Social Volume: ${marketData.lunarCrushData.socialVolume || 'N/A'} (mentions across platforms)
-- Social Dominance: ${marketData.lunarCrushData.socialDominance ? (marketData.lunarCrushData.socialDominance * 100).toFixed(2) + '%' : 'N/A'} (share of crypto social mentions)
-- Twitter Mentions: ${marketData.lunarCrushData.twitterMentions || 'N/A'}
-- Reddit Mentions: ${marketData.lunarCrushData.redditMentions || 'N/A'}
-- Social Score: ${marketData.lunarCrushData.socialScore || 'N/A'}/100
-- Interpretation: ${marketData.lunarCrushData.galaxyScore ? 
-    (marketData.lunarCrushData.galaxyScore > 75 ? 'Very High Social Activity - Strong community interest' :
-     marketData.lunarCrushData.galaxyScore > 50 ? 'Moderate Social Activity - Normal community engagement' :
-     'Low Social Activity - Limited community interest') : 'N/A'}
-` : '';
-
-        const priceInfo = projectedPrice ? 
-            `\n\n⚠️ CRITICAL PRICE CALCULATION:
-- CURRENT REAL-TIME PRICE: $${currentPrice.toFixed(2)} (fetched from LiveCoinWatch API at ${new Date().toLocaleTimeString()})
-- PRICE CHANGE: ${priceChangePercent > 0 ? '+' : ''}${priceChangePercent}%
-- PROJECTED PRICE: $${projectedPrice.toFixed(2)}
-\nYOU MUST USE THESE EXACT PRICES IN YOUR RESPONSE. DO NOT USE OLD OR INCORRECT PRICES.` :
-            `\n\n⚠️ CRITICAL: CURRENT REAL-TIME PRICE: $${currentPrice.toFixed(2)} (fetched from LiveCoinWatch API at ${new Date().toLocaleTimeString()})
-YOU MUST USE THIS EXACT PRICE IN YOUR RESPONSE. DO NOT USE OLD OR INCORRECT PRICES.`;
-        
-        const prompt = `You are an EXPERT cryptocurrency market analyst with 15+ years of experience. You have DEEP expertise in:
-- Market cycles, historical patterns, and correlations
-- Technical analysis, support/resistance levels, and chart patterns
-- BEHAVIORAL ECONOMICS and MARKET PSYCHOLOGY (herd behavior, FOMO, panic selling, euphoria, confirmation bias, loss aversion, anchoring)
-- MACROECONOMIC FACTORS (inflation, interest rates, monetary policy, fiscal policy, GDP growth, unemployment, currency devaluation, central bank actions)
-- PSYCHOLOGICAL FACTORS (investor sentiment, crowd psychology, social media influence, media narratives, institutional vs retail behavior)
-- Market sentiment, sentiment indicators, and behavioral finance
-- Regulatory impacts and institutional adoption
-- DeFi, NFT, and emerging crypto sectors
-- Global economic trends and their impact on risk assets
-
-User scenario question: "${input}"
-
-${marketContext}
-${topCoinsContext}
-${fearAndGreedContext}
-${lunarCrushContext}
-
-CURRENT MARKET DATA (REAL-TIME):
-- Focus Coin: ${coin}
-- Current Real-Time Price: $${currentPrice.toFixed(2)} (fetched from LiveCoinWatch API)
-- Portfolio Value: $${deposit.toFixed(2)}
-${priceInfo}
-
-YOUR TASK: Provide a COMPREHENSIVE, DEEP, and EDUCATIONAL analysis that expands the user's understanding. Focus HEAVILY on ECONOMIC and PSYCHOLOGICAL factors that drive market movements. Answer their question thoroughly and provide additional insights they might not have considered.
-
-Structure your response as follows:
-
-1. **WHY THIS COULD HAPPEN** (Root causes & catalysts - DEEP ECONOMIC & PSYCHOLOGICAL ANALYSIS):
-   
-   A. MACROECONOMIC FACTORS (30% of analysis):
-   - Federal Reserve policy (interest rate changes, quantitative easing/tightening, forward guidance)
-   - Inflation trends and their impact on risk assets vs safe havens
-   - Global economic growth/recession indicators (GDP, unemployment, consumer confidence)
-   - Currency markets (USD strength/weakness, DXY index, currency devaluation)
-   - Government fiscal policy (stimulus, austerity, debt levels)
-   - Central bank actions worldwide (ECB, BOJ, PBOC policies)
-   - Geopolitical tensions and their economic impact
-   - Commodity prices (oil, gold) and their correlation with crypto
-   - Bond markets (yield curves, treasury rates, risk-free rate)
-   - Stock market correlation (S&P 500, NASDAQ, risk-on vs risk-off sentiment)
-   - Explain HOW each macroeconomic factor could trigger this scenario
-   - Reference historical events (e.g., "Similar to 2018 when Fed raised rates..." or "Like 2020 COVID crash when...")
-   
-   B. PSYCHOLOGICAL FACTORS (30% of analysis):
-   - Herd behavior and mass psychology (how crowd emotions drive markets)
-   - FOMO (Fear Of Missing Out) and its role in bull markets
-   - Panic selling and capitulation events (what triggers them, how they manifest)
-   - Euphoria and irrational exuberance (signs, stages, consequences)
-   - Confirmation bias (how investors see what they want to see)
-   - Loss aversion (why people hold losers too long, sell winners too early)
-   - Anchoring bias (how past prices affect current decisions)
-   - Social media influence (Twitter, Reddit, TikTok trends and their impact)
-   - Media narratives and their power to shape sentiment
-   - Institutional vs retail investor psychology (different behaviors, different impacts)
-   - Fear & Greed Index interpretation (what it means, how it affects behavior)
-   - Social signals analysis (what high/low social volume means psychologically)
-   - Explain HOW each psychological factor could trigger this scenario
-   - Reference behavioral patterns (e.g., "This mirrors the 2017 FOMO cycle when..." or "Similar to the 2021 euphoria phase...")
-   
-   C. TECHNICAL & FUNDAMENTAL FACTORS (20% of analysis):
-   - Technical analysis (support/resistance, chart patterns, indicators)
-   - Fundamental factors (adoption, network activity, development progress)
-   - Regulatory impacts
-   - Institutional adoption
-   
-   D. MARKET CONDITIONS (20% of analysis):
-   - Current market structure and liquidity
-   - Correlation with traditional markets
-   - Market conditions that would make this scenario more or less likely
-
-2. **WHAT WILL HAPPEN** (Comprehensive consequences - WITH PSYCHOLOGICAL & ECONOMIC IMPACT):
-   - Impact on ${coin} specifically (use EXACT current price: $${currentPrice.toFixed(2)})
-   ${projectedPrice ? `- If price changes by ${priceChangePercent}%, new price will be: $${projectedPrice.toFixed(2)}` : ''}
-   - PSYCHOLOGICAL REACTIONS: How will investors react emotionally? (panic, euphoria, denial, acceptance)
-   - ECONOMIC CONSEQUENCES: How will this affect global liquidity, risk appetite, capital flows?
-   - Impact on different altcoin sectors (Layer 1s, DeFi, Meme coins, Stablecoins, etc.)
-   - Impact on overall crypto market structure
-   - Impact on trading volume, liquidity, and market depth
-   - Impact on market sentiment (Fear & Greed Index, social media, institutional interest)
-   - BEHAVIORAL CASCADE: How will one group's actions trigger reactions in others? (retail → institutions → whales)
-   - Potential cascading effects (liquidations, margin calls, exchange issues)
-   - Correlation effects with traditional markets (stocks, bonds, commodities)
-   - MACROECONOMIC SPILLOVER: How will this affect broader economy? (if significant enough)
-
-3. **QUANTITATIVE ANALYSIS & PROBABILITIES** (Professional risk assessment):
-   - SCENARIO PROBABILITIES (must add up to 100%):
-     * Best Case Scenario: X% probability (describe specific outcomes with numbers)
-     * Base Case Scenario: Y% probability (describe specific outcomes with numbers)
-     * Worst Case Scenario: Z% probability (describe specific outcomes with numbers)
-   - RISK METRICS:
-     * Maximum Drawdown Risk: X% to Y% (with confidence interval)
-     * Expected Volatility: X% to Y% (based on historical data)
-     * Risk-Reward Ratio: 1:X (if applicable)
-   - PRICE TARGETS WITH CONFIDENCE LEVELS:
-     * Support Level 1: $X (XX% confidence) - [explain why]
-     * Support Level 2: $Y (YY% confidence) - [explain why]
-     * Resistance Level 1: $Z (ZZ% confidence) - [explain why]
-     * Resistance Level 2: $W (WW% confidence) - [explain why]
-   - TIMEFRAME-SPECIFIC PREDICTIONS:
-     * Short-term (1-7 days): X% probability of Y% move in Z direction
-     * Medium-term (1-4 weeks): X% probability of Y% move in Z direction
-     * Long-term (1-3 months): X% probability of Y% move in Z direction
-   - HISTORICAL COMPARISONS:
-     * This scenario is X% similar to [specific historical event with date]
-     * Key differences: [list 3-5 specific differences]
-     * Historical outcome: [what happened then, with numbers]
-
-4. **ECONOMIC & PSYCHOLOGICAL INDICATORS TO WATCH** (Critical data points):
-   - MACROECONOMIC INDICATORS:
-     * Federal Reserve meeting dates and decisions
-     * CPI (Consumer Price Index) releases
-     * GDP growth rates
-     * Unemployment data
-     * DXY (Dollar Index) movements
-     * Bond yields (10-year Treasury, 2-year Treasury)
-     * Stock market indices (S&P 500, NASDAQ correlation)
-   - PSYCHOLOGICAL INDICATORS:
-     * Fear & Greed Index trends
-     * Social media sentiment (Twitter, Reddit mentions, trending topics)
-     * Google Trends for crypto-related searches
-     * Options market sentiment (put/call ratios)
-     * Funding rates on derivatives exchanges
-     * Exchange flows (inflows/outflows from exchanges)
-   - TECHNICAL LEVELS:
-     * Specific price levels to watch (support, resistance, psychological levels like round numbers)
-     * Expected volatility ranges
-     * Volume patterns to monitor
-   - TIMEFRAMES:
-     * Short-term, medium-term, long-term estimates
-   - HISTORICAL PRECEDENTS:
-     * Similar economic/psychological conditions in the past and their outcomes
-   - MARKET STRUCTURE:
-     * Market cap implications
-     * Trading volume implications
-
-5. **DEEPER INSIGHTS** (Expand user's understanding - ECONOMIC & PSYCHOLOGICAL PERSPECTIVE):
-   - ECONOMIC PERSPECTIVE:
-     * How does this scenario fit into broader economic cycles?
-     * What macroeconomic conditions would make this more/less likely?
-     * How do interest rates, inflation, and monetary policy affect crypto in this scenario?
-     * What role does global liquidity play?
-   - PSYCHOLOGICAL PERSPECTIVE:
-     * What sectors/coins might outperform or underperform in this scenario? (and WHY psychologically)
-     * What would be contrarian opportunities? (going against the crowd)
-     * How would this affect different types of investors psychologically? (HODLers vs traders vs institutions)
-     * What psychological traps should investors avoid?
-     * How does social media amplify or dampen market movements?
-   - BEHAVIORAL PATTERNS:
-     * What technical indicators would be most relevant? (and why they work psychologically)
-     * What fundamental factors would matter most? (and how they affect investor psychology)
-
-6. **RECOMMENDATIONS** (Actionable advice - WITH PSYCHOLOGICAL & ECONOMIC CONTEXT):
-   - PORTFOLIO STRATEGY (considering economic cycles and psychological biases):
-     * Portfolio adjustments (specific allocations)
-     * Entry/exit points with price targets
-     * How to avoid psychological traps (FOMO, panic, greed)
-   - RISK MANAGEMENT (behavioral finance approach):
-     * Risk management strategies (stop-losses, position sizing, diversification)
-     * How to manage emotions during volatile periods
-     * When to reassess vs when to stick to the plan
-   - SCENARIO PLANNING:
-     * Best case / worst case / realistic scenarios with probabilities
-     * Economic conditions that would change the scenario
-     * Psychological triggers to watch for
-   - MONITORING:
-     * What economic indicators to monitor/watch for
-     * What psychological signals to watch for (sentiment shifts, social media trends)
-     * When to reassess the situation
-
-IMPORTANT INSTRUCTIONS FOR PROFESSIONAL ANALYSIS:
-- Use ONLY the current price provided: $${currentPrice.toFixed(2)}
-- Calculate all future prices based on this EXACT current price
-- ALWAYS include SPECIFIC NUMBERS, PERCENTAGES, and TIME FRAMES in every section
-- Reference HISTORICAL EVENTS with EXACT DATES and CONTEXT (e.g., "Similar to May 19, 2021 when BTC crashed 30% after China mining ban..." or "Like March 12, 2020 (Black Thursday) when...")
-- Include PROBABILITY ESTIMATES for different scenarios (e.g., "Bullish scenario: 25% probability, Bearish: 40%, Neutral: 35%")
-- Provide QUANTITATIVE RISK METRICS (e.g., "Maximum drawdown risk: 45-60%", "Volatility expected: 25-35%")
-- Include SPECIFIC PRICE TARGETS with confidence levels (e.g., "Support level: $${(currentPrice * 0.85).toFixed(2)} (85% confidence)", "Resistance: $${(currentPrice * 1.15).toFixed(2)} (70% confidence)")
-- Reference REAL ECONOMIC INDICATORS (e.g., "If Fed raises rates by 0.5%, historically crypto drops 15-25% within 30 days")
-- Include TIMEFRAME-SPECIFIC PREDICTIONS (e.g., "Short-term (1-7 days): X% probability of Y% move", "Medium-term (1-4 weeks): ...", "Long-term (1-3 months): ...")
-- Explain WHY things happen from ECONOMIC and PSYCHOLOGICAL perspectives with CONCRETE EXAMPLES
-- Focus HEAVILY on behavioral economics and market psychology (this is CRITICAL)
-- Explain macroeconomic factors in detail with SPECIFIC POLICY EXAMPLES (e.g., "If Fed implements QT at $95B/month, similar to 2018...")
-- Provide COMPARATIVE ANALYSIS (e.g., "This scenario is 60% similar to 2018 bear market, but differs in X, Y, Z ways")
-- Include MULTIPLE SCENARIOS with probabilities:
-  * Best Case (20-30% probability): [specific outcomes]
-  * Base Case (40-50% probability): [specific outcomes]
-  * Worst Case (20-30% probability): [specific outcomes]
-- Format clearly with sections, bullet points, and clear headings
-- Use STRUCTURED DATA FORMAT (e.g., "Key Levels: Support $X (confidence Y%), Resistance $Z (confidence W%)")
-- Include RISK-REWARD RATIOS where applicable (e.g., "Risk:Reward = 1:2.5")
-- Reference SOCIAL/MEDIA TRENDS with SPECIFIC NUMBERS if available (e.g., "Twitter mentions increased 300% during similar events")
-- Make it comprehensive but readable
-- REMOVE all markdown formatting (**, *, #) and emojis from your response
-- END with a clear SUMMARY with 3-5 key takeaways in bullet format`;
-        
-        resultDiv.innerHTML = '<div style="color: #ffffff; font-weight: 500;">AI generating structured scenario analysis...</div>';
-        
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
@@ -2654,106 +2025,24 @@ IMPORTANT INSTRUCTIONS FOR PROFESSIONAL ANALYSIS:
             body: JSON.stringify({
                 model: 'mistral-small',
                 messages: [
-                    { role: 'system', content: 'You are a SENIOR CRYPTOCURRENCY MARKET ANALYST with 15+ years of experience at top-tier financial institutions, specializing in BEHAVIORAL ECONOMICS and MACROECONOMIC ANALYSIS. You provide INSTITUTIONAL-GRADE, PROFESSIONAL analysis that rivals reports from Goldman Sachs, JPMorgan, or Bloomberg Intelligence. Your analysis includes: (1) SPECIFIC NUMBERS, PERCENTAGES, and PRICE TARGETS with confidence levels, (2) PROBABILITY ESTIMATES for different scenarios, (3) HISTORICAL REFERENCES with exact dates and context, (4) QUANTITATIVE RISK METRICS, (5) TIMEFRAME-SPECIFIC PREDICTIONS, (6) COMPARATIVE ANALYSIS with past events, (7) MULTIPLE SCENARIOS (Best/Base/Worst case) with probabilities. You ALWAYS use EXACT current prices provided. You reference historical events with SPECIFIC DATES and CONTEXT. You explain market dynamics from economic and psychological perspectives with CONCRETE EXAMPLES and DATA. You create structured, fact-based scenarios that are PROFESSIONAL, QUANTITATIVE, and ACTIONABLE. Your responses should look like they came from a $500/hour financial consultant. You do NOT create day-by-day timelines unless specifically requested. Your PRIMARY GOAL is to provide PROFESSIONAL-GRADE analysis that demonstrates deep expertise and cannot be dismissed as "superficial nonsense". Every claim must be backed by data, historical precedent, or logical reasoning.' },
-                    { role: 'user', content: prompt }
+                    { role: 'system', content: 'You are a professional trader-analyst. Create detailed trading strategies with specific figures, percentages, and statistics.' },
+                    { role: 'user', content: scenario.prompt }
                 ],
                 temperature: 0.8,
-                max_tokens: 4000
+                max_tokens: 500
             })
         });
 
         const data = await response.json();
         
         if (data.choices && data.choices[0]) {
-            let scenario = data.choices[0].message.content.trim();
-            
-            // Убираем все звёздочки (markdown форматирование)
-            scenario = scenario.replace(/\*\*/g, ''); // Убираем **bold**
-            scenario = scenario.replace(/\*/g, ''); // Убираем одиночные *
-            scenario = scenario.replace(/##/g, ''); // Убираем ## заголовки
-            scenario = scenario.replace(/#/g, ''); // Убираем # заголовки
-            
-            // Форматируем текст для лучшей читаемости
-            scenario = scenario.replace(/\n\n\n+/g, '\n\n'); // Убираем лишние переносы строк
-            
-            // Auto-fill experiment scenario field
-            const experimentScenario = document.getElementById('experimentScenario');
-            if (experimentScenario) experimentScenario.value = scenario;
-            
-            // Формируем профессиональный заголовок с метриками
-            const currentTime = new Date().toLocaleString('en-US', { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric', 
-                hour: '2-digit', 
-                minute: '2-digit',
-                timeZoneName: 'short'
-            });
-            
-            // Собираем ключевые метрики для отображения
-            const metricsHtml = `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
-                    <div style="background: rgba(0, 255, 0, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 255, 0, 0.3);">
-                        <div style="color: #888; font-size: 0.85rem; margin-bottom: 5px;">Current Price</div>
-                        <div style="color: #00ff00; font-size: 1.3rem; font-weight: 700;">$${currentPrice.toFixed(2)}</div>
-                    </div>
-                    ${marketData.fearAndGreed ? `
-                    <div style="background: rgba(255, 165, 0, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 165, 0, 0.3);">
-                        <div style="color: #888; font-size: 0.85rem; margin-bottom: 5px;">Fear & Greed</div>
-                        <div style="color: #ffa500; font-size: 1.3rem; font-weight: 700;">${marketData.fearAndGreed.value}/100</div>
-                        <div style="color: #aaa; font-size: 0.8rem; margin-top: 3px;">${marketData.fearAndGreed.classification}</div>
-                    </div>
-                    ` : ''}
-                    ${marketData.lunarCrushData?.galaxyScore ? `
-                    <div style="background: rgba(138, 43, 226, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(138, 43, 226, 0.3);">
-                        <div style="color: #888; font-size: 0.85rem; margin-bottom: 5px;">Galaxy Score</div>
-                        <div style="color: #8a2be2; font-size: 1.3rem; font-weight: 700;">${marketData.lunarCrushData.galaxyScore}/100</div>
-                        <div style="color: #aaa; font-size: 0.8rem; margin-top: 3px;">Social Activity</div>
-                    </div>
-                    ` : ''}
-                    ${marketData.mainCoin?.change24h !== undefined ? `
-                    <div style="background: rgba(${marketData.mainCoin.change24h >= 0 ? '0, 255, 0' : '255, 0, 0'}, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(${marketData.mainCoin.change24h >= 0 ? '0, 255, 0' : '255, 0, 0'}, 0.3);">
-                        <div style="color: #888; font-size: 0.85rem; margin-bottom: 5px;">24h Change</div>
-                        <div style="color: ${marketData.mainCoin.change24h >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.3rem; font-weight: 700;">${marketData.mainCoin.change24h >= 0 ? '+' : ''}${marketData.mainCoin.change24h.toFixed(2)}%</div>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-            
-            resultDiv.innerHTML = `
-                <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); margin-top: 20px; max-height: 500px; overflow-y: auto; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);">
-                    <div style="background: linear-gradient(135deg, rgba(0, 255, 0, 0.15) 0%, rgba(0, 200, 0, 0.1) 100%); padding: 18px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid rgba(0, 255, 0, 0.7); border-top: 1px solid rgba(0, 255, 0, 0.3);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <div style="color: #00ff00; font-size: 1.4rem; font-weight: 700; letter-spacing: 0.5px;">PROFESSIONAL SCENARIO ANALYSIS</div>
-                            <div style="color: #888; font-size: 0.85rem; text-align: right;">${currentTime}</div>
-                        </div>
-                        <div style="color: #cccccc; font-size: 0.95rem; margin-bottom: 8px;">
-                            Asset: <span style="color: #ffffff; font-weight: 600; font-size: 1.1rem;">${coin}</span> | 
-                            Portfolio: <span style="color: #00ff00; font-weight: 600;">$${deposit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                        </div>
-                        <div style="color: #aaa; font-size: 0.8rem; font-style: italic;">
-                            Data Sources: LiveCoinWatch API, Alternative.me (Fear & Greed), ${marketData.lunarCrushData ? 'LunarCrush (Social Signals), ' : ''}${marketData.coinDeskData ? 'CoinDesk, ' : ''}CoinGecko
-                        </div>
-                    </div>
-                    ${metricsHtml}
-                    <div style="background: rgba(0, 0, 0, 0.4); padding: 20px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                        <div style="color: #ffffff; white-space: pre-wrap; font-size: 1rem; line-height: 1.9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;">
-                            ${scenario}
-                        </div>
-                    </div>
-                    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-                        <div style="color: #888; font-size: 0.85rem; text-align: center; font-style: italic;">
-                            Analysis generated using advanced AI models with real-time market data integration. 
-                            This analysis is for educational purposes and should not be considered as financial advice.
-                        </div>
-                    </div>
-                </div>
-            `;
+            return data.choices[0].message.content.trim();
         }
     } catch (error) {
         console.error('AI Error:', error);
-        resultDiv.innerHTML = '<div style="color: #ff6666; font-weight: 500; padding: 15px; background: rgba(255, 0, 0, 0.1); border-radius: 8px; border: 1px solid rgba(255, 0, 0, 0.3);">Error connecting to AI. Please try again.</div>';
     }
+
+    return scenario.description;
 }
 
 // Smart Correlations
@@ -2808,198 +2097,25 @@ function createBotStrategy() {
     alert('🤖 "Create Bot" feature will be added in the next update!\n\nThis will allow you to export the strategy for automatic trading.');
 }
 
-// 2. Backtesting Engine
-async function runBacktesting() {
-    const strategy = document.getElementById('backtestStrategy')?.value;
-    const period = parseInt(document.getElementById('backtestPeriod')?.value || 30);
-    const resultsDiv = document.getElementById('backtestResults');
-    
-    if (!resultsDiv) return;
-    
-    if (!strategy || !strategy.trim()) {
-        alert('Please enter a strategy to test');
+async function generateStrategyFromText() {
+    const text = document.getElementById('strategyText')?.value;
+    const resultDiv = document.getElementById('generatedStrategyResult');
+
+    if (!resultDiv) return;
+
+    if (!text || !text.trim()) {
+        alert('Please describe your strategy');
         return;
     }
 
-    resultsDiv.style.display = 'block';
-    resultsDiv.innerHTML = '<em style="color: #ff6666;">🔄 Running backtest on historical data...</em>';
+    resultDiv.innerHTML = '<em style="color: #ff6666;">🤖 AI analyzing your text...</em>';
 
     try {
-        // Simulate backtesting (in real implementation, use historical API data)
         const coin = document.getElementById('experimentCoin')?.value || 'BTC';
         const deposit = parseFloat(document.getElementById('userDeposit')?.value || 10000);
-        
-        // Mock backtesting results (replace with real historical data analysis)
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing
-        
-        const mockResults = {
-            initialCapital: deposit,
-            finalCapital: deposit * 1.45, // +45% profit
-            profit: deposit * 0.45,
-            profitPercent: 45,
-            maxDrawdown: -8,
-            totalTrades: 15,
-            winningTrades: 12,
-            losingTrades: 3,
-            winRate: 80,
-            roi: 145,
-            sharpeRatio: 1.8
-        };
-        
-        resultsDiv.innerHTML = `
-            <div style="background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 8px; border: 1px solid rgba(0, 255, 0, 0.3);">
-                <h5 style="color: #00ff00; margin-bottom: 15px;">📊 Backtesting Results (${period} days)</h5>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
-                    <div style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 8px;">
-                        <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Initial Capital</div>
-                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: bold;">$${mockResults.initialCapital.toFixed(2)}</div>
-                    </div>
-                    <div style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 8px;">
-                        <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Final Capital</div>
-                        <div style="color: #00ff00; font-size: 1.5rem; font-weight: bold;">$${mockResults.finalCapital.toFixed(2)}</div>
-                    </div>
-                    <div style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 8px;">
-                        <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Profit</div>
-                        <div style="color: #00ff00; font-size: 1.5rem; font-weight: bold;">+$${mockResults.profit.toFixed(2)} (+${mockResults.profitPercent}%)</div>
-                    </div>
-                    <div style="background: rgba(255, 0, 0, 0.1); padding: 15px; border-radius: 8px;">
-                        <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Max Drawdown</div>
-                        <div style="color: #ff6666; font-size: 1.5rem; font-weight: bold;">${mockResults.maxDrawdown}%</div>
-                    </div>
-                </div>
-                <div style="margin-top: 15px; padding: 15px; background: rgba(0, 0, 0, 0.5); border-radius: 8px;">
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
-                        <div>
-                            <div style="color: #cccccc; font-size: 0.85rem;">Total Trades</div>
-                            <div style="color: #ffffff; font-weight: bold;">${mockResults.totalTrades}</div>
-                        </div>
-                        <div>
-                            <div style="color: #cccccc; font-size: 0.85rem;">Win Rate</div>
-                            <div style="color: #00ff00; font-weight: bold;">${mockResults.winRate}%</div>
-                        </div>
-                        <div>
-                            <div style="color: #cccccc; font-size: 0.85rem;">Sharpe Ratio</div>
-                            <div style="color: #ffffff; font-weight: bold;">${mockResults.sharpeRatio}</div>
-                        </div>
-                    </div>
-                </div>
-                <div style="margin-top: 15px; padding: 15px; background: rgba(255, 215, 0, 0.1); border-left: 4px solid #ffd700; border-radius: 8px;">
-                    <strong style="color: #ffd700;">💡 Recommendation:</strong> 
-                    <span style="color: #ffffff;">Strategy shows ${mockResults.profitPercent > 30 ? 'strong' : 'moderate'} performance. ${mockResults.winRate > 70 ? 'High win rate indicates reliability.' : 'Consider optimizing entry/exit points.'}</span>
-                </div>
-            </div>
-        `;
-    } catch (error) {
-        console.error('Backtesting Error:', error);
-        resultsDiv.innerHTML = '<em style="color: #ff6666;">Error running backtest. Please try again.</em>';
-    }
-}
-
-// 3. Strategy Optimizer
-async function optimizeStrategy() {
-    const template = document.getElementById('strategyTemplate')?.value;
-    const xMin = parseFloat(document.getElementById('xMin')?.value || -25);
-    const xMax = parseFloat(document.getElementById('xMax')?.value || -5);
-    const xStep = parseFloat(document.getElementById('xStep')?.value || 5);
-    const yMin = parseFloat(document.getElementById('yMin')?.value || 10);
-    const yMax = parseFloat(document.getElementById('yMax')?.value || 30);
-    const yStep = parseFloat(document.getElementById('yStep')?.value || 5);
-    const resultsDiv = document.getElementById('optimizerResults');
-    
-    if (!resultsDiv) return;
-    
-    if (!template || !template.includes('X') || !template.includes('Y')) {
-        alert('Strategy template must contain X and Y variables');
-        return;
-    }
-    
-    resultsDiv.style.display = 'block';
-    resultsDiv.innerHTML = '<em style="color: #ff6666;">🔍 Testing combinations and finding optimal parameters...</em>';
-    
-    try {
-        // Simulate optimization (test all combinations)
-        const combinations = [];
-        for (let x = xMin; x <= xMax; x += xStep) {
-            for (let y = yMin; y <= yMax; y += yStep) {
-                // Mock ROI calculation (replace with real backtesting)
-                const roi = 30 + Math.random() * 40 + (Math.abs(x) * 0.5) + (y * 0.3); // Simulated
-                combinations.push({ x, y, roi });
-            }
-        }
-        
-        // Sort by ROI
-        combinations.sort((a, b) => b.roi - a.roi);
-        const best = combinations[0];
-        const top5 = combinations.slice(0, 5);
-        
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate processing
-        
-        resultsDiv.innerHTML = `
-            <div style="background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 8px; border: 1px solid rgba(0, 255, 0, 0.3);">
-                <h5 style="color: #00ff00; margin-bottom: 15px;">🎯 Optimization Results</h5>
-                <div style="background: rgba(0, 255, 0, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #00ff00;">
-                    <div style="color: #ffffff; font-size: 1.1rem; margin-bottom: 10px;"><strong>🏆 Best Combination:</strong></div>
-                    <div style="color: #00ff00; font-size: 1.5rem; font-weight: bold; margin-bottom: 5px;">
-                        X = ${best.x}%, Y = ${best.y}%
-                    </div>
-                    <div style="color: #ffffff; font-size: 1.2rem;">
-                        Expected ROI: <span style="color: #00ff00; font-weight: bold;">${best.roi.toFixed(1)}%</span>
-                    </div>
-                    <div style="color: #cccccc; margin-top: 10px; font-size: 0.9rem;">
-                        Strategy: ${template.replace('X', best.x).replace('Y', best.y)}
-                    </div>
-                </div>
-                <div style="margin-top: 15px;">
-                    <div style="color: #ffffff; font-size: 1rem; margin-bottom: 10px;"><strong>Top 5 Combinations:</strong></div>
-                    <div style="display: grid; gap: 8px;">
-                        ${top5.map((combo, idx) => `
-                            <div style="background: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
-                                <span style="color: #ffffff;">${idx + 1}. X=${combo.x}%, Y=${combo.y}%</span>
-                                <span style="color: #00ff00; font-weight: bold;">ROI: ${combo.roi.toFixed(1)}%</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-        `;
-    } catch (error) {
-        console.error('Optimization Error:', error);
-        resultsDiv.innerHTML = '<em style="color: #ff6666;">Error optimizing strategy. Please try again.</em>';
-    }
-}
-
-// 4. Predictive Analytics Dashboard
-async function loadPredictiveDashboard() {
-    const coin = document.getElementById('predictCoin')?.value || 'BTC';
-    const dashboardDiv = document.getElementById('predictiveDashboard');
-    
-    if (!dashboardDiv) return;
-    
-    dashboardDiv.style.display = 'block';
-    dashboardDiv.innerHTML = '<em style="color: #ff6666;">🔮 AI analyzing market data and generating predictions...</em>';
-    
-    try {
         const currentPrice = await getRealTimePrice(coin) || 50000;
 
-        // Get Fear & Greed Index (mock for now)
-        const fearGreedIndex = 50 + Math.floor(Math.random() * 50); // 50-100
-        
-        // Generate AI predictions
-        const prompt = `Analyze ${coin} current price: $${currentPrice.toFixed(2)}. Fear & Greed Index: ${fearGreedIndex}/100.
-        
-Provide price predictions for:
-- 7 days (short-term)
-- 30 days (medium-term)
-- 90 days (long-term)
-
-For each timeframe, provide:
-- Most likely price (50% probability)
-- Optimistic scenario (90% probability)
-- Pessimistic scenario (10% probability)
-- Probability of growth vs decline
-- Specific buy/sell recommendations with price levels
-
-Format as structured analysis.`;
+        const prompt = `The user described a trading/investment strategy for ${deposit}$: "${text}". Current price of ${coin}: $${currentPrice.toFixed(2)}. Create a DETAILED professional strategy with specific percentages, price levels, and actions.`;
 
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -3010,199 +2126,304 @@ Format as structured analysis.`;
             body: JSON.stringify({
                 model: 'mistral-small',
                 messages: [
-                    { role: 'system', content: 'You are a professional crypto market analyst. Provide detailed price predictions with probabilities and actionable recommendations.' },
+                    { role: 'system', content: 'You are a professional crypto trader with 10+ years of experience. Your strategies are always detailed, with specific figures and calculations.' },
                     { role: 'user', content: prompt }
                 ],
-                temperature: 0.7,
-                max_tokens: 700
+                temperature: 0.9,
+                max_tokens: 600
             })
         });
 
         const data = await response.json();
-        const predictions = data.choices && data.choices[0] ? data.choices[0].message.content.trim() : 'Analysis in progress...';
         
-        dashboardDiv.innerHTML = `
-            <div style="background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 8px; border: 1px solid rgba(255, 165, 0, 0.3);">
-                <h5 style="color: #ffa500; margin-bottom: 15px;">🔮 ${coin} Predictive Analytics</h5>
-                <div style="background: rgba(255, 165, 0, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    <div style="color: #ffffff; margin-bottom: 10px;"><strong>Current Price:</strong> $${currentPrice.toFixed(2)}</div>
-                    <div style="color: #ffffff; margin-bottom: 10px;"><strong>Market Sentiment:</strong> ${fearGreedIndex}/100 ${fearGreedIndex > 70 ? '🟢 (Greed)' : fearGreedIndex < 30 ? '🔴 (Fear)' : '🟡 (Neutral)'}</div>
+        if (data.choices && data.choices[0]) {
+            resultDiv.innerHTML = `
+                <div style="background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 8px; color: #00ff00; border: 1px solid rgba(0, 255, 0, 0.3); font-size: 0.95rem; line-height: 1.6;">
+                    <strong style="color: #00ff00; font-size: 1.1rem;">✅ Strategy generated:</strong><br>
+                    <div style="margin-top: 15px; white-space: pre-wrap;">${data.choices[0].message.content.trim()}</div>
                 </div>
-                <div style="background: rgba(0, 0, 0, 0.5); padding: 15px; border-radius: 8px; white-space: pre-wrap; color: #ffffff; line-height: 1.6; font-size: 0.95rem;">
-                    ${predictions}
-            </div>
-                    </div>
-                `;
+            `;
+        }
     } catch (error) {
-        console.error('Predictive Analytics Error:', error);
-        dashboardDiv.innerHTML = '<em style="color: #ff6666;">Error loading predictions. Please try again.</em>';
+        console.error('AI Error:', error);
+        resultDiv.innerHTML = '<em style="color: #ff6666;">Error connecting to AI. Please try again.</em>';
     }
 }
 
-async function runExperiment() {
-    const name = document.getElementById('experimentName')?.value;
-    const coin = document.getElementById('experimentCoin')?.value;
-    const scenario = document.getElementById('experimentScenario')?.value;
-    const priceChange = parseFloat(document.getElementById('priceChange')?.value || 0);
+// Survival Mode - Simplified version
+let survivalTimer = 60;
+let survivalInterval = null;
+let survivalScore = 0;
+let survivalLives = 3;
+let currentRound = 0;
 
+function startSurvivalMode() {
+    const survivalBox = document.getElementById('survivalModeBox');
+    if (survivalBox) survivalBox.style.display = 'block';
+    
+    survivalTimer = 60;
+    survivalScore = 0;
+    survivalLives = 3;
+    currentRound = 0;
+
+    const timerDiv = document.getElementById('survivalTimer');
+    const eventDiv = document.getElementById('survivalEvent');
+    const resultDiv = document.getElementById('survivalResult');
+    const actionsDiv = document.getElementById('survivalActions');
+
+    if (eventDiv) {
+        eventDiv.innerHTML = `
+            <div style="background: rgba(255, 0, 0, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <h4 style="color: #ff0000; margin-bottom: 10px;">🔥 CRYPTO SURVIVAL MODE</h4>
+                <p><strong>Portfolio:</strong> $10,000.00 | BTC 60%, ETH 30%, SOL 10%</p>
+            </div>
+        `;
+    }
+
+    if (resultDiv) resultDiv.innerHTML = '';
+    
+    if (survivalInterval) clearInterval(survivalInterval);
+    
+    survivalInterval = setInterval(() => {
+        survivalTimer--;
+        if (timerDiv) timerDiv.textContent = survivalTimer + ' sec';
+
+        if (survivalLives <= 0 || survivalTimer <= 0) {
+            clearInterval(survivalInterval);
+            if (resultDiv) {
+                resultDiv.innerHTML = `
+                    <div class="result-box">
+                        <h5 style="color: #ff0000;">💀 GAME OVER</h5>
+                        <p><strong>🎯 Final score:</strong> ${survivalScore} points</p>
+                        <p><strong>❤️ Lives remaining:</strong> ${survivalLives}/3</p>
+                    </div>
+                `;
+            }
+        }
+    }, 1000);
+}
+
+function survivalAction(action) {
+    if (survivalTimer <= 0 || survivalLives <= 0) return;
+    
+    survivalScore += 50;
+    currentRound++;
+    
+    alert(`✅ Action taken! +50 points`);
+}
+
+async function runExperiment() {
+    // Получаем все значения из формы
+    const name = document.getElementById('experimentName')?.value?.trim();
+    const coin = document.getElementById('experimentCoin')?.value || 'BTC';
+    const scenario = document.getElementById('experimentScenario')?.value?.trim();
+    const priceChange = parseFloat(document.getElementById('priceChange')?.value || 0);
+    const userDeposit = parseFloat(document.getElementById('userDeposit')?.value || 10000);
+
+    // Проверяем обязательные поля
     if (!name) {
-        alert('Please fill in the experiment name');
+        alert('Please enter an experiment name');
         return;
     }
 
+    // Находим блок результатов
     const resultsDiv = document.getElementById('experimentResults');
     const analysisDiv = document.getElementById('experimentAnalysis');
     const chartDiv = document.getElementById('experimentChart');
 
-    if (resultsDiv) resultsDiv.style.display = 'block';
-    if (analysisDiv) analysisDiv.innerHTML = '<em style="color: #ff6666;">🔄 Getting current coin price...</em>';
+    if (!resultsDiv || !analysisDiv) {
+        console.error('Results containers not found');
+        return;
+    }
 
-    try {
+    // Показываем блок результатов
+    resultsDiv.style.display = 'block';
+    analysisDiv.innerHTML = '<em style="color: #ff6666;">🔄 Getting current coin price...</em>';
+
+    // Получаем текущую цену монеты
     const currentPrice = await getRealTimePrice(coin);
     const displayPrice = currentPrice || 50000;
     
+    // Рассчитываем новую цену
     const newPrice = displayPrice * (1 + priceChange / 100);
-    const userDeposit = parseFloat(document.getElementById('userDeposit')?.value || 10000);
-        const portfolioValue = userDeposit * (1 + priceChange / 100);
-        const portfolioChange = portfolioValue - userDeposit;
-        const portfolioChangePercent = (portfolioChange / userDeposit * 100).toFixed(2);
+    const priceDifference = newPrice - displayPrice;
+    
+    // Рассчитываем изменение депозита (предполагаем, что 100% депозита в выбранной монете)
+    const depositChange = userDeposit * (priceChange / 100);
+    const newDepositValue = userDeposit + depositChange;
 
-        // Получаем результат AI Scenario Builder (если есть)
-        const aiResultDiv = document.getElementById('aiScenarioResult');
-        let aiAnalysis = '';
-        if (aiResultDiv && aiResultDiv.innerHTML && aiResultDiv.innerHTML.trim().length > 50) {
-            // Извлекаем текст из AI результата
-            const aiText = aiResultDiv.innerText || aiResultDiv.textContent || '';
-            if (aiText.length > 100) {
-                aiAnalysis = `
-                    <div style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid rgba(0, 255, 0, 0.6); margin-top: 15px;">
-                        <h5 style="color: #00ff00; margin-bottom: 10px;">🤖 AI Scenario Analysis:</h5>
-                        <div style="color: #ffffff; max-height: 300px; overflow-y: auto; line-height: 1.6;">
-                            ${aiText.substring(0, 500)}${aiText.length > 500 ? '...' : ''}
-                        </div>
-                        <small style="color: #888; margin-top: 10px; display: block;">💡 Full analysis available above in AI Scenario Builder</small>
-                    </div>
-                `;
-            }
-        }
-
-    if (analysisDiv) {
-        analysisDiv.innerHTML = `
-                <div style="background: rgba(0, 0, 0, 0.6); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15);">
-                    <h5 style="color: #ff0000; margin-bottom: 15px; font-size: 1.3rem;">📊 ${name}</h5>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                        <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px;">
-                            <small style="color: #888; display: block; margin-bottom: 5px;">Coin</small>
-                            <strong style="color: #ffffff; font-size: 1.1rem;">${coin}</strong>
-                        </div>
-                        <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px;">
-                            <small style="color: #888; display: block; margin-bottom: 5px;">Current Price</small>
-                            <strong style="color: #00ff00; font-size: 1.1rem;">$${displayPrice.toFixed(2)}</strong>
-                        </div>
-                        <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px;">
-                            <small style="color: #888; display: block; margin-bottom: 5px;">Price Change</small>
-                            <strong style="color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.1rem;">${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%</strong>
-                        </div>
-                        <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px;">
-                            <small style="color: #888; display: block; margin-bottom: 5px;">Projected Price</small>
-                            <strong style="color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.1rem;">$${newPrice.toFixed(2)}</strong>
-                        </div>
-                    </div>
-
-                    <div style="background: ${priceChange >= 0 ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)'}; padding: 15px; border-radius: 8px; border-left: 4px solid ${priceChange >= 0 ? 'rgba(0, 255, 0, 0.6)' : 'rgba(255, 0, 0, 0.6)'}; margin-bottom: 15px;">
-                        <h5 style="color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; margin-bottom: 10px;">💰 Portfolio Impact:</h5>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span style="color: #ffffff;">Starting Capital:</span>
-                            <strong style="color: #ffffff;">$${userDeposit.toFixed(2)}</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span style="color: #ffffff;">Projected Value:</span>
-                            <strong style="color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.2rem;">$${portfolioValue.toFixed(2)}</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: #ffffff;">Total Change:</span>
-                            <strong style="color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.2rem;">${priceChange >= 0 ? '+' : ''}$${Math.abs(portfolioChange).toFixed(2)} (${portfolioChangePercent >= 0 ? '+' : ''}${portfolioChangePercent}%)</strong>
-                        </div>
-                    </div>
-
-                    ${scenario ? `
-                    <div style="background: rgba(255, 165, 0, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid rgba(255, 165, 0, 0.6); margin-bottom: 15px;">
-                        <h5 style="color: #ffa500; margin-bottom: 10px;">📝 Scenario Description:</h5>
-                        <p style="color: #ffffff; line-height: 1.6;">${scenario}</p>
-                    </div>
-                    ` : ''}
-
-                    ${aiAnalysis}
-                </div>
-        `;
+    // Рассчитываем Smart Correlations (если включены)
+    const correlationsEnabled = document.getElementById('correlationsEnabled')?.checked || false;
+    let correlationsData = '';
+    if (correlationsEnabled && priceChange !== 0) {
+        const correlations = {
+            'BTC': { 'ETH': -1.4, 'SOL': -2.25, 'BNB': -1.65, 'ADA': -1.2, 'XRP': -1.1, 'AVAX': -1.8, 'DOGE': -1.3, 'SUI': -2.0, 'TON': -1.5 },
+            'ETH': { 'BTC': -0.7, 'SOL': -1.6, 'BNB': -1.2, 'ADA': -1.1, 'AVAX': -1.4, 'ARB': -1.8, 'UNI': -1.6 },
+            'SOL': { 'BTC': -0.44, 'ETH': -0.625, 'BNB': -0.75, 'SUI': -1.5, 'WIF': -2.2, 'PEPE': -1.8 }
+        };
+        const coinCorrelations = correlations[coin] || {};
+        correlationsData = Object.entries(coinCorrelations).map(([asset, multiplier]) => {
+            const suggestedChange = (priceChange * multiplier).toFixed(2);
+            return `${asset}: ${suggestedChange > 0 ? '+' : ''}${suggestedChange}%`;
+        }).join(', ');
     }
 
+    // Создаем красивую таблицу результатов
+    analysisDiv.innerHTML = `
+        <div style="
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(30, 0, 0, 0.9) 100%);
+            border: 2px solid rgba(255, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(255, 0, 0, 0.3);
+        ">
+            <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.5rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
+                🧪 Experiment Results
+            </h4>
+            
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 1.1rem;">
+                <tr style="background: rgba(255, 0, 0, 0.2);">
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; width: 40%; font-size: 1.1rem;">Experiment Name:</td>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-size: 1.1rem;">${name}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.1rem;">Your Deposit:</td>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-size: 1.1rem;">$${userDeposit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                </tr>
+                <tr style="background: rgba(255, 0, 0, 0.2);">
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.1rem;">Selected Coin:</td>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-weight: bold; font-size: 1.1rem;">${coin}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.1rem;">Current Price:</td>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #00ff00; font-weight: bold; font-size: 1.1rem;">$${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}</td>
+                </tr>
+                <tr style="background: rgba(255, 0, 0, 0.2);">
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.1rem;">Price Change:</td>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.2rem;">
+                        ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.1rem;">Projected Price:</td>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-weight: bold; font-size: 1.1rem;">$${newPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}</td>
+                </tr>
+                <tr style="background: rgba(255, 0, 0, 0.2);">
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.1rem;">Price Difference:</td>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${priceDifference >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.1rem;">
+                        ${priceDifference >= 0 ? '+' : ''}$${priceDifference.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.1rem;">New Deposit Value:</td>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${newDepositValue >= userDeposit ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.2rem;">
+                        $${newDepositValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                    </td>
+                </tr>
+                <tr style="background: rgba(255, 0, 0, 0.2);">
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.1rem;">Deposit Change:</td>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${depositChange >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.2rem;">
+                        ${depositChange >= 0 ? '+' : ''}$${depositChange.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        (${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%)
+                    </td>
+                </tr>
+                ${scenario ? `
+                <tr>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; vertical-align: top; font-size: 1.1rem;">Scenario Description:</td>
+                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; line-height: 1.6; font-size: 1.1rem;">${scenario}</td>
+                </tr>
+                ` : ''}
+                ${correlationsData ? `
+                <tr style="background: rgba(0, 255, 0, 0.1);">
+                    <td style="padding: 12px; border: 1px solid rgba(0, 255, 0, 0.3); color: #00ff00; font-weight: bold; vertical-align: top; font-size: 1.1rem;">Smart Correlations:</td>
+                    <td style="padding: 12px; border: 1px solid rgba(0, 255, 0, 0.3); color: #ffffff; line-height: 1.8; font-size: 1.1rem;">
+                        <div style="color: #00ff00; margin-bottom: 5px; font-size: 1.1rem;">💡 Expected changes in other coins:</div>
+                        <span style="font-size: 1.1rem;">${correlationsData}</span>
+                        <div style="color: #888; font-size: 1rem; margin-top: 8px;">Based on historical correlation data</div>
+                    </td>
+                </tr>
+                ` : ''}
+            </table>
+        </div>
+    `;
+
+    // AI совет
     const aiAdviceDiv = document.getElementById('aiAdviceBox');
     if (aiAdviceDiv) {
-            let advice = '';
-            if (priceChange < -30) {
-                advice = '⚠️ CRITICAL DROP: Consider taking immediate action. This is a severe market decline. Review your risk management strategy and consider stop-loss orders or partial exit to protect capital.';
-            } else if (priceChange < -15) {
-                advice = '📉 SIGNIFICANT DROP: Market is experiencing notable decline. Monitor closely, consider DCA (Dollar Cost Averaging) if holding long-term, or partial profit-taking if needed.';
-            } else if (priceChange < 0) {
-                advice = '📊 MINOR CORRECTION: Small market pullback. Stick to your strategy unless fundamental factors change. Good opportunity to evaluate entry points.';
-            } else if (priceChange < 20) {
-                advice = '📈 POSITIVE MOVEMENT: Moderate gains observed. Consider taking partial profits if holding large positions, or holding if trend is strong.';
-            } else {
-                advice = '🚀 STRONG GROWTH: Significant market appreciation. Consider profit-taking strategy, rebalancing portfolio, or trailing stop-loss to protect gains.';
-            }
+        let adviceText = '';
+        if (priceChange < -20) {
+            adviceText = '⚠️ Strong decline detected. Consider selling 30-50% to protect capital. Wait for stabilization before re-entering.';
+        } else if (priceChange < -10) {
+            adviceText = '📉 Moderate decline. Consider selling 20-25% to reduce risk. Monitor the situation closely.';
+        } else if (priceChange < 0) {
+            adviceText = '📊 Small correction detected. This is normal market behavior. Stick to your strategy and monitor.';
+        } else if (priceChange < 20) {
+            adviceText = '📈 Positive movement. Consider taking partial profits (10-20%) while holding the rest for further growth.';
+        } else if (priceChange < 50) {
+            adviceText = '🚀 Strong growth. Consider taking 30-40% profits. Set stop-loss to protect remaining gains.';
+        } else {
+            adviceText = '💎 Exceptional growth! Consider taking 50%+ profits. This level is often unsustainable long-term.';
+        }
 
         aiAdviceDiv.innerHTML = `
-                <div style="background: rgba(255, 165, 0, 0.15); padding: 15px; border-radius: 8px;">
-                    <h5 style="color: #ffa500; margin-bottom: 10px;">🤖 AI Actionable Advice:</h5>
-                    <p style="color: #ffffff; line-height: 1.7; margin-bottom: 10px;">${advice}</p>
-                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
-                        <small style="color: #888;">💡 Tip: Use AI Scenario Builder above for detailed market analysis and recommendations</small>
-                    </div>
-                </div>
+            <div style="padding: 20px;">
+                <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
+                    🤖 AI Trading Advice
+                </h5>
+                <p style="color: #ffffff; line-height: 1.8; font-size: 1.05rem; margin: 0;">${adviceText}</p>
+            </div>
         `;
     }
 
+    // Визуализация графика
     if (chartDiv) {
-            // Создаем простую визуализацию
-            const isPositive = priceChange >= 0;
-            const color = isPositive ? '#00ff00' : '#ff6666';
-            const arrow = isPositive ? '↗' : '↘';
-            
         chartDiv.innerHTML = `
-                <div style="background: rgba(0, 0, 0, 0.6); padding: 30px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); text-align: center;">
-                    <h5 style="color: #ffffff; margin-bottom: 20px; font-size: 1.2rem;">📊 Price Movement Visualization</h5>
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px;">
-                        <div style="text-align: right;">
-                            <div style="color: #888; font-size: 0.9rem; margin-bottom: 5px;">Current</div>
-                            <div style="color: #00ff00; font-size: 1.5rem; font-weight: bold;">$${displayPrice.toFixed(2)}</div>
-                        </div>
-                        <div style="color: ${color}; font-size: 3rem; font-weight: bold;">
-                            ${arrow}
-                        </div>
-                        <div style="text-align: left;">
-                            <div style="color: #888; font-size: 0.9rem; margin-bottom: 5px;">Projected</div>
-                            <div style="color: ${color}; font-size: 1.5rem; font-weight: bold;">$${newPrice.toFixed(2)}</div>
-                        </div>
+            <div style="
+                background: rgba(0, 0, 0, 0.6);
+                border: 2px solid rgba(255, 0, 0, 0.3);
+                border-radius: 12px;
+                padding: 25px;
+                text-align: center;
+            ">
+                <h5 style="color: #ffffff; margin-bottom: 20px; font-size: 1.2rem;">📊 Price Movement Visualization</h5>
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 30px;
+                    margin-bottom: 20px;
+                    flex-wrap: wrap;
+                ">
+                    <div style="text-align: center;">
+                        <div style="color: #888; font-size: 0.9rem; margin-bottom: 5px;">Current</div>
+                        <div style="color: #00ff00; font-size: 1.5rem; font-weight: bold;">$${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                     </div>
-                    <div style="background: ${color}20; padding: 15px; border-radius: 8px; border: 1px solid ${color}60;">
-                        <div style="color: ${color}; font-size: 2.5rem; font-weight: bold; margin-bottom: 10px;">
-                            ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%
-                        </div>
-                        <div style="color: #ffffff; font-size: 0.9rem;">
-                            ${isPositive ? 'Portfolio Gain' : 'Portfolio Loss'}: ${priceChange >= 0 ? '+' : ''}$${Math.abs(portfolioChange).toFixed(2)}
-                        </div>
+                    <div style="
+                        font-size: 3rem;
+                        color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'};
+                        text-shadow: 0 0 20px ${priceChange >= 0 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 0, 0, 0.5)'};
+                    ">
+                        ${priceChange >= 0 ? '↗' : '↘'}
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="color: #888; font-size: 0.9rem; margin-bottom: 5px;">Projected</div>
+                        <div style="color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">$${newPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                    </div>
+                </div>
+                <div style="
+                    color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'};
+                    font-size: 2rem;
+                    font-weight: bold;
+                    text-shadow: 0 0 15px ${priceChange >= 0 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 0, 0, 0.5)'};
+                ">
+                    ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%
                 </div>
             </div>
         `;
-        }
-    } catch (error) {
-        console.error('Error running experiment:', error);
-        if (analysisDiv) {
-            analysisDiv.innerHTML = `<div style="color: #ff6666; padding: 15px; background: rgba(255, 0, 0, 0.1); border-radius: 8px;">Error: Could not run experiment. Please try again.</div>`;
-        }
     }
+
+    // Прокручиваем к результатам
+    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function saveExperiment() {
