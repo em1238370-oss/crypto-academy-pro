@@ -1991,20 +1991,9 @@ async function getRealTimePrice(coinSymbol) {
 }
 
 function updatePriceChangeDisplay() {
-    const slider = document.getElementById('priceChange');
-    const value = slider?.value || 0;
+    const value = document.getElementById('priceChange')?.value || 0;
     const priceChangeValue = document.getElementById('priceChangeValue');
     if (priceChangeValue) priceChangeValue.textContent = value + '%';
-    
-    // Обновляем синюю линию прогресса
-    if (slider) {
-        const min = parseFloat(slider.min) || -70;
-        const max = parseFloat(slider.max) || 200;
-        const currentValue = parseFloat(value);
-        // Вычисляем процент для синей линии (0% = min, 100% = max)
-        const progress = ((currentValue - min) / (max - min)) * 100;
-        slider.style.setProperty('--progress', progress + '%');
-    }
 }
 
 // Load AI Scenario
