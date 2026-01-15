@@ -2018,7 +2018,7 @@ function showAICorrelations() {
     if (value !== 0) {
         displayDiv.style.display = 'block';
         // Обновляем корреляции через существующую функцию
-        updateCorrelations();
+        // updateCorrelations обновит correlationsSuggestions, а мы показываем наш блок
     } else {
         displayDiv.style.display = 'none';
     }
