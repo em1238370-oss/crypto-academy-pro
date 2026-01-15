@@ -1586,6 +1586,19 @@ div:has-text("Experience Points") {
     margin-bottom: 20px;
 }
 
+/* Переопределение для центрирования слайдера Price Change */
+.form-group:has(#priceChange) {
+    margin-bottom: 20px !important;
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
 .form-group label {
     display: block;
     color: #ff6666;
@@ -1614,6 +1627,7 @@ div:has-text("Experience Points") {
 }
 
 /* Центрирование слайдера Price Change */
+.price-change-slider-container,
 .form-group:has(#priceChange) {
     text-align: center !important;
     display: flex !important;
@@ -1622,6 +1636,7 @@ div:has-text("Experience Points") {
     justify-content: center !important;
     width: 100% !important;
     margin: 0 auto !important;
+    padding: 0 !important;
 }
 
 #priceChange {
@@ -1633,19 +1648,23 @@ div:has-text("Experience Points") {
     position: relative !important;
 }
 
+.price-change-slider-container label,
 .form-group:has(#priceChange) label {
     text-align: center !important;
     width: 100% !important;
     display: block !important;
-    margin: 0 auto !important;
+    margin: 0 auto 15px auto !important;
 }
 
+.price-change-slider-container > div,
 .form-group:has(#priceChange) > div {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
     width: 100% !important;
+    max-width: 600px !important;
     margin: 0 auto !important;
+    padding: 0 !important;
 }
 
 .section-box {
