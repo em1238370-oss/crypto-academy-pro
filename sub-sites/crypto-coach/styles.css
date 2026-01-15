@@ -1639,6 +1639,7 @@ div:has-text("Experience Points") {
     padding: 0 !important;
 }
 
+/* Слайдер без видимой точки (ручки) - только синяя полоска */
 #priceChange {
     display: block !important;
     margin: 0 auto !important;
@@ -1646,6 +1647,55 @@ div:has-text("Experience Points") {
     width: 100% !important;
     max-width: 600px !important;
     position: relative !important;
+    height: 10px !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-radius: 5px !important;
+    outline: none !important;
+    cursor: pointer !important;
+}
+
+/* Убираем стандартную ручку (точку) в Chrome/Safari */
+#priceChange::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    border: none !important;
+}
+
+/* Убираем стандартную ручку (точку) в Firefox */
+#priceChange::-moz-range-thumb {
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    border: none !important;
+}
+
+/* Синяя линия прогресса для Chrome/Safari */
+#priceChange::-webkit-slider-runnable-track {
+    width: 100% !important;
+    height: 10px !important;
+    background: linear-gradient(to right, #0066ff 0%, #0066ff var(--progress, 0%), rgba(255, 255, 255, 0.3) var(--progress, 0%), rgba(255, 255, 255, 0.3) 100%) !important;
+    border-radius: 5px !important;
+}
+
+/* Синяя линия прогресса для Firefox */
+#priceChange::-moz-range-track {
+    width: 100% !important;
+    height: 10px !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-radius: 5px !important;
+}
+
+#priceChange::-moz-range-progress {
+    height: 10px !important;
+    background: #0066ff !important;
+    border-radius: 5px !important;
 }
 
 .price-change-slider-container label,

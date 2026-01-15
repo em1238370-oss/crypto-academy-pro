@@ -672,20 +672,17 @@
                                        <button class="btn btn-red" style="padding: 12px 25px; font-size: 1rem; font-weight: 600; width: 100%; margin-top: 0;" onclick="aiScenarioBuilder()">Generate Detailed Scenario</button>
                                        <div id="aiScenarioResult" style="margin-top: 20px; font-size: 1rem; line-height: 1.7; max-height: 500px; overflow-y: auto; overflow-x: hidden; padding-right: 10px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.2);"></div>
                                    </div>
-                                   <div class="form-group" style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 255, 0, 0.3); text-align: center !important; margin-bottom: 20px;">
-                                       <label style="margin-bottom: 10px; color: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                                           <input type="checkbox" id="correlationsEnabled" onchange="updateCorrelations()" style="margin-right: 10px; cursor: pointer;">
-                                           <span style="font-weight: bold;">Smart Correlations (auto-fill)</span>
-                                       </label>
-                                       <div style="color: #cccccc; font-size: 0.9rem; margin-top: 8px; margin-bottom: 8px; line-height: 1.5;">
-                                           💡 <strong>What is this?</strong> Automatically calculates how other coins might change based on historical correlations. For example, if BTC drops 10%, ETH might drop ~14%, SOL ~22.5% (based on past market behavior).
-                                       </div>
-                                       <div id="correlationsSuggestions" style="margin-top: 10px; font-size: 0.9rem; color: #00ff00; padding: 10px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></div>
-                                   </div>
                                    <div class="form-group price-change-slider-container">
-                                       <label style="text-align: center !important; display: block !important; margin-bottom: 15px !important;">Price Change (%): <span id="priceChangeValue">0%</span></label>
-                                       <div style="display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important;">
-                                           <input type="range" id="priceChange" min="-70" max="200" value="0" oninput="updatePriceChangeDisplay(); updateCorrelations()" style="width: 100% !important; max-width: 600px !important; margin: 0 auto !important;">
+                                       <div style="text-align: center !important; margin-bottom: 20px !important;">
+                                           <span style="color: #ffffff !important; font-weight: bold !important; font-size: 1.2rem !important;">Smart Correlations (auto-fill)</span>
+                                       </div>
+                                       <div style="display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; margin-bottom: 15px !important;">
+                                           <input type="range" id="priceChange" min="-70" max="200" value="0" oninput="updatePriceChangeDisplay(); updateCorrelations(); showAICorrelations()" onmousemove="updatePriceChangeDisplay()" ontouchmove="updatePriceChangeDisplay()" style="width: 100% !important; max-width: 600px !important; margin: 0 auto !important;">
+                                       </div>
+                                       <div id="aiCorrelationsDisplay" style="text-align: center !important; margin-top: 15px !important; display: none !important;">
+                                           <div style="color: #00ff00 !important; font-weight: bold !important; font-size: 1rem !important;">
+                                               💡 AI suggests correlations
+                                           </div>
                                        </div>
                                    </div>
                                    <button class="btn btn-red" onclick="runExperiment()">Run Experiment</button>
