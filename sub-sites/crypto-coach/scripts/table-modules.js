@@ -2051,11 +2051,12 @@ function showAICorrelations() {
         }).join(' | ');
         
         // Обновляем содержимое блока зелёным цветом
+        // Порядок: заголовок сверху, монеты посередине, подпись внизу
         displayDiv.innerHTML = `
-            <div style="color: #00ff00 !important; font-weight: bold !important; font-size: 1rem !important; margin-bottom: 10px;">
+            <div style="color: #00ff00 !important; font-weight: bold !important; font-size: 1rem !important; margin-bottom: 12px;">
                 💡 AI suggests correlations:
             </div>
-            <div style="color: #00ff00 !important; font-size: 0.95rem !important; line-height: 1.6;">
+            <div style="color: #00ff00 !important; font-size: 0.95rem !important; line-height: 1.6; margin-bottom: 8px;">
                 ${suggestions}
             </div>
             <div style="color: #888 !important; font-size: 0.85rem !important; margin-top: 8px;">
