@@ -2276,6 +2276,9 @@ async function runExperiment() {
             border-radius: 15px;
             padding: 25px;
             box-shadow: 0 10px 40px rgba(255, 0, 0, 0.3);
+            margin-left: -37.8px;
+            margin-right: -37.8px;
+            width: calc(100% + 75.6px);
         ">
                     <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.6rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
                         🧪 Experiment Results
@@ -2579,6 +2582,9 @@ Format your response with clear sections, use bullet points, and be specific wit
                     color: #ffffff;
                     line-height: 1.8;
                     box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
+                    margin-left: -37.8px;
+                    margin-right: -37.8px;
+                    width: calc(100% + 75.6px);
                 ">
                     <h4 style="color: #ffd700; margin-bottom: 20px; font-size: 1.4rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
                         🤖 AI Generated Scenario Analysis
@@ -2706,6 +2712,9 @@ Be specific with numbers and percentages.`;
                     border-radius: 12px;
                     padding: 25px;
                     box-shadow: 0 10px 40px rgba(255, 0, 0, 0.3);
+                    margin-left: -37.8px;
+                    margin-right: -37.8px;
+                    width: calc(100% + 75.6px);
                 ">
                     <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.4rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
                         📊 Backtesting Results
@@ -2865,6 +2874,9 @@ Provide:
                 border-radius: 12px;
                 padding: 25px;
                 box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
+                margin-left: -37.8px;
+                margin-right: -37.8px;
+                width: calc(100% + 75.6px);
             ">
                 <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.4rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
                     🎯 Strategy Optimization Results
@@ -3022,6 +3034,9 @@ Be specific with numbers, percentages, and price levels.`;
                     border-radius: 12px;
                     padding: 25px;
                     box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
+                    margin-left: -37.8px;
+                    margin-right: -37.8px;
+                    width: calc(100% + 75.6px);
                 ">
                     <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.4rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
                         🔮 Predictive Analytics: ${coin}
