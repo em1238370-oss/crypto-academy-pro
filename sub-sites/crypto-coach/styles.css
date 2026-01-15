@@ -1639,7 +1639,6 @@ div:has-text("Experience Points") {
     padding: 0 !important;
 }
 
-/* Кастомный слайдер без видимой ручки - только синяя линия */
 #priceChange {
     display: block !important;
     margin: 0 auto !important;
@@ -1647,55 +1646,6 @@ div:has-text("Experience Points") {
     width: 100% !important;
     max-width: 600px !important;
     position: relative !important;
-    height: 8px !important;
-    -webkit-appearance: none !important;
-    appearance: none !important;
-    background: rgba(255, 255, 255, 0.3) !important;
-    border-radius: 5px !important;
-    outline: none !important;
-    cursor: pointer !important;
-}
-
-/* Убираем стандартную ручку в Chrome/Safari */
-#priceChange::-webkit-slider-thumb {
-    -webkit-appearance: none !important;
-    appearance: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent !important;
-    cursor: pointer !important;
-    border: none !important;
-}
-
-/* Убираем стандартную ручку в Firefox */
-#priceChange::-moz-range-thumb {
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent !important;
-    cursor: pointer !important;
-    border: none !important;
-}
-
-/* Синяя линия прогресса для Chrome/Safari */
-#priceChange::-webkit-slider-runnable-track {
-    width: 100% !important;
-    height: 8px !important;
-    background: linear-gradient(to right, #0066ff 0%, #0066ff var(--progress, 0%), rgba(255, 255, 255, 0.3) var(--progress, 0%), rgba(255, 255, 255, 0.3) 100%) !important;
-    border-radius: 5px !important;
-}
-
-/* Синяя линия прогресса для Firefox */
-#priceChange::-moz-range-track {
-    width: 100% !important;
-    height: 8px !important;
-    background: rgba(255, 255, 255, 0.3) !important;
-    border-radius: 5px !important;
-}
-
-#priceChange::-moz-range-progress {
-    height: 8px !important;
-    background: #0066ff !important;
-    border-radius: 5px !important;
 }
 
 .price-change-slider-container label,
@@ -1715,7 +1665,6 @@ div:has-text("Experience Points") {
     max-width: 600px !important;
     margin: 0 auto !important;
     padding: 0 !important;
-    position: relative !important;
 }
 
 .section-box {

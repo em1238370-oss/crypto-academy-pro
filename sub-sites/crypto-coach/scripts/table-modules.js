@@ -2077,57 +2077,33 @@ async function generateDetailedScenario(type, currentPrice, coinSymbol) {
 function updateCorrelations() {
     const enabled = document.getElementById('correlationsEnabled')?.checked || false;
     const coin = document.getElementById('experimentCoin')?.value || 'BTC';
-    const priceChange = parseFloat(document.getElementById('priceChange')?.value || 0);
+    const priceChange = parseInt(document.getElementById('priceChange')?.value || 0);
     const suggestionsDiv = document.getElementById('correlationsSuggestions');
-    const correlationsDisplay = document.getElementById('correlationsDisplay');
-    const correlationsText = document.getElementById('correlationsText');
 
-    // Обновляем отображение в блоке Smart Correlations (если он есть)
-    if (suggestionsDiv) {
-        if (!enabled || priceChange === 0) {
-            suggestionsDiv.innerHTML = '';
-        } else {
-            const correlations = {
-                'BTC': { 'ETH': -1.4, 'SOL': -2.25, 'BNB': -1.65, 'ADA': -1.2, 'XRP': -1.1, 'AVAX': -1.8, 'DOGE': -1.3, 'SUI': -2.0, 'TON': -1.5 },
-                'ETH': { 'BTC': -0.7, 'SOL': -1.6, 'BNB': -1.2, 'ADA': -1.1, 'AVAX': -1.4, 'ARB': -1.8, 'UNI': -1.6 },
-                'SOL': { 'BTC': -0.44, 'ETH': -0.625, 'BNB': -0.75, 'SUI': -1.5, 'WIF': -2.2, 'PEPE': -1.8 }
-            };
-            
-            const coinCorrelations = correlations[coin] || {};
-            const suggestions = Object.entries(coinCorrelations).map(([asset, multiplier]) => {
-                const suggestedChange = (priceChange * multiplier).toFixed(2);
-                return `${asset}: ${suggestedChange > 0 ? '+' : ''}${suggestedChange}%`;
-            }).join(', ');
-            
-            suggestionsDiv.innerHTML = `<div style="color: #00ff00; font-weight: bold;">💡 Expected changes: ${suggestions}</div>`;
-        }
+    if (!suggestionsDiv) return;
+
+    if (!enabled || priceChange === 0) {
+        suggestionsDiv.innerHTML = '';
+        return;
     }
-    
-    // Обновляем отображение прямо под слайдером
-    if (correlationsDisplay && correlationsText) {
-        if (priceChange !== 0) {
-            const correlations = {
-                'BTC': { 'ETH': -1.4, 'SOL': -2.25, 'BNB': -1.65, 'ADA': -1.2, 'XRP': -1.1, 'AVAX': -1.8, 'DOGE': -1.3, 'SUI': -2.0, 'TON': -1.5 },
-                'ETH': { 'BTC': -0.7, 'SOL': -1.6, 'BNB': -1.2, 'ADA': -1.1, 'AVAX': -1.4, 'ARB': -1.8, 'UNI': -1.6 },
-                'SOL': { 'BTC': -0.44, 'ETH': -0.625, 'BNB': -0.75, 'SUI': -1.5, 'WIF': -2.2, 'PEPE': -1.8 }
-            };
-            
-            const coinCorrelations = correlations[coin] || {};
-            const topSuggestions = Object.entries(coinCorrelations).slice(0, 3).map(([asset, multiplier]) => {
-                const suggestedChange = (priceChange * multiplier).toFixed(2);
-                return `${asset} ${suggestedChange > 0 ? '+' : ''}${suggestedChange}%`;
-            }).join(', ');
-            
-            if (topSuggestions) {
-                correlationsText.textContent = `💡 AI suggests correlations: ${topSuggestions}`;
-                correlationsDisplay.style.display = 'block';
-            } else {
-                correlationsDisplay.style.display = 'none';
-            }
-        } else {
-            correlationsDisplay.style.display = 'none';
-        }
-    }
+
+    const correlations = {
+        'BTC': { 'ETH': -1.4, 'SOL': -2.25, 'BNB': -1.65, 'ADA': -1.2, 'XRP': -1.1, 'AVAX': -1.8, 'DOGE': -1.3, 'SUI': -2.0, 'TON': -1.5 },
+        'ETH': { 'BTC': -0.7, 'SOL': -1.6, 'BNB': -1.2, 'ADA': -1.1, 'AVAX': -1.4, 'ARB': -1.8, 'UNI': -1.6 },
+        'SOL': { 'BTC': -0.44, 'ETH': -0.625, 'BNB': -0.75, 'SUI': -1.5, 'WIF': -2.2, 'PEPE': -1.8 }
+    };
+
+    const coinCorrelations = correlations[coin] || {};
+    const suggestions = Object.entries(coinCorrelations).map(([asset, multiplier]) => {
+        const suggestedChange = Math.round(priceChange * multiplier);
+        return `${asset}: ${suggestedChange}%`;
+    }).join(' | ');
+
+    suggestionsDiv.innerHTML = `
+        <strong style="color: #00ff00;">💡 AI suggests correlations:</strong><br>
+        ${suggestions}<br>
+        <small style="color: #888;">Based on historical data</small>
+    `;
 }
 
 function shareExperiment() {
