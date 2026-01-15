@@ -1614,10 +1614,26 @@ div:has-text("Experience Points") {
 }
 
 /* Центрирование слайдера Price Change */
+.form-group:has(#priceChange) {
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+
 #priceChange {
     display: block !important;
     margin: 0 auto !important;
     text-align: center !important;
+    width: 100% !important;
+    max-width: 600px !important;
+}
+
+.form-group:has(#priceChange) label {
+    text-align: center !important;
+    width: 100% !important;
+    display: block !important;
 }
 
 .section-box {
