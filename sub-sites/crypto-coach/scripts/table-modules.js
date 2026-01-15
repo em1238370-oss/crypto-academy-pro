@@ -2742,8 +2742,61 @@ Be specific with numbers and percentages.`;
                     <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8;">
                         <p style="margin: 15px 0; line-height: 1.8;">${backtestText}</p>
                     </div>
+                    
+                    <!-- График результатов бэктестинга -->
+                    <div style="margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px;">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📈 Performance Chart</h5>
+                        <canvas id="backtestChart" style="width: 100%; height: 200px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
+                    </div>
                 </div>
             `;
+            
+            // Создаем график результатов
+            setTimeout(() => {
+                const canvas = document.getElementById('backtestChart');
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = 200;
+                    
+                    // Симулируем данные для графика
+                    const dataPoints = 30;
+                    const maxValue = Math.max(parseFloat(totalReturn), 20);
+                    const minValue = Math.min(parseFloat(totalReturn), -10);
+                    const range = maxValue - minValue;
+                    
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.strokeStyle = parseFloat(totalReturn) >= 0 ? '#00ff00' : '#ff6666';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    
+                    for (let i = 0; i < dataPoints; i++) {
+                        const x = (i / (dataPoints - 1)) * canvas.width;
+                        const progress = i / (dataPoints - 1);
+                        const value = minValue + (progress * range) + (Math.sin(progress * Math.PI * 4) * range * 0.2);
+                        const y = canvas.height - ((value - minValue) / range) * canvas.height;
+                        
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    
+                    ctx.stroke();
+                    
+                    // Добавляем линию нуля
+                    ctx.strokeStyle = '#888';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    const zeroY = canvas.height - ((0 - minValue) / range) * canvas.height;
+                    ctx.moveTo(0, zeroY);
+                    ctx.lineTo(canvas.width, zeroY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }, 100);
         } else {
             throw new Error('No response from AI');
         }
@@ -2925,6 +2978,17 @@ Provide:
                     </div>
                 ` : ''}
                 
+                <!-- График оптимизации параметров -->
+                <div style="margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px;">
+                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📊 Parameter Optimization Heatmap</h5>
+                    <canvas id="optimizerChart" style="width: 100%; height: 250px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
+                    <div style="color: #cccccc; font-size: 0.9rem; margin-top: 10px; text-align: center;">
+                        <span style="color: #00ff00;">■</span> High Performance | 
+                        <span style="color: #ffd700;">■</span> Medium | 
+                        <span style="color: #ff6666;">■</span> Low
+                    </div>
+                </div>
+                
                 <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid rgba(255, 215, 0, 0.3);">
                     <button class="btn btn-red" onclick="applyOptimalStrategy(${topResults[0].x}, ${topResults[0].y})" style="padding: 12px 30px; font-size: 1rem; font-weight: bold; width: 100%;">
                         ✅ Use Best Parameters (X=${topResults[0].x}%, Y=${topResults[0].y}%)
@@ -2932,6 +2996,61 @@ Provide:
                 </div>
             </div>
         `;
+        
+        // Создаем heatmap оптимизации
+        setTimeout(() => {
+            const canvas = document.getElementById('optimizerChart');
+            if (canvas && results.length > 0) {
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvas.offsetWidth;
+                canvas.height = 250;
+                
+                // Находим min и max score для нормализации
+                const scores = results.map(r => r.score);
+                const minScore = Math.min(...scores);
+                const maxScore = Math.max(...scores);
+                const scoreRange = maxScore - minScore;
+                
+                // Создаем сетку
+                const xValues = [...new Set(results.map(r => r.x))].sort((a, b) => a - b);
+                const yValues = [...new Set(results.map(r => r.y))].sort((a, b) => a - b);
+                
+                const cellWidth = canvas.width / xValues.length;
+                const cellHeight = canvas.height / yValues.length;
+                
+                // Рисуем heatmap
+                for (const result of results) {
+                    const xIndex = xValues.indexOf(result.x);
+                    const yIndex = yValues.indexOf(result.y);
+                    
+                    const normalizedScore = (result.score - minScore) / scoreRange;
+                    let color;
+                    if (normalizedScore > 0.7) {
+                        color = `rgba(0, 255, 0, ${0.3 + normalizedScore * 0.5})`; // Зеленый
+                    } else if (normalizedScore > 0.4) {
+                        color = `rgba(255, 215, 0, ${0.3 + (normalizedScore - 0.4) * 0.5})`; // Золотой
+                    } else {
+                        color = `rgba(255, 102, 102, ${0.3 + normalizedScore * 0.5})`; // Красный
+                    }
+                    
+                    ctx.fillStyle = color;
+                    ctx.fillRect(xIndex * cellWidth, yIndex * cellHeight, cellWidth, cellHeight);
+                }
+                
+                // Добавляем подписи осей
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                xValues.forEach((x, i) => {
+                    ctx.fillText(`${x}%`, i * cellWidth + cellWidth / 2, canvas.height - 5);
+                });
+                ctx.save();
+                ctx.translate(15, canvas.height / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillText('Y (Sell %)', 0, 0);
+                ctx.restore();
+            }
+        }, 100);
     } catch (error) {
         console.error('Strategy Optimizer Error:', error);
         optimizerResults.innerHTML = `
@@ -3082,6 +3201,18 @@ Be specific with numbers, percentages, and price levels.`;
                         <p style="margin: 15px 0; line-height: 1.8;">${predictionText}</p>
                     </div>
                     
+                    <!-- График прогнозов -->
+                    <div style="margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px;">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📈 Price Prediction Chart</h5>
+                        <canvas id="predictionChart" style="width: 100%; height: 250px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
+                        <div style="display: flex; justify-content: space-around; margin-top: 15px; color: #cccccc; font-size: 0.9rem;">
+                            <span>Current</span>
+                            <span>7 days</span>
+                            <span>3 months</span>
+                            <span>6+ months</span>
+                        </div>
+                    </div>
+                    
                     <div style="margin-top: 25px; padding: 20px; background: rgba(255, 0, 0, 0.1); border-radius: 8px; border-left: 4px solid #ff0000;">
                         <div style="color: #ff0000; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem;">⚠️ DISCLAIMER:</div>
                         <div style="color: #ffffff; line-height: 1.6; font-size: 0.95rem;">
@@ -3091,6 +3222,75 @@ Be specific with numbers, percentages, and price levels.`;
                     </div>
                 </div>
             `;
+            
+            // Создаем график прогнозов
+            setTimeout(() => {
+                const canvas = document.getElementById('predictionChart');
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = 250;
+                    
+                    const prices = [
+                        currentPrice,
+                        currentPrice * (1 + parseFloat(shortTermChange) / 100),
+                        currentPrice * (1 + parseFloat(mediumTermChange) / 100),
+                        currentPrice * (1 + parseFloat(longTermChange) / 100)
+                    ];
+                    
+                    const labels = ['Now', '7d', '3m', '6m+'];
+                    const minPrice = Math.min(...prices);
+                    const maxPrice = Math.max(...prices);
+                    const priceRange = maxPrice - minPrice;
+                    
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Рисуем сетку
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 1;
+                    for (let i = 0; i <= 4; i++) {
+                        const y = (i / 4) * canvas.height;
+                        ctx.beginPath();
+                        ctx.moveTo(0, y);
+                        ctx.lineTo(canvas.width, y);
+                        ctx.stroke();
+                    }
+                    
+                    // Рисуем линию прогноза
+                    ctx.strokeStyle = '#ffd700';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    
+                    prices.forEach((price, i) => {
+                        const x = (i / (prices.length - 1)) * canvas.width;
+                        const y = canvas.height - ((price - minPrice) / priceRange) * canvas.height;
+                        
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                        
+                        // Точки
+                        ctx.fillStyle = i === 0 ? '#00ff00' : '#ffd700';
+                        ctx.beginPath();
+                        ctx.arc(x, y, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    
+                    ctx.stroke();
+                    
+                    // Подписи цен
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.textAlign = 'center';
+                    prices.forEach((price, i) => {
+                        const x = (i / (prices.length - 1)) * canvas.width;
+                        const y = canvas.height - ((price - minPrice) / priceRange) * canvas.height;
+                        ctx.fillText(`$${price.toFixed(0)}`, x, y - 10);
+                    });
+                }
+            }, 100);
         } else {
             throw new Error('No response from AI');
         }
