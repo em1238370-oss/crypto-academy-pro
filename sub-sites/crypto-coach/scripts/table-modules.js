@@ -1994,7 +1994,22 @@ function updatePriceChangeDisplay() {
     const slider = document.getElementById('priceChange');
     if (!slider) return;
     
-    const value = slider.value || 0;
+    const value = parseFloat(slider.value || 0);
+    const priceChangeValue = document.getElementById('priceChangeValue');
+    
+    // Обновляем отображение процентов над полоской (с плюсом/минусом)
+    if (priceChangeValue) {
+        if (value > 0) {
+            priceChangeValue.textContent = '+' + value + '%';
+            priceChangeValue.style.color = '#00ff00'; // Зелёный для плюса
+        } else if (value < 0) {
+            priceChangeValue.textContent = value + '%'; // Минус уже есть в значении
+            priceChangeValue.style.color = '#ff6666'; // Красный для минуса
+        } else {
+            priceChangeValue.textContent = '0%';
+            priceChangeValue.style.color = '#0066ff'; // Синий для нуля
+        }
+    }
     
     // Обновляем синюю линию прогресса
     const min = parseFloat(slider.min) || -70;
