@@ -683,11 +683,14 @@
                                        <div id="correlationsSuggestions" style="margin-top: 10px; font-size: 0.9rem; color: #00ff00; padding: 10px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></div>
                                    </div>
                                    <div class="form-group price-change-slider-container">
-                                       <div style="display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; margin: 0 auto !important;">
-                                           <input type="range" id="priceChange" min="-70" max="200" value="0" oninput="updatePriceChangeDisplay(); updateCorrelations()" style="width: 100% !important; max-width: 600px !important; margin: 0 auto !important; display: block !important;">
+                                       <div style="display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; margin: 0 auto !important; position: relative !important;">
+                                           <input type="range" id="priceChange" min="-70" max="200" value="0" oninput="updatePriceChangeDisplay(); updateCorrelations()" onmousemove="updatePriceChangeDisplay()" ontouchmove="updatePriceChangeDisplay()" style="width: 100% !important; max-width: 600px !important; margin: 0 auto !important; display: block !important;">
                                        </div>
-                                       <div style="text-align: center !important; margin-top: 10px !important; color: #ff6666 !important; font-weight: bold !important;">
-                                           Price Change: <span id="priceChangeValue">0%</span>
+                                       <div id="priceChangeDisplay" style="text-align: center !important; margin-top: 15px !important; color: #ff6666 !important; font-weight: bold !important; font-size: 1.1rem !important;">
+                                           Price Change: <span id="priceChangeValue" style="color: #0066ff !important; font-size: 1.3rem !important;">0%</span>
+                                       </div>
+                                       <div id="correlationsDisplay" style="text-align: center !important; margin-top: 15px !important; color: #00ff00 !important; font-size: 0.95rem !important; display: none !important;">
+                                           <span id="correlationsText"></span>
                                        </div>
                                    </div>
                                    <button class="btn btn-red" onclick="runExperiment()">Run Experiment</button>
