@@ -1619,7 +1619,9 @@ div:has-text("Experience Points") {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
+    justify-content: center !important;
     width: 100% !important;
+    margin: 0 auto !important;
 }
 
 #priceChange {
@@ -1628,12 +1630,22 @@ div:has-text("Experience Points") {
     text-align: center !important;
     width: 100% !important;
     max-width: 600px !important;
+    position: relative !important;
 }
 
 .form-group:has(#priceChange) label {
     text-align: center !important;
     width: 100% !important;
     display: block !important;
+    margin: 0 auto !important;
+}
+
+.form-group:has(#priceChange) > div {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin: 0 auto !important;
 }
 
 .section-box {
