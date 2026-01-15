@@ -2032,8 +2032,36 @@ function showAICorrelations() {
     // Показываем только если значение не 0
     if (value !== 0) {
         displayDiv.style.display = 'block';
-        // Обновляем корреляции через существующую функцию
-        // updateCorrelations обновит correlationsSuggestions, а мы показываем наш блок
+        
+        // Получаем выбранную монету
+        const coin = document.getElementById('experimentCoin')?.value || 'BTC';
+        const priceChange = parseFloat(value);
+        
+        // Данные корреляций (как в updateCorrelations)
+        const correlations = {
+            'BTC': { 'ETH': -1.4, 'SOL': -2.25, 'BNB': -1.65, 'ADA': -1.2, 'XRP': -1.1, 'AVAX': -1.8, 'DOGE': -1.3, 'SUI': -2.0, 'TON': -1.5 },
+            'ETH': { 'BTC': -0.7, 'SOL': -1.6, 'BNB': -1.2, 'ADA': -1.1, 'AVAX': -1.4, 'ARB': -1.8, 'UNI': -1.6 },
+            'SOL': { 'BTC': -0.44, 'ETH': -0.625, 'BNB': -0.75, 'SUI': -1.5, 'WIF': -2.2, 'PEPE': -1.8 }
+        };
+        
+        const coinCorrelations = correlations[coin] || {};
+        const suggestions = Object.entries(coinCorrelations).map(([asset, multiplier]) => {
+            const suggestedChange = Math.round(priceChange * multiplier);
+            return `${asset}: ${suggestedChange}%`;
+        }).join(' | ');
+        
+        // Обновляем содержимое блока зелёным цветом
+        displayDiv.innerHTML = `
+            <div style="color: #00ff00 !important; font-weight: bold !important; font-size: 1rem !important; margin-bottom: 10px;">
+                💡 AI suggests correlations:
+            </div>
+            <div style="color: #00ff00 !important; font-size: 0.95rem !important; line-height: 1.6;">
+                ${suggestions}
+            </div>
+            <div style="color: #888 !important; font-size: 0.85rem !important; margin-top: 8px;">
+                Based on historical data
+            </div>
+        `;
     } else {
         displayDiv.style.display = 'none';
     }
