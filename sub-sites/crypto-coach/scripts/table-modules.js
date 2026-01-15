@@ -1953,6 +1953,7 @@ function checkPaymentStatus() {
 // Fetch real-time price for Module C
 async function getRealTimePrice(coinSymbol) {
     try {
+        console.log(`Fetching real-time price for ${coinSymbol}...`);
         const response = await fetch(`${LIVECOINWATCH_URL}/${coinSymbol}`, {
             method: 'POST',
             headers: {
@@ -1965,10 +1966,26 @@ async function getRealTimePrice(coinSymbol) {
             })
         });
         
+        if (!response.ok) {
+            console.error(`API error for ${coinSymbol}:`, response.status, response.statusText);
+            throw new Error(`API returned ${response.status}`);
+        }
+        
         const data = await response.json();
-        return data.rate || null;
+        console.log(`Price data for ${coinSymbol}:`, data);
+        
+        // LiveCoinWatch возвращает цену в поле 'rate'
+        const price = data.rate || data.price || null;
+        
+        if (price) {
+            console.log(`✅ Real-time price for ${coinSymbol}: $${price}`);
+            return price;
+        } else {
+            console.warn(`⚠️ No price found in response for ${coinSymbol}:`, data);
+            return null;
+        }
     } catch (e) {
-        console.log(`Could not fetch price for ${coinSymbol}`);
+        console.error(`❌ Error fetching price for ${coinSymbol}:`, e);
         return null;
     }
 }
@@ -2238,11 +2255,25 @@ async function runExperiment() {
 
     // Показываем блок результатов
     resultsDiv.style.display = 'block';
-    analysisDiv.innerHTML = '<em style="color: #ff6666;">🔄 Getting current coin price...</em>';
+    analysisDiv.innerHTML = `<div style="color: #ffd700; padding: 20px; text-align: center; font-size: 1.1rem;"><div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Getting real-time price for ${coin}...</div>`;
 
-    // Получаем текущую цену монеты
+    // Получаем текущую цену монеты через API
+    console.log(`Fetching real-time price for ${coin}...`);
     const currentPrice = await getRealTimePrice(coin);
-    const displayPrice = currentPrice || 50000;
+    
+    if (!currentPrice) {
+        // Если не удалось получить цену, показываем ошибку
+        analysisDiv.innerHTML = `
+            <div style="color: #ff6666; padding: 20px; background: rgba(255, 0, 0, 0.1); border-radius: 8px; border-left: 4px solid #ff0000;">
+                <strong>⚠️ Error:</strong> Could not fetch real-time price for ${coin}.<br>
+                Please try again or check your internet connection.
+            </div>
+        `;
+        return;
+    }
+    
+    const displayPrice = currentPrice;
+    console.log(`✅ Using real-time price for ${coin}: $${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
     
     // Рассчитываем новую цену
     const newPrice = displayPrice * (1 + priceChange / 100);

@@ -689,6 +689,19 @@
                                    <button class="btn btn-red" onclick="runExperiment()">Run Experiment</button>
                                </div>
 
+                               <!-- Результаты эксперимента - перемещены сразу после кнопки -->
+                               <div class="section-box" id="experimentResults" style="display: none; margin-top: 20px;">
+                                   <h4>🔴 Live Result with AI Advice</h4>
+                                   <div class="result-box" id="experimentAnalysis"></div>
+                                   <div class="result-box" id="aiAdviceBox" style="background: rgba(255, 165, 0, 0.2); border-color: #ffa500; margin-top: 15px;"></div>
+                                   <div class="chart-container" id="experimentChart">Graphic visualization will appear here</div>
+                                   <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                                       <button class="btn btn-black" onclick="saveExperiment()">Save to Archive</button>
+                                       <button class="btn btn-black" onclick="shareExperiment()">Share</button>
+                                       <button class="btn btn-black" onclick="createBotStrategy()">Create Bot</button>
+                                   </div>
+                               </div>
+
                                <!-- NEW FUNCTIONS: Backtesting Engine, Strategy Optimizer, Predictive Analytics -->
                                <div class="section-box" style="margin-top: 20px;">
                                    <h4>📊 Backtesting Engine</h4>
@@ -752,18 +765,6 @@
                                    </div>
                                    <button class="btn btn-red" onclick="loadPredictiveDashboard()">📊 Load Predictions</button>
                                    <div id="predictiveDashboard" style="margin-top: 20px; display: none;"></div>
-                               </div>
-
-                               <div class="section-box" id="experimentResults" style="display: none;">
-                                   <h4>🔴 Live Result with AI Advice</h4>
-                                   <div class="result-box" id="experimentAnalysis"></div>
-                                   <div class="result-box" id="aiAdviceBox" style="background: rgba(255, 165, 0, 0.2); border-color: #ffa500; margin-top: 15px;"></div>
-                                   <div class="chart-container" id="experimentChart">Graphic visualization will appear here</div>
-                                   <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
-                                       <button class="btn btn-black" onclick="saveExperiment()">Save to Archive</button>
-                                       <button class="btn btn-black" onclick="shareExperiment()">Share</button>
-                                       <button class="btn btn-black" onclick="createBotStrategy()">Create Bot</button>
-                                   </div>
                                </div>
 
                                <div class="section-box">
