@@ -1469,13 +1469,14 @@ async function savePortfolio() {
         try {
             for (const coin of portfolioComposition) {
                 try {
-                    const priceResponse = await fetch(`${LIVECOINWATCH_URL}/${coin.symbol}`, {
+                    const priceResponse = await fetch('https://api.livecoinwatch.com/coins/single', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'x-api-key': LIVECOINWATCH_KEY
                         },
                         body: JSON.stringify({
+                            code: coin.symbol,
                             currency: 'USD',
                             meta: true
                         })
@@ -1593,13 +1594,14 @@ async function loadPortfolioGraph(portfolioName) {
         try {
             for (const coin of portfolioComposition) {
                 try {
-                    const priceResponse = await fetch(`${LIVECOINWATCH_URL}/${coin.symbol}`, {
+                    const priceResponse = await fetch('https://api.livecoinwatch.com/coins/single', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'x-api-key': LIVECOINWATCH_KEY
                         },
                         body: JSON.stringify({
+                            code: coin.symbol,
                             currency: 'USD',
                             meta: true
                         })
@@ -1987,9 +1989,6 @@ const FALLBACK_PRICES = {
     'MYX': 0.1,
     'ATOM': 8,
     'VIRTAUL': 0.01
-    'SEI': 0.5,
-    'GALA': 0.04,
-    'ATOM': 10
 };
 
 // Fetch real-time price for Module C
@@ -1997,14 +1996,17 @@ async function getRealTimePrice(coinSymbol) {
     try {
         console.log(`🔄 Fetching REAL-TIME price for ${coinSymbol} from LiveCoinWatch API...`);
         
-        // Убеждаемся, что используем правильный формат запроса для LiveCoinWatch
-        const response = await fetch(`${LIVECOINWATCH_URL}/${coinSymbol}`, {
+        // ПРАВИЛЬНЫЙ формат запроса для LiveCoinWatch API:
+        // URL: https://api.livecoinwatch.com/coins/single (БЕЗ символа монеты в URL!)
+        // Body: { "code": "BTC", "currency": "USD", "meta": true }
+        const response = await fetch('https://api.livecoinwatch.com/coins/single', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'x-api-key': LIVECOINWATCH_KEY
             },
             body: JSON.stringify({
+                code: coinSymbol,  // Символ монеты в теле запроса, а не в URL!
                 currency: 'USD',
                 meta: true
             })
@@ -2013,34 +2015,6 @@ async function getRealTimePrice(coinSymbol) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`❌ API error for ${coinSymbol}:`, response.status, response.statusText, errorText);
-            
-            // Пробуем альтернативный способ получения цены через другой endpoint
-            try {
-                console.log(`🔄 Trying alternative method for ${coinSymbol}...`);
-                const altResponse = await fetch(`https://api.livecoinwatch.com/coins/single`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-key': LIVECOINWATCH_KEY
-                    },
-                    body: JSON.stringify({
-                        code: coinSymbol,
-                        currency: 'USD',
-                        meta: true
-                    })
-                });
-                
-                if (altResponse.ok) {
-                    const altData = await altResponse.json();
-                    const altPrice = altData.rate || altData.price || null;
-                    if (altPrice) {
-                        console.log(`✅ Real-time price for ${coinSymbol} (alternative method): $${altPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
-                        return altPrice;
-                    }
-                }
-            } catch (altError) {
-                console.error(`❌ Alternative method also failed for ${coinSymbol}:`, altError);
-            }
             
             // Use fallback price if API fails
             const fallbackPrice = FALLBACK_PRICES[coinSymbol];
