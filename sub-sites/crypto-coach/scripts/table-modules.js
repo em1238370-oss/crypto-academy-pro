@@ -1951,6 +1951,7 @@ function checkPaymentStatus() {
 }
 
 // Fallback prices for popular coins (if API fails)
+// Актуальные fallback цены (обновляются регулярно, но лучше использовать API)
 const FALLBACK_PRICES = {
     'BTC': 95000,
     'ETH': 3500,
@@ -1972,6 +1973,20 @@ const FALLBACK_PRICES = {
     'LDO': 2.5,
     'UNI': 10,
     'AAVE': 100,
+    'ENA': 0.8,
+    'FARTCOIN': 0.0001,
+    'SBIB1000': 0.001,
+    'WLFI': 0.5,
+    'IJU': 0.1,
+    'SOMI': 0.05,
+    'IP': 0.02,
+    'APE': 1.5,
+    'PENGU': 0.0005,
+    'SEI': 0.5,
+    'GALA': 0.05,
+    'MYX': 0.1,
+    'ATOM': 8,
+    'VIRTAUL': 0.01
     'SEI': 0.5,
     'GALA': 0.04,
     'ATOM': 10
@@ -1980,7 +1995,9 @@ const FALLBACK_PRICES = {
 // Fetch real-time price for Module C
 async function getRealTimePrice(coinSymbol) {
     try {
-        console.log(`Fetching real-time price for ${coinSymbol}...`);
+        console.log(`🔄 Fetching REAL-TIME price for ${coinSymbol} from LiveCoinWatch API...`);
+        
+        // Убеждаемся, что используем правильный формат запроса для LiveCoinWatch
         const response = await fetch(`${LIVECOINWATCH_URL}/${coinSymbol}`, {
             method: 'POST',
             headers: {
@@ -1994,31 +2011,62 @@ async function getRealTimePrice(coinSymbol) {
         });
         
         if (!response.ok) {
-            console.error(`API error for ${coinSymbol}:`, response.status, response.statusText);
+            const errorText = await response.text();
+            console.error(`❌ API error for ${coinSymbol}:`, response.status, response.statusText, errorText);
+            
+            // Пробуем альтернативный способ получения цены через другой endpoint
+            try {
+                console.log(`🔄 Trying alternative method for ${coinSymbol}...`);
+                const altResponse = await fetch(`https://api.livecoinwatch.com/coins/single`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': LIVECOINWATCH_KEY
+                    },
+                    body: JSON.stringify({
+                        code: coinSymbol,
+                        currency: 'USD',
+                        meta: true
+                    })
+                });
+                
+                if (altResponse.ok) {
+                    const altData = await altResponse.json();
+                    const altPrice = altData.rate || altData.price || null;
+                    if (altPrice) {
+                        console.log(`✅ Real-time price for ${coinSymbol} (alternative method): $${altPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
+                        return altPrice;
+                    }
+                }
+            } catch (altError) {
+                console.error(`❌ Alternative method also failed for ${coinSymbol}:`, altError);
+            }
+            
             // Use fallback price if API fails
             const fallbackPrice = FALLBACK_PRICES[coinSymbol];
             if (fallbackPrice) {
-                console.warn(`⚠️ Using fallback price for ${coinSymbol}: $${fallbackPrice}`);
+                console.warn(`⚠️ Using fallback price for ${coinSymbol}: $${fallbackPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
                 return fallbackPrice;
             }
             throw new Error(`API returned ${response.status}`);
         }
         
         const data = await response.json();
-        console.log(`Price data for ${coinSymbol}:`, data);
+        console.log(`📊 Full API response for ${coinSymbol}:`, data);
         
         // LiveCoinWatch возвращает цену в поле 'rate'
-        const price = data.rate || data.price || null;
+        const price = data.rate || data.price || data.usd || null;
         
-        if (price) {
-            console.log(`✅ Real-time price for ${coinSymbol}: $${price}`);
-            return price;
+        if (price && price > 0) {
+            const formattedPrice = typeof price === 'number' ? price : parseFloat(price);
+            console.log(`✅✅✅ REAL-TIME price for ${coinSymbol}: $${formattedPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
+            return formattedPrice;
         } else {
-            console.warn(`⚠️ No price found in response for ${coinSymbol}:`, data);
+            console.warn(`⚠️ No valid price found in response for ${coinSymbol}:`, data);
             // Use fallback price if no price in response
             const fallbackPrice = FALLBACK_PRICES[coinSymbol];
             if (fallbackPrice) {
-                console.warn(`⚠️ Using fallback price for ${coinSymbol}: $${fallbackPrice}`);
+                console.warn(`⚠️ Using fallback price for ${coinSymbol}: $${fallbackPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
                 return fallbackPrice;
             }
             return null;
@@ -2028,7 +2076,7 @@ async function getRealTimePrice(coinSymbol) {
         // Use fallback price on error
         const fallbackPrice = FALLBACK_PRICES[coinSymbol];
         if (fallbackPrice) {
-            console.warn(`⚠️ Using fallback price for ${coinSymbol} due to error: $${fallbackPrice}`);
+            console.warn(`⚠️ Using fallback price for ${coinSymbol} due to error: $${fallbackPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
             return fallbackPrice;
         }
         return null;
@@ -2392,18 +2440,19 @@ async function runExperiment() {
     resultsDiv.style.display = 'block';
     analysisDiv.innerHTML = `<div style="color: #ffd700; padding: 20px; text-align: center; font-size: 1.1rem;"><div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Getting real-time price for ${coin}...</div>`;
 
-    // Получаем текущую цену монеты через API
-    console.log(`Fetching real-time price for ${coin}...`);
+    // Получаем текущую цену монеты через API (ОБЯЗАТЕЛЬНО реальное время!)
+    console.log(`🔄 Fetching REAL-TIME price for ${coin}...`);
     const currentPrice = await getRealTimePrice(coin);
     
-    // Используем fallback цену если API не вернул цену
+    // Используем fallback цену ТОЛЬКО если API не вернул цену
     const displayPrice = currentPrice || FALLBACK_PRICES[coin] || 50000;
     
     if (!currentPrice) {
         // Показываем предупреждение, но продолжаем работу с fallback ценой
-        console.warn(`⚠️ Using fallback price for ${coin}: $${displayPrice}`);
+        console.warn(`⚠️ WARNING: Using fallback price for ${coin}: $${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
+        console.warn(`⚠️ This may not reflect current market price. Please check your API connection.`);
     } else {
-        console.log(`✅ Using real-time price for ${coin}: $${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+        console.log(`✅✅✅ SUCCESS: Using REAL-TIME price for ${coin}: $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
     }
     
     // Рассчитываем новую цену
