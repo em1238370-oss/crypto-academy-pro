@@ -5,8 +5,7 @@ function simulateStrategy(strategyDescription, period, initialBalance, fees) {
     // Анализируем описание стратегии для определения параметров
     const strategy = analyzeStrategy(strategyDescription);
     
-    // Сбрасываем глобальную переменную
-    lastEntryIndex = -10;
+    console.log('Starting simulation:', { strategy, period, initialBalance, fees });
     
     // Генерируем реалистичные исторические данные (симуляция)
     const dailyPrices = generateHistoricalPrices(period, strategy.basePrice || 95000);
@@ -18,6 +17,7 @@ function simulateStrategy(strategyDescription, period, initialBalance, fees) {
     let position = null; // { entryPrice, entryDate, entryIndex }
     let peakBalance = initialBalance;
     let maxDrawdown = 0;
+    let lastEntryIndex = -10; // Локальная переменная для отслеживания последнего входа
     
     // Проходим по каждому дню и выполняем стратегию
     for (let i = 0; i < dailyPrices.length; i++) {
@@ -26,7 +26,9 @@ function simulateStrategy(strategyDescription, period, initialBalance, fees) {
         const priceChange = i > 0 ? ((currentPrice - dailyPrices[i-1].price) / dailyPrices[i-1].price) * 100 : 0;
         
         // Логика входа (если нет открытой позиции)
-        if (!position && shouldEnter(strategy, currentPrice, priceChange, i, dailyPrices)) {
+        if (!position && shouldEnter(strategy, currentPrice, priceChange, i, dailyPrices, lastEntryIndex)) {
+            // Обновляем lastEntryIndex
+            lastEntryIndex = i;
             const positionSize = initialBalance * (strategy.positionSize || 0.5); // 50% по умолчанию
             const entryFee = positionSize * fees;
             const effectiveEntryPrice = currentPrice * (1 + fees); // Учитываем комиссию входа
@@ -57,7 +59,7 @@ function simulateStrategy(strategyDescription, period, initialBalance, fees) {
             
             currentBalance = currentBalance + netValue;
             
-            trades.push({
+            const trade = {
                 tradeNum: trades.length + 1,
                 entryDate: position.entryDate,
                 entryPrice: position.entryPrice,
@@ -69,7 +71,10 @@ function simulateStrategy(strategyDescription, period, initialBalance, fees) {
                 fees: totalFees,
                 netPnl: pnl - totalFees,
                 holdingPeriod: i - position.entryIndex
-            });
+            };
+            
+            trades.push(trade);
+            console.log('Trade closed:', trade);
             
             position = null;
         }
@@ -167,6 +172,15 @@ function simulateStrategy(strategyDescription, period, initialBalance, fees) {
             performanceByMonth[month] = 0;
         }
         performanceByMonth[month] += trade.netPnl;
+    });
+    
+    console.log('Simulation complete:', { 
+        numTrades: trades.length, 
+        winRate, 
+        totalReturn, 
+        maxDrawdown,
+        profitFactor,
+        sharpeRatio
     });
     
     return {
@@ -289,12 +303,11 @@ function generateHistoricalPrices(period, basePrice) {
 }
 
 // Определение, должен ли быть вход в позицию
-let lastEntryIndex = -10; // Отслеживаем последний вход
-
-function shouldEnter(strategy, currentPrice, priceChange, index, priceHistory) {
-    // Минимум 5 дней между входами
-    if (index - lastEntryIndex < 5) return false;
+function shouldEnter(strategy, currentPrice, priceChange, index, priceHistory, lastEntryIndex) {
+    // Минимум 3 дня между входами (уменьшил с 5 до 3 для большего количества сделок)
+    if (index - lastEntryIndex < 3) return false;
     if (index === 0) return false;
+    if (index < 5) return false; // Ждём минимум 5 дней для накопления данных
     
     // Проверяем падение цены от предыдущего максимума (скользящий максимум за последние 10 дней)
     const lookbackPeriod = Math.min(10, index);
@@ -309,13 +322,25 @@ function shouldEnter(strategy, currentPrice, priceChange, index, priceHistory) {
     
     // Входим, если цена упала на заданный процент от максимума
     if (priceDrop <= strategy.entryDrop) {
-        lastEntryIndex = index;
+        console.log('Entry triggered by price drop:', { priceDrop, entryDrop: strategy.entryDrop, index });
         return true;
     }
     
     // Альтернативная логика: вход при значительном падении за день
     if (priceChange <= strategy.entryDrop * 0.5 && index > 5) {
-        lastEntryIndex = index;
+        console.log('Entry triggered by daily drop:', { priceChange, index });
+        return true;
+    }
+    
+    // ДОПОЛНИТЕЛЬНАЯ ЛОГИКА: Если за последние 20 дней не было входа, входим при любом падении >3%
+    if (index - lastEntryIndex >= 20 && priceDrop <= -3) {
+        console.log('Entry triggered by long wait and drop:', { priceDrop, daysSinceLastEntry: index - lastEntryIndex });
+        return true;
+    }
+    
+    // ГАРАНТИРОВАННЫЙ ВХОД: Каждые 15 дней, если цена упала хотя бы на 5%
+    if (index - lastEntryIndex >= 15 && priceDrop <= -5) {
+        console.log('Entry triggered by periodic check:', { priceDrop, daysSinceLastEntry: index - lastEntryIndex });
         return true;
     }
     
