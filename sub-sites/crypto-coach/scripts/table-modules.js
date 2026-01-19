@@ -3826,5 +3826,166 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePriceChangeDisplay();
         updateRiskAppetiteDisplay();
         loadExperimentArchive();
+        loadExperimentForm(); // Load saved form data
     }, 500);
 });
+
+// ========== EXPERIMENT FORM MANAGEMENT ==========
+
+// Save form data to localStorage
+function saveExperimentForm() {
+    const formData = {
+        userDeposit: document.getElementById('userDeposit')?.value || '',
+        experimentName: document.getElementById('experimentName')?.value || '',
+        experimentCoin: document.getElementById('experimentCoin')?.value || '',
+        experimentScenario: document.getElementById('experimentScenario')?.value || '',
+        priceChange: document.getElementById('priceChange')?.value || '0'
+    };
+    localStorage.setItem('experimentFormData', JSON.stringify(formData));
+}
+
+// Load form data from localStorage
+function loadExperimentForm() {
+    const savedData = localStorage.getItem('experimentFormData');
+    if (savedData) {
+        try {
+            const formData = JSON.parse(savedData);
+            if (formData.userDeposit) document.getElementById('userDeposit').value = formData.userDeposit;
+            if (formData.experimentName) document.getElementById('experimentName').value = formData.experimentName;
+            if (formData.experimentCoin) document.getElementById('experimentCoin').value = formData.experimentCoin;
+            if (formData.experimentScenario) document.getElementById('experimentScenario').value = formData.experimentScenario;
+            if (formData.priceChange) {
+                document.getElementById('priceChange').value = formData.priceChange;
+                updatePriceChangeDisplay();
+                showAICorrelations();
+            }
+        } catch (e) {
+            console.error('Error loading form data:', e);
+        }
+    }
+}
+
+// Fill example experiment
+function fillExampleExperiment() {
+    document.getElementById('userDeposit').value = '10000';
+    document.getElementById('experimentName').value = 'BTC Drop Scenario 20%';
+    document.getElementById('experimentCoin').value = 'BTC';
+    document.getElementById('experimentScenario').value = 'What if BTC drops 20% due to negative regulatory news? How will this affect my portfolio value?';
+    document.getElementById('priceChange').value = '-20';
+    updatePriceChangeDisplay();
+    showAICorrelations();
+    saveExperimentForm();
+}
+
+// Save current experiment to history
+function saveCurrentExperiment() {
+    const experiment = {
+        id: Date.now(),
+        name: document.getElementById('experimentName')?.value || 'Unnamed Experiment',
+        coin: document.getElementById('experimentCoin')?.value || 'BTC',
+        deposit: document.getElementById('userDeposit')?.value || '10000',
+        scenario: document.getElementById('experimentScenario')?.value || '',
+        priceChange: document.getElementById('priceChange')?.value || '0',
+        timestamp: new Date().toISOString()
+    };
+    
+    let history = JSON.parse(localStorage.getItem('experimentHistory') || '[]');
+    history.unshift(experiment); // Add to beginning
+    history = history.slice(0, 20); // Keep only last 20
+    localStorage.setItem('experimentHistory', JSON.stringify(history));
+    
+    alert('✅ Experiment saved to history!');
+}
+
+// Show experiment history
+function showExperimentHistory() {
+    const history = JSON.parse(localStorage.getItem('experimentHistory') || '[]');
+    const modal = document.getElementById('experimentHistoryModal');
+    const list = document.getElementById('experimentHistoryList');
+    
+    if (!modal || !list) return;
+    
+    if (history.length === 0) {
+        list.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">No saved experiments yet. Save an experiment to see it here.</div>';
+    } else {
+        list.innerHTML = history.map(exp => {
+            const date = new Date(exp.timestamp).toLocaleString();
+            return `
+                <div style="background: rgba(255, 0, 0, 0.1); border: 1px solid rgba(255, 0, 0, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                        <div>
+                            <div style="color: #ffffff; font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">${exp.name}</div>
+                            <div style="color: #cccccc; font-size: 0.9rem;">${date}</div>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="loadExperimentFromHistory(${exp.id})" style="background: rgba(0, 255, 0, 0.2); border: 1px solid rgba(0, 255, 0, 0.4); color: #00ff00; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.85rem;">📋 Load</button>
+                            <button onclick="cloneExperimentFromHistory(${exp.id})" style="background: rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.4); color: #ffd700; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.85rem;">📑 Clone</button>
+                            <button onclick="deleteExperimentFromHistory(${exp.id})" style="background: rgba(255, 0, 0, 0.2); border: 1px solid rgba(255, 0, 0, 0.4); color: #ff6666; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.85rem;">🗑️</button>
+                        </div>
+                    </div>
+                    <div style="color: #cccccc; font-size: 0.9rem; line-height: 1.5;">
+                        <div><strong>Coin:</strong> ${exp.coin}</div>
+                        <div><strong>Deposit:</strong> $${parseFloat(exp.deposit).toLocaleString()}</div>
+                        <div><strong>Price Change:</strong> ${parseFloat(exp.priceChange) >= 0 ? '+' : ''}${exp.priceChange}%</div>
+                        ${exp.scenario ? `<div style="margin-top: 8px;"><strong>Scenario:</strong> ${exp.scenario.substring(0, 100)}${exp.scenario.length > 100 ? '...' : ''}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    modal.style.display = 'block';
+}
+
+// Close experiment history modal
+function closeExperimentHistory() {
+    const modal = document.getElementById('experimentHistoryModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Load experiment from history
+function loadExperimentFromHistory(id) {
+    const history = JSON.parse(localStorage.getItem('experimentHistory') || '[]');
+    const experiment = history.find(exp => exp.id === id);
+    
+    if (!experiment) return;
+    
+    document.getElementById('userDeposit').value = experiment.deposit;
+    document.getElementById('experimentName').value = experiment.name;
+    document.getElementById('experimentCoin').value = experiment.coin;
+    document.getElementById('experimentScenario').value = experiment.scenario || '';
+    document.getElementById('priceChange').value = experiment.priceChange;
+    updatePriceChangeDisplay();
+    showAICorrelations();
+    saveExperimentForm();
+    closeExperimentHistory();
+}
+
+// Clone experiment from history
+function cloneExperimentFromHistory(id) {
+    const history = JSON.parse(localStorage.getItem('experimentHistory') || '[]');
+    const experiment = history.find(exp => exp.id === id);
+    
+    if (!experiment) return;
+    
+    // Create a copy with new name
+    document.getElementById('userDeposit').value = experiment.deposit;
+    document.getElementById('experimentName').value = experiment.name + ' (Copy)';
+    document.getElementById('experimentCoin').value = experiment.coin;
+    document.getElementById('experimentScenario').value = experiment.scenario || '';
+    document.getElementById('priceChange').value = experiment.priceChange;
+    updatePriceChangeDisplay();
+    showAICorrelations();
+    saveExperimentForm();
+    closeExperimentHistory();
+}
+
+// Delete experiment from history
+function deleteExperimentFromHistory(id) {
+    if (!confirm('Are you sure you want to delete this experiment from history?')) return;
+    
+    let history = JSON.parse(localStorage.getItem('experimentHistory') || '[]');
+    history = history.filter(exp => exp.id !== id);
+    localStorage.setItem('experimentHistory', JSON.stringify(history));
+    showExperimentHistory(); // Refresh the list
+}
