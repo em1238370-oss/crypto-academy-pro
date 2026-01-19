@@ -4446,3 +4446,60 @@ function compareWithHistory() {
         alert('Select an experiment from history to compare with current results.');
     }, 500);
 }
+
+// ========== CUSTOM TOOLTIP WITH DELAY ==========
+
+// Инициализация tooltip при загрузке страницы
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTooltips);
+} else {
+    initTooltips();
+}
+
+// Инициализация tooltip для динамически созданных элементов
+function initTooltips() {
+    const tooltips = document.querySelectorAll('.info-tooltip');
+    tooltips.forEach(tooltip => {
+        // Удаляем старые обработчики, если есть
+        const newTooltip = tooltip.cloneNode(true);
+        tooltip.parentNode.replaceChild(newTooltip, tooltip);
+        
+        // Добавляем новые обработчики
+        newTooltip.addEventListener('mouseenter', showTooltipHandler);
+        newTooltip.addEventListener('mouseleave', hideTooltipHandler);
+    });
+}
+
+let tooltipTimeout = null;
+
+function showTooltipHandler(event) {
+    const tooltip = event.currentTarget;
+    
+    // Очищаем предыдущий таймер, если есть
+    if (tooltipTimeout) {
+        clearTimeout(tooltipTimeout);
+        tooltipTimeout = null;
+    }
+    
+    // Убираем класс, если он был
+    tooltip.classList.remove('show-tooltip');
+    
+    // Устанавливаем таймер на 2 секунды
+    tooltipTimeout = setTimeout(() => {
+        tooltip.classList.add('show-tooltip');
+        tooltipTimeout = null;
+    }, 2000);
+}
+
+function hideTooltipHandler(event) {
+    const tooltip = event.currentTarget;
+    
+    // Очищаем таймер
+    if (tooltipTimeout) {
+        clearTimeout(tooltipTimeout);
+        tooltipTimeout = null;
+    }
+    
+    // Убираем класс
+    tooltip.classList.remove('show-tooltip');
+}
