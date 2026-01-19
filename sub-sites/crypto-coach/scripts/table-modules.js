@@ -2363,6 +2363,21 @@ async function runExperiment() {
         return;
     }
 
+    // Проверка логической ошибки: соответствие названия эксперимента и Price Change
+    const nameLower = name.toLowerCase();
+    const hasDrop = nameLower.includes('drop') || nameLower.includes('fall') || nameLower.includes('crash') || nameLower.includes('decline');
+    const hasRise = nameLower.includes('rise') || nameLower.includes('bull') || nameLower.includes('growth') || nameLower.includes('pump');
+    const nameMismatch = (hasDrop && priceChange > 0) || (hasRise && priceChange < 0);
+    
+    let mismatchWarning = '';
+    if (nameMismatch) {
+        mismatchWarning = `
+            <div style="color: #ffd700; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 8px; border-left: 4px solid #ffd700; margin-bottom: 20px;">
+                <strong>⚠️ Warning:</strong> Experiment name suggests ${hasDrop ? 'a drop' : 'a rise'}, but price change is ${priceChange >= 0 ? 'positive' : 'negative'}. Please verify your settings.
+            </div>
+        `;
+    }
+
     // Находим блок результатов
     const resultsDiv = document.getElementById('experimentResults');
     const analysisDiv = document.getElementById('experimentAnalysis');
@@ -2487,23 +2502,42 @@ async function runExperiment() {
                         (${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%)
                     </td>
                 </tr>
-                ${scenario ? `
-                <tr>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; vertical-align: top; font-size: 1.2rem;">Scenario Description:</td>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; line-height: 1.6; font-size: 1.2rem;">${scenario}</td>
-                </tr>
-                ` : ''}
-                ${correlationsData ? `
-                <tr style="background: rgba(0, 255, 0, 0.1);">
-                    <td style="padding: 12px; border: 1px solid rgba(0, 255, 0, 0.3); color: #00ff00; font-weight: bold; vertical-align: top; font-size: 1.2rem;">Smart Correlations:</td>
-                    <td style="padding: 12px; border: 1px solid rgba(0, 255, 0, 0.3); color: #ffffff; line-height: 1.8; font-size: 1.2rem;">
-                        <div style="color: #00ff00; margin-bottom: 5px; font-size: 1.2rem;">💡 Expected changes in other coins:</div>
-                        <span style="font-size: 1.2rem;">${correlationsData}</span>
-                        <div style="color: #888; font-size: 1.1rem; margin-top: 8px;">Based on historical correlation data</div>
-                    </td>
-                </tr>
-                ` : ''}
-            </table>
+            <!-- Дополнительная информация (сворачиваемая) -->
+            ${scenario || correlationsData ? `
+            <div style="margin-bottom: 20px;">
+                <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.3rem; cursor: pointer; user-select: none;" onclick="toggleSection('additionalInfo')">
+                    📊 Additional Information <span id="additionalInfoIcon" style="float: right; font-size: 1rem;">▼</span>
+                </h5>
+                <div id="additionalInfoSection" style="display: none;">
+                    ${scenario ? `
+                    <div style="margin-bottom: 15px; padding: 15px; background: rgba(255, 0, 0, 0.1); border-radius: 8px; border-left: 4px solid rgba(255, 0, 0, 0.5);">
+                        <div style="color: #ffd700; font-weight: bold; margin-bottom: 8px; font-size: 1.1rem;">Scenario Description:</div>
+                        <div style="color: #ffffff; line-height: 1.6; font-size: 1.05rem;">${scenario}</div>
+                    </div>
+                    ` : ''}
+                    ${correlationsData ? `
+                    <div style="padding: 15px; background: rgba(0, 255, 0, 0.1); border-radius: 8px; border-left: 4px solid rgba(0, 255, 0, 0.5);">
+                        <div style="color: #00ff00; font-weight: bold; margin-bottom: 8px; font-size: 1.1rem;">💡 Smart Correlations:</div>
+                        <div style="color: #ffffff; line-height: 1.8; font-size: 1.05rem; margin-bottom: 8px;">${correlationsData}</div>
+                        <div style="color: #888; font-size: 0.95rem;">Based on historical correlation data</div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- Секция с объяснениями -->
+            <div style="margin-top: 25px; padding: 20px; background: rgba(255, 215, 0, 0.1); border-radius: 10px; border-left: 4px solid #ffd700;">
+                <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; cursor: pointer; user-select: none;" onclick="toggleSection('howToInterpret')">
+                    📖 How to Interpret These Results <span id="howToInterpretIcon" style="float: right; font-size: 1rem;">▼</span>
+                </h5>
+                <div id="howToInterpretSection" style="display: none; color: #ffffff; line-height: 1.8; font-size: 1rem;">
+                    <p style="margin-bottom: 12px;"><strong style="color: #ffd700;">Projected Price:</strong> This is the expected price of ${coin} after the ${priceChange >= 0 ? 'increase' : 'decrease'} you set. Calculated as: Current Price × (1 + ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%)</p>
+                    <p style="margin-bottom: 12px;"><strong style="color: #ffd700;">New Deposit Value:</strong> If you had $${userDeposit.toLocaleString('en-US')} invested in ${coin} and the price changed by ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%, your portfolio would be worth $${newDepositValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}.</p>
+                    <p style="margin-bottom: 12px;"><strong style="color: #ffd700;">Deposit Change:</strong> This shows the ${depositChange >= 0 ? 'profit' : 'loss'} you would ${depositChange >= 0 ? 'gain' : 'lose'}: $${Math.abs(depositChange).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%)</p>
+                    <p style="margin-bottom: 0;"><strong style="color: #ffd700;">⚠️ Important:</strong> This is a simulation for educational purposes only. Real market conditions may vary significantly. Always do your own research and never invest more than you can afford to lose.</p>
+                </div>
+            </div>
         </div>
     `;
 
@@ -4040,4 +4074,206 @@ function deleteExperimentFromHistory(id) {
     history = history.filter(exp => exp.id !== id);
     localStorage.setItem('experimentHistory', JSON.stringify(history));
     showExperimentHistory(); // Refresh the list
+}
+
+// ========== EXPERIMENT RESULTS MANAGEMENT ==========
+
+// Toggle section (сворачивание/разворачивание)
+function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId + 'Section');
+    const icon = document.getElementById(sectionId + 'Icon');
+    if (section && icon) {
+        if (section.style.display === 'none') {
+            section.style.display = 'block';
+            icon.textContent = '▼';
+        } else {
+            section.style.display = 'none';
+            icon.textContent = '▶';
+        }
+    }
+}
+
+// Edit price change (интерактивность)
+function editPriceChange() {
+    const currentData = window.currentExperimentData;
+    if (!currentData) {
+        alert('No experiment data available. Please run an experiment first.');
+        return;
+    }
+    
+    const newPriceChange = prompt(`Enter new price change percentage (current: ${currentData.priceChange >= 0 ? '+' : ''}${currentData.priceChange.toFixed(2)}%):`, currentData.priceChange);
+    if (newPriceChange !== null && !isNaN(newPriceChange)) {
+        const priceChangeValue = parseFloat(newPriceChange);
+        if (priceChangeValue >= -70 && priceChangeValue <= 200) {
+            document.getElementById('priceChange').value = priceChangeValue;
+            updatePriceChangeDisplay();
+            showAICorrelations();
+            // Пересчитываем эксперимент
+            recalculateExperiment();
+        } else {
+            alert('Price change must be between -70% and 200%');
+        }
+    }
+}
+
+// Recalculate experiment (пересчёт с новыми параметрами)
+function recalculateExperiment() {
+    const currentData = window.currentExperimentData;
+    if (!currentData) {
+        alert('No experiment data available. Please run an experiment first.');
+        return;
+    }
+    
+    // Обновляем данные из формы
+    const priceChange = parseFloat(document.getElementById('priceChange')?.value || currentData.priceChange);
+    const userDeposit = parseFloat(document.getElementById('userDeposit')?.value || currentData.userDeposit);
+    const coin = document.getElementById('experimentCoin')?.value || currentData.coin;
+    
+    // Пересчитываем
+    const displayPrice = currentData.displayPrice;
+    const newPrice = displayPrice * (1 + priceChange / 100);
+    const priceDifference = newPrice - displayPrice;
+    const depositChange = userDeposit * (priceChange / 100);
+    const newDepositValue = userDeposit + depositChange;
+    
+    // Обновляем данные
+    window.currentExperimentData = {
+        ...currentData,
+        priceChange,
+        userDeposit,
+        coin,
+        newPrice,
+        priceDifference,
+        depositChange,
+        newDepositValue
+    };
+    
+    // Запускаем эксперимент заново
+    runExperiment();
+}
+
+// Generate AI Advice (детальный AI совет)
+async function generateAIAdvice(coin, currentPrice, priceChange, deposit, newValue, depositChange, scenario) {
+    try {
+        const prompt = `You are a professional cryptocurrency trading advisor. Analyze this experiment scenario:
+
+Coin: ${coin}
+Current Price: $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+Price Change: ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%
+Original Deposit: $${deposit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+New Portfolio Value: $${newValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+Profit/Loss: ${depositChange >= 0 ? '+' : ''}$${Math.abs(depositChange).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+${scenario ? `Scenario: ${scenario}` : ''}
+
+Provide a detailed, professional analysis with:
+1. **Market Interpretation**: What does this price change mean?
+2. **Risk Assessment**: What are the risks in this scenario?
+3. **Actionable Recommendations**: Specific steps to take (buy/sell percentages, price levels)
+4. **Portfolio Impact**: How this affects the portfolio
+5. **Timeline Considerations**: When to act
+
+Be specific with numbers and percentages. Format with clear paragraphs and highlights.`;
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'mistral-small',
+                messages: [
+                    { role: 'system', content: 'You are a professional cryptocurrency trading advisor. Provide detailed, actionable advice with specific numbers and percentages. Always include risk warnings.' },
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0.7,
+                max_tokens: 800
+            })
+        });
+
+        const data = await response.json();
+        if (data.choices && data.choices[0]) {
+            let advice = data.choices[0].message.content.trim();
+            // Форматируем ответ для лучшей читаемости
+            advice = advice.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #ffd700;">$1</strong>');
+            advice = advice.replace(/\*(.*?)\*/g, '<em style="color: #ffaaaa;">$1</em>');
+            advice = advice.replace(/\n\n/g, '</p><p style="margin-top: 12px;">');
+            advice = '<p style="margin: 0;">' + advice + '</p>';
+            return advice;
+        }
+    } catch (e) {
+        console.error('Error generating AI advice:', e);
+    }
+    return null;
+}
+
+// Share experiment results
+function shareExperimentResults() {
+    const data = window.currentExperimentData;
+    if (!data) {
+        alert('No experiment results to share. Please run an experiment first.');
+        return;
+    }
+    
+    const shareText = `Check out my crypto experiment results!\n\n` +
+        `Coin: ${data.coin}\n` +
+        `Price Change: ${data.priceChange >= 0 ? '+' : ''}${data.priceChange.toFixed(2)}%\n` +
+        `Portfolio Change: ${data.depositChange >= 0 ? '+' : ''}$${Math.abs(data.depositChange).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}\n` +
+        `New Value: $${data.newDepositValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}\n\n` +
+        `Try it yourself at: ${window.location.href}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: `Crypto Experiment: ${data.name}`,
+            text: shareText
+        }).catch(err => console.log('Share cancelled'));
+    } else {
+        navigator.clipboard.writeText(shareText).then(() => {
+            alert('Results copied to clipboard!');
+        });
+    }
+}
+
+// Export experiment results
+function exportExperimentResults() {
+    const data = window.currentExperimentData;
+    if (!data) {
+        alert('No experiment results to export. Please run an experiment first.');
+        return;
+    }
+    
+    const exportData = {
+        experimentName: data.name,
+        coin: data.coin,
+        currentPrice: data.displayPrice,
+        priceChange: data.priceChange,
+        originalDeposit: data.userDeposit,
+        newDepositValue: data.newDepositValue,
+        depositChange: data.depositChange,
+        scenario: data.scenario || '',
+        timestamp: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `experiment_${data.name.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// Compare with history
+function compareWithHistory() {
+    const data = window.currentExperimentData;
+    if (!data) {
+        alert('No experiment results to compare. Please run an experiment first.');
+        return;
+    }
+    
+    showExperimentHistory();
+    // Можно добавить логику сравнения
+    setTimeout(() => {
+        alert('Select an experiment from history to compare with current results.');
+    }, 500);
 }

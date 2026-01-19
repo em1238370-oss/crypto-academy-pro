@@ -726,10 +726,12 @@
                                    <div class="result-box" id="experimentAnalysis" style="margin-left: 0; margin-right: 0; width: 100%;"></div>
                                    <div class="result-box" id="aiAdviceBox" style="background: rgba(255, 165, 0, 0.2); border-color: #ffa500; margin-top: 15px;"></div>
                                    <div class="chart-container" id="experimentChart">Graphic visualization will appear here</div>
-                                   <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
-                                       <button class="btn btn-black" onclick="saveExperiment()">Save to Archive</button>
-                                       <button class="btn btn-black" onclick="shareExperiment()">Share</button>
-                                       <button class="btn btn-black" onclick="createBotStrategy()">Create Bot</button>
+                                   <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; justify-content: center;">
+                                       <button class="btn btn-red" onclick="saveCurrentExperiment()" style="padding: 12px 25px; font-size: 1rem;">💾 Save to History</button>
+                                       <button class="btn btn-red" onclick="shareExperimentResults()" style="padding: 12px 25px; font-size: 1rem;">📤 Share</button>
+                                       <button class="btn btn-red" onclick="compareWithHistory()" style="padding: 12px 25px; font-size: 1rem;">📊 Compare</button>
+                                       <button class="btn btn-red" onclick="exportExperimentResults()" style="padding: 12px 25px; font-size: 1rem;">📥 Export</button>
+                                       <button class="btn btn-red" onclick="recalculateExperiment()" style="padding: 12px 25px; font-size: 1rem; background: rgba(255, 215, 0, 0.3); border-color: #ffd700;">🔄 Recalculate</button>
                                    </div>
                                </div>
 
