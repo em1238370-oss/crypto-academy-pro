@@ -3075,7 +3075,10 @@ Be specific with numbers and percentages.`;
                     margin-left: -37.8px;
                     margin-right: -37.8px;
                     width: calc(100% + 75.6px);
-                ">
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    overflow-x: hidden;
+                " class="backtest-results-container">
                     <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.4rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
                         📊 Backtesting Results
                     </h4>

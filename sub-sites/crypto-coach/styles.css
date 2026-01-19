@@ -2290,3 +2290,29 @@ div:has-text("Experience Points") {
     visibility: visible;
     opacity: 1;
 }
+
+/* Backtesting Results Scrollbar */
+.backtest-results-container {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 0, 0, 0.5) rgba(0, 0, 0, 0.3);
+}
+
+.backtest-results-container::-webkit-scrollbar {
+    width: 12px;
+}
+
+.backtest-results-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    margin: 5px 0;
+}
+
+.backtest-results-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 0, 0, 0.5);
+    border-radius: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+.backtest-results-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 0, 0, 0.7);
+}
