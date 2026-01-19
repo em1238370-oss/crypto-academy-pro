@@ -5,6 +5,9 @@ function simulateStrategy(strategyDescription, period, initialBalance, fees) {
     // Анализируем описание стратегии для определения параметров
     const strategy = analyzeStrategy(strategyDescription);
     
+    // Сбрасываем глобальную переменную
+    lastEntryIndex = -10;
+    
     // Генерируем реалистичные исторические данные (симуляция)
     const dailyPrices = generateHistoricalPrices(period, strategy.basePrice || 95000);
     
@@ -207,9 +210,21 @@ function analyzeStrategy(description) {
     let takeProfit = 20; // По умолчанию +20%
     let stopLoss = -5; // По умолчанию -5%
     
-    const dropMatch = desc.match(/drop[ps]?\s*(?:by|of)?\s*(\d+)%/);
+    // Ищем "drops", "drop", "падает", "падает на"
+    const dropMatch = desc.match(/(?:drop[ps]?|падает|падение)\s*(?:by|of|на)?\s*(\d+)%/);
     if (dropMatch) {
         entryDrop = -parseInt(dropMatch[1]);
+    }
+    
+    // Если не нашли, ищем "10%" в контексте входа
+    if (!dropMatch) {
+        const percentMatch = desc.match(/(?:buy|покупка|вход)\s*(?:when|когда)?.*?(\d+)%/);
+        if (percentMatch) {
+            const percent = parseInt(percentMatch[1]);
+            if (percent <= 20) { // Разумный порог для входа
+                entryDrop = -percent;
+            }
+        }
     }
     
     const profitMatch = desc.match(/profit[^\d]*(\d+)%|take\s*profit[^\d]*(\d+)%|\+(\d+)%/);
@@ -221,6 +236,11 @@ function analyzeStrategy(description) {
     if (stopMatch) {
         stopLoss = -parseInt(stopMatch[1]);
     }
+    
+    // Гарантируем, что параметры разумные
+    if (entryDrop > -3) entryDrop = -10; // Минимум -3% для входа
+    if (takeProfit < 5) takeProfit = 20; // Минимум +5% для выхода
+    if (stopLoss > -2) stopLoss = -5; // Минимум -2% для стоп-лосса
     
     return {
         basePrice,
@@ -269,16 +289,34 @@ function generateHistoricalPrices(period, basePrice) {
 }
 
 // Определение, должен ли быть вход в позицию
+let lastEntryIndex = -10; // Отслеживаем последний вход
+
 function shouldEnter(strategy, currentPrice, priceChange, index, priceHistory) {
-    // Простая логика: вход при падении на указанный процент
+    // Минимум 5 дней между входами
+    if (index - lastEntryIndex < 5) return false;
     if (index === 0) return false;
     
-    const priceDrop = ((currentPrice - priceHistory[0].price) / priceHistory[0].price) * 100;
+    // Проверяем падение цены от предыдущего максимума (скользящий максимум за последние 10 дней)
+    const lookbackPeriod = Math.min(10, index);
+    let maxPrice = currentPrice;
+    for (let i = Math.max(0, index - lookbackPeriod); i < index; i++) {
+        if (priceHistory[i].price > maxPrice) {
+            maxPrice = priceHistory[i].price;
+        }
+    }
     
-    // Входим, если цена упала на заданный процент от начальной
+    const priceDrop = ((currentPrice - maxPrice) / maxPrice) * 100;
+    
+    // Входим, если цена упала на заданный процент от максимума
     if (priceDrop <= strategy.entryDrop) {
-        // Проверяем, что не слишком часто входим (минимум 5 дней между входами)
-        return true; // Упрощённая логика
+        lastEntryIndex = index;
+        return true;
+    }
+    
+    // Альтернативная логика: вход при значительном падении за день
+    if (priceChange <= strategy.entryDrop * 0.5 && index > 5) {
+        lastEntryIndex = index;
+        return true;
     }
     
     return false;
@@ -306,7 +344,25 @@ function shouldExit(strategy, currentPrice, entryPrice, priceChange, index, pric
 // График эквити (изменение баланса)
 function drawEquityChart(equityCurve, initialBalance) {
     const canvas = document.getElementById('equityChart');
-    if (!canvas) return;
+    if (!canvas) {
+        console.error('equityChart canvas not found');
+        return;
+    }
+    
+    if (!equityCurve || equityCurve.length === 0) {
+        console.warn('No equity curve data');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth;
+        canvas.height = 250;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#888';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data to display', canvas.width / 2, canvas.height / 2);
+        return;
+    }
     
     const ctx = canvas.getContext('2d');
     canvas.width = canvas.offsetWidth;
@@ -363,23 +419,65 @@ function drawEquityChart(equityCurve, initialBalance) {
 // График цены с метками входов/выходов
 function drawPriceChartWithTrades(trades, period) {
     const canvas = document.getElementById('priceChart');
-    if (!canvas || !trades || trades.length === 0) return;
+    if (!canvas) {
+        console.error('priceChart canvas not found');
+        return;
+    }
+    
+    if (!trades || trades.length === 0) {
+        console.warn('No trades to display');
+        // Рисуем пустой график с сообщением
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth;
+        canvas.height = 250;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#888';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('No trades to display', canvas.width / 2, canvas.height / 2);
+        return;
+    }
     
     const ctx = canvas.getContext('2d');
     canvas.width = canvas.offsetWidth;
     canvas.height = 250;
     
-    // Генерируем ценовые данные для графика
+    // Используем реальные цены из сделок
     const priceData = [];
-    const startDate = new Date();
+    const allPrices = new Set();
+    
+    trades.forEach(trade => {
+        allPrices.add(trade.entryPrice);
+        allPrices.add(trade.exitPrice);
+    });
+    
+    // Создаём временную шкалу на основе сделок
+    const basePrice = trades[0]?.entryPrice || 95000;
+    const startDate = new Date(trades[0]?.entryDate || new Date());
     startDate.setDate(startDate.getDate() - period);
     
+    // Генерируем ценовые данные с учётом реальных цен сделок
     for (let i = 0; i < period; i++) {
         const date = new Date(startDate);
         date.setDate(date.getDate() + i);
-        // Симулируем цены на основе сделок
-        const basePrice = 95000;
-        const price = basePrice * (1 + (Math.random() - 0.5) * 0.1);
+        
+        // Находим ближайшую сделку для этого дня
+        const tradeForDate = trades.find(t => {
+            const tradeDate = new Date(t.entryDate);
+            const daysDiff = Math.abs((date - tradeDate) / (1000 * 60 * 60 * 24));
+            return daysDiff < 1;
+        });
+        
+        let price;
+        if (tradeForDate) {
+            price = tradeForDate.entryPrice;
+        } else {
+            // Интерполируем цену между сделками
+            price = basePrice * (1 + (Math.random() - 0.5) * 0.1);
+        }
+        
         priceData.push({ date, price });
     }
     
@@ -440,7 +538,25 @@ function drawPriceChartWithTrades(trades, period) {
 // График Drawdown
 function drawDrawdownChart(equityCurve) {
     const canvas = document.getElementById('drawdownChart');
-    if (!canvas) return;
+    if (!canvas) {
+        console.error('drawdownChart canvas not found');
+        return;
+    }
+    
+    if (!equityCurve || equityCurve.length === 0) {
+        console.warn('No equity curve data for drawdown');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth;
+        canvas.height = 200;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#888';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data to display', canvas.width / 2, canvas.height / 2);
+        return;
+    }
     
     const ctx = canvas.getContext('2d');
     canvas.width = canvas.offsetWidth;
@@ -561,7 +677,15 @@ function drawPerformanceHeatmap(performanceByDay, performanceByMonth) {
 // Рендер детального лога сделок
 function renderTradeLog(trades) {
     const tbody = document.getElementById('tradeLogBody');
-    if (!tbody || !trades || trades.length === 0) return;
+    if (!tbody) {
+        console.error('tradeLogBody not found');
+        return;
+    }
+    
+    if (!trades || trades.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="padding: 20px; text-align: center; color: #888;">No trades to display</td></tr>';
+        return;
+    }
     
     tbody.innerHTML = trades.map(trade => `
         <tr style="border-bottom: 1px solid rgba(255, 0, 0, 0.2);">

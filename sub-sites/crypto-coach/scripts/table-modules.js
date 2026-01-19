@@ -3202,8 +3202,11 @@ Be specific with numbers and percentages.`;
                         </div>
                     </div>
                     
-                    <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8;">
-                        <p style="margin: 15px 0; line-height: 1.8;">${backtestText}</p>
+                    <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8; background: rgba(0, 0, 0, 0.3); padding: 25px; border-radius: 10px; margin: 25px 0; border-left: 4px solid rgba(255, 215, 0, 0.5);">
+                        <h5 style="color: #ffd700; font-size: 1.3rem; margin-bottom: 20px; font-weight: bold; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">📊 Backtesting Analysis</h5>
+                        <div style="white-space: pre-wrap; line-height: 2; font-size: 1.05rem;">
+                            ${backtestText}
+                        </div>
                     </div>
                     
                     <!-- Графики результатов бэктестинга -->
@@ -3332,12 +3335,23 @@ Be specific with numbers and percentages.`;
             
             // Создаем графики и визуализации
             setTimeout(() => {
-                drawEquityChart(equityCurve, initialBalance);
-                drawPriceChartWithTrades(trades, period);
-                drawDrawdownChart(equityCurve);
-                drawPerformanceHeatmap(performanceByDay, performanceByMonth);
-                renderTradeLog(trades);
-            }, 100);
+                try {
+                    console.log('Drawing charts...', { equityCurve, trades, performanceByDay, performanceByMonth });
+                    if (equityCurve && equityCurve.length > 0) {
+                        drawEquityChart(equityCurve, initialBalance);
+                    }
+                    if (trades && trades.length > 0) {
+                        drawPriceChartWithTrades(trades, period);
+                    }
+                    if (equityCurve && equityCurve.length > 0) {
+                        drawDrawdownChart(equityCurve);
+                    }
+                    drawPerformanceHeatmap(performanceByDay, performanceByMonth);
+                    renderTradeLog(trades);
+                } catch (error) {
+                    console.error('Error drawing charts:', error);
+                }
+            }, 200);
         } else {
             throw new Error('No response from AI');
         }
