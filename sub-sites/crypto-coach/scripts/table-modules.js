@@ -1950,6 +1950,33 @@ function checkPaymentStatus() {
     }
 }
 
+// Fallback prices for popular coins (if API fails)
+const FALLBACK_PRICES = {
+    'BTC': 95000,
+    'ETH': 3500,
+    'BNB': 600,
+    'SOL': 200,
+    'ADA': 0.5,
+    'XRP': 0.6,
+    'AVAX': 40,
+    'DOGE': 0.15,
+    'SUI': 1.5,
+    'TON': 5,
+    'PEPE': 0.00001,
+    'WIF': 2,
+    'ARB': 1.2,
+    'APT': 10,
+    'NEAR': 7,
+    'ONDO': 0.8,
+    'WLD': 4,
+    'LDO': 2.5,
+    'UNI': 10,
+    'AAVE': 100,
+    'SEI': 0.5,
+    'GALA': 0.04,
+    'ATOM': 10
+};
+
 // Fetch real-time price for Module C
 async function getRealTimePrice(coinSymbol) {
     try {
@@ -1968,6 +1995,12 @@ async function getRealTimePrice(coinSymbol) {
         
         if (!response.ok) {
             console.error(`API error for ${coinSymbol}:`, response.status, response.statusText);
+            // Use fallback price if API fails
+            const fallbackPrice = FALLBACK_PRICES[coinSymbol];
+            if (fallbackPrice) {
+                console.warn(`⚠️ Using fallback price for ${coinSymbol}: $${fallbackPrice}`);
+                return fallbackPrice;
+            }
             throw new Error(`API returned ${response.status}`);
         }
         
@@ -1982,10 +2015,22 @@ async function getRealTimePrice(coinSymbol) {
             return price;
         } else {
             console.warn(`⚠️ No price found in response for ${coinSymbol}:`, data);
+            // Use fallback price if no price in response
+            const fallbackPrice = FALLBACK_PRICES[coinSymbol];
+            if (fallbackPrice) {
+                console.warn(`⚠️ Using fallback price for ${coinSymbol}: $${fallbackPrice}`);
+                return fallbackPrice;
+            }
             return null;
         }
     } catch (e) {
         console.error(`❌ Error fetching price for ${coinSymbol}:`, e);
+        // Use fallback price on error
+        const fallbackPrice = FALLBACK_PRICES[coinSymbol];
+        if (fallbackPrice) {
+            console.warn(`⚠️ Using fallback price for ${coinSymbol} due to error: $${fallbackPrice}`);
+            return fallbackPrice;
+        }
         return null;
     }
 }
