@@ -740,19 +740,44 @@
                                    <h4>📊 Backtesting Engine</h4>
                                    <p style="color: #cccccc; margin-bottom: 15px;">Test your strategies on historical data</p>
                                    <div class="form-group">
-                                       <label>Strategy Description:</label>
-                                       <textarea id="backtestStrategy" rows="2" placeholder="e.g.: Buy when BTC drops 10%, sell when +20%"></textarea>
+                                       <label>
+                                           Strategy Description:
+                                           <span class="info-tooltip" data-tooltip="Describe your trading strategy in detail. Include entry and exit conditions, stop-loss, take-profit levels." style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">Describe your trading strategy in detail. Include entry and exit conditions, stop-loss, take-profit levels.</span></span>
+                                       </label>
+                                       <textarea id="backtestStrategy" rows="3" placeholder="e.g.: Buy when BTC drops 10%, sell when +20%" oninput="autoSaveBacktestForm()"></textarea>
+                                       <small style="color: #888; font-size: 0.85rem; display: block; margin-top: 5px;">Describe your trading strategy: entry conditions, exit conditions, risk management</small>
                                    </div>
                                    <div class="form-group">
-                                       <label>Time Period:</label>
-                                       <select id="backtestPeriod">
+                                       <label>
+                                           Time Period:
+                                           <span class="info-tooltip" data-tooltip="Select the historical period to test your strategy. Longer periods provide more reliable results but take more time." style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">Select the historical period to test your strategy. Longer periods provide more reliable results but take more time.</span></span>
+                                       </label>
+                                       <select id="backtestPeriod" onchange="autoSaveBacktestForm()">
                                            <option value="30">Last 30 days</option>
                                            <option value="90">Last 3 months</option>
                                            <option value="180">Last 6 months</option>
                                            <option value="365">Last year</option>
                                        </select>
+                                       <small style="color: #888; font-size: 0.85rem; display: block; margin-top: 5px;">Choose the historical period to test your strategy on</small>
                                    </div>
-                                   <button class="btn btn-red" onclick="runBacktesting()">Run Backtesting</button>
+                                   <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                                       <button class="btn btn-red" onclick="runBacktesting()" style="flex: 1;">Run Backtesting</button>
+                                       <button class="btn btn-red" onclick="fillExampleBacktest()" style="background: rgba(255, 215, 0, 0.3); border-color: #ffd700;">📝 Fill Example</button>
+                                       <button class="btn btn-red" onclick="saveBacktestToHistory()" style="background: rgba(255, 0, 0, 0.5);">💾 Save</button>
+                                       <button class="btn btn-red" onclick="showBacktestHistory()" style="background: rgba(255, 0, 0, 0.5);">📚 History</button>
+                                   </div>
+                                   <!-- Backtest History Modal -->
+                                   <div id="backtestHistoryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; overflow-y: auto;">
+                                       <div style="max-width: 800px; margin: 50px auto; background: rgba(0, 0, 0, 0.9); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 15px; padding: 30px;">
+                                           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                               <h3 style="color: #ffffff; margin: 0;">📚 Backtest History</h3>
+                                               <button onclick="closeBacktestHistory()" style="background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); color: #ffffff; padding: 8px 15px; border-radius: 5px; cursor: pointer;">✕ Close</button>
+                                           </div>
+                                           <div id="backtestHistoryList" style="color: #ffffff;">
+                                               <!-- History items will be added here -->
+                                           </div>
+                                       </div>
+                                   </div>
                                    <div id="backtestResults" style="margin-top: 20px; display: none;"></div>
                                </div>
 

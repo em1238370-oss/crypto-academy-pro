@@ -3111,8 +3111,46 @@ Be specific with numbers and percentages.`;
                         <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📈 Performance Chart</h5>
                         <canvas id="backtestChart" style="width: 100%; height: 200px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
                     </div>
+                    
+                    <!-- AI Advice Section -->
+                    <div id="backtestAIAdvice" style="margin-top: 25px; padding: 20px; background: rgba(255, 165, 0, 0.1); border-radius: 10px; border-left: 4px solid #ffa500;">
+                        <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
+                            🤖 AI Strategy Recommendations
+                        </h5>
+                        <div style="color: #ffd700; text-align: center; padding: 15px;">
+                            <div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Generating recommendations...
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; justify-content: center;">
+                        <button class="btn btn-red" onclick="saveBacktestResults()" style="padding: 12px 25px; font-size: 1rem;">💾 Save Results</button>
+                        <button class="btn btn-red" onclick="shareBacktestResults()" style="padding: 12px 25px; font-size: 1rem;">📤 Share</button>
+                        <button class="btn btn-red" onclick="compareBacktestResults()" style="padding: 12px 25px; font-size: 1rem;">📊 Compare</button>
+                        <button class="btn btn-red" onclick="exportBacktestResults()" style="padding: 12px 25px; font-size: 1rem;">📥 Export</button>
+                    </div>
                 </div>
             `;
+            
+            // Сохраняем данные бэктеста для дальнейшего использования
+            window.currentBacktestData = {
+                strategy,
+                period,
+                winRate,
+                totalReturn,
+                maxDrawdown,
+                numTrades,
+                backtestText,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Генерируем AI рекомендации
+            generateBacktestAIAdvice(strategy, winRate, totalReturn, maxDrawdown, numTrades, backtestText);
+            
+            // Инициализируем tooltips
+            setTimeout(() => {
+                initTooltips();
+            }, 100);
             
             // Создаем график результатов
             setTimeout(() => {
