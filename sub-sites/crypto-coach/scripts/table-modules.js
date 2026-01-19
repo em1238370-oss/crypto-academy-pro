@@ -27,6 +27,7 @@ function toggleDrawerWithInit(drawerId) {
             setTimeout(() => {
                 console.log('Initializing coins on drawer open');
                 initCoins();
+
                 initNewFeatures(); // Initialize new features
             }, 400);
         } else {
@@ -3059,11 +3060,32 @@ Be specific with numbers and percentages.`;
                 .replace(/\n\n/g, '</p><p style="margin: 15px 0; line-height: 1.8;">')
                 .replace(/\n/g, '<br>');
             
-            // Генерируем случайные метрики для визуализации
-            const winRate = Math.floor(Math.random() * 30) + 50; // 50-80%
-            const totalReturn = (Math.random() * 40 - 10).toFixed(2); // -10% to +30%
-            const maxDrawdown = (Math.random() * 20 + 5).toFixed(2); // 5-25%
-            const numTrades = Math.floor(Math.random() * 20) + 10; // 10-30
+            // РЕАЛИСТИЧНАЯ СИМУЛЯЦИЯ СТРАТЕГИИ (не случайные числа!)
+            const fees = parseFloat(document.getElementById('backtestFees')?.value || 0.2) / 100; // Комиссии в долях
+            const initialBalance = 10000; // Начальный баланс
+            
+            // Симулируем выполнение стратегии на основе её описания
+            const simulation = simulateStrategy(strategy, period, initialBalance, fees);
+            
+            // Извлекаем метрики из симуляции
+            const winRate = simulation.winRate;
+            const totalReturn = simulation.totalReturn;
+            const maxDrawdown = simulation.maxDrawdown;
+            const numTrades = simulation.numTrades;
+            const trades = simulation.trades; // Детальный лог сделок
+            const equityCurve = simulation.equityCurve; // График эквити
+            const profitFactor = simulation.profitFactor;
+            const sharpeRatio = simulation.sharpeRatio;
+            const expectancy = simulation.expectancy;
+            const totalProfit = simulation.totalProfit;
+            const totalLoss = simulation.totalLoss;
+            const averageWin = simulation.averageWin;
+            const averageLoss = simulation.averageLoss;
+            const largestWin = simulation.largestWin;
+            const largestLoss = simulation.largestLoss;
+            const totalFees = simulation.totalFees;
+            const performanceByDay = simulation.performanceByDay; // Для тепловой карты
+            const performanceByMonth = simulation.performanceByMonth; // Для тепловой карты
             
             backtestResults.innerHTML = `
                 <div style="
@@ -3083,22 +3105,100 @@ Be specific with numbers and percentages.`;
                         📊 Backtesting Results
                     </h4>
                     
+                    <!-- Основные метрики с tooltips -->
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
-                        <div style="background: rgba(255, 0, 0, 0.2); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 0, 0, 0.3); text-align: center;">
-                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Win Rate</div>
-                            <div style="color: #00ff00; font-size: 1.8rem; font-weight: bold;">${winRate}%</div>
+                        <div style="background: rgba(255, 0, 0, 0.2); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 0, 0, 0.3); text-align: center; position: relative;">
+                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">
+                                Win Rate
+                                <span class="info-tooltip" data-tooltip="Percentage of winning trades. Formula: (Winning Trades / Total Trades) × 100%. Higher is better." style="color: #888; font-size: 0.7rem; margin-left: 3px; display: inline-block; cursor: help;">ℹ️<span class="tooltip-text">Percentage of winning trades. Formula: (Winning Trades / Total Trades) × 100%. Higher is better.</span></span>
+                            </div>
+                            <div style="color: #00ff00; font-size: 1.8rem; font-weight: bold;">${winRate.toFixed(1)}%</div>
                         </div>
                         <div style="background: rgba(255, 0, 0, 0.2); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 0, 0, 0.3); text-align: center;">
-                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Total Return</div>
-                            <div style="color: ${totalReturn >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.8rem; font-weight: bold;">${totalReturn >= 0 ? '+' : ''}${totalReturn}%</div>
+                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">
+                                Total Return
+                                <span class="info-tooltip" data-tooltip="Total percentage gain or loss on your initial investment. Formula: ((Final Balance - Initial Balance) / Initial Balance) × 100%." style="color: #888; font-size: 0.7rem; margin-left: 3px; display: inline-block; cursor: help;">ℹ️<span class="tooltip-text">Total percentage gain or loss on your initial investment. Formula: ((Final Balance - Initial Balance) / Initial Balance) × 100%.</span></span>
+                            </div>
+                            <div style="color: ${totalReturn >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.8rem; font-weight: bold;">${totalReturn >= 0 ? '+' : ''}${totalReturn.toFixed(2)}%</div>
                         </div>
                         <div style="background: rgba(255, 0, 0, 0.2); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 0, 0, 0.3); text-align: center;">
-                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Max Drawdown</div>
-                            <div style="color: #ff6666; font-size: 1.8rem; font-weight: bold;">-${maxDrawdown}%</div>
+                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">
+                                Max Drawdown
+                                <span class="info-tooltip" data-tooltip="Maximum peak-to-trough decline during the testing period. Shows the worst loss from a high point. Lower is better." style="color: #888; font-size: 0.7rem; margin-left: 3px; display: inline-block; cursor: help;">ℹ️<span class="tooltip-text">Maximum peak-to-trough decline during the testing period. Shows the worst loss from a high point. Lower is better.</span></span>
+                            </div>
+                            <div style="color: #ff6666; font-size: 1.8rem; font-weight: bold;">-${maxDrawdown.toFixed(2)}%</div>
                         </div>
                         <div style="background: rgba(255, 0, 0, 0.2); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 0, 0, 0.3); text-align: center;">
-                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Total Trades</div>
+                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">
+                                Total Trades
+                                <span class="info-tooltip" data-tooltip="Total number of trades executed during the backtesting period. More trades can mean more opportunities but also more fees." style="color: #888; font-size: 0.7rem; margin-left: 3px; display: inline-block; cursor: help;">ℹ️<span class="tooltip-text">Total number of trades executed during the backtesting period. More trades can mean more opportunities but also more fees.</span></span>
+                            </div>
                             <div style="color: #ffffff; font-size: 1.8rem; font-weight: bold;">${numTrades}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Дополнительные метрики -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+                        <div style="background: rgba(255, 215, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.3); text-align: center;">
+                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">
+                                Sharpe Ratio
+                                <span class="info-tooltip" data-tooltip="Risk-adjusted return metric. Formula: (Average Return - Risk Free Rate) / Standard Deviation. Higher is better (typically >1 is good, >2 is excellent)." style="color: #888; font-size: 0.7rem; margin-left: 3px; display: inline-block; cursor: help;">ℹ️<span class="tooltip-text">Risk-adjusted return metric. Formula: (Average Return - Risk Free Rate) / Standard Deviation. Higher is better (typically >1 is good, >2 is excellent).</span></span>
+                            </div>
+                            <div style="color: ${sharpeRatio >= 1 ? '#00ff00' : sharpeRatio >= 0 ? '#ffd700' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">${sharpeRatio.toFixed(2)}</div>
+                        </div>
+                        <div style="background: rgba(255, 215, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.3); text-align: center;">
+                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">
+                                Profit Factor
+                                <span class="info-tooltip" data-tooltip="Ratio of gross profit to gross loss. Formula: Total Profits / Total Losses. Values >1 mean profitable strategy." style="color: #888; font-size: 0.7rem; margin-left: 3px; display: inline-block; cursor: help;">ℹ️<span class="tooltip-text">Ratio of gross profit to gross loss. Formula: Total Profits / Total Losses. Values >1 mean profitable strategy.</span></span>
+                            </div>
+                            <div style="color: ${profitFactor >= 1 ? '#00ff00' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">${profitFactor.toFixed(2)}</div>
+                            <div style="color: #888; font-size: 0.75rem; margin-top: 3px;">${profitFactor >= 2 ? 'Excellent' : profitFactor >= 1.5 ? 'Good' : profitFactor >= 1 ? 'Acceptable' : 'Poor'}</div>
+                        </div>
+                        <div style="background: rgba(255, 215, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.3); text-align: center;">
+                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">
+                                Expectancy
+                                <span class="info-tooltip" data-tooltip="Average expected profit/loss per trade. Formula: (Win Rate × Average Win) - (Loss Rate × Average Loss). Positive is profitable." style="color: #888; font-size: 0.7rem; margin-left: 3px; display: inline-block; cursor: help;">ℹ️<span class="tooltip-text">Average expected profit/loss per trade. Formula: (Win Rate × Average Win) - (Loss Rate × Average Loss). Positive is profitable.</span></span>
+                            </div>
+                            <div style="color: ${expectancy >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">${expectancy >= 0 ? '+' : ''}$${expectancy.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Детальная статистика -->
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
+                        <div style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 255, 0, 0.3);">
+                            <div style="color: #00ff00; font-weight: bold; margin-bottom: 10px; font-size: 1rem;">📈 Profit Statistics</div>
+                            <div style="color: #ffffff; font-size: 0.9rem; line-height: 1.8;">
+                                <div>Total Profit: <span style="color: #00ff00; font-weight: bold;">+$${totalProfit.toFixed(2)}</span></div>
+                                <div>Average Win: <span style="color: #00ff00;">+$${averageWin.toFixed(2)}</span></div>
+                                <div>Largest Win: <span style="color: #00ff00; font-weight: bold;">+$${largestWin.toFixed(2)}</span></div>
+                            </div>
+                        </div>
+                        <div style="background: rgba(255, 102, 102, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 102, 102, 0.3);">
+                            <div style="color: #ff6666; font-weight: bold; margin-bottom: 10px; font-size: 1rem;">📉 Loss Statistics</div>
+                            <div style="color: #ffffff; font-size: 0.9rem; line-height: 1.8;">
+                                <div>Total Loss: <span style="color: #ff6666; font-weight: bold;">-$${Math.abs(totalLoss).toFixed(2)}</span></div>
+                                <div>Average Loss: <span style="color: #ff6666;">-$${Math.abs(averageLoss).toFixed(2)}</span></div>
+                                <div>Largest Loss: <span style="color: #ff6666; font-weight: bold;">-$${Math.abs(largestLoss).toFixed(2)}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Комиссии и итоговый баланс -->
+                    <div style="background: rgba(255, 215, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.3); margin-bottom: 25px;">
+                        <div style="color: #ffd700; font-weight: bold; margin-bottom: 10px; font-size: 1rem;">💰 Financial Summary</div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                            <div>
+                                <div style="color: #cccccc; font-size: 0.85rem;">Initial Balance</div>
+                                <div style="color: #ffffff; font-size: 1.2rem; font-weight: bold;">$${initialBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                            </div>
+                            <div>
+                                <div style="color: #cccccc; font-size: 0.85rem;">Final Balance</div>
+                                <div style="color: ${equityCurve[equityCurve.length - 1] >= initialBalance ? '#00ff00' : '#ff6666'}; font-size: 1.2rem; font-weight: bold;">$${equityCurve[equityCurve.length - 1].toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                            </div>
+                            <div>
+                                <div style="color: #cccccc; font-size: 0.85rem;">Total Fees Paid</div>
+                                <div style="color: #ffd700; font-size: 1.2rem; font-weight: bold;">-$${totalFees.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                            </div>
                         </div>
                     </div>
                     
@@ -3106,10 +3206,73 @@ Be specific with numbers and percentages.`;
                         <p style="margin: 15px 0; line-height: 1.8;">${backtestText}</p>
                     </div>
                     
-                    <!-- График результатов бэктестинга -->
-                    <div style="margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px;">
-                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📈 Performance Chart</h5>
-                        <canvas id="backtestChart" style="width: 100%; height: 200px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
+                    <!-- Графики результатов бэктестинга -->
+                    <div style="margin-top: 30px;">
+                        <!-- График эквити (изменение баланса) -->
+                        <div style="padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px; margin-bottom: 20px;">
+                            <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">
+                                📈 Equity Curve
+                                <span class="info-tooltip" data-tooltip="Shows how your account balance changes over time. The line shows your portfolio value throughout the backtesting period." style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block; cursor: help;">ℹ️<span class="tooltip-text">Shows how your account balance changes over time. The line shows your portfolio value throughout the backtesting period.</span></span>
+                            </h5>
+                            <canvas id="equityChart" style="width: 100%; height: 250px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
+                        </div>
+                        
+                        <!-- График цены с метками входов/выходов -->
+                        <div style="padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px; margin-bottom: 20px;">
+                            <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">
+                                💹 Price Chart with Trade Markers
+                                <span class="info-tooltip" data-tooltip="Price movement chart with buy (green) and sell (red) markers showing when trades were executed." style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block; cursor: help;">ℹ️<span class="tooltip-text">Price movement chart with buy (green) and sell (red) markers showing when trades were executed.</span></span>
+                            </h5>
+                            <canvas id="priceChart" style="width: 100%; height: 250px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
+                        </div>
+                        
+                        <!-- График Drawdown -->
+                        <div style="padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px; margin-bottom: 20px;">
+                            <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">
+                                📉 Drawdown Chart
+                                <span class="info-tooltip" data-tooltip="Shows drawdowns (declines from peak) over time. Red areas indicate periods of losses from previous highs." style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block; cursor: help;">ℹ️<span class="tooltip-text">Shows drawdowns (declines from peak) over time. Red areas indicate periods of losses from previous highs.</span></span>
+                            </h5>
+                            <canvas id="drawdownChart" style="width: 100%; height: 200px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
+                        </div>
+                        
+                        <!-- Тепловая карта производительности -->
+                        <div style="padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px; margin-bottom: 20px;">
+                            <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">
+                                🔥 Performance Heatmap
+                                <span class="info-tooltip" data-tooltip="Shows strategy performance by day of week and month. Green = profitable, red = losses. Helps identify when strategy works best." style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block; cursor: help;">ℹ️<span class="tooltip-text">Shows strategy performance by day of week and month. Green = profitable, red = losses. Helps identify when strategy works best.</span></span>
+                            </h5>
+                            <div id="heatmapContainer" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 20px;">
+                                <!-- Тепловая карта по дням недели будет добавлена динамически -->
+                            </div>
+                            <canvas id="monthlyHeatmap" style="width: 100%; height: 150px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Детальный лог сделок -->
+                    <div style="margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px; margin-bottom: 20px;">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">
+                            📋 Trade Log
+                            <span class="info-tooltip" data-tooltip="Detailed list of all trades: entry/exit dates and prices, profit/loss, fees. Click column headers to sort." style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block; cursor: help;">ℹ️<span class="tooltip-text">Detailed list of all trades: entry/exit dates and prices, profit/loss, fees. Click column headers to sort.</span></span>
+                        </h5>
+                        <div style="max-height: 400px; overflow-y: auto; overflow-x: auto;">
+                            <table id="tradeLogTable" style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                                <thead style="background: rgba(255, 0, 0, 0.2); position: sticky; top: 0;">
+                                    <tr>
+                                        <th style="padding: 10px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; text-align: left; cursor: pointer;" onclick="sortTradeLog('tradeNum')">#</th>
+                                        <th style="padding: 10px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; text-align: left; cursor: pointer;" onclick="sortTradeLog('entryDate')">Entry Date</th>
+                                        <th style="padding: 10px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; text-align: left; cursor: pointer;" onclick="sortTradeLog('entryPrice')">Entry Price</th>
+                                        <th style="padding: 10px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; text-align: left; cursor: pointer;" onclick="sortTradeLog('exitDate')">Exit Date</th>
+                                        <th style="padding: 10px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; text-align: left; cursor: pointer;" onclick="sortTradeLog('exitPrice')">Exit Price</th>
+                                        <th style="padding: 10px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; text-align: left; cursor: pointer;" onclick="sortTradeLog('pnl')">P&L</th>
+                                        <th style="padding: 10px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; text-align: left; cursor: pointer;" onclick="sortTradeLog('fees')">Fees</th>
+                                        <th style="padding: 10px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; text-align: left; cursor: pointer;" onclick="sortTradeLog('pnlPercent')">P&L %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tradeLogBody">
+                                    <!-- Детальный лог сделок будет добавлен динамически -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     
                     <!-- AI Advice Section -->
@@ -3140,63 +3303,40 @@ Be specific with numbers and percentages.`;
                 totalReturn,
                 maxDrawdown,
                 numTrades,
+                trades,
+                equityCurve,
+                profitFactor,
+                sharpeRatio,
+                expectancy,
+                totalProfit,
+                totalLoss,
+                averageWin,
+                averageLoss,
+                largestWin,
+                largestLoss,
+                totalFees,
+                performanceByDay,
+                performanceByMonth,
+                initialBalance,
                 backtestText,
                 timestamp: new Date().toISOString()
             };
             
-            // Генерируем AI рекомендации
-            generateBacktestAIAdvice(strategy, winRate, totalReturn, maxDrawdown, numTrades, backtestText);
+            // Генерируем AI рекомендации с приоритизацией
+            generateBacktestAIAdvice(strategy, winRate, totalReturn, maxDrawdown, numTrades, profitFactor, sharpeRatio, backtestText, trades);
             
             // Инициализируем tooltips
             setTimeout(() => {
                 initTooltips();
             }, 100);
             
-            // Создаем график результатов
+            // Создаем графики и визуализации
             setTimeout(() => {
-                const canvas = document.getElementById('backtestChart');
-                if (canvas) {
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = canvas.offsetWidth;
-                    canvas.height = 200;
-                    
-                    // Симулируем данные для графика
-                    const dataPoints = 30;
-                    const maxValue = Math.max(parseFloat(totalReturn), 20);
-                    const minValue = Math.min(parseFloat(totalReturn), -10);
-                    const range = maxValue - minValue;
-                    
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.strokeStyle = parseFloat(totalReturn) >= 0 ? '#00ff00' : '#ff6666';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    
-                    for (let i = 0; i < dataPoints; i++) {
-                        const x = (i / (dataPoints - 1)) * canvas.width;
-                        const progress = i / (dataPoints - 1);
-                        const value = minValue + (progress * range) + (Math.sin(progress * Math.PI * 4) * range * 0.2);
-                        const y = canvas.height - ((value - minValue) / range) * canvas.height;
-                        
-                        if (i === 0) {
-                            ctx.moveTo(x, y);
-                        } else {
-                            ctx.lineTo(x, y);
-                        }
-                    }
-                    
-                    ctx.stroke();
-                    
-                    // Добавляем линию нуля
-                    ctx.strokeStyle = '#888';
-                    ctx.lineWidth = 1;
-                    ctx.setLineDash([5, 5]);
-                    ctx.beginPath();
-                    const zeroY = canvas.height - ((0 - minValue) / range) * canvas.height;
-                    ctx.moveTo(0, zeroY);
-                    ctx.lineTo(canvas.width, zeroY);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-                }
+                drawEquityChart(equityCurve, initialBalance);
+                drawPriceChartWithTrades(trades, period);
+                drawDrawdownChart(equityCurve);
+                drawPerformanceHeatmap(performanceByDay, performanceByMonth);
+                renderTradeLog(trades);
             }, 100);
         } else {
             throw new Error('No response from AI');
@@ -3217,7 +3357,9 @@ Be specific with numbers and percentages.`;
 function autoSaveBacktestForm() {
     const formData = {
         strategy: document.getElementById('backtestStrategy')?.value || '',
-        period: document.getElementById('backtestPeriod')?.value || '30'
+        period: document.getElementById('backtestPeriod')?.value || '30',
+        fees: document.getElementById('backtestFees')?.value || '0.2',
+        template: document.getElementById('strategyTemplate')?.value || ''
     };
     localStorage.setItem('backtestFormAutoSave', JSON.stringify(formData));
 }
@@ -3233,6 +3375,12 @@ function loadAutoSavedBacktestForm() {
             }
             if (formData.period) {
                 document.getElementById('backtestPeriod').value = formData.period;
+            }
+            if (formData.fees) {
+                document.getElementById('backtestFees').value = formData.fees;
+            }
+            if (formData.template) {
+                document.getElementById('strategyTemplate').value = formData.template;
             }
         }
     } catch (e) {
@@ -3432,27 +3580,51 @@ function exportBacktestResults() {
 }
 
 // Generate AI advice for backtest
-async function generateBacktestAIAdvice(strategy, winRate, totalReturn, maxDrawdown, numTrades, backtestText) {
+async function generateBacktestAIAdvice(strategy, winRate, totalReturn, maxDrawdown, numTrades, profitFactor, sharpeRatio, backtestText, trades) {
     const adviceDiv = document.getElementById('backtestAIAdvice');
     if (!adviceDiv) return;
     
+    // Рассчитываем дополнительные метрики для анализа
+    const avgWin = trades && trades.length > 0 ? trades.filter(t => t.netPnl > 0).reduce((sum, t) => sum + t.netPnl, 0) / trades.filter(t => t.netPnl > 0).length : 0;
+    const avgLoss = trades && trades.length > 0 ? Math.abs(trades.filter(t => t.netPnl <= 0).reduce((sum, t) => sum + t.netPnl, 0) / trades.filter(t => t.netPnl <= 0).length) : 0;
+    const losingTrades = trades && trades.length > 0 ? trades.filter(t => t.netPnl <= 0).length : 0;
+    const consecutiveLosses = trades && trades.length > 0 ? calculateMaxConsecutiveLosses(trades) : 0;
+    
     try {
-        const prompt = `You are a professional trading strategy analyst. Analyze these backtesting results:
+        const prompt = `You are a professional trading strategy analyst. Analyze these SPECIFIC backtesting results for THIS STRATEGY:
 
-Strategy: ${strategy}
-Win Rate: ${winRate}%
-Total Return: ${totalReturn >= 0 ? '+' : ''}${totalReturn}%
-Max Drawdown: -${maxDrawdown}%
-Total Trades: ${numTrades}
+Strategy Description: "${strategy}"
 
-Provide specific, actionable recommendations to improve this strategy. Include:
-1. **Strengths**: What works well in this strategy
-2. **Weaknesses**: What needs improvement
-3. **Specific Recommendations**: Concrete steps to improve win rate, reduce drawdown, increase returns
-4. **Risk Management**: How to better manage risk
-5. **Market Conditions**: When this strategy works best/worst
+METRICS:
+- Win Rate: ${winRate.toFixed(1)}%
+- Total Return: ${totalReturn >= 0 ? '+' : ''}${totalReturn.toFixed(2)}%
+- Max Drawdown: -${maxDrawdown.toFixed(2)}%
+- Total Trades: ${numTrades}
+- Profit Factor: ${profitFactor ? profitFactor.toFixed(2) : 'N/A'}
+- Sharpe Ratio: ${sharpeRatio ? sharpeRatio.toFixed(2) : 'N/A'}
+- Average Win: $${avgWin.toFixed(2)}
+- Average Loss: $${avgLoss.toFixed(2)}
+- Losing Trades: ${losingTrades}
+- Max Consecutive Losses: ${consecutiveLosses}
 
-Be specific with numbers and percentages. Format with clear paragraphs.`;
+Provide SPECIFIC, ACTIONABLE recommendations PRIORITIZED by urgency:
+1. **🔴 CRITICAL** (must fix immediately): Issues that will cause significant losses
+2. **🟡 IMPORTANT** (should fix soon): Improvements that will significantly boost performance
+3. **🟢 RECOMMENDED** (nice to have): Optimizations that can further improve results
+
+For EACH recommendation:
+- Explain WHY it's important for THIS specific strategy
+- Provide SPECIFIC numbers/percentages (e.g., "increase stop-loss to 5% to reduce max drawdown by 15%")
+- Explain HOW it relates to the actual metrics shown
+- Estimate the expected impact (e.g., "should improve win rate by 5-10%")
+
+Focus on:
+- How THIS strategy's specific metrics (${winRate}% win rate, ${profitFactor.toFixed(2)} profit factor, ${maxDrawdown.toFixed(2)}% drawdown) can be improved
+- Risk management tailored to this strategy's characteristics
+- Entry/exit conditions based on actual trade data
+- Market conditions where this strategy performs best/worst
+
+Be VERY SPECIFIC with numbers. Format with clear paragraphs and priorities.`;
 
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -3479,13 +3651,20 @@ Be specific with numbers and percentages. Format with clear paragraphs.`;
             advice = advice.replace(/\n\n/g, '</p><p style="margin-top: 12px;">');
             advice = '<p style="margin: 0; color: #ffffff; line-height: 1.8; font-size: 1.05rem;">' + advice + '</p>';
             
+            // Форматируем рекомендации с приоритетами
+            advice = advice
+                .replace(/\*\*🔴\s*CRITICAL\*\*/gi, '<div style="background: rgba(255, 0, 0, 0.2); border-left: 4px solid #ff0000; padding: 10px; margin: 15px 0; border-radius: 5px;"><strong style="color: #ff0000; font-size: 1.1em;">🔴 CRITICAL</strong>')
+                .replace(/\*\*🟡\s*IMPORTANT\*\*/gi, '<div style="background: rgba(255, 215, 0, 0.2); border-left: 4px solid #ffd700; padding: 10px; margin: 15px 0; border-radius: 5px;"><strong style="color: #ffd700; font-size: 1.1em;">🟡 IMPORTANT</strong>')
+                .replace(/\*\*🟢\s*RECOMMENDED\*\*/gi, '<div style="background: rgba(0, 255, 0, 0.2); border-left: 4px solid #00ff00; padding: 10px; margin: 15px 0; border-radius: 5px;"><strong style="color: #00ff00; font-size: 1.1em;">🟢 RECOMMENDED</strong>')
+                .replace(/<\/div>/g, '</div></div>');
+            
             adviceDiv.innerHTML = `
                 <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
-                    🤖 AI Strategy Recommendations
+                    🤖 AI Strategy Recommendations (Prioritized)
                 </h5>
-                <div style="color: #ffffff; line-height: 1.8; font-size: 1.05rem; white-space: pre-wrap;">${advice}</div>
+                <div style="color: #ffffff; line-height: 1.8; font-size: 1.05rem;">${advice}</div>
                 <div style="margin-top: 15px; padding: 10px; background: rgba(255, 0, 0, 0.1); border-radius: 5px; border-left: 3px solid #ff0000;">
-                    <small style="color: #ff6666; font-size: 0.9rem;">⚠️ This is not financial advice. Always do your own research.</small>
+                    <small style="color: #ff6666; font-size: 0.9rem;">⚠️ This is not financial advice. Always do your own research. Past performance does not guarantee future results.</small>
                 </div>
             `;
         }

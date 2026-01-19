@@ -14,6 +14,7 @@
    <!-- Chart.js for portfolio graphs -->
    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
    <script src="scripts/table-modules.js" defer></script>
+  <script src="scripts/backtesting-functions.js" defer></script>
 </head>
 <body>
    <div class="page">
@@ -759,6 +760,30 @@
                                            <option value="365">Last year</option>
                                        </select>
                                        <small style="color: #888; font-size: 0.85rem; display: block; margin-top: 5px;">Choose the historical period to test your strategy on</small>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>
+                                           Trading Fees:
+                                           <span class="info-tooltip" data-tooltip="Broker/exchange fees per trade (both entry and exit). Typical values: 0.1-0.5% for spot, 0.02-0.06% for futures." style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">Broker/exchange fees per trade (both entry and exit). Typical values: 0.1-0.5% for spot, 0.02-0.06% for futures.</span></span>
+                                       </label>
+                                       <input type="number" id="backtestFees" value="0.2" min="0" max="1" step="0.01" onchange="autoSaveBacktestForm()" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 0, 0, 0.3); border-radius: 5px; color: #ffffff; font-size: 1rem;">
+                                       <small style="color: #888; font-size: 0.85rem; display: block; margin-top: 5px;">Enter trading fees in percentage (e.g., 0.2 = 0.2% per trade)</small>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>
+                                           Example Strategies:
+                                           <span class="info-tooltip" data-tooltip="Select a pre-built strategy template to use as a starting point" style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">Select a pre-built strategy template to use as a starting point</span></span>
+                                       </label>
+                                       <select id="strategyTemplate" onchange="loadStrategyTemplate()" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 0, 0, 0.3); border-radius: 5px; color: #ffffff; font-size: 1rem;">
+                                           <option value="">-- Select a template or write your own --</option>
+                                           <option value="momentum">📈 Momentum Strategy (Buy on breakouts, sell on profit)</option>
+                                           <option value="mean_reversion">📊 Mean Reversion (Buy dips, sell peaks)</option>
+                                           <option value="breakout">🚀 Breakout Strategy (Buy after price breaks resistance)</option>
+                                           <option value="trend_following">📉 Trend Following (Buy in uptrend, sell in downtrend)</option>
+                                           <option value="scalping">⚡ Scalping (Quick in/out trades, small profits)</option>
+                                           <option value="swing">🎯 Swing Trading (Hold for days/weeks, larger moves)</option>
+                                       </select>
+                                       <small style="color: #888; font-size: 0.85rem; display: block; margin-top: 5px;">Choose a strategy template or write your own custom strategy</small>
                                    </div>
                                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
                                        <button class="btn btn-red" onclick="runBacktesting()" style="flex: 1;">Run Backtesting</button>
