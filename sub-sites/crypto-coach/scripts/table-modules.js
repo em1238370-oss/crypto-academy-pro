@@ -2381,19 +2381,15 @@ async function runExperiment() {
     console.log(`Fetching real-time price for ${coin}...`);
     const currentPrice = await getRealTimePrice(coin);
     
-    if (!currentPrice) {
-        // Если не удалось получить цену, показываем ошибку
-        analysisDiv.innerHTML = `
-            <div style="color: #ff6666; padding: 20px; background: rgba(255, 0, 0, 0.1); border-radius: 8px; border-left: 4px solid #ff0000;">
-                <strong>⚠️ Error:</strong> Could not fetch real-time price for ${coin}.<br>
-                Please try again or check your internet connection.
-            </div>
-        `;
-        return;
-    }
+    // Используем fallback цену если API не вернул цену
+    const displayPrice = currentPrice || FALLBACK_PRICES[coin] || 50000;
     
-    const displayPrice = currentPrice;
-    console.log(`✅ Using real-time price for ${coin}: $${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+    if (!currentPrice) {
+        // Показываем предупреждение, но продолжаем работу с fallback ценой
+        console.warn(`⚠️ Using fallback price for ${coin}: $${displayPrice}`);
+    } else {
+        console.log(`✅ Using real-time price for ${coin}: $${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+    }
     
     // Рассчитываем новую цену
     const newPrice = displayPrice * (1 + priceChange / 100);
