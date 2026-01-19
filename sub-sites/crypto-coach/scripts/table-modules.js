@@ -3211,6 +3211,306 @@ Be specific with numbers and percentages.`;
     }
 }
 
+// ========== BACKTESTING ENGINE UX IMPROVEMENTS ==========
+
+// Auto-save backtest form
+function autoSaveBacktestForm() {
+    const formData = {
+        strategy: document.getElementById('backtestStrategy')?.value || '',
+        period: document.getElementById('backtestPeriod')?.value || '30'
+    };
+    localStorage.setItem('backtestFormAutoSave', JSON.stringify(formData));
+}
+
+// Load auto-saved backtest form
+function loadAutoSavedBacktestForm() {
+    try {
+        const saved = localStorage.getItem('backtestFormAutoSave');
+        if (saved) {
+            const formData = JSON.parse(saved);
+            if (formData.strategy) {
+                document.getElementById('backtestStrategy').value = formData.strategy;
+            }
+            if (formData.period) {
+                document.getElementById('backtestPeriod').value = formData.period;
+            }
+        }
+    } catch (e) {
+        console.error('Error loading auto-saved backtest form:', e);
+    }
+}
+
+// Fill example backtest
+function fillExampleBacktest() {
+    document.getElementById('backtestStrategy').value = 'Buy when BTC drops 10% from current price, set stop-loss at -5%, take profit at +20%. Use 50% of portfolio per trade.';
+    document.getElementById('backtestPeriod').value = '90';
+    autoSaveBacktestForm();
+}
+
+// Save backtest to history
+function saveBacktestToHistory() {
+    const strategy = document.getElementById('backtestStrategy')?.value?.trim();
+    const period = document.getElementById('backtestPeriod')?.value || '30';
+    
+    if (!strategy) {
+        alert('Please enter a strategy description first');
+        return;
+    }
+    
+    const history = JSON.parse(localStorage.getItem('backtestHistory') || '[]');
+    const newBacktest = {
+        id: Date.now(),
+        strategy,
+        period,
+        timestamp: new Date().toISOString(),
+        date: new Date().toLocaleString()
+    };
+    
+    history.unshift(newBacktest);
+    if (history.length > 50) history.pop();
+    
+    localStorage.setItem('backtestHistory', JSON.stringify(history));
+    alert('Backtest saved to history!');
+}
+
+// Show backtest history
+function showBacktestHistory() {
+    const modal = document.getElementById('backtestHistoryModal');
+    const list = document.getElementById('backtestHistoryList');
+    
+    if (!modal || !list) return;
+    
+    const history = JSON.parse(localStorage.getItem('backtestHistory') || '[]');
+    
+    if (history.length === 0) {
+        list.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No saved backtests yet</div>';
+    } else {
+        list.innerHTML = history.map(backtest => {
+            const date = new Date(backtest.timestamp).toLocaleString();
+            return `
+                <div style="background: rgba(255, 0, 0, 0.1); border: 1px solid rgba(255, 0, 0, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                            <div style="color: #ffffff; font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">${backtest.strategy.substring(0, 60)}${backtest.strategy.length > 60 ? '...' : ''}</div>
+                            <div style="color: #cccccc; font-size: 0.9rem;">Period: ${backtest.period} days | ${date}</div>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="loadBacktestFromHistory(${backtest.id})" style="background: rgba(0, 255, 0, 0.2); border: 1px solid rgba(0, 255, 0, 0.4); color: #00ff00; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.85rem;">📋 Load</button>
+                            <button onclick="cloneBacktestFromHistory(${backtest.id})" style="background: rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.4); color: #ffd700; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.85rem;">📑 Clone</button>
+                            <button onclick="deleteBacktestFromHistory(${backtest.id})" style="background: rgba(255, 0, 0, 0.2); border: 1px solid rgba(255, 0, 0, 0.4); color: #ff6666; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.85rem;">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    modal.style.display = 'block';
+}
+
+// Close backtest history
+function closeBacktestHistory() {
+    const modal = document.getElementById('backtestHistoryModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Load backtest from history
+function loadBacktestFromHistory(id) {
+    const history = JSON.parse(localStorage.getItem('backtestHistory') || '[]');
+    const backtest = history.find(b => b.id === id);
+    
+    if (!backtest) return;
+    
+    document.getElementById('backtestStrategy').value = backtest.strategy;
+    document.getElementById('backtestPeriod').value = backtest.period;
+    autoSaveBacktestForm();
+    closeBacktestHistory();
+}
+
+// Clone backtest from history
+function cloneBacktestFromHistory(id) {
+    const history = JSON.parse(localStorage.getItem('backtestHistory') || '[]');
+    const backtest = history.find(b => b.id === id);
+    
+    if (!backtest) return;
+    
+    document.getElementById('backtestStrategy').value = backtest.strategy;
+    document.getElementById('backtestPeriod').value = backtest.period;
+    autoSaveBacktestForm();
+    closeBacktestHistory();
+}
+
+// Delete backtest from history
+function deleteBacktestFromHistory(id) {
+    if (!confirm('Are you sure you want to delete this backtest from history?')) return;
+    
+    let history = JSON.parse(localStorage.getItem('backtestHistory') || '[]');
+    history = history.filter(b => b.id !== id);
+    localStorage.setItem('backtestHistory', JSON.stringify(history));
+    showBacktestHistory();
+}
+
+// Save backtest results
+function saveBacktestResults() {
+    const data = window.currentBacktestData;
+    if (!data) {
+        alert('No backtest results to save. Please run a backtest first.');
+        return;
+    }
+    
+    saveBacktestToHistory();
+}
+
+// Share backtest results
+function shareBacktestResults() {
+    const data = window.currentBacktestData;
+    if (!data) {
+        alert('No backtest results to share. Please run a backtest first.');
+        return;
+    }
+    
+    const shareText = `Check out my backtesting results!\n\n` +
+        `Strategy: ${data.strategy.substring(0, 100)}...\n` +
+        `Win Rate: ${data.winRate}%\n` +
+        `Total Return: ${data.totalReturn >= 0 ? '+' : ''}${data.totalReturn}%\n` +
+        `Max Drawdown: -${data.maxDrawdown}%\n` +
+        `Total Trades: ${data.numTrades}\n\n` +
+        `Try it yourself at: ${window.location.href}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Backtesting Results',
+            text: shareText
+        }).catch(err => console.log('Share cancelled'));
+    } else {
+        navigator.clipboard.writeText(shareText).then(() => {
+            alert('Results copied to clipboard!');
+        });
+    }
+}
+
+// Compare backtest results
+function compareBacktestResults() {
+    const data = window.currentBacktestData;
+    if (!data) {
+        alert('No backtest results to compare. Please run a backtest first.');
+        return;
+    }
+    
+    showBacktestHistory();
+    setTimeout(() => {
+        alert('Select a backtest from history to compare with current results.');
+    }, 500);
+}
+
+// Export backtest results
+function exportBacktestResults() {
+    const data = window.currentBacktestData;
+    if (!data) {
+        alert('No backtest results to export. Please run a backtest first.');
+        return;
+    }
+    
+    const exportData = {
+        strategy: data.strategy,
+        period: data.period,
+        winRate: data.winRate,
+        totalReturn: data.totalReturn,
+        maxDrawdown: data.maxDrawdown,
+        numTrades: data.numTrades,
+        analysis: data.backtestText,
+        timestamp: data.timestamp
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backtest_${data.strategy.substring(0, 20).replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// Generate AI advice for backtest
+async function generateBacktestAIAdvice(strategy, winRate, totalReturn, maxDrawdown, numTrades, backtestText) {
+    const adviceDiv = document.getElementById('backtestAIAdvice');
+    if (!adviceDiv) return;
+    
+    try {
+        const prompt = `You are a professional trading strategy analyst. Analyze these backtesting results:
+
+Strategy: ${strategy}
+Win Rate: ${winRate}%
+Total Return: ${totalReturn >= 0 ? '+' : ''}${totalReturn}%
+Max Drawdown: -${maxDrawdown}%
+Total Trades: ${numTrades}
+
+Provide specific, actionable recommendations to improve this strategy. Include:
+1. **Strengths**: What works well in this strategy
+2. **Weaknesses**: What needs improvement
+3. **Specific Recommendations**: Concrete steps to improve win rate, reduce drawdown, increase returns
+4. **Risk Management**: How to better manage risk
+5. **Market Conditions**: When this strategy works best/worst
+
+Be specific with numbers and percentages. Format with clear paragraphs.`;
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'mistral-small',
+                messages: [
+                    { role: 'system', content: 'You are a professional trading strategy analyst. Provide detailed, actionable recommendations with specific numbers and percentages.' },
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0.7,
+                max_tokens: 800
+            })
+        });
+
+        const data = await response.json();
+        if (data.choices && data.choices[0]) {
+            let advice = data.choices[0].message.content.trim();
+            advice = advice.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #ffd700;">$1</strong>');
+            advice = advice.replace(/\*(.*?)\*/g, '<em style="color: #ffaaaa;">$1</em>');
+            advice = advice.replace(/\n\n/g, '</p><p style="margin-top: 12px;">');
+            advice = '<p style="margin: 0; color: #ffffff; line-height: 1.8; font-size: 1.05rem;">' + advice + '</p>';
+            
+            adviceDiv.innerHTML = `
+                <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
+                    🤖 AI Strategy Recommendations
+                </h5>
+                <div style="color: #ffffff; line-height: 1.8; font-size: 1.05rem; white-space: pre-wrap;">${advice}</div>
+                <div style="margin-top: 15px; padding: 10px; background: rgba(255, 0, 0, 0.1); border-radius: 5px; border-left: 3px solid #ff0000;">
+                    <small style="color: #ff6666; font-size: 0.9rem;">⚠️ This is not financial advice. Always do your own research.</small>
+                </div>
+            `;
+        }
+    } catch (e) {
+        console.error('Error generating AI advice:', e);
+        adviceDiv.innerHTML = `
+            <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
+                🤖 AI Strategy Recommendations
+            </h5>
+            <p style="color: #ffffff; line-height: 1.8; font-size: 1.05rem;">Unable to generate AI recommendations at this time. Please try again later.</p>
+        `;
+    }
+}
+
+// Инициализация при загрузке страницы для backtest
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        loadAutoSavedBacktestForm();
+        initTooltips();
+    });
+} else {
+    loadAutoSavedBacktestForm();
+    initTooltips();
+}
+
 // Strategy Optimizer - находит оптимальные параметры для стратегии
 async function optimizeStrategy() {
     const strategyTemplate = document.getElementById('strategyTemplate')?.value?.trim();
