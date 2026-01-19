@@ -2490,14 +2490,14 @@ async function runExperiment() {
                         <tr style="background: rgba(255, 0, 0, 0.2);">
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; width: 40%; font-size: 1.2rem; position: relative;">
                                 Experiment Name:
-                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The name you gave to this experiment for identification">ℹ️</span>
+                                <span class="info-tooltip" data-tooltip="The name you gave to this experiment for identification" style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">The name you gave to this experiment for identification</span></span>
                             </td>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-size: 1.2rem;">${name}</td>
                         </tr>
                         <tr>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
                                 Your Deposit:
-                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The virtual amount you're testing in this simulation">ℹ️</span>
+                                <span class="info-tooltip" data-tooltip="The virtual amount you're testing in this simulation" style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">The virtual amount you're testing in this simulation</span></span>
                             </td>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-size: 1.2rem;">$${userDeposit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         </tr>
@@ -2519,14 +2519,14 @@ async function runExperiment() {
                         <tr>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
                                 Current Price:
-                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The current market price of ${coin} at the time of experiment">ℹ️</span>
+                                <span class="info-tooltip" data-tooltip="The current market price of ${coin} at the time of experiment" style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">The current market price of ${coin} at the time of experiment</span></span>
                             </td>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #00ff00; font-weight: bold; font-size: 1.2rem;">$${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}</td>
                         </tr>
                         <tr style="background: rgba(255, 0, 0, 0.2);">
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
                                 Price Change:
-                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The percentage change you set in the scenario (use slider to adjust)">ℹ️</span>
+                                <span class="info-tooltip" data-tooltip="The percentage change you set in the scenario (use slider to adjust)" style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">The percentage change you set in the scenario (use slider to adjust)</span></span>
                                 <button onclick="editPriceChange()" style="margin-left: 10px; background: rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.4); color: #ffd700; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">✏️ Edit</button>
                             </td>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.3rem;">
@@ -2536,14 +2536,14 @@ async function runExperiment() {
                         <tr>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
                                 Projected Price:
-                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The expected price after the change: Current Price × (1 + Price Change%)">ℹ️</span>
+                                <span class="info-tooltip" data-tooltip="The expected price after the change: Current Price × (1 + Price Change%)" style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">The expected price after the change: Current Price × (1 + Price Change%)</span></span>
                             </td>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-weight: bold; font-size: 1.2rem;">$${newPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}</td>
                         </tr>
                         <tr style="background: rgba(255, 0, 0, 0.2);">
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
                                 Price Difference:
-                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The absolute dollar difference: Projected Price - Current Price">ℹ️</span>
+                                <span class="info-tooltip" data-tooltip="The absolute dollar difference: Projected Price - Current Price" style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">The absolute dollar difference: Projected Price - Current Price</span></span>
                             </td>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${priceDifference >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.2rem;">
                                 ${priceDifference >= 0 ? '+' : ''}$${priceDifference.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
@@ -2563,7 +2563,7 @@ async function runExperiment() {
                         <tr>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
                                 New Deposit Value:
-                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="Your deposit value after the price change: Deposit × (1 + Price Change%)">ℹ️</span>
+                                <span class="info-tooltip" data-tooltip="Your deposit value after the price change: Deposit × (1 + Price Change%)" style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">Your deposit value after the price change: Deposit × (1 + Price Change%)</span></span>
                             </td>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${newDepositValue >= userDeposit ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.3rem;">
                                 $${newDepositValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
@@ -2572,7 +2572,7 @@ async function runExperiment() {
                         <tr style="background: rgba(255, 0, 0, 0.2);">
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
                                 Deposit Change:
-                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The absolute change in your deposit value: New Value - Original Deposit">ℹ️</span>
+                                <span class="info-tooltip" data-tooltip="The absolute change in your deposit value: New Value - Original Deposit" style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">The absolute change in your deposit value: New Value - Original Deposit</span></span>
                             </td>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${depositChange >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.3rem;">
                                 ${depositChange >= 0 ? '+' : ''}$${depositChange.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
@@ -2779,7 +2779,12 @@ async function runExperiment() {
     window.currentExperimentData = {
         name, coin, scenario, priceChange, userDeposit, displayPrice, newPrice, priceDifference, depositChange, newDepositValue
     };
-
+    
+    // Инициализируем tooltip для новых элементов
+    setTimeout(() => {
+        initTooltips();
+    }, 100);
+    
     // Прокручиваем к результатам
     resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
