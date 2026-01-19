@@ -2399,14 +2399,24 @@ async function runExperiment() {
     const depositChange = userDeposit * (priceChange / 100);
     const newDepositValue = userDeposit + depositChange;
 
+    // Показываем предупреждение если используется fallback цена
+    let warningHtml = '';
+    if (!currentPrice) {
+        warningHtml = `
+            <div style="color: #ffd700; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 8px; border-left: 4px solid #ffd700; margin-bottom: 20px;">
+                <strong>⚠️ Note:</strong> Using estimated price for ${coin} ($${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}). Real-time price unavailable.
+            </div>
+        `;
+    }
+
     // Рассчитываем Smart Correlations (если включены)
     const correlationsEnabled = document.getElementById('correlationsEnabled')?.checked || false;
     let correlationsData = '';
     if (correlationsEnabled && priceChange !== 0) {
         const correlations = {
-            'BTC': { 'ETH': -1.4, 'SOL': -2.25, 'BNB': -1.65, 'ADA': -1.2, 'XRP': -1.1, 'AVAX': -1.8, 'DOGE': -1.3, 'SUI': -2.0, 'TON': -1.5 },
-            'ETH': { 'BTC': -0.7, 'SOL': -1.6, 'BNB': -1.2, 'ADA': -1.1, 'AVAX': -1.4, 'ARB': -1.8, 'UNI': -1.6 },
-            'SOL': { 'BTC': -0.44, 'ETH': -0.625, 'BNB': -0.75, 'SUI': -1.5, 'WIF': -2.2, 'PEPE': -1.8 }
+            'BTC': { 'ETH': 1.2, 'SOL': 1.8, 'BNB': 1.4, 'ADA': 1.1, 'XRP': 0.9, 'AVAX': 1.6, 'DOGE': 1.3, 'SUI': 1.9, 'TON': 1.4 },
+            'ETH': { 'BTC': 0.8, 'SOL': 1.4, 'BNB': 1.1, 'ADA': 0.9, 'AVAX': 1.3, 'ARB': 1.5, 'UNI': 1.4 },
+            'SOL': { 'BTC': 0.5, 'ETH': 0.7, 'BNB': 0.8, 'SUI': 1.3, 'WIF': 1.9, 'PEPE': 1.6 }
         };
         const coinCorrelations = correlations[coin] || {};
         correlationsData = Object.entries(coinCorrelations).map(([asset, multiplier]) => {
@@ -2416,7 +2426,7 @@ async function runExperiment() {
     }
 
     // Создаем красивую таблицу результатов
-        analysisDiv.innerHTML = `
+        analysisDiv.innerHTML = warningHtml + `
         <div style="
             background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(30, 0, 0, 0.9) 100%);
             border: 2px solid rgba(255, 0, 0, 0.4);
