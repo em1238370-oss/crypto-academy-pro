@@ -194,13 +194,14 @@ async function getAIRecommendations() {
         
         for (const coinSymbol of coinSymbols) {
             try {
-                const priceResponse = await fetch(`${LIVECOINWATCH_URL}/${coinSymbol}`, {
+                const priceResponse = await fetch('https://api.livecoinwatch.com/coins/single', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'x-api-key': LIVECOINWATCH_KEY
                     },
                     body: JSON.stringify({
+                        code: coinSymbol,
                         currency: 'USD',
                         meta: true
                     })
