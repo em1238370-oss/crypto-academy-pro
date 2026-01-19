@@ -2242,3 +2242,51 @@ div:has-text("Experience Points") {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
 }
+
+/* Custom Tooltip Styles */
+.info-tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.info-tooltip .tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    background-color: rgba(40, 40, 40, 0.95);
+    color: #ffffff;
+    text-align: left;
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    position: absolute;
+    z-index: 10000;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    max-width: 300px;
+    white-space: normal;
+    word-wrap: break-word;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
+}
+
+.info-tooltip .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(40, 40, 40, 0.95) transparent transparent transparent;
+}
+
+.info-tooltip.show-tooltip .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
