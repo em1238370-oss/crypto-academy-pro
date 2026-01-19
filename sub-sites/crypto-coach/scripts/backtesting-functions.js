@@ -190,6 +190,7 @@ function simulateStrategy(strategyDescription, period, initialBalance, fees) {
         numTrades: trades.length,
         trades,
         equityCurve,
+        dailyPrices, // Возвращаем реальные исторические данные для графиков
         profitFactor,
         sharpeRatio: sharpeRatio - (riskFreeRate / Math.sqrt(252)),
         expectancy,
@@ -442,7 +443,7 @@ function drawEquityChart(equityCurve, initialBalance) {
 }
 
 // График цены с метками входов/выходов
-function drawPriceChartWithTrades(trades, period) {
+function drawPriceChartWithTrades(trades, dailyPrices, period) {
     const canvas = document.getElementById('priceChart');
     if (!canvas) {
         console.error('priceChart canvas not found');
@@ -465,63 +466,39 @@ function drawPriceChartWithTrades(trades, period) {
         return;
     }
     
+    if (!dailyPrices || dailyPrices.length === 0) {
+        console.error('No daily prices data');
+        return;
+    }
+    
     const ctx = canvas.getContext('2d');
     canvas.width = canvas.offsetWidth;
     canvas.height = 250;
     
-    // Используем реальные цены из сделок
-    const priceData = [];
-    const allPrices = new Set();
-    
-    trades.forEach(trade => {
-        allPrices.add(trade.entryPrice);
-        allPrices.add(trade.exitPrice);
-    });
-    
-    // Создаём временную шкалу на основе сделок
-    const basePrice = trades[0]?.entryPrice || 95000;
-    const startDate = new Date(trades[0]?.entryDate || new Date());
-    startDate.setDate(startDate.getDate() - period);
-    
-    // Генерируем ценовые данные с учётом реальных цен сделок
-    for (let i = 0; i < period; i++) {
-        const date = new Date(startDate);
-        date.setDate(date.getDate() + i);
-        
-        // Находим ближайшую сделку для этого дня
-        const tradeForDate = trades.find(t => {
-            const tradeDate = new Date(t.entryDate);
-            const daysDiff = Math.abs((date - tradeDate) / (1000 * 60 * 60 * 24));
-            return daysDiff < 1;
-        });
-        
-        let price;
-        if (tradeForDate) {
-            price = tradeForDate.entryPrice;
-        } else {
-            // Интерполируем цену между сделками
-            price = basePrice * (1 + (Math.random() - 0.5) * 0.1);
-        }
-        
-        priceData.push({ date, price });
-    }
-    
-    const prices = priceData.map(d => d.price);
+    // ИСПОЛЬЗУЕМ РЕАЛЬНЫЕ ДАННЫЕ ИЗ СИМУЛЯЦИИ!
+    // dailyPrices содержит те же данные, что использовались для симуляции
+    const prices = dailyPrices.map(d => d.price);
     const maxPrice = Math.max(...prices);
     const minPrice = Math.min(...prices);
     const range = maxPrice - minPrice || 1;
+    
+    console.log('Drawing price chart with real simulation data:', {
+        dataPoints: dailyPrices.length,
+        trades: trades.length,
+        priceRange: { min: minPrice, max: maxPrice }
+    });
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // График цены
+    // График цены (используем реальные данные из симуляции)
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 1;
     ctx.beginPath();
     
-    for (let i = 0; i < priceData.length; i++) {
-        const x = (i / (priceData.length - 1)) * canvas.width;
+    for (let i = 0; i < dailyPrices.length; i++) {
+        const x = (i / (dailyPrices.length - 1)) * canvas.width;
         const y = canvas.height - ((prices[i] - minPrice) / range) * canvas.height;
         
         if (i === 0) {
@@ -533,31 +510,46 @@ function drawPriceChartWithTrades(trades, period) {
     
     ctx.stroke();
     
-    // Метки входов (зелёные)
+    // Метки входов (зелёные) - используем реальные индексы из dailyPrices
     trades.forEach(trade => {
-        const entryIndex = priceData.findIndex(d => d.date.toISOString().split('T')[0] === trade.entryDate);
+        // Находим индекс входа в dailyPrices по дате
+        const entryIndex = dailyPrices.findIndex(d => d.date === trade.entryDate);
         if (entryIndex >= 0) {
-            const x = (entryIndex / (priceData.length - 1)) * canvas.width;
+            const x = (entryIndex / (dailyPrices.length - 1)) * canvas.width;
             const y = canvas.height - ((trade.entryPrice - minPrice) / range) * canvas.height;
             
             ctx.fillStyle = '#00ff00';
             ctx.beginPath();
-            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
             ctx.fill();
+            
+            // Подпись "BUY"
+            ctx.fillStyle = '#00ff00';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('BUY', x, y - 10);
         }
         
-        // Метки выходов (красные)
-        const exitIndex = priceData.findIndex(d => d.date.toISOString().split('T')[0] === trade.exitDate);
+        // Метки выходов (красные) - используем реальные индексы из dailyPrices
+        const exitIndex = dailyPrices.findIndex(d => d.date === trade.exitDate);
         if (exitIndex >= 0) {
-            const x = (exitIndex / (priceData.length - 1)) * canvas.width;
+            const x = (exitIndex / (dailyPrices.length - 1)) * canvas.width;
             const y = canvas.height - ((trade.exitPrice - minPrice) / range) * canvas.height;
             
             ctx.fillStyle = '#ff0000';
             ctx.beginPath();
-            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
             ctx.fill();
+            
+            // Подпись "SELL"
+            ctx.fillStyle = '#ff0000';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('SELL', x, y - 10);
         }
     });
+    
+    console.log('Price chart drawn with', trades.length, 'trades marked on', dailyPrices.length, 'data points');
 }
 
 // График Drawdown

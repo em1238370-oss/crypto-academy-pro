@@ -3074,6 +3074,7 @@ Be specific with numbers and percentages.`;
             const numTrades = simulation.numTrades;
             const trades = simulation.trades; // Детальный лог сделок
             const equityCurve = simulation.equityCurve; // График эквити
+            const dailyPrices = simulation.dailyPrices; // Реальные исторические данные для графиков
             const profitFactor = simulation.profitFactor;
             const sharpeRatio = simulation.sharpeRatio;
             const expectancy = simulation.expectancy;
@@ -3308,6 +3309,7 @@ Be specific with numbers and percentages.`;
                 numTrades,
                 trades,
                 equityCurve,
+                dailyPrices, // Сохраняем для графиков
                 profitFactor,
                 sharpeRatio,
                 expectancy,
@@ -3340,8 +3342,8 @@ Be specific with numbers and percentages.`;
                     if (equityCurve && equityCurve.length > 0) {
                         drawEquityChart(equityCurve, initialBalance);
                     }
-                    if (trades && trades.length > 0) {
-                        drawPriceChartWithTrades(trades, period);
+                    if (trades && trades.length > 0 && dailyPrices) {
+                        drawPriceChartWithTrades(trades, dailyPrices, period);
                     }
                     if (equityCurve && equityCurve.length > 0) {
                         drawDrawdownChart(equityCurve);
