@@ -2440,8 +2440,8 @@ async function runExperiment() {
         }).join(', ');
     }
 
-    // Создаем красивую таблицу результатов
-        analysisDiv.innerHTML = warningHtml + `
+    // Создаем красивую таблицу результатов с группировкой
+        analysisDiv.innerHTML = warningHtml + mismatchWarning + `
         <div style="
             background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(30, 0, 0, 0.9) 100%);
             border: 2px solid rgba(255, 0, 0, 0.4);
@@ -2452,56 +2452,113 @@ async function runExperiment() {
             margin-right: -37.8px;
             width: calc(100% + 75.6px);
         ">
-                    <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.6rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
-                        🧪 Experiment Results
-                    </h4>
+            <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.6rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
+                🧪 Experiment Results
+            </h4>
             
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 1.2rem;">
-                <tr style="background: rgba(255, 0, 0, 0.2);">
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; width: 40%; font-size: 1.2rem;">Experiment Name:</td>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-size: 1.2rem;">${name}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem;">Your Deposit:</td>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-size: 1.2rem;">$${userDeposit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                </tr>
-                <tr style="background: rgba(255, 0, 0, 0.2);">
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem;">Selected Coin:</td>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-weight: bold; font-size: 1.2rem;">${coin}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem;">Current Price:</td>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #00ff00; font-weight: bold; font-size: 1.2rem;">$${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}</td>
-                </tr>
-                <tr style="background: rgba(255, 0, 0, 0.2);">
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem;">Price Change:</td>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.3rem;">
-                        ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem;">Projected Price:</td>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-weight: bold; font-size: 1.2rem;">$${newPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}</td>
-                </tr>
-                <tr style="background: rgba(255, 0, 0, 0.2);">
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem;">Price Difference:</td>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${priceDifference >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.2rem;">
-                        ${priceDifference >= 0 ? '+' : ''}$${priceDifference.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem;">New Deposit Value:</td>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${newDepositValue >= userDeposit ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.3rem;">
-                        $${newDepositValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                    </td>
-                </tr>
-                <tr style="background: rgba(255, 0, 0, 0.2);">
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem;">Deposit Change:</td>
-                    <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${depositChange >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.3rem;">
-                        ${depositChange >= 0 ? '+' : ''}$${depositChange.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                        (${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%)
-                    </td>
-                </tr>
+            <!-- Основная информация (всегда видима) -->
+            <div style="margin-bottom: 20px;">
+                <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.3rem; cursor: pointer; user-select: none;" onclick="toggleSection('basicInfo')">
+                    📋 Basic Information <span id="basicInfoIcon" style="float: right; font-size: 1rem;">▼</span>
+                </h5>
+                <div id="basicInfoSection">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 1.2rem;">
+                        <tr style="background: rgba(255, 0, 0, 0.2);">
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; width: 40%; font-size: 1.2rem; position: relative;">
+                                Experiment Name:
+                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The name you gave to this experiment for identification">ℹ️</span>
+                            </td>
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-size: 1.2rem;">${name}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
+                                Your Deposit:
+                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The virtual amount you're testing in this simulation">ℹ️</span>
+                            </td>
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-size: 1.2rem;">$${userDeposit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr style="background: rgba(255, 0, 0, 0.2);">
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem;">Selected Coin:</td>
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-weight: bold; font-size: 1.2rem;">${coin}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Ценовые данные (всегда видима) -->
+            <div style="margin-bottom: 20px;">
+                <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.3rem; cursor: pointer; user-select: none;" onclick="toggleSection('priceData')">
+                    💰 Price Data <span id="priceDataIcon" style="float: right; font-size: 1rem;">▼</span>
+                </h5>
+                <div id="priceDataSection">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 1.2rem;">
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
+                                Current Price:
+                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The current market price of ${coin} at the time of experiment">ℹ️</span>
+                            </td>
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #00ff00; font-weight: bold; font-size: 1.2rem;">$${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}</td>
+                        </tr>
+                        <tr style="background: rgba(255, 0, 0, 0.2);">
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
+                                Price Change:
+                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The percentage change you set in the scenario (use slider to adjust)">ℹ️</span>
+                                <button onclick="editPriceChange()" style="margin-left: 10px; background: rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.4); color: #ffd700; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">✏️ Edit</button>
+                            </td>
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.3rem;">
+                                ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
+                                Projected Price:
+                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The expected price after the change: Current Price × (1 + Price Change%)">ℹ️</span>
+                            </td>
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffffff; font-weight: bold; font-size: 1.2rem;">$${newPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}</td>
+                        </tr>
+                        <tr style="background: rgba(255, 0, 0, 0.2);">
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
+                                Price Difference:
+                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The absolute dollar difference: Projected Price - Current Price">ℹ️</span>
+                            </td>
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${priceDifference >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.2rem;">
+                                ${priceDifference >= 0 ? '+' : ''}$${priceDifference.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Результаты портфеля (всегда видима) -->
+            <div style="margin-bottom: 20px;">
+                <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.3rem; cursor: pointer; user-select: none;" onclick="toggleSection('portfolioResults')">
+                    💼 Portfolio Results <span id="portfolioResultsIcon" style="float: right; font-size: 1rem;">▼</span>
+                </h5>
+                <div id="portfolioResultsSection">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 1.2rem;">
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
+                                New Deposit Value:
+                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="Your deposit value after the price change: Deposit × (1 + Price Change%)">ℹ️</span>
+                            </td>
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${newDepositValue >= userDeposit ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.3rem;">
+                                $${newDepositValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            </td>
+                        </tr>
+                        <tr style="background: rgba(255, 0, 0, 0.2);">
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
+                                Deposit Change:
+                                <span style="color: #888; font-size: 0.8rem; margin-left: 5px; cursor: help;" title="The absolute change in your deposit value: New Value - Original Deposit">ℹ️</span>
+                            </td>
+                            <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: ${depositChange >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold; font-size: 1.3rem;">
+                                ${depositChange >= 0 ? '+' : ''}$${depositChange.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                (${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%)
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
             <!-- Дополнительная информация (сворачиваемая) -->
             ${scenario || correlationsData ? `
             <div style="margin-bottom: 20px;">
@@ -2541,35 +2598,94 @@ async function runExperiment() {
         </div>
     `;
 
-    // AI совет
+    // AI совет (улучшенный с использованием AI API)
     const aiAdviceDiv = document.getElementById('aiAdviceBox');
     if (aiAdviceDiv) {
-        let adviceText = '';
-        if (priceChange < -20) {
-            adviceText = '⚠️ Strong decline detected. Consider selling 30-50% to protect capital. Wait for stabilization before re-entering.';
-        } else if (priceChange < -10) {
-            adviceText = '📉 Moderate decline. Consider selling 20-25% to reduce risk. Monitor the situation closely.';
-        } else if (priceChange < 0) {
-            adviceText = '📊 Small correction detected. This is normal market behavior. Stick to your strategy and monitor.';
-        } else if (priceChange < 20) {
-            adviceText = '📈 Positive movement. Consider taking partial profits (10-20%) while holding the rest for further growth.';
-        } else if (priceChange < 50) {
-            adviceText = '🚀 Strong growth. Consider taking 30-40% profits. Set stop-loss to protect remaining gains.';
-        } else {
-            adviceText = '💎 Exceptional growth! Consider taking 50%+ profits. This level is often unsustainable long-term.';
-        }
-
         aiAdviceDiv.innerHTML = `
             <div style="padding: 20px;">
                 <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
                     🤖 AI Trading Advice
                 </h5>
-                <p style="color: #ffffff; line-height: 1.8; font-size: 1.05rem; margin: 0;">${adviceText}</p>
+                <div style="color: #ffd700; text-align: center; padding: 15px;">
+                    <div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Generating personalized advice...
+                </div>
             </div>
         `;
+        
+        // Генерируем детальный AI совет
+        generateAIAdvice(coin, displayPrice, priceChange, userDeposit, newDepositValue, depositChange, scenario).then(aiAdvice => {
+            if (aiAdvice) {
+                aiAdviceDiv.innerHTML = `
+                    <div style="padding: 20px;">
+                        <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
+                            🤖 AI Trading Advice
+                        </h5>
+                        <div style="color: #ffffff; line-height: 1.8; font-size: 1.05rem; white-space: pre-wrap;">${aiAdvice}</div>
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(255, 0, 0, 0.1); border-radius: 5px; border-left: 3px solid #ff0000;">
+                            <small style="color: #ff6666; font-size: 0.9rem;">⚠️ This is not financial advice. Always do your own research and never invest more than you can afford to lose.</small>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Fallback на простой совет
+                let adviceText = '';
+                if (priceChange < -20) {
+                    adviceText = '⚠️ Strong decline detected. Consider selling 30-50% to protect capital. Wait for stabilization before re-entering.';
+                } else if (priceChange < -10) {
+                    adviceText = '📉 Moderate decline. Consider selling 20-25% to reduce risk. Monitor the situation closely.';
+                } else if (priceChange < 0) {
+                    adviceText = '📊 Small correction detected. This is normal market behavior. Stick to your strategy and monitor.';
+                } else if (priceChange < 20) {
+                    adviceText = '📈 Positive movement. Consider taking partial profits (10-20%) while holding the rest for further growth.';
+                } else if (priceChange < 50) {
+                    adviceText = '🚀 Strong growth. Consider taking 30-40% profits. Set stop-loss to protect remaining gains.';
+                } else {
+                    adviceText = '💎 Exceptional growth! Consider taking 50%+ profits. This level is often unsustainable long-term.';
+                }
+                aiAdviceDiv.innerHTML = `
+                    <div style="padding: 20px;">
+                        <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
+                            🤖 AI Trading Advice
+                        </h5>
+                        <p style="color: #ffffff; line-height: 1.8; font-size: 1.05rem; margin: 0;">${adviceText}</p>
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(255, 0, 0, 0.1); border-radius: 5px; border-left: 3px solid #ff0000;">
+                            <small style="color: #ff6666; font-size: 0.9rem;">⚠️ This is not financial advice. Always do your own research.</small>
+                        </div>
+                    </div>
+                `;
+            }
+        }).catch(e => {
+            console.error('Error generating AI advice:', e);
+            // Fallback на простой совет
+            let adviceText = '';
+            if (priceChange < -20) {
+                adviceText = '⚠️ Strong decline detected. Consider selling 30-50% to protect capital. Wait for stabilization before re-entering.';
+            } else if (priceChange < -10) {
+                adviceText = '📉 Moderate decline. Consider selling 20-25% to reduce risk. Monitor the situation closely.';
+            } else if (priceChange < 0) {
+                adviceText = '📊 Small correction detected. This is normal market behavior. Stick to your strategy and monitor.';
+            } else if (priceChange < 20) {
+                adviceText = '📈 Positive movement. Consider taking partial profits (10-20%) while holding the rest for further growth.';
+            } else if (priceChange < 50) {
+                adviceText = '🚀 Strong growth. Consider taking 30-40% profits. Set stop-loss to protect remaining gains.';
+            } else {
+                adviceText = '💎 Exceptional growth! Consider taking 50%+ profits. This level is often unsustainable long-term.';
+            }
+            aiAdviceDiv.innerHTML = `
+                <div style="padding: 20px;">
+                    <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
+                        🤖 AI Trading Advice
+                    </h5>
+                    <p style="color: #ffffff; line-height: 1.8; font-size: 1.05rem; margin: 0;">${adviceText}</p>
+                    <div style="margin-top: 15px; padding: 10px; background: rgba(255, 0, 0, 0.1); border-radius: 5px; border-left: 3px solid #ff0000;">
+                        <small style="color: #ff6666; font-size: 0.9rem;">⚠️ This is not financial advice. Always do your own research.</small>
+                    </div>
+                </div>
+            `;
+        });
     }
 
-    // Визуализация графика
+    // Визуализация графика (улучшенная с Chart.js)
     if (chartDiv) {
         chartDiv.innerHTML = `
             <div style="
@@ -2577,44 +2693,68 @@ async function runExperiment() {
                 border: 2px solid rgba(255, 0, 0, 0.3);
                 border-radius: 12px;
                 padding: 25px;
-                text-align: center;
             ">
-                <h5 style="color: #ffffff; margin-bottom: 20px; font-size: 1.2rem;">📊 Price Movement Visualization</h5>
-                <div style="
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 30px;
-                    margin-bottom: 20px;
-                    flex-wrap: wrap;
-                ">
-                    <div style="text-align: center;">
-                        <div style="color: #888; font-size: 0.9rem; margin-bottom: 5px;">Current</div>
-                        <div style="color: #00ff00; font-size: 1.5rem; font-weight: bold;">$${displayPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                    </div>
-                    <div style="
-                        font-size: 3rem;
-                        color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'};
-                        text-shadow: 0 0 20px ${priceChange >= 0 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 0, 0, 0.5)'};
-                    ">
-                        ${priceChange >= 0 ? '↗' : '↘'}
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="color: #888; font-size: 0.9rem; margin-bottom: 5px;">Projected</div>
-                        <div style="color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">$${newPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                    </div>
-                </div>
-                <div style="
-                    color: ${priceChange >= 0 ? '#00ff00' : '#ff6666'};
-                    font-size: 2rem;
-                    font-weight: bold;
-                    text-shadow: 0 0 15px ${priceChange >= 0 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 0, 0, 0.5)'};
-                ">
-                    ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%
-                </div>
+                <h5 style="color: #ffffff; margin-bottom: 20px; font-size: 1.2rem; text-align: center;">📊 Price Movement Visualization</h5>
+                <canvas id="experimentPriceChart" style="max-height: 300px;"></canvas>
             </div>
         `;
+        
+        // Создаём график с Chart.js
+        setTimeout(() => {
+            const canvas = document.getElementById('experimentPriceChart');
+            if (canvas && typeof Chart !== 'undefined') {
+                const ctx = canvas.getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Current Price', 'Projected Price'],
+                        datasets: [{
+                            label: `${coin} Price ($)`,
+                            data: [displayPrice, newPrice],
+                            borderColor: priceChange >= 0 ? '#00ff00' : '#ff6666',
+                            backgroundColor: priceChange >= 0 ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 102, 102, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 8,
+                            pointBackgroundColor: priceChange >= 0 ? '#00ff00' : '#ff6666',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#ffffff', font: { size: 14 } }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#ffd700',
+                                bodyColor: '#ffffff',
+                                borderColor: '#ff0000',
+                                borderWidth: 1
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: { color: '#ffffff' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#ffffff' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+        }, 100);
     }
+    
+    // Сохраняем данные эксперимента для пересчёта
+    window.currentExperimentData = {
+        name, coin, scenario, priceChange, userDeposit, displayPrice, newPrice, priceDifference, depositChange, newDepositValue
+    };
 
     // Прокручиваем к результатам
     resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
