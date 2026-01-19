@@ -613,18 +613,27 @@
                                
                                <div class="section-box">
                                    <h4>Create New Experiment</h4>
+                                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                       <button class="btn btn-red" onclick="fillExampleExperiment()" style="padding: 8px 20px; font-size: 0.9rem; margin: 0;">📋 Fill Example</button>
+                                       <button class="btn btn-red" onclick="showExperimentHistory()" style="padding: 8px 20px; font-size: 0.9rem; margin: 0;">📚 History</button>
+                                   </div>
                                    <div class="form-group">
                                        <label>Your Deposit ($):</label>
-                                       <input type="number" id="userDeposit" placeholder="e.g.: 10000" min="0" step="100" value="10000" style="width: 100%;">
-                                       <small style="color: #888;">Enter your starting capital</small>
+                                       <input type="number" id="userDeposit" placeholder="e.g.: 10000" min="0" step="100" value="10000" style="width: 100%;" onchange="saveExperimentForm()">
+                                       <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.4;">
+                                           💡 How much virtual money do you want to test in the simulator? (This is virtual money for practice only)
+                                       </small>
                                    </div>
                                    <div class="form-group">
                                        <label>Experiment Name:</label>
-                                       <input type="text" id="experimentName" placeholder="e.g.: BTC drop scenario 20%">
+                                       <input type="text" id="experimentName" placeholder="e.g.: BTC drop scenario 20%" onchange="saveExperimentForm()">
+                                       <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.4;">
+                                           💡 Give your experiment a name to identify it later, e.g.: "Test BTC drop 20%"
+                                       </small>
                                    </div>
                                    <div class="form-group">
                                        <label>Select Coin:</label>
-                                       <select id="experimentCoin">
+                                       <select id="experimentCoin" onchange="saveExperimentForm()">
                                            <option value="BTC">Bitcoin (BTC)</option>
                                            <option value="ETH">Ethereum (ETH)</option>
                                            <option value="BNB">Binance Coin (BNB)</option>
@@ -664,7 +673,10 @@
 
                                    <div class="form-group">
                                        <label>Scenario Description:</label>
-                                       <textarea id="experimentScenario" rows="3" placeholder="e.g.: What if BTC drops 20%? How will this affect my portfolio?"></textarea>
+                                       <textarea id="experimentScenario" rows="3" placeholder="e.g.: What if BTC drops 20% due to negative news? How will this affect my portfolio value?" onchange="saveExperimentForm()"></textarea>
+                                       <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.4;">
+                                           💡 Describe the scenario: what will happen to the price? For example: "BTC drops 20% due to regulatory news"
+                                       </small>
                                    </div>
                                    <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 20px;">
                                        <label style="margin-bottom: 15px; color: #ffffff; font-size: 1.1rem; font-weight: 600; display: block;">AI Scenario Builder (Universal)</label>
@@ -679,17 +691,33 @@
                                        <div style="text-align: center !important; margin-bottom: 20px !important; color: #cccccc !important; font-size: 0.9rem !important; line-height: 1.5 !important;">
                                            Automatically calculates how other coins might change based on historical correlations
                                        </div>
-                                       <div style="text-align: center !important; margin-bottom: 10px !important;">
+                                       <div style="text-align: center !important; margin-bottom: 8px !important;">
+                                           <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">Selected Coin Price Change:</div>
                                            <span id="priceChangeValue" style="color: #0066ff !important; font-weight: bold !important; font-size: 1.3rem !important;">0%</span>
                                        </div>
                                        <div style="display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; margin-bottom: 15px !important;">
-                                           <input type="range" id="priceChange" min="-70" max="200" value="0" oninput="updatePriceChangeDisplay(); updateCorrelations(); showAICorrelations()" onmousemove="updatePriceChangeDisplay()" ontouchmove="updatePriceChangeDisplay()" style="width: 100% !important; max-width: 600px !important; margin: 0 auto !important;">
+                                           <input type="range" id="priceChange" min="-70" max="200" value="0" oninput="updatePriceChangeDisplay(); updateCorrelations(); showAICorrelations(); saveExperimentForm()" onmousemove="updatePriceChangeDisplay()" ontouchmove="updatePriceChangeDisplay()" style="width: 100% !important; max-width: 600px !important; margin: 0 auto !important;">
                                        </div>
                                        <div id="aiCorrelationsDisplay" style="text-align: center !important; margin-top: 20px !important; padding: 15px !important; background: rgba(0, 0, 0, 0.3) !important; border-radius: 8px !important; display: none !important;">
                                            <!-- Содержимое добавляется динамически через showAICorrelations() -->
                                        </div>
                                    </div>
-                                   <button class="btn btn-red" onclick="runExperiment()">Run Experiment</button>
+                                   <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                       <button class="btn btn-red" onclick="runExperiment()" style="flex: 1;">Run Experiment</button>
+                                       <button class="btn btn-red" onclick="saveCurrentExperiment()" style="flex: 1; background: rgba(255, 0, 0, 0.5);">💾 Save</button>
+                                   </div>
+                                   <!-- Experiment History Modal -->
+                                   <div id="experimentHistoryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; overflow-y: auto;">
+                                       <div style="max-width: 800px; margin: 50px auto; background: rgba(0, 0, 0, 0.9); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 15px; padding: 30px;">
+                                           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                               <h3 style="color: #ffffff; margin: 0;">📚 Experiment History</h3>
+                                               <button onclick="closeExperimentHistory()" style="background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); color: #ffffff; padding: 8px 15px; border-radius: 5px; cursor: pointer;">✕ Close</button>
+                                           </div>
+                                           <div id="experimentHistoryList" style="color: #ffffff;">
+                                               <!-- History items will be added here -->
+                                           </div>
+                                       </div>
+                                   </div>
                                </div>
 
                                <!-- Результаты эксперимента - перемещены сразу после кнопки -->

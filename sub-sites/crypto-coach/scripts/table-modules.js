@@ -2047,20 +2047,22 @@ function showAICorrelations() {
         const coinCorrelations = correlations[coin] || {};
         const suggestions = Object.entries(coinCorrelations).map(([asset, multiplier]) => {
             const suggestedChange = Math.round(priceChange * multiplier);
-            return `${asset}: ${suggestedChange}%`;
+            // Определяем цвет в зависимости от знака
+            const color = suggestedChange >= 0 ? '#00ff00' : '#ff6666';
+            return `<span style="color: ${color};">${asset}: ${suggestedChange >= 0 ? '+' : ''}${suggestedChange}%</span>`;
         }).join(' | ');
         
-        // Обновляем содержимое блока зелёным цветом
+        // Обновляем содержимое блока с правильными цветами
         // Порядок: заголовок сверху, монеты посередине, подпись внизу
         displayDiv.innerHTML = `
             <div style="color: #00ff00 !important; font-weight: bold !important; font-size: 1rem !important; margin-bottom: 12px;">
-                💡 AI suggests correlations:
+                💡 If ${coin} changes by ${priceChange >= 0 ? '+' : ''}${priceChange}%, other coins might change:
             </div>
-            <div style="color: #00ff00 !important; font-size: 0.95rem !important; line-height: 1.6; margin-bottom: 8px;">
+            <div style="color: #ffffff !important; font-size: 0.95rem !important; line-height: 1.6; margin-bottom: 8px;">
                 ${suggestions}
             </div>
             <div style="color: #888 !important; font-size: 0.85rem !important; margin-top: 8px;">
-                Based on historical data
+                Based on historical correlation data
             </div>
         `;
     } else {
