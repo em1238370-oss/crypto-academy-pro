@@ -3959,21 +3959,52 @@ async function optimizeStrategy() {
         if (bestResult.y > 20) insights.push(`High sell target (${bestResult.y}%) maximizes profit potential`);
         if (insights.length === 0) insights.push('Strategy shows balanced performance across all metrics');
         
-        // Используем AI для анализа (только если есть результаты)
+        // AI analysis: professional, trustworthy for experts and regular users
         let analysisText = '';
         if (topResults.length > 0) {
-            const prompt = `Analyze these optimized strategy parameters:
+            const bRet = benchmark.return >= 0 ? '+' : '';
+            const bWin = benchmark.winRate.toFixed(1);
+            const bSharpe = benchmark.sharpeRatio.toFixed(2);
+            const prompt = `Write an "Analysis of Optimized Strategy Parameters" for a crypto strategy tool. Readers include both experts and first-time users. Use only the data below; do not invent numbers.
 
-Strategy template: "${strategyTemplate}"
+**Data (use these exact numbers):**
+Strategy: "${strategyTemplate}"
 
-Top 5 parameter combinations:
-${topResults.map((r, i) => `${i + 1}. X=${r.x}%, Y=${r.y}% - Win Rate: ${r.winRate.toFixed(1)}%, Return: ${r.totalReturn >= 0 ? '+' : ''}${r.totalReturn}%, Sharpe: ${r.sharpeRatio.toFixed(2)}`).join('\n')}
+Benchmark — Buy & Hold (you must reference this when comparing):
+• Return: ${bRet}${benchmark.return}%
+• Win Rate: ${bWin}%
+• Sharpe: ${bSharpe}
 
-Provide:
-1. **Best Parameters**: Which combination is optimal and why
-2. **Risk Assessment**: Risk level for each top combination
-3. **Recommendations**: Which parameters to use and when
-4. **Trade-offs**: What you gain/lose with each option`;
+Top 5 combinations:
+${topResults.map((r, i) => `${i + 1}. X=${r.x}%, Y=${r.y}% — Win Rate ${r.winRate.toFixed(1)}%, Return ${r.totalReturn >= 0 ? '+' : ''}${r.totalReturn}%, Sharpe ${r.sharpeRatio.toFixed(2)}`).join('\n')}
+
+**Structure (use these headings; keep each section short):**
+
+### Analysis of Optimized Strategy Parameters
+
+**1. Best parameters and rationale**
+In 2–3 sentences: which combination (#1) is optimal and why, using Win Rate, Return, Sharpe. Compare to the Buy & Hold benchmark above when relevant.
+
+**2. Risk assessment**
+One sentence per top combination (1–3): Low / Medium / High risk and why, using the numbers.
+
+**3. Recommendations**
+Who should use which parameters (conservative vs aggressive) and in what situations. One short paragraph.
+
+**4. Trade-offs**
+Exactly one short paragraph. Describe what the user gains and what they sacrifice when switching between the top options (e.g. higher Y = more upside but fewer trades). No bullet lists here.
+
+**5. In plain terms**
+Two sentences for non-experts. In the second sentence, explicitly state that these conclusions are based on backtest results only, and are not a promise or guarantee of future returns.
+
+Write in English. Be precise and neutral. Do not add any disclaimer, legal text, or footer at the end.`;
+
+            const sysPrompt = [
+                'You are a senior quant analyst specializing in cryptocurrency strategies.',
+                'Use precise wording and base every claim only on the data provided (Top 5 + Buy & Hold benchmark).',
+                'Do not exaggerate; do not add disclaimers or legal text at the end — the product already shows one.',
+                'Address experts (Sharpe, risk-adjusted returns, trade-offs) and beginners (plain-language); output only the analysis, no meta-commentary.'
+            ].join(' ');
 
             const response = await fetch(API_URL, {
                 method: 'POST',
@@ -3984,14 +4015,11 @@ Provide:
                 body: JSON.stringify({
                     model: 'mistral-small',
                     messages: [
-                        { 
-                            role: 'system', 
-                            content: 'You are a strategy optimization expert. Analyze parameter combinations and provide clear recommendations.' 
-                        },
+                        { role: 'system', content: sysPrompt },
                         { role: 'user', content: prompt }
                     ],
-                    temperature: 0.7,
-                    max_tokens: 600
+                    temperature: 0.5,
+                    max_tokens: 850
                 })
             });
 
@@ -4214,7 +4242,7 @@ Provide:
                 
                 ${analysisText ? `
                     <div style="margin-top: 25px; padding-top: 25px; border-top: 2px solid rgba(255, 215, 0, 0.3);">
-                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">🤖 AI Analysis:</h5>
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📊 Analysis of Optimized Strategy Parameters</h5>
                         <div style="
                             min-height: 500px;
                             max-height: 1200px;
