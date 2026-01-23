@@ -44,12 +44,17 @@ function toggleDrawerWithInit(drawerId) {
     if (drawerId === 'drawerC') {
         const dc = document.getElementById('drawerC');
         const cc = document.getElementById('drawerCContent');
-        if (dc && cc && !dc.classList.contains('open')) {
-            cc.style.minHeight = '';
-            cc.style.maxHeight = '';
+        if (dc && cc) {
+            if (!dc.classList.contains('open')) {
+                cc.style.minHeight = '';
+                cc.style.maxHeight = '';
+            } else {
+                setTimeout(expandModuleCToContent, 50);
+                setTimeout(expandModuleCToContent, 350);
+            }
         }
     }
-    
+
     // Initialize coins if drawerA is opened
     if (drawerId === 'drawerA') {
         const coinsGrid = document.getElementById('coinsGrid');

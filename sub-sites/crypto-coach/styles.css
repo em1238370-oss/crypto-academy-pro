@@ -1357,6 +1357,11 @@ div:has-text("Experience Points") {
 .drawer-container + .drawer-container {
     margin-top: 36px;
 }
+/* Extra gap above Module C when open so it doesn't touch Module B */
+#drawerCContainer:has(#drawerC.open),
+.drawer-container:has(#drawerC.open) {
+    margin-top: 52px;
+}
 
 .drawer {
     background: rgba(0, 0, 0, 0.6);
@@ -1597,10 +1602,9 @@ div:has-text("Experience Points") {
     min-height: 0;
     max-height: none;
 }
-/* Space so Module C doesn't touch B (above) or D (below) when open */
+/* Space below Module C when open so it doesn't touch Module D */
 #drawerC.drawer.open {
-    margin-top: 24px;
-    margin-bottom: 64px;
+    margin-bottom: 80px;
 }
 
 .form-group {
