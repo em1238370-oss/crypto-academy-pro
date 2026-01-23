@@ -3939,7 +3939,26 @@ Provide:
                 margin-left: -37.8px;
                 margin-right: -37.8px;
                 width: calc(100% + 75.6px);
-            ">
+                max-height: 80vh;
+                overflow-y: auto;
+                overflow-x: hidden;
+            " class="optimizer-results-container">
+                <style>
+                    .optimizer-results-container::-webkit-scrollbar {
+                        width: 12px;
+                    }
+                    .optimizer-results-container::-webkit-scrollbar-track {
+                        background: rgba(0, 0, 0, 0.3);
+                        border-radius: 6px;
+                    }
+                    .optimizer-results-container::-webkit-scrollbar-thumb {
+                        background: rgba(255, 215, 0, 0.6);
+                        border-radius: 6px;
+                    }
+                    .optimizer-results-container::-webkit-scrollbar-thumb:hover {
+                        background: rgba(255, 215, 0, 0.8);
+                    }
+                </style>
                 <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.4rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
                     🎯 Strategy Optimization Results
                 </h4>
