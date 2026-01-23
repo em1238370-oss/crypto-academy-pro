@@ -4038,6 +4038,23 @@ Provide:
                 <!-- График оптимизации параметров -->
                 <div style="margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px;">
                     <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📊 Parameter Optimization Heatmap</h5>
+                    <div style="
+                        background: rgba(255, 215, 0, 0.1);
+                        border: 1px solid rgba(255, 215, 0, 0.3);
+                        border-radius: 8px;
+                        padding: 15px;
+                        margin-bottom: 15px;
+                        color: #ffffff;
+                        font-size: 0.95rem;
+                        line-height: 1.6;
+                    ">
+                        <strong style="color: #ffd700;">💡 What is this Heatmap?</strong><br>
+                        This heatmap visualizes the performance of all tested parameter combinations. Each colored cell represents one combination of X (Buy %) and Y (Sell %) parameters.<br><br>
+                        <strong style="color: #00ff00;">🟢 Green cells</strong> = High performance combinations (best results)<br>
+                        <strong style="color: #ffd700;">🟡 Gold/Yellow cells</strong> = Medium performance combinations (decent results)<br>
+                        <strong style="color: #ff6666;">🔴 Red cells</strong> = Low performance combinations (poor results)<br><br>
+                        <strong>How to read:</strong> The darker/more intense the color, the better the performance. Look for clusters of green cells to find optimal parameter ranges. The X-axis shows Buy % values (negative), and the Y-axis shows Sell % values (positive).
+                    </div>
                     <canvas id="optimizerChart" style="width: 100%; height: 250px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
                     <div style="color: #cccccc; font-size: 0.9rem; margin-top: 10px; text-align: center;">
                         <span style="color: #00ff00;">■</span> High Performance | 
