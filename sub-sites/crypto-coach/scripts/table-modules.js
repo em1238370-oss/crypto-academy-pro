@@ -3981,9 +3981,38 @@ Provide:
                 </div>
                 
                 ${analysisText ? `
-                    <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8; margin-top: 25px; padding-top: 25px; border-top: 2px solid rgba(255, 215, 0, 0.3);">
+                    <div style="margin-top: 25px; padding-top: 25px; border-top: 2px solid rgba(255, 215, 0, 0.3);">
                         <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">🤖 AI Analysis:</h5>
-                        <p style="margin: 15px 0; line-height: 1.8;">${analysisText}</p>
+                        <div style="
+                            max-height: 400px;
+                            overflow-y: auto;
+                            overflow-x: hidden;
+                            padding: 15px;
+                            background: rgba(0, 0, 0, 0.3);
+                            border-radius: 8px;
+                            border: 1px solid rgba(255, 215, 0, 0.2);
+                            color: #ffffff;
+                            font-size: 1.05rem;
+                            line-height: 1.8;
+                        " class="ai-analysis-scrollable">
+                            <p style="margin: 0; line-height: 1.8;">${analysisText}</p>
+                        </div>
+                        <style>
+                            .ai-analysis-scrollable::-webkit-scrollbar {
+                                width: 10px;
+                            }
+                            .ai-analysis-scrollable::-webkit-scrollbar-track {
+                                background: rgba(0, 0, 0, 0.3);
+                                border-radius: 5px;
+                            }
+                            .ai-analysis-scrollable::-webkit-scrollbar-thumb {
+                                background: rgba(255, 215, 0, 0.5);
+                                border-radius: 5px;
+                            }
+                            .ai-analysis-scrollable::-webkit-scrollbar-thumb:hover {
+                                background: rgba(255, 215, 0, 0.7);
+                            }
+                        </style>
                     </div>
                 ` : ''}
                 
@@ -4416,6 +4445,7 @@ function deleteStrategyOptimizerFromHistory(id) {
     localStorage.setItem('strategyOptimizerHistory', JSON.stringify(history));
     showStrategyOptimizerHistory();
 }
+
 
 // Predictive Analytics Dashboard - прогнозная аналитика с AI
 async function loadPredictiveDashboard() {
