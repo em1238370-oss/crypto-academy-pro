@@ -5178,11 +5178,12 @@ function showTooltipHandler(event) {
     // Убираем класс, если он был
     tooltip.classList.remove('show-tooltip');
     
-    // Устанавливаем таймер на 2 секунды
+    // Устанавливаем таймер на 1 секунду (было 2 секунды)
     tooltipTimeout = setTimeout(() => {
         tooltip.classList.add('show-tooltip');
+        adjustTooltipPosition(tooltip);
         tooltipTimeout = null;
-    }, 2000);
+    }, 1000);
 }
 
 function hideTooltipHandler(event) {
@@ -5196,4 +5197,87 @@ function hideTooltipHandler(event) {
     
     // Убираем класс
     tooltip.classList.remove('show-tooltip');
+}
+
+// Функция для корректировки позиции tooltip, чтобы он не выходил за границы экрана
+function adjustTooltipPosition(tooltip) {
+    const tooltipText = tooltip.querySelector('.tooltip-text');
+    if (!tooltipText) return;
+    
+    // Получаем позицию элемента и tooltip
+    const rect = tooltip.getBoundingClientRect();
+    const tooltipRect = tooltipText.getBoundingClientRect();
+    
+    // Получаем размеры окна
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const scrollX = window.scrollX || window.pageXOffset;
+    const scrollY = window.scrollY || window.pageYOffset;
+    
+    // Сбрасываем все стили позиционирования
+    tooltipText.style.left = '';
+    tooltipText.style.right = '';
+    tooltipText.style.top = '';
+    tooltipText.style.bottom = '';
+    tooltipText.style.transform = '';
+    
+    // Вычисляем позицию по умолчанию (сверху по центру)
+    const defaultLeft = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+    const defaultTop = rect.top - tooltipRect.height - 10;
+    
+    let finalLeft = defaultLeft;
+    let finalTop = defaultTop;
+    let transformX = 'translateX(-50%)';
+    let transformY = '';
+    
+    // Проверяем выход за левую границу
+    if (defaultLeft < 10) {
+        finalLeft = rect.left + (rect.width / 2);
+        transformX = 'translateX(-50%)';
+        // Если всё равно выходит, прижимаем к левому краю
+        if (finalLeft - (tooltipRect.width / 2) < 10) {
+            finalLeft = rect.left;
+            transformX = 'translateX(0)';
+        }
+    }
+    
+    // Проверяем выход за правую границу
+    if (defaultLeft + tooltipRect.width > windowWidth - 10) {
+        finalLeft = rect.left + (rect.width / 2);
+        transformX = 'translateX(-50%)';
+        // Если всё равно выходит, прижимаем к правому краю
+        if (finalLeft + (tooltipRect.width / 2) > windowWidth - 10) {
+            finalLeft = rect.right;
+            transformX = 'translateX(-100%)';
+        }
+    }
+    
+    // Проверяем выход за верхнюю границу
+    let showBelow = false;
+    if (defaultTop < 10) {
+        // Показываем tooltip снизу вместо сверху
+        finalTop = rect.bottom + 10;
+        transformY = '';
+        tooltipText.style.bottom = 'auto';
+        tooltipText.style.top = 'auto';
+        showBelow = true;
+        // Добавляем класс для изменения стрелки
+        tooltipText.classList.add('bottom-arrow');
+    } else {
+        tooltipText.classList.remove('bottom-arrow');
+    }
+    
+    // Проверяем выход за нижнюю границу (если tooltip снизу)
+    if (finalTop + tooltipRect.height > windowHeight - 10) {
+        // Возвращаем tooltip сверху, но сдвигаем вниз
+        finalTop = Math.max(10, windowHeight - tooltipRect.height - 10);
+    }
+    
+    // Применяем вычисленные позиции
+    tooltipText.style.position = 'fixed';
+    tooltipText.style.left = finalLeft + 'px';
+    tooltipText.style.top = finalTop + 'px';
+    tooltipText.style.transform = transformX + (transformY ? ' ' + transformY : '');
+    tooltipText.style.bottom = 'auto';
+    tooltipText.style.right = 'auto';
 }

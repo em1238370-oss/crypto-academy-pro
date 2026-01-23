@@ -2260,16 +2260,18 @@ div:has-text("Experience Points") {
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    position: absolute;
+    position: fixed;
     z-index: 10000;
-    bottom: 125%;
-    left: 50%;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    top: auto;
     transform: translateX(-50%);
-    white-space: nowrap;
+    white-space: normal;
     font-size: 0.9rem;
     line-height: 1.4;
     max-width: 300px;
-    white-space: normal;
+    min-width: 150px;
     word-wrap: break-word;
     transition: opacity 0.3s ease, visibility 0.3s ease;
     pointer-events: none;
@@ -2284,6 +2286,14 @@ div:has-text("Experience Points") {
     border-width: 6px;
     border-style: solid;
     border-color: rgba(40, 40, 40, 0.95) transparent transparent transparent;
+}
+
+/* Стрелка снизу, когда tooltip показывается снизу элемента */
+.info-tooltip .tooltip-text[style*="--arrow-position: bottom"]::after,
+.info-tooltip .tooltip-text.bottom-arrow::after {
+    top: auto;
+    bottom: 100%;
+    border-color: transparent transparent rgba(40, 40, 40, 0.95) transparent;
 }
 
 .info-tooltip.show-tooltip .tooltip-text {
