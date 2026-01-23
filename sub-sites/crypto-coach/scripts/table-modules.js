@@ -1,4 +1,18 @@
 // ========== MODULES JAVASCRIPT ==========
+
+// Auto-extend Module C content when any answer/results appear, so everything is visible
+function expandModuleCToContent() {
+    const drawer = document.getElementById('drawerC');
+    const content = document.getElementById('drawerCContent');
+    if (!drawer || !content) return;
+    if (!drawer.classList.contains('open')) return;
+    setTimeout(() => {
+        const h = Math.max(8000, content.scrollHeight + 800);
+        content.style.minHeight = h + 'px';
+        content.style.maxHeight = h + 'px';
+    }, 250);
+}
+
 // Initialize drawers
 function toggleDrawer(drawerId) {
     const drawer = document.getElementById(drawerId);
@@ -4337,9 +4351,11 @@ Provide:
             
             // Создаем график сравнения
             createComparisonChart(topResults);
+            expandModuleCToContent();
         }, 100);
         
         optimizerResults.style.display = 'block';
+        expandModuleCToContent();
     } catch (error) {
         console.error('Strategy Optimizer Error:', error);
         optimizerResults.innerHTML = `
@@ -5169,6 +5185,8 @@ Be specific with numbers, percentages, and price levels.`;
                 </div>
             `;
             
+            expandModuleCToContent();
+            
             // Создаем график прогнозов
             setTimeout(() => {
                 const canvas = document.getElementById('predictionChart');
@@ -5236,6 +5254,7 @@ Be specific with numbers, percentages, and price levels.`;
                         ctx.fillText(`$${price.toFixed(0)}`, x, y - 10);
                     });
                 }
+                expandModuleCToContent();
             }, 100);
         } else {
             throw new Error('No response from AI');
