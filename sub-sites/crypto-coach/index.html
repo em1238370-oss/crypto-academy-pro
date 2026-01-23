@@ -820,9 +820,9 @@
                                        <label>Strategy Template:</label>
                                        <input type="text" id="optimizerStrategyTemplate" placeholder="e.g.: Buy on drop X%, sell on rise Y%" style="width: 100%;" onchange="autoSaveStrategyOptimizerForm()">
                                        <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.6;">
-                                           💡 <strong>Что это такое:</strong> Опишите вашу торговую стратегию, используя X и Y как переменные. X = процент падения цены для покупки (обычно отрицательное число, например -10%), Y = процент роста цены для продажи (обычно положительное число, например +20%).<br><br>
-                                           <strong>Как это работает:</strong> Оптимизатор будет автоматически подставлять разные значения X и Y из указанных диапазонов и тестировать каждую комбинацию, чтобы найти лучшие параметры для вашей стратегии.<br><br>
-                                           <strong>Пример:</strong> "Buy when price drops X%, sell when it rises Y%" или "Покупать при падении X%, продавать при росте Y%"
+                                           💡 <strong>What this is:</strong> Describe your trading strategy using X and Y as variables. X = percentage price drop for buying (usually negative number, e.g., -10%), Y = percentage price rise for selling (usually positive number, e.g., +20%).<br><br>
+                                           <strong>How it works:</strong> The optimizer will automatically substitute different X and Y values from the specified ranges and test each combination to find the best parameters for your strategy.<br><br>
+                                           <strong>Example:</strong> "Buy when price drops X%, sell when it rises Y%" or "Buy BTC when it drops X% from current price, wait for recovery, then sell when price rises Y% from purchase price"
                                        </small>
                                    </div>
                                    <div class="form-group">
@@ -833,10 +833,10 @@
                                            <input type="number" id="xStep" placeholder="Step" value="5" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
                                        </div>
                                        <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.6;">
-                                           💡 <strong>X - это процент падения цены для покупки (BUY trigger):</strong><br>
-                                           • <strong>Min (Минимум):</strong> Самое глубокое падение цены, которое вы хотите протестировать. Например, -25% означает "покупать когда цена упала на 25%". Чем больше число (по модулю), тем глубже падение нужно для входа.<br>
-                                           • <strong>Max (Максимум):</strong> Самое маленькое падение цены для тестирования. Например, -5% означает "покупать когда цена упала всего на 5%". Чем меньше число (по модулю), тем раньше вы входите в позицию.<br>
-                                           • <strong>Step (Шаг):</strong> Шаг между тестами. Например, Step=5 означает тестировать -25%, -20%, -15%, -10%, -5%. Оптимизатор протестирует все комбинации X с Y.
+                                           💡 <strong>X is the percentage price drop for buying (BUY trigger):</strong><br>
+                                           • <strong>Min (Minimum):</strong> The deepest price drop you want to test. For example, -25% means "buy when price dropped by 25%". The larger the number (in absolute value), the deeper the drop needed to enter.<br>
+                                           • <strong>Max (Maximum):</strong> The smallest price drop to test. For example, -5% means "buy when price dropped by only 5%". The smaller the number (in absolute value), the earlier you enter the position.<br>
+                                           • <strong>Step (Increment):</strong> The step between tests. For example, Step=5 means testing -25%, -20%, -15%, -10%, -5%. The optimizer will test all X combinations with Y values.
                                        </small>
                                    </div>
                                    <div class="form-group">
@@ -847,10 +847,10 @@
                                            <input type="number" id="yStep" placeholder="Step" value="5" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
                                        </div>
                                        <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.6;">
-                                           💡 <strong>Y - это процент роста цены для продажи (SELL trigger):</strong><br>
-                                           • <strong>Min (Минимум):</strong> Самая маленькая цель прибыли для тестирования. Например, 10% означает "продавать когда цена выросла на 10%". Чем меньше число, тем быстрее вы фиксируете прибыль, но она меньше.<br>
-                                           • <strong>Max (Максимум):</strong> Самая большая цель прибыли для тестирования. Например, 30% означает "продавать когда цена выросла на 30%". Чем больше число, тем больше потенциальная прибыль, но нужно ждать дольше.<br>
-                                           • <strong>Step (Шаг):</strong> Шаг между тестами. Например, Step=5 означает тестировать 10%, 15%, 20%, 25%, 30%. Оптимизатор протестирует все комбинации Y с каждым значением X.
+                                           💡 <strong>Y is the percentage price rise for selling (SELL trigger):</strong><br>
+                                           • <strong>Min (Minimum):</strong> The smallest profit target to test. For example, 10% means "sell when price rose by 10%". The smaller the number, the faster you take profit, but it's smaller.<br>
+                                           • <strong>Max (Maximum):</strong> The largest profit target to test. For example, 30% means "sell when price rose by 30%". The larger the number, the greater potential profit, but you need to wait longer.<br>
+                                           • <strong>Step (Increment):</strong> The step between tests. For example, Step=5 means testing 10%, 15%, 20%, 25%, 30%. The optimizer will test all Y combinations with each X value.
                                        </small>
                                    </div>
                                    <div id="optimizerResults" style="margin-top: 20px; display: none;"></div>
