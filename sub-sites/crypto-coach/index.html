@@ -809,29 +809,56 @@
                                <div class="section-box" style="margin-top: 20px;">
                                    <h4>🎯 Strategy Optimizer</h4>
                                    <p style="color: #cccccc; margin-bottom: 15px;">Find optimal parameters for your strategy</p>
+                                   <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                                       <button class="btn btn-red" onclick="optimizeStrategy()" style="flex: 1;">🔍 Optimize Strategy</button>
+                                       <button class="btn btn-red" onclick="fillExampleStrategyOptimizer()" style="background: rgba(255, 215, 0, 0.3); border-color: #ffd700;">📋 Fill Example</button>
+                                       <button class="btn btn-red" onclick="saveStrategyOptimizerToHistory()" style="background: rgba(255, 0, 0, 0.5);">💾 Save</button>
+                                       <button class="btn btn-red" onclick="showStrategyOptimizerHistory()" style="background: rgba(255, 0, 0, 0.5);">📚 History</button>
+                                       <button class="btn btn-red" onclick="clearStrategyOptimizerForm()" style="background: rgba(100, 100, 100, 0.5);">🔄 Clear</button>
+                                   </div>
                                    <div class="form-group">
                                        <label>Strategy Template:</label>
-                                       <input type="text" id="strategyTemplate" placeholder="e.g.: Buy on drop X%, sell on rise Y%" style="width: 100%;">
-                                       <small style="color: #888;">Use X and Y as variables to optimize</small>
+                                       <input type="text" id="optimizerStrategyTemplate" placeholder="e.g.: Buy on drop X%, sell on rise Y%" style="width: 100%;" onchange="autoSaveStrategyOptimizerForm()">
+                                       <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.4;">
+                                           💡 Describe your strategy using X and Y as variables. X = buy trigger (negative %), Y = sell trigger (positive %). Example: "Buy when price drops X%, sell when it rises Y%"
+                                       </small>
                                    </div>
                                    <div class="form-group">
                                        <label>X Range (Buy %):</label>
                                        <div style="display: flex; gap: 10px;">
-                                           <input type="number" id="xMin" placeholder="Min" value="-25" style="flex: 1;">
-                                           <input type="number" id="xMax" placeholder="Max" value="-5" style="flex: 1;">
-                                           <input type="number" id="xStep" placeholder="Step" value="5" style="flex: 1;">
+                                           <input type="number" id="xMin" placeholder="Min" value="-25" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
+                                           <input type="number" id="xMax" placeholder="Max" value="-5" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
+                                           <input type="number" id="xStep" placeholder="Step" value="5" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
                                        </div>
+                                       <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.4;">
+                                           💡 X is the BUY trigger (usually negative). Min = deepest drop to test (e.g., -25%), Max = smallest drop (e.g., -5%), Step = increment between tests (e.g., 5%). The optimizer will test all combinations.
+                                       </small>
                                    </div>
                                    <div class="form-group">
                                        <label>Y Range (Sell %):</label>
                                        <div style="display: flex; gap: 10px;">
-                                           <input type="number" id="yMin" placeholder="Min" value="10" style="flex: 1;">
-                                           <input type="number" id="yMax" placeholder="Max" value="30" style="flex: 1;">
-                                           <input type="number" id="yStep" placeholder="Step" value="5" style="flex: 1;">
+                                           <input type="number" id="yMin" placeholder="Min" value="10" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
+                                           <input type="number" id="yMax" placeholder="Max" value="30" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
+                                           <input type="number" id="yStep" placeholder="Step" value="5" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
+                                       </div>
+                                       <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.4;">
+                                           💡 Y is the SELL trigger (usually positive). Min = smallest profit target (e.g., 10%), Max = largest profit target (e.g., 30%), Step = increment between tests (e.g., 5%). The optimizer will test all combinations with X values.
+                                       </small>
+                                   </div>
+                                   <div id="optimizerResults" style="margin-top: 20px; display: none;"></div>
+                               </div>
+                               
+                               <!-- Strategy Optimizer History Modal -->
+                               <div id="strategyOptimizerHistoryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; overflow-y: auto;">
+                                   <div style="max-width: 800px; margin: 50px auto; background: rgba(0, 0, 0, 0.9); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 15px; padding: 30px;">
+                                       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                           <h3 style="color: #ffffff; margin: 0;">📚 Strategy Optimizer History</h3>
+                                           <button onclick="closeStrategyOptimizerHistory()" style="background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); color: #ffffff; padding: 8px 15px; border-radius: 5px; cursor: pointer;">✕ Close</button>
+                                       </div>
+                                       <div id="strategyOptimizerHistoryList" style="color: #ffffff;">
+                                           <!-- History items will be added here -->
                                        </div>
                                    </div>
-                                   <button class="btn btn-red" onclick="optimizeStrategy()">🔍 Optimize Strategy</button>
-                                   <div id="optimizerResults" style="margin-top: 20px; display: none;"></div>
                                </div>
 
                                <div class="section-box" style="margin-top: 20px;">

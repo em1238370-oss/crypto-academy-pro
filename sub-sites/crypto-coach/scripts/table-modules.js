@@ -3741,7 +3741,7 @@ if (document.readyState === 'loading') {
 
 // Strategy Optimizer - находит оптимальные параметры для стратегии
 async function optimizeStrategy() {
-    const strategyTemplate = document.getElementById('strategyTemplate')?.value?.trim();
+    const strategyTemplate = document.getElementById('optimizerStrategyTemplate')?.value?.trim();
     const xMin = parseFloat(document.getElementById('xMin')?.value || -25);
     const xMax = parseFloat(document.getElementById('xMax')?.value || -5);
     const xStep = parseFloat(document.getElementById('xStep')?.value || 5);
@@ -4015,13 +4015,204 @@ Provide:
 
 // Применить оптимальные параметры
 function applyOptimalStrategy(x, y) {
-    const strategyTemplate = document.getElementById('strategyTemplate');
+    const strategyTemplate = document.getElementById('optimizerStrategyTemplate');
     if (strategyTemplate) {
         const template = strategyTemplate.value;
         const applied = template.replace(/X/g, x).replace(/Y/g, y);
         strategyTemplate.value = applied;
+        autoSaveStrategyOptimizerForm();
         alert(`✅ Optimal parameters applied: Buy on drop ${x}%, sell on rise ${y}%`);
     }
+}
+
+// ========== STRATEGY OPTIMIZER HISTORY MANAGEMENT ==========
+
+// Fill example for Strategy Optimizer
+function fillExampleStrategyOptimizer() {
+    document.getElementById('optimizerStrategyTemplate').value = 'Buy on drop X%, sell on rise Y%';
+    document.getElementById('xMin').value = '-25';
+    document.getElementById('xMax').value = '-5';
+    document.getElementById('xStep').value = '5';
+    document.getElementById('yMin').value = '10';
+    document.getElementById('yMax').value = '30';
+    document.getElementById('yStep').value = '5';
+    autoSaveStrategyOptimizerForm();
+}
+
+// Clear Strategy Optimizer form
+function clearStrategyOptimizerForm() {
+    if (!confirm('Are you sure you want to clear all fields?')) return;
+    document.getElementById('optimizerStrategyTemplate').value = '';
+    document.getElementById('xMin').value = '-25';
+    document.getElementById('xMax').value = '-5';
+    document.getElementById('xStep').value = '5';
+    document.getElementById('yMin').value = '10';
+    document.getElementById('yMax').value = '30';
+    document.getElementById('yStep').value = '5';
+    document.getElementById('optimizerResults').style.display = 'none';
+    document.getElementById('optimizerResults').innerHTML = '';
+    autoSaveStrategyOptimizerForm();
+}
+
+// Auto-save Strategy Optimizer form to localStorage
+function autoSaveStrategyOptimizerForm() {
+    const formData = {
+        strategyTemplate: document.getElementById('optimizerStrategyTemplate')?.value || '',
+        xMin: document.getElementById('xMin')?.value || '-25',
+        xMax: document.getElementById('xMax')?.value || '-5',
+        xStep: document.getElementById('xStep')?.value || '5',
+        yMin: document.getElementById('yMin')?.value || '10',
+        yMax: document.getElementById('yMax')?.value || '30',
+        yStep: document.getElementById('yStep')?.value || '5',
+        timestamp: Date.now()
+    };
+    localStorage.setItem('strategyOptimizerFormData', JSON.stringify(formData));
+}
+
+// Load Strategy Optimizer form from localStorage
+function loadStrategyOptimizerForm() {
+    const saved = localStorage.getItem('strategyOptimizerFormData');
+    if (saved) {
+        try {
+            const formData = JSON.parse(saved);
+            if (formData.strategyTemplate) document.getElementById('optimizerStrategyTemplate').value = formData.strategyTemplate;
+            if (formData.xMin) document.getElementById('xMin').value = formData.xMin;
+            if (formData.xMax) document.getElementById('xMax').value = formData.xMax;
+            if (formData.xStep) document.getElementById('xStep').value = formData.xStep;
+            if (formData.yMin) document.getElementById('yMin').value = formData.yMin;
+            if (formData.yMax) document.getElementById('yMax').value = formData.yMax;
+            if (formData.yStep) document.getElementById('yStep').value = formData.yStep;
+        } catch (e) {
+            console.error('Error loading Strategy Optimizer form:', e);
+        }
+    }
+}
+
+// Save Strategy Optimizer to history
+function saveStrategyOptimizerToHistory() {
+    const strategyTemplate = document.getElementById('optimizerStrategyTemplate')?.value?.trim();
+    const xMin = document.getElementById('xMin')?.value || '-25';
+    const xMax = document.getElementById('xMax')?.value || '-5';
+    const xStep = document.getElementById('xStep')?.value || '5';
+    const yMin = document.getElementById('yMin')?.value || '10';
+    const yMax = document.getElementById('yMax')?.value || '30';
+    const yStep = document.getElementById('yStep')?.value || '5';
+    
+    if (!strategyTemplate) {
+        alert('Please enter a strategy template first');
+        return;
+    }
+    
+    const history = JSON.parse(localStorage.getItem('strategyOptimizerHistory') || '[]');
+    const newOptimizer = {
+        id: Date.now(),
+        strategyTemplate,
+        xMin: parseFloat(xMin),
+        xMax: parseFloat(xMax),
+        xStep: parseFloat(xStep),
+        yMin: parseFloat(yMin),
+        yMax: parseFloat(yMax),
+        yStep: parseFloat(yStep),
+        timestamp: new Date().toISOString(),
+        date: new Date().toLocaleString()
+    };
+    
+    history.unshift(newOptimizer);
+    if (history.length > 50) history.pop();
+    
+    localStorage.setItem('strategyOptimizerHistory', JSON.stringify(history));
+    alert('✅ Strategy Optimizer saved to history!');
+}
+
+// Show Strategy Optimizer history
+function showStrategyOptimizerHistory() {
+    const modal = document.getElementById('strategyOptimizerHistoryModal');
+    const list = document.getElementById('strategyOptimizerHistoryList');
+    
+    if (!modal || !list) return;
+    
+    const history = JSON.parse(localStorage.getItem('strategyOptimizerHistory') || '[]');
+    
+    if (history.length === 0) {
+        list.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">No saved optimizations yet. Save an optimization to see it here.</div>';
+    } else {
+        list.innerHTML = history.map(optimizer => {
+            const date = new Date(optimizer.timestamp).toLocaleString();
+            return `
+                <div style="background: rgba(255, 0, 0, 0.1); border: 1px solid rgba(255, 0, 0, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                            <div style="color: #ffffff; font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">${optimizer.strategyTemplate.substring(0, 60)}${optimizer.strategyTemplate.length > 60 ? '...' : ''}</div>
+                            <div style="color: #cccccc; font-size: 0.9rem;">${date}</div>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="loadStrategyOptimizerFromHistory(${optimizer.id})" style="background: rgba(0, 255, 0, 0.2); border: 1px solid rgba(0, 255, 0, 0.4); color: #00ff00; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.85rem;">📋 Load</button>
+                            <button onclick="cloneStrategyOptimizerFromHistory(${optimizer.id})" style="background: rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.4); color: #ffd700; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.85rem;">📑 Clone</button>
+                            <button onclick="deleteStrategyOptimizerFromHistory(${optimizer.id})" style="background: rgba(255, 0, 0, 0.2); border: 1px solid rgba(255, 0, 0, 0.4); color: #ff6666; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.85rem;">🗑️</button>
+                        </div>
+                    </div>
+                    <div style="color: #cccccc; font-size: 0.9rem; line-height: 1.5;">
+                        <div><strong>X Range (Buy %):</strong> ${optimizer.xMin}% to ${optimizer.xMax}% (step: ${optimizer.xStep}%)</div>
+                        <div><strong>Y Range (Sell %):</strong> ${optimizer.yMin}% to ${optimizer.yMax}% (step: ${optimizer.yStep}%)</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    modal.style.display = 'block';
+}
+
+// Close Strategy Optimizer history
+function closeStrategyOptimizerHistory() {
+    const modal = document.getElementById('strategyOptimizerHistoryModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Load Strategy Optimizer from history
+function loadStrategyOptimizerFromHistory(id) {
+    const history = JSON.parse(localStorage.getItem('strategyOptimizerHistory') || '[]');
+    const optimizer = history.find(o => o.id === id);
+    
+    if (!optimizer) return;
+    
+    document.getElementById('optimizerStrategyTemplate').value = optimizer.strategyTemplate;
+    document.getElementById('xMin').value = optimizer.xMin;
+    document.getElementById('xMax').value = optimizer.xMax;
+    document.getElementById('xStep').value = optimizer.xStep;
+    document.getElementById('yMin').value = optimizer.yMin;
+    document.getElementById('yMax').value = optimizer.yMax;
+    document.getElementById('yStep').value = optimizer.yStep;
+    autoSaveStrategyOptimizerForm();
+    closeStrategyOptimizerHistory();
+}
+
+// Clone Strategy Optimizer from history
+function cloneStrategyOptimizerFromHistory(id) {
+    const history = JSON.parse(localStorage.getItem('strategyOptimizerHistory') || '[]');
+    const optimizer = history.find(o => o.id === id);
+    
+    if (!optimizer) return;
+    
+    document.getElementById('optimizerStrategyTemplate').value = optimizer.strategyTemplate + ' (Copy)';
+    document.getElementById('xMin').value = optimizer.xMin;
+    document.getElementById('xMax').value = optimizer.xMax;
+    document.getElementById('xStep').value = optimizer.xStep;
+    document.getElementById('yMin').value = optimizer.yMin;
+    document.getElementById('yMax').value = optimizer.yMax;
+    document.getElementById('yStep').value = optimizer.yStep;
+    autoSaveStrategyOptimizerForm();
+    closeStrategyOptimizerHistory();
+}
+
+// Delete Strategy Optimizer from history
+function deleteStrategyOptimizerFromHistory(id) {
+    if (!confirm('Are you sure you want to delete this optimization from history?')) return;
+    
+    let history = JSON.parse(localStorage.getItem('strategyOptimizerHistory') || '[]');
+    history = history.filter(o => o.id !== id);
+    localStorage.setItem('strategyOptimizerHistory', JSON.stringify(history));
+    showStrategyOptimizerHistory();
 }
 
 // Predictive Analytics Dashboard - прогнозная аналитика с AI
@@ -4776,6 +4967,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateRiskAppetiteDisplay();
         loadExperimentArchive();
         loadExperimentForm(); // Load saved form data
+        loadStrategyOptimizerForm(); // Load saved Strategy Optimizer form data
     }, 500);
 });
 
