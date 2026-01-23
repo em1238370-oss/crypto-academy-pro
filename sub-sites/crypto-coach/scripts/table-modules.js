@@ -4003,7 +4003,7 @@ Provide:
                     <div style="margin-top: 25px; padding-top: 25px; border-top: 2px solid rgba(255, 215, 0, 0.3);">
                         <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">🤖 AI Analysis:</h5>
                         <div style="
-                            max-height: 400px;
+                            max-height: 1200px;
                             overflow-y: auto;
                             overflow-x: hidden;
                             padding: 15px;
