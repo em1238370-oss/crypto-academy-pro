@@ -8,7 +8,7 @@ function expandModuleCToContent() {
     if (!drawer.classList.contains('open')) return;
     function setHeight() {
         if (!content || !drawer.classList.contains('open')) return;
-        const h = content.scrollHeight + 400;
+        const h = Math.max(400, content.scrollHeight + 80);
         content.style.minHeight = h + 'px';
         content.style.maxHeight = h + 'px';
     }
@@ -24,19 +24,31 @@ function toggleDrawer(drawerId) {
 }
 
 function toggleDrawerWithInit(drawerId) {
-    // Close ALL other drawers
+    // Close ALL other drawers and clear Module C height when it's closed (no black gap on reopen)
     const allDrawers = ['drawerA', 'drawerB', 'drawerC', 'drawerD'];
     allDrawers.forEach(id => {
         if (id !== drawerId) {
             const drawer = document.getElementById(id);
             if (drawer && drawer.classList.contains('open')) {
+                if (id === 'drawerC') {
+                    const c = document.getElementById('drawerCContent');
+                    if (c) { c.style.minHeight = ''; c.style.maxHeight = ''; }
+                }
                 drawer.classList.remove('open');
             }
         }
     });
-    
+
     // Toggle the clicked drawer
     toggleDrawer(drawerId);
+    if (drawerId === 'drawerC') {
+        const dc = document.getElementById('drawerC');
+        const cc = document.getElementById('drawerCContent');
+        if (dc && cc && !dc.classList.contains('open')) {
+            cc.style.minHeight = '';
+            cc.style.maxHeight = '';
+        }
+    }
     
     // Initialize coins if drawerA is opened
     if (drawerId === 'drawerA') {
