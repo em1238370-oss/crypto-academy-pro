@@ -4252,7 +4252,7 @@ Provide:
                     </ol>
                 </div>
                 
-                <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid rgba(255, 215, 0, 0.3);">
+                <div style="margin-top: 25px; padding-top: 20px; padding-bottom: 40px; border-top: 2px solid rgba(255, 215, 0, 0.3);">
                     <button class="btn btn-red" onclick="applyOptimalStrategy(${topResults[0].x}, ${topResults[0].y})" style="padding: 12px 30px; font-size: 1rem; font-weight: bold; width: 100%;">
                         ✅ Apply & Test Best Parameters (X=${topResults[0].x}%, Y=${topResults[0].y}%)
                     </button>
