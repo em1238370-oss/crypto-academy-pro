@@ -3875,6 +3875,9 @@ async function optimizeStrategy() {
         const statusText = document.getElementById('optimizerStatus');
         if (statusText) statusText.textContent = 'Analyzing results...';
         
+        // Задержка 3 секунды перед показом результатов
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
         // Сортируем по score (лучшие первыми)
         results.sort((a, b) => b.score - a.score);
         const topResults = results.slice(0, 5);
@@ -3936,12 +3939,9 @@ Provide:
                 border-radius: 12px;
                 padding: 25px;
                 box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
-                margin-left: -37.8px;
-                margin-right: -37.8px;
-                width: calc(100% + 75.6px);
-                max-height: 80vh;
-                overflow-y: auto;
-                overflow-x: hidden;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
             " class="optimizer-results-container">
                 <style>
                     .optimizer-results-container::-webkit-scrollbar {
@@ -3959,7 +3959,20 @@ Provide:
                         background: rgba(255, 215, 0, 0.8);
                     }
                 </style>
-                <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.4rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
+                <h4 style="
+                    color: #ffd700; 
+                    margin-bottom: 25px; 
+                    font-size: 1.4rem; 
+                    text-align: center; 
+                    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+                    position: sticky;
+                    top: 0;
+                    background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(30, 0, 0, 0.95) 100%);
+                    padding: 15px;
+                    margin: -25px -25px 25px -25px;
+                    border-radius: 12px 12px 0 0;
+                    z-index: 10;
+                ">
                     🎯 Strategy Optimization Results
                 </h4>
                 
@@ -4003,7 +4016,7 @@ Provide:
                     <div style="margin-top: 25px; padding-top: 25px; border-top: 2px solid rgba(255, 215, 0, 0.3);">
                         <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">🤖 AI Analysis:</h5>
                         <div style="
-                            max-height: 1200px;
+                            max-height: 50vh;
                             overflow-y: auto;
                             overflow-x: hidden;
                             padding: 15px;
