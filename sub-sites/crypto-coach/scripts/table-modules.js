@@ -4337,18 +4337,17 @@ Provide:
                 xValuesUnique.forEach((x, i) => {
                     ctx.fillText(`${x}%`, i * cellWidth + cellWidth / 2, canvas.height - 5);
                 });
+                
+                // Добавляем подпись оси Y
+                ctx.save();
+                ctx.translate(15, canvas.height / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillText('Y (Sell %)', 0, 0);
+                ctx.restore();
             }
             
-            // Добавляем подпись оси Y
-            ctx.save();
-            ctx.translate(15, canvas.height / 2);
-            ctx.rotate(-Math.PI / 2);
-            ctx.fillText('Y (Sell %)', 0, 0);
-            ctx.restore();
-        }
-        
-        // Создаем график сравнения
-        createComparisonChart(topResults);
+            // Создаем график сравнения
+            createComparisonChart(topResults);
         }, 100);
     } catch (error) {
         console.error('Strategy Optimizer Error:', error);
