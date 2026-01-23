@@ -1,6 +1,6 @@
 // ========== MODULES JAVASCRIPT ==========
 
-// Auto-extend Module C to fit content exactly when any answer appears — no black gap, no cutoff, last button visible
+// Auto-extend Module C to fit content when any answer appears — no black gap, last button visible, doesn't touch Module D
 function expandModuleCToContent() {
     const drawer = document.getElementById('drawerC');
     const content = document.getElementById('drawerCContent');
@@ -8,13 +8,13 @@ function expandModuleCToContent() {
     if (!drawer.classList.contains('open')) return;
     function setHeight() {
         if (!content || !drawer.classList.contains('open')) return;
-        const h = content.scrollHeight + 500;
+        const h = content.scrollHeight + 400;
         content.style.minHeight = h + 'px';
         content.style.maxHeight = h + 'px';
     }
-    setTimeout(setHeight, 150);
-    setTimeout(setHeight, 450);
-    setTimeout(setHeight, 900);
+    setTimeout(setHeight, 120);
+    setTimeout(setHeight, 400);
+    setTimeout(setHeight, 800);
 }
 
 // Initialize drawers
