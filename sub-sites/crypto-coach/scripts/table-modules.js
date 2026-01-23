@@ -4288,8 +4288,6 @@ Provide:
             </div>
         `;
         
-        optimizerResults.style.display = 'block';
-        
         // Создаем heatmap оптимизации
         setTimeout(() => {
             const canvas = document.getElementById('optimizerChart');
