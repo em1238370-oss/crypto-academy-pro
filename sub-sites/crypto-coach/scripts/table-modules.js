@@ -3961,15 +3961,46 @@ Provide:
                 </h4>
                 
                 <div style="margin-bottom: 25px;">
-                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">Top 5 Parameter Combinations:</h5>
+                    <h5 style="color: #ffd700; margin-bottom: 10px; font-size: 1.2rem;">Top 5 Parameter Combinations:</h5>
+                    <div style="
+                        background: rgba(255, 215, 0, 0.1);
+                        border: 1px solid rgba(255, 215, 0, 0.3);
+                        border-radius: 8px;
+                        padding: 15px;
+                        margin-bottom: 15px;
+                        color: #ffffff;
+                        font-size: 0.95rem;
+                        line-height: 1.6;
+                    ">
+                        <strong style="color: #ffd700;">💡 What does this table show?</strong><br>
+                        This table displays the top 5 best parameter combinations found by the optimizer. Each row shows a different combination of X (Buy %) and Y (Sell %) values, along with their performance metrics. The combinations are ranked from best (🥇) to 5th place, based on a combined score of win rate, return, and risk-adjusted performance (Sharpe ratio).
+                    </div>
                     <table style="width: 100%; border-collapse: collapse; font-size: 1.2rem;">
                         <tr style="background: rgba(255, 215, 0, 0.2);">
-                            <th style="padding: 12px; border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; text-align: left; font-size: 1.2rem;">Rank</th>
-                            <th style="padding: 12px; border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; text-align: left; font-size: 1.2rem;">X (Buy %)</th>
-                            <th style="padding: 12px; border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; text-align: left; font-size: 1.2rem;">Y (Sell %)</th>
-                            <th style="padding: 12px; border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; text-align: left; font-size: 1.2rem;">Win Rate</th>
-                            <th style="padding: 12px; border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; text-align: left; font-size: 1.2rem;">Return</th>
-                            <th style="padding: 12px; border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; text-align: left; font-size: 1.2rem;">Sharpe</th>
+                            <th style="padding: 12px; border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; text-align: left; font-size: 1.2rem;">
+                                Rank
+                                <span style="display: block; font-size: 0.75rem; font-weight: normal; color: #cccccc; margin-top: 5px;">Position in ranking (🥇=best)</span>
+                            </th>
+                            <th style="padding: 12px; border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; text-align: left; font-size: 1.2rem;">
+                                X (Buy %)
+                                <span style="display: block; font-size: 0.75rem; font-weight: normal; color: #cccccc; margin-top: 5px;">Price drop % to trigger buy (negative)</span>
+                            </th>
+                            <th style="padding: 12px; border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; text-align: left; font-size: 1.2rem;">
+                                Y (Sell %)
+                                <span style="display: block; font-size: 0.75rem; font-weight: normal; color: #cccccc; margin-top: 5px;">Price rise % to trigger sell (positive)</span>
+                            </th>
+                            <th style="padding: 12px; border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; text-align: left; font-size: 1.2rem;">
+                                Win Rate
+                                <span style="display: block; font-size: 0.75rem; font-weight: normal; color: #cccccc; margin-top: 5px;">% of profitable trades (higher is better)</span>
+                            </th>
+                            <th style="padding: 12px; border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; text-align: left; font-size: 1.2rem;">
+                                Return
+                                <span style="display: block; font-size: 0.75rem; font-weight: normal; color: #cccccc; margin-top: 5px;">Total profit/loss % (green=profit, red=loss)</span>
+                            </th>
+                            <th style="padding: 12px; border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; text-align: left; font-size: 1.2rem;">
+                                Sharpe
+                                <span style="display: block; font-size: 0.75rem; font-weight: normal; color: #cccccc; margin-top: 5px;">Risk-adjusted return (≥1 is good, ≥2 is excellent)</span>
+                            </th>
                         </tr>
                         ${topResults.map((r, i) => `
                             <tr style="background: ${i === 0 ? 'rgba(255, 215, 0, 0.1)' : i % 2 === 0 ? 'rgba(255, 0, 0, 0.05)' : 'transparent'};">
