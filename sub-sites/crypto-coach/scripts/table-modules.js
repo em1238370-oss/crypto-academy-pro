@@ -4055,9 +4055,14 @@ async function optimizeStrategy() {
                     🎯 Strategy Optimization Results
                 </h4>
                 
-                <!-- Social Proof -->
-                <div style="text-align: center; margin-bottom: 20px; color: #cccccc; font-size: 0.9rem;">
+                <!-- Social Proof + Run summary -->
+                <div style="text-align: center; margin-bottom: 16px; color: #cccccc; font-size: 0.9rem;">
                     <span style="color: #ffd700;">✨</span> ${Math.floor(Math.random() * 500 + 1000)} users optimized successfully this month
+                </div>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <span style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(0,255,0,0.08) 100%); border: 1px solid rgba(255,215,0,0.35); border-radius: 999px; color: #ffd700; font-size: 0.88rem;">
+                        ${results.length} combos tested · Best: X=${topResults[0].x}%, Y=${topResults[0].y}% · ${typeof coinSymbol !== 'undefined' ? coinSymbol : 'BTC'}
+                    </span>
                 </div>
                 
                 <!-- Action Buttons -->
@@ -4075,13 +4080,14 @@ async function optimizeStrategy() {
                 
                 <!-- Key Insights -->
                 <div style="
-                    background: rgba(255, 215, 0, 0.15);
+                    background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%);
                     border: 2px solid rgba(255, 215, 0, 0.4);
-                    border-radius: 10px;
+                    border-radius: 12px;
                     padding: 20px;
                     margin-bottom: 25px;
+                    box-shadow: 0 2px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
                 ">
-                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">💡 Key Insights:</h5>
+                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">💡 Key Insights</h5>
                     <ul style="color: #ffffff; margin: 0; padding-left: 20px; line-height: 1.8;">
                         ${insights.slice(0, 5).map(insight => `<li style="margin-bottom: 8px;">${insight}</li>`).join('')}
                     </ul>
@@ -4106,13 +4112,14 @@ async function optimizeStrategy() {
                 
                 <!-- Benchmark Comparison -->
                 <div style="
-                    background: rgba(0, 0, 0, 0.4);
+                    background: linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(30,0,0,0.3) 100%);
                     border: 1px solid rgba(255, 215, 0, 0.3);
-                    border-radius: 10px;
+                    border-radius: 12px;
                     padding: 20px;
                     margin-bottom: 25px;
+                    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
                 ">
-                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📊 Benchmark Comparison:</h5>
+                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📊 Benchmark Comparison</h5>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; color: #ffffff;">
                         <div style="text-align: center; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 8px;">
                             <div style="font-size: 0.9rem; color: #cccccc; margin-bottom: 5px;">Best Strategy</div>
@@ -4242,8 +4249,9 @@ async function optimizeStrategy() {
                 ` : ''}
                 
                 <!-- График оптимизации параметров -->
-                <div style="margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px;">
-                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📊 Parameter Optimization Heatmap</h5>
+                <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,215,0,0.08);">
+                    <h5 style="color: #ffd700; margin-bottom: 6px; font-size: 1.2rem;">📊 Parameter Optimization Heatmap</h5>
+                    <p style="color: #aaaaaa; font-size: 0.85rem; margin: 0 0 15px 0;">Data from this run · Asset: ${typeof coinSymbol !== 'undefined' ? coinSymbol : 'BTC'}</p>
                     <div style="
                         background: rgba(255, 215, 0, 0.1);
                         border: 1px solid rgba(255, 215, 0, 0.3);
@@ -4261,18 +4269,19 @@ async function optimizeStrategy() {
                         <strong style="color: #ff6666;">🔴 Red cells</strong> = Low performance combinations (poor results)<br><br>
                         <strong>How to read:</strong> The darker/more intense the color, the better the performance. Look for clusters of green cells to find optimal parameter ranges. The X-axis shows Buy % values (negative), and the Y-axis shows Sell % values (positive).
                     </div>
-                    <canvas id="optimizerChart" style="width: 100%; height: 250px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
-                    <div style="color: #cccccc; font-size: 0.9rem; margin-top: 10px; text-align: center;">
-                        <span style="color: #00ff00;">■</span> High Performance | 
-                        <span style="color: #ffd700;">■</span> Medium | 
-                        <span style="color: #ff6666;">■</span> Low
+                    <canvas id="optimizerChart" style="width: 100%; height: 250px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255,215,0,0.15);"></canvas>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 12px; flex-wrap: wrap;">
+                        <span style="color: #cccccc; font-size: 0.9rem;"><span style="color: #00ff00;">■</span> High</span>
+                        <div style="width: 120px; height: 10px; border-radius: 5px; background: linear-gradient(90deg, #cc4444, #ffd700, #22aa22); opacity: 0.9;"></div>
+                        <span style="color: #cccccc; font-size: 0.9rem;"><span style="color: #ff6666;">■</span> Low</span>
                     </div>
                 </div>
                 
                 <!-- Visual Comparison Chart -->
-                <div style="margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px;">
-                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📈 Visual Comparison:</h5>
-                    <canvas id="comparisonChart" style="width: 100%; height: 300px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
+                <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,215,0,0.08);">
+                    <h5 style="color: #ffd700; margin-bottom: 6px; font-size: 1.2rem;">📈 Visual Comparison</h5>
+                    <p style="color: #aaaaaa; font-size: 0.85rem; margin: 0 0 15px 0;">Top 5 combinations from this run · Asset: ${typeof coinSymbol !== 'undefined' ? coinSymbol : 'BTC'}</p>
+                    <canvas id="comparisonChart" style="width: 100%; height: 300px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255,215,0,0.15);"></canvas>
                 </div>
                 
                 <!-- Step-by-Step Guide -->
@@ -4288,7 +4297,7 @@ async function optimizeStrategy() {
                 </div>
                 
                 <div style="margin-top: 25px; padding-top: 20px; padding-bottom: 40px; border-top: 2px solid rgba(255, 215, 0, 0.3);">
-                    <button class="btn btn-red" onclick="applyOptimalStrategy(${topResults[0].x}, ${topResults[0].y})" style="padding: 12px 30px; font-size: 1rem; font-weight: bold; width: 100%;">
+                    <button class="btn btn-red" onclick="applyOptimalStrategy(${topResults[0].x}, ${topResults[0].y})" style="padding: 14px 30px; font-size: 1.05rem; font-weight: bold; width: 100%; border: 2px solid rgba(0, 255, 0, 0.5); box-shadow: 0 4px 16px rgba(0, 255, 0, 0.25), inset 0 1px 0 rgba(255,255,255,0.1); background: linear-gradient(180deg, rgba(0, 150, 0, 0.5) 0%, rgba(0, 100, 0, 0.4) 100%);">
                         ✅ Apply & Test Best Parameters (X=${topResults[0].x}%, Y=${topResults[0].y}%)
                     </button>
                 </div>
@@ -4306,58 +4315,60 @@ async function optimizeStrategy() {
             </div>
         `;
         
-        // Создаем heatmap оптимизации
+        // Создаем heatmap оптимизации (данные этого запуска: results, xValuesUnique, yValuesUnique)
         setTimeout(() => {
             const canvas = document.getElementById('optimizerChart');
             if (canvas && results.length > 0) {
                 const ctx = canvas.getContext('2d');
                 canvas.width = canvas.offsetWidth;
                 canvas.height = 250;
-                
-                // Находим min и max score для нормализации
+                const leftMargin = 38;
+                const bottomMargin = 20;
+                const graphW = canvas.width - leftMargin;
+                const graphH = canvas.height - bottomMargin;
+
                 const scores = results.map(r => r.score);
                 const minScore = Math.min(...scores);
                 const maxScore = Math.max(...scores);
-                const scoreRange = maxScore - minScore;
-                
-                // Создаем сетку
+                const scoreRange = Math.max(maxScore - minScore, 1e-9);
+
                 const xValuesUnique = [...new Set(results.map(r => r.x))].sort((a, b) => a - b);
                 const yValuesUnique = [...new Set(results.map(r => r.y))].sort((a, b) => a - b);
-                
-                const cellWidth = canvas.width / xValuesUnique.length;
-                const cellHeight = canvas.height / yValuesUnique.length;
-                
-                // Рисуем heatmap
+                const cellWidth = graphW / xValuesUnique.length;
+                const cellHeight = graphH / yValuesUnique.length;
+
                 for (const result of results) {
                     const xIndex = xValuesUnique.indexOf(result.x);
                     const yIndex = yValuesUnique.indexOf(result.y);
-                    
                     const normalizedScore = (result.score - minScore) / scoreRange;
                     let color;
                     if (normalizedScore > 0.7) {
-                        color = `rgba(0, 255, 0, ${0.3 + normalizedScore * 0.5})`; // Зеленый
+                        color = 'rgba(0, 255, 0, ' + (0.3 + normalizedScore * 0.5) + ')';
                     } else if (normalizedScore > 0.4) {
-                        color = `rgba(255, 215, 0, ${0.3 + (normalizedScore - 0.4) * 0.5})`; // Золотой
+                        color = 'rgba(255, 215, 0, ' + (0.3 + (normalizedScore - 0.4) * 0.5) + ')';
                     } else {
-                        color = `rgba(255, 102, 102, ${0.3 + normalizedScore * 0.5})`; // Красный
+                        color = 'rgba(255, 102, 102, ' + (0.3 + normalizedScore * 0.5) + ')';
                     }
-                    
                     ctx.fillStyle = color;
-                    ctx.fillRect(xIndex * cellWidth, yIndex * cellHeight, cellWidth, cellHeight);
+                    ctx.fillRect(leftMargin + xIndex * cellWidth, yIndex * cellHeight, cellWidth, cellHeight);
                 }
-                
-                // Добавляем подписи осей
+
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '10px Arial';
+                ctx.font = '11px Arial';
                 ctx.textAlign = 'center';
                 xValuesUnique.forEach((x, i) => {
-                    ctx.fillText(`${x}%`, i * cellWidth + cellWidth / 2, canvas.height - 5);
+                    ctx.fillText(x + '%', leftMargin + i * cellWidth + cellWidth / 2, canvas.height - 6);
                 });
-                
-                // Добавляем подпись оси Y
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#cccccc';
+                yValuesUnique.forEach((y, i) => {
+                    ctx.fillText(y + '%', leftMargin - 4, i * cellHeight + cellHeight / 2 + 4);
+                });
                 ctx.save();
-                ctx.translate(15, canvas.height / 2);
+                ctx.translate(14, graphH / 2);
                 ctx.rotate(-Math.PI / 2);
+                ctx.fillStyle = '#ffd700';
+                ctx.textAlign = 'center';
                 ctx.fillText('Y (Sell %)', 0, 0);
                 ctx.restore();
             }
@@ -4685,28 +4696,31 @@ function showDetailedReport(rank, x, y, winRate, returnVal, sharpe) {
     modal.style.display = 'block';
 }
 
-// Создать график сравнения
+// Создать график сравнения (данные topResults этого запуска; подписи значений совпадают с таблицей)
 function createComparisonChart(topResults) {
     setTimeout(() => {
         const canvas = document.getElementById('comparisonChart');
         if (!canvas || !topResults || topResults.length === 0) return;
-        
+
         const ctx = canvas.getContext('2d');
         canvas.width = canvas.offsetWidth;
         canvas.height = 300;
-        
-        const padding = 40;
+        const padding = 44;
         const chartWidth = canvas.width - padding * 2;
         const chartHeight = canvas.height - padding * 2;
-        
-        // Очистка
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Находим максимальные значения для масштабирования
         const maxReturn = Math.max(...topResults.map(r => Math.abs(r.totalReturn)), 50);
         const maxWinRate = Math.max(...topResults.map(r => r.winRate), 100);
-        
-        // Рисуем оси
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.2)';
+        ctx.lineWidth = 1;
+        for (let p = 0.25; p < 1; p += 0.25) {
+            const y = canvas.height - padding - p * chartHeight;
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(canvas.width - padding, y);
+            ctx.stroke();
+        }
         ctx.strokeStyle = '#ffd700';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -4714,39 +4728,40 @@ function createComparisonChart(topResults) {
         ctx.lineTo(padding, canvas.height - padding);
         ctx.lineTo(canvas.width - padding, canvas.height - padding);
         ctx.stroke();
-        
-        // Рисуем данные
-        const barWidth = chartWidth / topResults.length / 2;
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = '9px Arial';
+        ctx.textAlign = 'right';
+        [0, 25, 50, 75, 100].forEach(function(pct, i) {
+            const y = canvas.height - padding - (pct / 100) * chartHeight;
+            if (i > 0) ctx.fillText(pct + '%', padding - 6, y + 3);
+        });
+
+        const slotWidth = chartWidth / topResults.length;
+        const barWidth = Math.max(12, slotWidth / 2.4);
         topResults.forEach((result, i) => {
-            const x = padding + (i + 0.5) * (chartWidth / topResults.length);
-            
-            // Win Rate (зеленый)
+            const x = padding + (i + 0.5) * slotWidth;
             const winRateHeight = (result.winRate / maxWinRate) * chartHeight;
+            const returnHeight = (Math.abs(result.totalReturn) / maxReturn) * chartHeight;
+
             ctx.fillStyle = '#00ff00';
             ctx.fillRect(x - barWidth / 2, canvas.height - padding - winRateHeight, barWidth, winRateHeight);
-            
-            // Return (синий/красный)
-            const returnHeight = (Math.abs(result.totalReturn) / maxReturn) * chartHeight;
             ctx.fillStyle = result.totalReturn >= 0 ? '#00aaff' : '#ff6666';
             ctx.fillRect(x + barWidth / 2, canvas.height - padding - returnHeight, barWidth, returnHeight);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(result.winRate.toFixed(0) + '%', x - barWidth / 2 + barWidth / 2, canvas.height - padding - winRateHeight - 4);
+            ctx.fillText((result.totalReturn >= 0 ? '+' : '') + result.totalReturn + '%', x + barWidth / 2 + barWidth / 2, canvas.height - padding - returnHeight - 4);
+            ctx.fillText('#' + (i + 1), x, canvas.height - padding + 18);
         });
-        
-        // Подписи
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        topResults.forEach((result, i) => {
-            const x = padding + (i + 0.5) * (chartWidth / topResults.length);
-            ctx.fillText(`#${i + 1}`, x, canvas.height - padding + 20);
-        });
-        
-        // Легенда
+
         ctx.fillStyle = '#00ff00';
         ctx.fillRect(canvas.width - 150, 20, 15, 15);
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'left';
+        ctx.font = '11px Arial';
         ctx.fillText('Win Rate', canvas.width - 130, 32);
-        
         ctx.fillStyle = '#00aaff';
         ctx.fillRect(canvas.width - 150, 40, 15, 15);
         ctx.fillStyle = '#ffffff';
