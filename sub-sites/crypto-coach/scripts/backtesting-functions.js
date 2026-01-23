@@ -160,19 +160,31 @@ function simulateStrategy(strategyDescription, period, initialBalance, fees) {
     const performanceByMonth = {};
     
     trades.forEach(trade => {
-        const entryDate = new Date(trade.entryDate);
-        const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][entryDate.getDay()];
-        const month = entryDate.toLocaleString('en-US', { month: 'short' });
-        
-        if (performanceByDay[dayOfWeek] !== undefined) {
-            performanceByDay[dayOfWeek] += trade.netPnl;
+        try {
+            const entryDate = new Date(trade.entryDate);
+            if (isNaN(entryDate.getTime())) {
+                console.warn('Invalid entry date:', trade.entryDate);
+                return;
+            }
+            
+            const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][entryDate.getDay()];
+            const month = entryDate.toLocaleString('en-US', { month: 'short' });
+            
+            if (performanceByDay[dayOfWeek] !== undefined) {
+                performanceByDay[dayOfWeek] += trade.netPnl || 0;
+            }
+            
+            if (!performanceByMonth[month]) {
+                performanceByMonth[month] = 0;
+            }
+            performanceByMonth[month] += trade.netPnl || 0;
+        } catch (e) {
+            console.error('Error processing trade for heatmap:', e, trade);
         }
-        
-        if (!performanceByMonth[month]) {
-            performanceByMonth[month] = 0;
-        }
-        performanceByMonth[month] += trade.netPnl;
     });
+    
+    console.log('Performance by day calculated:', performanceByDay);
+    console.log('Performance by month calculated:', performanceByMonth);
     
     console.log('Simulation complete:', { 
         numTrades: trades.length, 
