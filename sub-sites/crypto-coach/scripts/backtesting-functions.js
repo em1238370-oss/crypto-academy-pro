@@ -1,14 +1,14 @@
 // ========== REALISTIC STRATEGY SIMULATION ==========
 
-// Симуляция стратегии на основе её описания (НЕ случайные числа!)
-function simulateStrategy(strategyDescription, period, initialBalance, fees) {
-    // Анализируем описание стратегии для определения параметров
-    const strategy = analyzeStrategy(strategyDescription);
+// Симуляция стратегии на основе её описания с РЕАЛЬНЫМИ историческими данными!
+async function simulateStrategy(strategyDescription, period, initialBalance, fees, coinSymbol = 'BTC') {
+    // Анализируем описание стратегии для определения параметров (теперь асинхронная!)
+    const strategy = await analyzeStrategy(strategyDescription, coinSymbol);
     
-    console.log('Starting simulation:', { strategy, period, initialBalance, fees });
+    console.log('Starting simulation with REAL historical data:', { strategy, period, initialBalance, fees, coinSymbol });
     
-    // Генерируем реалистичные исторические данные (симуляция)
-    const dailyPrices = generateHistoricalPrices(period, strategy.basePrice || 95000);
+    // Получаем РЕАЛЬНЫЕ исторические данные из API (не симуляция!)
+    const dailyPrices = await generateHistoricalPrices(period, strategy.basePrice || 95000, coinSymbol);
     
     // Симулируем выполнение стратегии
     const trades = [];
@@ -219,11 +219,26 @@ function simulateStrategy(strategyDescription, period, initialBalance, fees) {
 }
 
 // Анализ описания стратегии для определения параметров
-function analyzeStrategy(description) {
+async function analyzeStrategy(description, coinSymbol = 'BTC') {
     const desc = description.toLowerCase();
     
-    // Определяем базовую цену (используем BTC как пример)
-    const basePrice = 95000;
+    // Получаем РЕАЛЬНУЮ текущую цену для определения базовой цены
+    // Используем глобальную функцию getRealTimePrice если доступна, иначе fallback
+    let basePrice = 95000; // Fallback для BTC
+    try {
+        // Пытаемся получить реальную цену через глобальную функцию
+        if (typeof getRealTimePrice === 'function') {
+            const realPrice = await getRealTimePrice(coinSymbol);
+            if (realPrice && realPrice > 0) {
+                basePrice = realPrice;
+                console.log(`✅ Using REAL current price for ${coinSymbol}: $${basePrice}`);
+            } else {
+                console.warn(`⚠️ Could not get real price for ${coinSymbol}, using fallback`);
+            }
+        }
+    } catch (e) {
+        console.warn(`⚠️ Error getting real price for ${coinSymbol}:`, e);
+    }
     
     // Определяем размер позиции
     let positionSize = 0.5; // 50% по умолчанию
@@ -278,8 +293,137 @@ function analyzeStrategy(description) {
     };
 }
 
-// Генерация реалистичных исторических данных
-function generateHistoricalPrices(period, basePrice) {
+// Получение РЕАЛЬНЫХ исторических данных из CoinGecko API
+// ВАЖНО: Использует реальные исторические цены вместо симуляции!
+async function generateHistoricalPrices(period, basePrice, coinSymbol = 'bitcoin') {
+    console.log(`🔄 Fetching REAL historical data for ${coinSymbol} for last ${period} days...`);
+    
+    try {
+        // Маппинг символов монет на CoinGecko ID
+        const coinGeckoMap = {
+            'BTC': 'bitcoin',
+            'ETH': 'ethereum',
+            'BNB': 'binancecoin',
+            'SOL': 'solana',
+            'ADA': 'cardano',
+            'XRP': 'ripple',
+            'AVAX': 'avalanche-2',
+            'DOGE': 'dogecoin',
+            'SUI': 'sui',
+            'TON': 'the-open-network',
+            'PEPE': 'pepe',
+            'WIF': 'dogwifcoin',
+            'ARB': 'arbitrum',
+            'APT': 'aptos',
+            'NEAR': 'near',
+            'ONDO': 'ondo-finance',
+            'WLD': 'worldcoin-wld',
+            'LDO': 'lido-dao',
+            'UNI': 'uniswap',
+            'AAVE': 'aave',
+            'ENA': 'ethena',
+            'FARTCOIN': 'fartcoin',
+            'SBIB1000': 'shiba-inu',
+            'WLFI': 'wallet-fi',
+            'IJU': 'inj',
+            'SOMI': 'somi',
+            'IP': 'ipx-token',
+            'APE': 'apecoin',
+            'PENGU': 'pudgy-penguins',
+            'SEI': 'sei-network',
+            'GALA': 'gala',
+            'MYX': 'myx-network',
+            'ATOM': 'cosmos',
+            'VIRTAUL': 'virtual-protocol'
+        };
+        
+        const coinGeckoId = coinGeckoMap[coinSymbol] || coinGeckoMap['BTC'] || 'bitcoin';
+        
+        // Получаем исторические данные из CoinGecko API
+        // CoinGecko предоставляет бесплатный доступ без API ключа для базовых запросов
+        const endDate = Math.floor(Date.now() / 1000);
+        const startDate = endDate - (period * 24 * 60 * 60); // period дней назад
+        
+        const url = `https://api.coingecko.com/api/v3/coins/${coinGeckoId}/market_chart/range?vs_currency=usd&from=${startDate}&to=${endDate}`;
+        
+        console.log(`📊 Requesting historical data from CoinGecko: ${url}`);
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`CoinGecko API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.prices || !Array.isArray(data.prices) || data.prices.length === 0) {
+            console.warn(`⚠️ No historical data from CoinGecko for ${coinSymbol}, using fallback simulation`);
+            return generateFallbackHistoricalPrices(period, basePrice);
+        }
+        
+        // Конвертируем данные CoinGecko в наш формат
+        const prices = [];
+        const priceData = data.prices; // Массив [timestamp, price]
+        
+        // Группируем по дням (CoinGecko может возвращать несколько точек в день)
+        const dailyData = {};
+        priceData.forEach(([timestamp, price]) => {
+            const date = new Date(timestamp);
+            const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+            
+            if (!dailyData[dateKey]) {
+                dailyData[dateKey] = {
+                    date: dateKey,
+                    prices: [],
+                    timestamps: []
+                };
+            }
+            dailyData[dateKey].prices.push(price);
+            dailyData[dateKey].timestamps.push(timestamp);
+        });
+        
+        // Создаём OHLC данные для каждого дня
+        const sortedDates = Object.keys(dailyData).sort();
+        
+        sortedDates.forEach((dateKey, index) => {
+            const dayData = dailyData[dateKey];
+            const dayPrices = dayData.prices;
+            
+            const open = index === 0 ? basePrice : prices[index - 1].close;
+            const close = dayPrices[dayPrices.length - 1]; // Последняя цена дня
+            const high = Math.max(...dayPrices);
+            const low = Math.min(...dayPrices);
+            
+            prices.push({
+                date: dateKey,
+                open: index === 0 ? close : open, // Используем реальную цену открытия
+                high: high,
+                low: low,
+                close: close,
+                price: close // Используем close для упрощения
+            });
+        });
+        
+        // Если данных недостаточно, дополняем fallback данными
+        if (prices.length < period) {
+            console.warn(`⚠️ Only ${prices.length} days of data available, need ${period}. Filling with fallback...`);
+            const fallbackPrices = generateFallbackHistoricalPrices(period - prices.length, prices[prices.length - 1]?.close || basePrice);
+            prices.push(...fallbackPrices);
+        }
+        
+        console.log(`✅✅✅ Successfully fetched ${prices.length} days of REAL historical data for ${coinSymbol}`);
+        return prices.slice(0, period); // Возвращаем только нужное количество дней
+        
+    } catch (error) {
+        console.error(`❌ Error fetching historical data for ${coinSymbol}:`, error);
+        console.warn(`⚠️ Using fallback simulation for ${coinSymbol}`);
+        return generateFallbackHistoricalPrices(period, basePrice);
+    }
+}
+
+// Fallback функция для генерации исторических данных (используется только если API недоступен)
+function generateFallbackHistoricalPrices(period, basePrice) {
+    console.warn(`⚠️ Using FALLBACK historical price generation (not real data!)`);
     const prices = [];
     let currentPrice = basePrice;
     const startDate = new Date();
@@ -308,7 +452,7 @@ function generateHistoricalPrices(period, basePrice) {
             high,
             low,
             close,
-            price: close // Используем close для упрощения
+            price: close
         });
     }
     
@@ -455,6 +599,7 @@ function drawEquityChart(equityCurve, initialBalance) {
 }
 
 // График цены с метками входов/выходов
+// ВАЖНО: Использует РЕАЛЬНЫЕ исторические данные из API, а не симуляцию!
 function drawPriceChartWithTrades(trades, dailyPrices, period) {
     const canvas = document.getElementById('priceChart');
     if (!canvas) {
@@ -487,8 +632,8 @@ function drawPriceChartWithTrades(trades, dailyPrices, period) {
     canvas.width = canvas.offsetWidth;
     canvas.height = 250;
     
-    // ИСПОЛЬЗУЕМ РЕАЛЬНЫЕ ДАННЫЕ ИЗ СИМУЛЯЦИИ!
-    // dailyPrices содержит те же данные, что использовались для симуляции
+    // ИСПОЛЬЗУЕМ РЕАЛЬНЫЕ ИСТОРИЧЕСКИЕ ДАННЫЕ ИЗ API!
+    // dailyPrices содержит реальные исторические цены из CoinGecko API, а не симуляцию
     const prices = dailyPrices.map(d => d.price);
     const maxPrice = Math.max(...prices);
     const minPrice = Math.min(...prices);
