@@ -1582,6 +1582,12 @@ div:has-text("Experience Points") {
     opacity: 1;
 }
 
+/* Module C: extra height only when OPEN, so all Strategy Optimizer content fits */
+#drawerC.open #drawerCContent {
+    min-height: 8000px;
+    max-height: 8000px;
+}
+
 .form-group {
     margin-bottom: 20px;
 }
