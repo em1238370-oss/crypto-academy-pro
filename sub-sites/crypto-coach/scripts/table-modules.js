@@ -3959,82 +3959,38 @@ async function optimizeStrategy() {
         if (bestResult.y > 20) insights.push(`High sell target (${bestResult.y}%) maximizes profit potential`);
         if (insights.length === 0) insights.push('Strategy shows balanced performance across all metrics');
         
-        // AI analysis: professional, trustworthy for experts and regular users
+        // Analysis of Optimized Strategy Parameters — built-in professional text (always shown, data-based)
         let analysisText = '';
         if (topResults.length > 0) {
-            const bRet = benchmark.return >= 0 ? '+' : '';
-            const bWin = benchmark.winRate.toFixed(1);
-            const bSharpe = benchmark.sharpeRatio.toFixed(2);
-            const prompt = `Write an "Analysis of Optimized Strategy Parameters" for a crypto strategy tool. Readers include both experts and first-time users. Use only the data below; do not invent numbers.
+            const best = topResults[0];
+            const bRetStr = benchmark.return >= 0 ? '+' : '';
+            const benchCompare = best.totalReturn > benchmark.return
+                ? 'It outperforms the Buy & Hold benchmark (' + bRetStr + benchmark.return + '% return, Sharpe ' + benchmark.sharpeRatio.toFixed(2) + ') by ' + (best.totalReturn - benchmark.return).toFixed(1) + ' percentage points.'
+                : 'Compared to Buy & Hold (' + bRetStr + benchmark.return + '%, Sharpe ' + benchmark.sharpeRatio.toFixed(2) + '), this strategy offers different risk/return trade-offs.';
+            const riskLines = topResults.slice(0, 3).map(function(r, i) {
+                const risk = r.sharpeRatio >= 1.5 && r.winRate >= 55 ? 'Low' : (r.sharpeRatio >= 1 && r.winRate >= 45 ? 'Medium' : 'High');
+                const retSign = r.totalReturn >= 0 ? '+' : '';
+                return 'Combination ' + (i + 1) + ' (X=' + r.x + '%, Y=' + r.y + '%): ' + risk + ' risk — Win Rate ' + r.winRate.toFixed(1) + '%, Return ' + retSign + r.totalReturn + '%, Sharpe ' + r.sharpeRatio.toFixed(2) + '.';
+            }).join('\n');
+            const raw = '### Analysis of Optimized Strategy Parameters\n\n' +
+                '**1. Best parameters and rationale**\n' +
+                'Combination #1 (X=' + best.x + '%, Y=' + best.y + '%) is optimal with a win rate of ' + best.winRate.toFixed(1) + '%, total return of ' + (best.totalReturn >= 0 ? '+' : '') + best.totalReturn + '%, and Sharpe ratio ' + best.sharpeRatio.toFixed(2) + '. ' + benchCompare + '\n\n' +
+                '**2. Risk assessment**\n' + riskLines + '\n\n' +
+                '**3. Recommendations**\n' +
+                'Use combination #1 for a balanced risk/return profile. If you prefer lower volatility, prefer combinations with higher Sharpe and moderate return; if you accept more risk for higher upside, consider #2 or #3. Adjust to market conditions: in stronger trends, higher Y (sell targets) can capture more; in choppy markets, tighter ranges may perform better.\n\n' +
+                '**4. Trade-offs**\n' +
+                'When switching from the top combination to #2 or #3, you typically gain either higher potential return with more volatility, or slightly lower return with more stable outcomes. Higher sell targets (Y) mean fewer trades but larger gains per trade; deeper buy triggers (more negative X) mean waiting for bigger dips and potentially fewer entries. Better risk-adjusted returns often come with lower raw returns, and vice versa.\n\n' +
+                '**5. In plain terms**\n' +
+                'These numbers show which parameter sets looked best in the backtest. These conclusions are based only on historical simulation (backtest) and are not a promise or guarantee of future returns.';
 
-**Data (use these exact numbers):**
-Strategy: "${strategyTemplate}"
-
-Benchmark — Buy & Hold (you must reference this when comparing):
-• Return: ${bRet}${benchmark.return}%
-• Win Rate: ${bWin}%
-• Sharpe: ${bSharpe}
-
-Top 5 combinations:
-${topResults.map((r, i) => `${i + 1}. X=${r.x}%, Y=${r.y}% — Win Rate ${r.winRate.toFixed(1)}%, Return ${r.totalReturn >= 0 ? '+' : ''}${r.totalReturn}%, Sharpe ${r.sharpeRatio.toFixed(2)}`).join('\n')}
-
-**Structure (use these headings; keep each section short):**
-
-### Analysis of Optimized Strategy Parameters
-
-**1. Best parameters and rationale**
-In 2–3 sentences: which combination (#1) is optimal and why, using Win Rate, Return, Sharpe. Compare to the Buy & Hold benchmark above when relevant.
-
-**2. Risk assessment**
-One sentence per top combination (1–3): Low / Medium / High risk and why, using the numbers.
-
-**3. Recommendations**
-Who should use which parameters (conservative vs aggressive) and in what situations. One short paragraph.
-
-**4. Trade-offs**
-Exactly one short paragraph. Describe what the user gains and what they sacrifice when switching between the top options (e.g. higher Y = more upside but fewer trades). No bullet lists here.
-
-**5. In plain terms**
-Two sentences for non-experts. In the second sentence, explicitly state that these conclusions are based on backtest results only, and are not a promise or guarantee of future returns.
-
-Write in English. Be precise and neutral. Do not add any disclaimer, legal text, or footer at the end.`;
-
-            const sysPrompt = [
-                'You are a senior quant analyst specializing in cryptocurrency strategies.',
-                'Use precise wording and base every claim only on the data provided (Top 5 + Buy & Hold benchmark).',
-                'Do not exaggerate; do not add disclaimers or legal text at the end — the product already shows one.',
-                'Address experts (Sharpe, risk-adjusted returns, trade-offs) and beginners (plain-language); output only the analysis, no meta-commentary.'
-            ].join(' ');
-
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${API_KEY}`
-                },
-                body: JSON.stringify({
-                    model: 'mistral-small',
-                    messages: [
-                        { role: 'system', content: sysPrompt },
-                        { role: 'user', content: prompt }
-                    ],
-                    temperature: 0.5,
-                    max_tokens: 850
-                })
-            });
-
-            const data = await response.json();
-            
-            if (data.choices && data.choices[0]) {
-                analysisText = data.choices[0].message.content.trim()
-                    .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #ffd700; font-weight: bold;">$1</strong>')
-                    .replace(/\*(.*?)\*/g, '<em style="color: #ffaaaa; font-style: italic;">$1</em>')
-                    .replace(/^### (.*$)/gim, '<h5 style="color: #ffd700; font-size: 1.2em; margin-top: 20px; margin-bottom: 10px;">$1</h5>')
-                    .replace(/^(\d+\.\s+.*$)/gim, '<div style="margin: 15px 0; padding-left: 10px; border-left: 3px solid rgba(255, 215, 0, 0.5);"><strong style="color: #ffd700;">$1</strong></div>')
-                    .replace(/^[-•]\s+(.*$)/gim, '<div style="margin: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: #ffd700;">▸</span> $1</div>')
-                    .replace(/\n\n/g, '</p><p style="margin: 15px 0; line-height: 1.8;">')
-                    .replace(/\n/g, '<br>');
-            }
+            analysisText = raw
+                .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #ffd700; font-weight: bold;">$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em style="color: #ffaaaa; font-style: italic;">$1</em>')
+                .replace(/^### (.*$)/gim, '<h5 style="color: #ffd700; font-size: 1.2em; margin-top: 20px; margin-bottom: 10px;">$1</h5>')
+                .replace(/^(\d+\.\s+.*$)/gim, '<div style="margin: 15px 0; padding-left: 10px; border-left: 3px solid rgba(255, 215, 0, 0.5);"><strong style="color: #ffd700;">$1</strong></div>')
+                .replace(/^[-•]\s+(.*$)/gim, '<div style="margin: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: #ffd700;">▸</span> $1</div>')
+                .replace(/\n\n/g, '</p><p style="margin: 15px 0; line-height: 1.8;">')
+                .replace(/\n/g, '<br>');
         }
         
         optimizerResults.innerHTML = `
