@@ -3984,29 +3984,11 @@ Provide:
                 width: 100%;
                 max-width: 100%;
                 box-sizing: border-box;
-                max-height: 90vh;
-                overflow-y: auto;
-                overflow-x: hidden;
             " class="optimizer-results-wrapper">
                 <style>
-                    .optimizer-results-wrapper::-webkit-scrollbar {
-                        width: 12px;
-                    }
-                    .optimizer-results-wrapper::-webkit-scrollbar-track {
-                        background: rgba(0, 0, 0, 0.3);
-                        border-radius: 6px;
-                    }
-                    .optimizer-results-wrapper::-webkit-scrollbar-thumb {
-                        background: rgba(255, 215, 0, 0.6);
-                        border-radius: 6px;
-                    }
-                    .optimizer-results-wrapper::-webkit-scrollbar-thumb:hover {
-                        background: rgba(255, 215, 0, 0.8);
-                    }
                     @media (max-width: 768px) {
                         .optimizer-results-wrapper {
                             padding: 15px !important;
-                            max-height: 85vh !important;
                         }
                         .optimizer-results-wrapper table {
                             font-size: 0.9rem !important;
