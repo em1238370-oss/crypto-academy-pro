@@ -4097,6 +4097,7 @@ Provide:
                     </div>
                 </div>
                 
+
                 <div style="margin-bottom: 25px;">
                     <h5 style="color: #ffd700; margin-bottom: 10px; font-size: 1.2rem;">Top 5 Parameter Combinations:</h5>
                     <div style="
@@ -4318,14 +4319,16 @@ Provide:
                 });
             }
             
-            // Создаем график сравнения
-            createComparisonChart(topResults);
-                ctx.save();
-                ctx.translate(15, canvas.height / 2);
-                ctx.rotate(-Math.PI / 2);
-                ctx.fillText('Y (Sell %)', 0, 0);
-                ctx.restore();
-            }
+            // Добавляем подпись оси Y
+            ctx.save();
+            ctx.translate(15, canvas.height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Y (Sell %)', 0, 0);
+            ctx.restore();
+        }
+        
+        // Создаем график сравнения
+        createComparisonChart(topResults);
         }, 100);
     } catch (error) {
         console.error('Strategy Optimizer Error:', error);
