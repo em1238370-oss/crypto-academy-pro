@@ -4347,6 +4347,8 @@ Provide:
             // Создаем график сравнения
             createComparisonChart(topResults);
         }, 100);
+        
+        optimizerResults.style.display = 'block';
     } catch (error) {
         console.error('Strategy Optimizer Error:', error);
         optimizerResults.innerHTML = `
