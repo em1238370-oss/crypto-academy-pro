@@ -3980,15 +3980,23 @@ Provide:
                 border: 2px solid rgba(255, 215, 0, 0.4);
                 border-radius: 12px;
                 padding: 25px;
+                padding-bottom: 60px;
                 box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
                 width: 100%;
                 max-width: 100%;
                 box-sizing: border-box;
+                min-height: auto;
             " class="optimizer-results-wrapper">
                 <style>
+                    .optimizer-results-wrapper {
+                        overflow: visible !important;
+                        height: auto !important;
+                        max-height: none !important;
+                    }
                     @media (max-width: 768px) {
                         .optimizer-results-wrapper {
                             padding: 15px !important;
+                            padding-bottom: 40px !important;
                         }
                         .optimizer-results-wrapper table {
                             font-size: 0.9rem !important;
