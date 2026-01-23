@@ -629,25 +629,47 @@ function drawDrawdownChart(equityCurve) {
 
 // Тепловая карта производительности
 function drawPerformanceHeatmap(performanceByDay, performanceByMonth) {
+    console.log('Drawing performance heatmap:', { performanceByDay, performanceByMonth });
+    
     // Тепловая карта по дням недели
     const container = document.getElementById('heatmapContainer');
     if (container) {
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const maxValue = Math.max(...Object.values(performanceByDay), 1);
-        const minValue = Math.min(...Object.values(performanceByDay), -1);
+        
+        // Получаем реальные значения (без fallback)
+        const values = days.map(day => performanceByDay[day] || 0);
+        const maxValue = Math.max(...values);
+        const minValue = Math.min(...values);
         const range = maxValue - minValue || 1;
+        
+        console.log('Heatmap day values:', { values, maxValue, minValue, range });
         
         container.innerHTML = days.map(day => {
             const value = performanceByDay[day] || 0;
-            const intensity = (value - minValue) / range;
-            const color = value >= 0 
-                ? `rgba(0, 255, 0, ${0.3 + intensity * 0.7})`
-                : `rgba(255, 0, 0, ${0.3 + (1 - intensity) * 0.7})`;
+            
+            // Рассчитываем интенсивность цвета правильно
+            let intensity = 0;
+            let color = '';
+            
+            if (range === 0 || (maxValue === 0 && minValue === 0)) {
+                // Все значения нули - показываем нейтральный серый
+                color = 'rgba(128, 128, 128, 0.5)';
+            } else if (value >= 0) {
+                // Положительное значение - зелёный
+                intensity = maxValue > 0 ? (value / maxValue) : 0;
+                const alpha = 0.3 + (intensity * 0.7);
+                color = `rgba(0, 255, 0, ${alpha})`;
+            } else {
+                // Отрицательное значение - красный
+                intensity = minValue < 0 ? (Math.abs(value) / Math.abs(minValue)) : 0;
+                const alpha = 0.3 + (intensity * 0.7);
+                color = `rgba(255, 0, 0, ${alpha})`;
+            }
             
             return `
                 <div style="background: ${color}; padding: 15px; border-radius: 5px; text-align: center; border: 1px solid rgba(255, 215, 0, 0.3);">
                     <div style="color: #ffffff; font-weight: bold; font-size: 0.9rem; margin-bottom: 5px;">${day}</div>
-                    <div style="color: ${value >= 0 ? '#00ff00' : '#ff6666'}; font-size: 0.85rem; font-weight: bold;">${value >= 0 ? '+' : ''}$${value.toFixed(2)}</div>
+                    <div style="color: ${value >= 0 ? '#00ff00' : value < 0 ? '#ff6666' : '#888888'}; font-size: 0.85rem; font-weight: bold;">${value >= 0 ? '+' : ''}$${value.toFixed(2)}</div>
                 </div>
             `;
         }).join('');
@@ -661,9 +683,25 @@ function drawPerformanceHeatmap(performanceByDay, performanceByMonth) {
         monthlyCanvas.height = 150;
         
         const months = Object.keys(performanceByMonth);
-        const maxValue = Math.max(...Object.values(performanceByMonth), 1);
-        const minValue = Math.min(...Object.values(performanceByMonth), -1);
+        const monthValues = Object.values(performanceByMonth);
+        
+        if (months.length === 0) {
+            // Нет данных - показываем сообщение
+            ctx.clearRect(0, 0, monthlyCanvas.width, monthlyCanvas.height);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, monthlyCanvas.width, monthlyCanvas.height);
+            ctx.fillStyle = '#888';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('No monthly data available', monthlyCanvas.width / 2, monthlyCanvas.height / 2);
+            return;
+        }
+        
+        const maxValue = Math.max(...monthValues);
+        const minValue = Math.min(...monthValues);
         const range = maxValue - minValue || 1;
+        
+        console.log('Heatmap month values:', { months, monthValues, maxValue, minValue, range });
         
         ctx.clearRect(0, 0, monthlyCanvas.width, monthlyCanvas.height);
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
@@ -673,11 +711,28 @@ function drawPerformanceHeatmap(performanceByDay, performanceByMonth) {
         
         months.forEach((month, index) => {
             const value = performanceByMonth[month];
-            const intensity = (value - minValue) / range;
-            const height = (Math.abs(value) / (Math.max(Math.abs(maxValue), Math.abs(minValue)) || 1)) * monthlyCanvas.height * 0.8;
-            const color = value >= 0 
-                ? `rgba(0, 255, 0, ${0.5 + intensity * 0.5})`
-                : `rgba(255, 0, 0, ${0.5 + (1 - intensity) * 0.5})`;
+            
+            // Рассчитываем высоту и цвет правильно
+            let height = 0;
+            let color = '';
+            
+            if (range === 0 || (maxValue === 0 && minValue === 0)) {
+                // Все значения нули
+                height = monthlyCanvas.height * 0.1; // Маленькая полоска
+                color = 'rgba(128, 128, 128, 0.5)';
+            } else if (value >= 0) {
+                // Положительное значение
+                height = (value / (Math.max(Math.abs(maxValue), Math.abs(minValue)) || 1)) * monthlyCanvas.height * 0.8;
+                const intensity = maxValue > 0 ? (value / maxValue) : 0;
+                const alpha = 0.5 + (intensity * 0.5);
+                color = `rgba(0, 255, 0, ${alpha})`;
+            } else {
+                // Отрицательное значение
+                height = (Math.abs(value) / (Math.max(Math.abs(maxValue), Math.abs(minValue)) || 1)) * monthlyCanvas.height * 0.8;
+                const intensity = minValue < 0 ? (Math.abs(value) / Math.abs(minValue)) : 0;
+                const alpha = 0.5 + (intensity * 0.5);
+                color = `rgba(255, 0, 0, ${alpha})`;
+            }
             
             ctx.fillStyle = color;
             ctx.fillRect(index * barWidth, monthlyCanvas.height - height, barWidth - 2, height);
@@ -687,6 +742,13 @@ function drawPerformanceHeatmap(performanceByDay, performanceByMonth) {
             ctx.font = '10px Arial';
             ctx.textAlign = 'center';
             ctx.fillText(month, index * barWidth + barWidth / 2, monthlyCanvas.height - 5);
+            
+            // Подпись значения
+            if (Math.abs(value) > 0.01) {
+                ctx.fillStyle = value >= 0 ? '#00ff00' : '#ff6666';
+                ctx.font = '9px Arial';
+                ctx.fillText(`${value >= 0 ? '+' : ''}$${value.toFixed(0)}`, index * barWidth + barWidth / 2, monthlyCanvas.height - height - 5);
+            }
         });
     }
 }
