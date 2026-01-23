@@ -3942,23 +3942,7 @@ Provide:
                 width: 100%;
                 max-width: 100%;
                 box-sizing: border-box;
-            " class="optimizer-results-container">
-                <style>
-                    .optimizer-results-container::-webkit-scrollbar {
-                        width: 12px;
-                    }
-                    .optimizer-results-container::-webkit-scrollbar-track {
-                        background: rgba(0, 0, 0, 0.3);
-                        border-radius: 6px;
-                    }
-                    .optimizer-results-container::-webkit-scrollbar-thumb {
-                        background: rgba(255, 215, 0, 0.6);
-                        border-radius: 6px;
-                    }
-                    .optimizer-results-container::-webkit-scrollbar-thumb:hover {
-                        background: rgba(255, 215, 0, 0.8);
-                    }
-                </style>
+            ">
                 <h4 style="
                     color: #ffd700; 
                     margin-bottom: 25px; 
