@@ -8,7 +8,7 @@ function expandModuleCToContent() {
     if (!drawer.classList.contains('open')) return;
     function setHeight() {
         if (!content || !drawer.classList.contains('open')) return;
-        const h = Math.max(400, content.scrollHeight + 80);
+        const h = content.scrollHeight + 32;
         content.style.minHeight = h + 'px';
         content.style.maxHeight = h + 'px';
     }
