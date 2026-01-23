@@ -1,16 +1,20 @@
 // ========== MODULES JAVASCRIPT ==========
 
-// Auto-extend Module C content when any answer/results appear, so everything is visible
+// Auto-extend Module C to fit content exactly when any answer appears — no black gap, no cutoff, last button visible
 function expandModuleCToContent() {
     const drawer = document.getElementById('drawerC');
     const content = document.getElementById('drawerCContent');
     if (!drawer || !content) return;
     if (!drawer.classList.contains('open')) return;
-    setTimeout(() => {
-        const h = Math.max(8000, content.scrollHeight + 800);
+    function setHeight() {
+        if (!content || !drawer.classList.contains('open')) return;
+        const h = content.scrollHeight + 500;
         content.style.minHeight = h + 'px';
         content.style.maxHeight = h + 'px';
-    }, 250);
+    }
+    setTimeout(setHeight, 150);
+    setTimeout(setHeight, 450);
+    setTimeout(setHeight, 900);
 }
 
 // Initialize drawers
