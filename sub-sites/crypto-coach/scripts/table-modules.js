@@ -3974,14 +3974,22 @@ async function optimizeStrategy() {
             }).join('\n');
             const raw = '### Analysis of Optimized Strategy Parameters\n\n' +
                 '**1. Best parameters and rationale**\n' +
-                'Combination #1 (X=' + best.x + '%, Y=' + best.y + '%) is optimal with a win rate of ' + best.winRate.toFixed(1) + '%, total return of ' + (best.totalReturn >= 0 ? '+' : '') + best.totalReturn + '%, and Sharpe ratio ' + best.sharpeRatio.toFixed(2) + '. ' + benchCompare + '\n\n' +
-                '**2. Risk assessment**\n' + riskLines + '\n\n' +
+                'Combination #1 (X=' + best.x + '%, Y=' + best.y + '%) is optimal with a win rate of ' + best.winRate.toFixed(1) + '%, total return of ' + (best.totalReturn >= 0 ? '+' : '') + best.totalReturn + '%, and Sharpe ratio ' + best.sharpeRatio.toFixed(2) + '. ' + benchCompare + ' This combination is a solid default if you are new to parameter tuning: it balances how often you win, how much you gain, and how much risk you take.\n\n' +
+                '**2. Risk assessment**\n' +
+                'Below we describe the risk level of the top three combinations so you can compare them. Low risk usually means more stable results; high risk can mean higher gains but also bigger swings. Use this to pick a set that matches how much volatility you are comfortable with.\n\n' +
+                riskLines + '\n\n' +
                 '**3. Recommendations**\n' +
-                'Use combination #1 for a balanced risk/return profile. If you prefer lower volatility, prefer combinations with higher Sharpe and moderate return; if you accept more risk for higher upside, consider #2 or #3. Adjust to market conditions: in stronger trends, higher Y (sell targets) can capture more; in choppy markets, tighter ranges may perform better.\n\n' +
+                'Use combination #1 for a balanced risk/return profile — especially if you are a beginner: start with #1 and only try others once you feel at ease with how it works. If you prefer lower volatility, prefer combinations with higher Sharpe and moderate return; if you accept more risk for higher upside, consider #2 or #3. Adjust to market conditions: in stronger trends, higher Y (sell targets) can capture more; in choppy markets, tighter ranges may perform better. Remember: past test results do not guarantee future performance; treat this as a learning tool.\n\n' +
                 '**4. Trade-offs**\n' +
-                'When switching from the top combination to #2 or #3, you typically gain either higher potential return with more volatility, or slightly lower return with more stable outcomes. Higher sell targets (Y) mean fewer trades but larger gains per trade; deeper buy triggers (more negative X) mean waiting for bigger dips and potentially fewer entries. Better risk-adjusted returns often come with lower raw returns, and vice versa.\n\n' +
-                '**5. In plain terms**\n' +
-                'These numbers show which parameter sets looked best in the backtest. These conclusions are based only on historical simulation (backtest) and are not a promise or guarantee of future returns.';
+                'When switching from the top combination to #2 or #3, you typically gain either higher potential return with more volatility, or slightly lower return with more stable outcomes. Higher sell targets (Y) mean fewer trades but larger gains per trade; deeper buy triggers (more negative X) mean waiting for bigger dips and potentially fewer entries. Better risk-adjusted returns often come with lower raw returns, and vice versa. Keeping that in mind helps you choose the combination that fits your goals and your comfort with risk.\n\n' +
+                '**5. In plain terms (for newcomers)**\n' +
+                'The table above tested many different settings and ranked them. Combination #1 is the one that, in the test, gave the best mix of wins, profit, and risk — think of it as the suggested starting point. You can try the other top rows if you want something more aggressive or more cautious; the heatmap and the comparison chart below show the same results in a visual way. All of this is based on a historical simulation (a backtest), not on real future results, so use it to learn and compare, not as a promise of how much you will earn.\n\n' +
+                '**6. What the numbers mean**\n' +
+                '• Win Rate = share of trades that made a profit (e.g. 65% means 65 out of 100 trades were profitable). A very high win rate with low return can still be risky if the few losing trades are large — balance matters.\n' +
+                '• Return = total profit or loss in % over the test period (e.g. +20% means your capital would have grown by 20% in the simulation). Negative return means the strategy would have lost money in that test.\n' +
+                '• Sharpe = how much return you get for the risk taken; above 1 is good, above 2 is very good. It helps you see whether the gains are worth the ups and downs.\n' +
+                '• X (Buy %) = your rule buys when the price has dropped by this % from a recent high (e.g. -10% means buy after a 10% dip). More negative X = you wait for deeper dips before buying.\n' +
+                '• Y (Sell %) = your rule sells when the price has risen by this % from the buy level (e.g. +15% means take profit after a 15% rise). Higher Y = you aim for bigger gains per trade but may sell less often.';
 
             analysisText = raw
                 .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #ffd700; font-weight: bold;">$1</strong>')
