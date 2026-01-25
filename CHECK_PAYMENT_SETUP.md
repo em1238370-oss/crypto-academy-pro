@@ -57,3 +57,4 @@
    - URL должен быть: `https://crypto-academy-pro.onrender.com/api/payments/nowpayments/callback`
    - IPN Secret должен совпадать
 
+
