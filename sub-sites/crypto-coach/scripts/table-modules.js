@@ -6066,6 +6066,8 @@ Be specific with numbers, percentages, and price levels.`;
                 usageStats.today = (usageStats.today || 0) + 1;
             }
             localStorage.setItem('predictiveUsageStats', JSON.stringify(usageStats));
+            
+            predictiveDashboard.innerHTML = `
                 <div style="
                     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(30, 0, 0, 0.8) 100%);
                     border: 2px solid rgba(255, 215, 0, 0.4);
@@ -6479,6 +6481,16 @@ Be specific with numbers, percentages, and price levels.`;
             `;
             
             expandModuleCToContent();
+            
+            // Сохраняем результат в историю
+            savePredictiveToHistory(coin, currentPrice, shortTermChange, mediumTermChange, longTermChange, predictionText);
+            
+            // Создаем график прогнозов - с большей задержкой для гарантии, что DOM готов
+            setTimeout(() => {
+                console.log('🎨 Drawing chart with:', { currentPrice, shortTermChange, mediumTermChange, longTermChange });
+                createPredictionChart(currentPrice, shortTermChange, mediumTermChange, longTermChange);
+                expandModuleCToContent();
+            }, 500);
             
             // Initialize profit calculator
             setTimeout(() => {
