@@ -6118,15 +6118,35 @@ async function loadPredictiveDashboard() {
     try {
         console.log('🚀 loadPredictiveDashboard() called');
         
+        // Убеждаемся, что модуль C открыт
+        const drawerC = document.getElementById('drawerC');
+        if (drawerC && !drawerC.classList.contains('open')) {
+            console.log('📂 Opening Module C...');
+            toggleDrawerWithInit('drawerC');
+            // Ждем немного, чтобы DOM обновился
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
         coin = document.getElementById('predictCoin')?.value || 'BTC';
         console.log('📌 Selected coin:', coin);
         
-        const predictiveDashboard = document.getElementById('predictiveDashboard');
+        // Пробуем найти элемент несколько раз с задержкой
+        let predictiveDashboard = document.getElementById('predictiveDashboard');
+        let attempts = 0;
+        while (!predictiveDashboard && attempts < 5) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            predictiveDashboard = document.getElementById('predictiveDashboard');
+            attempts++;
+        }
         
         if (!predictiveDashboard) {
-            console.error('❌ predictiveDashboard element not found');
-            alert('Error: Predictive Dashboard element not found. Please refresh the page.');
-            return;
+            console.error('❌ predictiveDashboard element not found after', attempts, 'attempts');
+            // Пробуем найти через querySelector
+            predictiveDashboard = document.querySelector('#predictiveDashboard');
+            if (!predictiveDashboard) {
+                alert('Error: Predictive Dashboard element not found. Please make sure Module C is open and refresh the page.');
+                return;
+            }
         }
         
         console.log('✅ predictiveDashboard element found');
