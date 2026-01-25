@@ -5479,43 +5479,44 @@ Be specific with numbers, percentages, and price levels.`;
                         </button>
                     </div>
                     
-                    <div style="margin-bottom: 25px; padding: 20px; background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(20,0,0,0.3) 100%); border-radius: 10px; border: 1px solid rgba(255,215,0,0.2);">
-                        <div style="color: #ffffff; font-size: 1.1rem; margin-bottom: 15px; text-align: center;">
-                            Current Price: <span style="color: #00ff00; font-weight: bold; font-size: 1.4rem;">$${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    <div style="margin-bottom: 25px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,215,0,0.08);">
+                        <div style="color: #ffffff; font-size: 1.15rem; margin-bottom: 18px; text-align: center;">
+                            Current Price: <span style="color: #00ff00; font-weight: bold; font-size: 1.5rem;">$${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
-                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 18px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 8px;">Short-term (7d)</div>
-                                <div style="color: ${shortTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.6rem; font-weight: bold; margin-bottom: 5px;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;">
+                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px; font-weight: 500;">Short-term (7d)</div>
+                                <div style="color: ${shortTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.7rem; font-weight: bold; margin-bottom: 6px;">
                                     ${shortTermChange >= 0 ? '+' : ''}${shortTermChange}%
                                 </div>
-                                <div style="color: #aaaaaa; font-size: 0.9rem;">
+                                <div style="color: #aaaaaa; font-size: 0.95rem;">
                                     $${(currentPrice * (1 + shortTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </div>
                             </div>
-                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 18px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 8px;">Medium-term (3m)</div>
-                                <div style="color: ${mediumTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.6rem; font-weight: bold; margin-bottom: 5px;">
+                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px; font-weight: 500;">Medium-term (3m)</div>
+                                <div style="color: ${mediumTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.7rem; font-weight: bold; margin-bottom: 6px;">
                                     ${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange}%
                                 </div>
-                                <div style="color: #aaaaaa; font-size: 0.9rem;">
+                                <div style="color: #aaaaaa; font-size: 0.95rem;">
                                     $${(currentPrice * (1 + mediumTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </div>
                             </div>
-                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 18px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 8px;">Long-term (6m+)</div>
-                                <div style="color: ${longTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.6rem; font-weight: bold; margin-bottom: 5px;">
+                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px; font-weight: 500;">Long-term (6m+)</div>
+                                <div style="color: ${longTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.7rem; font-weight: bold; margin-bottom: 6px;">
                                     ${longTermChange >= 0 ? '+' : ''}${longTermChange}%
                                 </div>
-                                <div style="color: #aaaaaa; font-size: 0.9rem;">
+                                <div style="color: #aaaaaa; font-size: 0.95rem;">
                                     $${(currentPrice * (1 + longTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                    <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(30,0,0,0.3) 100%); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.25); box-shadow: 0 2px 12px rgba(0,0,0,0.3);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 8px;">📊 AI Analysis & Predictions</h5>
                         <p style="margin: 15px 0; line-height: 1.8;">${predictionText}</p>
                     </div>
                     
