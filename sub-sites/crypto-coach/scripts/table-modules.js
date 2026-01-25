@@ -2072,6 +2072,15 @@ async function getRealTimePrice(coinSymbol) {
             const errorText = await response.text();
             console.error(`❌ API error for ${coinSymbol}:`, response.status, response.statusText, errorText);
             
+            // Пробуем CoinGecko как резервный источник
+            console.log(`🔄 Trying CoinGecko as fallback for ${coinSymbol}...`);
+            const coinGeckoPrice = await getPriceFromCoinGecko(coinSymbol);
+            if (coinGeckoPrice) {
+                console.log(`✅ Got price from CoinGecko: $${coinGeckoPrice}`);
+                updateFallbackPrice(coinSymbol, coinGeckoPrice);
+                return coinGeckoPrice;
+            }
+            
             // Use fallback price if API fails
             const fallbackPrice = FALLBACK_PRICES[coinSymbol];
             if (fallbackPrice) {
@@ -2082,20 +2091,94 @@ async function getRealTimePrice(coinSymbol) {
         }
         
         const data = await response.json();
-        console.log(`📊 Full API response for ${coinSymbol} at ${new Date().toLocaleTimeString()}:`, data);
+        console.log(`📊 Full API response for ${coinSymbol} at ${new Date().toLocaleTimeString()}:`, JSON.stringify(data, null, 2));
         
-        // LiveCoinWatch возвращает цену в поле 'rate'
-        const price = data.rate || data.price || data.usd || null;
+        // LiveCoinWatch API может возвращать цену в разных полях
+        // Проверяем все возможные варианты и логируем их
+        let price = null;
         
+        // Проверяем различные возможные поля для цены
+        if (data.rate !== undefined && data.rate !== null) {
+            price = data.rate;
+            console.log(`✅ Found price in 'rate' field: ${price}`);
+        } else if (data.price !== undefined && data.price !== null) {
+            price = data.price;
+            console.log(`✅ Found price in 'price' field: ${price}`);
+        } else if (data.usd !== undefined && data.usd !== null) {
+            price = data.usd;
+            console.log(`✅ Found price in 'usd' field: ${price}`);
+        } else if (data.marketCap !== undefined && data.marketCap !== null && data.circulatingSupply !== undefined && data.circulatingSupply > 0) {
+            // Если есть marketCap и circulatingSupply, можем вычислить цену
+            price = data.marketCap / data.circulatingSupply;
+            console.log(`✅ Calculated price from marketCap/circulatingSupply: ${price}`);
+        } else {
+            // Пробуем найти цену в любом числовом поле, которое выглядит как цена
+            const possiblePriceFields = ['rate', 'price', 'usd', 'value', 'last', 'close'];
+            for (const field of possiblePriceFields) {
+                if (data[field] !== undefined && data[field] !== null && typeof data[field] === 'number' && data[field] > 0) {
+                    price = data[field];
+                    console.log(`✅ Found price in '${field}' field: ${price}`);
+                    break;
+                }
+            }
+        }
+        
+        // Проверяем, что цена валидна и в разумных пределах
         if (price && price > 0) {
             const formattedPrice = typeof price === 'number' ? price : parseFloat(price);
+            
+            // Проверка на разумность цены (защита от ошибок API)
+            const fallbackPrice = FALLBACK_PRICES[coinSymbol];
+            if (fallbackPrice && fallbackPrice > 0) {
+                // Если цена отличается от fallback более чем на 1000%, это подозрительно
+                const priceDiff = Math.abs(formattedPrice - fallbackPrice) / fallbackPrice;
+                if (priceDiff > 10) {
+                    console.warn(`⚠️ Price ${formattedPrice} differs significantly from fallback ${fallbackPrice} (${(priceDiff * 100).toFixed(1)}% difference)`);
+                    console.warn(`⚠️ Trying CoinGecko to verify...`);
+                    
+                    // Пробуем CoinGecko для проверки
+                    const coinGeckoPrice = await getPriceFromCoinGecko(coinSymbol);
+                    if (coinGeckoPrice) {
+                        const geckoDiff = Math.abs(formattedPrice - coinGeckoPrice) / coinGeckoPrice;
+                        if (geckoDiff > 0.5) {
+                            // Если CoinGecko тоже сильно отличается, используем CoinGecko (более надежный источник)
+                            console.warn(`⚠️ LiveCoinWatch price seems wrong, using CoinGecko price: $${coinGeckoPrice}`);
+                            updateFallbackPrice(coinSymbol, coinGeckoPrice);
+                            return coinGeckoPrice;
+                        }
+                    }
+                }
+            }
+            
+            // Дополнительная проверка: если цена слишком мала или слишком велика
+            if (formattedPrice < 0.000001 || formattedPrice > 1000000) {
+                console.warn(`⚠️ Price ${formattedPrice} seems unreasonable for ${coinSymbol}, trying CoinGecko...`);
+                const coinGeckoPrice = await getPriceFromCoinGecko(coinSymbol);
+                if (coinGeckoPrice && coinGeckoPrice > 0.000001 && coinGeckoPrice < 1000000) {
+                    console.warn(`⚠️ Using CoinGecko price instead: $${coinGeckoPrice}`);
+                    updateFallbackPrice(coinSymbol, coinGeckoPrice);
+                    return coinGeckoPrice;
+                }
+            }
+            
             const fetchTime = new Date().toLocaleTimeString();
             console.log(`✅✅✅ REAL-TIME price for ${coinSymbol} fetched at ${fetchTime}: $${formattedPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
             // Обновляем fallback цену при успешном запросе
             updateFallbackPrice(coinSymbol, formattedPrice);
             return formattedPrice;
         } else {
-            console.warn(`⚠️ No valid price found in response for ${coinSymbol}:`, data);
+            console.warn(`⚠️ No valid price found in response for ${coinSymbol}. Response structure:`, Object.keys(data));
+            console.warn(`⚠️ Full response:`, JSON.stringify(data, null, 2));
+            
+            // Пробуем CoinGecko как резервный источник
+            console.log(`🔄 Trying CoinGecko as fallback for ${coinSymbol}...`);
+            const coinGeckoPrice = await getPriceFromCoinGecko(coinSymbol);
+            if (coinGeckoPrice) {
+                console.log(`✅ Got price from CoinGecko: $${coinGeckoPrice}`);
+                updateFallbackPrice(coinSymbol, coinGeckoPrice);
+                return coinGeckoPrice;
+            }
+            
             // Use fallback price if no price in response
             const fallbackPrice = FALLBACK_PRICES[coinSymbol];
             if (fallbackPrice) {
@@ -2106,12 +2189,62 @@ async function getRealTimePrice(coinSymbol) {
         }
     } catch (e) {
         console.error(`❌ Error fetching price for ${coinSymbol}:`, e);
+        
+        // Пробуем CoinGecko как резервный источник
+        console.log(`🔄 Trying CoinGecko as fallback for ${coinSymbol}...`);
+        const coinGeckoPrice = await getPriceFromCoinGecko(coinSymbol);
+        if (coinGeckoPrice) {
+            console.log(`✅ Got price from CoinGecko: $${coinGeckoPrice}`);
+            updateFallbackPrice(coinSymbol, coinGeckoPrice);
+            return coinGeckoPrice;
+        }
+        
         // Use fallback price on error
         const fallbackPrice = FALLBACK_PRICES[coinSymbol];
         if (fallbackPrice) {
             console.warn(`⚠️ Using fallback price for ${coinSymbol} due to error: $${fallbackPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
             return fallbackPrice;
         }
+        return null;
+    }
+}
+
+// Резервная функция для получения цены из CoinGecko
+async function getPriceFromCoinGecko(coinSymbol) {
+    try {
+        const coinGeckoMap = {
+            'BTC': 'bitcoin', 'ETH': 'ethereum', 'BNB': 'binancecoin', 'SOL': 'solana',
+            'ADA': 'cardano', 'XRP': 'ripple', 'AVAX': 'avalanche-2', 'DOGE': 'dogecoin',
+            'SUI': 'sui', 'TON': 'the-open-network', 'PEPE': 'pepe', 'WIF': 'dogwifcoin',
+            'ARB': 'arbitrum', 'APT': 'aptos', 'NEAR': 'near', 'ONDO': 'ondo-finance',
+            'WLD': 'worldcoin-wld', 'LDO': 'lido-dao', 'UNI': 'uniswap', 'AAVE': 'aave',
+            'ENA': 'ethena', 'FARTCOIN': 'fartcoin', 'SBIB1000': 'shiba-inu', 'WLFI': 'wallet-fi',
+            'IJU': 'inj', 'SOMI': 'somi', 'IP': 'ipx-token', 'APE': 'apecoin',
+            'PENGU': 'pudgy-penguins', 'SEI': 'sei-network', 'GALA': 'gala', 'MYX': 'myx-network',
+            'ATOM': 'cosmos', 'VIRTAUL': 'virtual-protocol'
+        };
+        
+        const coinGeckoId = coinGeckoMap[coinSymbol] || coinSymbol.toLowerCase();
+        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=usd`, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data[coinGeckoId] && data[coinGeckoId].usd) {
+                const price = parseFloat(data[coinGeckoId].usd);
+                console.log(`✅ CoinGecko price for ${coinSymbol}: $${price}`);
+                return price;
+            }
+        }
+        return null;
+    } catch (e) {
+        console.error(`❌ Error fetching CoinGecko price for ${coinSymbol}:`, e);
         return null;
     }
 }
