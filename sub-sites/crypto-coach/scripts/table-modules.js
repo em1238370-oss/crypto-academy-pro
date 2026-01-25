@@ -6114,26 +6114,41 @@ function savePredictiveResult() {
 
 // Predictive Analytics Dashboard - прогнозная аналитика с AI
 async function loadPredictiveDashboard() {
-    const coin = document.getElementById('predictCoin')?.value || 'BTC';
-    const predictiveDashboard = document.getElementById('predictiveDashboard');
-    
-    if (!predictiveDashboard) {
-        console.error('predictiveDashboard element not found');
-        return;
-    }
-    
-    // Показываем загрузку
-    predictiveDashboard.innerHTML = '<div style="color: #ffd700; padding: 15px; text-align: center;"><div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Loading predictive analytics...</div>';
-    predictiveDashboard.style.display = 'block';
-    
+    let coin = 'BTC'; // Объявляем coin вне try для доступа в catch
     try {
+        console.log('🚀 loadPredictiveDashboard() called');
+        
+        coin = document.getElementById('predictCoin')?.value || 'BTC';
+        console.log('📌 Selected coin:', coin);
+        
+        const predictiveDashboard = document.getElementById('predictiveDashboard');
+        
+        if (!predictiveDashboard) {
+            console.error('❌ predictiveDashboard element not found');
+            alert('Error: Predictive Dashboard element not found. Please refresh the page.');
+            return;
+        }
+        
+        console.log('✅ predictiveDashboard element found');
+        
+        // Показываем загрузку
+        predictiveDashboard.innerHTML = '<div style="color: #ffd700; padding: 15px; text-align: center;"><div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Loading predictive analytics...</div>';
+        predictiveDashboard.style.display = 'block';
+        
         // ВАЖНО: Получаем СВЕЖУЮ цену каждый раз при открытии модуля
         // Добавляем timestamp для логирования времени запроса
         const requestTime = new Date().toLocaleString();
         console.log(`🔄 Loading Predictive Dashboard for ${coin} at ${requestTime} - fetching FRESH price...`);
         
-        // Получаем текущую цену БЕЗ КЭШИРОВАНИЯ
-        let currentPrice = await getRealTimePrice(coin);
+        // Получаем текущую цену БЕЗ КЭШИРОВАНИЯ - ВСЕГДА свежая цена!
+        let currentPrice;
+        try {
+            currentPrice = await getRealTimePrice(coin);
+            console.log('✅ Price fetched:', currentPrice);
+        } catch (priceError) {
+            console.error('❌ Error fetching price:', priceError);
+            currentPrice = null;
+        }
         
         const fetchTime = new Date().toLocaleString();
         console.log(`🔍 Price fetched at ${fetchTime} for ${coin}:`, currentPrice);
@@ -7243,19 +7258,49 @@ Be specific with numbers, percentages, and price levels.`;
                 updateProfitCalculator(coin, currentPrice, shortTermChange, mediumTermChange, longTermChange);
             }, 100);
     } catch (error) {
-        console.error('Predictive Dashboard Error:', error);
+        console.error('❌ Predictive Dashboard Error:', error);
         console.error('Error details:', {
             message: error.message,
             stack: error.stack,
             coin: coin
         });
-        predictiveDashboard.innerHTML = `
-            <div style="color: #ff6666; padding: 15px; background: rgba(255, 0, 0, 0.1); border-radius: 8px; border-left: 4px solid #ff0000;">
-                <div style="font-weight: bold; margin-bottom: 10px;">❌ Error loading predictions</div>
-                <div style="font-size: 0.9rem; color: #ffaaaa;">${error.message || 'Please try again later.'}</div>
-                <div style="font-size: 0.8rem; color: #888; margin-top: 10px;">If the problem persists, please check your internet connection or try a different coin.</div>
-            </div>
-        `;
+        
+        const predictiveDashboard = document.getElementById('predictiveDashboard');
+        if (predictiveDashboard) {
+            predictiveDashboard.innerHTML = `
+                <div style="color: #ff6666; padding: 20px; background: rgba(255, 0, 0, 0.15); border-radius: 10px; border: 2px solid #ff0000; margin-top: 20px;">
+                    <div style="font-weight: bold; margin-bottom: 12px; font-size: 1.1rem;">❌ Error loading predictions</div>
+                    <div style="font-size: 0.95rem; color: #ffaaaa; margin-bottom: 10px;">
+                        ${error.message || 'An unexpected error occurred. Please try again.'}
+                    </div>
+                    <div style="font-size: 0.85rem; color: #888; margin-top: 15px; line-height: 1.6;">
+                        <strong>Possible causes:</strong><br>
+                        • API connection issue<br>
+                        • Invalid coin symbol<br>
+                        • Network timeout<br><br>
+                        <strong>Try:</strong><br>
+                        • Check your internet connection<br>
+                        • Try a different coin<br>
+                        • Refresh the page<br>
+                        • Wait a few seconds and try again
+                    </div>
+                    <button onclick="loadPredictiveDashboard()" style="
+                        margin-top: 15px;
+                        padding: 10px 20px;
+                        background: rgba(255, 0, 0, 0.3);
+                        border: 2px solid #ff0000;
+                        color: #ffffff;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        font-size: 0.95rem;
+                    ">🔄 Retry</button>
+                </div>
+            `;
+            predictiveDashboard.style.display = 'block';
+        } else {
+            alert('Error loading predictions: ' + (error.message || 'Unknown error'));
+        }
     }
 }
 
