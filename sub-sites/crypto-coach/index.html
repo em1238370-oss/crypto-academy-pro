@@ -737,9 +737,43 @@
                                            <!-- Содержимое добавляется динамически через showAICorrelations() -->
                                        </div>
                                    </div>
-                                   <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                                       <button class="btn btn-red" onclick="runExperiment()" style="flex: 1;">Run Experiment</button>
-                                       <button class="btn btn-red" onclick="saveCurrentExperiment()" style="flex: 1; background: rgba(255, 0, 0, 0.5);">💾 Save</button>
+                                   <div style="display: flex; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; align-items: stretch;">
+                                       <button class="btn btn-red" onclick="runExperiment()" style="
+                                           flex: 1 1 auto;
+                                           min-width: 150px;
+                                           max-width: 100%;
+                                           padding: 12px 20px;
+                                           font-size: 0.95rem;
+                                           font-weight: 600;
+                                           border-radius: 8px;
+                                           border: 2px solid rgba(255, 0, 0, 0.5);
+                                           background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%);
+                                           color: #ffffff;
+                                           cursor: pointer;
+                                           transition: all 0.3s ease;
+                                           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                                           box-sizing: border-box;
+                                           white-space: nowrap;
+                                           margin: 0;
+                                       " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(255, 0, 0, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.3)'">Run Experiment</button>
+                                       <button class="btn btn-red" onclick="saveCurrentExperiment()" style="
+                                           flex: 1 1 auto;
+                                           min-width: 120px;
+                                           max-width: 100%;
+                                           padding: 12px 20px;
+                                           font-size: 0.95rem;
+                                           font-weight: 600;
+                                           border-radius: 8px;
+                                           border: 2px solid rgba(255, 102, 102, 0.6);
+                                           background: linear-gradient(135deg, rgba(255, 0, 0, 0.25) 0%, rgba(150, 0, 0, 0.35) 100%);
+                                           color: #ffffff;
+                                           cursor: pointer;
+                                           transition: all 0.3s ease;
+                                           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                                           box-sizing: border-box;
+                                           white-space: nowrap;
+                                           margin: 0;
+                                       " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(255, 102, 102, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.3)'">💾 Save</button>
                                    </div>
                                    <!-- Experiment History Modal -->
                                    <div id="experimentHistoryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; overflow-y: auto;">
