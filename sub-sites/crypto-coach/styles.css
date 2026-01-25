@@ -1908,23 +1908,30 @@ div:has-text("Experience Points") {
     font-size: 1.3rem;
 }
 
-.btn {
-    padding: 12px 30px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: bold;
-    transition: all 0.3s ease;
-    margin-top: 10px;
-    box-sizing: border-box;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    /* Prevent shape changes on click */
-    outline: none;
-    -webkit-tap-highlight-color: transparent;
+/* Global button hover effect - NO scale, just preserve shape and color */
+button:hover,
+.btn:hover {
+    /* No scale increase - buttons stay same size */
+    transform: none;
+    /* Preserve border-radius */
+    border-radius: inherit !important;
+    /* Keep opacity */
+    opacity: inherit !important;
+    /* Smooth transition */
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+button:active,
+button:focus,
+.btn:active,
+.btn:focus {
+    /* No transform on click */
+    transform: none;
+    /* Preserve shape */
+    border-radius: inherit !important;
+    /* Keep opacity */
+    opacity: inherit !important;
+    outline: none !important;
 }
 
 /* Fix for buttons in flex containers - only apply when flex is not explicitly set */
@@ -1955,9 +1962,12 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 
 .btn-red:hover {
     background: linear-gradient(135deg, #ff3333, #ff0000);
-    /* Remove transform to prevent buttons from going outside boundaries */
+    /* Subtle, barely noticeable scale increase on hover */
+    transform: scale(1.02);
     border-radius: 8px !important;
     opacity: 1 !important;
+    /* Ensure button stays within boundaries */
+    will-change: transform;
 }
 
 .btn-red:active,
@@ -1966,7 +1976,8 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     border-radius: 8px !important;
     opacity: 1 !important;
     background: linear-gradient(135deg, #ff3333, #ff0000);
-    transform: none !important;
+    /* No scale on click, just return to normal */
+    transform: scale(1);
     outline: none !important;
 }
 
@@ -1980,9 +1991,12 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 
 .btn-black:hover {
     background: linear-gradient(135deg, #1a1a1a, #000000);
+    /* Subtle, barely noticeable scale increase on hover */
+    transform: scale(1.02);
     border-radius: 8px !important;
     opacity: 1 !important;
-    transform: none !important;
+    /* Ensure button stays within boundaries */
+    will-change: transform;
 }
 
 .btn-black:active,
@@ -1990,7 +2004,8 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     border-radius: 8px !important;
     opacity: 1 !important;
     background: linear-gradient(135deg, #1a1a1a, #000000);
-    transform: none !important;
+    /* No scale on click, just return to normal */
+    transform: scale(1);
     outline: none !important;
 }
 
