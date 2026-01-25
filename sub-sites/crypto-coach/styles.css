@@ -1588,6 +1588,8 @@ div:has-text("Experience Points") {
     opacity: 0;
     position: relative;
     z-index: 1;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .drawer.open .drawer-content {
@@ -1595,12 +1597,60 @@ div:has-text("Experience Points") {
     padding: 30px;
     transform: translateY(0);
     opacity: 1;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Fix for Module C to prevent overflow */
+#drawerC .drawer-content,
+#drawerCContent {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+}
+
+#drawerC .drawer-content > *,
+#drawerCContent > * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
 }
 
 /* Module C: height set by JS (expandModuleCToContent) — no fixed 8000px, no black gap */
 #drawerC.open #drawerCContent {
     min-height: 0;
     max-height: none;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+}
+
+/* Ensure all content inside Module C respects container width */
+#drawerCContent * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Fix for tables and wide elements in Module C */
+#drawerCContent table,
+#drawerCContent .table,
+#drawerCContent div[style*="grid"],
+#drawerCContent div[style*="display: grid"] {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    display: block !important;
+}
+
+#drawerCContent table {
+    width: 100% !important;
+    table-layout: auto !important;
 }
 /* Space below Module C when open so it doesn't touch Module D */
 #drawerC.drawer.open {

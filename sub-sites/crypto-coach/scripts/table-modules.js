@@ -2705,17 +2705,17 @@ async function runExperiment() {
                 // Fallback на аналитический формат (БЕЗ прямых рекомендаций)
                 let adviceText = '';
                 if (priceChange < -20) {
-                    adviceText = '⚠️ Обнаружен сильный спад. Если вы рассматриваете возможность уменьшения позиции, учтите: такие движения могут указывать на повышенный риск. Следите за стабилизацией перед любыми действиями.';
+                    adviceText = '⚠️ Strong decline detected. If you are considering reducing your position, note that such movements may indicate increased risk. Monitor for stabilization before taking any actions.';
                 } else if (priceChange < -10) {
-                    adviceText = '📉 Обнаружен умеренный спад. Если вы анализируете свою позицию, обратите внимание на уровень риска. Продолжайте мониторить ситуацию.';
+                    adviceText = '📉 Moderate decline detected. If you are analyzing your position, pay attention to the risk level. Continue monitoring the situation.';
                 } else if (priceChange < 0) {
-                    adviceText = '📊 Обнаружена небольшая коррекция. Это нормальное рыночное поведение. Продолжайте следовать своей стратегии и мониторьте ситуацию.';
+                    adviceText = '📊 Small correction detected. This is normal market behavior. Continue following your strategy and monitor the situation.';
                 } else if (priceChange < 20) {
-                    adviceText = '📈 Обнаружено положительное движение. Если вы рассматриваете возможность фиксации прибыли, учтите текущие уровни. Продолжайте наблюдать за дальнейшим развитием.';
+                    adviceText = '📈 Positive movement detected. If you are considering taking profits, consider current levels. Continue observing further developments.';
                 } else if (priceChange < 50) {
-                    adviceText = '🚀 Обнаружен сильный рост. Если вы анализируете возможность фиксации прибыли, учтите текущие уровни. Рассмотрите возможность установки защитных уровней для управления рисками.';
+                    adviceText = '🚀 Strong growth detected. If you are analyzing profit-taking opportunities, consider current levels. Consider setting protective levels for risk management.';
                 } else {
-                    adviceText = '💎 Обнаружен исключительный рост! Если вы рассматриваете возможность фиксации прибыли, учтите, что такие уровни часто неустойчивы в долгосрочной перспективе.';
+                    adviceText = '💎 Exceptional growth detected! If you are considering profit-taking, note that such levels are often unsustainable in the long term.';
                 }
                 aiAdviceDiv.innerHTML = `
                     <div style="padding: 20px;">
@@ -2749,7 +2749,7 @@ async function runExperiment() {
             aiAdviceDiv.innerHTML = `
                 <div style="padding: 20px;">
                     <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
-                        🤖 AI Trading Advice
+                        🤖 Market Analysis & Insights
                     </h5>
                     <p style="color: #ffffff; line-height: 1.8; font-size: 1.05rem; margin: 0;">${adviceText}</p>
                     <div style="margin-top: 15px; padding: 10px; background: rgba(255, 0, 0, 0.1); border-radius: 5px; border-left: 3px solid #ff0000;">
@@ -6064,31 +6064,31 @@ Be specific with numbers, percentages, and price levels.`;
             
             if (avgChange > 5) {
             marketSituation = 'Positive Trend Detected';
-            situationDescription = 'Анализ показывает положительный тренд на основе исторических данных и технических индикаторов.';
-                actionColor = '#00ff00';
-                entryPrice = currentPrice;
-                exitPrice = currentPrice * (1 + mediumTermChange / 100);
-            conditionalAdvice = `Если вы рассматриваете возможность увеличения позиции, обратите внимание на следующие факторы: текущая цена $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}, потенциальная цель $${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange.toFixed(2)}%). Однако помните, что прошлые результаты не гарантируют будущую прибыль.`;
-            riskFactors = ['Рынок может развернуться в любой момент', 'Высокая волатильность криптовалют', 'Возможны коррекции после роста'];
-            opportunities = ['Потенциальный рост на основе тренда', 'Технические индикаторы показывают позитивные сигналы'];
+            situationDescription = 'Analysis shows a positive trend based on historical data and technical indicators.';
+            actionColor = '#00ff00';
+            entryPrice = currentPrice;
+            exitPrice = currentPrice * (1 + mediumTermChange / 100);
+            conditionalAdvice = `If you are considering increasing your position, pay attention to the following factors: current price $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}, potential target $${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange.toFixed(2)}%). However, remember that past results do not guarantee future profits.`;
+            riskFactors = ['Market can reverse at any moment', 'High cryptocurrency volatility', 'Possible corrections after growth'];
+            opportunities = ['Potential growth based on trend', 'Technical indicators show positive signals'];
             } else if (avgChange < -5) {
             marketSituation = 'Negative Trend Detected';
-            situationDescription = 'Анализ показывает негативный тренд на основе исторических данных и технических индикаторов.';
-                actionColor = '#ff6666';
-                entryPrice = currentPrice;
-                exitPrice = currentPrice * (1 + Math.min(shortTermChange, mediumTermChange) / 100);
-            conditionalAdvice = `Если вы рассматриваете возможность уменьшения позиции, учтите следующие факторы: текущая цена $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}, потенциальная поддержка может быть около $${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}. Однако помните, что рынок непредсказуем и может развернуться.`;
-            riskFactors = ['Продолжение нисходящего тренда', 'Возможны дальнейшие падения', 'Высокая волатильность'];
-            opportunities = ['Возможность покупки на более низких уровнях', 'Потенциальное восстановление после коррекции'];
+            situationDescription = 'Analysis shows a negative trend based on historical data and technical indicators.';
+            actionColor = '#ff6666';
+            entryPrice = currentPrice;
+            exitPrice = currentPrice * (1 + Math.min(shortTermChange, mediumTermChange) / 100);
+            conditionalAdvice = `If you are considering reducing your position, consider the following factors: current price $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}, potential support may be around $${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}. However, remember that the market is unpredictable and can reverse.`;
+            riskFactors = ['Continuation of downtrend', 'Possible further declines', 'High volatility'];
+            opportunities = ['Opportunity to buy at lower levels', 'Potential recovery after correction'];
         } else {
             marketSituation = 'Neutral/Consolidation Phase';
-            situationDescription = 'Анализ показывает нейтральный тренд или фазу консолидации. Рынок находится в неопределенном состоянии.';
+            situationDescription = 'Analysis shows a neutral trend or consolidation phase. The market is in an uncertain state.';
             actionColor = '#ffd700';
             entryPrice = currentPrice;
             exitPrice = currentPrice * (1 + mediumTermChange / 100);
-            conditionalAdvice = `Если вы держите позицию, следите за следующими уровнями: текущая цена $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}, потенциальная цель $${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}. В фазе консолидации важно наблюдать за прорывом ключевых уровней.`;
-            riskFactors = ['Неопределенность направления', 'Возможны резкие движения в любую сторону', 'Низкая предсказуемость'];
-            opportunities = ['Возможность накопления на текущих уровнях', 'Потенциал для движения после консолидации'];
+            conditionalAdvice = `If you are holding a position, monitor the following levels: current price $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}, potential target $${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}. In a consolidation phase, it's important to watch for breakouts of key levels.`;
+            riskFactors = ['Uncertainty in direction', 'Possible sharp movements in either direction', 'Low predictability'];
+            opportunities = ['Opportunity to accumulate at current levels', 'Potential for movement after consolidation'];
             }
             
             // Calculate position sizing (conservative: 1-5% of portfolio based on risk)
@@ -6268,14 +6268,14 @@ Be specific with numbers, percentages, and price levels.`;
                     <!-- Important Disclaimer -->
                     <div style="background: rgba(255,0,0,0.15); padding: 20px; border-radius: 10px; border: 2px solid #ff0000; margin-top: 25px;">
                         <div style="color: #ff0000; font-weight: bold; font-size: 1.1rem; margin-bottom: 12px; text-align: center;">
-                            ⚠️ ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ
+                            ⚠️ IMPORTANT WARNING
                         </div>
                         <div style="color: #ffffff; line-height: 1.8; font-size: 0.95rem; text-align: center;">
-                            <strong>Это образовательный анализ данных, а НЕ финансовый совет.</strong><br>
-                            Все представленные данные основаны на исторических паттернах и технических индикаторах, которые НЕ гарантируют будущие результаты.<br>
-                            Криптовалютный рынок крайне непредсказуем и волатилен. Все торговые решения вы принимаете самостоятельно и на свой собственный риск.<br>
-                            <strong style="color: #ff6666;">Никогда не инвестируйте больше, чем можете позволить себе потерять.</strong>
-                    </div>
+                            <strong>This is educational data analysis, NOT financial advice.</strong><br>
+                            All presented data is based on historical patterns and technical indicators that do NOT guarantee future results.<br>
+                            The cryptocurrency market is extremely unpredictable and volatile. All trading decisions are made by you independently and at your own risk.<br>
+                            <strong style="color: #ff6666;">Never invest more than you can afford to lose.</strong>
+                        </div>
                 </div>
                     </div>
                     
