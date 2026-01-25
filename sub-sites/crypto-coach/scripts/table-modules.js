@@ -4962,6 +4962,150 @@ function deleteStrategyOptimizerFromHistory(id) {
 
 // ========== PREDICTIVE ANALYTICS DASHBOARD MANAGEMENT ==========
 
+// Create prediction chart
+function createPredictionChart(currentPrice, shortTermChange, mediumTermChange, longTermChange) {
+    const canvas = document.getElementById('predictionChart');
+    if (!canvas) {
+        console.error('predictionChart canvas not found');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get 2d context');
+        return;
+    }
+    
+    // Устанавливаем размеры canvas
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width || canvas.offsetWidth || 800;
+    canvas.height = 250;
+    
+    // Вычисляем прогнозируемые цены
+    const prices = [
+        currentPrice,
+        currentPrice * (1 + parseFloat(shortTermChange) / 100),
+        currentPrice * (1 + parseFloat(mediumTermChange) / 100),
+        currentPrice * (1 + parseFloat(longTermChange) / 100)
+    ];
+    
+    // Проверяем, что все цены валидны
+    if (prices.some(p => !p || isNaN(p) || p <= 0)) {
+        console.error('Invalid prices for chart:', { currentPrice, shortTermChange, mediumTermChange, longTermChange, prices });
+        return;
+    }
+    
+    const labels = ['Now', '7d', '3m', '6m+'];
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const priceRange = Math.max(maxPrice - minPrice, maxPrice * 0.1); // Минимум 10% диапазона для визуализации
+    
+    // Очищаем canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Рисуем фон
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Рисуем сетку
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+        const y = (i / 4) * canvas.height;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+    
+    // Вертикальные линии для точек
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < prices.length; i++) {
+        const x = (i / (prices.length - 1)) * canvas.width;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+    
+    // Рисуем линию прогноза
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    
+    prices.forEach((price, i) => {
+        const x = (i / (prices.length - 1)) * canvas.width;
+        const normalizedPrice = (price - minPrice) / priceRange;
+        const y = canvas.height - (normalizedPrice * canvas.height);
+        
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    });
+    
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    
+    // Рисуем точки и подписи
+    prices.forEach((price, i) => {
+        const x = (i / (prices.length - 1)) * canvas.width;
+        const normalizedPrice = (price - minPrice) / priceRange;
+        const y = canvas.height - (normalizedPrice * canvas.height);
+        
+        // Точка
+        ctx.fillStyle = i === 0 ? '#00ff00' : '#ffd700';
+        ctx.shadowColor = i === 0 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 215, 0, 0.5)';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // Подпись цены
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        
+        const priceText = `$${price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        const textY = y - 12;
+        
+        // Фон для текста для читаемости
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        const textWidth = ctx.measureText(priceText).width;
+        ctx.fillRect(x - textWidth / 2 - 4, textY - 12, textWidth + 8, 14);
+        
+        // Текст цены
+        ctx.fillStyle = i === 0 ? '#00ff00' : '#ffd700';
+        ctx.fillText(priceText, x, textY);
+        
+        // Подпись времени
+        ctx.fillStyle = '#cccccc';
+        ctx.font = '10px Arial';
+        ctx.textBaseline = 'top';
+        ctx.fillText(labels[i], x, y + 10);
+    });
+    
+    // Рисуем Y-axis labels (цены)
+    ctx.fillStyle = '#888888';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    
+    for (let i = 0; i <= 4; i++) {
+        const y = (i / 4) * canvas.height;
+        const price = maxPrice - (i / 4) * priceRange;
+        ctx.fillText(`$${price.toLocaleString('en-US', {maximumFractionDigits: 0})}`, 5, y);
+    }
+    
+    console.log('✅ Prediction chart drawn successfully');
+}
+
 // Fill example for Predictive Analytics Dashboard
 function fillExamplePredictive() {
     document.getElementById('predictCoin').value = 'BTC';
@@ -5174,59 +5318,9 @@ function loadPredictiveFromHistory(id) {
             dashboard.style.display = 'block';
             
             setTimeout(() => {
-                const canvas = document.getElementById('predictionChart');
-                if (canvas) {
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = canvas.offsetWidth;
-                    canvas.height = 250;
-                    const prices = [
-                        currentPrice,
-                        currentPrice * (1 + shortTerm / 100),
-                        currentPrice * (1 + mediumTerm / 100),
-                        currentPrice * (1 + longTerm / 100)
-                    ];
-                    const labels = ['Now', '7d', '3m', '6m+'];
-                    const minPrice = Math.min(...prices);
-                    const maxPrice = Math.max(...prices);
-                    const priceRange = maxPrice - minPrice;
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.strokeStyle = '#333';
-                    ctx.lineWidth = 1;
-                    for (let i = 0; i <= 4; i++) {
-                        const y = (i / 4) * canvas.height;
-                        ctx.beginPath();
-                        ctx.moveTo(0, y);
-                        ctx.lineTo(canvas.width, y);
-                        ctx.stroke();
-                    }
-                    ctx.strokeStyle = '#ffd700';
-                    ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    prices.forEach((price, i) => {
-                        const x = (i / (prices.length - 1)) * canvas.width;
-                        const y = canvas.height - ((price - minPrice) / priceRange) * canvas.height;
-                        if (i === 0) {
-                            ctx.moveTo(x, y);
-                        } else {
-                            ctx.lineTo(x, y);
-                        }
-                        ctx.fillStyle = i === 0 ? '#00ff00' : '#ffd700';
-                        ctx.beginPath();
-                        ctx.arc(x, y, 5, 0, Math.PI * 2);
-                        ctx.fill();
-                    });
-                    ctx.stroke();
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 12px Arial';
-                    ctx.textAlign = 'center';
-                    prices.forEach((price, i) => {
-                        const x = (i / (prices.length - 1)) * canvas.width;
-                        const y = canvas.height - ((price - minPrice) / priceRange) * canvas.height;
-                        ctx.fillText('$' + price.toFixed(0), x, y - 10);
-                    });
-                }
+                createPredictionChart(currentPrice, shortTerm, mediumTerm, longTerm);
                 expandModuleCToContent();
-            }, 100);
+            }, 200);
         }
         
         closePredictiveHistory();
@@ -5293,7 +5387,32 @@ async function loadPredictiveDashboard() {
     
     try {
         // Получаем текущую цену
-        const currentPrice = await getRealTimePrice(coin) || 50000;
+        let currentPrice = await getRealTimePrice(coin);
+        
+        // Если цена не получена или равна 0/null, используем fallback
+        if (!currentPrice || currentPrice === 0 || isNaN(currentPrice)) {
+            console.warn(`⚠️ Price for ${coin} is invalid (${currentPrice}), using fallback`);
+            const fallbackPrice = FALLBACK_PRICES[coin];
+            if (fallbackPrice && fallbackPrice > 0) {
+                currentPrice = fallbackPrice;
+            } else {
+                // Если нет fallback, используем базовую цену в зависимости от монеты
+                const defaultPrices = {
+                    'BTC': 95000, 'ETH': 3500, 'BNB': 600, 'SOL': 150,
+                    'ADA': 0.5, 'XRP': 0.6, 'AVAX': 35, 'DOGE': 0.15,
+                    'SUI': 1.5, 'TON': 6, 'PEPE': 0.00001, 'WIF': 2.5,
+                    'ARB': 1.2, 'APT': 8, 'NEAR': 6, 'ONDO': 0.8,
+                    'WLD': 4, 'LDO': 2.5, 'UNI': 10, 'AAVE': 100,
+                    'ENA': 0.8, 'FARTCOIN': 0.0001, 'SBIB1000': 0.00002,
+                    'WLFI': 0.5, 'IJU': 25, 'SOMI': 0.01, 'IP': 0.05,
+                    'APE': 1.5, 'PENGU': 0.5, 'SEI': 0.5, 'GALA': 0.04,
+                    'MYX': 0.1, 'ATOM': 8, 'VIRTAUL': 0.02
+                };
+                currentPrice = defaultPrices[coin] || 50000;
+            }
+        }
+        
+        console.log(`✅ Using price for ${coin}: $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
         
         // Используем AI для прогноза
         const prompt = `You are a cryptocurrency market analyst. Provide price predictions and analysis for ${coin}.
@@ -5518,7 +5637,7 @@ Be specific with numbers, percentages, and price levels.`;
                     <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(30,0,0,0.3) 100%); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.25); box-shadow: 0 2px 12px rgba(0,0,0,0.3);">
                         <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 8px;">📊 AI Analysis & Predictions</h5>
                         <div style="max-height: 600px; overflow-y: auto; padding-right: 8px;">
-                            <p style="margin: 15px 0; line-height: 1.8;">${predictionText}</p>
+                        <p style="margin: 15px 0; line-height: 1.8;">${predictionText}</p>
                         </div>
                         <style>
                             #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar {
@@ -5567,73 +5686,9 @@ Be specific with numbers, percentages, and price levels.`;
             
             // Создаем график прогнозов
             setTimeout(() => {
-                const canvas = document.getElementById('predictionChart');
-                if (canvas) {
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = canvas.offsetWidth;
-                    canvas.height = 250;
-                    
-                    const prices = [
-                        currentPrice,
-                        currentPrice * (1 + parseFloat(shortTermChange) / 100),
-                        currentPrice * (1 + parseFloat(mediumTermChange) / 100),
-                        currentPrice * (1 + parseFloat(longTermChange) / 100)
-                    ];
-                    
-                    const labels = ['Now', '7d', '3m', '6m+'];
-                    const minPrice = Math.min(...prices);
-                    const maxPrice = Math.max(...prices);
-                    const priceRange = maxPrice - minPrice;
-                    
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    
-                    // Рисуем сетку
-                    ctx.strokeStyle = '#333';
-                    ctx.lineWidth = 1;
-                    for (let i = 0; i <= 4; i++) {
-                        const y = (i / 4) * canvas.height;
-                        ctx.beginPath();
-                        ctx.moveTo(0, y);
-                        ctx.lineTo(canvas.width, y);
-                        ctx.stroke();
-                    }
-                    
-                    // Рисуем линию прогноза
-                    ctx.strokeStyle = '#ffd700';
-                    ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    
-                    prices.forEach((price, i) => {
-                        const x = (i / (prices.length - 1)) * canvas.width;
-                        const y = canvas.height - ((price - minPrice) / priceRange) * canvas.height;
-                        
-                        if (i === 0) {
-                            ctx.moveTo(x, y);
-                        } else {
-                            ctx.lineTo(x, y);
-                        }
-                        
-                        // Точки
-                        ctx.fillStyle = i === 0 ? '#00ff00' : '#ffd700';
-                        ctx.beginPath();
-                        ctx.arc(x, y, 5, 0, Math.PI * 2);
-                        ctx.fill();
-                    });
-                    
-                    ctx.stroke();
-                    
-                    // Подписи цен
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 12px Arial';
-                    ctx.textAlign = 'center';
-                    prices.forEach((price, i) => {
-                        const x = (i / (prices.length - 1)) * canvas.width;
-                        const y = canvas.height - ((price - minPrice) / priceRange) * canvas.height;
-                        ctx.fillText(`$${price.toFixed(0)}`, x, y - 10);
-                    });
-                }
+                createPredictionChart(currentPrice, shortTermChange, mediumTermChange, longTermChange);
                 expandModuleCToContent();
-            }, 100);
+            }, 200);
         } else {
             throw new Error('No response from AI');
         }
