@@ -38,7 +38,7 @@ function toggleDrawerWithInit(drawerId) {
             }
         }
     });
-
+    
     // Toggle the clicked drawer
     toggleDrawer(drawerId);
     if (drawerId === 'drawerC') {
@@ -54,7 +54,7 @@ function toggleDrawerWithInit(drawerId) {
             }
         }
     }
-
+    
     // Initialize coins if drawerA is opened
     if (drawerId === 'drawerA') {
         const coinsGrid = document.getElementById('coinsGrid');
@@ -4139,7 +4139,7 @@ async function optimizeStrategy() {
                     </div>
                 </div>
                 
-
+                
                 <div style="margin-bottom: 25px;">
                     <h5 style="color: #ffd700; margin-bottom: 10px; font-size: 1.2rem;">Top 5 Parameter Combinations:</h5>
                     <div style="
@@ -4326,7 +4326,7 @@ async function optimizeStrategy() {
                 const bottomMargin = 20;
                 const graphW = canvas.width - leftMargin;
                 const graphH = canvas.height - bottomMargin;
-
+                
                 const scores = results.map(r => r.score);
                 const minScore = Math.min(...scores);
                 const maxScore = Math.max(...scores);
@@ -4352,7 +4352,7 @@ async function optimizeStrategy() {
                     ctx.fillStyle = color;
                     ctx.fillRect(leftMargin + xIndex * cellWidth, yIndex * cellHeight, cellWidth, cellHeight);
                 }
-
+                
                 ctx.fillStyle = '#ffffff';
                 ctx.font = '11px Arial';
                 ctx.textAlign = 'center';
@@ -4960,6 +4960,323 @@ function deleteStrategyOptimizerFromHistory(id) {
 }
 
 
+// ========== PREDICTIVE ANALYTICS DASHBOARD MANAGEMENT ==========
+
+// Fill example for Predictive Analytics Dashboard
+function fillExamplePredictive() {
+    document.getElementById('predictCoin').value = 'BTC';
+    autoSavePredictiveForm();
+}
+
+// Clear Predictive Analytics form
+function clearPredictiveForm() {
+    if (!confirm('Are you sure you want to clear all fields?')) return;
+    document.getElementById('predictCoin').value = 'BTC';
+    document.getElementById('predictiveDashboard').style.display = 'none';
+    document.getElementById('predictiveDashboard').innerHTML = '';
+    autoSavePredictiveForm();
+}
+
+// Auto-save Predictive Analytics form
+function autoSavePredictiveForm() {
+    const coin = document.getElementById('predictCoin')?.value || 'BTC';
+    localStorage.setItem('predictiveForm', JSON.stringify({ coin: coin }));
+}
+
+// Load Predictive Analytics form
+function loadPredictiveForm() {
+    try {
+        const saved = localStorage.getItem('predictiveForm');
+        if (saved) {
+            const data = JSON.parse(saved);
+            if (data.coin) document.getElementById('predictCoin').value = data.coin;
+        }
+    } catch (e) {
+        console.warn('Could not load Predictive form:', e);
+    }
+}
+
+// Save Predictive Analytics result to history
+function savePredictiveToHistory(coin, currentPrice, shortTerm, mediumTerm, longTerm, predictionText) {
+    try {
+        const history = JSON.parse(localStorage.getItem('predictiveHistory') || '[]');
+        const entry = {
+            id: Date.now(),
+            coin: coin,
+            currentPrice: currentPrice,
+            shortTerm: shortTerm,
+            mediumTerm: mediumTerm,
+            longTerm: longTerm,
+            predictionText: predictionText,
+            timestamp: new Date().toISOString()
+        };
+        history.unshift(entry);
+        if (history.length > 50) history.pop();
+        localStorage.setItem('predictiveHistory', JSON.stringify(history));
+    } catch (e) {
+        console.warn('Could not save Predictive history:', e);
+    }
+}
+
+// Show Predictive Analytics history
+function showPredictiveHistory() {
+    const modal = document.getElementById('predictiveHistoryModal');
+    const list = document.getElementById('predictiveHistoryList');
+    if (!modal || !list) return;
+    
+    try {
+        const history = JSON.parse(localStorage.getItem('predictiveHistory') || '[]');
+        if (history.length === 0) {
+            list.innerHTML = '<p style="color: #cccccc; text-align: center; padding: 20px;">No saved predictions yet.</p>';
+        } else {
+            list.innerHTML = history.map(entry => `
+                <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 10px; padding: 20px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                        <div>
+                            <h4 style="color: #ffd700; margin: 0 0 5px 0;">${entry.coin} Prediction</h4>
+                            <div style="color: #cccccc; font-size: 0.9rem;">${new Date(entry.timestamp).toLocaleString()}</div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="loadPredictiveFromHistory(${entry.id})" style="background: rgba(0, 255, 0, 0.3); border: 1px solid #00ff00; color: #ffffff; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem;">📋 Load</button>
+                            <button onclick="deletePredictiveFromHistory(${entry.id})" style="background: rgba(255, 0, 0, 0.3); border: 1px solid #ff6666; color: #ffffff; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85rem;">🗑️ Delete</button>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px;">
+                        <div style="text-align: center; padding: 10px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;">
+                            <div style="color: #cccccc; font-size: 0.85rem;">7d</div>
+                            <div style="color: ${entry.shortTerm >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold;">${entry.shortTerm >= 0 ? '+' : ''}${entry.shortTerm}%</div>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;">
+                            <div style="color: #cccccc; font-size: 0.85rem;">3m</div>
+                            <div style="color: ${entry.mediumTerm >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold;">${entry.mediumTerm >= 0 ? '+' : ''}${entry.mediumTerm}%</div>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;">
+                            <div style="color: #cccccc; font-size: 0.85rem;">6m+</div>
+                            <div style="color: ${entry.longTerm >= 0 ? '#00ff00' : '#ff6666'}; font-weight: bold;">${entry.longTerm >= 0 ? '+' : ''}${entry.longTerm}%</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        modal.style.display = 'block';
+    } catch (e) {
+        console.error('Error loading Predictive history:', e);
+        list.innerHTML = '<p style="color: #ff6666; text-align: center; padding: 20px;">Error loading history.</p>';
+    }
+}
+
+// Close Predictive Analytics history
+function closePredictiveHistory() {
+    const modal = document.getElementById('predictiveHistoryModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Load Predictive Analytics from history
+function loadPredictiveFromHistory(id) {
+    try {
+        const history = JSON.parse(localStorage.getItem('predictiveHistory') || '[]');
+        const entry = history.find(e => e.id === id);
+        if (!entry) return;
+        
+        document.getElementById('predictCoin').value = entry.coin;
+        autoSavePredictiveForm();
+        
+        const dashboard = document.getElementById('predictiveDashboard');
+        if (dashboard && entry.currentPrice && entry.shortTerm !== undefined) {
+            const currentPrice = entry.currentPrice;
+            const shortTerm = entry.shortTerm;
+            const mediumTerm = entry.mediumTerm;
+            const longTerm = entry.longTerm;
+            const predictionText = entry.predictionText || '';
+            
+            dashboard.innerHTML = `
+                <div style="
+                    background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(30, 0, 0, 0.8) 100%);
+                    border: 2px solid rgba(255, 215, 0, 0.4);
+                    border-radius: 12px;
+                    padding: 25px;
+                    padding-bottom: 50px;
+                    box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
+                    width: 100%;
+                    max-width: 100%;
+                    box-sizing: border-box;
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                        <h4 style="color: #ffd700; margin: 0; font-size: 1.4rem; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
+                            🔮 Predictive Analytics: ${entry.coin} (Saved)
+                        </h4>
+                        <button class="btn btn-red" onclick="savePredictiveResult()" style="padding: 8px 16px; font-size: 0.9rem; background: rgba(255, 215, 0, 0.3); border-color: #ffd700;">
+                            💾 Save Results
+                        </button>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px; padding: 20px; background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(20,0,0,0.3) 100%); border-radius: 10px; border: 1px solid rgba(255,215,0,0.2);">
+                        <div style="color: #ffffff; font-size: 1.1rem; margin-bottom: 15px; text-align: center;">
+                            Current Price: <span style="color: #00ff00; font-weight: bold; font-size: 1.4rem;">$${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 18px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 8px;">Short-term (7d)</div>
+                                <div style="color: ${shortTerm >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.6rem; font-weight: bold; margin-bottom: 5px;">
+                                    ${shortTerm >= 0 ? '+' : ''}${shortTerm}%
+                                </div>
+                                <div style="color: #aaaaaa; font-size: 0.9rem;">
+                                    $${(currentPrice * (1 + shortTerm / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                </div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 18px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 8px;">Medium-term (3m)</div>
+                                <div style="color: ${mediumTerm >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.6rem; font-weight: bold; margin-bottom: 5px;">
+                                    ${mediumTerm >= 0 ? '+' : ''}${mediumTerm}%
+                                </div>
+                                <div style="color: #aaaaaa; font-size: 0.9rem;">
+                                    $${(currentPrice * (1 + mediumTerm / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                </div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 18px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 8px;">Long-term (6m+)</div>
+                                <div style="color: ${longTerm >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.6rem; font-weight: bold; margin-bottom: 5px;">
+                                    ${longTerm >= 0 ? '+' : ''}${longTerm}%
+                                </div>
+                                <div style="color: #aaaaaa; font-size: 0.9rem;">
+                                    $${(currentPrice * (1 + longTerm / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                        <p style="margin: 15px 0; line-height: 1.8;">${predictionText}</p>
+                    </div>
+                    
+                    <div style="margin-top: 25px; padding: 20px; background: rgba(255, 0, 0, 0.1); border-radius: 10px; border-left: 4px solid #ff0000; box-shadow: 0 2px 12px rgba(0,0,0,0.3);">
+                        <div style="color: #ff0000; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem;">⚠️ DISCLAIMER:</div>
+                        <div style="color: #ffffff; line-height: 1.6; font-size: 0.95rem;">
+                            These predictions are AI-generated estimates based on current market data and should NOT be considered financial advice. 
+                            Cryptocurrency markets are highly volatile and unpredictable. Always do your own research (DYOR) and never invest more than you can afford to lose.
+                        </div>
+                    </div>
+                    
+                    <!-- График прогнозов -->
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,215,0,0.08);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📈 Price Prediction Chart</h5>
+                        <canvas id="predictionChart" style="width: 100%; height: 250px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255,215,0,0.15);"></canvas>
+                        <div style="display: flex; justify-content: space-around; margin-top: 15px; color: #cccccc; font-size: 0.9rem;">
+                            <span>Current</span>
+                            <span>7 days</span>
+                            <span>3 months</span>
+                            <span>6+ months</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            dashboard.style.display = 'block';
+            
+            setTimeout(() => {
+                const canvas = document.getElementById('predictionChart');
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = canvas.offsetWidth;
+                    canvas.height = 250;
+                    const prices = [
+                        currentPrice,
+                        currentPrice * (1 + shortTerm / 100),
+                        currentPrice * (1 + mediumTerm / 100),
+                        currentPrice * (1 + longTerm / 100)
+                    ];
+                    const labels = ['Now', '7d', '3m', '6m+'];
+                    const minPrice = Math.min(...prices);
+                    const maxPrice = Math.max(...prices);
+                    const priceRange = maxPrice - minPrice;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 1;
+                    for (let i = 0; i <= 4; i++) {
+                        const y = (i / 4) * canvas.height;
+                        ctx.beginPath();
+                        ctx.moveTo(0, y);
+                        ctx.lineTo(canvas.width, y);
+                        ctx.stroke();
+                    }
+                    ctx.strokeStyle = '#ffd700';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    prices.forEach((price, i) => {
+                        const x = (i / (prices.length - 1)) * canvas.width;
+                        const y = canvas.height - ((price - minPrice) / priceRange) * canvas.height;
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                        ctx.fillStyle = i === 0 ? '#00ff00' : '#ffd700';
+                        ctx.beginPath();
+                        ctx.arc(x, y, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    ctx.stroke();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.textAlign = 'center';
+                    prices.forEach((price, i) => {
+                        const x = (i / (prices.length - 1)) * canvas.width;
+                        const y = canvas.height - ((price - minPrice) / priceRange) * canvas.height;
+                        ctx.fillText('$' + price.toFixed(0), x, y - 10);
+                    });
+                }
+                expandModuleCToContent();
+            }, 100);
+        }
+        
+        closePredictiveHistory();
+        expandModuleCToContent();
+    } catch (e) {
+        console.error('Error loading Predictive from history:', e);
+        alert('Error loading prediction from history.');
+    }
+}
+
+// Delete Predictive Analytics from history
+function deletePredictiveFromHistory(id) {
+    if (!confirm('Delete this prediction from history?')) return;
+    try {
+        const history = JSON.parse(localStorage.getItem('predictiveHistory') || '[]');
+        const filtered = history.filter(e => e.id !== id);
+        localStorage.setItem('predictiveHistory', JSON.stringify(filtered));
+        showPredictiveHistory();
+    } catch (e) {
+        console.error('Error deleting Predictive from history:', e);
+    }
+}
+
+// Save current Predictive Analytics result (called from button)
+function savePredictiveResult() {
+    const dashboard = document.getElementById('predictiveDashboard');
+    if (!dashboard || dashboard.style.display === 'none') {
+        alert('No prediction results to save. Please load predictions first.');
+        return;
+    }
+    const coin = document.getElementById('predictCoin')?.value || 'BTC';
+    const currentPriceMatch = dashboard.innerHTML.match(/Current Price:.*?\$([\d,]+\.?\d*)/);
+    const shortMatch = dashboard.innerHTML.match(/Short-term.*?([+-]?\d+\.?\d*)%/);
+    const mediumMatch = dashboard.innerHTML.match(/Medium-term.*?([+-]?\d+\.?\d*)%/);
+    const longMatch = dashboard.innerHTML.match(/Long-term.*?([+-]?\d+\.?\d*)%/);
+    const predictionTextMatch = dashboard.innerHTML.match(/<p style="margin: 15px 0[^>]*>(.*?)<\/p>/s);
+    
+    if (currentPriceMatch && shortMatch && mediumMatch && longMatch) {
+        const currentPrice = parseFloat(currentPriceMatch[1].replace(/,/g, ''));
+        const shortTerm = parseFloat(shortMatch[1]);
+        const mediumTerm = parseFloat(mediumMatch[1]);
+        const longTerm = parseFloat(longMatch[1]);
+        const predictionText = predictionTextMatch ? predictionTextMatch[1] : '';
+        savePredictiveToHistory(coin, currentPrice, shortTerm, mediumTerm, longTerm, predictionText);
+        alert('Prediction saved to history!');
+    } else {
+        alert('Could not extract prediction data. Please try loading predictions again.');
+    }
+}
+
 // Predictive Analytics Dashboard - прогнозная аналитика с AI
 async function loadPredictiveDashboard() {
     const coin = document.getElementById('predictCoin')?.value || 'BTC';
@@ -5142,59 +5459,65 @@ Be specific with numbers, percentages, and price levels.`;
                     border: 2px solid rgba(255, 215, 0, 0.4);
                     border-radius: 12px;
                     padding: 25px;
+                    padding-bottom: 50px;
                     box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
-                    margin-left: -37.8px;
-                    margin-right: -37.8px;
-                    width: calc(100% + 75.6px);
+                    width: 100%;
+                    max-width: 100%;
+                    box-sizing: border-box;
                 ">
-                    <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.4rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                        <h4 style="color: #ffd700; margin: 0; font-size: 1.4rem; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
                         🔮 Predictive Analytics: ${coin}
                     </h4>
+                        <button class="btn btn-red" onclick="savePredictiveResult()" style="padding: 8px 16px; font-size: 0.9rem; background: rgba(255, 215, 0, 0.3); border-color: #ffd700;">
+                            💾 Save Results
+                        </button>
+                    </div>
                     
-                    <div style="margin-bottom: 25px;">
+                    <div style="margin-bottom: 25px; padding: 20px; background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(20,0,0,0.3) 100%); border-radius: 10px; border: 1px solid rgba(255,215,0,0.2);">
                         <div style="color: #ffffff; font-size: 1.1rem; margin-bottom: 15px; text-align: center;">
-                            Current Price: <span style="color: #00ff00; font-weight: bold; font-size: 1.3rem;">$${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            Current Price: <span style="color: #00ff00; font-weight: bold; font-size: 1.4rem;">$${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
-                            <div style="background: rgba(255, 215, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.3); text-align: center;">
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Short-term (7d)</div>
-                                <div style="color: ${shortTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 18px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 8px;">Short-term (7d)</div>
+                                <div style="color: ${shortTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.6rem; font-weight: bold; margin-bottom: 5px;">
                                     ${shortTermChange >= 0 ? '+' : ''}${shortTermChange}%
                                 </div>
-                                <div style="color: #888; font-size: 0.85rem; margin-top: 5px;">
+                                <div style="color: #aaaaaa; font-size: 0.9rem;">
                                     $${(currentPrice * (1 + shortTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </div>
                             </div>
-                            <div style="background: rgba(255, 215, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.3); text-align: center;">
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Medium-term (3m)</div>
-                                <div style="color: ${mediumTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">
+                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 18px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 8px;">Medium-term (3m)</div>
+                                <div style="color: ${mediumTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.6rem; font-weight: bold; margin-bottom: 5px;">
                                     ${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange}%
                                 </div>
-                                <div style="color: #888; font-size: 0.85rem; margin-top: 5px;">
+                                <div style="color: #aaaaaa; font-size: 0.9rem;">
                                     $${(currentPrice * (1 + mediumTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </div>
                             </div>
-                            <div style="background: rgba(255, 215, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.3); text-align: center;">
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Long-term (6m+)</div>
-                                <div style="color: ${longTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">
+                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 18px; border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 8px;">Long-term (6m+)</div>
+                                <div style="color: ${longTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.6rem; font-weight: bold; margin-bottom: 5px;">
                                     ${longTermChange >= 0 ? '+' : ''}${longTermChange}%
                                 </div>
-                                <div style="color: #888; font-size: 0.85rem; margin-top: 5px;">
+                                <div style="color: #aaaaaa; font-size: 0.9rem;">
                                     $${(currentPrice * (1 + longTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8;">
+                    <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.2);">
                         <p style="margin: 15px 0; line-height: 1.8;">${predictionText}</p>
                     </div>
                     
                     <!-- График прогнозов -->
-                    <div style="margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px;">
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,215,0,0.08);">
                         <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📈 Price Prediction Chart</h5>
-                        <canvas id="predictionChart" style="width: 100%; height: 250px; background: rgba(0, 0, 0, 0.3); border-radius: 5px;"></canvas>
+                        <canvas id="predictionChart" style="width: 100%; height: 250px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255,215,0,0.15);"></canvas>
                         <div style="display: flex; justify-content: space-around; margin-top: 15px; color: #cccccc; font-size: 0.9rem;">
                             <span>Current</span>
                             <span>7 days</span>
@@ -5203,7 +5526,7 @@ Be specific with numbers, percentages, and price levels.`;
                         </div>
                     </div>
                     
-                    <div style="margin-top: 25px; padding: 20px; background: rgba(255, 0, 0, 0.1); border-radius: 8px; border-left: 4px solid #ff0000;">
+                    <div style="margin-top: 25px; padding: 20px; background: rgba(255, 0, 0, 0.1); border-radius: 10px; border-left: 4px solid #ff0000; box-shadow: 0 2px 12px rgba(0,0,0,0.3);">
                         <div style="color: #ff0000; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem;">⚠️ DISCLAIMER:</div>
                         <div style="color: #ffffff; line-height: 1.6; font-size: 0.95rem;">
                             These predictions are AI-generated estimates based on current market data and should NOT be considered financial advice. 
@@ -5214,6 +5537,9 @@ Be specific with numbers, percentages, and price levels.`;
             `;
             
             expandModuleCToContent();
+            
+            // Сохраняем результат в историю
+            savePredictiveToHistory(coin, currentPrice, shortTermChange, mediumTermChange, longTermChange, predictionText);
             
             // Создаем график прогнозов
             setTimeout(() => {
@@ -5716,6 +6042,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadExperimentArchive();
         loadExperimentForm(); // Load saved form data
         loadStrategyOptimizerForm(); // Load saved Strategy Optimizer form data
+        loadPredictiveForm(); // Load saved Predictive Analytics form data
     }, 500);
 });
 

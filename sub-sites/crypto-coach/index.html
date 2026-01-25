@@ -872,17 +872,35 @@
                                <div class="section-box" style="margin-top: 20px;">
                                    <h4>🔮 Predictive Analytics Dashboard</h4>
                                    <p style="color: #cccccc; margin-bottom: 15px;">AI-powered price predictions and recommendations</p>
+                                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                                       <button class="btn btn-red" onclick="fillExamplePredictive()" style="padding: 8px 20px; font-size: 0.9rem; margin: 0;">📋 Fill Example</button>
+                                       <button class="btn btn-red" onclick="showPredictiveHistory()" style="padding: 8px 20px; font-size: 0.9rem; margin: 0;">📚 History</button>
+                                   </div>
                                    <div class="form-group">
-                                       <label>Select Coin for Prediction:</label>
-                                       <select id="predictCoin">
+                                       <label>Select Coin for Prediction: <span class="info-tooltip" data-tooltip="Choose the cryptocurrency you want to get AI-powered price predictions for. The system will analyze current market data and historical trends to provide short-term (7 days), medium-term (3 months), and long-term (6+ months) forecasts.">ℹ️</span></label>
+                                       <select id="predictCoin" onchange="savePredictiveForm()">
                                            <option value="BTC">Bitcoin (BTC)</option>
                                            <option value="ETH">Ethereum (ETH)</option>
                                            <option value="SOL">Solana (SOL)</option>
                                            <option value="BNB">Binance Coin (BNB)</option>
                                        </select>
                                    </div>
-                                   <button class="btn btn-red" onclick="loadPredictiveDashboard()">📊 Load Predictions</button>
+                                   <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                                       <button class="btn btn-red" onclick="loadPredictiveDashboard()" style="flex: 1; min-width: 150px;">📊 Load Predictions</button>
+                                       <button class="btn btn-red" onclick="clearPredictiveForm()" style="padding: 8px 20px; font-size: 0.9rem; background: rgba(255, 0, 0, 0.3); border-color: #ff6666;">🗑️ Clear</button>
+                                   </div>
                                    <div id="predictiveDashboard" style="margin-top: 20px; display: none;"></div>
+                                   
+                                   <!-- Predictive Analytics History Modal -->
+                                   <div id="predictiveHistoryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; overflow-y: auto;">
+                                       <div style="max-width: 800px; margin: 50px auto; background: rgba(0, 0, 0, 0.95); border: 2px solid rgba(255, 215, 0, 0.4); border-radius: 15px; padding: 30px;">
+                                           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                               <h3 style="color: #ffd700; margin: 0;">📚 Predictive Analytics History</h3>
+                                               <button onclick="closePredictiveHistory()" style="background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); color: #ffffff; padding: 8px 15px; border-radius: 5px; cursor: pointer;">✕ Close</button>
+                                           </div>
+                                           <div id="predictiveHistoryList" style="color: #ffffff;"></div>
+                                       </div>
+                                   </div>
                                </div>
 
                                <div class="section-box">
