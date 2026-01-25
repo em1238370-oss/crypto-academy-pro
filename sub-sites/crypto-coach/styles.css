@@ -1922,6 +1922,9 @@ div:has-text("Experience Points") {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+    /* Prevent shape changes on click */
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Fix for buttons in flex containers - only apply when flex is not explicitly set */
@@ -1946,22 +1949,49 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .btn-red {
     background: linear-gradient(135deg, #ff0000, #cc0000);
     color: white;
+    border-radius: 8px !important;
+    opacity: 1 !important;
 }
 
 .btn-red:hover {
     background: linear-gradient(135deg, #ff3333, #ff0000);
-    transform: scale(1.05);
+    /* Remove transform to prevent buttons from going outside boundaries */
+    border-radius: 8px !important;
+    opacity: 1 !important;
+}
+
+.btn-red:active,
+.btn-red:focus {
+    /* Keep same shape and appearance when clicked */
+    border-radius: 8px !important;
+    opacity: 1 !important;
+    background: linear-gradient(135deg, #ff3333, #ff0000);
+    transform: none !important;
+    outline: none !important;
 }
 
 .btn-black {
     background: linear-gradient(135deg, #000000, #333333);
     color: white;
     border: 1px solid rgba(255, 0, 0, 0.3);
+    border-radius: 8px !important;
+    opacity: 1 !important;
 }
 
 .btn-black:hover {
     background: linear-gradient(135deg, #1a1a1a, #000000);
-    transform: scale(1.05);
+    border-radius: 8px !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+.btn-black:active,
+.btn-black:focus {
+    border-radius: 8px !important;
+    opacity: 1 !important;
+    background: linear-gradient(135deg, #1a1a1a, #000000);
+    transform: none !important;
+    outline: none !important;
 }
 
 .result-box {
