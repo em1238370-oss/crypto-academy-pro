@@ -4978,11 +4978,18 @@ function createPredictionChart(currentPrice, shortTermChange, mediumTermChange, 
         return;
     }
     
-    // Устанавливаем размеры canvas - используем реальные размеры элемента
+    // Устанавливаем размеры canvas с учетом devicePixelRatio для четкости
     const rect = canvas.getBoundingClientRect();
     const containerWidth = rect.width || canvas.parentElement?.offsetWidth || canvas.offsetWidth || 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Устанавливаем внутренние размеры canvas (логические пиксели)
     canvas.width = containerWidth;
     canvas.height = 250;
+    
+    // Устанавливаем физические размеры для высокого DPI
+    canvas.style.width = containerWidth + 'px';
+    canvas.style.height = '250px';
     
     // Если canvas не виден, пробуем еще раз через небольшую задержку
     if (canvas.width === 0 || canvas.height === 0) {
@@ -4991,6 +4998,8 @@ function createPredictionChart(currentPrice, shortTermChange, mediumTermChange, 
             const retryRect = canvas.getBoundingClientRect();
             canvas.width = retryRect.width || 800;
             canvas.height = 250;
+            canvas.style.width = (retryRect.width || 800) + 'px';
+            canvas.style.height = '250px';
             drawChart();
         }, 100);
         return;
@@ -5013,113 +5022,212 @@ function createPredictionChart(currentPrice, shortTermChange, mediumTermChange, 
             return;
         }
         
-        const labels = ['Now', '7d', '3m', '6m+'];
+        const labels = ['Current', '7 days', '3 months', '6m+'];
         const minPrice = Math.min(...prices);
         const maxPrice = Math.max(...prices);
-        const priceRange = Math.max(maxPrice - minPrice, maxPrice * 0.1); // Минимум 10% диапазона для визуализации
+        const priceRange = Math.max(maxPrice - minPrice, maxPrice * 0.1);
+        
+        // Настройки отступов
+        const padding = { top: 40, right: 20, bottom: 50, left: 60 };
+        const chartWidth = canvas.width - padding.left - padding.right;
+        const chartHeight = canvas.height - padding.top - padding.bottom;
+        
+        // Включаем сглаживание для качественной отрисовки
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         
         // Очищаем canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Рисуем фон
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+        // Рисуем фон с градиентом
+        const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        bgGradient.addColorStop(0, 'rgba(0, 0, 0, 0.5)');
+        bgGradient.addColorStop(1, 'rgba(20, 0, 0, 0.4)');
+        ctx.fillStyle = bgGradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Рисуем сетку
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        // Рисуем сетку с более тонкими линиями
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
         ctx.lineWidth = 1;
-        for (let i = 0; i <= 4; i++) {
-            const y = (i / 4) * canvas.height;
+        ctx.setLineDash([]);
+        
+        // Горизонтальные линии сетки
+        for (let i = 0; i <= 5; i++) {
+            const y = padding.top + (i / 5) * chartHeight;
             ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvas.width, y);
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(canvas.width - padding.right, y);
             ctx.stroke();
         }
         
-        // Вертикальные линии для точек
+        // Вертикальные линии для точек данных
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        ctx.lineWidth = 1;
         for (let i = 0; i < prices.length; i++) {
-            const x = (i / (prices.length - 1)) * canvas.width;
+            const x = padding.left + (i / (prices.length - 1)) * chartWidth;
             ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, canvas.height);
+            ctx.moveTo(x, padding.top);
+            ctx.lineTo(x, canvas.height - padding.bottom);
             ctx.stroke();
         }
         
-        // Рисуем линию прогноза
-        ctx.strokeStyle = '#ffd700';
-        ctx.lineWidth = 3;
-        ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
-        ctx.shadowBlur = 10;
-        ctx.beginPath();
-        
-        prices.forEach((price, i) => {
-            const x = (i / (prices.length - 1)) * canvas.width;
+        // Вычисляем координаты точек
+        const points = prices.map((price, i) => {
+            const x = padding.left + (i / (prices.length - 1)) * chartWidth;
             const normalizedPrice = (price - minPrice) / priceRange;
-            const y = canvas.height - (normalizedPrice * canvas.height);
-            
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
+            const y = padding.top + chartHeight - (normalizedPrice * chartHeight);
+            return { x, y, price };
         });
         
-        ctx.stroke();
-        ctx.shadowBlur = 0;
+        // Рисуем область под графиком с градиентом
+        const areaGradient = ctx.createLinearGradient(0, padding.top, 0, canvas.height - padding.bottom);
+        areaGradient.addColorStop(0, 'rgba(255, 215, 0, 0.15)');
+        areaGradient.addColorStop(1, 'rgba(255, 215, 0, 0.01)');
         
-        // Рисуем точки и подписи
-        prices.forEach((price, i) => {
-            const x = (i / (prices.length - 1)) * canvas.width;
-            const normalizedPrice = (price - minPrice) / priceRange;
-            const y = canvas.height - (normalizedPrice * canvas.height);
+        ctx.fillStyle = areaGradient;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, canvas.height - padding.bottom);
+        points.forEach(point => ctx.lineTo(point.x, point.y));
+        ctx.lineTo(points[points.length - 1].x, canvas.height - padding.bottom);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Рисуем линию прогноза с градиентом и свечением
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // Создаем градиент для линии
+        const lineGradient = ctx.createLinearGradient(
+            padding.left, padding.top,
+            canvas.width - padding.right, canvas.height - padding.bottom
+        );
+        lineGradient.addColorStop(0, '#00ff00'); // Зеленый для текущей цены
+        lineGradient.addColorStop(0.33, '#ffd700'); // Золотой для 7 дней
+        lineGradient.addColorStop(0.66, '#ffaa00'); // Оранжевый для 3 месяцев
+        lineGradient.addColorStop(1, '#ff6666'); // Красный для долгосрочного
+        
+        ctx.strokeStyle = lineGradient;
+        ctx.lineWidth = 3;
+        
+        // Добавляем свечение
+        ctx.shadowColor = 'rgba(255, 215, 0, 0.6)';
+        ctx.shadowBlur = 15;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        
+        // Используем кривые Безье для плавных переходов
+        for (let i = 1; i < points.length; i++) {
+            const prevPoint = points[i - 1];
+            const currentPoint = points[i];
             
-            // Точка
-            ctx.fillStyle = i === 0 ? '#00ff00' : '#ffd700';
-            ctx.shadowColor = i === 0 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 215, 0, 0.5)';
-            ctx.shadowBlur = 8;
+            // Вычисляем контрольные точки для плавной кривой
+            const cp1x = prevPoint.x + (currentPoint.x - prevPoint.x) * 0.5;
+            const cp1y = prevPoint.y;
+            const cp2x = currentPoint.x - (currentPoint.x - prevPoint.x) * 0.5;
+            const cp2y = currentPoint.y;
+            
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, currentPoint.x, currentPoint.y);
+        }
+        
+        ctx.stroke();
+        
+        // Убираем тень для остальных элементов
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+        
+        // Рисуем точки данных с градиентами и свечением
+        points.forEach((point, i) => {
+            const isCurrent = i === 0;
+            const pointColor = isCurrent ? '#00ff00' : '#ffd700';
+            
+            // Внешнее свечение
+            ctx.shadowColor = isCurrent ? 'rgba(0, 255, 0, 0.6)' : 'rgba(255, 215, 0, 0.6)';
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Градиент для точки
+            const pointGradient = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, 8);
+            pointGradient.addColorStop(0, pointColor);
+            pointGradient.addColorStop(0.5, isCurrent ? 'rgba(0, 255, 0, 0.8)' : 'rgba(255, 215, 0, 0.8)');
+            pointGradient.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
+            
+            ctx.fillStyle = pointGradient;
             ctx.beginPath();
-            ctx.arc(x, y, 6, 0, Math.PI * 2);
+            ctx.arc(point.x, point.y, 7, 0, Math.PI * 2);
             ctx.fill();
-            ctx.shadowBlur = 0;
             
-            // Подпись цены
+            // Внутренний круг для глубины
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Подпись цены с улучшенным шрифтом
+            ctx.shadowBlur = 0;
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 11px Arial';
+            ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'bottom';
             
-            const priceText = `$${price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            const textY = y - 12;
+            const priceText = `$${point.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            const textY = point.y - 15;
             
-            // Фон для текста для читаемости
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            // Фон для текста с градиентом
+            const textBgGradient = ctx.createLinearGradient(point.x - 50, textY - 14, point.x + 50, textY);
+            textBgGradient.addColorStop(0, 'rgba(0, 0, 0, 0.85)');
+            textBgGradient.addColorStop(1, 'rgba(20, 20, 20, 0.85)');
+            
+            ctx.fillStyle = textBgGradient;
             const textWidth = ctx.measureText(priceText).width;
-            ctx.fillRect(x - textWidth / 2 - 4, textY - 12, textWidth + 8, 14);
+            const textPadding = 8;
+            ctx.fillRect(point.x - textWidth / 2 - textPadding, textY - 16, textWidth + textPadding * 2, 18);
+            
+            // Рамка для текста
+            ctx.strokeStyle = isCurrent ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 215, 0, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(point.x - textWidth / 2 - textPadding, textY - 16, textWidth + textPadding * 2, 18);
             
             // Текст цены
-            ctx.fillStyle = i === 0 ? '#00ff00' : '#ffd700';
-            ctx.fillText(priceText, x, textY);
+            ctx.fillStyle = isCurrent ? '#00ff00' : '#ffd700';
+            ctx.fillText(priceText, point.x, textY);
             
             // Подпись времени
-            ctx.fillStyle = '#cccccc';
-            ctx.font = '10px Arial';
+            ctx.fillStyle = '#aaaaaa';
+            ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
             ctx.textBaseline = 'top';
-            ctx.fillText(labels[i], x, y + 10);
+            ctx.fillText(labels[i], point.x, point.y + 12);
         });
         
-        // Рисуем Y-axis labels (цены)
+        // Рисуем Y-axis labels (цены) с улучшенным шрифтом
         ctx.fillStyle = '#888888';
-        ctx.font = '10px Arial';
-        ctx.textAlign = 'left';
+        ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+        ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         
-        for (let i = 0; i <= 4; i++) {
-            const y = (i / 4) * canvas.height;
-            const price = maxPrice - (i / 4) * priceRange;
-            ctx.fillText(`$${price.toLocaleString('en-US', {maximumFractionDigits: 0})}`, 5, y);
+        for (let i = 0; i <= 5; i++) {
+            const price = maxPrice - (i / 5) * priceRange;
+            const y = padding.top + (i / 5) * chartHeight;
+            const priceLabel = `$${price.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+            ctx.fillText(priceLabel, padding.left - 10, y);
         }
+        
+        // Рисуем ось X линию
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, canvas.height - padding.bottom);
+        ctx.lineTo(canvas.width - padding.right, canvas.height - padding.bottom);
+        ctx.stroke();
+        
+        // Рисуем ось Y линию
+        ctx.beginPath();
+        ctx.moveTo(padding.left, padding.top);
+        ctx.lineTo(padding.left, canvas.height - padding.bottom);
+        ctx.stroke();
         
         console.log('✅ Prediction chart drawn successfully');
     }
