@@ -5898,10 +5898,8 @@ Be specific with numbers, percentages, and price levels.`;
             let mediumTermChange = 0;
             let longTermChange = 0;
             
-            try {
-                // Получаем исторические данные за последние 7, 30 и 90 дней для анализа трендов
+            // Определяем coinGeckoId и endDate ДО блока try для использования в Promise.all
                 const endDate = Math.floor(Date.now() / 1000);
-                // Полный маппинг символов монет на CoinGecko ID для получения РЕАЛЬНЫХ исторических данных
                 const coinGeckoMap = {
                     'BTC': 'bitcoin',
                     'ETH': 'ethereum',
@@ -5940,6 +5938,7 @@ Be specific with numbers, percentages, and price levels.`;
                 };
                 const coinGeckoId = coinGeckoMap[coin] || coinGeckoMap['BTC'] || 'bitcoin';
                 
+            try {
                 // Получаем данные за 7 дней для краткосрочного прогноза
                 const shortTermStart = endDate - (7 * 24 * 60 * 60);
                 const shortTermResponse = await fetch(`https://api.coingecko.com/api/v3/coins/${coinGeckoId}/market_chart/range?vs_currency=usd&from=${shortTermStart}&to=${endDate}`);
@@ -6501,9 +6500,16 @@ Be specific with numbers, percentages, and price levels.`;
         }
     } catch (error) {
         console.error('Predictive Dashboard Error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            coin: coin
+        });
         predictiveDashboard.innerHTML = `
             <div style="color: #ff6666; padding: 15px; background: rgba(255, 0, 0, 0.1); border-radius: 8px; border-left: 4px solid #ff0000;">
-                ❌ Error loading predictions. Please try again later.
+                <div style="font-weight: bold; margin-bottom: 10px;">❌ Error loading predictions</div>
+                <div style="font-size: 0.9rem; color: #ffaaaa;">${error.message || 'Please try again later.'}</div>
+                <div style="font-size: 0.8rem; color: #888; margin-top: 10px;">If the problem persists, please check your internet connection or try a different coin.</div>
             </div>
         `;
     }
