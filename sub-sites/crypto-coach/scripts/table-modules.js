@@ -2044,7 +2044,9 @@ function updateFallbackPrice(coinSymbol, price) {
 // Fetch real-time price for Module C
 async function getRealTimePrice(coinSymbol) {
     try {
-        console.log(`🔄 Fetching REAL-TIME price for ${coinSymbol} from LiveCoinWatch API...`);
+        // Добавляем timestamp для предотвращения кэширования
+        const timestamp = Date.now();
+        console.log(`🔄 Fetching REAL-TIME price for ${coinSymbol} from LiveCoinWatch API at ${new Date(timestamp).toLocaleTimeString()}...`);
         
         // ПРАВИЛЬНЫЙ формат запроса для LiveCoinWatch API:
         // URL: https://api.livecoinwatch.com/coins/single (БЕЗ символа монеты в URL!)
@@ -2053,13 +2055,17 @@ async function getRealTimePrice(coinSymbol) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-api-key': LIVECOINWATCH_KEY
+                'x-api-key': LIVECOINWATCH_KEY,
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
             },
             body: JSON.stringify({
                 code: coinSymbol,  // Символ монеты в теле запроса, а не в URL!
                 currency: 'USD',
                 meta: true
-            })
+            }),
+            cache: 'no-store' // Предотвращаем кэширование
         });
         
         if (!response.ok) {
@@ -2076,14 +2082,15 @@ async function getRealTimePrice(coinSymbol) {
         }
         
         const data = await response.json();
-        console.log(`📊 Full API response for ${coinSymbol}:`, data);
+        console.log(`📊 Full API response for ${coinSymbol} at ${new Date().toLocaleTimeString()}:`, data);
         
         // LiveCoinWatch возвращает цену в поле 'rate'
         const price = data.rate || data.price || data.usd || null;
         
         if (price && price > 0) {
             const formattedPrice = typeof price === 'number' ? price : parseFloat(price);
-            console.log(`✅✅✅ REAL-TIME price for ${coinSymbol}: $${formattedPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
+            const fetchTime = new Date().toLocaleTimeString();
+            console.log(`✅✅✅ REAL-TIME price for ${coinSymbol} fetched at ${fetchTime}: $${formattedPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
             // Обновляем fallback цену при успешном запросе
             updateFallbackPrice(coinSymbol, formattedPrice);
             return formattedPrice;
@@ -5914,10 +5921,16 @@ async function loadPredictiveDashboard() {
     predictiveDashboard.style.display = 'block';
     
     try {
-        // Получаем текущую цену
+        // ВАЖНО: Получаем СВЕЖУЮ цену каждый раз при открытии модуля
+        // Добавляем timestamp для логирования времени запроса
+        const requestTime = new Date().toLocaleString();
+        console.log(`🔄 Loading Predictive Dashboard for ${coin} at ${requestTime} - fetching FRESH price...`);
+        
+        // Получаем текущую цену БЕЗ КЭШИРОВАНИЯ
         let currentPrice = await getRealTimePrice(coin);
         
-        console.log(`🔍 Initial price for ${coin}:`, currentPrice);
+        const fetchTime = new Date().toLocaleString();
+        console.log(`🔍 Price fetched at ${fetchTime} for ${coin}:`, currentPrice);
         
         // Если цена не получена или равна 0/null, используем fallback
         if (!currentPrice || currentPrice === 0 || isNaN(currentPrice)) {
@@ -6173,18 +6186,18 @@ Be specific with numbers, percentages, and price levels.`;
             if (avgChange > 5) {
             marketSituation = 'Positive Trend Detected';
             situationDescription = 'Analysis shows a positive trend based on historical data and technical indicators.';
-            actionColor = '#00ff00';
-            entryPrice = currentPrice;
-            exitPrice = currentPrice * (1 + mediumTermChange / 100);
+                actionColor = '#00ff00';
+                entryPrice = currentPrice;
+                exitPrice = currentPrice * (1 + mediumTermChange / 100);
             conditionalAdvice = `If you are considering increasing your position, pay attention to the following factors: current price $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}, potential target $${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange.toFixed(2)}%). However, remember that past results do not guarantee future profits.`;
             riskFactors = ['Market can reverse at any moment', 'High cryptocurrency volatility', 'Possible corrections after growth'];
             opportunities = ['Potential growth based on trend', 'Technical indicators show positive signals'];
             } else if (avgChange < -5) {
             marketSituation = 'Negative Trend Detected';
             situationDescription = 'Analysis shows a negative trend based on historical data and technical indicators.';
-            actionColor = '#ff6666';
-            entryPrice = currentPrice;
-            exitPrice = currentPrice * (1 + Math.min(shortTermChange, mediumTermChange) / 100);
+                actionColor = '#ff6666';
+                entryPrice = currentPrice;
+                exitPrice = currentPrice * (1 + Math.min(shortTermChange, mediumTermChange) / 100);
             conditionalAdvice = `If you are considering reducing your position, consider the following factors: current price $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}, potential support may be around $${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}. However, remember that the market is unpredictable and can reverse.`;
             riskFactors = ['Continuation of downtrend', 'Possible further declines', 'High volatility'];
             opportunities = ['Opportunity to buy at lower levels', 'Potential recovery after correction'];
@@ -6234,6 +6247,9 @@ Be specific with numbers, percentages, and price levels.`;
                         <span style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(0,255,0,0.08) 100%); border: 1px solid rgba(255,215,0,0.35); border-radius: 999px; color: #ffd700; font-size: 0.88rem;">
                             Current: $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} · Asset: ${coin}
                         </span>
+                        <div style="margin-top: 8px; color: #aaaaaa; font-size: 0.75rem;">
+                            Price fetched at: ${fetchTime}
+                        </div>
                     </div>
                     <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
                         <button class="btn btn-red" onclick="savePredictiveResult()" style="padding: 8px 16px; font-size: 0.9rem; background: rgba(255, 215, 0, 0.3); border-color: #ffd700;">
@@ -6244,6 +6260,9 @@ Be specific with numbers, percentages, and price levels.`;
                     <div style="margin-bottom: 25px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,215,0,0.08);">
                         <div style="color: #ffffff; font-size: 1.15rem; margin-bottom: 18px; text-align: center;">
                             Current Price: <span style="color: #00ff00; font-weight: bold; font-size: 1.5rem;">$${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                        <div style="text-align: center; color: #888888; font-size: 0.8rem; margin-top: 8px;">
+                            Price updated at: ${fetchTime}
                         </div>
                         
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;">
@@ -6383,7 +6402,7 @@ Be specific with numbers, percentages, and price levels.`;
                             All presented data is based on historical patterns and technical indicators that do NOT guarantee future results.<br>
                             The cryptocurrency market is extremely unpredictable and volatile. All trading decisions are made by you independently and at your own risk.<br>
                             <strong style="color: #ff6666;">Never invest more than you can afford to lose.</strong>
-                        </div>
+                    </div>
                 </div>
                     </div>
                     
