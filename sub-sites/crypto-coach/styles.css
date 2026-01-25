@@ -1669,27 +1669,47 @@ div:has-text("Experience Points") {
     box-sizing: border-box !important;
 }
 
-/* Global fix for all drawers to prevent overflow */
-.drawer-container,
-.drawer,
-.drawer-content,
-.drawer.open,
-.drawer.open .drawer-content {
+/* Fix for predictiveDashboard content inside Module C */
+#predictiveDashboard,
+#predictiveDashboard > div,
+#predictiveDashboard [style] {
+    max-width: 100% !important;
     overflow-x: hidden !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+/* Fix for all sections inside predictiveDashboard */
+#predictiveDashboard div[style*="padding"],
+#predictiveDashboard div[style*="margin"] {
     max-width: 100% !important;
     box-sizing: border-box !important;
 }
 
-/* Aggressive overflow prevention - override inline styles */
-#drawerCContent [style],
-.drawer-content [style],
-#drawerCContent div[style],
-.drawer-content div[style],
-.modules-container [style],
-.modules-container div[style] {
+/* Ensure grid layouts in predictiveDashboard don't overflow */
+#predictiveDashboard [style*="grid-template-columns"] {
     max-width: 100% !important;
-    overflow-x: hidden !important;
+    overflow-x: auto !important;
+    width: 100% !important;
+}
+
+/* Fix for buttons and other elements */
+#predictiveDashboard button,
+#predictiveDashboard .btn {
+    max-width: 100% !important;
     box-sizing: border-box !important;
+    word-wrap: break-word !important;
+}
+
+/* Final safety net - prevent ANY element from exceeding viewport */
+.page,
+.content,
+.modules-container,
+.drawer-container,
+.drawer,
+.drawer-content {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
 }
 
 /* Fix for all elements with width in style attribute */
@@ -2483,3 +2503,49 @@ div:has-text("Experience Points") {
 .backtest-results-container::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 0, 0, 0.7);
 }
+
+
+/* ========== FINAL OVERFLOW PREVENTION - HIGHEST PRIORITY ========== */
+/* Fix for predictiveDashboard content inside Module C */
+#predictiveDashboard,
+#predictiveDashboard > div,
+#predictiveDashboard [style] {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+/* Fix for all sections inside predictiveDashboard */
+#predictiveDashboard div[style*=padding],
+#predictiveDashboard div[style*=margin] {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Ensure grid layouts in predictiveDashboard don't overflow */
+#predictiveDashboard [style*=grid-template-columns] {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    width: 100% !important;
+}
+
+/* Fix for buttons and other elements */
+#predictiveDashboard button,
+#predictiveDashboard .btn {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    word-wrap: break-word !important;
+}
+
+/* Final safety net - prevent ANY element from exceeding viewport */
+.page,
+.content,
+.modules-container,
+.drawer-container,
+.drawer,
+.drawer-content {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+}
+
