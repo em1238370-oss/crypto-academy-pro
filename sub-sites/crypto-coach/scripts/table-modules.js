@@ -7361,7 +7361,7 @@ function editPriceChange() {
 }
 
 // Recalculate experiment (пересчёт с новыми параметрами)
-function recalculateExperiment() {
+async function recalculateExperiment() {
     const currentData = window.currentExperimentData;
     if (!currentData) {
         alert('No experiment data available. Please run an experiment first.');
@@ -7372,6 +7372,12 @@ function recalculateExperiment() {
     const priceChange = parseFloat(document.getElementById('priceChange')?.value || currentData.priceChange);
     const userDeposit = parseFloat(document.getElementById('userDeposit')?.value || currentData.userDeposit);
     const coin = document.getElementById('experimentCoin')?.value || currentData.coin;
+    
+    // ВАЖНО: Получаем СВЕЖУЮ цену при пересчёте
+    console.log(`🔄 Recalculating experiment - fetching FRESH price for ${coin}...`);
+    const currentPrice = await getRealTimePrice(coin) || currentData.currentPrice || FALLBACK_PRICES[coin] || 50000;
+    const fetchTime = new Date().toLocaleString();
+    console.log(`✅ Price fetched at ${fetchTime} for recalculation: $${currentPrice}`);
     
     // Пересчитываем
     const displayPrice = currentData.displayPrice;
