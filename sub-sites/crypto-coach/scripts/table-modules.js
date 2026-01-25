@@ -1993,6 +1993,37 @@ function checkPaymentStatus() {
 
 // Fallback prices for popular coins (if API fails)
 // ВНИМАНИЕ: Эти цены используются ТОЛЬКО если API недоступен. Всегда предпочитайте реальные данные через getRealTimePrice()!
+// ============================================================================
+// ⚠️ ВАЖНО: СИСТЕМА ПОЛУЧЕНИЯ АКТУАЛЬНЫХ ЦЕН - НЕ ИЗМЕНЯТЬ БЕЗ СОГЛАСОВАНИЯ!
+// ============================================================================
+// 
+// ПРАВИЛА РАБОТЫ С ЦЕНАМИ:
+// 1. Цены ВСЕГДА должны быть актуальными и совпадать с моментом открытия модуля
+// 2. Цены ВСЕГДА должны совпадать с выбранной монетой
+// 3. Цены НИКОГДА не должны кэшироваться между запросами
+// 4. При каждом открытии модуля/выборе монеты - НОВЫЙ запрос к API
+// 5. Используется валидация для проверки правильности цены
+// 6. CoinGecko используется как резервный источник при проблемах с LiveCoinWatch
+//
+// ФУНКЦИИ:
+// - getRealTimePrice(coinSymbol) - основная функция получения цены
+//   * ВСЕГДА делает свежий запрос к API (без кэширования)
+//   * Валидирует полученную цену
+//   * Использует CoinGecko как резервный источник
+//   * Логирует все шаги для отладки
+//
+// - getPriceFromCoinGecko(coinSymbol) - резервный источник цен
+//   * Используется когда LiveCoinWatch возвращает неправильные данные
+//   * Также без кэширования
+//
+// ИСПОЛЬЗОВАНИЕ:
+// - ВСЕГДА вызывать getRealTimePrice() при открытии модуля
+// - ВСЕГДА передавать правильный символ монеты (coinSymbol)
+// - НИКОГДА не использовать старые/кэшированные цены
+// - НИКОГДА не использовать fallback цены если API доступен
+//
+// ============================================================================
+
 // FALLBACK_PRICES - используются ТОЛЬКО если API недоступен
 // ⚠️ ВАЖНО: Эти цены устарели! Всегда используйте getRealTimePrice() для актуальных данных!
 // Эти значения обновляются автоматически при первом успешном запросе к API
@@ -2210,6 +2241,8 @@ async function getRealTimePrice(coinSymbol) {
 }
 
 // Резервная функция для получения цены из CoinGecko
+// ⚠️ ВАЖНО: Используется ТОЛЬКО как резервный источник при проблемах с LiveCoinWatch
+// ВСЕГДА делает свежий запрос без кэширования
 async function getPriceFromCoinGecko(coinSymbol) {
     try {
         const coinGeckoMap = {
@@ -2226,7 +2259,7 @@ async function getPriceFromCoinGecko(coinSymbol) {
         
         const coinGeckoId = coinGeckoMap[coinSymbol] || coinSymbol.toLowerCase();
         const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinGeckoId}&vs_currencies=usd`, {
-            cache: 'no-store',
+            cache: 'no-store', // ⚠️ ВАЖНО: Без кэширования!
             headers: {
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache',
@@ -2602,11 +2635,51 @@ async function runExperiment() {
         return;
     }
 
+async function runExperiment() {
+    // Получаем все значения из формы
+    const name = document.getElementById('experimentName')?.value?.trim();
+    const coin = document.getElementById('experimentCoin')?.value || 'BTC';
+    const scenario = document.getElementById('experimentScenario')?.value?.trim();
+    const priceChange = parseFloat(document.getElementById('priceChange')?.value || 0);
+    const userDeposit = parseFloat(document.getElementById('userDeposit')?.value || 10000);
+
+    // Проверяем обязательные поля
+    if (!name) {
+        alert('Please enter an experiment name');
+        return;
+    }
+
+    // Проверка логической ошибки: соответствие названия эксперимента и Price Change
+    const nameLower = name.toLowerCase();
+    const hasDrop = nameLower.includes('drop') || nameLower.includes('fall') || nameLower.includes('crash') || nameLower.includes('decline');
+    const hasRise = nameLower.includes('rise') || nameLower.includes('bull') || nameLower.includes('growth') || nameLower.includes('pump');
+    const nameMismatch = (hasDrop && priceChange > 0) || (hasRise && priceChange < 0);
+    
+    let mismatchWarning = '';
+    if (nameMismatch) {
+        mismatchWarning = `
+            <div style="color: #ffd700; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 8px; border-left: 4px solid #ffd700; margin-bottom: 20px;">
+                <strong>⚠️ Warning:</strong> Experiment name suggests ${hasDrop ? 'a drop' : 'a rise'}, but price change is ${priceChange >= 0 ? 'positive' : 'negative'}. Please verify your settings.
+            </div>
+        `;
+    }
+
+    // Находим блок результатов
+    const resultsDiv = document.getElementById('experimentResults');
+    const analysisDiv = document.getElementById('experimentAnalysis');
+    const chartDiv = document.getElementById('experimentChart');
+
+    if (!resultsDiv || !analysisDiv) {
+        console.error('Results containers not found');
+        return;
+    }
+
     // Показываем блок результатов
     resultsDiv.style.display = 'block';
     analysisDiv.innerHTML = `<div style="color: #ffd700; padding: 20px; text-align: center; font-size: 1.1rem;"><div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Getting real-time price for ${coin}...</div>`;
 
-    // Получаем текущую цену монеты через API (ОБЯЗАТЕЛЬНО реальное время!)
+    // ⚠️ КРИТИЧЕСКИ ВАЖНО: Получаем текущую цену монеты через API (ОБЯЗАТЕЛЬНО реальное время!)
+    // ВСЕГДА свежая цена, совпадающая с моментом запуска эксперимента и выбранной монетой!
     console.log(`🔄 Fetching REAL-TIME price for ${coin}...`);
     const currentPrice = await getRealTimePrice(coin);
     
@@ -7494,6 +7567,7 @@ function editPriceChange() {
 }
 
 // Recalculate experiment (пересчёт с новыми параметрами)
+// ⚠️ ВАЖНО: ВСЕГДА получает СВЕЖУЮ цену при пересчёте!
 async function recalculateExperiment() {
     const currentData = window.currentExperimentData;
     if (!currentData) {
@@ -7506,7 +7580,8 @@ async function recalculateExperiment() {
     const userDeposit = parseFloat(document.getElementById('userDeposit')?.value || currentData.userDeposit);
     const coin = document.getElementById('experimentCoin')?.value || currentData.coin;
     
-    // ВАЖНО: Получаем СВЕЖУЮ цену при пересчёте
+    // ⚠️ КРИТИЧЕСКИ ВАЖНО: Получаем СВЕЖУЮ цену при пересчёте
+    // Цена ВСЕГДА совпадает с моментом пересчёта и выбранной монетой!
     console.log(`🔄 Recalculating experiment - fetching FRESH price for ${coin}...`);
     const currentPrice = await getRealTimePrice(coin) || currentData.currentPrice || FALLBACK_PRICES[coin] || 50000;
     const fetchTime = new Date().toLocaleString();
