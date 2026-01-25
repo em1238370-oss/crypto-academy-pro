@@ -5517,7 +5517,25 @@ Be specific with numbers, percentages, and price levels.`;
                     
                     <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(30,0,0,0.3) 100%); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.25); box-shadow: 0 2px 12px rgba(0,0,0,0.3);">
                         <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 8px;">📊 AI Analysis & Predictions</h5>
-                        <p style="margin: 15px 0; line-height: 1.8;">${predictionText}</p>
+                        <div style="max-height: 600px; overflow-y: auto; padding-right: 8px;">
+                            <p style="margin: 15px 0; line-height: 1.8;">${predictionText}</p>
+                        </div>
+                        <style>
+                            #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar {
+                                width: 10px;
+                            }
+                            #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar-track {
+                                background: rgba(0, 0, 0, 0.3);
+                                border-radius: 5px;
+                            }
+                            #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar-thumb {
+                                background: rgba(255, 215, 0, 0.5);
+                                border-radius: 5px;
+                            }
+                            #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar-thumb:hover {
+                                background: rgba(255, 215, 0, 0.7);
+                            }
+                        </style>
                     </div>
                     
                     <!-- График прогнозов -->
