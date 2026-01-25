@@ -7880,3 +7880,4 @@ function adjustTooltipPosition(tooltip) {
     tooltipText.style.visibility = 'visible';
     tooltipText.style.opacity = '1';
 }
+
