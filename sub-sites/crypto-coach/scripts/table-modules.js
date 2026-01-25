@@ -2281,6 +2281,7 @@ async function getPriceFromCoinGecko(coinSymbol) {
         return null;
     }
 }
+}
 
 function updatePriceChangeDisplay() {
     const slider = document.getElementById('priceChange');
