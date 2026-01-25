@@ -5914,45 +5914,45 @@ Be specific with numbers, percentages, and price levels.`;
             let longTermChange = 0;
             
             // Определяем coinGeckoId и endDate ДО блока try для использования в Promise.all
-                const endDate = Math.floor(Date.now() / 1000);
-                const coinGeckoMap = {
-                    'BTC': 'bitcoin',
-                    'ETH': 'ethereum',
-                    'BNB': 'binancecoin',
-                    'SOL': 'solana',
-                    'ADA': 'cardano',
-                    'XRP': 'ripple',
-                    'AVAX': 'avalanche-2',
-                    'DOGE': 'dogecoin',
-                    'SUI': 'sui',
-                    'TON': 'the-open-network',
-                    'PEPE': 'pepe',
-                    'WIF': 'dogwifcoin',
-                    'ARB': 'arbitrum',
-                    'APT': 'aptos',
-                    'NEAR': 'near',
-                    'ONDO': 'ondo-finance',
-                    'WLD': 'worldcoin-wld',
-                    'LDO': 'lido-dao',
-                    'UNI': 'uniswap',
-                    'AAVE': 'aave',
-                    'ENA': 'ethena',
-                    'FARTCOIN': 'fartcoin',
-                    'SBIB1000': 'shiba-inu',
-                    'WLFI': 'wallet-fi',
-                    'IJU': 'inj',
-                    'SOMI': 'somi',
-                    'IP': 'ipx-token',
-                    'APE': 'apecoin',
-                    'PENGU': 'pudgy-penguins',
-                    'SEI': 'sei-network',
-                    'GALA': 'gala',
-                    'MYX': 'myx-network',
-                    'ATOM': 'cosmos',
-                    'VIRTAUL': 'virtual-protocol'
-                };
-                const coinGeckoId = coinGeckoMap[coin] || coinGeckoMap['BTC'] || 'bitcoin';
-                
+            const endDate = Math.floor(Date.now() / 1000);
+            const coinGeckoMap = {
+                'BTC': 'bitcoin',
+                'ETH': 'ethereum',
+                'BNB': 'binancecoin',
+                'SOL': 'solana',
+                'ADA': 'cardano',
+                'XRP': 'ripple',
+                'AVAX': 'avalanche-2',
+                'DOGE': 'dogecoin',
+                'SUI': 'sui',
+                'TON': 'the-open-network',
+                'PEPE': 'pepe',
+                'WIF': 'dogwifcoin',
+                'ARB': 'arbitrum',
+                'APT': 'aptos',
+                'NEAR': 'near',
+                'ONDO': 'ondo-finance',
+                'WLD': 'worldcoin-wld',
+                'LDO': 'lido-dao',
+                'UNI': 'uniswap',
+                'AAVE': 'aave',
+                'ENA': 'ethena',
+                'FARTCOIN': 'fartcoin',
+                'SBIB1000': 'shiba-inu',
+                'WLFI': 'wallet-fi',
+                'IJU': 'inj',
+                'SOMI': 'somi',
+                'IP': 'ipx-token',
+                'APE': 'apecoin',
+                'PENGU': 'pudgy-penguins',
+                'SEI': 'sei-network',
+                'GALA': 'gala',
+                'MYX': 'myx-network',
+                'ATOM': 'cosmos',
+                'VIRTAUL': 'virtual-protocol'
+            };
+            const coinGeckoId = coinGeckoMap[coin] || coinGeckoMap['BTC'] || 'bitcoin';
+            
             try {
                 // Получаем данные за 7 дней для краткосрочного прогноза
                 const shortTermStart = endDate - (7 * 24 * 60 * 60);
