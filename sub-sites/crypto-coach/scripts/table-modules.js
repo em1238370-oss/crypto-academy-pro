@@ -5877,9 +5877,24 @@ Be specific with numbers, percentages, and price levels.`;
             })
         });
 
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API Response Error:', response.status, response.statusText, errorText);
+            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        }
+
         const data = await response.json();
         
-        if (data.choices && data.choices[0]) {
+        // Проверяем наличие ошибок в ответе API
+        if (data.error) {
+            console.error('API Error:', data.error);
+            throw new Error(data.error.message || 'API Error: ' + JSON.stringify(data.error));
+        }
+        
+        if (!data.choices || !data.choices[0]) {
+            console.error('No choices in API response:', data);
+            throw new Error('No response from AI. API returned: ' + JSON.stringify(data));
+        }
             let predictionText = data.choices[0].message.content.trim();
             
             // Форматируем ответ
