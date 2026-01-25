@@ -556,8 +556,16 @@ html {
 }
 
 .subscription-pay-btn:hover:not(:disabled) {
-   transform: translateY(-2px);
+   transform: scale(1.02) translateY(-2px);
    box-shadow: 0 12px 30px rgba(122, 0, 255, 0.35);
+   border-radius: inherit;
+   opacity: inherit;
+}
+
+.subscription-pay-btn:active:not(:disabled) {
+   transform: scale(1) translateY(0);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .subscription-pay-btn:disabled {
@@ -655,11 +663,15 @@ html {
 .chat-expired-btn:hover {
    background: #3a3a3a;
    border-color: #4a4a4a;
-   transform: translateY(-2px);
+   transform: scale(1.02) translateY(-2px);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .chat-expired-btn:active {
-   transform: translateY(0);
+   transform: scale(1) translateY(0);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .chat-expired-btn:disabled {
@@ -701,12 +713,16 @@ html {
 .payment-method-btn:hover:not(:disabled) {
    background: #3a3a3a;
    border-color: #4a4a4a;
-   transform: translateY(-2px);
+   transform: scale(1.02) translateY(-2px);
    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .payment-method-btn:active:not(:disabled) {
-   transform: translateY(0);
+   transform: scale(1) translateY(0);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .payment-method-btn:disabled {
@@ -764,11 +780,15 @@ html {
 .subscription-overlay-btn:hover {
    background: #3a3a3a;
    border-color: #4a4a4a;
-   transform: translateY(-2px);
+   transform: scale(1.02) translateY(-2px);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .subscription-overlay-btn:active {
-   transform: translateY(0);
+   transform: scale(1) translateY(0);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .main-content {
@@ -836,12 +856,16 @@ html {
 }
 
 .submit-btn:hover {
-   transform: translateY(-2px);
+   transform: scale(1.02) translateY(-2px);
    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .submit-btn:active {
-   transform: translateY(-1px);
+   transform: scale(1) translateY(-1px);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 /* Responsive design */
@@ -971,6 +995,15 @@ html {
 
 .copy-btn:hover {
    background: rgba(255, 255, 255, 0.2);
+   transform: scale(1.02);
+   border-radius: inherit;
+   opacity: inherit;
+}
+
+.copy-btn:active {
+   transform: scale(1);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .payment-link {
@@ -992,8 +1025,16 @@ html {
 }
 
 .payment-link:hover {
-   transform: translateY(-1px);
+   transform: scale(1.02) translateY(-1px);
    box-shadow: 0 12px 24px rgba(122, 0, 255, 0.35);
+   border-radius: inherit;
+   opacity: inherit;
+}
+
+.payment-link:active {
+   transform: scale(1);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .payment-note {
@@ -1468,12 +1509,16 @@ html {
    background: #3a3a3a;
    color: #cccccc;
    border-color: #4a4a4a;
-   transform: translateY(-2px);
+   transform: scale(1.02) translateY(-2px);
    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .quick-question-btn:active {
-   transform: translateY(0);
+   transform: scale(1) translateY(0);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 @media (max-width: 480px) {
@@ -2914,7 +2959,13 @@ body {
 }
 
 /* Отключаем все keyframes анимации */
-@keyframes float,
+@keyframes float {
+    0%, 100% {
+        transform: none;
+        opacity: 1;
+    }
+}
+
 @keyframes pulseGlow {
     0%, 100% {
         transform: none;
@@ -2922,6 +2973,7 @@ body {
     }
 }
 
+* {
     -webkit-backdrop-filter: none !important;
 }
 
@@ -3093,4 +3145,119 @@ body::before {
     text-shadow: 
         0 0 20px rgba(0, 255, 163, 0.8),
         0 0 40px rgba(0, 255, 163, 0.5) !important;
+}
+
+/* ========== GLOBAL BUTTON HOVER EFFECT - SITE WIDE ========== */
+/* Subtle, barely noticeable scale increase (2%) for all buttons on hover */
+/* This applies to all buttons across the entire site */
+
+/* General button hover - subtle scale */
+button:not(.chat-button):not(.send-button):hover {
+    transform: scale(1.02);
+    border-radius: inherit;
+    opacity: inherit;
+    transition: transform 0.2s ease, background 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+}
+
+button:not(.chat-button):not(.send-button):active,
+button:not(.chat-button):not(.send-button):focus {
+    transform: scale(1);
+    border-radius: inherit;
+    opacity: inherit;
+    outline: none;
+}
+
+/* Subscription and payment buttons */
+.subscription-pay-btn:hover:not(:disabled) {
+    transform: scale(1.02) translateY(-2px);
+    box-shadow: 0 12px 30px rgba(122, 0, 255, 0.35);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.subscription-pay-btn:active:not(:disabled) {
+    transform: scale(1) translateY(0);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+/* Submit buttons */
+.submit-btn:hover {
+    transform: scale(1.02) translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.submit-btn:active {
+    transform: scale(1) translateY(-1px);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+/* Payment links */
+.payment-link:hover {
+    transform: scale(1.02) translateY(-1px);
+    box-shadow: 0 12px 24px rgba(122, 0, 255, 0.35);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.payment-link:active {
+    transform: scale(1);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+/* Copy buttons */
+.copy-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.02);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.copy-btn:active {
+    transform: scale(1);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+/* Payment method buttons */
+.payment-method-btn:hover:not(:disabled) {
+    transform: scale(1.02);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.payment-method-btn:active:not(:disabled) {
+    transform: scale(1);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+/* Subscription overlay buttons */
+.subscription-overlay-btn:hover {
+    transform: scale(1.02);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.subscription-overlay-btn:active {
+    transform: scale(1);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+/* Chat expired buttons */
+.chat-expired-btn:hover {
+    transform: scale(1.02);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.chat-expired-btn:active {
+    transform: scale(1);
+    border-radius: inherit;
+    opacity: inherit;
 }
