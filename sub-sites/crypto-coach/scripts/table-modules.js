@@ -6471,35 +6471,351 @@ Be specific with numbers, percentages, and price levels.`;
                             Price updated at: ${fetchTime}
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;">
-                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px; font-weight: 500;">Short-term (7d)</div>
-                                <div style="color: ${shortTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.7rem; font-weight: bold; margin-bottom: 6px;">
-                                    ${shortTermChange >= 0 ? '+' : ''}${shortTermChange}%
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 25px;">
+                            <!-- Short-term Card -->
+                            <div style="
+                                background: linear-gradient(135deg, rgba(0, 150, 255, 0.15) 0%, rgba(0, 100, 200, 0.25) 50%, rgba(0, 150, 255, 0.15) 100%);
+                                padding: 24px;
+                                border-radius: 16px;
+                                border: 2px solid rgba(0, 150, 255, 0.4);
+                                text-align: center;
+                                box-shadow: 
+                                    0 4px 20px rgba(0, 0, 0, 0.4),
+                                    0 0 30px rgba(0, 150, 255, 0.2),
+                                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                                position: relative;
+                                overflow: hidden;
+                                transition: all 0.3s ease;
+                            ">
+                                <!-- Animated background effect -->
+                                <div style="
+                                    position: absolute;
+                                    top: -50%;
+                                    left: -50%;
+                                    width: 200%;
+                                    height: 200%;
+                                    background: radial-gradient(circle, rgba(0, 150, 255, 0.1) 0%, transparent 70%);
+                                    animation: pulse 3s ease-in-out infinite;
+                                    pointer-events: none;
+                                "></div>
+                                
+                                <!-- Icon -->
+                                <div style="
+                                    font-size: 2.5rem;
+                                    margin-bottom: 12px;
+                                    filter: drop-shadow(0 0 10px rgba(0, 150, 255, 0.5));
+                                    position: relative;
+                                    z-index: 1;
+                                ">⚡</div>
+                                
+                                <!-- Period Label -->
+                                <div style="
+                                    color: #88ccff;
+                                    font-size: 0.85rem;
+                                    font-weight: 600;
+                                    text-transform: uppercase;
+                                    letter-spacing: 1.5px;
+                                    margin-bottom: 16px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">Short-term</div>
+                                
+                                <!-- Time Period -->
+                                <div style="
+                                    color: #aaaaaa;
+                                    font-size: 0.75rem;
+                                    margin-bottom: 18px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">7 days</div>
+                                
+                                <!-- Percentage Change -->
+                                <div style="
+                                    color: ${shortTermChange >= 0 ? '#00ff88' : '#ff6b6b'};
+                                    font-size: 2rem;
+                                    font-weight: 700;
+                                    margin-bottom: 8px;
+                                    text-shadow: 0 0 15px ${shortTermChange >= 0 ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 107, 107, 0.5)'};
+                                    position: relative;
+                                    z-index: 1;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: 6px;
+                                ">
+                                    <span style="font-size: 1.2rem;">${shortTermChange >= 0 ? '↗' : '↘'}</span>
+                                    <span>${shortTermChange >= 0 ? '+' : ''}${shortTermChange}%</span>
                                 </div>
-                                <div style="color: #aaaaaa; font-size: 0.95rem;">
-                                    $${(currentPrice * (1 + shortTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                
+                                <!-- Projected Price -->
+                                <div style="
+                                    color: #ffffff;
+                                    font-size: 1.1rem;
+                                    font-weight: 600;
+                                    margin-bottom: 8px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">$${(currentPrice * (1 + shortTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                
+                                <!-- Price Change Indicator -->
+                                <div style="
+                                    color: #888888;
+                                    font-size: 0.8rem;
+                                    position: relative;
+                                    z-index: 1;
+                                ">
+                                    ${shortTermChange >= 0 ? '↑' : '↓'} $${Math.abs(currentPrice * shortTermChange / 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </div>
+                                
+                                <!-- Bottom accent line -->
+                                <div style="
+                                    position: absolute;
+                                    bottom: 0;
+                                    left: 0;
+                                    right: 0;
+                                    height: 3px;
+                                    background: linear-gradient(90deg, transparent, rgba(0, 150, 255, 0.6), transparent);
+                                "></div>
                             </div>
-                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px; font-weight: 500;">Medium-term (3m)</div>
-                                <div style="color: ${mediumTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.7rem; font-weight: bold; margin-bottom: 6px;">
-                                    ${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange}%
+                            
+                            <!-- Medium-term Card -->
+                            <div style="
+                                background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 180, 0, 0.25) 50%, rgba(255, 215, 0, 0.15) 100%);
+                                padding: 24px;
+                                border-radius: 16px;
+                                border: 2px solid rgba(255, 215, 0, 0.5);
+                                text-align: center;
+                                box-shadow: 
+                                    0 4px 20px rgba(0, 0, 0, 0.4),
+                                    0 0 30px rgba(255, 215, 0, 0.25),
+                                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                                position: relative;
+                                overflow: hidden;
+                                transition: all 0.3s ease;
+                            ">
+                                <!-- Animated background effect -->
+                                <div style="
+                                    position: absolute;
+                                    top: -50%;
+                                    left: -50%;
+                                    width: 200%;
+                                    height: 200%;
+                                    background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+                                    animation: pulse 3s ease-in-out infinite;
+                                    animation-delay: 0.5s;
+                                    pointer-events: none;
+                                "></div>
+                                
+                                <!-- Icon -->
+                                <div style="
+                                    font-size: 2.5rem;
+                                    margin-bottom: 12px;
+                                    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
+                                    position: relative;
+                                    z-index: 1;
+                                ">📊</div>
+                                
+                                <!-- Period Label -->
+                                <div style="
+                                    color: #ffd700;
+                                    font-size: 0.85rem;
+                                    font-weight: 600;
+                                    text-transform: uppercase;
+                                    letter-spacing: 1.5px;
+                                    margin-bottom: 16px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">Medium-term</div>
+                                
+                                <!-- Time Period -->
+                                <div style="
+                                    color: #aaaaaa;
+                                    font-size: 0.75rem;
+                                    margin-bottom: 18px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">3 months</div>
+                                
+                                <!-- Percentage Change -->
+                                <div style="
+                                    color: ${mediumTermChange >= 0 ? '#00ff88' : '#ff6b6b'};
+                                    font-size: 2rem;
+                                    font-weight: 700;
+                                    margin-bottom: 8px;
+                                    text-shadow: 0 0 15px ${mediumTermChange >= 0 ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 107, 107, 0.5)'};
+                                    position: relative;
+                                    z-index: 1;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: 6px;
+                                ">
+                                    <span style="font-size: 1.2rem;">${mediumTermChange >= 0 ? '↗' : '↘'}</span>
+                                    <span>${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange}%</span>
                                 </div>
-                                <div style="color: #aaaaaa; font-size: 0.95rem;">
-                                    $${(currentPrice * (1 + mediumTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                
+                                <!-- Projected Price -->
+                                <div style="
+                                    color: #ffffff;
+                                    font-size: 1.1rem;
+                                    font-weight: 600;
+                                    margin-bottom: 8px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">$${(currentPrice * (1 + mediumTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                
+                                <!-- Price Change Indicator -->
+                                <div style="
+                                    color: #888888;
+                                    font-size: 0.8rem;
+                                    position: relative;
+                                    z-index: 1;
+                                ">
+                                    ${mediumTermChange >= 0 ? '↑' : '↓'} $${Math.abs(currentPrice * mediumTermChange / 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </div>
+                                
+                                <!-- Bottom accent line -->
+                                <div style="
+                                    position: absolute;
+                                    bottom: 0;
+                                    left: 0;
+                                    right: 0;
+                                    height: 3px;
+                                    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.7), transparent);
+                                "></div>
                             </div>
-                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px; font-weight: 500;">Long-term (6m+)</div>
-                                <div style="color: ${longTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.7rem; font-weight: bold; margin-bottom: 6px;">
-                                    ${longTermChange >= 0 ? '+' : ''}${longTermChange}%
+                            
+                            <!-- Long-term Card -->
+                            <div style="
+                                background: linear-gradient(135deg, rgba(138, 43, 226, 0.15) 0%, rgba(100, 0, 200, 0.25) 50%, rgba(138, 43, 226, 0.15) 100%);
+                                padding: 24px;
+                                border-radius: 16px;
+                                border: 2px solid rgba(138, 43, 226, 0.5);
+                                text-align: center;
+                                box-shadow: 
+                                    0 4px 20px rgba(0, 0, 0, 0.4),
+                                    0 0 30px rgba(138, 43, 226, 0.25),
+                                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                                position: relative;
+                                overflow: hidden;
+                                transition: all 0.3s ease;
+                            ">
+                                <!-- Animated background effect -->
+                                <div style="
+                                    position: absolute;
+                                    top: -50%;
+                                    left: -50%;
+                                    width: 200%;
+                                    height: 200%;
+                                    background: radial-gradient(circle, rgba(138, 43, 226, 0.1) 0%, transparent 70%);
+                                    animation: pulse 3s ease-in-out infinite;
+                                    animation-delay: 1s;
+                                    pointer-events: none;
+                                "></div>
+                                
+                                <!-- Icon -->
+                                <div style="
+                                    font-size: 2.5rem;
+                                    margin-bottom: 12px;
+                                    filter: drop-shadow(0 0 10px rgba(138, 43, 226, 0.6));
+                                    position: relative;
+                                    z-index: 1;
+                                ">🔮</div>
+                                
+                                <!-- Period Label -->
+                                <div style="
+                                    color: #bb86fc;
+                                    font-size: 0.85rem;
+                                    font-weight: 600;
+                                    text-transform: uppercase;
+                                    letter-spacing: 1.5px;
+                                    margin-bottom: 16px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">Long-term</div>
+                                
+                                <!-- Time Period -->
+                                <div style="
+                                    color: #aaaaaa;
+                                    font-size: 0.75rem;
+                                    margin-bottom: 18px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">6+ months</div>
+                                
+                                <!-- Percentage Change -->
+                                <div style="
+                                    color: ${longTermChange >= 0 ? '#00ff88' : '#ff6b6b'};
+                                    font-size: 2rem;
+                                    font-weight: 700;
+                                    margin-bottom: 8px;
+                                    text-shadow: 0 0 15px ${longTermChange >= 0 ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 107, 107, 0.5)'};
+                                    position: relative;
+                                    z-index: 1;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: 6px;
+                                ">
+                                    <span style="font-size: 1.2rem;">${longTermChange >= 0 ? '↗' : '↘'}</span>
+                                    <span>${longTermChange >= 0 ? '+' : ''}${longTermChange}%</span>
                                 </div>
-                                <div style="color: #aaaaaa; font-size: 0.95rem;">
-                                    $${(currentPrice * (1 + longTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                
+                                <!-- Projected Price -->
+                                <div style="
+                                    color: #ffffff;
+                                    font-size: 1.1rem;
+                                    font-weight: 600;
+                                    margin-bottom: 8px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">$${(currentPrice * (1 + longTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                
+                                <!-- Price Change Indicator -->
+                                <div style="
+                                    color: #888888;
+                                    font-size: 0.8rem;
+                                    position: relative;
+                                    z-index: 1;
+                                ">
+                                    ${longTermChange >= 0 ? '↑' : '↓'} $${Math.abs(currentPrice * longTermChange / 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </div>
+                                
+                                <!-- Bottom accent line -->
+                                <div style="
+                                    position: absolute;
+                                    bottom: 0;
+                                    left: 0;
+                                    right: 0;
+                                    height: 3px;
+                                    background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.7), transparent);
+                                "></div>
                             </div>
                         </div>
+                        
+                        <!-- Add CSS animation for pulse effect -->
+                        <style>
+                            @keyframes pulse {
+                                0%, 100% {
+                                    opacity: 0.3;
+                                    transform: scale(1);
+                                }
+                                50% {
+                                    opacity: 0.6;
+                                    transform: scale(1.1);
+                                }
+                            }
+                            
+                            /* Hover effects for cards */
+                            #predictiveDashboard div[style*="grid-template-columns: repeat(3"] > div:hover {
+                                transform: translateY(-5px) !important;
+                                box-shadow: 
+                                    0 8px 30px rgba(0, 0, 0, 0.5),
+                                    0 0 40px rgba(255, 215, 0, 0.3),
+                                    inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+                                border-color: rgba(255, 215, 0, 0.7) !important;
+                            }
+                        </style>
                     </div>
                     
                     <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(30,0,0,0.3) 100%); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.25); box-shadow: 0 2px 12px rgba(0,0,0,0.3);">
