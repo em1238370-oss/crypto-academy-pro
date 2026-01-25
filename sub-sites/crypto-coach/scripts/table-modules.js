@@ -4976,134 +4976,151 @@ function createPredictionChart(currentPrice, shortTermChange, mediumTermChange, 
         return;
     }
     
-    // Устанавливаем размеры canvas
+    // Устанавливаем размеры canvas - используем реальные размеры элемента
     const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width || canvas.offsetWidth || 800;
+    const containerWidth = rect.width || canvas.parentElement?.offsetWidth || canvas.offsetWidth || 800;
+    canvas.width = containerWidth;
     canvas.height = 250;
     
-    // Вычисляем прогнозируемые цены
-    const prices = [
-        currentPrice,
-        currentPrice * (1 + parseFloat(shortTermChange) / 100),
-        currentPrice * (1 + parseFloat(mediumTermChange) / 100),
-        currentPrice * (1 + parseFloat(longTermChange) / 100)
-    ];
-    
-    // Проверяем, что все цены валидны
-    if (prices.some(p => !p || isNaN(p) || p <= 0)) {
-        console.error('Invalid prices for chart:', { currentPrice, shortTermChange, mediumTermChange, longTermChange, prices });
+    // Если canvas не виден, пробуем еще раз через небольшую задержку
+    if (canvas.width === 0 || canvas.height === 0) {
+        console.warn('Canvas has zero dimensions, retrying...');
+        setTimeout(() => {
+            const retryRect = canvas.getBoundingClientRect();
+            canvas.width = retryRect.width || 800;
+            canvas.height = 250;
+            drawChart();
+        }, 100);
         return;
     }
     
-    const labels = ['Now', '7d', '3m', '6m+'];
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-    const priceRange = Math.max(maxPrice - minPrice, maxPrice * 0.1); // Минимум 10% диапазона для визуализации
+    drawChart();
     
-    // Очищаем canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Рисуем фон
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Рисуем сетку
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 4; i++) {
-        const y = (i / 4) * canvas.height;
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-    }
-    
-    // Вертикальные линии для точек
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < prices.length; i++) {
-        const x = (i / (prices.length - 1)) * canvas.width;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-    }
-    
-    // Рисуем линию прогноза
-    ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 3;
-    ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    
-    prices.forEach((price, i) => {
-        const x = (i / (prices.length - 1)) * canvas.width;
-        const normalizedPrice = (price - minPrice) / priceRange;
-        const y = canvas.height - (normalizedPrice * canvas.height);
+    function drawChart() {
+        // Вычисляем прогнозируемые цены
+        const prices = [
+            currentPrice,
+            currentPrice * (1 + parseFloat(shortTermChange) / 100),
+            currentPrice * (1 + parseFloat(mediumTermChange) / 100),
+            currentPrice * (1 + parseFloat(longTermChange) / 100)
+        ];
         
-        if (i === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
+        // Проверяем, что все цены валидны
+        if (prices.some(p => !p || isNaN(p) || p <= 0)) {
+            console.error('Invalid prices for chart:', { currentPrice, shortTermChange, mediumTermChange, longTermChange, prices });
+            return;
         }
-    });
-    
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    
-    // Рисуем точки и подписи
-    prices.forEach((price, i) => {
-        const x = (i / (prices.length - 1)) * canvas.width;
-        const normalizedPrice = (price - minPrice) / priceRange;
-        const y = canvas.height - (normalizedPrice * canvas.height);
         
-        // Точка
-        ctx.fillStyle = i === 0 ? '#00ff00' : '#ffd700';
-        ctx.shadowColor = i === 0 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 215, 0, 0.5)';
-        ctx.shadowBlur = 8;
+        const labels = ['Now', '7d', '3m', '6m+'];
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const priceRange = Math.max(maxPrice - minPrice, maxPrice * 0.1); // Минимум 10% диапазона для визуализации
+        
+        // Очищаем canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Рисуем фон
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Рисуем сетку
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+            const y = (i / 4) * canvas.height;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+        
+        // Вертикальные линии для точек
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < prices.length; i++) {
+            const x = (i / (prices.length - 1)) * canvas.width;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+        
+        // Рисуем линию прогноза
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
+        ctx.shadowBlur = 10;
         ctx.beginPath();
-        ctx.arc(x, y, 6, 0, Math.PI * 2);
-        ctx.fill();
+        
+        prices.forEach((price, i) => {
+            const x = (i / (prices.length - 1)) * canvas.width;
+            const normalizedPrice = (price - minPrice) / priceRange;
+            const y = canvas.height - (normalizedPrice * canvas.height);
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+        
+        ctx.stroke();
         ctx.shadowBlur = 0;
         
-        // Подпись цены
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 11px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
+        // Рисуем точки и подписи
+        prices.forEach((price, i) => {
+            const x = (i / (prices.length - 1)) * canvas.width;
+            const normalizedPrice = (price - minPrice) / priceRange;
+            const y = canvas.height - (normalizedPrice * canvas.height);
+            
+            // Точка
+            ctx.fillStyle = i === 0 ? '#00ff00' : '#ffd700';
+            ctx.shadowColor = i === 0 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 215, 0, 0.5)';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(x, y, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // Подпись цены
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 11px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            
+            const priceText = `$${price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            const textY = y - 12;
+            
+            // Фон для текста для читаемости
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            const textWidth = ctx.measureText(priceText).width;
+            ctx.fillRect(x - textWidth / 2 - 4, textY - 12, textWidth + 8, 14);
+            
+            // Текст цены
+            ctx.fillStyle = i === 0 ? '#00ff00' : '#ffd700';
+            ctx.fillText(priceText, x, textY);
+            
+            // Подпись времени
+            ctx.fillStyle = '#cccccc';
+            ctx.font = '10px Arial';
+            ctx.textBaseline = 'top';
+            ctx.fillText(labels[i], x, y + 10);
+        });
         
-        const priceText = `$${price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        const textY = y - 12;
-        
-        // Фон для текста для читаемости
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        const textWidth = ctx.measureText(priceText).width;
-        ctx.fillRect(x - textWidth / 2 - 4, textY - 12, textWidth + 8, 14);
-        
-        // Текст цены
-        ctx.fillStyle = i === 0 ? '#00ff00' : '#ffd700';
-        ctx.fillText(priceText, x, textY);
-        
-        // Подпись времени
-        ctx.fillStyle = '#cccccc';
+        // Рисуем Y-axis labels (цены)
+        ctx.fillStyle = '#888888';
         ctx.font = '10px Arial';
-        ctx.textBaseline = 'top';
-        ctx.fillText(labels[i], x, y + 10);
-    });
-    
-    // Рисуем Y-axis labels (цены)
-    ctx.fillStyle = '#888888';
-    ctx.font = '10px Arial';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    
-    for (let i = 0; i <= 4; i++) {
-        const y = (i / 4) * canvas.height;
-        const price = maxPrice - (i / 4) * priceRange;
-        ctx.fillText(`$${price.toLocaleString('en-US', {maximumFractionDigits: 0})}`, 5, y);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        
+        for (let i = 0; i <= 4; i++) {
+            const y = (i / 4) * canvas.height;
+            const price = maxPrice - (i / 4) * priceRange;
+            ctx.fillText(`$${price.toLocaleString('en-US', {maximumFractionDigits: 0})}`, 5, y);
+        }
+        
+        console.log('✅ Prediction chart drawn successfully');
     }
-    
-    console.log('✅ Prediction chart drawn successfully');
 }
 
 // Fill example for Predictive Analytics Dashboard
@@ -5389,12 +5406,15 @@ async function loadPredictiveDashboard() {
         // Получаем текущую цену
         let currentPrice = await getRealTimePrice(coin);
         
+        console.log(`🔍 Initial price for ${coin}:`, currentPrice);
+        
         // Если цена не получена или равна 0/null, используем fallback
         if (!currentPrice || currentPrice === 0 || isNaN(currentPrice)) {
             console.warn(`⚠️ Price for ${coin} is invalid (${currentPrice}), using fallback`);
             const fallbackPrice = FALLBACK_PRICES[coin];
             if (fallbackPrice && fallbackPrice > 0) {
                 currentPrice = fallbackPrice;
+                console.log(`✅ Using fallback price: $${currentPrice}`);
             } else {
                 // Если нет fallback, используем базовую цену в зависимости от монеты
                 const defaultPrices = {
@@ -5409,10 +5429,17 @@ async function loadPredictiveDashboard() {
                     'MYX': 0.1, 'ATOM': 8, 'VIRTAUL': 0.02
                 };
                 currentPrice = defaultPrices[coin] || 50000;
+                console.log(`✅ Using default price: $${currentPrice}`);
             }
         }
         
-        console.log(`✅ Using price for ${coin}: $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
+        // Финальная проверка - убеждаемся, что цена валидна
+        if (!currentPrice || currentPrice === 0 || isNaN(currentPrice)) {
+            currentPrice = 50000; // Последний fallback
+            console.error(`❌ All price sources failed, using hardcoded fallback: $${currentPrice}`);
+        }
+        
+        console.log(`✅✅✅ FINAL price for ${coin}: $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
         
         // Используем AI для прогноза
         const prompt = `You are a cryptocurrency market analyst. Provide price predictions and analysis for ${coin}.
@@ -5684,11 +5711,12 @@ Be specific with numbers, percentages, and price levels.`;
             // Сохраняем результат в историю
             savePredictiveToHistory(coin, currentPrice, shortTermChange, mediumTermChange, longTermChange, predictionText);
             
-            // Создаем график прогнозов
+            // Создаем график прогнозов - с большей задержкой для гарантии, что DOM готов
             setTimeout(() => {
+                console.log('🎨 Drawing chart with:', { currentPrice, shortTermChange, mediumTermChange, longTermChange });
                 createPredictionChart(currentPrice, shortTermChange, mediumTermChange, longTermChange);
                 expandModuleCToContent();
-            }, 200);
+            }, 500);
         } else {
             throw new Error('No response from AI');
         }
