@@ -200,3 +200,4 @@ APP_BASE_URL=https://crypto-academy-pro.onrender.com
 
 **Пришлите хотя бы это, и я смогу начать диагностику!**
 
+

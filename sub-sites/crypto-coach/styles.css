@@ -1917,6 +1917,30 @@ div:has-text("Experience Points") {
     font-weight: bold;
     transition: all 0.3s ease;
     margin-top: 10px;
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Fix for buttons in flex containers - only apply when flex is not explicitly set */
+button.btn:not([style*="flex"]),
+button[class*="btn"]:not([style*="flex"]) {
+    flex: 0 0 auto;
+    min-width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Prevent buttons from overlapping - respect inline flex styles */
+div[style*="display: flex"] button:not([style*="flex"]),
+div[style*="display:flex"] button:not([style*="flex"]) {
+    flex: 0 0 auto;
+    min-width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0;
 }
 
 .btn-red {
