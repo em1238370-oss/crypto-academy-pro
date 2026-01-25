@@ -10,10 +10,11 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=13.0">
+    <link rel="stylesheet" href="styles.css?v=14.0">
    <!-- Chart.js for portfolio graphs -->
    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
    <script src="scripts/table-modules.js" defer></script>
+  <script src="scripts/backtesting-functions.js" defer></script>
 </head>
 <body>
    <div class="page">
@@ -602,29 +603,72 @@
                    </div>
 
                    <!-- Module C: Crypto Experiment Lab -->
-                   <div class="drawer-container">
+                   <div class="drawer-container" id="drawerCContainer">
                        <div class="drawer" id="drawerC">
                            <div class="drawer-header" onclick="toggleDrawerWithInit('drawerC')">
                                <h2>C. Crypto Experiment Lab <span style="background: rgba(255, 0, 0, 0.3); padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; margin-left: 15px; color: #ff6666;">PAID</span></h2>
                                <span class="drawer-icon">▼</span>
                            </div>
-                           <div class="drawer-content">
+                           <div class="drawer-content" id="drawerCContent">
                                <h3 style="color: #ffffff; margin-bottom: 20px;">Interactive zone for testing hypotheses and experimenting with cryptocurrency strategies</h3>
                                
                                <div class="section-box">
                                    <h4>Create New Experiment</h4>
+                                   <div style="display: flex; justify-content: flex-start; align-items: stretch; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                                       <button class="btn btn-red" onclick="fillExampleExperiment()" style="
+                                           flex: 0 0 auto;
+                                           min-width: 140px;
+                                           max-width: 100%;
+                                           padding: 10px 20px;
+                                           font-size: 0.9rem;
+                                           font-weight: 600;
+                                           margin: 0;
+                                           border-radius: 8px;
+                                           border: 2px solid rgba(255, 0, 0, 0.5);
+                                           background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%);
+                                           color: #ffffff;
+                                           cursor: pointer;
+                                           transition: all 0.3s ease;
+                                           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                                           box-sizing: border-box;
+                                           white-space: nowrap;
+                                       " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(255, 0, 0, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.3)'">📋 Fill Example</button>
+                                       <button class="btn btn-red" onclick="showExperimentHistory()" style="
+                                           flex: 0 0 auto;
+                                           min-width: 140px;
+                                           max-width: 100%;
+                                           padding: 10px 20px;
+                                           font-size: 0.9rem;
+                                           font-weight: 600;
+                                           margin: 0;
+                                           border-radius: 8px;
+                                           border: 2px solid rgba(255, 0, 0, 0.5);
+                                           background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%);
+                                           color: #ffffff;
+                                           cursor: pointer;
+                                           transition: all 0.3s ease;
+                                           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                                           box-sizing: border-box;
+                                           white-space: nowrap;
+                                       " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(255, 0, 0, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.3)'">📚 History</button>
+                                   </div>
                                    <div class="form-group">
                                        <label>Your Deposit ($):</label>
-                                       <input type="number" id="userDeposit" placeholder="e.g.: 10000" min="0" step="100" value="10000" style="width: 100%;">
-                                       <small style="color: #888;">Enter your starting capital</small>
+                                       <input type="number" id="userDeposit" placeholder="e.g.: 10000" min="0" step="100" value="10000" style="width: 100%;" onchange="saveExperimentForm()">
+                                       <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.4;">
+                                           💡 How much virtual money do you want to test in the simulator? (This is virtual money for practice only)
+                                       </small>
                                    </div>
                                    <div class="form-group">
                                        <label>Experiment Name:</label>
-                                       <input type="text" id="experimentName" placeholder="e.g.: BTC drop scenario 20%">
+                                       <input type="text" id="experimentName" placeholder="e.g.: BTC drop scenario 20%" onchange="saveExperimentForm()">
+                                       <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.4;">
+                                           💡 Give your experiment a name to identify it later, e.g.: "Test BTC drop 20%"
+                                       </small>
                                    </div>
                                    <div class="form-group">
                                        <label>Select Coin:</label>
-                                       <select id="experimentCoin">
+                                       <select id="experimentCoin" onchange="saveExperimentForm()">
                                            <option value="BTC">Bitcoin (BTC)</option>
                                            <option value="ETH">Ethereum (ETH)</option>
                                            <option value="BNB">Binance Coin (BNB)</option>
@@ -661,62 +705,333 @@
                                    <option value="ATOM">Cosmos (ATOM)</option>
                                        </select>
                                    </div>
-                                   <div class="form-group" style="background: rgba(255, 165, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 165, 0, 0.3);">
-                                       <label style="margin-bottom: 10px;">🤖 Strategy Generator from Text:</label>
-                                       <textarea id="strategyText" rows="3" placeholder="e.g.: If BTC drops 30%, I want to sell half, wait for -50% and buy back" style="width: 100%; margin-bottom: 10px;"></textarea>
-                                       <button class="btn btn-black" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 0;" onclick="generateStrategyFromText()">Convert to Strategy</button>
-                                       <div id="generatedStrategyResult" style="margin-top: 10px; font-size: 0.9rem;"></div>
-                                   </div>
+
                                    <div class="form-group">
                                        <label>Scenario Description:</label>
-                                       <textarea id="experimentScenario" rows="3" placeholder="e.g.: What if BTC drops 20%? How will this affect my portfolio?"></textarea>
+                                       <textarea id="experimentScenario" rows="3" placeholder="e.g.: What if BTC drops 20% due to negative news? How will this affect my portfolio value?" onchange="saveExperimentForm()"></textarea>
+                                       <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.4;">
+                                           💡 Describe the scenario: what will happen to the price? For example: "BTC drops 20% due to regulatory news"
+                                       </small>
                                    </div>
-                                   <div class="form-group" style="background: rgba(255, 0, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255, 0, 0, 0.3);">
-                                       <label style="margin-bottom: 10px;">🤖 AI Scenario Generator:</label>
-                                       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                           <button class="btn btn-black" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 0;" onclick="loadAIScenario('bearish')">CRASH -50% (Hardcore)</button>
-                                           <button class="btn btn-black" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 0;" onclick="loadAIScenario('altcrash')">BULLRUN +150%</button>
-                                           <button class="btn btn-black" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 0;" onclick="loadAIScenario('regulatory')">Regulatory Shock -35%</button>
+                                   <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 20px;">
+                                       <label style="margin-bottom: 15px; color: #ffffff; font-size: 1.1rem; font-weight: 600; display: block;">AI Scenario Builder (Universal)</label>
+                                       <textarea id="aiScenarioInput" rows="4" placeholder="Describe any scenario: crashes, bull runs, regulatory events, custom situations..." style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: #ffffff; font-size: 1rem; margin-bottom: 15px; resize: vertical; font-family: inherit; box-sizing: border-box;"></textarea>
+                                       <button class="btn btn-red" style="padding: 12px 25px; font-size: 1rem; font-weight: 600; width: 100%; margin-top: 0;" onclick="aiScenarioBuilder()">Generate Detailed Scenario</button>
+                                       <div id="aiScenarioResult" style="margin-top: 20px; font-size: 1rem; line-height: 1.7; max-height: 500px; overflow-y: auto; overflow-x: hidden; padding-right: 10px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.2);"></div>
+                                   </div>
+                                   <div class="form-group price-change-slider-container">
+                                       <div style="text-align: center !important; margin-bottom: 15px !important;">
+                                           <span style="color: #ffffff !important; font-weight: bold !important; font-size: 1.2rem !important;">Smart Correlations (auto-fill)</span>
                                        </div>
-                                       <small style="color: #888; margin-top: 10px; display: block;">💡 AI will create a detailed strategy with specific numbers and actions</small>
+                                       <div style="text-align: center !important; margin-bottom: 20px !important; color: #cccccc !important; font-size: 0.9rem !important; line-height: 1.5 !important;">
+                                           Automatically calculates how other coins might change based on historical correlations
+                                       </div>
+                                       <div style="text-align: center !important; margin-bottom: 8px !important;">
+                                           <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">Selected Coin Price Change:</div>
+                                           <span id="priceChangeValue" style="color: #0066ff !important; font-weight: bold !important; font-size: 1.3rem !important;">0%</span>
+                                       </div>
+                                       <div style="display: flex !important; justify-content: center !important; align-items: center !important; width: 100% !important; margin-bottom: 15px !important;">
+                                           <input type="range" id="priceChange" min="-70" max="200" value="0" oninput="updatePriceChangeDisplay(); updateCorrelations(); showAICorrelations(); saveExperimentForm()" onmousemove="updatePriceChangeDisplay()" ontouchmove="updatePriceChangeDisplay()" style="width: 100% !important; max-width: 600px !important; margin: 0 auto !important;">
+                                       </div>
+                                       <div id="aiCorrelationsDisplay" style="text-align: center !important; margin-top: 20px !important; padding: 15px !important; background: rgba(0, 0, 0, 0.3) !important; border-radius: 8px !important; display: none !important;">
+                                           <!-- Содержимое добавляется динамически через showAICorrelations() -->
+                                       </div>
                                    </div>
-                                   <div class="form-group">
-                                       <label>Price Change (%): <span id="priceChangeValue">0%</span></label>
-                                       <input type="range" id="priceChange" min="-70" max="200" value="0" oninput="updatePriceChangeDisplay(); updateCorrelations()">
+                                   <div style="display: flex; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; align-items: stretch;">
+                                       <button class="btn btn-red" onclick="runExperiment()" style="
+                                           flex: 1 1 auto;
+                                           min-width: 150px;
+                                           max-width: 100%;
+                                           padding: 12px 20px;
+                                           font-size: 0.95rem;
+                                           font-weight: 600;
+                                           border-radius: 8px;
+                                           border: 2px solid rgba(255, 0, 0, 0.5);
+                                           background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%);
+                                           color: #ffffff;
+                                           cursor: pointer;
+                                           transition: all 0.3s ease;
+                                           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                                           box-sizing: border-box;
+                                           white-space: nowrap;
+                                           margin: 0;
+                                       " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(255, 0, 0, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.3)'">Run Experiment</button>
+                                       <button class="btn btn-red" onclick="saveCurrentExperiment()" style="
+                                           flex: 1 1 auto;
+                                           min-width: 120px;
+                                           max-width: 100%;
+                                           padding: 12px 20px;
+                                           font-size: 0.95rem;
+                                           font-weight: 600;
+                                           border-radius: 8px;
+                                           border: 2px solid rgba(255, 102, 102, 0.6);
+                                           background: linear-gradient(135deg, rgba(255, 0, 0, 0.25) 0%, rgba(150, 0, 0, 0.35) 100%);
+                                           color: #ffffff;
+                                           cursor: pointer;
+                                           transition: all 0.3s ease;
+                                           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                                           box-sizing: border-box;
+                                           white-space: nowrap;
+                                           margin: 0;
+                                       " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(255, 102, 102, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.3)'">💾 Save</button>
                                    </div>
-                                   <div class="form-group" style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 255, 0, 0.3);">
-                                       <label style="margin-bottom: 10px;">
-                                           <input type="checkbox" id="correlationsEnabled" onchange="updateCorrelations()" style="margin-right: 10px;">
-                                           Smart Correlations (auto-fill)
-                                       </label>
-                                       <div id="correlationsSuggestions" style="margin-top: 10px; font-size: 0.9rem; color: #888;"></div>
+                                   <!-- Experiment History Modal -->
+                                   <div id="experimentHistoryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; overflow-y: auto;">
+                                       <div style="max-width: 800px; margin: 50px auto; background: rgba(0, 0, 0, 0.9); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 15px; padding: 30px;">
+                                           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                               <h3 style="color: #ffffff; margin: 0;">📚 Experiment History</h3>
+                                               <button onclick="closeExperimentHistory()" style="background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); color: #ffffff; padding: 8px 15px; border-radius: 5px; cursor: pointer;">✕ Close</button>
+                                           </div>
+                                           <div id="experimentHistoryList" style="color: #ffffff;">
+                                               <!-- History items will be added here -->
+                                           </div>
+                                       </div>
                                    </div>
-                                   <button class="btn btn-red" onclick="runExperiment()">Run Experiment</button>
-                                   <button class="btn btn-red" onclick="startSurvivalMode()" style="background: linear-gradient(135deg, #ff3333, #cc0000); margin-top: 10px; width: 100%;">🔥 SURVIVAL MODE</button>
                                </div>
 
-                               <div class="section-box" id="survivalModeBox" style="display: none;">
-                                   <h4>🔥 SURVIVAL MODE</h4>
-                                   <div id="survivalTimer" style="font-size: 3rem; text-align: center; color: #ff0000; margin: 20px 0;"></div>
-                                   <div id="survivalEvent" style="background: rgba(255, 0, 0, 0.3); padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;"></div>
-                                   <div id="survivalActions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 600px; margin: 0 auto;">
-                                       <button class="btn btn-red" onclick="survivalAction('sell30')" style="background: linear-gradient(135deg, #00ff00, #00cc00);">[1] [1] Sell 30% BTC</button>
-                                       <button class="btn btn-red" onclick="survivalAction('buydip')" style="background: linear-gradient(135deg, #ff0000, #cc0000);">[2] [2] Buy SOL dip</button>
-                                       <button class="btn btn-red" onclick="survivalAction('donothing')" style="background: linear-gradient(135deg, #ffa500, #ff8000);">[3] [3] Do nothing</button>
-                                       <button class="btn btn-red" onclick="survivalAction('panicsell')" style="background: linear-gradient(135deg, #000000, #330000);">[4] [4] Panic sell everything</button>
-                                   </div>
-                                   <div id="survivalResult" style="margin-top: 20px;"></div>
-                               </div>
-
-                               <div class="section-box" id="experimentResults" style="display: none;">
+                               <!-- Результаты эксперимента - перемещены сразу после кнопки -->
+                               <div class="section-box" id="experimentResults" style="display: none; margin-top: 20px; margin-left: -37.8px; margin-right: -37.8px; width: calc(100% + 75.6px);">
                                    <h4>🔴 Live Result with AI Advice</h4>
-                                   <div class="result-box" id="experimentAnalysis"></div>
+                                   <div class="result-box" id="experimentAnalysis" style="margin-left: 0; margin-right: 0; width: 100%;"></div>
                                    <div class="result-box" id="aiAdviceBox" style="background: rgba(255, 165, 0, 0.2); border-color: #ffa500; margin-top: 15px;"></div>
                                    <div class="chart-container" id="experimentChart">Graphic visualization will appear here</div>
-                                   <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
-                                       <button class="btn btn-black" onclick="saveExperiment()">Save to Archive</button>
-                                       <button class="btn btn-black" onclick="shareExperiment()">Share</button>
-                                       <button class="btn btn-black" onclick="createBotStrategy()">Create Bot</button>
+                                   <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; justify-content: center;">
+                                       <button class="btn btn-red" onclick="saveCurrentExperiment()" style="padding: 12px 25px; font-size: 1rem;">💾 Save to History</button>
+                                       <button class="btn btn-red" onclick="shareExperimentResults()" style="padding: 12px 25px; font-size: 1rem;">📤 Share</button>
+                                       <button class="btn btn-red" onclick="compareWithHistory()" style="padding: 12px 25px; font-size: 1rem;">📊 Compare</button>
+                                       <button class="btn btn-red" onclick="exportExperimentResults()" style="padding: 12px 25px; font-size: 1rem;">📥 Export</button>
+                                       <button class="btn btn-red" onclick="recalculateExperiment()" style="padding: 12px 25px; font-size: 1rem; background: rgba(255, 215, 0, 0.3); border-color: #ffd700;">🔄 Recalculate</button>
+                                   </div>
+                               </div>
+
+                               <!-- NEW FUNCTIONS: Backtesting Engine, Strategy Optimizer, Predictive Analytics -->
+                               <div class="section-box" style="margin-top: 20px;">
+                                   <h4>📊 Backtesting Engine</h4>
+                                   <p style="color: #cccccc; margin-bottom: 15px;">Test your strategies on historical data</p>
+                                   <div class="form-group">
+                                       <label>
+                                           Strategy Description:
+                                           <span class="info-tooltip" data-tooltip="Describe your trading strategy in detail. Include entry and exit conditions, stop-loss, take-profit levels." style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">Describe your trading strategy in detail. Include entry and exit conditions, stop-loss, take-profit levels.</span></span>
+                                       </label>
+                                       <textarea id="backtestStrategy" rows="3" placeholder="e.g.: Buy when BTC drops 10%, sell when +20%" oninput="autoSaveBacktestForm()"></textarea>
+                                       <small style="color: #888; font-size: 0.85rem; display: block; margin-top: 5px;">Describe your trading strategy: entry conditions, exit conditions, risk management</small>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>
+                                           Time Period:
+                                           <span class="info-tooltip" data-tooltip="Select the historical period to test your strategy. Longer periods provide more reliable results but take more time." style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">Select the historical period to test your strategy. Longer periods provide more reliable results but take more time.</span></span>
+                                       </label>
+                                       <select id="backtestPeriod" onchange="autoSaveBacktestForm()">
+                                           <option value="30">Last 30 days</option>
+                                           <option value="90">Last 3 months</option>
+                                           <option value="180">Last 6 months</option>
+                                           <option value="365">Last year</option>
+                                       </select>
+                                       <small style="color: #888; font-size: 0.85rem; display: block; margin-top: 5px;">Choose the historical period to test your strategy on</small>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>
+                                           Trading Fees:
+                                           <span class="info-tooltip" data-tooltip="Broker/exchange fees per trade (both entry and exit). Typical values: 0.1-0.5% for spot, 0.02-0.06% for futures." style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">Broker/exchange fees per trade (both entry and exit). Typical values: 0.1-0.5% for spot, 0.02-0.06% for futures.</span></span>
+                                       </label>
+                                       <input type="number" id="backtestFees" value="0.2" min="0" max="1" step="0.01" onchange="autoSaveBacktestForm()" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 0, 0, 0.3); border-radius: 5px; color: #ffffff; font-size: 1rem;">
+                                       <small style="color: #888; font-size: 0.85rem; display: block; margin-top: 5px;">Enter trading fees in percentage (e.g., 0.2 = 0.2% per trade)</small>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>
+                                           Example Strategies:
+                                           <span class="info-tooltip" data-tooltip="Select a pre-built strategy template to use as a starting point" style="color: #888; font-size: 0.8rem; margin-left: 5px; display: inline-block;">ℹ️<span class="tooltip-text">Select a pre-built strategy template to use as a starting point</span></span>
+                                       </label>
+                                       <select id="strategyTemplate" onchange="loadStrategyTemplate()" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 0, 0, 0.3); border-radius: 5px; color: #ffffff; font-size: 1rem;">
+                                           <option value="">-- Select a template or write your own --</option>
+                                           <option value="momentum">📈 Momentum Strategy (Buy on breakouts, sell on profit)</option>
+                                           <option value="mean_reversion">📊 Mean Reversion (Buy dips, sell peaks)</option>
+                                           <option value="breakout">🚀 Breakout Strategy (Buy after price breaks resistance)</option>
+                                           <option value="trend_following">📉 Trend Following (Buy in uptrend, sell in downtrend)</option>
+                                           <option value="scalping">⚡ Scalping (Quick in/out trades, small profits)</option>
+                                           <option value="swing">🎯 Swing Trading (Hold for days/weeks, larger moves)</option>
+                                       </select>
+                                       <small style="color: #888; font-size: 0.85rem; display: block; margin-top: 5px;">Choose a strategy template or write your own custom strategy</small>
+                                   </div>
+                                   <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                                       <button class="btn btn-red" onclick="runBacktesting()" style="flex: 1;">Run Backtesting</button>
+                                       <button class="btn btn-red" onclick="fillExampleBacktest()" style="background: rgba(255, 215, 0, 0.3); border-color: #ffd700;">📝 Fill Example</button>
+                                       <button class="btn btn-red" onclick="saveBacktestToHistory()" style="background: rgba(255, 0, 0, 0.5);">💾 Save</button>
+                                       <button class="btn btn-red" onclick="showBacktestHistory()" style="background: rgba(255, 0, 0, 0.5);">📚 History</button>
+                                   </div>
+                                   <!-- Backtest History Modal -->
+                                   <div id="backtestHistoryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; overflow-y: auto;">
+                                       <div style="max-width: 800px; margin: 50px auto; background: rgba(0, 0, 0, 0.9); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 15px; padding: 30px;">
+                                           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                               <h3 style="color: #ffffff; margin: 0;">📚 Backtest History</h3>
+                                               <button onclick="closeBacktestHistory()" style="background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); color: #ffffff; padding: 8px 15px; border-radius: 5px; cursor: pointer;">✕ Close</button>
+                                           </div>
+                                           <div id="backtestHistoryList" style="color: #ffffff;">
+                                               <!-- History items will be added here -->
+                                           </div>
+                                       </div>
+                                   </div>
+                                   <div id="backtestResults" style="margin-top: 20px; display: none;"></div>
+                               </div>
+
+                               <div class="section-box" style="margin-top: 20px;">
+                                   <h4>🎯 Strategy Optimizer</h4>
+                                   <p style="color: #cccccc; margin-bottom: 15px;">Find optimal parameters for your strategy</p>
+                                   <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                                       <button class="btn btn-red" onclick="optimizeStrategy()" style="flex: 1;">🔍 Optimize Strategy</button>
+                                       <button class="btn btn-red" onclick="fillExampleStrategyOptimizer()" style="background: rgba(255, 215, 0, 0.3); border-color: #ffd700;">📋 Fill Example</button>
+                                       <button class="btn btn-red" onclick="saveStrategyOptimizerToHistory()" style="background: rgba(255, 0, 0, 0.5);">💾 Save</button>
+                                       <button class="btn btn-red" onclick="showStrategyOptimizerHistory()" style="background: rgba(255, 0, 0, 0.5);">📚 History</button>
+                                       <button class="btn btn-red" onclick="clearStrategyOptimizerForm()" style="background: rgba(100, 100, 100, 0.5);">🔄 Clear</button>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Strategy Template:</label>
+                                       <input type="text" id="optimizerStrategyTemplate" placeholder="e.g.: Buy on drop X%, sell on rise Y%" style="width: 100%;" onchange="autoSaveStrategyOptimizerForm()">
+                                       <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.6;">
+                                           💡 <strong>What this is:</strong> Describe your trading strategy using X and Y as variables. X = percentage price drop for buying (usually negative number, e.g., -10%), Y = percentage price rise for selling (usually positive number, e.g., +20%).<br><br>
+                                           <strong>How it works:</strong> The optimizer will automatically substitute different X and Y values from the specified ranges and test each combination to find the best parameters for your strategy.<br><br>
+                                           <strong>Example:</strong> "Buy when price drops X%, sell when it rises Y%" or "Buy BTC when it drops X% from current price, wait for recovery, then sell when price rises Y% from purchase price"
+                                       </small>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>X Range (Buy %):</label>
+                                       <div style="display: flex; gap: 10px;">
+                                           <input type="number" id="xMin" placeholder="Min" value="-25" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
+                                           <input type="number" id="xMax" placeholder="Max" value="-5" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
+                                           <input type="number" id="xStep" placeholder="Step" value="5" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
+                                       </div>
+                                       <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.6;">
+                                           💡 <strong>X is the percentage price drop for buying (BUY trigger):</strong><br>
+                                           • <strong>Min (Minimum):</strong> The deepest price drop you want to test. For example, -25% means "buy when price dropped by 25%". The larger the number (in absolute value), the deeper the drop needed to enter.<br>
+                                           • <strong>Max (Maximum):</strong> The smallest price drop to test. For example, -5% means "buy when price dropped by only 5%". The smaller the number (in absolute value), the earlier you enter the position.<br>
+                                           • <strong>Step (Increment):</strong> The step between tests. For example, Step=5 means testing -25%, -20%, -15%, -10%, -5%. The optimizer will test all X combinations with Y values.
+                                       </small>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Y Range (Sell %):</label>
+                                       <div style="display: flex; gap: 10px;">
+                                           <input type="number" id="yMin" placeholder="Min" value="10" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
+                                           <input type="number" id="yMax" placeholder="Max" value="30" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
+                                           <input type="number" id="yStep" placeholder="Step" value="5" style="flex: 1;" onchange="autoSaveStrategyOptimizerForm()">
+                                       </div>
+                                       <small style="color: #cccccc; display: block; margin-top: 5px; line-height: 1.6;">
+                                           💡 <strong>Y is the percentage price rise for selling (SELL trigger):</strong><br>
+                                           • <strong>Min (Minimum):</strong> The smallest profit target to test. For example, 10% means "sell when price rose by 10%". The smaller the number, the faster you take profit, but it's smaller.<br>
+                                           • <strong>Max (Maximum):</strong> The largest profit target to test. For example, 30% means "sell when price rose by 30%". The larger the number, the greater potential profit, but you need to wait longer.<br>
+                                           • <strong>Step (Increment):</strong> The step between tests. For example, Step=5 means testing 10%, 15%, 20%, 25%, 30%. The optimizer will test all Y combinations with each X value.
+                                       </small>
+                                   </div>
+                                   <div id="optimizerResults" style="margin-top: 20px; display: none;"></div>
+                               </div>
+                               
+                               <!-- Strategy Optimizer History Modal -->
+                               <div id="strategyOptimizerHistoryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; overflow-y: auto;">
+                                   <div style="max-width: 800px; margin: 50px auto; background: rgba(0, 0, 0, 0.9); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 15px; padding: 30px;">
+                                       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                           <h3 style="color: #ffffff; margin: 0;">📚 Strategy Optimizer History</h3>
+                                           <button onclick="closeStrategyOptimizerHistory()" style="background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); color: #ffffff; padding: 8px 15px; border-radius: 5px; cursor: pointer;">✕ Close</button>
+                                       </div>
+                                       <div id="strategyOptimizerHistoryList" style="color: #ffffff;">
+                                           <!-- History items will be added here -->
+                                       </div>
+                                   </div>
+                               </div>
+
+                               <div class="section-box" style="margin-top: 20px;">
+                                   <h4>🔮 Predictive Analytics Dashboard</h4>
+                                   <p style="color: #cccccc; margin-bottom: 15px;">AI-powered price predictions and recommendations</p>
+                                   <div style="display: flex; justify-content: flex-start; align-items: stretch; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                                       <button class="btn btn-red" onclick="fillExamplePredictive()" style="
+                                           flex: 0 0 auto;
+                                           min-width: 140px;
+                                           max-width: 100%;
+                                           padding: 10px 20px;
+                                           font-size: 0.9rem;
+                                           font-weight: 600;
+                                           margin: 0;
+                                           border-radius: 8px;
+                                           border: 2px solid rgba(255, 0, 0, 0.5);
+                                           background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%);
+                                           color: #ffffff;
+                                           cursor: pointer;
+                                           transition: all 0.3s ease;
+                                           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                                           box-sizing: border-box;
+                                           white-space: nowrap;
+                                       " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(255, 0, 0, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.3)'">📋 Fill Example</button>
+                                       <button class="btn btn-red" onclick="showPredictiveHistory()" style="
+                                           flex: 0 0 auto;
+                                           min-width: 140px;
+                                           max-width: 100%;
+                                           padding: 10px 20px;
+                                           font-size: 0.9rem;
+                                           font-weight: 600;
+                                           margin: 0;
+                                           border-radius: 8px;
+                                           border: 2px solid rgba(255, 0, 0, 0.5);
+                                           background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%);
+                                           color: #ffffff;
+                                           cursor: pointer;
+                                           transition: all 0.3s ease;
+                                           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                                           box-sizing: border-box;
+                                           white-space: nowrap;
+                                       " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(255, 0, 0, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.3)'">📚 History</button>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Select Coin for Prediction: <span class="info-tooltip" data-tooltip="Choose the cryptocurrency you want to get AI-powered price predictions for. The system will analyze current market data and historical trends to provide short-term (7 days), medium-term (3 months), and long-term (6+ months) forecasts.">ℹ️</span></label>
+                                       <select id="predictCoin" onchange="autoSavePredictiveForm()">
+                                           <option value="BTC">Bitcoin (BTC)</option>
+                                           <option value="ETH">Ethereum (ETH)</option>
+                                           <option value="BNB">Binance Coin (BNB)</option>
+                                           <option value="SOL">Solana (SOL)</option>
+                                           <option value="ADA">Cardano (ADA)</option>
+                                           <option value="XRP">Ripple (XRP)</option>
+                                           <option value="AVAX">Avalanche (AVAX)</option>
+                                           <option value="DOGE">Dogecoin (DOGE)</option>
+                                           <option value="SUI">Sui (SUI)</option>
+                                           <option value="TON">Toncoin (TON)</option>
+                                           <option value="PEPE">Pepe (PEPE)</option>
+                                           <option value="WIF">dogwifhat (WIF)</option>
+                                           <option value="ARB">Arbitrum (ARB)</option>
+                                           <option value="APT">Aptos (APT)</option>
+                                           <option value="NEAR">NEAR Protocol (NEAR)</option>
+                                           <option value="ONDO">Ondo Finance (ONDO)</option>
+                                           <option value="WLD">Worldcoin (WLD)</option>
+                                           <option value="LDO">Lido DAO (LDO)</option>
+                                           <option value="UNI">Uniswap (UNI)</option>
+                                           <option value="AAVE">Aave (AAVE)</option>
+                                           <option value="ENA">Ethena (ENA)</option>
+                                           <option value="FARTCOIN">Fartcoin (FARTCOIN)</option>
+                                           <option value="SBIB1000">Shiba Inu (SBIB1000)</option>
+                                           <option value="WLFI">WalletFi (WLFI)</option>
+                                           <option value="IJU">Injective (IJU)</option>
+                                           <option value="SOMI">SOMI (SOMI)</option>
+                                           <option value="IP">IPX Token (IP)</option>
+                                           <option value="APE">ApeCoin (APE)</option>
+                                           <option value="PENGU">Pudgy Penguins (PENGU)</option>
+                                           <option value="SEI">Sei Network (SEI)</option>
+                                           <option value="GALA">Gala (GALA)</option>
+                                           <option value="MYX">MYX Network (MYX)</option>
+                                           <option value="ATOM">Cosmos (ATOM)</option>
+                                           <option value="VIRTAUL">Virtual Protocol (VIRTAUL)</option>
+                                       </select>
+                                   </div>
+                                   <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                       <button class="btn btn-red" onclick="loadPredictiveDashboard()">📊 Load Predictions</button>
+                                       <button class="btn btn-red" onclick="clearPredictiveForm()" style="background: rgba(255, 0, 0, 0.3); border-color: #ff6666;">🗑️ Clear</button>
+                                   </div>
+                                   <div id="predictiveDashboard" style="margin-top: 20px; display: none;"></div>
+                                   
+                                   <!-- Predictive Analytics History Modal -->
+                                   <div id="predictiveHistoryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; overflow-y: auto;">
+                                       <div style="max-width: 800px; margin: 50px auto; background: rgba(0, 0, 0, 0.95); border: 2px solid rgba(255, 215, 0, 0.4); border-radius: 15px; padding: 30px;">
+                                           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                               <h3 style="color: #ffd700; margin: 0;">📚 Predictive Analytics History</h3>
+                                               <button onclick="closePredictiveHistory()" style="background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); color: #ffffff; padding: 8px 15px; border-radius: 5px; cursor: pointer;">✕ Close</button>
+                                           </div>
+                                           <div id="predictiveHistoryList" style="color: #ffffff;"></div>
+                                       </div>
                                    </div>
                                </div>
 

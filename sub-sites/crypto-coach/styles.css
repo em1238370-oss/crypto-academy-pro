@@ -7,12 +7,21 @@
     box-sizing: border-box;
 }
 
+/* Global overflow prevention */
+html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+}
+
 body {
     font-family: 'Poppins', sans-serif;
     background-color: #000000;
     min-height: 100vh;
     position: relative;
-    overflow-x: hidden;
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
     /* Гарантируем, что fixed элементы работают правильно */
     transform: none !important;
     will-change: auto !important;
@@ -108,7 +117,11 @@ body::after {
     position: relative;
     z-index: 1;
     min-height: 100vh;
-    padding-top: calc(50vh - 60px - 4cm); /* Центрируем заголовок по вертикали при загрузке, поднимаем на 4 см выше */
+    padding-top: calc(50vh - 60px - 2cm); /* Центрируем заголовок по вертикали при загрузке, поднимаем на 2 см выше */
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
 /* Заголовок Crypto Coach */
@@ -1332,6 +1345,16 @@ div:has-text("Experience Points") {
 .modules-container {
     max-width: 1400px;
     margin: 0 auto;
+    width: 100%;
+    padding: 0 20px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+/* Prevent any content from overflowing */
+.modules-container * {
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .main-title {
@@ -1349,9 +1372,22 @@ div:has-text("Experience Points") {
 /* Drawer Module Styles */
 .drawer-container {
     margin-bottom: 60px;
+    margin-top: 0;
     perspective: 1000px;
     position: relative;
     z-index: 1; /* Блоки ниже заголовка */
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+.drawer-container + .drawer-container {
+    margin-top: 36px;
+}
+/* Extra gap above Module C when open so it doesn't touch Module B */
+#drawerCContainer:has(#drawerC.open),
+.drawer-container:has(#drawerC.open) {
+    margin-top: 52px;
 }
 
 .drawer {
@@ -1362,6 +1398,10 @@ div:has-text("Experience Points") {
     transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     position: relative;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 /* Уникальный дизайн для FREE блока (drawerA) - ЗОЛОТОЙ когда закрыт */
@@ -1461,15 +1501,18 @@ div:has-text("Experience Points") {
 
 .drawer-header {
     background: rgba(255, 0, 0, 0.2);
-    padding: 25px 30px;
+    padding: 20px 24px;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
     border-bottom: 2px solid rgba(255, 0, 0, 0.3);
     transition: all 0.3s ease;
     position: relative;
     z-index: 2;
+    flex-shrink: 0;
+    min-height: 56px;
 }
 
 /* Уникальный дизайн заголовка для FREE блока - ЗОЛОТОЙ когда закрыт */
@@ -1552,6 +1595,9 @@ div:has-text("Experience Points") {
     color: #ffffff;
     font-size: 1.8rem;
     font-weight: bold;
+    margin: 0;
+    min-width: 0;
+    flex: 1;
 }
 
 .drawer-icon {
@@ -1573,6 +1619,8 @@ div:has-text("Experience Points") {
     opacity: 0;
     position: relative;
     z-index: 1;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .drawer.open .drawer-content {
@@ -1580,10 +1628,152 @@ div:has-text("Experience Points") {
     padding: 30px;
     transform: translateY(0);
     opacity: 1;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Fix for Module C to prevent overflow */
+#drawerC .drawer-content,
+#drawerCContent {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+}
+
+#drawerC .drawer-content > *,
+#drawerCContent > * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+}
+
+/* Module C: height set by JS (expandModuleCToContent) — no fixed 8000px, no black gap */
+#drawerC.open #drawerCContent {
+    min-height: 0;
+    max-height: none;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+}
+
+/* Ensure all content inside Module C respects container width */
+#drawerCContent * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Fix for predictiveDashboard content inside Module C */
+#predictiveDashboard,
+#predictiveDashboard > div,
+#predictiveDashboard [style] {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+/* Fix for all sections inside predictiveDashboard */
+#predictiveDashboard div[style*="padding"],
+#predictiveDashboard div[style*="margin"] {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Ensure grid layouts in predictiveDashboard don't overflow */
+#predictiveDashboard [style*="grid-template-columns"] {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    width: 100% !important;
+}
+
+/* Fix for buttons and other elements */
+#predictiveDashboard button,
+#predictiveDashboard .btn {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    word-wrap: break-word !important;
+}
+
+/* Final safety net - prevent ANY element from exceeding viewport */
+.page,
+.content,
+.modules-container,
+.drawer-container,
+.drawer,
+.drawer-content {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+}
+
+/* Fix for all elements with width in style attribute */
+#drawerCContent [style*="width"],
+.drawer-content [style*="width"],
+.modules-container [style*="width"] {
+    max-width: 100% !important;
+}
+
+/* Prevent padding from causing overflow - use clamp for responsive padding */
+#drawerCContent,
+.drawer-content {
+    padding-left: clamp(10px, 2vw, 30px) !important;
+    padding-right: clamp(10px, 2vw, 30px) !important;
+}
+
+/* Ensure all nested divs respect container */
+#drawerCContent > div,
+.drawer-content > div,
+.modules-container > div {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+}
+
+/* Fix for grid layouts that might overflow */
+#drawerCContent [style*="grid"],
+.drawer-content [style*="grid"],
+#drawerCContent [style*="display: grid"],
+.drawer-content [style*="display: grid"] {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    width: 100% !important;
+}
+
+/* Fix for flex layouts */
+#drawerCContent [style*="flex"],
+.drawer-content [style*="flex"],
+#drawerCContent [style*="display: flex"],
+.drawer-content [style*="display: flex"] {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    flex-wrap: wrap !important;
+}
+/* Space below Module C when open so it doesn't touch Module D */
+#drawerC.drawer.open {
+    margin-bottom: 80px;
 }
 
 .form-group {
     margin-bottom: 20px;
+}
+
+/* Переопределение для центрирования слайдера Price Change */
+.form-group:has(#priceChange) {
+    margin-bottom: 20px !important;
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
 }
 
 .form-group label {
@@ -1611,6 +1801,97 @@ div:has-text("Experience Points") {
 
 .form-group input[type="range"] {
     padding: 0;
+}
+
+/* Центрирование слайдера Price Change */
+.price-change-slider-container,
+.form-group:has(#priceChange) {
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+}
+
+/* Слайдер без видимой точки (ручки) - только синяя полоска */
+#priceChange {
+    display: block !important;
+    margin: 0 auto !important;
+    text-align: center !important;
+    width: 100% !important;
+    max-width: 600px !important;
+    position: relative !important;
+    height: 10px !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-radius: 5px !important;
+    outline: none !important;
+    cursor: pointer !important;
+}
+
+/* Убираем стандартную ручку (точку) в Chrome/Safari */
+#priceChange::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    border: none !important;
+}
+
+/* Убираем стандартную ручку (точку) в Firefox */
+#priceChange::-moz-range-thumb {
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    border: none !important;
+}
+
+/* Синяя линия прогресса для Chrome/Safari */
+#priceChange::-webkit-slider-runnable-track {
+    width: 100% !important;
+    height: 10px !important;
+    background: linear-gradient(to right, #0066ff 0%, #0066ff var(--progress, 0%), rgba(255, 255, 255, 0.3) var(--progress, 0%), rgba(255, 255, 255, 0.3) 100%) !important;
+    border-radius: 5px !important;
+}
+
+/* Синяя линия прогресса для Firefox */
+#priceChange::-moz-range-track {
+    width: 100% !important;
+    height: 10px !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-radius: 5px !important;
+}
+
+#priceChange::-moz-range-progress {
+    height: 10px !important;
+    background: #0066ff !important;
+    border-radius: 5px !important;
+}
+
+.price-change-slider-container label,
+.form-group:has(#priceChange) label {
+    text-align: center !important;
+    width: 100% !important;
+    display: block !important;
+    margin: 0 auto 15px auto !important;
+}
+
+.price-change-slider-container > div,
+.form-group:has(#priceChange) > div {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 600px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
 }
 
 .section-box {
@@ -2138,3 +2419,133 @@ div:has-text("Experience Points") {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
 }
+
+/* Custom Tooltip Styles */
+.info-tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.info-tooltip .tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    background-color: rgba(40, 40, 40, 0.95);
+    color: #ffffff;
+    text-align: left;
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    position: fixed;
+    z-index: 10000;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    top: auto;
+    transform: translateX(-50%);
+    white-space: normal;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    max-width: 300px;
+    min-width: 150px;
+    word-wrap: break-word;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
+}
+
+.info-tooltip .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(40, 40, 40, 0.95) transparent transparent transparent;
+}
+
+/* Стрелка снизу, когда tooltip показывается снизу элемента */
+.info-tooltip .tooltip-text[style*="--arrow-position: bottom"]::after,
+.info-tooltip .tooltip-text.bottom-arrow::after {
+    top: auto;
+    bottom: 100%;
+    border-color: transparent transparent rgba(40, 40, 40, 0.95) transparent;
+}
+
+.info-tooltip.show-tooltip .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Backtesting Results Scrollbar */
+.backtest-results-container {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 0, 0, 0.5) rgba(0, 0, 0, 0.3);
+}
+
+.backtest-results-container::-webkit-scrollbar {
+    width: 12px;
+}
+
+.backtest-results-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    margin: 5px 0;
+}
+
+.backtest-results-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 0, 0, 0.5);
+    border-radius: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+.backtest-results-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 0, 0, 0.7);
+}
+
+
+/* ========== FINAL OVERFLOW PREVENTION - HIGHEST PRIORITY ========== */
+/* Fix for predictiveDashboard content inside Module C */
+#predictiveDashboard,
+#predictiveDashboard > div,
+#predictiveDashboard [style] {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+/* Fix for all sections inside predictiveDashboard */
+#predictiveDashboard div[style*=padding],
+#predictiveDashboard div[style*=margin] {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Ensure grid layouts in predictiveDashboard don't overflow */
+#predictiveDashboard [style*=grid-template-columns] {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    width: 100% !important;
+}
+
+/* Fix for buttons and other elements */
+#predictiveDashboard button,
+#predictiveDashboard .btn {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    word-wrap: break-word !important;
+}
+
+/* Final safety net - prevent ANY element from exceeding viewport */
+.page,
+.content,
+.modules-container,
+.drawer-container,
+.drawer,
+.drawer-content {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+}
+
