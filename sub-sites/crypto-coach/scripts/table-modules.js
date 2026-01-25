@@ -5465,10 +5465,15 @@ Be specific with numbers, percentages, and price levels.`;
                     max-width: 100%;
                     box-sizing: border-box;
                 ">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                        <h4 style="color: #ffd700; margin: 0; font-size: 1.4rem; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
+                    <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.4rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
                         🔮 Predictive Analytics: ${coin}
                     </h4>
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <span style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(0,255,0,0.08) 100%); border: 1px solid rgba(255,215,0,0.35); border-radius: 999px; color: #ffd700; font-size: 0.88rem;">
+                            Current: $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} · Asset: ${coin}
+                        </span>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
                         <button class="btn btn-red" onclick="savePredictiveResult()" style="padding: 8px 16px; font-size: 0.9rem; background: rgba(255, 215, 0, 0.3); border-color: #ffd700;">
                             💾 Save Results
                         </button>
