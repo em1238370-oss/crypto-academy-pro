@@ -344,25 +344,25 @@ FORMAT YOUR RESPONSE with these EXACT sections:
    - Best coin combinations for this portfolio
    - Relative strengths and weaknesses of each coin
 
-3. TIME-BASED RECOMMENDATIONS (For each coin):
+3. TIME-BASED MARKET ANALYSIS (For each coin):
 
    SHORT-TERM (1-7 days):
-   - Immediate actions to take
-   - Entry points for buying
-   - Quick profit-taking opportunities
-   - Day trading opportunities if applicable
+   - Market conditions and price movements to watch
+   - Key price levels (support/resistance) to monitor
+   - Potential scenarios and what they might indicate
+   - Volatility patterns and what to observe
 
    MEDIUM-TERM (1-3 months):
-   - Price targets to watch
-   - When to accumulate more
-   - When to take partial profits
-   - Portfolio rebalancing suggestions
+   - Price targets to monitor based on trends
+   - Accumulation scenarios (if considering increasing position)
+   - Profit-taking scenarios (if considering reducing position)
+   - Portfolio rebalancing considerations
 
    LONG-TERM (6+ months):
-   - Strategic hold recommendations
-   - Major price milestones
-   - When to exit completely
-   - Long-term growth potential
+   - Strategic considerations for holding
+   - Major price milestones to watch
+   - Exit scenarios to consider
+   - Long-term growth potential analysis
 
 4. REAL-TIME MARKET ANALYSIS FOR EACH COIN:
    - Current price position relative to ATH/ATL (use exact percentages provided)
@@ -372,32 +372,34 @@ FORMAT YOUR RESPONSE with these EXACT sections:
    - Chart pattern analysis: Based on price changes, is it forming support/resistance?
    - Unique characteristics and current market sentiment
 
-5. ACTIONABLE RECOMMENDATIONS BASED ON CURRENT PRICES:
-   For each coin, provide SPECIFIC advice using CURRENT prices:
-   - WHEN TO BUY: Based on current price $X, buy if it drops to $Y (X% below current) OR if it breaks above $Z (resistance level)
-   - WHEN TO SELL: Based on current price $X, take profits at $Y (X% above current) OR set stop-loss at $Z
-   - PORTFOLIO ADJUSTMENT: Increase/decrease percentage? Why? (Consider current trend and distance from ATH)
-   - ENTRY STRATEGY: Dollar-cost averaging or lump sum? Based on current volatility
+5. CONDITIONAL SCENARIOS BASED ON CURRENT PRICES (NOT Direct Recommendations):
+   For each coin, provide CONDITIONAL analysis using CURRENT prices:
+   - IF price drops to $Y (X% below current $X), THEN what might happen? What factors to consider?
+   - IF price breaks above $Z (resistance level), THEN what might indicate? What to watch for?
+   - IF considering portfolio adjustment: What factors to evaluate? (Consider current trend and distance from ATH)
+   - IF considering entry: Dollar-cost averaging vs lump sum scenarios - what are the considerations based on current volatility?
 
 6. MARKET TIMING INSIGHTS:
-   - Best time to enter based on current trends
-   - Risk assessment based on current volatility
-   - Market sentiment analysis (bullish/bearish/neutral)
+   - Market conditions to observe based on current trends
+   - Risk factors to consider based on current volatility
+   - Market sentiment analysis (bullish/bearish/neutral) and what it might mean
    - Correlation between selected coins (do they move together or independently?)
 
-7. OVERALL STRATEGY:
+7. OVERALL MARKET ANALYSIS:
    - Portfolio balance assessment based on current market conditions
-   - Risk management advice using real-time volatility data
+   - Risk factors to consider using real-time volatility data
    - Opportunity identification from current price positions
-   - Next steps with specific action items
+   - Key factors to monitor going forward
 
 IMPORTANT: 
 - Use the EXACT current prices and percentages provided above
 - Reference the real-time data (24h, 7d, 30d changes) in your analysis
 - Mention the distance from ATH/ATL when relevant
-- Be specific with numbers: "Buy at $X" not "Buy when price drops"
+- Focus on CONDITIONAL scenarios (IF...THEN...) NOT direct buy/sell recommendations
+- Provide analytical insights, NOT trading advice
 - Format your response with clear sections, use bullet points, and make it easy to read
-- Add timestamps or "as of now" references to emphasize real-time analysis`;
+- Add timestamps or "as of now" references to emphasize real-time analysis
+- Always emphasize that this is educational analysis, not financial advice`;
 
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -408,7 +410,7 @@ IMPORTANT:
             body: JSON.stringify({
                 model: 'mistral-small',
                 messages: [
-                    { role: 'system', content: 'You are an expert cryptocurrency investment advisor and portfolio strategist. You provide detailed, actionable, and unique investment advice based on real market data. Always be specific with numbers and conditions.' },
+                    { role: 'system', content: 'You are an expert cryptocurrency market analyst and portfolio strategist. You provide detailed, analytical market insights based on real market data. Focus on conditional scenarios (IF...THEN...) and analytical insights, NOT direct buy/sell recommendations. Always emphasize that this is educational analysis, not financial advice. Always be specific with numbers and conditions.' },
                     { role: 'user', content: prompt }
                 ],
                 temperature: 0.8,
@@ -439,8 +441,8 @@ IMPORTANT:
                 .replace(/SHORT-TERM|Short-term|1-7 days/gi, '<span style="color: #ff6b6b; font-weight: bold;">⚡ SHORT-TERM (1-7 days)</span>')
                 .replace(/MEDIUM-TERM|Medium-term|1-3 months/gi, '<span style="color: #ffa500; font-weight: bold;">📅 MEDIUM-TERM (1-3 months)</span>')
                 .replace(/LONG-TERM|Long-term|6\+ months/gi, '<span style="color: #4ecdc4; font-weight: bold;">🎯 LONG-TERM (6+ months)</span>')
-                .replace(/WHEN TO BUY|Buy/gi, '<span style="color: #51cf66; font-weight: bold;">🟢 BUY:</span>')
-                .replace(/WHEN TO SELL|Sell/gi, '<span style="color: #ff6b6b; font-weight: bold;">🔴 SELL:</span>');
+                .replace(/WHEN TO BUY|Buy/gi, '<span style="color: #51cf66; font-weight: bold;">🟢 IF CONSIDERING ENTRY:</span>')
+                .replace(/WHEN TO SELL|Sell/gi, '<span style="color: #ff6b6b; font-weight: bold;">🔴 IF CONSIDERING EXIT:</span>');
             
             // Добавляем временную метку актуальности данных
             const timestamp = new Date().toLocaleString('en-US', { 
@@ -751,19 +753,19 @@ async function compareSentiment() {
     if (difference < 20) {
         insight = `You and the market are aligned (difference: ${difference} points). `;
         if (marketScore < 30) {
-            recommendation = 'Both you and the market are in fear. This might be a good buying opportunity, but be cautious.';
+            recommendation = 'Both you and the market are in fear. If you are considering entry opportunities, this might indicate potential value, but remain cautious and do your own research.';
         } else if (marketScore > 70) {
-            recommendation = 'Both you and the market are in greed. Consider taking profits and being cautious of FOMO.';
+            recommendation = 'Both you and the market are in greed. If you are analyzing your positions, be aware of FOMO risks. Consider the possibility of market corrections.';
         } else {
-            recommendation = 'You are both neutral. Good time for rational decision-making.';
+            recommendation = 'You are both neutral. This might be a good time for rational analysis and decision-making based on your own research.';
         }
     } else {
         if (currentMoodScore < marketScore) {
             insight = `The market is more optimistic than you (difference: ${difference} points). `;
-            recommendation = 'You are more cautious than the market. This could be good - avoid FOMO. Consider waiting for better entry points.';
+            recommendation = 'You are more cautious than the market. This could help you avoid FOMO. If you are considering entry, waiting for better levels might be worth considering.';
         } else {
             insight = `You are more optimistic than the market (difference: ${difference} points). `;
-            recommendation = 'You are more bullish than the market. Be careful of overconfidence. The market might be right - consider being more cautious.';
+            recommendation = 'You are more bullish than the market. Be aware of overconfidence risks. The market sentiment might indicate caution - consider doing additional research.';
         }
     }
     
@@ -2691,7 +2693,7 @@ async function runExperiment() {
                 aiAdviceDiv.innerHTML = `
                     <div style="padding: 20px;">
                         <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
-                            🤖 AI Trading Advice
+                            🤖 Market Analysis & Insights
                         </h5>
                         <div style="color: #ffffff; line-height: 1.8; font-size: 1.05rem; white-space: pre-wrap;">${aiAdvice}</div>
                         <div style="margin-top: 15px; padding: 10px; background: rgba(255, 0, 0, 0.1); border-radius: 5px; border-left: 3px solid #ff0000;">
@@ -2700,25 +2702,25 @@ async function runExperiment() {
                     </div>
                 `;
             } else {
-                // Fallback на простой совет
+                // Fallback на аналитический формат (БЕЗ прямых рекомендаций)
                 let adviceText = '';
                 if (priceChange < -20) {
-                    adviceText = '⚠️ Strong decline detected. Consider selling 30-50% to protect capital. Wait for stabilization before re-entering.';
+                    adviceText = '⚠️ Обнаружен сильный спад. Если вы рассматриваете возможность уменьшения позиции, учтите: такие движения могут указывать на повышенный риск. Следите за стабилизацией перед любыми действиями.';
                 } else if (priceChange < -10) {
-                    adviceText = '📉 Moderate decline. Consider selling 20-25% to reduce risk. Monitor the situation closely.';
+                    adviceText = '📉 Обнаружен умеренный спад. Если вы анализируете свою позицию, обратите внимание на уровень риска. Продолжайте мониторить ситуацию.';
                 } else if (priceChange < 0) {
-                    adviceText = '📊 Small correction detected. This is normal market behavior. Stick to your strategy and monitor.';
+                    adviceText = '📊 Обнаружена небольшая коррекция. Это нормальное рыночное поведение. Продолжайте следовать своей стратегии и мониторьте ситуацию.';
                 } else if (priceChange < 20) {
-                    adviceText = '📈 Positive movement. Consider taking partial profits (10-20%) while holding the rest for further growth.';
+                    adviceText = '📈 Обнаружено положительное движение. Если вы рассматриваете возможность фиксации прибыли, учтите текущие уровни. Продолжайте наблюдать за дальнейшим развитием.';
                 } else if (priceChange < 50) {
-                    adviceText = '🚀 Strong growth. Consider taking 30-40% profits. Set stop-loss to protect remaining gains.';
+                    adviceText = '🚀 Обнаружен сильный рост. Если вы анализируете возможность фиксации прибыли, учтите текущие уровни. Рассмотрите возможность установки защитных уровней для управления рисками.';
                 } else {
-                    adviceText = '💎 Exceptional growth! Consider taking 50%+ profits. This level is often unsustainable long-term.';
+                    adviceText = '💎 Обнаружен исключительный рост! Если вы рассматриваете возможность фиксации прибыли, учтите, что такие уровни часто неустойчивы в долгосрочной перспективе.';
                 }
                 aiAdviceDiv.innerHTML = `
                     <div style="padding: 20px;">
                         <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
-                            🤖 AI Trading Advice
+                            🤖 Market Analysis & Insights
                         </h5>
                         <p style="color: #ffffff; line-height: 1.8; font-size: 1.05rem; margin: 0;">${adviceText}</p>
                         <div style="margin-top: 15px; padding: 10px; background: rgba(255, 0, 0, 0.1); border-radius: 5px; border-left: 3px solid #ff0000;">
@@ -2729,20 +2731,20 @@ async function runExperiment() {
             }
         }).catch(e => {
             console.error('Error generating AI advice:', e);
-            // Fallback на простой совет
+            // Fallback на аналитический формат (БЕЗ прямых рекомендаций)
             let adviceText = '';
             if (priceChange < -20) {
-                adviceText = '⚠️ Strong decline detected. Consider selling 30-50% to protect capital. Wait for stabilization before re-entering.';
+                adviceText = '⚠️ Обнаружен сильный спад. Если вы рассматриваете возможность уменьшения позиции, учтите: такие движения могут указывать на повышенный риск. Следите за стабилизацией перед любыми действиями.';
             } else if (priceChange < -10) {
-                adviceText = '📉 Moderate decline. Consider selling 20-25% to reduce risk. Monitor the situation closely.';
+                adviceText = '📉 Обнаружен умеренный спад. Если вы анализируете свою позицию, обратите внимание на уровень риска. Продолжайте мониторить ситуацию.';
             } else if (priceChange < 0) {
-                adviceText = '📊 Small correction detected. This is normal market behavior. Stick to your strategy and monitor.';
+                adviceText = '📊 Обнаружена небольшая коррекция. Это нормальное рыночное поведение. Продолжайте следовать своей стратегии и мониторьте ситуацию.';
             } else if (priceChange < 20) {
-                adviceText = '📈 Positive movement. Consider taking partial profits (10-20%) while holding the rest for further growth.';
+                adviceText = '📈 Обнаружено положительное движение. Если вы рассматриваете возможность фиксации прибыли, учтите текущие уровни. Продолжайте наблюдать за дальнейшим развитием.';
             } else if (priceChange < 50) {
-                adviceText = '🚀 Strong growth. Consider taking 30-40% profits. Set stop-loss to protect remaining gains.';
+                adviceText = '🚀 Обнаружен сильный рост. Если вы анализируете возможность фиксации прибыли, учтите текущие уровни. Рассмотрите возможность установки защитных уровней для управления рисками.';
             } else {
-                adviceText = '💎 Exceptional growth! Consider taking 50%+ profits. This level is often unsustainable long-term.';
+                adviceText = '💎 Обнаружен исключительный рост! Если вы рассматриваете возможность фиксации прибыли, учтите, что такие уровни часто неустойчивы в долгосрочной перспективе.';
             }
             aiAdviceDiv.innerHTML = `
                 <div style="padding: 20px;">
@@ -5842,18 +5844,20 @@ async function loadPredictiveDashboard() {
         
         console.log(`✅✅✅ FINAL price for ${coin}: $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}`);
         
-        // Используем AI для прогноза
-        const prompt = `You are a cryptocurrency market analyst. Provide price predictions and analysis for ${coin}.
+        // Используем AI для прогноза (БЕЗ прямых рекомендаций)
+        const prompt = `You are a cryptocurrency market analyst. Provide detailed market analysis for ${coin}.
 
 Current price: $${currentPrice.toFixed(2)}
 
-Provide detailed predictions for:
-1. **Short-term (1-7 days)**: Price target, support/resistance levels, probability
-2. **Medium-term (1-3 months)**: Price target, trend analysis, key factors
-3. **Long-term (6+ months)**: Price target, fundamental analysis, market outlook
+Provide detailed analysis for:
+1. **Short-term (1-7 days)**: Price targets, support/resistance levels, probability of movements
+2. **Medium-term (1-3 months)**: Price targets, trend analysis, key factors affecting price
+3. **Long-term (6+ months)**: Price targets, fundamental analysis, market outlook
 4. **Risk Factors**: What could cause price to drop
 5. **Opportunities**: What could drive price up
-6. **Recommendations**: Buy/sell/hold with specific price levels
+6. **Market Conditions**: Current market situation and what to watch for
+
+IMPORTANT: Do NOT provide direct buy/sell/hold recommendations. Instead, provide analytical insights and conditional scenarios (e.g., "If price reaches X, then Y might happen"). Focus on data analysis, not trading advice.
 
 Be specific with numbers, percentages, and price levels.`;
 
@@ -5868,7 +5872,7 @@ Be specific with numbers, percentages, and price levels.`;
                 messages: [
                     { 
                         role: 'system', 
-                        content: 'You are an expert cryptocurrency analyst. Provide detailed, realistic price predictions with specific numbers and probabilities.' 
+                        content: 'You are an expert cryptocurrency analyst. Provide detailed, realistic market analysis with specific numbers and probabilities. Focus on analytical insights and conditional scenarios, NOT direct trading recommendations. Always emphasize that this is educational analysis, not financial advice.' 
                     },
                     { role: 'user', content: prompt }
                 ],
@@ -5896,65 +5900,65 @@ Be specific with numbers, percentages, and price levels.`;
             throw new Error('No response from AI. API returned: ' + JSON.stringify(data));
         }
         
-        let predictionText = data.choices[0].message.content.trim();
-        
-        // Форматируем ответ
-        predictionText = predictionText
-            .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #ffd700; font-weight: bold;">$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em style="color: #ffaaaa; font-style: italic;">$1</em>')
-            .replace(/^### (.*$)/gim, '<h5 style="color: #ffd700; font-size: 1.2em; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 5px;">$1</h5>')
-            .replace(/^## (.*$)/gim, '<h4 style="color: #ffd700; font-size: 1.3em; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid rgba(255, 215, 0, 0.5); padding-bottom: 8px;">$1</h4>')
-            .replace(/^(\d+\.\s+.*$)/gim, '<div style="margin: 15px 0; padding-left: 10px; border-left: 3px solid rgba(255, 215, 0, 0.5);"><strong style="color: #ffd700;">$1</strong></div>')
-            .replace(/^[-•]\s+(.*$)/gim, '<div style="margin: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: #ffd700;">▸</span> $1</div>')
-            .replace(/\n\n/g, '</p><p style="margin: 15px 0; line-height: 1.8;">')
-            .replace(/\n/g, '<br>');
-        
-        // Получаем РЕАЛЬНЫЕ исторические данные для анализа трендов
-        let shortTermChange = 0;
-        let mediumTermChange = 0;
-        let longTermChange = 0;
-        
-        // Определяем coinGeckoId и endDate ДО блока try для использования в Promise.all
-        const endDate = Math.floor(Date.now() / 1000);
-        const coinGeckoMap = {
-            'BTC': 'bitcoin',
-            'ETH': 'ethereum',
-            'BNB': 'binancecoin',
-            'SOL': 'solana',
-            'ADA': 'cardano',
-            'XRP': 'ripple',
-            'AVAX': 'avalanche-2',
-            'DOGE': 'dogecoin',
-            'SUI': 'sui',
-            'TON': 'the-open-network',
-            'PEPE': 'pepe',
-            'WIF': 'dogwifcoin',
-            'ARB': 'arbitrum',
-            'APT': 'aptos',
-            'NEAR': 'near',
-            'ONDO': 'ondo-finance',
-            'WLD': 'worldcoin-wld',
-            'LDO': 'lido-dao',
-            'UNI': 'uniswap',
-            'AAVE': 'aave',
-            'ENA': 'ethena',
-            'FARTCOIN': 'fartcoin',
-            'SBIB1000': 'shiba-inu',
-            'WLFI': 'wallet-fi',
-            'IJU': 'inj',
-            'SOMI': 'somi',
-            'IP': 'ipx-token',
-            'APE': 'apecoin',
-            'PENGU': 'pudgy-penguins',
-            'SEI': 'sei-network',
-            'GALA': 'gala',
-            'MYX': 'myx-network',
-            'ATOM': 'cosmos',
-            'VIRTAUL': 'virtual-protocol'
-        };
-        const coinGeckoId = coinGeckoMap[coin] || coinGeckoMap['BTC'] || 'bitcoin';
-        
-        try {
+            let predictionText = data.choices[0].message.content.trim();
+            
+            // Форматируем ответ
+            predictionText = predictionText
+                .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #ffd700; font-weight: bold;">$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em style="color: #ffaaaa; font-style: italic;">$1</em>')
+                .replace(/^### (.*$)/gim, '<h5 style="color: #ffd700; font-size: 1.2em; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 5px;">$1</h5>')
+                .replace(/^## (.*$)/gim, '<h4 style="color: #ffd700; font-size: 1.3em; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid rgba(255, 215, 0, 0.5); padding-bottom: 8px;">$1</h4>')
+                .replace(/^(\d+\.\s+.*$)/gim, '<div style="margin: 15px 0; padding-left: 10px; border-left: 3px solid rgba(255, 215, 0, 0.5);"><strong style="color: #ffd700;">$1</strong></div>')
+                .replace(/^[-•]\s+(.*$)/gim, '<div style="margin: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: #ffd700;">▸</span> $1</div>')
+                .replace(/\n\n/g, '</p><p style="margin: 15px 0; line-height: 1.8;">')
+                .replace(/\n/g, '<br>');
+            
+            // Получаем РЕАЛЬНЫЕ исторические данные для анализа трендов
+            let shortTermChange = 0;
+            let mediumTermChange = 0;
+            let longTermChange = 0;
+            
+            // Определяем coinGeckoId и endDate ДО блока try для использования в Promise.all
+            const endDate = Math.floor(Date.now() / 1000);
+            const coinGeckoMap = {
+                'BTC': 'bitcoin',
+                'ETH': 'ethereum',
+                'BNB': 'binancecoin',
+                'SOL': 'solana',
+                'ADA': 'cardano',
+                'XRP': 'ripple',
+                'AVAX': 'avalanche-2',
+                'DOGE': 'dogecoin',
+                'SUI': 'sui',
+                'TON': 'the-open-network',
+                'PEPE': 'pepe',
+                'WIF': 'dogwifcoin',
+                'ARB': 'arbitrum',
+                'APT': 'aptos',
+                'NEAR': 'near',
+                'ONDO': 'ondo-finance',
+                'WLD': 'worldcoin-wld',
+                'LDO': 'lido-dao',
+                'UNI': 'uniswap',
+                'AAVE': 'aave',
+                'ENA': 'ethena',
+                'FARTCOIN': 'fartcoin',
+                'SBIB1000': 'shiba-inu',
+                'WLFI': 'wallet-fi',
+                'IJU': 'inj',
+                'SOMI': 'somi',
+                'IP': 'ipx-token',
+                'APE': 'apecoin',
+                'PENGU': 'pudgy-penguins',
+                'SEI': 'sei-network',
+                'GALA': 'gala',
+                'MYX': 'myx-network',
+                'ATOM': 'cosmos',
+                'VIRTAUL': 'virtual-protocol'
+            };
+            const coinGeckoId = coinGeckoMap[coin] || coinGeckoMap['BTC'] || 'bitcoin';
+            
+            try {
                 // Получаем данные за 7 дней для краткосрочного прогноза
                 const shortTermStart = endDate - (7 * 24 * 60 * 60);
                 const shortTermResponse = await fetch(`https://api.coingecko.com/api/v3/coins/${coinGeckoId}/market_chart/range?vs_currency=usd&from=${shortTermStart}&to=${endDate}`);
@@ -6010,507 +6014,585 @@ Be specific with numbers, percentages, and price levels.`;
                 longTermChange = 10; // Консервативный прогноз +10%
             }
             
-        // Форматируем изменения
-        shortTermChange = parseFloat(shortTermChange.toFixed(2));
-        mediumTermChange = parseFloat(mediumTermChange.toFixed(2));
-        longTermChange = parseFloat(longTermChange.toFixed(2));
-        
-        // Получаем все дополнительные данные параллельно
-        const [
-            technicalIndicators,
-            correlationMatrix,
-            buyHoldBenchmark7d,
-            buyHoldBenchmark90d,
-            onChainMetrics,
-            historicalPrices
-        ] = await Promise.all([
-            getTechnicalIndicators(coin).catch(() => null),
-            getCorrelationMatrix(coin).catch(() => null),
-            getBuyHoldBenchmark(coin, 7).catch(() => null),
-            getBuyHoldBenchmark(coin, 90).catch(() => null),
-            getOnChainMetrics(coin).catch(() => null),
-            fetch(`https://api.coingecko.com/api/v3/coins/${coinGeckoId}/market_chart/range?vs_currency=usd&from=${endDate - (90 * 24 * 60 * 60)}&to=${endDate}`).then(r => r.ok ? r.json() : null).catch(() => null)
-        ]);
-        
-        // Calculate confidence levels
-        const confidence7d = calculateConfidence(shortTermChange, 0, 0);
-        const confidence3m = calculateConfidence(shortTermChange, mediumTermChange, 0);
-        const confidence6m = calculateConfidence(shortTermChange, mediumTermChange, longTermChange);
-        
-        // Calculate Maximum Drawdown
-        const maxDrawdown = historicalPrices && historicalPrices.prices ? 
-            calculateMaxDrawdown(historicalPrices.prices.map(p => p[1])) : null;
-        
-        // Get historical accuracy
-        const historicalAccuracy = getHistoricalAccuracy();
-        
-        // Get backtesting results
-        const backtestingResults = getBacktestingResults(coin, shortTermChange, mediumTermChange, longTermChange);
-        
-        // Determine action recommendation
-        const avgChange = (shortTermChange + mediumTermChange + longTermChange) / 3;
-        let actionRecommendation = 'HOLD';
-        let actionColor = '#ffd700';
-        let entryPrice = currentPrice;
-        let exitPrice = currentPrice * (1 + mediumTermChange / 100);
-        
-        if (avgChange > 5) {
-            actionRecommendation = 'BUY';
-            actionColor = '#00ff00';
+            // Форматируем изменения
+            shortTermChange = parseFloat(shortTermChange.toFixed(2));
+            mediumTermChange = parseFloat(mediumTermChange.toFixed(2));
+            longTermChange = parseFloat(longTermChange.toFixed(2));
+            
+            // Получаем все дополнительные данные параллельно
+            const [
+                technicalIndicators,
+                correlationMatrix,
+                buyHoldBenchmark7d,
+                buyHoldBenchmark90d,
+                onChainMetrics,
+                historicalPrices
+            ] = await Promise.all([
+                getTechnicalIndicators(coin).catch(() => null),
+                getCorrelationMatrix(coin).catch(() => null),
+                getBuyHoldBenchmark(coin, 7).catch(() => null),
+                getBuyHoldBenchmark(coin, 90).catch(() => null),
+                getOnChainMetrics(coin).catch(() => null),
+                fetch(`https://api.coingecko.com/api/v3/coins/${coinGeckoId}/market_chart/range?vs_currency=usd&from=${endDate - (90 * 24 * 60 * 60)}&to=${endDate}`).then(r => r.ok ? r.json() : null).catch(() => null)
+            ]);
+            
+            // Calculate confidence levels
+            const confidence7d = calculateConfidence(shortTermChange, 0, 0);
+            const confidence3m = calculateConfidence(shortTermChange, mediumTermChange, 0);
+            const confidence6m = calculateConfidence(shortTermChange, mediumTermChange, longTermChange);
+            
+            // Calculate Maximum Drawdown
+            const maxDrawdown = historicalPrices && historicalPrices.prices ? 
+                calculateMaxDrawdown(historicalPrices.prices.map(p => p[1])) : null;
+            
+            // Get historical accuracy
+            const historicalAccuracy = getHistoricalAccuracy();
+            
+            // Get backtesting results
+            const backtestingResults = getBacktestingResults(coin, shortTermChange, mediumTermChange, longTermChange);
+            
+        // Determine market situation analysis (NOT direct recommendations)
+            const avgChange = (shortTermChange + mediumTermChange + longTermChange) / 3;
+        let marketSituation = '';
+        let situationDescription = '';
+            let actionColor = '#ffd700';
+            let entryPrice = currentPrice;
+            let exitPrice = currentPrice * (1 + mediumTermChange / 100);
+        let conditionalAdvice = '';
+        let riskFactors = [];
+        let opportunities = [];
+            
+            if (avgChange > 5) {
+            marketSituation = 'Positive Trend Detected';
+            situationDescription = 'Анализ показывает положительный тренд на основе исторических данных и технических индикаторов.';
+                actionColor = '#00ff00';
+                entryPrice = currentPrice;
+                exitPrice = currentPrice * (1 + mediumTermChange / 100);
+            conditionalAdvice = `Если вы рассматриваете возможность увеличения позиции, обратите внимание на следующие факторы: текущая цена $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}, потенциальная цель $${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange.toFixed(2)}%). Однако помните, что прошлые результаты не гарантируют будущую прибыль.`;
+            riskFactors = ['Рынок может развернуться в любой момент', 'Высокая волатильность криптовалют', 'Возможны коррекции после роста'];
+            opportunities = ['Потенциальный рост на основе тренда', 'Технические индикаторы показывают позитивные сигналы'];
+            } else if (avgChange < -5) {
+            marketSituation = 'Negative Trend Detected';
+            situationDescription = 'Анализ показывает негативный тренд на основе исторических данных и технических индикаторов.';
+                actionColor = '#ff6666';
+                entryPrice = currentPrice;
+                exitPrice = currentPrice * (1 + Math.min(shortTermChange, mediumTermChange) / 100);
+            conditionalAdvice = `Если вы рассматриваете возможность уменьшения позиции, учтите следующие факторы: текущая цена $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}, потенциальная поддержка может быть около $${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}. Однако помните, что рынок непредсказуем и может развернуться.`;
+            riskFactors = ['Продолжение нисходящего тренда', 'Возможны дальнейшие падения', 'Высокая волатильность'];
+            opportunities = ['Возможность покупки на более низких уровнях', 'Потенциальное восстановление после коррекции'];
+        } else {
+            marketSituation = 'Neutral/Consolidation Phase';
+            situationDescription = 'Анализ показывает нейтральный тренд или фазу консолидации. Рынок находится в неопределенном состоянии.';
+            actionColor = '#ffd700';
             entryPrice = currentPrice;
             exitPrice = currentPrice * (1 + mediumTermChange / 100);
-        } else if (avgChange < -5) {
-            actionRecommendation = 'SELL';
-            actionColor = '#ff6666';
-            entryPrice = currentPrice;
-            exitPrice = currentPrice * (1 + Math.min(shortTermChange, mediumTermChange) / 100);
-        }
-        
-        // Calculate position sizing (conservative: 1-5% of portfolio based on risk)
-        const riskLevel = Math.abs(avgChange) / 10; // 0-10 scale
-        const positionSizePercent = Math.min(5, Math.max(1, riskLevel));
-        
-        // Get usage statistics (from localStorage)
-        const usageStats = JSON.parse(localStorage.getItem('predictiveUsageStats') || '{"total": 0, "today": 0}');
-        usageStats.total = (usageStats.total || 0) + 1;
-        const today = new Date().toDateString();
-        if (usageStats.lastDate !== today) {
-            usageStats.today = 1;
-            usageStats.lastDate = today;
-        } else {
-            usageStats.today = (usageStats.today || 0) + 1;
-        }
-        localStorage.setItem('predictiveUsageStats', JSON.stringify(usageStats));
-        
-        predictiveDashboard.innerHTML = `
-            <div style="
-                background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(30, 0, 0, 0.8) 100%);
-                border: 2px solid rgba(255, 215, 0, 0.4);
-                border-radius: 12px;
-                padding: 25px;
-                padding-bottom: 50px;
-                box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
-                width: 100%;
-                max-width: 100%;
-                box-sizing: border-box;
-            ">
-                <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.4rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
-                    🔮 Predictive Analytics: ${coin}
-                </h4>
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <span style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(0,255,0,0.08) 100%); border: 1px solid rgba(255,215,0,0.35); border-radius: 999px; color: #ffd700; font-size: 0.88rem;">
-                        Current: $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} · Asset: ${coin}
-                    </span>
-                </div>
-                <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-                    <button class="btn btn-red" onclick="savePredictiveResult()" style="padding: 8px 16px; font-size: 0.9rem; background: rgba(255, 215, 0, 0.3); border-color: #ffd700;">
-                        💾 Save Results
-                    </button>
-                </div>
-                
-                <div style="margin-bottom: 25px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,215,0,0.08);">
-                    <div style="color: #ffffff; font-size: 1.15rem; margin-bottom: 18px; text-align: center;">
-                        Current Price: <span style="color: #00ff00; font-weight: bold; font-size: 1.5rem;">$${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;">
-                        <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
-                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px; font-weight: 500;">Short-term (7d)</div>
-                            <div style="color: ${shortTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.7rem; font-weight: bold; margin-bottom: 6px;">
-                                ${shortTermChange >= 0 ? '+' : ''}${shortTermChange}%
-                            </div>
-                            <div style="color: #aaaaaa; font-size: 0.95rem;">
-                                $${(currentPrice * (1 + shortTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                            </div>
-                        </div>
-                        <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
-                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px; font-weight: 500;">Medium-term (3m)</div>
-                            <div style="color: ${mediumTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.7rem; font-weight: bold; margin-bottom: 6px;">
-                                ${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange}%
-                            </div>
-                            <div style="color: #aaaaaa; font-size: 0.95rem;">
-                                $${(currentPrice * (1 + mediumTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                            </div>
-                        </div>
-                        <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
-                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px; font-weight: 500;">Long-term (6m+)</div>
-                            <div style="color: ${longTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.7rem; font-weight: bold; margin-bottom: 6px;">
-                                ${longTermChange >= 0 ? '+' : ''}${longTermChange}%
-                            </div>
-                            <div style="color: #aaaaaa; font-size: 0.95rem;">
-                                $${(currentPrice * (1 + longTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(30,0,0,0.3) 100%); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.25); box-shadow: 0 2px 12px rgba(0,0,0,0.3);">
-                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 8px;">📊 AI Analysis & Predictions</h5>
-                    <div style="max-height: 600px; overflow-y: auto; padding-right: 8px;">
-                    <p style="margin: 15px 0; line-height: 1.8;">${predictionText}</p>
-                    </div>
-                    <style>
-                        #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar {
-                            width: 10px;
-                        }
-                        #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar-track {
-                            background: rgba(0, 0, 0, 0.3);
-                            border-radius: 5px;
-                        }
-                        #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar-thumb {
-                            background: rgba(255, 215, 0, 0.5);
-                            border-radius: 5px;
-                        }
-                        #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar-thumb:hover {
-                            background: rgba(255, 215, 0, 0.7);
-                        }
-                    </style>
-                </div>
-                
-                <!-- График прогнозов -->
-                <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,215,0,0.08);">
-                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📈 Price Prediction Chart</h5>
-                    <canvas id="predictionChart" style="width: 100%; height: 250px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255,215,0,0.15);"></canvas>
-                    <div style="display: flex; justify-content: space-around; margin-top: 15px; color: #cccccc; font-size: 0.9rem;">
-                        <span>Current</span>
-                        <span>7 days</span>
-                        <span>3 months</span>
-                    </div>
-                </div>
-                
-                <!-- NEW SECTIONS START -->
-                
-                <!-- Action Recommendations (Priority 1) -->
-                <div style="margin-top: 30px; padding: 25px; background: linear-gradient(135deg, rgba(0,255,0,0.1) 0%, rgba(255,215,0,0.1) 100%); border-radius: 12px; border: 2px solid ${actionColor}; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
-                    <h5 style="color: ${actionColor}; margin-bottom: 20px; font-size: 1.3rem; font-weight: bold; text-align: center;">
-                        🎯 What Should You Do Now?
-                    </h5>
+            conditionalAdvice = `Если вы держите позицию, следите за следующими уровнями: текущая цена $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}, потенциальная цель $${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}. В фазе консолидации важно наблюдать за прорывом ключевых уровней.`;
+            riskFactors = ['Неопределенность направления', 'Возможны резкие движения в любую сторону', 'Низкая предсказуемость'];
+            opportunities = ['Возможность накопления на текущих уровнях', 'Потенциал для движения после консолидации'];
+            }
+            
+            // Calculate position sizing (conservative: 1-5% of portfolio based on risk)
+            const riskLevel = Math.abs(avgChange) / 10; // 0-10 scale
+            const positionSizePercent = Math.min(5, Math.max(1, riskLevel));
+            
+            // Get usage statistics (from localStorage)
+            const usageStats = JSON.parse(localStorage.getItem('predictiveUsageStats') || '{"total": 0, "today": 0}');
+            usageStats.total = (usageStats.total || 0) + 1;
+            const today = new Date().toDateString();
+            if (usageStats.lastDate !== today) {
+                usageStats.today = 1;
+                usageStats.lastDate = today;
+            } else {
+                usageStats.today = (usageStats.today || 0) + 1;
+            }
+            localStorage.setItem('predictiveUsageStats', JSON.stringify(usageStats));
+            
+            predictiveDashboard.innerHTML = `
+                <div style="
+                    background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(30, 0, 0, 0.8) 100%);
+                    border: 2px solid rgba(255, 215, 0, 0.4);
+                    border-radius: 12px;
+                    padding: 25px;
+                    padding-bottom: 50px;
+                    box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
+                    width: 100%;
+                    max-width: 100%;
+                    box-sizing: border-box;
+                ">
+                    <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.4rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
+                        🔮 Predictive Analytics: ${coin}
+                    </h4>
                     <div style="text-align: center; margin-bottom: 20px;">
-                        <div style="display: inline-block; padding: 15px 30px; background: ${actionColor}; color: #000; font-size: 2rem; font-weight: bold; border-radius: 10px; margin-bottom: 15px;">
-                            ${actionRecommendation}
+                        <span style="display: inline-block; padding: 8px 16px; background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(0,255,0,0.08) 100%); border: 1px solid rgba(255,215,0,0.35); border-radius: 999px; color: #ffd700; font-size: 0.88rem;">
+                            Current: $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} · Asset: ${coin}
+                        </span>
                     </div>
-                        <div style="color: #ffffff; margin-top: 15px;">
-                            <div style="margin: 10px 0;">Entry Price: <span style="color: #00ff00; font-weight: bold;">$${entryPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-                            <div style="margin: 10px 0;">Target Exit: <span style="color: #ffd700; font-weight: bold;">$${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-                            <div style="margin: 10px 0; font-size: 0.9rem; color: #cccccc;">Recommended Position Size: <span style="color: #ffd700;">${positionSizePercent}%</span> of portfolio</div>
-                </div>
-            </div>
-                </div>
-                
-                <!-- Profit Calculator (Priority 1) -->
-                <div style="margin-top: 30px; padding: 25px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
-                    <h5 style="color: #ffd700; margin-bottom: 20px; font-size: 1.2rem;">💰 Profit Calculator</h5>
-                    <div style="margin-bottom: 15px;">
-                        <label style="color: #cccccc; display: block; margin-bottom: 8px;">Investment Amount ($):</label>
-                        <input type="number" id="profitCalcAmount" value="1000" min="1" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,215,0,0.3); border-radius: 5px; color: #ffffff; font-size: 1rem;" oninput="updateProfitCalculator('${coin}', ${currentPrice}, ${shortTermChange}, ${mediumTermChange}, ${longTermChange})">
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                        <button class="btn btn-red" onclick="savePredictiveResult()" style="padding: 8px 16px; font-size: 0.9rem; background: rgba(255, 215, 0, 0.3); border-color: #ffd700;">
+                            💾 Save Results
+                        </button>
                     </div>
-                    <div id="profitCalcResults" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px;">
-                        <div style="background: rgba(255,215,0,0.1); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,215,0,0.3);">
-                            <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">7 days</div>
-                            <div style="color: ${shortTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.3rem; font-weight: bold;" id="profit7d">$0</div>
-                        </div>
-                        <div style="background: rgba(255,215,0,0.1); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,215,0,0.3);">
-                            <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">3 months</div>
-                            <div style="color: ${mediumTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.3rem; font-weight: bold;" id="profit3m">$0</div>
-                        </div>
-                        <div style="background: rgba(255,215,0,0.1); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,215,0,0.3);">
-                            <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">6+ months</div>
-                            <div style="color: ${longTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.3rem; font-weight: bold;" id="profit6m">$0</div>
-                        </div>
-                    </div>
-                    <div style="margin-top: 15px; padding: 12px; background: rgba(0,255,0,0.1); border-radius: 8px; border-left: 3px solid #00ff00;">
-                        <div style="color: #00ff00; font-size: 0.9rem;" id="profitExample">Example: If you invest $1000, in 3 months you'll have $${(1000 * (1 + mediumTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                    </div>
-                </div>
-                
-                <!-- Confidence Levels (Priority 1) -->
-                <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
-                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">🎯 Prediction Confidence Levels</h5>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
-                        <div style="text-align: center; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
-                            <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 8px;">7 days</div>
-                            <div style="color: ${confidence7d >= 70 ? '#00ff00' : confidence7d >= 60 ? '#ffd700' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">${confidence7d}%</div>
-                        </div>
-                        <div style="text-align: center; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
-                            <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 8px;">3 months</div>
-                            <div style="color: ${confidence3m >= 70 ? '#00ff00' : confidence3m >= 60 ? '#ffd700' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">${confidence3m}%</div>
-                        </div>
-                        <div style="text-align: center; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
-                            <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 8px;">6+ months</div>
-                            <div style="color: ${confidence6m >= 70 ? '#00ff00' : confidence6m >= 60 ? '#ffd700' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">${confidence6m}%</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Buy & Hold Benchmark Comparison (Priority 1) -->
-                <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
-                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📊 Buy & Hold vs Prediction</h5>
-                    ${buyHoldBenchmark90d ? `
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
-                        <div style="padding: 15px; background: rgba(0,255,0,0.1); border-radius: 8px; border: 1px solid rgba(0,255,0,0.3);">
-                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Buy & Hold (90d)</div>
-                            <div style="color: ${buyHoldBenchmark90d.returnPercent >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.4rem; font-weight: bold;">
-                                ${buyHoldBenchmark90d.returnPercent >= 0 ? '+' : ''}${buyHoldBenchmark90d.returnPercent.toFixed(2)}%
-                            </div>
-                        </div>
-                        <div style="padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px; border: 1px solid rgba(255,215,0,0.3);">
-                            <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Our Prediction (3m)</div>
-                            <div style="color: ${mediumTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.4rem; font-weight: bold;">
-                                ${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange}%
-                            </div>
-                        </div>
-                    </div>
-                    ` : '<div style="color: #cccccc; text-align: center; padding: 20px;">Benchmark data unavailable</div>'}
-                </div>
-                
-                <!-- Expert Analysis Section -->
-                <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(30,0,0,0.5) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
-                    <h5 style="color: #ffd700; margin-bottom: 20px; font-size: 1.3rem; border-bottom: 2px solid rgba(255,215,0,0.3); padding-bottom: 10px;">🔬 Expert Analysis</h5>
                     
-                    <!-- Historical Accuracy -->
-                    <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
-                        <h6 style="color: #ffd700; margin-bottom: 10px; font-size: 1.1rem;">📈 Historical Model Accuracy</h6>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                            <div style="text-align: center;">
-                                <div style="color: #cccccc; font-size: 0.85rem;">7 days</div>
-                                <div style="color: #00ff00; font-size: 1.2rem; font-weight: bold;">${historicalAccuracy['7d']}%</div>
+                    <div style="margin-bottom: 25px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,215,0,0.08);">
+                        <div style="color: #ffffff; font-size: 1.15rem; margin-bottom: 18px; text-align: center;">
+                            Current Price: <span style="color: #00ff00; font-weight: bold; font-size: 1.5rem;">$${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;">
+                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px; font-weight: 500;">Short-term (7d)</div>
+                                <div style="color: ${shortTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.7rem; font-weight: bold; margin-bottom: 6px;">
+                                    ${shortTermChange >= 0 ? '+' : ''}${shortTermChange}%
+                                </div>
+                                <div style="color: #aaaaaa; font-size: 0.95rem;">
+                                    $${(currentPrice * (1 + shortTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                </div>
                             </div>
-                            <div style="text-align: center;">
-                                <div style="color: #cccccc; font-size: 0.85rem;">30 days</div>
-                                <div style="color: #00ff00; font-size: 1.2rem; font-weight: bold;">${historicalAccuracy['30d']}%</div>
+                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px; font-weight: 500;">Medium-term (3m)</div>
+                                <div style="color: ${mediumTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.7rem; font-weight: bold; margin-bottom: 6px;">
+                                    ${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange}%
+                                </div>
+                                <div style="color: #aaaaaa; font-size: 0.95rem;">
+                                    $${(currentPrice * (1 + mediumTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                </div>
                             </div>
-                            <div style="text-align: center;">
-                                <div style="color: #cccccc; font-size: 0.85rem;">90 days</div>
-                                <div style="color: #00ff00; font-size: 1.2rem; font-weight: bold;">${historicalAccuracy['90d']}%</div>
+                            <div style="background: linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.18) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.35); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px; font-weight: 500;">Long-term (6m+)</div>
+                                <div style="color: ${longTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.7rem; font-weight: bold; margin-bottom: 6px;">
+                                    ${longTermChange >= 0 ? '+' : ''}${longTermChange}%
+                                </div>
+                                <div style="color: #aaaaaa; font-size: 0.95rem;">
+                                    $${(currentPrice * (1 + longTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Technical Indicators -->
-                    ${technicalIndicators ? `
-                    <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
-                        <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem;">📊 Technical Indicators</h6>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-                            <div>
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">RSI (14)</div>
-                                <div style="color: ${technicalIndicators.rsi > 70 ? '#ff6666' : technicalIndicators.rsi < 30 ? '#00ff00' : '#ffd700'}; font-size: 1.2rem; font-weight: bold;">
-                                    ${technicalIndicators.rsi.toFixed(2)}
-                                    <span style="font-size: 0.8rem; color: #aaaaaa;">${technicalIndicators.rsi > 70 ? ' (Overbought)' : technicalIndicators.rsi < 30 ? ' (Oversold)' : ' (Neutral)'}</span>
-                                </div>
+                    <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(30,0,0,0.3) 100%); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.25); box-shadow: 0 2px 12px rgba(0,0,0,0.3);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 8px;">📊 AI Analysis & Predictions</h5>
+                        <div style="max-height: 600px; overflow-y: auto; padding-right: 8px;">
+                        <p style="margin: 15px 0; line-height: 1.8;">${predictionText}</p>
+                        </div>
+                        <style>
+                            #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar {
+                                width: 10px;
+                            }
+                            #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar-track {
+                                background: rgba(0, 0, 0, 0.3);
+                                border-radius: 5px;
+                            }
+                            #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar-thumb {
+                                background: rgba(255, 215, 0, 0.5);
+                                border-radius: 5px;
+                            }
+                            #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar-thumb:hover {
+                                background: rgba(255, 215, 0, 0.7);
+                            }
+                        </style>
+                    </div>
+                    
+                    <!-- График прогнозов -->
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,215,0,0.08);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📈 Price Prediction Chart</h5>
+                        <canvas id="predictionChart" style="width: 100%; height: 250px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255,215,0,0.15);"></canvas>
+                        <div style="display: flex; justify-content: space-around; margin-top: 15px; color: #cccccc; font-size: 0.9rem;">
+                            <span>Current</span>
+                            <span>7 days</span>
+                            <span>3 months</span>
+                        </div>
+                    </div>
+                    
+                    <!-- NEW SECTIONS START -->
+                    
+                <!-- Market Situation Analysis (NOT Direct Recommendations) -->
+                    <div style="margin-top: 30px; padding: 25px; background: linear-gradient(135deg, rgba(0,255,0,0.1) 0%, rgba(255,215,0,0.1) 100%); border-radius: 12px; border: 2px solid ${actionColor}; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+                        <h5 style="color: ${actionColor}; margin-bottom: 20px; font-size: 1.3rem; font-weight: bold; text-align: center;">
+                        📊 Market Situation Analysis
+                        </h5>
+                    
+                    <!-- Market Situation Status -->
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <div style="display: inline-block; padding: 12px 25px; background: ${actionColor}; color: #000; font-size: 1.4rem; font-weight: bold; border-radius: 10px; margin-bottom: 15px;">
+                            ${marketSituation}
+                        </div>
+                        <div style="color: #ffffff; margin-top: 15px; font-size: 1rem; line-height: 1.6;">
+                            ${situationDescription}
+                        </div>
+                    </div>
+                    
+                    <!-- Key Price Levels (Analytical, NOT Recommendations) -->
+                    <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem;">📈 Key Price Levels to Monitor</h6>
+                        <div style="color: #ffffff; line-height: 1.8;">
+                            <div style="margin: 10px 0;">
+                                <strong style="color: #cccccc;">Current Price:</strong> 
+                                <span style="color: #00ff00; font-weight: bold; margin-left: 10px;">$${entryPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                             </div>
-                            <div>
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">MACD</div>
-                                <div style="color: ${technicalIndicators.macd.histogram > 0 ? '#00ff00' : '#ff6666'}; font-size: 1.2rem; font-weight: bold;">
-                                    ${technicalIndicators.macd.histogram > 0 ? '↑' : '↓'} ${technicalIndicators.macd.histogram.toFixed(4)}
-                                </div>
+                            <div style="margin: 10px 0;">
+                                <strong style="color: #cccccc;">Potential Target (based on analysis):</strong> 
+                                <span style="color: #ffd700; font-weight: bold; margin-left: 10px;">$${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                <span style="color: #aaaaaa; font-size: 0.9rem; margin-left: 5px;">(${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange.toFixed(2)}%)</span>
                             </div>
-                            <div>
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">MA 50</div>
-                                <div style="color: ${technicalIndicators.ma50Signal === 'bullish' ? '#00ff00' : '#ff6666'}; font-size: 1.1rem; font-weight: bold;">
-                                    $${technicalIndicators.ma50.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                                    <span style="font-size: 0.8rem; color: #aaaaaa;"> (${technicalIndicators.ma50Signal})</span>
-                                </div>
-                            </div>
-                            <div>
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">MA 200</div>
-                                <div style="color: ${technicalIndicators.ma200Signal === 'bullish' ? '#00ff00' : '#ff6666'}; font-size: 1.1rem; font-weight: bold;">
-                                    $${technicalIndicators.ma200.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                                    <span style="font-size: 0.8rem; color: #aaaaaa;"> (${technicalIndicators.ma200Signal})</span>
-                                </div>
-                            </div>
-                            <div style="grid-column: 1 / -1;">
-                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Volume Analysis</div>
-                                <div style="color: ${technicalIndicators.volume.change > 0 ? '#00ff00' : '#ff6666'}; font-size: 1rem;">
-                                    ${technicalIndicators.volume.change > 0 ? '↑' : '↓'} ${Math.abs(technicalIndicators.volume.change).toFixed(1)}% vs 30-day average
-                                </div>
+                            <div style="margin: 10px 0; font-size: 0.9rem; color: #cccccc;">
+                                <strong>Position Size Consideration:</strong> 
+                                <span style="color: #ffd700;">${positionSizePercent}%</span> of portfolio (based on risk analysis, NOT a recommendation)
                             </div>
                         </div>
                     </div>
-                    ` : '<div style="color: #cccccc; padding: 15px; text-align: center;">Technical indicators loading...</div>'}
                     
-                    <!-- Maximum Drawdown -->
-                    ${maxDrawdown !== null ? `
-                    <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,0,0,0.1); border-radius: 8px; border-left: 3px solid #ff6666;">
-                        <h6 style="color: #ff6666; margin-bottom: 10px; font-size: 1.1rem;">⚠️ Maximum Drawdown (90d)</h6>
-                        <div style="color: #ff6666; font-size: 1.3rem; font-weight: bold;">-${maxDrawdown.toFixed(2)}%</div>
-                        <div style="color: #cccccc; font-size: 0.85rem; margin-top: 5px;">Largest price decline from peak in the last 90 days</div>
+                    <!-- Conditional Analysis (If... Then format) -->
+                    <div style="background: rgba(255,215,0,0.1); padding: 20px; border-radius: 10px; border-left: 4px solid ${actionColor}; margin-bottom: 20px;">
+                        <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem;">💡 Conditional Analysis</h6>
+                        <div style="color: #ffffff; line-height: 1.8; font-size: 0.95rem;">
+                            ${conditionalAdvice}
+                        </div>
                     </div>
-                    ` : ''}
                     
-                    <!-- Correlation Matrix -->
-                    ${correlationMatrix ? `
-                    <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
-                        <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem;">🔗 Correlation with Top Coins</h6>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
-                            ${Object.entries(correlationMatrix).map(([coin, corr]) => `
-                                <div style="text-align: center; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px;">
-                                    <div style="color: #cccccc; font-size: 0.8rem;">${coin}</div>
-                                    <div style="color: ${corr > 0.7 ? '#00ff00' : corr > 0.3 ? '#ffd700' : '#ff6666'}; font-size: 1rem; font-weight: bold;">
-                                        ${corr > 0 ? '+' : ''}${corr.toFixed(2)}
+                    <!-- Risk Factors -->
+                    <div style="background: rgba(255,0,0,0.1); padding: 20px; border-radius: 10px; border-left: 4px solid #ff6666; margin-bottom: 20px;">
+                        <h6 style="color: #ff6666; margin-bottom: 15px; font-size: 1.1rem;">⚠️ Risk Factors to Consider</h6>
+                        <ul style="color: #ffffff; line-height: 1.8; padding-left: 20px; margin: 0;">
+                            ${riskFactors.map(risk => `<li style="margin-bottom: 8px;">${risk}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <!-- Opportunities -->
+                    <div style="background: rgba(0,255,0,0.1); padding: 20px; border-radius: 10px; border-left: 4px solid #00ff00; margin-bottom: 20px;">
+                        <h6 style="color: #00ff00; margin-bottom: 15px; font-size: 1.1rem;">🎯 Potential Opportunities</h6>
+                        <ul style="color: #ffffff; line-height: 1.8; padding-left: 20px; margin: 0;">
+                            ${opportunities.map(opp => `<li style="margin-bottom: 8px;">${opp}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <!-- Important Disclaimer -->
+                    <div style="background: rgba(255,0,0,0.15); padding: 20px; border-radius: 10px; border: 2px solid #ff0000; margin-top: 25px;">
+                        <div style="color: #ff0000; font-weight: bold; font-size: 1.1rem; margin-bottom: 12px; text-align: center;">
+                            ⚠️ ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ
+                        </div>
+                        <div style="color: #ffffff; line-height: 1.8; font-size: 0.95rem; text-align: center;">
+                            <strong>Это образовательный анализ данных, а НЕ финансовый совет.</strong><br>
+                            Все представленные данные основаны на исторических паттернах и технических индикаторах, которые НЕ гарантируют будущие результаты.<br>
+                            Криптовалютный рынок крайне непредсказуем и волатилен. Все торговые решения вы принимаете самостоятельно и на свой собственный риск.<br>
+                            <strong style="color: #ff6666;">Никогда не инвестируйте больше, чем можете позволить себе потерять.</strong>
+                    </div>
+                </div>
+                    </div>
+                    
+                    <!-- Profit Calculator (Priority 1) -->
+                    <div style="margin-top: 30px; padding: 25px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
+                        <h5 style="color: #ffd700; margin-bottom: 20px; font-size: 1.2rem;">💰 Profit Calculator</h5>
+                        <div style="margin-bottom: 15px;">
+                            <label style="color: #cccccc; display: block; margin-bottom: 8px;">Investment Amount ($):</label>
+                            <input type="number" id="profitCalcAmount" value="1000" min="1" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,215,0,0.3); border-radius: 5px; color: #ffffff; font-size: 1rem;" oninput="updateProfitCalculator('${coin}', ${currentPrice}, ${shortTermChange}, ${mediumTermChange}, ${longTermChange})">
+                        </div>
+                        <div id="profitCalcResults" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px;">
+                            <div style="background: rgba(255,215,0,0.1); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,215,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">7 days</div>
+                                <div style="color: ${shortTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.3rem; font-weight: bold;" id="profit7d">$0</div>
+                            </div>
+                            <div style="background: rgba(255,215,0,0.1); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,215,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">3 months</div>
+                                <div style="color: ${mediumTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.3rem; font-weight: bold;" id="profit3m">$0</div>
+                            </div>
+                            <div style="background: rgba(255,215,0,0.1); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,215,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">6+ months</div>
+                                <div style="color: ${longTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.3rem; font-weight: bold;" id="profit6m">$0</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; padding: 12px; background: rgba(0,255,0,0.1); border-radius: 8px; border-left: 3px solid #00ff00;">
+                            <div style="color: #00ff00; font-size: 0.9rem;" id="profitExample">Example: If you invest $1000, in 3 months you'll have $${(1000 * (1 + mediumTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Confidence Levels (Priority 1) -->
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">🎯 Prediction Confidence Levels</h5>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                            <div style="text-align: center; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                                <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 8px;">7 days</div>
+                                <div style="color: ${confidence7d >= 70 ? '#00ff00' : confidence7d >= 60 ? '#ffd700' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">${confidence7d}%</div>
+                            </div>
+                            <div style="text-align: center; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                                <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 8px;">3 months</div>
+                                <div style="color: ${confidence3m >= 70 ? '#00ff00' : confidence3m >= 60 ? '#ffd700' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">${confidence3m}%</div>
+                            </div>
+                            <div style="text-align: center; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                                <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 8px;">6+ months</div>
+                                <div style="color: ${confidence6m >= 70 ? '#00ff00' : confidence6m >= 60 ? '#ffd700' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">${confidence6m}%</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Buy & Hold Benchmark Comparison (Priority 1) -->
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📊 Buy & Hold vs Prediction</h5>
+                        ${buyHoldBenchmark90d ? `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                            <div style="padding: 15px; background: rgba(0,255,0,0.1); border-radius: 8px; border: 1px solid rgba(0,255,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Buy & Hold (90d)</div>
+                                <div style="color: ${buyHoldBenchmark90d.returnPercent >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.4rem; font-weight: bold;">
+                                    ${buyHoldBenchmark90d.returnPercent >= 0 ? '+' : ''}${buyHoldBenchmark90d.returnPercent.toFixed(2)}%
+                                </div>
+                            </div>
+                            <div style="padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px; border: 1px solid rgba(255,215,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Our Prediction (3m)</div>
+                                <div style="color: ${mediumTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.4rem; font-weight: bold;">
+                                    ${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange}%
+                                </div>
+                            </div>
+                        </div>
+                        ` : '<div style="color: #cccccc; text-align: center; padding: 20px;">Benchmark data unavailable</div>'}
+                    </div>
+                    
+                    <!-- Expert Analysis Section -->
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(30,0,0,0.5) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
+                        <h5 style="color: #ffd700; margin-bottom: 20px; font-size: 1.3rem; border-bottom: 2px solid rgba(255,215,0,0.3); padding-bottom: 10px;">🔬 Expert Analysis</h5>
+                        
+                        <!-- Historical Accuracy -->
+                        <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                            <h6 style="color: #ffd700; margin-bottom: 10px; font-size: 1.1rem;">📈 Historical Model Accuracy</h6>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                                <div style="text-align: center;">
+                                    <div style="color: #cccccc; font-size: 0.85rem;">7 days</div>
+                                    <div style="color: #00ff00; font-size: 1.2rem; font-weight: bold;">${historicalAccuracy['7d']}%</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="color: #cccccc; font-size: 0.85rem;">30 days</div>
+                                    <div style="color: #00ff00; font-size: 1.2rem; font-weight: bold;">${historicalAccuracy['30d']}%</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="color: #cccccc; font-size: 0.85rem;">90 days</div>
+                                    <div style="color: #00ff00; font-size: 1.2rem; font-weight: bold;">${historicalAccuracy['90d']}%</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Technical Indicators -->
+                        ${technicalIndicators ? `
+                        <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                            <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem;">📊 Technical Indicators</h6>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">RSI (14)</div>
+                                    <div style="color: ${technicalIndicators.rsi > 70 ? '#ff6666' : technicalIndicators.rsi < 30 ? '#00ff00' : '#ffd700'}; font-size: 1.2rem; font-weight: bold;">
+                                        ${technicalIndicators.rsi.toFixed(2)}
+                                        <span style="font-size: 0.8rem; color: #aaaaaa;">${technicalIndicators.rsi > 70 ? ' (Overbought)' : technicalIndicators.rsi < 30 ? ' (Oversold)' : ' (Neutral)'}</span>
                                     </div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">MACD</div>
+                                    <div style="color: ${technicalIndicators.macd.histogram > 0 ? '#00ff00' : '#ff6666'}; font-size: 1.2rem; font-weight: bold;">
+                                        ${technicalIndicators.macd.histogram > 0 ? '↑' : '↓'} ${technicalIndicators.macd.histogram.toFixed(4)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">MA 50</div>
+                                    <div style="color: ${technicalIndicators.ma50Signal === 'bullish' ? '#00ff00' : '#ff6666'}; font-size: 1.1rem; font-weight: bold;">
+                                        $${technicalIndicators.ma50.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                        <span style="font-size: 0.8rem; color: #aaaaaa;"> (${technicalIndicators.ma50Signal})</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">MA 200</div>
+                                    <div style="color: ${technicalIndicators.ma200Signal === 'bullish' ? '#00ff00' : '#ff6666'}; font-size: 1.1rem; font-weight: bold;">
+                                        $${technicalIndicators.ma200.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                        <span style="font-size: 0.8rem; color: #aaaaaa;"> (${technicalIndicators.ma200Signal})</span>
+                                    </div>
+                                </div>
+                                <div style="grid-column: 1 / -1;">
+                                    <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Volume Analysis</div>
+                                    <div style="color: ${technicalIndicators.volume.change > 0 ? '#00ff00' : '#ff6666'}; font-size: 1rem;">
+                                        ${technicalIndicators.volume.change > 0 ? '↑' : '↓'} ${Math.abs(technicalIndicators.volume.change).toFixed(1)}% vs 30-day average
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        ` : '<div style="color: #cccccc; padding: 15px; text-align: center;">Technical indicators loading...</div>'}
+                        
+                        <!-- Maximum Drawdown -->
+                        ${maxDrawdown !== null ? `
+                        <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,0,0,0.1); border-radius: 8px; border-left: 3px solid #ff6666;">
+                            <h6 style="color: #ff6666; margin-bottom: 10px; font-size: 1.1rem;">⚠️ Maximum Drawdown (90d)</h6>
+                            <div style="color: #ff6666; font-size: 1.3rem; font-weight: bold;">-${maxDrawdown.toFixed(2)}%</div>
+                            <div style="color: #cccccc; font-size: 0.85rem; margin-top: 5px;">Largest price decline from peak in the last 90 days</div>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Correlation Matrix -->
+                        ${correlationMatrix ? `
+                        <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                            <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem;">🔗 Correlation with Top Coins</h6>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+                                ${Object.entries(correlationMatrix).map(([coin, corr]) => `
+                                    <div style="text-align: center; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px;">
+                                        <div style="color: #cccccc; font-size: 0.8rem;">${coin}</div>
+                                        <div style="color: ${corr > 0.7 ? '#00ff00' : corr > 0.3 ? '#ffd700' : '#ff6666'}; font-size: 1rem; font-weight: bold;">
+                                            ${corr > 0 ? '+' : ''}${corr.toFixed(2)}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- On-chain Metrics (BTC/ETH only) -->
+                        ${onChainMetrics ? `
+                        <div style="margin-bottom: 25px; padding: 15px; background: rgba(0,255,255,0.1); border-radius: 8px; border-left: 3px solid #00ffff;">
+                            <h6 style="color: #00ffff; margin-bottom: 15px; font-size: 1.1rem;">⛓️ On-chain Metrics</h6>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Active Addresses</div>
+                                    <div style="color: #00ffff; font-size: 1.1rem; font-weight: bold;">${onChainMetrics.activeAddresses.toLocaleString()}</div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Transactions</div>
+                                    <div style="color: #00ffff; font-size: 1.1rem; font-weight: bold;">${onChainMetrics.transactions.toLocaleString()}</div>
+                                </div>
+                                ${onChainMetrics.hashRate !== null ? `
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Hash Rate</div>
+                                    <div style="color: #00ffff; font-size: 1.1rem; font-weight: bold;">${onChainMetrics.hashRate.toLocaleString()}</div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Backtesting Results -->
+                        <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                            <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem;">🧪 Backtesting Results</h6>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Win Rate</div>
+                                    <div style="color: #00ff00; font-size: 1.2rem; font-weight: bold;">${backtestingResults.winRate.toFixed(1)}%</div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Avg Return</div>
+                                    <div style="color: ${backtestingResults.avgReturn >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.2rem; font-weight: bold;">
+                                        ${backtestingResults.avgReturn >= 0 ? '+' : ''}${backtestingResults.avgReturn.toFixed(2)}%
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Sharpe Ratio</div>
+                                    <div style="color: #ffd700; font-size: 1.2rem; font-weight: bold;">${backtestingResults.sharpeRatio}</div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Total Trades</div>
+                                    <div style="color: #ffffff; font-size: 1.2rem; font-weight: bold;">${backtestingResults.totalTrades}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Methodology & Data Sources -->
+                        <div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                            <h6 style="color: #ffd700; margin-bottom: 10px; font-size: 1.1rem;">📚 Methodology & Data Sources</h6>
+                            <div style="color: #cccccc; font-size: 0.9rem; line-height: 1.6;">
+                                <div style="margin-bottom: 8px;"><strong style="color: #ffd700;">Data Sources:</strong> LiveCoinWatch API (real-time prices), CoinGecko API (historical data & technical indicators)</div>
+                                <div style="margin-bottom: 8px;"><strong style="color: #ffd700;">Update Frequency:</strong> Real-time (prices), Daily (technical indicators), Hourly (on-chain metrics)</div>
+                                <div><strong style="color: #ffd700;">Methodology:</strong> AI-powered analysis using historical trends, technical indicators, and market sentiment. Predictions are based on statistical models and pattern recognition.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Comparison with Other Coins -->
+                    ${correlationMatrix ? `
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">🔄 Comparison with Other Coins</h5>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            ${Object.entries(correlationMatrix).slice(0, 3).map(([coin, corr]) => `
+                                <div style="padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px; border: 1px solid rgba(255,215,0,0.3);">
+                                    <div style="color: #ffd700; font-weight: bold; margin-bottom: 8px;">${coin}</div>
+                                    <div style="color: ${corr > 0.7 ? '#00ff00' : corr > 0.3 ? '#ffd700' : '#ff6666'}; font-size: 1.1rem;">
+                                        ${corr > 0.7 ? '🟢 Strong' : corr > 0.3 ? '🟡 Moderate' : '🔴 Weak'} Correlation
+                                    </div>
+                                    <div style="color: #cccccc; font-size: 0.85rem; margin-top: 5px;">${corr > 0 ? '+' : ''}${corr.toFixed(2)}</div>
                                 </div>
                             `).join('')}
                         </div>
                     </div>
                     ` : ''}
                     
-                    <!-- On-chain Metrics (BTC/ETH only) -->
-                    ${onChainMetrics ? `
-                    <div style="margin-bottom: 25px; padding: 15px; background: rgba(0,255,255,0.1); border-radius: 8px; border-left: 3px solid #00ffff;">
-                        <h6 style="color: #00ffff; margin-bottom: 15px; font-size: 1.1rem;">⛓️ On-chain Metrics</h6>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-                            <div>
-                                <div style="color: #cccccc; font-size: 0.9rem;">Active Addresses</div>
-                                <div style="color: #00ffff; font-size: 1.1rem; font-weight: bold;">${onChainMetrics.activeAddresses.toLocaleString()}</div>
+                    <!-- Educational Guide -->
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; cursor: pointer;" onclick="toggleEducationalGuide()">
+                            📖 How to Read This Forecast <span id="guideToggle" style="font-size: 0.8rem;">▼</span>
+                        </h5>
+                        <div id="educationalGuide" style="display: none; color: #cccccc; font-size: 0.95rem; line-height: 1.8;">
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #ffd700;">Understanding the Predictions:</strong>
+                                <ul style="margin: 10px 0; padding-left: 20px;">
+                                    <li><strong>Short-term (7d):</strong> Expected price movement in the next week. Higher confidence but more volatile.</li>
+                                    <li><strong>Medium-term (3m):</strong> Expected trend over the next 3 months. More reliable for planning investments.</li>
+                                    <li><strong>Long-term (6m+):</strong> Long-term outlook. Lower confidence but useful for strategic planning.</li>
+                                </ul>
                             </div>
-                            <div>
-                                <div style="color: #cccccc; font-size: 0.9rem;">Transactions</div>
-                                <div style="color: #00ffff; font-size: 1.1rem; font-weight: bold;">${onChainMetrics.transactions.toLocaleString()}</div>
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #ffd700;">Confidence Levels:</strong>
+                                <ul style="margin: 10px 0; padding-left: 20px;">
+                                    <li><span style="color: #00ff00;">70%+</span>: High confidence prediction</li>
+                                    <li><span style="color: #ffd700;">60-70%</span>: Moderate confidence</li>
+                                    <li><span style="color: #ff6666;">Below 60%</span>: Lower confidence, higher uncertainty</li>
+                                </ul>
                             </div>
-                            ${onChainMetrics.hashRate !== null ? `
-                            <div>
-                                <div style="color: #cccccc; font-size: 0.9rem;">Hash Rate</div>
-                                <div style="color: #00ffff; font-size: 1.1rem; font-weight: bold;">${onChainMetrics.hashRate.toLocaleString()}</div>
-                            </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                    ` : ''}
-                    
-                    <!-- Backtesting Results -->
-                    <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
-                        <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem;">🧪 Backtesting Results</h6>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-                            <div>
-                                <div style="color: #cccccc; font-size: 0.9rem;">Win Rate</div>
-                                <div style="color: #00ff00; font-size: 1.2rem; font-weight: bold;">${backtestingResults.winRate.toFixed(1)}%</div>
-                            </div>
-                            <div>
-                                <div style="color: #cccccc; font-size: 0.9rem;">Avg Return</div>
-                                <div style="color: ${backtestingResults.avgReturn >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.2rem; font-weight: bold;">
-                                    ${backtestingResults.avgReturn >= 0 ? '+' : ''}${backtestingResults.avgReturn.toFixed(2)}%
-                                </div>
-                            </div>
-                            <div>
-                                <div style="color: #cccccc; font-size: 0.9rem;">Sharpe Ratio</div>
-                                <div style="color: #ffd700; font-size: 1.2rem; font-weight: bold;">${backtestingResults.sharpeRatio}</div>
-                            </div>
-                            <div>
-                                <div style="color: #cccccc; font-size: 0.9rem;">Total Trades</div>
-                                <div style="color: #ffffff; font-size: 1.2rem; font-weight: bold;">${backtestingResults.totalTrades}</div>
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #ffd700;">Example Usage:</strong>
+                                <ul style="margin: 10px 0; padding-left: 20px;">
+                                    <li>Use short-term predictions for day trading or quick decisions</li>
+                                    <li>Use medium-term for portfolio rebalancing</li>
+                                    <li>Use long-term for strategic investment planning</li>
+                                    <li>Always combine with your own research and risk tolerance</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Methodology & Data Sources -->
-                    <div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px;">
-                        <h6 style="color: #ffd700; margin-bottom: 10px; font-size: 1.1rem;">📚 Methodology & Data Sources</h6>
-                        <div style="color: #cccccc; font-size: 0.9rem; line-height: 1.6;">
-                            <div style="margin-bottom: 8px;"><strong style="color: #ffd700;">Data Sources:</strong> LiveCoinWatch API (real-time prices), CoinGecko API (historical data & technical indicators)</div>
-                            <div style="margin-bottom: 8px;"><strong style="color: #ffd700;">Update Frequency:</strong> Real-time (prices), Daily (technical indicators), Hourly (on-chain metrics)</div>
-                            <div><strong style="color: #ffd700;">Methodology:</strong> AI-powered analysis using historical trends, technical indicators, and market sentiment. Predictions are based on statistical models and pattern recognition.</div>
+                    <!-- Usage Statistics -->
+                    <div style="margin-top: 30px; padding: 20px; background: rgba(255,215,0,0.1); border-radius: 12px; border: 1px solid rgba(255,215,0,0.3); text-align: center;">
+                        <div style="color: #ffd700; font-size: 1.1rem; margin-bottom: 10px;">📊 Usage Statistics</div>
+                        <div style="color: #ffffff; font-size: 1.3rem; font-weight: bold;">
+                            ${usageStats.today || 0} users today · ${usageStats.total || 0} total predictions
+                        </div>
+                    </div>
+                    
+                    <!-- Export Buttons -->
+                    <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="exportPredictiveToPDF('${coin}', ${currentPrice}, ${shortTermChange}, ${mediumTermChange}, ${longTermChange})" style="padding: 12px 24px; background: rgba(255,0,0,0.3); border: 2px solid #ff0000; color: #ffffff; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                            📄 Export PDF
+                        </button>
+                        <button onclick="exportPredictiveToCSV('${coin}', ${currentPrice}, ${shortTermChange}, ${mediumTermChange}, ${longTermChange})" style="padding: 12px 24px; background: rgba(0,255,0,0.3); border: 2px solid #00ff00; color: #ffffff; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                            📊 Export CSV
+                        </button>
+                    </div>
+                    
+                    <!-- NEW SECTIONS END -->
+                    
+                    <div style="margin-top: 25px; padding: 20px; background: rgba(255, 0, 0, 0.1); border-radius: 10px; border-left: 4px solid #ff0000; box-shadow: 0 2px 12px rgba(0,0,0,0.3);">
+                        <div style="color: #ff0000; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem;">⚠️ DISCLAIMER:</div>
+                        <div style="color: #ffffff; line-height: 1.6; font-size: 0.95rem;">
+                            These predictions are AI-generated estimates based on current market data and should NOT be considered financial advice. 
+                            Cryptocurrency markets are highly volatile and unpredictable. Always do your own research (DYOR) and never invest more than you can afford to lose.
                         </div>
                     </div>
                 </div>
-                
-                <!-- Comparison with Other Coins -->
-                ${correlationMatrix ? `
-                <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
-                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">🔄 Comparison with Other Coins</h5>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                        ${Object.entries(correlationMatrix).slice(0, 3).map(([coin, corr]) => `
-                            <div style="padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px; border: 1px solid rgba(255,215,0,0.3);">
-                                <div style="color: #ffd700; font-weight: bold; margin-bottom: 8px;">${coin}</div>
-                                <div style="color: ${corr > 0.7 ? '#00ff00' : corr > 0.3 ? '#ffd700' : '#ff6666'}; font-size: 1.1rem;">
-                                    ${corr > 0.7 ? '🟢 Strong' : corr > 0.3 ? '🟡 Moderate' : '🔴 Weak'} Correlation
-                                </div>
-                                <div style="color: #cccccc; font-size: 0.85rem; margin-top: 5px;">${corr > 0 ? '+' : ''}${corr.toFixed(2)}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : ''}
-                
-                <!-- Educational Guide -->
-                <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
-                    <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; cursor: pointer;" onclick="toggleEducationalGuide()">
-                        📖 How to Read This Forecast <span id="guideToggle" style="font-size: 0.8rem;">▼</span>
-                    </h5>
-                    <div id="educationalGuide" style="display: none; color: #cccccc; font-size: 0.95rem; line-height: 1.8;">
-                        <div style="margin-bottom: 15px;">
-                            <strong style="color: #ffd700;">Understanding the Predictions:</strong>
-                            <ul style="margin: 10px 0; padding-left: 20px;">
-                                <li><strong>Short-term (7d):</strong> Expected price movement in the next week. Higher confidence but more volatile.</li>
-                                <li><strong>Medium-term (3m):</strong> Expected trend over the next 3 months. More reliable for planning investments.</li>
-                                <li><strong>Long-term (6m+):</strong> Long-term outlook. Lower confidence but useful for strategic planning.</li>
-                            </ul>
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <strong style="color: #ffd700;">Confidence Levels:</strong>
-                            <ul style="margin: 10px 0; padding-left: 20px;">
-                                <li><span style="color: #00ff00;">70%+</span>: High confidence prediction</li>
-                                <li><span style="color: #ffd700;">60-70%</span>: Moderate confidence</li>
-                                <li><span style="color: #ff6666;">Below 60%</span>: Lower confidence, higher uncertainty</li>
-                            </ul>
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <strong style="color: #ffd700;">Example Usage:</strong>
-                            <ul style="margin: 10px 0; padding-left: 20px;">
-                                <li>Use short-term predictions for day trading or quick decisions</li>
-                                <li>Use medium-term for portfolio rebalancing</li>
-                                <li>Use long-term for strategic investment planning</li>
-                                <li>Always combine with your own research and risk tolerance</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Usage Statistics -->
-                <div style="margin-top: 30px; padding: 20px; background: rgba(255,215,0,0.1); border-radius: 12px; border: 1px solid rgba(255,215,0,0.3); text-align: center;">
-                    <div style="color: #ffd700; font-size: 1.1rem; margin-bottom: 10px;">📊 Usage Statistics</div>
-                    <div style="color: #ffffff; font-size: 1.3rem; font-weight: bold;">
-                        ${usageStats.today || 0} users today · ${usageStats.total || 0} total predictions
-                    </div>
-                </div>
-                
-                <!-- Export Buttons -->
-                <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                    <button onclick="exportPredictiveToPDF('${coin}', ${currentPrice}, ${shortTermChange}, ${mediumTermChange}, ${longTermChange})" style="padding: 12px 24px; background: rgba(255,0,0,0.3); border: 2px solid #ff0000; color: #ffffff; border-radius: 8px; cursor: pointer; font-weight: bold;">
-                        📄 Export PDF
-                    </button>
-                    <button onclick="exportPredictiveToCSV('${coin}', ${currentPrice}, ${shortTermChange}, ${mediumTermChange}, ${longTermChange})" style="padding: 12px 24px; background: rgba(0,255,0,0.3); border: 2px solid #00ff00; color: #ffffff; border-radius: 8px; cursor: pointer; font-weight: bold;">
-                        📊 Export CSV
-                    </button>
-                </div>
-                
-                <!-- NEW SECTIONS END -->
-                
-                <div style="margin-top: 25px; padding: 20px; background: rgba(255, 0, 0, 0.1); border-radius: 10px; border-left: 4px solid #ff0000; box-shadow: 0 2px 12px rgba(0,0,0,0.3);">
-                    <div style="color: #ff0000; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem;">⚠️ DISCLAIMER:</div>
-                    <div style="color: #ffffff; line-height: 1.6; font-size: 0.95rem;">
-                        These predictions are AI-generated estimates based on current market data and should NOT be considered financial advice. 
-                        Cryptocurrency markets are highly volatile and unpredictable. Always do your own research (DYOR) and never invest more than you can afford to lose.
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        expandModuleCToContent();
-        
-        // Сохраняем результат в историю
-        savePredictiveToHistory(coin, currentPrice, shortTermChange, mediumTermChange, longTermChange, predictionText);
-        
-        // Создаем график прогнозов - с большей задержкой для гарантии, что DOM готов
-        setTimeout(() => {
-            console.log('🎨 Drawing chart with:', { currentPrice, shortTermChange, mediumTermChange, longTermChange });
-            createPredictionChart(currentPrice, shortTermChange, mediumTermChange, longTermChange);
+            `;
+            
             expandModuleCToContent();
-        }, 500);
-        
-        // Initialize profit calculator
-        setTimeout(() => {
-            updateProfitCalculator(coin, currentPrice, shortTermChange, mediumTermChange, longTermChange);
-        }, 100);
+            
+            // Сохраняем результат в историю
+            savePredictiveToHistory(coin, currentPrice, shortTermChange, mediumTermChange, longTermChange, predictionText);
+            
+            // Создаем график прогнозов - с большей задержкой для гарантии, что DOM готов
+            setTimeout(() => {
+                console.log('🎨 Drawing chart with:', { currentPrice, shortTermChange, mediumTermChange, longTermChange });
+                createPredictionChart(currentPrice, shortTermChange, mediumTermChange, longTermChange);
+                expandModuleCToContent();
+            }, 500);
+            
+            // Initialize profit calculator
+            setTimeout(() => {
+                updateProfitCalculator(coin, currentPrice, shortTermChange, mediumTermChange, longTermChange);
+            }, 100);
     } catch (error) {
         console.error('Predictive Dashboard Error:', error);
         console.error('Error details:', {
