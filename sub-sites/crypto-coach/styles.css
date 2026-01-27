@@ -1908,42 +1908,25 @@ div:has-text("Experience Points") {
     font-size: 1.3rem;
 }
 
-<<<<<<< HEAD
 /* Global button hover effect - NO scale, just preserve shape and color */
 button:hover,
 .btn:hover {
     /* No scale increase - buttons stay same size */
     transform: none;
-=======
-/* Global button hover effect - subtle scale for all buttons */
-button:hover,
-.btn:hover {
-    /* Subtle, barely noticeable scale increase */
-    transform: scale(1.02);
->>>>>>> 7a5ea494dcf01170a34a69ac20d51846b6264743
     /* Preserve border-radius */
     border-radius: inherit !important;
     /* Keep opacity */
     opacity: inherit !important;
     /* Smooth transition */
-<<<<<<< HEAD
     transition: background 0.3s ease, box-shadow 0.3s ease;
-=======
-    transition: transform 0.2s ease, background 0.3s ease, box-shadow 0.3s ease;
->>>>>>> 7a5ea494dcf01170a34a69ac20d51846b6264743
 }
 
 button:active,
 button:focus,
 .btn:active,
 .btn:focus {
-<<<<<<< HEAD
     /* No transform on click */
     transform: none;
-=======
-    /* Return to normal size on click */
-    transform: scale(1);
->>>>>>> 7a5ea494dcf01170a34a69ac20d51846b6264743
     /* Preserve shape */
     border-radius: inherit !important;
     /* Keep opacity */
