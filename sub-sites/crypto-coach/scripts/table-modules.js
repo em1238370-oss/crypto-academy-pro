@@ -3118,7 +3118,8 @@ function loadExperiment(index) {
 // ========== MODULE C: CRYPTO EXPERIMENT LAB - ADDITIONAL FUNCTIONS ==========
 
 // AI Scenario Builder - генерирует детальный сценарий на основе описания пользователя
-async function aiScenarioBuilder() {
+// Make function globally accessible
+window.aiScenarioBuilder = async function aiScenarioBuilder() {
     const aiScenarioInput = document.getElementById('aiScenarioInput')?.value?.trim();
     const aiScenarioResult = document.getElementById('aiScenarioResult');
     
@@ -7750,7 +7751,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // ========== EXPERIMENT FORM MANAGEMENT ==========
 
 // Save form data to localStorage
-function saveExperimentForm() {
+// Make functions globally accessible
+window.saveExperimentForm = function saveExperimentForm() {
     const formData = {
         userDeposit: document.getElementById('userDeposit')?.value || '',
         experimentName: document.getElementById('experimentName')?.value || '',
@@ -7759,7 +7761,7 @@ function saveExperimentForm() {
         priceChange: document.getElementById('priceChange')?.value || '0'
     };
     localStorage.setItem('experimentFormData', JSON.stringify(formData));
-}
+};
 
 // Load form data from localStorage
 function loadExperimentForm() {
@@ -7783,7 +7785,8 @@ function loadExperimentForm() {
 }
 
 // Fill example experiment
-function fillExampleExperiment() {
+// Make function globally accessible
+window.fillExampleExperiment = function fillExampleExperiment() {
     document.getElementById('userDeposit').value = '10000';
     document.getElementById('experimentName').value = 'BTC Drop Scenario 20%';
     document.getElementById('experimentCoin').value = 'BTC';
@@ -7792,7 +7795,7 @@ function fillExampleExperiment() {
     updatePriceChangeDisplay();
     showAICorrelations();
     saveExperimentForm();
-}
+};
 
 // Save current experiment to history
 function saveCurrentExperiment() {
