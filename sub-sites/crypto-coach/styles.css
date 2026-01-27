@@ -1393,7 +1393,7 @@ div:has-text("Experience Points") {
 .drawer {
     background: rgba(0, 0, 0, 0.6);
     border: 2px solid rgba(255, 0, 0, 0.3);
-    border-radius: 15px;
+    border-radius: 15px !important;
     overflow: visible;
     transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
@@ -1402,6 +1402,14 @@ div:has-text("Experience Points") {
     max-width: 100%;
     box-sizing: border-box;
     overflow-x: hidden;
+}
+
+.drawer:hover {
+    border-radius: 15px !important;
+}
+
+.drawer:active {
+    border-radius: 15px !important;
 }
 
 /* Уникальный дизайн для FREE блока (drawerA) - ЗОЛОТОЙ когда закрыт */
@@ -1466,6 +1474,23 @@ div:has-text("Experience Points") {
     border-radius: 15px !important;
     overflow: visible !important;
     transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+#drawerA:hover {
+    border-radius: 15px !important;
+}
+
+#drawerB, #drawerC, #drawerD {
+    border-radius: 15px !important;
+}
+
+#drawerB:hover, #drawerC:hover, #drawerD:hover {
+    border-radius: 15px !important;
+}
+
+#drawerB.open, #drawerC.open, #drawerD.open {
+    border-radius: 15px !important;
+    overflow: visible !important;
 }
 
 /* Скрываем золотые эффекты когда блок открыт */
