@@ -2964,8 +2964,8 @@ window.runExperiment = async function runExperiment() {
                     font-weight: bold; position: relative; z-index: 1;">
                     📊 Price Movement Visualization
                 </h5>
-                <div style="position: relative; z-index: 1; background: rgba(0, 0, 0, 0.3); border-radius: 10px; padding: 20px; min-height: 450px;">
-                    <canvas id="experimentPriceChart" style="width: 100% !important; height: 450px !important;"></canvas>
+                <div style="position: relative; z-index: 1; background: rgba(0, 0, 0, 0.3); border-radius: 10px; padding: 20px; min-height: 450px; overflow: visible;">
+                    <canvas id="experimentPriceChart" style="width: 100% !important; height: 450px !important; display: block;"></canvas>
                 </div>
             </div>
         `;
@@ -3080,6 +3080,10 @@ window.runExperiment = async function runExperiment() {
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'nearest'
+                        },
                         layout: {
                             padding: {
                                 top: 20,
@@ -3094,9 +3098,17 @@ window.runExperiment = async function runExperiment() {
                             delay: (context) => {
                                 // Анимация точек последовательно
                                 return context.dataIndex * 50;
+                            },
+                            onComplete: function() {
+                                // После завершения анимации делаем график статичным
+                                this.chart.options.animation = false;
                             }
                         },
+                        onHover: null, // Отключаем hover эффекты
                         plugins: {
+                            tooltip: {
+                                enabled: false // Отключаем tooltips
+                            },
                             legend: {
                                 display: true,
                                 position: 'top',
@@ -3108,25 +3120,6 @@ window.runExperiment = async function runExperiment() {
                                     pointStyle: 'circle',
                                     boxWidth: 12,
                                     boxHeight: 12
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.95)',
-                                titleColor: '#ffd700',
-                                bodyColor: '#ffffff',
-                                borderColor: isPositive ? '#00ff00' : '#ff0000',
-                                borderWidth: 3,
-                                padding: 15,
-                                displayColors: true,
-                                titleFont: { size: 16, weight: 'bold' },
-                                bodyFont: { size: 14, weight: 'bold' },
-                                cornerRadius: 10,
-                                callbacks: {
-                                    label: function(context) {
-                                        const value = context.parsed.y;
-                                        const change = ((value - displayPrice) / displayPrice * 100).toFixed(2);
-                                        return `${coin}: $${value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${change >= 0 ? '+' : ''}${change}%)`;
-                                    }
                                 }
                             }
                         },
@@ -3182,14 +3175,18 @@ window.runExperiment = async function runExperiment() {
                         },
                         elements: {
                             point: {
-                                hoverRadius: 16,
-                                hoverBorderWidth: 5
+                                hoverRadius: 0, // Отключаем hover эффекты
+                                hoverBorderWidth: 0
                             },
                             line: {
                                 borderCapStyle: 'round',
                                 borderJoinStyle: 'round'
                             }
-                        }
+                        },
+                        // Отключаем все интерактивные элементы
+                        onResize: null,
+                        onClick: null,
+                        onHover: null
                     }
                 });
             }
