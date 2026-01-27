@@ -1472,7 +1472,7 @@ div:has-text("Experience Points") {
     box-shadow: 0 25px 70px rgba(255, 0, 0, 0.5); /* Красное свечение */
     margin-top: 20px;
     border-radius: 15px !important;
-    overflow: visible !important;
+    overflow: hidden !important;
     transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
@@ -1490,7 +1490,7 @@ div:has-text("Experience Points") {
 
 #drawerB.open, #drawerC.open, #drawerD.open {
     border-radius: 15px !important;
-    overflow: visible !important;
+    overflow: hidden !important;
 }
 
 /* Скрываем золотые эффекты когда блок открыт */
@@ -1508,7 +1508,7 @@ div:has-text("Experience Points") {
     box-shadow: 0 25px 70px rgba(255, 0, 0, 0.5);
     margin-top: 20px;
     border-radius: 15px !important;
-    overflow: visible !important;
+    overflow: hidden !important;
 }
 
 .drawer::before {
