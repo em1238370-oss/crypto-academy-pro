@@ -1471,6 +1471,12 @@ div:has-text("Experience Points") {
     box-shadow: 0 25px 70px rgba(255, 0, 0, 0.5); /* Красное свечение */
     margin-top: 20px;
     border-radius: 15px !important;
+    -webkit-border-radius: 15px !important;
+    -moz-border-radius: 15px !important;
+    border-top-left-radius: 15px !important;
+    border-top-right-radius: 15px !important;
+    border-bottom-left-radius: 15px !important;
+    border-bottom-right-radius: 15px !important;
     overflow: hidden !important;
     transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
@@ -1489,6 +1495,12 @@ div:has-text("Experience Points") {
 
 #drawerB.open, #drawerC.open, #drawerD.open {
     border-radius: 15px !important;
+    -webkit-border-radius: 15px !important;
+    -moz-border-radius: 15px !important;
+    border-top-left-radius: 15px !important;
+    border-top-right-radius: 15px !important;
+    border-bottom-left-radius: 15px !important;
+    border-bottom-right-radius: 15px !important;
     overflow: hidden !important;
 }
 
@@ -1507,7 +1519,13 @@ div:has-text("Experience Points") {
     box-shadow: 0 25px 70px rgba(255, 0, 0, 0.5);
     margin-top: 20px;
     border-radius: 15px !important;
+    -webkit-border-radius: 15px !important;
+    -moz-border-radius: 15px !important;
     overflow: hidden !important;
+    border-top-left-radius: 15px !important;
+    border-top-right-radius: 15px !important;
+    border-bottom-left-radius: 15px !important;
+    border-bottom-right-radius: 15px !important;
 }
 
 .drawer::before {
@@ -1542,6 +1560,10 @@ div:has-text("Experience Points") {
     flex-shrink: 0;
     min-height: 56px;
     border-radius: 15px 15px 0 0 !important;
+    -webkit-border-radius: 15px 15px 0 0 !important;
+    -moz-border-radius: 15px 15px 0 0 !important;
+    border-top-left-radius: 15px !important;
+    border-top-right-radius: 15px !important;
 }
 
 /* Уникальный дизайн заголовка для FREE блока - ЗОЛОТОЙ когда закрыт */
@@ -1651,6 +1673,10 @@ div:has-text("Experience Points") {
     width: 100%;
     box-sizing: border-box;
     border-radius: 0 0 15px 15px !important;
+    -webkit-border-radius: 0 0 15px 15px !important;
+    -moz-border-radius: 0 0 15px 15px !important;
+    border-bottom-left-radius: 15px !important;
+    border-bottom-right-radius: 15px !important;
 }
 
 .drawer.open .drawer-content {
@@ -1664,6 +1690,10 @@ div:has-text("Experience Points") {
     max-width: 100%;
     box-sizing: border-box;
     border-radius: 0 0 15px 15px !important;
+    -webkit-border-radius: 0 0 15px 15px !important;
+    -moz-border-radius: 0 0 15px 15px !important;
+    border-bottom-left-radius: 15px !important;
+    border-bottom-right-radius: 15px !important;
 }
 
 /* Module C: Auto-expand to fit all content - no scrolling, module grows */
