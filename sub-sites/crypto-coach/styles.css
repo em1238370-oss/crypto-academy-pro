@@ -1482,20 +1482,6 @@ div:has-text("Experience Points") {
     margin-top: 20px;
 }
 
-/* Module C: Fixed position when open - stays on screen, only content scrolls */
-#drawerC.open {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%) scale(1.02);
-    width: 90%;
-    max-width: 1200px;
-    max-height: calc(100vh - 40px);
-    z-index: 1000;
-    margin: 0;
-    box-shadow: 0 25px 70px rgba(255, 0, 0, 0.5), 0 0 0 9999px rgba(0, 0, 0, 0.7);
-}
-
 .drawer::before {
     content: '';
     position: absolute;
@@ -1643,18 +1629,17 @@ div:has-text("Experience Points") {
     transform: translateY(0);
     opacity: 1;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: visible;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
 }
 
-/* Module C: Content scrolls, module stays fixed */
+/* Module C: Auto-expand to fit all content - no scrolling, module grows */
 #drawerC.open .drawer-content {
-    max-height: calc(100vh - 200px);
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
+    max-height: none !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
 }
 
 /* Fix for Module C to prevent overflow */
@@ -1675,16 +1660,16 @@ div:has-text("Experience Points") {
     overflow-x: hidden !important;
 }
 
-/* Module C: height set by JS (expandModuleCToContent) — no fixed 8000px, no black gap */
-/* When fixed, content scrolls inside */
+/* Module C: Auto-expand to fit all content - module grows taller automatically */
 #drawerC.open #drawerCContent {
-    min-height: 0;
-    max-height: calc(100vh - 200px) !important;
+    min-height: auto !important;
+    max-height: none !important;
+    height: auto !important;
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
     overflow-x: hidden !important;
-    overflow-y: auto !important;
+    overflow-y: visible !important;
 }
 
 /* Ensure all content inside Module C respects container width */

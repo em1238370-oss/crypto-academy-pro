@@ -1,32 +1,53 @@
 // ========== MODULES JAVASCRIPT ==========
 
-// Auto-extend Module C to fit content when any answer appears — no black gap, last button visible, doesn't touch Module D
-// NOTE: When Module C is fixed (position: fixed), content scrolls inside, so we don't set fixed height
+// Auto-extend Module C to fit content when any answer appears — module grows automatically to fit all content
+// Module automatically expands in height to show all content without scrolling
 function expandModuleCToContent() {
     const drawer = document.getElementById('drawerC');
     const content = document.getElementById('drawerCContent');
     if (!drawer || !content) return;
     if (!drawer.classList.contains('open')) return;
     
-    // If module is fixed, content scrolls - don't set fixed height
-    const computedStyle = window.getComputedStyle(drawer);
-    if (computedStyle.position === 'fixed') {
-        // Module is fixed - content will scroll, just ensure max-height is set
-        content.style.minHeight = '';
-        content.style.maxHeight = 'calc(100vh - 200px)';
-        return;
-    }
-    
-    // Original behavior for non-fixed modules
+    // Function to calculate and set the correct height based on actual content
     function setHeight() {
         if (!content || !drawer.classList.contains('open')) return;
-        const h = content.scrollHeight + 32;
-        content.style.minHeight = h + 'px';
-        content.style.maxHeight = h + 'px';
+        
+        // Get the actual scroll height of the content
+        const actualHeight = content.scrollHeight;
+        
+        // Add padding for better spacing
+        const padding = 40;
+        const newHeight = actualHeight + padding;
+        
+        // Set height to fit all content - module will grow automatically
+        content.style.minHeight = newHeight + 'px';
+        content.style.height = 'auto';
+        content.style.maxHeight = 'none';
+        
+        // Also ensure drawer itself expands
+        drawer.style.height = 'auto';
+        drawer.style.maxHeight = 'none';
     }
+    
+    // Call multiple times to catch dynamic content loading
+    setTimeout(setHeight, 50);
     setTimeout(setHeight, 120);
-    setTimeout(setHeight, 400);
-    setTimeout(setHeight, 800);
+    setTimeout(setHeight, 300);
+    setTimeout(setHeight, 600);
+    setTimeout(setHeight, 1000);
+    
+    // Also watch for content changes using MutationObserver
+    if (!window.moduleCObserver) {
+        window.moduleCObserver = new MutationObserver(() => {
+            setHeight();
+        });
+        window.moduleCObserver.observe(content, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['style', 'class']
+        });
+    }
 }
 
 // Initialize drawers
