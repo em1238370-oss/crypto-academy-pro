@@ -1394,7 +1394,7 @@ div:has-text("Experience Points") {
     background: rgba(0, 0, 0, 0.6);
     border: 2px solid rgba(255, 0, 0, 0.3);
     border-radius: 15px;
-    overflow: hidden;
+    overflow: visible;
     transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     position: relative;
@@ -1464,6 +1464,7 @@ div:has-text("Experience Points") {
     box-shadow: 0 25px 70px rgba(255, 0, 0, 0.5); /* Красное свечение */
     margin-top: 20px;
     border-radius: 15px !important;
+    overflow: visible !important;
     transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
@@ -1482,6 +1483,7 @@ div:has-text("Experience Points") {
     box-shadow: 0 25px 70px rgba(255, 0, 0, 0.5);
     margin-top: 20px;
     border-radius: 15px !important;
+    overflow: visible !important;
 }
 
 .drawer::before {
