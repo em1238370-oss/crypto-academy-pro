@@ -2675,7 +2675,10 @@ window.runExperiment = async function runExperiment() {
 
     // Показываем блок результатов
     resultsDiv.style.display = 'block';
-    analysisDiv.innerHTML = `<div style="color: #ffd700; padding: 20px; text-align: center; font-size: 1.1rem;"><div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Getting real-time price for ${coin}...</div>`;
+        analysisDiv.innerHTML = `<div style="color: #ffd700; padding: 20px; text-align: center; font-size: 1.1rem;"><div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Getting real-time price for ${coin}...</div>`;
+        
+        // Автоматически расширяем модуль C чтобы поместился весь контент
+        expandModuleCToContent();
 
     // ⚠️ КРИТИЧЕСКИ ВАЖНО: Получаем текущую цену монеты через API (ОБЯЗАТЕЛЬНО реальное время!)
     // ВСЕГДА свежая цена, совпадающая с моментом запуска эксперимента и выбранной монетой!
@@ -2941,6 +2944,8 @@ window.runExperiment = async function runExperiment() {
                         </div>
                     </div>
                 `;
+                // Автоматически расширяем модуль после появления fallback совета
+                expandModuleCToContent();
             }
         }).catch(e => {
             console.error('Error generating AI advice:', e);
