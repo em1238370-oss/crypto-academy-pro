@@ -8321,3 +8321,4 @@ console.log('✅ All Module C functions are now globally accessible:', {
     loadPredictiveDashboard: typeof window.loadPredictiveDashboard,
     autoSavePredictiveForm: typeof window.autoSavePredictiveForm
 });
+});
