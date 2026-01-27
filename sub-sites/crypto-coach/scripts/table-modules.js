@@ -3104,7 +3104,6 @@ window.runExperiment = async function runExperiment() {
                                 this.chart.options.animation = false;
                             }
                         },
-                        onHover: null, // Отключаем hover эффекты
                         plugins: {
                             tooltip: {
                                 enabled: false // Отключаем tooltips
