@@ -3390,9 +3390,8 @@ Format your response with clear sections, use bullet points, and be specific wit
                 <div style="
                     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(30, 0, 0, 0.8) 100%);
                     border: 2px solid rgba(255, 215, 0, 0.4);
-
                     border-radius: 15px;
-                    padding: 30px;
+                    padding: 35px;
                     color: #ffffff;
                     line-height: 1.8;
                     box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
@@ -3402,14 +3401,14 @@ Format your response with clear sections, use bullet points, and be specific wit
                     margin: 0 auto;
                     display: block;
                 ">
-                    <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.5rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); padding: 0; margin-left: 0; margin-right: 0;">
+                    <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.5rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); padding: 0; margin: 0 auto 25px auto; width: 100%;">
                         🤖 AI Generated Scenario Analysis
                     </h4>
-                    <div style="font-size: 1.05rem; padding: 0; margin: 0; width: 100%; max-width: 100%; box-sizing: border-box;">
-                        <div style="margin: 0; padding: 0; line-height: 1.8; color: #ffffff;">${scenarioText}</div>
+                    <div style="font-size: 1.05rem; padding: 0; margin: 0 auto; width: 100%; max-width: 100%; box-sizing: border-box; text-align: left;">
+                        <div style="margin: 0; padding: 0; line-height: 1.8; color: #ffffff; width: 100%; text-align: left;">${scenarioText}</div>
                     </div>
-                    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid rgba(255, 215, 0, 0.3); text-align: center;">
-                        <button class="btn btn-red" onclick="applyAIScenario()" style="padding: 12px 30px; font-size: 1rem; font-weight: bold; width: 100%; max-width: 100%; box-sizing: border-box;">
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid rgba(255, 215, 0, 0.3); text-align: center; width: 100%;">
+                        <button class="btn btn-red" onclick="applyAIScenario()" style="padding: 12px 30px; font-size: 1rem; font-weight: bold; width: 100%; max-width: 100%; box-sizing: border-box; margin: 0;">
                             ✅ Apply This Scenario to Experiment
                         </button>
                     </div>
