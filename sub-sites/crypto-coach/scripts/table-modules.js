@@ -1,11 +1,23 @@
 // ========== MODULES JAVASCRIPT ==========
 
 // Auto-extend Module C to fit content when any answer appears — no black gap, last button visible, doesn't touch Module D
+// NOTE: When Module C is fixed (position: fixed), content scrolls inside, so we don't set fixed height
 function expandModuleCToContent() {
     const drawer = document.getElementById('drawerC');
     const content = document.getElementById('drawerCContent');
     if (!drawer || !content) return;
     if (!drawer.classList.contains('open')) return;
+    
+    // If module is fixed, content scrolls - don't set fixed height
+    const computedStyle = window.getComputedStyle(drawer);
+    if (computedStyle.position === 'fixed') {
+        // Module is fixed - content will scroll, just ensure max-height is set
+        content.style.minHeight = '';
+        content.style.maxHeight = 'calc(100vh - 200px)';
+        return;
+    }
+    
+    // Original behavior for non-fixed modules
     function setHeight() {
         if (!content || !drawer.classList.contains('open')) return;
         const h = content.scrollHeight + 32;

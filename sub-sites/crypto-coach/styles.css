@@ -1676,13 +1676,15 @@ div:has-text("Experience Points") {
 }
 
 /* Module C: height set by JS (expandModuleCToContent) — no fixed 8000px, no black gap */
+/* When fixed, content scrolls inside */
 #drawerC.open #drawerCContent {
     min-height: 0;
-    max-height: none;
+    max-height: calc(100vh - 200px) !important;
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
     overflow-x: hidden !important;
+    overflow-y: auto !important;
 }
 
 /* Ensure all content inside Module C respects container width */
