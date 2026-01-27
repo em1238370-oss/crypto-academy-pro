@@ -2596,7 +2596,7 @@ function survivalAction(action) {
     alert(`✅ Action taken! +50 points`);
 }
 
-async function runExperiment() {
+window.runExperiment = async function runExperiment() {
     // Получаем все значения из формы
     const name = document.getElementById('experimentName')?.value?.trim();
     const coin = document.getElementById('experimentCoin')?.value || 'BTC';
@@ -2635,7 +2635,7 @@ async function runExperiment() {
         return;
     }
 
-async function runExperiment() {
+window.runExperiment = async function runExperiment() {
     // Получаем все значения из формы
     const name = document.getElementById('experimentName')?.value?.trim();
     const coin = document.getElementById('experimentCoin')?.value || 'BTC';
@@ -3118,7 +3118,7 @@ function loadExperiment(index) {
 // ========== MODULE C: CRYPTO EXPERIMENT LAB - ADDITIONAL FUNCTIONS ==========
 
 // AI Scenario Builder - генерирует детальный сценарий на основе описания пользователя
-async function aiScenarioBuilder() {
+window.aiScenarioBuilder = async function aiScenarioBuilder() {
     const aiScenarioInput = document.getElementById('aiScenarioInput')?.value?.trim();
     const aiScenarioResult = document.getElementById('aiScenarioResult');
     
@@ -7750,7 +7750,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // ========== EXPERIMENT FORM MANAGEMENT ==========
 
 // Save form data to localStorage
-function saveExperimentForm() {
+window.saveExperimentForm = function saveExperimentForm() {
     const formData = {
         userDeposit: document.getElementById('userDeposit')?.value || '',
         experimentName: document.getElementById('experimentName')?.value || '',
