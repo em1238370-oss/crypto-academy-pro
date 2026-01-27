@@ -1950,7 +1950,6 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 
 .btn-red:hover {
     background: linear-gradient(135deg, #ff3333, #ff0000);
-    transform: scale(1.05);
 }
 
 .btn-black {
@@ -1961,7 +1960,6 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 
 .btn-black:hover {
     background: linear-gradient(135deg, #1a1a1a, #000000);
-    transform: scale(1.05);
 }
 
 .result-box {
