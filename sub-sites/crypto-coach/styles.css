@@ -1785,6 +1785,30 @@ div:has-text("Experience Points") {
     margin-right: auto !important;
 }
 
+/* Принудительное выравнивание для AI Scenario Builder */
+#aiScenarioResult {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    transform: none !important;
+    float: none !important;
+    clear: both !important;
+    position: relative !important;
+    left: 0 !important;
+    right: 0 !important;
+}
+
+#aiScenarioResult > div {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    transform: none !important;
+    float: none !important;
+    position: relative !important;
+    left: 0 !important;
+    right: 0 !important;
+}
+
 .form-group label {
     display: block;
     color: #ff6666;
