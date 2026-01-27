@@ -1987,12 +1987,9 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 
 .btn-black:hover {
     background: linear-gradient(135deg, #1a1a1a, #000000);
-    /* Subtle, barely noticeable scale increase on hover */
-    transform: scale(1.02);
     border-radius: 8px !important;
     opacity: 1 !important;
-    /* Ensure button stays within boundaries */
-    will-change: transform;
+    transform: none !important;
 }
 
 .btn-black:active,
@@ -2000,8 +1997,7 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     border-radius: 8px !important;
     opacity: 1 !important;
     background: linear-gradient(135deg, #1a1a1a, #000000);
-    /* No scale on click, just return to normal */
-    transform: scale(1);
+    transform: none !important;
     outline: none !important;
 }
 
