@@ -1541,6 +1541,7 @@ div:has-text("Experience Points") {
     z-index: 2;
     flex-shrink: 0;
     min-height: 56px;
+    border-radius: 15px 15px 0 0 !important;
 }
 
 /* Уникальный дизайн заголовка для FREE блока - ЗОЛОТОЙ когда закрыт */
