@@ -2596,10 +2596,46 @@ function survivalAction(action) {
     alert(`✅ Action taken! +50 points`);
 }
 
-// REMOVED: Incomplete duplicate runExperiment - using complete version below
+async function runExperiment() {
+    // Получаем все значения из формы
+    const name = document.getElementById('experimentName')?.value?.trim();
+    const coin = document.getElementById('experimentCoin')?.value || 'BTC';
+    const scenario = document.getElementById('experimentScenario')?.value?.trim();
+    const priceChange = parseFloat(document.getElementById('priceChange')?.value || 0);
+    const userDeposit = parseFloat(document.getElementById('userDeposit')?.value || 10000);
 
-// Make function globally accessible
-window.runExperiment = async function runExperiment() {
+    // Проверяем обязательные поля
+    if (!name) {
+        alert('Please enter an experiment name');
+        return;
+    }
+
+    // Проверка логической ошибки: соответствие названия эксперимента и Price Change
+    const nameLower = name.toLowerCase();
+    const hasDrop = nameLower.includes('drop') || nameLower.includes('fall') || nameLower.includes('crash') || nameLower.includes('decline');
+    const hasRise = nameLower.includes('rise') || nameLower.includes('bull') || nameLower.includes('growth') || nameLower.includes('pump');
+    const nameMismatch = (hasDrop && priceChange > 0) || (hasRise && priceChange < 0);
+    
+    let mismatchWarning = '';
+    if (nameMismatch) {
+        mismatchWarning = `
+            <div style="color: #ffd700; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 8px; border-left: 4px solid #ffd700; margin-bottom: 20px;">
+                <strong>⚠️ Warning:</strong> Experiment name suggests ${hasDrop ? 'a drop' : 'a rise'}, but price change is ${priceChange >= 0 ? 'positive' : 'negative'}. Please verify your settings.
+            </div>
+        `;
+    }
+
+    // Находим блок результатов
+    const resultsDiv = document.getElementById('experimentResults');
+    const analysisDiv = document.getElementById('experimentAnalysis');
+    const chartDiv = document.getElementById('experimentChart');
+
+    if (!resultsDiv || !analysisDiv) {
+        console.error('Results containers not found');
+        return;
+    }
+
+async function runExperiment() {
     // Получаем все значения из формы
     const name = document.getElementById('experimentName')?.value?.trim();
     const coin = document.getElementById('experimentCoin')?.value || 'BTC';
@@ -3082,8 +3118,7 @@ function loadExperiment(index) {
 // ========== MODULE C: CRYPTO EXPERIMENT LAB - ADDITIONAL FUNCTIONS ==========
 
 // AI Scenario Builder - генерирует детальный сценарий на основе описания пользователя
-// Make function globally accessible
-window.aiScenarioBuilder = async function aiScenarioBuilder() {
+async function aiScenarioBuilder() {
     const aiScenarioInput = document.getElementById('aiScenarioInput')?.value?.trim();
     const aiScenarioResult = document.getElementById('aiScenarioResult');
     
@@ -7715,8 +7750,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // ========== EXPERIMENT FORM MANAGEMENT ==========
 
 // Save form data to localStorage
-// Make functions globally accessible
-window.saveExperimentForm = function saveExperimentForm() {
+function saveExperimentForm() {
     const formData = {
         userDeposit: document.getElementById('userDeposit')?.value || '',
         experimentName: document.getElementById('experimentName')?.value || '',
@@ -7725,7 +7759,7 @@ window.saveExperimentForm = function saveExperimentForm() {
         priceChange: document.getElementById('priceChange')?.value || '0'
     };
     localStorage.setItem('experimentFormData', JSON.stringify(formData));
-};
+}
 
 // Load form data from localStorage
 function loadExperimentForm() {
@@ -7749,7 +7783,6 @@ function loadExperimentForm() {
 }
 
 // Fill example experiment
-// Make function globally accessible
 window.fillExampleExperiment = function fillExampleExperiment() {
     document.getElementById('userDeposit').value = '10000';
     document.getElementById('experimentName').value = 'BTC Drop Scenario 20%';
@@ -7759,7 +7792,7 @@ window.fillExampleExperiment = function fillExampleExperiment() {
     updatePriceChangeDisplay();
     showAICorrelations();
     saveExperimentForm();
-};
+}
 
 // Save current experiment to history
 function saveCurrentExperiment() {
