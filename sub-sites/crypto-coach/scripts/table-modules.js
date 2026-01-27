@@ -3390,6 +3390,7 @@ Format your response with clear sections, use bullet points, and be specific wit
                 <div style="
                     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(30, 0, 0, 0.8) 100%);
                     border: 2px solid rgba(255, 215, 0, 0.4);
+
                     border-radius: 15px;
                     padding: 30px;
                     color: #ffffff;
@@ -3414,6 +3415,9 @@ Format your response with clear sections, use bullet points, and be specific wit
                     </div>
                 </div>
             `;
+            
+            // Автоматически расширяем модуль C чтобы поместился весь контент
+            expandModuleCToContent();
         } else {
             throw new Error('No response from AI');
         }
