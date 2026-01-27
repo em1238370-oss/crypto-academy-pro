@@ -3406,15 +3406,18 @@ Format your response with clear sections, use bullet points, and be specific wit
                     position: relative;
                     left: 0;
                     right: 0;
+                    transform: none;
+                    float: none;
+                    clear: both;
                 ">
-                    <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.5rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); padding: 0; margin: 0 0 25px 0; width: 100%; display: block;">
+                    <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.5rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); padding: 0; margin: 0 0 25px 0; width: 100%; display: block; position: relative; left: 0;">
                         🤖 AI Generated Scenario Analysis
                     </h4>
-                    <div style="font-size: 1.05rem; padding: 0; margin: 0; width: 100%; max-width: 100%; box-sizing: border-box; text-align: left; display: block;">
-                        <div style="margin: 0; padding: 0; line-height: 1.8; color: #ffffff; width: 100%; text-align: left; display: block;">${scenarioText}</div>
+                    <div style="font-size: 1.05rem; padding: 0; margin: 0; width: 100%; max-width: 100%; box-sizing: border-box; text-align: left; display: block; position: relative; left: 0;">
+                        <div style="margin: 0; padding: 0; line-height: 1.8; color: #ffffff; width: 100%; text-align: left; display: block; position: relative; left: 0;">${scenarioText}</div>
                     </div>
-                    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid rgba(255, 215, 0, 0.3); text-align: center; width: 100%; display: block;">
-                        <button class="btn btn-red" onclick="applyAIScenario()" style="padding: 12px 30px; font-size: 1rem; font-weight: bold; width: 100%; max-width: 100%; box-sizing: border-box; margin: 0; display: block;">
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid rgba(255, 215, 0, 0.3); text-align: center; width: 100%; display: block; position: relative; left: 0;">
+                        <button class="btn btn-red" onclick="applyAIScenario()" style="padding: 12px 30px; font-size: 1rem; font-weight: bold; width: 100%; max-width: 100%; box-sizing: border-box; margin: 0; display: block; position: relative; left: 0;">
                             ✅ Apply This Scenario to Experiment
                         </button>
                     </div>
