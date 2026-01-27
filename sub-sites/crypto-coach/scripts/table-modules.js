@@ -8,6 +8,28 @@ function expandModuleCToContent() {
     if (!drawer || !content) return;
     if (!drawer.classList.contains('open')) return;
     
+    // Функция для принудительного сохранения скругленных углов
+    function forceRoundedCorners() {
+        if (drawer) {
+            drawer.style.borderRadius = '15px';
+            drawer.style.webkitBorderRadius = '15px';
+            drawer.style.mozBorderRadius = '15px';
+            drawer.style.borderTopLeftRadius = '15px';
+            drawer.style.borderTopRightRadius = '15px';
+            drawer.style.borderBottomLeftRadius = '15px';
+            drawer.style.borderBottomRightRadius = '15px';
+        }
+        if (content) {
+            content.style.borderBottomLeftRadius = '15px';
+            content.style.borderBottomRightRadius = '15px';
+        }
+        const header = drawer ? drawer.querySelector('.drawer-header') : null;
+        if (header) {
+            header.style.borderTopLeftRadius = '15px';
+            header.style.borderTopRightRadius = '15px';
+        }
+    }
+    
     // Function to calculate and set the correct height based on actual content
     function setHeight() {
         if (!content || !drawer.classList.contains('open')) return;
@@ -27,19 +49,26 @@ function expandModuleCToContent() {
         // Also ensure drawer itself expands
         drawer.style.height = 'auto';
         drawer.style.maxHeight = 'none';
+        
+        // Принудительно сохраняем скругленные углы
+        forceRoundedCorners();
     }
     
+    // Принудительно применяем скругленные углы сразу
+    forceRoundedCorners();
+    
     // Call multiple times to catch dynamic content loading
-    setTimeout(setHeight, 50);
-    setTimeout(setHeight, 120);
-    setTimeout(setHeight, 300);
-    setTimeout(setHeight, 600);
-    setTimeout(setHeight, 1000);
+    setTimeout(() => { setHeight(); forceRoundedCorners(); }, 50);
+    setTimeout(() => { setHeight(); forceRoundedCorners(); }, 120);
+    setTimeout(() => { setHeight(); forceRoundedCorners(); }, 300);
+    setTimeout(() => { setHeight(); forceRoundedCorners(); }, 600);
+    setTimeout(() => { setHeight(); forceRoundedCorners(); }, 1000);
     
     // Also watch for content changes using MutationObserver
     if (!window.moduleCObserver) {
         window.moduleCObserver = new MutationObserver(() => {
             setHeight();
+            forceRoundedCorners();
         });
         window.moduleCObserver.observe(content, {
             childList: true,
