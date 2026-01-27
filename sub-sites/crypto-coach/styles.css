@@ -1625,6 +1625,7 @@ div:has-text("Experience Points") {
     z-index: 1;
     width: 100%;
     box-sizing: border-box;
+    border-radius: 0 0 15px 15px;
 }
 
 .drawer.open .drawer-content {
