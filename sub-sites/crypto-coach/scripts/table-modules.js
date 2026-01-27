@@ -2977,6 +2977,49 @@ window.runExperiment = async function runExperiment() {
                 const ctx = canvas.getContext('2d');
                 
                 const isPositive = priceChange >= 0;
+                const priceDiff = newPrice - displayPrice;
+                const absChange = Math.abs(priceChange);
+                
+                // Генерируем промежуточные точки для плавного движения
+                // Создаем 20 точек, показывающих реалистичное движение цены
+                const numPoints = 20;
+                const labels = [];
+                const dataPoints = [];
+                
+                // Генерируем реалистичную траекторию с небольшими колебаниями
+                for (let i = 0; i <= numPoints; i++) {
+                    const progress = i / numPoints;
+                    labels.push(i === 0 ? 'Start' : i === numPoints ? 'Target' : `T${i}`);
+                    
+                    // Базовое линейное движение
+                    let basePrice = displayPrice + (priceDiff * progress);
+                    
+                    // Добавляем реалистичные колебания (волны)
+                    // Для роста: сначала небольшой рост, потом ускорение, потом замедление
+                    // Для падения: сначала резкое падение, потом замедление, потом небольшой отскок
+                    let wave = 0;
+                    if (isPositive) {
+                        // Для роста: синусоида с ускорением в середине
+                        wave = Math.sin(progress * Math.PI * 2) * (absChange * 0.02) * (1 - progress * 0.5);
+                        // Добавляем небольшое ускорение в середине
+                        if (progress > 0.3 && progress < 0.7) {
+                            wave += Math.sin((progress - 0.3) * Math.PI / 0.4) * (absChange * 0.01);
+                        }
+                    } else {
+                        // Для падения: более резкое в начале, потом замедление
+                        wave = Math.sin(progress * Math.PI * 3) * (absChange * 0.03) * (1 - progress);
+                        // Добавляем небольшой отскок в конце
+                        if (progress > 0.7) {
+                            wave += Math.sin((progress - 0.7) * Math.PI / 0.3) * (absChange * 0.015);
+                        }
+                    }
+                    
+                    // Добавляем небольшие случайные колебания для реализма
+                    const randomFluctuation = (Math.random() - 0.5) * (absChange * 0.01);
+                    
+                    const finalPrice = basePrice + wave + randomFluctuation;
+                    dataPoints.push(Math.max(0, finalPrice)); // Убеждаемся, что цена не отрицательная
+                }
                 
                 // Создаём градиент для линии (более насыщенный)
                 const gradient = ctx.createLinearGradient(0, 0, 0, 450);
@@ -3005,24 +3048,33 @@ window.runExperiment = async function runExperiment() {
                 new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: ['Current Price', 'Projected Price'],
+                        labels: labels,
                         datasets: [{
                             label: `${coin} Price ($)`,
-                            data: [displayPrice, newPrice],
+                            data: dataPoints,
                             borderColor: gradient,
                             backgroundColor: fillGradient,
-                            borderWidth: 5,
-                            pointRadius: 12,
-                            pointHoverRadius: 16,
-                            pointBackgroundColor: isPositive ? '#00ff00' : '#ff0000',
+                            borderWidth: 4,
+                            pointRadius: (ctx, point) => {
+                                // Делаем первую и последнюю точку больше
+                                return point.dataIndex === 0 || point.dataIndex === dataPoints.length - 1 ? 8 : 4;
+                            },
+                            pointHoverRadius: 12,
+                            pointBackgroundColor: (ctx, point) => {
+                                // Разные цвета для начальной, промежуточных и конечной точек
+                                if (point.dataIndex === 0) return '#ffd700'; // Золотой для начала
+                                if (point.dataIndex === dataPoints.length - 1) return isPositive ? '#00ff00' : '#ff0000'; // Зеленый/красный для конца
+                                return isPositive ? 'rgba(0, 255, 0, 0.6)' : 'rgba(255, 0, 0, 0.6)'; // Прозрачные для промежуточных
+                            },
                             pointBorderColor: '#ffffff',
-                            pointBorderWidth: 4,
+                            pointBorderWidth: 2,
                             pointHoverBackgroundColor: isPositive ? '#00ff88' : '#ff4444',
                             pointHoverBorderColor: '#ffd700',
-                            pointHoverBorderWidth: 5,
-                            tension: 0.5,
+                            pointHoverBorderWidth: 4,
+                            tension: 0.4, // Плавная кривая
                             fill: true,
-                            cubicInterpolationMode: 'monotone'
+                            cubicInterpolationMode: 'monotone',
+                            showLine: true
                         }]
                     },
                     options: {
