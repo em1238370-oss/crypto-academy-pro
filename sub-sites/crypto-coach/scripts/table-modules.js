@@ -2738,16 +2738,6 @@ function initNewFeatures() {
 // Note: calculatePortfolioHealth will be called from updateSelectedCoins and other places
 
 document.addEventListener('DOMContentLoaded', function() {
-    updatePortfolioValue();
-    setTimeout(() => {
-        updateRiskDisplay();
-        updatePortfolioSelector();
-        checkPaymentStatus();
-        updatePriceChangeDisplay();
-        updateRiskAppetiteDisplay();
-        loadExperimentArchive();
-    }, 500);
-});
 async function loadPredictiveDashboard() {
     let coin = 'BTC'; // Объявляем coin вне try для доступа в catch
     try {
@@ -3146,3 +3136,817 @@ Be specific with numbers, percentages, and price levels.`;
                             <div style="
                                 background: linear-gradient(135deg, rgba(0, 150, 255, 0.15) 0%, rgba(0, 100, 200, 0.25) 50%, rgba(0, 150, 255, 0.15) 100%);
                                 padding: 24px;
+                                border-radius: 16px;
+                                border: 2px solid rgba(0, 150, 255, 0.4);
+                                text-align: center;
+                                box-shadow: 
+                                    0 4px 20px rgba(0, 0, 0, 0.4),
+                                    0 0 30px rgba(0, 150, 255, 0.2),
+                                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                                position: relative;
+                                overflow: hidden;
+                                transition: all 0.3s ease;
+                            ">
+                                <!-- Animated background effect -->
+                                <div style="
+                                    position: absolute;
+                                    top: -50%;
+                                    left: -50%;
+                                    width: 200%;
+                                    height: 200%;
+                                    background: radial-gradient(circle, rgba(0, 150, 255, 0.1) 0%, transparent 70%);
+                                    animation: pulse 3s ease-in-out infinite;
+                                    pointer-events: none;
+                                "></div>
+                                
+                                <!-- Icon -->
+                                <div style="
+                                    font-size: 2.5rem;
+                                    margin-bottom: 12px;
+                                    filter: drop-shadow(0 0 10px rgba(0, 150, 255, 0.5));
+                                    position: relative;
+                                    z-index: 1;
+                                ">⚡</div>
+                                
+                                <!-- Period Label -->
+                                <div style="
+                                    color: #88ccff;
+                                    font-size: 0.85rem;
+                                    font-weight: 600;
+                                    text-transform: uppercase;
+                                    letter-spacing: 1.5px;
+                                    margin-bottom: 16px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">Short-term</div>
+                                
+                                <!-- Time Period -->
+                                <div style="
+                                    color: #aaaaaa;
+                                    font-size: 0.75rem;
+                                    margin-bottom: 18px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">7 days</div>
+                                
+                                <!-- Percentage Change -->
+                                <div style="
+                                    color: ${shortTermChange >= 0 ? '#00ff88' : '#ff6b6b'};
+                                    font-size: 2rem;
+                                    font-weight: 700;
+                                    margin-bottom: 8px;
+                                    text-shadow: 0 0 15px ${shortTermChange >= 0 ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 107, 107, 0.5)'};
+                                    position: relative;
+                                    z-index: 1;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: 6px;
+                                ">
+                                    <span style="font-size: 1.2rem;">${shortTermChange >= 0 ? '↗' : '↘'}</span>
+                                    <span>${shortTermChange >= 0 ? '+' : ''}${shortTermChange}%</span>
+                                </div>
+                                
+                                <!-- Projected Price -->
+                                <div style="
+                                    color: #ffffff;
+                                    font-size: 1.1rem;
+                                    font-weight: 600;
+                                    margin-bottom: 8px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">$${(currentPrice * (1 + shortTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                
+                                <!-- Price Change Indicator -->
+                                <div style="
+                                    color: #888888;
+                                    font-size: 0.8rem;
+                                    position: relative;
+                                    z-index: 1;
+                                ">
+                                    ${shortTermChange >= 0 ? '↑' : '↓'} $${Math.abs(currentPrice * shortTermChange / 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                </div>
+                                
+                                <!-- Bottom accent line -->
+                                <div style="
+                                    position: absolute;
+                                    bottom: 0;
+                                    left: 0;
+                                    right: 0;
+                                    height: 3px;
+                                    background: linear-gradient(90deg, transparent, rgba(0, 150, 255, 0.6), transparent);
+                                "></div>
+                            </div>
+                            
+                            <!-- Medium-term Card -->
+                            <div style="
+                                background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 180, 0, 0.25) 50%, rgba(255, 215, 0, 0.15) 100%);
+                                padding: 24px;
+                                border-radius: 16px;
+                                border: 2px solid rgba(255, 215, 0, 0.5);
+                                text-align: center;
+                                box-shadow: 
+                                    0 4px 20px rgba(0, 0, 0, 0.4),
+                                    0 0 30px rgba(255, 215, 0, 0.25),
+                                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                                position: relative;
+                                overflow: hidden;
+                                transition: all 0.3s ease;
+                            ">
+                                <!-- Animated background effect -->
+                                <div style="
+                                    position: absolute;
+                                    top: -50%;
+                                    left: -50%;
+                                    width: 200%;
+                                    height: 200%;
+                                    background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+                                    animation: pulse 3s ease-in-out infinite;
+                                    animation-delay: 0.5s;
+                                    pointer-events: none;
+                                "></div>
+                                
+                                <!-- Icon -->
+                                <div style="
+                                    font-size: 2.5rem;
+                                    margin-bottom: 12px;
+                                    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
+                                    position: relative;
+                                    z-index: 1;
+                                ">📊</div>
+                                
+                                <!-- Period Label -->
+                                <div style="
+                                    color: #ffd700;
+                                    font-size: 0.85rem;
+                                    font-weight: 600;
+                                    text-transform: uppercase;
+                                    letter-spacing: 1.5px;
+                                    margin-bottom: 16px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">Medium-term</div>
+                                
+                                <!-- Time Period -->
+                                <div style="
+                                    color: #aaaaaa;
+                                    font-size: 0.75rem;
+                                    margin-bottom: 18px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">3 months</div>
+                                
+                                <!-- Percentage Change -->
+                                <div style="
+                                    color: ${mediumTermChange >= 0 ? '#00ff88' : '#ff6b6b'};
+                                    font-size: 2rem;
+                                    font-weight: 700;
+                                    margin-bottom: 8px;
+                                    text-shadow: 0 0 15px ${mediumTermChange >= 0 ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 107, 107, 0.5)'};
+                                    position: relative;
+                                    z-index: 1;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: 6px;
+                                ">
+                                    <span style="font-size: 1.2rem;">${mediumTermChange >= 0 ? '↗' : '↘'}</span>
+                                    <span>${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange}%</span>
+                                </div>
+                                
+                                <!-- Projected Price -->
+                                <div style="
+                                    color: #ffffff;
+                                    font-size: 1.1rem;
+                                    font-weight: 600;
+                                    margin-bottom: 8px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">$${(currentPrice * (1 + mediumTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                
+                                <!-- Price Change Indicator -->
+                                <div style="
+                                    color: #888888;
+                                    font-size: 0.8rem;
+                                    position: relative;
+                                    z-index: 1;
+                                ">
+                                    ${mediumTermChange >= 0 ? '↑' : '↓'} $${Math.abs(currentPrice * mediumTermChange / 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                </div>
+                                
+                                <!-- Bottom accent line -->
+                                <div style="
+                                    position: absolute;
+                                    bottom: 0;
+                                    left: 0;
+                                    right: 0;
+                                    height: 3px;
+                                    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.7), transparent);
+                                "></div>
+                            </div>
+                            
+                            <!-- Long-term Card -->
+                            <div style="
+                                background: linear-gradient(135deg, rgba(138, 43, 226, 0.15) 0%, rgba(100, 0, 200, 0.25) 50%, rgba(138, 43, 226, 0.15) 100%);
+                                padding: 24px;
+                                border-radius: 16px;
+                                border: 2px solid rgba(138, 43, 226, 0.5);
+                                text-align: center;
+                                box-shadow: 
+                                    0 4px 20px rgba(0, 0, 0, 0.4),
+                                    0 0 30px rgba(138, 43, 226, 0.25),
+                                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                                position: relative;
+                                overflow: hidden;
+                                transition: all 0.3s ease;
+                            ">
+                                <!-- Animated background effect -->
+                                <div style="
+                                    position: absolute;
+                                    top: -50%;
+                                    left: -50%;
+                                    width: 200%;
+                                    height: 200%;
+                                    background: radial-gradient(circle, rgba(138, 43, 226, 0.1) 0%, transparent 70%);
+                                    animation: pulse 3s ease-in-out infinite;
+                                    animation-delay: 1s;
+                                    pointer-events: none;
+                                "></div>
+                                
+                                <!-- Icon -->
+                                <div style="
+                                    font-size: 2.5rem;
+                                    margin-bottom: 12px;
+                                    filter: drop-shadow(0 0 10px rgba(138, 43, 226, 0.6));
+                                    position: relative;
+                                    z-index: 1;
+                                ">🔮</div>
+                                
+                                <!-- Period Label -->
+                                <div style="
+                                    color: #bb86fc;
+                                    font-size: 0.85rem;
+                                    font-weight: 600;
+                                    text-transform: uppercase;
+                                    letter-spacing: 1.5px;
+                                    margin-bottom: 16px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">Long-term</div>
+                                
+                                <!-- Time Period -->
+                                <div style="
+                                    color: #aaaaaa;
+                                    font-size: 0.75rem;
+                                    margin-bottom: 18px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">6+ months</div>
+                                
+                                <!-- Percentage Change -->
+                                <div style="
+                                    color: ${longTermChange >= 0 ? '#00ff88' : '#ff6b6b'};
+                                    font-size: 2rem;
+                                    font-weight: 700;
+                                    margin-bottom: 8px;
+                                    text-shadow: 0 0 15px ${longTermChange >= 0 ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 107, 107, 0.5)'};
+                                    position: relative;
+                                    z-index: 1;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: 6px;
+                                ">
+                                    <span style="font-size: 1.2rem;">${longTermChange >= 0 ? '↗' : '↘'}</span>
+                                    <span>${longTermChange >= 0 ? '+' : ''}${longTermChange}%</span>
+                                </div>
+                                
+                                <!-- Projected Price -->
+                                <div style="
+                                    color: #ffffff;
+                                    font-size: 1.1rem;
+                                    font-weight: 600;
+                                    margin-bottom: 8px;
+                                    position: relative;
+                                    z-index: 1;
+                                ">$${(currentPrice * (1 + longTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                
+                                <!-- Price Change Indicator -->
+                                <div style="
+                                    color: #888888;
+                                    font-size: 0.8rem;
+                                    position: relative;
+                                    z-index: 1;
+                                ">
+                                    ${longTermChange >= 0 ? '↑' : '↓'} $${Math.abs(currentPrice * longTermChange / 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                </div>
+                                
+                                <!-- Bottom accent line -->
+                                <div style="
+                                    position: absolute;
+                                    bottom: 0;
+                                    left: 0;
+                                    right: 0;
+                                    height: 3px;
+                                    background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.7), transparent);
+                                "></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Add CSS animation for pulse effect -->
+                        <style>
+                            @keyframes pulse {
+                                0%, 100% {
+                                    opacity: 0.3;
+                                    transform: scale(1);
+                                }
+                                50% {
+                                    opacity: 0.6;
+                                    transform: scale(1.1);
+                                }
+                            }
+                            
+                            /* Hover effects for cards */
+                            #predictiveDashboard div[style*="grid-template-columns: repeat(3"] > div:hover {
+                                transform: translateY(-5px) !important;
+                                box-shadow: 
+                                    0 8px 30px rgba(0, 0, 0, 0.5),
+                                    0 0 40px rgba(255, 215, 0, 0.3),
+                                    inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+                                border-color: rgba(255, 215, 0, 0.7) !important;
+                            }
+                        </style>
+                    </div>
+                    
+                    <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(30,0,0,0.3) 100%); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.25); box-shadow: 0 2px 12px rgba(0,0,0,0.3);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 8px;">📊 AI Analysis & Predictions</h5>
+                        <div style="max-height: 600px; overflow-y: auto; padding-right: 8px;">
+                        <p style="margin: 15px 0; line-height: 1.8;">${predictionText}</p>
+                        </div>
+                        <style>
+                            #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar {
+                                width: 10px;
+                            }
+                            #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar-track {
+                                background: rgba(0, 0, 0, 0.3);
+                                border-radius: 5px;
+                            }
+                            #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar-thumb {
+                                background: rgba(255, 215, 0, 0.5);
+                                border-radius: 5px;
+                            }
+                            #predictiveDashboard div[style*="overflow-y"]::-webkit-scrollbar-thumb:hover {
+                                background: rgba(255, 215, 0, 0.7);
+                            }
+                        </style>
+                    </div>
+                    
+                    <!-- График прогнозов -->
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25); box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,215,0,0.08);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📈 Price Prediction Chart</h5>
+                        <canvas id="predictionChart" style="width: 100%; height: 250px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255,215,0,0.15);"></canvas>
+                        <div style="display: flex; justify-content: space-around; margin-top: 15px; color: #cccccc; font-size: 0.9rem;">
+                            <span>Current</span>
+                            <span>7 days</span>
+                            <span>3 months</span>
+                        </div>
+                    </div>
+                    
+                    <!-- NEW SECTIONS START -->
+                    
+                <!-- Market Situation Analysis (NOT Direct Recommendations) -->
+                    <div style="margin-top: 30px; padding: 25px; background: linear-gradient(135deg, rgba(0,255,0,0.1) 0%, rgba(255,215,0,0.1) 100%); border-radius: 12px; border: 2px solid ${actionColor}; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+                        <h5 style="color: ${actionColor}; margin-bottom: 20px; font-size: 1.3rem; font-weight: bold; text-align: center;">
+                        📊 Market Situation Analysis
+                        </h5>
+                    
+                    <!-- Market Situation Status -->
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <div style="display: inline-block; padding: 12px 25px; background: ${actionColor}; color: #000; font-size: 1.4rem; font-weight: bold; border-radius: 10px; margin-bottom: 15px;">
+                            ${marketSituation}
+                        </div>
+                        <div style="color: #ffffff; margin-top: 15px; font-size: 1rem; line-height: 1.6;">
+                            ${situationDescription}
+                        </div>
+                    </div>
+                    
+                    <!-- Key Price Levels (Analytical, NOT Recommendations) -->
+                    <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem;">📈 Key Price Levels to Monitor</h6>
+                        <div style="color: #ffffff; line-height: 1.8;">
+                            <div style="margin: 10px 0;">
+                                <strong style="color: #cccccc;">Current Price:</strong> 
+                                <span style="color: #00ff00; font-weight: bold; margin-left: 10px;">$${entryPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </div>
+                            <div style="margin: 10px 0;">
+                                <strong style="color: #cccccc;">Potential Target (based on analysis):</strong> 
+                                <span style="color: #ffd700; font-weight: bold; margin-left: 10px;">$${exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                <span style="color: #aaaaaa; font-size: 0.9rem; margin-left: 5px;">(${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange.toFixed(2)}%)</span>
+                            </div>
+                            <div style="margin: 10px 0; font-size: 0.9rem; color: #cccccc;">
+                                <strong>Position Size Consideration:</strong> 
+                                <span style="color: #ffd700;">${positionSizePercent}%</span> of portfolio (based on risk analysis, NOT a recommendation)
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Conditional Analysis (If... Then format) -->
+                    <div style="background: rgba(255,215,0,0.1); padding: 20px; border-radius: 10px; border-left: 4px solid ${actionColor}; margin-bottom: 20px;">
+                        <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem;">💡 Conditional Analysis</h6>
+                        <div style="color: #ffffff; line-height: 1.8; font-size: 0.95rem;">
+                            ${conditionalAdvice}
+                        </div>
+                    </div>
+                    
+                    <!-- Risk Factors -->
+                    <div style="background: rgba(255,0,0,0.1); padding: 20px; border-radius: 10px; border-left: 4px solid #ff6666; margin-bottom: 20px;">
+                        <h6 style="color: #ff6666; margin-bottom: 15px; font-size: 1.1rem;">⚠️ Risk Factors to Consider</h6>
+                        <ul style="color: #ffffff; line-height: 1.8; padding-left: 20px; margin: 0;">
+                            ${riskFactors.map(risk => `<li style="margin-bottom: 8px;">${risk}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <!-- Opportunities -->
+                    <div style="background: rgba(0,255,0,0.1); padding: 20px; border-radius: 10px; border-left: 4px solid #00ff00; margin-bottom: 20px;">
+                        <h6 style="color: #00ff00; margin-bottom: 15px; font-size: 1.1rem;">🎯 Potential Opportunities</h6>
+                        <ul style="color: #ffffff; line-height: 1.8; padding-left: 20px; margin: 0;">
+                            ${opportunities.map(opp => `<li style="margin-bottom: 8px;">${opp}</li>`).join('')}
+                        </ul>
+                    </div>
+                    
+                    <!-- Important Disclaimer -->
+                    <div style="background: rgba(255,0,0,0.15); padding: 20px; border-radius: 10px; border: 2px solid #ff0000; margin-top: 25px;">
+                        <div style="color: #ff0000; font-weight: bold; font-size: 1.1rem; margin-bottom: 12px; text-align: center;">
+                            ⚠️ IMPORTANT WARNING
+                        </div>
+                        <div style="color: #ffffff; line-height: 1.8; font-size: 0.95rem; text-align: center;">
+                            <strong>This is educational data analysis, NOT financial advice.</strong><br>
+                            All presented data is based on historical patterns and technical indicators that do NOT guarantee future results.<br>
+                            The cryptocurrency market is extremely unpredictable and volatile. All trading decisions are made by you independently and at your own risk.<br>
+                            <strong style="color: #ff6666;">Never invest more than you can afford to lose.</strong>
+                    </div>
+                </div>
+                    </div>
+                    
+                    <!-- Profit Calculator (Priority 1) -->
+                    <div style="margin-top: 30px; padding: 25px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
+                        <h5 style="color: #ffd700; margin-bottom: 20px; font-size: 1.2rem;">💰 Profit Calculator</h5>
+                        <div style="margin-bottom: 15px;">
+                            <label style="color: #cccccc; display: block; margin-bottom: 8px;">Investment Amount ($):</label>
+                            <input type="number" id="profitCalcAmount" value="1000" min="1" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,215,0,0.3); border-radius: 5px; color: #ffffff; font-size: 1rem;" oninput="updateProfitCalculator('${coin}', ${currentPrice}, ${shortTermChange}, ${mediumTermChange}, ${longTermChange})">
+                        </div>
+                        <div id="profitCalcResults" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px;">
+                            <div style="background: rgba(255,215,0,0.1); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,215,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">7 days</div>
+                                <div style="color: ${shortTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.3rem; font-weight: bold;" id="profit7d">$0</div>
+                            </div>
+                            <div style="background: rgba(255,215,0,0.1); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,215,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">3 months</div>
+                                <div style="color: ${mediumTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.3rem; font-weight: bold;" id="profit3m">$0</div>
+                            </div>
+                            <div style="background: rgba(255,215,0,0.1); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,215,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">6+ months</div>
+                                <div style="color: ${longTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.3rem; font-weight: bold;" id="profit6m">$0</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; padding: 12px; background: rgba(0,255,0,0.1); border-radius: 8px; border-left: 3px solid #00ff00;">
+                            <div style="color: #00ff00; font-size: 0.9rem;" id="profitExample">Example: If you invest $1000, in 3 months you'll have $${(1000 * (1 + mediumTermChange / 100)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Confidence Levels (Priority 1) -->
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">🎯 Prediction Confidence Levels</h5>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                            <div style="text-align: center; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                                <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 8px;">7 days</div>
+                                <div style="color: ${confidence7d >= 70 ? '#00ff00' : confidence7d >= 60 ? '#ffd700' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">${confidence7d}%</div>
+                            </div>
+                            <div style="text-align: center; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                                <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 8px;">3 months</div>
+                                <div style="color: ${confidence3m >= 70 ? '#00ff00' : confidence3m >= 60 ? '#ffd700' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">${confidence3m}%</div>
+                            </div>
+                            <div style="text-align: center; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                                <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 8px;">6+ months</div>
+                                <div style="color: ${confidence6m >= 70 ? '#00ff00' : confidence6m >= 60 ? '#ffd700' : '#ff6666'}; font-size: 1.5rem; font-weight: bold;">${confidence6m}%</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Buy & Hold Benchmark Comparison (Priority 1) -->
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">📊 Buy & Hold vs Prediction</h5>
+                        ${buyHoldBenchmark90d ? `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                            <div style="padding: 15px; background: rgba(0,255,0,0.1); border-radius: 8px; border: 1px solid rgba(0,255,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Buy & Hold (90d)</div>
+                                <div style="color: ${buyHoldBenchmark90d.returnPercent >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.4rem; font-weight: bold;">
+                                    ${buyHoldBenchmark90d.returnPercent >= 0 ? '+' : ''}${buyHoldBenchmark90d.returnPercent.toFixed(2)}%
+                                </div>
+                            </div>
+                            <div style="padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px; border: 1px solid rgba(255,215,0,0.3);">
+                                <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Our Prediction (3m)</div>
+                                <div style="color: ${mediumTermChange >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.4rem; font-weight: bold;">
+                                    ${mediumTermChange >= 0 ? '+' : ''}${mediumTermChange}%
+                                </div>
+                            </div>
+                        </div>
+                        ` : '<div style="color: #cccccc; text-align: center; padding: 20px;">Benchmark data unavailable</div>'}
+                    </div>
+                    
+                    <!-- Expert Analysis Section -->
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(30,0,0,0.5) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
+                        <h5 style="color: #ffd700; margin-bottom: 20px; font-size: 1.3rem; border-bottom: 2px solid rgba(255,215,0,0.3); padding-bottom: 10px;">🔬 Expert Analysis</h5>
+                        
+                        <!-- Historical Accuracy -->
+                        <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                            <h6 style="color: #ffd700; margin-bottom: 10px; font-size: 1.1rem;">📈 Historical Model Accuracy</h6>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                                <div style="text-align: center;">
+                                    <div style="color: #cccccc; font-size: 0.85rem;">7 days</div>
+                                    <div style="color: #00ff00; font-size: 1.2rem; font-weight: bold;">${historicalAccuracy['7d']}%</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="color: #cccccc; font-size: 0.85rem;">30 days</div>
+                                    <div style="color: #00ff00; font-size: 1.2rem; font-weight: bold;">${historicalAccuracy['30d']}%</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="color: #cccccc; font-size: 0.85rem;">90 days</div>
+                                    <div style="color: #00ff00; font-size: 1.2rem; font-weight: bold;">${historicalAccuracy['90d']}%</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Technical Indicators -->
+                        ${technicalIndicators ? `
+                        <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                            <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem;">📊 Technical Indicators</h6>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">RSI (14)</div>
+                                    <div style="color: ${technicalIndicators.rsi > 70 ? '#ff6666' : technicalIndicators.rsi < 30 ? '#00ff00' : '#ffd700'}; font-size: 1.2rem; font-weight: bold;">
+                                        ${technicalIndicators.rsi.toFixed(2)}
+                                        <span style="font-size: 0.8rem; color: #aaaaaa;">${technicalIndicators.rsi > 70 ? ' (Overbought)' : technicalIndicators.rsi < 30 ? ' (Oversold)' : ' (Neutral)'}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">MACD</div>
+                                    <div style="color: ${technicalIndicators.macd.histogram > 0 ? '#00ff00' : '#ff6666'}; font-size: 1.2rem; font-weight: bold;">
+                                        ${technicalIndicators.macd.histogram > 0 ? '↑' : '↓'} ${technicalIndicators.macd.histogram.toFixed(4)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">MA 50</div>
+                                    <div style="color: ${technicalIndicators.ma50Signal === 'bullish' ? '#00ff00' : '#ff6666'}; font-size: 1.1rem; font-weight: bold;">
+                                        $${technicalIndicators.ma50.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                        <span style="font-size: 0.8rem; color: #aaaaaa;"> (${technicalIndicators.ma50Signal})</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">MA 200</div>
+                                    <div style="color: ${technicalIndicators.ma200Signal === 'bullish' ? '#00ff00' : '#ff6666'}; font-size: 1.1rem; font-weight: bold;">
+                                        $${technicalIndicators.ma200.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                        <span style="font-size: 0.8rem; color: #aaaaaa;"> (${technicalIndicators.ma200Signal})</span>
+                                    </div>
+                                </div>
+                                <div style="grid-column: 1 / -1;">
+                                    <div style="color: #cccccc; font-size: 0.9rem; margin-bottom: 5px;">Volume Analysis</div>
+                                    <div style="color: ${technicalIndicators.volume.change > 0 ? '#00ff00' : '#ff6666'}; font-size: 1rem;">
+                                        ${technicalIndicators.volume.change > 0 ? '↑' : '↓'} ${Math.abs(technicalIndicators.volume.change).toFixed(1)}% vs 30-day average
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        ` : '<div style="color: #cccccc; padding: 15px; text-align: center;">Technical indicators loading...</div>'}
+                        
+                        <!-- Maximum Drawdown -->
+                        ${maxDrawdown !== null ? `
+                        <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,0,0,0.1); border-radius: 8px; border-left: 3px solid #ff6666;">
+                            <h6 style="color: #ff6666; margin-bottom: 10px; font-size: 1.1rem;">⚠️ Maximum Drawdown (90d)</h6>
+                            <div style="color: #ff6666; font-size: 1.3rem; font-weight: bold;">-${maxDrawdown.toFixed(2)}%</div>
+                            <div style="color: #cccccc; font-size: 0.85rem; margin-top: 5px;">Largest price decline from peak in the last 90 days</div>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Correlation Matrix -->
+                        ${correlationMatrix ? `
+                        <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                            <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem;">🔗 Correlation with Top Coins</h6>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+                                ${Object.entries(correlationMatrix).map(([coin, corr]) => `
+                                    <div style="text-align: center; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px;">
+                                        <div style="color: #cccccc; font-size: 0.8rem;">${coin}</div>
+                                        <div style="color: ${corr > 0.7 ? '#00ff00' : corr > 0.3 ? '#ffd700' : '#ff6666'}; font-size: 1rem; font-weight: bold;">
+                                            ${corr > 0 ? '+' : ''}${corr.toFixed(2)}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- On-chain Metrics (BTC/ETH only) -->
+                        ${onChainMetrics ? `
+                        <div style="margin-bottom: 25px; padding: 15px; background: rgba(0,255,255,0.1); border-radius: 8px; border-left: 3px solid #00ffff;">
+                            <h6 style="color: #00ffff; margin-bottom: 15px; font-size: 1.1rem;">⛓️ On-chain Metrics</h6>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Active Addresses</div>
+                                    <div style="color: #00ffff; font-size: 1.1rem; font-weight: bold;">${onChainMetrics.activeAddresses.toLocaleString()}</div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Transactions</div>
+                                    <div style="color: #00ffff; font-size: 1.1rem; font-weight: bold;">${onChainMetrics.transactions.toLocaleString()}</div>
+                                </div>
+                                ${onChainMetrics.hashRate !== null ? `
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Hash Rate</div>
+                                    <div style="color: #00ffff; font-size: 1.1rem; font-weight: bold;">${onChainMetrics.hashRate.toLocaleString()}</div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Backtesting Results -->
+                        <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px;">
+                            <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem;">🧪 Backtesting Results</h6>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Win Rate</div>
+                                    <div style="color: #00ff00; font-size: 1.2rem; font-weight: bold;">${backtestingResults.winRate.toFixed(1)}%</div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Avg Return</div>
+                                    <div style="color: ${backtestingResults.avgReturn >= 0 ? '#00ff00' : '#ff6666'}; font-size: 1.2rem; font-weight: bold;">
+                                        ${backtestingResults.avgReturn >= 0 ? '+' : ''}${backtestingResults.avgReturn.toFixed(2)}%
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Sharpe Ratio</div>
+                                    <div style="color: #ffd700; font-size: 1.2rem; font-weight: bold;">${backtestingResults.sharpeRatio}</div>
+                                </div>
+                                <div>
+                                    <div style="color: #cccccc; font-size: 0.9rem;">Total Trades</div>
+                                    <div style="color: #ffffff; font-size: 1.2rem; font-weight: bold;">${backtestingResults.totalTrades}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Methodology & Data Sources -->
+                        <div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                            <h6 style="color: #ffd700; margin-bottom: 10px; font-size: 1.1rem;">📚 Methodology & Data Sources</h6>
+                            <div style="color: #cccccc; font-size: 0.9rem; line-height: 1.6;">
+                                <div style="margin-bottom: 8px;"><strong style="color: #ffd700;">Data Sources:</strong> LiveCoinWatch API (real-time prices), CoinGecko API (historical data & technical indicators)</div>
+                                <div style="margin-bottom: 8px;"><strong style="color: #ffd700;">Update Frequency:</strong> Real-time (prices), Daily (technical indicators), Hourly (on-chain metrics)</div>
+                                <div><strong style="color: #ffd700;">Methodology:</strong> AI-powered analysis using historical trends, technical indicators, and market sentiment. Predictions are based on statistical models and pattern recognition.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Comparison with Other Coins -->
+                    ${correlationMatrix ? `
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem;">🔄 Comparison with Other Coins</h5>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            ${Object.entries(correlationMatrix).slice(0, 3).map(([coin, corr]) => `
+                                <div style="padding: 15px; background: rgba(255,215,0,0.1); border-radius: 8px; border: 1px solid rgba(255,215,0,0.3);">
+                                    <div style="color: #ffd700; font-weight: bold; margin-bottom: 8px;">${coin}</div>
+                                    <div style="color: ${corr > 0.7 ? '#00ff00' : corr > 0.3 ? '#ffd700' : '#ff6666'}; font-size: 1.1rem;">
+                                        ${corr > 0.7 ? '🟢 Strong' : corr > 0.3 ? '🟡 Moderate' : '🔴 Weak'} Correlation
+                                    </div>
+                                    <div style="color: #cccccc; font-size: 0.85rem; margin-top: 5px;">${corr > 0 ? '+' : ''}${corr.toFixed(2)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- Educational Guide -->
+                    <div style="margin-top: 30px; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(20,0,0,0.4) 100%); border-radius: 12px; border: 1px solid rgba(255,215,0,0.25);">
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; cursor: pointer;" onclick="toggleEducationalGuide()">
+                            📖 How to Read This Forecast <span id="guideToggle" style="font-size: 0.8rem;">▼</span>
+                        </h5>
+                        <div id="educationalGuide" style="display: none; color: #cccccc; font-size: 0.95rem; line-height: 1.8;">
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #ffd700;">Understanding the Predictions:</strong>
+                                <ul style="margin: 10px 0; padding-left: 20px;">
+                                    <li><strong>Short-term (7d):</strong> Expected price movement in the next week. Higher confidence but more volatile.</li>
+                                    <li><strong>Medium-term (3m):</strong> Expected trend over the next 3 months. More reliable for planning investments.</li>
+                                    <li><strong>Long-term (6m+):</strong> Long-term outlook. Lower confidence but useful for strategic planning.</li>
+                                </ul>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #ffd700;">Confidence Levels:</strong>
+                                <ul style="margin: 10px 0; padding-left: 20px;">
+                                    <li><span style="color: #00ff00;">70%+</span>: High confidence prediction</li>
+                                    <li><span style="color: #ffd700;">60-70%</span>: Moderate confidence</li>
+                                    <li><span style="color: #ff6666;">Below 60%</span>: Lower confidence, higher uncertainty</li>
+                                </ul>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <strong style="color: #ffd700;">Example Usage:</strong>
+                                <ul style="margin: 10px 0; padding-left: 20px;">
+                                    <li>Use short-term predictions for day trading or quick decisions</li>
+                                    <li>Use medium-term for portfolio rebalancing</li>
+                                    <li>Use long-term for strategic investment planning</li>
+                                    <li>Always combine with your own research and risk tolerance</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Usage Statistics -->
+                    <div style="margin-top: 30px; padding: 20px; background: rgba(255,215,0,0.1); border-radius: 12px; border: 1px solid rgba(255,215,0,0.3); text-align: center;">
+                        <div style="color: #ffd700; font-size: 1.1rem; margin-bottom: 10px;">📊 Usage Statistics</div>
+                        <div style="color: #ffffff; font-size: 1.3rem; font-weight: bold;">
+                            ${usageStats.today || 0} users today · ${usageStats.total || 0} total predictions
+                        </div>
+                    </div>
+                    
+                    <!-- Export Buttons -->
+                    <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="exportPredictiveToPDF('${coin}', ${currentPrice}, ${shortTermChange}, ${mediumTermChange}, ${longTermChange})" style="padding: 12px 24px; background: rgba(255,0,0,0.3); border: 2px solid #ff0000; color: #ffffff; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                            📄 Export PDF
+                        </button>
+                        <button onclick="exportPredictiveToCSV('${coin}', ${currentPrice}, ${shortTermChange}, ${mediumTermChange}, ${longTermChange})" style="padding: 12px 24px; background: rgba(0,255,0,0.3); border: 2px solid #00ff00; color: #ffffff; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                            📊 Export CSV
+                        </button>
+                    </div>
+                    
+                    <!-- NEW SECTIONS END -->
+                    
+                    <div style="margin-top: 25px; padding: 20px; background: rgba(255, 0, 0, 0.1); border-radius: 10px; border-left: 4px solid #ff0000; box-shadow: 0 2px 12px rgba(0,0,0,0.3);">
+                        <div style="color: #ff0000; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem;">⚠️ DISCLAIMER:</div>
+                        <div style="color: #ffffff; line-height: 1.6; font-size: 0.95rem;">
+                            These predictions are AI-generated estimates based on current market data and should NOT be considered financial advice. 
+                            Cryptocurrency markets are highly volatile and unpredictable. Always do your own research (DYOR) and never invest more than you can afford to lose.
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            expandModuleCToContent();
+            
+            // Сохраняем результат в историю
+            savePredictiveToHistory(coin, currentPrice, shortTermChange, mediumTermChange, longTermChange, predictionText);
+            
+            // Создаем график прогнозов - с большей задержкой для гарантии, что DOM готов
+            setTimeout(() => {
+                console.log('🎨 Drawing chart with:', { currentPrice, shortTermChange, mediumTermChange, longTermChange });
+                createPredictionChart(currentPrice, shortTermChange, mediumTermChange, longTermChange);
+                expandModuleCToContent();
+            }, 500);
+            
+            // Initialize profit calculator
+            setTimeout(() => {
+                updateProfitCalculator(coin, currentPrice, shortTermChange, mediumTermChange, longTermChange);
+            }, 100);
+    } catch (error) {
+        console.error('❌ Predictive Dashboard Error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            coin: coin
+        });
+        
+        const predictiveDashboard = document.getElementById('predictiveDashboard');
+        if (predictiveDashboard) {
+            predictiveDashboard.innerHTML = `
+                <div style="color: #ff6666; padding: 20px; background: rgba(255, 0, 0, 0.15); border-radius: 10px; border: 2px solid #ff0000; margin-top: 20px;">
+                    <div style="font-weight: bold; margin-bottom: 12px; font-size: 1.1rem;">❌ Error loading predictions</div>
+                    <div style="font-size: 0.95rem; color: #ffaaaa; margin-bottom: 10px;">
+                        ${error.message || 'An unexpected error occurred. Please try again.'}
+                    </div>
+                    <div style="font-size: 0.85rem; color: #888; margin-top: 15px; line-height: 1.6;">
+                        <strong>Possible causes:</strong><br>
+                        • API connection issue<br>
+                        • Invalid coin symbol<br>
+                        • Network timeout<br><br>
+                        <strong>Try:</strong><br>
+                        • Check your internet connection<br>
+                        • Try a different coin<br>
+                        • Refresh the page<br>
+                        • Wait a few seconds and try again
+                    </div>
+                    <button onclick="loadPredictiveDashboard()" style="
+                        margin-top: 15px;
+                        padding: 10px 20px;
+                        background: rgba(255, 0, 0, 0.3);
+                        border: 2px solid #ff0000;
+                        color: #ffffff;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        font-size: 0.95rem;
+                    ">🔄 Retry</button>
+                </div>
+            `;
+            predictiveDashboard.style.display = 'block';
+        } else {
+            alert('Error loading predictions: ' + (error.message || 'Unknown error'));
+        }
+    }
+}
+
+// Module D: Strategy Constructor
