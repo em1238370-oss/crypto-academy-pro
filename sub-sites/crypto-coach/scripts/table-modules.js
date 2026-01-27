@@ -2970,30 +2970,36 @@ window.runExperiment = async function runExperiment() {
             </div>
         `;
         
-        // Создаём улучшенный график с Chart.js
+        // Создаём профессиональный график с Chart.js
         setTimeout(() => {
             const canvas = document.getElementById('experimentPriceChart');
             if (canvas && typeof Chart !== 'undefined') {
                 const ctx = canvas.getContext('2d');
                 
-                // Создаём градиент для линии
-                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                if (priceChange >= 0) {
-                    gradient.addColorStop(0, 'rgba(0, 255, 0, 0.8)');
-                    gradient.addColorStop(1, 'rgba(0, 255, 0, 0.1)');
+                const isPositive = priceChange >= 0;
+                
+                // Создаём градиент для линии (более насыщенный)
+                const gradient = ctx.createLinearGradient(0, 0, 0, 350);
+                if (isPositive) {
+                    gradient.addColorStop(0, '#00ff88');
+                    gradient.addColorStop(0.5, '#00ff00');
+                    gradient.addColorStop(1, '#00cc00');
                 } else {
-                    gradient.addColorStop(0, 'rgba(255, 102, 102, 0.8)');
-                    gradient.addColorStop(1, 'rgba(255, 102, 102, 0.1)');
+                    gradient.addColorStop(0, '#ff4444');
+                    gradient.addColorStop(0.5, '#ff0000');
+                    gradient.addColorStop(1, '#cc0000');
                 }
                 
-                // Создаём градиент для заливки
-                const fillGradient = ctx.createLinearGradient(0, 0, 0, 300);
-                if (priceChange >= 0) {
-                    fillGradient.addColorStop(0, 'rgba(0, 255, 0, 0.3)');
-                    fillGradient.addColorStop(1, 'rgba(0, 255, 0, 0.05)');
+                // Создаём градиент для заливки (более выразительный)
+                const fillGradient = ctx.createLinearGradient(0, 0, 0, 350);
+                if (isPositive) {
+                    fillGradient.addColorStop(0, 'rgba(0, 255, 136, 0.4)');
+                    fillGradient.addColorStop(0.5, 'rgba(0, 255, 0, 0.25)');
+                    fillGradient.addColorStop(1, 'rgba(0, 204, 0, 0.1)');
                 } else {
-                    fillGradient.addColorStop(0, 'rgba(255, 102, 102, 0.3)');
-                    fillGradient.addColorStop(1, 'rgba(255, 102, 102, 0.05)');
+                    fillGradient.addColorStop(0, 'rgba(255, 68, 68, 0.4)');
+                    fillGradient.addColorStop(0.5, 'rgba(255, 0, 0, 0.25)');
+                    fillGradient.addColorStop(1, 'rgba(204, 0, 0, 0.1)');
                 }
                 
                 new Chart(ctx, {
@@ -3005,52 +3011,58 @@ window.runExperiment = async function runExperiment() {
                             data: [displayPrice, newPrice],
                             borderColor: gradient,
                             backgroundColor: fillGradient,
-                            borderWidth: 4,
-                            pointRadius: 10,
-                            pointHoverRadius: 12,
-                            pointBackgroundColor: priceChange >= 0 ? '#00ff00' : '#ff6666',
+                            borderWidth: 5,
+                            pointRadius: 12,
+                            pointHoverRadius: 16,
+                            pointBackgroundColor: isPositive ? '#00ff00' : '#ff0000',
                             pointBorderColor: '#ffffff',
-                            pointBorderWidth: 3,
-                            pointHoverBackgroundColor: priceChange >= 0 ? '#00ff00' : '#ff6666',
+                            pointBorderWidth: 4,
+                            pointHoverBackgroundColor: isPositive ? '#00ff88' : '#ff4444',
                             pointHoverBorderColor: '#ffd700',
-                            pointHoverBorderWidth: 4,
-                            tension: 0.4,
+                            pointHoverBorderWidth: 5,
+                            tension: 0.5,
                             fill: true,
-                            shadowOffsetX: 0,
-                            shadowOffsetY: 5,
-                            shadowBlur: 15,
-                            shadowColor: priceChange >= 0 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 102, 102, 0.5)'
+                            cubicInterpolationMode: 'monotone'
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,
+                        aspectRatio: 2.5,
                         animation: {
-                            duration: 1500,
-                            easing: 'easeInOutQuart'
+                            duration: 2000,
+                            easing: 'easeInOutCubic'
                         },
                         plugins: {
                             legend: {
                                 display: true,
                                 position: 'top',
                                 labels: { 
-                                    color: '#ffffff', 
-                                    font: { size: 14, weight: 'bold' },
-                                    padding: 15,
-                                    usePointStyle: true
+                                    color: '#ffd700', 
+                                    font: { size: 15, weight: 'bold', family: 'Poppins' },
+                                    padding: 20,
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    boxWidth: 12,
+                                    boxHeight: 12
                                 }
                             },
                             tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                backgroundColor: 'rgba(0, 0, 0, 0.95)',
                                 titleColor: '#ffd700',
                                 bodyColor: '#ffffff',
-                                borderColor: priceChange >= 0 ? '#00ff00' : '#ff6666',
-                                borderWidth: 2,
-                                padding: 12,
+                                borderColor: isPositive ? '#00ff00' : '#ff0000',
+                                borderWidth: 3,
+                                padding: 15,
                                 displayColors: true,
+                                titleFont: { size: 16, weight: 'bold' },
+                                bodyFont: { size: 14, weight: 'bold' },
+                                cornerRadius: 10,
                                 callbacks: {
                                     label: function(context) {
-                                        return `${coin}: $${context.parsed.y.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                                        const value = context.parsed.y;
+                                        const change = ((value - displayPrice) / displayPrice * 100).toFixed(2);
+                                        return `${coin}: $${value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${change >= 0 ? '+' : ''}${change}%)`;
                                     }
                                 }
                             }
@@ -3058,35 +3070,53 @@ window.runExperiment = async function runExperiment() {
                         scales: {
                             y: {
                                 beginAtZero: false,
+                                min: Math.min(displayPrice, newPrice) * 0.95,
+                                max: Math.max(displayPrice, newPrice) * 1.05,
                                 ticks: { 
                                     color: '#ffffff',
-                                    font: { size: 12, weight: 'bold' },
+                                    font: { size: 13, weight: 'bold', family: 'Poppins' },
+                                    padding: 12,
                                     callback: function(value) {
                                         return '$' + value.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
                                     }
                                 },
                                 grid: { 
-                                    color: 'rgba(255, 255, 255, 0.15)',
-                                    lineWidth: 1
+                                    color: 'rgba(255, 255, 255, 0.2)',
+                                    lineWidth: 1.5,
+                                    drawBorder: true
                                 },
                                 border: {
-                                    color: 'rgba(255, 255, 255, 0.3)',
-                                    width: 2
+                                    color: 'rgba(255, 255, 255, 0.4)',
+                                    width: 2,
+                                    dash: []
                                 }
                             },
                             x: {
                                 ticks: { 
                                     color: '#ffffff',
-                                    font: { size: 12, weight: 'bold' }
+                                    font: { size: 13, weight: 'bold', family: 'Poppins' },
+                                    padding: 12
                                 },
                                 grid: { 
-                                    color: 'rgba(255, 255, 255, 0.15)',
-                                    lineWidth: 1
+                                    color: 'rgba(255, 255, 255, 0.2)',
+                                    lineWidth: 1.5,
+                                    drawBorder: true
                                 },
                                 border: {
-                                    color: 'rgba(255, 255, 255, 0.3)',
-                                    width: 2
+                                    color: 'rgba(255, 255, 255, 0.4)',
+                                    width: 2,
+                                    dash: []
                                 }
+                            }
+                        },
+                        elements: {
+                            point: {
+                                hoverRadius: 16,
+                                hoverBorderWidth: 5
+                            },
+                            line: {
+                                borderCapStyle: 'round',
+                                borderJoinStyle: 'round'
                             }
                         }
                     }
@@ -6193,23 +6223,23 @@ window.loadPredictiveDashboard = async function loadPredictiveDashboard() {
             predictiveDashboard = document.getElementById('predictiveDashboard');
             attempts++;
         }
-        
-        if (!predictiveDashboard) {
+    
+    if (!predictiveDashboard) {
             console.error('❌ predictiveDashboard element not found after', attempts, 'attempts');
             // Пробуем найти через querySelector
             predictiveDashboard = document.querySelector('#predictiveDashboard');
             if (!predictiveDashboard) {
                 alert('Error: Predictive Dashboard element not found. Please make sure Module C is open and refresh the page.');
-                return;
+        return;
             }
-        }
+    }
         
         console.log('✅ predictiveDashboard element found');
-        
-        // Показываем загрузку
-        predictiveDashboard.innerHTML = '<div style="color: #ffd700; padding: 15px; text-align: center;"><div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Loading predictive analytics...</div>';
-        predictiveDashboard.style.display = 'block';
-        
+    
+    // Показываем загрузку
+    predictiveDashboard.innerHTML = '<div style="color: #ffd700; padding: 15px; text-align: center;"><div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Loading predictive analytics...</div>';
+    predictiveDashboard.style.display = 'block';
+    
         // ВАЖНО: Получаем СВЕЖУЮ цену каждый раз при открытии модуля
         // Добавляем timestamp для логирования времени запроса
         const requestTime = new Date().toLocaleString();
@@ -7342,7 +7372,7 @@ Be specific with numbers, percentages, and price levels.`;
         
         const predictiveDashboard = document.getElementById('predictiveDashboard');
         if (predictiveDashboard) {
-            predictiveDashboard.innerHTML = `
+        predictiveDashboard.innerHTML = `
                 <div style="color: #ff6666; padding: 20px; background: rgba(255, 0, 0, 0.15); border-radius: 10px; border: 2px solid #ff0000; margin-top: 20px;">
                     <div style="font-weight: bold; margin-bottom: 12px; font-size: 1.1rem;">❌ Error loading predictions</div>
                     <div style="font-size: 0.95rem; color: #ffaaaa; margin-bottom: 10px;">
@@ -7370,8 +7400,8 @@ Be specific with numbers, percentages, and price levels.`;
                         font-weight: bold;
                         font-size: 0.95rem;
                     ">🔄 Retry</button>
-                </div>
-            `;
+            </div>
+        `;
             predictiveDashboard.style.display = 'block';
         } else {
             alert('Error loading predictions: ' + (error.message || 'Unknown error'));
