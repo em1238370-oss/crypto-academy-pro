@@ -1394,14 +1394,13 @@ div:has-text("Experience Points") {
     background: rgba(0, 0, 0, 0.6);
     border: 2px solid rgba(255, 0, 0, 0.3);
     border-radius: 15px !important;
-    overflow: visible;
+    overflow: hidden !important;
     transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     position: relative;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    overflow-x: hidden;
 }
 
 .drawer:hover {
