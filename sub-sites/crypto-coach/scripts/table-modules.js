@@ -3345,7 +3345,6 @@ Be specific with numbers and percentages.`;
                     width: 100%;
                     max-width: 100%;
                     box-sizing: border-box;
-                    overflow-x: hidden;
                     max-height: 80vh;
                     overflow-y: auto;
                     overflow-x: hidden;
