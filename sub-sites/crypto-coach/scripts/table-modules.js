@@ -2596,44 +2596,7 @@ function survivalAction(action) {
     alert(`✅ Action taken! +50 points`);
 }
 
-window.runExperiment = async function runExperiment() {
-    // Получаем все значения из формы
-    const name = document.getElementById('experimentName')?.value?.trim();
-    const coin = document.getElementById('experimentCoin')?.value || 'BTC';
-    const scenario = document.getElementById('experimentScenario')?.value?.trim();
-    const priceChange = parseFloat(document.getElementById('priceChange')?.value || 0);
-    const userDeposit = parseFloat(document.getElementById('userDeposit')?.value || 10000);
-
-    // Проверяем обязательные поля
-    if (!name) {
-        alert('Please enter an experiment name');
-        return;
-    }
-
-    // Проверка логической ошибки: соответствие названия эксперимента и Price Change
-    const nameLower = name.toLowerCase();
-    const hasDrop = nameLower.includes('drop') || nameLower.includes('fall') || nameLower.includes('crash') || nameLower.includes('decline');
-    const hasRise = nameLower.includes('rise') || nameLower.includes('bull') || nameLower.includes('growth') || nameLower.includes('pump');
-    const nameMismatch = (hasDrop && priceChange > 0) || (hasRise && priceChange < 0);
-    
-    let mismatchWarning = '';
-    if (nameMismatch) {
-        mismatchWarning = `
-            <div style="color: #ffd700; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 8px; border-left: 4px solid #ffd700; margin-bottom: 20px;">
-                <strong>⚠️ Warning:</strong> Experiment name suggests ${hasDrop ? 'a drop' : 'a rise'}, but price change is ${priceChange >= 0 ? 'positive' : 'negative'}. Please verify your settings.
-            </div>
-        `;
-    }
-
-    // Находим блок результатов
-    const resultsDiv = document.getElementById('experimentResults');
-    const analysisDiv = document.getElementById('experimentAnalysis');
-    const chartDiv = document.getElementById('experimentChart');
-
-    if (!resultsDiv || !analysisDiv) {
-        console.error('Results containers not found');
-        return;
-    }
+// REMOVED: Incomplete duplicate runExperiment - using complete version below
 
 window.runExperiment = async function runExperiment() {
     // Получаем все значения из формы
