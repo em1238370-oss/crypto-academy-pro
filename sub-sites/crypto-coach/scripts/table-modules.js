@@ -2675,8 +2675,8 @@ window.runExperiment = async function runExperiment() {
 
     // Показываем блок результатов
     resultsDiv.style.display = 'block';
-        analysisDiv.innerHTML = `<div style="color: #ffd700; padding: 20px; text-align: center; font-size: 1.1rem;"><div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Getting real-time price for ${coin}...</div>`;
-        
+    analysisDiv.innerHTML = `<div style="color: #ffd700; padding: 20px; text-align: center; font-size: 1.1rem;"><div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Getting real-time price for ${coin}...</div>`;
+
         // Автоматически расширяем модуль C чтобы поместился весь контент
         expandModuleCToContent();
 
@@ -3378,12 +3378,12 @@ Format your response with clear sections, use bullet points, and be specific wit
             scenarioText = scenarioText
                 .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #ffd700; font-weight: bold;">$1</strong>')
                 .replace(/\*(.*?)\*/g, '<em style="color: #ffaaaa; font-style: italic;">$1</em>')
-                .replace(/^### (.*$)/gim, '<h5 style="color: #ffd700; font-size: 1.2em; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 5px;">$1</h5>')
-                .replace(/^## (.*$)/gim, '<h4 style="color: #ffd700; font-size: 1.3em; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid rgba(255, 215, 0, 0.5); padding-bottom: 8px;">$1</h4>')
-                .replace(/^# (.*$)/gim, '<h3 style="color: #ffd700; font-size: 1.4em; margin-top: 30px; margin-bottom: 20px; border-bottom: 3px solid rgba(255, 215, 0, 0.6); padding-bottom: 10px;">$1</h3>')
-                .replace(/^(\d+\.\s+.*$)/gim, '<div style="margin: 15px 0; padding-left: 10px; border-left: 3px solid rgba(255, 215, 0, 0.5);"><strong style="color: #ffd700;">$1</strong></div>')
-                .replace(/^[-•]\s+(.*$)/gim, '<div style="margin: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: #ffd700;">▸</span> $1</div>')
-                .replace(/\n\n/g, '</p><p style="margin: 15px 0; line-height: 1.8;">')
+                .replace(/^### (.*$)/gim, '<h5 style="color: #ffd700; font-size: 1.2em; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 5px; text-align: left; width: 100%;">$1</h5>')
+                .replace(/^## (.*$)/gim, '<h4 style="color: #ffd700; font-size: 1.3em; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid rgba(255, 215, 0, 0.5); padding-bottom: 8px; text-align: left; width: 100%;">$1</h4>')
+                .replace(/^# (.*$)/gim, '<h3 style="color: #ffd700; font-size: 1.4em; margin-top: 30px; margin-bottom: 20px; border-bottom: 3px solid rgba(255, 215, 0, 0.6); padding-bottom: 10px; text-align: left; width: 100%;">$1</h3>')
+                .replace(/^(\d+\.\s+.*$)/gim, '<div style="margin: 15px 0; padding-left: 10px; padding-right: 10px; border-left: 3px solid rgba(255, 215, 0, 0.5); width: 100%; box-sizing: border-box;"><strong style="color: #ffd700;">$1</strong></div>')
+                .replace(/^[-•]\s+(.*$)/gim, '<div style="margin: 8px 0; padding-left: 20px; padding-right: 10px; position: relative; width: 100%; box-sizing: border-box;"><span style="position: absolute; left: 0; color: #ffd700;">▸</span> <span style="margin-left: 15px;">$1</span></div>')
+                .replace(/\n\n/g, '</p><p style="margin: 15px 0; line-height: 1.8; text-align: left; width: 100%;">')
                 .replace(/\n/g, '<br>');
             
             aiScenarioResult.innerHTML = `
