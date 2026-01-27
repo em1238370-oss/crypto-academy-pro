@@ -2937,26 +2937,82 @@ window.runExperiment = async function runExperiment() {
         });
     }
 
-    // Визуализация графика с РЕАЛЬНЫМИ ценами (Chart.js)
+    // Визуализация графика с РЕАЛЬНЫМИ ценами (Chart.js) - УЛУЧШЕННАЯ ВЕРСИЯ
     // График показывает реальную текущую цену и прогнозируемую цену после изменения
     if (chartDiv) {
+        // Генерируем инсайты от эксперта и покупателя
+        const expertInsights = generateExpertInsights(coin, displayPrice, newPrice, priceChange);
+        const buyerInsights = generateBuyerInsights(coin, displayPrice, newPrice, priceChange, userDeposit, depositChange);
+        
         chartDiv.innerHTML = `
             <div style="
-                background: rgba(0, 0, 0, 0.6);
-                border: 2px solid rgba(255, 0, 0, 0.3);
+                background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(30, 0, 0, 0.9) 100%);
+                border: 2px solid rgba(255, 0, 0, 0.4);
                 border-radius: 12px;
                 padding: 25px;
+                box-shadow: 0 10px 40px rgba(255, 0, 0, 0.3);
             ">
-                <h5 style="color: #ffffff; margin-bottom: 20px; font-size: 1.2rem; text-align: center;">📊 Price Movement Visualization</h5>
+                <h5 style="color: #ffd700; margin-bottom: 20px; font-size: 1.3rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
+                    📊 Price Movement Visualization
+                </h5>
                 <canvas id="experimentPriceChart" style="max-height: 300px;"></canvas>
+                
+                <!-- Expert Insights -->
+                <div style="margin-top: 25px; padding: 20px; background: rgba(255, 215, 0, 0.1); border-radius: 10px; border-left: 4px solid #ffd700;">
+                    <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem; font-weight: bold;">
+                        🎓 Expert Analysis (3 Key Points)
+                    </h6>
+                    <div style="color: #ffffff; line-height: 1.8; font-size: 0.95rem;">
+                        ${expertInsights.map((insight, idx) => `
+                            <div style="margin-bottom: 12px; padding: 10px; background: rgba(255, 215, 0, 0.05); border-radius: 6px;">
+                                <strong style="color: #ffd700;">${idx + 1}.</strong> ${insight}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <!-- Buyer Insights -->
+                <div style="margin-top: 20px; padding: 20px; background: rgba(0, 255, 0, 0.1); border-radius: 10px; border-left: 4px solid #00ff00;">
+                    <h6 style="color: #00ff00; margin-bottom: 15px; font-size: 1.1rem; font-weight: bold;">
+                        👤 Regular Buyer Perspective (3 Key Points)
+                    </h6>
+                    <div style="color: #ffffff; line-height: 1.8; font-size: 0.95rem;">
+                        ${buyerInsights.map((insight, idx) => `
+                            <div style="margin-bottom: 12px; padding: 10px; background: rgba(0, 255, 0, 0.05); border-radius: 6px;">
+                                <strong style="color: #00ff00;">${idx + 1}.</strong> ${insight}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
             </div>
         `;
         
-        // Создаём график с Chart.js
+        // Создаём улучшенный график с Chart.js
         setTimeout(() => {
             const canvas = document.getElementById('experimentPriceChart');
             if (canvas && typeof Chart !== 'undefined') {
                 const ctx = canvas.getContext('2d');
+                
+                // Создаём градиент для линии
+                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                if (priceChange >= 0) {
+                    gradient.addColorStop(0, 'rgba(0, 255, 0, 0.8)');
+                    gradient.addColorStop(1, 'rgba(0, 255, 0, 0.1)');
+                } else {
+                    gradient.addColorStop(0, 'rgba(255, 102, 102, 0.8)');
+                    gradient.addColorStop(1, 'rgba(255, 102, 102, 0.1)');
+                }
+                
+                // Создаём градиент для заливки
+                const fillGradient = ctx.createLinearGradient(0, 0, 0, 300);
+                if (priceChange >= 0) {
+                    fillGradient.addColorStop(0, 'rgba(0, 255, 0, 0.3)');
+                    fillGradient.addColorStop(1, 'rgba(0, 255, 0, 0.05)');
+                } else {
+                    fillGradient.addColorStop(0, 'rgba(255, 102, 102, 0.3)');
+                    fillGradient.addColorStop(1, 'rgba(255, 102, 102, 0.05)');
+                }
+                
                 new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -2964,38 +3020,90 @@ window.runExperiment = async function runExperiment() {
                         datasets: [{
                             label: `${coin} Price ($)`,
                             data: [displayPrice, newPrice],
-                            borderColor: priceChange >= 0 ? '#00ff00' : '#ff6666',
-                            backgroundColor: priceChange >= 0 ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 102, 102, 0.1)',
-                            borderWidth: 3,
-                            pointRadius: 8,
+                            borderColor: gradient,
+                            backgroundColor: fillGradient,
+                            borderWidth: 4,
+                            pointRadius: 10,
+                            pointHoverRadius: 12,
                             pointBackgroundColor: priceChange >= 0 ? '#00ff00' : '#ff6666',
-                            tension: 0.4
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 3,
+                            pointHoverBackgroundColor: priceChange >= 0 ? '#00ff00' : '#ff6666',
+                            pointHoverBorderColor: '#ffd700',
+                            pointHoverBorderWidth: 4,
+                            tension: 0.4,
+                            fill: true,
+                            shadowOffsetX: 0,
+                            shadowOffsetY: 5,
+                            shadowBlur: 15,
+                            shadowColor: priceChange >= 0 ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 102, 102, 0.5)'
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeInOutQuart'
+                        },
                         plugins: {
                             legend: {
-                                labels: { color: '#ffffff', font: { size: 14 } }
+                                display: true,
+                                position: 'top',
+                                labels: { 
+                                    color: '#ffffff', 
+                                    font: { size: 14, weight: 'bold' },
+                                    padding: 15,
+                                    usePointStyle: true
+                                }
                             },
                             tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
                                 titleColor: '#ffd700',
                                 bodyColor: '#ffffff',
-                                borderColor: '#ff0000',
-                                borderWidth: 1
+                                borderColor: priceChange >= 0 ? '#00ff00' : '#ff6666',
+                                borderWidth: 2,
+                                padding: 12,
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${coin}: $${context.parsed.y.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                                    }
+                                }
                             }
                         },
                         scales: {
                             y: {
                                 beginAtZero: false,
-                                ticks: { color: '#ffffff' },
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                                ticks: { 
+                                    color: '#ffffff',
+                                    font: { size: 12, weight: 'bold' },
+                                    callback: function(value) {
+                                        return '$' + value.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+                                    }
+                                },
+                                grid: { 
+                                    color: 'rgba(255, 255, 255, 0.15)',
+                                    lineWidth: 1
+                                },
+                                border: {
+                                    color: 'rgba(255, 255, 255, 0.3)',
+                                    width: 2
+                                }
                             },
                             x: {
-                                ticks: { color: '#ffffff' },
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                                ticks: { 
+                                    color: '#ffffff',
+                                    font: { size: 12, weight: 'bold' }
+                                },
+                                grid: { 
+                                    color: 'rgba(255, 255, 255, 0.15)',
+                                    lineWidth: 1
+                                },
+                                border: {
+                                    color: 'rgba(255, 255, 255, 0.3)',
+                                    width: 2
+                                }
                             }
                         }
                     }
