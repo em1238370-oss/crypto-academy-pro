@@ -1635,6 +1635,7 @@ div:has-text("Experience Points") {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+    border-radius: 0 0 15px 15px !important;
 }
 
 /* Module C: Auto-expand to fit all content - no scrolling, module grows */
@@ -1642,6 +1643,7 @@ div:has-text("Experience Points") {
     max-height: none !important;
     overflow-y: visible !important;
     overflow-x: hidden !important;
+    border-radius: 0 0 15px 15px !important;
 }
 
 /* Fix for Module C to prevent overflow */
