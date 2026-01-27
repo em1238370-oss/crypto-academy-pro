@@ -3843,10 +3843,18 @@ Be specific with numbers and percentages.`;
                     }
                     drawPerformanceHeatmap(performanceByDay, performanceByMonth);
                     renderTradeLog(trades);
+                    
+                    // Автоматически расширяем модуль после отрисовки всех графиков
+                    expandModuleCToContent();
                 } catch (error) {
                     console.error('Error drawing charts:', error);
                 }
             }, 200);
+            
+            // Еще раз расширяем модуль после небольшой задержки для полной загрузки
+            setTimeout(() => {
+                expandModuleCToContent();
+            }, 500);
         } else {
             throw new Error('No response from AI');
         }
