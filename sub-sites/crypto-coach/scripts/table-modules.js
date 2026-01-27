@@ -54,6 +54,24 @@ function expandModuleCToContent() {
 function toggleDrawer(drawerId) {
     const drawer = document.getElementById(drawerId);
     drawer.classList.toggle('open');
+    // Принудительно сохраняем скругленные углы
+    if (drawer.classList.contains('open')) {
+        drawer.style.borderRadius = '15px';
+        drawer.style.webkitBorderRadius = '15px';
+        drawer.style.mozBorderRadius = '15px';
+        drawer.style.borderTopLeftRadius = '15px';
+        drawer.style.borderTopRightRadius = '15px';
+        drawer.style.borderBottomLeftRadius = '15px';
+        drawer.style.borderBottomRightRadius = '15px';
+    } else {
+        drawer.style.borderRadius = '15px';
+        drawer.style.webkitBorderRadius = '15px';
+        drawer.style.mozBorderRadius = '15px';
+        drawer.style.borderTopLeftRadius = '15px';
+        drawer.style.borderTopRightRadius = '15px';
+        drawer.style.borderBottomLeftRadius = '15px';
+        drawer.style.borderBottomRightRadius = '15px';
+    }
 }
 
 function toggleDrawerWithInit(drawerId) {
