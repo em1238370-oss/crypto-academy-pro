@@ -2951,7 +2951,7 @@ window.runExperiment = async function runExperiment() {
                 padding: 30px;
                 box-shadow: 0 15px 50px rgba(255, 0, 0, 0.4), inset 0 0 30px rgba(255, 0, 0, 0.1);
                 position: relative;
-                overflow: hidden;
+                overflow: visible;
             ">
                 <!-- Декоративные элементы фона -->
                 <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: 
@@ -3182,11 +3182,7 @@ window.runExperiment = async function runExperiment() {
                                 borderCapStyle: 'round',
                                 borderJoinStyle: 'round'
                             }
-                        },
-                        // Отключаем все интерактивные элементы
-                        onResize: null,
-                        onClick: null,
-                        onHover: null
+                        }
                     }
                 });
             }
