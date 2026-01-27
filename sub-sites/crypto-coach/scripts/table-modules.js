@@ -2979,7 +2979,7 @@ window.runExperiment = async function runExperiment() {
                 const isPositive = priceChange >= 0;
                 
                 // Создаём градиент для линии (более насыщенный)
-                const gradient = ctx.createLinearGradient(0, 0, 0, 350);
+                const gradient = ctx.createLinearGradient(0, 0, 0, 450);
                 if (isPositive) {
                     gradient.addColorStop(0, '#00ff88');
                     gradient.addColorStop(0.5, '#00ff00');
@@ -2991,7 +2991,7 @@ window.runExperiment = async function runExperiment() {
                 }
                 
                 // Создаём градиент для заливки (более выразительный)
-                const fillGradient = ctx.createLinearGradient(0, 0, 0, 350);
+                const fillGradient = ctx.createLinearGradient(0, 0, 0, 450);
                 if (isPositive) {
                     fillGradient.addColorStop(0, 'rgba(0, 255, 136, 0.4)');
                     fillGradient.addColorStop(0.5, 'rgba(0, 255, 0, 0.25)');
