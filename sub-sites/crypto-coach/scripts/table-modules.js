@@ -346,6 +346,9 @@ FORMAT YOUR RESPONSE with these EXACT sections:
 
 3. TIME-BASED MARKET ANALYSIS (For each coin):
 
+
+
+
    SHORT-TERM (1-7 days):
    - Market conditions and price movements to watch
    - Key price levels (support/resistance) to monitor
@@ -2937,52 +2940,32 @@ window.runExperiment = async function runExperiment() {
         });
     }
 
-    // Визуализация графика с РЕАЛЬНЫМИ ценами (Chart.js) - УЛУЧШЕННАЯ ВЕРСИЯ
+    // Визуализация графика с РЕАЛЬНЫМИ ценами (Chart.js) - ПРОФЕССИОНАЛЬНАЯ ВЕРСИЯ
     // График показывает реальную текущую цену и прогнозируемую цену после изменения
     if (chartDiv) {
-        // Генерируем инсайты от эксперта и покупателя
-        const expertInsights = generateExpertInsights(coin, displayPrice, newPrice, priceChange);
-        const buyerInsights = generateBuyerInsights(coin, displayPrice, newPrice, priceChange, userDeposit, depositChange);
-        
         chartDiv.innerHTML = `
             <div style="
-                background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(30, 0, 0, 0.9) 100%);
-                border: 2px solid rgba(255, 0, 0, 0.4);
-                border-radius: 12px;
-                padding: 25px;
-                box-shadow: 0 10px 40px rgba(255, 0, 0, 0.3);
+                background: linear-gradient(135deg, rgba(0, 0, 0, 0.85) 0%, rgba(20, 0, 0, 0.95) 100%);
+                border: 2px solid rgba(255, 0, 0, 0.5);
+                border-radius: 15px;
+                padding: 30px;
+                box-shadow: 0 15px 50px rgba(255, 0, 0, 0.4), inset 0 0 30px rgba(255, 0, 0, 0.1);
+                position: relative;
+                overflow: hidden;
             ">
-                <h5 style="color: #ffd700; margin-bottom: 20px; font-size: 1.3rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
+                <!-- Декоративные элементы фона -->
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: 
+                    radial-gradient(circle at 20% 30%, rgba(255, 0, 0, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 70%, rgba(255, 215, 0, 0.08) 0%, transparent 50%);
+                    pointer-events: none; z-index: 0;"></div>
+                
+                <h5 style="color: #ffd700; margin-bottom: 25px; font-size: 1.4rem; text-align: center; 
+                    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.5);
+                    font-weight: bold; position: relative; z-index: 1;">
                     📊 Price Movement Visualization
                 </h5>
-                <canvas id="experimentPriceChart" style="max-height: 300px;"></canvas>
-                
-                <!-- Expert Insights -->
-                <div style="margin-top: 25px; padding: 20px; background: rgba(255, 215, 0, 0.1); border-radius: 10px; border-left: 4px solid #ffd700;">
-                    <h6 style="color: #ffd700; margin-bottom: 15px; font-size: 1.1rem; font-weight: bold;">
-                        🎓 Expert Analysis (3 Key Points)
-                    </h6>
-                    <div style="color: #ffffff; line-height: 1.8; font-size: 0.95rem;">
-                        ${expertInsights.map((insight, idx) => `
-                            <div style="margin-bottom: 12px; padding: 10px; background: rgba(255, 215, 0, 0.05); border-radius: 6px;">
-                                <strong style="color: #ffd700;">${idx + 1}.</strong> ${insight}
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                
-                <!-- Buyer Insights -->
-                <div style="margin-top: 20px; padding: 20px; background: rgba(0, 255, 0, 0.1); border-radius: 10px; border-left: 4px solid #00ff00;">
-                    <h6 style="color: #00ff00; margin-bottom: 15px; font-size: 1.1rem; font-weight: bold;">
-                        👤 Regular Buyer Perspective (3 Key Points)
-                    </h6>
-                    <div style="color: #ffffff; line-height: 1.8; font-size: 0.95rem;">
-                        ${buyerInsights.map((insight, idx) => `
-                            <div style="margin-bottom: 12px; padding: 10px; background: rgba(0, 255, 0, 0.05); border-radius: 6px;">
-                                <strong style="color: #00ff00;">${idx + 1}.</strong> ${insight}
-                            </div>
-                        `).join('')}
-                    </div>
+                <div style="position: relative; z-index: 1; background: rgba(0, 0, 0, 0.3); border-radius: 10px; padding: 15px;">
+                    <canvas id="experimentPriceChart" style="max-height: 350px; width: 100% !important;"></canvas>
                 </div>
             </div>
         `;
