@@ -3473,6 +3473,9 @@ async function runBacktesting() {
     backtestResults.innerHTML = '<div style="color: #ffd700; padding: 15px; text-align: center;"><div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Running backtest analysis...</div>';
     backtestResults.style.display = 'block';
     
+    // Автоматически расширяем модуль C чтобы поместился весь контент
+    expandModuleCToContent();
+    
     try {
         // Бэктестинг с РЕАЛЬНЫМИ историческими данными из CoinGecko API
         // Используем AI для анализа стратегии + реальные исторические цены
