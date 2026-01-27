@@ -8334,3 +8334,65 @@ function adjustTooltipPosition(tooltip) {
     tooltipText.style.opacity = '1';
 }
 
+// Генерация инсайтов от эксперта
+function generateExpertInsights(coin, currentPrice, projectedPrice, priceChange) {
+    const changePercent = Math.abs(priceChange);
+    const isPositive = priceChange >= 0;
+    
+    const insights = [];
+    
+    // Инсайт 1: Технический анализ
+    if (changePercent > 20) {
+        insights.push(`<strong>Volatility Assessment:</strong> A ${changePercent.toFixed(1)}% move represents significant volatility. ${isPositive ? 'Such strong upward momentum' : 'Such sharp declines'} typically indicate ${isPositive ? 'potential overextension' : 'panic selling or fundamental concerns'}. Monitor for ${isPositive ? 'resistance levels' : 'support levels'} and volume confirmation.`);
+    } else if (changePercent > 10) {
+        insights.push(`<strong>Market Structure:</strong> A ${changePercent.toFixed(1)}% movement suggests ${isPositive ? 'sustained buying pressure' : 'increased selling pressure'}. ${isPositive ? 'Consider watching for consolidation patterns' : 'Look for potential reversal signals'} and compare with historical ${coin} behavior during similar market conditions.`);
+    } else {
+        insights.push(`<strong>Price Action Analysis:</strong> A ${changePercent.toFixed(1)}% ${isPositive ? 'appreciation' : 'decline'} falls within normal market fluctuations. ${isPositive ? 'This indicates steady accumulation' : 'This suggests healthy market correction'}. Monitor volume and compare with broader market trends for context.`);
+    }
+    
+    // Инсайт 2: Риск-менеджмент
+    if (isPositive) {
+        insights.push(`<strong>Risk Management Perspective:</strong> With price moving from $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2})} to $${projectedPrice.toLocaleString('en-US', {minimumFractionDigits: 2})}, consider implementing trailing stop-loss orders to protect gains. Historical data shows that ${coin} often experiences pullbacks after strong rallies, so position sizing and exit strategies become critical.`);
+    } else {
+        insights.push(`<strong>Risk Management Perspective:</strong> The decline from $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2})} to $${projectedPrice.toLocaleString('en-US', {minimumFractionDigits: 2})} highlights the importance of stop-loss orders. ${changePercent > 15 ? 'Sharp declines' : 'Moderate corrections'} can accelerate, so having predefined exit points helps manage downside risk. Consider dollar-cost averaging if planning to add to positions.`);
+    }
+    
+    // Инсайт 3: Контекст и сравнение
+    const priceDiff = Math.abs(projectedPrice - currentPrice);
+    insights.push(`<strong>Market Context:</strong> The ${priceDiff.toLocaleString('en-US', {minimumFractionDigits: 2})} price difference represents ${((priceDiff / currentPrice) * 100).toFixed(1)}% of current value. ${isPositive ? 'Compare this movement with' : 'Assess whether this decline aligns with'} ${coin}'s historical volatility patterns (typically 2-5% daily moves). ${isPositive ? 'If this exceeds normal ranges, investigate fundamental catalysts' : 'If this exceeds normal ranges, investigate potential fundamental issues'}. Always cross-reference with market sentiment indicators and on-chain metrics.`);
+    
+    return insights;
+}
+
+// Генерация инсайтов от обычного покупателя
+function generateBuyerInsights(coin, currentPrice, projectedPrice, priceChange, userDeposit, depositChange) {
+    const changePercent = Math.abs(priceChange);
+    const isPositive = priceChange >= 0;
+    const newValue = userDeposit + depositChange;
+    
+    const insights = [];
+    
+    // Инсайт 1: Практическое влияние на портфель
+    if (isPositive) {
+        insights.push(`<strong>Portfolio Impact:</strong> If I had $${userDeposit.toLocaleString('en-US', {minimumFractionDigits: 2})} invested in ${coin}, this ${changePercent.toFixed(1)}% increase would grow my portfolio to $${newValue.toLocaleString('en-US', {minimumFractionDigits: 2})}. That's a gain of $${Math.abs(depositChange).toLocaleString('en-US', {minimumFractionDigits: 2})}! However, I need to remember that these are paper gains until I actually sell, and prices can change quickly.`);
+    } else {
+        insights.push(`<strong>Portfolio Impact:</strong> If I had $${userDeposit.toLocaleString('en-US', {minimumFractionDigits: 2})} invested in ${coin}, this ${changePercent.toFixed(1)}% drop would reduce my portfolio to $${newValue.toLocaleString('en-US', {minimumFractionDigits: 2})}. That's a loss of $${Math.abs(depositChange).toLocaleString('en-US', {minimumFractionDigits: 2})}. This reminds me why I should never invest more than I can afford to lose, and why diversification is so important.`);
+    }
+    
+    // Инсайт 2: Эмоциональная реакция
+    if (isPositive) {
+        insights.push(`<strong>Emotional Considerations:</strong> Seeing ${coin} go from $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2})} to $${projectedPrice.toLocaleString('en-US', {minimumFractionDigits: 2})} feels exciting! But I've learned that FOMO (fear of missing out) can lead to bad decisions. I should ask myself: "Would I buy at this higher price if I didn't already own it?" If the answer is no, maybe it's time to consider taking some profits.`);
+    } else {
+        insights.push(`<strong>Emotional Considerations:</strong> Watching ${coin} drop from $${currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2})} to $${projectedPrice.toLocaleString('en-US', {minimumFractionDigits: 2})} can be stressful. I need to avoid panic selling. I've learned that markets are volatile, and ${coin} has recovered from drops before. I should stick to my original plan and not make emotional decisions. If I believe in the long-term potential, this might even be a buying opportunity.`);
+    }
+    
+    // Инсайт 3: Практические шаги
+    if (isPositive) {
+        insights.push(`<strong>What I Should Do:</strong> With this ${changePercent.toFixed(1)}% gain, I'm thinking about my strategy. ${changePercent > 20 ? 'Since this is a big move, I might consider taking some profits off the table (maybe 20-30%) to lock in gains, while letting the rest ride.' : 'I should review my original investment goals. If I was planning to hold long-term, maybe I don\'t need to do anything. But if I had a target price in mind, this might be a good time to reassess.'} I'll also check if there's any news driving this move that I should be aware of.`);
+    } else {
+        insights.push(`<strong>What I Should Do:</strong> Facing this ${changePercent.toFixed(1)}% decline, I'm reminding myself of my investment strategy. ${changePercent > 20 ? 'This is a significant drop, so I should check if my stop-loss was triggered. If not, I need to decide: is this a temporary dip or a sign of bigger problems?' : 'This is a normal market fluctuation. I should stick to my plan and not overreact.'} I'll also look at whether other cryptocurrencies are down too (which might mean it's a market-wide issue) or if it's specific to ${coin}. Most importantly, I won't make any hasty decisions based on fear.`);
+    }
+    
+    return insights;
+}
+
