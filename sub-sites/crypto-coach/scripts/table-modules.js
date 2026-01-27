@@ -3577,15 +3577,20 @@ Be specific with numbers and percentages.`;
                 <div style="
                     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(30, 0, 0, 0.8) 100%);
                     border: 2px solid rgba(255, 0, 0, 0.4);
-                    border-radius: 12px;
-                    padding: 25px;
+                    border-radius: 15px;
+                    padding: 35px;
                     box-shadow: 0 10px 40px rgba(255, 0, 0, 0.3);
                     width: 100%;
                     max-width: 100%;
                     box-sizing: border-box;
-                    max-height: 80vh;
+                    max-height: 900px;
+                    min-height: 500px;
                     overflow-y: auto;
                     overflow-x: hidden;
+                    margin: 0;
+                    position: relative;
+                    left: 0;
+                    right: 0;
                 " class="backtest-results-container">
                     <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.4rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
                         📊 Backtesting Results
