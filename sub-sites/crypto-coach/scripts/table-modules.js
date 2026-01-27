@@ -2964,8 +2964,8 @@ window.runExperiment = async function runExperiment() {
                     font-weight: bold; position: relative; z-index: 1;">
                     📊 Price Movement Visualization
                 </h5>
-                <div style="position: relative; z-index: 1; background: rgba(0, 0, 0, 0.3); border-radius: 10px; padding: 15px;">
-                    <canvas id="experimentPriceChart" style="max-height: 350px; width: 100% !important;"></canvas>
+                <div style="position: relative; z-index: 1; background: rgba(0, 0, 0, 0.3); border-radius: 10px; padding: 20px; min-height: 450px;">
+                    <canvas id="experimentPriceChart" style="width: 100% !important; height: 450px !important;"></canvas>
                 </div>
             </div>
         `;
@@ -3027,11 +3027,22 @@ window.runExperiment = async function runExperiment() {
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: true,
-                        aspectRatio: 2.5,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                top: 20,
+                                right: 20,
+                                bottom: 20,
+                                left: 20
+                            }
+                        },
                         animation: {
-                            duration: 2000,
-                            easing: 'easeInOutCubic'
+                            duration: 2500,
+                            easing: 'easeInOutCubic',
+                            delay: (context) => {
+                                // Анимация точек последовательно
+                                return context.dataIndex * 50;
+                            }
                         },
                         plugins: {
                             legend: {
@@ -3070,8 +3081,8 @@ window.runExperiment = async function runExperiment() {
                         scales: {
                             y: {
                                 beginAtZero: false,
-                                min: Math.min(displayPrice, newPrice) * 0.95,
-                                max: Math.max(displayPrice, newPrice) * 1.05,
+                                min: Math.min(...dataPoints) * 0.98,
+                                max: Math.max(...dataPoints) * 1.02,
                                 ticks: { 
                                     color: '#ffffff',
                                     font: { size: 13, weight: 'bold', family: 'Poppins' },
@@ -3094,12 +3105,20 @@ window.runExperiment = async function runExperiment() {
                             x: {
                                 ticks: { 
                                     color: '#ffffff',
-                                    font: { size: 13, weight: 'bold', family: 'Poppins' },
-                                    padding: 12
+                                    font: { size: 12, weight: 'bold', family: 'Poppins' },
+                                    padding: 10,
+                                    maxRotation: 0,
+                                    callback: function(value, index) {
+                                        // Показываем только Start и Target, остальные скрываем
+                                        const labels = this.chart.data.labels;
+                                        if (index === 0) return 'Start';
+                                        if (index === labels.length - 1) return 'Target';
+                                        return '';
+                                    }
                                 },
                                 grid: { 
-                                    color: 'rgba(255, 255, 255, 0.2)',
-                                    lineWidth: 1.5,
+                                    color: 'rgba(255, 255, 255, 0.15)',
+                                    lineWidth: 1,
                                     drawBorder: true
                                 },
                                 border: {
