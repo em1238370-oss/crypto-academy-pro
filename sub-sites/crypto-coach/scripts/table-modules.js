@@ -8225,4 +8225,3 @@ function adjustTooltipPosition(tooltip) {
     tooltipText.style.opacity = '1';
 }
 
-}
