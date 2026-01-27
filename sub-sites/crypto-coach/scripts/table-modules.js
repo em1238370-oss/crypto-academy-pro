@@ -2917,6 +2917,8 @@ window.runExperiment = async function runExperiment() {
                         </div>
                     </div>
                 `;
+                // Автоматически расширяем модуль после появления AI совета
+                expandModuleCToContent();
             } else {
                 // Fallback на аналитический формат (БЕЗ прямых рекомендаций)
                 let adviceText = '';
