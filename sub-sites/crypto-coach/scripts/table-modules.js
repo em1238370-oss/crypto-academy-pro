@@ -2714,7 +2714,7 @@ window.runExperiment = async function runExperiment() {
                     📋 Basic Information <span id="basicInfoIcon" style="float: right; font-size: 1rem;">▼</span>
                 </h5>
                 <div id="basicInfoSection">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 1.2rem;">
+                    <table style="width: 100%; max-width: 100%; border-collapse: collapse; font-size: 1.2rem; table-layout: auto; box-sizing: border-box;">
                         <tr style="background: rgba(255, 0, 0, 0.2);">
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; width: 40%; font-size: 1.2rem; position: relative;">
                                 Experiment Name:
@@ -2743,7 +2743,7 @@ window.runExperiment = async function runExperiment() {
                     💰 Price Data <span id="priceDataIcon" style="float: right; font-size: 1rem;">▼</span>
                 </h5>
                 <div id="priceDataSection">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 1.2rem;">
+                    <table style="width: 100%; max-width: 100%; border-collapse: collapse; font-size: 1.2rem; table-layout: auto; box-sizing: border-box;">
                         <tr>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
                                 Current Price:
@@ -2787,7 +2787,7 @@ window.runExperiment = async function runExperiment() {
                     💼 Portfolio Results <span id="portfolioResultsIcon" style="float: right; font-size: 1rem;">▼</span>
                 </h5>
                 <div id="portfolioResultsSection">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 1.2rem;">
+                    <table style="width: 100%; max-width: 100%; border-collapse: collapse; font-size: 1.2rem; table-layout: auto; box-sizing: border-box;">
                         <tr>
                             <td style="padding: 12px; border: 1px solid rgba(255, 0, 0, 0.3); color: #ffd700; font-weight: bold; font-size: 1.2rem; position: relative;">
                                 New Deposit Value:
@@ -4335,7 +4335,7 @@ async function optimizeStrategy() {
                         <strong style="color: #ffd700;">💡 What does this table show?</strong><br>
                         This table displays the top 5 best parameter combinations found by the optimizer. Each row shows a different combination of X (Buy %) and Y (Sell %) values, along with their performance metrics. The combinations are ranked from best (🥇) to 5th place, based on a combined score of win rate, return, and risk-adjusted performance (Sharpe ratio).
                     </div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 1.2rem;">
+                    <table style="width: 100%; max-width: 100%; border-collapse: collapse; font-size: 1.2rem; table-layout: auto; box-sizing: border-box;">
                         <tr style="background: rgba(255, 215, 0, 0.2);">
                             <th style="padding: 12px; border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; text-align: left; font-size: 1.2rem;">
                                 Rank
