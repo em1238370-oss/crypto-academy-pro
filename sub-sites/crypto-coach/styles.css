@@ -1391,24 +1391,42 @@ div:has-text("Experience Points") {
 }
 
 .drawer {
-    background: rgba(0, 0, 0, 0.6);
-    border: 2px solid rgba(255, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.6) !important;
+    border: 2px solid rgba(255, 0, 0, 0.3) !important;
     border-radius: 15px !important;
+    -webkit-border-radius: 15px !important;
+    -moz-border-radius: 15px !important;
+    border-top-left-radius: 15px !important;
+    border-top-right-radius: 15px !important;
+    border-bottom-left-radius: 15px !important;
+    border-bottom-right-radius: 15px !important;
     overflow: hidden !important;
-    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    position: relative;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 .drawer:hover {
     border-radius: 15px !important;
+    -webkit-border-radius: 15px !important;
+    -moz-border-radius: 15px !important;
+    border-top-left-radius: 15px !important;
+    border-top-right-radius: 15px !important;
+    border-bottom-left-radius: 15px !important;
+    border-bottom-right-radius: 15px !important;
 }
 
 .drawer:active {
     border-radius: 15px !important;
+    -webkit-border-radius: 15px !important;
+    -moz-border-radius: 15px !important;
+    border-top-left-radius: 15px !important;
+    border-top-right-radius: 15px !important;
+    border-bottom-left-radius: 15px !important;
+    border-bottom-right-radius: 15px !important;
 }
 
 /* Уникальный дизайн для FREE блока (drawerA) - ЗОЛОТОЙ когда закрыт */
