@@ -75,6 +75,30 @@ function toggleDrawer(drawerId) {
 }
 
 function toggleDrawerWithInit(drawerId) {
+    // Функция для принудительного сохранения скругленных углов
+    function forceRoundedCorners(element) {
+        if (!element) return;
+        element.style.borderRadius = '15px';
+        element.style.webkitBorderRadius = '15px';
+        element.style.mozBorderRadius = '15px';
+        element.style.borderTopLeftRadius = '15px';
+        element.style.borderTopRightRadius = '15px';
+        element.style.borderBottomLeftRadius = '15px';
+        element.style.borderBottomRightRadius = '15px';
+        
+        // Также для header и content
+        const header = element.querySelector('.drawer-header');
+        if (header) {
+            header.style.borderTopLeftRadius = '15px';
+            header.style.borderTopRightRadius = '15px';
+        }
+        const content = element.querySelector('.drawer-content');
+        if (content) {
+            content.style.borderBottomLeftRadius = '15px';
+            content.style.borderBottomRightRadius = '15px';
+        }
+    }
+    
     // Close ALL other drawers and clear Module C height when it's closed (no black gap on reopen)
     const allDrawers = ['drawerA', 'drawerB', 'drawerC', 'drawerD'];
     allDrawers.forEach(id => {
@@ -86,12 +110,23 @@ function toggleDrawerWithInit(drawerId) {
                     if (c) { c.style.minHeight = ''; c.style.maxHeight = ''; }
                 }
                 drawer.classList.remove('open');
+                forceRoundedCorners(drawer);
             }
         }
     });
     
     // Toggle the clicked drawer
     toggleDrawer(drawerId);
+    
+    // Принудительно применяем скругленные углы после переключения
+    const drawer = document.getElementById(drawerId);
+    if (drawer) {
+        forceRoundedCorners(drawer);
+        // Повторно применяем через небольшую задержку для надежности
+        setTimeout(() => forceRoundedCorners(drawer), 10);
+        setTimeout(() => forceRoundedCorners(drawer), 100);
+    }
+    
     if (drawerId === 'drawerC') {
         const dc = document.getElementById('drawerC');
         const cc = document.getElementById('drawerCContent');
