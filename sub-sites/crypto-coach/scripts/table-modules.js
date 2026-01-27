@@ -2699,9 +2699,10 @@ window.runExperiment = async function runExperiment() {
             border-radius: 15px;
             padding: 25px;
             box-shadow: 0 10px 40px rgba(255, 0, 0, 0.3);
-            margin-left: -37.8px;
-            margin-right: -37.8px;
-            width: calc(100% + 75.6px);
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
         ">
             <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.6rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
                 🧪 Experiment Results
@@ -3341,9 +3342,10 @@ Be specific with numbers and percentages.`;
                     border-radius: 12px;
                     padding: 25px;
                     box-shadow: 0 10px 40px rgba(255, 0, 0, 0.3);
-                    margin-left: -37.8px;
-                    margin-right: -37.8px;
-                    width: calc(100% + 75.6px);
+                    width: 100%;
+                    max-width: 100%;
+                    box-sizing: border-box;
+                    overflow-x: hidden;
                     max-height: 80vh;
                     overflow-y: auto;
                     overflow-x: hidden;
