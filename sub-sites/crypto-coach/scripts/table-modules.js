@@ -5462,7 +5462,7 @@ function clearPredictiveForm() {
 }
 
 // Auto-save Predictive Analytics form
-function autoSavePredictiveForm() {
+window.autoSavePredictiveForm = function autoSavePredictiveForm() {
     const coin = document.getElementById('predictCoin')?.value || 'BTC';
     localStorage.setItem('predictiveForm', JSON.stringify({ coin: coin }));
 }
@@ -6113,7 +6113,7 @@ function savePredictiveResult() {
 }
 
 // Predictive Analytics Dashboard - прогнозная аналитика с AI
-async function loadPredictiveDashboard() {
+window.loadPredictiveDashboard = async function loadPredictiveDashboard() {
     let coin = 'BTC'; // Объявляем coin вне try для доступа в catch
     try {
         console.log('🚀 loadPredictiveDashboard() called');
@@ -8262,63 +8262,4 @@ function adjustTooltipPosition(tooltip) {
     tooltipText.style.opacity = '1';
 }
 
-// ========== GLOBAL FUNCTION EXPORTS - Ensure all functions are accessible from HTML ==========
-// This section ensures all functions used in onclick/onchange handlers are globally accessible
-
-// Make sure fillExampleExperiment is globally accessible
-if (typeof window.fillExampleExperiment === 'undefined') {
-    window.fillExampleExperiment = function fillExampleExperiment() {
-        document.getElementById('userDeposit').value = '10000';
-        document.getElementById('experimentName').value = 'BTC Drop Scenario 20%';
-        document.getElementById('experimentCoin').value = 'BTC';
-        document.getElementById('experimentScenario').value = 'What if BTC drops 20% due to negative regulatory news? How will this affect my portfolio value?';
-        document.getElementById('priceChange').value = '-20';
-        if (typeof updatePriceChangeDisplay === 'function') updatePriceChangeDisplay();
-        if (typeof showAICorrelations === 'function') showAICorrelations();
-        if (typeof saveExperimentForm === 'function') saveExperimentForm();
-    };
 }
-
-// Make sure saveExperimentForm is globally accessible
-if (typeof window.saveExperimentForm === 'undefined') {
-    window.saveExperimentForm = function saveExperimentForm() {
-        const formData = {
-            userDeposit: document.getElementById('userDeposit')?.value || '',
-            experimentName: document.getElementById('experimentName')?.value || '',
-            experimentCoin: document.getElementById('experimentCoin')?.value || '',
-            experimentScenario: document.getElementById('experimentScenario')?.value || '',
-            priceChange: document.getElementById('priceChange')?.value || '0'
-        };
-        localStorage.setItem('experimentFormData', JSON.stringify(formData));
-    };
-}
-
-// Make sure runExperiment is globally accessible
-if (typeof window.runExperiment === 'undefined' && typeof runExperiment === 'function') {
-    window.runExperiment = runExperiment;
-}
-
-// Make sure aiScenarioBuilder is globally accessible
-if (typeof window.aiScenarioBuilder === 'undefined' && typeof aiScenarioBuilder === 'function') {
-    window.aiScenarioBuilder = aiScenarioBuilder;
-}
-
-// Make sure loadPredictiveDashboard is globally accessible
-if (typeof window.loadPredictiveDashboard === 'undefined' && typeof loadPredictiveDashboard === 'function') {
-    window.loadPredictiveDashboard = loadPredictiveDashboard;
-}
-
-// Make sure autoSavePredictiveForm is globally accessible
-if (typeof window.autoSavePredictiveForm === 'undefined' && typeof autoSavePredictiveForm === 'function') {
-    window.autoSavePredictiveForm = autoSavePredictiveForm;
-}
-
-console.log('✅ All Module C functions are now globally accessible:', {
-    fillExampleExperiment: typeof window.fillExampleExperiment,
-    saveExperimentForm: typeof window.saveExperimentForm,
-    runExperiment: typeof window.runExperiment,
-    aiScenarioBuilder: typeof window.aiScenarioBuilder,
-    loadPredictiveDashboard: typeof window.loadPredictiveDashboard,
-    autoSavePredictiveForm: typeof window.autoSavePredictiveForm
-});
-});
