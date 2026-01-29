@@ -7894,6 +7894,86 @@ function runStressTestFromModuleD() {
     }, 2500);
 }
 
+window.runDcaExperiment = function runDcaExperiment() {
+    const amount = parseInt(document.getElementById('dcaExperimentAmount')?.value || 100, 10);
+    const coin = document.getElementById('dcaExperimentCoin')?.value || 'BTC';
+    const months = parseInt(document.getElementById('dcaExperimentPeriod')?.value || 12, 10);
+    const resultDiv = document.getElementById('dcaExperimentResult');
+    if (!resultDiv) return;
+    const totalInvested = amount * months;
+    const illustrativeGrowth = 1 + (coin === 'BTC' ? 0.15 : 0.12);
+    const illustrativeValue = Math.round(totalInvested * illustrativeGrowth);
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `
+        <h5 style="color: #ffd700; margin-bottom: 10px;">DCA over the last ${months} months (${coin})</h5>
+        <p><strong style="color: #ffffff;">Total invested:</strong> $${totalInvested.toLocaleString()}</p>
+        <p><strong style="color: #ffffff;">Illustrative value today:</strong> ~$${illustrativeValue.toLocaleString()} (example growth only; real results vary)</p>
+        <p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 12px;">This is for education only. Past performance does not guarantee future results. Use your own research.</p>
+    `;
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
+
+window.runWhatIfScenario = function runWhatIfScenario() {
+    const scenario = document.getElementById('whatIfScenario')?.value || 'crash';
+    const answer = (document.getElementById('whatIfMyAnswer')?.value || '').trim();
+    const resultDiv = document.getElementById('whatIfScenarioResult');
+    if (!resultDiv) return;
+    const scenarioLabels = { crash: 'Market drops 30% in a week', double: 'My coin doubles in a month', urgent: 'I need the money urgently' };
+    resultDiv.style.display = 'block';
+    if (!answer) {
+        resultDiv.innerHTML = `<p style="color: #ffaa00;">Write in one or two sentences what you would do in this situation, then click "Show my plan".</p>`;
+        return;
+    }
+    resultDiv.innerHTML = `
+        <h5 style="color: #ffd700; margin-bottom: 10px;">Your plan: ${scenarioLabels[scenario] || scenario}</h5>
+        <p><strong style="color: #ffffff;">In this case I would:</strong></p>
+        <p style="margin-top: 8px; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid rgba(255, 215, 0, 0.5);">${answer.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+        <p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 12px;">Having a written plan helps you stick to it when emotions run high. Revisit it if the situation changes.</p>
+    `;
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
+
+window.runStrategyInNumbers = function runStrategyInNumbers() {
+    const deposit = parseInt(document.getElementById('strategyNumbersDeposit')?.value || 5000, 10);
+    const horizonMonths = parseInt(document.getElementById('strategyNumbersHorizon')?.value || 12, 10);
+    const risk = parseInt(document.getElementById('strategyNumbersRisk')?.value || 50, 10);
+    const resultDiv = document.getElementById('strategyNumbersResult');
+    if (!resultDiv) return;
+    const riskLabel = risk <= 30 ? 'Low' : risk <= 60 ? 'Medium' : 'High';
+    const possibleDown = risk <= 30 ? 15 : risk <= 60 ? 30 : 50;
+    const possibleUp = risk <= 30 ? 25 : risk <= 60 ? 50 : 100;
+    const illustrativeLow = Math.round(deposit * (1 - possibleDown / 100));
+    const illustrativeHigh = Math.round(deposit * (1 + possibleUp / 100));
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `
+        <h5 style="color: #ffd700; margin-bottom: 10px;">Strategy in numbers</h5>
+        <p><strong style="color: #ffffff;">Deposit:</strong> $${deposit.toLocaleString()} · <strong style="color: #ffffff;">Horizon:</strong> ${horizonMonths} months · <strong style="color: #ffffff;">Risk:</strong> ${riskLabel} (${risk})</p>
+        <p><strong style="color: #ffffff;">Illustrative outcome range:</strong> from ~$${illustrativeLow.toLocaleString()} (−${possibleDown}%) to ~$${illustrativeHigh.toLocaleString()} (+${possibleUp}%).</p>
+        <p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 12px;">This is for education only. Real results depend on the market and your execution. Manage risk according to your situation.</p>
+    `;
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
+
+window.runRebalanceExperiment = function runRebalanceExperiment() {
+    const btcPct = Math.min(100, Math.max(0, parseInt(document.getElementById('rebalanceBtcPct')?.value || 60, 10)));
+    const ethPct = 100 - btcPct;
+    const portfolioValue = parseInt(document.getElementById('rebalancePortfolioValue')?.value || 10000, 10);
+    const frequency = document.getElementById('rebalanceFrequency')?.value || 'quarterly';
+    const resultDiv = document.getElementById('rebalanceExperimentResult');
+    if (!resultDiv) return;
+    const btcValue = Math.round(portfolioValue * btcPct / 100);
+    const ethValue = Math.round(portfolioValue * ethPct / 100);
+    const freqLabel = frequency === 'monthly' ? 'Monthly' : frequency === 'quarterly' ? 'Quarterly' : 'Yearly';
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `
+        <h5 style="color: #ffd700; margin-bottom: 10px;">Rebalance experiment</h5>
+        <p><strong style="color: #ffffff;">Current allocation:</strong> BTC ${btcPct}% ($${btcValue.toLocaleString()}) · ETH ${ethPct}% ($${ethValue.toLocaleString()}) · Total $${portfolioValue.toLocaleString()}</p>
+        <p><strong style="color: #ffffff;">Rebalance:</strong> ${freqLabel}. After a rebalance you bring weights back to your target (e.g. ${btcPct}% / ${ethPct}%). This sells a bit of what went up and buys what went down, which can reduce volatility and lock in some discipline.</p>
+        <p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 12px;">This is illustrative. Real rebalancing has fees and tax implications. For education only.</p>
+    `;
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
+
 function generateDistribution(assets, type) {
     const percentages = {
         'conservative': [60, 40],

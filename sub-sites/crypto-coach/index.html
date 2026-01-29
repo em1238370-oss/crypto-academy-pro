@@ -1338,6 +1338,100 @@
                                        <button class="btn btn-red" onclick="compareStrategiesAB()" style="padding: 10px 20px; font-size: 0.95rem; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Compare</button>
                                        <div id="compareABResult" class="result-box" style="display: none; margin-top: 14px; padding: 16px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; color: #ffffff; border-left: 4px solid rgba(255, 215, 0, 0.5);"></div>
                                    </div>
+
+                                   <!-- Assignment 2: DCA experiment -->
+                                   <div class="section-box" style="margin-top: 32px; padding-top: 24px; border-top: 2px solid rgba(255, 255, 255, 0.2);">
+                                       <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 2: What if I had DCA'd over the last year?</h4>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Enter an amount and period — see an <strong style="color: #ffffff;">illustrative</strong> result of how much you would have invested and what the approximate value might be. This is for education only; real results depend on the market.</p>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">Amount per month (USD):</label>
+                                           <input type="number" id="dcaExperimentAmount" min="10" max="100000" value="100" step="10" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
+                                       </div>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">Coin:</label>
+                                           <select id="dcaExperimentCoin" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
+                                               <option value="BTC">Bitcoin (BTC)</option>
+                                               <option value="ETH">Ethereum (ETH)</option>
+                                           </select>
+                                       </div>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">Period:</label>
+                                           <select id="dcaExperimentPeriod" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
+                                               <option value="6">Last 6 months</option>
+                                               <option value="12" selected>Last 12 months</option>
+                                           </select>
+                                       </div>
+                                       <button type="button" class="btn btn-red" onclick="runDcaExperiment()" style="padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Calculate</button>
+                                       <div id="dcaExperimentResult" class="result-box" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
+                                   </div>
+
+                                   <!-- Assignment 3: What would I do if... -->
+                                   <div class="section-box" style="margin-top: 28px;">
+                                       <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 3: What would I do if…?</h4>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Pick a scenario and write in one or two sentences what you would do. This helps you plan in advance so you don’t act on emotion when it happens.</p>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">Scenario:</label>
+                                           <select id="whatIfScenario" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; width: 100%; max-width: 400px;">
+                                               <option value="crash">The market drops 30% in a week</option>
+                                               <option value="double">My coin doubles in a month</option>
+                                               <option value="urgent">I need the money urgently</option>
+                                           </select>
+                                       </div>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">In this case I would…</label>
+                                           <textarea id="whatIfMyAnswer" rows="3" placeholder="e.g. I would hold and not sell, or I would take part of the profit…" style="width: 100%; max-width: 500px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 12px; border-radius: 8px; font-family: inherit;"></textarea>
+                                       </div>
+                                       <button type="button" class="btn btn-red" onclick="runWhatIfScenario()" style="padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Show my plan</button>
+                                       <div id="whatIfScenarioResult" class="result-box" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
+                                   </div>
+
+                                   <!-- Assignment 4: Strategy in numbers -->
+                                   <div class="section-box" style="margin-top: 28px; padding-top: 24px; border-top: 2px solid rgba(255, 255, 255, 0.2);">
+                                       <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 4: Strategy in numbers — how much in the end and what risk</h4>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Enter your deposit, horizon and risk — get an <strong style="color: #ffffff;">illustrative</strong> summary: approximate total invested, possible outcome range and risk level. For education only; real results depend on the market.</p>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">Initial deposit (USD):</label>
+                                           <input type="number" id="strategyNumbersDeposit" min="100" max="1000000" value="5000" step="100" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
+                                       </div>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">Horizon:</label>
+                                           <select id="strategyNumbersHorizon" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
+                                               <option value="6">6 months</option>
+                                               <option value="12" selected>12 months</option>
+                                               <option value="24">24 months</option>
+                                           </select>
+                                       </div>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">Risk level (1–100):</label>
+                                           <input type="number" id="strategyNumbersRisk" min="1" max="100" value="50" style="width: 80px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;">
+                                       </div>
+                                       <button type="button" class="btn btn-red" onclick="runStrategyInNumbers()" style="padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Show numbers</button>
+                                       <div id="strategyNumbersResult" class="result-box" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
+                                   </div>
+
+                                   <!-- Assignment 5: Rebalance experiment -->
+                                   <div class="section-box" style="margin-top: 28px;">
+                                       <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 5: Rebalance experiment</h4>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">See what happens when you <strong style="color: #ffffff;">rebalance</strong> a simple portfolio: enter your current allocation and how often you rebalance. You get an illustrative before/after and why it matters. For education only.</p>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">BTC % (rest is ETH):</label>
+                                           <input type="number" id="rebalanceBtcPct" min="0" max="100" value="60" style="width: 80px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> %
+                                       </div>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">Portfolio value (USD):</label>
+                                           <input type="number" id="rebalancePortfolioValue" min="100" max="1000000" value="10000" step="100" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
+                                       </div>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">Rebalance frequency:</label>
+                                           <select id="rebalanceFrequency" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
+                                               <option value="monthly">Monthly</option>
+                                               <option value="quarterly" selected>Quarterly</option>
+                                               <option value="yearly">Yearly</option>
+                                           </select>
+                                       </div>
+                                       <button type="button" class="btn btn-red" onclick="runRebalanceExperiment()" style="padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Run rebalance</button>
+                                       <div id="rebalanceExperimentResult" class="result-box" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
+                                   </div>
                                </div>
                            </div>
                        </div>
