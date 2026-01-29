@@ -1577,7 +1577,7 @@ div:has-text("Experience Points") {
     padding: 20px 24px !important;
     cursor: pointer !important;
     display: flex !important;
-    justify-content: space-between !important;
+    justify-content: center !important;
     align-items: center !important;
     gap: 16px !important;
     border-bottom: 2px solid rgba(255, 0, 0, 0.3) !important;
@@ -1594,6 +1594,7 @@ div:has-text("Experience Points") {
     border-bottom-left-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
     margin: 0 !important;
+    text-align: center !important;
 }
 
 /* Уникальный дизайн заголовка для FREE блока - ЗОЛОТОЙ когда закрыт */
