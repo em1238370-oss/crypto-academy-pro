@@ -7876,11 +7876,12 @@ function runStressTestFromModuleD() {
     const survives = portfolioImpact < 35;
     const recommendation = portfolioImpact < 25 ? 'Your strategy is resilient. Keep your rules.' : portfolioImpact < 40 ? 'Consider reducing position size or adding a stricter stop-loss.' : 'Consider lowering risk (fewer altcoins, smaller size) or adding a hard stop.';
     resultDiv.innerHTML = `
-        <h5 style="color: #ff6666;">Stress test: ${scenarioVal === 'panic' ? 'Panic (-60%)' : '-' + crashPercent + '%'}</h5>
-        <p><strong>Market drop:</strong> ${scenarioVal === 'panic' ? '-60% (brief panic)' : '-' + crashPercent + '%'}</p>
-        <p><strong>Estimated impact on your portfolio:</strong> <span style="color: #ff8888;">-${portfolioImpact.toFixed(1)}%</span></p>
-        <p><strong>Strategy survives?</strong> ${survives ? '✅ Yes' : '❌ High risk'}</p>
-        <p><strong>Recommendation:</strong> ${recommendation}</p>
+        <h5 style="color: #ff6666; margin-bottom: 12px;">Stress test result: ${scenarioVal === 'panic' ? 'Panic (-60%)' : '-' + crashPercent + '%'}</h5>
+        <p style="margin-bottom: 8px;"><strong style="color: #ffffff;">Market drop:</strong> ${scenarioVal === 'panic' ? '-60% (brief panic)' : '-' + crashPercent + '%'} — This is the scenario you chose: a one-time fall in the market by this amount. Real crashes can be deeper or shallower and last longer or shorter.</p>
+        <p style="margin-bottom: 8px;"><strong style="color: #ffffff;">Estimated impact on your portfolio:</strong> <span style="color: #ff8888;">-${portfolioImpact.toFixed(1)}%</span> — An approximate loss on your portfolio in this scenario. It is derived from your risk level (from the form above): higher risk typically leads to a larger estimated impact. This is illustrative, not a forecast.</p>
+        <p style="margin-bottom: 8px;"><strong style="color: #ffffff;">Strategy survives?</strong> ${survives ? '✅ Yes' : '❌ High risk'} — Whether the estimated impact is within a range often considered acceptable (under about 35%). "Yes" means your plan appears resilient in this scenario; "High risk" means you might want to reduce risk or position size.</p>
+        <p style="margin-bottom: 12px;"><strong style="color: #ffffff;">Recommendation:</strong> ${recommendation}</p>
+        <p style="color: #aaaaaa; font-size: 0.88rem; line-height: 1.5; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.15);">💡 <strong style="color: #cccccc;">What this means:</strong> Use this result to reflect on your risk and stop-loss. If the impact is too high for you, consider a more conservative strategy, a smaller deposit, or a stricter stop-loss. This tool is for education and planning only — not financial advice. Real markets can behave differently; always manage risk according to your own situation.</p>
     `;
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     resultDiv.style.background = 'rgba(255, 80, 80, 0.25)';
