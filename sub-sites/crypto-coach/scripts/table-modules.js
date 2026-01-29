@@ -7660,9 +7660,9 @@ function generateStrategies() {
     if (resultDiv) resultDiv.style.display = 'block';
     if (!strategiesList) return;
 
-    const goalText = { accumulate: 'Accumulate (save & grow)', earn: 'Earn (active gains)', preserve: 'Preserve (protect capital)' }[goal] || goal;
-    const entryText = { price_drop: 'After price drops X%', dca: 'Regular amount (DCA)', support: 'Near support level', signal: 'On my signal' }[entryRule] || entryRule;
-    const exitText = { take_profit: 'Take profit at target', stop_loss: 'Stop loss only', both: 'Both take profit & stop loss', time: 'After X time' }[exitRule] || exitRule;
+    const goalText = { accumulate: 'Accumulate (save & grow)', earn: 'Earn (active gains)', preserve: 'Preserve (protect capital)', diversify: 'Diversify (spread risk)', rebalance: 'Rebalance (adjust weights)' }[goal] || goal;
+    const entryText = { price_drop: 'After price drops X% (buy the dip)', dca: 'Regular amount (DCA)', support: 'Near support level', signal: 'On my signal', breakout: 'After breakout above resistance', rsi: 'When RSI oversold', volume: 'When volume spikes' }[entryRule] || entryRule;
+    const exitText = { take_profit: 'Take profit at target', stop_loss: 'Stop loss only', both: 'Both take profit & stop loss', time: 'After X time', trailing: 'Trailing stop', rebalance: 'At rebalance date' }[exitRule] || exitRule;
 
     const strategies = [
         {
@@ -7686,23 +7686,23 @@ function generateStrategies() {
     ];
 
     let summary = '';
-    if (deposit > 0) summary += `<p style="margin-bottom: 8px;"><strong>Deposit:</strong> $${deposit.toLocaleString()}</p>`;
-    summary += `<p style="margin-bottom: 8px;"><strong>Goal:</strong> ${goalText} · <strong>Time horizon:</strong> ${timeHorizon}</p>`;
-    summary += `<p style="margin-bottom: 8px;"><strong>When to buy:</strong> ${entryText} · <strong>When to sell:</strong> ${exitText}</p>`;
-    summary += `<p style="margin-bottom: 12px;"><strong>Stop-loss:</strong> ${stopLoss}% · <strong>Take-profit:</strong> ${takeProfit}%</p>`;
+    if (deposit > 0) summary += `<p style="margin-bottom: 8px; color: #cccccc;"><strong style="color: #ffffff;">Deposit:</strong> $${deposit.toLocaleString()}</p>`;
+    summary += `<p style="margin-bottom: 8px; color: #cccccc;"><strong style="color: #ffffff;">Goal:</strong> ${goalText} · <strong style="color: #ffffff;">Time horizon:</strong> ${timeHorizon}</p>`;
+    summary += `<p style="margin-bottom: 8px; color: #cccccc;"><strong style="color: #ffffff;">When to buy:</strong> ${entryText} · <strong style="color: #ffffff;">When to sell:</strong> ${exitText}</p>`;
+    summary += `<p style="margin-bottom: 12px; color: #cccccc;"><strong style="color: #ffffff;">Stop-loss:</strong> ${stopLoss}% · <strong style="color: #ffffff;">Take-profit:</strong> ${takeProfit}%</p>`;
 
-    strategiesList.innerHTML = '<div class="strategy-card" style="margin-bottom: 16px; padding: 14px; background: #1a1a1a; border-radius: 10px;">' +
-        '<h5 style="color: #c9a227; margin-bottom: 10px;">Your choices summary</h5>' + summary + '</div>' +
+    strategiesList.innerHTML = '<div class="strategy-card" style="margin-bottom: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15);">' +
+        '<h5 style="color: #ffd700; margin-bottom: 10px;">Your choices summary</h5>' + summary + '</div>' +
         strategies.map((strategy, idx) => `
-        <div class="strategy-card">
-            <h5>Strategy ${idx + 1}: ${strategy.name}</h5>
-            <p style="color: #888; margin-bottom: 10px;">${strategy.description}</p>
-            <p style="margin-bottom: 10px;"><strong>Distribution:</strong></p>
-            <ul style="margin-left: 20px; margin-bottom: 10px;">
+        <div class="strategy-card" style="margin-bottom: 16px; padding: 16px; background: rgba(0, 0, 0, 0.3); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff;">
+            <h5 style="color: #ffd700;">Strategy ${idx + 1}: ${strategy.name}</h5>
+            <p style="color: #cccccc; margin-bottom: 10px;">${strategy.description}</p>
+            <p style="color: #ffffff; margin-bottom: 10px;"><strong>Distribution:</strong></p>
+            <ul style="margin-left: 20px; margin-bottom: 10px; color: #cccccc;">
                 ${strategy.distribution.map(d => `<li>${d.asset}: ${d.percent}%</li>`).join('')}
             </ul>
-            <p style="margin-bottom: 5px;"><strong>Execution Steps:</strong></p>
-            <ol style="margin-left: 20px;">
+            <p style="color: #ffffff; margin-bottom: 5px;"><strong>Execution Steps:</strong></p>
+            <ol style="margin-left: 20px; color: #cccccc;">
                 ${strategy.steps.map(s => `<li>${s}</li>`).join('')}
             </ol>
         </div>
@@ -7822,15 +7822,15 @@ function refreshModuleDSavedStrategies() {
     }
     if (listEl) {
         if (list.length === 0) {
-            listEl.innerHTML = '<p style="color: #888;">No saved strategies yet. Create one above and click "Save current strategy".</p>';
+            listEl.innerHTML = '<p style="color: #cccccc;">No saved strategies yet. Create one above and click "Save current strategy".</p>';
         } else {
             listEl.innerHTML = list.map(s => `
-                <div class="strategy-card" style="margin-bottom: 10px; padding: 12px; background: #1a1a1a; border-radius: 8px;">
-                    <strong>${(s.name || 'Strategy')}</strong> <span style="color: #888; font-size: 0.85rem;">${s.createdAt ? new Date(s.createdAt).toLocaleDateString() : ''}</span>
-                    <div style="margin-top: 8px;">
-                        <button class="btn btn-black" style="margin-right: 6px; padding: 4px 10px; font-size: 0.85rem;" onclick="loadSavedStrategy('${s.id}')">Open</button>
-                        <button class="btn btn-black" style="margin-right: 6px; padding: 4px 10px; font-size: 0.85rem;" onclick="duplicateSavedStrategy('${s.id}')">Duplicate</button>
-                        <button class="btn btn-black" style="padding: 4px 10px; font-size: 0.85rem;" onclick="deleteSavedStrategy('${s.id}')">Delete</button>
+                <div class="strategy-card" style="margin-bottom: 10px; padding: 14px; background: rgba(0, 0, 0, 0.35); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15);">
+                    <strong style="color: #ffffff;">${(s.name || 'Strategy')}</strong> <span style="color: #cccccc; font-size: 0.85rem;">${s.createdAt ? new Date(s.createdAt).toLocaleDateString() : ''}</span>
+                    <div style="margin-top: 10px;">
+                        <button class="btn btn-red" style="margin-right: 8px; padding: 6px 12px; font-size: 0.85rem; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 0, 0, 0.3); border-radius: 6px;" onclick="loadSavedStrategy('${s.id}')">Open</button>
+                        <button class="btn btn-red" style="margin-right: 8px; padding: 6px 12px; font-size: 0.85rem; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 0, 0, 0.3); border-radius: 6px;" onclick="duplicateSavedStrategy('${s.id}')">Duplicate</button>
+                        <button class="btn btn-red" style="padding: 6px 12px; font-size: 0.85rem; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 0, 0, 0.25); border-radius: 6px;" onclick="deleteSavedStrategy('${s.id}')">Delete</button>
                     </div>
                 </div>
             `).join('');

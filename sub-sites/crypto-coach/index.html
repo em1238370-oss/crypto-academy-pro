@@ -1138,15 +1138,27 @@
                                <span class="drawer-icon">▼</span>
                            </div>
                            <div class="drawer-content">
-                               <h3 style="color: #ffffff; margin-bottom: 12px;">Build your personal strategy in one place</h3>
-                               <p style="color: #aaa; margin-bottom: 24px; font-size: 0.95rem; line-height: 1.5;">This is <strong>one assignment</strong>: choose your coins, deposit, goal, rules, then generate your plan. All fields below belong to the same strategy. Use <strong>Fill with example</strong> to see how it works and what the result looks like.</p>
+                               <h3 style="color: #ffffff; margin-bottom: 16px; font-size: 1.25rem;">Build your personal trading strategy in one place</h3>
+                               <p style="color: #cccccc; margin-bottom: 24px; font-size: 1rem; line-height: 1.65;">This is <strong style="color: #ffd700;">one assignment</strong>: choose your coins, deposit amount, goal, time horizon, risk level, and clear entry/exit rules — then generate your personalized plan. All fields below belong to the same strategy. Use <strong style="color: #ffd700;">Fill with example</strong> to see how the tool works, or pick a <strong style="color: #ffd700;">template</strong> (DCA, swing, long-term, and more) to start from a ready-made style.</p>
                                
                                <div class="section-box">
-                                   <h4 style="margin-bottom: 8px;">1. Coins and deposit</h4>
-                                   <p style="color: #888; font-size: 0.88rem; margin-bottom: 12px;">Choose which coins you want in your strategy. You can pick one or several. The deposit is the amount (in dollars) you plan to use for this strategy — it is used to show you approximate allocations and risk.</p>
+                                   <h4 style="color: #ffffff; margin-bottom: 12px;">Quick start: templates</h4>
+                                   <p style="color: #cccccc; margin-bottom: 16px; font-size: 0.95rem; line-height: 1.5;">Start from a preset: one click fills goal, horizon, risk, and rules. Then change any field and generate your own strategy.</p>
+                                   <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px;">
+                                       <button class="btn btn-red" onclick="loadStrategyTemplate('dca')" style="padding: 10px 18px; font-size: 0.9rem; font-weight: 600; margin: 0; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">📋 DCA</button>
+                                       <button class="btn btn-red" onclick="loadStrategyTemplate('swing')" style="padding: 10px 18px; font-size: 0.9rem; font-weight: 600; margin: 0; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">📊 Swing</button>
+                                       <button class="btn btn-red" onclick="loadStrategyTemplate('long')" style="padding: 10px 18px; font-size: 0.9rem; font-weight: 600; margin: 0; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">📈 Long-term</button>
+                                       <button class="btn btn-red" onclick="loadStrategyTemplate('conservative')" style="padding: 10px 18px; font-size: 0.9rem; font-weight: 600; margin: 0; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">🛡️ Conservative</button>
+                                       <button class="btn btn-red" onclick="loadStrategyTemplate('growth')" style="padding: 10px 18px; font-size: 0.9rem; font-weight: 600; margin: 0; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">🚀 Growth</button>
+                                       <button class="btn btn-red" onclick="fillWithExample()" style="padding: 10px 20px; font-size: 0.9rem; font-weight: 600; margin: 0; border-radius: 8px; border: 2px solid rgba(255, 215, 0, 0.5); background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(200, 165, 0, 0.35) 100%); color: #ffffff;">✨ Fill with example</button>
+                                   </div>
+                                   <p id="templateLoadedHint" style="color: #ffd700; font-size: 0.95rem; display: none; margin-bottom: 20px;">Template loaded. Adjust coins and options below if needed, then click <strong>Generate my strategy</strong>.</p>
+
+                                   <h4 style="color: #ffffff; margin-top: 24px; margin-bottom: 12px;">1. Coins and deposit</h4>
+                                   <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Choose which coins you want — one or several. The deposit is the amount (in dollars) you plan to allocate; it is used to show approximate position sizes and risk.</p>
                                    <div class="form-group">
-                                       <label>Preferred coins (select one or more):</label>
-                                       <select id="preferredAssets" multiple style="height: 180px;">
+                                       <label style="color: #ffffff;">Preferred coins (select one or more):</label>
+                                       <select id="preferredAssets" multiple style="height: 220px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2);">
                                            <option value="BTC">Bitcoin (BTC)</option>
                                            <option value="ETH">Ethereum (ETH)</option>
                                            <option value="BNB">Binance Coin (BNB)</option>
@@ -1174,111 +1186,123 @@
                                            <option value="GALA">Gala (GALA)</option>
                                            <option value="MYX">Myx (MYX)</option>
                                        </select>
-                                       <small style="color: #888;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple coins.</small>
+                                       <small style="color: #cccccc; display: block; margin-top: 8px;">💡 Hold Ctrl (Windows) or Cmd (Mac) to select multiple coins. Blue chips (BTC, ETH) are usually less volatile.</small>
                                    </div>
                                    <div class="form-group">
-                                       <label>Deposit (USD) — amount you plan to use for this strategy:</label>
-                                       <input type="number" id="strategyDeposit" min="100" max="10000000" value="5000" step="100" style="width: 140px;"> $
-                                       <small style="color: #888; display: block;">Used to calculate approximate position sizes and risk. Enter only the sum you are ready to allocate.</small>
-                                   </div>
-
-                                   <h4 style="margin-top: 20px; margin-bottom: 8px;">2. Goal and timeframe</h4>
-                                   <p style="color: #888; font-size: 0.88rem; margin-bottom: 12px;">What do you want from this strategy: slowly accumulate, earn more actively, or mainly preserve capital? Time horizon is how long you plan to hold or trade — it affects how aggressive the plan can be.</p>
-                                   <div class="form-group">
-                                       <label>Goal:</label>
-                                       <select id="strategyGoal">
-                                           <option value="accumulate">Accumulate — save and grow slowly</option>
-                                           <option value="earn">Earn — aim for active gains</option>
-                                           <option value="preserve">Preserve — protect capital first</option>
-                                       </select>
-                                   </div>
-                                   <div class="form-group">
-                                       <label>Time horizon:</label>
-                                       <select id="timeHorizon">
-                                           <option value="days">Days (short-term)</option>
-                                           <option value="weeks">Weeks (medium-term)</option>
-                                           <option value="months" selected>Months (long-term)</option>
-                                           <option value="years">Years (very long-term)</option>
-                                       </select>
+                                       <label style="color: #ffffff;">Deposit (USD) — amount you plan to use for this strategy:</label>
+                                       <input type="number" id="strategyDeposit" min="100" max="10000000" value="5000" step="100" style="width: 160px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
+                                       <small style="color: #cccccc; display: block; margin-top: 8px;">💡 Used to calculate approximate position sizes and risk. Enter only the sum you are ready to allocate. No real money involved here.</small>
                                    </div>
 
-                                   <h4 style="margin-top: 20px; margin-bottom: 8px;">3. Risk and rules</h4>
-                                   <p style="color: #888; font-size: 0.88rem; margin-bottom: 12px;">Risk appetite (0–100%) defines how much volatility you accept: lower = more conservative. Entry rule = when you buy; exit rule = when you sell. Stop-loss limits your loss per position; take-profit locks in profit. These rules keep you disciplined.</p>
+                                   <h4 style="color: #ffffff; margin-top: 28px; margin-bottom: 12px;">2. Goal and timeframe</h4>
+                                   <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">What do you want from this strategy: slowly accumulate, earn more actively, or mainly preserve capital? Time horizon is how long you plan to hold or trade; it directly affects how aggressive or conservative the plan will be.</p>
                                    <div class="form-group">
-                                       <label>Risk appetite: <span id="riskAppetiteValue">50</span>%</label>
+                                       <label style="color: #ffffff;">Goal:</label>
+                                       <select id="strategyGoal" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2);">
+                                           <option value="accumulate">Accumulate — save and grow slowly over time</option>
+                                           <option value="earn">Earn — aim for active short- or medium-term gains</option>
+                                           <option value="preserve">Preserve — protect capital first, minimal risk</option>
+                                           <option value="diversify">Diversify — spread risk across several assets</option>
+                                           <option value="rebalance">Rebalance — regularly adjust portfolio weights</option>
+                                       </select>
+                                       <small style="color: #cccccc; display: block; margin-top: 6px;">💡 Your goal shapes the recommended allocation and rebalancing frequency.</small>
+                                   </div>
+                                   <div class="form-group">
+                                       <label style="color: #ffffff;">Time horizon:</label>
+                                       <select id="timeHorizon" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2);">
+                                           <option value="days">Days — short-term (scalping / quick trades)</option>
+                                           <option value="weeks">Weeks — medium-term (swing)</option>
+                                           <option value="months" selected>Months — long-term (position / hold)</option>
+                                           <option value="years">Years — very long-term (buy and hold)</option>
+                                       </select>
+                                       <small style="color: #cccccc; display: block; margin-top: 6px;">💡 Longer horizons usually allow more volatility; shorter ones need stricter stop-loss.</small>
+                                   </div>
+
+                                   <h4 style="color: #ffffff; margin-top: 28px; margin-bottom: 12px;">3. Risk and rules</h4>
+                                   <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Risk appetite (0–100%) defines how much volatility you accept: lower values mean more conservative. Entry rule = when you buy; exit rule = when you sell. Stop-loss limits your loss per position; take-profit locks in profit. Clear rules help you stay disciplined.</p>
+                                   <div class="form-group">
+                                       <label style="color: #ffffff;">Risk appetite: <span id="riskAppetiteValue">50</span>%</label>
                                        <input type="range" id="riskAppetite" min="0" max="100" value="50" oninput="updateRiskAppetiteDisplay()">
+                                       <small style="color: #cccccc; display: block; margin-top: 6px;">💡 0–30% = conservative, 30–60% = moderate, 60–100% = aggressive.</small>
                                    </div>
                                    <div class="form-group">
-                                       <label>When to buy (entry rule):</label>
-                                       <select id="entryRule">
-                                           <option value="price_drop">After price drops by X%</option>
-                                           <option value="dca" selected>Regular amount (DCA)</option>
-                                           <option value="support">Near support level</option>
-                                           <option value="signal">On my own signal / feeling</option>
+                                       <label style="color: #ffffff;">When to buy (entry rule):</label>
+                                       <select id="entryRule" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2);">
+                                           <option value="price_drop">After price drops by X% (buy the dip)</option>
+                                           <option value="dca" selected>Regular fixed amount (DCA)</option>
+                                           <option value="support">Near support level (technical)</option>
+                                           <option value="signal">On my own signal or feeling</option>
+                                           <option value="breakout">After breakout above resistance</option>
+                                           <option value="rsi">When RSI is oversold (e.g. &lt; 30)</option>
+                                           <option value="volume">When volume spikes (confirmation)</option>
                                        </select>
                                    </div>
                                    <div class="form-group">
-                                       <label>When to sell (exit rule):</label>
-                                       <select id="exitRule">
-                                           <option value="take_profit">Take profit at target</option>
-                                           <option value="stop_loss">Only stop loss</option>
+                                       <label style="color: #ffffff;">When to sell (exit rule):</label>
+                                       <select id="exitRule" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2);">
+                                           <option value="take_profit">Take profit at target % only</option>
+                                           <option value="stop_loss">Only stop loss (cut losses)</option>
                                            <option value="both" selected>Both take profit and stop loss</option>
-                                           <option value="time">After X time</option>
+                                           <option value="time">After X time (e.g. 30 days)</option>
+                                           <option value="trailing">Trailing stop (follow price up)</option>
+                                           <option value="rebalance">At rebalance date (e.g. monthly)</option>
                                        </select>
                                    </div>
                                    <div class="form-group">
-                                       <label>Stop-loss % (max loss per position):</label>
-                                       <input type="number" id="entryExitStopLoss" min="1" max="50" value="10" style="width: 70px;"> %
+                                       <label style="color: #ffffff;">Stop-loss % (max loss per position):</label>
+                                       <input type="number" id="entryExitStopLoss" min="1" max="50" value="10" style="width: 80px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;"> %
+                                       <small style="color: #cccccc; display: block; margin-top: 4px;">💡 Typical range 5–15%. Tighter = less loss per trade, but more frequent exits.</small>
                                    </div>
                                    <div class="form-group">
-                                       <label>Take-profit % (target profit per position):</label>
-                                       <input type="number" id="entryExitTakeProfit" min="5" max="500" value="25" style="width: 70px;"> %
+                                       <label style="color: #ffffff;">Take-profit % (target profit per position):</label>
+                                       <input type="number" id="entryExitTakeProfit" min="5" max="500" value="25" style="width: 80px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;"> %
+                                       <small style="color: #cccccc; display: block; margin-top: 4px;">💡 Common range 15–50%. Higher targets may be hit less often.</small>
                                    </div>
 
-                                   <h4 style="margin-top: 24px; margin-bottom: 12px;">Buttons — what they do</h4>
-                                   <div style="background: #1a1a1a; padding: 14px; border-radius: 10px; margin-bottom: 16px; border-left: 4px solid #c9a227;">
-                                       <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 10px;"><strong style="color: #c9a227;">Fill with example</strong> — Fills all fields above with sample data and shows an example of what your strategy result looks like. Use this first if you want to see how the tool works before entering your own numbers. You can then change any field and generate your own strategy.</p>
-                                       <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 10px;"><strong style="color: #c9a227;">Generate my strategy</strong> — Builds your personalized strategy from your choices (coins, deposit, goal, horizon, risk, entry/exit rules). You get a clear plan: which coins, how much, when to buy/sell, and steps to follow. Use this after you have filled the form.</p>
-                                       <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 10px;"><strong style="color: #c9a227;">Run stress test</strong> — Simulates a market crash (e.g. -30% or -50%) and shows how your strategy would behave: estimated loss and whether your plan is resilient. Helps you check if your risk and stop-loss are adequate before using real money.</p>
-                                       <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 0;"><strong style="color: #c9a227;">Save strategy</strong> — Saves this strategy with a name in “My strategies” so you can open it later, compare it with another one, or duplicate and adjust. Your data is stored only in this browser.</p>
+                                   <h4 style="color: #ffd700; margin-top: 24px; margin-bottom: 14px; font-size: 1.1rem;">What the buttons do</h4>
+                                   <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 24px;">
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 12px; line-height: 1.55;"><strong style="color: #ffffff;">Fill with example</strong> — Fills all fields above with sample data and shows an example of what your strategy result looks like. Use this first if you want to see how the tool works before entering your own numbers. You can then change any field and generate your own strategy.</p>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 12px; line-height: 1.55;"><strong style="color: #ffffff;">Generate my strategy</strong> — Builds your personalized strategy from your choices (coins, deposit, goal, horizon, risk, entry/exit rules). You get a clear plan: which coins, how much, when to buy/sell, and steps to follow. Use this after you have filled the form.</p>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 12px; line-height: 1.55;"><strong style="color: #ffffff;">Run stress test</strong> — Simulates a market crash (e.g. -30% or -50%) and shows how your strategy would behave: estimated loss and whether your plan is resilient. Helps you check if your risk and stop-loss are adequate before using real money.</p>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 0; line-height: 1.55;"><strong style="color: #ffffff;">Save strategy</strong> — Saves this strategy with a name in “My strategies” so you can open it later, compare it with another one, or duplicate and adjust. Your data is stored only in this browser.</p>
                                    </div>
 
                                    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px;">
-                                       <button class="btn btn-red" onclick="fillWithExample()">Fill with example</button>
-                                       <button class="btn btn-red" onclick="generateStrategies()">Generate my strategy</button>
-                                       <button class="btn btn-black" onclick="runStressTestFromModuleD()">Run stress test</button>
+                                       <button class="btn btn-red" onclick="fillWithExample()" style="min-width: 160px; padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 215, 0, 0.5); background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(200, 165, 0, 0.35) 100%); color: #ffffff;">✨ Fill with example</button>
+                                       <button class="btn btn-red" onclick="generateStrategies()" style="min-width: 180px; padding: 12px 24px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Generate my strategy</button>
+                                       <button class="btn btn-red" onclick="runStressTestFromModuleD()" style="min-width: 150px; padding: 12px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 102, 102, 0.6); background: linear-gradient(135deg, rgba(255, 0, 0, 0.25) 0%, rgba(150, 0, 0, 0.35) 100%); color: #ffffff;">Run stress test</button>
                                    </div>
-                                   <div class="form-group" style="margin-top: 16px;">
-                                       <label>Strategy name (for saving):</label>
-                                       <input type="text" id="savedStrategyName" placeholder="e.g. Conservative BTC/ETH" style="max-width: 280px;">
-                                       <button class="btn btn-black" onclick="saveCurrentStrategy()" style="margin-left: 10px;">Save strategy</button>
+                                   <div class="form-group" style="margin-top: 20px;">
+                                       <label style="color: #ffffff;">Strategy name (for saving):</label>
+                                       <input type="text" id="savedStrategyName" placeholder="e.g. Conservative BTC/ETH" style="max-width: 320px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;">
+                                       <button class="btn btn-red" onclick="saveCurrentStrategy()" style="margin-left: 12px; padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">💾 Save strategy</button>
                                    </div>
 
-                                   <div class="section-box" id="strategiesResult" style="display: none; margin-top: 20px; background: #151515;">
-                                       <h4>Your strategy result</h4>
-                                       <p style="color: #888; font-size: 0.88rem; margin-bottom: 12px;">Below is your personalized plan based on the choices above. You can run a stress test or save this strategy.</p>
+                                   <div class="section-box" id="strategiesResult" style="display: none; margin-top: 24px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.2); padding: 24px;">
+                                       <h4 style="color: #ffffff;">Your strategy result</h4>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.5;">Below is your personalized plan based on the choices above. You can run a stress test or save this strategy.</p>
                                        <div id="strategiesList"></div>
                                        <div id="stressTestBlock" style="margin-top: 16px;">
-                                           <label style="color: #aaa;">Crash scenario for stress test:</label>
-                                           <select id="stressTestScenario" style="margin-left: 8px;">
+                                           <label style="color: #ffffff; margin-right: 10px;">Crash scenario for stress test:</label>
+                                           <select id="stressTestScenario" style="margin-right: 12px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
                                                <option value="30">-30% (correction)</option>
                                                <option value="40" selected>-40% (strong drop)</option>
                                                <option value="50">-50% (crash)</option>
                                                <option value="panic">Panic (brief -60%)</option>
                                            </select>
-                                           <div id="stressTestResult" style="display: none; margin-top: 12px;" class="result-box"></div>
+                                           <div id="stressTestResult" style="display: none; margin-top: 14px; padding: 16px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid rgba(255, 0, 0, 0.5); color: #ffffff;" class="result-box"></div>
                                        </div>
                                    </div>
 
-                                   <h4 style="margin-top: 24px; margin-bottom: 8px;">My saved strategies</h4>
-                                   <p style="color: #888; font-size: 0.88rem; margin-bottom: 12px;">Strategies you saved appear here. <strong>Open</strong> loads a strategy into the form so you can edit or regenerate. <strong>Duplicate</strong> creates a copy to adjust. <strong>Compare</strong> lets you pick two saved strategies and see which fits your risk and horizon better.</p>
-                                   <div id="myStrategiesList" style="margin-top: 10px;"></div>
-                                   <div style="margin-top: 14px;">
-                                       <label style="color: #aaa;">Compare two strategies:</label>
-                                       <select id="compareStrategyA" style="margin: 0 6px;"><option value="">— A —</option></select>
-                                       <select id="compareStrategyB" style="margin: 0 6px;"><option value="">— B —</option></select>
-                                       <button class="btn btn-black" onclick="compareStrategiesAB()">Compare</button>
-                                       <div id="compareABResult" class="result-box" style="display: none; margin-top: 12px;"></div>
+                                   <h4 style="color: #ffffff; margin-top: 28px; margin-bottom: 12px;">My saved strategies</h4>
+                                   <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 14px; line-height: 1.55;">Strategies you saved appear here. <strong style="color: #ffffff;">Open</strong> loads a strategy into the form so you can edit or regenerate. <strong style="color: #ffffff;">Duplicate</strong> creates a copy to adjust. <strong style="color: #ffffff;">Compare</strong> lets you pick two saved strategies and see which fits your risk and horizon better.</p>
+                                   <div id="myStrategiesList" style="margin-top: 12px;"></div>
+                                   <div style="margin-top: 18px;">
+                                       <label style="color: #ffffff; margin-right: 10px;">Compare two strategies:</label>
+                                       <select id="compareStrategyA" style="margin: 0 6px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;"><option value="">— A —</option></select>
+                                       <select id="compareStrategyB" style="margin: 0 6px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;"><option value="">— B —</option></select>
+                                       <button class="btn btn-red" onclick="compareStrategiesAB()" style="padding: 10px 20px; font-size: 0.95rem; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Compare</button>
+                                       <div id="compareABResult" class="result-box" style="display: none; margin-top: 14px; padding: 16px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; color: #ffffff; border-left: 4px solid rgba(255, 215, 0, 0.5);"></div>
                                    </div>
                                </div>
                            </div>
