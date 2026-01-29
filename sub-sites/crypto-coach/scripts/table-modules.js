@@ -8847,7 +8847,7 @@ window.saveMoodAnalysisToPDF = function saveMoodAnalysisToPDF() {
         
         Stress Level: ${stressValue}/100
         
-        AI Analysis:
+        Mood Analysis:
         ${moodResult.replace(/<[^>]*>/g, '').replace(/\n\s*\n/g, '\n')}
         
         Disclaimer: This analysis is for educational purposes only and should not replace professional psychological advice.
