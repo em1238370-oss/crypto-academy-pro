@@ -1520,8 +1520,6 @@ div:has-text("Experience Points") {
     border-bottom-left-radius: 15px !important;
     border-bottom-right-radius: 15px !important;
     overflow: hidden !important;
-    clip-path: inset(0 round 15px) !important;
-    -webkit-clip-path: inset(0 round 15px) !important;
 }
 
 /* Скрываем золотые эффекты когда блок открыт */
