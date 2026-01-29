@@ -7630,6 +7630,28 @@ Be specific with numbers, percentages, and price levels.`;
 }
 
 // Module D: Strategy Constructor
+function hideModuleDDataChangedHint() {
+    const el = document.getElementById('moduleDDataChangedHint');
+    if (el) el.style.display = 'none';
+}
+function showModuleDDataChangedHint() {
+    const resultDiv = document.getElementById('strategiesResult');
+    const hintEl = document.getElementById('moduleDDataChangedHint');
+    if (hintEl && resultDiv && resultDiv.style.display !== 'none') hintEl.style.display = 'block';
+}
+function setupModuleDDataChangedListeners() {
+    const ids = ['preferredAssets', 'strategyDeposit', 'strategyGoal', 'timeHorizon', 'riskAppetite', 'entryRule', 'exitRule', 'entryExitStopLoss', 'entryExitTakeProfit'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const handler = () => showModuleDDataChangedHint();
+        if (el._moduleDChangeListener) return;
+        el.addEventListener('change', handler);
+        el.addEventListener('input', handler);
+        el._moduleDChangeListener = true;
+    });
+}
+
 function updateRiskAppetiteDisplay() {
     const value = document.getElementById('riskAppetite')?.value || 50;
     const riskAppetiteValue = document.getElementById('riskAppetiteValue');
@@ -7666,6 +7688,7 @@ function generateStrategies() {
     const strategiesList = document.getElementById('strategiesList');
     
     if (resultDiv) resultDiv.style.display = 'block';
+    hideModuleDDataChangedHint();
     if (!strategiesList) return;
 
     const goalText = { accumulate: 'Accumulate (save & grow)', earn: 'Earn (active gains)', preserve: 'Preserve (protect capital)', diversify: 'Diversify (spread risk)', rebalance: 'Rebalance (adjust weights)' }[goal] || goal;
@@ -7767,6 +7790,7 @@ function generateStrategies() {
         '<h5 style="color: #ffd700; margin-bottom: 12px;">What to do next</h5>' +
         '<p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 10px; line-height: 1.6;">Pick one variant (often <strong style="color: #ffffff;">Balanced</strong> is a good starting point). Use <strong style="color: #ffffff;">Run stress test</strong> below to see how that choice would behave in a market crash; if the impact is too high for you, consider a more conservative variant or a smaller deposit. When you are satisfied, use <strong style="color: #ffffff;">Save strategy</strong> above to store this setup with a name so you can reopen or compare it later. This tool is for education and planning only — not financial advice. Always adapt the plan to your own risk tolerance and situation.</p>' +
         '</div>';
+    setupModuleDDataChangedListeners();
 }
 
 function copyStrategySummaryToClipboard() {
@@ -7994,20 +8018,31 @@ function testStressScenarioExtended() {
 
 function loadStrategyTemplate(type) {
     const templates = {
-        dca: { timeHorizon: 'months', riskAppetite: 30, hint: 'DCA: invest regularly (e.g. weekly), focus on BTC/ETH.' },
-        swing: { timeHorizon: 'weeks', riskAppetite: 50, hint: 'Swing: hold for weeks, set take-profit and stop-loss.' },
-        long: { timeHorizon: 'years', riskAppetite: 40, hint: 'Long-term: blue chips, rebalance every few months.' },
-        conservative: { timeHorizon: 'months', riskAppetite: 25, hint: 'Conservative: low risk, stable growth.' },
-        growth: { timeHorizon: 'months', riskAppetite: 65, hint: 'Growth: higher risk, mix of blue chips and alts.' }
+        dca: { timeHorizon: 'months', riskAppetite: 30, goal: 'accumulate', hint: 'DCA: invest regularly (e.g. weekly), focus on BTC/ETH.' },
+        swing: { timeHorizon: 'weeks', riskAppetite: 50, goal: 'earn', hint: 'Swing: hold for weeks, set take-profit and stop-loss.' },
+        long: { timeHorizon: 'years', riskAppetite: 40, goal: 'accumulate', hint: 'Long-term: blue chips, rebalance every few months.' },
+        conservative: { timeHorizon: 'months', riskAppetite: 25, goal: 'preserve', hint: 'Conservative: low risk, stable growth.' },
+        growth: { timeHorizon: 'months', riskAppetite: 65, goal: 'earn', hint: 'Growth: higher risk, mix of blue chips and alts.' }
     };
     const t = templates[type] || templates.dca;
     const th = document.getElementById('timeHorizon');
     const ra = document.getElementById('riskAppetite');
     const raVal = document.getElementById('riskAppetiteValue');
+    const goalEl = document.getElementById('strategyGoal');
     if (th) th.value = t.timeHorizon;
     if (ra) { ra.value = t.riskAppetite; if (raVal) raVal.textContent = t.riskAppetite + '%'; }
+    if (goalEl && t.goal) goalEl.value = t.goal;
+    // Ensure at least one coin is selected so "Generate" works when we run it
+    const pa = document.getElementById('preferredAssets');
+    if (pa) {
+        const opts = Array.from(pa.options);
+        const hasSelection = opts.some(o => o.selected);
+        if (!hasSelection) { opts.forEach(o => { o.selected = (o.value === 'BTC' || o.value === 'ETH'); }); }
+    }
     const hintEl = document.getElementById('templateLoadedHint');
-    if (hintEl) { hintEl.textContent = t.hint + ' Adjust above (assets, horizon, risk) and click Generate Strategies.'; hintEl.style.display = 'block'; }
+    if (hintEl) { hintEl.textContent = t.hint + ' You can change coins and options above, then click «Get my strategy» again to update.'; hintEl.style.display = 'block'; }
+    // Auto-generate so user sees result immediately (no "nothing happens")
+    generateStrategies();
 }
 
 function compareStrategiesAB() {
