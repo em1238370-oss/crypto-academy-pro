@@ -8625,3 +8625,241 @@ function generateBuyerInsights(coin, currentPrice, projectedPrice, priceChange, 
     return insights;
 }
 
+
+// ==================== MODULE A: PORTFOLIO FUNCTIONS ====================
+
+// Fill example portfolio data
+window.fillExamplePortfolio = function fillExamplePortfolio() {
+    const portfolioInput = document.getElementById('portfolioInput');
+    if (portfolioInput) {
+        portfolioInput.value = '50000';
+        portfolioInput.dispatchEvent(new Event('input'));
+    }
+    
+    // Fill portfolio name if exists
+    const portfolioName = document.getElementById('portfolioName');
+    if (portfolioName) {
+        portfolioName.value = 'My Example Portfolio';
+    }
+    
+    alert('✅ Example portfolio data filled!');
+}
+
+// Show portfolio history
+window.showPortfolioHistory = function showPortfolioHistory() {
+    const history = JSON.parse(localStorage.getItem('savedPortfolios') || '[]');
+    
+    if (history.length === 0) {
+        alert('📚 No saved portfolios yet. Save a portfolio to see it here.');
+        return;
+    }
+    
+    // Create modal
+    let modal = document.getElementById('portfolioHistoryModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'portfolioHistoryModal';
+        modal.style.cssText = 'display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; overflow-y: auto;';
+        modal.innerHTML = `
+            <div style="max-width: 800px; margin: 50px auto; background: rgba(0, 0, 0, 0.9); border: 2px solid rgba(255, 215, 0, 0.3); border-radius: 15px; padding: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="color: #ffd700; margin: 0;">📚 Portfolio History</h3>
+                    <button onclick="closePortfolioHistory()" style="background: rgba(255, 215, 0, 0.3); border: 1px solid rgba(255, 215, 0, 0.5); color: #ffffff; padding: 8px 15px; border-radius: 5px; cursor: pointer;">✕ Close</button>
+                </div>
+                <div id="portfolioHistoryList" style="color: #ffffff;"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    const list = document.getElementById('portfolioHistoryList');
+    list.innerHTML = history.map(portfolio => {
+        const date = new Date(portfolio.timestamp || Date.now()).toLocaleString();
+        return `
+            <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <div>
+                        <div style="color: #ffd700; font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">${portfolio.name || 'Unnamed Portfolio'}</div>
+                        <div style="color: #cccccc; font-size: 0.9rem;">${date}</div>
+                    </div>
+                    <button onclick="loadPortfolioFromHistory('${portfolio.id}')" style="background: rgba(255, 215, 0, 0.3); border: 1px solid rgba(255, 215, 0, 0.5); color: #ffffff; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-left: 10px;">Load</button>
+                </div>
+                <div style="color: #cccccc; font-size: 0.9rem;">Value: $${(portfolio.value || 0).toLocaleString()}</div>
+            </div>
+        `;
+    }).join('');
+    
+    modal.style.display = 'block';
+}
+
+// Close portfolio history modal
+window.closePortfolioHistory = function closePortfolioHistory() {
+    const modal = document.getElementById('portfolioHistoryModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Load portfolio from history
+window.loadPortfolioFromHistory = function loadPortfolioFromHistory(id) {
+    const history = JSON.parse(localStorage.getItem('savedPortfolios') || '[]');
+    const portfolio = history.find(p => p.id === id);
+    
+    if (!portfolio) {
+        alert('Portfolio not found!');
+        return;
+    }
+    
+    if (portfolio.name) {
+        const portfolioName = document.getElementById('portfolioName');
+        if (portfolioName) portfolioName.value = portfolio.name;
+    }
+    
+    if (portfolio.value) {
+        const portfolioInput = document.getElementById('portfolioInput');
+        if (portfolioInput) {
+            portfolioInput.value = portfolio.value;
+            portfolioInput.dispatchEvent(new Event('input'));
+        }
+    }
+    
+    closePortfolioHistory();
+    alert('✅ Portfolio loaded!');
+}
+
+// Save portfolio to PDF
+window.savePortfolioToPDF = function savePortfolioToPDF() {
+    const portfolioValue = document.getElementById('portfolioValue')?.textContent || 'N/A';
+    const profitLoss = document.getElementById('profitLossValue')?.textContent || 'N/A';
+    const profitPercent = document.getElementById('profitLossPercent')?.textContent || 'N/A';
+    const healthScore = document.getElementById('healthScoreValue')?.textContent || 'N/A';
+    const portfolioName = document.getElementById('portfolioName')?.value || 'My Portfolio';
+    
+    const content = `
+        Portfolio Report - ${portfolioName}
+        Generated: ${new Date().toLocaleString()}
+        
+        Portfolio Value: ${portfolioValue}
+        Profit/Loss: ${profitLoss} (${profitPercent})
+        Health Score: ${healthScore}
+        
+        Disclaimer: This is a virtual trading simulator. Results are for educational purposes only.
+    `;
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `portfolio-report-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    alert('✅ Portfolio report exported! (Note: Full PDF export requires additional libraries)');
+}
+
+// ==================== MODULE B: MOOD ANALYSIS FUNCTIONS ====================
+
+// Fill example mood data
+window.fillExampleMood = function fillExampleMood() {
+    const moodText = document.getElementById('moodText');
+    if (moodText) {
+        moodText.value = 'I am feeling a bit anxious about recent market drops. My portfolio has lost some value, and I am worried about making the wrong decisions. However, I am also excited about potential opportunities and want to learn more about trading strategies.';
+    }
+    
+    // Set stress level to example value
+    const stressLevel = document.getElementById('stressLevel');
+    if (stressLevel) {
+        stressLevel.value = '45';
+        if (typeof updateStressLevel === 'function') {
+            updateStressLevel('45');
+        }
+    }
+    
+    alert('✅ Example mood data filled!');
+}
+
+// Show mood history
+window.showMoodHistory = function showMoodHistory() {
+    const history = JSON.parse(localStorage.getItem('moodHistory') || '[]');
+    
+    if (history.length === 0) {
+        alert('📚 No saved mood analyses yet. Complete a mood analysis to see it here.');
+        return;
+    }
+    
+    // Create modal
+    let modal = document.getElementById('moodHistoryModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'moodHistoryModal';
+        modal.style.cssText = 'display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; overflow-y: auto;';
+        modal.innerHTML = `
+            <div style="max-width: 800px; margin: 50px auto; background: rgba(0, 0, 0, 0.9); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 15px; padding: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="color: #ffffff; margin: 0;">📚 Mood Analysis History</h3>
+                    <button onclick="closeMoodHistory()" style="background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); color: #ffffff; padding: 8px 15px; border-radius: 5px; cursor: pointer;">✕ Close</button>
+                </div>
+                <div id="moodHistoryList" style="color: #ffffff;"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    const list = document.getElementById('moodHistoryList');
+    list.innerHTML = history.map((entry, index) => {
+        const date = new Date(entry.timestamp || Date.now()).toLocaleString();
+        return `
+            <div style="background: rgba(255, 0, 0, 0.1); border: 1px solid rgba(255, 0, 0, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <div>
+                        <div style="color: #ffffff; font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">Mood Analysis #${index + 1}</div>
+                        <div style="color: #cccccc; font-size: 0.9rem;">${date}</div>
+                    </div>
+                </div>
+                <div style="color: #cccccc; font-size: 0.9rem; margin-top: 10px;">${entry.summary || 'No summary available'}</div>
+            </div>
+        `;
+    }).join('');
+    
+    modal.style.display = 'block';
+}
+
+// Close mood history modal
+window.closeMoodHistory = function closeMoodHistory() {
+    const modal = document.getElementById('moodHistoryModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Save mood analysis to PDF
+window.saveMoodAnalysisToPDF = function saveMoodAnalysisToPDF() {
+    const moodText = document.getElementById('moodText')?.value || 'N/A';
+    const moodResult = document.getElementById('moodResult')?.innerHTML || 'No analysis completed yet';
+    const stressValue = document.getElementById('stressValue')?.textContent || 'N/A';
+    
+    const content = `
+        Mood Analysis Report
+        Generated: ${new Date().toLocaleString()}
+        
+        Your Mood Description:
+        ${moodText}
+        
+        Stress Level: ${stressValue}/100
+        
+        AI Analysis:
+        ${moodResult.replace(/<[^>]*>/g, '').replace(/\n\s*\n/g, '\n')}
+        
+        Disclaimer: This analysis is for educational purposes only and should not replace professional psychological advice.
+    `;
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mood-analysis-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    alert('✅ Mood analysis report exported! (Note: Full PDF export requires additional libraries)');
+}
