@@ -1259,6 +1259,20 @@
                                        <small style="color: #cccccc; display: block; margin-top: 4px;">💡 Common range 15–50%. Higher targets may be hit less often.</small>
                                    </div>
 
+                                   <div class="section-box" style="margin-top: 24px; margin-bottom: 20px;">
+                                   <details style="color: #cccccc;">
+                                       <summary style="color: #ffd700; cursor: pointer; font-weight: 600; font-size: 1rem;">📖 Quick glossary (terms used in this module)</summary>
+                                       <div style="padding: 14px 0 0 0; font-size: 0.92rem; line-height: 1.6;">
+                                           <p style="margin-bottom: 10px;"><strong style="color: #ffffff;">DCA (Dollar Cost Averaging)</strong> — Investing a fixed amount at regular intervals (e.g. weekly). Smooths out price volatility: you buy more when price is low, less when high. Reduces the risk of buying everything at a peak.</p>
+                                           <p style="margin-bottom: 10px;"><strong style="color: #ffffff;">Stop-loss</strong> — A predetermined price or % at which you sell to limit loss. Example: -10% stop-loss means you exit if the position drops 10%. Helps avoid emotional “holding and hoping.”</p>
+                                           <p style="margin-bottom: 10px;"><strong style="color: #ffffff;">Take-profit</strong> — A target % or price at which you sell to lock in profit. Example: +25% take-profit means you close the position when it gains 25%. Disciplined way to secure gains.</p>
+                                           <p style="margin-bottom: 10px;"><strong style="color: #ffffff;">Support level</strong> — A price zone where the asset has historically found buyers and bounced. Some traders buy “near support” expecting a rebound (technical analysis).</p>
+                                           <p style="margin-bottom: 10px;"><strong style="color: #ffffff;">RSI (Relative Strength Index)</strong> — An indicator (0–100). Below ~30 is often considered “oversold” (possible bounce); above ~70 “overbought” (possible pullback). Used to time entries or exits.</p>
+                                           <p style="margin-bottom: 0;"><strong style="color: #ffffff;">Trailing stop</strong> — A stop-loss that moves up as the price rises, so you lock in profit while still allowing the trade to run. If price falls back by X%, you sell.</p>
+                                       </div>
+                                   </details>
+                               </div>
+
                                    <h4 style="color: #ffd700; margin-top: 24px; margin-bottom: 14px; font-size: 1.1rem;">What the buttons do</h4>
                                    <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 24px;">
                                        <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 12px; line-height: 1.55;"><strong style="color: #ffffff;">Fill with example</strong> — Fills all fields above with sample data and shows an example of what your strategy result looks like. Use this first if you want to see how the tool works before entering your own numbers. You can then change any field and generate your own strategy.</p>
@@ -1267,6 +1281,7 @@
                                        <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 0; line-height: 1.55;"><strong style="color: #ffffff;">Save strategy</strong> — Saves this strategy with a name in “My strategies” so you can open it later, compare it with another one, or duplicate and adjust. Your data is stored only in this browser.</p>
                                    </div>
 
+                                   <div id="moduleDValidationError" style="display: none; margin-bottom: 14px; padding: 14px; background: rgba(255, 0, 0, 0.15); border: 1px solid rgba(255, 100, 100, 0.5); border-radius: 8px; color: #ffcccc; font-size: 0.95rem;"></div>
                                    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px;">
                                        <button class="btn btn-red" onclick="fillWithExample()" style="min-width: 160px; padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 215, 0, 0.5); background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(200, 165, 0, 0.35) 100%); color: #ffffff;">✨ Fill with example</button>
                                        <button class="btn btn-red" onclick="generateStrategies()" style="min-width: 180px; padding: 12px 24px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Generate my strategy</button>
@@ -1279,8 +1294,11 @@
                                    </div>
 
                                    <div class="section-box" id="strategiesResult" style="display: none; margin-top: 24px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.2); padding: 24px;">
-                                       <h4 style="color: #ffffff;">Your strategy result</h4>
-                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.5;">Below is your personalized plan based on the choices above. You can run a stress test or save this strategy.</p>
+                                       <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px;">
+                                           <h4 style="color: #ffffff; margin: 0;">Your strategy result</h4>
+                                           <button type="button" class="btn btn-red" onclick="copyStrategySummaryToClipboard()" style="padding: 8px 16px; font-size: 0.9rem; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 215, 0, 0.5); background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(200, 165, 0, 0.3) 100%); color: #ffffff;">📋 Copy summary</button>
+                                       </div>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 12px; line-height: 1.6;">Here you see <strong style="color: #ffffff;">three parts</strong>: (1) a summary of your choices so you can confirm everything is correct, (2) three strategy variants — Conservative, Balanced, and Aggressive — each with a suggested allocation and step-by-step actions, and (3) the option to run a stress test or save the strategy. Read the short explanation under each block to understand what the numbers and steps mean and how to use them. This is for education and planning only; it is not financial advice.</p>
                                        <div id="strategiesList"></div>
                                        <div id="stressTestBlock" style="margin-top: 16px;">
                                            <label style="color: #ffffff; margin-right: 10px;">Crash scenario for stress test:</label>

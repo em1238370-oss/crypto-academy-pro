@@ -7637,6 +7637,9 @@ function updateRiskAppetiteDisplay() {
 }
 
 function generateStrategies() {
+    const errEl = document.getElementById('moduleDValidationError');
+    if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
     const assets = Array.from(document.getElementById('preferredAssets')?.selectedOptions || []).map(o => o.value);
     const timeHorizon = document.getElementById('timeHorizon')?.value || 'months';
     const risk = parseInt(document.getElementById('riskAppetite')?.value || 50);
@@ -7649,8 +7652,13 @@ function generateStrategies() {
     const stopLoss = document.getElementById('entryExitStopLoss')?.value || 10;
     const takeProfit = document.getElementById('entryExitTakeProfit')?.value || 25;
 
-    if (assets.length === 0) {
-        alert('Please select at least one preferred asset');
+    const errors = [];
+    if (assets.length === 0) errors.push('Select at least one preferred coin.');
+    if (isNaN(deposit) || deposit <= 0) errors.push('Enter a valid deposit (number greater than 0).');
+    else if (deposit < 100) errors.push('Deposit should be at least $100 for the calculator to be meaningful.');
+    if (errEl && errors.length > 0) {
+        errEl.innerHTML = '⚠️ ' + errors.join(' ');
+        errEl.style.display = 'block';
         return;
     }
 
@@ -7690,23 +7698,104 @@ function generateStrategies() {
     summary += `<p style="margin-bottom: 8px; color: #cccccc;"><strong style="color: #ffffff;">Goal:</strong> ${goalText} · <strong style="color: #ffffff;">Time horizon:</strong> ${timeHorizon}</p>`;
     summary += `<p style="margin-bottom: 8px; color: #cccccc;"><strong style="color: #ffffff;">When to buy:</strong> ${entryText} · <strong style="color: #ffffff;">When to sell:</strong> ${exitText}</p>`;
     summary += `<p style="margin-bottom: 12px; color: #cccccc;"><strong style="color: #ffffff;">Stop-loss:</strong> ${stopLoss}% · <strong style="color: #ffffff;">Take-profit:</strong> ${takeProfit}%</p>`;
+    summary += `<p style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.15); color: #aaaaaa; font-size: 0.9rem; line-height: 1.55;">💡 <strong style="color: #cccccc;">What this means:</strong> Deposit is the amount you plan to allocate. Goal and time horizon define whether the plan is more defensive or growth-oriented. Entry and exit rules are your discipline: when you allow yourself to buy and sell. Stop-loss and take-profit are the limits you set per position so that losses are capped and profits can be locked in. Check that these match what you had in mind; if not, change the form above and generate again.</p>`;
 
-    strategiesList.innerHTML = '<div class="strategy-card" style="margin-bottom: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15);">' +
-        '<h5 style="color: #ffd700; margin-bottom: 10px;">Your choices summary</h5>' + summary + '</div>' +
-        strategies.map((strategy, idx) => `
-        <div class="strategy-card" style="margin-bottom: 16px; padding: 16px; background: rgba(0, 0, 0, 0.3); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff;">
-            <h5 style="color: #ffd700;">Strategy ${idx + 1}: ${strategy.name}</h5>
+    const strategyExplanations = {
+        'Conservative Strategy': { who: 'Best if you prefer lower volatility and can accept slower growth. Suits long-term holders and those who want to sleep well at night.', dist: 'Distribution is the suggested share of your deposit in each coin (percentages add up to 100%). Here more weight goes to the first coins you selected, with a smaller number of positions.', steps: 'Execution steps are the concrete actions to follow: e.g. use dollar-cost averaging, favour blue chips, set a tight stop-loss, and rebalance on a fixed schedule so you don’t drift from the plan.'
+        },
+        'Balanced Strategy': { who: 'A middle ground between safety and growth. Suits investors who want some upside but don’t want to take extreme risk.', dist: 'Distribution splits your capital between a few core assets and more growth-oriented ones. The percentages are suggestions; you can adjust them slightly to match your own view.', steps: 'Steps include mixing large and mid-cap coins, keeping a core vs growth ratio, setting a moderate stop-loss, and rebalancing every two weeks so the portfolio doesn’t become too skewed.'
+        },
+        'Aggressive Strategy': { who: 'For those who accept higher volatility in exchange for higher potential return. Suits experienced participants who can handle large drawdowns.', dist: 'A larger share goes to more volatile assets. The percentages spread across more coins; each position is smaller, so no single coin dominates. Risk is higher than in the conservative variant.', steps: 'Steps suggest a higher share in altcoins, a smaller core holding, a wider stop-loss, and more frequent rebalancing (e.g. weekly) so you react faster to market moves.'
+        }
+    };
+
+    strategiesList.innerHTML = '<div class="strategy-card" style="margin-bottom: 20px; padding: 18px; background: rgba(0, 0, 0, 0.35); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15);">' +
+        '<h5 style="color: #ffd700; margin-bottom: 12px;">1. Your choices summary</h5>' +
+        '<p style="color: #aaaaaa; font-size: 0.9rem; margin-bottom: 14px; line-height: 1.5;">This block repeats the inputs you selected above. Use it to confirm deposit, goal, horizon, entry/exit rules, and risk limits before looking at the strategy variants.</p>' +
+        summary + '</div>' +
+        strategies.map((strategy, idx) => {
+            const exp = strategyExplanations[strategy.name] || { who: '', dist: '', steps: '', takeaway: '' };
+            const positionSizes = deposit > 0 ? strategy.distribution.map(d => d.asset + ': $' + Math.round(deposit * (d.percent / 100)).toLocaleString()).join(' · ') : '';
+            return `
+        <div class="strategy-card" style="margin-bottom: 20px; padding: 18px; background: rgba(0, 0, 0, 0.3); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff;">
+            <h5 style="color: #ffd700; margin-bottom: 8px;">${idx + 2}. ${strategy.name}</h5>
             <p style="color: #cccccc; margin-bottom: 10px;">${strategy.description}</p>
-            <p style="color: #ffffff; margin-bottom: 10px;"><strong>Distribution:</strong></p>
-            <ul style="margin-left: 20px; margin-bottom: 10px; color: #cccccc;">
+            ${exp.takeaway ? '<p style="color: #ffd700; font-size: 0.9rem; margin-bottom: 12px; line-height: 1.5; font-style: italic;">' + exp.takeaway + '</p>' : ''}
+            <p style="color: #aaaaaa; font-size: 0.9rem; margin-bottom: 12px; line-height: 1.5;">💡 <strong style="color: #cccccc;">Who this is for:</strong> ${exp.who}</p>
+            <p style="color: #ffffff; margin-bottom: 6px;"><strong>Distribution (suggested % per coin):</strong></p>
+            <p style="color: #aaaaaa; font-size: 0.88rem; margin-bottom: 8px; line-height: 1.45;">${exp.dist}</p>
+            <ul style="margin-left: 20px; margin-bottom: 8px; color: #cccccc;">
                 ${strategy.distribution.map(d => `<li>${d.asset}: ${d.percent}%</li>`).join('')}
             </ul>
-            <p style="color: #ffffff; margin-bottom: 5px;"><strong>Execution Steps:</strong></p>
+            ${positionSizes ? '<p style="color: #aaaaaa; font-size: 0.9rem; margin-bottom: 14px; line-height: 1.45;">📊 <strong style="color: #cccccc;">Approximate position sizes with your deposit:</strong> ' + positionSizes + '</p>' : ''}
+            <p style="color: #ffffff; margin-bottom: 6px;"><strong>Execution steps (what to do in practice):</strong></p>
+            <p style="color: #aaaaaa; font-size: 0.88rem; margin-bottom: 8px; line-height: 1.45;">${exp.steps}</p>
             <ol style="margin-left: 20px; color: #cccccc;">
                 ${strategy.steps.map(s => `<li>${s}</li>`).join('')}
             </ol>
         </div>
-    `).join('');
+    `;
+        }).join('') +
+        '<div class="strategy-card" style="margin-bottom: 20px; padding: 18px; background: rgba(255, 255, 255, 0.04); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2);">' +
+        '<h5 style="color: #ffd700; margin-bottom: 12px;">Why you see three variants (Conservative, Balanced, Aggressive)</h5>' +
+        '<p style="color: #cccccc; font-size: 0.92rem; line-height: 1.6; margin-bottom: 0;">Your <strong style="color: #ffffff;">risk appetite</strong> and <strong style="color: #ffffff;">goal</strong> are used to suggest three possible plans. Conservative gives fewer coins and lower volatility; Balanced is a middle ground; Aggressive spreads across more assets with higher potential and higher risk. You are not forced to pick one — use them to compare and choose the style that fits you. The exact percentages are illustrative and based on common practice; adjust them to your own research and comfort.</p></div>' +
+        '<div class="strategy-card" style="margin-bottom: 20px; padding: 18px; background: rgba(255, 255, 255, 0.04); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2);">' +
+        '<h5 style="color: #ffd700; margin-bottom: 12px;">How to choose between the three variants</h5>' +
+        '<ul style="color: #cccccc; font-size: 0.92rem; line-height: 1.6; margin-left: 20px; margin-bottom: 0;">' +
+        '<li><strong style="color: #ffffff;">Conservative</strong> — Choose if you are new, risk-averse, or want to prioritise capital preservation. Lower volatility, slower potential growth.</li>' +
+        '<li><strong style="color: #ffffff;">Balanced</strong> — Choose if you want a middle ground: some growth potential without extreme risk. Often the best starting point for most users.</li>' +
+        '<li><strong style="color: #ffffff;">Aggressive</strong> — Choose only if you understand and accept high drawdowns and volatility. Higher potential return, higher risk.</li>' +
+        '</ul></div>' +
+        '<div class="strategy-card" style="margin-bottom: 20px; padding: 18px; background: rgba(255, 255, 255, 0.04); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2);">' +
+        '<h5 style="color: #ffd700; margin-bottom: 12px;">Before you act on this plan</h5>' +
+        '<p style="color: #aaaaaa; font-size: 0.9rem; margin-bottom: 10px; line-height: 1.5;">Check that you have considered the following. This is not a legal checklist — it is a reminder of responsible behaviour.</p>' +
+        '<ul style="color: #cccccc; font-size: 0.92rem; line-height: 1.7; margin-left: 20px; margin-bottom: 0;">' +
+        '<li>I understand that this output is for education and planning only, not financial advice.</li>' +
+        '<li>I have run (or will run) the stress test below to see how the strategy behaves in a crash.</li>' +
+        '<li>I will not invest more than I can afford to lose.</li>' +
+        '<li>I know what my stop-loss and take-profit levels are and I am prepared to follow them.</li>' +
+        '</ul></div>' +
+        '<div class="strategy-card" style="margin-bottom: 20px; padding: 18px; background: rgba(255, 0, 0, 0.06); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15);">' +
+        '<h5 style="color: #ff9999; margin-bottom: 12px;">Common mistakes to avoid</h5>' +
+        '<ul style="color: #cccccc; font-size: 0.92rem; line-height: 1.6; margin-left: 20px; margin-bottom: 0;">' +
+        '<li><strong style="color: #ffffff;">Skipping the stress test</strong> — Always run it to see how your strategy would behave in a crash.</li>' +
+        '<li><strong style="color: #ffffff;">Putting all capital in one strategy or one coin</strong> — Diversification and clear rules reduce emotional decisions.</li>' +
+        '<li><strong style="color: #ffffff;">Ignoring your own stop-loss</strong> — If you set a limit, stick to it; otherwise the plan is useless.</li>' +
+        '<li><strong style="color: #ffffff;">Chasing one good result</strong> — Past or simulated results do not guarantee future performance; stay disciplined.</li>' +
+        '</ul></div>' +
+        '<div class="strategy-card" style="margin-bottom: 16px; padding: 18px; background: rgba(255, 215, 0, 0.08); border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.25);">' +
+        '<h5 style="color: #ffd700; margin-bottom: 12px;">What to do next</h5>' +
+        '<p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 10px; line-height: 1.6;">Pick one variant (often <strong style="color: #ffffff;">Balanced</strong> is a good starting point). Use <strong style="color: #ffffff;">Run stress test</strong> below to see how that choice would behave in a market crash; if the impact is too high for you, consider a more conservative variant or a smaller deposit. When you are satisfied, use <strong style="color: #ffffff;">Save strategy</strong> above to store this setup with a name so you can reopen or compare it later. This tool is for education and planning only — not financial advice. Always adapt the plan to your own risk tolerance and situation.</p>' +
+        '</div>';
+}
+
+function copyStrategySummaryToClipboard() {
+    const strategiesList = document.getElementById('strategiesList');
+    const strategiesResult = document.getElementById('strategiesResult');
+    if (!strategiesList || strategiesResult.style.display === 'none') return;
+    const text = strategiesList.innerText || strategiesList.textContent || '';
+    if (!text.trim()) return;
+    const disclaimer = '— Strategy generated by Crypto Coach (education only, not financial advice). —';
+    const full = text.trim() + '\n\n' + disclaimer;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(full).then(() => {
+            const btn = document.querySelector('#strategiesResult button[onclick="copyStrategySummaryToClipboard()"]');
+            if (btn) { const orig = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(() => { btn.textContent = orig; }, 2500); }
+        }).catch(() => fallbackCopy(full));
+    } else {
+        fallbackCopy(full);
+    }
+}
+function fallbackCopy(str) {
+    const ta = document.createElement('textarea');
+    ta.value = str;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    const btn = document.querySelector('#strategiesResult button[onclick="copyStrategySummaryToClipboard()"]');
+    if (btn) { const orig = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(() => { btn.textContent = orig; }, 2500); }
 }
 
 function fillWithExample() {
