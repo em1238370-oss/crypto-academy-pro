@@ -1483,11 +1483,11 @@ div:has-text("Experience Points") {
 
 /* Когда блок открыт - становится КРАСНЫМ как другие блоки */
 #drawerA.open {
-    transform: scale(1.02);
-    background: rgba(0, 0, 0, 0.6); /* Стандартный фон как у других блоков */
-    border: 2px solid rgba(255, 0, 0, 0.3); /* Красная рамка как у других */
-    box-shadow: 0 25px 70px rgba(255, 0, 0, 0.5); /* Красное свечение */
-    margin-top: 20px;
+    transform: scale(1.02) !important;
+    background: rgba(0, 0, 0, 0.6) !important; /* Стандартный фон как у других блоков */
+    border: 2px solid rgba(255, 0, 0, 0.3) !important; /* Красная рамка как у других */
+    box-shadow: 0 25px 70px rgba(255, 0, 0, 0.5) !important; /* Красное свечение */
+    margin-top: 20px !important;
     border-radius: 15px !important;
     -webkit-border-radius: 15px !important;
     -moz-border-radius: 15px !important;
@@ -1496,7 +1496,9 @@ div:has-text("Experience Points") {
     border-bottom-left-radius: 15px !important;
     border-bottom-right-radius: 15px !important;
     overflow: hidden !important;
-    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    clip-path: inset(0 round 15px) !important;
+    -webkit-clip-path: inset(0 round 15px) !important;
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
 }
 
 #drawerA:hover {
@@ -1520,6 +1522,8 @@ div:has-text("Experience Points") {
     border-bottom-left-radius: 15px !important;
     border-bottom-right-radius: 15px !important;
     overflow: hidden !important;
+    clip-path: inset(0 round 15px) !important;
+    -webkit-clip-path: inset(0 round 15px) !important;
 }
 
 /* Скрываем золотые эффекты когда блок открыт */
