@@ -1401,6 +1401,8 @@ div:has-text("Experience Points") {
     border-bottom-left-radius: 15px !important;
     border-bottom-right-radius: 15px !important;
     overflow: hidden !important;
+    clip-path: inset(0 round 15px) !important;
+    -webkit-clip-path: inset(0 round 15px) !important;
     transition: border-radius 0s !important, transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important, box-shadow 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important, margin-top 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
     position: relative !important;
