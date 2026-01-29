@@ -7764,6 +7764,7 @@ function generateStrategies() {
         '<p style="color: #cccccc; font-size: 0.92rem; line-height: 1.6; margin-bottom: 0;">Your <strong style="color: #ffffff;">risk appetite</strong> and <strong style="color: #ffffff;">goal</strong> are used to suggest three possible plans. Conservative gives fewer coins and lower volatility; Balanced is a middle ground; Aggressive spreads across more assets with higher potential and higher risk. You are not forced to pick one — use them to compare and choose the style that fits you. The exact percentages are illustrative and based on common practice; adjust them to your own research and comfort.</p></div>' +
         '<div class="strategy-card" style="margin-bottom: 20px; padding: 18px; background: rgba(255, 255, 255, 0.04); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2);">' +
         '<h5 style="color: #ffd700; margin-bottom: 12px;">How to choose between the three variants</h5>' +
+        '<p style="color: #ffd700; font-size: 0.95rem; margin-bottom: 12px; line-height: 1.5;"><strong>Most people start with Balanced</strong> — if you are not sure, choose that one.</p>' +
         '<ul style="color: #cccccc; font-size: 0.92rem; line-height: 1.6; margin-left: 20px; margin-bottom: 0;">' +
         '<li><strong style="color: #ffffff;">Conservative</strong> — Choose if you are new, risk-averse, or want to prioritise capital preservation. Lower volatility, slower potential growth.</li>' +
         '<li><strong style="color: #ffffff;">Balanced</strong> — Choose if you want a middle ground: some growth potential without extreme risk. Often the best starting point for most users.</li>' +
@@ -7844,7 +7845,9 @@ function fillWithExample() {
     if (sl) sl.value = 10;
     const tp = document.getElementById('entryExitTakeProfit');
     if (tp) tp.value = 25;
-    generateStrategies();
+    // Do NOT auto-generate — user must click "Create my strategy" to see result
+    const hintEl = document.getElementById('templateLoadedHint');
+    if (hintEl) { hintEl.textContent = 'Form filled with example. Click «Create my strategy» below to see your plan.'; hintEl.style.display = 'block'; }
 }
 
 function runStressTestFromModuleD() {
@@ -8040,9 +8043,14 @@ function loadStrategyTemplate(type) {
         if (!hasSelection) { opts.forEach(o => { o.selected = (o.value === 'BTC' || o.value === 'ETH'); }); }
     }
     const hintEl = document.getElementById('templateLoadedHint');
-    if (hintEl) { hintEl.textContent = t.hint + ' You can change coins and options above, then click «Get my strategy» again to update.'; hintEl.style.display = 'block'; }
-    // Auto-generate so user sees result immediately (no "nothing happens")
-    generateStrategies();
+    if (hintEl) { hintEl.textContent = t.hint + ' Form filled. Click «Create my strategy» below to see your plan.'; hintEl.style.display = 'block'; }
+    // Do NOT auto-generate — user must click "Create my strategy" to see result
+}
+
+function pickForMeCoins() {
+    const pa = document.getElementById('preferredAssets');
+    if (!pa) return;
+    Array.from(pa.options).forEach(o => { o.selected = (o.value === 'BTC' || o.value === 'ETH'); });
 }
 
 function compareStrategiesAB() {
