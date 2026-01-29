@@ -1673,18 +1673,26 @@ div:has-text("Experience Points") {
 }
 
 .drawer-header h2 {
-    color: #ffffff;
-    font-size: 1.8rem;
-    font-weight: bold;
-    margin: 0;
-    min-width: 0;
-    flex: 1;
+    color: #ffffff !important;
+    font-size: 1.8rem !important;
+    font-weight: bold !important;
+    margin: 0 auto !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    text-align: center !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 15px !important;
 }
 
 .drawer-icon {
-    font-size: 2rem;
-    color: #ffffff;
-    transition: transform 0.4s ease;
+    font-size: 2rem !important;
+    color: #ffffff !important;
+    transition: transform 0.4s ease !important;
+    position: absolute !important;
+    right: 24px !important;
+    flex-shrink: 0 !important;
 }
 
 .drawer.open .drawer-icon {
