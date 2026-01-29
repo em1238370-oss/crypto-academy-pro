@@ -57,24 +57,25 @@ function expandModuleCToContent() {
     // Принудительно применяем скругленные углы сразу
     forceRoundedCorners();
     
-    // Call multiple times to catch dynamic content loading
-    setTimeout(() => { setHeight(); forceRoundedCorners(); }, 50);
-    setTimeout(() => { setHeight(); forceRoundedCorners(); }, 120);
-    setTimeout(() => { setHeight(); forceRoundedCorners(); }, 300);
-    setTimeout(() => { setHeight(); forceRoundedCorners(); }, 600);
-    setTimeout(() => { setHeight(); forceRoundedCorners(); }, 1000);
-    
-    // Also watch for content changes using MutationObserver
-    if (!window.moduleCObserver) {
-        window.moduleCObserver = new MutationObserver(() => {
+    // Call once with debounce to catch dynamic content loading
+    let timeoutId;
+    function debouncedUpdate() {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
             setHeight();
             forceRoundedCorners();
-        });
+        }, 100);
+    }
+    
+    debouncedUpdate();
+    
+    // Watch for content changes using MutationObserver with debounce
+    if (!window.moduleCObserver) {
+        window.moduleCObserver = new MutationObserver(debouncedUpdate);
         window.moduleCObserver.observe(content, {
             childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['style', 'class']
+            subtree: false, // Only direct children, not all descendants
+            attributes: false // Don't watch attributes to reduce calls
         });
     }
 }
