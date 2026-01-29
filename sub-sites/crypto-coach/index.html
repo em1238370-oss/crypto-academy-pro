@@ -1291,15 +1291,10 @@
                                    <div id="moduleDValidationError" style="display: none; margin-bottom: 14px; padding: 14px; background: rgba(255, 0, 0, 0.15); border: 1px solid rgba(255, 100, 100, 0.5); border-radius: 8px; color: #ffcccc; font-size: 0.95rem;"></div>
                                    <div id="moduleDDataChangedHint" style="display: none; margin-bottom: 14px; padding: 12px 16px; background: rgba(255, 215, 0, 0.12); border: 1px solid rgba(255, 215, 0, 0.4); border-radius: 8px; color: #ffd700; font-size: 0.9rem;">You changed your choices. Click <strong>Create my strategy</strong> below to update the result.</div>
                                    <p style="color: #ffd700; font-size: 1rem; margin-bottom: 12px; font-weight: 600;">Step 1: Fill the fields above (or use a template). Step 2: Click the button below — only then will your strategy appear.</p>
-                                   <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-bottom: 6px;">
+                                   <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center; margin-bottom: 16px;">
                                        <button class="btn btn-red" onclick="fillWithExample(); hideModuleDDataChangedHint();" style="min-width: 160px; padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 215, 0, 0.5); background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(200, 165, 0, 0.35) 100%); color: #ffffff;">✨ Fill with example</button>
                                        <button class="btn btn-red" onclick="generateStrategies(); hideModuleDDataChangedHint();" style="min-width: 220px; padding: 14px 28px; font-weight: 700; font-size: 1.05rem; border-radius: 8px; border: 2px solid rgba(255, 215, 0, 0.6); background: linear-gradient(135deg, rgba(255, 215, 0, 0.35) 0%, rgba(200, 165, 0, 0.45) 100%); color: #ffffff; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);">🎯 Create my strategy</button>
                                        <button class="btn btn-red" onclick="runStressTestFromModuleD()" style="min-width: 150px; padding: 12px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 102, 102, 0.6); background: linear-gradient(135deg, rgba(255, 0, 0, 0.25) 0%, rgba(150, 0, 0, 0.35) 100%); color: #ffffff;">Run stress test</button>
-                                   </div>
-                                   <div style="display: flex; flex-wrap: wrap; gap: 24px; margin-bottom: 16px; font-size: 0.85rem; color: #aaaaaa;">
-                                       <span title="Fills the form with sample data">✨ = fill example (form only)</span>
-                                       <span style="color: #ffd700;"><strong>🎯 Create my strategy</strong> = build and show your plan (click after filling the form)</span>
-                                       <span title="Simulates a market crash to see impact">Run stress test = see crash impact</span>
                                    </div>
                                    <div class="form-group" style="margin-top: 20px;">
                                        <label style="color: #ffffff;">Strategy name (for saving):</label>
