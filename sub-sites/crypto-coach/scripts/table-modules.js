@@ -170,6 +170,10 @@ function toggleDrawerWithInit(drawerId) {
             }
         }
     }
+
+    if (drawerId === 'drawerD' && typeof refreshModuleDSavedStrategies === 'function') {
+        setTimeout(refreshModuleDSavedStrategies, 150);
+    }
     
     // Initialize coins if drawerA is opened
     if (drawerId === 'drawerA') {
@@ -7716,6 +7720,243 @@ function testStressScenario() {
         <p><strong>Impact on your portfolio:</strong> <span style="color: #ff6666;">-${portfolioImpact.toFixed(1)}%</span></p>
         <p><strong>Strategy resilience:</strong> ${portfolioImpact < 25 ? '✅ Excellent' : portfolioImpact < 35 ? '⚠️ Moderate' : '❌ High risk'}</p>
     `;
+}
+
+// --- Module D: New assignments (expert + buyer) ---
+
+const MODULE_D_STORAGE_KEY = 'cryptoCoachStrategies';
+const MODULE_D_ENTRY_EXIT_KEY = 'cryptoCoachEntryExitRules';
+
+function getSavedStrategies() {
+    try {
+        return JSON.parse(localStorage.getItem(MODULE_D_STORAGE_KEY) || '[]');
+    } catch (e) { return []; }
+}
+
+function setSavedStrategies(arr) {
+    localStorage.setItem(MODULE_D_STORAGE_KEY, JSON.stringify(arr));
+}
+
+function refreshModuleDSavedStrategies() {
+    const list = getSavedStrategies();
+    const listEl = document.getElementById('myStrategiesList');
+    const selA = document.getElementById('compareStrategyA');
+    const selB = document.getElementById('compareStrategyB');
+    if (selA) {
+        const curA = selA.value;
+        selA.innerHTML = '<option value="">— Select —</option>' + list.map(s => `<option value="${s.id}">${(s.name || 'Strategy')} (${s.createdAt ? new Date(s.createdAt).toLocaleDateString() : ''})</option>`).join('');
+        if (curA && list.some(s => s.id === curA)) selA.value = curA;
+    }
+    if (selB) {
+        const curB = selB.value;
+        selB.innerHTML = '<option value="">— Select —</option>' + list.map(s => `<option value="${s.id}">${(s.name || 'Strategy')} (${s.createdAt ? new Date(s.createdAt).toLocaleDateString() : ''})</option>`).join('');
+        if (curB && list.some(s => s.id === curB)) selB.value = curB;
+    }
+    if (listEl) {
+        if (list.length === 0) {
+            listEl.innerHTML = '<p style="color: #888;">No saved strategies yet. Create one above and click "Save current strategy".</p>';
+        } else {
+            listEl.innerHTML = list.map(s => `
+                <div class="strategy-card" style="margin-bottom: 10px; padding: 12px; background: #1a1a1a; border-radius: 8px;">
+                    <strong>${(s.name || 'Strategy')}</strong> <span style="color: #888; font-size: 0.85rem;">${s.createdAt ? new Date(s.createdAt).toLocaleDateString() : ''}</span>
+                    <div style="margin-top: 8px;">
+                        <button class="btn btn-black" style="margin-right: 6px; padding: 4px 10px; font-size: 0.85rem;" onclick="loadSavedStrategy('${s.id}')">Open</button>
+                        <button class="btn btn-black" style="margin-right: 6px; padding: 4px 10px; font-size: 0.85rem;" onclick="duplicateSavedStrategy('${s.id}')">Duplicate</button>
+                        <button class="btn btn-black" style="padding: 4px 10px; font-size: 0.85rem;" onclick="deleteSavedStrategy('${s.id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+}
+
+function runFirstStrategyWizard() {
+    const goal = document.getElementById('firstStrategyGoal')?.value || 'accumulate';
+    const horizon = document.getElementById('firstStrategyHorizon')?.value || 'medium';
+    const risk = document.getElementById('firstStrategyRisk')?.value || 'medium';
+    const resultDiv = document.getElementById('firstStrategyResult');
+    if (!resultDiv) return;
+    resultDiv.style.display = 'block';
+    const goalText = { accumulate: 'Accumulate (save & grow)', earn: 'Earn (active gains)', preserve: 'Preserve (protect capital)' }[goal] || goal;
+    const horizonText = { short: 'Weeks', medium: 'Months', long: '1+ year' }[horizon] || horizon;
+    const riskText = { low: 'Low', medium: 'Medium', high: 'High' }[risk] || risk;
+    const steps = goal === 'accumulate' ? ['Invest a fixed amount regularly (e.g. weekly)', 'Focus on BTC/ETH or 2–3 blue chips', 'Set stop-loss at 5–10%', 'Rebalance every 1–3 months'] :
+        goal === 'earn' ? ['Define entry: e.g. after -15% pullback', 'Define exit: take profit at +20–30% or stop-loss at -10%', 'Use only a small part of portfolio for this', 'Review weekly'] :
+        ['Keep 60–80% in stablecoins or blue chips', 'Only 20–40% in growth assets', 'Set strict stop-loss (e.g. 5%)', 'Rebalance monthly'];
+    resultDiv.innerHTML = `
+        <h5 style="color: #c9a227; margin-bottom: 10px;">Your First Strategy</h5>
+        <p><strong>Goal:</strong> ${goalText} · <strong>Timeframe:</strong> ${horizonText} · <strong>Risk:</strong> ${riskText}</p>
+        <p style="margin-bottom: 8px;"><strong>What to do:</strong></p>
+        <ol style="margin-left: 20px;">${steps.map(s => `<li>${s}</li>`).join('')}</ol>
+    `;
+}
+
+function saveEntryExitRules() {
+    const entry = document.getElementById('entryRule')?.value || 'price_drop';
+    const exit = document.getElementById('exitRule')?.value || 'take_profit';
+    const stopLoss = document.getElementById('entryExitStopLoss')?.value || 10;
+    const takeProfit = document.getElementById('entryExitTakeProfit')?.value || 25;
+    const resultDiv = document.getElementById('entryExitResult');
+    if (!resultDiv) return;
+    const entryLabels = { price_drop: 'After price drops X%', dca: 'Regular amount (DCA)', support: 'Near support level', signal: 'On my signal / feeling' };
+    const exitLabels = { take_profit: 'Take profit at target', stop_loss: 'Stop loss only', both: 'Both take profit & stop loss', time: 'After X time' };
+    try {
+        localStorage.setItem(MODULE_D_ENTRY_EXIT_KEY, JSON.stringify({ entry, exit, stopLoss: Number(stopLoss), takeProfit: Number(takeProfit) }));
+    } catch (e) {}
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `
+        <h5 style="color: #c9a227;">Your rules saved</h5>
+        <p><strong>When to buy:</strong> ${entryLabels[entry] || entry}</p>
+        <p><strong>When to sell:</strong> ${exitLabels[exit] || exit}</p>
+        <p><strong>Stop-loss:</strong> ${stopLoss}% · <strong>Take-profit:</strong> ${takeProfit}%</p>
+    `;
+}
+
+function testStressScenarioExtended() {
+    const risk = parseInt(document.getElementById('riskAppetite')?.value || 50);
+    const scenarioEl = document.getElementById('stressTestScenario');
+    const scenarioVal = scenarioEl?.value || '40';
+    const resultDiv = document.getElementById('stressTestResultExtended');
+    if (!resultDiv) return;
+    resultDiv.style.display = 'block';
+    let crashPercent = 40;
+    if (scenarioVal === '30') crashPercent = 30;
+    else if (scenarioVal === '50') crashPercent = 50;
+    else if (scenarioVal === 'panic') crashPercent = 60;
+    const portfolioImpact = risk > 70 ? crashPercent * 0.8 : risk > 40 ? crashPercent * 0.6 : crashPercent * 0.4;
+    const survives = portfolioImpact < 35;
+    const recommendation = portfolioImpact < 25 ? 'Your strategy is resilient. Keep your rules.' : portfolioImpact < 40 ? 'Consider reducing position size or adding a stricter stop-loss.' : 'Consider lowering risk (fewer altcoins, smaller size) or adding a hard stop.';
+    resultDiv.innerHTML = `
+        <h5 style="color: #ff6666;">Stress Test: ${scenarioVal === 'panic' ? 'Panic (-60%)' : '-' + crashPercent + '%'}</h5>
+        <p><strong>Market drop:</strong> ${scenarioVal === 'panic' ? '-60% (brief panic)' : '-' + crashPercent + '%'}</p>
+        <p><strong>Estimated impact on your portfolio:</strong> <span style="color: #ff8888;">-${portfolioImpact.toFixed(1)}%</span></p>
+        <p><strong>Strategy survives?</strong> ${survives ? '✅ Yes' : '❌ High risk'}</p>
+        <p><strong>Recommendation:</strong> ${recommendation}</p>
+    `;
+}
+
+function loadStrategyTemplate(type) {
+    const templates = {
+        dca: { timeHorizon: 'months', riskAppetite: 30, hint: 'DCA: invest regularly (e.g. weekly), focus on BTC/ETH.' },
+        swing: { timeHorizon: 'weeks', riskAppetite: 50, hint: 'Swing: hold for weeks, set take-profit and stop-loss.' },
+        long: { timeHorizon: 'years', riskAppetite: 40, hint: 'Long-term: blue chips, rebalance every few months.' },
+        conservative: { timeHorizon: 'months', riskAppetite: 25, hint: 'Conservative: low risk, stable growth.' },
+        growth: { timeHorizon: 'months', riskAppetite: 65, hint: 'Growth: higher risk, mix of blue chips and alts.' }
+    };
+    const t = templates[type] || templates.dca;
+    const th = document.getElementById('timeHorizon');
+    const ra = document.getElementById('riskAppetite');
+    const raVal = document.getElementById('riskAppetiteValue');
+    if (th) th.value = t.timeHorizon;
+    if (ra) { ra.value = t.riskAppetite; if (raVal) raVal.textContent = t.riskAppetite + '%'; }
+    const hintEl = document.getElementById('templateLoadedHint');
+    if (hintEl) { hintEl.textContent = t.hint + ' Adjust above (assets, horizon, risk) and click Generate Strategies.'; hintEl.style.display = 'block'; }
+}
+
+function compareStrategiesAB() {
+    const idA = document.getElementById('compareStrategyA')?.value;
+    const idB = document.getElementById('compareStrategyB')?.value;
+    const resultDiv = document.getElementById('compareABResult');
+    if (!resultDiv) return;
+    if (!idA || !idB || idA === idB) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<p style="color: #cc8;">Select two different strategies to compare.</p>';
+        return;
+    }
+    const list = getSavedStrategies();
+    const sA = list.find(s => s.id === idA);
+    const sB = list.find(s => s.id === idB);
+    if (!sA || !sB) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<p style="color: #cc8;">Strategies not found.</p>';
+        return;
+    }
+    const riskA = (sA.riskAppetite != null ? sA.riskAppetite : 50);
+    const riskB = (sB.riskAppetite != null ? sB.riskAppetite : 50);
+    const timeA = sA.timeHorizon || 'months';
+    const timeB = sB.timeHorizon || 'months';
+    const winner = riskA <= riskB && timeA.length >= timeB.length ? 'A' : 'B';
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `
+        <h5 style="color: #c9a227;">A/B Comparison</h5>
+        <table style="width: 100%; border-collapse: collapse; color: #ccc;">
+            <tr><td></td><td><strong>${(sA.name || 'Strategy A')}</strong></td><td><strong>${(sB.name || 'Strategy B')}</strong></td></tr>
+            <tr><td>Risk appetite</td><td>${riskA}%</td><td>${riskB}%</td></tr>
+            <tr><td>Time horizon</td><td>${timeA}</td><td>${timeB}</td></tr>
+        </table>
+        <p style="margin-top: 12px;"><strong>For your current setup, the better fit is Strategy ${winner}.</strong> Use "Open" in My Strategies to load it and adjust.</p>
+    `;
+}
+
+function submitPreStartChecklist() {
+    const c1 = document.getElementById('checkStopLoss')?.checked;
+    const c2 = document.getElementById('checkAmount')?.checked;
+    const c3 = document.getElementById('checkTimeframe')?.checked;
+    const c4 = document.getElementById('checkRules')?.checked;
+    const resultDiv = document.getElementById('preStartChecklistResult');
+    if (!resultDiv) return;
+    resultDiv.style.display = 'block';
+    const total = [c1, c2, c3, c4].filter(Boolean).length;
+    if (total === 4) {
+        resultDiv.innerHTML = '<h5 style="color: #6a8;">✅ Strategy ready to start</h5><p>All checks passed. Stick to your rules and risk level.</p>';
+    } else {
+        resultDiv.innerHTML = `<h5 style="color: #ca8;">⚠️ ${total}/4 checks</h5><p>Complete the remaining items before you start.</p>`;
+    }
+}
+
+function saveCurrentStrategy() {
+    const nameInput = document.getElementById('savedStrategyName');
+    const name = nameInput?.value?.trim() || prompt('Strategy name:') || 'My Strategy';
+    if (!name) return;
+    const assets = Array.from(document.getElementById('preferredAssets')?.selectedOptions || []).map(o => o.value);
+    const timeHorizon = document.getElementById('timeHorizon')?.value || 'months';
+    const riskAppetite = parseInt(document.getElementById('riskAppetite')?.value || 50);
+    const list = getSavedStrategies();
+    const id = 'strategy_' + Date.now();
+    list.push({
+        id,
+        name,
+        assets: assets.length ? assets : ['BTC', 'ETH'],
+        timeHorizon,
+        riskAppetite,
+        createdAt: new Date().toISOString()
+    });
+    setSavedStrategies(list);
+    if (nameInput) nameInput.value = '';
+    refreshModuleDSavedStrategies();
+}
+
+function loadSavedStrategy(id) {
+    const list = getSavedStrategies();
+    const s = list.find(x => x.id === id);
+    if (!s) return;
+    const th = document.getElementById('timeHorizon');
+    const ra = document.getElementById('riskAppetite');
+    const raVal = document.getElementById('riskAppetiteValue');
+    const pa = document.getElementById('preferredAssets');
+    if (th) th.value = s.timeHorizon || 'months';
+    if (ra) { ra.value = s.riskAppetite != null ? s.riskAppetite : 50; if (raVal) raVal.textContent = (s.riskAppetite != null ? s.riskAppetite : 50) + '%'; }
+    if (pa && Array.isArray(s.assets)) {
+        Array.from(pa.options).forEach(opt => { opt.selected = s.assets.includes(opt.value); });
+    }
+    refreshModuleDSavedStrategies();
+}
+
+function duplicateSavedStrategy(id) {
+    const list = getSavedStrategies();
+    const s = list.find(x => x.id === id);
+    if (!s) return;
+    const copy = { ...s, id: 'strategy_' + Date.now(), name: (s.name || 'Strategy') + ' (copy)', createdAt: new Date().toISOString() };
+    list.push(copy);
+    setSavedStrategies(list);
+    refreshModuleDSavedStrategies();
+}
+
+function deleteSavedStrategy(id) {
+    if (!confirm('Delete this strategy?')) return;
+    const list = getSavedStrategies().filter(s => s.id !== id);
+    setSavedStrategies(list);
+    refreshModuleDSavedStrategies();
 }
 
 // Update portfolio value from input

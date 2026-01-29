@@ -1205,6 +1205,143 @@
                                        <button class="btn btn-black" onclick="testStressScenario()">Strategy Stress Test (Market Crash)</button>
                                        <div id="stressTestResult" style="display: none; margin-top: 15px;" class="result-box"></div>
                                    </div>
+
+                               <!-- 1. My First Strategy (wizard) -->
+                               <div class="section-box">
+                                   <h4>1. My First Strategy</h4>
+                                   <p style="color: #aaa; margin-bottom: 15px; font-size: 0.9rem;">Quick wizard: goal → timeframe → risk → one ready strategy.</p>
+                                   <div class="form-group">
+                                       <label>Goal:</label>
+                                       <select id="firstStrategyGoal">
+                                           <option value="accumulate">Accumulate (save & grow)</option>
+                                           <option value="earn">Earn (active gains)</option>
+                                           <option value="preserve">Preserve (protect capital)</option>
+                                       </select>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Timeframe:</label>
+                                       <select id="firstStrategyHorizon">
+                                           <option value="short">Short (weeks)</option>
+                                           <option value="medium">Medium (months)</option>
+                                           <option value="long">Long (1+ year)</option>
+                                       </select>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Risk level:</label>
+                                       <select id="firstStrategyRisk">
+                                           <option value="low">Low</option>
+                                           <option value="medium" selected>Medium</option>
+                                           <option value="high">High</option>
+                                       </select>
+                                   </div>
+                                   <button class="btn btn-red" onclick="runFirstStrategyWizard()">Get My First Strategy</button>
+                                   <div id="firstStrategyResult" class="result-box" style="display: none; margin-top: 15px;"></div>
+                               </div>
+
+                               <!-- 2. Entry & Exit Rules -->
+                               <div class="section-box">
+                                   <h4>2. Entry & Exit Rules</h4>
+                                   <p style="color: #aaa; margin-bottom: 15px; font-size: 0.9rem;">When to buy and when to sell — simple rules.</p>
+                                   <div class="form-group">
+                                       <label>When to buy:</label>
+                                       <select id="entryRule">
+                                           <option value="price_drop">After price drops X%</option>
+                                           <option value="dca">Regular amount (DCA)</option>
+                                           <option value="support">Near support level</option>
+                                           <option value="signal">On my signal / feeling</option>
+                                       </select>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>When to sell:</label>
+                                       <select id="exitRule">
+                                           <option value="take_profit">Take profit at target</option>
+                                           <option value="stop_loss">Stop loss only</option>
+                                           <option value="both">Both take profit & stop loss</option>
+                                           <option value="time">After X time</option>
+                                       </select>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Stop-loss %:</label>
+                                       <input type="number" id="entryExitStopLoss" min="1" max="50" value="10" style="width: 80px;"> %
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Take-profit %:</label>
+                                       <input type="number" id="entryExitTakeProfit" min="5" max="500" value="25" style="width: 80px;"> %
+                                   </div>
+                                   <button class="btn btn-black" onclick="saveEntryExitRules()">Save My Rules</button>
+                                   <div id="entryExitResult" class="result-box" style="display: none; margin-top: 15px;"></div>
+                               </div>
+
+                               <!-- 3. Stress Test (extended) -->
+                               <div class="section-box">
+                                   <h4>3. Strategy Stress Test</h4>
+                                   <p style="color: #aaa; margin-bottom: 15px; font-size: 0.9rem;">What happens if the market crashes? Pick a scenario.</p>
+                                   <div class="form-group">
+                                       <label>Crash scenario:</label>
+                                       <select id="stressTestScenario">
+                                           <option value="30">-30% (correction)</option>
+                                           <option value="40" selected>-40% (strong drop)</option>
+                                           <option value="50">-50% (crash)</option>
+                                           <option value="panic">Panic (brief -60%)</option>
+                                       </select>
+                                   </div>
+                                   <button class="btn btn-black" onclick="testStressScenarioExtended()">Run Stress Test</button>
+                                   <div id="stressTestResultExtended" class="result-box" style="display: none; margin-top: 15px;"></div>
+                               </div>
+
+                               <!-- 4. Strategy Templates -->
+                               <div class="section-box">
+                                   <h4>4. Strategy Templates</h4>
+                                   <p style="color: #aaa; margin-bottom: 15px; font-size: 0.9rem;">Start from a template, then customize.</p>
+                                   <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                                       <button class="btn btn-black" onclick="loadStrategyTemplate('dca')">DCA (steady)</button>
+                                       <button class="btn btn-black" onclick="loadStrategyTemplate('swing')">Swing (weeks)</button>
+                                       <button class="btn btn-black" onclick="loadStrategyTemplate('long')">Long-term</button>
+                                       <button class="btn btn-black" onclick="loadStrategyTemplate('conservative')">Conservative</button>
+                                       <button class="btn btn-black" onclick="loadStrategyTemplate('growth')">Growth</button>
+                                   </div>
+                                   <p id="templateLoadedHint" style="color: #8a8; font-size: 0.9rem; display: none;">Template loaded. Adjust above (assets, horizon, risk) and click Generate Strategies.</p>
+                               </div>
+
+                               <!-- 5. Compare Two Strategies (A/B) -->
+                               <div class="section-box">
+                                   <h4>5. Compare Two Strategies (A/B)</h4>
+                                   <p style="color: #aaa; margin-bottom: 15px; font-size: 0.9rem;">Pick two saved strategies and see which fits better.</p>
+                                   <div class="form-group">
+                                       <label>Strategy A:</label>
+                                       <select id="compareStrategyA"><option value="">— Select —</option></select>
+                                   </div>
+                                   <div class="form-group">
+                                       <label>Strategy B:</label>
+                                       <select id="compareStrategyB"><option value="">— Select —</option></select>
+                                   </div>
+                                   <button class="btn btn-black" onclick="compareStrategiesAB()">Compare</button>
+                                   <div id="compareABResult" class="result-box" style="display: none; margin-top: 15px;"></div>
+                               </div>
+
+                               <!-- 6. Pre-Start Checklist -->
+                               <div class="section-box">
+                                   <h4>6. Pre-Start Checklist</h4>
+                                   <p style="color: #aaa; margin-bottom: 15px; font-size: 0.9rem;">Before you start — quick checks.</p>
+                                   <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;"><input type="checkbox" id="checkStopLoss"> Stop-loss is set</label>
+                                   <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;"><input type="checkbox" id="checkAmount"> Amount is affordable</label>
+                                   <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;"><input type="checkbox" id="checkTimeframe"> Timeframe is realistic</label>
+                                   <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;"><input type="checkbox" id="checkRules"> Entry/exit rules are written</label>
+                                   <button class="btn btn-black" onclick="submitPreStartChecklist()">Strategy ready to start</button>
+                                   <div id="preStartChecklistResult" class="result-box" style="display: none; margin-top: 15px;"></div>
+                               </div>
+
+                               <!-- 7. My Strategies (save & library) -->
+                               <div class="section-box">
+                                   <h4>7. My Strategies</h4>
+                                   <p style="color: #aaa; margin-bottom: 15px; font-size: 0.9rem;">Save current setup and manage your strategies.</p>
+                                   <div class="form-group">
+                                       <label>Strategy name:</label>
+                                       <input type="text" id="savedStrategyName" placeholder="e.g. Conservative BTC/ETH" style="max-width: 300px;">
+                                   </div>
+                                   <button class="btn btn-red" onclick="saveCurrentStrategy()">Save current strategy</button>
+                                   <div id="myStrategiesList" style="margin-top: 15px;"></div>
+                                   <p style="color: #888; font-size: 0.85rem; margin-top: 10px;">Use "Compare Two Strategies" to compare saved ones.</p>
                                </div>
                            </div>
                        </div>
