@@ -7633,13 +7633,21 @@ Be specific with numbers, percentages, and price levels.`;
 function updateRiskAppetiteDisplay() {
     const value = document.getElementById('riskAppetite')?.value || 50;
     const riskAppetiteValue = document.getElementById('riskAppetiteValue');
-    if (riskAppetiteValue) riskAppetiteValue.textContent = value + '%';
+    if (riskAppetiteValue) riskAppetiteValue.textContent = value;
 }
 
 function generateStrategies() {
     const assets = Array.from(document.getElementById('preferredAssets')?.selectedOptions || []).map(o => o.value);
     const timeHorizon = document.getElementById('timeHorizon')?.value || 'months';
     const risk = parseInt(document.getElementById('riskAppetite')?.value || 50);
+    const depositEl = document.getElementById('strategyDeposit');
+    const goalEl = document.getElementById('strategyGoal');
+    const deposit = depositEl ? (parseFloat(depositEl.value) || 0) : 0;
+    const goal = goalEl ? goalEl.value : 'accumulate';
+    const entryRule = document.getElementById('entryRule')?.value || 'dca';
+    const exitRule = document.getElementById('exitRule')?.value || 'both';
+    const stopLoss = document.getElementById('entryExitStopLoss')?.value || 10;
+    const takeProfit = document.getElementById('entryExitTakeProfit')?.value || 25;
 
     if (assets.length === 0) {
         alert('Please select at least one preferred asset');
@@ -7651,6 +7659,10 @@ function generateStrategies() {
     
     if (resultDiv) resultDiv.style.display = 'block';
     if (!strategiesList) return;
+
+    const goalText = { accumulate: 'Accumulate (save & grow)', earn: 'Earn (active gains)', preserve: 'Preserve (protect capital)' }[goal] || goal;
+    const entryText = { price_drop: 'After price drops X%', dca: 'Regular amount (DCA)', support: 'Near support level', signal: 'On my signal' }[entryRule] || entryRule;
+    const exitText = { take_profit: 'Take profit at target', stop_loss: 'Stop loss only', both: 'Both take profit & stop loss', time: 'After X time' }[exitRule] || exitRule;
 
     const strategies = [
         {
@@ -7673,7 +7685,15 @@ function generateStrategies() {
         }
     ];
 
-    strategiesList.innerHTML = strategies.map((strategy, idx) => `
+    let summary = '';
+    if (deposit > 0) summary += `<p style="margin-bottom: 8px;"><strong>Deposit:</strong> $${deposit.toLocaleString()}</p>`;
+    summary += `<p style="margin-bottom: 8px;"><strong>Goal:</strong> ${goalText} · <strong>Time horizon:</strong> ${timeHorizon}</p>`;
+    summary += `<p style="margin-bottom: 8px;"><strong>When to buy:</strong> ${entryText} · <strong>When to sell:</strong> ${exitText}</p>`;
+    summary += `<p style="margin-bottom: 12px;"><strong>Stop-loss:</strong> ${stopLoss}% · <strong>Take-profit:</strong> ${takeProfit}%</p>`;
+
+    strategiesList.innerHTML = '<div class="strategy-card" style="margin-bottom: 16px; padding: 14px; background: #1a1a1a; border-radius: 10px;">' +
+        '<h5 style="color: #c9a227; margin-bottom: 10px;">Your choices summary</h5>' + summary + '</div>' +
+        strategies.map((strategy, idx) => `
         <div class="strategy-card">
             <h5>Strategy ${idx + 1}: ${strategy.name}</h5>
             <p style="color: #888; margin-bottom: 10px;">${strategy.description}</p>
@@ -7687,6 +7707,54 @@ function generateStrategies() {
             </ol>
         </div>
     `).join('');
+}
+
+function fillWithExample() {
+    const pa = document.getElementById('preferredAssets');
+    if (pa) {
+        Array.from(pa.options).forEach(opt => { opt.selected = (opt.value === 'BTC' || opt.value === 'ETH'); });
+    }
+    const dep = document.getElementById('strategyDeposit');
+    if (dep) dep.value = 5000;
+    const goal = document.getElementById('strategyGoal');
+    if (goal) goal.value = 'accumulate';
+    const th = document.getElementById('timeHorizon');
+    if (th) th.value = 'months';
+    const ra = document.getElementById('riskAppetite');
+    const raVal = document.getElementById('riskAppetiteValue');
+    if (ra) { ra.value = 40; if (raVal) raVal.textContent = '40'; }
+    const er = document.getElementById('entryRule');
+    if (er) er.value = 'dca';
+    const ex = document.getElementById('exitRule');
+    if (ex) ex.value = 'both';
+    const sl = document.getElementById('entryExitStopLoss');
+    if (sl) sl.value = 10;
+    const tp = document.getElementById('entryExitTakeProfit');
+    if (tp) tp.value = 25;
+    generateStrategies();
+}
+
+function runStressTestFromModuleD() {
+    const risk = parseInt(document.getElementById('riskAppetite')?.value || 50);
+    const scenarioEl = document.getElementById('stressTestScenario');
+    const scenarioVal = scenarioEl?.value || '40';
+    const resultDiv = document.getElementById('stressTestResult');
+    if (!resultDiv) return;
+    resultDiv.style.display = 'block';
+    let crashPercent = 40;
+    if (scenarioVal === '30') crashPercent = 30;
+    else if (scenarioVal === '50') crashPercent = 50;
+    else if (scenarioVal === 'panic') crashPercent = 60;
+    const portfolioImpact = risk > 70 ? crashPercent * 0.8 : risk > 40 ? crashPercent * 0.6 : crashPercent * 0.4;
+    const survives = portfolioImpact < 35;
+    const recommendation = portfolioImpact < 25 ? 'Your strategy is resilient. Keep your rules.' : portfolioImpact < 40 ? 'Consider reducing position size or adding a stricter stop-loss.' : 'Consider lowering risk (fewer altcoins, smaller size) or adding a hard stop.';
+    resultDiv.innerHTML = `
+        <h5 style="color: #ff6666;">Stress test: ${scenarioVal === 'panic' ? 'Panic (-60%)' : '-' + crashPercent + '%'}</h5>
+        <p><strong>Market drop:</strong> ${scenarioVal === 'panic' ? '-60% (brief panic)' : '-' + crashPercent + '%'}</p>
+        <p><strong>Estimated impact on your portfolio:</strong> <span style="color: #ff8888;">-${portfolioImpact.toFixed(1)}%</span></p>
+        <p><strong>Strategy survives?</strong> ${survives ? '✅ Yes' : '❌ High risk'}</p>
+        <p><strong>Recommendation:</strong> ${recommendation}</p>
+    `;
 }
 
 function generateDistribution(assets, type) {
@@ -7911,6 +7979,10 @@ function saveCurrentStrategy() {
     const assets = Array.from(document.getElementById('preferredAssets')?.selectedOptions || []).map(o => o.value);
     const timeHorizon = document.getElementById('timeHorizon')?.value || 'months';
     const riskAppetite = parseInt(document.getElementById('riskAppetite')?.value || 50);
+    const depositEl = document.getElementById('strategyDeposit');
+    const goalEl = document.getElementById('strategyGoal');
+    const deposit = depositEl ? (parseFloat(depositEl.value) || 0) : 0;
+    const goal = goalEl ? goalEl.value : 'accumulate';
     const list = getSavedStrategies();
     const id = 'strategy_' + Date.now();
     list.push({
@@ -7919,6 +7991,8 @@ function saveCurrentStrategy() {
         assets: assets.length ? assets : ['BTC', 'ETH'],
         timeHorizon,
         riskAppetite,
+        deposit,
+        goal,
         createdAt: new Date().toISOString()
     });
     setSavedStrategies(list);
@@ -7934,11 +8008,15 @@ function loadSavedStrategy(id) {
     const ra = document.getElementById('riskAppetite');
     const raVal = document.getElementById('riskAppetiteValue');
     const pa = document.getElementById('preferredAssets');
+    const dep = document.getElementById('strategyDeposit');
+    const goalEl = document.getElementById('strategyGoal');
     if (th) th.value = s.timeHorizon || 'months';
-    if (ra) { ra.value = s.riskAppetite != null ? s.riskAppetite : 50; if (raVal) raVal.textContent = (s.riskAppetite != null ? s.riskAppetite : 50) + '%'; }
+    if (ra) { ra.value = s.riskAppetite != null ? s.riskAppetite : 50; if (raVal) raVal.textContent = (s.riskAppetite != null ? s.riskAppetite : 50); }
     if (pa && Array.isArray(s.assets)) {
         Array.from(pa.options).forEach(opt => { opt.selected = s.assets.includes(opt.value); });
     }
+    if (dep && s.deposit != null) dep.value = s.deposit;
+    if (goalEl && s.goal) goalEl.value = s.goal;
     refreshModuleDSavedStrategies();
 }
 

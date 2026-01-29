@@ -2081,21 +2081,23 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 
 .btn-red {
     background: linear-gradient(135deg, #ff0000, #cc0000);
-    color: white;
+    color: #ffffff !important;
 }
 
 .btn-red:hover {
     background: linear-gradient(135deg, #ff3333, #ff0000);
+    color: #ffffff !important;
 }
 
 .btn-black {
     background: linear-gradient(135deg, #000000, #333333);
-    color: white;
+    color: #ffffff !important;
     border: 1px solid rgba(255, 0, 0, 0.3);
 }
 
 .btn-black:hover {
     background: linear-gradient(135deg, #1a1a1a, #000000);
+    color: #ffffff !important;
 }
 
 .result-box {
