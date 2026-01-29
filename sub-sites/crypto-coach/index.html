@@ -245,9 +245,9 @@
                                <div id="selectedCoinsList" class="selected-coins-list"></div>
 
                                <div class="ai-recommendations">
-                                   <h4>AI Recommendations Based on Market Analysis</h4>
+                                   <h4>Smart Recommendations Based on Market Analysis</h4>
                                    <div id="recommendationsContent">
-                                       <p style="color: #ffffff; font-weight: bold;">Select coins to get AI recommendations</p>
+                                       <p style="color: #ffffff; font-weight: bold;">Select coins to get personalized recommendations</p>
                                    </div>
                                </div>
 
@@ -438,7 +438,7 @@
                                                  style="width: 100%; padding: 15px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 8px; color: #ffffff; font-size: 1rem; resize: vertical; box-sizing: border-box;"></textarea>
                                    </div>
                                    <button class="btn btn-red" onclick="analyzeMoodEnhanced()" style="padding: 12px 30px; font-size: 1.1rem; font-weight: bold;">
-                                       🤖 AI Deep Mood Analysis
+                                       🔍 Deep Mood Analysis
                                    </button>
                                    <div id="moodResult" class="mood-result" style="display: none; margin-top: 20px; padding: 20px; background: rgba(0, 0, 0, 0.5); border-radius: 10px; border-left: 4px solid #ff0000;"></div>
                                </div>
@@ -621,7 +621,7 @@
                                ">
                                    <h4 style="color: #ffffff; margin-bottom: 20px; font-size: 1.4rem; text-align: center;">🎯 Cognitive Bias Detector</h4>
                                    <p style="color: #cccccc; text-align: center; margin-bottom: 25px; font-size: 1rem; line-height: 1.6;">
-                                       Describe a recent trading decision you made. AI will analyze it for cognitive biases and provide insights.
+                                       Describe a recent trading decision you made. Our system will analyze it for cognitive biases and provide insights.
                                    </p>
                                    <div class="form-group" style="margin-bottom: 20px;">
                                        <label style="color: #ffffff; display: block; margin-bottom: 10px; font-size: 1.1rem;">Describe your trading decision:</label>
@@ -834,7 +834,7 @@
                                        </small>
                                    </div>
                                    <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 20px;">
-                                       <label style="margin-bottom: 15px; color: #ffffff; font-size: 1.1rem; font-weight: 600; display: block;">AI Scenario Builder (Universal)</label>
+                                       <label style="margin-bottom: 15px; color: #ffffff; font-size: 1.1rem; font-weight: 600; display: block;">Advanced Scenario Builder</label>
                                        <textarea id="aiScenarioInput" rows="4" placeholder="Describe any scenario: crashes, bull runs, regulatory events, custom situations..." style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: #ffffff; font-size: 1rem; margin-bottom: 15px; resize: vertical; font-family: inherit; box-sizing: border-box;"></textarea>
                                        <button class="btn btn-red" style="padding: 12px 25px; font-size: 1rem; font-weight: 600; width: 100%; margin-top: 0;" onclick="aiScenarioBuilder()">Generate Detailed Scenario</button>
                                        <div id="aiScenarioResult" style="margin-top: 20px; margin-left: 0 !important; margin-right: 0 !important; margin-bottom: 0; font-size: 1rem; line-height: 1.7; max-height: 800px; min-height: 400px; overflow-y: auto; overflow-x: hidden; padding: 0 !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.2); display: block !important; text-align: left !important; position: relative !important; left: 0 !important; right: 0 !important; transform: none !important; float: none !important; clear: both !important;"></div>
@@ -911,7 +911,7 @@
 
                                <!-- Результаты эксперимента - перемещены сразу после кнопки -->
                                <div class="section-box" id="experimentResults" style="display: none; margin-top: 20px; width: 100%; max-width: 100%; box-sizing: border-box; overflow-x: hidden;">
-                                   <h4>🔴 Live Result with AI Advice</h4>
+                                   <h4>🔴 Live Result with Expert Advice</h4>
                                    <div class="result-box" id="experimentAnalysis" style="margin-left: 0; margin-right: 0; width: 100%;"></div>
                                    <div class="result-box" id="aiAdviceBox" style="background: rgba(255, 165, 0, 0.2); border-color: #ffa500; margin-top: 15px;"></div>
                                    <div class="chart-container" id="experimentChart">Graphic visualization will appear here</div>
@@ -1059,13 +1059,13 @@
 
                                <div class="section-box" style="margin-top: 20px;">
                                    <h4>🔮 Predictive Analytics Dashboard</h4>
-                                   <p style="color: #cccccc; margin-bottom: 15px;">AI-powered price predictions and recommendations</p>
+                                   <p style="color: #cccccc; margin-bottom: 15px;">Advanced price predictions and market recommendations</p>
                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                                        <button class="btn btn-red" onclick="fillExamplePredictive()" style="padding: 8px 20px; font-size: 0.9rem; margin: 0;">📋 Fill Example</button>
                                        <button class="btn btn-red" onclick="showPredictiveHistory()" style="padding: 8px 20px; font-size: 0.9rem; margin: 0;">📚 History</button>
                                    </div>
                                    <div class="form-group">
-                                       <label>Select Coin for Prediction: <span class="info-tooltip" data-tooltip="Choose the cryptocurrency you want to get AI-powered price predictions for. The system will analyze current market data and historical trends to provide short-term (7 days), medium-term (3 months), and long-term (6+ months) forecasts.">ℹ️</span></label>
+                                       <label>Select Coin for Prediction: <span class="info-tooltip" data-tooltip="Choose the cryptocurrency you want to get advanced price predictions for. The system will analyze current market data and historical trends to provide short-term (7 days), medium-term (3 months), and long-term (6+ months) forecasts.">ℹ️</span></label>
                                        <select id="predictCoin" onchange="autoSavePredictiveForm()">
                                            <option value="BTC">Bitcoin (BTC)</option>
                                            <option value="ETH">Ethereum (ETH)</option>
@@ -1250,7 +1250,7 @@
                <div class="message bot">
                    <div class="message-avatar" aria-hidden="true">🇺🇸</div>
                    <div class="message-content">
-                       Hey! I'm your Crypto AI Assistant powered by Mistral AI 🚀 I understand all crypto terms, slang, and even "dumb" questions! Ask me anything about Bitcoin, DeFi, NFTs, trading, security, or crypto culture (HODL, FOMO, FUD, moon, lambo, degen, WAGMI)!
+                       Hey! I'm your Crypto Trading Assistant 🚀 I understand all crypto terms, slang, and even "dumb" questions! Ask me anything about Bitcoin, DeFi, NFTs, trading, security, or crypto culture (HODL, FOMO, FUD, moon, lambo, degen, WAGMI)!
                        <div class="quick-questions">
                            <button class="quick-question-btn" data-question="What is HODL?">What is HODL?</button>
                            <button class="quick-question-btn" data-question="Explain DeFi">Explain DeFi</button>

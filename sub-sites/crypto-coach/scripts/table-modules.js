@@ -2978,7 +2978,7 @@ window.runExperiment = async function runExperiment() {
         aiAdviceDiv.innerHTML = `
             <div style="padding: 20px;">
                 <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
-                    🤖 AI Trading Advice
+                    💡 Expert Trading Insights
                 </h5>
                 <div style="color: #ffd700; text-align: center; padding: 15px;">
                     <div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Generating personalized advice...
@@ -3494,7 +3494,7 @@ Format your response with clear sections, use bullet points, and be specific wit
                     clear: both;
                 ">
                     <h4 style="color: #ffd700; margin-bottom: 25px; font-size: 1.5rem; text-align: center; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); padding: 0; margin: 0 0 25px 0; width: 100%; display: block; position: relative; left: 0;">
-                        🤖 AI Generated Scenario Analysis
+                        📋 Detailed Scenario Analysis
                     </h4>
                     <div style="font-size: 1.05rem; padding: 0; margin: 0; width: 100%; max-width: 100%; box-sizing: border-box; text-align: left; display: block; position: relative; left: 0;">
                         <div style="margin: 0; padding: 0; line-height: 1.8; color: #ffffff; width: 100%; text-align: left; display: block; position: relative; left: 0;">${scenarioText}</div>
@@ -3858,7 +3858,7 @@ Be specific with numbers and percentages.`;
                     <!-- AI Advice Section -->
                     <div id="backtestAIAdvice" style="margin-top: 25px; padding: 20px; background: rgba(255, 165, 0, 0.1); border-radius: 10px; border-left: 4px solid #ffa500;">
                         <h5 style="color: #ffa500; margin-bottom: 15px; font-size: 1.2rem; text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);">
-                            🤖 AI Strategy Recommendations
+                            💡 Expert Strategy Recommendations
                         </h5>
                         <div style="color: #ffd700; text-align: center; padding: 15px;">
                             <div style="display: inline-block; animation: spin 1s linear infinite;">🔄</div> Generating recommendations...
@@ -7155,7 +7155,7 @@ Be specific with numbers, percentages, and price levels.`;
                     </div>
                     
                     <div style="color: #ffffff; font-size: 1.05rem; line-height: 1.8; padding: 22px; background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(30,0,0,0.3) 100%); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.25); box-shadow: 0 2px 12px rgba(0,0,0,0.3);">
-                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 8px;">📊 AI Analysis & Predictions</h5>
+                        <h5 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 8px;">📊 Market Analysis & Predictions</h5>
                         <div style="max-height: 600px; overflow-y: auto; padding-right: 8px;">
                         <p style="margin: 15px 0; line-height: 1.8;">${predictionText}</p>
                         </div>
