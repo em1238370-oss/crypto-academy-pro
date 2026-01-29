@@ -7850,7 +7850,18 @@ function fillWithExample() {
     if (hintEl) { hintEl.textContent = 'Form filled with example. Click «Create my strategy» below to see your plan.'; hintEl.style.display = 'block'; }
 }
 
+function showStressTestScenarioHint() {
+    const sel = document.getElementById('stressTestScenario');
+    const hint = document.getElementById('stressTestScenarioHint');
+    if (!sel || !hint) return;
+    const text = sel.options[sel.selectedIndex]?.text || '';
+    hint.textContent = 'Selected: ' + text + '. Click «Run stress test» to see impact.';
+    hint.style.display = 'block';
+}
+
 function runStressTestFromModuleD() {
+    const hintEl = document.getElementById('stressTestScenarioHint');
+    if (hintEl) hintEl.style.display = 'none';
     const risk = parseInt(document.getElementById('riskAppetite')?.value || 50);
     const scenarioEl = document.getElementById('stressTestScenario');
     const scenarioVal = scenarioEl?.value || '40';
@@ -7871,6 +7882,15 @@ function runStressTestFromModuleD() {
         <p><strong>Strategy survives?</strong> ${survives ? '✅ Yes' : '❌ High risk'}</p>
         <p><strong>Recommendation:</strong> ${recommendation}</p>
     `;
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    resultDiv.style.background = 'rgba(255, 80, 80, 0.25)';
+    resultDiv.style.boxShadow = '0 0 20px rgba(255, 100, 100, 0.4)';
+    resultDiv.style.border = '2px solid rgba(255, 120, 120, 0.7)';
+    setTimeout(function() {
+        resultDiv.style.background = 'rgba(255, 80, 80, 0.12)';
+        resultDiv.style.boxShadow = 'none';
+        resultDiv.style.border = '2px solid rgba(255, 100, 100, 0.5)';
+    }, 2500);
 }
 
 function generateDistribution(assets, type) {

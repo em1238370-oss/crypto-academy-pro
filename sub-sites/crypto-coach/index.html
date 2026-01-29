@@ -1314,15 +1314,21 @@
                                        </div>
                                        <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 12px; line-height: 1.6;">Here you see <strong style="color: #ffffff;">three parts</strong>: (1) a summary of your choices so you can confirm everything is correct, (2) three strategy variants — Conservative, Balanced, and Aggressive — each with a suggested allocation and step-by-step actions, and (3) the option to run a stress test or save the strategy. Read the short explanation under each block to understand what the numbers and steps mean and how to use them. This is for education and planning only; it is not financial advice.</p>
                                        <div id="strategiesList"></div>
-                                       <div id="stressTestBlock" style="margin-top: 16px;">
-                                           <label style="color: #ffffff; margin-right: 10px;">Crash scenario for stress test:</label>
-                                           <select id="stressTestScenario" style="margin-right: 12px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
-                                               <option value="30">-30% (correction)</option>
-                                               <option value="40" selected>-40% (strong drop)</option>
-                                               <option value="50">-50% (crash)</option>
-                                               <option value="panic">Panic (brief -60%)</option>
-                                           </select>
-                                           <div id="stressTestResult" style="display: none; margin-top: 14px; padding: 16px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid rgba(255, 0, 0, 0.5); color: #ffffff;" class="result-box"></div>
+                                       <div id="stressTestBlock" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.15);">
+                                           <h5 style="color: #ffd700; margin-bottom: 8px; font-size: 1rem;">Stress test: what happens if the market crashes?</h5>
+                                           <p style="color: #aaaaaa; font-size: 0.9rem; margin-bottom: 12px; line-height: 1.5;">Pick a crash scenario (e.g. -40%), then click <strong style="color: #ffffff;">Run stress test</strong> below. You will see the estimated impact on your portfolio and whether your strategy would survive. This is for planning only — to check if your risk level and stop-loss are adequate.</p>
+                                           <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                               <label style="color: #ffffff; margin-right: 4px;">Crash scenario:</label>
+                                               <select id="stressTestScenario" onchange="showStressTestScenarioHint()" style="margin-right: 8px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
+                                                   <option value="30">-30% (correction)</option>
+                                                   <option value="40" selected>-40% (strong drop)</option>
+                                                   <option value="50">-50% (crash)</option>
+                                                   <option value="panic">Panic (brief -60%)</option>
+                                               </select>
+                                               <button type="button" class="btn btn-red" onclick="runStressTestFromModuleD()" style="padding: 8px 16px; font-size: 0.9rem; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 102, 102, 0.6); background: linear-gradient(135deg, rgba(255, 0, 0, 0.25) 0%, rgba(150, 0, 0, 0.35) 100%); color: #ffffff;">Run stress test</button>
+                                           </div>
+                                           <div id="stressTestScenarioHint" style="display: none; margin-top: 8px; padding: 8px 12px; background: rgba(255, 215, 0, 0.15); border: 1px solid rgba(255, 215, 0, 0.4); border-radius: 6px; color: #ffd700; font-size: 0.9rem;">Selected. Click «Run stress test» to see impact.</div>
+                                           <div id="stressTestResult" style="display: none; margin-top: 14px; padding: 16px; background: rgba(255, 80, 80, 0.12); border-radius: 8px; border: 2px solid rgba(255, 100, 100, 0.5); color: #ffffff; font-size: 0.95rem; line-height: 1.5;" class="result-box"></div>
                                        </div>
                                    </div>
 
