@@ -1867,6 +1867,33 @@ div:has-text("Experience Points") {
     margin-bottom: 80px;
 }
 
+/* Module D: no scale, fixed to viewport — scrolls with page, no horizontal shift */
+#drawerD.open {
+    transform: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+}
+#drawerD .drawer-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+}
+#drawerD.open .drawer-content {
+    max-height: none !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+#drawerD .drawer-content > *,
+#drawerD .drawer-content * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
 .form-group {
     margin-bottom: 20px;
 }
