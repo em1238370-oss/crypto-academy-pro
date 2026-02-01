@@ -2334,12 +2334,19 @@ div:has-text("Experience Points") {
 .dca-compare-result-block .dca-compare-row,
 .dca-compare-result-block .dca-compare-verdict,
 .dca-compare-result-block .dca-compare-questions,
-.dca-compare-result-block .dca-compare-advice {
+.dca-compare-result-block .dca-compare-advice,
+.dca-compare-result-block .dca-compare-buyer {
     max-width: 100%;
     box-sizing: border-box;
 }
 .dca-compare-result-block .dca-compare-questions ul {
     margin-top: 8px;
+}
+.dca-compare-result-block .dca-compare-buyer h6 {
+    text-align: center;
+}
+.dca-compare-result-block .dca-compare-buyer ul {
+    margin-top: 6px;
 }
 
 .btn {
