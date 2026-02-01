@@ -1627,7 +1627,9 @@ div:has-text("Experience Points") {
     font-size: 1.3rem;
 }
 
-/* Module C: Centered headers and Assignment 3 */
+/* Module C: ALL headers STRICTLY centered */
+.module-c-content .section-box h4,
+.module-c-content .section-box-header,
 .section-box-header {
     text-align: center !important;
 }
@@ -1636,7 +1638,17 @@ div:has-text("Experience Points") {
     text-align: center !important;
 }
 
+.module-c-content .form-group label {
+    text-align: center !important;
+    display: block;
+}
+
 .assignment-3-box label {
+    text-align: center !important;
+    display: block;
+}
+
+.module-c-content .form-group small {
     text-align: center;
     display: block;
 }

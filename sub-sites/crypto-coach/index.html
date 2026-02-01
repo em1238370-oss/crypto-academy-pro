@@ -614,16 +614,16 @@
                                <div class="section-box">
                                    <h4 class="section-box-header">Create New Experiment</h4>
                                    <div class="form-group">
-                                       <label>Your Deposit ($):</label>
+                                       <label style="text-align: center;">Your Deposit ($):</label>
                                        <input type="number" id="userDeposit" placeholder="e.g.: 10000" min="0" step="100" value="10000" style="width: 100%;">
                                        <small style="color: #888;">Enter your starting capital</small>
                                    </div>
                                    <div class="form-group">
-                                       <label>Experiment Name:</label>
+                                       <label style="text-align: center;">Experiment Name:</label>
                                        <input type="text" id="experimentName" placeholder="e.g.: BTC drop scenario 20%">
                                    </div>
                                    <div class="form-group">
-                                       <label>Select Coin:</label>
+                                       <label style="text-align: center;">Select Coin:</label>
                                        <select id="experimentCoin">
                                            <option value="BTC">Bitcoin (BTC)</option>
                                            <option value="ETH">Ethereum (ETH)</option>
@@ -664,7 +664,7 @@
 
                                    <div class="form-group assignment-3-box">
                                        <h4 class="section-box-header">Assignment 3: What would I do if…?</h4>
-                                       <label>Scenario Description:</label>
+                                       <label style="text-align: center;">Scenario Description:</label>
                                        <textarea id="experimentScenario" rows="3" placeholder="e.g.: What if BTC drops 20%? How will this affect my portfolio?"></textarea>
                                    </div>
                                    <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 20px;">
@@ -674,11 +674,11 @@
                                        <div id="aiScenarioResult" style="margin-top: 20px; font-size: 1rem; line-height: 1.7; max-height: 500px; overflow-y: auto; overflow-x: hidden; padding-right: 10px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.2);"></div>
                                    </div>
                                    <div class="form-group">
-                                       <label>Price Change (%): <span id="priceChangeValue">0%</span></label>
+                                       <label style="text-align: center;">Price Change (%): <span id="priceChangeValue">0%</span></label>
                                        <input type="range" id="priceChange" min="-70" max="200" value="0" oninput="updatePriceChangeDisplay(); updateCorrelations()">
                                    </div>
                                    <div class="form-group" style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 255, 0, 0.3);">
-                                       <label style="margin-bottom: 10px;">
+                                       <label style="margin-bottom: 10px; text-align: center; display: block;">
                                            <input type="checkbox" id="correlationsEnabled" onchange="updateCorrelations()" style="margin-right: 10px;">
                                            Smart Correlations (auto-fill)
                                        </label>
@@ -692,11 +692,11 @@
                                    <h4 class="section-box-header">📊 Backtesting Engine</h4>
                                    <p style="color: #cccccc; margin-bottom: 15px; text-align: center;">Test your strategies on historical data</p>
                                    <div class="form-group">
-                                       <label>Strategy Description:</label>
+                                       <label style="text-align: center;">Strategy Description:</label>
                                        <textarea id="backtestStrategy" rows="2" placeholder="e.g.: Buy when BTC drops 10%, sell when +20%"></textarea>
                                    </div>
                                    <div class="form-group">
-                                       <label>Time Period:</label>
+                                       <label style="text-align: center;">Time Period:</label>
                                        <select id="backtestPeriod">
                                            <option value="30">Last 30 days</option>
                                            <option value="90">Last 3 months</option>
@@ -712,12 +712,12 @@
                                    <h4 class="section-box-header">🎯 Strategy Optimizer</h4>
                                    <p style="color: #cccccc; margin-bottom: 15px; text-align: center;">Find optimal parameters for your strategy</p>
                                    <div class="form-group">
-                                       <label>Strategy Template:</label>
+                                       <label style="text-align: center;">Strategy Template:</label>
                                        <input type="text" id="strategyTemplate" placeholder="e.g.: Buy on drop X%, sell on rise Y%" style="width: 100%;">
                                        <small style="color: #888;">Use X and Y as variables to optimize</small>
                                    </div>
                                    <div class="form-group">
-                                       <label>X Range (Buy %):</label>
+                                       <label style="text-align: center;">X Range (Buy %):</label>
                                        <div style="display: flex; gap: 10px;">
                                            <input type="number" id="xMin" placeholder="Min" value="-25" style="flex: 1;">
                                            <input type="number" id="xMax" placeholder="Max" value="-5" style="flex: 1;">
@@ -725,7 +725,7 @@
                                        </div>
                                    </div>
                                    <div class="form-group">
-                                       <label>Y Range (Sell %):</label>
+                                       <label style="text-align: center;">Y Range (Sell %):</label>
                                        <div style="display: flex; gap: 10px;">
                                            <input type="number" id="yMin" placeholder="Min" value="10" style="flex: 1;">
                                            <input type="number" id="yMax" placeholder="Max" value="30" style="flex: 1;">
@@ -740,7 +740,7 @@
                                    <h4 class="section-box-header">🔮 Predictive Analytics Dashboard</h4>
                                    <p style="color: #cccccc; margin-bottom: 15px; text-align: center;">AI-powered price predictions and recommendations</p>
                                    <div class="form-group">
-                                       <label>Select Coin for Prediction:</label>
+                                       <label style="text-align: center;">Select Coin for Prediction:</label>
                                        <select id="predictCoin">
                                            <option value="BTC">Bitcoin (BTC)</option>
                                            <option value="ETH">Ethereum (ETH)</option>
