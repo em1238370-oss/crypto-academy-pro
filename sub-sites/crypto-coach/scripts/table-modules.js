@@ -8253,21 +8253,22 @@ var whatIfScenarioImpact = {
     lostAccess: 0
 };
 
-// Assignment 4: Money Simulator
+// Assignment 4: Money Simulator — always fresh, diverse text (even same inputs)
 window.runMoneySimulator = async function runMoneySimulator() {
     const portfolio = parseFloat(document.getElementById('moneySimPortfolio')?.value || 10000);
     const risk = parseInt(document.getElementById('moneySimRisk')?.value || 50);
     const resultDiv = document.getElementById('moneySimResult');
     if (!resultDiv) return;
     resultDiv.style.display = 'block'; resultDiv.innerHTML = '<span style="color: #ffa500;">Loading...</span>';
+    const varietySeed = Date.now() + Math.random().toString(36).substr(2, 9);
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
             body: JSON.stringify({ model: 'mistral-small', messages: [
-                { role: 'system', content: 'Crypto risk analyst. Return ONLY valid JSON.' },
-                { role: 'user', content: `Portfolio: $${portfolio.toLocaleString()}, Risk: ${risk}%. JSON: bestCase, baseCase, worstCase (numbers), riskScore (1-10), riskLabel, explanation.` }
-            ], temperature: 0.7, max_tokens: 400 })
+                { role: 'system', content: 'Crypto risk analyst. Return ONLY valid JSON. CRITICAL: explanation MUST be UNIQUE and DIVERSE every time — different phrasing, different analogies, different angle. Never repeat. Even same portfolio/risk = different text. Seed for uniqueness: ' + varietySeed },
+                { role: 'user', content: `Portfolio $${portfolio.toLocaleString()}, Risk ${risk}%. Return JSON: bestCase, baseCase, worstCase (numbers), riskScore (1-10), riskLabel (short phrase), explanation (1-2 sentences, FRESH wording — vary metaphors, structure, perspective. Use different crypto/risk analogies each time. Short is OK. Unique seed: ${varietySeed})` }
+            ], temperature: 0.95, max_tokens: 450 })
         });
         const data = await response.json();
         if (data.choices?.[0]) {
