@@ -8339,8 +8339,8 @@ window.runRiskDna = async function runRiskDna() {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
             body: JSON.stringify({ model: 'mistral-small', messages: [
                 { role: 'system', content: 'Behavioral finance expert. Analyze the user\'s reaction to the crypto scenario. Return ONLY valid JSON. Be concise but informative.' },
-                { role: 'user', content: `Scenario: "${scenario}". User would: ${action}. Q2(horizon)=${q2}, Q3(money)=${q3}. Analyze their risk profile. JSON: profileName (e.g. "Cautious Turtle"), profileEmoji, description, expectedRange12mo, riskLevel (1-10), recommendation, strengths (array of 2-3 items — what they do well in stress), watchOut (array of 2-3 items — where this profile tends to slip), quickTips (array of 3 items — what to do), thingsToAvoid (array of 3 items — what to avoid), emotionalPattern (1-2 sentences — how they typically react, e.g. FOMO on pumps, fear on dumps), whenToReconsider (1-2 sentences — conditions to change strategy).` }
-            ], temperature: 0.9, max_tokens: 950 })
+                { role: 'user', content: `Scenario: "${scenario}". User would: ${action}. Q2(horizon)=${q2}, Q3(money)=${q3}. Analyze their risk profile. JSON: profileName (e.g. "Cautious Turtle"), profileEmoji, description, expectedRange12mo, riskLevel (1-10), recommendation, expertComment (2-4 sentences — expert opinion: why this profile, what it means for their crypto journey, why it matters), strengths (array of 2-3 items), watchOut (array of 2-3 items), quickTips (array of 3 items), thingsToAvoid (array of 3 items), emotionalPattern (1-2 sentences), whenToReconsider (1-2 sentences), plainTerms (2-3 sentences — in plain English for beginners: what this profile means in everyday words, no jargon), everydayTakeaway (1-2 sentences — one simple thing they can use daily when they see crypto news or prices), whereToStart (array of 2 items — first steps for someone learning crypto basics).` }
+            ], temperature: 0.9, max_tokens: 1200 })
         });
         const data = await response.json();
         if (data.choices?.[0]) {
@@ -8356,12 +8356,21 @@ window.runRiskDna = async function runRiskDna() {
             html += '<div style="color: #fff; line-height: 1.6; margin: 10px 0;">' + esc(p.description) + '</div>';
             html += '<div style="color: #ffd700;">Expected 12mo: ' + esc(p.expectedRange12mo) + '</div><div style="color: #ffa500;">Risk: ' + (p.riskLevel || '?') + '/10</div>';
             html += '<div style="color: #ffd700; margin-top: 10px;">💡 ' + esc(p.recommendation) + '</div>';
+            if (p.expertComment) html += '<div style="margin-top: 12px; padding: 12px; background: rgba(255,165,0,0.08); border-radius: 8px; border-left: 4px solid #ffa500;"><div style="color: #ffa500; font-weight: bold; margin-bottom: 6px;">🎯 Expert opinion</div><div style="color: #fff; line-height: 1.6;">' + esc(p.expertComment) + '</div></div>';
             if (strengths.length) html += '<div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,215,0,0.3);"><div style="color: #ffd700; font-weight: bold; margin-bottom: 6px;">✓ Strengths</div><ul style="color: #fff; margin: 0; padding-left: 20px; line-height: 1.5;">' + strengths.map(s => '<li>' + esc(s) + '</li>').join('') + '</ul></div>';
             if (watchOut.length) html += '<div style="margin-top: 12px;"><div style="color: #ffa500; font-weight: bold; margin-bottom: 6px;">⚠ Watch out</div><ul style="color: #fff; margin: 0; padding-left: 20px; line-height: 1.5;">' + watchOut.map(w => '<li>' + esc(w) + '</li>').join('') + '</ul></div>';
             if (quickTips.length) html += '<div style="margin-top: 12px;"><div style="color: #ffd700; font-weight: bold; margin-bottom: 6px;">📌 3 quick tips</div><ul style="color: #fff; margin: 0; padding-left: 20px; line-height: 1.5;">' + quickTips.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul></div>';
             if (thingsToAvoid.length) html += '<div style="margin-top: 12px;"><div style="color: #ffa500; font-weight: bold; margin-bottom: 6px;">🚫 3 things to avoid</div><ul style="color: #fff; margin: 0; padding-left: 20px; line-height: 1.5;">' + thingsToAvoid.map(a => '<li>' + esc(a) + '</li>').join('') + '</ul></div>';
             if (p.emotionalPattern) html += '<div style="margin-top: 12px; padding: 10px; background: rgba(255,165,0,0.1); border-radius: 8px; border-left: 3px solid #ffa500;"><div style="color: #ffa500; font-weight: bold; margin-bottom: 4px;">🧠 Your emotional pattern</div><div style="color: #fff; line-height: 1.5;">' + esc(p.emotionalPattern) + '</div></div>';
             if (p.whenToReconsider) html += '<div style="margin-top: 12px; padding: 10px; background: rgba(255,215,0,0.1); border-radius: 8px; border-left: 3px solid #ffd700;"><div style="color: #ffd700; font-weight: bold; margin-bottom: 4px;">🔄 When to reconsider</div><div style="color: #fff; line-height: 1.5;">' + esc(p.whenToReconsider) + '</div></div>';
+            if (p.plainTerms || p.everydayTakeaway) {
+                html += '<div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,215,0,0.3);"><div style="color: #ffd700; font-weight: bold; margin-bottom: 8px; font-size: 1.05rem;">📖 Crypto basics for you</div>';
+                if (p.plainTerms) html += '<div style="color: #fff; line-height: 1.6; margin-bottom: 10px;">' + esc(p.plainTerms) + '</div>';
+                if (p.everydayTakeaway) html += '<div style="padding: 10px; background: rgba(255,215,0,0.1); border-radius: 8px; margin-bottom: 10px;"><div style="color: #ffd700; font-weight: bold; margin-bottom: 4px;">✨ Everyday takeaway</div><div style="color: #fff; line-height: 1.5;">' + esc(p.everydayTakeaway) + '</div></div>';
+                const whereToStart = Array.isArray(p.whereToStart) ? p.whereToStart : [p.whereToStart].filter(Boolean);
+                if (whereToStart.length) html += '<div style="color: #ffa500; font-weight: bold; margin-bottom: 6px;">🚀 Where to start</div><ul style="color: #fff; margin: 0; padding-left: 20px; line-height: 1.5;">' + whereToStart.map(w => '<li>' + esc(w) + '</li>').join('') + '</ul>';
+                html += '</div>';
+            }
             html += '</div>';
             resultDiv.innerHTML = html;
         } else { resultDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable.</span>'; }
