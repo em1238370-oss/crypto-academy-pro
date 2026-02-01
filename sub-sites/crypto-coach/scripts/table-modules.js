@@ -2853,6 +2853,174 @@ CRITICAL DIVERSITY RULES:
     }
 }
 
+// ========== ASSIGNMENT 4: Strategy in numbers ==========
+
+// 1. Money Simulator — Three Scenarios
+async function runMoneySimulator() {
+    const portfolio = parseFloat(document.getElementById('moneySimPortfolio')?.value || 10000);
+    const risk = parseInt(document.getElementById('moneySimRisk')?.value || 50);
+    const resultDiv = document.getElementById('moneySimResult');
+    if (!resultDiv) return;
+    
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<span style="color: #ffa500;">Loading...</span>';
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+            body: JSON.stringify({
+                model: 'mistral-small',
+                messages: [
+                    { role: 'system', content: 'You are a crypto risk analyst. Return ONLY valid JSON.' },
+                    { role: 'user', content: `Portfolio: $${portfolio.toLocaleString()}, Risk level: ${risk}% (1-100). 
+Generate JSON with: bestCase (dollar amount, number), baseCase (dollar amount), worstCase (dollar amount), riskScore (1-10), riskLabel (short phrase), explanation (1-2 sentences).
+Use realistic crypto volatility. Higher risk = wider range. Example: {"bestCase": 18500, "baseCase": 12200, "worstCase": 7800, "riskScore": 6, "riskLabel": "Moderate-High", "explanation": "..."}` }
+                ],
+                temperature: 0.7,
+                max_tokens: 400
+            })
+        });
+        
+        const data = await response.json();
+        if (data.choices?.[0]) {
+            let content = data.choices[0].message.content.trim().replace(/```json\n?|\n?```/g, '').trim();
+            const p = JSON.parse(content);
+            const fmt = n => '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            resultDiv.innerHTML = `
+                <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(0,255,0,0.3);">
+                    <div class="money-sim-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px;">
+                        <div style="background: rgba(0,255,0,0.15); padding: 15px; border-radius: 8px; border: 1px solid rgba(0,255,0,0.4);">
+                            <div style="color: #00ff00; font-size: 0.85rem; margin-bottom: 5px;">Best Case</div>
+                            <div style="color: #fff; font-size: 1.4rem; font-weight: bold;">${fmt(p.bestCase)}</div>
+                        </div>
+                        <div style="background: rgba(255,215,0,0.15); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,215,0,0.4);">
+                            <div style="color: #ffd700; font-size: 0.85rem; margin-bottom: 5px;">Base Case</div>
+                            <div style="color: #fff; font-size: 1.4rem; font-weight: bold;">${fmt(p.baseCase)}</div>
+                        </div>
+                        <div style="background: rgba(255,0,0,0.15); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,0,0,0.4);">
+                            <div style="color: #ff6666; font-size: 0.85rem; margin-bottom: 5px;">Worst Case</div>
+                            <div style="color: #fff; font-size: 1.4rem; font-weight: bold;">${fmt(p.worstCase)}</div>
+                        </div>
+                    </div>
+                    <div style="color: #ffa500; font-size: 1rem; margin-bottom: 8px;">Risk Score: ${p.riskScore || '?'}/10 — ${p.riskLabel || ''}</div>
+                    <div style="color: #ccc; font-size: 0.9rem; line-height: 1.5;">${(p.explanation || '').replace(/</g, '&lt;')}</div>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable. Try again.</span>';
+        }
+    } catch (err) {
+        resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>';
+    }
+}
+
+// 2. Risk DNA — Personal Risk Profile
+async function runRiskDna() {
+    const q1 = document.getElementById('riskDnaQ1')?.value || 'wait';
+    const q2 = document.getElementById('riskDnaQ2')?.value || 'months';
+    const q3 = document.getElementById('riskDnaQ3')?.value || 'important';
+    const resultDiv = document.getElementById('riskDnaResult');
+    if (!resultDiv) return;
+    
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<span style="color: #ffa500;">Analyzing your Risk DNA...</span>';
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+            body: JSON.stringify({
+                model: 'mistral-small',
+                messages: [
+                    { role: 'system', content: 'You are a behavioral finance expert. Return ONLY valid JSON.' },
+                    { role: 'user', content: `Quiz answers: Q1(if -20%)=${q1}, Q2(horizon)=${q2}, Q3(money type)=${q3}.
+Generate JSON: profileName (creative name like "Cautious Turtle", "Diamond Hands", "Balanced Owl"), profileEmoji (single emoji), description (2 sentences), expectedRange12mo (e.g. "$8,200 - $14,500"), riskLevel (1-10), recommendation (1 sentence).` }
+                ],
+                temperature: 0.9,
+                max_tokens: 500
+            })
+        });
+        
+        const data = await response.json();
+        if (data.choices?.[0]) {
+            let content = data.choices[0].message.content.trim().replace(/```json\n?|\n?```/g, '').trim();
+            const p = JSON.parse(content);
+            resultDiv.innerHTML = `
+                <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,165,0,0.4);">
+                    <div style="color: #ffa500; font-size: 1.5rem; font-weight: bold; margin-bottom: 10px;">${p.profileEmoji || '🧬'} ${(p.profileName || 'Your Profile').replace(/</g, '&lt;')}</div>
+                    <div style="color: #fff; line-height: 1.6; margin-bottom: 15px;">${(p.description || '').replace(/</g, '&lt;')}</div>
+                    <div style="color: #ffd700; font-size: 1.1rem; margin-bottom: 8px;">Expected 12‑month range: ${(p.expectedRange12mo || '').replace(/</g, '&lt;')}</div>
+                    <div style="color: #ffa500; margin-bottom: 8px;">Risk level: ${p.riskLevel || '?'}/10</div>
+                    <div style="color: #00ff00; font-size: 0.95rem;">💡 ${(p.recommendation || '').replace(/</g, '&lt;')}</div>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable. Try again.</span>';
+        }
+    } catch (err) {
+        resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>';
+    }
+}
+
+// 3. Strategy Report Card
+async function runStrategyReportCard() {
+    const strategy = document.getElementById('reportCardStrategy')?.value?.trim();
+    const resultDiv = document.getElementById('reportCardResult');
+    if (!resultDiv) return;
+    
+    if (!strategy) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<span style="color: #ffa500;">Please describe your strategy first.</span>';
+        return;
+    }
+    
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<span style="color: #ffa500;">AI grading your strategy...</span>';
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+            body: JSON.stringify({
+                model: 'mistral-small',
+                messages: [
+                    { role: 'system', content: 'You are a crypto strategy analyst. Grade strategies like a school report. Return ONLY valid JSON.' },
+                    { role: 'user', content: `Strategy: "${strategy}"
+
+Return JSON: diversificationGrade (A+ to F), riskReturnGrade (A+ to F), liquidityGrade (A+ to F), overallScore (0-100), strengths (array of 2-3 short strings), improvements (array of 2-3 short strings), topRecommendation (1 sentence).` }
+                ],
+                temperature: 0.7,
+                max_tokens: 600
+            })
+        });
+        
+        const data = await response.json();
+        if (data.choices?.[0]) {
+            let content = data.choices[0].message.content.trim().replace(/```json\n?|\n?```/g, '').trim();
+            const p = JSON.parse(content);
+            const grades = [p.diversificationGrade, p.riskReturnGrade, p.liquidityGrade].filter(Boolean);
+            const strengths = Array.isArray(p.strengths) ? p.strengths : [p.strengths].filter(Boolean);
+            const improvements = Array.isArray(p.improvements) ? p.improvements : [p.improvements].filter(Boolean);
+            resultDiv.innerHTML = `
+                <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,215,0,0.4);">
+                    <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; flex-wrap: wrap;">
+                        ${grades.map(g => `<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.3rem; font-weight: bold; color: #ffd700;">${g}</div>`).join('')}
+                    </div>
+                    <div style="color: #fff; font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; text-align: center;">Overall: ${p.overallScore || '?'}/100</div>
+                    <div style="margin-bottom: 12px;"><span style="color: #00ff00;">✅ Strengths:</span> ${strengths.map(s => '<div style="color: #ccc; margin-left: 10px;">• ' + (s||'').replace(/</g, '&lt;') + '</div>').join('')}</div>
+                    <div style="margin-bottom: 12px;"><span style="color: #ffa500;">📈 Improve:</span> ${improvements.map(i => '<div style="color: #ccc; margin-left: 10px;">• ' + (i||'').replace(/</g, '&lt;') + '</div>').join('')}</div>
+                    <div style="color: #ffd700; font-size: 1rem; margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,215,0,0.3);">💡 ${(p.topRecommendation || '').replace(/</g, '&lt;')}</div>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable. Try again.</span>';
+        }
+    } catch (err) {
+        resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>';
+    }
+}
+
 // Smart Correlations
 function updateCorrelations() {
     const enabled = document.getElementById('correlationsEnabled')?.checked || false;

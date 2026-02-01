@@ -688,6 +688,79 @@
                                            </div>
                                        </div>
                                    </div>
+                                   
+                                   <!-- Assignment 4: Strategy in numbers — how much in the end and what risk -->
+                                   <div class="assignment-4-box">
+                                       <h4 class="section-box-header">Assignment 4: Strategy in numbers — how much in the end and what risk</h4>
+                                       
+                                       <!-- 1. Money Simulator -->
+                                       <div class="assignment-4-card">
+                                           <h5 class="section-box-header" style="color: #00ff00; font-size: 1.2rem;">💰 Money Simulator — Three Scenarios</h5>
+                                           <p style="color: #cccccc; text-align: center; margin-bottom: 15px; font-size: 0.95rem;">Enter your amount and risk level. See Best / Base / Worst outcomes.</p>
+                                           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                               <div>
+                                                   <label style="text-align: center; display: block; color: #ffffff; margin-bottom: 8px;">Portfolio ($)</label>
+                                                   <input type="number" id="moneySimPortfolio" value="10000" min="100" step="100" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,165,0,0.3); border-radius: 8px; color: #fff;">
+                                               </div>
+                                               <div>
+                                                   <label style="text-align: center; display: block; color: #ffffff; margin-bottom: 8px;">Risk Level: <span id="moneySimRiskVal">50</span>%</label>
+                                                   <input type="range" id="moneySimRisk" min="10" max="90" value="50" oninput="document.getElementById('moneySimRiskVal').textContent=this.value" style="width: 100%;">
+                                               </div>
+                                           </div>
+                                           <button class="btn btn-red" onclick="runMoneySimulator()" style="width: 100%;">📊 Run Money Simulator</button>
+                                           <div id="moneySimResult" style="margin-top: 15px; display: none; text-align: center;"></div>
+                                       </div>
+                                       
+                                       <!-- 2. Risk DNA -->
+                                       <div class="assignment-4-card">
+                                           <h5 class="section-box-header" style="color: #ffa500; font-size: 1.2rem;">🧬 Risk DNA — Your Personal Risk Profile</h5>
+                                           <p style="color: #cccccc; text-align: center; margin-bottom: 15px; font-size: 0.95rem;">Quick quiz to discover your risk profile: Cautious Turtle, Diamond Hands, or something in between.</p>
+                                           <div id="riskDnaQuiz" style="margin-bottom: 15px;">
+                                               <div class="risk-dna-q" style="margin-bottom: 12px;">
+                                                   <label style="color: #ffffff; display: block; margin-bottom: 5px;">1. If your portfolio drops 20% tomorrow, you would:</label>
+                                                   <select id="riskDnaQ1" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,165,0,0.3); border-radius: 8px; color: #fff;">
+                                                       <option value="sell">Sell immediately</option>
+                                                       <option value="wait">Wait and watch</option>
+                                                       <option value="buy">Buy more (DCA)</option>
+                                                       <option value="hodl">HODL, no emotions</option>
+                                                   </select>
+                                               </div>
+                                               <div class="risk-dna-q" style="margin-bottom: 12px;">
+                                                   <label style="color: #ffffff; display: block; margin-bottom: 5px;">2. Your investment horizon:</label>
+                                                   <select id="riskDnaQ2" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,165,0,0.3); border-radius: 8px; color: #fff;">
+                                                       <option value="days">Days to weeks</option>
+                                                       <option value="months">1-6 months</option>
+                                                       <option value="year">6-12 months</option>
+                                                       <option value="years">1+ years</option>
+                                                   </select>
+                                               </div>
+                                               <div class="risk-dna-q" style="margin-bottom: 12px;">
+                                                   <label style="color: #ffffff; display: block; margin-bottom: 5px;">3. Money you invest is:</label>
+                                                   <select id="riskDnaQ3" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,165,0,0.3); border-radius: 8px; color: #fff;">
+                                                       <option value="critical">Critical — can't lose it</option>
+                                                       <option value="important">Important — would hurt to lose</option>
+                                                       <option value="ok">Okay to lose some</option>
+                                                       <option value="play">Play money — full risk</option>
+                                                   </select>
+                                               </div>
+                                           </div>
+                                           <button class="btn btn-red" onclick="runRiskDna()" style="width: 100%;">🧬 Discover My Risk DNA</button>
+                                           <div id="riskDnaResult" style="margin-top: 15px; display: none; text-align: center;"></div>
+                                       </div>
+                                       
+                                       <!-- 3. Strategy Report Card -->
+                                       <div class="assignment-4-card">
+                                           <h5 class="section-box-header" style="color: #ffd700; font-size: 1.2rem;">📋 Strategy Report Card</h5>
+                                           <p style="color: #cccccc; text-align: center; margin-bottom: 15px; font-size: 0.95rem;">AI grades your strategy: diversification, risk-return, liquidity. Get specific recommendations.</p>
+                                           <div style="margin-bottom: 15px;">
+                                               <label style="text-align: center; display: block; color: #ffffff; margin-bottom: 8px;">Describe your strategy or paste from Module A:</label>
+                                               <textarea id="reportCardStrategy" rows="3" placeholder="e.g.: 50% BTC, 30% ETH, 20% SOL. Holding 12 months. DCA monthly." style="width: 100%; padding: 12px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,215,0,0.3); border-radius: 8px; color: #fff; box-sizing: border-box;"></textarea>
+                                           </div>
+                                           <button class="btn btn-red" onclick="runStrategyReportCard()" style="width: 100%;">📋 Get Report Card</button>
+                                           <div id="reportCardResult" style="margin-top: 15px; display: none; text-align: center;"></div>
+                                       </div>
+                                   </div>
+                                   
                                    <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 20px;">
                                        <label style="margin-bottom: 15px; color: #ffffff; font-size: 1.1rem; font-weight: 600; display: block; text-align: center;">AI Scenario Builder (Universal)</label>
                                        <textarea id="aiScenarioInput" rows="4" placeholder="Describe any scenario: crashes, bull runs, regulatory events, custom situations..." style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: #ffffff; font-size: 1rem; margin-bottom: 15px; resize: vertical; font-family: inherit; box-sizing: border-box;"></textarea>

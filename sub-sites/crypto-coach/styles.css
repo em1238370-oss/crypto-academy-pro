@@ -1686,6 +1686,40 @@ div:has-text("Experience Points") {
     font-size: 1rem;
 }
 
+/* Assignment 4: Strategy in numbers */
+.assignment-4-box {
+    background: linear-gradient(135deg, rgba(0, 100, 0, 0.08) 0%, rgba(255, 165, 0, 0.08) 50%, rgba(255, 0, 0, 0.05) 100%);
+    border: 2px solid rgba(255, 165, 0, 0.4);
+    border-radius: 16px;
+    padding: 25px;
+    margin: 25px 0;
+    box-shadow: 0 0 30px rgba(255, 165, 0, 0.15);
+}
+
+.assignment-4-card {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.assignment-4-card:hover {
+    border-color: rgba(255, 165, 0, 0.4);
+    box-shadow: 0 0 20px rgba(255, 165, 0, 0.1);
+}
+
+.assignment-4-card:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+    .money-sim-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 /* aiScenarioResult - header centered via parent, content left for readability */
 
 .module-c-content .result-box,
