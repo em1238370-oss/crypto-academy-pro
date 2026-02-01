@@ -8282,7 +8282,11 @@ window.runMoneySimulator = async function runMoneySimulator() {
 
 // Assignment 4: Risk DNA
 window.runRiskDna = async function runRiskDna() {
-    const q1 = document.getElementById('riskDnaQ1')?.value || 'wait';
+    const scenarioSel = document.getElementById('riskDnaScenario');
+    const scenario = scenarioSel ? scenarioSel.options[scenarioSel.selectedIndex]?.text || 'Portfolio drops 20%' : 'Portfolio drops 20%';
+    const actionSel = document.getElementById('riskDnaQ1');
+    const action = actionSel ? actionSel.options[actionSel.selectedIndex]?.text || 'Wait 24h, then decide' : 'Wait 24h, then decide';
+    const q1 = document.getElementById('riskDnaQ1')?.value || 'wait24h';
     const q2 = document.getElementById('riskDnaQ2')?.value || 'months';
     const q3 = document.getElementById('riskDnaQ3')?.value || 'important';
     const resultDiv = document.getElementById('riskDnaResult');
@@ -8293,8 +8297,8 @@ window.runRiskDna = async function runRiskDna() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
             body: JSON.stringify({ model: 'mistral-small', messages: [
-                { role: 'system', content: 'Behavioral finance expert. Return ONLY valid JSON.' },
-                { role: 'user', content: `Q1(-20%)=${q1}, Q2(horizon)=${q2}, Q3(money)=${q3}. JSON: profileName (e.g. "Cautious Turtle"), profileEmoji, description, expectedRange12mo, riskLevel (1-10), recommendation.` }
+                { role: 'system', content: 'Behavioral finance expert. Analyze the user\'s reaction to the crypto scenario. Return ONLY valid JSON.' },
+                { role: 'user', content: `Scenario: "${scenario}". User would: ${action}. Q2(horizon)=${q2}, Q3(money)=${q3}. Analyze: what's their strength/weakness in this scenario? JSON: profileName (e.g. "Cautious Turtle"), profileEmoji, description, expectedRange12mo, riskLevel (1-10), recommendation.` }
             ], temperature: 0.9, max_tokens: 500 })
         });
         const data = await response.json();

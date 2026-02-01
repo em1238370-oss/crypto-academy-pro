@@ -1583,7 +1583,34 @@
                                            <h5 class="section-box-header" style="color: #ffa500; font-size: 1.1rem;">🧬 Risk DNA — Your Personal Risk Profile</h5>
                                            <p style="color: #cccccc; text-align: center; margin-bottom: 12px; font-size: 0.95rem;">Quick quiz → Cautious Turtle, Diamond Hands, or in between.</p>
                                            <div style="margin-bottom: 12px;">
-                                               <label style="color: #fff; display: block; margin-bottom: 4px; text-align: center;">1. Portfolio drops 20% tomorrow — you:</label>
+                                               <label style="color: #fff; display: block; margin-bottom: 4px; text-align: center;">1. When this happens — you would:</label>
+                                               <select id="riskDnaScenario" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,165,0,0.3); border-radius: 8px; color: #fff; margin-bottom: 8px;">
+                                                   <optgroup label="— Sharp / uncommon —">
+                                                   <option value="scam_token">You discover you bought a scam token</option>
+                                                   <option value="whale_alert">Whale alert: big sell happening</option>
+                                                   <option value="influencer_sell">Influencer says "sell everything"</option>
+                                                   <option value="doubled_overnight">Portfolio doubled overnight</option>
+                                                   <option value="halved_overnight">Portfolio halved overnight</option>
+                                                   <option value="btc_ath_alts_flat">Bitcoin hits new ATH, your alts don't move</option>
+                                                   <option value="staked_locked_dump">Staked tokens locked 30 days, market dumping</option>
+                                                   <option value="rug_pull">"Rug pull" in your coin's Telegram</option>
+                                                   <option value="stablecoin_depeg">Stablecoin depegs to $0.95</option>
+                                                   <option value="forgot_wallet">Forgot you had crypto, found old wallet</option>
+                                                   </optgroup>
+                                                   <optgroup label="— Classic / everyday —">
+                                                   <option value="portfolio_drop_20">Portfolio drops 20% tomorrow</option>
+                                                   <option value="need_money_urgent">You need money urgently (rent, bills)</option>
+                                                   <option value="exchange_hacked">Exchange you use is hacked</option>
+                                                   <option value="tax_season">Tax season: big unrealized gains</option>
+                                                   <option value="market_sideways">Market sideways for 6 months</option>
+                                                   <option value="fomo_buying">FOMO: everyone buying, prices rising fast</option>
+                                                   <option value="lump_sum_volatile">You have lump sum, market very volatile</option>
+                                                   <option value="one_coin_300">One coin goes +300%, rest flat</option>
+                                                   <option value="lose_wallet">You might lose access to your wallet</option>
+                                                   <option value="friend_borrow">Friend asks to borrow money to "buy the dip"</option>
+                                                   </optgroup>
+                                               </select>
+                                               <label style="color: #fff; display: block; margin-bottom: 4px; text-align: center;">Your reaction:</label>
                                                <select id="riskDnaQ1" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,165,0,0.3); border-radius: 8px; color: #fff;"><option value="panic_sell" title="Stops the pain but often locks in losses">🚨 Panic sell</option><option value="wait24h" title="Gives time to cool down — many beginners choose this">⏸️ Wait 24h, then decide</option><option value="double_down" title="If you have reserve and conviction in the coin">📈 Double down (buy the dip)</option><option value="hodl_app" title="Popular among beginners — avoids emotional exits">🧘 HODL and close the app</option><option value="rebalance" title="Often chosen by experienced — trim winners, hold losers">⚖️ Rebalance: sell winners, hold losers</option><option value="take_walk" title="Step back, decide tomorrow — reduces impulsive trades">🚶 Take a walk, decide tomorrow</option><option value="check_twitter" title="See what others say first — but verify sources">📱 Check Twitter/Telegram first</option></select>
                                                <p class="risk-dna-hint" style="font-size: 0.85rem; color: #aaaaaa; margin-top: 8px; text-align: center; line-height: 1.5;">👤 <strong>Beginners often:</strong> Wait 24h or HODL — reduces impulsive moves. <strong>Experienced:</strong> Rebalance or Double down.</p>
                                                <label style="color: #fff; display: block; margin: 10px 0 4px; text-align: center;">2. Investment horizon:</label>
