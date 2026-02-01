@@ -2177,6 +2177,28 @@ div:has-text("Experience Points") {
 .dca-assignment-block .dca-form-row label[style*="min-width: 200px"] {
     min-width: 0;
 }
+.dca-assignment-block .dca-centered-note {
+    text-align: center;
+    display: block;
+    width: 100%;
+}
+.dca-assignment-block .dca-checkbox-row {
+    justify-content: center;
+    margin-bottom: 20px;
+}
+.dca-assignment-block .dca-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    color: #ffffff;
+    margin: 0;
+    min-width: 0;
+    max-width: 520px;
+    text-align: center;
+    line-height: 1.4;
+}
 .dca-assignment-block > div[style*="margin-top: 20px"] {
     text-align: center;
     margin-top: 28px;

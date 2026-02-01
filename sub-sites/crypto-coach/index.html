@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=18.0">
+    <link rel="stylesheet" href="styles.css?v=19.0">
    <!-- Chart.js for portfolio graphs -->
    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
    <script src="scripts/table-modules.js?v=21.0"></script>
@@ -1490,15 +1490,14 @@
                                            </select>
                                            <span class="dca-allocation-wrap"><label for="dcaAlloc3">Allocation:</label><input type="number" id="dcaAlloc3" min="0" max="100" value="0" style="width: 64px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;"> <span style="color: #cccccc;">%</span></span>
                                        </div>
-                                       <p style="color: #aaaaaa; font-size: 0.88rem; margin-bottom: 18px;">Allocations must sum to 100% when using 2 or 3 coins.</p>
-                                       <div class="dca-form-row" style="margin-bottom: 10px;">
-                                           <label style="color: #ffffff; display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; min-width: 0;">
+                                       <p class="dca-centered-note" style="color: #aaaaaa; font-size: 0.88rem; margin-bottom: 22px; text-align: center;">Allocations must sum to 100% when using 2 or 3 coins.</p>
+                                       <div class="dca-form-row dca-checkbox-row">
+                                           <label class="dca-checkbox-label" for="dcaShowLumpSum">
                                                <input type="checkbox" id="dcaShowLumpSum" style="width: 18px; height: 18px;"> Show comparison with lump sum (if you had invested the same total in one go at the start)
                                            </label>
                                        </div>
-                                       <div class="dca-form-row" style="margin-bottom: 22px;">
-                                           <label style="min-width: 200px; margin: 0;"></label>
-                                           <label style="color: #ffffff; display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; min-width: 0;">
+                                       <div class="dca-form-row dca-checkbox-row" style="margin-bottom: 26px;">
+                                           <label class="dca-checkbox-label" for="dcaIncludeFee">
                                                <input type="checkbox" id="dcaIncludeFee" style="width: 18px; height: 18px;"> Include 0.5% fee per purchase (illustrative)
                                            </label>
                                        </div>
