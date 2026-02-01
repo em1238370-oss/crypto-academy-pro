@@ -8240,6 +8240,7 @@ window.runWhatIfScenario = function runWhatIfScenario() {
     }
     var a = answer.toLowerCase();
     var urgentIsRecoverCapital = scenario === 'urgent' && (/\b(recover|initial capital|don't worry|peace of mind|take profit|secure|fomo|leave profits|profits invested)\b/.test(a) || /\bcapital.*invested|invested.*capital\b/.test(a)) && !/\b(need money|bills|family|emergency|need cash|have to sell)\b/.test(a);
+    var userMentionsLockInProfitOrDistribute = /\b(lock in|fix|secure|take)\s*(in)?\s*profit|profit.*(lock|fix|secure|take)|(\d+%)\s*profit|distribute|reallocate|other places|put elsewhere|diversify|allocate|move\s*(money|funds|to)|place\s*(money|funds)\b/.test(a) || /\b(40|50|30)\s*%\s*(profit|gain)/.test(a);
     if (scenario === 'urgent') {
         if (urgentIsRecoverCapital) {
             numbersExplain = 'In plain words: if you sell enough to recover your initial capital, the rest stays invested. The number above is your total portfolio if you sold everything — use it to decide how much to sell to get your initial back.';
@@ -8312,16 +8313,22 @@ window.runWhatIfScenario = function runWhatIfScenario() {
     if (/\b(sell|exit|cash out)\b/.test(a)) checklist.push('Selling / exit considered');
     if (/\b(hold|keep|don\'t sell|not sell)\b/.test(a)) checklist.push('Holding considered');
     if (/\b(emergency|urgent|need money)\b/.test(a)) checklist.push('Emergency / need for money');
-    if (/\b(take profit|profit|partial)\b/.test(a)) checklist.push('Taking profit / partial exit');
+    if (userMentionsLockInProfitOrDistribute) checklist.push('Lock in profit / fix profit mentioned');
+    if (/\b(distribute|reallocate|other places|put elsewhere|diversify|allocate|move.*(money|funds))\b/.test(a)) checklist.push('Distribute / reallocate to other places');
+    if (/\b(take profit|profit|partial)\b/.test(a) && !userMentionsLockInProfitOrDistribute) checklist.push('Taking profit / partial exit');
     if (/\b(dca|average|add|buy more)\b/.test(a)) checklist.push('Averaging down / adding');
     var checklistHtml = checklist.length ? '<ul style="margin: 8px 0 0 16px; color: #cccccc;">' + checklist.map(function(c) { return '<li>' + c + '</li>'; }).join('') + '</ul>' : '<p style="color: #888;">No keywords detected. Consider adding: stop-loss, sell part, hold, emergency fund, take profit.</p>';
     var recommend = [];
     if (scenario === 'crash' || scenario === 'crash50') {
-        if (/hold|keep|not sell/.test(a)) recommend.push('You plan to hold — make sure you can tolerate a further drop (e.g. −50% or more). Consider a stop-loss or position size you can afford to lose.');
+        if (userMentionsLockInProfitOrDistribute) {
+            recommend.push('You plan to lock in profit and distribute the money — that is a clear rule. Define what % you fix (e.g. 40% profit) and where you put that money (other assets, stablecoins, etc.) so you act without hesitation. Do not switch to crash talk (e.g. "what if it drops 50%") — your plan is about taking profit and reallocation.');
+        } else if (/hold|keep|not sell/.test(a)) recommend.push('You plan to hold — make sure you can tolerate a further drop (e.g. −50% or more). Consider a stop-loss or position size you can afford to lose.');
         else if (/sell|exit/.test(a)) recommend.push('You plan to sell or exit — that can limit losses. Define the level (e.g. −20%) in advance so you act without emotion.');
         else recommend.push('Write a clear rule: at what % drop do you sell or add? Having it in advance reduces panic.');
     } else if (scenario === 'double') {
-        if (/sell|profit|take/.test(a)) recommend.push('Taking profit is disciplined. Decide the % to sell (e.g. 30% at +100%) so you lock in gains and still participate if it goes higher.');
+        if (userMentionsLockInProfitOrDistribute) {
+            recommend.push('You plan to lock in profit (e.g. 40%) and distribute the money to other places. That is disciplined. Define in advance what % you take and where you put it (other assets, stablecoins, etc.) so you act without FOMO or regret.');
+        } else if (/sell|profit|take/.test(a)) recommend.push('Taking profit is disciplined. Decide the % to sell (e.g. 30% at +100%) so you lock in gains and still participate if it goes higher.');
         else recommend.push('Consider defining in advance: at +100% do you sell part, all, or hold? A written rule reduces FOMO and regret.');
     } else if (scenario === 'urgent') {
         if (urgentIsRecoverCapital) {
@@ -8338,11 +8345,15 @@ window.runWhatIfScenario = function runWhatIfScenario() {
 
     var expertOnAnswer = '';
     if (scenario === 'crash' || scenario === 'crash50') {
-        if (/hold|keep|not sell/.test(a)) expertOnAnswer = 'You wrote that you would hold. A picky expert would ask: at what level of drop would you still hold? If it goes −50% or −70%, will you still hold? Writing a number now (e.g. "I hold unless it drops below −40%") makes it easier to stick to your plan when emotions run high.';
+        if (userMentionsLockInProfitOrDistribute) {
+            expertOnAnswer = 'You wrote that you would lock in profit (e.g. 40%) and distribute the money to other places — without selling everything. A picky expert would say: that is a clear plan. Define what "40% profit" means (40% of the position, or 40% of the portfolio?) and where you put that money (other assets, stablecoins, another exchange). Do not change the subject to "what if it drops 50% or 70%" — your plan is about fixing profit and reallocation; the answer should reflect that.';
+        } else if (/hold|keep|not sell/.test(a)) expertOnAnswer = 'You wrote that you would hold. A picky expert would ask: at what level of drop would you still hold? If it goes −50% or −70%, will you still hold? Writing a number now (e.g. "I hold unless it drops below −40%") makes it easier to stick to your plan when emotions run high.';
         else if (/sell|exit/.test(a)) expertOnAnswer = 'You wrote that you would sell or exit. A picky expert would ask: at what exact level do you sell? (e.g. −20%, −30%?) And do you sell everything or only part? Writing it down (e.g. "I sell 50% if it drops 25%") turns your plan into something you can follow.';
         else expertOnAnswer = 'A picky expert would ask: what exactly do you do in this scenario — hold, sell part, or add? And at what level? (e.g. "I add 10% if it drops 30%".) The more specific your plan, the easier it is to follow when the moment comes.';
     } else if (scenario === 'double') {
-        if (/sell|profit|take/.test(a)) expertOnAnswer = 'You wrote that you would take profit or sell part. A picky expert would ask: what percentage do you sell, and at what level? (e.g. "I sell 30% when it doubles".) Writing it down reduces regret and FOMO when the price keeps going up.';
+        if (userMentionsLockInProfitOrDistribute) {
+            expertOnAnswer = 'You wrote that you would lock in profit (e.g. 40%) and distribute the money to other places — you are not selling everything, just taking part of the profit. A picky expert would say: that is a clear rule. Define what "40% profit" means (of the position or of the portfolio) and where you put that money (other assets, stablecoins, etc.). The answer should be about your plan — locking in profit and reallocation — not about crash scenarios (e.g. "what if it drops 50%").';
+        } else if (/sell|profit|take/.test(a)) expertOnAnswer = 'You wrote that you would take profit or sell part. A picky expert would ask: what percentage do you sell, and at what level? (e.g. "I sell 30% when it doubles".) Writing it down reduces regret and FOMO when the price keeps going up.';
         else expertOnAnswer = 'You wrote what you would do when the coin doubles. A picky expert would ask: do you sell part, all, or hold? If you sell part, what percentage? A clear rule (e.g. "sell 20% at +100%") helps you act instead of hesitating.';
     } else if (scenario === 'urgent') {
         if (urgentIsRecoverCapital) {
