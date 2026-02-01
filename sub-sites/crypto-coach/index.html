@@ -1348,28 +1348,28 @@
                                            <summary style="color: #ffd700; cursor: pointer; font-weight: 600;">What is DCA and why average in?</summary>
                                            <p style="color: #cccccc; font-size: 0.9rem; margin-top: 10px; line-height: 1.5;">DCA (Dollar Cost Averaging) means investing a fixed amount on a schedule (e.g. every week or every month) instead of one big lump sum. That way you buy more when the price is low and less when it is high, which can smooth out volatility and reduce the risk of buying everything at a bad time. It does not guarantee profit — it is just one way to discipline yourself and spread risk over time.</p>
                                        </details>
-                                       <div class="form-group">
-                                           <label style="color: #ffffff;">Amount per month (USD):</label>
-                                           <input type="number" id="dcaExperimentAmount" min="10" max="100000" value="100" step="10" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
+                                       <div class="dca-form-row">
+                                           <label for="dcaExperimentAmount">Amount per month (USD):</label>
+                                           <input type="number" id="dcaExperimentAmount" min="10" max="100000" value="100" step="10" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> <span style="color: #cccccc;">$</span>
                                        </div>
-                                       <div class="form-group">
-                                           <label style="color: #ffffff;">Period:</label>
-                                           <select id="dcaExperimentPeriod" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
+                                       <div class="dca-form-row">
+                                           <label for="dcaExperimentPeriod">Period:</label>
+                                           <select id="dcaExperimentPeriod" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; min-width: 160px;">
                                                <option value="6">Last 6 months</option>
                                                <option value="12" selected>Last 12 months</option>
                                                <option value="24">Last 24 months</option>
                                            </select>
                                        </div>
-                                       <div class="form-group">
-                                           <label style="color: #ffffff;">Frequency:</label>
-                                           <select id="dcaFrequency" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
+                                       <div class="dca-form-row">
+                                           <label for="dcaFrequency">Frequency:</label>
+                                           <select id="dcaFrequency" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; min-width: 160px;">
                                                <option value="weekly">Every week</option>
                                                <option value="biweekly">Every 2 weeks</option>
                                                <option value="monthly" selected>Every month</option>
                                            </select>
                                        </div>
-                                       <div class="form-group">
-                                           <label style="color: #ffffff;">Coin 1:</label>
+                                       <div class="dca-form-row">
+                                           <label for="dcaExperimentCoin1">Coin 1:</label>
                                            <select id="dcaExperimentCoin1" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; min-width: 160px;">
                                                <option value="BTC" selected>Bitcoin (BTC)</option>
                                                <option value="ETH">Ethereum (ETH)</option>
@@ -1406,11 +1406,10 @@
                                                <option value="MYX">MYX</option>
                                                <option value="ATOM">Cosmos (ATOM)</option>
                                            </select>
-                                           <label style="color: #cccccc; margin-left: 12px;">Allocation:</label>
-                                           <input type="number" id="dcaAlloc1" min="0" max="100" value="100" style="width: 60px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; margin-left: 6px;"> %
+                                           <span class="dca-allocation-wrap"><label for="dcaAlloc1">Allocation:</label><input type="number" id="dcaAlloc1" min="0" max="100" value="100" style="width: 64px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;"> <span style="color: #cccccc;">%</span></span>
                                        </div>
-                                       <div class="form-group">
-                                           <label style="color: #ffffff;">Coin 2 (optional):</label>
+                                       <div class="dca-form-row">
+                                           <label for="dcaExperimentCoin2">Coin 2 (optional):</label>
                                            <select id="dcaExperimentCoin2" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; min-width: 160px;">
                                                <option value="">— None —</option>
                                                <option value="BTC">Bitcoin (BTC)</option>
@@ -1448,11 +1447,10 @@
                                                <option value="MYX">MYX</option>
                                                <option value="ATOM">Cosmos (ATOM)</option>
                                            </select>
-                                           <label style="color: #cccccc; margin-left: 12px;">Allocation:</label>
-                                           <input type="number" id="dcaAlloc2" min="0" max="100" value="0" style="width: 60px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; margin-left: 6px;"> %
+                                           <span class="dca-allocation-wrap"><label for="dcaAlloc2">Allocation:</label><input type="number" id="dcaAlloc2" min="0" max="100" value="0" style="width: 64px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;"> <span style="color: #cccccc;">%</span></span>
                                        </div>
-                                       <div class="form-group">
-                                           <label style="color: #ffffff;">Coin 3 (optional):</label>
+                                       <div class="dca-form-row">
+                                           <label for="dcaExperimentCoin3">Coin 3 (optional):</label>
                                            <select id="dcaExperimentCoin3" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; min-width: 160px;">
                                                <option value="">— None —</option>
                                                <option value="BTC">Bitcoin (BTC)</option>
@@ -1490,22 +1488,22 @@
                                                <option value="MYX">MYX</option>
                                                <option value="ATOM">Cosmos (ATOM)</option>
                                            </select>
-                                           <label style="color: #cccccc; margin-left: 12px;">Allocation:</label>
-                                           <input type="number" id="dcaAlloc3" min="0" max="100" value="0" style="width: 60px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; margin-left: 6px;"> %
+                                           <span class="dca-allocation-wrap"><label for="dcaAlloc3">Allocation:</label><input type="number" id="dcaAlloc3" min="0" max="100" value="0" style="width: 64px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;"> <span style="color: #cccccc;">%</span></span>
                                        </div>
-                                       <p style="color: #aaaaaa; font-size: 0.88rem; margin-bottom: 12px;">Allocations must sum to 100% when using 2 or 3 coins.</p>
-                                       <div class="form-group" style="margin-bottom: 10px;">
-                                           <label style="color: #ffffff; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                       <p style="color: #aaaaaa; font-size: 0.88rem; margin-bottom: 18px;">Allocations must sum to 100% when using 2 or 3 coins.</p>
+                                       <div class="dca-form-row" style="margin-bottom: 10px;">
+                                           <label style="color: #ffffff; display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; min-width: 0;">
                                                <input type="checkbox" id="dcaShowLumpSum" style="width: 18px; height: 18px;"> Show comparison with lump sum (if you had invested the same total in one go at the start)
                                            </label>
                                        </div>
-                                       <div class="form-group" style="margin-bottom: 14px;">
-                                           <label style="color: #ffffff; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                       <div class="dca-form-row" style="margin-bottom: 22px;">
+                                           <label style="min-width: 200px; margin: 0;"></label>
+                                           <label style="color: #ffffff; display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; min-width: 0;">
                                                <input type="checkbox" id="dcaIncludeFee" style="width: 18px; height: 18px;"> Include 0.5% fee per purchase (illustrative)
                                            </label>
                                        </div>
                                        <button type="button" class="btn btn-red" onclick="runDcaExperiment()" style="padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Calculate</button>
-                                       <div id="dcaExperimentResult" class="result-box" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
+                                       <div id="dcaExperimentResult" class="result-box dca-result-block" style="display: none; margin-top: 16px; padding: 20px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
                                        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.15);">
                                            <h5 style="color: #ffd700; margin-bottom: 10px; font-size: 1rem;">My DCA scenarios</h5>
                                            <p style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px;">Save the current form and load it later, or compare two saved scenarios.</p>

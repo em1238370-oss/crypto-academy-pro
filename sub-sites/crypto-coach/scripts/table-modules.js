@@ -7976,22 +7976,37 @@ window.runDcaExperiment = function runDcaExperiment() {
     if (lumpSumValue !== null) copyText += ' | Lump sum: ~$' + lumpSumValue.toLocaleString();
     copyText += ' — Education only. Not financial advice.';
 
-    var html = '<p style="margin-bottom: 12px; padding: 10px; background: rgba(255,215,0,0.12); border-radius: 8px; border-left: 4px solid rgba(255,215,0,0.6);"><strong style="color: #ffffff;">One-line summary:</strong> Over ' + months + ' months you would have invested $' + totalInvested.toLocaleString() + ' and illustrative value ~$' + totalValue.toLocaleString() + (includeFee ? ' (after fee: ~$' + valueAfterFee.toLocaleString() + ')' : '') + '.</p>';
-    html += '<p style="color: #cccccc; font-size: 0.9rem; margin-bottom: 12px;">' + freqText + '</p>';
-    html += '<h5 style="color: #ffd700; margin-bottom: 10px;">DCA over the last ' + months + ' months</h5>';
-    html += '<p><strong style="color: #ffffff;">Total invested:</strong> $' + totalInvested.toLocaleString() + '</p>';
+    var html = '<div class="dca-result-section dca-result-summary-box"><strong style="color: #ffffff;">One-line summary:</strong> Over ' + months + ' months you would have invested $' + totalInvested.toLocaleString() + ' and illustrative value ~$' + totalValue.toLocaleString() + (includeFee ? ' (after fee: ~$' + valueAfterFee.toLocaleString() + ')' : '') + '.</div>';
+    html += '<div class="dca-result-section dca-result-line" style="color: #cccccc; font-size: 0.9rem;">' + freqText + '</div>';
+    html += '<div class="dca-result-section"><h5 style="color: #ffd700; margin: 0 0 14px 0; font-size: 1.05rem;">DCA over the last ' + months + ' months</h5>';
+    html += '<p class="dca-result-line" style="margin: 0 0 12px 0;"><strong style="color: #ffffff;">Total invested:</strong> $' + totalInvested.toLocaleString() + '</p>';
     lines.forEach(function(l) {
-        html += '<p><strong style="color: #ffffff;">' + l.coin + ' (' + l.alloc + '%):</strong> invested $' + l.invested.toLocaleString() + ' → illustrative value ~$' + l.value.toLocaleString() + '</p>';
+        html += '<p class="dca-result-line" style="margin: 0 0 12px 0;"><strong style="color: #ffffff;">' + l.coin + ' (' + l.alloc + '%):</strong> invested $' + l.invested.toLocaleString() + ' → illustrative value ~$' + l.value.toLocaleString() + '</p>';
     });
-    html += '<p><strong style="color: #ffd700;">Total illustrative value:</strong> ~$' + totalValue.toLocaleString() + '</p>';
+    html += '<p class="dca-result-line" style="margin: 0 0 12px 0;"><strong style="color: #ffd700;">Total illustrative value:</strong> ~$' + totalValue.toLocaleString() + '</p>';
     if (includeFee) {
-        html += '<p style="color: #aaaaaa; font-size: 0.9rem;"><strong style="color: #ffffff;">After 0.5% fee per purchase (illustrative):</strong> ~$' + valueAfterFee.toLocaleString() + '</p>';
+        html += '<p class="dca-result-line" style="margin: 0 0 12px 0; color: #aaaaaa; font-size: 0.9rem;"><strong style="color: #ffffff;">After 0.5% fee per purchase (illustrative):</strong> ~$' + valueAfterFee.toLocaleString() + '</p>';
     }
+    html += '</div>';
     if (lumpSumValue !== null) {
-        html += '<p style="margin-top: 12px; padding: 10px; background: rgba(255,215,0,0.1); border-radius: 8px; border-left: 4px solid rgba(255,215,0,0.5);"><strong style="color: #ffffff;">Lump sum comparison:</strong> If you had invested $' + totalInvested.toLocaleString() + ' in one go at the start, illustrative value would be ~$' + lumpSumValue.toLocaleString() + '. (Example only; real results vary.)</p>';
+        html += '<div class="dca-result-lump-box dca-result-section"><strong style="color: #ffffff;">Lump sum comparison:</strong> If you had invested $' + totalInvested.toLocaleString() + ' in one go at the start, illustrative value would be ~$' + lumpSumValue.toLocaleString() + '. (Example only; real results vary.)</div>';
     }
-    html += '<p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 14px;">This is for education only. Past performance does not guarantee future results. Use your own research.</p>';
-    html += '<button type="button" class="btn btn-red" onclick="copyDcaResult()" style="margin-top: 12px; padding: 8px 16px; font-size: 0.9rem;">Copy result</button>';
+    html += '<div class="dca-expert-block dca-result-section"><h6>From a picky expert\'s point of view</h6>';
+    html += '<p><strong>When DCA makes sense:</strong> You add money on a schedule (e.g. every 2 weeks). So you buy more when the price is low and less when it\'s high. That can help you avoid putting everything in at a bad time. DCA does not guarantee profit. If the market goes up a lot from the start, putting all the money in at once could have done better. Remember: even small fees (e.g. 0.5% per purchase) add up over time.</p>';
+    html += '<p><strong>When DCA is not the best choice:</strong> If you already have a big sum and you strongly believe the market will go up soon, putting it in once (lump sum) might give a higher result. But no one knows the future — that\'s why many people still prefer DCA to spread the risk over time.</p>';
+    html += '<p><strong>Choosing coins and rebalancing:</strong> Picking 2–3 coins (like you did) spreads risk: if one falls, the others may balance it. "Allocation" is just the share per coin (e.g. 70% BTC, 30% ETH). Once a year you can "rebalance": bring the shares back to your target (e.g. sell a bit of what went up and buy what went down). You don\'t have to — it\'s optional.</p>';
+    html += '<p><strong>How to read these numbers:</strong> The "illustrative value" above is an example, not a forecast. Your real result will depend on the exact days you buy and how the market moves. The numbers are here only to help you understand how DCA could look.</p>';
+    html += '<p><strong>Practical tip:</strong> Set a calendar reminder (e.g. every 2 weeks) so you don\'t forget to add money or do it on impulse. Stick to your plan and change it only when your goal or time horizon changes.</p></div>';
+    html += '<div class="dca-glossary-block dca-result-section"><h6>Explanation of terms</h6><dl>';
+    html += '<dt>DCA (Dollar Cost Averaging)</dt><dd>Adding a fixed amount of money on a regular schedule (e.g. every week or month) instead of investing everything at once.</dd>';
+    html += '<dt>Lump sum</dt><dd>Investing the full amount in one go at the start, instead of spreading it over time.</dd>';
+    html += '<dt>Illustrative value</dt><dd>An example result based on simple assumptions. It is not a prediction of what you will actually get.</dd>';
+    html += '<dt>Allocation</dt><dd>The share of your total investment that you put into each coin (e.g. 60% Bitcoin, 40% Ethereum). The percentages usually add up to 100%.</dd>';
+    html += '<dt>Rebalance</dt><dd>Adjusting your holdings so the shares match your target again (e.g. after one coin went up a lot, you sell a bit of it and buy more of the other).</dd>';
+    html += '<dt>Fee (per purchase)</dt><dd>What the platform or exchange charges each time you buy. Even 0.5% per purchase can add up over many months.</dd>';
+    html += '</dl></div>';
+    html += '<p class="dca-result-line" style="color: #aaaaaa; font-size: 0.88rem; margin-top: 18px; margin-bottom: 0;">This is for education only. Past performance does not guarantee future results. Use your own research.</p>';
+    html += '<button type="button" class="btn btn-red" onclick="copyDcaResult()" style="margin-top: 16px; padding: 8px 16px; font-size: 0.9rem;">Copy result</button>';
     resultDiv.style.display = 'block';
     resultDiv.setAttribute('data-dca-copy', copyText);
     resultDiv.innerHTML = html;
