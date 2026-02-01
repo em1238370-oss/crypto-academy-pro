@@ -8185,25 +8185,184 @@ window.compareDcaScenarios = function compareDcaScenarios() {
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+var whatIfScenarioLabels = {
+    crash: 'Market drops 30% in a week',
+    double: 'My coin doubles in a month',
+    urgent: 'I need the money urgently',
+    crash50: 'My coin drops 50% in a month',
+    sideways: 'Market sideways for 6 months'
+};
+var whatIfScenarioImpact = {
+    crash: -30,
+    double: 100,
+    urgent: 0,
+    crash50: -50,
+    sideways: 0
+};
+
 window.runWhatIfScenario = function runWhatIfScenario() {
     const scenario = document.getElementById('whatIfScenario')?.value || 'crash';
     const answer = (document.getElementById('whatIfMyAnswer')?.value || '').trim();
+    const portfolio = Math.max(0, parseFloat(document.getElementById('whatIfPortfolio')?.value || 10000, 10));
     const resultDiv = document.getElementById('whatIfScenarioResult');
     if (!resultDiv) return;
-    const scenarioLabels = { crash: 'Market drops 30% in a week', double: 'My coin doubles in a month', urgent: 'I need the money urgently' };
     resultDiv.style.display = 'block';
     if (!answer) {
-        resultDiv.innerHTML = `<p style="color: #ffaa00;">Write in one or two sentences what you would do in this situation, then click "Show my plan".</p>`;
+        resultDiv.innerHTML = '<p style="color: #ffaa00;">Write in one or two sentences what you would do in this situation, then click "Show my plan".</p>';
         return;
     }
-    resultDiv.innerHTML = `
-        <h5 style="color: #ffd700; margin-bottom: 10px;">Your plan: ${scenarioLabels[scenario] || scenario}</h5>
-        <p><strong style="color: #ffffff;">In this case I would:</strong></p>
-        <p style="margin-top: 8px; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid rgba(255, 215, 0, 0.5);">${answer.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
-        <p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 12px;">Having a written plan helps you stick to it when emotions run high. Revisit it if the situation changes.</p>
-    `;
+    const impact = whatIfScenarioImpact[scenario] !== undefined ? whatIfScenarioImpact[scenario] : -30;
+    const afterValue = impact === 0 ? portfolio : Math.round(portfolio * (1 + impact / 100));
+    const diff = afterValue - portfolio;
+    var numbersText = '';
+    if (scenario === 'crash') numbersText = 'At −30% your portfolio would be ≈ $' + Math.round(portfolio * 0.7).toLocaleString() + ' (−$' + Math.round(portfolio * 0.3).toLocaleString() + ').';
+    else if (scenario === 'double') numbersText = 'At +100% your portfolio would be ≈ $' + Math.round(portfolio * 2).toLocaleString() + ' (+$' + portfolio.toLocaleString() + ').';
+    else if (scenario === 'urgent') numbersText = 'If you had to sell everything, you would have ≈ $' + portfolio.toLocaleString() + ' (plan your emergency fund in advance).';
+    else if (scenario === 'crash50') numbersText = 'At −50% your portfolio would be ≈ $' + Math.round(portfolio * 0.5).toLocaleString() + ' (−$' + Math.round(portfolio * 0.5).toLocaleString() + ').';
+    else if (scenario === 'sideways') numbersText = 'In a sideways market your portfolio might stay around $' + portfolio.toLocaleString() + ' (no big move up or down).';
+
+    var usualDo = '';
+    if (scenario === 'crash') usualDo = 'In a sharp drop, many people sell in panic or hold and wait. Some add to positions (average down). Having a written plan and a stop-loss level helps avoid emotional decisions.';
+    else if (scenario === 'double') usualDo = 'When a coin doubles, some take part of the profit and leave the rest to run. Others sell everything. Defining in advance what you will do (e.g. sell 30%) reduces regret and FOMO.';
+    else if (scenario === 'urgent') usualDo = 'When money is needed urgently, selling at a loss is common. To avoid this, experts suggest keeping an emergency fund in stable assets and not investing money you might need soon.';
+    else if (scenario === 'crash50') usualDo = 'A 50% drop is stressful. Many hold hoping for a rebound, or sell to cap losses. Deciding in advance how much loss you can accept (e.g. stop-loss at −30%) helps you act consistently.';
+    else if (scenario === 'sideways') usualDo = 'In sideways markets, prices move little for months. Some get impatient and sell; others use the time to DCA or rebalance. Sticking to your plan and not chasing short-term moves usually pays off.';
+
+    var timeline = '';
+    if (scenario === 'crash' || scenario === 'crash50') {
+        timeline = '<strong>Day 1:</strong> News hits, price falls. — <strong>Week 1:</strong> Volatility high; avoid panic sells. — <strong>Month:</strong> Either recovery starts or further decline; your plan (hold/sell/add) should already be set.';
+    } else if (scenario === 'double') {
+        timeline = '<strong>Day 1–7:</strong> Price rises. — <strong>Week 2–4:</strong> Momentum; decide in advance whether to take partial profit. — <strong>Month:</strong> Re-evaluate; stick to the rule you set (e.g. sell 30% at +100%).';
+    } else if (scenario === 'urgent') {
+        timeline = '<strong>When it happens:</strong> You need cash. — <strong>Best case:</strong> You have an emergency fund and do not touch crypto. — <strong>Worst case:</strong> You sell at a loss; lesson for next time: keep a cash buffer.';
+    } else if (scenario === 'sideways') {
+        timeline = '<strong>Month 1–3:</strong> Range-bound; no big moves. — <strong>Month 4–6:</strong> Still sideways; avoid overtrading. — <strong>Lesson:</strong> Patience; use DCA or rebalance instead of timing the market.';
+    } else timeline = '—';
+
+    var low = Math.min(portfolio, afterValue);
+    var high = Math.max(portfolio, afterValue);
+    if (high <= 0) high = 1;
+    var maxBarH = 48;
+    var barHBefore = Math.max(16, (portfolio / high) * maxBarH);
+    var barHAfter = Math.max(16, (afterValue / high) * maxBarH);
+    var barColorAfter = afterValue >= portfolio ? 'rgba(0,200,100,0.6)' : 'rgba(255,100,100,0.6)';
+    var comparisonHtml = '<div class="whatif-compare-row" style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 16px 0;">';
+    ['crash', 'double', 'urgent'].forEach(function(s) {
+        var imp = whatIfScenarioImpact[s];
+        var val = imp === 0 ? portfolio : Math.round(portfolio * (1 + imp / 100));
+        var label = whatIfScenarioLabels[s] || s;
+        comparisonHtml += '<div style="flex: 1; min-width: 120px; padding: 12px; background: rgba(255,255,255,0.06); border-radius: 8px; text-align: center;"><strong style="color: #ffd700;">' + label.split(' ').slice(0, 3).join(' ') + '</strong><br><span style="color: #ccc;">≈ $' + val.toLocaleString() + '</span></div>';
+    });
+    comparisonHtml += '</div>';
+
+    var checklist = [];
+    var a = answer.toLowerCase();
+    if (/\b(stop[- ]?loss|stoploss)\b/.test(a)) checklist.push('Stop-loss mentioned');
+    if (/\b(sell|exit|cash out)\b/.test(a)) checklist.push('Selling / exit considered');
+    if (/\b(hold|keep|don\'t sell|not sell)\b/.test(a)) checklist.push('Holding considered');
+    if (/\b(emergency|urgent|need money)\b/.test(a)) checklist.push('Emergency / need for money');
+    if (/\b(take profit|profit|partial)\b/.test(a)) checklist.push('Taking profit / partial exit');
+    if (/\b(dca|average|add|buy more)\b/.test(a)) checklist.push('Averaging down / adding');
+    var checklistHtml = checklist.length ? '<ul style="margin: 8px 0 0 16px; color: #cccccc;">' + checklist.map(function(c) { return '<li>' + c + '</li>'; }).join('') + '</ul>' : '<p style="color: #888;">No keywords detected. Consider adding: stop-loss, sell part, hold, emergency fund, take profit.</p>';
+    var recommend = [];
+    if (scenario === 'crash' || scenario === 'crash50') {
+        if (/hold|keep|not sell/.test(a)) recommend.push('You plan to hold — make sure you can tolerate a further drop (e.g. −50% or more). Consider a stop-loss or position size you can afford to lose.');
+        else if (/sell|exit/.test(a)) recommend.push('You plan to sell or exit — that can limit losses. Define the level (e.g. −20%) in advance so you act without emotion.');
+        else recommend.push('Write a clear rule: at what % drop do you sell or add? Having it in advance reduces panic.');
+    } else if (scenario === 'double') {
+        if (/sell|profit|take/.test(a)) recommend.push('Taking profit is disciplined. Decide the % to sell (e.g. 30% at +100%) so you lock in gains and still participate if it goes higher.');
+        else recommend.push('Consider defining in advance: at +100% do you sell part, all, or hold? A written rule reduces FOMO and regret.');
+    } else if (scenario === 'urgent') {
+        recommend.push('If you need money urgently, selling is often the only option. For next time: keep an emergency fund in stable assets so you don’t have to sell crypto at a bad moment.');
+    } else if (scenario === 'sideways') {
+        recommend.push('In sideways markets, avoid overtrading. Stick to DCA or rebalance on a schedule; patience usually beats chasing short-term moves.');
+    } else {
+        recommend.push('Revisit your plan when the situation changes. Having it written down helps you stick to it when emotions run high.');
+    }
+    var verdictHtml = '<p style="margin: 0; color: #cccccc; line-height: 1.5;">' + recommend.join(' ') + '</p>';
+
+    var html = '';
+    html += '<h5 style="color: #ffd700; margin-bottom: 12px;">Your plan: ' + (whatIfScenarioLabels[scenario] || scenario) + '</h5>';
+    html += '<p><strong style="color: #ffffff;">In this case I would:</strong></p>';
+    html += '<p style="margin-top: 8px; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid rgba(255, 215, 0, 0.5);">' + answer.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</p>';
+    html += '<div class="whatif-numbers" style="margin: 16px 0; padding: 12px; background: rgba(255,215,0,0.08); border-radius: 8px;"><strong style="color: #ffd700;">Illustrative numbers (your portfolio $' + portfolio.toLocaleString() + '):</strong> ' + numbersText + '</div>';
+    html += '<div class="whatif-chart" style="margin: 16px 0;"><strong style="color: #ffffff;">Mini chart — portfolio in this scenario:</strong><br>';
+    html += '<div style="display: flex; align-items: flex-end; gap: 8px; height: 52px; margin-top: 8px;"><div style="flex: 1; max-width: 50%; background: rgba(255,255,255,0.15); border-radius: 4px; height: ' + barHBefore + 'px;" title="Before"></div><div style="flex: 1; max-width: 50%; background: ' + barColorAfter + '; border-radius: 4px; height: ' + barHAfter + 'px;" title="After"></div></div>';
+    html += '<div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #aaa; margin-top: 4px;"><span>Before: $' + portfolio.toLocaleString() + '</span><span>After: $' + afterValue.toLocaleString() + '</span></div></div>';
+    html += '<div class="whatif-compare" style="margin: 16px 0;"><strong style="color: #ffffff;">Comparison — three scenarios (same portfolio):</strong>' + comparisonHtml + '</div>';
+    html += '<div class="whatif-timeline" style="margin: 16px 0; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px;"><strong style="color: #ffd700;">Timeline (illustrative):</strong><p style="color: #cccccc; font-size: 0.9rem; margin: 8px 0 0 0; line-height: 1.5;">' + timeline + '</p></div>';
+    html += '<div class="whatif-usual" style="margin: 16px 0; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px;"><strong style="color: #ffffff;">What people usually do in this scenario:</strong><p style="color: #aaaaaa; font-size: 0.9rem; margin: 8px 0 0 0; line-height: 1.55;">' + usualDo + '</p></div>';
+    html += '<div class="whatif-checklist" style="margin: 16px 0;"><strong style="color: #ffffff;">Checklist from your plan:</strong>' + checklistHtml + '</div>';
+    html += '<div class="whatif-verdict" style="margin: 16px 0; padding: 14px; background: rgba(255,215,0,0.1); border-radius: 8px; border-left: 4px solid rgba(255,215,0,0.5);"><strong style="color: #ffd700;">Expert verdict:</strong>' + verdictHtml + '</div>';
+    html += '<p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 12px;">Having a written plan helps you stick to it when emotions run high. Revisit it if the situation changes.</p>';
+    html += '<div style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px;"><button type="button" class="btn btn-red" onclick="saveWhatIfPlan()" style="padding: 8px 16px; font-size: 0.9rem;">Save this plan</button><button type="button" class="btn btn-red" onclick="downloadWhatIfPlan()" style="padding: 8px 16px; font-size: 0.9rem;">Download plan (txt)</button></div>';
+    resultDiv.innerHTML = html;
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
+
+function saveWhatIfPlan() {
+    var scenario = document.getElementById('whatIfScenario')?.value || 'crash';
+    var answer = (document.getElementById('whatIfMyAnswer')?.value || '').trim();
+    var portfolio = document.getElementById('whatIfPortfolio')?.value || '10000';
+    if (!answer) { alert('Write your plan first, then click "Show my plan", then "Save this plan".'); return; }
+    var name = prompt('Name for this plan (e.g. Crash 30% plan):', whatIfScenarioLabels[scenario] || scenario);
+    if (!name || !name.trim()) return;
+    var list = JSON.parse(localStorage.getItem('whatIfPlans') || '[]');
+    list.push({ name: name.trim(), scenario: scenario, answer: answer, portfolio: portfolio, when: new Date().toISOString() });
+    localStorage.setItem('whatIfPlans', JSON.stringify(list));
+    refreshWhatIfPlansList();
+    alert('Plan saved.');
+}
+
+function refreshWhatIfPlansList() {
+    var list = JSON.parse(localStorage.getItem('whatIfPlans') || '[]');
+    var div = document.getElementById('whatIfPlansList');
+    if (!div) return;
+    if (list.length === 0) { div.innerHTML = '<p style="color: #888;">No saved plans yet.</p>'; return; }
+    div.innerHTML = list.map(function(p, i) {
+        return '<div style="margin-bottom: 8px; padding: 8px 12px; background: rgba(255,255,255,0.06); border-radius: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;"><span style="color: #fff;">' + (p.name || 'Plan ' + (i+1)) + '</span><span style="display: flex; gap: 6px;"><button type="button" class="btn btn-red" onclick="loadWhatIfPlan(' + i + ')" style="padding: 4px 10px; font-size: 0.8rem;">Load</button><button type="button" class="btn btn-red" onclick="deleteWhatIfPlan(' + i + ')" style="padding: 4px 10px; font-size: 0.8rem;">Delete</button></span></div>';
+    }).join('');
+}
+
+function loadWhatIfPlan(index) {
+    var list = JSON.parse(localStorage.getItem('whatIfPlans') || '[]');
+    var p = list[index];
+    if (!p) return;
+    var elS = document.getElementById('whatIfScenario');
+    var elA = document.getElementById('whatIfMyAnswer');
+    var elP = document.getElementById('whatIfPortfolio');
+    if (elS) elS.value = p.scenario || 'crash';
+    if (elA) elA.value = p.answer || '';
+    if (elP) elP.value = p.portfolio || '10000';
+    runWhatIfScenario();
+}
+
+function deleteWhatIfPlan(index) {
+    var list = JSON.parse(localStorage.getItem('whatIfPlans') || '[]');
+    list.splice(index, 1);
+    localStorage.setItem('whatIfPlans', JSON.stringify(list));
+    refreshWhatIfPlansList();
+}
+
+function downloadWhatIfPlan() {
+    var scenario = document.getElementById('whatIfScenario')?.value || 'crash';
+    var answer = (document.getElementById('whatIfMyAnswer')?.value || '').trim();
+    var portfolio = document.getElementById('whatIfPortfolio')?.value || '10000';
+    if (!answer) { alert('Show your plan first, then click "Download plan".'); return; }
+    var label = whatIfScenarioLabels[scenario] || scenario;
+    var text = 'Assignment 3: What would I do if…?\n\nScenario: ' + label + '\nMy portfolio (USD): ' + portfolio + '\n\nIn this case I would:\n' + answer + '\n\n— Saved from Crypto Coach. Education only, not financial advice.';
+    var blob = new Blob([text], { type: 'text/plain' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'my-plan-' + scenario + '.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var list = document.getElementById('whatIfPlansList');
+    if (list) setTimeout(refreshWhatIfPlansList, 300);
+});
 
 window.runStrategyInNumbers = function runStrategyInNumbers() {
     const deposit = parseInt(document.getElementById('strategyNumbersDeposit')?.value || 5000, 10);

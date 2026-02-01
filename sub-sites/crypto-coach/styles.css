@@ -2407,6 +2407,31 @@ div:has-text("Experience Points") {
     text-align: center;
 }
 
+/* Assignment 3: What would I do if…? — result block */
+.whatif-assignment-block {
+    text-align: center;
+}
+.whatif-assignment-block .form-group label,
+.whatif-assignment-block .form-group input,
+.whatif-assignment-block .form-group select,
+.whatif-assignment-block .form-group textarea {
+    text-align: left;
+}
+.whatif-result-block {
+    text-align: left;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.whatif-result-block .whatif-compare-row,
+.whatif-result-block .whatif-chart {
+    text-align: center;
+}
+.whatif-result-block .whatif-checklist ul {
+    margin: 8px 0 0 16px;
+    padding-left: 16px;
+}
+
 .btn {
     padding: 12px 30px;
     border: none;

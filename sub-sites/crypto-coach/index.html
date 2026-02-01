@@ -10,10 +10,10 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20.0">
+    <link rel="stylesheet" href="styles.css?v=21.0">
    <!-- Chart.js for portfolio graphs -->
    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-   <script src="scripts/table-modules.js?v=22.0"></script>
+   <script src="scripts/table-modules.js?v=23.0"></script>
   <script src="scripts/backtesting-functions.js" defer></script>
 </head>
 <body>
@@ -1518,16 +1518,23 @@
                                    </div>
 
                                    <!-- Assignment 3: What would I do if... -->
-                                   <div class="section-box module-d-assignment">
+                                   <div class="section-box module-d-assignment whatif-assignment-block">
                                        <span class="module-d-assignment-badge">3</span>
                                        <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 3: What would I do if…?</h4>
-                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Pick a scenario and write in one or two sentences what you would do. This helps you plan in advance so you don’t act on emotion when it happens.</p>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Enter your portfolio, pick a scenario, and write what you would do. You’ll see illustrative numbers, a mini chart, what people usually do, a checklist of your plan, and an expert verdict. Save or download your plan for later.</p>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">My portfolio (USD):</label>
+                                           <input type="number" id="whatIfPortfolio" min="0" max="10000000" value="10000" step="100" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
+                                           <small style="color: #aaaaaa; display: block; margin-top: 6px;">Used for illustrative numbers (e.g. “at −30% ≈ −$X”).</small>
+                                       </div>
                                        <div class="form-group">
                                            <label style="color: #ffffff;">Scenario:</label>
                                            <select id="whatIfScenario" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; width: 100%; max-width: 400px;">
                                                <option value="crash">The market drops 30% in a week</option>
                                                <option value="double">My coin doubles in a month</option>
                                                <option value="urgent">I need the money urgently</option>
+                                               <option value="crash50">My coin drops 50% in a month</option>
+                                               <option value="sideways">Market sideways for 6 months</option>
                                            </select>
                                        </div>
                                        <div class="form-group">
@@ -1535,7 +1542,12 @@
                                            <textarea id="whatIfMyAnswer" rows="3" placeholder="e.g. I would hold and not sell, or I would take part of the profit…" style="width: 100%; max-width: 500px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 12px; border-radius: 8px; font-family: inherit;"></textarea>
                                        </div>
                                        <button type="button" class="btn btn-red" onclick="runWhatIfScenario()" style="padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Show my plan</button>
-                                       <div id="whatIfScenarioResult" class="result-box" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
+                                       <div id="whatIfScenarioResult" class="result-box whatif-result-block" style="display: none; margin-top: 16px; padding: 20px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
+                                       <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.15);">
+                                           <h5 style="color: #ffd700; margin-bottom: 10px; font-size: 1rem;">My saved plans</h5>
+                                           <div id="whatIfPlansList" style="margin-bottom: 12px; min-height: 24px;"></div>
+                                           <p style="color: #aaaaaa; font-size: 0.88rem;">Save your plan after viewing the result; load or delete saved plans here.</p>
+                                       </div>
                                    </div>
 
                                    <!-- Assignment 4: Strategy in numbers -->
