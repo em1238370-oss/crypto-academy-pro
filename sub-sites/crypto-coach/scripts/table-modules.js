@@ -8280,10 +8280,51 @@ window.runMoneySimulator = async function runMoneySimulator() {
     } catch (err) { resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>'; }
 };
 
-// Assignment 4: Risk DNA
+// Assignment 4: Risk DNA — 20 scenarios, circular arrow navigation
+var RISK_DNA_SCENARIOS = [
+    'You discover you bought a scam token',
+    'Whale alert: big sell happening',
+    'Influencer says "sell everything"',
+    'Portfolio doubled overnight',
+    'Portfolio halved overnight',
+    'Bitcoin hits new ATH, your alts don\'t move',
+    'Staked tokens locked 30 days, market dumping',
+    '"Rug pull" in your coin\'s Telegram',
+    'Stablecoin depegs to $0.95',
+    'Forgot you had crypto, found old wallet',
+    'Portfolio drops 20% tomorrow',
+    'You need money urgently (rent, bills)',
+    'Exchange you use is hacked',
+    'Tax season: big unrealized gains',
+    'Market sideways for 6 months',
+    'FOMO: everyone buying, prices rising fast',
+    'You have lump sum, market very volatile',
+    'One coin goes +300%, rest flat',
+    'You might lose access to your wallet',
+    'Friend asks to borrow money to "buy the dip"'
+];
+window.riskDnaScenarioIndex = 0;
+
+function updateRiskDnaScenarioDisplay() {
+    var el = document.getElementById('riskDnaScenarioText');
+    if (el && RISK_DNA_SCENARIOS.length) el.textContent = RISK_DNA_SCENARIOS[window.riskDnaScenarioIndex];
+}
+document.addEventListener('DOMContentLoaded', function() {
+    updateRiskDnaScenarioDisplay();
+    var prev = document.getElementById('riskDnaScenarioPrev');
+    var next = document.getElementById('riskDnaScenarioNext');
+    if (prev) prev.addEventListener('click', function() {
+        window.riskDnaScenarioIndex = (window.riskDnaScenarioIndex - 1 + RISK_DNA_SCENARIOS.length) % RISK_DNA_SCENARIOS.length;
+        updateRiskDnaScenarioDisplay();
+    });
+    if (next) next.addEventListener('click', function() {
+        window.riskDnaScenarioIndex = (window.riskDnaScenarioIndex + 1) % RISK_DNA_SCENARIOS.length;
+        updateRiskDnaScenarioDisplay();
+    });
+});
+
 window.runRiskDna = async function runRiskDna() {
-    const scenarioSel = document.getElementById('riskDnaScenario');
-    const scenario = scenarioSel ? scenarioSel.options[scenarioSel.selectedIndex]?.text || 'Portfolio drops 20%' : 'Portfolio drops 20%';
+    const scenario = (document.getElementById('riskDnaScenarioText') && document.getElementById('riskDnaScenarioText').textContent.trim()) || RISK_DNA_SCENARIOS[0];
     const actionSel = document.getElementById('riskDnaQ1');
     const action = actionSel ? actionSel.options[actionSel.selectedIndex]?.text || 'Wait 24h, then decide' : 'Wait 24h, then decide';
     const q1 = document.getElementById('riskDnaQ1')?.value || 'wait24h';
