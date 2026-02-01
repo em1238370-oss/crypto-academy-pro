@@ -195,6 +195,8 @@ function toggleDrawerWithInit(drawerId) {
 // API Configuration
 const API_KEY = 'hfDsgAHIsiU6tKZOSTqAL5pazYPjA8SO';
 const API_URL = 'https://api.mistral.ai/v1/chat/completions';
+/** API key used only for Assignment 3 "What would I do if…?" — Picky expert (understands any user text). Other features use API_KEY. */
+const WHATIF_EXPERT_API_KEY = 'tki1lyqEITFpZOxqjKvCSIwROUpUCNJS';
 const LIVECOINWATCH_KEY = '84d685c4-2905-4fc2-91fc-ba7b696eb966';
 const LIVECOINWATCH_URL = 'https://api.livecoinwatch.com/coins/single';
 
@@ -8192,6 +8194,39 @@ var whatIfScenarioLabels = {
     crash50: 'My coin drops 50% in a month',
     sideways: 'Market sideways for 6 months'
 };
+
+/** Calls Mistral with WHATIF_EXPERT_API_KEY only. Returns { expertOnAnswer, expertVerdict } or null. */
+function fetchWhatIfExpertFromAPI(userAnswer, scenarioLabel, portfolio) {
+    var systemPrompt = 'You are a picky expert commenting on a user\'s written plan in a crypto scenario. Rules: (1) Respond ONLY to the meaning of what the user wrote — do not add topics they did not mention (e.g. do not say "family" or "urgent money" or "what if it drops 50%" unless they wrote that). (2) Give two short paragraphs. (3) First paragraph: "Picky expert\'s opinion" — 2–4 sentences that reflect and clarify their plan, ask one clarifying question if useful. (4) Second paragraph: "Expert verdict (short)" — 1–2 sentences. (5) Do not invent reasons or scenarios. (6) Write in English.';
+    var userPrompt = 'Scenario: ' + scenarioLabel + '. User\'s portfolio (illustrative): $' + (portfolio || '0') + '. User wrote: "' + (userAnswer || '') + '". Output ONLY the two paragraphs (no headings, no labels). First paragraph = Picky expert\'s opinion. Second paragraph = Expert verdict (short).';
+    return fetch(API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + WHATIF_EXPERT_API_KEY
+        },
+        body: JSON.stringify({
+            model: 'mistral-small',
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.4,
+            max_tokens: 400
+        })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+            var text = data.choices[0].message.content.trim();
+            var idx = text.indexOf('\n\n');
+            if (idx > 0) {
+                return { expertOnAnswer: text.substring(0, idx).trim(), expertVerdict: text.substring(idx + 2).trim() };
+            }
+            return { expertOnAnswer: text, expertVerdict: '' };
+        }
+        return null;
+    }).catch(function() { return null; });
+}
+
 var whatIfScenarioImpact = {
     crash: -30,
     double: 100,
@@ -8368,23 +8403,37 @@ window.runWhatIfScenario = function runWhatIfScenario() {
     }
     var expertDisclaimer = 'This is the expert’s opinion for reflection only — not advice. The decision and responsibility are yours.';
 
-    var html = '';
-    html += '<h5 style="color: #ffd700; margin-bottom: 12px;">Your plan: ' + (whatIfScenarioLabels[scenario] || scenario) + '</h5>';
-    html += '<p><strong style="color: #ffffff;">In this case I would:</strong></p>';
-    html += '<p style="margin-top: 8px; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid rgba(255, 215, 0, 0.5);">' + answer.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</p>';
-    html += '<div class="whatif-numbers" style="margin: 16px 0; padding: 12px; background: rgba(255,215,0,0.08); border-radius: 8px;"><strong style="color: #ffd700;">Illustrative numbers (your portfolio $' + portfolio.toLocaleString() + '):</strong> ' + numbersText + (numbersExplain ? '<p style="margin: 10px 0 0 0; color: #cccccc; font-size: 0.9rem; line-height: 1.5;">' + numbersExplain + '</p>' : '') + '<p style="margin: 10px 0 0 0; color: #aaaaaa; font-size: 0.88rem;">' + numbersWhy + '</p></div>';
-    html += '<div class="whatif-chart" style="margin: 16px 0;"><strong style="color: #ffffff;">Mini chart — portfolio in this scenario:</strong><br>';
-    html += '<div style="display: flex; align-items: flex-end; gap: 8px; height: 52px; margin-top: 8px;"><div style="flex: 1; max-width: 50%; background: rgba(255,255,255,0.15); border-radius: 4px; height: ' + barHBefore + 'px;" title="Before"></div><div style="flex: 1; max-width: 50%; background: ' + barColorAfter + '; border-radius: 4px; height: ' + barHAfter + 'px;" title="After"></div></div>';
-    html += '<div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #aaa; margin-top: 4px;"><span>Before: $' + portfolio.toLocaleString() + '</span><span>After: $' + afterValue.toLocaleString() + '</span></div></div>';
-    html += '<div class="whatif-compare" style="margin: 16px 0;"><strong style="color: #ffffff;">Comparison — three scenarios (same portfolio):</strong>' + comparisonHtml + '</div>';
-    html += '<div class="whatif-timeline" style="margin: 16px 0; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px;"><strong style="color: #ffd700;">Timeline (illustrative):</strong><p style="color: #cccccc; font-size: 0.9rem; margin: 8px 0 0 0; line-height: 1.5;">' + timeline + '</p></div>';
-    html += '<div class="whatif-usual" style="margin: 16px 0; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px;"><strong style="color: #ffffff;">What people usually do in this scenario:</strong><p style="color: #aaaaaa; font-size: 0.9rem; margin: 8px 0 0 0; line-height: 1.55;">' + usualDo + '</p><p style="color: #888; font-size: 0.88rem; margin: 10px 0 0 0;">' + usualDoDisclaimer + '</p>' + (usualDoMistake ? '<p style="color: #ffd700; font-size: 0.88rem; margin: 8px 0 0 0;">' + usualDoMistake + '</p>' : '') + '</div>';
-    html += '<div class="whatif-checklist" style="margin: 16px 0;"><strong style="color: #ffffff;">Checklist from your plan:</strong>' + checklistHtml + '</div>';
-    html += '<div class="whatif-verdict" style="margin: 16px 0; padding: 14px; background: rgba(255,215,0,0.1); border-radius: 8px; border-left: 4px solid rgba(255,215,0,0.5);"><strong style="color: #ffd700;">Picky expert’s opinion on your answer («In this case I would…»):</strong><p style="color: #cccccc; font-size: 0.9rem; margin: 10px 0 0 0; line-height: 1.55;">' + expertOnAnswer + '</p><p style="color: #888; font-size: 0.85rem; margin: 12px 0 0 0;">' + expertDisclaimer + '</p><strong style="color: #ffd700; display: block; margin-top: 14px;">Expert verdict (short):</strong>' + verdictHtml + '</div>';
-    html += '<p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 12px;">Having a written plan helps you stick to it when emotions run high. Revisit it if the situation changes.</p>';
-    html += '<div style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px;"><button type="button" class="btn btn-red" onclick="saveWhatIfPlan()" style="padding: 8px 16px; font-size: 0.9rem;">Save this plan</button><button type="button" class="btn btn-red" onclick="downloadWhatIfPlan()" style="padding: 8px 16px; font-size: 0.9rem;">Download plan (txt)</button></div>';
-    resultDiv.innerHTML = html;
+    function buildWhatIfHtml() {
+        var h = '';
+        h += '<h5 style="color: #ffd700; margin-bottom: 12px;">Your plan: ' + (whatIfScenarioLabels[scenario] || scenario) + '</h5>';
+        h += '<p><strong style="color: #ffffff;">In this case I would:</strong></p>';
+        h += '<p style="margin-top: 8px; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border-left: 4px solid rgba(255, 215, 0, 0.5);">' + answer.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</p>';
+        h += '<div class="whatif-numbers" style="margin: 16px 0; padding: 12px; background: rgba(255,215,0,0.08); border-radius: 8px;"><strong style="color: #ffd700;">Illustrative numbers (your portfolio $' + portfolio.toLocaleString() + '):</strong> ' + numbersText + (numbersExplain ? '<p style="margin: 10px 0 0 0; color: #cccccc; font-size: 0.9rem; line-height: 1.5;">' + numbersExplain + '</p>' : '') + '<p style="margin: 10px 0 0 0; color: #aaaaaa; font-size: 0.88rem;">' + numbersWhy + '</p></div>';
+        h += '<div class="whatif-chart" style="margin: 16px 0;"><strong style="color: #ffffff;">Mini chart — portfolio in this scenario:</strong><br>';
+        h += '<div style="display: flex; align-items: flex-end; gap: 8px; height: 52px; margin-top: 8px;"><div style="flex: 1; max-width: 50%; background: rgba(255,255,255,0.15); border-radius: 4px; height: ' + barHBefore + 'px;" title="Before"></div><div style="flex: 1; max-width: 50%; background: ' + barColorAfter + '; border-radius: 4px; height: ' + barHAfter + 'px;" title="After"></div></div>';
+        h += '<div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #aaa; margin-top: 4px;"><span>Before: $' + portfolio.toLocaleString() + '</span><span>After: $' + afterValue.toLocaleString() + '</span></div></div>';
+        h += '<div class="whatif-compare" style="margin: 16px 0;"><strong style="color: #ffffff;">Comparison — three scenarios (same portfolio):</strong>' + comparisonHtml + '</div>';
+        h += '<div class="whatif-timeline" style="margin: 16px 0; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px;"><strong style="color: #ffd700;">Timeline (illustrative):</strong><p style="color: #cccccc; font-size: 0.9rem; margin: 8px 0 0 0; line-height: 1.5;">' + timeline + '</p></div>';
+        h += '<div class="whatif-usual" style="margin: 16px 0; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px;"><strong style="color: #ffffff;">What people usually do in this scenario:</strong><p style="color: #aaaaaa; font-size: 0.9rem; margin: 8px 0 0 0; line-height: 1.55;">' + usualDo + '</p><p style="color: #888; font-size: 0.88rem; margin: 10px 0 0 0;">' + usualDoDisclaimer + '</p>' + (usualDoMistake ? '<p style="color: #ffd700; font-size: 0.88rem; margin: 8px 0 0 0;">' + usualDoMistake + '</p>' : '') + '</div>';
+        h += '<div class="whatif-checklist" style="margin: 16px 0;"><strong style="color: #ffffff;">Checklist from your plan:</strong>' + checklistHtml + '</div>';
+        h += '<div class="whatif-verdict" style="margin: 16px 0; padding: 14px; background: rgba(255,215,0,0.1); border-radius: 8px; border-left: 4px solid rgba(255,215,0,0.5);"><strong style="color: #ffd700;">Picky expert’s opinion on your answer («In this case I would…»):</strong><p style="color: #cccccc; font-size: 0.9rem; margin: 10px 0 0 0; line-height: 1.55;">' + expertOnAnswer + '</p><p style="color: #888; font-size: 0.85rem; margin: 12px 0 0 0;">' + expertDisclaimer + '</p><strong style="color: #ffd700; display: block; margin-top: 14px;">Expert verdict (short):</strong>' + verdictHtml + '</div>';
+        h += '<p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 12px;">Having a written plan helps you stick to it when emotions run high. Revisit it if the situation changes.</p>';
+        h += '<div style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px;"><button type="button" class="btn btn-red" onclick="saveWhatIfPlan()" style="padding: 8px 16px; font-size: 0.9rem;">Save this plan</button><button type="button" class="btn btn-red" onclick="downloadWhatIfPlan()" style="padding: 8px 16px; font-size: 0.9rem;">Download plan (txt)</button></div>';
+        return h;
+    }
+
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<p style="color: #ffd700;">Reading your plan…</p>';
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    fetchWhatIfExpertFromAPI(answer, whatIfScenarioLabels[scenario] || scenario, portfolio).then(function(apiResult) {
+        if (apiResult && apiResult.expertOnAnswer) expertOnAnswer = apiResult.expertOnAnswer.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        if (apiResult && apiResult.expertVerdict) verdictHtml = '<p style="margin: 0; color: #cccccc; line-height: 1.5;">' + apiResult.expertVerdict.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</p>';
+        resultDiv.innerHTML = buildWhatIfHtml();
+        resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }).catch(function() {
+        resultDiv.innerHTML = buildWhatIfHtml();
+        resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
 };
 
 function saveWhatIfPlan() {
