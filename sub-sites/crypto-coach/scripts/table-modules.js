@@ -171,8 +171,9 @@ function toggleDrawerWithInit(drawerId) {
         }
     }
 
-    if (drawerId === 'drawerD' && typeof refreshModuleDSavedStrategies === 'function') {
-        setTimeout(refreshModuleDSavedStrategies, 150);
+    if (drawerId === 'drawerD') {
+        if (typeof refreshModuleDSavedStrategies === 'function') setTimeout(refreshModuleDSavedStrategies, 150);
+        if (typeof refreshDcaScenariosList === 'function') setTimeout(refreshDcaScenariosList, 150);
     }
     
     // Initialize coins if drawerA is opened
@@ -7894,24 +7895,257 @@ function runStressTestFromModuleD() {
     }, 2500);
 }
 
+function dcaIllustrativeGrowth(coin) {
+    if (coin === 'BTC') return 1.15;
+    if (coin === 'ETH') return 1.12;
+    return 1.10;
+}
+
+function dcaComputeResult(amount, months, coins, showLumpSum, includeFee) {
+    var totalInvested = amount * months;
+    var totalValue = 0;
+    var lines = [];
+    coins.forEach(function(c) {
+        var invested = Math.round(totalInvested * (c.alloc / 100));
+        var value = Math.round(invested * dcaIllustrativeGrowth(c.coin));
+        totalValue += value;
+        lines.push({ coin: c.coin, alloc: c.alloc, invested: invested, value: value });
+    });
+    var lumpSumValue = null;
+    if (showLumpSum) {
+        var avgGrowth = 1;
+        coins.forEach(function(c) {
+            avgGrowth *= Math.pow(dcaIllustrativeGrowth(c.coin), (c.alloc / 100));
+        });
+        lumpSumValue = Math.round(totalInvested * Math.pow(avgGrowth, months / 12));
+    }
+    var valueAfterFee = totalValue;
+    if (includeFee) {
+        var fee = Math.round(totalInvested * 0.005);
+        valueAfterFee = Math.max(0, totalValue - fee);
+    }
+    return { totalInvested: totalInvested, totalValue: totalValue, valueAfterFee: valueAfterFee, lines: lines, lumpSumValue: lumpSumValue, includeFee: includeFee };
+}
+
 window.runDcaExperiment = function runDcaExperiment() {
     const amount = parseInt(document.getElementById('dcaExperimentAmount')?.value || 100, 10);
-    const coin = document.getElementById('dcaExperimentCoin')?.value || 'BTC';
     const months = parseInt(document.getElementById('dcaExperimentPeriod')?.value || 12, 10);
+    const frequency = document.getElementById('dcaFrequency')?.value || 'monthly';
+    const coin1 = document.getElementById('dcaExperimentCoin1')?.value || 'BTC';
+    const coin2 = (document.getElementById('dcaExperimentCoin2')?.value || '').trim();
+    const coin3 = (document.getElementById('dcaExperimentCoin3')?.value || '').trim();
+    let a1 = parseInt(document.getElementById('dcaAlloc1')?.value || 100, 10);
+    let a2 = parseInt(document.getElementById('dcaAlloc2')?.value || 0, 10);
+    let a3 = parseInt(document.getElementById('dcaAlloc3')?.value || 0, 10);
+    const showLumpSum = document.getElementById('dcaShowLumpSum')?.checked || false;
+    const includeFee = document.getElementById('dcaIncludeFee')?.checked || false;
     const resultDiv = document.getElementById('dcaExperimentResult');
     if (!resultDiv) return;
-    const totalInvested = amount * months;
-    const illustrativeGrowth = 1 + (coin === 'BTC' ? 0.15 : 0.12);
-    const illustrativeValue = Math.round(totalInvested * illustrativeGrowth);
+
+    var coins = [{ coin: coin1, alloc: Math.max(0, Math.min(100, a1)) }];
+    if (coin2 && a2 > 0) coins.push({ coin: coin2, alloc: Math.max(0, Math.min(100, a2)) });
+    if (coin3 && a3 > 0) coins.push({ coin: coin3, alloc: Math.max(0, Math.min(100, a3)) });
+    var sumAlloc = coins.reduce(function(s, c) { return s + c.alloc; }, 0);
+    if (sumAlloc <= 0) sumAlloc = 100;
+    coins.forEach(function(c) { c.alloc = Math.round((c.alloc / sumAlloc) * 100); });
+    if (coins.length > 1) {
+        var remainder = 100 - coins.reduce(function(s, c) { return s + c.alloc; }, 0);
+        if (remainder !== 0 && coins[0]) coins[0].alloc += remainder;
+    }
+
+    var res = dcaComputeResult(amount, months, coins, showLumpSum, includeFee);
+    var totalInvested = res.totalInvested;
+    var totalValue = res.totalValue;
+    var valueAfterFee = res.valueAfterFee;
+    var lines = res.lines;
+    var lumpSumValue = res.lumpSumValue;
+
+    var freqText = '';
+    var perAmount = amount;
+    var everyDays = 30;
+    if (frequency === 'weekly') { perAmount = Math.round(amount / 4.33); everyDays = 7; freqText = 'You would add ~$' + perAmount + ' every ' + everyDays + ' days.'; }
+    else if (frequency === 'biweekly') { perAmount = Math.round(amount / 2); everyDays = 14; freqText = 'You would add ~$' + perAmount + ' every ' + everyDays + ' days.'; }
+    else { freqText = 'You would add $' + amount + ' every month (~every 30 days).'; }
+
+    var copyText = 'DCA — Over ' + months + ' months you would have invested $' + totalInvested.toLocaleString() + ' and illustrative value ~$' + totalValue.toLocaleString();
+    if (includeFee) copyText += ' (after 0.5% fee: ~$' + valueAfterFee.toLocaleString() + ')';
+    copyText += '. ' + freqText;
+    lines.forEach(function(l) {
+        copyText += ' | ' + l.coin + ' ' + l.alloc + '%: $' + l.invested.toLocaleString() + ' → ~$' + l.value.toLocaleString();
+    });
+    if (lumpSumValue !== null) copyText += ' | Lump sum: ~$' + lumpSumValue.toLocaleString();
+    copyText += ' — Education only. Not financial advice.';
+
+    var html = '<p style="margin-bottom: 12px; padding: 10px; background: rgba(255,215,0,0.12); border-radius: 8px; border-left: 4px solid rgba(255,215,0,0.6);"><strong style="color: #ffffff;">One-line summary:</strong> Over ' + months + ' months you would have invested $' + totalInvested.toLocaleString() + ' and illustrative value ~$' + totalValue.toLocaleString() + (includeFee ? ' (after fee: ~$' + valueAfterFee.toLocaleString() + ')' : '') + '.</p>';
+    html += '<p style="color: #cccccc; font-size: 0.9rem; margin-bottom: 12px;">' + freqText + '</p>';
+    html += '<h5 style="color: #ffd700; margin-bottom: 10px;">DCA over the last ' + months + ' months</h5>';
+    html += '<p><strong style="color: #ffffff;">Total invested:</strong> $' + totalInvested.toLocaleString() + '</p>';
+    lines.forEach(function(l) {
+        html += '<p><strong style="color: #ffffff;">' + l.coin + ' (' + l.alloc + '%):</strong> invested $' + l.invested.toLocaleString() + ' → illustrative value ~$' + l.value.toLocaleString() + '</p>';
+    });
+    html += '<p><strong style="color: #ffd700;">Total illustrative value:</strong> ~$' + totalValue.toLocaleString() + '</p>';
+    if (includeFee) {
+        html += '<p style="color: #aaaaaa; font-size: 0.9rem;"><strong style="color: #ffffff;">After 0.5% fee per purchase (illustrative):</strong> ~$' + valueAfterFee.toLocaleString() + '</p>';
+    }
+    if (lumpSumValue !== null) {
+        html += '<p style="margin-top: 12px; padding: 10px; background: rgba(255,215,0,0.1); border-radius: 8px; border-left: 4px solid rgba(255,215,0,0.5);"><strong style="color: #ffffff;">Lump sum comparison:</strong> If you had invested $' + totalInvested.toLocaleString() + ' in one go at the start, illustrative value would be ~$' + lumpSumValue.toLocaleString() + '. (Example only; real results vary.)</p>';
+    }
+    html += '<p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 14px;">This is for education only. Past performance does not guarantee future results. Use your own research.</p>';
+    html += '<button type="button" class="btn btn-red" onclick="copyDcaResult()" style="margin-top: 12px; padding: 8px 16px; font-size: 0.9rem;">Copy result</button>';
     resultDiv.style.display = 'block';
-    resultDiv.innerHTML = `
-        <h5 style="color: #ffd700; margin-bottom: 10px;">DCA over the last ${months} months (${coin})</h5>
-        <p><strong style="color: #ffffff;">Total invested:</strong> $${totalInvested.toLocaleString()}</p>
-        <p><strong style="color: #ffffff;">Illustrative value today:</strong> ~$${illustrativeValue.toLocaleString()} (example growth only; real results vary)</p>
-        <p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 12px;">This is for education only. Past performance does not guarantee future results. Use your own research.</p>
-    `;
+    resultDiv.setAttribute('data-dca-copy', copyText);
+    resultDiv.innerHTML = html;
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
+
+window.copyDcaResult = function copyDcaResult() {
+    var el = document.getElementById('dcaExperimentResult');
+    var text = el ? el.getAttribute('data-dca-copy') : '';
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() { alert('Result copied to clipboard.'); }).catch(function() { fallbackCopyDca(text); });
+    } else {
+        fallbackCopyDca(text);
+    }
+};
+function fallbackCopyDca(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+        document.execCommand('copy');
+        alert('Result copied to clipboard.');
+    } catch (e) { alert('Copy failed. Select the result text manually.'); }
+    document.body.removeChild(ta);
+}
+
+var DCA_SCENARIOS_KEY = 'cryptoCoachDcaScenarios';
+function getDcaScenarios() {
+    try {
+        return JSON.parse(localStorage.getItem(DCA_SCENARIOS_KEY) || '[]');
+    } catch (e) { return []; }
+}
+function setDcaScenarios(arr) {
+    try {
+        localStorage.setItem(DCA_SCENARIOS_KEY, JSON.stringify(arr));
+    } catch (e) {}
+}
+
+window.saveDcaScenario = function saveDcaScenario() {
+    var name = prompt('Name this scenario (e.g. BTC+ETH 60/40):');
+    if (!name || !name.trim()) return;
+    name = name.trim();
+    var amount = parseInt(document.getElementById('dcaExperimentAmount')?.value || 100, 10);
+    var months = parseInt(document.getElementById('dcaExperimentPeriod')?.value || 12, 10);
+    var frequency = document.getElementById('dcaFrequency')?.value || 'monthly';
+    var coin1 = document.getElementById('dcaExperimentCoin1')?.value || 'BTC';
+    var coin2 = (document.getElementById('dcaExperimentCoin2')?.value || '').trim();
+    var coin3 = (document.getElementById('dcaExperimentCoin3')?.value || '').trim();
+    var a1 = parseInt(document.getElementById('dcaAlloc1')?.value || 100, 10);
+    var a2 = parseInt(document.getElementById('dcaAlloc2')?.value || 0, 10);
+    var a3 = parseInt(document.getElementById('dcaAlloc3')?.value || 0, 10);
+    var showLumpSum = document.getElementById('dcaShowLumpSum')?.checked || false;
+    var includeFee = document.getElementById('dcaIncludeFee')?.checked || false;
+    var list = getDcaScenarios();
+    var id = 'dca_' + Date.now();
+    list.push({ id: id, name: name, amount: amount, months: months, frequency: frequency, coin1: coin1, coin2: coin2 || '', coin3: coin3 || '', alloc1: a1, alloc2: a2, alloc3: a3, showLumpSum: showLumpSum, includeFee: includeFee, createdAt: Date.now() });
+    setDcaScenarios(list);
+    refreshDcaScenariosList();
+    alert('Scenario saved.');
+}
+
+window.loadDcaScenario = function loadDcaScenario(id) {
+    var list = getDcaScenarios();
+    var s = list.find(function(x) { return x.id === id; });
+    if (!s) return;
+    var el = function(id) { return document.getElementById(id); };
+    if (el('dcaExperimentAmount')) el('dcaExperimentAmount').value = s.amount;
+    if (el('dcaExperimentPeriod')) el('dcaExperimentPeriod').value = s.months;
+    if (el('dcaFrequency')) el('dcaFrequency').value = s.frequency || 'monthly';
+    if (el('dcaExperimentCoin1')) el('dcaExperimentCoin1').value = s.coin1 || 'BTC';
+    if (el('dcaExperimentCoin2')) el('dcaExperimentCoin2').value = s.coin2 || '';
+    if (el('dcaExperimentCoin3')) el('dcaExperimentCoin3').value = s.coin3 || '';
+    if (el('dcaAlloc1')) el('dcaAlloc1').value = s.alloc1 || 100;
+    if (el('dcaAlloc2')) el('dcaAlloc2').value = s.alloc2 || 0;
+    if (el('dcaAlloc3')) el('dcaAlloc3').value = s.alloc3 || 0;
+    if (el('dcaShowLumpSum')) el('dcaShowLumpSum').checked = !!s.showLumpSum;
+    if (el('dcaIncludeFee')) el('dcaIncludeFee').checked = !!s.includeFee;
+    refreshDcaScenariosList();
+}
+
+window.deleteDcaScenario = function deleteDcaScenario(id) {
+    if (!confirm('Delete this scenario?')) return;
+    var list = getDcaScenarios().filter(function(x) { return x.id !== id; });
+    setDcaScenarios(list);
+    refreshDcaScenariosList();
+}
+
+function refreshDcaScenariosList() {
+    var list = getDcaScenarios();
+    var listEl = document.getElementById('dcaScenariosList');
+    var selA = document.getElementById('dcaCompareA');
+    var selB = document.getElementById('dcaCompareB');
+    if (listEl) {
+        if (list.length === 0) {
+            listEl.innerHTML = '<p style="color: #888;">No saved scenarios yet. Click Calculate, then "Save this scenario".</p>';
+        } else {
+            listEl.innerHTML = list.map(function(s) {
+                var date = s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '';
+                return '<div style="margin-bottom: 8px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;"><span style="color: #fff;">' + (s.name || 'Scenario') + '</span> <span style="color: #888; font-size: 0.85rem;">' + date + '</span> <button type="button" class="btn btn-red" onclick="loadDcaScenario(\'' + s.id + '\')" style="padding: 4px 10px; font-size: 0.8rem;">Load</button> <button type="button" class="btn btn-red" onclick="deleteDcaScenario(\'' + s.id + '\')" style="padding: 4px 10px; font-size: 0.8rem;">Delete</button></div>';
+            }).join('');
+        }
+    }
+    if (selA) {
+        var curA = selA.value;
+        selA.innerHTML = '<option value="">— A —</option>' + list.map(function(s) { return '<option value="' + s.id + '">' + (s.name || 'Scenario') + '</option>'; }).join('');
+        if (curA && list.some(function(s) { return s.id === curA; })) selA.value = curA;
+    }
+    if (selB) {
+        var curB = selB.value;
+        selB.innerHTML = '<option value="">— B —</option>' + list.map(function(s) { return '<option value="' + s.id + '">' + (s.name || 'Scenario') + '</option>'; }).join('');
+        if (curB && list.some(function(s) { return s.id === curB; })) selB.value = curB;
+    }
+}
+
+window.compareDcaScenarios = function compareDcaScenarios() {
+    var idA = document.getElementById('dcaCompareA')?.value;
+    var idB = document.getElementById('dcaCompareB')?.value;
+    var list = getDcaScenarios();
+    var sA = list.find(function(x) { return x.id === idA; });
+    var sB = list.find(function(x) { return x.id === idB; });
+    var resultDiv = document.getElementById('dcaCompareResult');
+    if (!resultDiv) return;
+    if (!sA || !sB) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<p style="color: #ffaa00;">Select two saved scenarios (A and B) to compare.</p>';
+        return;
+    }
+    if (sA.id === sB.id) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<p style="color: #ffaa00;">Choose two different scenarios.</p>';
+        return;
+    }
+    function toCoins(s) {
+        var coins = [{ coin: s.coin1 || 'BTC', alloc: Math.max(0, Math.min(100, s.alloc1 || 100)) }];
+        if (s.coin2 && s.alloc2 > 0) coins.push({ coin: s.coin2, alloc: Math.max(0, Math.min(100, s.alloc2)) });
+        if (s.coin3 && s.alloc3 > 0) coins.push({ coin: s.coin3, alloc: Math.max(0, Math.min(100, s.alloc3)) });
+        var sum = coins.reduce(function(a, c) { return a + c.alloc; }, 0);
+        if (sum <= 0) sum = 100;
+        coins.forEach(function(c) { c.alloc = Math.round((c.alloc / sum) * 100); });
+        var rem = 100 - coins.reduce(function(a, c) { return a + c.alloc; }, 0);
+        if (rem !== 0 && coins[0]) coins[0].alloc += rem;
+        return coins;
+    }
+    var resA = dcaComputeResult(sA.amount, sA.months, toCoins(sA), !!sA.showLumpSum, !!sA.includeFee);
+    var resB = dcaComputeResult(sB.amount, sB.months, toCoins(sB), !!sB.showLumpSum, !!sB.includeFee);
+    var displayValA = resA.includeFee ? resA.valueAfterFee : resA.totalValue;
+    var displayValB = resB.includeFee ? resB.valueAfterFee : resB.totalValue;
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<h5 style="color: #ffd700; margin-bottom: 10px;">Compare two scenarios</h5><p><strong style="color: #ffffff;">A: ' + (sA.name || 'Scenario A') + '</strong> — Total invested: $' + resA.totalInvested.toLocaleString() + ', illustrative value: ~$' + displayValA.toLocaleString() + '</p><p><strong style="color: #ffffff;">B: ' + (sB.name || 'Scenario B') + '</strong> — Total invested: $' + resB.totalInvested.toLocaleString() + ', illustrative value: ~$' + displayValB.toLocaleString() + '</p><p style="color: #aaaaaa; font-size: 0.88rem;">Education only. Not financial advice.</p>';
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
 
 window.runWhatIfScenario = function runWhatIfScenario() {
     const scenario = document.getElementById('whatIfScenario')?.value || 'crash';

@@ -1343,27 +1343,180 @@
                                    <div class="section-box module-d-assignment">
                                        <span class="module-d-assignment-badge">2</span>
                                        <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 2: What if I had DCA'd over the last year?</h4>
-                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Enter an amount and period — see an <strong style="color: #ffffff;">illustrative</strong> result of how much you would have invested and what the approximate value might be. This is for education only; real results depend on the market.</p>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Choose one to three coins and allocation — see an <strong style="color: #ffffff;">illustrative</strong> result: total invested, value per coin, and optional <strong style="color: #ffffff;">DCA vs lump sum</strong> comparison. For education only; real results depend on the market.</p>
+                                       <details style="margin-bottom: 16px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,215,0,0.2);">
+                                           <summary style="color: #ffd700; cursor: pointer; font-weight: 600;">What is DCA and why average in?</summary>
+                                           <p style="color: #cccccc; font-size: 0.9rem; margin-top: 10px; line-height: 1.5;">DCA (Dollar Cost Averaging) means investing a fixed amount on a schedule (e.g. every week or every month) instead of one big lump sum. That way you buy more when the price is low and less when it is high, which can smooth out volatility and reduce the risk of buying everything at a bad time. It does not guarantee profit — it is just one way to discipline yourself and spread risk over time.</p>
+                                       </details>
                                        <div class="form-group">
                                            <label style="color: #ffffff;">Amount per month (USD):</label>
                                            <input type="number" id="dcaExperimentAmount" min="10" max="100000" value="100" step="10" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
-                                       </div>
-                                       <div class="form-group">
-                                           <label style="color: #ffffff;">Coin:</label>
-                                           <select id="dcaExperimentCoin" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
-                                               <option value="BTC">Bitcoin (BTC)</option>
-                                               <option value="ETH">Ethereum (ETH)</option>
-                                           </select>
                                        </div>
                                        <div class="form-group">
                                            <label style="color: #ffffff;">Period:</label>
                                            <select id="dcaExperimentPeriod" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
                                                <option value="6">Last 6 months</option>
                                                <option value="12" selected>Last 12 months</option>
+                                               <option value="24">Last 24 months</option>
                                            </select>
+                                       </div>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">Frequency:</label>
+                                           <select id="dcaFrequency" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
+                                               <option value="weekly">Every week</option>
+                                               <option value="biweekly">Every 2 weeks</option>
+                                               <option value="monthly" selected>Every month</option>
+                                           </select>
+                                       </div>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">Coin 1:</label>
+                                           <select id="dcaExperimentCoin1" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; min-width: 160px;">
+                                               <option value="BTC" selected>Bitcoin (BTC)</option>
+                                               <option value="ETH">Ethereum (ETH)</option>
+                                               <option value="BNB">BNB</option>
+                                               <option value="SOL">Solana (SOL)</option>
+                                               <option value="ADA">Cardano (ADA)</option>
+                                               <option value="XRP">XRP</option>
+                                               <option value="ENA">Ethena (ENA)</option>
+                                               <option value="FARTCOIN">FARTCOIN</option>
+                                               <option value="PEPE">Pepe (PEPE)</option>
+                                               <option value="AVAX">Avalanche (AVAX)</option>
+                                               <option value="NEAR">Near (NEAR)</option>
+                                               <option value="ONDO">ONDO</option>
+                                               <option value="WLD">Worldcoin (WLD)</option>
+                                               <option value="ARB">Arbitrum (ARB)</option>
+                                               <option value="APT">Aptos (APT)</option>
+                                               <option value="LDO">Lido (LDO)</option>
+                                               <option value="VIRTAUL">VIRTAUL</option>
+                                               <option value="UNI">Uniswap (UNI)</option>
+                                               <option value="SBIB1000">SBIB1000</option>
+                                               <option value="WLFI">WLFI</option>
+                                               <option value="IJU">IJU</option>
+                                               <option value="SOMI">SOMI</option>
+                                               <option value="IP">IP</option>
+                                               <option value="APE">ApeCoin (APE)</option>
+                                               <option value="DOGE">Dogecoin (DOGE)</option>
+                                               <option value="SUI">SUI</option>
+                                               <option value="WIF">dogwifhat (WIF)</option>
+                                               <option value="AAVE">AAVE</option>
+                                               <option value="PENGU">PENGU</option>
+                                               <option value="SEI">SEI</option>
+                                               <option value="GALA">GALA</option>
+                                               <option value="TON">TON</option>
+                                               <option value="MYX">MYX</option>
+                                               <option value="ATOM">Cosmos (ATOM)</option>
+                                           </select>
+                                           <label style="color: #cccccc; margin-left: 12px;">Allocation:</label>
+                                           <input type="number" id="dcaAlloc1" min="0" max="100" value="100" style="width: 60px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; margin-left: 6px;"> %
+                                       </div>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">Coin 2 (optional):</label>
+                                           <select id="dcaExperimentCoin2" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; min-width: 160px;">
+                                               <option value="">— None —</option>
+                                               <option value="BTC">Bitcoin (BTC)</option>
+                                               <option value="ETH">Ethereum (ETH)</option>
+                                               <option value="BNB">BNB</option>
+                                               <option value="SOL">Solana (SOL)</option>
+                                               <option value="ADA">Cardano (ADA)</option>
+                                               <option value="XRP">XRP</option>
+                                               <option value="ENA">Ethena (ENA)</option>
+                                               <option value="FARTCOIN">FARTCOIN</option>
+                                               <option value="PEPE">Pepe (PEPE)</option>
+                                               <option value="AVAX">Avalanche (AVAX)</option>
+                                               <option value="NEAR">Near (NEAR)</option>
+                                               <option value="ONDO">ONDO</option>
+                                               <option value="WLD">Worldcoin (WLD)</option>
+                                               <option value="ARB">Arbitrum (ARB)</option>
+                                               <option value="APT">Aptos (APT)</option>
+                                               <option value="LDO">Lido (LDO)</option>
+                                               <option value="VIRTAUL">VIRTAUL</option>
+                                               <option value="UNI">Uniswap (UNI)</option>
+                                               <option value="SBIB1000">SBIB1000</option>
+                                               <option value="WLFI">WLFI</option>
+                                               <option value="IJU">IJU</option>
+                                               <option value="SOMI">SOMI</option>
+                                               <option value="IP">IP</option>
+                                               <option value="APE">ApeCoin (APE)</option>
+                                               <option value="DOGE">Dogecoin (DOGE)</option>
+                                               <option value="SUI">SUI</option>
+                                               <option value="WIF">dogwifhat (WIF)</option>
+                                               <option value="AAVE">AAVE</option>
+                                               <option value="PENGU">PENGU</option>
+                                               <option value="SEI">SEI</option>
+                                               <option value="GALA">GALA</option>
+                                               <option value="TON">TON</option>
+                                               <option value="MYX">MYX</option>
+                                               <option value="ATOM">Cosmos (ATOM)</option>
+                                           </select>
+                                           <label style="color: #cccccc; margin-left: 12px;">Allocation:</label>
+                                           <input type="number" id="dcaAlloc2" min="0" max="100" value="0" style="width: 60px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; margin-left: 6px;"> %
+                                       </div>
+                                       <div class="form-group">
+                                           <label style="color: #ffffff;">Coin 3 (optional):</label>
+                                           <select id="dcaExperimentCoin3" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; min-width: 160px;">
+                                               <option value="">— None —</option>
+                                               <option value="BTC">Bitcoin (BTC)</option>
+                                               <option value="ETH">Ethereum (ETH)</option>
+                                               <option value="BNB">BNB</option>
+                                               <option value="SOL">Solana (SOL)</option>
+                                               <option value="ADA">Cardano (ADA)</option>
+                                               <option value="XRP">XRP</option>
+                                               <option value="ENA">Ethena (ENA)</option>
+                                               <option value="FARTCOIN">FARTCOIN</option>
+                                               <option value="PEPE">Pepe (PEPE)</option>
+                                               <option value="AVAX">Avalanche (AVAX)</option>
+                                               <option value="NEAR">Near (NEAR)</option>
+                                               <option value="ONDO">ONDO</option>
+                                               <option value="WLD">Worldcoin (WLD)</option>
+                                               <option value="ARB">Arbitrum (ARB)</option>
+                                               <option value="APT">Aptos (APT)</option>
+                                               <option value="LDO">Lido (LDO)</option>
+                                               <option value="VIRTAUL">VIRTAUL</option>
+                                               <option value="UNI">Uniswap (UNI)</option>
+                                               <option value="SBIB1000">SBIB1000</option>
+                                               <option value="WLFI">WLFI</option>
+                                               <option value="IJU">IJU</option>
+                                               <option value="SOMI">SOMI</option>
+                                               <option value="IP">IP</option>
+                                               <option value="APE">ApeCoin (APE)</option>
+                                               <option value="DOGE">Dogecoin (DOGE)</option>
+                                               <option value="SUI">SUI</option>
+                                               <option value="WIF">dogwifhat (WIF)</option>
+                                               <option value="AAVE">AAVE</option>
+                                               <option value="PENGU">PENGU</option>
+                                               <option value="SEI">SEI</option>
+                                               <option value="GALA">GALA</option>
+                                               <option value="TON">TON</option>
+                                               <option value="MYX">MYX</option>
+                                               <option value="ATOM">Cosmos (ATOM)</option>
+                                           </select>
+                                           <label style="color: #cccccc; margin-left: 12px;">Allocation:</label>
+                                           <input type="number" id="dcaAlloc3" min="0" max="100" value="0" style="width: 60px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; margin-left: 6px;"> %
+                                       </div>
+                                       <p style="color: #aaaaaa; font-size: 0.88rem; margin-bottom: 12px;">Allocations must sum to 100% when using 2 or 3 coins.</p>
+                                       <div class="form-group" style="margin-bottom: 10px;">
+                                           <label style="color: #ffffff; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                               <input type="checkbox" id="dcaShowLumpSum" style="width: 18px; height: 18px;"> Show comparison with lump sum (if you had invested the same total in one go at the start)
+                                           </label>
+                                       </div>
+                                       <div class="form-group" style="margin-bottom: 14px;">
+                                           <label style="color: #ffffff; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                               <input type="checkbox" id="dcaIncludeFee" style="width: 18px; height: 18px;"> Include 0.5% fee per purchase (illustrative)
+                                           </label>
                                        </div>
                                        <button type="button" class="btn btn-red" onclick="runDcaExperiment()" style="padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Calculate</button>
                                        <div id="dcaExperimentResult" class="result-box" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
+                                       <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.15);">
+                                           <h5 style="color: #ffd700; margin-bottom: 10px; font-size: 1rem;">My DCA scenarios</h5>
+                                           <p style="color: #cccccc; font-size: 0.9rem; margin-bottom: 10px;">Save the current form and load it later, or compare two saved scenarios.</p>
+                                           <div id="dcaScenariosList" style="margin-bottom: 12px; min-height: 24px;"></div>
+                                           <button type="button" class="btn btn-red" onclick="saveDcaScenario()" style="padding: 8px 16px; font-size: 0.9rem; margin-right: 8px;">Save this scenario</button>
+                                           <span style="color: #cccccc; margin-right: 12px;">Compare:</span>
+                                           <select id="dcaCompareA" style="color: #ffffff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 6px; margin-right: 6px;"><option value="">— A —</option></select>
+                                           <select id="dcaCompareB" style="color: #ffffff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 6px; margin-right: 8px;"><option value="">— B —</option></select>
+                                           <button type="button" class="btn btn-red" onclick="compareDcaScenarios()" style="padding: 8px 16px; font-size: 0.9rem;">Compare</button>
+                                           <div id="dcaCompareResult" class="result-box" style="display: none; margin-top: 12px; padding: 14px; background: rgba(0,0,0,0.35); border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); color: #ffffff;"></div>
+                                       </div>
                                    </div>
 
                                    <!-- Assignment 3: What would I do if... -->
