@@ -8334,13 +8334,14 @@ window.runRiskDna = async function runRiskDna() {
     if (!resultDiv) return;
     resultDiv.style.display = 'block'; resultDiv.innerHTML = '<span style="color: #ffa500;">Analyzing...</span>';
     try {
+        const varietySeed = Date.now() + '-' + Math.random().toString(36).slice(2, 10);
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
             body: JSON.stringify({ model: 'mistral-small', messages: [
-                { role: 'system', content: 'Behavioral finance expert. Analyze the user\'s reaction to the crypto scenario. Return ONLY valid JSON. Be concise but informative.' },
-                { role: 'user', content: `Scenario: "${scenario}". User would: ${action}. Q2(horizon)=${q2}, Q3(money)=${q3}. Analyze their risk profile. JSON: profileName (e.g. "Cautious Turtle"), profileEmoji, description, expectedRange12mo, riskLevel (1-10), recommendation, expertComment (2-4 sentences — expert opinion: why this profile, what it means for their crypto journey, why it matters), strengths (array of 2-3 items), watchOut (array of 2-3 items), quickTips (array of 3 items), thingsToAvoid (array of 3 items), emotionalPattern (1-2 sentences), whenToReconsider (1-2 sentences), plainTerms (2-3 sentences — in plain English for beginners: what this profile means in everyday words, no jargon), everydayTakeaway (1-2 sentences — one simple thing they can use daily when they see crypto news or prices), whereToStart (array of 2 items — first steps for someone learning crypto basics).` }
-            ], temperature: 0.9, max_tokens: 1200 })
+                { role: 'system', content: 'Behavioral finance expert. Analyze the user\'s reaction to the crypto scenario. Return ONLY valid JSON. CRITICAL: Generate UNIQUE, DIVERSE content every time — even for identical inputs. Vary: profile names (e.g. Cautious Turtle, Steady Fox, Calm Owl — use different animal/persona), phrasing, structure, examples, analogies. Never repeat the same wording or structure. Write full, coherent explanations — not fragments or clipped phrases. Each field must be a complete thought, clearly explained. Be informative and helpful.' },
+                { role: 'user', content: `[Variety seed: ${varietySeed}] Scenario: "${scenario}". User would: ${action}. Q2(horizon)=${q2}, Q3(money)=${q3}. Analyze their risk profile. Generate a UNIQUE response — different wording, different profile name, different examples than any previous analysis. JSON: profileName (unique name e.g. Cautious Turtle, Steady Fox, Calm Owl — vary each time), profileEmoji, description (full paragraph, well explained), expectedRange12mo, riskLevel (1-10), recommendation (complete advice), expertComment (2-4 full sentences — expert opinion, vary phrasing), strengths (array of 2-3 items — full phrases, not fragments), watchOut (array of 2-3 items — full phrases), quickTips (array of 3 items — full phrases), thingsToAvoid (array of 3 items — full phrases), emotionalPattern (1-2 sentences — well explained), whenToReconsider (1-2 sentences), plainTerms (2-3 sentences — in plain English, no jargon, vary explanation), everydayTakeaway (1-2 sentences — practical, vary phrasing), whereToStart (array of 2 items — full actionable steps).` }
+            ], temperature: 0.95, max_tokens: 1200 })
         });
         const data = await response.json();
         if (data.choices?.[0]) {
