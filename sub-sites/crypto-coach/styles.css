@@ -2144,36 +2144,94 @@ div:has-text("Experience Points") {
     min-width: auto;
     font-weight: 400;
 }
-/* DCA result block: ровное выравнивание и отступы */
-#dcaExperimentResult.dca-result-block,
-.dca-result-block {
+
+/* DCA Assignment 2: всё по центру экрана */
+.dca-assignment-block {
+    text-align: center;
+}
+.dca-assignment-block .module-d-assignment-badge,
+.dca-assignment-block h4,
+.dca-assignment-block > p {
+    text-align: center;
+}
+.dca-assignment-block details {
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 24px;
     text-align: left;
 }
+.dca-assignment-block .dca-form-row {
+    justify-content: center;
+    margin-bottom: 26px;
+}
+.dca-assignment-block .dca-form-row > label:first-of-type {
+    min-width: auto;
+}
+.dca-assignment-block .dca-allocation-wrap {
+    margin-left: 8px;
+}
+.dca-assignment-block p[style*="color: #aaaaaa"] {
+    margin-bottom: 26px;
+}
+.dca-assignment-block .dca-form-row label[style*="min-width: 200px"] {
+    min-width: 0;
+}
+.dca-assignment-block > div[style*="margin-top: 20px"] {
+    text-align: center;
+    margin-top: 28px;
+    padding-top: 24px;
+}
+.dca-assignment-block #dcaScenariosList {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.dca-assignment-block #dcaScenariosList > div {
+    width: 100%;
+    max-width: 520px;
+}
+
+/* DCA result block: по центру и отступы между блоками */
+#dcaExperimentResult.dca-result-block,
+.dca-result-block {
+    text-align: center;
+}
 .dca-result-block .dca-result-section {
-    margin-bottom: 20px;
+    margin-bottom: 26px;
 }
 .dca-result-block .dca-result-line {
-    margin-bottom: 12px;
+    margin-bottom: 14px;
     padding-left: 0;
 }
 .dca-result-block .dca-result-summary-box {
-    margin-bottom: 20px;
-    padding: 14px 16px;
+    margin-bottom: 26px;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 640px;
+    padding: 16px 20px;
     background: rgba(255,215,0,0.12);
     border-radius: 8px;
     border-left: 4px solid rgba(255,215,0,0.6);
 }
 .dca-result-block .dca-result-lump-box {
-    margin-top: 20px;
-    margin-bottom: 20px;
-    padding: 14px 16px;
+    margin-top: 26px;
+    margin-bottom: 26px;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 640px;
+    padding: 16px 20px;
     background: rgba(255,215,0,0.1);
     border-radius: 8px;
     border-left: 4px solid rgba(255,215,0,0.5);
 }
 .dca-result-block .dca-expert-block {
-    margin-top: 24px;
-    padding: 18px 20px;
+    margin-top: 28px;
+    margin-bottom: 26px;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 640px;
+    padding: 20px 24px;
     background: rgba(0,0,0,0.4);
     border-radius: 10px;
     border: 1px solid rgba(255,215,0,0.25);
@@ -2182,19 +2240,25 @@ div:has-text("Experience Points") {
     color: #ffd700;
     margin: 0 0 14px 0;
     font-size: 1rem;
+    text-align: center;
 }
 .dca-result-block .dca-expert-block p {
     color: #cccccc;
     font-size: 0.92rem;
     line-height: 1.6;
     margin: 0 0 12px 0;
+    text-align: left;
 }
 .dca-result-block .dca-expert-block p:last-child {
     margin-bottom: 0;
 }
 .dca-result-block .dca-glossary-block {
-    margin-top: 24px;
-    padding: 18px 20px;
+    margin-top: 28px;
+    margin-bottom: 26px;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 640px;
+    padding: 20px 24px;
     background: rgba(0,0,0,0.35);
     border-radius: 10px;
     border: 1px solid rgba(255,255,255,0.15);
@@ -2203,12 +2267,14 @@ div:has-text("Experience Points") {
     color: #ffd700;
     margin: 0 0 12px 0;
     font-size: 0.98rem;
+    text-align: center;
 }
 .dca-result-block .dca-glossary-block dl {
     margin: 0;
     color: #cccccc;
     font-size: 0.9rem;
     line-height: 1.55;
+    text-align: left;
 }
 .dca-result-block .dca-glossary-block dt {
     color: #ffffff;
@@ -2222,6 +2288,15 @@ div:has-text("Experience Points") {
 .dca-result-block .dca-glossary-block dd {
     margin: 0 0 0 0;
     padding-left: 0;
+}
+.dca-result-block .dca-result-line {
+    text-align: center;
+}
+.dca-result-block .dca-result-section > h5 {
+    text-align: center;
+}
+.dca-result-block .dca-result-section > p {
+    text-align: center;
 }
 
 .btn {
