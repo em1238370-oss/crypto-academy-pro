@@ -2370,12 +2370,6 @@ div:has-text("Experience Points") {
     background: rgba(255,215,0,0.2);
     border-color: rgba(255,215,0,0.6);
 }
-.btn-strategy-deposit-preset:hover,
-.btn-numbers-deposit-preset:hover {
-    background: rgba(255,215,0,0.2);
-    border-color: rgba(255,215,0,0.6);
-}
-
 /* Module D strategy result: текст и данные по центру */
 .strategy-result-block {
     text-align: center;

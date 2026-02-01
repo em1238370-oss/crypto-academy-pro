@@ -7976,7 +7976,9 @@ window.runDcaExperiment = function runDcaExperiment() {
     if (lumpSumValue !== null) copyText += ' | Lump sum: ~$' + lumpSumValue.toLocaleString();
     copyText += ' — Education only. Not financial advice.';
 
-    var html = '<div class="dca-result-section dca-result-summary-box"><strong style="color: #ffffff;">One-line summary:</strong> Deposit (total invested) $' + totalInvested.toLocaleString() + ' over ' + months + ' months → illustrative value ~$' + totalValue.toLocaleString() + (includeFee ? ' (after fee: ~$' + valueAfterFee.toLocaleString() + ')' : '') + '.</div>';
+    var perPeriodLabel = frequency === 'weekly' ? 'per week' : (frequency === 'biweekly' ? 'per 2 weeks' : 'per month');
+    var html = '<div class="dca-result-section dca-result-summary-box" style="margin-bottom: 14px;"><strong style="color: #ffd700;">Based on your deposit:</strong> $' + amount.toLocaleString() + ' ' + perPeriodLabel + '. All numbers below are calculated from this.</div>';
+    html += '<div class="dca-result-section dca-result-summary-box"><strong style="color: #ffffff;">One-line summary:</strong> Total invested $' + totalInvested.toLocaleString() + ' over ' + months + ' months → illustrative value ~$' + totalValue.toLocaleString() + (includeFee ? ' (after fee: ~$' + valueAfterFee.toLocaleString() + ')' : '') + '.</div>';
     html += '<div class="dca-result-section dca-result-line" style="color: #cccccc; font-size: 0.9rem;">' + freqText + '</div>';
     html += '<div class="dca-result-section"><h5 style="color: #ffd700; margin: 0 0 14px 0; font-size: 1.05rem;">DCA over the last ' + months + ' months</h5>';
     html += '<p class="dca-result-line" style="margin: 0 0 12px 0;"><strong style="color: #ffffff;">Deposit (total invested over the period):</strong> $' + totalInvested.toLocaleString() + '</p>';
@@ -8871,23 +8873,6 @@ document.addEventListener('DOMContentLoaded', function() {
         loadStrategyOptimizerForm(); // Load saved Strategy Optimizer form data
         loadPredictiveForm(); // Load saved Predictive Analytics form data
     }, 500);
-    // Deposit preset buttons: DCA, Module D strategy, Assignment 4
-    document.addEventListener('click', function(e) {
-        var target = e.target && (e.target.closest('.btn-deposit-preset') || e.target.closest('.btn-strategy-deposit-preset') || e.target.closest('.btn-numbers-deposit-preset'));
-        if (!target) return;
-        var amount = target.getAttribute('data-amount');
-        if (!amount) return;
-        if (target.classList.contains('btn-deposit-preset')) {
-            var el = document.getElementById('dcaExperimentAmount');
-            if (el) el.value = amount;
-        } else if (target.classList.contains('btn-strategy-deposit-preset')) {
-            var el = document.getElementById('strategyDeposit');
-            if (el) el.value = amount;
-        } else if (target.classList.contains('btn-numbers-deposit-preset')) {
-            var el = document.getElementById('strategyNumbersDeposit');
-            if (el) el.value = amount;
-        }
-    });
 });
 
 // ========== EXPERIMENT FORM MANAGEMENT ==========
