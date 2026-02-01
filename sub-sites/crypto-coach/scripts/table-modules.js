@@ -8253,56 +8253,6 @@ var whatIfScenarioImpact = {
     lostAccess: 0
 };
 
-// Assignment 3: AI Mini-Summaries (4 diverse blocks)
-window.generateAssignment3MiniSummaries = async function generateAssignment3MiniSummaries() {
-    const sel = document.getElementById('whatIfScenario');
-    const scenario = sel ? (sel.options[sel.selectedIndex]?.text || sel.value) : 'The market drops 30% in a week';
-    const portfolio = parseFloat(document.getElementById('whatIfPortfolio')?.value || 10000);
-    const container = document.getElementById('assignment3MiniSummaries');
-    const illustrativeDiv = document.getElementById('illustrativeNumbers');
-    const threeScenariosDiv = document.getElementById('threeScenarios');
-    const whatPeopleDoDiv = document.getElementById('whatPeopleDo');
-    const expertOpinionDiv = document.getElementById('expertOpinion');
-    if (!container || !illustrativeDiv || !threeScenariosDiv || !whatPeopleDoDiv || !expertOpinionDiv) return;
-    container.style.display = 'block';
-    illustrativeDiv.innerHTML = '<span style="color: #ffa500;">Loading...</span>';
-    threeScenariosDiv.innerHTML = ''; whatPeopleDoDiv.innerHTML = ''; expertOpinionDiv.innerHTML = '';
-    const varietySeed = Date.now() + Math.random().toString(36).substr(2, 9);
-    const prompt = `You are a crypto education expert. Portfolio $${portfolio.toLocaleString('en-US')}, scenario: "${scenario}"
-Generate EXACTLY 4 mini-summaries. Output ONLY valid JSON:
-{
-  "illustrativeNumbers": "2-3 sentences with specific numbers: portfolio impact, gains/losses.",
-  "threeScenarios": "Compare 3 outcomes (bullish/base/bearish) for same $${portfolio.toLocaleString()} portfolio.",
-  "whatPeopleDo": "What typical investors do in this scenario (panic sell, HODL, DCA). Vary phrasing.",
-  "expertOpinion": "2-3 sentences starting 'In this case I would...' - picky expert view. Unique angle."
-}
-Seed for uniqueness: ${varietySeed}. NO repetitive phrases.`;
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
-            body: JSON.stringify({ model: 'mistral-small', messages: [
-                { role: 'system', content: 'Generate UNIQUE educational content. Output ONLY valid JSON.' },
-                { role: 'user', content: prompt }
-            ], temperature: 0.95, max_tokens: 1500 })
-        });
-        const data = await response.json();
-        if (data.choices && data.choices[0]) {
-            let content = data.choices[0].message.content.trim().replace(/```json\n?|\n?```/g, '').trim();
-            let parsed; try { parsed = JSON.parse(content); } catch (e) {
-                illustrativeDiv.innerHTML = '<span style="color: #ffa500;">AI format issue. Try again.</span>'; return;
-            }
-            const escapeHtml = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-            illustrativeDiv.innerHTML = '<span style="color: #ffffff; line-height: 1.7;">' + escapeHtml(parsed.illustrativeNumbers || '') + '</span>';
-            threeScenariosDiv.innerHTML = '<span style="color: #ffffff; line-height: 1.7;">' + escapeHtml(parsed.threeScenarios || '') + '</span>';
-            whatPeopleDoDiv.innerHTML = '<span style="color: #ffffff; line-height: 1.7;">' + escapeHtml(parsed.whatPeopleDo || '') + '</span>';
-            expertOpinionDiv.innerHTML = '<span style="color: #ffffff; line-height: 1.7;">' + escapeHtml(parsed.expertOpinion || '') + '</span>';
-        } else { illustrativeDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable. Try again.</span>'; }
-    } catch (err) {
-        illustrativeDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>';
-    }
-};
-
 // Assignment 4: Money Simulator
 window.runMoneySimulator = async function runMoneySimulator() {
     const portfolio = parseFloat(document.getElementById('moneySimPortfolio')?.value || 10000);

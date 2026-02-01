@@ -2466,21 +2466,9 @@ div:has-text("Experience Points") {
     padding-left: 16px;
 }
 
-/* Assignment 3: Mini-summaries (AI) */
-.assignment-3-box .section-box-header { text-align: center !important; }
-.mini-summary-card {
-    background: rgba(0, 0, 0, 0.5);
-    border: 2px solid rgba(255, 165, 0, 0.3);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 15px;
-    text-align: center;
-}
-.mini-summary-card h5 { color: #ffa500 !important; margin-bottom: 10px; }
-.mini-summary-card > div { color: #ffffff; line-height: 1.7; font-size: 1rem; }
-
 /* Assignment 4: Money Simulator, Risk DNA, Report Card */
-.assignment-4-box { }
+.assignment-4-box { text-align: center; }
+.assignment-4-box .section-box-header { text-align: center !important; }
 .assignment-4-card {
     background: rgba(0, 0, 0, 0.5);
     border: 2px solid rgba(255, 255, 255, 0.15);
