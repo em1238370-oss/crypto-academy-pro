@@ -2321,6 +2321,27 @@ div:has-text("Experience Points") {
     text-align: center;
 }
 
+/* DCA compare result: по дизайну как блок результата */
+.dca-compare-result-block {
+    text-align: center;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.dca-compare-result-block .dca-compare-title {
+    text-align: center;
+}
+.dca-compare-result-block .dca-compare-row,
+.dca-compare-result-block .dca-compare-verdict,
+.dca-compare-result-block .dca-compare-questions,
+.dca-compare-result-block .dca-compare-advice {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.dca-compare-result-block .dca-compare-questions ul {
+    margin-top: 8px;
+}
+
 .btn {
     padding: 12px 30px;
     border: none;

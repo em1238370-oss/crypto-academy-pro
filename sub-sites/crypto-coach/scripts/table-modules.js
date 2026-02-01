@@ -170,7 +170,7 @@ function toggleDrawerWithInit(drawerId) {
             }
         }
     }
-
+    
     if (drawerId === 'drawerD') {
         if (typeof refreshModuleDSavedStrategies === 'function') setTimeout(refreshModuleDSavedStrategies, 150);
         if (typeof refreshDcaScenariosList === 'function') setTimeout(refreshDcaScenariosList, 150);
@@ -8157,8 +8157,22 @@ window.compareDcaScenarios = function compareDcaScenarios() {
     var resB = dcaComputeResult(sB.amount, sB.months, toCoins(sB), !!sB.showLumpSum, !!sB.includeFee);
     var displayValA = resA.includeFee ? resA.valueAfterFee : resA.totalValue;
     var displayValB = resB.includeFee ? resB.valueAfterFee : resB.totalValue;
+    var diff = Math.abs(displayValA - displayValB);
+    var pct = (resA.totalInvested + resB.totalInvested) / 2;
+    var isClose = pct > 0 && (diff / pct < 0.05);
+    var html = '<h5 class="dca-compare-title" style="color: #ffd700; margin: 0 0 18px 0; font-size: 1.1rem;">Compare two scenarios</h5>';
+    html += '<div class="dca-compare-row" style="margin-bottom: 14px; padding: 14px 16px; background: rgba(255,255,255,0.04); border-radius: 8px; text-align: left;"><strong style="color: #ffffff;">A: ' + (sA.name || 'Scenario A') + '</strong> — Total invested: $' + resA.totalInvested.toLocaleString() + ', illustrative value: ~$' + displayValA.toLocaleString() + '</div>';
+    html += '<div class="dca-compare-row" style="margin-bottom: 22px; padding: 14px 16px; background: rgba(255,255,255,0.04); border-radius: 8px; text-align: left;"><strong style="color: #ffffff;">B: ' + (sB.name || 'Scenario B') + '</strong> — Total invested: $' + resB.totalInvested.toLocaleString() + ', illustrative value: ~$' + displayValB.toLocaleString() + '</div>';
+    var verdict = '';
+    if (displayValA > displayValB) verdict = 'By illustration, scenario A is ahead.';
+    else if (displayValB > displayValA) verdict = 'By illustration, scenario B is ahead.';
+    else verdict = 'By illustration, both scenarios show a similar result.';
+    html += '<div class="dca-compare-verdict" style="margin-bottom: 22px; padding: 16px 18px; background: rgba(255,215,0,0.1); border-radius: 10px; border-left: 4px solid rgba(255,215,0,0.5); text-align: left;"><strong style="color: #ffd700;">Picky expert\'s verdict</strong><p style="color: #cccccc; font-size: 0.95rem; margin: 10px 0 0 0; line-height: 1.5;">' + verdict + ' This is only an example; your real result will depend on the market and the exact days you buy.</p></div>';
+    html += '<div class="dca-compare-questions" style="margin-bottom: 22px; padding: 16px 18px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid rgba(255,215,0,0.25); text-align: left;"><h6 style="color: #ffd700; margin: 0 0 12px 0; font-size: 1rem;">Questions a picky expert would ask</h6><ul style="color: #cccccc; font-size: 0.92rem; line-height: 1.6; margin: 0; padding-left: 20px;"><li>Why does one scenario have more of one coin than the other? Does that match your risk tolerance?</li><li>Are fees included in both? Over a long period, fees can change the result.</li><li>What is your real horizon? Does it match the period of each scenario?</li><li>If the numbers are close, which scenario is easier for you to stick to (e.g. weekly vs monthly)?</li></ul></div>';
+    html += '<div class="dca-compare-advice" style="margin-bottom: 18px; padding: 16px 18px; background: rgba(0,0,0,0.35); border-radius: 10px; border: 1px solid rgba(255,215,0,0.2); text-align: left;"><strong style="color: #ffd700;">One advice under your choice</strong><p style="color: #cccccc; font-size: 0.92rem; margin: 10px 0 0 0; line-height: 1.55;">' + (isClose ? 'Illustratively the result is close. A picky expert would pay attention to lower risk (e.g. more diversification) and whether fees are included, especially over a long horizon.' : 'By illustration one scenario is ahead; but it\'s not a forecast. Consider risk and fees when choosing.') + '</p></div>';
+    html += '<p style="color: #aaaaaa; font-size: 0.88rem; margin: 0;">Education only. Not financial advice.</p>';
     resultDiv.style.display = 'block';
-    resultDiv.innerHTML = '<h5 style="color: #ffd700; margin-bottom: 10px;">Compare two scenarios</h5><p><strong style="color: #ffffff;">A: ' + (sA.name || 'Scenario A') + '</strong> — Total invested: $' + resA.totalInvested.toLocaleString() + ', illustrative value: ~$' + displayValA.toLocaleString() + '</p><p><strong style="color: #ffffff;">B: ' + (sB.name || 'Scenario B') + '</strong> — Total invested: $' + resB.totalInvested.toLocaleString() + ', illustrative value: ~$' + displayValB.toLocaleString() + '</p><p style="color: #aaaaaa; font-size: 0.88rem;">Education only. Not financial advice.</p>';
+    resultDiv.innerHTML = html;
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
