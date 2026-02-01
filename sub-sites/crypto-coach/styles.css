@@ -2269,7 +2269,7 @@ div:has-text("Experience Points") {
     font-size: 0.92rem;
     line-height: 1.6;
     margin: 0 0 12px 0;
-    text-align: left;
+    text-align: center;
 }
 .dca-result-block .dca-expert-block p:last-child {
     margin-bottom: 0;
@@ -2296,13 +2296,14 @@ div:has-text("Experience Points") {
     color: #cccccc;
     font-size: 0.9rem;
     line-height: 1.55;
-    text-align: left;
+    text-align: center;
 }
 .dca-result-block .dca-glossary-block dt {
     color: #ffffff;
     font-weight: 600;
     margin-top: 10px;
     margin-bottom: 2px;
+    text-align: center;
 }
 .dca-result-block .dca-glossary-block dt:first-child {
     margin-top: 0;
@@ -2310,6 +2311,7 @@ div:has-text("Experience Points") {
 .dca-result-block .dca-glossary-block dd {
     margin: 0 0 0 0;
     padding-left: 0;
+    text-align: center;
 }
 .dca-result-block .dca-result-line {
     text-align: center;
@@ -2341,12 +2343,74 @@ div:has-text("Experience Points") {
 }
 .dca-compare-result-block .dca-compare-questions ul {
     margin-top: 8px;
+    text-align: center;
+    list-style-position: inside;
+    padding-left: 0;
+}
+.dca-compare-result-block .dca-compare-verdict,
+.dca-compare-result-block .dca-compare-advice,
+.dca-compare-result-block .dca-compare-buyer {
+    text-align: center;
+}
+.dca-compare-result-block .dca-compare-verdict p,
+.dca-compare-result-block .dca-compare-advice p,
+.dca-compare-result-block .dca-compare-buyer p,
+.dca-compare-result-block .dca-compare-buyer ul {
+    text-align: center;
 }
 .dca-compare-result-block .dca-compare-buyer h6 {
     text-align: center;
 }
 .dca-compare-result-block .dca-compare-buyer ul {
     margin-top: 6px;
+    list-style-position: inside;
+    padding-left: 0;
+}
+.dca-assignment-block .btn-deposit-preset:hover {
+    background: rgba(255,215,0,0.2);
+    border-color: rgba(255,215,0,0.6);
+}
+.btn-strategy-deposit-preset:hover,
+.btn-numbers-deposit-preset:hover {
+    background: rgba(255,215,0,0.2);
+    border-color: rgba(255,215,0,0.6);
+}
+
+/* Module D strategy result: текст и данные по центру */
+.strategy-result-block {
+    text-align: center;
+}
+.strategy-result-block .strategy-card,
+.strategy-result-block #strategiesList > div {
+    text-align: center;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.strategy-result-block .strategy-card p,
+.strategy-result-block .strategy-card ul,
+.strategy-result-block .strategy-card ol,
+.strategy-result-block #strategiesList .strategy-card p,
+.strategy-result-block #strategiesList .strategy-card ul,
+.strategy-result-block #strategiesList .strategy-card ol {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+.strategy-result-block #strategiesList .strategy-card ul,
+.strategy-result-block #strategiesList .strategy-card ol {
+    list-style-position: inside;
+    padding-left: 0;
+}
+
+/* Assignment 4 result: текст и данные по центру */
+.strategy-numbers-result {
+    text-align: center;
+}
+.strategy-numbers-result .strategy-numbers-result-inner,
+.strategy-numbers-result p,
+.strategy-numbers-result h5 {
+    text-align: center;
 }
 
 .btn {

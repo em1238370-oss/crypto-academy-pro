@@ -10,10 +10,10 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=19.0">
+    <link rel="stylesheet" href="styles.css?v=20.0">
    <!-- Chart.js for portfolio graphs -->
    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-   <script src="scripts/table-modules.js?v=21.0"></script>
+   <script src="scripts/table-modules.js?v=22.0"></script>
   <script src="scripts/backtesting-functions.js" defer></script>
 </head>
 <body>
@@ -1196,8 +1196,14 @@
                                    </div>
                                    <div class="form-group">
                                        <label style="color: #ffffff;">Deposit (USD) — amount you plan to use for this strategy:</label>
-                                       <input type="number" id="strategyDeposit" min="100" max="10000000" value="5000" step="100" style="width: 160px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
-                                       <small style="color: #cccccc; display: block; margin-top: 8px;">💡 Used to calculate approximate position sizes and risk. Enter only the sum you are ready to allocate. No real money involved here.</small>
+                                       <span style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                           <button type="button" class="btn-strategy-deposit-preset" data-amount="500" style="padding: 6px 12px; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.4); background: rgba(0,0,0,0.4); color: #ffd700; cursor: pointer;">$500</button>
+                                           <button type="button" class="btn-strategy-deposit-preset" data-amount="1000" style="padding: 6px 12px; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.4); background: rgba(0,0,0,0.4); color: #ffd700; cursor: pointer;">$1,000</button>
+                                           <button type="button" class="btn-strategy-deposit-preset" data-amount="5000" style="padding: 6px 12px; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.4); background: rgba(0,0,0,0.4); color: #ffd700; cursor: pointer;">$5,000</button>
+                                           <button type="button" class="btn-strategy-deposit-preset" data-amount="10000" style="padding: 6px 12px; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.4); background: rgba(0,0,0,0.4); color: #ffd700; cursor: pointer;">$10,000</button>
+                                           <input type="number" id="strategyDeposit" min="100" max="10000000" value="5000" step="100" style="width: 160px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
+                                       </span>
+                                       <small style="color: #cccccc; display: block; margin-top: 8px;">💡 Used to calculate approximate position sizes and risk. Choose a preset or enter your amount — the result below will show this deposit.</small>
                                    </div>
 
                                    <h4 style="color: #ffffff; margin-top: 28px; margin-bottom: 12px;">2. Goal and timeframe</h4>
@@ -1302,7 +1308,7 @@
                                        <button class="btn btn-red" onclick="saveCurrentStrategy()" style="margin-left: 12px; padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">💾 Save strategy</button>
                                    </div>
 
-                                   <div class="section-box" id="strategiesResult" style="display: none; margin-top: 24px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.2); padding: 24px;">
+                                   <div class="section-box strategy-result-block" id="strategiesResult" style="display: none; margin-top: 24px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.2); padding: 24px;">
                                        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px;">
                                            <h4 style="color: #ffffff; margin: 0;">Your strategy result</h4>
                                            <button type="button" class="btn btn-red" onclick="copyStrategySummaryToClipboard()" style="padding: 8px 16px; font-size: 0.9rem; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 215, 0, 0.5); background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(200, 165, 0, 0.3) 100%); color: #ffffff;">📋 Copy summary</button>
@@ -1349,8 +1355,14 @@
                                            <p style="color: #cccccc; font-size: 0.9rem; margin-top: 10px; line-height: 1.5;">DCA (Dollar Cost Averaging) means investing a fixed amount on a schedule (e.g. every week or every month) instead of one big lump sum. That way you buy more when the price is low and less when it is high, which can smooth out volatility and reduce the risk of buying everything at a bad time. It does not guarantee profit — it is just one way to discipline yourself and spread risk over time.</p>
                                        </details>
                                        <div class="dca-form-row">
-                                           <label for="dcaExperimentAmount">Amount per month (USD):</label>
-                                           <input type="number" id="dcaExperimentAmount" min="10" max="100000" value="100" step="10" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> <span style="color: #cccccc;">$</span>
+                                           <label for="dcaExperimentAmount">Deposit (monthly, USD):</label>
+                                           <span style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                                               <button type="button" class="btn-deposit-preset" data-amount="50" style="padding: 6px 12px; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.4); background: rgba(0,0,0,0.4); color: #ffd700; cursor: pointer;">$50</button>
+                                               <button type="button" class="btn-deposit-preset" data-amount="100" style="padding: 6px 12px; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.4); background: rgba(0,0,0,0.4); color: #ffd700; cursor: pointer;">$100</button>
+                                               <button type="button" class="btn-deposit-preset" data-amount="200" style="padding: 6px 12px; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.4); background: rgba(0,0,0,0.4); color: #ffd700; cursor: pointer;">$200</button>
+                                               <button type="button" class="btn-deposit-preset" data-amount="500" style="padding: 6px 12px; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.4); background: rgba(0,0,0,0.4); color: #ffd700; cursor: pointer;">$500</button>
+                                               <input type="number" id="dcaExperimentAmount" min="10" max="100000" value="100" step="10" style="width: 100px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;"> <span style="color: #cccccc;">$</span>
+                                           </span>
                                        </div>
                                        <div class="dca-form-row">
                                            <label for="dcaExperimentPeriod">Period:</label>
@@ -1541,10 +1553,17 @@
                                    <div class="section-box module-d-assignment">
                                        <span class="module-d-assignment-badge">4</span>
                                        <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 4: Strategy in numbers — how much in the end and what risk</h4>
-                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Enter your deposit, horizon and risk — get an <strong style="color: #ffffff;">illustrative</strong> summary: approximate total invested, possible outcome range and risk level. For education only; real results depend on the market.</p>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Choose or enter your deposit, horizon and risk — get an <strong style="color: #ffffff;">illustrative</strong> summary tied to your deposit: possible outcome range and risk level. For education only; real results depend on the market.</p>
                                        <div class="form-group">
                                            <label style="color: #ffffff;">Initial deposit (USD):</label>
-                                           <input type="number" id="strategyNumbersDeposit" min="100" max="1000000" value="5000" step="100" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
+                                           <span style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                                               <button type="button" class="btn-numbers-deposit-preset" data-amount="500" style="padding: 6px 12px; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.4); background: rgba(0,0,0,0.4); color: #ffd700; cursor: pointer;">$500</button>
+                                               <button type="button" class="btn-numbers-deposit-preset" data-amount="1000" style="padding: 6px 12px; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.4); background: rgba(0,0,0,0.4); color: #ffd700; cursor: pointer;">$1,000</button>
+                                               <button type="button" class="btn-numbers-deposit-preset" data-amount="5000" style="padding: 6px 12px; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.4); background: rgba(0,0,0,0.4); color: #ffd700; cursor: pointer;">$5,000</button>
+                                               <button type="button" class="btn-numbers-deposit-preset" data-amount="10000" style="padding: 6px 12px; font-size: 0.9rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.4); background: rgba(0,0,0,0.4); color: #ffd700; cursor: pointer;">$10,000</button>
+                                               <input type="number" id="strategyNumbersDeposit" min="100" max="1000000" value="5000" step="100" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
+                                           </span>
+                                           <small style="color: #cccccc; display: block; margin-top: 8px;">💡 The result below is tied to the deposit you choose here.</small>
                                        </div>
                                        <div class="form-group">
                                            <label style="color: #ffffff;">Horizon:</label>
@@ -1559,7 +1578,7 @@
                                            <input type="number" id="strategyNumbersRisk" min="1" max="100" value="50" style="width: 80px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;">
                                        </div>
                                        <button type="button" class="btn btn-red" onclick="runStrategyInNumbers()" style="padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Show numbers</button>
-                                       <div id="strategyNumbersResult" class="result-box" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
+                                       <div id="strategyNumbersResult" class="result-box strategy-numbers-result" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
                                    </div>
 
                                    <!-- Assignment 5: Rebalance experiment -->

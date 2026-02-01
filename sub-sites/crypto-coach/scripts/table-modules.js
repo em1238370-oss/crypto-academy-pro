@@ -7735,7 +7735,7 @@ function generateStrategies() {
 
     strategiesList.innerHTML = '<div class="strategy-card" style="margin-bottom: 20px; padding: 18px; background: rgba(0, 0, 0, 0.35); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15);">' +
         '<h5 style="color: #ffd700; margin-bottom: 12px;">1. Your choices summary</h5>' +
-        '<p style="color: #aaaaaa; font-size: 0.9rem; margin-bottom: 14px; line-height: 1.5;">This block repeats the inputs you selected above. Use it to confirm deposit, goal, horizon, entry/exit rules, and risk limits before looking at the strategy variants.</p>' +
+        '<p style="color: #aaaaaa; font-size: 0.9rem; margin-bottom: 14px; line-height: 1.5;">This block repeats the inputs you selected above. The <strong style="color: #ffffff;">deposit</strong> and all position sizes below are tied to the amount you chose. Use it to confirm deposit, goal, horizon, entry/exit rules, and risk limits before looking at the strategy variants.</p>' +
         summary + '</div>' +
         strategies.map((strategy, idx) => {
             const exp = strategyExplanations[strategy.name] || { who: '', dist: '', steps: '', takeaway: '' };
@@ -7967,7 +7967,7 @@ window.runDcaExperiment = function runDcaExperiment() {
     else if (frequency === 'biweekly') { perAmount = Math.round(amount / 2); everyDays = 14; freqText = 'You would add ~$' + perAmount + ' every ' + everyDays + ' days.'; }
     else { freqText = 'You would add $' + amount + ' every month (~every 30 days).'; }
 
-    var copyText = 'DCA — Over ' + months + ' months you would have invested $' + totalInvested.toLocaleString() + ' and illustrative value ~$' + totalValue.toLocaleString();
+    var copyText = 'DCA — Deposit (total invested) $' + totalInvested.toLocaleString() + ' over ' + months + ' months → illustrative value ~$' + totalValue.toLocaleString();
     if (includeFee) copyText += ' (after 0.5% fee: ~$' + valueAfterFee.toLocaleString() + ')';
     copyText += '. ' + freqText;
     lines.forEach(function(l) {
@@ -7976,10 +7976,10 @@ window.runDcaExperiment = function runDcaExperiment() {
     if (lumpSumValue !== null) copyText += ' | Lump sum: ~$' + lumpSumValue.toLocaleString();
     copyText += ' — Education only. Not financial advice.';
 
-    var html = '<div class="dca-result-section dca-result-summary-box"><strong style="color: #ffffff;">One-line summary:</strong> Over ' + months + ' months you would have invested $' + totalInvested.toLocaleString() + ' and illustrative value ~$' + totalValue.toLocaleString() + (includeFee ? ' (after fee: ~$' + valueAfterFee.toLocaleString() + ')' : '') + '.</div>';
+    var html = '<div class="dca-result-section dca-result-summary-box"><strong style="color: #ffffff;">One-line summary:</strong> Deposit (total invested) $' + totalInvested.toLocaleString() + ' over ' + months + ' months → illustrative value ~$' + totalValue.toLocaleString() + (includeFee ? ' (after fee: ~$' + valueAfterFee.toLocaleString() + ')' : '') + '.</div>';
     html += '<div class="dca-result-section dca-result-line" style="color: #cccccc; font-size: 0.9rem;">' + freqText + '</div>';
     html += '<div class="dca-result-section"><h5 style="color: #ffd700; margin: 0 0 14px 0; font-size: 1.05rem;">DCA over the last ' + months + ' months</h5>';
-    html += '<p class="dca-result-line" style="margin: 0 0 12px 0;"><strong style="color: #ffffff;">Total invested:</strong> $' + totalInvested.toLocaleString() + '</p>';
+    html += '<p class="dca-result-line" style="margin: 0 0 12px 0;"><strong style="color: #ffffff;">Deposit (total invested over the period):</strong> $' + totalInvested.toLocaleString() + '</p>';
     lines.forEach(function(l) {
         html += '<p class="dca-result-line" style="margin: 0 0 12px 0;"><strong style="color: #ffffff;">' + l.coin + ' (' + l.alloc + '%):</strong> invested $' + l.invested.toLocaleString() + ' → illustrative value ~$' + l.value.toLocaleString() + '</p>';
     });
@@ -8161,8 +8161,8 @@ window.compareDcaScenarios = function compareDcaScenarios() {
     var pct = (resA.totalInvested + resB.totalInvested) / 2;
     var isClose = pct > 0 && (diff / pct < 0.05);
     var html = '<h5 class="dca-compare-title" style="color: #ffd700; margin: 0 0 18px 0; font-size: 1.1rem;">Compare two scenarios</h5>';
-    html += '<div class="dca-compare-row" style="margin-bottom: 14px; padding: 14px 16px; background: rgba(255,255,255,0.04); border-radius: 8px; text-align: left;"><strong style="color: #ffffff;">A: ' + (sA.name || 'Scenario A') + '</strong> — Total invested: $' + resA.totalInvested.toLocaleString() + ', illustrative value: ~$' + displayValA.toLocaleString() + '</div>';
-    html += '<div class="dca-compare-row" style="margin-bottom: 22px; padding: 14px 16px; background: rgba(255,255,255,0.04); border-radius: 8px; text-align: left;"><strong style="color: #ffffff;">B: ' + (sB.name || 'Scenario B') + '</strong> — Total invested: $' + resB.totalInvested.toLocaleString() + ', illustrative value: ~$' + displayValB.toLocaleString() + '</div>';
+    html += '<div class="dca-compare-row" style="margin-bottom: 14px; padding: 14px 16px; background: rgba(255,255,255,0.04); border-radius: 8px; text-align: left;"><strong style="color: #ffffff;">A: ' + (sA.name || 'Scenario A') + '</strong> — Deposit (total invested): $' + resA.totalInvested.toLocaleString() + ', illustrative value: ~$' + displayValA.toLocaleString() + '</div>';
+    html += '<div class="dca-compare-row" style="margin-bottom: 22px; padding: 14px 16px; background: rgba(255,255,255,0.04); border-radius: 8px; text-align: left;"><strong style="color: #ffffff;">B: ' + (sB.name || 'Scenario B') + '</strong> — Deposit (total invested): $' + resB.totalInvested.toLocaleString() + ', illustrative value: ~$' + displayValB.toLocaleString() + '</div>';
     var verdict = '';
     if (displayValA > displayValB) verdict = 'By illustration, scenario A is ahead.';
     else if (displayValB > displayValA) verdict = 'By illustration, scenario B is ahead.';
@@ -8216,10 +8216,13 @@ window.runStrategyInNumbers = function runStrategyInNumbers() {
     const illustrativeHigh = Math.round(deposit * (1 + possibleUp / 100));
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = `
-        <h5 style="color: #ffd700; margin-bottom: 10px;">Strategy in numbers</h5>
-        <p><strong style="color: #ffffff;">Deposit:</strong> $${deposit.toLocaleString()} · <strong style="color: #ffffff;">Horizon:</strong> ${horizonMonths} months · <strong style="color: #ffffff;">Risk:</strong> ${riskLabel} (${risk})</p>
-        <p><strong style="color: #ffffff;">Illustrative outcome range:</strong> from ~$${illustrativeLow.toLocaleString()} (−${possibleDown}%) to ~$${illustrativeHigh.toLocaleString()} (+${possibleUp}%).</p>
-        <p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 12px;">This is for education only. Real results depend on the market and your execution. Manage risk according to your situation.</p>
+        <div class="strategy-numbers-result-inner" style="text-align: center; max-width: 560px; margin: 0 auto;">
+            <h5 style="color: #ffd700; margin-bottom: 14px;">Strategy in numbers</h5>
+            <p style="margin-bottom: 12px;"><strong style="color: #ffffff;">Deposit (your choice):</strong> <span style="color: #ffd700;">$${deposit.toLocaleString()}</span></p>
+            <p style="margin-bottom: 12px;"><strong style="color: #ffffff;">Horizon:</strong> ${horizonMonths} months · <strong style="color: #ffffff;">Risk:</strong> ${riskLabel} (${risk})</p>
+            <p style="margin-bottom: 12px;"><strong style="color: #ffffff;">Illustrative outcome range for this deposit:</strong><br>from ~$${illustrativeLow.toLocaleString()} (−${possibleDown}%) to ~$${illustrativeHigh.toLocaleString()} (+${possibleUp}%).</p>
+            <p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 14px;">This is for education only. Real results depend on the market and your execution. Manage risk according to your situation.</p>
+        </div>
     `;
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
@@ -8868,6 +8871,23 @@ document.addEventListener('DOMContentLoaded', function() {
         loadStrategyOptimizerForm(); // Load saved Strategy Optimizer form data
         loadPredictiveForm(); // Load saved Predictive Analytics form data
     }, 500);
+    // Deposit preset buttons: DCA, Module D strategy, Assignment 4
+    document.addEventListener('click', function(e) {
+        var target = e.target && (e.target.closest('.btn-deposit-preset') || e.target.closest('.btn-strategy-deposit-preset') || e.target.closest('.btn-numbers-deposit-preset'));
+        if (!target) return;
+        var amount = target.getAttribute('data-amount');
+        if (!amount) return;
+        if (target.classList.contains('btn-deposit-preset')) {
+            var el = document.getElementById('dcaExperimentAmount');
+            if (el) el.value = amount;
+        } else if (target.classList.contains('btn-strategy-deposit-preset')) {
+            var el = document.getElementById('strategyDeposit');
+            if (el) el.value = amount;
+        } else if (target.classList.contains('btn-numbers-deposit-preset')) {
+            var el = document.getElementById('strategyNumbersDeposit');
+            if (el) el.value = amount;
+        }
+    });
 });
 
 // ========== EXPERIMENT FORM MANAGEMENT ==========
