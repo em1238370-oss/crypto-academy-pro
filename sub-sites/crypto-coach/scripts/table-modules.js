@@ -8227,8 +8227,8 @@ window.runWhatIfScenario = function runWhatIfScenario() {
         numbersText = 'At +100% your portfolio would be ≈ $' + doubleVal.toLocaleString() + ' (+$' + portfolio.toLocaleString() + ').';
         numbersExplain = 'In plain words: your $' + portfolio.toLocaleString() + ' would double to about $' + doubleVal.toLocaleString() + ' in this scenario.';
     } else if (scenario === 'urgent') {
-        numbersText = 'If you had to sell everything, you would have ≈ $' + portfolio.toLocaleString() + '.';
-        numbersExplain = 'In plain words: if you sold everything today, you would get about $' + portfolio.toLocaleString() + '. It is important to keep some money outside crypto (emergency fund) so you do not have to sell at a bad time.';
+        numbersText = 'If you sold everything, you would have ≈ $' + portfolio.toLocaleString() + '.';
+        numbersExplain = '';
     } else if (scenario === 'crash50') {
         var c50Val = Math.round(portfolio * 0.5);
         var c50Loss = Math.round(portfolio * 0.5);
@@ -8237,6 +8237,15 @@ window.runWhatIfScenario = function runWhatIfScenario() {
     } else if (scenario === 'sideways') {
         numbersText = 'In a sideways market your portfolio might stay around $' + portfolio.toLocaleString() + ' (no big move up or down).';
         numbersExplain = 'In plain words: prices move little for months; your portfolio could stay near $' + portfolio.toLocaleString() + '.';
+    }
+    var a = answer.toLowerCase();
+    var urgentIsRecoverCapital = scenario === 'urgent' && (/\b(recover|initial capital|don't worry|peace of mind|take profit|secure|fomo|leave profits|profits invested)\b/.test(a) || /\bcapital.*invested|invested.*capital\b/.test(a)) && !/\b(need money|bills|family|emergency|need cash|have to sell)\b/.test(a);
+    if (scenario === 'urgent') {
+        if (urgentIsRecoverCapital) {
+            numbersExplain = 'In plain words: if you sell enough to recover your initial capital, the rest stays invested. The number above is your total portfolio if you sold everything — use it to decide how much to sell to get your initial back.';
+        } else {
+            numbersExplain = 'In plain words: if you sold everything today, you would get about $' + portfolio.toLocaleString() + '. It is important to keep some money outside crypto (emergency fund) so you do not have to sell at a bad time.';
+        }
     }
 
     var usualDo = '';
@@ -8249,8 +8258,13 @@ window.runWhatIfScenario = function runWhatIfScenario() {
         usualDo = 'When a coin doubles, some take part of the profit and leave the rest to run. Others sell everything. Defining in advance what you will do (e.g. sell 30%) reduces regret and FOMO.';
         usualDoMistake = 'A common mistake is changing the plan in the moment (selling everything or holding everything) instead of sticking to what you wrote.';
     } else if (scenario === 'urgent') {
-        usualDo = 'When money is needed urgently, selling at a loss is common. To avoid this, experts suggest keeping an emergency fund in stable assets and not investing money you might need soon.';
-        usualDoMistake = 'A common mistake is having no cash buffer; then you are forced to sell crypto when prices are down.';
+        if (urgentIsRecoverCapital) {
+            usualDo = 'Some people sell part to recover their initial investment and stop worrying; the rest stays invested. Others sell everything to lock in gains. Defining in advance how much you sell (e.g. enough to recover your initial capital) reduces FOMO and regret.';
+            usualDoMistake = 'A common mistake is changing the plan in the moment (selling everything or holding everything) instead of sticking to what you wrote (e.g. recover initial, leave profits).';
+        } else {
+            usualDo = 'When money is needed urgently, selling at a loss is common. To avoid this, experts suggest keeping an emergency fund in stable assets and not investing money you might need soon.';
+            usualDoMistake = 'A common mistake is having no cash buffer; then you are forced to sell crypto when prices are down.';
+        }
     } else if (scenario === 'crash50') {
         usualDo = 'A 50% drop is stressful. Many hold hoping for a rebound, or sell to cap losses. Deciding in advance how much loss you can accept (e.g. stop-loss at −30%) helps you act consistently.';
         usualDoMistake = 'A common mistake is deciding in panic; a pre-written rule (e.g. "sell 20% if it drops 40%") helps you stay consistent.';
@@ -8265,7 +8279,11 @@ window.runWhatIfScenario = function runWhatIfScenario() {
     } else if (scenario === 'double') {
         timeline = '<strong>Day 1–7:</strong> Price rises. — <strong>Week 2–4:</strong> Momentum; decide in advance whether to take partial profit. — <strong>Month:</strong> Re-evaluate; stick to the rule you set (e.g. sell 30% at +100%).';
     } else if (scenario === 'urgent') {
-        timeline = '<strong>When it happens:</strong> You need cash. — <strong>Best case:</strong> You have an emergency fund and do not touch crypto. — <strong>Worst case:</strong> You sell at a loss; lesson for next time: keep a cash buffer.';
+        if (urgentIsRecoverCapital) {
+            timeline = '<strong>When you decide to secure capital:</strong> You sell enough to recover your initial. — <strong>Rest stays invested:</strong> Profits remain in the market. — <strong>If it doubles again:</strong> You can repeat the process (e.g. take initial back again).';
+        } else {
+            timeline = '<strong>When it happens:</strong> You need cash. — <strong>Best case:</strong> You have an emergency fund and do not touch crypto. — <strong>Worst case:</strong> You sell at a loss; lesson for next time: keep a cash buffer.';
+        }
     } else if (scenario === 'sideways') {
         timeline = '<strong>Month 1–3:</strong> Range-bound; no big moves. — <strong>Month 4–6:</strong> Still sideways; avoid overtrading. — <strong>Lesson:</strong> Patience; use DCA or rebalance instead of timing the market.';
     } else timeline = '—';
@@ -8290,7 +8308,6 @@ window.runWhatIfScenario = function runWhatIfScenario() {
     comparisonHtml += '</div>';
 
     var checklist = [];
-    var a = answer.toLowerCase();
     if (/\b(stop[- ]?loss|stoploss)\b/.test(a)) checklist.push('Stop-loss mentioned');
     if (/\b(sell|exit|cash out)\b/.test(a)) checklist.push('Selling / exit considered');
     if (/\b(hold|keep|don\'t sell|not sell)\b/.test(a)) checklist.push('Holding considered');
@@ -8307,7 +8324,11 @@ window.runWhatIfScenario = function runWhatIfScenario() {
         if (/sell|profit|take/.test(a)) recommend.push('Taking profit is disciplined. Decide the % to sell (e.g. 30% at +100%) so you lock in gains and still participate if it goes higher.');
         else recommend.push('Consider defining in advance: at +100% do you sell part, all, or hold? A written rule reduces FOMO and regret.');
     } else if (scenario === 'urgent') {
-        recommend.push('If you need money urgently, selling is often the only option. For next time: keep an emergency fund in stable assets so you don’t have to sell crypto at a bad moment.');
+        if (urgentIsRecoverCapital) {
+            recommend.push('Selling to recover your initial capital and leave profits invested is a clear rule. Define in advance what "initial capital" means (the exact sum) so you act without hesitation. If it doubles again, repeating the process keeps your plan consistent.');
+        } else {
+            recommend.push('If you need money urgently, selling is often the only option. For next time: keep an emergency fund in stable assets so you don’t have to sell crypto at a bad moment.');
+        }
     } else if (scenario === 'sideways') {
         recommend.push('In sideways markets, avoid overtrading. Stick to DCA or rebalance on a schedule; patience usually beats chasing short-term moves.');
     } else {
@@ -8324,7 +8345,11 @@ window.runWhatIfScenario = function runWhatIfScenario() {
         if (/sell|profit|take/.test(a)) expertOnAnswer = 'You wrote that you would take profit or sell part. A picky expert would ask: what percentage do you sell, and at what level? (e.g. "I sell 30% when it doubles".) Writing it down reduces regret and FOMO when the price keeps going up.';
         else expertOnAnswer = 'You wrote what you would do when the coin doubles. A picky expert would ask: do you sell part, all, or hold? If you sell part, what percentage? A clear rule (e.g. "sell 20% at +100%") helps you act instead of hesitating.';
     } else if (scenario === 'urgent') {
-        expertOnAnswer = 'You wrote what you would do if you needed money urgently. A picky expert would say: if you have to sell, you have to sell — but for next time, keep an emergency fund in stable assets so you do not have to sell crypto at a bad moment. Your plan is a reminder of that.';
+        if (urgentIsRecoverCapital) {
+            expertOnAnswer = 'You wrote that you would sell enough to recover your initial capital and leave the profits invested. A picky expert would say: that is a clear rule — you secure your stake and let the rest run. Define in advance what "recover 100% of my initial capital" means (the exact sum or %) so you act without hesitation. If it doubles again and you repeat the process, your plan stays consistent. Do not add reasons (e.g. "need money for family") that you did not write — stick to what you said.';
+        } else {
+            expertOnAnswer = 'You wrote what you would do if you needed money urgently. A picky expert would say: if you have to sell, you have to sell — but for next time, keep an emergency fund in stable assets so you do not have to sell crypto at a bad moment. Your plan is a reminder of that.';
+        }
     } else if (scenario === 'sideways') {
         expertOnAnswer = 'You wrote what you would do in a sideways market. A picky expert would ask: do you stick to DCA, rebalance on a schedule, or do nothing? Writing it down (e.g. "I DCA every month and do not change the plan for 6 months") helps you avoid overtrading.';
     } else {
