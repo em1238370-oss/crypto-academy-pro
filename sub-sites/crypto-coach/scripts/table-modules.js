@@ -8338,15 +8338,32 @@ window.runRiskDna = async function runRiskDna() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
             body: JSON.stringify({ model: 'mistral-small', messages: [
-                { role: 'system', content: 'Behavioral finance expert. Analyze the user\'s reaction to the crypto scenario. Return ONLY valid JSON.' },
-                { role: 'user', content: `Scenario: "${scenario}". User would: ${action}. Q2(horizon)=${q2}, Q3(money)=${q3}. Analyze: what's their strength/weakness in this scenario? JSON: profileName (e.g. "Cautious Turtle"), profileEmoji, description, expectedRange12mo, riskLevel (1-10), recommendation.` }
-            ], temperature: 0.9, max_tokens: 500 })
+                { role: 'system', content: 'Behavioral finance expert. Analyze the user\'s reaction to the crypto scenario. Return ONLY valid JSON. Be concise but informative.' },
+                { role: 'user', content: `Scenario: "${scenario}". User would: ${action}. Q2(horizon)=${q2}, Q3(money)=${q3}. Analyze their risk profile. JSON: profileName (e.g. "Cautious Turtle"), profileEmoji, description, expectedRange12mo, riskLevel (1-10), recommendation, strengths (array of 2-3 items — what they do well in stress), watchOut (array of 2-3 items — where this profile tends to slip), quickTips (array of 3 items — what to do), thingsToAvoid (array of 3 items — what to avoid), emotionalPattern (1-2 sentences — how they typically react, e.g. FOMO on pumps, fear on dumps), whenToReconsider (1-2 sentences — conditions to change strategy).` }
+            ], temperature: 0.9, max_tokens: 950 })
         });
         const data = await response.json();
         if (data.choices?.[0]) {
             let content = data.choices[0].message.content.trim().replace(/```json\n?|\n?```/g, '').trim();
             const p = JSON.parse(content);
-            resultDiv.innerHTML = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,165,0,0.4);"><div style="color: #ffa500; font-size: 1.5rem; font-weight: bold;">' + (p.profileEmoji || '🧬') + ' ' + (p.profileName || 'Profile').replace(/</g, '&lt;') + '</div><div style="color: #fff; line-height: 1.6; margin: 10px 0;">' + (p.description || '').replace(/</g, '&lt;') + '</div><div style="color: #ffd700;">Expected 12mo: ' + (p.expectedRange12mo || '').replace(/</g, '&lt;') + '</div><div style="color: #ffa500;">Risk: ' + (p.riskLevel || '?') + '/10</div><div style="color: #ffd700; margin-top: 10px;">💡 ' + (p.recommendation || '').replace(/</g, '&lt;') + '</div></div>';
+            const esc = (s) => (s || '').toString().replace(/</g, '&lt;');
+            const strengths = Array.isArray(p.strengths) ? p.strengths : [p.strengths].filter(Boolean);
+            const watchOut = Array.isArray(p.watchOut) ? p.watchOut : [p.watchOut].filter(Boolean);
+            const quickTips = Array.isArray(p.quickTips) ? p.quickTips : [p.quickTips].filter(Boolean);
+            const thingsToAvoid = Array.isArray(p.thingsToAvoid) ? p.thingsToAvoid : [p.thingsToAvoid].filter(Boolean);
+            let html = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,165,0,0.4); text-align: left;">';
+            html += '<div style="color: #ffa500; font-size: 1.5rem; font-weight: bold; text-align: center;">' + (p.profileEmoji || '🧬') + ' ' + esc(p.profileName || 'Profile') + '</div>';
+            html += '<div style="color: #fff; line-height: 1.6; margin: 10px 0;">' + esc(p.description) + '</div>';
+            html += '<div style="color: #ffd700;">Expected 12mo: ' + esc(p.expectedRange12mo) + '</div><div style="color: #ffa500;">Risk: ' + (p.riskLevel || '?') + '/10</div>';
+            html += '<div style="color: #ffd700; margin-top: 10px;">💡 ' + esc(p.recommendation) + '</div>';
+            if (strengths.length) html += '<div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,215,0,0.3);"><div style="color: #ffd700; font-weight: bold; margin-bottom: 6px;">✓ Strengths</div><ul style="color: #fff; margin: 0; padding-left: 20px; line-height: 1.5;">' + strengths.map(s => '<li>' + esc(s) + '</li>').join('') + '</ul></div>';
+            if (watchOut.length) html += '<div style="margin-top: 12px;"><div style="color: #ffa500; font-weight: bold; margin-bottom: 6px;">⚠ Watch out</div><ul style="color: #fff; margin: 0; padding-left: 20px; line-height: 1.5;">' + watchOut.map(w => '<li>' + esc(w) + '</li>').join('') + '</ul></div>';
+            if (quickTips.length) html += '<div style="margin-top: 12px;"><div style="color: #ffd700; font-weight: bold; margin-bottom: 6px;">📌 3 quick tips</div><ul style="color: #fff; margin: 0; padding-left: 20px; line-height: 1.5;">' + quickTips.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul></div>';
+            if (thingsToAvoid.length) html += '<div style="margin-top: 12px;"><div style="color: #ffa500; font-weight: bold; margin-bottom: 6px;">🚫 3 things to avoid</div><ul style="color: #fff; margin: 0; padding-left: 20px; line-height: 1.5;">' + thingsToAvoid.map(a => '<li>' + esc(a) + '</li>').join('') + '</ul></div>';
+            if (p.emotionalPattern) html += '<div style="margin-top: 12px; padding: 10px; background: rgba(255,165,0,0.1); border-radius: 8px; border-left: 3px solid #ffa500;"><div style="color: #ffa500; font-weight: bold; margin-bottom: 4px;">🧠 Your emotional pattern</div><div style="color: #fff; line-height: 1.5;">' + esc(p.emotionalPattern) + '</div></div>';
+            if (p.whenToReconsider) html += '<div style="margin-top: 12px; padding: 10px; background: rgba(255,215,0,0.1); border-radius: 8px; border-left: 3px solid #ffd700;"><div style="color: #ffd700; font-weight: bold; margin-bottom: 4px;">🔄 When to reconsider</div><div style="color: #fff; line-height: 1.5;">' + esc(p.whenToReconsider) + '</div></div>';
+            html += '</div>';
+            resultDiv.innerHTML = html;
         } else { resultDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable.</span>'; }
     } catch (err) { resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>'; }
 };
