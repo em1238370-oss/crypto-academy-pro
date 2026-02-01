@@ -1667,6 +1667,25 @@ div:has-text("Experience Points") {
     margin-bottom: 20px;
 }
 
+.mini-summary-card {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 165, 0, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.mini-summary-card h5 {
+    color: #ffa500 !important;
+}
+
+.mini-summary-card > div {
+    color: #ffffff;
+    line-height: 1.7;
+    font-size: 1rem;
+}
+
 /* aiScenarioResult - header centered via parent, content left for readability */
 
 .module-c-content .result-box,

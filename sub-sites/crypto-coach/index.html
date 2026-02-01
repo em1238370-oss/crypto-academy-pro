@@ -666,6 +666,27 @@
                                        <h4 class="section-box-header">Assignment 3: What would I do if…?</h4>
                                        <label style="text-align: center;">Scenario Description:</label>
                                        <textarea id="experimentScenario" rows="3" placeholder="e.g.: What if BTC drops 20%? How will this affect my portfolio?"></textarea>
+                                       <button class="btn btn-red" onclick="generateAssignment3MiniSummaries()" style="margin-top: 15px; width: 100%;">
+                                           📋 Generate Mini-Summaries (Diverse Each Time)
+                                       </button>
+                                       <div id="assignment3MiniSummaries" style="margin-top: 20px; display: none;">
+                                           <div class="mini-summary-card" style="text-align: center;">
+                                               <h5 style="color: #ffa500; margin-bottom: 10px;">📊 Illustrative Numbers (Your Portfolio)</h5>
+                                               <div id="illustrativeNumbers"></div>
+                                           </div>
+                                           <div class="mini-summary-card" style="text-align: center;">
+                                               <h5 style="color: #ffa500; margin-bottom: 10px;">⚖️ Comparison — Three Scenarios (Same Portfolio)</h5>
+                                               <div id="threeScenarios"></div>
+                                           </div>
+                                           <div class="mini-summary-card" style="text-align: center;">
+                                               <h5 style="color: #ffa500; margin-bottom: 10px;">👥 What People Usually Do in This Scenario</h5>
+                                               <div id="whatPeopleDo"></div>
+                                           </div>
+                                           <div class="mini-summary-card" style="text-align: center;">
+                                               <h5 style="color: #ffa500; margin-bottom: 10px;">🎯 Picky Expert's Opinion («In this case I would…»)</h5>
+                                               <div id="expertOpinion"></div>
+                                           </div>
+                                       </div>
                                    </div>
                                    <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 20px;">
                                        <label style="margin-bottom: 15px; color: #ffffff; font-size: 1.1rem; font-weight: 600; display: block; text-align: center;">AI Scenario Builder (Universal)</label>

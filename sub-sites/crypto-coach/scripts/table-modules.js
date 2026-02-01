@@ -2756,6 +2756,103 @@ IMPORTANT INSTRUCTIONS FOR PROFESSIONAL ANALYSIS:
     }
 }
 
+// Assignment 3: Mini-Summaries with VARIETY (different content each time)
+async function generateAssignment3MiniSummaries() {
+    const scenario = document.getElementById('experimentScenario')?.value?.trim() || 
+                    document.getElementById('aiScenarioInput')?.value?.trim();
+    const portfolio = parseFloat(document.getElementById('userDeposit')?.value || 10000);
+    const coin = document.getElementById('experimentCoin')?.value || 'BTC';
+    
+    const container = document.getElementById('assignment3MiniSummaries');
+    const illustrativeDiv = document.getElementById('illustrativeNumbers');
+    const threeScenariosDiv = document.getElementById('threeScenarios');
+    const whatPeopleDoDiv = document.getElementById('whatPeopleDo');
+    const expertOpinionDiv = document.getElementById('expertOpinion');
+    
+    if (!container || !illustrativeDiv || !threeScenariosDiv || !whatPeopleDoDiv || !expertOpinionDiv) return;
+    
+    if (!scenario) {
+        alert('Please enter a scenario description first (or use AI Scenario Builder above)');
+        return;
+    }
+    
+    // Show loading
+    container.style.display = 'block';
+    illustrativeDiv.innerHTML = '<span style="color: #ffa500;">Loading...</span>';
+    threeScenariosDiv.innerHTML = '';
+    whatPeopleDoDiv.innerHTML = '';
+    expertOpinionDiv.innerHTML = '';
+    
+    const varietySeed = Date.now() + Math.random().toString(36).substr(2, 9);
+    
+    const prompt = `You are a crypto education expert. The user has portfolio $${portfolio.toLocaleString('en-US')} and asks: "${scenario}"
+
+Generate EXACTLY 4 mini-summaries. Use STRICT JSON format - no markdown, no extra text:
+
+{
+  "illustrativeNumbers": "2-3 sentences with specific numbers: show portfolio impact, potential gains/losses, key metrics for ${coin}. Use varied phrasing.",
+  "threeScenarios": "Compare 3 different outcomes (bullish/base/bearish or conservative/moderate/aggressive) for the SAME $${portfolio.toLocaleString()} portfolio. Each scenario: different % and outcome. Vary wording.",
+  "whatPeopleDo": "2-3 sentences: what typical investors do in this scenario (panic sell, HODL, DCA, etc). Use different phrases each time - avoid repetition.",
+  "expertOpinion": "2-3 sentences starting with 'In this case I would...' - picky expert's view. Use unique angle, different reasoning. Vary structure."
+}
+
+CRITICAL DIVERSITY RULES:
+- Each generation MUST be COMPLETELY DIFFERENT from any previous response
+- Use different statistics, different analogies, different historical examples
+- Vary sentence structure, synonyms, and phrasing
+- Expert opinion: use different persona each time (risk-averse, contrarian, pragmatic)
+- Seed for uniqueness: ${varietySeed}
+- NO repetitive phrases. Fresh content only.`;
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'mistral-small',
+                messages: [
+                    { role: 'system', content: 'You generate UNIQUE, DIVERSE educational content. Never repeat. Always vary phrasing, statistics, and expert opinions. Output ONLY valid JSON.' },
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0.95,
+                max_tokens: 1500
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.choices && data.choices[0]) {
+            let content = data.choices[0].message.content.trim();
+            content = content.replace(/```json\n?|\n?```/g, '').trim();
+            
+            let parsed;
+            try {
+                parsed = JSON.parse(content);
+            } catch (e) {
+                illustrativeDiv.innerHTML = '<span style="color: #ffa500;">AI response format issue. Please click Generate again.</span>';
+                threeScenariosDiv.innerHTML = '';
+                whatPeopleDoDiv.innerHTML = '';
+                expertOpinionDiv.innerHTML = '';
+                return;
+            }
+            
+            const escapeHtml = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            illustrativeDiv.innerHTML = '<span style="color: #ffffff; line-height: 1.7;">' + escapeHtml(parsed.illustrativeNumbers || '') + '</span>';
+            threeScenariosDiv.innerHTML = '<span style="color: #ffffff; line-height: 1.7;">' + escapeHtml(parsed.threeScenarios || '') + '</span>';
+            whatPeopleDoDiv.innerHTML = '<span style="color: #ffffff; line-height: 1.7;">' + escapeHtml(parsed.whatPeopleDo || '') + '</span>';
+            expertOpinionDiv.innerHTML = '<span style="color: #ffffff; line-height: 1.7;">' + escapeHtml(parsed.expertOpinion || '') + '</span>';
+        } else {
+            illustrativeDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable. Try again.</span>';
+        }
+    } catch (err) {
+        console.error('Assignment 3 AI Error:', err);
+        illustrativeDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Please try again') + '</span>';
+    }
+}
+
 // Smart Correlations
 function updateCorrelations() {
     const enabled = document.getElementById('correlationsEnabled')?.checked || false;
