@@ -8192,7 +8192,16 @@ var whatIfScenarioLabels = {
     double: 'My coin doubles in a month',
     urgent: 'I need the money urgently',
     crash50: 'My coin drops 50% in a month',
-    sideways: 'Market sideways for 6 months'
+    sideways: 'Market sideways for 6 months',
+    bear70: 'Market drops 70% from the top and stays low for a year',
+    bull2x: 'Market goes up 2x in three months (strong bull run)',
+    onePump300: 'One of my coins goes +300%, the rest are flat',
+    legalize: 'My country legalizes crypto / allows ETFs',
+    fomo: 'Everyone around me is buying and prices are rising fast (FOMO)',
+    lumpSum: 'I have a lump sum to invest and the market is very volatile',
+    taxSeason: 'Tax season: I have big unrealized gains',
+    exchangeHack: 'An exchange I use is hacked or in trouble',
+    lostAccess: 'I might lose access to my wallet or exchange account'
 };
 
 /** Calls Mistral with WHATIF_EXPERT_API_KEY only. Returns { expertOnAnswer, expertVerdict } or null. */
@@ -8232,7 +8241,16 @@ var whatIfScenarioImpact = {
     double: 100,
     urgent: 0,
     crash50: -50,
-    sideways: 0
+    sideways: 0,
+    bear70: -70,
+    bull2x: 100,
+    onePump300: 75,
+    legalize: 0,
+    fomo: 0,
+    lumpSum: 0,
+    taxSeason: 0,
+    exchangeHack: 0,
+    lostAccess: 0
 };
 
 window.runWhatIfScenario = function runWhatIfScenario() {
@@ -8272,6 +8290,40 @@ window.runWhatIfScenario = function runWhatIfScenario() {
     } else if (scenario === 'sideways') {
         numbersText = 'In a sideways market your portfolio might stay around $' + portfolio.toLocaleString() + ' (no big move up or down).';
         numbersExplain = 'In plain words: prices move little for months; your portfolio could stay near $' + portfolio.toLocaleString() + '.';
+    } else if (scenario === 'bear70') {
+        var bear70Val = Math.round(portfolio * 0.3);
+        var bear70Loss = Math.round(portfolio * 0.7);
+        numbersText = 'At −70% your portfolio would be ≈ $' + bear70Val.toLocaleString() + ' (−$' + bear70Loss.toLocaleString() + ').';
+        numbersExplain = 'In plain words: in a long bear market, about 70% of your $' + portfolio.toLocaleString() + ' could be gone on paper, leaving roughly $' + bear70Val.toLocaleString() + '. Deciding in advance whether you hold, DCA, or cap losses helps you stay consistent.';
+    } else if (scenario === 'bull2x') {
+        var bull2xVal = Math.round(portfolio * 2);
+        numbersText = 'At +100% in three months your portfolio would be ≈ $' + bull2xVal.toLocaleString() + ' (+$' + portfolio.toLocaleString() + ').';
+        numbersExplain = 'In plain words: in a strong bull run your $' + portfolio.toLocaleString() + ' could double to about $' + bull2xVal.toLocaleString() + '. Having a rule for when to take partial profit reduces FOMO and regret.';
+    } else if (scenario === 'onePump300') {
+        var onePart = Math.round(portfolio * 0.25);
+        var restPart = Math.round(portfolio * 0.75);
+        var pumpedPart = Math.round(onePart * 4);
+        var totalPump = pumpedPart + restPart;
+        numbersText = 'If 25% of your portfolio was in the pumping coin, that part could be 4× (≈ $' + pumpedPart.toLocaleString() + '); the rest stays ≈ $' + restPart.toLocaleString() + '. Total ≈ $' + totalPump.toLocaleString() + '.';
+        numbersExplain = 'In plain words: one coin +300% means that part quadruples. Your total depends on how much you had in that coin; defining in advance whether you take profit or rebalance helps you act calmly.';
+    } else if (scenario === 'legalize') {
+        numbersText = 'No single number — legalization can affect prices and access. Your portfolio today: ≈ $' + portfolio.toLocaleString() + '.';
+        numbersExplain = 'In plain words: positive regulation can bring more investors and volatility. Your plan (e.g. rebalance, add, or do nothing) matters more than guessing the exact move.';
+    } else if (scenario === 'fomo') {
+        numbersText = 'No single number — FOMO is about behavior. Your portfolio today: ≈ $' + portfolio.toLocaleString() + '.';
+        numbersExplain = 'In plain words: when everyone is buying and prices rise fast, the risk is chasing the move with money you cannot afford to lose. A written plan (e.g. "I only add X% per month") helps you stick to your rules.';
+    } else if (scenario === 'lumpSum') {
+        numbersText = 'Your lump sum: ≈ $' + portfolio.toLocaleString() + '. In volatile markets, value can swing sharply up or down after you invest.';
+        numbersExplain = 'In plain words: investing a large amount at once can lead to big short-term swings. Deciding in advance (e.g. DCA over 3–6 months vs lump sum) helps you avoid regret if the market drops right after you buy.';
+    } else if (scenario === 'taxSeason') {
+        numbersText = 'Your portfolio today: ≈ $' + portfolio.toLocaleString() + '. Selling to pay tax means you lock in gains and get cash; the amount of tax depends on your jurisdiction and gains.';
+        numbersExplain = 'In plain words: big unrealized gains can mean a large tax bill when you sell. Planning in advance (how much to sell, when) helps you avoid panic or last-minute decisions.';
+    } else if (scenario === 'exchangeHack') {
+        numbersText = 'Your funds on the exchange: could be at risk. Portfolio value today: ≈ $' + portfolio.toLocaleString() + '.';
+        numbersExplain = 'In plain words: if an exchange is hacked or in trouble, the priority is to secure what you can (withdraw, move to cold wallet) and follow official communications. Your plan (e.g. never keep more than X on an exchange) reduces this risk.';
+    } else if (scenario === 'lostAccess') {
+        numbersText = 'No price change — the risk is losing access to your keys or account. Portfolio value: ≈ $' + portfolio.toLocaleString() + '.';
+        numbersExplain = 'In plain words: losing access to a wallet or exchange can mean losing funds permanently. Your plan (backups, 2FA, recovery phrases stored safely) is what protects you — not market moves.';
     }
     var a = answer.toLowerCase();
     var urgentIsRecoverCapital = scenario === 'urgent' && (/\b(recover|initial capital|don't worry|peace of mind|take profit|secure|fomo|leave profits|profits invested)\b/.test(a) || /\bcapital.*invested|invested.*capital\b/.test(a)) && !/\b(need money|bills|family|emergency|need cash|have to sell)\b/.test(a);
@@ -8307,6 +8359,33 @@ window.runWhatIfScenario = function runWhatIfScenario() {
     } else if (scenario === 'sideways') {
         usualDo = 'In sideways markets, prices move little for months. Some get impatient and sell; others use the time to DCA or rebalance. Sticking to your plan and not chasing short-term moves usually pays off.';
         usualDoMistake = 'A common mistake is overtrading or changing strategy often; patience and a fixed plan usually work better.';
+    } else if (scenario === 'bear70') {
+        usualDo = 'In a long bear market, many hold hoping for a rebound, or DCA to average down. Some capitulate and sell at a loss. Deciding in advance how long you can wait and what loss you can accept helps you act consistently.';
+        usualDoMistake = 'A common mistake is deciding in panic after months of red; a pre-written rule (e.g. "I hold and DCA for 12 months, then reassess") reduces emotional exits.';
+    } else if (scenario === 'bull2x') {
+        usualDo = 'In a strong bull run, some take partial profit on the way up; others hold for more. Defining in advance what % you sell at which level (e.g. 20% at +50%, 30% at +100%) reduces FOMO and regret.';
+        usualDoMistake = 'A common mistake is selling everything too early or holding everything and then watching it correct; a staged plan (take profit in steps) usually feels better.';
+    } else if (scenario === 'onePump300') {
+        usualDo = 'When one coin pumps and the rest are flat, people often take profit on the winner and rebalance, or let it run. Deciding in advance (e.g. "I sell 50% of the pumping coin when it 3×") helps you act calmly.';
+        usualDoMistake = 'A common mistake is either selling the whole winner too early or never taking profit and watching it dump; a clear rule (e.g. take 30% off at +200%) balances both.';
+    } else if (scenario === 'legalize') {
+        usualDo = 'When regulation turns positive, some add exposure, others rebalance or take profit. Having a plan (e.g. "I do nothing for 30 days, then reassess") helps you avoid impulsive buys or sells on the news.';
+        usualDoMistake = 'A common mistake is buying or selling everything on the headline; waiting and sticking to your allocation usually works better.';
+    } else if (scenario === 'fomo') {
+        usualDo = 'When everyone is buying and prices rise fast, many chase the move with extra money. A written rule (e.g. "I only add X% per month, no more") helps you avoid overinvesting at the top.';
+        usualDoMistake = 'A common mistake is investing more than you planned because of FOMO; a fixed budget and a plan protect you.';
+    } else if (scenario === 'lumpSum') {
+        usualDo = 'With a lump sum in a volatile market, some invest all at once; others DCA over 3–6 months. Both can work; the key is deciding in advance so you do not regret either way.';
+        usualDoMistake = 'A common mistake is investing the whole sum and then panicking when it drops; having a plan (e.g. DCA over 4 months) reduces regret.';
+    } else if (scenario === 'taxSeason') {
+        usualDo = 'When tax is due on gains, people often sell just enough to pay the bill, or plan sells in advance to spread the hit. Deciding in advance how much to sell and when helps you avoid last-minute panic.';
+        usualDoMistake = 'A common mistake is ignoring tax until the deadline and then selling in a rush; planning a year ahead (e.g. set aside 20% of gains) reduces stress.';
+    } else if (scenario === 'exchangeHack') {
+        usualDo = 'When an exchange is hacked or in trouble, the priority is to withdraw funds or move to a cold wallet if possible. Following official updates and not spreading panic helps.';
+        usualDoMistake = 'A common mistake is keeping too much on an exchange "for convenience"; a rule (e.g. never more than X% on any one exchange) limits this risk.';
+    } else if (scenario === 'lostAccess') {
+        usualDo = 'To avoid losing access, people use backups, 2FA, and store recovery phrases safely offline. Having a plan (e.g. test recovery once a year) reduces the chance of permanent loss.';
+        usualDoMistake = 'A common mistake is not backing up keys or forgetting where the backup is; one verified backup in a safe place can save everything.';
     }
 
     var timeline = '';
@@ -8322,6 +8401,24 @@ window.runWhatIfScenario = function runWhatIfScenario() {
         }
     } else if (scenario === 'sideways') {
         timeline = '<strong>Month 1–3:</strong> Range-bound; no big moves. — <strong>Month 4–6:</strong> Still sideways; avoid overtrading. — <strong>Lesson:</strong> Patience; use DCA or rebalance instead of timing the market.';
+    } else if (scenario === 'bear70') {
+        timeline = '<strong>Month 1–3:</strong> Market down sharply; emotions run high. — <strong>Month 4–12:</strong> Prices stay low; many capitulate or DCA. — <strong>Lesson:</strong> Your pre-written rule (hold / DCA / cap loss) helps you avoid panic decisions.';
+    } else if (scenario === 'bull2x') {
+        timeline = '<strong>Month 1:</strong> Strong uptrend. — <strong>Month 2–3:</strong> Momentum; decide in advance when to take partial profit. — <strong>Lesson:</strong> A staged plan (e.g. sell 20% at +50%, 30% at +100%) reduces FOMO.';
+    } else if (scenario === 'onePump300') {
+        timeline = '<strong>Week 1–2:</strong> One coin pumps; rest flat. — <strong>Decision point:</strong> Do you take profit on the winner, rebalance, or let it run? — <strong>Lesson:</strong> A clear rule (e.g. sell 30% at +200%) helps you act without regret.';
+    } else if (scenario === 'legalize') {
+        timeline = '<strong>News day:</strong> Headlines; volatility often spikes. — <strong>Weeks after:</strong> Market digests; avoid impulsive buys or sells. — <strong>Lesson:</strong> Stick to your plan; reassess after 30 days if needed.';
+    } else if (scenario === 'fomo') {
+        timeline = '<strong>When FOMO hits:</strong> Prices rise fast; everyone talks about gains. — <strong>Your rule:</strong> Stick to your budget and plan (e.g. "I add only X% per month"). — <strong>Lesson:</strong> A written limit protects you from chasing the top.';
+    } else if (scenario === 'lumpSum') {
+        timeline = '<strong>Day 1:</strong> You have a lump sum; market is volatile. — <strong>Options:</strong> Invest all at once or DCA over 3–6 months. — <strong>Lesson:</strong> Decide in advance so you do not regret either outcome.';
+    } else if (scenario === 'taxSeason') {
+        timeline = '<strong>Before deadline:</strong> Plan how much to sell to cover tax. — <strong>When you sell:</strong> Lock in gains; set aside cash for tax. — <strong>Lesson:</strong> Planning a year ahead (e.g. set aside 20% of gains) reduces last-minute stress.';
+    } else if (scenario === 'exchangeHack') {
+        timeline = '<strong>When news breaks:</strong> Check official channels; avoid panic. — <strong>If you can withdraw:</strong> Move funds to cold wallet or another exchange. — <strong>Lesson:</strong> Never keep more than you can afford to lose on one exchange.';
+    } else if (scenario === 'lostAccess') {
+        timeline = '<strong>Prevention:</strong> Back up keys and recovery phrases; test recovery. — <strong>If access is lost:</strong> Use backup or recovery flow; do not rush. — <strong>Lesson:</strong> One verified backup in a safe place can save everything.';
     } else timeline = '—';
 
     var low = Math.min(portfolio, afterValue);
@@ -8352,6 +8449,11 @@ window.runWhatIfScenario = function runWhatIfScenario() {
     if (/\b(distribute|reallocate|other places|put elsewhere|diversify|allocate|move.*(money|funds))\b/.test(a)) checklist.push('Distribute / reallocate to other places');
     if (/\b(take profit|profit|partial)\b/.test(a) && !userMentionsLockInProfitOrDistribute) checklist.push('Taking profit / partial exit');
     if (/\b(dca|average|add|buy more)\b/.test(a)) checklist.push('Averaging down / adding');
+    if (/\b(tax|sell to pay|cover tax)\b/.test(a)) checklist.push('Tax / selling to cover tax');
+    if (/\b(fomo|limit|budget|only add)\b/.test(a)) checklist.push('FOMO limit / budget');
+    if (/\b(lump sum|dca|split|spread|month)\b/.test(a) && scenario === 'lumpSum') checklist.push('Lump sum plan (DCA or all at once)');
+    if (/\b(withdraw|move|cold wallet|exchange)\b/.test(a) && (scenario === 'exchangeHack' || scenario === 'lostAccess')) checklist.push('Withdraw / cold wallet / exchange');
+    if (/\b(backup|recovery|phrase|key|2fa)\b/.test(a)) checklist.push('Backup / recovery / keys');
     var checklistHtml = checklist.length ? '<ul style="margin: 8px 0 0 16px; color: #cccccc;">' + checklist.map(function(c) { return '<li>' + c + '</li>'; }).join('') + '</ul>' : '<p style="color: #888;">No keywords detected. Consider adding: stop-loss, sell part, hold, emergency fund, take profit.</p>';
     var recommend = [];
     if (scenario === 'crash' || scenario === 'crash50') {
@@ -8373,6 +8475,31 @@ window.runWhatIfScenario = function runWhatIfScenario() {
         }
     } else if (scenario === 'sideways') {
         recommend.push('In sideways markets, avoid overtrading. Stick to DCA or rebalance on a schedule; patience usually beats chasing short-term moves.');
+    } else if (scenario === 'bear70') {
+        if (/hold|keep|dca|add|average/.test(a)) recommend.push('You plan to hold or DCA in a long bear — make sure you can tolerate a long drawdown and have no need for that money soon. Define in advance how long you will stick to the plan (e.g. 12 months) and when you reassess.');
+        else if (/sell|exit|cap|stop/.test(a)) recommend.push('You plan to cap losses or exit — that can limit further pain. Define the level (e.g. sell 50% if it drops another 20%) so you act without panic.');
+        else recommend.push('In a long bear market, decide in advance: hold and DCA, or cap losses at a level. Writing it down helps you stick to it when emotions run high.');
+    } else if (scenario === 'bull2x') {
+        if (userMentionsLockInProfitOrDistribute) recommend.push('You plan to lock in profit and distribute — that is disciplined. Define what % you take at which level (e.g. 30% at +100%) and where you put the money so you act without FOMO.');
+        else if (/sell|profit|take/.test(a)) recommend.push('Taking profit in a bull run is sensible. Define in advance the % and level (e.g. sell 20% at +50%, 30% at +100%) so you lock in gains and still participate if it goes higher.');
+        else recommend.push('In a strong bull run, consider defining in advance when you take partial profit (e.g. 20% at +50%, 30% at +100%) so you reduce FOMO and regret.');
+    } else if (scenario === 'onePump300') {
+        if (/sell|profit|take|rebalance/.test(a)) recommend.push('You plan to take profit or rebalance when one coin pumps — that is clear. Define the level (e.g. sell 30% of that coin at +200%) so you act calmly and avoid regret.');
+        else recommend.push('When one coin pumps and the rest are flat, define in advance: do you take profit on the winner, rebalance, or let it run? A rule (e.g. sell 30% at +200%) helps you act without emotion.');
+    } else if (scenario === 'legalize') {
+        recommend.push('When regulation turns positive, avoid impulsive buys or sells on the headline. Your plan (e.g. do nothing for 30 days, then reassess) helps you stay consistent.');
+    } else if (scenario === 'fomo') {
+        recommend.push('When everyone is buying, stick to a written limit (e.g. "I only add X% per month"). That protects you from chasing the top with money you cannot afford to lose.');
+    } else if (scenario === 'lumpSum') {
+        if (/dca|split|month|spread/.test(a)) recommend.push('You plan to DCA or spread the lump sum — that can reduce regret if the market drops right after you invest. Define the schedule (e.g. 25% per month for 4 months) so you stick to it.');
+        else if (/all at once|lump|invest all/.test(a)) recommend.push('You plan to invest the lump sum at once — that can work if you accept short-term volatility. Make sure you can tolerate a drop right after you buy.');
+        else recommend.push('Decide in advance: invest the lump sum at once or DCA over 3–6 months. Both can work; the key is having a plan so you do not regret either way.');
+    } else if (scenario === 'taxSeason') {
+        recommend.push('Plan in advance how much to sell to cover tax and when. Setting aside a portion of gains (e.g. 20%) as you go reduces last-minute panic and rushed sells.');
+    } else if (scenario === 'exchangeHack') {
+        recommend.push('If an exchange is hacked or in trouble, follow official channels and withdraw if possible. For next time: never keep more than you can afford to lose on one exchange; use cold storage for the rest.');
+    } else if (scenario === 'lostAccess') {
+        recommend.push('Back up recovery phrases and keys in a safe place; test recovery once. Your plan (e.g. one backup in a safe, one in a different location) can prevent permanent loss.');
     } else {
         recommend.push('Revisit your plan when the situation changes. Having it written down helps you stick to it when emotions run high.');
     }
@@ -8398,6 +8525,31 @@ window.runWhatIfScenario = function runWhatIfScenario() {
         }
     } else if (scenario === 'sideways') {
         expertOnAnswer = 'You wrote what you would do in a sideways market. A picky expert would ask: do you stick to DCA, rebalance on a schedule, or do nothing? Writing it down (e.g. "I DCA every month and do not change the plan for 6 months") helps you avoid overtrading.';
+    } else if (scenario === 'bear70') {
+        if (/hold|keep|dca|add|average/.test(a)) expertOnAnswer = 'You wrote that you would hold or DCA in a long bear. A picky expert would ask: for how long? And at what point would you reassess (e.g. 12 months)? Writing it down helps you avoid panic exits.';
+        else if (/sell|exit|cap/.test(a)) expertOnAnswer = 'You wrote that you would sell or cap losses. A picky expert would ask: at what level? (e.g. sell 50% if it drops another 20%.) A clear rule helps you act without emotion.';
+        else expertOnAnswer = 'You wrote what you would do in a long bear market. A picky expert would ask: do you hold, DCA, or cap losses? And at what level or for how long? Adding a number or a time makes your plan easier to follow.';
+    } else if (scenario === 'bull2x') {
+        if (userMentionsLockInProfitOrDistribute) expertOnAnswer = 'You wrote that you would lock in profit and distribute. A picky expert would say: define what % you take at which level (e.g. 30% at +100%) and where you put the money so you act without FOMO.';
+        else if (/sell|profit|take/.test(a)) expertOnAnswer = 'You wrote that you would take profit in a bull run. A picky expert would ask: what % and at what level? (e.g. "I sell 20% at +50%, 30% at +100%".) Writing it down reduces regret when the price keeps going up.';
+        else expertOnAnswer = 'You wrote what you would do when the market goes up 2×. A picky expert would ask: do you take partial profit, and at which level? A clear rule (e.g. sell 20% at +100%) helps you act instead of hesitating.';
+    } else if (scenario === 'onePump300') {
+        if (/sell|profit|take|rebalance/.test(a)) expertOnAnswer = 'You wrote that you would take profit or rebalance when one coin pumps. A picky expert would ask: at what level? (e.g. "I sell 30% of that coin at +200%".) A clear rule helps you act calmly.';
+        else expertOnAnswer = 'You wrote what you would do when one coin goes +300% and the rest are flat. A picky expert would ask: do you take profit on the winner, rebalance, or let it run? Defining the level (e.g. sell 30% at +200%) reduces regret.';
+    } else if (scenario === 'legalize') {
+        expertOnAnswer = 'You wrote what you would do when your country legalizes crypto or allows ETFs. A picky expert would ask: do you add, rebalance, or do nothing? And for how long do you wait before acting? (e.g. "I do nothing for 30 days, then reassess".)';
+    } else if (scenario === 'fomo') {
+        expertOnAnswer = 'You wrote what you would do when everyone is buying and prices rise fast. A picky expert would ask: do you have a limit on how much you add? (e.g. "I only add 10% per month, no more".) A written limit protects you from chasing the top.';
+    } else if (scenario === 'lumpSum') {
+        if (/dca|split|month|spread/.test(a)) expertOnAnswer = 'You wrote that you would DCA or spread the lump sum. A picky expert would ask: over how long? (e.g. "25% per month for 4 months".) A clear schedule helps you stick to it.';
+        else if (/all at once|lump|invest all/.test(a)) expertOnAnswer = 'You wrote that you would invest the lump sum at once. A picky expert would say: that can work if you accept short-term volatility; make sure you can tolerate a drop right after you buy.';
+        else expertOnAnswer = 'You wrote what you would do with a lump sum in a volatile market. A picky expert would ask: do you invest all at once or DCA? And over how long? Deciding in advance reduces regret either way.';
+    } else if (scenario === 'taxSeason') {
+        expertOnAnswer = 'You wrote what you would do at tax season with big unrealized gains. A picky expert would ask: how much do you plan to sell to cover tax, and when? Planning in advance (e.g. set aside 20% of gains) reduces last-minute panic.';
+    } else if (scenario === 'exchangeHack') {
+        expertOnAnswer = 'You wrote what you would do if an exchange is hacked or in trouble. A picky expert would say: the priority is to withdraw or move funds if possible. For next time: never keep more than you can afford to lose on one exchange.';
+    } else if (scenario === 'lostAccess') {
+        expertOnAnswer = 'You wrote what you would do to avoid or handle losing access to your wallet or account. A picky expert would ask: do you have a backup of recovery phrases? Have you tested recovery? One verified backup in a safe place can save everything.';
     } else {
         expertOnAnswer = 'A picky expert would ask: is your plan specific enough to follow when the situation happens? Adding a number or a rule (e.g. a % level or a time) makes it easier to stick to.';
     }
