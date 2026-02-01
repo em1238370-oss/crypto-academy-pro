@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=21.0">
+    <link rel="stylesheet" href="styles.css?v=22.0">
    <!-- Chart.js for portfolio graphs -->
    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
    <script src="scripts/table-modules.js?v=27.0"></script>
@@ -1522,6 +1522,7 @@
                                        <span class="module-d-assignment-badge">3</span>
                                        <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 3: What would I do if…?</h4>
                                        <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Enter your portfolio, pick a scenario, and write what you would do. You’ll see illustrative numbers, a mini chart, what people usually do, a checklist of your plan, and an expert verdict. Save or download your plan for later.</p>
+                                       <div class="whatif-form-center">
                                        <div class="form-group">
                                            <label style="color: #ffffff;">My portfolio (USD):</label>
                                            <input type="number" id="whatIfPortfolio" min="0" max="10000000" value="10000" step="100" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
@@ -1529,7 +1530,7 @@
                                        </div>
                                        <div class="form-group">
                                            <label style="color: #ffffff;">Scenario:</label>
-                                           <select id="whatIfScenario" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; width: 100%; max-width: 400px;">
+                                           <select id="whatIfScenario" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; width: 100%; max-width: 400px; box-sizing: border-box;">
                                                <option value="crash">The market drops 30% in a week</option>
                                                <option value="double">My coin doubles in a month</option>
                                                <option value="urgent">I need the money urgently</option>
@@ -1548,9 +1549,17 @@
                                        </div>
                                        <div class="form-group">
                                            <label style="color: #ffffff;">In this case I would…</label>
-                                           <textarea id="whatIfMyAnswer" rows="3" placeholder="e.g. I would hold and not sell, or I would take part of the profit…" style="width: 100%; max-width: 500px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 12px; border-radius: 8px; font-family: inherit;"></textarea>
+                                           <textarea id="whatIfMyAnswer" rows="3" placeholder="e.g. I would hold and not sell, or I would take part of the profit…" style="width: 100%; max-width: 500px; box-sizing: border-box; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 12px; border-radius: 8px; font-family: inherit;"></textarea>
                                        </div>
                                        <button type="button" class="btn btn-red" onclick="runWhatIfScenario()" style="padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Show my plan</button>
+                                       <button type="button" class="btn btn-red" onclick="generateAssignment3MiniSummaries()" style="padding: 10px 20px; font-weight: 600; margin-left: 10px; border-radius: 8px; border: 2px solid rgba(255, 165, 0, 0.5); background: linear-gradient(135deg, rgba(255, 165, 0, 0.3) 0%, rgba(200, 130, 0, 0.4) 100%); color: #ffffff;">📋 Generate Mini-Summaries (AI)</button>
+                                       </div>
+                                       <div id="assignment3MiniSummaries" style="margin-top: 20px; display: none; text-align: center;">
+                                           <div class="mini-summary-card"><h5 style="color: #ffa500;">📊 Illustrative Numbers</h5><div id="illustrativeNumbers"></div></div>
+                                           <div class="mini-summary-card"><h5 style="color: #ffa500;">⚖️ Three Scenarios</h5><div id="threeScenarios"></div></div>
+                                           <div class="mini-summary-card"><h5 style="color: #ffa500;">👥 What People Usually Do</h5><div id="whatPeopleDo"></div></div>
+                                           <div class="mini-summary-card"><h5 style="color: #ffa500;">🎯 Expert Opinion («In this case I would…»)</h5><div id="expertOpinion"></div></div>
+                                       </div>
                                        <div id="whatIfScenarioResult" class="result-box whatif-result-block" style="display: none; margin-top: 16px; padding: 20px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
                                        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.15);">
                                            <h5 style="color: #ffd700; margin-bottom: 10px; font-size: 1rem;">My saved plans</h5>
@@ -1560,28 +1569,56 @@
                                    </div>
 
                                    <!-- Assignment 4: Strategy in numbers -->
-                                   <div class="section-box module-d-assignment">
+                                   <div class="section-box module-d-assignment assignment-4-box">
                                        <span class="module-d-assignment-badge">4</span>
-                                       <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 4: Strategy in numbers — how much in the end and what risk</h4>
-                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Enter horizon and risk — get an <strong style="color: #ffffff;">illustrative</strong> summary: possible outcome range and risk level. For education only; real results depend on the market.</p>
-                                       <div class="form-group">
-                                           <label style="color: #ffffff;">Initial deposit (USD):</label>
-                                           <input type="number" id="strategyNumbersDeposit" min="100" max="1000000" value="5000" step="100" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
+                                       <h4 class="section-box-header" style="color: #ffd700; margin-bottom: 16px; font-size: 1.2rem;">Assignment 4: Strategy in numbers — how much in the end and what risk</h4>
+                                       
+                                       <!-- 1. Money Simulator -->
+                                       <div class="assignment-4-card">
+                                           <h5 class="section-box-header" style="color: #00ff00; font-size: 1.1rem;">💰 Money Simulator — Best / Base / Worst</h5>
+                                           <p style="color: #cccccc; text-align: center; margin-bottom: 12px; font-size: 0.95rem;">Portfolio & risk level → three scenarios in dollars.</p>
+                                           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                               <div><label style="color: #fff; display: block; margin-bottom: 6px; text-align: center;">Portfolio ($)</label><input type="number" id="moneySimPortfolio" value="10000" min="100" step="100" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,165,0,0.3); border-radius: 8px; color: #fff;"></div>
+                                               <div><label style="color: #fff; display: block; margin-bottom: 6px; text-align: center;">Risk: <span id="moneySimRiskVal">50</span>%</label><input type="range" id="moneySimRisk" min="10" max="90" value="50" oninput="document.getElementById('moneySimRiskVal').textContent=this.value" style="width: 100%;"></div>
+                                           </div>
+                                           <button type="button" class="btn btn-red" onclick="runMoneySimulator()" style="width: 100%;">📊 Run Money Simulator</button>
+                                           <div id="moneySimResult" style="margin-top: 15px; display: none; text-align: center;"></div>
                                        </div>
-                                       <div class="form-group">
-                                           <label style="color: #ffffff;">Horizon:</label>
-                                           <select id="strategyNumbersHorizon" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
-                                               <option value="6">6 months</option>
-                                               <option value="12" selected>12 months</option>
-                                               <option value="24">24 months</option>
-                                           </select>
+                                       
+                                       <!-- 2. Risk DNA -->
+                                       <div class="assignment-4-card">
+                                           <h5 class="section-box-header" style="color: #ffa500; font-size: 1.1rem;">🧬 Risk DNA — Your Personal Risk Profile</h5>
+                                           <p style="color: #cccccc; text-align: center; margin-bottom: 12px; font-size: 0.95rem;">Quick quiz → Cautious Turtle, Diamond Hands, or in between.</p>
+                                           <div style="margin-bottom: 12px;">
+                                               <label style="color: #fff; display: block; margin-bottom: 4px; text-align: center;">1. Portfolio drops 20% tomorrow — you:</label>
+                                               <select id="riskDnaQ1" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,165,0,0.3); border-radius: 8px; color: #fff;"><option value="sell">Sell immediately</option><option value="wait">Wait</option><option value="buy">Buy more (DCA)</option><option value="hodl">HODL</option></select>
+                                               <label style="color: #fff; display: block; margin: 10px 0 4px; text-align: center;">2. Investment horizon:</label>
+                                               <select id="riskDnaQ2" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,165,0,0.3); border-radius: 8px; color: #fff;"><option value="days">Days–weeks</option><option value="months">1–6 months</option><option value="year">6–12 months</option><option value="years">1+ years</option></select>
+                                               <label style="color: #fff; display: block; margin: 10px 0 4px; text-align: center;">3. Money you invest is:</label>
+                                               <select id="riskDnaQ3" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,165,0,0.3); border-radius: 8px; color: #fff;"><option value="critical">Critical — can't lose</option><option value="important">Important</option><option value="ok">Okay to lose some</option><option value="play">Play money</option></select>
+                                           </div>
+                                           <button type="button" class="btn btn-red" onclick="runRiskDna()" style="width: 100%;">🧬 Discover My Risk DNA</button>
+                                           <div id="riskDnaResult" style="margin-top: 15px; display: none; text-align: center;"></div>
                                        </div>
-                                       <div class="form-group">
-                                           <label style="color: #ffffff;">Risk level (1–100):</label>
-                                           <input type="number" id="strategyNumbersRisk" min="1" max="100" value="50" style="width: 80px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;">
+                                       
+                                       <!-- 3. Strategy Report Card -->
+                                       <div class="assignment-4-card">
+                                           <h5 class="section-box-header" style="color: #ffd700; font-size: 1.1rem;">📋 Strategy Report Card</h5>
+                                           <p style="color: #cccccc; text-align: center; margin-bottom: 12px; font-size: 0.95rem;">AI grades: diversification, risk-return, liquidity.</p>
+                                           <div style="margin-bottom: 12px;"><label style="color: #fff; display: block; margin-bottom: 6px; text-align: center;">Describe your strategy:</label><textarea id="reportCardStrategy" rows="3" placeholder="e.g.: 50% BTC, 30% ETH, 20% SOL. DCA monthly." style="width: 100%; padding: 12px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,215,0,0.3); border-radius: 8px; color: #fff; box-sizing: border-box;"></textarea></div>
+                                           <button type="button" class="btn btn-red" onclick="runStrategyReportCard()" style="width: 100%;">📋 Get Report Card</button>
+                                           <div id="reportCardResult" style="margin-top: 15px; display: none; text-align: center;"></div>
                                        </div>
-                                       <button type="button" class="btn btn-red" onclick="runStrategyInNumbers()" style="padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Show numbers</button>
-                                       <div id="strategyNumbersResult" class="result-box strategy-numbers-result" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
+                                       
+                                       <!-- Original simple numbers -->
+                                       <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.15);">
+                                           <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 12px; text-align: center;">Or quick summary: deposit, horizon, risk.</p>
+                                           <div class="form-group"><label style="color: #ffffff; text-align: center;">Initial deposit (USD):</label><input type="number" id="strategyNumbersDeposit" min="100" max="1000000" value="5000" step="100" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"></div>
+                                           <div class="form-group"><label style="color: #ffffff; text-align: center;">Horizon:</label><select id="strategyNumbersHorizon" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;"><option value="6">6 months</option><option value="12" selected>12 months</option><option value="24">24 months</option></select></div>
+                                           <div class="form-group"><label style="color: #ffffff; text-align: center;">Risk level (1–100):</label><input type="number" id="strategyNumbersRisk" min="1" max="100" value="50" style="width: 80px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"></div>
+                                           <button type="button" class="btn btn-red" onclick="runStrategyInNumbers()" style="padding: 10px 20px; font-weight: 600;">Show numbers</button>
+                                           <div id="strategyNumbersResult" class="result-box strategy-numbers-result" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
+                                       </div>
                                    </div>
 
                                    <!-- Assignment 5: Rebalance experiment -->

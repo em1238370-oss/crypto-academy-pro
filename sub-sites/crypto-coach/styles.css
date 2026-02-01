@@ -2407,9 +2407,43 @@ div:has-text("Experience Points") {
     text-align: center;
 }
 
-/* Assignment 3: What would I do if…? — result block */
+/* Assignment 3: What would I do if…? — form centered, result block */
 .whatif-assignment-block {
     text-align: center;
+}
+/* Центр модуля: поля (портфель, сценарий, текст) и кнопка по центру */
+.whatif-form-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 0;
+}
+.whatif-form-center .form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 16px;
+}
+.whatif-form-center .form-group label {
+    text-align: center;
+    margin-bottom: 6px;
+}
+.whatif-form-center .form-group input,
+.whatif-form-center .form-group select,
+.whatif-form-center .form-group textarea {
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+    text-align: left;
+}
+.whatif-form-center .form-group small {
+    text-align: center;
+}
+.whatif-form-center .btn {
+    margin-top: 8px;
 }
 .whatif-assignment-block .form-group label,
 .whatif-assignment-block .form-group input,
@@ -2430,6 +2464,44 @@ div:has-text("Experience Points") {
 .whatif-result-block .whatif-checklist ul {
     margin: 8px 0 0 16px;
     padding-left: 16px;
+}
+
+/* Assignment 3: Mini-summaries (AI) */
+.assignment-3-box .section-box-header { text-align: center !important; }
+.mini-summary-card {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 165, 0, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+.mini-summary-card h5 { color: #ffa500 !important; margin-bottom: 10px; }
+.mini-summary-card > div { color: #ffffff; line-height: 1.7; font-size: 1rem; }
+
+/* Assignment 4: Money Simulator, Risk DNA, Report Card */
+.assignment-4-box { }
+.assignment-4-card {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+.assignment-4-card:hover {
+    border-color: rgba(255, 165, 0, 0.4);
+    box-shadow: 0 0 20px rgba(255, 165, 0, 0.1);
+}
+.assignment-4-card:last-child { margin-bottom: 0; }
+.money-sim-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 15px;
+}
+@media (max-width: 600px) {
+    .money-sim-grid { grid-template-columns: 1fr !important; }
 }
 
 .btn {

@@ -8253,6 +8253,136 @@ var whatIfScenarioImpact = {
     lostAccess: 0
 };
 
+// Assignment 3: AI Mini-Summaries (4 diverse blocks)
+window.generateAssignment3MiniSummaries = async function generateAssignment3MiniSummaries() {
+    const sel = document.getElementById('whatIfScenario');
+    const scenario = sel ? (sel.options[sel.selectedIndex]?.text || sel.value) : 'The market drops 30% in a week';
+    const portfolio = parseFloat(document.getElementById('whatIfPortfolio')?.value || 10000);
+    const container = document.getElementById('assignment3MiniSummaries');
+    const illustrativeDiv = document.getElementById('illustrativeNumbers');
+    const threeScenariosDiv = document.getElementById('threeScenarios');
+    const whatPeopleDoDiv = document.getElementById('whatPeopleDo');
+    const expertOpinionDiv = document.getElementById('expertOpinion');
+    if (!container || !illustrativeDiv || !threeScenariosDiv || !whatPeopleDoDiv || !expertOpinionDiv) return;
+    container.style.display = 'block';
+    illustrativeDiv.innerHTML = '<span style="color: #ffa500;">Loading...</span>';
+    threeScenariosDiv.innerHTML = ''; whatPeopleDoDiv.innerHTML = ''; expertOpinionDiv.innerHTML = '';
+    const varietySeed = Date.now() + Math.random().toString(36).substr(2, 9);
+    const prompt = `You are a crypto education expert. Portfolio $${portfolio.toLocaleString('en-US')}, scenario: "${scenario}"
+Generate EXACTLY 4 mini-summaries. Output ONLY valid JSON:
+{
+  "illustrativeNumbers": "2-3 sentences with specific numbers: portfolio impact, gains/losses.",
+  "threeScenarios": "Compare 3 outcomes (bullish/base/bearish) for same $${portfolio.toLocaleString()} portfolio.",
+  "whatPeopleDo": "What typical investors do in this scenario (panic sell, HODL, DCA). Vary phrasing.",
+  "expertOpinion": "2-3 sentences starting 'In this case I would...' - picky expert view. Unique angle."
+}
+Seed for uniqueness: ${varietySeed}. NO repetitive phrases.`;
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+            body: JSON.stringify({ model: 'mistral-small', messages: [
+                { role: 'system', content: 'Generate UNIQUE educational content. Output ONLY valid JSON.' },
+                { role: 'user', content: prompt }
+            ], temperature: 0.95, max_tokens: 1500 })
+        });
+        const data = await response.json();
+        if (data.choices && data.choices[0]) {
+            let content = data.choices[0].message.content.trim().replace(/```json\n?|\n?```/g, '').trim();
+            let parsed; try { parsed = JSON.parse(content); } catch (e) {
+                illustrativeDiv.innerHTML = '<span style="color: #ffa500;">AI format issue. Try again.</span>'; return;
+            }
+            const escapeHtml = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            illustrativeDiv.innerHTML = '<span style="color: #ffffff; line-height: 1.7;">' + escapeHtml(parsed.illustrativeNumbers || '') + '</span>';
+            threeScenariosDiv.innerHTML = '<span style="color: #ffffff; line-height: 1.7;">' + escapeHtml(parsed.threeScenarios || '') + '</span>';
+            whatPeopleDoDiv.innerHTML = '<span style="color: #ffffff; line-height: 1.7;">' + escapeHtml(parsed.whatPeopleDo || '') + '</span>';
+            expertOpinionDiv.innerHTML = '<span style="color: #ffffff; line-height: 1.7;">' + escapeHtml(parsed.expertOpinion || '') + '</span>';
+        } else { illustrativeDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable. Try again.</span>'; }
+    } catch (err) {
+        illustrativeDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>';
+    }
+};
+
+// Assignment 4: Money Simulator
+window.runMoneySimulator = async function runMoneySimulator() {
+    const portfolio = parseFloat(document.getElementById('moneySimPortfolio')?.value || 10000);
+    const risk = parseInt(document.getElementById('moneySimRisk')?.value || 50);
+    const resultDiv = document.getElementById('moneySimResult');
+    if (!resultDiv) return;
+    resultDiv.style.display = 'block'; resultDiv.innerHTML = '<span style="color: #ffa500;">Loading...</span>';
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+            body: JSON.stringify({ model: 'mistral-small', messages: [
+                { role: 'system', content: 'Crypto risk analyst. Return ONLY valid JSON.' },
+                { role: 'user', content: `Portfolio: $${portfolio.toLocaleString()}, Risk: ${risk}%. JSON: bestCase, baseCase, worstCase (numbers), riskScore (1-10), riskLabel, explanation.` }
+            ], temperature: 0.7, max_tokens: 400 })
+        });
+        const data = await response.json();
+        if (data.choices?.[0]) {
+            let content = data.choices[0].message.content.trim().replace(/```json\n?|\n?```/g, '').trim();
+            const p = JSON.parse(content);
+            const fmt = n => '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            resultDiv.innerHTML = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(0,255,0,0.3);"><div class="money-sim-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px;"><div style="background: rgba(0,255,0,0.15); padding: 15px; border-radius: 8px;"><div style="color: #00ff00; font-size: 0.85rem;">Best</div><div style="color: #fff; font-size: 1.4rem; font-weight: bold;">' + fmt(p.bestCase) + '</div></div><div style="background: rgba(255,215,0,0.15); padding: 15px; border-radius: 8px;"><div style="color: #ffd700; font-size: 0.85rem;">Base</div><div style="color: #fff; font-size: 1.4rem; font-weight: bold;">' + fmt(p.baseCase) + '</div></div><div style="background: rgba(255,0,0,0.15); padding: 15px; border-radius: 8px;"><div style="color: #ff6666; font-size: 0.85rem;">Worst</div><div style="color: #fff; font-size: 1.4rem; font-weight: bold;">' + fmt(p.worstCase) + '</div></div></div><div style="color: #ffa500;">Risk: ' + (p.riskScore || '?') + '/10 — ' + (p.riskLabel || '') + '</div><div style="color: #ccc; font-size: 0.9rem; margin-top: 8px;">' + (p.explanation || '').replace(/</g, '&lt;') + '</div></div>';
+        } else { resultDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable.</span>'; }
+    } catch (err) { resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>'; }
+};
+
+// Assignment 4: Risk DNA
+window.runRiskDna = async function runRiskDna() {
+    const q1 = document.getElementById('riskDnaQ1')?.value || 'wait';
+    const q2 = document.getElementById('riskDnaQ2')?.value || 'months';
+    const q3 = document.getElementById('riskDnaQ3')?.value || 'important';
+    const resultDiv = document.getElementById('riskDnaResult');
+    if (!resultDiv) return;
+    resultDiv.style.display = 'block'; resultDiv.innerHTML = '<span style="color: #ffa500;">Analyzing...</span>';
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+            body: JSON.stringify({ model: 'mistral-small', messages: [
+                { role: 'system', content: 'Behavioral finance expert. Return ONLY valid JSON.' },
+                { role: 'user', content: `Q1(-20%)=${q1}, Q2(horizon)=${q2}, Q3(money)=${q3}. JSON: profileName (e.g. "Cautious Turtle"), profileEmoji, description, expectedRange12mo, riskLevel (1-10), recommendation.` }
+            ], temperature: 0.9, max_tokens: 500 })
+        });
+        const data = await response.json();
+        if (data.choices?.[0]) {
+            let content = data.choices[0].message.content.trim().replace(/```json\n?|\n?```/g, '').trim();
+            const p = JSON.parse(content);
+            resultDiv.innerHTML = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,165,0,0.4);"><div style="color: #ffa500; font-size: 1.5rem; font-weight: bold;">' + (p.profileEmoji || '🧬') + ' ' + (p.profileName || 'Profile').replace(/</g, '&lt;') + '</div><div style="color: #fff; line-height: 1.6; margin: 10px 0;">' + (p.description || '').replace(/</g, '&lt;') + '</div><div style="color: #ffd700;">Expected 12mo: ' + (p.expectedRange12mo || '').replace(/</g, '&lt;') + '</div><div style="color: #ffa500;">Risk: ' + (p.riskLevel || '?') + '/10</div><div style="color: #00ff00; margin-top: 10px;">💡 ' + (p.recommendation || '').replace(/</g, '&lt;') + '</div></div>';
+        } else { resultDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable.</span>'; }
+    } catch (err) { resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>'; }
+};
+
+// Assignment 4: Strategy Report Card
+window.runStrategyReportCard = async function runStrategyReportCard() {
+    const strategy = document.getElementById('reportCardStrategy')?.value?.trim();
+    const resultDiv = document.getElementById('reportCardResult');
+    if (!resultDiv) return;
+    if (!strategy) { resultDiv.style.display = 'block'; resultDiv.innerHTML = '<span style="color: #ffa500;">Describe your strategy first.</span>'; return; }
+    resultDiv.style.display = 'block'; resultDiv.innerHTML = '<span style="color: #ffa500;">Grading...</span>';
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+            body: JSON.stringify({ model: 'mistral-small', messages: [
+                { role: 'system', content: 'Crypto strategy analyst. Grade like school report. Return ONLY valid JSON.' },
+                { role: 'user', content: `Strategy: "${strategy}" JSON: diversificationGrade, riskReturnGrade, liquidityGrade (A+ to F), overallScore (0-100), strengths (array), improvements (array), topRecommendation.` }
+            ], temperature: 0.7, max_tokens: 600 })
+        });
+        const data = await response.json();
+        if (data.choices?.[0]) {
+            let content = data.choices[0].message.content.trim().replace(/```json\n?|\n?```/g, '').trim();
+            const p = JSON.parse(content);
+            const grades = [p.diversificationGrade, p.riskReturnGrade, p.liquidityGrade].filter(Boolean);
+            const strengths = Array.isArray(p.strengths) ? p.strengths : [p.strengths].filter(Boolean);
+            const improvements = Array.isArray(p.improvements) ? p.improvements : [p.improvements].filter(Boolean);
+            resultDiv.innerHTML = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,215,0,0.4);"><div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">' + grades.map(g => '<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #ffd700;">' + g + '</div>').join('') + '</div><div style="color: #fff; margin-bottom: 10px;"><strong>Strengths:</strong> ' + strengths.join('; ').replace(/</g, '&lt;') + '</div><div style="color: #ffa500; margin-bottom: 10px;"><strong>Improve:</strong> ' + improvements.join('; ').replace(/</g, '&lt;') + '</div><div style="color: #00ff00;">💡 ' + (p.topRecommendation || '').replace(/</g, '&lt;') + '</div></div>';
+        } else { resultDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable.</span>'; }
+    } catch (err) { resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>'; }
+};
+
 window.runWhatIfScenario = function runWhatIfScenario() {
     const scenario = document.getElementById('whatIfScenario')?.value || 'crash';
     const answer = (document.getElementById('whatIfMyAnswer')?.value || '').trim();
