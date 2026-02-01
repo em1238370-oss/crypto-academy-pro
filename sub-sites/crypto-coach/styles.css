@@ -1627,6 +1627,42 @@ div:has-text("Experience Points") {
     font-size: 1.3rem;
 }
 
+/* Module C: Centered headers and Assignment 3 */
+.section-box-header {
+    text-align: center !important;
+}
+
+.module-c-content .section-title {
+    text-align: center !important;
+}
+
+.assignment-3-box label {
+    text-align: center;
+    display: block;
+}
+
+.assignment-3-box {
+    background: rgba(255, 165, 0, 0.08);
+    border: 2px solid rgba(255, 165, 0, 0.3);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 20px;
+}
+
+.assignment-3-box .section-box-header {
+    color: #ffa500;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+}
+
+/* aiScenarioResult - header centered via parent, content left for readability */
+
+.module-c-content .result-box,
+.module-c-content #experimentAnalysis,
+.module-c-content #aiAdviceBox {
+    text-align: center;
+}
+
 .btn {
     padding: 12px 30px;
     border: none;

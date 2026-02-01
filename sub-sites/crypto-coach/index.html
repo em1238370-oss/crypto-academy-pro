@@ -608,11 +608,11 @@
                                <h2>C. Crypto Experiment Lab <span style="background: rgba(255, 0, 0, 0.3); padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; margin-left: 15px; color: #ff6666;">PAID</span></h2>
                                <span class="drawer-icon">▼</span>
                            </div>
-                           <div class="drawer-content">
-                               <h3 style="color: #ffffff; margin-bottom: 20px;">Interactive zone for testing hypotheses and experimenting with cryptocurrency strategies</h3>
+                           <div class="drawer-content module-c-content">
+                               <h3 style="color: #ffffff; margin-bottom: 20px; text-align: center;">Interactive zone for testing hypotheses and experimenting with cryptocurrency strategies</h3>
                                
                                <div class="section-box">
-                                   <h4>Create New Experiment</h4>
+                                   <h4 class="section-box-header">Create New Experiment</h4>
                                    <div class="form-group">
                                        <label>Your Deposit ($):</label>
                                        <input type="number" id="userDeposit" placeholder="e.g.: 10000" min="0" step="100" value="10000" style="width: 100%;">
@@ -662,12 +662,13 @@
                                        </select>
                                    </div>
 
-                                   <div class="form-group">
+                                   <div class="form-group assignment-3-box">
+                                       <h4 class="section-box-header">Assignment 3: What would I do if…?</h4>
                                        <label>Scenario Description:</label>
                                        <textarea id="experimentScenario" rows="3" placeholder="e.g.: What if BTC drops 20%? How will this affect my portfolio?"></textarea>
                                    </div>
                                    <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 20px;">
-                                       <label style="margin-bottom: 15px; color: #ffffff; font-size: 1.1rem; font-weight: 600; display: block;">AI Scenario Builder (Universal)</label>
+                                       <label style="margin-bottom: 15px; color: #ffffff; font-size: 1.1rem; font-weight: 600; display: block; text-align: center;">AI Scenario Builder (Universal)</label>
                                        <textarea id="aiScenarioInput" rows="4" placeholder="Describe any scenario: crashes, bull runs, regulatory events, custom situations..." style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: #ffffff; font-size: 1rem; margin-bottom: 15px; resize: vertical; font-family: inherit; box-sizing: border-box;"></textarea>
                                        <button class="btn btn-red" style="padding: 12px 25px; font-size: 1rem; font-weight: 600; width: 100%; margin-top: 0;" onclick="aiScenarioBuilder()">Generate Detailed Scenario</button>
                                        <div id="aiScenarioResult" style="margin-top: 20px; font-size: 1rem; line-height: 1.7; max-height: 500px; overflow-y: auto; overflow-x: hidden; padding-right: 10px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.2);"></div>
@@ -688,8 +689,8 @@
 
                                <!-- NEW FUNCTIONS: Backtesting Engine, Strategy Optimizer, Predictive Analytics -->
                                <div class="section-box" style="margin-top: 20px;">
-                                   <h4>📊 Backtesting Engine</h4>
-                                   <p style="color: #cccccc; margin-bottom: 15px;">Test your strategies on historical data</p>
+                                   <h4 class="section-box-header">📊 Backtesting Engine</h4>
+                                   <p style="color: #cccccc; margin-bottom: 15px; text-align: center;">Test your strategies on historical data</p>
                                    <div class="form-group">
                                        <label>Strategy Description:</label>
                                        <textarea id="backtestStrategy" rows="2" placeholder="e.g.: Buy when BTC drops 10%, sell when +20%"></textarea>
@@ -708,8 +709,8 @@
                                </div>
 
                                <div class="section-box" style="margin-top: 20px;">
-                                   <h4>🎯 Strategy Optimizer</h4>
-                                   <p style="color: #cccccc; margin-bottom: 15px;">Find optimal parameters for your strategy</p>
+                                   <h4 class="section-box-header">🎯 Strategy Optimizer</h4>
+                                   <p style="color: #cccccc; margin-bottom: 15px; text-align: center;">Find optimal parameters for your strategy</p>
                                    <div class="form-group">
                                        <label>Strategy Template:</label>
                                        <input type="text" id="strategyTemplate" placeholder="e.g.: Buy on drop X%, sell on rise Y%" style="width: 100%;">
@@ -736,8 +737,8 @@
                                </div>
 
                                <div class="section-box" style="margin-top: 20px;">
-                                   <h4>🔮 Predictive Analytics Dashboard</h4>
-                                   <p style="color: #cccccc; margin-bottom: 15px;">AI-powered price predictions and recommendations</p>
+                                   <h4 class="section-box-header">🔮 Predictive Analytics Dashboard</h4>
+                                   <p style="color: #cccccc; margin-bottom: 15px; text-align: center;">AI-powered price predictions and recommendations</p>
                                    <div class="form-group">
                                        <label>Select Coin for Prediction:</label>
                                        <select id="predictCoin">
@@ -752,7 +753,7 @@
                                </div>
 
                                <div class="section-box" id="experimentResults" style="display: none;">
-                                   <h4>🔴 Live Result with AI Advice</h4>
+                                   <h4 class="section-box-header">🔴 Live Result with AI Advice</h4>
                                    <div class="result-box" id="experimentAnalysis"></div>
                                    <div class="result-box" id="aiAdviceBox" style="background: rgba(255, 165, 0, 0.2); border-color: #ffa500; margin-top: 15px;"></div>
                                    <div class="chart-container" id="experimentChart">Graphic visualization will appear here</div>
@@ -764,7 +765,7 @@
                                </div>
 
                                <div class="section-box">
-                                   <h4>Your Experiment Archive</h4>
+                                   <h4 class="section-box-header">Your Experiment Archive</h4>
                                    <div class="section-title">Saved Experiments</div>
                                    <div id="experimentArchive"></div>
                                </div>
