@@ -9135,12 +9135,14 @@ window.updateRebalanceSlider = function updateRebalanceSlider() {
     pctEl.textContent = pct;
     const portfolio = 10000;
     const targetBtc = 60;
-    const sellBtc = pct > targetBtc ? Math.round(portfolio * (pct - targetBtc) / 100) : 0;
-    const buyEth = sellBtc;
-    if (pct <= targetBtc) {
-        resultEl.innerHTML = 'No rebalance needed — you\'re at or below target.';
+    if (pct === targetBtc) {
+        resultEl.innerHTML = 'No rebalance needed — you\'re at target.';
+    } else if (pct > targetBtc) {
+        const sellBtc = Math.round(portfolio * (pct - targetBtc) / 100);
+        resultEl.innerHTML = 'BTC grew. <strong style="color: #ff8888;">Sell</strong> $' + sellBtc.toLocaleString() + ' <strong>BTC</strong> · <strong style="color: #90c090;">Buy</strong> $' + sellBtc.toLocaleString() + ' <strong>ETH</strong>';
     } else {
-        resultEl.innerHTML = '<strong style="color: #ff8888;">Sell</strong> $' + sellBtc.toLocaleString() + ' <strong>BTC</strong> · <strong style="color: #90c090;">Buy</strong> $' + buyEth.toLocaleString() + ' <strong>ETH</strong>';
+        const buyBtc = Math.round(portfolio * (targetBtc - pct) / 100);
+        resultEl.innerHTML = 'BTC fell. <strong style="color: #ff8888;">Sell</strong> $' + buyBtc.toLocaleString() + ' <strong>ETH</strong> · <strong style="color: #90c090;">Buy</strong> $' + buyBtc.toLocaleString() + ' <strong>BTC</strong>';
     }
 };
 
