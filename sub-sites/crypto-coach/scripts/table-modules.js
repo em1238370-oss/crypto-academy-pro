@@ -9358,10 +9358,11 @@ window.updateRebalanceCalendar = function updateRebalanceCalendar() {
     const next = new Date(last);
     next.setDate(next.getDate() + daysPerPeriod);
     const daysLeft = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
+    const nextDateStr = next.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     if (daysLeft <= 0) {
         resultEl.innerHTML = 'Next rebalance was due <strong>' + Math.abs(daysLeft) + ' days ago</strong>. Time to rebalance!';
     } else {
-        resultEl.innerHTML = 'Next rebalance in <strong>' + daysLeft + ' days</strong> (around ' + next.toLocaleDateString() + ').';
+        resultEl.innerHTML = 'Next rebalance in <strong>' + daysLeft + ' days</strong> (around ' + nextDateStr + ').';
     }
 };
 

@@ -2966,6 +2966,44 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     color: #1a1a1a;
     background: #ffffff;
 }
+.rebalance-date-input,
+.rebalance-date-input::-webkit-datetime-edit,
+.rebalance-date-input::-webkit-datetime-edit-text,
+.rebalance-date-input::-webkit-datetime-edit-month-field,
+.rebalance-date-input::-webkit-datetime-edit-day-field,
+.rebalance-date-input::-webkit-datetime-edit-year-field {
+    color: #ffffff !important;
+}
+.rebalance-calendar-section { max-width: 480px; margin-left: auto; margin-right: auto; }
+.rebalance-calendar-section .rebalance-form-label { color: #ffffff !important; }
+.rebalance-calendar-section .rebalance-calendar-hint { color: #cccccc !important; }
+.rebalance-calendar-section h5 { color: #ffd700 !important; }
+.rebalance-calendar-section .rebalance-form-input,
+.rebalance-calendar-section .rebalance-form-select { color: #ffffff !important; }
+.rebalance-calendar-hint { text-align: center; }
+.rebalance-calendar-card {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(20,15,10,0.5) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(255,215,0,0.2);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.rebalance-calendar-grid { justify-content: center; }
+.rebalance-calendar-result {
+    padding: 16px 18px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.15);
+    font-size: 1rem;
+    color: #ffffff !important;
+    margin-bottom: 14px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+.rebalance-calendar-btn { margin-top: 4px; }
 .rebalance-input-wrap {
     color: #ffffff !important;
     display: inline-flex;
