@@ -3290,6 +3290,32 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 }
 .rebalance-glossary .rebalance-detail:last-child { margin-bottom: 0; }
 
+.rebalance-mistakes-section { max-width: 560px; margin-left: auto; margin-right: auto; }
+.rebalance-mistakes-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;
+}
+.rebalance-mistake-card {
+    background: linear-gradient(145deg, rgba(40,25,20,0.9) 0%, rgba(25,15,12,0.95) 100%);
+    border: 1px solid rgba(255,165,0,0.25); border-radius: 12px;
+    padding: 0; overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.rebalance-mistake-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,165,0,0.15); border-color: rgba(255,165,0,0.4); }
+.rebalance-mistake-card[open] { border-color: rgba(255,215,0,0.5); box-shadow: 0 4px 16px rgba(255,215,0,0.2); }
+.rebalance-mistake-card summary {
+    cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+    list-style: none; color: #e8d8a8; font-weight: 600; font-size: 0.95rem;
+}
+.rebalance-mistake-card summary::-webkit-details-marker { display: none; }
+.rebalance-mistake-card summary::after { content: '▶'; font-size: 0.7rem; margin-left: auto; opacity: 0.6; transition: transform 0.2s; }
+.rebalance-mistake-card[open] summary::after { transform: rotate(90deg); }
+.rebalance-mistake-emoji { font-size: 1.6rem; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); }
+.rebalance-mistake-title { flex: 1; }
+.rebalance-mistake-card p {
+    margin: 0; padding: 8px 16px 14px 16px;
+    color: #b8b0a0; font-size: 0.9rem; line-height: 1.55;
+}
+
 .practice-slider-block-centered { text-align: center; display: flex; flex-direction: column; align-items: center; }
 .practice-slider-block-centered > * { width: 100%; max-width: 520px; }
 .practice-slider-coins-container { margin-bottom: 16px; width: 100%; display: flex; justify-content: center; }
