@@ -9558,6 +9558,21 @@ window.addQuickLogFromCalendar = function addQuickLogFromCalendar() {
     openRebalanceNotesModal();
 };
 
+function updateRebalanceCheckProgress() {
+    const c1 = document.getElementById('rebalanceCheck1')?.checked;
+    const c2 = document.getElementById('rebalanceCheck2')?.checked;
+    const c3 = document.getElementById('rebalanceCheck3')?.checked;
+    const c4 = document.getElementById('rebalanceCheck4')?.checked;
+    const count = [c1, c2, c3, c4].filter(Boolean).length;
+    const prog = document.getElementById('rebalanceCheckProgress');
+    if (prog) prog.textContent = count + '/4';
+}
+document.addEventListener('DOMContentLoaded', function() {
+    [1,2,3,4].forEach(function(i) {
+        var cb = document.getElementById('rebalanceCheck' + i);
+        if (cb) cb.addEventListener('change', updateRebalanceCheckProgress);
+    });
+});
 window.checkRebalanceReadiness = function checkRebalanceReadiness() {
     const c1 = document.getElementById('rebalanceCheck1')?.checked;
     const c2 = document.getElementById('rebalanceCheck2')?.checked;
@@ -9567,11 +9582,13 @@ window.checkRebalanceReadiness = function checkRebalanceReadiness() {
     if (!resultEl) return;
     const count = [c1, c2, c3, c4].filter(Boolean).length;
     resultEl.style.display = 'block';
+    resultEl.classList.remove('rebalance-check-success-pulse');
     if (count === 4) {
         resultEl.style.background = 'linear-gradient(135deg, rgba(0,120,0,0.25) 0%, rgba(0,90,0,0.2) 100%)';
         resultEl.style.border = '1px solid rgba(100,220,100,0.5)';
         resultEl.style.color = '#90c090';
         resultEl.textContent = '✓ Ready! You can proceed with rebalancing.';
+        resultEl.classList.add('rebalance-check-success-pulse');
     } else {
         resultEl.style.background = 'linear-gradient(135deg, rgba(255,140,0,0.2) 0%, rgba(200,100,0,0.15) 100%)';
         resultEl.style.border = '1px solid rgba(255,165,0,0.5)';

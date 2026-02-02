@@ -1765,11 +1765,12 @@
                                        <div class="rebalance-extra-section rebalance-checklist-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
                                            <h5 class="rebalance-checklist-title">✅ Before I rebalance</h5>
                                            <p class="rebalance-checklist-subtitle">Quick checklist — tick when ready</p>
+                                           <div id="rebalanceCheckProgress" class="rebalance-check-progress">0/4</div>
                                            <div class="rebalance-checklist-grid">
-                                               <label class="rebalance-check-card"><input type="checkbox" id="rebalanceCheck1"><span class="rebalance-check-emoji">🎯</span><span class="rebalance-check-text">I know my target allocation</span></label>
-                                               <label class="rebalance-check-card"><input type="checkbox" id="rebalanceCheck2"><span class="rebalance-check-emoji">💸</span><span class="rebalance-check-text">I checked exchange fees</span></label>
-                                               <label class="rebalance-check-card"><input type="checkbox" id="rebalanceCheck3"><span class="rebalance-check-emoji">🧘</span><span class="rebalance-check-text">I'm not acting on emotion</span></label>
-                                               <label class="rebalance-check-card"><input type="checkbox" id="rebalanceCheck4"><span class="rebalance-check-emoji">📅</span><span class="rebalance-check-text">I have a plan and schedule</span></label>
+                                               <label class="rebalance-check-card" data-tooltip="e.g. 60% BTC, 40% ETH — your goal weights"><input type="checkbox" id="rebalanceCheck1"><span class="rebalance-check-emoji">🎯</span><span class="rebalance-check-text">I know my target allocation</span></label>
+                                               <label class="rebalance-check-card" data-tooltip="Check fees before you trade — they add up"><input type="checkbox" id="rebalanceCheck2"><span class="rebalance-check-emoji">💸</span><span class="rebalance-check-text">I checked exchange fees</span></label>
+                                               <label class="rebalance-check-card" data-tooltip="Fear & greed are poor advisors — stick to the plan"><input type="checkbox" id="rebalanceCheck3"><span class="rebalance-check-emoji">🧘</span><span class="rebalance-check-text">I'm not acting on emotion</span></label>
+                                               <label class="rebalance-check-card" data-tooltip="e.g. quarterly on the 15th — stick to it"><input type="checkbox" id="rebalanceCheck4"><span class="rebalance-check-emoji">📅</span><span class="rebalance-check-text">I have a plan and schedule</span></label>
                                            </div>
                                            <div id="rebalanceCheckResult" class="rebalance-check-result"></div>
                                            <button type="button" class="btn btn-red rebalance-check-btn" onclick="checkRebalanceReadiness()">✨ Check readiness</button>
