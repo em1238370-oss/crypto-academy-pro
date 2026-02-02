@@ -174,6 +174,7 @@ function toggleDrawerWithInit(drawerId) {
     if (drawerId === 'drawerD') {
         if (typeof refreshModuleDSavedStrategies === 'function') setTimeout(refreshModuleDSavedStrategies, 150);
         if (typeof refreshDcaScenariosList === 'function') setTimeout(refreshDcaScenariosList, 150);
+        if (typeof loadRebalanceCalendarNotes === 'function') setTimeout(loadRebalanceCalendarNotes, 100);
     }
     
     // Initialize coins if drawerA is opened
@@ -9374,6 +9375,11 @@ document.addEventListener('DOMContentLoaded', function() {
     loadRebalanceCalendarNotes();
     const notesEl = document.getElementById('rebalanceCalendarNotes');
     if (notesEl) { notesEl.addEventListener('input', saveRebalanceCalendarNotes); notesEl.addEventListener('change', saveRebalanceCalendarNotes); }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('rebalanceNotesModal')?.classList.contains('rebalance-notes-modal-open')) {
+            closeRebalanceNotesModal();
+        }
+    });
 });
 
 window.markRebalanceDone = function markRebalanceDone() {
@@ -9385,6 +9391,7 @@ window.markRebalanceDone = function markRebalanceDone() {
 };
 
 const REBALANCE_CALENDAR_NOTES_KEY = 'cryptoCoachRebalanceCalendarNotes';
+let rebalanceNotesSaveTimeout = null;
 
 function loadRebalanceCalendarNotes() {
     try {
@@ -9396,8 +9403,45 @@ function loadRebalanceCalendarNotes() {
 function saveRebalanceCalendarNotes() {
     const el = document.getElementById('rebalanceCalendarNotes');
     if (!el) return;
-    try { localStorage.setItem(REBALANCE_CALENDAR_NOTES_KEY, el.value || ''); } catch (e) {}
+    if (rebalanceNotesSaveTimeout) clearTimeout(rebalanceNotesSaveTimeout);
+    rebalanceNotesSaveTimeout = setTimeout(function() {
+        try {
+            localStorage.setItem(REBALANCE_CALENDAR_NOTES_KEY, el.value || '');
+            const hint = document.getElementById('rebalanceNotesSavedHint');
+            if (hint) { hint.style.display = 'inline-block'; hint.style.opacity = '1'; setTimeout(function() { hint.style.opacity = '0'; hint.style.display = 'none'; }, 2000); }
+        } catch (e) {}
+        rebalanceNotesSaveTimeout = null;
+    }, 400);
 }
+window.openRebalanceNotesModal = function openRebalanceNotesModal() {
+    const modal = document.getElementById('rebalanceNotesModal');
+    const notesEl = document.getElementById('rebalanceNotesModalNotes');
+    const logEl = document.getElementById('rebalanceNotesModalLog');
+    if (!modal || !notesEl || !logEl) return;
+    try {
+        const notes = localStorage.getItem(REBALANCE_CALENDAR_NOTES_KEY) || '';
+        notesEl.textContent = notes || '(No notes yet)';
+        const entries = getRebalanceLog();
+        if (entries.length === 0) {
+            logEl.innerHTML = '<p style="color:#888;font-size:0.9rem;">No log entries yet.</p>';
+        } else {
+            logEl.innerHTML = entries.slice().reverse().map(function(e) {
+                return '<div class="rebalance-notes-modal-log-entry"><strong>' + (e.date || '') + '</strong> — ' + (e.action || '') + (e.notes ? '<br><span style="color:#888;font-size:0.85rem;">' + e.notes + '</span>' : '') + '</div>';
+            }).join('');
+        }
+    } catch (e) { notesEl.textContent = '(Error loading)'; logEl.innerHTML = '<p style="color:#888;">Error loading log.</p>'; }
+    modal.classList.add('rebalance-notes-modal-open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+};
+window.closeRebalanceNotesModal = function closeRebalanceNotesModal() {
+    const modal = document.getElementById('rebalanceNotesModal');
+    if (modal) {
+        modal.classList.remove('rebalance-notes-modal-open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+};
 
 window.setRebalanceReminder = function setRebalanceReminder() {
     const lastInput = document.getElementById('rebalanceLastDate');
@@ -9443,7 +9487,7 @@ window.addQuickLogFromCalendar = function addQuickLogFromCalendar() {
     setRebalanceLog(entries);
     input.value = '';
     if (notesInput) notesInput.value = '';
-    if (typeof alert === 'function') alert('Entry added.');
+    openRebalanceNotesModal();
 };
 
 window.checkRebalanceReadiness = function checkRebalanceReadiness() {

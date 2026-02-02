@@ -1722,7 +1722,9 @@
                                                <div class="rebalance-calendar-notes">
                                                    <label class="rebalance-form-label">My notes</label>
                                                    <textarea id="rebalanceCalendarNotes" class="rebalance-calendar-notes-input" placeholder="e.g. Plan to trim BTC, add ETH. Check fees on exchange first." rows="3"></textarea>
+                                                   <span id="rebalanceNotesSavedHint" class="rebalance-notes-saved-hint" style="display:none;">✓ Saved</span>
                                                </div>
+                                               <button type="button" class="btn btn-red rebalance-view-notes-btn" onclick="openRebalanceNotesModal()" style="margin-bottom: 16px;">📋 View my notes & log</button>
                                                <div class="rebalance-calendar-quick-log">
                                                    <label class="rebalance-form-label">📝 Log entry — record what you did</label>
                                                    <p class="rebalance-quick-log-hint" style="color: #aaaaaa; font-size: 0.85rem; margin-bottom: 8px;">e.g. Sold $500 BTC, bought $500 ETH because…</p>
@@ -2097,6 +2099,25 @@
            console.log('✅ Chat position force script loaded');
        })();
    </script>
+
+   <!-- Modal: My notes & log (blur overlay) -->
+   <div id="rebalanceNotesModal" class="rebalance-notes-modal-overlay" aria-hidden="true">
+       <div class="rebalance-notes-modal-backdrop" onclick="closeRebalanceNotesModal()"></div>
+       <div class="rebalance-notes-modal-content">
+           <button type="button" class="rebalance-notes-modal-close" onclick="closeRebalanceNotesModal()" aria-label="Close">×</button>
+           <h5 class="rebalance-notes-modal-title">📋 My notes & log</h5>
+           <div class="rebalance-notes-modal-body">
+               <div class="rebalance-notes-modal-section">
+                   <h6>My notes</h6>
+                   <div id="rebalanceNotesModalNotes" class="rebalance-notes-modal-text"></div>
+               </div>
+               <div class="rebalance-notes-modal-section">
+                   <h6>Log entries</h6>
+                   <div id="rebalanceNotesModalLog" class="rebalance-notes-modal-log"></div>
+               </div>
+           </div>
+       </div>
+   </div>
 </body>
 </html>
 

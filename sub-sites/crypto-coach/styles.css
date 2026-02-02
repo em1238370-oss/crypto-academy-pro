@@ -3018,9 +3018,44 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     box-sizing: border-box;
 }
 .rebalance-calendar-notes-input::placeholder { color: rgba(255,255,255,0.5); }
+.rebalance-notes-saved-hint { font-size: 0.85rem; color: #90c090; margin-top: 6px; display: inline-block; animation: rebalanceSavedFade 2s ease-out forwards; }
+@keyframes rebalanceSavedFade { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+.rebalance-view-notes-btn { width: 100%; }
 .rebalance-calendar-quick-log { padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
 .rebalance-calendar-quick-log .rebalance-form-input { width: 100%; max-width: 100%; margin-bottom: 10px; }
 .rebalance-calendar-quick-log .btn { margin-top: 4px; }
+.rebalance-notes-modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 10000;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transition: opacity 0.25s, visibility 0.25s;
+}
+.rebalance-notes-modal-overlay.rebalance-notes-modal-open {
+    opacity: 1; visibility: visible;
+}
+.rebalance-notes-modal-backdrop {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    cursor: pointer;
+}
+.rebalance-notes-modal-content {
+    position: relative; z-index: 1; max-width: 480px; width: 90%; max-height: 85vh; overflow-y: auto;
+    background: linear-gradient(135deg, rgba(40,25,20,0.98) 0%, rgba(30,18,15,0.98) 100%);
+    border: 1px solid rgba(255,215,0,0.3); border-radius: 12px; padding: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.rebalance-notes-modal-close {
+    position: absolute; top: 12px; right: 12px; width: 36px; height: 36px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;
+    color: #fff; font-size: 1.5rem; line-height: 1; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
+}
+.rebalance-notes-modal-close:hover { background: rgba(255,255,255,0.2); }
+.rebalance-notes-modal-title { color: #ffd700 !important; margin-bottom: 20px !important; font-size: 1.2rem !important; }
+.rebalance-notes-modal-body { color: #fff; }
+.rebalance-notes-modal-section { margin-bottom: 20px; }
+.rebalance-notes-modal-section h6 { color: #ffa500 !important; font-size: 0.95rem !important; margin-bottom: 10px !important; }
+.rebalance-notes-modal-text { white-space: pre-wrap; line-height: 1.5; color: #ddd; font-size: 0.95rem; min-height: 1.5em; }
+.rebalance-notes-modal-log { max-height: 200px; overflow-y: auto; }
+.rebalance-notes-modal-log-entry { padding: 10px; margin-bottom: 8px; background: rgba(0,0,0,0.35); border-radius: 6px; border-left: 3px solid rgba(255,215,0,0.5); font-size: 0.9rem; }
+.rebalance-notes-modal-log-entry strong { color: #c9a227; }
 .rebalance-input-wrap {
     color: #ffffff !important;
     display: inline-flex;
