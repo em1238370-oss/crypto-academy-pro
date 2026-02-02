@@ -9053,37 +9053,24 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
         coins.forEach(c => { targetAlloc[c] = Math.round(targetAlloc[c] * scale); newSum += targetAlloc[c]; });
         targetAlloc[coins[0]] += 100 - newSum;
     }
+    let currentSum = coins.reduce((s, c) => s + (currentAlloc[c] || 0), 0);
+    if (currentSum !== 100 && currentSum > 0) {
+        const scale = 100 / currentSum;
+        coins.forEach(c => { currentAlloc[c] = Math.round((currentAlloc[c] || 0) * scale); });
+        currentAlloc[coins[0]] += 100 - coins.reduce((s, c) => s + (currentAlloc[c] || 0), 0);
+    }
 
     const freqLabels = { weekly: 'Weekly', biweekly: 'Bi-weekly', monthly: 'Monthly', quarterly: 'Quarterly', semiannually: 'Semi-annually', yearly: 'Yearly' };
     const freqLabel = freqLabels[frequency] || 'Quarterly';
 
-    const btcPct = targetAlloc['BTC'] || 0;
-    const ethPct = targetAlloc['ETH'] || 0;
-    const targetBtcPct = btcPct;
-    const targetEthPct = ethPct;
-    const currentBtcPct = currentAlloc['BTC'] ?? targetBtcPct;
-    const currentEthPct = currentAlloc['ETH'] ?? targetEthPct;
-
-    const changes = { 'BTC': 0.5, 'ETH': -0.2 };
-    const driftedVal = {};
-    const driftedPct = {};
-    let totalAfterDrift = 0;
-    coins.forEach((c, i) => {
-        const before = Math.round(portfolioValue * (targetAlloc[c] || 0) / 100);
-        const chg = changes[c] !== undefined ? changes[c] : (i % 3 === 0 ? 0.1 : i % 3 === 1 ? -0.15 : 0);
-        driftedVal[c] = Math.round(before * (1 + chg));
-        totalAfterDrift += driftedVal[c];
+    const currentVal = {};
+    const targetVal = {};
+    coins.forEach(c => {
+        const cur = currentAlloc[c] || 0;
+        const tgt = targetAlloc[c] || 0;
+        currentVal[c] = Math.round(portfolioValue * cur / 100);
+        targetVal[c] = Math.round(portfolioValue * tgt / 100);
     });
-    if (totalAfterDrift <= 0) totalAfterDrift = portfolioValue;
-    coins.forEach(c => { driftedPct[c] = Math.round(100 * driftedVal[c] / totalAfterDrift); });
-    const btcAfterDrift = driftedVal['BTC'] || 0;
-    const ethAfterDrift = driftedVal['ETH'] || 0;
-    const btcPctDrifted = driftedPct['BTC'] || 0;
-    const ethPctDrifted = driftedPct['ETH'] || 0;
-    const btcTargetVal = Math.round(totalAfterDrift * targetBtcPct / 100);
-    const ethTargetVal = Math.round(totalAfterDrift * targetEthPct / 100);
-    const sellBtc = Math.max(0, btcAfterDrift - btcTargetVal);
-    const buyEth = Math.max(0, ethTargetVal - ethAfterDrift);
 
     const hodlReturn = 18;
     const rebalReturn = 15;
@@ -9103,32 +9090,41 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
     });
 
     const targetStr = coins.map(c => c + ' ' + (targetAlloc[c] || 0) + '%').join(', ');
-    const beforeStr = coins.map(c => c + ' ' + (driftedPct[c] || 0) + '% — $' + (driftedVal[c] || 0).toLocaleString()).join('<br>');
-    const afterStr = coins.map(c => c + ' ' + (targetAlloc[c] || 0) + '%').join('<br>');
+    const beforeStr = coins.map(c => {
+        const cur = currentAlloc[c] || 0;
+        const val = currentVal[c] || 0;
+        const valStr = cur < 0 ? 'short' : '$' + val.toLocaleString();
+        return c + ' ' + cur + '% — ' + valStr;
+    }).join('<br>');
+    const afterStr = coins.map(c => c + ' ' + (targetAlloc[c] || 0) + '% — $' + (targetVal[c] || 0).toLocaleString()).join('<br>');
 
-    const volDiff = hodlVol - rebalVol;
-    const ddDiff = Math.abs(hodlDrawdown) - Math.abs(rebalDrawdown);
+    const actionSummary = calcActions.map(a => (a.type === 'sell' ? 'Sell' : 'Buy') + ' $' + a.amt.toLocaleString() + ' ' + a.coin).join('; ');
     const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
-    const actionPhrases = [
-        'Sell $' + sellBtc.toLocaleString() + ' BTC, buy $' + buyEth.toLocaleString() + ' ETH. Trim winners, add to laggards — disciplined approach.',
-        'Sell $' + sellBtc.toLocaleString() + ' BTC, buy $' + buyEth.toLocaleString() + ' ETH. Reduce the outperformer, top up the laggard.',
-        'Sell $' + sellBtc.toLocaleString() + ' BTC, buy $' + buyEth.toLocaleString() + ' ETH. Classic rebalancing: sell high, buy low.'
+    const actionPhrases = needsRebalance && calcActions.length > 0 ? [
+        actionSummary + '. Trim winners, add to laggards — disciplined approach.',
+        actionSummary + '. Reduce the outperformer, top up the laggard.',
+        actionSummary + '. Classic rebalancing: sell high, buy low.'
+    ] : [
+        'No action needed — allocation matches target.',
+        'You\'re on target. No trades required.',
+        'Weights align. Sit tight.'
     ];
     const expert1Phrases = [
-        'Expert view: This drift is typical — one asset runs ahead, another lags. Rebalancing brings you back to plan without guessing the market.',
-        'Expert view: When weights shift like this, trimming winners and adding to laggards is the textbook move. Keeps you disciplined.',
-        'Expert view: The before/after shows why rebalancing matters. You lock in some gains from the winner and buy the laggard at better prices.'
+        'This kind of drift is common — some assets run ahead, others lag. Rebalancing gets you back on plan without guessing the market.',
+        'When weights shift like this, trimming winners and adding to laggards is the textbook move. Keeps you disciplined.',
+        'The before/after shows why rebalancing matters: you lock in gains from outperformers and add to underperformers at better prices.'
     ];
     const tableNotePhrases = [
         'Rebalancing often reduces volatility and drawdowns by selling high and buying low.',
-        'With rebalancing you typically get smoother ride — lower swings, smaller drawdowns.',
-        'Selling winners and buying laggards tends to dampen volatility over time.'
+        'With rebalancing you typically get a smoother ride — lower swings, smaller drawdowns.',
+        'Selling winners and buying laggards tends to dampen volatility over time.',
+        'Regular rebalancing can smooth out the bumps — fewer sharp drops, more predictable path.'
     ];
     const expert2Phrases = [
-        'Expert view: With ' + freqLabel + ' rebalancing you trade a bit of return for calmer waters — ' + volDiff + '% less volatility, ' + ddDiff + '% better drawdown. That\'s the usual trade-off.',
-        'Expert view: ' + freqLabel + ' rebalance gives you a smoother ride: volatility drops by ' + volDiff + '%, max drawdown improves by ' + ddDiff + '%. Return may lag slightly, but risk-adjusted it often makes sense.',
-        'Expert view: The numbers suggest ' + freqLabel + ' rebalancing dials down risk — ' + volDiff + '% less volatility, ' + ddDiff + '% better drawdown. You give up some upside for peace of mind.'
+        'With ' + freqLabel + ' rebalancing you typically trade a bit of return for calmer waters — lower volatility, smaller drawdowns. That\'s the usual trade-off.',
+        freqLabel + ' rebalance tends to give a smoother ride: volatility and drawdowns often drop. Return may lag slightly, but risk-adjusted it often makes sense.',
+        'In general, ' + freqLabel + ' rebalancing dials down risk. You give up some upside for peace of mind.'
     ];
     const driftIntroPhrases = [
         'Your portfolio has drifted. To return to target (' + targetStr + '):',
@@ -9141,14 +9137,14 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
         'Weights align with your target (' + targetStr + '). Sit tight.'
     ];
     const expert3RebalancePhrases = [
-        'Expert view: Before you act — check exchange fees (often 0.1–0.5% per trade) and any tax impact. Small costs add up.',
-        'Expert view: Factor in trading fees and taxes before executing. They can eat into the benefit.',
-        'Expert view: Real-world costs — exchange fees, possibly taxes — will trim these numbers. Worth checking first.'
+        'Before you act — check exchange fees (often 0.1–0.5% per trade) and any tax impact. Small costs add up.',
+        'Factor in trading fees and taxes before executing. They can eat into the benefit.',
+        'Real-world costs — exchange fees, possibly taxes — will trim these numbers. Worth checking first.'
     ];
     const expert3NoRebalancePhrases = [
-        'Expert view: You\'re on target — no action needed. Sometimes the best move is to do nothing.',
-        'Expert view: Allocation looks good. No need to tinker.',
-        'Expert view: Weights match your plan. Sit tight and avoid unnecessary trades.'
+        'You\'re on target — no action needed. Sometimes the best move is to do nothing.',
+        'Allocation looks good. No need to tinker.',
+        'Weights match your plan. Sit tight and avoid unnecessary trades.'
     ];
     const bottomLinePhrases = [
         'Bottom line: for your setup, ' + freqLabel + ' rebalancing looks like a solid choice.',
@@ -9160,16 +9156,16 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
     resultDiv.innerHTML = `
         <div class="rebalance-result-section">
             <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">1. Before / After Simulation</h5>
-            <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 10px;">Scenario: BTC +50%, ETH -20% from target. Other coins: mixed moves.</p>
+            <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 10px;">Your current allocation vs target. Portfolio: $${portfolioValue.toLocaleString()}.</p>
             <div class="rebalance-before-after">
                 <div class="rebalance-col">
-                    <strong style="color: #b8a060;">Before (drifted)</strong>
-                    <p style="margin: 6px 0 0 0; font-size: 0.9rem;">${beforeStr}<br><span style="color: #aaaaaa;">Total: $${totalAfterDrift.toLocaleString()}</span></p>
+                    <strong style="color: #b8a060;">Before (current)</strong>
+                    <p style="margin: 6px 0 0 0; font-size: 0.9rem;">${beforeStr}<br><span style="color: #aaaaaa;">Total: $${portfolioValue.toLocaleString()}</span></p>
                 </div>
                 <div class="rebalance-arrow">→</div>
                 <div class="rebalance-col">
                     <strong style="color: #b8a060;">After rebalance</strong>
-                    <p style="margin: 6px 0 0 0; font-size: 0.9rem;">${afterStr}<br><span style="color: #aaaaaa;">Total: $${totalAfterDrift.toLocaleString()}</span></p>
+                    <p style="margin: 6px 0 0 0; font-size: 0.9rem;">${afterStr}<br><span style="color: #aaaaaa;">Total: $${portfolioValue.toLocaleString()}</span></p>
                 </div>
             </div>
             <p style="color: #c9a227; font-size: 0.9rem; margin-top: 12px;">Action: ${pick(actionPhrases)}</p>
@@ -9178,7 +9174,8 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
 
         <div class="rebalance-result-section">
             <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">2. Strategy Comparison</h5>
-            <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 12px;">Hypothetical 12-month comparison (illustrative):</p>
+            <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 8px;">Hypothetical 12-month comparison:</p>
+            <p style="color: #ffa500; font-size: 0.82rem; margin-bottom: 12px;">⚠️ Example numbers only — not calculated from your portfolio. Real returns depend on market conditions.</p>
             <table class="rebalance-comparison-table">
                 <thead>
                     <tr><th></th><th>Never rebalance</th><th>${freqLabel} rebalance</th></tr>
