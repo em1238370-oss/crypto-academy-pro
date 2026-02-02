@@ -2517,9 +2517,10 @@ div:has-text("Experience Points") {
     display: grid;
     grid-template-columns: 1fr;
     grid-template-rows: auto auto;
-    gap: 28px;
+    gap: 1cm;
     align-items: start;
-    margin-bottom: 3cm;
+    margin-top: 1cm;
+    margin-bottom: 1.5cm;
     overflow: visible;
 }
 .report-card-charts.report-card-charts-with-allocation {
@@ -2536,6 +2537,12 @@ div:has-text("Experience Points") {
 .report-card-progress > div:first-child {
     text-align: center;
 }
+.report-card-progress-item {
+    margin-bottom: 14px;
+}
+.report-card-progress-item:last-child {
+    margin-bottom: 0;
+}
 .report-card-gauge {
     display: flex;
     flex-direction: column;
@@ -2543,8 +2550,8 @@ div:has-text("Experience Points") {
     justify-content: flex-start;
 }
 .report-card-gauge-wrap {
-    width: 220px;
-    height: 120px;
+    width: 140px;
+    height: 70px;
     margin: 0 auto;
 }
 .report-card-gauge-wrap canvas {
@@ -2563,8 +2570,8 @@ div:has-text("Experience Points") {
     overflow: visible;
 }
 .report-card-donut-inner {
-    width: 220px;
-    height: 220px;
+    width: 280px;
+    height: 280px;
     margin: 0 auto;
     overflow: visible;
 }
@@ -2572,17 +2579,34 @@ div:has-text("Experience Points") {
     display: block;
     margin: 0 auto;
 }
+.report-card-donut [class*="legend"] ul,
+.report-card-donut ul[role="list"] {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 16px;
+    max-width: 300px;
+    margin: 8px auto 0;
+    padding: 0;
+    list-style: none;
+}
+.report-card-donut [class*="legend"] li,
+.report-card-donut ul[role="list"] li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
 @media (max-width: 600px) {
     .report-card-charts.report-card-charts-with-allocation {
         grid-template-columns: 1fr !important;
     }
     .report-card-gauge-wrap {
-        width: 200px;
-        height: 110px;
+        width: 120px;
+        height: 60px;
     }
     .report-card-donut-inner {
-        width: 200px;
-        height: 200px;
+        width: 240px;
+        height: 240px;
     }
 }
 

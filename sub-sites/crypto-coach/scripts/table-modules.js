@@ -8466,20 +8466,19 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
             const improvements = Array.isArray(p.improvements) ? p.improvements : [p.improvements].filter(Boolean);
             var barColors = ['#ffd700', '#e6a800', '#e07c5a'];
             var html = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,215,0,0.4); text-align: left;">';
-            html += '<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">' + grades.map(g => '<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #ffd700;">' + esc(g) + '</div>').join('') + '</div>';
+            html += '<div class="report-card-grades" style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 1cm;">' + grades.map(g => '<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #ffd700;">' + esc(g) + '</div>').join('') + '</div>';
             html += '<div class="report-card-charts' + (allocation.length > 0 ? ' report-card-charts-with-allocation' : '') + '">';
-            html += '<div class="report-card-progress"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; text-align: center;">Progress</div>';
+            html += '<div class="report-card-progress"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 12px; text-align: center;">Progress</div>';
             ['Diversification', 'Risk–Return', 'Liquidity'].forEach(function(label, i) {
                 var sc = scores[i] || 50;
                 var col = sc >= 70 ? barColors[0] : (sc >= 50 ? barColors[1] : barColors[2]);
-                html += '<div style="margin-bottom: 8px;"><div style="color: #ccc; font-size: 0.8rem; margin-bottom: 2px;">' + label + '</div><div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;"><div style="height: 100%; width: ' + sc + '%; background: ' + col + '; border-radius: 4px; transition: width 0.5s ease;"></div></div></div>';
+                html += '<div class="report-card-progress-item"><div style="color: #ccc; font-size: 0.8rem; margin-bottom: 4px;">' + label + '</div><div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;"><div style="height: 100%; width: ' + sc + '%; background: ' + col + '; border-radius: 4px; transition: width 0.5s ease;"></div></div></div>';
             });
             html += '</div>';
             html += '<div class="report-card-gauge"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; text-align: center;">Overall</div><div class="report-card-gauge-wrap"><canvas id="reportCardGauge"></canvas></div><div style="color: #ffd700; font-size: 1.6rem; font-weight: bold; margin-top: 8px; text-align: center;">' + overallScore + '<span style="font-size: 0.8rem; color: #aaa; font-weight: normal;">/100</span></div></div>';
             if (allocation.length > 0) {
                 var n = allocation.length;
-                var legendH = Math.max(100, n * 28);
-                html += '<div class="report-card-donut" style="min-height: ' + (200 + legendH) + 'px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; text-align: center;">Allocation</div><div class="report-card-donut-inner"><canvas id="reportCardDonut"></canvas></div></div>';
+                html += '<div class="report-card-donut"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; text-align: center;">Allocation</div><div class="report-card-donut-inner"><canvas id="reportCardDonut"></canvas></div></div>';
             }
             html += '</div>';
             html += '<div style="color: #fff; margin-bottom: 10px;"><strong>Strengths:</strong> ' + strengths.map(s => esc(s)).join('; ') + '</div>';
@@ -8499,10 +8498,11 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                     window.reportCardGaugeChart = new Chart(gaugeCtx, {
                         type: 'doughnut',
                         data: {
-                            datasets: [{ data: fillData, backgroundColor: fillColors, borderColor: 'rgba(255,215,0,0.4)', borderWidth: 2 }]
+                            datasets: [{ data: fillData, backgroundColor: fillColors, borderColor: 'rgba(255,215,0,0.4)', borderWidth: 1 }]
                         },
                         options: {
-                            circumference: 180, rotation: 270, responsive: true, maintainAspectRatio: true, cutout: '55%',
+                            circumference: 180, rotation: 270, responsive: true, maintainAspectRatio: true, cutout: '60%',
+                            devicePixelRatio: 2,
                             layout: { padding: 0 },
                             plugins: { legend: { display: false }, tooltip: { enabled: false } }
                         }
@@ -8513,8 +8513,9 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                     if (donutCtx) {
                         var donutColors = ['#ffd700', '#e6a800', '#e07c5a', '#9b59b6', '#3498db', '#5dade2', '#f39c12', '#e74c3c', '#8e44ad', '#c0392b', '#d35400', '#2980b9', '#e67e22', '#7f8c8d'];
                         var nAlloc = allocation.length;
-                        var donutLegendH = Math.max(60, nAlloc * 28);
-                        var legendFontSize = nAlloc > 5 ? 13 : 15;
+                        var legendFontSize = nAlloc > 6 ? 12 : 14;
+                        var legendPadding = nAlloc > 6 ? 2 : 4;
+                        var legendMaxWidth = nAlloc > 6 ? 90 : 140;
                         var colors = donutColors.slice(0, Math.max(nAlloc, 1));
                         while (colors.length < nAlloc) colors.push(donutColors[colors.length % donutColors.length]);
                         window.reportCardDonutChart = new Chart(donutCtx, {
@@ -8526,8 +8527,9 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                             options: {
                                 responsive: true, maintainAspectRatio: true, aspectRatio: 1,
                                 circumference: 360, rotation: -90, cutout: '55%',
-                                layout: { padding: { top: 8, bottom: donutLegendH, left: 16, right: 16 } },
-                                plugins: { legend: { display: true, position: 'bottom', labels: { color: '#e0e0e0', font: { size: legendFontSize, weight: '500' }, boxWidth: 14, padding: 6 } } }
+                                devicePixelRatio: 2,
+                                layout: { padding: { top: 4, bottom: 8, left: 8, right: 8 } },
+                                plugins: { legend: { display: true, position: 'bottom', align: 'center', labels: { color: '#e0e0e0', font: { size: legendFontSize, weight: '500' }, boxWidth: 10, padding: legendPadding, usePointStyle: true, maxWidth: legendMaxWidth } } }
                             }
                         });
                     }
