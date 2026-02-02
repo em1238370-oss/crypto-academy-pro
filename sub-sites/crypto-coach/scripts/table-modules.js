@@ -8444,9 +8444,10 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                 html += '<div style="margin-bottom: 8px;"><div style="color: #ccc; font-size: 0.8rem; margin-bottom: 2px;">' + label + '</div><div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;"><div style="height: 100%; width: ' + sc + '%; background: ' + col + '; border-radius: 4px; transition: width 0.5s ease;"></div></div></div>';
             });
             html += '</div>';
-            html += '<div class="report-card-chart-wrap" style="flex: 0 0 auto; text-align: center; width: 150px; min-height: 170px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 6px;">Overall</div><div style="width: 130px; height: 130px; margin: 0 auto; position: relative;"><canvas id="reportCardGauge"></canvas></div></div>';
+            html += '<div class="report-card-chart-wrap report-card-gauge-wrap" style="flex: 0 0 auto; text-align: center; padding: 0 16px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Overall</div><div style="width: 110px; height: 65px; margin: 0 auto;"><canvas id="reportCardGauge"></canvas></div><div id="reportCardGaugeScore" style="color: #ffd700; font-size: 1.5rem; font-weight: bold; margin-top: 8px; line-height: 1.2;">' + overallScore + '<span style="font-size: 0.8rem; color: #aaa; font-weight: normal;">/100</span></div></div>';
             if (allocation.length > 0) {
-                html += '<div class="report-card-chart-wrap" style="flex: 0 0 auto; text-align: center; width: 180px; min-height: 160px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 6px;">Allocation</div><div style="width: 140px; height: 140px; margin: 0 auto; overflow: visible;"><canvas id="reportCardDonut"></canvas></div></div>';
+                var donutMargin = 32;
+                html += '<div class="report-card-chart-wrap report-card-donut-wrap" style="flex: 0 0 auto; text-align: center; padding: ' + donutMargin + 'px; min-width: 140px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Allocation</div><div class="report-card-donut-canvas-wrap" style="width: 110px; height: 110px; margin: 0 auto ' + donutMargin + 'px;"><canvas id="reportCardDonut"></canvas></div></div>';
             }
             html += '</div>';
             html += '<div style="color: #fff; margin-bottom: 10px;"><strong>Strengths:</strong> ' + strengths.map(s => esc(s)).join('; ') + '</div>';
@@ -8461,37 +8462,32 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                     window.reportCardGaugeChart = new Chart(gaugeCtx, {
                         type: 'doughnut',
                         data: {
-                            datasets: [{ data: [overallScore, 100 - overallScore], backgroundColor: [overallScore >= 70 ? '#ffd700' : (overallScore >= 50 ? '#e6a800' : '#e07c5a'), 'rgba(255,255,255,0.08)'], borderWidth: 0 }]
+                            datasets: [{ data: [overallScore, 100 - overallScore], backgroundColor: [overallScore >= 70 ? '#ffd700' : (overallScore >= 50 ? '#e6a800' : '#e07c5a'), 'rgba(255,255,255,0.06)'], borderWidth: 0 }]
                         },
                         options: {
-                            circumference: 180, rotation: 270, responsive: true, maintainAspectRatio: true, cutout: '65%',
-                            layout: { padding: { top: 8, bottom: 8, left: 8, right: 8 } },
+                            circumference: 180, rotation: 270, responsive: true, maintainAspectRatio: true, cutout: '50%',
+                            layout: { padding: 0 },
                             plugins: { legend: { display: false }, tooltip: { enabled: false } }
-                        },
-                        plugins: [{ id: 'gaugeCenter', afterDraw: function(chart) {
-                            var ctx = chart.ctx, w = chart.width, h = chart.height, cx = w / 2, cy = h / 2;
-                            ctx.save();
-                            ctx.font = 'bold 20px Poppins'; ctx.fillStyle = '#ffd700'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                            ctx.fillText(overallScore, cx, cy - 8);
-                            ctx.font = '10px Poppins'; ctx.fillStyle = '#aaa'; ctx.fillText('/100', cx, cy + 10);
-                            ctx.restore();
-                        }}]
+                        }
                     });
                 }
                 if (allocation.length > 0) {
                     var donutCtx = document.getElementById('reportCardDonut');
                     if (donutCtx) {
-                        var donutColors = ['#ffd700', '#e6a800', '#e07c5a', '#9b59b6', '#3498db', '#5dade2'];
+                        var donutColors = ['#ffd700', '#e6a800', '#e07c5a', '#9b59b6', '#3498db', '#5dade2', '#f39c12', '#e74c3c', '#8e44ad', '#c0392b', '#d35400', '#2980b9', '#e67e22', '#7f8c8d'];
+                        var n = allocation.length;
+                        var colors = donutColors.slice(0, Math.max(n, 1));
+                        while (colors.length < n) colors.push(donutColors[colors.length % donutColors.length]);
                         window.reportCardDonutChart = new Chart(donutCtx, {
                             type: 'doughnut',
                             data: {
                                 labels: allocation.map(function(a) { return (a.asset || '?') + ' ' + (a.pct || 0) + '%'; }),
-                                datasets: [{ data: allocation.map(function(a) { return parseFloat(a.pct) || 0; }), backgroundColor: donutColors.slice(0, allocation.length), borderColor: 'rgba(0,0,0,0.2)', borderWidth: 1 }]
+                                datasets: [{ data: allocation.map(function(a) { return parseFloat(a.pct) || 0; }), backgroundColor: colors.slice(0, n), borderColor: 'rgba(0,0,0,0.2)', borderWidth: 1 }]
                             },
                             options: {
                                 responsive: true, maintainAspectRatio: true, cutout: '55%',
-                                layout: { padding: 8 },
-                                plugins: { legend: { display: true, position: 'right', labels: { color: '#ccc', font: { size: 9 }, boxWidth: 8, padding: 4 } } }
+                                layout: { padding: 30 },
+                                plugins: { legend: { display: true, position: 'bottom', labels: { color: '#ccc', font: { size: n > 6 ? 8 : 9 }, boxWidth: 8, padding: 4 } } }
                             }
                         });
                     }

@@ -2514,10 +2514,20 @@ div:has-text("Experience Points") {
     overflow: visible;
 }
 .report-card-charts {
-    gap: 20px;
+    gap: 24px;
     overflow: visible;
 }
 .report-card-chart-wrap {
+    overflow: visible;
+}
+.report-card-gauge-wrap canvas {
+    display: block;
+    margin: 0 auto;
+}
+.report-card-donut-wrap {
+    min-width: 160px;
+}
+.report-card-donut-canvas-wrap {
     overflow: visible;
 }
 @media (max-width: 500px) {
