@@ -2971,7 +2971,7 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 }
 .rebalance-coin-row {
     display: grid;
-    grid-template-columns: 52px 70px 20px 80px 20px 30px;
+    grid-template-columns: 90px 70px 20px 80px 20px 30px;
     align-items: center;
     justify-items: center;
     gap: 0 6px;
@@ -2983,8 +2983,11 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .rebalance-coin-label {
     color: #e0e0e0 !important;
     font-size: 0.9rem;
-    text-align: center;
+    text-align: left;
     font-weight: 500;
+    width: 100%;
+    padding-right: 12px;
+    box-sizing: border-box;
 }
 .rebalance-input-target,
 .rebalance-input-current {
