@@ -8395,24 +8395,29 @@ window.runRiskDna = async function runRiskDna() {
     } catch (err) { resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>'; }
 };
 
-// Parse allocation from strategy text (fallback when AI misses coins)
+// Parse allocation from strategy text — always use when we find X% ASSET patterns
 function parseAllocationFromStrategy(text) {
     if (!text || typeof text !== 'string') return [];
     var list = [];
-    var re1 = /(\d+(?:\.\d+)?)\s*%\s*([A-Za-z0-9]+)/g;
-    var re2 = /([A-Za-z0-9]+)\s*(\d+(?:\.\d+)?)\s*%/g;
+    // re1: "40% BTC" or "20% USDT/USDC" or "10% RWA tokens" — supports multi-word assets
+    var re1 = /(\d+(?:\.\d+)?)\s*%\s*([A-Za-z0-9\/]+(?:\s+[A-Za-z]+)?)(?:\s|$|,|\.)/g;
+    var re2 = /([A-Za-z0-9\/]+(?:\s+[A-Za-z]+)?)\s*(\d+(?:\.\d+)?)\s*%/g;
     var seen = {};
     var m;
     while ((m = re1.exec(text)) !== null) {
         var pct = parseFloat(m[1]);
-        var asset = m[2].toUpperCase();
-        if (asset.length >= 2 && asset.length <= 10 && !seen[asset]) { seen[asset] = 1; list.push({ asset: asset, pct: pct }); }
+        var raw = (m[2] || '').trim();
+        var asset = raw.replace(/\s+/g, ' ').toUpperCase();
+        var key = asset.replace(/\s/g, '');
+        if (asset.length >= 2 && asset.length <= 25 && !seen[key]) { seen[key] = 1; list.push({ asset: asset, pct: pct }); }
     }
     if (list.length === 0) {
         while ((m = re2.exec(text)) !== null) {
             var pct = parseFloat(m[2]);
-            var asset = m[1].toUpperCase();
-            if (asset.length >= 2 && asset.length <= 10 && !seen[asset]) { seen[asset] = 1; list.push({ asset: asset, pct: pct }); }
+            var raw = (m[1] || '').trim();
+            var asset = raw.replace(/\s+/g, ' ').toUpperCase();
+            var key = asset.replace(/\s/g, '');
+            if (asset.length >= 2 && asset.length <= 25 && !seen[key]) { seen[key] = 1; list.push({ asset: asset, pct: pct }); }
         }
     }
     var sum = list.reduce(function(s, a) { return s + a.pct; }, 0);
@@ -8455,7 +8460,7 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
             const overallScore = Math.max(0, Math.min(100, parseInt(p.overallScore, 10) || 50));
             var allocation = Array.isArray(p.allocation) ? p.allocation.filter(function(a) { return a && (a.asset || a.pct !== undefined); }) : [];
             var parsed = parseAllocationFromStrategy(strategy);
-            if (parsed.length > allocation.length) allocation = parsed;
+            if (parsed.length > 0) allocation = parsed;
             var allocSum = allocation.reduce(function(s, a) { return s + (parseFloat(a.pct) || 0); }, 0);
             if (allocSum > 0 && allocSum !== 100) allocation = allocation.map(function(a) { return { asset: a.asset || '?', pct: Math.round((parseFloat(a.pct) || 0) * 100 / allocSum) }; });
             const strengths = Array.isArray(p.strengths) ? p.strengths : [p.strengths].filter(Boolean);
@@ -8476,7 +8481,7 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
             if (allocation.length > 0) {
                 var n = allocation.length;
                 var legendH = Math.max(80, n * 22);
-                html += '<div class="report-card-donut" style="min-height: ' + (120 + legendH) + 'px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; text-align: center;">Allocation</div><div class="report-card-donut-inner" style="width: 130px; min-height: ' + (100 + legendH) + 'px; margin: 0 auto; overflow: visible;"><canvas id="reportCardDonut"></canvas></div></div>';
+                html += '<div class="report-card-donut" style="min-height: ' + (180 + legendH) + 'px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; text-align: center;">Allocation</div><div class="report-card-donut-inner" style="width: 160px; height: 160px; margin: 0 auto; overflow: visible;"><canvas id="reportCardDonut"></canvas></div></div>';
             }
             html += '</div>';
             html += '<div style="color: #fff; margin-bottom: 10px;"><strong>Strengths:</strong> ' + strengths.map(s => esc(s)).join('; ') + '</div>';
@@ -8515,7 +8520,8 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                                 datasets: [{ data: allocation.map(function(a) { return parseFloat(a.pct) || 0; }), backgroundColor: colors.slice(0, nAlloc), borderColor: 'rgba(0,0,0,0.2)', borderWidth: 1 }]
                             },
                             options: {
-                                responsive: true, maintainAspectRatio: true, cutout: '55%',
+                                responsive: true, maintainAspectRatio: true, aspectRatio: 1,
+                                circumference: 360, rotation: -90, cutout: '55%',
                                 layout: { padding: { top: 8, bottom: donutLegendH, left: 12, right: 12 } },
                                 plugins: { legend: { display: true, position: 'bottom', labels: { color: '#ccc', font: { size: nAlloc > 8 ? 8 : 9 }, boxWidth: 10, padding: 4 } } }
                             }
