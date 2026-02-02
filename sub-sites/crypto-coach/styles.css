@@ -2883,6 +2883,36 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 }
 .rebalance-coin-row:last-child { margin-bottom: 0; }
 .rebalance-coin-row label { min-width: 50px; }
+.rebalance-detail {
+    margin-bottom: 10px;
+    padding: 12px 14px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.rebalance-detail summary {
+    cursor: pointer;
+    color: #b8a060;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.rebalance-detail p {
+    margin: 10px 0 0 0;
+    color: #cccccc;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+.rebalance-glossary .rebalance-detail:last-child { margin-bottom: 0; }
+.rebalance-checklist { display: flex; flex-direction: column; gap: 10px; }
+.rebalance-check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #cccccc;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+.rebalance-check-item input { width: 18px; height: 18px; }
 @media (max-width: 500px) {
     .rebalance-form-grid { grid-template-columns: 1fr; }
 }

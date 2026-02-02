@@ -1674,6 +1674,71 @@
                                        </div>
                                        <button type="button" class="btn btn-red" onclick="runRebalanceExperiment()" style="padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Run rebalance</button>
                                        <div id="rebalanceExperimentResult" class="result-box rebalance-result-box" style="display: none; margin-top: 16px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff;"></div>
+
+                                       <!-- 1. Glossary: Rebalance terms -->
+                                       <div class="rebalance-extra-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
+                                           <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">📖 Glossary: Rebalance terms</h5>
+                                           <div class="rebalance-glossary">
+                                               <details class="rebalance-detail"><summary>Drift</summary><p>When your actual allocation moves away from your target. E.g. you wanted 60% BTC / 40% ETH, but BTC grew and now it's 72% / 28%.</p></details>
+                                               <details class="rebalance-detail"><summary>Target allocation</summary><p>The percentages you aim for (e.g. 60% BTC, 40% ETH). You rebalance to bring your portfolio back to these weights.</p></details>
+                                               <details class="rebalance-detail"><summary>Trim winners</summary><p>Sell a portion of assets that went up. This locks in some gains and brings your allocation back toward target.</p></details>
+                                               <details class="rebalance-detail"><summary>Buy the laggard</summary><p>Add to assets that underperformed. You buy more of what went down, often at better prices.</p></details>
+                                           </div>
+                                       </div>
+
+                                       <!-- 2. Practice: Move the slider -->
+                                       <div class="rebalance-extra-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
+                                           <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">🎚️ Practice: Move the slider</h5>
+                                           <p style="color: #cccccc; font-size: 0.9rem; margin-bottom: 12px;">Target: 60% BTC / 40% ETH. Portfolio $10,000. BTC grew — now it's <strong id="rebalanceSliderPct">60</strong>% of your portfolio. How much to sell/buy?</p>
+                                           <input type="range" id="rebalancePracticeSlider" min="60" max="90" value="60" oninput="updateRebalanceSlider()" style="width: 100%; max-width: 400px; margin-bottom: 12px;">
+                                           <div id="rebalanceSliderResult" style="padding: 14px; background: rgba(0,0,0,0.35); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.95rem; color: #c9a227;"></div>
+                                       </div>
+
+                                       <!-- 3. My rebalance calendar -->
+                                       <div class="rebalance-extra-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
+                                           <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">📅 My rebalance calendar</h5>
+                                           <div class="rebalance-form-grid" style="margin-bottom: 12px;">
+                                               <div class="form-group"><label style="color: #fff;">Last rebalance date:</label><input type="date" id="rebalanceLastDate" style="color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px;"></div>
+                                               <div class="form-group"><label style="color: #fff;">Frequency:</label><select id="rebalanceCalendarFreq" onchange="updateRebalanceCalendar()" style="color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px;"><option value="monthly">Monthly</option><option value="quarterly" selected>Quarterly</option><option value="yearly">Yearly</option></select></div>
+                                           </div>
+                                           <div id="rebalanceCalendarResult" style="padding: 14px; background: rgba(0,0,0,0.35); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.95rem; color: #c9a227; margin-bottom: 10px;"></div>
+                                           <button type="button" class="btn btn-red" onclick="markRebalanceDone()" style="padding: 8px 16px; font-size: 0.9rem;">✓ Mark as done</button>
+                                       </div>
+
+                                       <!-- 4. Common mistakes -->
+                                       <div class="rebalance-extra-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
+                                           <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">⚠️ Common mistakes</h5>
+                                           <div class="rebalance-glossary">
+                                               <details class="rebalance-detail"><summary>Rebalancing too often</summary><p>Frequent rebalancing can eat into returns via fees and taxes. Stick to your schedule (e.g. quarterly).</p></details>
+                                               <details class="rebalance-detail"><summary>Rebalancing on emotion</summary><p>Don't rebalance because you're scared or greedy. Follow your plan and schedule.</p></details>
+                                               <details class="rebalance-detail"><summary>Ignoring fees</summary><p>Check exchange fees before rebalancing. Small fees add up over time.</p></details>
+                                               <details class="rebalance-detail"><summary>No target allocation</summary><p>Without a target, you don't know when to rebalance. Define your weights first.</p></details>
+                                           </div>
+                                       </div>
+
+                                       <!-- 5. My rebalance log -->
+                                       <div class="rebalance-extra-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
+                                           <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">📝 My rebalance log</h5>
+                                           <div style="margin-bottom: 12px;">
+                                               <input type="text" id="rebalanceLogAction" placeholder="e.g. Sold $500 BTC, bought $500 ETH" style="width: 100%; max-width: 400px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+                                               <input type="text" id="rebalanceLogNotes" placeholder="Notes (optional)" style="width: 100%; max-width: 400px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+                                               <button type="button" class="btn btn-red" onclick="addRebalanceLogEntry()" style="padding: 8px 16px; font-size: 0.9rem;">Add entry</button>
+                                           </div>
+                                           <div id="rebalanceLogList" style="max-height: 200px; overflow-y: auto;"></div>
+                                       </div>
+
+                                       <!-- 6. Before I rebalance: quick checklist -->
+                                       <div class="rebalance-extra-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
+                                           <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">✅ Before I rebalance: quick checklist</h5>
+                                           <div class="rebalance-checklist">
+                                               <label class="rebalance-check-item"><input type="checkbox" id="rebalanceCheck1"> I know my target allocation</label>
+                                               <label class="rebalance-check-item"><input type="checkbox" id="rebalanceCheck2"> I checked exchange fees</label>
+                                               <label class="rebalance-check-item"><input type="checkbox" id="rebalanceCheck3"> I'm not acting on emotion</label>
+                                               <label class="rebalance-check-item"><input type="checkbox" id="rebalanceCheck4"> I have a plan and schedule</label>
+                                           </div>
+                                           <div id="rebalanceCheckResult" style="margin-top: 12px; padding: 12px; border-radius: 8px; font-size: 0.95rem; display: none;"></div>
+                                           <button type="button" class="btn btn-red" onclick="checkRebalanceReadiness()" style="padding: 8px 16px; font-size: 0.9rem; margin-top: 8px;">Check readiness</button>
+                                       </div>
                                    </div>
                                </div>
                            </div>

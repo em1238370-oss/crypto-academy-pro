@@ -9125,6 +9125,128 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
 
+// Assignment 5 extras: Practice slider, Calendar, Log, Checklist
+window.updateRebalanceSlider = function updateRebalanceSlider() {
+    const slider = document.getElementById('rebalancePracticeSlider');
+    const pctEl = document.getElementById('rebalanceSliderPct');
+    const resultEl = document.getElementById('rebalanceSliderResult');
+    if (!slider || !pctEl || !resultEl) return;
+    const pct = parseInt(slider.value, 10);
+    pctEl.textContent = pct;
+    const portfolio = 10000;
+    const targetBtc = 60;
+    const sellBtc = pct > targetBtc ? Math.round(portfolio * (pct - targetBtc) / 100) : 0;
+    const buyEth = sellBtc;
+    if (pct <= targetBtc) {
+        resultEl.innerHTML = 'No rebalance needed — you\'re at or below target.';
+    } else {
+        resultEl.innerHTML = '<strong style="color: #ff8888;">Sell</strong> $' + sellBtc.toLocaleString() + ' <strong>BTC</strong> · <strong style="color: #90c090;">Buy</strong> $' + buyEth.toLocaleString() + ' <strong>ETH</strong>';
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('rebalancePracticeSlider')) updateRebalanceSlider();
+});
+
+window.updateRebalanceCalendar = function updateRebalanceCalendar() {
+    const lastInput = document.getElementById('rebalanceLastDate');
+    const freqSel = document.getElementById('rebalanceCalendarFreq');
+    const resultEl = document.getElementById('rebalanceCalendarResult');
+    if (!lastInput || !freqSel || !resultEl) return;
+    const lastStr = lastInput.value;
+    const freq = freqSel.value;
+    if (!lastStr) {
+        resultEl.textContent = 'Set your last rebalance date to see when next is due.';
+        return;
+    }
+    const last = new Date(lastStr);
+    const now = new Date();
+    const daysPerPeriod = freq === 'monthly' ? 30 : freq === 'quarterly' ? 90 : 365;
+    const next = new Date(last);
+    next.setDate(next.getDate() + daysPerPeriod);
+    const daysLeft = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
+    if (daysLeft <= 0) {
+        resultEl.innerHTML = 'Next rebalance was due <strong>' + Math.abs(daysLeft) + ' days ago</strong>. Time to rebalance!';
+    } else {
+        resultEl.innerHTML = 'Next rebalance in <strong>' + daysLeft + ' days</strong> (around ' + next.toLocaleDateString() + ').';
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const lastInput = document.getElementById('rebalanceLastDate');
+    const freqSel = document.getElementById('rebalanceCalendarFreq');
+    if (lastInput) lastInput.addEventListener('change', updateRebalanceCalendar);
+    if (freqSel) freqSel.addEventListener('change', updateRebalanceCalendar);
+});
+
+window.markRebalanceDone = function markRebalanceDone() {
+    const lastInput = document.getElementById('rebalanceLastDate');
+    if (!lastInput) return;
+    const today = new Date().toISOString().slice(0, 10);
+    lastInput.value = today;
+    updateRebalanceCalendar();
+};
+
+const REBALANCE_LOG_KEY = 'cryptoCoachRebalanceLog';
+function getRebalanceLog() {
+    try { return JSON.parse(localStorage.getItem(REBALANCE_LOG_KEY) || '[]'); } catch (e) { return []; }
+}
+function setRebalanceLog(arr) {
+    localStorage.setItem(REBALANCE_LOG_KEY, JSON.stringify(arr));
+}
+function renderRebalanceLog() {
+    const list = document.getElementById('rebalanceLogList');
+    if (!list) return;
+    const entries = getRebalanceLog();
+    if (entries.length === 0) {
+        list.innerHTML = '<p style="color: #888; font-size: 0.9rem;">No entries yet. Add your first rebalance.</p>';
+        return;
+    }
+    list.innerHTML = entries.slice().reverse().map(function(e) {
+        return '<div class="rebalance-log-entry" style="padding: 10px; margin-bottom: 8px; background: rgba(0,0,0,0.35); border-radius: 6px; border-left: 3px solid rgba(255,215,0,0.5);"><strong style="color: #c9a227;">' + (e.date || '') + '</strong> — ' + (e.action || '') + (e.notes ? '<br><span style="color: #888; font-size: 0.85rem;">' + e.notes + '</span>' : '') + '</div>';
+    }).join('');
+}
+window.addRebalanceLogEntry = function addRebalanceLogEntry() {
+    const actionInput = document.getElementById('rebalanceLogAction');
+    const notesInput = document.getElementById('rebalanceLogNotes');
+    if (!actionInput) return;
+    const action = (actionInput.value || '').trim();
+    if (!action) return;
+    const entries = getRebalanceLog();
+    entries.push({
+        date: new Date().toLocaleDateString(),
+        action: action,
+        notes: (notesInput && notesInput.value) ? notesInput.value.trim() : ''
+    });
+    setRebalanceLog(entries);
+    actionInput.value = '';
+    if (notesInput) notesInput.value = '';
+    renderRebalanceLog();
+};
+document.addEventListener('DOMContentLoaded', function() { renderRebalanceLog(); });
+
+window.checkRebalanceReadiness = function checkRebalanceReadiness() {
+    const c1 = document.getElementById('rebalanceCheck1')?.checked;
+    const c2 = document.getElementById('rebalanceCheck2')?.checked;
+    const c3 = document.getElementById('rebalanceCheck3')?.checked;
+    const c4 = document.getElementById('rebalanceCheck4')?.checked;
+    const resultEl = document.getElementById('rebalanceCheckResult');
+    if (!resultEl) return;
+    const count = [c1, c2, c3, c4].filter(Boolean).length;
+    resultEl.style.display = 'block';
+    if (count === 4) {
+        resultEl.style.background = 'rgba(0, 150, 0, 0.2)';
+        resultEl.style.borderLeft = '4px solid #90c090';
+        resultEl.style.color = '#90c090';
+        resultEl.textContent = '✓ Ready! You can proceed with rebalancing.';
+    } else {
+        resultEl.style.background = 'rgba(255, 165, 0, 0.15)';
+        resultEl.style.borderLeft = '4px solid #ffa500';
+        resultEl.style.color = '#ffd700';
+        resultEl.textContent = 'Review ' + (4 - count) + ' more point(s) before rebalancing.';
+    }
+};
+
 function generateDistribution(assets, type) {
     const percentages = {
         'conservative': [60, 40],
