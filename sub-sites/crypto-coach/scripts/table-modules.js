@@ -9236,7 +9236,14 @@ function initPracticeSliderCoins() {
     const btcVal = btcExisting !== undefined && btcExisting !== '' ? parseInt(btcExisting, 10) : 60;
     const btcSafe = Math.min(90, Math.max(10, btcVal));
     rowsHtml = '<div class="practice-slider-coin-row practice-slider-btc-row" data-coin="BTC"><span class="practice-slider-coin-label">BTC</span><input type="number" id="practiceTarget_BTC" min="10" max="90" value="' + btcSafe + '" onchange="updateRebalanceSlider()" class="rebalance-form-input practice-slider-target-input practice-slider-btc-target-input" style="width: 60px;"><span class="rebalance-pct">%</span></div>' + rowsHtml;
-    container.innerHTML = '<div class="practice-slider-coins-grid"><h6 style="color: #b8a060; margin-bottom: 8px; font-size: 0.9rem;">BTC (always) + your coins</h6><p style="color: #888; font-size: 0.85rem; margin-bottom: 8px;">Set your target % for each. BTC cannot be removed.</p>' + rowsHtml + (availableToAdd.length ? '<div class="practice-slider-add-row"><select id="practiceAddSelect" onchange="addPracticeSliderCoin(this)" class="rebalance-form-select practice-add-select"><option value="">— Add coin —</option>' + availableToAdd.map(c => '<option value="' + c + '">' + c + '</option>').join('') + '</select></div>' : '') + '</div>';
+    var assignmentIntro = '<div class="practice-slider-assignment-intro">' +
+        '<p><strong>Why this matters:</strong> Many people buy crypto and wonder — too much in one coin? What to sell or add? This exercise helps you <strong>see your portfolio</strong> and learn when to rebalance without stress.</p>' +
+        '<p><strong>What you do:</strong> Set target % for each coin. Move the slider to simulate BTC going up or down. The result shows what to sell and buy to get back on track.</p>' +
+        '<p><strong>What you learn:</strong> Where you might be overexposed, what to add or remove, and how to fix mistakes — like 90% in one asset or never rebalancing.</p>' +
+        '<p><strong>How it works:</strong> BTC is always in your portfolio. Set target % for BTC and others. Slider = BTC % now (left = fell, right = grew). Result below shows actions.</p>' +
+        '<p class="practice-slider-tip"><em>💡 Common mistakes: 80–90% in one coin, never rebalancing, panicking. This tool helps you plan ahead.</em></p>' +
+        '</div>';
+    container.innerHTML = '<div class="practice-slider-coins-grid">' + assignmentIntro + '<h6 style="color: #b8a060; margin-bottom: 8px; font-size: 0.9rem;">BTC (always) + your coins</h6><p style="color: #888; font-size: 0.85rem; margin-bottom: 8px;">Set your target % for each. BTC cannot be removed.</p>' + rowsHtml + (availableToAdd.length ? '<div class="practice-slider-add-row"><select id="practiceAddSelect" onchange="addPracticeSliderCoin(this)" class="rebalance-form-select practice-add-select"><option value="">— Add coin —</option>' + availableToAdd.map(c => '<option value="' + c + '">' + c + '</option>').join('') + '</select></div>' : '') + '</div>';
 }
 
 window.addPracticeSliderCoin = function addPracticeSliderCoin(selEl) {

@@ -3196,6 +3196,21 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .practice-slider-coins-container { margin-bottom: 16px; }
 .practice-slider-coins-centered { display: flex; justify-content: center; }
 .practice-slider-coins-centered .practice-slider-coins-grid { margin-left: auto; margin-right: auto; }
+.practice-slider-assignment-intro {
+    text-align: left;
+    padding: 14px 0 16px 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255,215,0,0.2);
+}
+.practice-slider-assignment-intro p {
+    margin: 0 0 10px 0;
+    color: #ccc;
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+.practice-slider-assignment-intro p:last-child { margin-bottom: 0; }
+.practice-slider-assignment-intro strong { color: #ffd700; }
+.practice-slider-assignment-intro .practice-slider-tip { color: #b8a060; font-size: 0.85rem; margin-top: 10px; }
 .practice-slider-coins-grid {
     max-width: 420px;
     margin-left: auto;
@@ -3312,7 +3327,6 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     border-radius: 8px;
     border-left: 4px solid rgba(255,215,0,0.4);
 }
-.practice-slider-explanation-expanded .practice-slider-intro { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,215,0,0.2); }
 .practice-slider-explanation p {
     margin: 0 0 10px 0;
     color: #ccc;
