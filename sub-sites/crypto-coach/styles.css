@@ -2902,9 +2902,11 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 }
 
 .rebalance-form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 16px 24px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 24px;
+    flex-wrap: wrap;
     margin-bottom: 20px;
 }
 .rebalance-form-label {
@@ -3115,7 +3117,7 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 }
 .rebalance-check-item input { width: 18px; height: 18px; }
 @media (max-width: 500px) {
-    .rebalance-form-grid { grid-template-columns: 1fr; }
+    .rebalance-form-grid { flex-direction: column; align-items: center; }
 }
 
 .chart-container {
