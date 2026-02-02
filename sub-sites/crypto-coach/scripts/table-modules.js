@@ -8986,10 +8986,10 @@ function initRebalanceAllocationInputs() {
     const remainder = 100 - defaultPct * n;
     const defaults = coins.map((_, i) => i === 0 ? defaultPct + remainder : defaultPct);
     if (coins.length === 2 && coins[0] === 'BTC' && coins[1] === 'ETH') { defaults[0] = 60; defaults[1] = 40; }
-    container.innerHTML = '<div class="rebalance-allocation-grid"><h6 style="color: #b8a060; margin-bottom: 6px; font-size: 0.95rem;">Target % and Current % per coin</h6><p style="color: #888; font-size: 0.85rem; margin-bottom: 12px; line-height: 1.5; max-width: 420px; margin-left: auto; margin-right: auto;">Target % = what you want (e.g. 60% BTC, 40% ETH). Current % = what you have now if prices have drifted. Leave Current empty if you\'re already at target. The calculator below will show exactly how much to sell or buy.</p>' +
+    container.innerHTML = '<div class="rebalance-allocation-grid"><h6 style="color: #b8a060; margin-bottom: 6px; font-size: 0.95rem;">Target % and Current % per coin</h6><p style="color: #888; font-size: 0.85rem; margin-bottom: 12px; line-height: 1.5; max-width: 480px; margin-left: auto; margin-right: auto;">Target % = what you want (e.g. 60% BTC, 40% ETH). Current % = what you have now (0–100% or negative if you don\'t have it / short). Leave Current empty if at target. Negative = different strategy (buy to close short).</p>' +
         coins.map((c, i) => {
             const targetDefault = defaults[i];
-            return `<div class="rebalance-coin-row"><label style="color: #ccc; font-size: 0.9rem;">${c}</label><input type="number" id="rebalanceTarget_${c}" min="0" max="100" value="${targetDefault}" placeholder="Target %" style="width: 70px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px; margin: 0 8px;">% <input type="number" id="rebalanceCurrent_${c}" min="0" max="100" value="" placeholder="Current" style="width: 70px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px;" title="Leave empty if same as target">%</div>`;
+            return `<div class="rebalance-coin-row"><label style="color: #ccc; font-size: 0.9rem;">${c}</label><input type="number" id="rebalanceTarget_${c}" min="0" max="100" value="${targetDefault}" placeholder="Target %" style="width: 70px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px; margin: 0 8px;">% <input type="number" id="rebalanceCurrent_${c}" min="-999" max="100" value="" placeholder="Current" style="width: 80px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px;" title="0–100% or negative (short/don't have)">%</div>`;
         }).join('') + '</div>';
 }
 
@@ -9014,7 +9014,8 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
         const curRaw = document.getElementById('rebalanceCurrent_' + c)?.value?.trim();
         targetAlloc[c] = Math.min(100, Math.max(0, t));
         targetSum += targetAlloc[c];
-        currentAlloc[c] = curRaw === '' ? targetAlloc[c] : Math.min(100, Math.max(0, parseInt(curRaw || targetAlloc[c], 10)));
+        const curVal = parseInt(curRaw || targetAlloc[c], 10);
+        currentAlloc[c] = curRaw === '' ? targetAlloc[c] : (isNaN(curVal) ? targetAlloc[c] : curVal);
     });
     if (targetSum !== 100 && targetSum > 0) {
         const scale = 100 / targetSum;
@@ -9061,6 +9062,7 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
     const rebalDrawdown = -22;
 
     const needsRebalance = coins.some(c => (currentAlloc[c] || 0) !== (targetAlloc[c] || 0));
+    const hasNegative = coins.some(c => (currentAlloc[c] || 0) < 0);
     const calcActions = [];
     coins.forEach(c => {
         const cur = currentAlloc[c] || 0;
@@ -9111,6 +9113,7 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
         <div class="rebalance-result-section">
             <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">3. Rebalance Calculator</h5>
             ${needsRebalance && calcActions.length > 0 ? `
+                ${hasNegative ? '<p style="color: #ffa500; font-size: 0.9rem; margin-bottom: 10px;">⚠️ Negative current = short or no position. Strategy differs: buy to reach target.</p>' : ''}
                 <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 10px;">Your portfolio has drifted. To return to target (${targetStr}):</p>
                 <div class="rebalance-calc-actions">
                     ${calcActions.map(a => `<p><strong style="color: ${a.type === 'sell' ? '#ff8888' : '#90c090'};">${a.type === 'sell' ? 'Sell' : 'Buy'}</strong> $${a.amt.toLocaleString()} <strong>${a.coin}</strong></p>`).join('')}
