@@ -9407,12 +9407,24 @@ function saveRebalanceCalendarNotes() {
     rebalanceNotesSaveTimeout = setTimeout(function() {
         try {
             localStorage.setItem(REBALANCE_CALENDAR_NOTES_KEY, el.value || '');
-            const hint = document.getElementById('rebalanceNotesSavedHint');
-            if (hint) { hint.style.display = 'inline-block'; hint.style.opacity = '1'; setTimeout(function() { hint.style.opacity = '0'; hint.style.display = 'none'; }, 2000); }
+            showRebalanceNotesSavedHint();
         } catch (e) {}
         rebalanceNotesSaveTimeout = null;
     }, 400);
 }
+function showRebalanceNotesSavedHint() {
+    const hint = document.getElementById('rebalanceNotesSavedHint');
+    if (hint) { hint.style.display = 'inline-block'; hint.style.opacity = '1'; hint.classList.add('rebalance-notes-saved-visible'); setTimeout(function() { hint.style.opacity = '0'; hint.style.display = 'none'; hint.classList.remove('rebalance-notes-saved-visible'); }, 2500); }
+}
+window.saveRebalanceCalendarNotesNow = function saveRebalanceCalendarNotesNow() {
+    const el = document.getElementById('rebalanceCalendarNotes');
+    if (!el) return;
+    try {
+        localStorage.setItem(REBALANCE_CALENDAR_NOTES_KEY, el.value || '');
+        showRebalanceNotesSavedHint();
+        openRebalanceNotesModal();
+    } catch (e) {}
+};
 window.openRebalanceNotesModal = function openRebalanceNotesModal() {
     const modal = document.getElementById('rebalanceNotesModal');
     const notesEl = document.getElementById('rebalanceNotesModalNotes');

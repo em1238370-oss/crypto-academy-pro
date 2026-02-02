@@ -1722,7 +1722,10 @@
                                                <div class="rebalance-calendar-notes">
                                                    <label class="rebalance-form-label">My notes</label>
                                                    <textarea id="rebalanceCalendarNotes" class="rebalance-calendar-notes-input" placeholder="e.g. Plan to trim BTC, add ETH. Check fees on exchange first." rows="3"></textarea>
-                                                   <span id="rebalanceNotesSavedHint" class="rebalance-notes-saved-hint" style="display:none;">✓ Saved</span>
+                                                   <div class="rebalance-notes-save-row">
+                                                       <button type="button" class="btn btn-red rebalance-save-notes-btn" onclick="saveRebalanceCalendarNotesNow()">💾 Save</button>
+                                                       <span id="rebalanceNotesSavedHint" class="rebalance-notes-saved-hint" style="display:none;">✓ Saved</span>
+                                                   </div>
                                                </div>
                                                <button type="button" class="btn btn-red rebalance-view-notes-btn" onclick="openRebalanceNotesModal()" style="margin-bottom: 16px;">📋 View my notes & log</button>
                                                <div class="rebalance-calendar-quick-log">

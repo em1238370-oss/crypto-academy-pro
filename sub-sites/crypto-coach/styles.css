@@ -3018,8 +3018,11 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     box-sizing: border-box;
 }
 .rebalance-calendar-notes-input::placeholder { color: rgba(255,255,255,0.5); }
-.rebalance-notes-saved-hint { font-size: 0.85rem; color: #90c090; margin-top: 6px; display: inline-block; animation: rebalanceSavedFade 2s ease-out forwards; }
-@keyframes rebalanceSavedFade { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+.rebalance-notes-save-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.rebalance-save-notes-btn { padding: 8px 16px; font-size: 0.9rem; }
+.rebalance-notes-saved-hint { font-size: 1rem; color: #90c090; font-weight: 600; padding: 6px 12px; background: rgba(0,150,0,0.2); border-radius: 6px; }
+.rebalance-notes-saved-hint.rebalance-notes-saved-visible { animation: rebalanceSavedPulse 0.3s ease-out; }
+@keyframes rebalanceSavedPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 .rebalance-view-notes-btn { width: 100%; }
 .rebalance-calendar-quick-log { padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
 .rebalance-calendar-quick-log .rebalance-form-input { width: 100%; max-width: 100%; margin-bottom: 10px; }
