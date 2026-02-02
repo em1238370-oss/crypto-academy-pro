@@ -1762,16 +1762,17 @@
                                        </div>
 
                                        <!-- 5. Before I rebalance: quick checklist -->
-                                       <div class="rebalance-extra-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
-                                           <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">✅ Before I rebalance: quick checklist</h5>
-                                           <div class="rebalance-checklist">
-                                               <label class="rebalance-check-item"><input type="checkbox" id="rebalanceCheck1"> I know my target allocation</label>
-                                               <label class="rebalance-check-item"><input type="checkbox" id="rebalanceCheck2"> I checked exchange fees</label>
-                                               <label class="rebalance-check-item"><input type="checkbox" id="rebalanceCheck3"> I'm not acting on emotion</label>
-                                               <label class="rebalance-check-item"><input type="checkbox" id="rebalanceCheck4"> I have a plan and schedule</label>
+                                       <div class="rebalance-extra-section rebalance-checklist-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
+                                           <h5 class="rebalance-checklist-title">✅ Before I rebalance</h5>
+                                           <p class="rebalance-checklist-subtitle">Quick checklist — tick when ready</p>
+                                           <div class="rebalance-checklist-grid">
+                                               <label class="rebalance-check-card"><input type="checkbox" id="rebalanceCheck1"><span class="rebalance-check-emoji">🎯</span><span class="rebalance-check-text">I know my target allocation</span></label>
+                                               <label class="rebalance-check-card"><input type="checkbox" id="rebalanceCheck2"><span class="rebalance-check-emoji">💸</span><span class="rebalance-check-text">I checked exchange fees</span></label>
+                                               <label class="rebalance-check-card"><input type="checkbox" id="rebalanceCheck3"><span class="rebalance-check-emoji">🧘</span><span class="rebalance-check-text">I'm not acting on emotion</span></label>
+                                               <label class="rebalance-check-card"><input type="checkbox" id="rebalanceCheck4"><span class="rebalance-check-emoji">📅</span><span class="rebalance-check-text">I have a plan and schedule</span></label>
                                            </div>
-                                           <div id="rebalanceCheckResult" style="margin-top: 12px; padding: 12px; border-radius: 8px; font-size: 0.95rem; display: none;"></div>
-                                           <button type="button" class="btn btn-red" onclick="checkRebalanceReadiness()" style="padding: 8px 16px; font-size: 0.9rem; margin-top: 8px;">Check readiness</button>
+                                           <div id="rebalanceCheckResult" class="rebalance-check-result"></div>
+                                           <button type="button" class="btn btn-red rebalance-check-btn" onclick="checkRebalanceReadiness()">✨ Check readiness</button>
                                        </div>
                                    </div>
                                </div>

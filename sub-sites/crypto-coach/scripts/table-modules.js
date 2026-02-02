@@ -9568,13 +9568,13 @@ window.checkRebalanceReadiness = function checkRebalanceReadiness() {
     const count = [c1, c2, c3, c4].filter(Boolean).length;
     resultEl.style.display = 'block';
     if (count === 4) {
-        resultEl.style.background = 'rgba(0, 150, 0, 0.2)';
-        resultEl.style.borderLeft = '4px solid #90c090';
+        resultEl.style.background = 'linear-gradient(135deg, rgba(0,120,0,0.25) 0%, rgba(0,90,0,0.2) 100%)';
+        resultEl.style.border = '1px solid rgba(100,220,100,0.5)';
         resultEl.style.color = '#90c090';
         resultEl.textContent = '✓ Ready! You can proceed with rebalancing.';
     } else {
-        resultEl.style.background = 'rgba(255, 165, 0, 0.15)';
-        resultEl.style.borderLeft = '4px solid #ffa500';
+        resultEl.style.background = 'linear-gradient(135deg, rgba(255,140,0,0.2) 0%, rgba(200,100,0,0.15) 100%)';
+        resultEl.style.border = '1px solid rgba(255,165,0,0.5)';
         resultEl.style.color = '#ffd700';
         resultEl.textContent = 'Review ' + (4 - count) + ' more point(s) before rebalancing.';
     }
