@@ -2900,6 +2900,38 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     margin-right: auto;
     display: block;
 }
+.rebalance-assignment-block .rebalance-result-box,
+.rebalance-assignment-block .rebalance-result-box * {
+    text-align: center !important;
+}
+.rebalance-assignment-block .rebalance-result-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.rebalance-assignment-block .rebalance-before-after {
+    justify-content: center;
+}
+.rebalance-assignment-block .rebalance-col {
+    text-align: center !important;
+}
+.rebalance-assignment-block .rebalance-col p {
+    text-align: center !important;
+}
+.rebalance-assignment-block .rebalance-comparison-table {
+    margin-left: auto;
+    margin-right: auto;
+}
+.rebalance-assignment-block .rebalance-comparison-table th,
+.rebalance-assignment-block .rebalance-comparison-table td {
+    text-align: center !important;
+}
+.rebalance-assignment-block .rebalance-calc-actions {
+    text-align: center !important;
+}
+.rebalance-assignment-block .rebalance-calc-actions p {
+    text-align: center !important;
+}
 
 .rebalance-form-grid {
     display: flex;
@@ -2977,7 +3009,7 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .rebalance-comparison-table th,
 .rebalance-comparison-table td {
     padding: 10px 14px;
-    text-align: left;
+    text-align: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .rebalance-comparison-table th {
