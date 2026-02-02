@@ -8395,6 +8395,14 @@ window.runRiskDna = async function runRiskDna() {
     } catch (err) { resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>'; }
 };
 
+// Grade to score (0-100) for Strategy Report Card charts
+function reportCardGradeToScore(g) {
+    if (!g) return 50;
+    var s = String(g).toUpperCase().replace(/\s/g, '');
+    var map = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 88, 'B': 82, 'B-': 78, 'C+': 72, 'C': 65, 'C-': 58, 'D+': 52, 'D': 45, 'D-': 38, 'F': 25 };
+    return map[s] !== undefined ? map[s] : 50;
+}
+
 // Assignment 4: Strategy Report Card
 window.runStrategyReportCard = async function runStrategyReportCard() {
     const strategy = document.getElementById('reportCardStrategy')?.value?.trim();
@@ -8418,9 +8426,91 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
             const p = JSON.parse(content);
             var esc = function(s) { return (s || '').toString().replace(/</g, '&lt;'); };
             const grades = [p.diversificationGrade, p.riskReturnGrade, p.liquidityGrade].filter(Boolean);
+            const labels = ['Diversification', 'Risk–Return', 'Liquidity'];
+            const scores = [reportCardGradeToScore(p.diversificationGrade), reportCardGradeToScore(p.riskReturnGrade), reportCardGradeToScore(p.liquidityGrade)];
+            const overallScore = Math.max(0, Math.min(100, parseInt(p.overallScore, 10) || 50));
             const strengths = Array.isArray(p.strengths) ? p.strengths : [p.strengths].filter(Boolean);
             const improvements = Array.isArray(p.improvements) ? p.improvements : [p.improvements].filter(Boolean);
-            resultDiv.innerHTML = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,215,0,0.4); text-align: left;"><div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">' + grades.map(g => '<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #ffd700;">' + esc(g) + '</div>').join('') + '</div><div style="color: #fff; margin-bottom: 10px;"><strong>Strengths:</strong> ' + strengths.map(s => esc(s)).join('; ') + '</div><div style="color: #ffa500; margin-bottom: 10px;"><strong>Improve:</strong> ' + improvements.map(i => esc(i)).join('; ') + '</div><div style="color: #ffd700;">💡 ' + esc(p.topRecommendation) + '</div></div>';
+            var html = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,215,0,0.4); text-align: left;">';
+            html += '<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">' + grades.map(g => '<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #ffd700;">' + esc(g) + '</div>').join('') + '</div>';
+            html += '<div style="margin-bottom: 15px;"><canvas id="reportCardBarChart" style="height: 160px; width: 100%;"></canvas></div>';
+            html += '<div style="margin-bottom: 15px; text-align: center;"><canvas id="reportCardGaugeChart" style="max-width: 130px; max-height: 130px; margin: 0 auto;"></canvas><div style="color: #ffd700; font-size: 0.85rem; margin-top: 4px;">Overall score</div></div>';
+            html += '<div style="color: #fff; margin-bottom: 10px;"><strong>Strengths:</strong> ' + strengths.map(s => esc(s)).join('; ') + '</div>';
+            html += '<div style="color: #ffa500; margin-bottom: 10px;"><strong>Improve:</strong> ' + improvements.map(i => esc(i)).join('; ') + '</div>';
+            html += '<div style="color: #ffd700;">💡 ' + esc(p.topRecommendation) + '</div></div>';
+            resultDiv.innerHTML = html;
+            if (typeof Chart !== 'undefined') {
+                if (window.reportCardBarChart) { window.reportCardBarChart.destroy(); window.reportCardBarChart = null; }
+                if (window.reportCardGaugeChart) { window.reportCardGaugeChart.destroy(); window.reportCardGaugeChart = null; }
+                var barCtx = document.getElementById('reportCardBarChart');
+                var gaugeCtx = document.getElementById('reportCardGaugeChart');
+                if (barCtx) {
+                    window.reportCardBarChart = new Chart(barCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Score',
+                                data: scores,
+                                backgroundColor: scores.map(function(v) { return v >= 70 ? 'rgba(255,215,0,0.6)' : (v >= 50 ? 'rgba(255,165,0,0.6)' : 'rgba(255,100,100,0.6)'); }),
+                                borderColor: scores.map(function(v) { return v >= 70 ? '#ffd700' : (v >= 50 ? '#ffa500' : '#ff6666'); }),
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } },
+                                y: { grid: { display: false }, ticks: { color: '#fff' } }
+                            }
+                        }
+                    });
+                }
+                if (gaugeCtx) {
+                    window.reportCardGaugeChart = new Chart(gaugeCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Score', 'Remaining'],
+                            datasets: [{
+                                data: [overallScore, 100 - overallScore],
+                                backgroundColor: [overallScore >= 70 ? '#ffd700' : (overallScore >= 50 ? '#ffa500' : '#ff6666'), 'rgba(255,255,255,0.1)'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            circumference: 180,
+                            rotation: 270,
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            cutout: '75%',
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false }
+                            }
+                        },
+                        plugins: [{
+                            id: 'gaugeCenter',
+                            afterDraw: function(chart) {
+                                var ctx = chart.ctx;
+                                var width = chart.width; var height = chart.height;
+                                ctx.save();
+                                ctx.font = 'bold 24px Poppins';
+                                ctx.fillStyle = '#ffd700';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(overallScore, width / 2, height / 2 - 5);
+                                ctx.font = '12px Poppins';
+                                ctx.fillStyle = '#aaa';
+                                ctx.fillText('/100', width / 2, height / 2 + 15);
+                                ctx.restore();
+                            }
+                        }]
+                    });
+                }
+            }
         } else { resultDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable.</span>'; }
     } catch (err) { resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>'; }
 };
