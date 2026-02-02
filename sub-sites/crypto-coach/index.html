@@ -1723,13 +1723,6 @@
                                                    <label class="rebalance-form-label">My notes</label>
                                                    <textarea id="rebalanceCalendarNotes" class="rebalance-calendar-notes-input" placeholder="e.g. Plan to trim BTC, add ETH. Check fees on exchange first." rows="3"></textarea>
                                                </div>
-                                               <div class="rebalance-calendar-quick-log">
-                                                   <label class="rebalance-form-label">📝 Log entry — record what you did</label>
-                                                   <p class="rebalance-quick-log-hint" style="color: #aaaaaa; font-size: 0.85rem; margin-bottom: 8px;">e.g. Sold $500 BTC, bought $500 ETH because…</p>
-                                                   <input type="text" id="rebalanceCalendarQuickLog" class="rebalance-form-input" placeholder="What did you do? (action)">
-                                                   <input type="text" id="rebalanceCalendarQuickLogNotes" class="rebalance-form-input rebalance-quick-log-notes" placeholder="Why / notes (optional)">
-                                                   <button type="button" class="btn btn-red" onclick="addQuickLogFromCalendar()">Add to log</button>
-                                               </div>
                                            </div>
                                        </div>
 
@@ -1744,18 +1737,7 @@
                                            </div>
                                        </div>
 
-                                       <!-- 5. My rebalance log -->
-                                       <div class="rebalance-extra-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
-                                           <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">📝 My rebalance log</h5>
-                                           <div style="margin-bottom: 12px;">
-                                               <input type="text" id="rebalanceLogAction" placeholder="e.g. Sold $500 BTC, bought $500 ETH" style="width: 100%; max-width: 400px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 10px; border-radius: 6px; margin-bottom: 8px;">
-                                               <input type="text" id="rebalanceLogNotes" placeholder="Notes (optional)" style="width: 100%; max-width: 400px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 10px; border-radius: 6px; margin-bottom: 8px;">
-                                               <button type="button" class="btn btn-red" onclick="addRebalanceLogEntry()" style="padding: 8px 16px; font-size: 0.9rem;">Add entry</button>
-                                           </div>
-                                           <div id="rebalanceLogList" style="max-height: 200px; overflow-y: auto;"></div>
-                                       </div>
-
-                                       <!-- 6. Before I rebalance: quick checklist -->
+                                       <!-- 5. Before I rebalance: quick checklist -->
                                        <div class="rebalance-extra-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
                                            <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">✅ Before I rebalance: quick checklist</h5>
                                            <div class="rebalance-checklist">

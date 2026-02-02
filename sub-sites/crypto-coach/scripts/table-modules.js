@@ -9424,61 +9424,6 @@ window.setRebalanceReminder = function setRebalanceReminder() {
     }
 };
 
-window.addQuickLogFromCalendar = function addQuickLogFromCalendar() {
-    const input = document.getElementById('rebalanceCalendarQuickLog');
-    if (!input) return;
-    const action = (input.value || '').trim();
-    if (!action) return;
-    const notesInput = document.getElementById('rebalanceCalendarQuickLogNotes');
-    const notes = (notesInput && notesInput.value) ? notesInput.value.trim() : '';
-    const entries = getRebalanceLog();
-    entries.push({ date: new Date().toLocaleDateString('en-US'), action: action, notes: notes });
-    setRebalanceLog(entries);
-    input.value = '';
-    if (notesInput) notesInput.value = '';
-    renderRebalanceLog();
-    const logList = document.getElementById('rebalanceLogList');
-    if (logList) logList.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-};
-
-const REBALANCE_LOG_KEY = 'cryptoCoachRebalanceLog';
-function getRebalanceLog() {
-    try { return JSON.parse(localStorage.getItem(REBALANCE_LOG_KEY) || '[]'); } catch (e) { return []; }
-}
-function setRebalanceLog(arr) {
-    localStorage.setItem(REBALANCE_LOG_KEY, JSON.stringify(arr));
-}
-function renderRebalanceLog() {
-    const list = document.getElementById('rebalanceLogList');
-    if (!list) return;
-    const entries = getRebalanceLog();
-    if (entries.length === 0) {
-        list.innerHTML = '<p style="color: #888; font-size: 0.9rem;">No entries yet. Add your first rebalance.</p>';
-        return;
-    }
-    list.innerHTML = entries.slice().reverse().map(function(e) {
-        return '<div class="rebalance-log-entry" style="padding: 10px; margin-bottom: 8px; background: rgba(0,0,0,0.35); border-radius: 6px; border-left: 3px solid rgba(255,215,0,0.5);"><strong style="color: #c9a227;">' + (e.date || '') + '</strong> — ' + (e.action || '') + (e.notes ? '<br><span style="color: #888; font-size: 0.85rem;">' + e.notes + '</span>' : '') + '</div>';
-    }).join('');
-}
-window.addRebalanceLogEntry = function addRebalanceLogEntry() {
-    const actionInput = document.getElementById('rebalanceLogAction');
-    const notesInput = document.getElementById('rebalanceLogNotes');
-    if (!actionInput) return;
-    const action = (actionInput.value || '').trim();
-    if (!action) return;
-    const entries = getRebalanceLog();
-    entries.push({
-        date: new Date().toLocaleDateString(),
-        action: action,
-        notes: (notesInput && notesInput.value) ? notesInput.value.trim() : ''
-    });
-    setRebalanceLog(entries);
-    actionInput.value = '';
-    if (notesInput) notesInput.value = '';
-    renderRebalanceLog();
-};
-document.addEventListener('DOMContentLoaded', function() { renderRebalanceLog(); });
-
 window.checkRebalanceReadiness = function checkRebalanceReadiness() {
     const c1 = document.getElementById('rebalanceCheck1')?.checked;
     const c2 = document.getElementById('rebalanceCheck2')?.checked;
