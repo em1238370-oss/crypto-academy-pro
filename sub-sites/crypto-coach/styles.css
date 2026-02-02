@@ -2597,6 +2597,7 @@ div:has-text("Experience Points") {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+    margin-top: 28px;
 }
 .report-card-gauge-wrap {
     width: 160px;
