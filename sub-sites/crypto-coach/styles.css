@@ -2509,9 +2509,43 @@ div:has-text("Experience Points") {
     word-break: break-word;
 }
 
-/* Strategy Report Card: charts layout */
+/* Strategy Report Card: refined layout */
 #reportCardResult {
     overflow: visible;
+}
+.report-card-container {
+    background: linear-gradient(145deg, rgba(28,28,32,0.98) 0%, rgba(22,22,26,0.98) 100%);
+    padding: 28px;
+    border-radius: 16px;
+    border: 1px solid rgba(180,160,120,0.25);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03);
+    text-align: left;
+}
+.report-card-grades {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 1cm;
+}
+.report-card-grade {
+    background: rgba(180,160,120,0.12);
+    padding: 10px 22px;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #c9a227;
+    letter-spacing: 0.02em;
+    border: 1px solid rgba(180,160,120,0.2);
+}
+.report-card-section-title {
+    color: #b8a060;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 .report-card-charts {
     display: grid;
@@ -2534,14 +2568,28 @@ div:has-text("Experience Points") {
     align-items: stretch;
     text-align: left;
 }
-.report-card-progress > div:first-child {
-    text-align: center;
-}
 .report-card-progress-item {
-    margin-bottom: 14px;
+    margin-bottom: 16px;
 }
 .report-card-progress-item:last-child {
     margin-bottom: 0;
+}
+.report-card-progress-label {
+    color: #a0a0a0;
+    font-size: 0.82rem;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+.report-card-progress-track {
+    height: 10px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 5px;
+    overflow: hidden;
+}
+.report-card-progress-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.5s ease;
 }
 .report-card-gauge {
     display: flex;
@@ -2550,14 +2598,27 @@ div:has-text("Experience Points") {
     justify-content: flex-start;
 }
 .report-card-gauge-wrap {
-    width: 140px;
-    height: 70px;
+    width: 150px;
+    height: 75px;
     margin: 0 auto;
 }
 .report-card-gauge-wrap canvas {
     display: block;
     width: 100% !important;
     height: 100% !important;
+}
+.report-card-gauge-score {
+    color: #c9a227;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 10px;
+    letter-spacing: 0.02em;
+}
+.report-card-gauge-max {
+    font-size: 0.75rem;
+    color: #6a6a6a;
+    font-weight: 400;
+    margin-left: 2px;
 }
 .report-card-charts:not(.report-card-charts-with-allocation) .report-card-gauge {
     grid-column: 1 / -1;
@@ -2570,8 +2631,8 @@ div:has-text("Experience Points") {
     overflow: visible;
 }
 .report-card-donut-inner {
-    width: 280px;
-    height: 280px;
+    width: 260px;
+    height: 260px;
     margin: 0 auto;
     overflow: visible;
 }
@@ -2579,14 +2640,50 @@ div:has-text("Experience Points") {
     display: block;
     margin: 0 auto;
 }
+.report-card-strengths,
+.report-card-improve,
+.report-card-tip {
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+.report-card-strengths {
+    color: #d0d0d0;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.report-card-strengths strong {
+    color: #b8a060;
+    font-weight: 600;
+    margin-right: 4px;
+}
+.report-card-improve {
+    color: #c0b090;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.report-card-improve strong {
+    color: #a89060;
+    font-weight: 600;
+    margin-right: 4px;
+}
+.report-card-tip {
+    color: #a8a090;
+    font-style: italic;
+}
+.report-card-tip::before {
+    content: "💡 ";
+    font-style: normal;
+}
 .report-card-donut [class*="legend"] ul,
 .report-card-donut ul[role="list"] {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 4px 16px;
-    max-width: 300px;
-    margin: 8px auto 0;
+    gap: 6px 18px;
+    max-width: 280px;
+    margin: 10px auto 0;
     padding: 0;
     list-style: none;
 }
@@ -2601,12 +2698,12 @@ div:has-text("Experience Points") {
         grid-template-columns: 1fr !important;
     }
     .report-card-gauge-wrap {
-        width: 120px;
-        height: 60px;
+        width: 130px;
+        height: 65px;
     }
     .report-card-donut-inner {
-        width: 240px;
-        height: 240px;
+        width: 220px;
+        height: 220px;
     }
 }
 
