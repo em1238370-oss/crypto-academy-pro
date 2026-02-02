@@ -1666,11 +1666,10 @@
                                        <div class="rebalance-extra-section practice-slider-block" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
                                            <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">🎚️ Practice: Move the slider</h5>
                                            <div class="practice-slider-explanation">
-                                               <p><strong>How it works (simple):</strong></p>
-                                               <p>Imagine you have a portfolio of BTC and ETH. The slider shows <strong>how much % is in Bitcoin right now</strong> (after prices moved). Move <strong>left</strong> = BTC fell, its share dropped. Move <strong>right</strong> = BTC grew, its share rose.</p>
-                                               <p><strong>Target BTC %</strong> — what you WANT (e.g. 60% BTC, 40% ETH). Your goal.</p>
-                                               <p><strong>Portfolio $</strong> — your total money (e.g. $10,000).</p>
-                                               <p><strong>Result below</strong> — to get from "now" (slider) back to your target: <strong>sell one coin, buy the other</strong>. The amounts are calculated for you.</p>
+                                               <p><strong>How it works:</strong></p>
+                                               <p><strong>Portfolio $</strong> = your total money in BTC + ETH. <strong>Target %</strong> = how you WANT to split it (e.g. 60% BTC, 40% ETH). <strong>Slider</strong> = how it is NOW after prices moved. Left = BTC fell. Right = BTC grew.</p>
+                                               <p><strong>Example:</strong> Portfolio $1,000, target 60% BTC. You want $600 in BTC, $400 in ETH. You move the slider to 75% — meaning BTC grew and now you have $750 BTC, $250 ETH. To get back to 60/40 you need to <strong>sell $150 BTC</strong> and <strong>buy $150 ETH</strong>. The tool calculates this for you.</p>
+                                               <p><strong>Result below</strong> — shows exactly what to sell and what to buy, with the amounts.</p>
                                            </div>
                                            <div class="practice-slider-settings">
                                                <div class="form-group"><label class="rebalance-form-label">Target BTC %</label><input type="number" id="rebalanceSliderTargetBtc" min="10" max="90" value="60" onchange="updateRebalanceSlider()" class="rebalance-form-input" style="width: 80px;"></div>
