@@ -8323,6 +8323,22 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Systematic Risk DNA scoring — same inputs = same numbers, no confusion
+function calcRiskDnaNumbers(q1, q2, q3) {
+    var actionBase = { panic_sell: 8, wait24h: 5, double_down: 8, hodl_app: 4, rebalance: 3, take_walk: 5, check_twitter: 6, say_no: 4 };
+    var moneyMod = { critical: 2, important: 1, ok_calc: 0, play_full: -2, longterm: -1, emergency: 1, sidehustle: 0, windfall: -1, borrowed: 2 };
+    var horizonMod = { days: 1, months: 0, year: -1, years: -2 };
+    var base = actionBase[q1] !== undefined ? actionBase[q1] : 5;
+    var modM = moneyMod[q3] !== undefined ? moneyMod[q3] : 0;
+    var modH = horizonMod[q2] !== undefined ? horizonMod[q2] : 0;
+    var risk = Math.max(1, Math.min(10, base + modM + modH));
+    var ranges = [
+        [-10, 40], [-15, 50], [-20, 60], [-25, 70], [-30, 80], [-35, 90], [-40, 100], [-45, 120], [-50, 140], [-50, 150]
+    ];
+    var r = ranges[risk - 1] || ranges[4];
+    return { riskLevel: risk, expectedRange12mo: r[0] + '% to +' + r[1] + '%' };
+}
+
 window.runRiskDna = async function runRiskDna() {
     const scenario = (document.getElementById('riskDnaScenarioText') && document.getElementById('riskDnaScenarioText').textContent.trim()) || RISK_DNA_SCENARIOS[0];
     const actionSel = document.getElementById('riskDnaQ1');
@@ -8333,14 +8349,15 @@ window.runRiskDna = async function runRiskDna() {
     const resultDiv = document.getElementById('riskDnaResult');
     if (!resultDiv) return;
     resultDiv.style.display = 'block'; resultDiv.innerHTML = '<span style="color: #ffa500;">Analyzing...</span>';
+    var sys = calcRiskDnaNumbers(q1, q2, q3);
     try {
         const varietySeed = Date.now() + '-' + Math.random().toString(36).slice(2, 10);
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
             body: JSON.stringify({ model: 'mistral-small', messages: [
-                { role: 'system', content: 'Behavioral finance expert. Analyze the user\'s reaction to the crypto scenario. Return ONLY valid JSON. CRITICAL: 1) riskLevel (1-10) and expectedRange12mo MUST vary by inputs — different scenario+action+horizon+money = different numbers. Map logically: panic sell + critical money = 8-10; wait24h + play money = 2-4; double down + borrowed = 9-10; HODL + important = 4-6; rebalance + ok to lose = 3-5; say no + play money = 2-4; etc. NEVER always return 2/10 or 3/10 — use full range 1-10. 2) expectedRange12mo: conservative -20% to +30%, moderate -30% to +80%, aggressive -50% to +150%. 3) Generate UNIQUE content, vary profile names and phrasing. Full explanations, no fragments.' },
-                { role: 'user', content: `[Variety seed: ${varietySeed}] Scenario: "${scenario}". User would: ${action}. Q2(horizon)=${q2}, Q3(money)=${q3}. CRITICAL: Set riskLevel (1-10) and expectedRange12mo based on these inputs — different choices MUST produce different numbers. Panic sell = higher risk (7-9); wait24h/HODL = moderate (4-6); rebalance = lower (3-5); double down = higher (6-8); critical/borrowed money = +2 risk; play money = -2 risk; short horizon = +1 risk. Use full range 1-10, vary expectedRange12mo (e.g. -40% to +20%, or +50% to +120%). JSON: profileName, profileEmoji, description, expectedRange12mo (e.g. "-30% to +50%" or "+20% to +100%" — vary by profile), riskLevel (1-10, must fit the inputs), recommendation, expertComment, strengths, watchOut, quickTips, thingsToAvoid, emotionalPattern, whenToReconsider, plainTerms, everydayTakeaway, whereToStart.` }
+                { role: 'system', content: 'Behavioral finance expert. Analyze the user\'s reaction to the crypto scenario. Return ONLY valid JSON. Do NOT include riskLevel or expectedRange12mo — they are calculated separately. Generate UNIQUE content each time: vary profile names (Cautious Turtle, Steady Fox, Calm Owl, etc.), phrasing, examples. Never repeat same wording. Full explanations, no fragments. For any input combination (even contradictory) give clear, coherent analysis.' },
+                { role: 'user', content: `[Variety seed: ${varietySeed}] Scenario: "${scenario}". User would: ${action}. Q2(horizon)=${q2}, Q3(money)=${q3}. Analyze their risk profile. Use risk ${sys.riskLevel}/10 and range "${sys.expectedRange12mo}" in your reasoning but do NOT output them in JSON. JSON (omit riskLevel, expectedRange12mo): profileName, profileEmoji, description, recommendation, expertComment, strengths, watchOut, quickTips, thingsToAvoid, emotionalPattern, whenToReconsider, plainTerms, everydayTakeaway, whereToStart.` }
             ], temperature: 0.95, max_tokens: 1200 })
         });
         const data = await response.json();
@@ -8355,7 +8372,7 @@ window.runRiskDna = async function runRiskDna() {
             let html = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,165,0,0.4); text-align: left;">';
             html += '<div style="color: #ffa500; font-size: 1.5rem; font-weight: bold; text-align: center;">' + (p.profileEmoji || '🧬') + ' ' + esc(p.profileName || 'Profile') + '</div>';
             html += '<div style="color: #fff; line-height: 1.6; margin: 10px 0;">' + esc(p.description) + '</div>';
-            html += '<div style="color: #ffd700;">Expected 12mo: ' + esc(p.expectedRange12mo) + '</div><div style="color: #ffa500;">Risk: ' + (p.riskLevel || '?') + '/10</div>';
+            html += '<div style="color: #ffd700;">Expected 12mo: ' + esc(sys.expectedRange12mo) + '</div><div style="color: #ffa500;">Risk: ' + sys.riskLevel + '/10</div>';
             html += '<div style="color: #ffd700; margin-top: 10px;">💡 ' + esc(p.recommendation) + '</div>';
             if (p.expertComment) html += '<div style="margin-top: 12px; padding: 12px; background: rgba(255,165,0,0.08); border-radius: 8px; border-left: 4px solid #ffa500;"><div style="color: #ffa500; font-weight: bold; margin-bottom: 6px;">🎯 Expert opinion</div><div style="color: #fff; line-height: 1.6;">' + esc(p.expertComment) + '</div></div>';
             if (strengths.length) html += '<div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,215,0,0.3);"><div style="color: #ffd700; font-weight: bold; margin-bottom: 6px;">✓ Strengths</div><ul style="color: #fff; margin: 0; padding-left: 20px; line-height: 1.5;">' + strengths.map(s => '<li>' + esc(s) + '</li>').join('') + '</ul></div>';
