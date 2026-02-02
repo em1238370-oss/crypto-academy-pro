@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=28.0">
+    <link rel="stylesheet" href="styles.css?v=29.0">
    <!-- Chart.js for portfolio graphs -->
    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
    <script src="scripts/table-modules.js?v=36.0"></script>
@@ -1639,13 +1639,26 @@
                                        <div id="rebalanceExperimentResult" class="result-box rebalance-result-box" style="display: none; margin-top: 16px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff;"></div>
 
                                        <!-- 1. Glossary: Rebalance terms -->
-                                       <div class="rebalance-extra-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
-                                           <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">📖 Glossary: Rebalance terms</h5>
-                                           <div class="rebalance-glossary">
-                                               <details class="rebalance-detail"><summary>Drift</summary><p>When your actual allocation moves away from your target. E.g. you wanted 60% BTC / 40% ETH, but BTC grew and now it's 72% / 28%.</p></details>
-                                               <details class="rebalance-detail"><summary>Target allocation</summary><p>The percentages you aim for (e.g. 60% BTC, 40% ETH). You rebalance to bring your portfolio back to these weights.</p></details>
-                                               <details class="rebalance-detail"><summary>Trim winners</summary><p>Sell a portion of assets that went up. This locks in some gains and brings your allocation back toward target.</p></details>
-                                               <details class="rebalance-detail"><summary>Buy the laggard</summary><p>Add to assets that underperformed. You buy more of what went down, often at better prices.</p></details>
+                                       <div class="rebalance-extra-section rebalance-glossary-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
+                                           <h5 style="color: #ffd700; margin-bottom: 16px; font-size: 1.05rem;">📖 Rebalance terms — hover for details</h5>
+                                           <p style="color: #888; font-size: 0.85rem; margin-bottom: 16px;">Hover over the icon next to each term to see the full explanation.</p>
+                                           <div class="rebalance-glossary-grid">
+                                               <div class="rebalance-glossary-card">
+                                                   <span class="info-tooltip glossary-tip" data-tooltip="When your actual allocation moves away from your target. E.g. you wanted 60% BTC / 40% ETH, but BTC grew and now it's 72% / 28%. Rebalancing brings you back.">📊<span class="tooltip-text">When your actual allocation moves away from your target. E.g. you wanted 60% BTC / 40% ETH, but BTC grew and now it's 72% / 28%. Rebalancing brings you back.</span></span>
+                                                   <div class="glossary-card-text"><strong>Drift</strong><br><span class="glossary-short">Weights shifted from your plan</span></div>
+                                               </div>
+                                               <div class="rebalance-glossary-card">
+                                                   <span class="info-tooltip glossary-tip" data-tooltip="The percentages you aim for (e.g. 60% BTC, 40% ETH). You rebalance to bring your portfolio back to these weights. Define this first — without a target, you don't know when to act.">🎯<span class="tooltip-text">The percentages you aim for (e.g. 60% BTC, 40% ETH). You rebalance to bring your portfolio back to these weights. Define this first — without a target, you don't know when to act.</span></span>
+                                                   <div class="glossary-card-text"><strong>Target allocation</strong><br><span class="glossary-short">Your goal weights</span></div>
+                                               </div>
+                                               <div class="rebalance-glossary-card">
+                                                   <span class="info-tooltip glossary-tip" data-tooltip="Sell a portion of assets that went up. This locks in some gains and brings your allocation back toward target. Classic rebalancing move.">✂️<span class="tooltip-text">Sell a portion of assets that went up. This locks in some gains and brings your allocation back toward target. Classic rebalancing move.</span></span>
+                                                   <div class="glossary-card-text"><strong>Trim winners</strong><br><span class="glossary-short">Sell some of what went up</span></div>
+                                               </div>
+                                               <div class="rebalance-glossary-card">
+                                                   <span class="info-tooltip glossary-tip" data-tooltip="Add to assets that underperformed. You buy more of what went down, often at better prices. The other half of rebalancing — buy the laggard.">📈<span class="tooltip-text">Add to assets that underperformed. You buy more of what went down, often at better prices. The other half of rebalancing — buy the laggard.</span></span>
+                                                   <div class="glossary-card-text"><strong>Buy the laggard</strong><br><span class="glossary-short">Add to what underperformed</span></div>
+                                               </div>
                                            </div>
                                        </div>
 

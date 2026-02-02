@@ -3118,6 +3118,54 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .rebalance-remove-coin:hover {
     background: rgba(255, 100, 100, 0.3);
 }
+.rebalance-glossary-section .rebalance-glossary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    max-width: 520px;
+    margin: 0 auto;
+}
+.rebalance-glossary-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(30, 25, 20, 0.5) 100%);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 215, 0, 0.15);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.rebalance-glossary-card:hover {
+    border-color: rgba(255, 215, 0, 0.35);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.08);
+}
+.glossary-tip {
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: help;
+    flex-shrink: 0;
+    opacity: 0.9;
+}
+.glossary-tip:hover {
+    opacity: 1;
+}
+.glossary-card-text {
+    color: #e0e0e0;
+    font-size: 0.92rem;
+    line-height: 1.4;
+}
+.glossary-card-text strong {
+    color: #ffd700;
+    font-size: 0.95rem;
+}
+.glossary-short {
+    color: #aaa;
+    font-size: 0.85rem;
+}
+.glossary-hint {
+    color: #ffd700;
+    font-weight: 600;
+}
 .rebalance-detail {
     margin-bottom: 10px;
     padding: 12px 14px;
