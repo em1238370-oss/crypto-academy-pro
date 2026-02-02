@@ -1616,25 +1616,31 @@
                                    <div class="section-box module-d-assignment">
                                        <span class="module-d-assignment-badge">5</span>
                                        <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 5: Rebalance experiment</h4>
-                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">See what happens when you <strong style="color: #ffffff;">rebalance</strong> a simple portfolio: enter your current allocation and how often you rebalance. You get an illustrative before/after and why it matters. For education only.</p>
-                                       <div class="form-group">
-                                           <label style="color: #ffffff;">BTC % (rest is ETH):</label>
-                                           <input type="number" id="rebalanceBtcPct" min="0" max="100" value="60" style="width: 80px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> %
-                                       </div>
-                                       <div class="form-group">
-                                           <label style="color: #ffffff;">Portfolio value (USD):</label>
-                                           <input type="number" id="rebalancePortfolioValue" min="100" max="1000000" value="10000" step="100" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px;"> $
-                                       </div>
-                                       <div class="form-group">
-                                           <label style="color: #ffffff;">Rebalance frequency:</label>
-                                           <select id="rebalanceFrequency" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px;">
-                                               <option value="monthly">Monthly</option>
-                                               <option value="quarterly" selected>Quarterly</option>
-                                               <option value="yearly">Yearly</option>
-                                           </select>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Simulate rebalancing a BTC/ETH portfolio: see before/after, compare strategies, and get exact sell/buy amounts. For education only.</p>
+                                       <div class="rebalance-form-grid">
+                                           <div class="form-group">
+                                               <label style="color: #ffffff;">Target BTC % (rest is ETH):</label>
+                                               <input type="number" id="rebalanceBtcPct" min="0" max="100" value="60" style="width: 80px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 6px;"> %
+                                           </div>
+                                           <div class="form-group">
+                                               <label style="color: #ffffff;">Current BTC % <span style="color: #888; font-size: 0.85rem;">(if drifted)</span>:</label>
+                                               <input type="number" id="rebalanceCurrentBtcPct" min="0" max="100" value="" placeholder="Same as target" style="width: 80px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 6px;"> %
+                                           </div>
+                                           <div class="form-group">
+                                               <label style="color: #ffffff;">Portfolio value (USD):</label>
+                                               <input type="number" id="rebalancePortfolioValue" min="100" max="1000000" value="10000" step="100" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 6px;"> $
+                                           </div>
+                                           <div class="form-group">
+                                               <label style="color: #ffffff;">Rebalance frequency:</label>
+                                               <select id="rebalanceFrequency" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; border-radius: 6px;">
+                                                   <option value="monthly">Monthly</option>
+                                                   <option value="quarterly" selected>Quarterly</option>
+                                                   <option value="yearly">Yearly</option>
+                                               </select>
+                                           </div>
                                        </div>
                                        <button type="button" class="btn btn-red" onclick="runRebalanceExperiment()" style="padding: 10px 20px; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255, 0, 0, 0.5); background: linear-gradient(135deg, rgba(255, 0, 0, 0.3) 0%, rgba(200, 0, 0, 0.4) 100%); color: #ffffff;">Run rebalance</button>
-                                       <div id="rebalanceExperimentResult" class="result-box" style="display: none; margin-top: 16px; padding: 16px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff;"></div>
+                                       <div id="rebalanceExperimentResult" class="result-box rebalance-result-box" style="display: none; margin-top: 16px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff;"></div>
                                    </div>
                                </div>
                            </div>

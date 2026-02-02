@@ -8971,21 +8971,99 @@ window.runStrategyInNumbers = function runStrategyInNumbers() {
 };
 
 window.runRebalanceExperiment = function runRebalanceExperiment() {
-    const btcPct = Math.min(100, Math.max(0, parseInt(document.getElementById('rebalanceBtcPct')?.value || 60, 10)));
-    const ethPct = 100 - btcPct;
+    const targetBtcPct = Math.min(100, Math.max(0, parseInt(document.getElementById('rebalanceBtcPct')?.value || 60, 10)));
+    const targetEthPct = 100 - targetBtcPct;
+    const currentBtcRaw = document.getElementById('rebalanceCurrentBtcPct')?.value?.trim();
+    const currentBtcPct = currentBtcRaw === '' ? targetBtcPct : Math.min(100, Math.max(0, parseInt(currentBtcRaw || targetBtcPct, 10)));
+    const currentEthPct = 100 - currentBtcPct;
     const portfolioValue = parseInt(document.getElementById('rebalancePortfolioValue')?.value || 10000, 10);
     const frequency = document.getElementById('rebalanceFrequency')?.value || 'quarterly';
     const resultDiv = document.getElementById('rebalanceExperimentResult');
     if (!resultDiv) return;
-    const btcValue = Math.round(portfolioValue * btcPct / 100);
-    const ethValue = Math.round(portfolioValue * ethPct / 100);
+
     const freqLabel = frequency === 'monthly' ? 'Monthly' : frequency === 'quarterly' ? 'Quarterly' : 'Yearly';
+
+    // --- Variant 1: Before/After simulation ---
+    const btcChange = 0.5;
+    const ethChange = -0.2;
+    const btcBefore = Math.round(portfolioValue * targetBtcPct / 100);
+    const ethBefore = Math.round(portfolioValue * targetEthPct / 100);
+    const btcAfterDrift = Math.round(btcBefore * (1 + btcChange));
+    const ethAfterDrift = Math.round(ethBefore * (1 + ethChange));
+    const totalAfterDrift = btcAfterDrift + ethAfterDrift;
+    const btcPctDrifted = Math.round(100 * btcAfterDrift / totalAfterDrift);
+    const ethPctDrifted = 100 - btcPctDrifted;
+    const btcTargetVal = Math.round(totalAfterDrift * targetBtcPct / 100);
+    const ethTargetVal = totalAfterDrift - btcTargetVal;
+    const sellBtc = Math.max(0, btcAfterDrift - btcTargetVal);
+    const buyEth = Math.max(0, ethTargetVal - ethAfterDrift);
+
+    // --- Variant 3: Strategy comparison (HODL vs Rebalance) ---
+    const hodlReturn = 18;
+    const rebalReturn = 15;
+    const hodlVol = 42;
+    const rebalVol = 28;
+    const hodlDrawdown = -35;
+    const rebalDrawdown = -22;
+
+    // --- Variant 5: Calculator ---
+    const needsRebalance = currentBtcPct !== targetBtcPct;
+    const sellBtcCalc = currentBtcPct > targetBtcPct ? Math.round(portfolioValue * (currentBtcPct - targetBtcPct) / 100) : 0;
+    const buyEthCalc = sellBtcCalc;
+    const sellEthCalc = currentEthPct > targetEthPct ? Math.round(portfolioValue * (currentEthPct - targetEthPct) / 100) : 0;
+    const buyBtcCalc = sellEthCalc;
+
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = `
-        <h5 style="color: #ffd700; margin-bottom: 10px;">Rebalance experiment</h5>
-        <p><strong style="color: #ffffff;">Current allocation:</strong> BTC ${btcPct}% ($${btcValue.toLocaleString()}) · ETH ${ethPct}% ($${ethValue.toLocaleString()}) · Total $${portfolioValue.toLocaleString()}</p>
-        <p><strong style="color: #ffffff;">Rebalance:</strong> ${freqLabel}. After a rebalance you bring weights back to your target (e.g. ${btcPct}% / ${ethPct}%). This sells a bit of what went up and buys what went down, which can reduce volatility and lock in some discipline.</p>
-        <p style="color: #aaaaaa; font-size: 0.88rem; margin-top: 12px;">This is illustrative. Real rebalancing has fees and tax implications. For education only.</p>
+        <div class="rebalance-result-section">
+            <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">1. Before / After Simulation</h5>
+            <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 10px;">Scenario: BTC +50%, ETH -20% from your target allocation.</p>
+            <div class="rebalance-before-after">
+                <div class="rebalance-col">
+                    <strong style="color: #b8a060;">Before (drifted)</strong>
+                    <p style="margin: 6px 0 0 0; font-size: 0.9rem;">BTC ${btcPctDrifted}% — $${btcAfterDrift.toLocaleString()}<br>ETH ${ethPctDrifted}% — $${ethAfterDrift.toLocaleString()}<br><span style="color: #aaaaaa;">Total: $${totalAfterDrift.toLocaleString()}</span></p>
+                </div>
+                <div class="rebalance-arrow">→</div>
+                <div class="rebalance-col">
+                    <strong style="color: #b8a060;">After rebalance</strong>
+                    <p style="margin: 6px 0 0 0; font-size: 0.9rem;">BTC ${targetBtcPct}% — $${btcTargetVal.toLocaleString()}<br>ETH ${targetEthPct}% — $${ethTargetVal.toLocaleString()}<br><span style="color: #aaaaaa;">Total: $${totalAfterDrift.toLocaleString()}</span></p>
+                </div>
+            </div>
+            <p style="color: #c9a227; font-size: 0.9rem; margin-top: 12px;">Action: Sell $${sellBtc.toLocaleString()} BTC, buy $${buyEth.toLocaleString()} ETH. You trim the winner and add to the laggard — a disciplined approach.</p>
+        </div>
+
+        <div class="rebalance-result-section">
+            <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">2. Strategy Comparison</h5>
+            <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 12px;">Hypothetical 12-month comparison (illustrative):</p>
+            <table class="rebalance-comparison-table">
+                <thead>
+                    <tr><th></th><th>Never rebalance</th><th>${freqLabel} rebalance</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td style="color: #b8a060;">Return</td><td>${hodlReturn}%</td><td>${rebalReturn}%</td></tr>
+                    <tr><td style="color: #b8a060;">Volatility</td><td>${hodlVol}%</td><td style="color: #90c090;">${rebalVol}%</td></tr>
+                    <tr><td style="color: #b8a060;">Max drawdown</td><td style="color: #ff8888;">${hodlDrawdown}%</td><td style="color: #90c090;">${rebalDrawdown}%</td></tr>
+                </tbody>
+            </table>
+            <p style="color: #aaaaaa; font-size: 0.85rem; margin-top: 10px;">Rebalancing often reduces volatility and drawdowns by selling high and buying low.</p>
+        </div>
+
+        <div class="rebalance-result-section">
+            <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">3. Rebalance Calculator</h5>
+            ${needsRebalance ? `
+                <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 10px;">Your portfolio has drifted. To return to ${targetBtcPct}% BTC / ${targetEthPct}% ETH:</p>
+                <div class="rebalance-calc-actions">
+                    ${sellBtcCalc > 0 ? `<p><strong style="color: #ff8888;">Sell</strong> $${sellBtcCalc.toLocaleString()} <strong>BTC</strong></p>` : ''}
+                    ${buyEthCalc > 0 ? `<p><strong style="color: #90c090;">Buy</strong> $${buyEthCalc.toLocaleString()} <strong>ETH</strong></p>` : ''}
+                    ${sellEthCalc > 0 ? `<p><strong style="color: #ff8888;">Sell</strong> $${sellEthCalc.toLocaleString()} <strong>ETH</strong></p>` : ''}
+                    ${buyBtcCalc > 0 ? `<p><strong style="color: #90c090;">Buy</strong> $${buyBtcCalc.toLocaleString()} <strong>BTC</strong></p>` : ''}
+                </div>
+            ` : `
+                <p style="color: #90c090;">Your allocation matches your target (${targetBtcPct}% BTC / ${targetEthPct}% ETH). No rebalance needed.</p>
+            `}
+        </div>
+
+        <p style="color: #888; font-size: 0.82rem; margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">This is illustrative. Real rebalancing has fees and tax implications. For education only.</p>
     `;
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };

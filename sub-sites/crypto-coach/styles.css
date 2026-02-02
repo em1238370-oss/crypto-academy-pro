@@ -2809,6 +2809,69 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     word-wrap: break-word;
 }
 
+/* Rebalance experiment */
+.rebalance-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px 24px;
+    margin-bottom: 20px;
+}
+.rebalance-result-box {
+    border-left-color: rgba(255, 215, 0, 0.5) !important;
+}
+.rebalance-result-section {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.rebalance-result-section:last-of-type {
+    border-bottom: none;
+}
+.rebalance-before-after {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.rebalance-col {
+    background: rgba(0, 0, 0, 0.35);
+    padding: 14px 18px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 140px;
+}
+.rebalance-arrow {
+    color: #c9a227;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+.rebalance-comparison-table {
+    width: 100%;
+    max-width: 360px;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+.rebalance-comparison-table th,
+.rebalance-comparison-table td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.rebalance-comparison-table th {
+    color: #b8a060;
+    font-weight: 600;
+}
+.rebalance-comparison-table thead th {
+    border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+}
+.rebalance-calc-actions p {
+    margin: 8px 0;
+    font-size: 0.95rem;
+}
+@media (max-width: 500px) {
+    .rebalance-form-grid { grid-template-columns: 1fr; }
+}
+
 .chart-container {
     width: 100%;
     max-width: 100%;
