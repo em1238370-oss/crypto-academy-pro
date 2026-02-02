@@ -2905,6 +2905,36 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     gap: 16px 24px;
     margin-bottom: 20px;
 }
+.rebalance-form-label {
+    color: #ffffff !important;
+    text-align: center !important;
+    width: 100%;
+    margin-bottom: 8px;
+}
+.rebalance-form-input,
+.rebalance-form-select {
+    color: #ffffff !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    padding: 10px 12px !important;
+    border-radius: 6px !important;
+}
+.rebalance-form-input { width: 140px; }
+.rebalance-form-input[type="date"] { width: auto; min-width: 140px; }
+.rebalance-form-select { padding: 8px 12px !important; cursor: pointer; }
+.rebalance-form-select option {
+    color: #1a1a1a;
+    background: #ffffff;
+}
+.rebalance-input-wrap {
+    color: #ffffff !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.rebalance-currency {
+    color: #ffffff !important;
+}
 .rebalance-result-box {
     border-left-color: rgba(255, 215, 0, 0.5) !important;
 }

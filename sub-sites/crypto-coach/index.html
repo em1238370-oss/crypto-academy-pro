@@ -10,10 +10,10 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=24.0">
+    <link rel="stylesheet" href="styles.css?v=25.0">
    <!-- Chart.js for portfolio graphs -->
    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-   <script src="scripts/table-modules.js?v=29.0"></script>
+   <script src="scripts/table-modules.js?v=30.0"></script>
   <script src="scripts/backtesting-functions.js" defer></script>
 </head>
 <body>
@@ -1620,14 +1620,17 @@
                                        <div id="rebalanceAllocationInputs" class="rebalance-allocation-inputs"></div>
                                        <div class="rebalance-form-grid">
                                            <div class="form-group">
-                                               <label style="color: #ffffff;">Portfolio value (USD):</label>
-                                               <input type="number" id="rebalancePortfolioValue" min="100" max="1000000" value="10000" step="100" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 6px;"> $
+                                               <label class="rebalance-form-label">Portfolio value (USD):</label>
+                                               <span class="rebalance-input-wrap"><input type="number" id="rebalancePortfolioValue" min="100" max="1000000" value="10000" step="100" class="rebalance-form-input"> <span class="rebalance-currency">$</span></span>
                                            </div>
                                            <div class="form-group">
-                                               <label style="color: #ffffff;">Rebalance frequency:</label>
-                                               <select id="rebalanceFrequency" style="color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px; border-radius: 6px;">
+                                               <label class="rebalance-form-label">Rebalance frequency:</label>
+                                               <select id="rebalanceFrequency" class="rebalance-form-select">
+                                                   <option value="weekly">Weekly</option>
+                                                   <option value="biweekly">Bi-weekly</option>
                                                    <option value="monthly">Monthly</option>
                                                    <option value="quarterly" selected>Quarterly</option>
+                                                   <option value="semiannually">Semi-annually</option>
                                                    <option value="yearly">Yearly</option>
                                                </select>
                                            </div>
@@ -1658,8 +1661,8 @@
                                        <div class="rebalance-extra-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
                                            <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">📅 My rebalance calendar</h5>
                                            <div class="rebalance-form-grid" style="margin-bottom: 12px;">
-                                               <div class="form-group"><label style="color: #fff;">Last rebalance date:</label><input type="date" id="rebalanceLastDate" style="color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px;"></div>
-                                               <div class="form-group"><label style="color: #fff;">Frequency:</label><select id="rebalanceCalendarFreq" onchange="updateRebalanceCalendar()" style="color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px;"><option value="monthly">Monthly</option><option value="quarterly" selected>Quarterly</option><option value="yearly">Yearly</option></select></div>
+                                               <div class="form-group"><label class="rebalance-form-label">Last rebalance date:</label><input type="date" id="rebalanceLastDate" class="rebalance-form-input"></div>
+                                               <div class="form-group"><label class="rebalance-form-label">Frequency:</label><select id="rebalanceCalendarFreq" onchange="updateRebalanceCalendar()" class="rebalance-form-select"><option value="weekly">Weekly</option><option value="biweekly">Bi-weekly</option><option value="monthly">Monthly</option><option value="quarterly" selected>Quarterly</option><option value="semiannually">Semi-annually</option><option value="yearly">Yearly</option></select></div>
                                            </div>
                                            <div id="rebalanceCalendarResult" style="padding: 14px; background: rgba(0,0,0,0.35); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.95rem; color: #c9a227; margin-bottom: 10px;"></div>
                                            <button type="button" class="btn btn-red" onclick="markRebalanceDone()" style="padding: 8px 16px; font-size: 0.9rem;">✓ Mark as done</button>

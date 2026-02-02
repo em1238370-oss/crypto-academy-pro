@@ -9054,7 +9054,8 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
         targetAlloc[coins[0]] += 100 - newSum;
     }
 
-    const freqLabel = frequency === 'monthly' ? 'Monthly' : frequency === 'quarterly' ? 'Quarterly' : 'Yearly';
+    const freqLabels = { weekly: 'Weekly', biweekly: 'Bi-weekly', monthly: 'Monthly', quarterly: 'Quarterly', semiannually: 'Semi-annually', yearly: 'Yearly' };
+    const freqLabel = freqLabels[frequency] || 'Quarterly';
 
     const btcPct = targetAlloc['BTC'] || 0;
     const ethPct = targetAlloc['ETH'] || 0;
@@ -9203,7 +9204,7 @@ window.updateRebalanceCalendar = function updateRebalanceCalendar() {
     }
     const last = new Date(lastStr);
     const now = new Date();
-    const daysPerPeriod = freq === 'monthly' ? 30 : freq === 'quarterly' ? 90 : 365;
+    const daysPerPeriod = freq === 'weekly' ? 7 : freq === 'biweekly' ? 14 : freq === 'monthly' ? 30 : freq === 'quarterly' ? 90 : freq === 'semiannually' ? 182 : 365;
     const next = new Date(last);
     next.setDate(next.getDate() + daysPerPeriod);
     const daysLeft = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
