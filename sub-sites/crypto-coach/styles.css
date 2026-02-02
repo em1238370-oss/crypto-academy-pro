@@ -2514,11 +2514,10 @@ div:has-text("Experience Points") {
     overflow: visible;
 }
 .report-card-container {
-    background: linear-gradient(145deg, rgba(28,28,32,0.98) 0%, rgba(22,22,26,0.98) 100%);
+    background: rgba(0,0,0,0.5);
     padding: 28px;
     border-radius: 16px;
     border: 1px solid rgba(180,160,120,0.25);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03);
     text-align: left;
 }
 .report-card-grades {
@@ -2598,8 +2597,8 @@ div:has-text("Experience Points") {
     justify-content: flex-start;
 }
 .report-card-gauge-wrap {
-    width: 150px;
-    height: 75px;
+    width: 140px;
+    height: 95px;
     margin: 0 auto;
 }
 .report-card-gauge-wrap canvas {
@@ -2676,30 +2675,45 @@ div:has-text("Experience Points") {
     content: "💡 ";
     font-style: normal;
 }
-.report-card-donut [class*="legend"] ul,
-.report-card-donut ul[role="list"] {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 6px 18px;
-    max-width: 280px;
-    margin: 10px auto 0;
+.report-card-donut [class*="legend"],
+.report-card-donut .report-card-legend-column {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 12px !important;
+    max-width: 220px;
+    margin: 16px auto 0 !important;
     padding: 0;
+}
+.report-card-donut [class*="legend"] ul,
+.report-card-donut [class*="legend"] > div,
+.report-card-donut .report-card-legend-column ul,
+.report-card-donut .report-card-legend-column > div {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 0;
+    margin: 0;
     list-style: none;
 }
 .report-card-donut [class*="legend"] li,
-.report-card-donut ul[role="list"] li {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.report-card-donut [class*="legend"] > div > div,
+.report-card-donut .report-card-legend-column li,
+.report-card-donut .report-card-legend-column > div > div {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100%;
+    justify-content: flex-start;
 }
 @media (max-width: 600px) {
     .report-card-charts.report-card-charts-with-allocation {
         grid-template-columns: 1fr !important;
     }
     .report-card-gauge-wrap {
-        width: 130px;
-        height: 65px;
+        width: 120px;
+        height: 82px;
     }
     .report-card-donut-inner {
         width: 220px;

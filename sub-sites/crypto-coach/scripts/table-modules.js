@@ -8509,8 +8509,8 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                         var donutColors = ['#c9a227', '#a67c4a', '#6b7b8e', '#7a8a9d', '#8b7355', '#9a7a6a', '#5a6b7d', '#7a7a8a', '#7b6a5a', '#6d8a9a'];
                         var nAlloc = allocation.length;
                         var legendFontSize = nAlloc > 6 ? 12 : 14;
-                        var legendPadding = nAlloc > 6 ? 2 : 4;
-                        var legendMaxWidth = nAlloc > 6 ? 90 : 140;
+                        var legendPadding = 10;
+                        var legendMaxWidth = 180;
                         var colors = donutColors.slice(0, Math.max(nAlloc, 1));
                         while (colors.length < nAlloc) colors.push(donutColors[colors.length % donutColors.length]);
                         window.reportCardDonutChart = new Chart(donutCtx, {
@@ -8524,9 +8524,21 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                                 circumference: 360, rotation: -90, cutout: '55%',
                                 devicePixelRatio: 2,
                                 layout: { padding: { top: 4, bottom: 8, left: 8, right: 8 } },
-                                plugins: { legend: { display: true, position: 'bottom', align: 'center', labels: { color: '#b8b8b8', font: { size: legendFontSize, weight: '400' }, boxWidth: 10, padding: legendPadding, usePointStyle: true, maxWidth: legendMaxWidth } } }
+                                plugins: {
+                                    legend: {
+                                        display: true, position: 'bottom', align: 'center',
+                                        labels: { color: '#b8b8b8', font: { size: legendFontSize, weight: '400' }, boxWidth: 10, padding: legendPadding, usePointStyle: true, maxWidth: legendMaxWidth }
+                                    }
+                                },
                             }
                         });
+                        setTimeout(function() {
+                            var wrap = donutCtx.closest('.report-card-donut');
+                            if (wrap) {
+                                var leg = wrap.querySelector('[class*="legend"]') || wrap.querySelector('div > div:last-child');
+                                if (leg) leg.classList.add('report-card-legend-column');
+                            }
+                        }, 150);
                     }
                 }
             }
