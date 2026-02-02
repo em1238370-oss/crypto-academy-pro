@@ -3003,7 +3003,27 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     justify-content: center;
     text-align: center;
 }
+.rebalance-calendar-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px; }
 .rebalance-calendar-btn { margin-top: 4px; }
+.rebalance-reminder-btn { background: linear-gradient(135deg, rgba(255,165,0,0.3) 0%, rgba(200,130,0,0.4) 100%) !important; border-color: rgba(255,165,0,0.5) !important; }
+.rebalance-calendar-notes { margin-bottom: 20px; }
+.rebalance-calendar-notes-input {
+    width: 100%;
+    min-height: 70px;
+    padding: 12px 14px;
+    background: rgba(0,0,0,0.5) !important;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: #ffffff !important;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+}
+.rebalance-calendar-notes-input::placeholder { color: rgba(255,255,255,0.5); }
+.rebalance-calendar-quick-log { padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+.rebalance-calendar-quick-log .rebalance-form-input { width: 100%; max-width: 100%; margin-bottom: 10px; }
+.rebalance-calendar-quick-log .btn { margin-top: 4px; }
 .rebalance-input-wrap {
     color: #ffffff !important;
     display: inline-flex;

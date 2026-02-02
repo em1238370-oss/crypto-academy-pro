@@ -9371,6 +9371,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const freqSel = document.getElementById('rebalanceCalendarFreq');
     if (lastInput) lastInput.addEventListener('change', updateRebalanceCalendar);
     if (freqSel) freqSel.addEventListener('change', updateRebalanceCalendar);
+    loadRebalanceCalendarNotes();
+    const notesEl = document.getElementById('rebalanceCalendarNotes');
+    if (notesEl) { notesEl.addEventListener('input', saveRebalanceCalendarNotes); notesEl.addEventListener('change', saveRebalanceCalendarNotes); }
 });
 
 window.markRebalanceDone = function markRebalanceDone() {
@@ -9379,6 +9382,60 @@ window.markRebalanceDone = function markRebalanceDone() {
     const today = new Date().toISOString().slice(0, 10);
     lastInput.value = today;
     updateRebalanceCalendar();
+};
+
+const REBALANCE_CALENDAR_NOTES_KEY = 'cryptoCoachRebalanceCalendarNotes';
+
+function loadRebalanceCalendarNotes() {
+    try {
+        const notes = localStorage.getItem(REBALANCE_CALENDAR_NOTES_KEY) || '';
+        const el = document.getElementById('rebalanceCalendarNotes');
+        if (el) el.value = notes;
+    } catch (e) {}
+}
+function saveRebalanceCalendarNotes() {
+    const el = document.getElementById('rebalanceCalendarNotes');
+    if (!el) return;
+    try { localStorage.setItem(REBALANCE_CALENDAR_NOTES_KEY, el.value || ''); } catch (e) {}
+}
+
+window.setRebalanceReminder = function setRebalanceReminder() {
+    const lastInput = document.getElementById('rebalanceLastDate');
+    const freqSel = document.getElementById('rebalanceCalendarFreq');
+    if (!lastInput || !freqSel) return;
+    const lastStr = lastInput.value;
+    if (!lastStr) {
+        if (typeof alert === 'function') alert('Set your last rebalance date first.');
+        return;
+    }
+    const last = new Date(lastStr);
+    const freq = freqSel.value;
+    const daysPerPeriod = freq === 'weekly' ? 7 : freq === 'biweekly' ? 14 : freq === 'monthly' ? 30 : freq === 'quarterly' ? 90 : freq === 'semiannually' ? 182 : 365;
+    const next = new Date(last);
+    next.setDate(next.getDate() + daysPerPeriod);
+    const nextStr = next.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const text = 'Reminder: Rebalance due on ' + nextStr;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() {
+            if (typeof alert === 'function') alert('Copied to clipboard! Add this to your calendar app.');
+        }).catch(function() { if (typeof alert === 'function') alert(text); });
+    } else {
+        if (typeof alert === 'function') alert(text);
+    }
+};
+
+window.addQuickLogFromCalendar = function addQuickLogFromCalendar() {
+    const input = document.getElementById('rebalanceCalendarQuickLog');
+    if (!input) return;
+    const action = (input.value || '').trim();
+    if (!action) return;
+    const entries = getRebalanceLog();
+    entries.push({ date: new Date().toLocaleDateString('en-US'), action: action, notes: '' });
+    setRebalanceLog(entries);
+    input.value = '';
+    renderRebalanceLog();
+    const logList = document.getElementById('rebalanceLogList');
+    if (logList) logList.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
 
 const REBALANCE_LOG_KEY = 'cryptoCoachRebalanceLog';

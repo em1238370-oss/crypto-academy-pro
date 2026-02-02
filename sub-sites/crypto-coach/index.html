@@ -1715,7 +1715,19 @@
                                                    <div class="form-group"><label class="rebalance-form-label">Frequency</label><select id="rebalanceCalendarFreq" onchange="updateRebalanceCalendar()" class="rebalance-form-select"><option value="weekly">Weekly</option><option value="biweekly">Bi-weekly</option><option value="monthly">Monthly</option><option value="quarterly" selected>Quarterly</option><option value="semiannually">Semi-annually</option><option value="yearly">Yearly</option></select></div>
                                                </div>
                                                <div id="rebalanceCalendarResult" class="rebalance-calendar-result"></div>
-                                               <button type="button" class="btn btn-red rebalance-calendar-btn" onclick="markRebalanceDone()">✓ Mark as done</button>
+                                               <div class="rebalance-calendar-actions">
+                                                   <button type="button" class="btn btn-red rebalance-calendar-btn" onclick="markRebalanceDone()">✓ Mark as done</button>
+                                                   <button type="button" class="btn btn-red rebalance-calendar-btn rebalance-reminder-btn" onclick="setRebalanceReminder()">🔔 Set reminder</button>
+                                               </div>
+                                               <div class="rebalance-calendar-notes">
+                                                   <label class="rebalance-form-label">My notes</label>
+                                                   <textarea id="rebalanceCalendarNotes" class="rebalance-calendar-notes-input" placeholder="e.g. Plan to trim BTC, add ETH. Check fees on exchange first." rows="3"></textarea>
+                                               </div>
+                                               <div class="rebalance-calendar-quick-log">
+                                                   <label class="rebalance-form-label">Quick log — what did you do?</label>
+                                                   <input type="text" id="rebalanceCalendarQuickLog" class="rebalance-form-input" placeholder="e.g. Sold $500 BTC, bought $500 ETH">
+                                                   <button type="button" class="btn btn-red" onclick="addQuickLogFromCalendar()">Add to log</button>
+                                               </div>
                                            </div>
                                        </div>
 
