@@ -3051,8 +3051,14 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     color: #fff; font-size: 1.5rem; line-height: 1; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
 }
 .rebalance-notes-modal-close:hover { background: rgba(255,255,255,0.2); }
-.rebalance-notes-modal-title { color: #ffd700 !important; margin-bottom: 20px !important; font-size: 1.2rem !important; }
+.rebalance-notes-modal-title { color: #ffd700 !important; margin-bottom: 12px !important; font-size: 1.2rem !important; }
+.rebalance-notes-modal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.rebalance-notes-modal-btn { padding: 6px 12px; font-size: 0.85rem; }
 .rebalance-notes-modal-body { color: #fff; }
+.rebalance-notes-modal-content.rebalance-notes-modal-expanded { max-width: 95%; width: 95%; max-height: 95vh; }
+.rebalance-notes-modal-log-entry { position: relative; padding-right: 36px; }
+.rebalance-log-entry-delete { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; padding: 0; background: rgba(255,80,80,0.3); border: 1px solid rgba(255,80,80,0.5); border-radius: 4px; color: #fff; font-size: 0.75rem; cursor: pointer; line-height: 1; }
+.rebalance-log-entry-delete:hover { background: rgba(255,80,80,0.6); }
 .rebalance-notes-modal-section { margin-bottom: 20px; }
 .rebalance-notes-modal-section h6 { color: #ffa500 !important; font-size: 0.95rem !important; margin-bottom: 10px !important; }
 .rebalance-notes-modal-text { white-space: pre-wrap; line-height: 1.5; color: #ddd; font-size: 0.95rem; min-height: 1.5em; }

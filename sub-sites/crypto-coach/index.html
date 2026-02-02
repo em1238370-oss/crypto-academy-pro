@@ -2106,10 +2106,16 @@
    <!-- Modal: My notes & log (blur overlay) -->
    <div id="rebalanceNotesModal" class="rebalance-notes-modal-overlay" aria-hidden="true">
        <div class="rebalance-notes-modal-backdrop" onclick="closeRebalanceNotesModal()"></div>
-       <div class="rebalance-notes-modal-content">
+       <div id="rebalanceNotesModalContent" class="rebalance-notes-modal-content">
            <button type="button" class="rebalance-notes-modal-close" onclick="closeRebalanceNotesModal()" aria-label="Close">×</button>
            <h5 class="rebalance-notes-modal-title">📋 My notes & log</h5>
-           <div class="rebalance-notes-modal-body">
+           <div class="rebalance-notes-modal-actions">
+               <button type="button" class="btn btn-red rebalance-notes-modal-btn" onclick="toggleRebalanceNotesModalExpand()" title="Expand / fullscreen">⛶ Expand</button>
+               <button type="button" class="btn btn-red rebalance-notes-modal-btn" onclick="clearRebalanceNotesAndSync()" title="Clear my notes">🗑 Clear notes</button>
+               <button type="button" class="btn btn-red rebalance-notes-modal-btn" onclick="clearRebalanceLogAndSync()" title="Clear all log entries">🗑 Clear log</button>
+               <button type="button" class="btn btn-red rebalance-notes-modal-btn" onclick="saveRebalanceNotesToPdf()" title="Save as PDF">📄 Save as PDF</button>
+           </div>
+           <div class="rebalance-notes-modal-body" id="rebalanceNotesModalBody">
                <div class="rebalance-notes-modal-section">
                    <h6>My notes</h6>
                    <div id="rebalanceNotesModalNotes" class="rebalance-notes-modal-text"></div>

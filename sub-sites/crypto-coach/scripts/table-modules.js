@@ -9425,11 +9425,10 @@ window.saveRebalanceCalendarNotesNow = function saveRebalanceCalendarNotesNow() 
         openRebalanceNotesModal();
     } catch (e) {}
 };
-window.openRebalanceNotesModal = function openRebalanceNotesModal() {
-    const modal = document.getElementById('rebalanceNotesModal');
+function renderRebalanceNotesModalContent() {
     const notesEl = document.getElementById('rebalanceNotesModalNotes');
     const logEl = document.getElementById('rebalanceNotesModalLog');
-    if (!modal || !notesEl || !logEl) return;
+    if (!notesEl || !logEl) return;
     try {
         const notes = localStorage.getItem(REBALANCE_CALENDAR_NOTES_KEY) || '';
         notesEl.textContent = notes || '(No notes yet)';
@@ -9437,22 +9436,79 @@ window.openRebalanceNotesModal = function openRebalanceNotesModal() {
         if (entries.length === 0) {
             logEl.innerHTML = '<p style="color:#888;font-size:0.9rem;">No log entries yet.</p>';
         } else {
-            logEl.innerHTML = entries.slice().reverse().map(function(e) {
-                return '<div class="rebalance-notes-modal-log-entry"><strong>' + (e.date || '') + '</strong> — ' + (e.action || '') + (e.notes ? '<br><span style="color:#888;font-size:0.85rem;">' + e.notes + '</span>' : '') + '</div>';
+            const reversed = entries.slice().reverse();
+            logEl.innerHTML = reversed.map(function(e, i) {
+                var idx = entries.length - 1 - i;
+                return '<div class="rebalance-notes-modal-log-entry" data-idx="' + idx + '"><button type="button" class="rebalance-log-entry-delete" onclick="deleteRebalanceLogEntry(' + idx + ')" title="Delete">✕</button><strong>' + (e.date || '') + '</strong> — ' + (e.action || '') + (e.notes ? '<br><span style="color:#888;font-size:0.85rem;">' + e.notes + '</span>' : '') + '</div>';
             }).join('');
         }
+        var notesInput = document.getElementById('rebalanceCalendarNotes');
+        if (notesInput) notesInput.value = notes;
     } catch (e) { notesEl.textContent = '(Error loading)'; logEl.innerHTML = '<p style="color:#888;">Error loading log.</p>'; }
+}
+window.openRebalanceNotesModal = function openRebalanceNotesModal() {
+    const modal = document.getElementById('rebalanceNotesModal');
+    if (!modal) return;
+    renderRebalanceNotesModalContent();
     modal.classList.add('rebalance-notes-modal-open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
 };
 window.closeRebalanceNotesModal = function closeRebalanceNotesModal() {
     const modal = document.getElementById('rebalanceNotesModal');
+    const content = document.getElementById('rebalanceNotesModalContent');
     if (modal) {
         modal.classList.remove('rebalance-notes-modal-open');
+        modal.classList.remove('rebalance-notes-modal-expanded');
         modal.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
     }
+    if (content) content.classList.remove('rebalance-notes-modal-expanded');
+};
+window.toggleRebalanceNotesModalExpand = function toggleRebalanceNotesModalExpand() {
+    const modal = document.getElementById('rebalanceNotesModal');
+    const content = document.getElementById('rebalanceNotesModalContent');
+    if (modal && content) {
+        modal.classList.toggle('rebalance-notes-modal-expanded');
+        content.classList.toggle('rebalance-notes-modal-expanded');
+    }
+};
+window.clearRebalanceNotesAndSync = function clearRebalanceNotesAndSync() {
+    if (typeof confirm !== 'function' || !confirm('Clear all my notes?')) return;
+    try {
+        localStorage.setItem(REBALANCE_CALENDAR_NOTES_KEY, '');
+        var el = document.getElementById('rebalanceCalendarNotes');
+        if (el) el.value = '';
+        renderRebalanceNotesModalContent();
+    } catch (e) {}
+};
+window.deleteRebalanceLogEntry = function deleteRebalanceLogEntry(idx) {
+    var entries = getRebalanceLog();
+    if (idx < 0 || idx >= entries.length) return;
+    if (typeof confirm !== 'function' || !confirm('Delete this log entry?')) return;
+    entries.splice(idx, 1);
+    setRebalanceLog(entries);
+    renderRebalanceNotesModalContent();
+};
+window.clearRebalanceLogAndSync = function clearRebalanceLogAndSync() {
+    if (typeof confirm !== 'function' || !confirm('Clear all log entries?')) return;
+    setRebalanceLog([]);
+    renderRebalanceNotesModalContent();
+};
+window.saveRebalanceNotesToPdf = function saveRebalanceNotesToPdf() {
+    var body = document.getElementById('rebalanceNotesModalBody');
+    if (!body) return;
+    var printWin = window.open('', '_blank');
+    if (!printWin) { alert('Please allow popups to save as PDF.'); return; }
+    var notes = localStorage.getItem(REBALANCE_CALENDAR_NOTES_KEY) || '';
+    var entries = getRebalanceLog();
+    var logHtml = entries.length === 0 ? '<p>No log entries.</p>' : entries.slice().reverse().map(function(e) {
+        return '<div style="margin-bottom:12px;padding:10px;background:#f5f5f5;border-left:4px solid #c9a227;"><strong>' + (e.date || '') + '</strong> — ' + (e.action || '') + (e.notes ? '<br><span style="color:#666;font-size:0.9em;">' + e.notes + '</span>' : '') + '</div>';
+    }).join('');
+    printWin.document.write('<html><head><title>My notes & log</title><style>body{font-family:sans-serif;padding:24px;max-width:600px;margin:0 auto;color:#333;} h1{color:#c9a227;} h2{color:#ffa500;margin-top:24px;} .notes{white-space:pre-wrap;line-height:1.6;margin-bottom:24px;}</style></head><body><h1>My notes & log</h1><h2>My notes</h2><div class="notes">' + (notes || '(No notes)') + '</div><h2>Log entries</h2>' + logHtml + '</body></html>');
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(function() { printWin.print(); printWin.close(); }, 250);
 };
 
 window.setRebalanceReminder = function setRebalanceReminder() {
