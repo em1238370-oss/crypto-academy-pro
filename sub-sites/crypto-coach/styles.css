@@ -2510,8 +2510,15 @@ div:has-text("Experience Points") {
 }
 
 /* Strategy Report Card: charts layout */
+#reportCardResult {
+    overflow: visible;
+}
 .report-card-charts {
     gap: 20px;
+    overflow: visible;
+}
+.report-card-chart-wrap {
+    overflow: visible;
 }
 @media (max-width: 500px) {
     .report-card-charts {

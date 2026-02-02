@@ -8433,10 +8433,10 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
             if (allocSum > 0 && allocSum !== 100) allocation = allocation.map(function(a) { return { asset: a.asset || '?', pct: Math.round((parseFloat(a.pct) || 0) * 100 / allocSum) }; });
             const strengths = Array.isArray(p.strengths) ? p.strengths : [p.strengths].filter(Boolean);
             const improvements = Array.isArray(p.improvements) ? p.improvements : [p.improvements].filter(Boolean);
-            var barColors = ['#ffd700', '#ffa500', '#ff6666'];
+            var barColors = ['#ffd700', '#e6a800', '#e07c5a'];
             var html = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,215,0,0.4); text-align: left;">';
             html += '<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">' + grades.map(g => '<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #ffd700;">' + esc(g) + '</div>').join('') + '</div>';
-            html += '<div class="report-card-charts" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start; margin-bottom: 15px;">';
+            html += '<div class="report-card-charts" style="display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; margin-bottom: 15px;">';
             html += '<div style="flex: 1; min-width: 200px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; text-align: center;">Progress</div>';
             ['Diversification', 'Risk–Return', 'Liquidity'].forEach(function(label, i) {
                 var sc = scores[i] || 50;
@@ -8444,9 +8444,9 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                 html += '<div style="margin-bottom: 8px;"><div style="color: #ccc; font-size: 0.8rem; margin-bottom: 2px;">' + label + '</div><div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;"><div style="height: 100%; width: ' + sc + '%; background: ' + col + '; border-radius: 4px; transition: width 0.5s ease;"></div></div></div>';
             });
             html += '</div>';
-            html += '<div style="flex: 0 0 auto; text-align: center;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Overall</div><canvas id="reportCardGauge" style="max-width: 110px; max-height: 110px;"></canvas></div>';
+            html += '<div class="report-card-chart-wrap" style="flex: 0 0 auto; text-align: center; width: 150px; min-height: 170px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 6px;">Overall</div><div style="width: 130px; height: 130px; margin: 0 auto; position: relative;"><canvas id="reportCardGauge"></canvas></div></div>';
             if (allocation.length > 0) {
-                html += '<div style="flex: 0 0 auto; text-align: center;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Allocation</div><canvas id="reportCardDonut" style="max-width: 110px; max-height: 110px;"></canvas></div>';
+                html += '<div class="report-card-chart-wrap" style="flex: 0 0 auto; text-align: center; width: 180px; min-height: 160px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 6px;">Allocation</div><div style="width: 140px; height: 140px; margin: 0 auto; overflow: visible;"><canvas id="reportCardDonut"></canvas></div></div>';
             }
             html += '</div>';
             html += '<div style="color: #fff; margin-bottom: 10px;"><strong>Strengths:</strong> ' + strengths.map(s => esc(s)).join('; ') + '</div>';
@@ -8461,18 +8461,19 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                     window.reportCardGaugeChart = new Chart(gaugeCtx, {
                         type: 'doughnut',
                         data: {
-                            datasets: [{ data: [overallScore, 100 - overallScore], backgroundColor: [overallScore >= 70 ? '#ffd700' : (overallScore >= 50 ? '#ffa500' : '#ff6666'), 'rgba(255,255,255,0.08)'], borderWidth: 0 }]
+                            datasets: [{ data: [overallScore, 100 - overallScore], backgroundColor: [overallScore >= 70 ? '#ffd700' : (overallScore >= 50 ? '#e6a800' : '#e07c5a'), 'rgba(255,255,255,0.08)'], borderWidth: 0 }]
                         },
                         options: {
-                            circumference: 180, rotation: 270, responsive: true, maintainAspectRatio: true, cutout: '70%',
+                            circumference: 180, rotation: 270, responsive: true, maintainAspectRatio: true, cutout: '65%',
+                            layout: { padding: { top: 8, bottom: 8, left: 8, right: 8 } },
                             plugins: { legend: { display: false }, tooltip: { enabled: false } }
                         },
                         plugins: [{ id: 'gaugeCenter', afterDraw: function(chart) {
-                            var ctx = chart.ctx, w = chart.width, h = chart.height;
+                            var ctx = chart.ctx, w = chart.width, h = chart.height, cx = w / 2, cy = h / 2;
                             ctx.save();
-                            ctx.font = 'bold 22px Poppins'; ctx.fillStyle = '#ffd700'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                            ctx.fillText(overallScore, w / 2, h / 2 - 5);
-                            ctx.font = '11px Poppins'; ctx.fillStyle = '#aaa'; ctx.fillText('/100', w / 2, h / 2 + 14);
+                            ctx.font = 'bold 20px Poppins'; ctx.fillStyle = '#ffd700'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText(overallScore, cx, cy - 8);
+                            ctx.font = '10px Poppins'; ctx.fillStyle = '#aaa'; ctx.fillText('/100', cx, cy + 10);
                             ctx.restore();
                         }}]
                     });
@@ -8480,16 +8481,17 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                 if (allocation.length > 0) {
                     var donutCtx = document.getElementById('reportCardDonut');
                     if (donutCtx) {
-                        var donutColors = ['#ffd700', '#ffa500', '#ff8c00', '#ffb347', '#daa520', '#b8860b'];
+                        var donutColors = ['#ffd700', '#e6a800', '#e07c5a', '#9b59b6', '#3498db', '#5dade2'];
                         window.reportCardDonutChart = new Chart(donutCtx, {
                             type: 'doughnut',
                             data: {
                                 labels: allocation.map(function(a) { return (a.asset || '?') + ' ' + (a.pct || 0) + '%'; }),
-                                datasets: [{ data: allocation.map(function(a) { return parseFloat(a.pct) || 0; }), backgroundColor: donutColors.slice(0, allocation.length), borderColor: 'rgba(0,0,0,0.3)', borderWidth: 1 }]
+                                datasets: [{ data: allocation.map(function(a) { return parseFloat(a.pct) || 0; }), backgroundColor: donutColors.slice(0, allocation.length), borderColor: 'rgba(0,0,0,0.2)', borderWidth: 1 }]
                             },
                             options: {
-                                responsive: true, maintainAspectRatio: true, cutout: '60%',
-                                plugins: { legend: { display: true, position: 'bottom', labels: { color: '#ccc', font: { size: 10 } } } }
+                                responsive: true, maintainAspectRatio: true, cutout: '55%',
+                                layout: { padding: 8 },
+                                plugins: { legend: { display: true, position: 'right', labels: { color: '#ccc', font: { size: 9 }, boxWidth: 8, padding: 4 } } }
                             }
                         });
                     }
