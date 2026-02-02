@@ -9429,10 +9429,13 @@ window.addQuickLogFromCalendar = function addQuickLogFromCalendar() {
     if (!input) return;
     const action = (input.value || '').trim();
     if (!action) return;
+    const notesInput = document.getElementById('rebalanceCalendarQuickLogNotes');
+    const notes = (notesInput && notesInput.value) ? notesInput.value.trim() : '';
     const entries = getRebalanceLog();
-    entries.push({ date: new Date().toLocaleDateString('en-US'), action: action, notes: '' });
+    entries.push({ date: new Date().toLocaleDateString('en-US'), action: action, notes: notes });
     setRebalanceLog(entries);
     input.value = '';
+    if (notesInput) notesInput.value = '';
     renderRebalanceLog();
     const logList = document.getElementById('rebalanceLogList');
     if (logList) logList.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
