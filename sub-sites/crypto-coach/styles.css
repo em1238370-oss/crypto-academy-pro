@@ -2827,7 +2827,9 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .rebalance-assignment-block .rebalance-check-item,
 .rebalance-assignment-block .rebalance-detail,
 .rebalance-assignment-block .rebalance-detail summary,
-.rebalance-assignment-block .rebalance-detail p {
+.rebalance-assignment-block .rebalance-detail p,
+.rebalance-assignment-block .practice-faq-card,
+.rebalance-assignment-block .practice-faq-card .glossary-card-text {
     text-align: center !important;
 }
 .rebalance-assignment-block .form-group {
@@ -2869,7 +2871,9 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .rebalance-assignment-block #rebalanceCalendarResult,
 .rebalance-assignment-block #rebalanceLogAction,
 .rebalance-assignment-block #rebalanceLogNotes,
-.rebalance-assignment-block #rebalanceLogList {
+.rebalance-assignment-block #rebalanceLogList,
+.rebalance-assignment-block .practice-faq-section,
+.rebalance-assignment-block .practice-faq-grid {
     margin-left: auto;
     margin-right: auto;
 }
@@ -3258,31 +3262,50 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .rebalance-assignment-block .practice-slider-explanation { text-align: left; }
 .rebalance-assignment-block .practice-slider-explanation p { text-align: left; }
 
-.practice-faq-section { max-width: 560px; margin-left: auto; margin-right: auto; }
+.practice-faq-section {
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+.practice-faq-section h5,
+.practice-faq-section > p { text-align: center; }
 .practice-faq-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
 }
 .practice-faq-card {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 14px 16px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 16px 18px;
+    width: 100%;
+    min-width: 150px;
+    max-width: 200px;
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.45) 0%, rgba(25, 20, 15, 0.55) 100%);
     border-radius: 10px;
     border: 1px solid rgba(255, 215, 0, 0.12);
     transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+    text-align: center;
 }
 .practice-faq-card:hover {
     border-color: rgba(255, 215, 0, 0.35);
     box-shadow: 0 0 24px rgba(255, 215, 0, 0.1);
     transform: translateY(-1px);
 }
-.practice-faq-card .glossary-tip { font-size: 1.35rem; }
-.practice-faq-card .glossary-card-text strong { color: #ffd700; font-size: 0.9rem; }
+.practice-faq-card .glossary-tip { font-size: 1.5rem; }
+.practice-faq-card .glossary-card-text { text-align: center; }
+.practice-faq-card .glossary-card-text strong { color: #ffd700; font-size: 0.9rem; display: block; }
 .practice-faq-card .glossary-short { color: #aaa; font-size: 0.82rem; }
-.practice-faq-card-wide { grid-column: 1 / -1; }
+.practice-faq-card-wide {
+    flex-basis: 100%;
+    max-width: 100%;
+}
+.practice-faq-card-wide .glossary-tip { margin-bottom: 4px; }
 
 .practice-result-actions {
     display: flex;
