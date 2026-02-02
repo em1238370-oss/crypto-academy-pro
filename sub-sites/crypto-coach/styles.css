@@ -2868,6 +2868,21 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     margin: 8px 0;
     font-size: 0.95rem;
 }
+.rebalance-allocation-grid {
+    margin-bottom: 20px;
+    padding: 14px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.rebalance-coin-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.rebalance-coin-row:last-child { margin-bottom: 0; }
+.rebalance-coin-row label { min-width: 50px; }
 @media (max-width: 500px) {
     .rebalance-form-grid { grid-template-columns: 1fr; }
 }

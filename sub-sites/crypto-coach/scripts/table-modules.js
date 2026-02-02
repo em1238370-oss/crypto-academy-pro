@@ -8970,35 +8970,89 @@ window.runStrategyInNumbers = function runStrategyInNumbers() {
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
 
+function getRebalanceSelectedCoins() {
+    const sel = document.getElementById('rebalanceCoinsSelect');
+    if (!sel) return ['BTC', 'ETH'];
+    const opts = Array.from(sel.options).filter(o => o.selected).map(o => o.value);
+    return opts.length >= 2 ? opts : ['BTC', 'ETH'];
+}
+
+function initRebalanceAllocationInputs() {
+    const coins = getRebalanceSelectedCoins();
+    const container = document.getElementById('rebalanceAllocationInputs');
+    if (!container) return;
+    const n = coins.length;
+    const defaultPct = Math.floor(100 / n);
+    const remainder = 100 - defaultPct * n;
+    const defaults = coins.map((_, i) => i === 0 ? defaultPct + remainder : defaultPct);
+    if (coins.length === 2 && coins[0] === 'BTC' && coins[1] === 'ETH') { defaults[0] = 60; defaults[1] = 40; }
+    container.innerHTML = '<div class="rebalance-allocation-grid"><h6 style="color: #b8a060; margin-bottom: 10px; font-size: 0.95rem;">Target % and Current % (if drifted) per coin:</h6>' +
+        coins.map((c, i) => {
+            const targetDefault = defaults[i];
+            return `<div class="rebalance-coin-row"><label style="color: #ccc; font-size: 0.9rem;">${c}</label><input type="number" id="rebalanceTarget_${c}" min="0" max="100" value="${targetDefault}" placeholder="Target %" style="width: 70px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px; margin: 0 8px;">% <input type="number" id="rebalanceCurrent_${c}" min="0" max="100" value="" placeholder="Current" style="width: 70px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px;" title="Leave empty if same as target">%</div>`;
+        }).join('') + '</div>';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const sel = document.getElementById('rebalanceCoinsSelect');
+    if (sel) sel.addEventListener('change', initRebalanceAllocationInputs);
+    initRebalanceAllocationInputs();
+});
+
 window.runRebalanceExperiment = function runRebalanceExperiment() {
-    const targetBtcPct = Math.min(100, Math.max(0, parseInt(document.getElementById('rebalanceBtcPct')?.value || 60, 10)));
-    const targetEthPct = 100 - targetBtcPct;
-    const currentBtcRaw = document.getElementById('rebalanceCurrentBtcPct')?.value?.trim();
-    const currentBtcPct = currentBtcRaw === '' ? targetBtcPct : Math.min(100, Math.max(0, parseInt(currentBtcRaw || targetBtcPct, 10)));
-    const currentEthPct = 100 - currentBtcPct;
+    const coins = getRebalanceSelectedCoins();
     const portfolioValue = parseInt(document.getElementById('rebalancePortfolioValue')?.value || 10000, 10);
     const frequency = document.getElementById('rebalanceFrequency')?.value || 'quarterly';
     const resultDiv = document.getElementById('rebalanceExperimentResult');
     if (!resultDiv) return;
 
+    const targetAlloc = {};
+    const currentAlloc = {};
+    let targetSum = 0;
+    coins.forEach(c => {
+        const t = parseInt(document.getElementById('rebalanceTarget_' + c)?.value || 0, 10);
+        const curRaw = document.getElementById('rebalanceCurrent_' + c)?.value?.trim();
+        targetAlloc[c] = Math.min(100, Math.max(0, t));
+        targetSum += targetAlloc[c];
+        currentAlloc[c] = curRaw === '' ? targetAlloc[c] : Math.min(100, Math.max(0, parseInt(curRaw || targetAlloc[c], 10)));
+    });
+    if (targetSum !== 100 && targetSum > 0) {
+        const scale = 100 / targetSum;
+        let newSum = 0;
+        coins.forEach(c => { targetAlloc[c] = Math.round(targetAlloc[c] * scale); newSum += targetAlloc[c]; });
+        targetAlloc[coins[0]] += 100 - newSum;
+    }
+
     const freqLabel = frequency === 'monthly' ? 'Monthly' : frequency === 'quarterly' ? 'Quarterly' : 'Yearly';
 
-    // --- Variant 1: Before/After simulation ---
-    const btcChange = 0.5;
-    const ethChange = -0.2;
-    const btcBefore = Math.round(portfolioValue * targetBtcPct / 100);
-    const ethBefore = Math.round(portfolioValue * targetEthPct / 100);
-    const btcAfterDrift = Math.round(btcBefore * (1 + btcChange));
-    const ethAfterDrift = Math.round(ethBefore * (1 + ethChange));
-    const totalAfterDrift = btcAfterDrift + ethAfterDrift;
-    const btcPctDrifted = Math.round(100 * btcAfterDrift / totalAfterDrift);
-    const ethPctDrifted = 100 - btcPctDrifted;
+    const btcPct = targetAlloc['BTC'] || 0;
+    const ethPct = targetAlloc['ETH'] || 0;
+    const targetBtcPct = btcPct;
+    const targetEthPct = ethPct;
+    const currentBtcPct = currentAlloc['BTC'] ?? targetBtcPct;
+    const currentEthPct = currentAlloc['ETH'] ?? targetEthPct;
+
+    const changes = { 'BTC': 0.5, 'ETH': -0.2 };
+    const driftedVal = {};
+    const driftedPct = {};
+    let totalAfterDrift = 0;
+    coins.forEach((c, i) => {
+        const before = Math.round(portfolioValue * (targetAlloc[c] || 0) / 100);
+        const chg = changes[c] !== undefined ? changes[c] : (i % 3 === 0 ? 0.1 : i % 3 === 1 ? -0.15 : 0);
+        driftedVal[c] = Math.round(before * (1 + chg));
+        totalAfterDrift += driftedVal[c];
+    });
+    if (totalAfterDrift <= 0) totalAfterDrift = portfolioValue;
+    coins.forEach(c => { driftedPct[c] = Math.round(100 * driftedVal[c] / totalAfterDrift); });
+    const btcAfterDrift = driftedVal['BTC'] || 0;
+    const ethAfterDrift = driftedVal['ETH'] || 0;
+    const btcPctDrifted = driftedPct['BTC'] || 0;
+    const ethPctDrifted = driftedPct['ETH'] || 0;
     const btcTargetVal = Math.round(totalAfterDrift * targetBtcPct / 100);
-    const ethTargetVal = totalAfterDrift - btcTargetVal;
+    const ethTargetVal = Math.round(totalAfterDrift * targetEthPct / 100);
     const sellBtc = Math.max(0, btcAfterDrift - btcTargetVal);
     const buyEth = Math.max(0, ethTargetVal - ethAfterDrift);
 
-    // --- Variant 3: Strategy comparison (HODL vs Rebalance) ---
     const hodlReturn = 18;
     const rebalReturn = 15;
     const hodlVol = 42;
@@ -9006,30 +9060,36 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
     const hodlDrawdown = -35;
     const rebalDrawdown = -22;
 
-    // --- Variant 5: Calculator ---
-    const needsRebalance = currentBtcPct !== targetBtcPct;
-    const sellBtcCalc = currentBtcPct > targetBtcPct ? Math.round(portfolioValue * (currentBtcPct - targetBtcPct) / 100) : 0;
-    const buyEthCalc = sellBtcCalc;
-    const sellEthCalc = currentEthPct > targetEthPct ? Math.round(portfolioValue * (currentEthPct - targetEthPct) / 100) : 0;
-    const buyBtcCalc = sellEthCalc;
+    const needsRebalance = coins.some(c => (currentAlloc[c] || 0) !== (targetAlloc[c] || 0));
+    const calcActions = [];
+    coins.forEach(c => {
+        const cur = currentAlloc[c] || 0;
+        const tgt = targetAlloc[c] || 0;
+        if (cur > tgt) calcActions.push({ type: 'sell', coin: c, amt: Math.round(portfolioValue * (cur - tgt) / 100) });
+        else if (cur < tgt) calcActions.push({ type: 'buy', coin: c, amt: Math.round(portfolioValue * (tgt - cur) / 100) });
+    });
+
+    const targetStr = coins.map(c => c + ' ' + (targetAlloc[c] || 0) + '%').join(', ');
+    const beforeStr = coins.map(c => c + ' ' + (driftedPct[c] || 0) + '% — $' + (driftedVal[c] || 0).toLocaleString()).join('<br>');
+    const afterStr = coins.map(c => c + ' ' + (targetAlloc[c] || 0) + '%').join('<br>');
 
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = `
         <div class="rebalance-result-section">
             <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">1. Before / After Simulation</h5>
-            <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 10px;">Scenario: BTC +50%, ETH -20% from your target allocation.</p>
+            <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 10px;">Scenario: BTC +50%, ETH -20% from target. Other coins: mixed moves.</p>
             <div class="rebalance-before-after">
                 <div class="rebalance-col">
                     <strong style="color: #b8a060;">Before (drifted)</strong>
-                    <p style="margin: 6px 0 0 0; font-size: 0.9rem;">BTC ${btcPctDrifted}% — $${btcAfterDrift.toLocaleString()}<br>ETH ${ethPctDrifted}% — $${ethAfterDrift.toLocaleString()}<br><span style="color: #aaaaaa;">Total: $${totalAfterDrift.toLocaleString()}</span></p>
+                    <p style="margin: 6px 0 0 0; font-size: 0.9rem;">${beforeStr}<br><span style="color: #aaaaaa;">Total: $${totalAfterDrift.toLocaleString()}</span></p>
                 </div>
                 <div class="rebalance-arrow">→</div>
                 <div class="rebalance-col">
                     <strong style="color: #b8a060;">After rebalance</strong>
-                    <p style="margin: 6px 0 0 0; font-size: 0.9rem;">BTC ${targetBtcPct}% — $${btcTargetVal.toLocaleString()}<br>ETH ${targetEthPct}% — $${ethTargetVal.toLocaleString()}<br><span style="color: #aaaaaa;">Total: $${totalAfterDrift.toLocaleString()}</span></p>
+                    <p style="margin: 6px 0 0 0; font-size: 0.9rem;">${afterStr}<br><span style="color: #aaaaaa;">Total: $${totalAfterDrift.toLocaleString()}</span></p>
                 </div>
             </div>
-            <p style="color: #c9a227; font-size: 0.9rem; margin-top: 12px;">Action: Sell $${sellBtc.toLocaleString()} BTC, buy $${buyEth.toLocaleString()} ETH. You trim the winner and add to the laggard — a disciplined approach.</p>
+            <p style="color: #c9a227; font-size: 0.9rem; margin-top: 12px;">Action: Sell $${sellBtc.toLocaleString()} BTC, buy $${buyEth.toLocaleString()} ETH. Trim winners, add to laggards — disciplined approach.</p>
         </div>
 
         <div class="rebalance-result-section">
@@ -9050,16 +9110,13 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
 
         <div class="rebalance-result-section">
             <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">3. Rebalance Calculator</h5>
-            ${needsRebalance ? `
-                <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 10px;">Your portfolio has drifted. To return to ${targetBtcPct}% BTC / ${targetEthPct}% ETH:</p>
+            ${needsRebalance && calcActions.length > 0 ? `
+                <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 10px;">Your portfolio has drifted. To return to target (${targetStr}):</p>
                 <div class="rebalance-calc-actions">
-                    ${sellBtcCalc > 0 ? `<p><strong style="color: #ff8888;">Sell</strong> $${sellBtcCalc.toLocaleString()} <strong>BTC</strong></p>` : ''}
-                    ${buyEthCalc > 0 ? `<p><strong style="color: #90c090;">Buy</strong> $${buyEthCalc.toLocaleString()} <strong>ETH</strong></p>` : ''}
-                    ${sellEthCalc > 0 ? `<p><strong style="color: #ff8888;">Sell</strong> $${sellEthCalc.toLocaleString()} <strong>ETH</strong></p>` : ''}
-                    ${buyBtcCalc > 0 ? `<p><strong style="color: #90c090;">Buy</strong> $${buyBtcCalc.toLocaleString()} <strong>BTC</strong></p>` : ''}
+                    ${calcActions.map(a => `<p><strong style="color: ${a.type === 'sell' ? '#ff8888' : '#90c090'};">${a.type === 'sell' ? 'Sell' : 'Buy'}</strong> $${a.amt.toLocaleString()} <strong>${a.coin}</strong></p>`).join('')}
                 </div>
             ` : `
-                <p style="color: #90c090;">Your allocation matches your target (${targetBtcPct}% BTC / ${targetEthPct}% ETH). No rebalance needed.</p>
+                <p style="color: #90c090;">Your allocation matches your target (${targetStr}). No rebalance needed.</p>
             `}
         </div>
 

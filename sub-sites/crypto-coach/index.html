@@ -1616,16 +1616,49 @@
                                    <div class="section-box module-d-assignment">
                                        <span class="module-d-assignment-badge">5</span>
                                        <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 5: Rebalance experiment</h4>
-                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Simulate rebalancing a BTC/ETH portfolio: see before/after, compare strategies, and get exact sell/buy amounts. For education only.</p>
+                                       <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Simulate rebalancing a multi-coin portfolio: see before/after, compare strategies, and get exact sell/buy amounts. For education only.</p>
+                                       <div class="form-group" style="margin-bottom: 16px;">
+                                           <label style="color: #ffffff;">Coins to rebalance <span style="color: #888; font-size: 0.85rem;">(hold Ctrl/Cmd to select multiple)</span>:</label>
+                                           <select id="rebalanceCoinsSelect" multiple style="width: 100%; min-height: 100px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 6px;">
+                                               <option value="BTC" selected>BTC</option>
+                                               <option value="ETH" selected>ETH</option>
+                                               <option value="BNB">BNB</option>
+                                               <option value="SOL">SOL</option>
+                                               <option value="ADA">ADA</option>
+                                               <option value="XRP">XRP</option>
+                                               <option value="ENA">ENA</option>
+                                               <option value="FARTCOIN">FARTCOIN</option>
+                                               <option value="PEPE">PEPE</option>
+                                               <option value="AVAX">AVAX</option>
+                                               <option value="NEAR">NEAR</option>
+                                               <option value="ONDO">ONDO</option>
+                                               <option value="WLD">WLD</option>
+                                               <option value="ARB">ARB</option>
+                                               <option value="APT">APT</option>
+                                               <option value="LDO">LDO</option>
+                                               <option value="VIRTAUL">VIRTAUL</option>
+                                               <option value="UNI">UNI</option>
+                                               <option value="SBIB1000">SBIB1000</option>
+                                               <option value="WLFI">WLFI</option>
+                                               <option value="IJU">IJU</option>
+                                               <option value="SOMI">SOMI</option>
+                                               <option value="IP">IP</option>
+                                               <option value="APE">APE</option>
+                                               <option value="DOGE">DOGE</option>
+                                               <option value="SUI">SUI</option>
+                                               <option value="WIF">WIF</option>
+                                               <option value="AAVE">AAVE</option>
+                                               <option value="PENGU">PENGU</option>
+                                               <option value="SEI">SEI</option>
+                                               <option value="GALA">GALA</option>
+                                               <option value="TON">TON</option>
+                                               <option value="MYX">MYX</option>
+                                               <option value="ATOM">ATOM</option>
+                                           </select>
+                                           <small style="color: #888; font-size: 0.82rem; display: block; margin-top: 6px;">Default: BTC + ETH. Add more coins for a diversified portfolio.</small>
+                                       </div>
+                                       <div id="rebalanceAllocationInputs" class="rebalance-allocation-inputs"></div>
                                        <div class="rebalance-form-grid">
-                                           <div class="form-group">
-                                               <label style="color: #ffffff;">Target BTC % (rest is ETH):</label>
-                                               <input type="number" id="rebalanceBtcPct" min="0" max="100" value="60" style="width: 80px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 6px;"> %
-                                           </div>
-                                           <div class="form-group">
-                                               <label style="color: #ffffff;">Current BTC % <span style="color: #888; font-size: 0.85rem;">(if drifted)</span>:</label>
-                                               <input type="number" id="rebalanceCurrentBtcPct" min="0" max="100" value="" placeholder="Same as target" style="width: 80px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 6px;"> %
-                                           </div>
                                            <div class="form-group">
                                                <label style="color: #ffffff;">Portfolio value (USD):</label>
                                                <input type="number" id="rebalancePortfolioValue" min="100" max="1000000" value="10000" step="100" style="width: 140px; color: #ffffff; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 6px;"> $
