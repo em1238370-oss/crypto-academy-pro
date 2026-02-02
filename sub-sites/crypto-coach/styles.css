@@ -3023,6 +3023,19 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     margin: 8px 0;
     font-size: 0.95rem;
 }
+.rebalance-expert-take {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: rgba(255, 215, 0, 0.06);
+    border-radius: 8px;
+    border-left: 3px solid rgba(255, 215, 0, 0.35);
+}
+.rebalance-assignment-block .rebalance-expert-take {
+    text-align: center !important;
+}
+.rebalance-assignment-block .rebalance-expert-take p {
+    text-align: center !important;
+}
 .rebalance-allocation-grid {
     margin-bottom: 20px;
     padding: 14px;

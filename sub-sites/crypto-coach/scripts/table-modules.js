@@ -9106,6 +9106,54 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
     const beforeStr = coins.map(c => c + ' ' + (driftedPct[c] || 0) + '% — $' + (driftedVal[c] || 0).toLocaleString()).join('<br>');
     const afterStr = coins.map(c => c + ' ' + (targetAlloc[c] || 0) + '%').join('<br>');
 
+    const volDiff = hodlVol - rebalVol;
+    const ddDiff = Math.abs(hodlDrawdown) - Math.abs(rebalDrawdown);
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+    const actionPhrases = [
+        'Sell $' + sellBtc.toLocaleString() + ' BTC, buy $' + buyEth.toLocaleString() + ' ETH. Trim winners, add to laggards — disciplined approach.',
+        'Sell $' + sellBtc.toLocaleString() + ' BTC, buy $' + buyEth.toLocaleString() + ' ETH. Reduce the outperformer, top up the laggard.',
+        'Sell $' + sellBtc.toLocaleString() + ' BTC, buy $' + buyEth.toLocaleString() + ' ETH. Classic rebalancing: sell high, buy low.'
+    ];
+    const tableNotePhrases = [
+        'Rebalancing often reduces volatility and drawdowns by selling high and buying low.',
+        'With rebalancing you typically get smoother ride — lower swings, smaller drawdowns.',
+        'Selling winners and buying laggards tends to dampen volatility over time.'
+    ];
+    const driftIntroPhrases = [
+        'Your portfolio has drifted. To return to target (' + targetStr + '):',
+        'Allocation has shifted. To get back to your target (' + targetStr + '):',
+        'Weights have moved. To restore target (' + targetStr + '):'
+    ];
+    const noRebalancePhrases = [
+        'Your allocation matches your target (' + targetStr + '). No rebalance needed.',
+        'You\'re already on target (' + targetStr + '). Nothing to do.',
+        'Weights align with your target (' + targetStr + '). Sit tight.'
+    ];
+    const expertTakePhrases = [
+        'With ' + freqLabel + ' rebalancing you trade a bit of return for calmer waters — lower volatility (' + volDiff + '% less) and smaller drawdowns (' + ddDiff + '% improvement). That\'s the usual trade-off.',
+        freqLabel + ' rebalance gives you a smoother ride: volatility drops by ' + volDiff + '%, max drawdown improves by ' + ddDiff + '%. Return may lag slightly, but risk-adjusted it often makes sense.',
+        'The numbers suggest ' + freqLabel + ' rebalancing dials down risk — ' + volDiff + '% less volatility, ' + ddDiff + '% better drawdown. You give up some upside for peace of mind.',
+        'Here\'s the trade-off: ' + freqLabel + ' rebalancing typically cuts volatility by ' + volDiff + '% and softens drawdowns by ' + ddDiff + '%. Worth considering if you prefer less drama.'
+    ];
+    const feeWarningPhrases = [
+        'Before you act: check exchange fees (often 0.1–0.5% per trade) and any tax impact. Small costs add up.',
+        'Heads up: factor in trading fees and taxes before executing. They can eat into the benefit.',
+        'One more thing: real-world costs — exchange fees, possibly taxes — will trim the numbers above.',
+        'Quick reminder: trading fees (usually 0.1–0.5%) and taxes apply. Factor them in before you move.'
+    ];
+    const bottomLinePhrases = [
+        'For your setup, ' + freqLabel + ' rebalancing looks like a solid choice.',
+        'In short: ' + freqLabel + ' rebalance fits your portfolio well.',
+        'Takeaway: sticking to ' + freqLabel + ' rebalancing is a reasonable plan here.',
+        'All in all, ' + freqLabel + ' rebalance works well for this allocation.'
+    ];
+    const disclaimerPhrases = [
+        'This is illustrative. Real rebalancing has fees and tax implications. For education only.',
+        'Numbers are hypothetical. Actual results depend on fees, taxes, and market moves. Educational purpose.',
+        'Illustrative only. Fees and taxes apply in practice. Not financial advice.'
+    ];
+
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = `
         <div class="rebalance-result-section">
@@ -9122,7 +9170,7 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
                     <p style="margin: 6px 0 0 0; font-size: 0.9rem;">${afterStr}<br><span style="color: #aaaaaa;">Total: $${totalAfterDrift.toLocaleString()}</span></p>
                 </div>
             </div>
-            <p style="color: #c9a227; font-size: 0.9rem; margin-top: 12px;">Action: Sell $${sellBtc.toLocaleString()} BTC, buy $${buyEth.toLocaleString()} ETH. Trim winners, add to laggards — disciplined approach.</p>
+            <p style="color: #c9a227; font-size: 0.9rem; margin-top: 12px;">Action: ${pick(actionPhrases)}</p>
         </div>
 
         <div class="rebalance-result-section">
@@ -9138,23 +9186,34 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
                     <tr><td style="color: #b8a060;">Max drawdown</td><td style="color: #ff8888;">${hodlDrawdown}%</td><td style="color: #90c090;">${rebalDrawdown}%</td></tr>
                 </tbody>
             </table>
-            <p style="color: #aaaaaa; font-size: 0.85rem; margin-top: 10px;">Rebalancing often reduces volatility and drawdowns by selling high and buying low.</p>
+            <p style="color: #aaaaaa; font-size: 0.85rem; margin-top: 10px;">${pick(tableNotePhrases)}</p>
+            <div class="rebalance-expert-take">
+                <p style="color: #ffd700; font-size: 0.95rem; font-weight: 600; margin: 14px 0 6px 0;">Expert take</p>
+                <p style="color: #cccccc; font-size: 0.9rem; margin: 0; line-height: 1.5;">${pick(expertTakePhrases)}</p>
+            </div>
         </div>
 
         <div class="rebalance-result-section">
             <h5 style="color: #ffd700; margin-bottom: 12px; font-size: 1.05rem;">3. Rebalance Calculator</h5>
             ${needsRebalance && calcActions.length > 0 ? `
                 ${hasNegative ? '<p style="color: #ffa500; font-size: 0.9rem; margin-bottom: 10px;">⚠️ Negative current = short or no position. Strategy differs: buy to reach target.</p>' : ''}
-                <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 10px;">Your portfolio has drifted. To return to target (${targetStr}):</p>
+                <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 10px;">${pick(driftIntroPhrases)}</p>
                 <div class="rebalance-calc-actions">
                     ${calcActions.map(a => `<p><strong style="color: ${a.type === 'sell' ? '#ff8888' : '#90c090'};">${a.type === 'sell' ? 'Sell' : 'Buy'}</strong> $${a.amt.toLocaleString()} <strong>${a.coin}</strong></p>`).join('')}
                 </div>
             ` : `
-                <p style="color: #90c090;">Your allocation matches your target (${targetStr}). No rebalance needed.</p>
+                <p style="color: #90c090;">${pick(noRebalancePhrases)}</p>
             `}
         </div>
 
-        <p style="color: #888; font-size: 0.82rem; margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">This is illustrative. Real rebalancing has fees and tax implications. For education only.</p>
+        <div class="rebalance-expert-take">
+            <p style="color: #ffd700; font-size: 0.95rem; font-weight: 600; margin: 0 0 6px 0;">Bottom line</p>
+            <p style="color: #cccccc; font-size: 0.9rem; margin: 0; line-height: 1.5;">${pick(bottomLinePhrases)}</p>
+        </div>
+
+        <p style="color: #ffa500; font-size: 0.88rem; margin-top: 14px; padding: 10px 12px; background: rgba(255,165,0,0.08); border-radius: 6px; border-left: 3px solid rgba(255,165,0,0.4);">${pick(feeWarningPhrases)}</p>
+
+        <p style="color: #888; font-size: 0.82rem; margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">${pick(disclaimerPhrases)}</p>
     `;
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
