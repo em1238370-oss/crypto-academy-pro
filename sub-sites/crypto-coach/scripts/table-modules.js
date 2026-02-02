@@ -9150,6 +9150,11 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
         'Expert view: Allocation looks good. No need to tinker.',
         'Expert view: Weights match your plan. Sit tight and avoid unnecessary trades.'
     ];
+    const bottomLinePhrases = [
+        'Bottom line: for your setup, ' + freqLabel + ' rebalancing looks like a solid choice.',
+        'In short: ' + freqLabel + ' rebalance fits your portfolio well.',
+        'Takeaway: sticking to ' + freqLabel + ' rebalancing is a reasonable plan here.'
+    ];
 
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = `
@@ -9202,6 +9207,8 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
                 <p style="color: #b8a060; font-size: 0.88rem; margin-top: 10px; font-style: italic;">${pick(expert3NoRebalancePhrases)}</p>
             `}
         </div>
+
+        <p style="color: #ffd700; font-size: 0.92rem; font-weight: 600; margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">${pick(bottomLinePhrases)}</p>
 
         <p style="color: #888; font-size: 0.82rem; margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">This is illustrative. Real rebalancing has fees and tax implications. For education only.</p>
     `;
