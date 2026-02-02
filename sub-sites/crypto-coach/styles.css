@@ -2514,38 +2514,75 @@ div:has-text("Experience Points") {
     overflow: visible;
 }
 .report-card-charts {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    gap: 28px;
+    align-items: start;
+    margin-bottom: 3cm;
     overflow: visible;
 }
-.report-card-progress,
-.report-card-gauge,
-.report-card-donut {
+.report-card-charts.report-card-charts-with-allocation {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+}
+.report-card-progress {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+}
+.report-card-progress > div:first-child {
+    text-align: center;
+}
+.report-card-gauge {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
 }
-.report-card-progress {
-    text-align: left;
-    align-items: stretch;
-}
-.report-card-progress > div:first-child {
-    text-align: center;
-}
-.report-card-gauge canvas,
-.report-card-donut canvas {
-    display: block;
+.report-card-gauge-wrap {
+    width: 180px;
+    height: 100px;
     margin: 0 auto;
 }
+.report-card-gauge-wrap canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+.report-card-charts:not(.report-card-charts-with-allocation) .report-card-gauge {
+    grid-column: 1 / -1;
+}
 .report-card-donut {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
     overflow: visible;
 }
 .report-card-donut-inner {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
     overflow: visible;
 }
+.report-card-donut-inner canvas {
+    display: block;
+    margin: 0 auto;
+}
 @media (max-width: 600px) {
-    .report-card-charts {
+    .report-card-charts.report-card-charts-with-allocation {
         grid-template-columns: 1fr !important;
-        gap: 28px;
+    }
+    .report-card-gauge-wrap {
+        width: 160px;
+        height: 90px;
+    }
+    .report-card-donut-inner {
+        width: 180px;
+        height: 180px;
     }
 }
 
