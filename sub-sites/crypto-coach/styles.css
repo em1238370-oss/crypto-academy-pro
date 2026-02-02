@@ -3225,21 +3225,29 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .practice-slider-coins-grid > p { text-align: center; }
 .practice-slider-coins-grid .practice-slider-add-row { justify-content: center; display: flex; }
 .practice-slider-coin-row {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 90px 65px 20px 28px;
     align-items: center;
-    justify-content: center;
-    gap: 8px 12px;
+    justify-items: center;
+    gap: 0 8px;
     margin-bottom: 10px;
 }
+.practice-slider-coin-row .practice-slider-coin-label { justify-self: start; }
 .practice-slider-coin-row:last-of-type { margin-bottom: 0; }
 .practice-slider-coin-label {
     color: #ffd700;
     font-weight: 600;
     font-size: 0.9rem;
-    min-width: 45px;
+    justify-self: start;
 }
-.practice-slider-btc-row .practice-slider-coin-label { min-width: 45px; }
+.practice-slider-btc-row {
+    grid-template-columns: 90px 65px 20px 28px;
+}
+.practice-slider-btc-row .practice-slider-remove-spacer {
+    width: 28px;
+    height: 26px;
+    display: block;
+}
 .practice-slider-btc-target { color: #b8a060; font-weight: 600; }
 .practice-slider-hint { color: #888; font-size: 0.85rem; }
 .practice-slider-target-input { text-align: center; }

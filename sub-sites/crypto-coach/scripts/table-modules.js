@@ -9235,7 +9235,7 @@ function initPracticeSliderCoins() {
     const btcExisting = document.getElementById('practiceTarget_BTC')?.value;
     const btcVal = btcExisting !== undefined && btcExisting !== '' ? parseInt(btcExisting, 10) : 60;
     const btcSafe = Math.min(90, Math.max(10, btcVal));
-    rowsHtml = '<div class="practice-slider-coin-row practice-slider-btc-row" data-coin="BTC"><span class="practice-slider-coin-label">BTC</span><input type="number" id="practiceTarget_BTC" min="10" max="90" value="' + btcSafe + '" onchange="updateRebalanceSlider()" class="rebalance-form-input practice-slider-target-input practice-slider-btc-target-input" style="width: 60px;"><span class="rebalance-pct">%</span></div>' + rowsHtml;
+    rowsHtml = '<div class="practice-slider-coin-row practice-slider-btc-row" data-coin="BTC"><span class="practice-slider-coin-label">BTC</span><input type="number" id="practiceTarget_BTC" min="10" max="90" value="' + btcSafe + '" onchange="updateRebalanceSlider()" class="rebalance-form-input practice-slider-target-input practice-slider-btc-target-input" style="width: 60px;"><span class="rebalance-pct">%</span><span class="practice-slider-remove-spacer"></span></div>' + rowsHtml;
     var assignmentIntro = '<div class="practice-slider-assignment-intro">' +
         '<p><strong>Why this matters:</strong> Many people buy crypto and wonder — too much in one coin? What to sell or add? This exercise helps you <strong>see your portfolio</strong> and learn when to rebalance without stress.</p>' +
         '<p><strong>What you do:</strong> Set target % for each coin. Move the slider to simulate BTC going up or down. The result shows what to sell and buy to get back on track.</p>' +
