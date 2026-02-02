@@ -2841,9 +2841,11 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 }
 .rebalance-assignment-block .rebalance-form-grid {
     justify-content: center;
+    justify-items: center;
 }
 .rebalance-assignment-block .rebalance-form-grid .form-group {
     align-items: center;
+    text-align: center;
 }
 .rebalance-assignment-block .rebalance-allocation-grid {
     text-align: center !important;
