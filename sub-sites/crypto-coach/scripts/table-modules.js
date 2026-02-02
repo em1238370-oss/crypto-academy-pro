@@ -9129,12 +9129,19 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
 window.updateRebalanceSlider = function updateRebalanceSlider() {
     const slider = document.getElementById('rebalancePracticeSlider');
     const pctEl = document.getElementById('rebalanceSliderPct');
+    const deltaEl = document.getElementById('rebalanceSliderDelta');
     const resultEl = document.getElementById('rebalanceSliderResult');
     if (!slider || !pctEl || !resultEl) return;
     const pct = parseInt(slider.value, 10);
-    pctEl.textContent = pct;
-    const portfolio = 10000;
     const targetBtc = 60;
+    const delta = pct - targetBtc;
+    pctEl.textContent = pct;
+    if (deltaEl) {
+        if (delta === 0) deltaEl.textContent = '';
+        else if (delta > 0) deltaEl.textContent = '(+' + delta + ')';
+        else deltaEl.textContent = '(' + delta + ')';
+    }
+    const portfolio = 10000;
     if (pct === targetBtc) {
         resultEl.innerHTML = 'No rebalance needed — you\'re at target.';
     } else if (pct > targetBtc) {
