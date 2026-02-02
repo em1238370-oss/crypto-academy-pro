@@ -8399,26 +8399,25 @@ window.runRiskDna = async function runRiskDna() {
 function parseAllocationFromStrategy(text) {
     if (!text || typeof text !== 'string') return [];
     var list = [];
-    // re1: "40% BTC" or "20% USDT/USDC" or "10% RWA tokens" — supports multi-word assets
-    var re1 = /(\d+(?:\.\d+)?)\s*%\s*([A-Za-z0-9\/]+(?:\s+[A-Za-z]+)?)(?:\s|$|,|\.)/g;
-    var re2 = /([A-Za-z0-9\/]+(?:\s+[A-Za-z]+)?)\s*(\d+(?:\.\d+)?)\s*%/g;
     var seen = {};
+    function add(a, p) {
+        var raw = (a || '').trim().replace(/\s+/g, ' ').replace(/[!?.]+$/, '');
+        var asset = raw.toUpperCase();
+        var key = asset.replace(/\s/g, '').replace(/\//g, '');
+        if (asset.length >= 2 && asset.length <= 35 && !seen[key]) { seen[key] = 1; list.push({ asset: asset, pct: p }); }
+    }
+    // re1: "48% BTC" or "15% FET/T40/RENDER JAI agents!" — flexible terminator
+    var re1 = /(\d+(?:\.\d+)?)\s*%\s*([A-Za-z0-9\/]+(?:\s+[A-Za-z0-9\/]+)*)(?:\s|$|,|\.|!)/g;
+    var re2 = /([A-Za-z0-9\/]+(?:\s+[A-Za-z0-9\/]+)*)\s*(\d+(?:\.\d+)?)\s*%/g;
+    // re3 fallback: X% ... until next X% or comma
+    var re3 = /(\d+(?:\.\d+)?)\s*%\s*([^,]+?)(?=\s*\d+\s*%|,|\.\s|$)/g;
     var m;
-    while ((m = re1.exec(text)) !== null) {
-        var pct = parseFloat(m[1]);
-        var raw = (m[2] || '').trim();
-        var asset = raw.replace(/\s+/g, ' ').toUpperCase();
-        var key = asset.replace(/\s/g, '');
-        if (asset.length >= 2 && asset.length <= 25 && !seen[key]) { seen[key] = 1; list.push({ asset: asset, pct: pct }); }
+    while ((m = re1.exec(text)) !== null) { add(m[2], parseFloat(m[1])); }
+    if (list.length === 0) {
+        while ((m = re2.exec(text)) !== null) { add(m[1], parseFloat(m[2])); }
     }
     if (list.length === 0) {
-        while ((m = re2.exec(text)) !== null) {
-            var pct = parseFloat(m[2]);
-            var raw = (m[1] || '').trim();
-            var asset = raw.replace(/\s+/g, ' ').toUpperCase();
-            var key = asset.replace(/\s/g, '');
-            if (asset.length >= 2 && asset.length <= 25 && !seen[key]) { seen[key] = 1; list.push({ asset: asset, pct: pct }); }
-        }
+        while ((m = re3.exec(text)) !== null) { add(m[2], parseFloat(m[1])); }
     }
     var sum = list.reduce(function(s, a) { return s + a.pct; }, 0);
     if (sum > 0 && sum !== 100) list = list.map(function(a) { return { asset: a.asset, pct: Math.round(a.pct * 100 / sum) }; });
@@ -8492,12 +8491,15 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                 if (window.reportCardDonutChart) { window.reportCardDonutChart.destroy(); window.reportCardDonutChart = null; }
                 var gaugeCtx = document.getElementById('reportCardGauge');
                 if (gaugeCtx) {
-                    var gaugeCol = overallScore >= 70 ? '#ffd700' : (overallScore >= 50 ? '#e6a800' : '#e07c5a');
-                    var gaugeBorder = overallScore >= 70 ? 'rgba(255,215,0,0.6)' : (overallScore >= 50 ? 'rgba(230,168,0,0.5)' : 'rgba(224,124,90,0.5)');
+                    var gaugeColors = overallScore >= 70 ? ['#ffd700', '#ffec8b', '#ffa500'] : (overallScore >= 50 ? ['#e6a800', '#f0c040', '#e07c5a'] : ['#e07c5a', '#e8a090', '#c0392b']);
+                    var n = 3;
+                    var each = overallScore / n;
+                    var fillData = [each, each, each, 100 - overallScore];
+                    var fillColors = [gaugeColors[0], gaugeColors[1], gaugeColors[2], 'rgba(255,255,255,0.08)'];
                     window.reportCardGaugeChart = new Chart(gaugeCtx, {
                         type: 'doughnut',
                         data: {
-                            datasets: [{ data: [overallScore, 100 - overallScore], backgroundColor: [gaugeCol, 'rgba(255,255,255,0.08)'], borderColor: [gaugeBorder, 'transparent'], borderWidth: 2 }]
+                            datasets: [{ data: fillData, backgroundColor: fillColors, borderColor: 'rgba(255,215,0,0.4)', borderWidth: 2 }]
                         },
                         options: {
                             circumference: 180, rotation: 270, responsive: true, maintainAspectRatio: true, cutout: '55%',
@@ -8511,8 +8513,8 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                     if (donutCtx) {
                         var donutColors = ['#ffd700', '#e6a800', '#e07c5a', '#9b59b6', '#3498db', '#5dade2', '#f39c12', '#e74c3c', '#8e44ad', '#c0392b', '#d35400', '#2980b9', '#e67e22', '#7f8c8d'];
                         var nAlloc = allocation.length;
-                        var donutLegendH = Math.max(50, nAlloc * 26);
-                        var legendFontSize = nAlloc > 6 ? 12 : 14;
+                        var donutLegendH = Math.max(60, nAlloc * 28);
+                        var legendFontSize = nAlloc > 5 ? 13 : 15;
                         var colors = donutColors.slice(0, Math.max(nAlloc, 1));
                         while (colors.length < nAlloc) colors.push(donutColors[colors.length % donutColors.length]);
                         window.reportCardDonutChart = new Chart(donutCtx, {

@@ -2543,8 +2543,8 @@ div:has-text("Experience Points") {
     justify-content: flex-start;
 }
 .report-card-gauge-wrap {
-    width: 180px;
-    height: 100px;
+    width: 220px;
+    height: 120px;
     margin: 0 auto;
 }
 .report-card-gauge-wrap canvas {
@@ -2563,8 +2563,8 @@ div:has-text("Experience Points") {
     overflow: visible;
 }
 .report-card-donut-inner {
-    width: 200px;
-    height: 200px;
+    width: 220px;
+    height: 220px;
     margin: 0 auto;
     overflow: visible;
 }
@@ -2577,12 +2577,12 @@ div:has-text("Experience Points") {
         grid-template-columns: 1fr !important;
     }
     .report-card-gauge-wrap {
-        width: 160px;
-        height: 90px;
+        width: 200px;
+        height: 110px;
     }
     .report-card-donut-inner {
-        width: 180px;
-        height: 180px;
+        width: 200px;
+        height: 200px;
     }
 }
 
