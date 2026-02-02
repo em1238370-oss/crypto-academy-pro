@@ -8464,7 +8464,7 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
             var html = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,215,0,0.4); text-align: left;">';
             html += '<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">' + grades.map(g => '<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #ffd700;">' + esc(g) + '</div>').join('') + '</div>';
             var gridCols = allocation.length > 0 ? '1fr 1fr 1fr' : '1fr 1fr';
-            html += '<div class="report-card-charts" style="display: grid; grid-template-columns: ' + gridCols + '; gap: 24px; align-items: start; margin-bottom: 20px;">';
+            html += '<div class="report-card-charts" style="display: grid; grid-template-columns: ' + gridCols + '; gap: 24px; align-items: start; margin-bottom: 3cm;">';
             html += '<div class="report-card-progress"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; text-align: center;">Progress</div>';
             ['Diversification', 'Risk–Return', 'Liquidity'].forEach(function(label, i) {
                 var sc = scores[i] || 50;
@@ -8474,7 +8474,9 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
             html += '</div>';
             html += '<div class="report-card-gauge"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; text-align: center;">Overall</div><div style="width: 100px; height: 55px; margin: 0 auto;"><canvas id="reportCardGauge"></canvas></div><div style="color: #ffd700; font-size: 1.4rem; font-weight: bold; margin-top: 6px; text-align: center;">' + overallScore + '<span style="font-size: 0.75rem; color: #aaa; font-weight: normal;">/100</span></div></div>';
             if (allocation.length > 0) {
-                html += '<div class="report-card-donut"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; text-align: center;">Allocation</div><div class="report-card-donut-inner" style="width: 120px; min-height: 140px; margin: 0 auto;"><canvas id="reportCardDonut"></canvas></div></div>';
+                var n = allocation.length;
+                var legendH = Math.max(80, n * 22);
+                html += '<div class="report-card-donut" style="min-height: ' + (120 + legendH) + 'px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; text-align: center;">Allocation</div><div class="report-card-donut-inner" style="width: 130px; min-height: ' + (100 + legendH) + 'px; margin: 0 auto; overflow: visible;"><canvas id="reportCardDonut"></canvas></div></div>';
             }
             html += '</div>';
             html += '<div style="color: #fff; margin-bottom: 10px;"><strong>Strengths:</strong> ' + strengths.map(s => esc(s)).join('; ') + '</div>';
@@ -8502,19 +8504,20 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                     var donutCtx = document.getElementById('reportCardDonut');
                     if (donutCtx) {
                         var donutColors = ['#ffd700', '#e6a800', '#e07c5a', '#9b59b6', '#3498db', '#5dade2', '#f39c12', '#e74c3c', '#8e44ad', '#c0392b', '#d35400', '#2980b9', '#e67e22', '#7f8c8d'];
-                        var n = allocation.length;
-                        var colors = donutColors.slice(0, Math.max(n, 1));
-                        while (colors.length < n) colors.push(donutColors[colors.length % donutColors.length]);
+                        var nAlloc = allocation.length;
+                        var donutLegendH = Math.max(35, nAlloc * 18);
+                        var colors = donutColors.slice(0, Math.max(nAlloc, 1));
+                        while (colors.length < nAlloc) colors.push(donutColors[colors.length % donutColors.length]);
                         window.reportCardDonutChart = new Chart(donutCtx, {
                             type: 'doughnut',
                             data: {
                                 labels: allocation.map(function(a) { return (a.asset || '?') + ' ' + (a.pct || 0) + '%'; }),
-                                datasets: [{ data: allocation.map(function(a) { return parseFloat(a.pct) || 0; }), backgroundColor: colors.slice(0, n), borderColor: 'rgba(0,0,0,0.2)', borderWidth: 1 }]
+                                datasets: [{ data: allocation.map(function(a) { return parseFloat(a.pct) || 0; }), backgroundColor: colors.slice(0, nAlloc), borderColor: 'rgba(0,0,0,0.2)', borderWidth: 1 }]
                             },
                             options: {
                                 responsive: true, maintainAspectRatio: true, cutout: '55%',
-                                layout: { padding: { top: 8, bottom: 24, left: 8, right: 8 } },
-                                plugins: { legend: { display: true, position: 'bottom', labels: { color: '#ccc', font: { size: n > 6 ? 8 : 9 }, boxWidth: 8, padding: 3 } } }
+                                layout: { padding: { top: 8, bottom: donutLegendH, left: 12, right: 12 } },
+                                plugins: { legend: { display: true, position: 'bottom', labels: { color: '#ccc', font: { size: nAlloc > 8 ? 8 : 9 }, boxWidth: 10, padding: 4 } } }
                             }
                         });
                     }

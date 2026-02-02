@@ -2536,6 +2536,12 @@ div:has-text("Experience Points") {
     display: block;
     margin: 0 auto;
 }
+.report-card-donut {
+    overflow: visible;
+}
+.report-card-donut-inner {
+    overflow: visible;
+}
 @media (max-width: 600px) {
     .report-card-charts {
         grid-template-columns: 1fr !important;
