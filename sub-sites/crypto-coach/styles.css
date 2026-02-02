@@ -2810,6 +2810,94 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 }
 
 /* Rebalance experiment */
+/* Assignment 5: center all content */
+.rebalance-assignment-block {
+    text-align: center !important;
+}
+.rebalance-assignment-block .module-d-assignment-badge,
+.rebalance-assignment-block h4,
+.rebalance-assignment-block > p,
+.rebalance-assignment-block .form-group,
+.rebalance-assignment-block .form-group label,
+.rebalance-assignment-block .form-group small,
+.rebalance-assignment-block .rebalance-extra-section h5,
+.rebalance-assignment-block .rebalance-extra-section p,
+.rebalance-assignment-block .rebalance-glossary,
+.rebalance-assignment-block .rebalance-checklist,
+.rebalance-assignment-block .rebalance-check-item,
+.rebalance-assignment-block .rebalance-detail,
+.rebalance-assignment-block .rebalance-detail summary,
+.rebalance-assignment-block .rebalance-detail p {
+    text-align: center !important;
+}
+.rebalance-assignment-block .form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.rebalance-assignment-block .form-group label,
+.rebalance-assignment-block .form-group small {
+    width: 100%;
+}
+.rebalance-assignment-block .rebalance-form-grid {
+    justify-content: center;
+}
+.rebalance-assignment-block .rebalance-form-grid .form-group {
+    align-items: center;
+}
+.rebalance-assignment-block .rebalance-allocation-grid {
+    text-align: center !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.rebalance-assignment-block .rebalance-coin-row {
+    justify-content: center;
+}
+.rebalance-assignment-block .rebalance-extra-section {
+    text-align: center !important;
+}
+.rebalance-assignment-block .rebalance-extra-section > * {
+    margin-left: auto;
+    margin-right: auto;
+}
+.rebalance-assignment-block #rebalancePracticeSlider,
+.rebalance-assignment-block #rebalanceSliderResult,
+.rebalance-assignment-block #rebalanceCalendarResult,
+.rebalance-assignment-block #rebalanceLogAction,
+.rebalance-assignment-block #rebalanceLogNotes,
+.rebalance-assignment-block #rebalanceLogList {
+    margin-left: auto;
+    margin-right: auto;
+}
+.rebalance-assignment-block .rebalance-glossary {
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.rebalance-assignment-block .rebalance-checklist {
+    align-items: center;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.rebalance-assignment-block .rebalance-check-item {
+    justify-content: center;
+}
+.rebalance-assignment-block #rebalanceCoinsSelect {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 400px;
+}
+.rebalance-assignment-block .form-group:has(#rebalanceCoinsSelect) {
+    align-items: center;
+}
+.rebalance-assignment-block button.btn {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
 .rebalance-form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
