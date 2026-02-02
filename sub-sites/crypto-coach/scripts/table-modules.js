@@ -8395,6 +8395,14 @@ window.runRiskDna = async function runRiskDna() {
     } catch (err) { resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>'; }
 };
 
+// Grade to score (0-100) for Strategy Report Card
+function reportCardGradeToScore(g) {
+    if (!g) return 50;
+    var s = String(g).toUpperCase().replace(/\s/g, '');
+    var map = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 88, 'B': 82, 'B-': 78, 'C+': 72, 'C': 65, 'C-': 58, 'D+': 52, 'D': 45, 'D-': 38, 'F': 25 };
+    return map[s] !== undefined ? map[s] : 50;
+}
+
 // Assignment 4: Strategy Report Card
 window.runStrategyReportCard = async function runStrategyReportCard() {
     const strategy = document.getElementById('reportCardStrategy')?.value?.trim();
@@ -8409,8 +8417,8 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
             body: JSON.stringify({ model: 'mistral-small', messages: [
                 { role: 'system', content: 'You are a crypto strategy analyst giving a personal report. Write like a real advisor recommending to a friend — warm, direct, human. Return ONLY valid JSON. CRITICAL: Generate UNIQUE content every time. Even for similar strategies, vary: phrasing, examples, analogies, tone. Never repeat same wording. Keep crypto advice accurate — correct terms, realistic risks. Grades and scores must fit the strategy logically. Sound like a person, not a system.' },
-                { role: 'user', content: `[Variety seed: ${varietySeed}] Strategy: "${strategy}" Grade this crypto strategy. Generate a UNIQUE report — different wording, different examples each time. Sound like a real advisor, not a bot. JSON: diversificationGrade, riskReturnGrade, liquidityGrade (A+ to F), overallScore (0-100), strengths (array — full phrases, vary phrasing), improvements (array — full phrases, vary phrasing), topRecommendation (2-4 sentences — personal, warm, like advice from a friend; vary structure and examples).` }
-            ], temperature: 0.92, max_tokens: 700 })
+                { role: 'user', content: `[Variety seed: ${varietySeed}] Strategy: "${strategy}" Grade this crypto strategy. Extract allocation from text if present (e.g. "50% BTC, 30% ETH" -> [{asset:"BTC",pct:50},{asset:"ETH",pct:30}]). If no clear allocation, use empty array. JSON: diversificationGrade, riskReturnGrade, liquidityGrade (A+ to F), overallScore (0-100), allocation (array of {asset, pct} — e.g. [{asset:"BTC",pct:50},{asset:"ETH",pct:30},{asset:"SOL",pct:20}], empty if not specified), strengths (array), improvements (array), topRecommendation (2-4 sentences).` }
+            ], temperature: 0.92, max_tokens: 750 })
         });
         const data = await response.json();
         if (data.choices?.[0]) {
@@ -8418,9 +8426,75 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
             const p = JSON.parse(content);
             var esc = function(s) { return (s || '').toString().replace(/</g, '&lt;'); };
             const grades = [p.diversificationGrade, p.riskReturnGrade, p.liquidityGrade].filter(Boolean);
+            const scores = [reportCardGradeToScore(p.diversificationGrade), reportCardGradeToScore(p.riskReturnGrade), reportCardGradeToScore(p.liquidityGrade)];
+            const overallScore = Math.max(0, Math.min(100, parseInt(p.overallScore, 10) || 50));
+            var allocation = Array.isArray(p.allocation) ? p.allocation.filter(function(a) { return a && (a.asset || a.pct !== undefined); }) : [];
+            var allocSum = allocation.reduce(function(s, a) { return s + (parseFloat(a.pct) || 0); }, 0);
+            if (allocSum > 0 && allocSum !== 100) allocation = allocation.map(function(a) { return { asset: a.asset || '?', pct: Math.round((parseFloat(a.pct) || 0) * 100 / allocSum) }; });
             const strengths = Array.isArray(p.strengths) ? p.strengths : [p.strengths].filter(Boolean);
             const improvements = Array.isArray(p.improvements) ? p.improvements : [p.improvements].filter(Boolean);
-            resultDiv.innerHTML = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,215,0,0.4); text-align: left;"><div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">' + grades.map(g => '<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #ffd700;">' + esc(g) + '</div>').join('') + '</div><div style="color: #fff; margin-bottom: 10px;"><strong>Strengths:</strong> ' + strengths.map(s => esc(s)).join('; ') + '</div><div style="color: #ffa500; margin-bottom: 10px;"><strong>Improve:</strong> ' + improvements.map(i => esc(i)).join('; ') + '</div><div style="color: #ffd700;">💡 ' + esc(p.topRecommendation) + '</div></div>';
+            var barColors = ['#ffd700', '#ffa500', '#ff6666'];
+            var html = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,215,0,0.4); text-align: left;">';
+            html += '<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">' + grades.map(g => '<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #ffd700;">' + esc(g) + '</div>').join('') + '</div>';
+            html += '<div class="report-card-charts" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start; margin-bottom: 15px;">';
+            html += '<div style="flex: 1; min-width: 200px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; text-align: center;">Progress</div>';
+            ['Diversification', 'Risk–Return', 'Liquidity'].forEach(function(label, i) {
+                var sc = scores[i] || 50;
+                var col = sc >= 70 ? barColors[0] : (sc >= 50 ? barColors[1] : barColors[2]);
+                html += '<div style="margin-bottom: 8px;"><div style="color: #ccc; font-size: 0.8rem; margin-bottom: 2px;">' + label + '</div><div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;"><div style="height: 100%; width: ' + sc + '%; background: ' + col + '; border-radius: 4px; transition: width 0.5s ease;"></div></div></div>';
+            });
+            html += '</div>';
+            html += '<div style="flex: 0 0 auto; text-align: center;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Overall</div><canvas id="reportCardGauge" style="max-width: 110px; max-height: 110px;"></canvas></div>';
+            if (allocation.length > 0) {
+                html += '<div style="flex: 0 0 auto; text-align: center;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Allocation</div><canvas id="reportCardDonut" style="max-width: 110px; max-height: 110px;"></canvas></div>';
+            }
+            html += '</div>';
+            html += '<div style="color: #fff; margin-bottom: 10px;"><strong>Strengths:</strong> ' + strengths.map(s => esc(s)).join('; ') + '</div>';
+            html += '<div style="color: #ffa500; margin-bottom: 10px;"><strong>Improve:</strong> ' + improvements.map(i => esc(i)).join('; ') + '</div>';
+            html += '<div style="color: #ffd700;">💡 ' + esc(p.topRecommendation) + '</div></div>';
+            resultDiv.innerHTML = html;
+            if (typeof Chart !== 'undefined') {
+                if (window.reportCardGaugeChart) { window.reportCardGaugeChart.destroy(); window.reportCardGaugeChart = null; }
+                if (window.reportCardDonutChart) { window.reportCardDonutChart.destroy(); window.reportCardDonutChart = null; }
+                var gaugeCtx = document.getElementById('reportCardGauge');
+                if (gaugeCtx) {
+                    window.reportCardGaugeChart = new Chart(gaugeCtx, {
+                        type: 'doughnut',
+                        data: {
+                            datasets: [{ data: [overallScore, 100 - overallScore], backgroundColor: [overallScore >= 70 ? '#ffd700' : (overallScore >= 50 ? '#ffa500' : '#ff6666'), 'rgba(255,255,255,0.08)'], borderWidth: 0 }]
+                        },
+                        options: {
+                            circumference: 180, rotation: 270, responsive: true, maintainAspectRatio: true, cutout: '70%',
+                            plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                        },
+                        plugins: [{ id: 'gaugeCenter', afterDraw: function(chart) {
+                            var ctx = chart.ctx, w = chart.width, h = chart.height;
+                            ctx.save();
+                            ctx.font = 'bold 22px Poppins'; ctx.fillStyle = '#ffd700'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText(overallScore, w / 2, h / 2 - 5);
+                            ctx.font = '11px Poppins'; ctx.fillStyle = '#aaa'; ctx.fillText('/100', w / 2, h / 2 + 14);
+                            ctx.restore();
+                        }}]
+                    });
+                }
+                if (allocation.length > 0) {
+                    var donutCtx = document.getElementById('reportCardDonut');
+                    if (donutCtx) {
+                        var donutColors = ['#ffd700', '#ffa500', '#ff8c00', '#ffb347', '#daa520', '#b8860b'];
+                        window.reportCardDonutChart = new Chart(donutCtx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: allocation.map(function(a) { return (a.asset || '?') + ' ' + (a.pct || 0) + '%'; }),
+                                datasets: [{ data: allocation.map(function(a) { return parseFloat(a.pct) || 0; }), backgroundColor: donutColors.slice(0, allocation.length), borderColor: 'rgba(0,0,0,0.3)', borderWidth: 1 }]
+                            },
+                            options: {
+                                responsive: true, maintainAspectRatio: true, cutout: '60%',
+                                plugins: { legend: { display: true, position: 'bottom', labels: { color: '#ccc', font: { size: 10 } } } }
+                            }
+                        });
+                    }
+                }
+            }
         } else { resultDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable.</span>'; }
     } catch (err) { resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>'; }
 };

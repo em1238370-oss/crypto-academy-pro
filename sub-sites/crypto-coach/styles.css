@@ -2509,6 +2509,17 @@ div:has-text("Experience Points") {
     word-break: break-word;
 }
 
+/* Strategy Report Card: charts layout */
+.report-card-charts {
+    gap: 20px;
+}
+@media (max-width: 500px) {
+    .report-card-charts {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
 .money-sim-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
