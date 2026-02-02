@@ -9212,20 +9212,73 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
     resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
 
-// Assignment 5 extras: Practice slider, Calendar, Log, Checklist
+// Assignment 5 extras: Practice slider (BTC base + multi-coin), Calendar, Log, Checklist
+const PRACTICE_SLIDER_COINS = ['ETH','SOL','XRP','BNB','ADA','DOGE','AVAX','DOT','MATIC','LINK','UNI','ATOM','LTC','BCH','XLM','ALGO','VET','FIL','TRX','ETC','NEAR','APT','ARB','OP','INJ','STX','RUNE','TIA','SEI','SUI','PEPE','WIF','FLOKI','BONK'];
+
+window.practiceSliderSelectedCoins = ['ETH'];
+
+function getPracticeSliderCoins() {
+    return window.practiceSliderSelectedCoins || ['ETH'];
+}
+
+function initPracticeSliderCoins() {
+    const coins = getPracticeSliderCoins();
+    const container = document.getElementById('practiceSliderCoinsContainer');
+    if (!container) return;
+    const defaultPct = coins.length === 1 ? 40 : Math.floor(40 / coins.length);
+    const availableToAdd = PRACTICE_SLIDER_COINS.filter(c => !coins.includes(c));
+    let othersSum = 0;
+    let rowsHtml = '';
+    coins.forEach(c => {
+        const existing = document.getElementById('practiceTarget_' + c)?.value;
+        const val = existing !== undefined && existing !== '' ? parseInt(existing, 10) : defaultPct;
+        const safeVal = Math.min(90, Math.max(0, val));
+        othersSum += safeVal;
+        rowsHtml += '<div class="practice-slider-coin-row" data-coin="' + c + '"><span class="practice-slider-coin-label">' + c + '</span><input type="number" id="practiceTarget_' + c + '" min="1" max="90" value="' + safeVal + '" onchange="updateRebalanceSlider()" class="rebalance-form-input practice-slider-target-input" style="width: 60px;"><span class="rebalance-pct">%</span><button type="button" class="practice-slider-remove" onclick="removePracticeSliderCoin(\'' + c + '\')" title="Remove">×</button></div>';
+    });
+    const btcTarget = Math.max(10, Math.min(90, 100 - othersSum));
+    rowsHtml = '<div class="practice-slider-coin-row" data-coin="BTC"><span class="practice-slider-coin-label">BTC</span><span class="practice-slider-btc-target">' + btcTarget + '</span><span class="practice-slider-hint">% (rest)</span></div>' + rowsHtml;
+    container.innerHTML = '<div class="practice-slider-coins-grid"><h6 style="color: #b8a060; margin-bottom: 8px; font-size: 0.9rem;">BTC (always) + your coins</h6>' + rowsHtml + (availableToAdd.length ? '<div class="practice-slider-add-row"><select id="practiceAddSelect" onchange="addPracticeSliderCoin(this)" class="rebalance-form-select practice-add-select"><option value="">— Add coin —</option>' + availableToAdd.map(c => '<option value="' + c + '">' + c + '</option>').join('') + '</select></div>' : '') + '</div>';
+}
+
+window.addPracticeSliderCoin = function addPracticeSliderCoin(selEl) {
+    const v = selEl && selEl.value;
+    if (!v) return;
+    if (!window.practiceSliderSelectedCoins) window.practiceSliderSelectedCoins = ['ETH'];
+    if (window.practiceSliderSelectedCoins.includes(v)) return;
+    window.practiceSliderSelectedCoins.push(v);
+    selEl.value = '';
+    initPracticeSliderCoins();
+    updateRebalanceSlider();
+};
+
+window.removePracticeSliderCoin = function removePracticeSliderCoin(coin) {
+    if (!window.practiceSliderSelectedCoins) return;
+    if (window.practiceSliderSelectedCoins.length <= 1) return;
+    window.practiceSliderSelectedCoins = window.practiceSliderSelectedCoins.filter(c => c !== coin);
+    initPracticeSliderCoins();
+    updateRebalanceSlider();
+};
+
 window.updateRebalanceSlider = function updateRebalanceSlider() {
     const slider = document.getElementById('rebalancePracticeSlider');
     const pctEl = document.getElementById('rebalanceSliderPct');
     const deltaEl = document.getElementById('rebalanceSliderDelta');
     const resultEl = document.getElementById('rebalanceSliderResult');
-    const targetInput = document.getElementById('rebalanceSliderTargetBtc');
     const portfolioInput = document.getElementById('rebalanceSliderPortfolio');
     const targetLabel = document.getElementById('rebalanceSliderTargetLabel');
     if (!slider || !pctEl || !resultEl) return;
-    const targetBtc = Math.min(90, Math.max(10, parseInt(targetInput?.value || 60, 10)));
+
+    const coins = getPracticeSliderCoins();
+    let othersSum = 0;
+    coins.forEach(c => {
+        othersSum += Math.min(90, Math.max(0, parseInt(document.getElementById('practiceTarget_' + c)?.value || 0, 10)));
+    });
+    const targetBtc = Math.max(10, Math.min(90, 100 - othersSum));
+
     const portfolio = Math.min(1000000, Math.max(100, parseInt(portfolioInput?.value || 10000, 10)));
-    if (targetInput) targetInput.value = targetBtc;
     if (portfolioInput) portfolioInput.value = portfolio;
+
     const sliderMin = Math.max(5, targetBtc - 35);
     const sliderMax = Math.min(95, targetBtc + 35);
     slider.min = sliderMin;
@@ -9234,6 +9287,7 @@ window.updateRebalanceSlider = function updateRebalanceSlider() {
     if (pct < sliderMin) pct = sliderMin;
     if (pct > sliderMax) pct = sliderMax;
     slider.value = pct;
+
     const delta = pct - targetBtc;
     pctEl.textContent = pct;
     if (deltaEl) {
@@ -9242,24 +9296,40 @@ window.updateRebalanceSlider = function updateRebalanceSlider() {
         else deltaEl.textContent = ' (' + delta + ')';
     }
     if (targetLabel) targetLabel.textContent = targetBtc;
-    const ethTarget = 100 - targetBtc;
+
+    const othersTarget = 100 - targetBtc;
+    const othersLabel = coins.length === 1 ? coins[0] : coins.join(', ');
+
     if (pct === targetBtc) {
-        resultEl.innerHTML = '<div class="practice-result-ok">✓ No rebalance needed — you\'re at target (' + targetBtc + '% / ' + ethTarget + '%).</div>';
+        resultEl.innerHTML = '<div class="practice-result-ok">✓ No rebalance needed — you\'re at target (' + targetBtc + '% BTC / ' + othersTarget + '% ' + othersLabel + ').</div>';
     } else if (pct > targetBtc) {
         const sellBtc = Math.round(portfolio * (pct - targetBtc) / 100);
-        resultEl.innerHTML = '<div class="practice-result-actions"><span class="practice-action sell">Sell $' + sellBtc.toLocaleString() + ' BTC</span><span class="practice-action buy">Buy $' + sellBtc.toLocaleString() + ' ETH</span></div><p style="color: #888; font-size: 0.85rem; margin-bottom: 4px;">BTC grew — trim it, add to ETH.</p><p style="color: #aaa; font-size: 0.8rem; margin: 0;">It\'s the same $' + sellBtc.toLocaleString() + ' — you sell BTC, get cash, use that cash to buy ETH. Your total stays $' + portfolio.toLocaleString() + '.</p>';
+        const div = othersTarget > 0 ? othersTarget : 1;
+        const buyParts = coins.map(c => {
+            const t = Math.min(90, Math.max(0, parseInt(document.getElementById('practiceTarget_' + c)?.value || 0, 10)));
+            const amt = Math.round(sellBtc * t / div);
+            return amt > 0 ? '<span class="practice-action buy">Buy $' + amt.toLocaleString() + ' ' + c + '</span>' : '';
+        }).filter(Boolean).join('');
+        resultEl.innerHTML = '<div class="practice-result-actions"><span class="practice-action sell">Sell $' + sellBtc.toLocaleString() + ' BTC</span>' + buyParts + '</div><p style="color: #888; font-size: 0.85rem; margin-bottom: 4px;">BTC grew — trim it, add to ' + othersLabel + '.</p><p style="color: #aaa; font-size: 0.8rem; margin: 0;">Same $' + sellBtc.toLocaleString() + ' moves from BTC to your other coins. Total stays $' + portfolio.toLocaleString() + '.</p>';
     } else {
         const buyBtc = Math.round(portfolio * (targetBtc - pct) / 100);
-        resultEl.innerHTML = '<div class="practice-result-actions"><span class="practice-action sell">Sell $' + buyBtc.toLocaleString() + ' ETH</span><span class="practice-action buy">Buy $' + buyBtc.toLocaleString() + ' BTC</span></div><p style="color: #888; font-size: 0.85rem; margin-bottom: 4px;">BTC fell — add to it, trim ETH.</p><p style="color: #aaa; font-size: 0.8rem; margin: 0;">It\'s the same $' + buyBtc.toLocaleString() + ' — you sell ETH, get cash, use that cash to buy BTC. Your total stays $' + portfolio.toLocaleString() + '.</p>';
+        const div = othersTarget > 0 ? othersTarget : 1;
+        const sellParts = coins.map(c => {
+            const t = Math.min(90, Math.max(0, parseInt(document.getElementById('practiceTarget_' + c)?.value || 0, 10)));
+            const amt = Math.round(buyBtc * t / div);
+            return amt > 0 ? '<span class="practice-action sell">Sell $' + amt.toLocaleString() + ' ' + c + '</span>' : '';
+        }).filter(Boolean).join('');
+        resultEl.innerHTML = '<div class="practice-result-actions">' + sellParts + '<span class="practice-action buy">Buy $' + buyBtc.toLocaleString() + ' BTC</span></div><p style="color: #888; font-size: 0.85rem; margin-bottom: 4px;">BTC fell — add to it, trim ' + othersLabel + '.</p><p style="color: #aaa; font-size: 0.8rem; margin: 0;">Same $' + buyBtc.toLocaleString() + ' moves from your other coins to BTC. Total stays $' + portfolio.toLocaleString() + '.</p>';
     }
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+    initPracticeSliderCoins();
     if (document.getElementById('rebalancePracticeSlider')) updateRebalanceSlider();
-    const targetInput = document.getElementById('rebalanceSliderTargetBtc');
     const portfolioInput = document.getElementById('rebalanceSliderPortfolio');
-    if (targetInput) targetInput.addEventListener('input', updateRebalanceSlider);
     if (portfolioInput) portfolioInput.addEventListener('input', updateRebalanceSlider);
+    const coinsContainer = document.getElementById('practiceSliderCoinsContainer');
+    if (coinsContainer) coinsContainer.addEventListener('change', function(e) { if (e.target.matches('.practice-slider-target-input')) updateRebalanceSlider(); });
 });
 
 window.updateRebalanceCalendar = function updateRebalanceCalendar() {

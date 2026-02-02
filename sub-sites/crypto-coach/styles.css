@@ -3191,6 +3191,56 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 }
 .rebalance-glossary .rebalance-detail:last-child { margin-bottom: 0; }
 
+.practice-slider-coins-container { margin-bottom: 16px; }
+.practice-slider-coins-grid {
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 14px 18px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    border: 1px solid rgba(255,215,0,0.15);
+}
+.practice-slider-coin-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.practice-slider-coin-row:last-of-type { margin-bottom: 0; }
+.practice-slider-coin-label {
+    color: #ffd700;
+    font-weight: 600;
+    min-width: 44px;
+    text-align: left;
+}
+.practice-slider-btc-target { color: #b8a060; font-weight: 600; }
+.practice-slider-hint { color: #888; font-size: 0.85rem; }
+.practice-slider-target-input { text-align: center; }
+.practice-slider-remove {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,100,100,0.5);
+    background: rgba(255,100,100,0.2);
+    color: #ff8888;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.practice-slider-remove:hover { background: rgba(255,100,100,0.4); }
+.practice-slider-add-row {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+.practice-add-select { max-width: 180px; }
+
 .practice-slider-settings {
     display: flex;
     flex-wrap: wrap;
