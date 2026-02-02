@@ -3018,6 +3018,9 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     box-sizing: border-box;
 }
 .rebalance-calendar-notes-input::placeholder { color: rgba(255,255,255,0.5); }
+.rebalance-calendar-quick-log { padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+.rebalance-calendar-quick-log .rebalance-form-input { width: 100%; max-width: 100%; margin-bottom: 10px; }
+.rebalance-calendar-quick-log .btn { margin-top: 4px; }
 .rebalance-input-wrap {
     color: #ffffff !important;
     display: inline-flex;

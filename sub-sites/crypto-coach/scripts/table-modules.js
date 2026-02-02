@@ -9424,6 +9424,28 @@ window.setRebalanceReminder = function setRebalanceReminder() {
     }
 };
 
+const REBALANCE_LOG_KEY = 'cryptoCoachRebalanceLog';
+function getRebalanceLog() {
+    try { return JSON.parse(localStorage.getItem(REBALANCE_LOG_KEY) || '[]'); } catch (e) { return []; }
+}
+function setRebalanceLog(arr) {
+    localStorage.setItem(REBALANCE_LOG_KEY, JSON.stringify(arr));
+}
+window.addQuickLogFromCalendar = function addQuickLogFromCalendar() {
+    const input = document.getElementById('rebalanceCalendarQuickLog');
+    if (!input) return;
+    const action = (input.value || '').trim();
+    if (!action) return;
+    const notesInput = document.getElementById('rebalanceCalendarQuickLogNotes');
+    const notes = (notesInput && notesInput.value) ? notesInput.value.trim() : '';
+    const entries = getRebalanceLog();
+    entries.push({ date: new Date().toLocaleDateString('en-US'), action: action, notes: notes });
+    setRebalanceLog(entries);
+    input.value = '';
+    if (notesInput) notesInput.value = '';
+    if (typeof alert === 'function') alert('Entry added.');
+};
+
 window.checkRebalanceReadiness = function checkRebalanceReadiness() {
     const c1 = document.getElementById('rebalanceCheck1')?.checked;
     const c2 = document.getElementById('rebalanceCheck2')?.checked;

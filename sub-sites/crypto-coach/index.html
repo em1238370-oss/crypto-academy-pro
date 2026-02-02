@@ -1723,6 +1723,13 @@
                                                    <label class="rebalance-form-label">My notes</label>
                                                    <textarea id="rebalanceCalendarNotes" class="rebalance-calendar-notes-input" placeholder="e.g. Plan to trim BTC, add ETH. Check fees on exchange first." rows="3"></textarea>
                                                </div>
+                                               <div class="rebalance-calendar-quick-log">
+                                                   <label class="rebalance-form-label">📝 Log entry — record what you did</label>
+                                                   <p class="rebalance-quick-log-hint" style="color: #aaaaaa; font-size: 0.85rem; margin-bottom: 8px;">e.g. Sold $500 BTC, bought $500 ETH because…</p>
+                                                   <input type="text" id="rebalanceCalendarQuickLog" class="rebalance-form-input" placeholder="What did you do? (action)">
+                                                   <input type="text" id="rebalanceCalendarQuickLogNotes" class="rebalance-form-input rebalance-quick-log-notes" placeholder="Why / notes (optional)">
+                                                   <button type="button" class="btn btn-red" onclick="addQuickLogFromCalendar()">Add to log</button>
+                                               </div>
                                            </div>
                                        </div>
 
