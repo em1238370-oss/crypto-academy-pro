@@ -3217,6 +3217,7 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     justify-self: start;
 }
 .practice-slider-btc-target { color: #b8a060; font-weight: 600; }
+.practice-slider-btc-row { grid-template-columns: minmax(55px, 80px) 65px 20px; }
 .practice-slider-hint { color: #888; font-size: 0.85rem; }
 .practice-slider-target-input { text-align: center; }
 .practice-slider-remove {

@@ -9232,9 +9232,11 @@ function initPracticeSliderCoins() {
         othersSum += safeVal;
         rowsHtml += '<div class="practice-slider-coin-row" data-coin="' + c + '"><span class="practice-slider-coin-label">' + c + '</span><input type="number" id="practiceTarget_' + c + '" min="1" max="90" value="' + safeVal + '" onchange="updateRebalanceSlider()" class="rebalance-form-input practice-slider-target-input" style="width: 60px;"><span class="rebalance-pct">%</span><button type="button" class="practice-slider-remove" onclick="removePracticeSliderCoin(\'' + c + '\')" title="Remove">×</button></div>';
     });
-    const btcTarget = Math.max(10, Math.min(90, 100 - othersSum));
-    rowsHtml = '<div class="practice-slider-coin-row" data-coin="BTC"><span class="practice-slider-coin-label">BTC</span><span class="practice-slider-btc-target">' + btcTarget + '</span><span class="practice-slider-hint">% (rest)</span></div>' + rowsHtml;
-    container.innerHTML = '<div class="practice-slider-coins-grid"><h6 style="color: #b8a060; margin-bottom: 8px; font-size: 0.9rem;">BTC (always) + your coins</h6>' + rowsHtml + (availableToAdd.length ? '<div class="practice-slider-add-row"><select id="practiceAddSelect" onchange="addPracticeSliderCoin(this)" class="rebalance-form-select practice-add-select"><option value="">— Add coin —</option>' + availableToAdd.map(c => '<option value="' + c + '">' + c + '</option>').join('') + '</select></div>' : '') + '</div>';
+    const btcExisting = document.getElementById('practiceTarget_BTC')?.value;
+    const btcVal = btcExisting !== undefined && btcExisting !== '' ? parseInt(btcExisting, 10) : 60;
+    const btcSafe = Math.min(90, Math.max(10, btcVal));
+    rowsHtml = '<div class="practice-slider-coin-row practice-slider-btc-row" data-coin="BTC"><span class="practice-slider-coin-label">BTC</span><input type="number" id="practiceTarget_BTC" min="10" max="90" value="' + btcSafe + '" onchange="updateRebalanceSlider()" class="rebalance-form-input practice-slider-target-input practice-slider-btc-target-input" style="width: 60px;"><span class="rebalance-pct">%</span></div>' + rowsHtml;
+    container.innerHTML = '<div class="practice-slider-coins-grid"><h6 style="color: #b8a060; margin-bottom: 8px; font-size: 0.9rem;">BTC (always) + your coins</h6><p style="color: #888; font-size: 0.85rem; margin-bottom: 8px;">Set your target % for each. BTC cannot be removed.</p>' + rowsHtml + (availableToAdd.length ? '<div class="practice-slider-add-row"><select id="practiceAddSelect" onchange="addPracticeSliderCoin(this)" class="rebalance-form-select practice-add-select"><option value="">— Add coin —</option>' + availableToAdd.map(c => '<option value="' + c + '">' + c + '</option>').join('') + '</select></div>' : '') + '</div>';
 }
 
 window.addPracticeSliderCoin = function addPracticeSliderCoin(selEl) {
@@ -9249,6 +9251,7 @@ window.addPracticeSliderCoin = function addPracticeSliderCoin(selEl) {
 };
 
 window.removePracticeSliderCoin = function removePracticeSliderCoin(coin) {
+    if (coin === 'BTC') return;
     if (!window.practiceSliderSelectedCoins) return;
     if (window.practiceSliderSelectedCoins.length <= 1) return;
     window.practiceSliderSelectedCoins = window.practiceSliderSelectedCoins.filter(c => c !== coin);
@@ -9266,11 +9269,12 @@ window.updateRebalanceSlider = function updateRebalanceSlider() {
     if (!slider || !pctEl || !resultEl) return;
 
     const coins = getPracticeSliderCoins();
+    const targetBtc = Math.max(10, Math.min(90, parseInt(document.getElementById('practiceTarget_BTC')?.value || 60, 10)));
     let othersSum = 0;
     coins.forEach(c => {
         othersSum += Math.min(90, Math.max(0, parseInt(document.getElementById('practiceTarget_' + c)?.value || 0, 10)));
     });
-    const targetBtc = Math.max(10, Math.min(90, 100 - othersSum));
+    if (othersSum <= 0) othersSum = 1;
 
     const portfolio = Math.min(1000000, Math.max(100, parseInt(portfolioInput?.value || 10000, 10)));
     if (portfolioInput) portfolioInput.value = portfolio;
@@ -9300,7 +9304,7 @@ window.updateRebalanceSlider = function updateRebalanceSlider() {
         resultEl.innerHTML = '<div class="practice-result-ok">✓ No rebalance needed — you\'re at target (' + targetBtc + '% BTC / ' + othersTarget + '% ' + othersLabel + ').</div>';
     } else if (pct > targetBtc) {
         const sellBtc = Math.round(portfolio * (pct - targetBtc) / 100);
-        const div = othersTarget > 0 ? othersTarget : 1;
+        const div = othersSum > 0 ? othersSum : 1;
         const buyParts = coins.map(c => {
             const t = Math.min(90, Math.max(0, parseInt(document.getElementById('practiceTarget_' + c)?.value || 0, 10)));
             const amt = Math.round(sellBtc * t / div);
@@ -9309,7 +9313,7 @@ window.updateRebalanceSlider = function updateRebalanceSlider() {
         resultEl.innerHTML = '<div class="practice-result-actions"><span class="practice-action sell">Sell $' + sellBtc.toLocaleString() + ' BTC</span>' + buyParts + '</div><p style="color: #888; font-size: 0.85rem; margin-bottom: 4px;">BTC grew — trim it, add to ' + othersLabel + '.</p><p style="color: #aaa; font-size: 0.8rem; margin: 0;">Same $' + sellBtc.toLocaleString() + ' moves from BTC to your other coins. Total stays $' + portfolio.toLocaleString() + '.</p>';
     } else {
         const buyBtc = Math.round(portfolio * (targetBtc - pct) / 100);
-        const div = othersTarget > 0 ? othersTarget : 1;
+        const div = othersSum > 0 ? othersSum : 1;
         const sellParts = coins.map(c => {
             const t = Math.min(90, Math.max(0, parseInt(document.getElementById('practiceTarget_' + c)?.value || 0, 10)));
             const amt = Math.round(buyBtc * t / div);
@@ -9325,7 +9329,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const portfolioInput = document.getElementById('rebalanceSliderPortfolio');
     if (portfolioInput) portfolioInput.addEventListener('input', updateRebalanceSlider);
     const coinsContainer = document.getElementById('practiceSliderCoinsContainer');
-    if (coinsContainer) coinsContainer.addEventListener('change', function(e) { if (e.target.matches('.practice-slider-target-input')) updateRebalanceSlider(); });
+    function onPracticeTargetChange(e) { if (e.target.matches('.practice-slider-target-input')) updateRebalanceSlider(); }
+    if (coinsContainer) { coinsContainer.addEventListener('change', onPracticeTargetChange); coinsContainer.addEventListener('input', onPracticeTargetChange); }
 });
 
 window.updateRebalanceCalendar = function updateRebalanceCalendar() {
