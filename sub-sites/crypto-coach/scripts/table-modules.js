@@ -9243,7 +9243,8 @@ function initPracticeSliderCoins() {
         '<p><strong>How it works:</strong> BTC is always in your portfolio. Set target % for BTC and others. Slider = BTC % now (left = fell, right = grew). Result below shows actions.</p>' +
         '<p class="practice-slider-tip"><em>💡 Common mistakes: 80–90% in one coin, never rebalancing, panicking. This tool helps you plan ahead.</em></p>' +
         '</div>';
-    container.innerHTML = '<div class="practice-slider-coins-grid">' + assignmentIntro + '<h6 style="color: #b8a060; margin-bottom: 8px; font-size: 0.9rem;">BTC (always) + your coins</h6><p style="color: #888; font-size: 0.85rem; margin-bottom: 8px;">Set your target % for each. BTC cannot be removed.</p>' + rowsHtml + (availableToAdd.length ? '<div class="practice-slider-add-row"><select id="practiceAddSelect" onchange="addPracticeSliderCoin(this)" class="rebalance-form-select practice-add-select"><option value="">— Add coin —</option>' + availableToAdd.map(c => '<option value="' + c + '">' + c + '</option>').join('') + '</select></div>' : '') + '</div>';
+    var rowsWrapper = '<div class="practice-slider-rows-centered">' + rowsHtml + '</div>';
+    container.innerHTML = '<div class="practice-slider-coins-grid">' + assignmentIntro + '<h6 style="color: #b8a060; margin-bottom: 8px; font-size: 0.9rem;">BTC (always) + your coins</h6><p style="color: #888; font-size: 0.85rem; margin-bottom: 8px;">Set your target % for each. BTC cannot be removed.</p>' + rowsWrapper + (availableToAdd.length ? '<div class="practice-slider-add-row"><select id="practiceAddSelect" onchange="addPracticeSliderCoin(this)" class="rebalance-form-select practice-add-select"><option value="">— Add coin —</option>' + availableToAdd.map(c => '<option value="' + c + '">' + c + '</option>').join('') + '</select></div>' : '') + '</div>';
 }
 
 window.addPracticeSliderCoin = function addPracticeSliderCoin(selEl) {

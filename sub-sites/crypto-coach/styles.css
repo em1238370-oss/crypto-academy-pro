@@ -3193,8 +3193,8 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 
 .practice-slider-block-centered { text-align: center; display: flex; flex-direction: column; align-items: center; }
 .practice-slider-block-centered > * { width: 100%; max-width: 520px; }
-.practice-slider-coins-container { margin-bottom: 16px; }
-.practice-slider-coins-centered { display: flex; justify-content: center; }
+.practice-slider-coins-container { margin-bottom: 16px; width: 100%; display: flex; justify-content: center; }
+.practice-slider-coins-centered { display: flex; justify-content: center; width: 100%; }
 .practice-slider-coins-centered .practice-slider-coins-grid { margin-left: auto; margin-right: auto; }
 .practice-slider-assignment-intro {
     text-align: left;
@@ -3224,6 +3224,11 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .practice-slider-coins-grid h6,
 .practice-slider-coins-grid > p { text-align: center; }
 .practice-slider-coins-grid .practice-slider-add-row { justify-content: center; display: flex; }
+.practice-slider-rows-centered {
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
 .practice-slider-coin-row {
     display: grid;
     grid-template-columns: 90px 65px 20px 28px;
