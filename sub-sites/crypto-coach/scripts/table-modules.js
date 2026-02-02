@@ -9579,10 +9579,12 @@ window.checkRebalanceReadiness = function checkRebalanceReadiness() {
     const c3 = document.getElementById('rebalanceCheck3')?.checked;
     const c4 = document.getElementById('rebalanceCheck4')?.checked;
     const resultEl = document.getElementById('rebalanceCheckResult');
+    const addBtn = document.getElementById('rebalanceCheckAddNotesBtn');
     if (!resultEl) return;
     const count = [c1, c2, c3, c4].filter(Boolean).length;
     resultEl.style.display = 'block';
     resultEl.classList.remove('rebalance-check-success-pulse');
+    if (addBtn) addBtn.style.display = 'inline-block';
     if (count === 4) {
         resultEl.style.background = 'linear-gradient(135deg, rgba(0,120,0,0.25) 0%, rgba(0,90,0,0.2) 100%)';
         resultEl.style.border = '1px solid rgba(100,220,100,0.5)';
@@ -9595,6 +9597,35 @@ window.checkRebalanceReadiness = function checkRebalanceReadiness() {
         resultEl.style.color = '#ffd700';
         resultEl.textContent = 'Review ' + (4 - count) + ' more point(s) before rebalancing.';
     }
+};
+window.resetRebalanceChecklist = function resetRebalanceChecklist() {
+    [1,2,3,4].forEach(function(i) {
+        var cb = document.getElementById('rebalanceCheck' + i);
+        if (cb) cb.checked = false;
+    });
+    updateRebalanceCheckProgress();
+    var resultEl = document.getElementById('rebalanceCheckResult');
+    var addBtn = document.getElementById('rebalanceCheckAddNotesBtn');
+    if (resultEl) { resultEl.style.display = 'none'; resultEl.textContent = ''; }
+    if (addBtn) addBtn.style.display = 'none';
+};
+window.addCheckResultToNotes = function addCheckResultToNotes() {
+    var resultEl = document.getElementById('rebalanceCheckResult');
+    if (!resultEl || resultEl.style.display !== 'block') return;
+    var text = resultEl.textContent || '';
+    if (!text) return;
+    try {
+        var key = 'cryptoCoachRebalanceCalendarNotes';
+        var existing = localStorage.getItem(key) || '';
+        var sep = existing ? '\n\n' : '';
+        var date = new Date().toLocaleDateString('en-US');
+        var newEntry = sep + '[' + date + '] Checklist: ' + text;
+        localStorage.setItem(key, existing + newEntry);
+        var notesEl = document.getElementById('rebalanceCalendarNotes');
+        if (notesEl) notesEl.value = (notesEl.value || '') + newEntry;
+        if (typeof alert === 'function') alert('Added to my notes.');
+        openRebalanceNotesModal();
+    } catch (e) {}
 };
 
 function generateDistribution(assets, type) {
