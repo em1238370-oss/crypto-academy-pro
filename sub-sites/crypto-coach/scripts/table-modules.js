@@ -9111,9 +9111,9 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
         'Weights align. Sit tight.'
     ];
     const expert1Phrases = [
-        'This kind of drift is common — some assets run ahead, others lag. Rebalancing gets you back on plan without guessing the market.',
-        'When weights shift like this, trimming winners and adding to laggards is the textbook move. Keeps you disciplined.',
-        'The before/after shows why rebalancing matters: you lock in gains from outperformers and add to underperformers at better prices.'
+        'A picky expert would ask: did you actually check your real allocation before this? Percentages on paper and on the exchange can differ.',
+        'Before you celebrate — are these current % from real holdings or from memory? One wrong number and the whole plan is off.',
+        'The math looks fine, but in practice: did you include staking, airdrops, or anything that changed your balance since last check?'
     ];
     const tableNotePhrases = [
         'Rebalancing often reduces volatility and drawdowns by selling high and buying low.',
@@ -9137,9 +9137,9 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
         'Weights align with your target (' + targetStr + '). Sit tight.'
     ];
     const expert3RebalancePhrases = [
-        'Before you act — check exchange fees (often 0.1–0.5% per trade) and any tax impact. Small costs add up.',
-        'Factor in trading fees and taxes before executing. They can eat into the benefit.',
-        'Real-world costs — exchange fees, possibly taxes — will trim these numbers. Worth checking first.'
+        'A picky expert would stop you here: did you check the fee for this exact trade? Some exchanges charge more for small amounts.',
+        'Before you hit "sell": withdrawal fee, trading fee, spread — have you added them all? They can turn a "good" rebalance into a loss.',
+        'A picky expert would ask: is this rebalance worth it after fees? If the amount is tiny, you might lose more in fees than you gain.'
     ];
     const expert3NoRebalancePhrases = [
         'You\'re on target — no action needed. Sometimes the best move is to do nothing.',
