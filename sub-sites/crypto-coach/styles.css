@@ -3202,18 +3202,19 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     border: 1px solid rgba(255,215,0,0.15);
 }
 .practice-slider-coin-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(55px, 80px) 65px 20px 28px;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
+    justify-items: center;
+    gap: 8px;
     margin-bottom: 10px;
 }
 .practice-slider-coin-row:last-of-type { margin-bottom: 0; }
 .practice-slider-coin-label {
     color: #ffd700;
     font-weight: 600;
-    min-width: 44px;
-    text-align: left;
+    font-size: 0.9rem;
+    justify-self: start;
 }
 .practice-slider-btc-target { color: #b8a060; font-weight: 600; }
 .practice-slider-hint { color: #888; font-size: 0.85rem; }
@@ -3536,8 +3537,8 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 
 .coins-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 12px;
     margin-top: 15px;
 }
 
@@ -3545,10 +3546,15 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     background: rgba(0, 0, 0, 0.6);
     border: 2px solid rgba(255, 0, 0, 0.3);
     border-radius: 12px;
-    padding: 20px;
+    padding: 16px;
+    min-height: 160px;
     transition: all 0.3s ease;
-    text-align: left;
+    text-align: center;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .coin-card:hover {
@@ -3560,8 +3566,19 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 
 .coin-card h4 {
     color: #ffffff;
-    margin-bottom: 10px;
+    margin: 0 0 8px 0;
     text-align: center;
+    font-size: 1.1rem;
+}
+.coin-card label {
+    text-align: center;
+    width: 100%;
+}
+.coin-card > div {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .percentage-slider {
@@ -3870,7 +3887,12 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     }
 
     .coins-grid {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+@media (max-width: 500px) {
+    .coins-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 

@@ -231,21 +231,17 @@ function initCoins() {
         const coinCard = document.createElement('div');
         coinCard.className = 'coin-card';
         coinCard.innerHTML = `
-            <h4 style="margin-bottom: 10px; color: #ffffff; font-size: 1.2rem;">${coin}</h4>
-            <label style="display: block; margin-bottom: 8px; color: #ff6666; font-size: 0.9rem; font-weight: bold;">Percentage:</label>
+            <h4>${coin}</h4>
+            <label style="display: block; margin-bottom: 6px; color: #ff6666; font-size: 0.85rem; font-weight: bold;">Percentage:</label>
             <input type="range" class="percentage-slider" min="0" max="100" value="0" 
                    oninput="setCoinPercentage('${coin}', this.value)"
-                   style="width: 100%; margin-bottom: 5px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span id="percent-${coin}" style="color: #ff0000; font-weight: bold; font-size: 1rem;">0%</span>
-                <button class="btn btn-red" style="padding: 5px 15px; font-size: 0.85rem;" 
+                   style="width: 100%; margin-bottom: 6px;">
+            <div>
+                <span id="percent-${coin}" style="color: #ff0000; font-weight: bold; font-size: 0.95rem;">0%</span>
+                <button class="btn btn-red" style="padding: 5px 12px; font-size: 0.8rem;" 
                         onclick="addRemoveCoin('${coin}')">Remove</button>
             </div>
         `;
-        coinCard.style.padding = '20px';
-        coinCard.style.minHeight = '140px';
-        coinCard.style.display = 'flex';
-        coinCard.style.flexDirection = 'column';
         coinsGrid.appendChild(coinCard);
     });
 }
