@@ -3258,6 +3258,10 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .rebalance-assignment-block .practice-slider-explanation { text-align: left; }
 .rebalance-assignment-block .practice-slider-explanation p { text-align: left; }
 
+.practice-slider-faq { max-width: 520px; margin-left: auto; margin-right: auto; text-align: left; }
+.practice-slider-faq .practice-faq-item { margin-bottom: 8px; }
+.practice-slider-faq .practice-faq-item:last-child { margin-bottom: 0; }
+
 .practice-result-actions {
     display: flex;
     flex-wrap: wrap;

@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=30.0">
+    <link rel="stylesheet" href="styles.css?v=31.0">
    <!-- Chart.js for portfolio graphs -->
    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
    <script src="scripts/table-modules.js?v=37.0"></script>
@@ -1617,6 +1617,10 @@
                                        <span class="module-d-assignment-badge">5</span>
                                        <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 5: Rebalance experiment</h4>
                                        <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Simulate rebalancing a multi-coin portfolio: see before/after, compare strategies, and get exact sell/buy amounts. For education only.</p>
+                                       <details class="rebalance-calc-help" style="margin-bottom: 14px; padding: 12px 14px; background: rgba(0,0,0,0.25); border-radius: 8px; border-left: 4px solid rgba(255,215,0,0.4);">
+                                           <summary style="cursor: pointer; color: #ffd700; font-weight: 600; font-size: 0.9rem;">❓ What do Portfolio, Target %, Current % mean? (click to expand)</summary>
+                                           <p style="color: #ccc; font-size: 0.88rem; margin: 10px 0 0 0; line-height: 1.5;"><strong>Portfolio value</strong> = your total $ in these coins. <strong>Target %</strong> = how you WANT to split (e.g. 60% BTC, 40% ETH). <strong>Current %</strong> = how it is NOW after prices moved. Example: $10,000, target 60/40, current 72/28 — you need to sell some BTC, buy ETH to get back to 60/40.</p>
+                                       </details>
                                        <div id="rebalanceAllocationInputs" class="rebalance-allocation-inputs"></div>
                                        <div class="rebalance-form-grid">
                                            <div class="form-group">
@@ -1678,6 +1682,15 @@
                                            <p style="color: #aaa; font-size: 0.85rem; margin-bottom: 8px;">BTC now: <strong id="rebalanceSliderPct" style="color: #ffd700;">60</strong>% <span id="rebalanceSliderDelta" style="color: #888;"></span> (target: <span id="rebalanceSliderTargetLabel">60</span>%)</p>
                                            <input type="range" id="rebalancePracticeSlider" min="40" max="90" value="60" oninput="updateRebalanceSlider()" class="practice-slider-input">
                                            <div id="rebalanceSliderResult" class="practice-slider-result"></div>
+
+                                           <div class="practice-slider-faq" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+                                               <h6 style="color: #ffd700; margin-bottom: 12px; font-size: 0.95rem;">❓ FAQ — click to expand</h6>
+                                               <details class="rebalance-detail practice-faq-item"><summary>What is Portfolio $?</summary><p><strong>Portfolio</strong> = your total money in BTC + ETH. Example: $10,000 means you have $10,000 worth of crypto in these two coins combined. Not your bank balance — just what's in this portfolio.</p></details>
+                                               <details class="rebalance-detail practice-faq-item"><summary>What is Target BTC %?</summary><p><strong>Target</strong> = how you WANT to split your money. 60% means you want 60% in BTC and 40% in ETH. Example: with $10,000 and target 60%, you want $6,000 in BTC and $4,000 in ETH. This is your goal, not what you have now.</p></details>
+                                               <details class="rebalance-detail practice-faq-item"><summary>What does the slider mean?</summary><p>The slider shows <strong>how much % is in BTC right now</strong> (after prices moved). Move <strong>left</strong> = BTC fell, its share dropped. Move <strong>right</strong> = BTC grew, its share rose. Example: slider at 75% = you currently have 75% in BTC, 25% in ETH.</p></details>
+                                               <details class="rebalance-detail practice-faq-item"><summary>Why don't Sell + Buy add up to my total? (e.g. $1,600 + $1,600 ≠ $10,000)</summary><p>Because it's the <strong>same money</strong> moving from one coin to the other. You sell $1,600 BTC → you get $1,600 cash → you use that $1,600 to buy ETH. So it's $1,600 total that moves, not $3,200. Your portfolio stays $10,000 — you're just shifting part of it from BTC to ETH.</p></details>
+                                               <details class="rebalance-detail practice-faq-item"><summary>Full example: $1,000, target 60%, slider at 75%</summary><p>You want 60% BTC ($600), 40% ETH ($400). Slider at 75% = BTC grew: now you have $750 BTC, $250 ETH. To get back to 60/40: sell $150 BTC, buy $150 ETH. It's the same $150 — you sell BTC, get cash, buy ETH. After: $600 BTC, $400 ETH. Total still $1,000.</p></details>
+                                           </div>
                                        </div>
 
                                        <!-- 3. My rebalance calendar -->
