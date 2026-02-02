@@ -8403,22 +8403,24 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
     if (!strategy) { resultDiv.style.display = 'block'; resultDiv.innerHTML = '<span style="color: #ffa500;">Describe your strategy first.</span>'; return; }
     resultDiv.style.display = 'block'; resultDiv.innerHTML = '<span style="color: #ffa500;">Grading...</span>';
     try {
+        const varietySeed = Date.now() + '-' + Math.random().toString(36).slice(2, 10);
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
             body: JSON.stringify({ model: 'mistral-small', messages: [
-                { role: 'system', content: 'Crypto strategy analyst. Grade like school report. Return ONLY valid JSON.' },
-                { role: 'user', content: `Strategy: "${strategy}" JSON: diversificationGrade, riskReturnGrade, liquidityGrade (A+ to F), overallScore (0-100), strengths (array), improvements (array), topRecommendation.` }
-            ], temperature: 0.7, max_tokens: 600 })
+                { role: 'system', content: 'You are a crypto strategy analyst giving a personal report. Write like a real advisor recommending to a friend — warm, direct, human. Return ONLY valid JSON. CRITICAL: Generate UNIQUE content every time. Even for similar strategies, vary: phrasing, examples, analogies, tone. Never repeat same wording. Keep crypto advice accurate — correct terms, realistic risks. Grades and scores must fit the strategy logically. Sound like a person, not a system.' },
+                { role: 'user', content: `[Variety seed: ${varietySeed}] Strategy: "${strategy}" Grade this crypto strategy. Generate a UNIQUE report — different wording, different examples each time. Sound like a real advisor, not a bot. JSON: diversificationGrade, riskReturnGrade, liquidityGrade (A+ to F), overallScore (0-100), strengths (array — full phrases, vary phrasing), improvements (array — full phrases, vary phrasing), topRecommendation (2-4 sentences — personal, warm, like advice from a friend; vary structure and examples).` }
+            ], temperature: 0.92, max_tokens: 700 })
         });
         const data = await response.json();
         if (data.choices?.[0]) {
             let content = data.choices[0].message.content.trim().replace(/```json\n?|\n?```/g, '').trim();
             const p = JSON.parse(content);
+            var esc = function(s) { return (s || '').toString().replace(/</g, '&lt;'); };
             const grades = [p.diversificationGrade, p.riskReturnGrade, p.liquidityGrade].filter(Boolean);
             const strengths = Array.isArray(p.strengths) ? p.strengths : [p.strengths].filter(Boolean);
             const improvements = Array.isArray(p.improvements) ? p.improvements : [p.improvements].filter(Boolean);
-            resultDiv.innerHTML = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,215,0,0.4);"><div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">' + grades.map(g => '<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #ffd700;">' + g + '</div>').join('') + '</div><div style="color: #fff; margin-bottom: 10px;"><strong>Strengths:</strong> ' + strengths.join('; ').replace(/</g, '&lt;') + '</div><div style="color: #ffa500; margin-bottom: 10px;"><strong>Improve:</strong> ' + improvements.join('; ').replace(/</g, '&lt;') + '</div><div style="color: #ffd700;">💡 ' + (p.topRecommendation || '').replace(/</g, '&lt;') + '</div></div>';
+            resultDiv.innerHTML = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,215,0,0.4); text-align: left;"><div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">' + grades.map(g => '<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #ffd700;">' + esc(g) + '</div>').join('') + '</div><div style="color: #fff; margin-bottom: 10px;"><strong>Strengths:</strong> ' + strengths.map(s => esc(s)).join('; ') + '</div><div style="color: #ffa500; margin-bottom: 10px;"><strong>Improve:</strong> ' + improvements.map(i => esc(i)).join('; ') + '</div><div style="color: #ffd700;">💡 ' + esc(p.topRecommendation) + '</div></div>';
         } else { resultDiv.innerHTML = '<span style="color: #ff6666;">AI unavailable.</span>'; }
     } catch (err) { resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>'; }
 };
