@@ -2966,11 +2966,47 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .rebalance-coin-row {
     display: flex;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    gap: 8px;
     margin-bottom: 10px;
 }
 .rebalance-coin-row:last-child { margin-bottom: 0; }
-.rebalance-coin-row label { min-width: 50px; }
+.rebalance-coin-label {
+    display: inline-block;
+    width: 52px;
+    min-width: 52px;
+    color: #ccc;
+    font-size: 0.9rem;
+    text-align: center;
+}
+.rebalance-input-target {
+    width: 70px !important;
+    min-width: 70px;
+    color: #fff !important;
+    background: rgba(0,0,0,0.5) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    padding: 8px !important;
+    border-radius: 6px !important;
+    margin: 0 !important;
+    text-align: center;
+}
+.rebalance-input-current {
+    width: 80px !important;
+    min-width: 80px;
+    color: #fff !important;
+    background: rgba(0,0,0,0.5) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    padding: 8px !important;
+    border-radius: 6px !important;
+    margin: 0 !important;
+    text-align: center;
+}
+.rebalance-coin-spacer {
+    display: inline-block;
+    width: 24px;
+    min-width: 24px;
+    height: 24px;
+}
 .rebalance-add-row {
     display: flex;
     align-items: center;
@@ -2979,25 +3015,14 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     padding-top: 12px;
     border-top: 1px dashed rgba(255, 255, 255, 0.15);
 }
-.rebalance-add-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 215, 0, 0.5);
-    background: rgba(255, 215, 0, 0.1);
-    color: #ffd700;
-    font-size: 1.4rem;
-    line-height: 1;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-.rebalance-add-btn:hover {
-    background: rgba(255, 215, 0, 0.25);
-    border-color: rgba(255, 215, 0, 0.8);
-    transform: scale(1.05);
+.rebalance-add-select {
+    color: #fff !important;
+    background: rgba(0,0,0,0.5) !important;
+    border: 1px solid rgba(255,215,0,0.3) !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    min-width: 160px !important;
 }
 .rebalance-remove-coin {
     width: 24px;

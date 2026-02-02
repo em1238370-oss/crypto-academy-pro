@@ -8996,15 +8996,15 @@ function initRebalanceAllocationInputs() {
         const targetDefault = document.getElementById('rebalanceTarget_' + c)?.value || defaults[i];
         const currentVal = document.getElementById('rebalanceCurrent_' + c)?.value ?? '';
         const isExtra = c !== 'BTC' && c !== 'ETH';
-        const removeBtn = isExtra ? '<button type="button" class="rebalance-remove-coin" onclick="removeRebalanceCoin(\'' + c + '\')" title="Remove" aria-label="Remove ' + c + '">×</button>' : '';
-        return '<div class="rebalance-coin-row" data-coin="' + c + '"><label style="color: #ccc; font-size: 0.9rem;">' + c + '</label><input type="number" id="rebalanceTarget_' + c + '" min="0" max="100" value="' + targetDefault + '" placeholder="Target %" style="width: 70px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px; margin: 0 8px;">% <input type="number" id="rebalanceCurrent_' + c + '" min="-999" max="100" value="' + currentVal + '" placeholder="Current" style="width: 80px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px;" title="0–100% or negative (short/don\'t have)">%' + removeBtn + '</div>';
+        const removeBtn = isExtra ? '<button type="button" class="rebalance-remove-coin" onclick="removeRebalanceCoin(\'' + c + '\')" title="Remove" aria-label="Remove ' + c + '">×</button>' : '<span class="rebalance-coin-spacer"></span>';
+        return '<div class="rebalance-coin-row" data-coin="' + c + '"><span class="rebalance-coin-label">' + c + '</span><input type="number" id="rebalanceTarget_' + c + '" min="0" max="100" value="' + targetDefault + '" placeholder="Target %" class="rebalance-input-target" title="Target %">% <input type="number" id="rebalanceCurrent_' + c + '" min="-999" max="100" value="' + currentVal + '" placeholder="Current" class="rebalance-input-current" title="0–100% or negative (short/don\'t have)">%' + removeBtn + '</div>';
     }).join('');
 
     container.innerHTML = '<div class="rebalance-allocation-grid">' +
         '<h6 style="color: #b8a060; margin-bottom: 6px; font-size: 0.95rem;">Target % and Current % per coin</h6>' +
         '<p style="color: #888; font-size: 0.85rem; margin-bottom: 14px; line-height: 1.5; max-width: 480px; margin-left: auto; margin-right: auto;">Target % = what you want. Current % = what you have now (0–100% or negative if short). Leave Current empty if at target.</p>' +
         rowsHtml +
-        (addSelectHtml ? '<div class="rebalance-add-row"><span style="color: #888; font-size: 0.9rem; margin-right: 10px;">Add coin:</span><button type="button" class="rebalance-add-btn" onclick="document.getElementById(\'rebalanceAddSelect\').focus()" title="Add another coin">+</button><select id="rebalanceAddSelect" onchange="addRebalanceCoin(this)" style="color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,215,0,0.3); padding: 8px 12px; border-radius: 6px; margin-left: 8px; cursor: pointer; min-width: 120px;">' + addSelectHtml + '</select></div>' : '') +
+        (addSelectHtml ? '<div class="rebalance-add-row"><select id="rebalanceAddSelect" onchange="addRebalanceCoin(this)" class="rebalance-add-select" title="Add coin">' + addSelectHtml + '</select></div>' : '') +
         '</div>';
 }
 
