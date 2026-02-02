@@ -3186,6 +3186,77 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     line-height: 1.5;
 }
 .rebalance-glossary .rebalance-detail:last-child { margin-bottom: 0; }
+
+.practice-slider-settings {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 16px;
+}
+.practice-slider-input {
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 14px;
+    height: 10px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: linear-gradient(90deg, rgba(255,100,100,0.4) 0%, rgba(255,215,0,0.3) 50%, rgba(100,255,100,0.4) 100%);
+    border-radius: 5px;
+}
+.practice-slider-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd700 0%, #c9a227 100%);
+    border: 2px solid rgba(255,255,255,0.8);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.practice-slider-input::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd700 0%, #c9a227 100%);
+    border: 2px solid rgba(255,255,255,0.8);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.practice-slider-result {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(0,0,0,0.5) 0%, rgba(30,25,15,0.6) 100%);
+    border-radius: 10px;
+    border: 1px solid rgba(255,215,0,0.2);
+    font-size: 1rem;
+}
+.practice-result-ok {
+    color: #90c090;
+    font-weight: 500;
+}
+.practice-result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.practice-action {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+}
+.practice-action.sell {
+    background: rgba(255,100,100,0.2);
+    border: 1px solid rgba(255,100,100,0.5);
+    color: #ff8888;
+}
+.practice-action.buy {
+    background: rgba(100,255,100,0.15);
+    border: 1px solid rgba(100,255,100,0.4);
+    color: #90c090;
+}
+
 .rebalance-checklist { display: flex; flex-direction: column; gap: 10px; }
 .rebalance-check-item {
     display: flex;

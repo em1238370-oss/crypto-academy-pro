@@ -9218,30 +9218,48 @@ window.updateRebalanceSlider = function updateRebalanceSlider() {
     const pctEl = document.getElementById('rebalanceSliderPct');
     const deltaEl = document.getElementById('rebalanceSliderDelta');
     const resultEl = document.getElementById('rebalanceSliderResult');
+    const targetInput = document.getElementById('rebalanceSliderTargetBtc');
+    const portfolioInput = document.getElementById('rebalanceSliderPortfolio');
+    const targetLabel = document.getElementById('rebalanceSliderTargetLabel');
     if (!slider || !pctEl || !resultEl) return;
-    const pct = parseInt(slider.value, 10);
-    const targetBtc = 60;
+    const targetBtc = Math.min(90, Math.max(10, parseInt(targetInput?.value || 60, 10)));
+    const portfolio = Math.min(1000000, Math.max(100, parseInt(portfolioInput?.value || 10000, 10)));
+    if (targetInput) targetInput.value = targetBtc;
+    if (portfolioInput) portfolioInput.value = portfolio;
+    const sliderMin = Math.max(5, targetBtc - 35);
+    const sliderMax = Math.min(95, targetBtc + 35);
+    slider.min = sliderMin;
+    slider.max = sliderMax;
+    let pct = parseInt(slider.value, 10);
+    if (pct < sliderMin) pct = sliderMin;
+    if (pct > sliderMax) pct = sliderMax;
+    slider.value = pct;
     const delta = pct - targetBtc;
     pctEl.textContent = pct;
     if (deltaEl) {
         if (delta === 0) deltaEl.textContent = '';
-        else if (delta > 0) deltaEl.textContent = '(+' + delta + ')';
-        else deltaEl.textContent = '(' + delta + ')';
+        else if (delta > 0) deltaEl.textContent = ' (+' + delta + ')';
+        else deltaEl.textContent = ' (' + delta + ')';
     }
-    const portfolio = 10000;
+    if (targetLabel) targetLabel.textContent = targetBtc;
+    const ethTarget = 100 - targetBtc;
     if (pct === targetBtc) {
-        resultEl.innerHTML = 'No rebalance needed — you\'re at target.';
+        resultEl.innerHTML = '<div class="practice-result-ok">✓ No rebalance needed — you\'re at target (' + targetBtc + '% / ' + ethTarget + '%).</div>';
     } else if (pct > targetBtc) {
         const sellBtc = Math.round(portfolio * (pct - targetBtc) / 100);
-        resultEl.innerHTML = 'BTC grew. <strong style="color: #ff8888;">Sell</strong> $' + sellBtc.toLocaleString() + ' <strong>BTC</strong> · <strong style="color: #90c090;">Buy</strong> $' + sellBtc.toLocaleString() + ' <strong>ETH</strong>';
+        resultEl.innerHTML = '<div class="practice-result-actions"><span class="practice-action sell">Sell $' + sellBtc.toLocaleString() + ' BTC</span><span class="practice-action buy">Buy $' + sellBtc.toLocaleString() + ' ETH</span></div><p style="color: #888; font-size: 0.85rem; margin-bottom: 0;">BTC grew — trim it, add to ETH.</p>';
     } else {
         const buyBtc = Math.round(portfolio * (targetBtc - pct) / 100);
-        resultEl.innerHTML = 'BTC fell. <strong style="color: #ff8888;">Sell</strong> $' + buyBtc.toLocaleString() + ' <strong>ETH</strong> · <strong style="color: #90c090;">Buy</strong> $' + buyBtc.toLocaleString() + ' <strong>BTC</strong>';
+        resultEl.innerHTML = '<div class="practice-result-actions"><span class="practice-action sell">Sell $' + buyBtc.toLocaleString() + ' ETH</span><span class="practice-action buy">Buy $' + buyBtc.toLocaleString() + ' BTC</span></div><p style="color: #888; font-size: 0.85rem; margin-bottom: 0;">BTC fell — add to it, trim ETH.</p>';
     }
 };
 
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('rebalancePracticeSlider')) updateRebalanceSlider();
+    const targetInput = document.getElementById('rebalanceSliderTargetBtc');
+    const portfolioInput = document.getElementById('rebalanceSliderPortfolio');
+    if (targetInput) targetInput.addEventListener('input', updateRebalanceSlider);
+    if (portfolioInput) portfolioInput.addEventListener('input', updateRebalanceSlider);
 });
 
 window.updateRebalanceCalendar = function updateRebalanceCalendar() {
