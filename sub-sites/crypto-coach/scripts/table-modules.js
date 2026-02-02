@@ -8986,7 +8986,7 @@ function initRebalanceAllocationInputs() {
     const remainder = 100 - defaultPct * n;
     const defaults = coins.map((_, i) => i === 0 ? defaultPct + remainder : defaultPct);
     if (coins.length === 2 && coins[0] === 'BTC' && coins[1] === 'ETH') { defaults[0] = 60; defaults[1] = 40; }
-    container.innerHTML = '<div class="rebalance-allocation-grid"><h6 style="color: #b8a060; margin-bottom: 10px; font-size: 0.95rem;">Target % and Current % (if drifted) per coin:</h6>' +
+    container.innerHTML = '<div class="rebalance-allocation-grid"><h6 style="color: #b8a060; margin-bottom: 6px; font-size: 0.95rem;">Target % and Current % per coin</h6><p style="color: #888; font-size: 0.85rem; margin-bottom: 12px; line-height: 1.5; max-width: 420px; margin-left: auto; margin-right: auto;">Target % = what you want (e.g. 60% BTC, 40% ETH). Current % = what you have now if prices have drifted. Leave Current empty if you\'re already at target. The calculator below will show exactly how much to sell or buy.</p>' +
         coins.map((c, i) => {
             const targetDefault = defaults[i];
             return `<div class="rebalance-coin-row"><label style="color: #ccc; font-size: 0.9rem;">${c}</label><input type="number" id="rebalanceTarget_${c}" min="0" max="100" value="${targetDefault}" placeholder="Target %" style="width: 70px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px; margin: 0 8px;">% <input type="number" id="rebalanceCurrent_${c}" min="0" max="100" value="" placeholder="Current" style="width: 70px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); padding: 8px; border-radius: 6px;" title="Leave empty if same as target">%</div>`;
