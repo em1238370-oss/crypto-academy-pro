@@ -8997,7 +8997,7 @@ function initRebalanceAllocationInputs() {
         const currentVal = document.getElementById('rebalanceCurrent_' + c)?.value ?? '';
         const isExtra = c !== 'BTC' && c !== 'ETH';
         const removeBtn = isExtra ? '<button type="button" class="rebalance-remove-coin" onclick="removeRebalanceCoin(\'' + c + '\')" title="Remove" aria-label="Remove ' + c + '">×</button>' : '<span class="rebalance-coin-spacer"></span>';
-        return '<div class="rebalance-coin-row" data-coin="' + c + '"><span class="rebalance-coin-label">' + c + '</span><input type="number" id="rebalanceTarget_' + c + '" min="0" max="100" value="' + targetDefault + '" placeholder="Target %" class="rebalance-input-target" title="Target %">% <input type="number" id="rebalanceCurrent_' + c + '" min="-999" max="100" value="' + currentVal + '" placeholder="Current" class="rebalance-input-current" title="0–100% or negative (short/don\'t have)">%' + removeBtn + '</div>';
+        return '<div class="rebalance-coin-row" data-coin="' + c + '"><span class="rebalance-coin-label">' + c + '</span><input type="number" id="rebalanceTarget_' + c + '" min="0" max="100" value="' + targetDefault + '" placeholder="Target %" class="rebalance-input-target" title="Target %"><span class="rebalance-pct">%</span><input type="number" id="rebalanceCurrent_' + c + '" min="-999" max="100" value="' + currentVal + '" placeholder="Current" class="rebalance-input-current" title="0–100% or negative (short/don\'t have)"><span class="rebalance-pct">%</span>' + removeBtn + '</div>';
     }).join('');
 
     container.innerHTML = '<div class="rebalance-allocation-grid">' +

@@ -2852,7 +2852,8 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     align-items: center;
 }
 .rebalance-assignment-block .rebalance-coin-row {
-    justify-content: center;
+    margin-left: auto;
+    margin-right: auto;
 }
 .rebalance-assignment-block .rebalance-extra-section {
     text-align: center !important;
@@ -2962,49 +2963,54 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     background: rgba(0, 0, 0, 0.25);
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #e0e0e0;
+}
+.rebalance-allocation-grid input,
+.rebalance-allocation-grid select {
+    color: #ffffff !important;
 }
 .rebalance-coin-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 52px 70px 20px 80px 20px 30px;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    justify-items: center;
+    gap: 0 6px;
     margin-bottom: 10px;
+    min-height: 40px;
+    line-height: 1.5;
 }
 .rebalance-coin-row:last-child { margin-bottom: 0; }
 .rebalance-coin-label {
-    display: inline-block;
-    width: 52px;
-    min-width: 52px;
-    color: #ccc;
+    color: #e0e0e0 !important;
     font-size: 0.9rem;
     text-align: center;
+    font-weight: 500;
 }
-.rebalance-input-target {
-    width: 70px !important;
-    min-width: 70px;
-    color: #fff !important;
-    background: rgba(0,0,0,0.5) !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    padding: 8px !important;
-    border-radius: 6px !important;
-    margin: 0 !important;
-    text-align: center;
-}
+.rebalance-input-target,
 .rebalance-input-current {
-    width: 80px !important;
-    min-width: 80px;
-    color: #fff !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    color: #ffffff !important;
     background: rgba(0,0,0,0.5) !important;
     border: 1px solid rgba(255,255,255,0.2) !important;
-    padding: 8px !important;
+    padding: 8px 6px !important;
     border-radius: 6px !important;
     margin: 0 !important;
-    text-align: center;
+    text-align: center !important;
+    font-size: 0.95rem !important;
+}
+.rebalance-input-target::placeholder,
+.rebalance-input-current::placeholder {
+    color: #d0d0d0 !important;
+    opacity: 1;
+}
+.rebalance-pct {
+    color: #e0e0e0 !important;
+    font-size: 0.95rem;
+    font-weight: 500;
 }
 .rebalance-coin-spacer {
-    display: inline-block;
     width: 24px;
-    min-width: 24px;
     height: 24px;
 }
 .rebalance-add-row {
@@ -3027,7 +3033,7 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .rebalance-remove-coin {
     width: 24px;
     height: 24px;
-    margin-left: 8px;
+    margin: 0;
     border-radius: 50%;
     border: 1px solid rgba(255, 100, 100, 0.5);
     background: rgba(255, 100, 100, 0.15);
