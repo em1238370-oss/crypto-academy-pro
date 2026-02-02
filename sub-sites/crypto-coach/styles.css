@@ -3229,16 +3229,43 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     border-radius: 10px;
     border: 1px solid rgba(255,215,0,0.2);
     font-size: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
 }
 .practice-result-ok {
     color: #90c090;
     font-weight: 500;
 }
+.practice-slider-explanation {
+    text-align: left;
+    max-width: 480px;
+    margin: 0 auto 16px auto;
+    padding: 14px 18px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 8px;
+    border-left: 4px solid rgba(255,215,0,0.4);
+}
+.practice-slider-explanation p {
+    margin: 0 0 8px 0;
+    color: #ccc;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+.practice-slider-explanation p:last-child { margin-bottom: 0; }
+.practice-slider-explanation strong { color: #ffd700; }
+.rebalance-assignment-block .practice-slider-explanation { text-align: left; }
+.rebalance-assignment-block .practice-slider-explanation p { text-align: left; }
+
 .practice-result-actions {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
     gap: 12px;
     margin-bottom: 10px;
+    width: 100%;
 }
 .practice-action {
     padding: 10px 16px;
