@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=31.0">
+    <link rel="stylesheet" href="styles.css?v=32.0">
    <!-- Chart.js for portfolio graphs -->
    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
    <script src="scripts/table-modules.js?v=37.0"></script>
@@ -1683,13 +1683,31 @@
                                            <input type="range" id="rebalancePracticeSlider" min="40" max="90" value="60" oninput="updateRebalanceSlider()" class="practice-slider-input">
                                            <div id="rebalanceSliderResult" class="practice-slider-result"></div>
 
-                                           <div class="practice-slider-faq" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
-                                               <h6 style="color: #ffd700; margin-bottom: 12px; font-size: 0.95rem;">❓ FAQ — click to expand</h6>
-                                               <details class="rebalance-detail practice-faq-item"><summary>What is Portfolio $?</summary><p><strong>Portfolio</strong> = your total money in BTC + ETH. Example: $10,000 means you have $10,000 worth of crypto in these two coins combined. Not your bank balance — just what's in this portfolio.</p></details>
-                                               <details class="rebalance-detail practice-faq-item"><summary>What is Target BTC %?</summary><p><strong>Target</strong> = how you WANT to split your money. 60% means you want 60% in BTC and 40% in ETH. Example: with $10,000 and target 60%, you want $6,000 in BTC and $4,000 in ETH. This is your goal, not what you have now.</p></details>
-                                               <details class="rebalance-detail practice-faq-item"><summary>What does the slider mean?</summary><p>The slider shows <strong>how much % is in BTC right now</strong> (after prices moved). Move <strong>left</strong> = BTC fell, its share dropped. Move <strong>right</strong> = BTC grew, its share rose. Example: slider at 75% = you currently have 75% in BTC, 25% in ETH.</p></details>
-                                               <details class="rebalance-detail practice-faq-item"><summary>Why don't Sell + Buy add up to my total? (e.g. $1,600 + $1,600 ≠ $10,000)</summary><p>Because it's the <strong>same money</strong> moving from one coin to the other. You sell $1,600 BTC → you get $1,600 cash → you use that $1,600 to buy ETH. So it's $1,600 total that moves, not $3,200. Your portfolio stays $10,000 — you're just shifting part of it from BTC to ETH.</p></details>
-                                               <details class="rebalance-detail practice-faq-item"><summary>Full example: $1,000, target 60%, slider at 75%</summary><p>You want 60% BTC ($600), 40% ETH ($400). Slider at 75% = BTC grew: now you have $750 BTC, $250 ETH. To get back to 60/40: sell $150 BTC, buy $150 ETH. It's the same $150 — you sell BTC, get cash, buy ETH. After: $600 BTC, $400 ETH. Total still $1,000.</p></details>
+                                           <div class="rebalance-extra-section practice-faq-section" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.12);">
+                                               <h5 style="color: #ffd700; margin-bottom: 10px; font-size: 1.05rem;">❓ FAQ — hover for full answer</h5>
+                                               <p style="color: #888; font-size: 0.85rem; margin-bottom: 16px;">Hover over the icon next to each question to see the full explanation.</p>
+                                               <div class="practice-faq-grid">
+                                                   <div class="practice-faq-card">
+                                                       <span class="info-tooltip glossary-tip" data-tooltip="Portfolio = your total money in BTC + ETH. Example: $10,000 means you have $10,000 worth of crypto in these two coins combined. Not your bank balance — just what's in this portfolio.">💰<span class="tooltip-text">Portfolio = your total money in BTC + ETH. Example: $10,000 means you have $10,000 worth of crypto in these two coins combined. Not your bank balance — just what's in this portfolio.</span></span>
+                                                       <div class="glossary-card-text"><strong>What is Portfolio $?</strong><br><span class="glossary-short">Your total in BTC + ETH</span></div>
+                                                   </div>
+                                                   <div class="practice-faq-card">
+                                                       <span class="info-tooltip glossary-tip" data-tooltip="Target = how you WANT to split your money. 60% means you want 60% in BTC and 40% in ETH. Example: with $10,000 and target 60%, you want $6,000 in BTC and $4,000 in ETH. This is your goal, not what you have now.">🎯<span class="tooltip-text">Target = how you WANT to split your money. 60% means you want 60% in BTC and 40% in ETH. Example: with $10,000 and target 60%, you want $6,000 in BTC and $4,000 in ETH. This is your goal, not what you have now.</span></span>
+                                                       <div class="glossary-card-text"><strong>What is Target BTC %?</strong><br><span class="glossary-short">How you want to split</span></div>
+                                                   </div>
+                                                   <div class="practice-faq-card">
+                                                       <span class="info-tooltip glossary-tip" data-tooltip="The slider shows how much % is in BTC right now (after prices moved). Move left = BTC fell, its share dropped. Move right = BTC grew, its share rose. Example: slider at 75% = you currently have 75% in BTC, 25% in ETH.">🎚️<span class="tooltip-text">The slider shows how much % is in BTC right now (after prices moved). Move left = BTC fell, its share dropped. Move right = BTC grew, its share rose. Example: slider at 75% = you currently have 75% in BTC, 25% in ETH.</span></span>
+                                                       <div class="glossary-card-text"><strong>What does the slider mean?</strong><br><span class="glossary-short">BTC % now — left=fell, right=grew</span></div>
+                                                   </div>
+                                                   <div class="practice-faq-card">
+                                                       <span class="info-tooltip glossary-tip" data-tooltip="Because it's the SAME money moving from one coin to the other. You sell $1,600 BTC → you get $1,600 cash → you use that $1,600 to buy ETH. So it's $1,600 total that moves, not $3,200. Your portfolio stays $10,000 — you're just shifting part of it from BTC to ETH.">🔄<span class="tooltip-text">Because it's the SAME money moving from one coin to the other. You sell $1,600 BTC → you get $1,600 cash → you use that $1,600 to buy ETH. So it's $1,600 total that moves, not $3,200. Your portfolio stays $10,000 — you're just shifting part of it from BTC to ETH.</span></span>
+                                                       <div class="glossary-card-text"><strong>Why Sell + Buy ≠ total?</strong><br><span class="glossary-short">Same money moves — not doubled</span></div>
+                                                   </div>
+                                                   <div class="practice-faq-card practice-faq-card-wide">
+                                                       <span class="info-tooltip glossary-tip" data-tooltip="You want 60% BTC ($600), 40% ETH ($400). Slider at 75% = BTC grew: now you have $750 BTC, $250 ETH. To get back to 60/40: sell $150 BTC, buy $150 ETH. It's the same $150 — you sell BTC, get cash, buy ETH. After: $600 BTC, $400 ETH. Total still $1,000.">📋<span class="tooltip-text">You want 60% BTC ($600), 40% ETH ($400). Slider at 75% = BTC grew: now you have $750 BTC, $250 ETH. To get back to 60/40: sell $150 BTC, buy $150 ETH. It's the same $150 — you sell BTC, get cash, buy ETH. After: $600 BTC, $400 ETH. Total still $1,000.</span></span>
+                                                       <div class="glossary-card-text"><strong>Full example: $1,000, 60%, slider 75%</strong><br><span class="glossary-short">Sell $150 BTC → buy $150 ETH. Total stays $1,000.</span></div>
+                                                   </div>
+                                               </div>
                                            </div>
                                        </div>
 

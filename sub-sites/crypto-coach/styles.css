@@ -3258,9 +3258,31 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 .rebalance-assignment-block .practice-slider-explanation { text-align: left; }
 .rebalance-assignment-block .practice-slider-explanation p { text-align: left; }
 
-.practice-slider-faq { max-width: 520px; margin-left: auto; margin-right: auto; text-align: left; }
-.practice-slider-faq .practice-faq-item { margin-bottom: 8px; }
-.practice-slider-faq .practice-faq-item:last-child { margin-bottom: 0; }
+.practice-faq-section { max-width: 560px; margin-left: auto; margin-right: auto; }
+.practice-faq-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+.practice-faq-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.45) 0%, rgba(25, 20, 15, 0.55) 100%);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 215, 0, 0.12);
+    transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+}
+.practice-faq-card:hover {
+    border-color: rgba(255, 215, 0, 0.35);
+    box-shadow: 0 0 24px rgba(255, 215, 0, 0.1);
+    transform: translateY(-1px);
+}
+.practice-faq-card .glossary-tip { font-size: 1.35rem; }
+.practice-faq-card .glossary-card-text strong { color: #ffd700; font-size: 0.9rem; }
+.practice-faq-card .glossary-short { color: #aaa; font-size: 0.82rem; }
+.practice-faq-card-wide { grid-column: 1 / -1; }
 
 .practice-result-actions {
     display: flex;
