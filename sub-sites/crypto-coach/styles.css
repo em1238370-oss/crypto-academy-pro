@@ -2514,26 +2514,32 @@ div:has-text("Experience Points") {
     overflow: visible;
 }
 .report-card-charts {
-    gap: 24px;
     overflow: visible;
 }
-.report-card-chart-wrap {
-    overflow: visible;
+.report-card-progress,
+.report-card-gauge,
+.report-card-donut {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
 }
-.report-card-gauge-wrap canvas {
+.report-card-progress {
+    text-align: left;
+    align-items: stretch;
+}
+.report-card-progress > div:first-child {
+    text-align: center;
+}
+.report-card-gauge canvas,
+.report-card-donut canvas {
     display: block;
     margin: 0 auto;
 }
-.report-card-donut-wrap {
-    min-width: 160px;
-}
-.report-card-donut-canvas-wrap {
-    overflow: visible;
-}
-@media (max-width: 500px) {
+@media (max-width: 600px) {
     .report-card-charts {
-        flex-direction: column;
-        align-items: center;
+        grid-template-columns: 1fr !important;
+        gap: 28px;
     }
 }
 

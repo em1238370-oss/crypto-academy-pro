@@ -8395,6 +8395,31 @@ window.runRiskDna = async function runRiskDna() {
     } catch (err) { resultDiv.innerHTML = '<span style="color: #ff6666;">Error: ' + (err.message || 'Try again') + '</span>'; }
 };
 
+// Parse allocation from strategy text (fallback when AI misses coins)
+function parseAllocationFromStrategy(text) {
+    if (!text || typeof text !== 'string') return [];
+    var list = [];
+    var re1 = /(\d+(?:\.\d+)?)\s*%\s*([A-Za-z0-9]+)/g;
+    var re2 = /([A-Za-z0-9]+)\s*(\d+(?:\.\d+)?)\s*%/g;
+    var seen = {};
+    var m;
+    while ((m = re1.exec(text)) !== null) {
+        var pct = parseFloat(m[1]);
+        var asset = m[2].toUpperCase();
+        if (asset.length >= 2 && asset.length <= 10 && !seen[asset]) { seen[asset] = 1; list.push({ asset: asset, pct: pct }); }
+    }
+    if (list.length === 0) {
+        while ((m = re2.exec(text)) !== null) {
+            var pct = parseFloat(m[2]);
+            var asset = m[1].toUpperCase();
+            if (asset.length >= 2 && asset.length <= 10 && !seen[asset]) { seen[asset] = 1; list.push({ asset: asset, pct: pct }); }
+        }
+    }
+    var sum = list.reduce(function(s, a) { return s + a.pct; }, 0);
+    if (sum > 0 && sum !== 100) list = list.map(function(a) { return { asset: a.asset, pct: Math.round(a.pct * 100 / sum) }; });
+    return list;
+}
+
 // Grade to score (0-100) for Strategy Report Card
 function reportCardGradeToScore(g) {
     if (!g) return 50;
@@ -8417,7 +8442,7 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
             body: JSON.stringify({ model: 'mistral-small', messages: [
                 { role: 'system', content: 'You are a crypto strategy analyst giving a personal report. Write like a real advisor recommending to a friend — warm, direct, human. Return ONLY valid JSON. CRITICAL: Generate UNIQUE content every time. Even for similar strategies, vary: phrasing, examples, analogies, tone. Never repeat same wording. Keep crypto advice accurate — correct terms, realistic risks. Grades and scores must fit the strategy logically. Sound like a person, not a system.' },
-                { role: 'user', content: `[Variety seed: ${varietySeed}] Strategy: "${strategy}" Grade this crypto strategy. Extract allocation from text if present (e.g. "50% BTC, 30% ETH" -> [{asset:"BTC",pct:50},{asset:"ETH",pct:30}]). If no clear allocation, use empty array. JSON: diversificationGrade, riskReturnGrade, liquidityGrade (A+ to F), overallScore (0-100), allocation (array of {asset, pct} — e.g. [{asset:"BTC",pct:50},{asset:"ETH",pct:30},{asset:"SOL",pct:20}], empty if not specified), strengths (array), improvements (array), topRecommendation (2-4 sentences).` }
+                { role: 'user', content: `[Variety seed: ${varietySeed}] Strategy: "${strategy}" Grade this crypto strategy. CRITICAL for allocation: Extract EVERY asset and percentage from the text. If user writes "45% BTC, 25% ETH, 15% SOL, 10% AVAX, 5% UNI" you MUST return all 5: [{asset:"BTC",pct:45},{asset:"ETH",pct:25},{asset:"SOL",pct:15},{asset:"AVAX",pct:10},{asset:"UNI",pct:5}]. Never return only 2 when more are specified. JSON: diversificationGrade, riskReturnGrade, liquidityGrade (A+ to F), overallScore (0-100), allocation (array of ALL {asset, pct} from strategy), strengths (array), improvements (array), topRecommendation (2-4 sentences).` }
             ], temperature: 0.92, max_tokens: 750 })
         });
         const data = await response.json();
@@ -8429,25 +8454,27 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
             const scores = [reportCardGradeToScore(p.diversificationGrade), reportCardGradeToScore(p.riskReturnGrade), reportCardGradeToScore(p.liquidityGrade)];
             const overallScore = Math.max(0, Math.min(100, parseInt(p.overallScore, 10) || 50));
             var allocation = Array.isArray(p.allocation) ? p.allocation.filter(function(a) { return a && (a.asset || a.pct !== undefined); }) : [];
+            var parsed = parseAllocationFromStrategy(strategy);
+            if (parsed.length > allocation.length) allocation = parsed;
             var allocSum = allocation.reduce(function(s, a) { return s + (parseFloat(a.pct) || 0); }, 0);
             if (allocSum > 0 && allocSum !== 100) allocation = allocation.map(function(a) { return { asset: a.asset || '?', pct: Math.round((parseFloat(a.pct) || 0) * 100 / allocSum) }; });
             const strengths = Array.isArray(p.strengths) ? p.strengths : [p.strengths].filter(Boolean);
             const improvements = Array.isArray(p.improvements) ? p.improvements : [p.improvements].filter(Boolean);
             var barColors = ['#ffd700', '#e6a800', '#e07c5a'];
             var html = '<div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 2px solid rgba(255,215,0,0.4); text-align: left;">';
-            html += '<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">' + grades.map(g => '<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #ffd700;">' + esc(g) + '</div>').join('') + '</div>';
-            html += '<div class="report-card-charts" style="display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; margin-bottom: 15px;">';
-            html += '<div style="flex: 1; min-width: 200px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; text-align: center;">Progress</div>';
+            html += '<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">' + grades.map(g => '<div style="background: rgba(255,215,0,0.2); padding: 10px 20px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: #ffd700;">' + esc(g) + '</div>').join('') + '</div>';
+            var gridCols = allocation.length > 0 ? '1fr 1fr 1fr' : '1fr 1fr';
+            html += '<div class="report-card-charts" style="display: grid; grid-template-columns: ' + gridCols + '; gap: 24px; align-items: start; margin-bottom: 20px;">';
+            html += '<div class="report-card-progress"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; text-align: center;">Progress</div>';
             ['Diversification', 'Risk–Return', 'Liquidity'].forEach(function(label, i) {
                 var sc = scores[i] || 50;
                 var col = sc >= 70 ? barColors[0] : (sc >= 50 ? barColors[1] : barColors[2]);
                 html += '<div style="margin-bottom: 8px;"><div style="color: #ccc; font-size: 0.8rem; margin-bottom: 2px;">' + label + '</div><div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;"><div style="height: 100%; width: ' + sc + '%; background: ' + col + '; border-radius: 4px; transition: width 0.5s ease;"></div></div></div>';
             });
             html += '</div>';
-            html += '<div class="report-card-chart-wrap report-card-gauge-wrap" style="flex: 0 0 auto; text-align: center; padding: 0 16px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Overall</div><div style="width: 110px; height: 65px; margin: 0 auto;"><canvas id="reportCardGauge"></canvas></div><div id="reportCardGaugeScore" style="color: #ffd700; font-size: 1.5rem; font-weight: bold; margin-top: 8px; line-height: 1.2;">' + overallScore + '<span style="font-size: 0.8rem; color: #aaa; font-weight: normal;">/100</span></div></div>';
+            html += '<div class="report-card-gauge"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; text-align: center;">Overall</div><div style="width: 100px; height: 55px; margin: 0 auto;"><canvas id="reportCardGauge"></canvas></div><div style="color: #ffd700; font-size: 1.4rem; font-weight: bold; margin-top: 6px; text-align: center;">' + overallScore + '<span style="font-size: 0.75rem; color: #aaa; font-weight: normal;">/100</span></div></div>';
             if (allocation.length > 0) {
-                var donutMargin = 32;
-                html += '<div class="report-card-chart-wrap report-card-donut-wrap" style="flex: 0 0 auto; text-align: center; padding: ' + donutMargin + 'px; min-width: 140px;"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">Allocation</div><div class="report-card-donut-canvas-wrap" style="width: 110px; height: 110px; margin: 0 auto ' + donutMargin + 'px;"><canvas id="reportCardDonut"></canvas></div></div>';
+                html += '<div class="report-card-donut"><div style="color: #ffd700; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; text-align: center;">Allocation</div><div class="report-card-donut-inner" style="width: 120px; min-height: 140px; margin: 0 auto;"><canvas id="reportCardDonut"></canvas></div></div>';
             }
             html += '</div>';
             html += '<div style="color: #fff; margin-bottom: 10px;"><strong>Strengths:</strong> ' + strengths.map(s => esc(s)).join('; ') + '</div>';
@@ -8486,8 +8513,8 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                             },
                             options: {
                                 responsive: true, maintainAspectRatio: true, cutout: '55%',
-                                layout: { padding: 30 },
-                                plugins: { legend: { display: true, position: 'bottom', labels: { color: '#ccc', font: { size: n > 6 ? 8 : 9 }, boxWidth: 8, padding: 4 } } }
+                                layout: { padding: { top: 8, bottom: 24, left: 8, right: 8 } },
+                                plugins: { legend: { display: true, position: 'bottom', labels: { color: '#ccc', font: { size: n > 6 ? 8 : 9 }, boxWidth: 8, padding: 3 } } }
                             }
                         });
                     }
