@@ -9213,7 +9213,7 @@ window.runRebalanceExperiment = function runRebalanceExperiment() {
 };
 
 // Assignment 5 extras: Practice slider (BTC base + multi-coin), Calendar, Log, Checklist
-const PRACTICE_SLIDER_COINS = ['ETH','SOL','XRP','BNB','ADA','DOGE','AVAX','DOT','MATIC','LINK','UNI','ATOM','LTC','BCH','XLM','ALGO','VET','FIL','TRX','ETC','NEAR','APT','ARB','OP','INJ','STX','RUNE','TIA','SEI','SUI','PEPE','WIF','FLOKI','BONK'];
+const PRACTICE_SLIDER_COINS = ['ETH','BNB','SOL','ADA','XRP','ENA','FARTCOIN','PEPE','AVAX','NEAR','ONDO','WLD','ARB','APT','LDO','VIRTAUL','UNI','SBIB1000','WLFI','IJU','SOMI','IP','APE','DOGE','SUI','WIF','AAVE','PENGU','SEI','GALA','TON','MYX','ATOM'];
 
 window.practiceSliderSelectedCoins = ['ETH'];
 
