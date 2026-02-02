@@ -8496,7 +8496,8 @@ window.runStrategyReportCard = async function runStrategyReportCard() {
                             datasets: [{ data: [overallScore, 100 - overallScore], backgroundColor: [gaugeCol, 'rgba(255,255,255,0.06)'], borderWidth: 0 }]
                         },
                         options: {
-                            circumference: 180, rotation: 270, responsive: true, maintainAspectRatio: true, cutout: '65%',
+                            circumference: 180, rotation: 270, responsive: true, maintainAspectRatio: true, aspectRatio: 2,
+                            cutout: '65%',
                             devicePixelRatio: 2,
                             layout: { padding: 0 },
                             plugins: { legend: { display: false }, tooltip: { enabled: false } }
