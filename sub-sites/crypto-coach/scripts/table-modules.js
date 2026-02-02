@@ -9247,10 +9247,10 @@ window.updateRebalanceSlider = function updateRebalanceSlider() {
         resultEl.innerHTML = '<div class="practice-result-ok">✓ No rebalance needed — you\'re at target (' + targetBtc + '% / ' + ethTarget + '%).</div>';
     } else if (pct > targetBtc) {
         const sellBtc = Math.round(portfolio * (pct - targetBtc) / 100);
-        resultEl.innerHTML = '<div class="practice-result-actions"><span class="practice-action sell">Sell $' + sellBtc.toLocaleString() + ' BTC</span><span class="practice-action buy">Buy $' + sellBtc.toLocaleString() + ' ETH</span></div><p style="color: #888; font-size: 0.85rem; margin-bottom: 0;">BTC grew — trim it, add to ETH.</p>';
+        resultEl.innerHTML = '<div class="practice-result-actions"><span class="practice-action sell">Sell $' + sellBtc.toLocaleString() + ' BTC</span><span class="practice-action buy">Buy $' + sellBtc.toLocaleString() + ' ETH</span></div><p style="color: #888; font-size: 0.85rem; margin-bottom: 4px;">BTC grew — trim it, add to ETH.</p><p style="color: #aaa; font-size: 0.8rem; margin: 0;">It\'s the same $' + sellBtc.toLocaleString() + ' — you sell BTC, get cash, use that cash to buy ETH. Your total stays $' + portfolio.toLocaleString() + '.</p>';
     } else {
         const buyBtc = Math.round(portfolio * (targetBtc - pct) / 100);
-        resultEl.innerHTML = '<div class="practice-result-actions"><span class="practice-action sell">Sell $' + buyBtc.toLocaleString() + ' ETH</span><span class="practice-action buy">Buy $' + buyBtc.toLocaleString() + ' BTC</span></div><p style="color: #888; font-size: 0.85rem; margin-bottom: 0;">BTC fell — add to it, trim ETH.</p>';
+        resultEl.innerHTML = '<div class="practice-result-actions"><span class="practice-action sell">Sell $' + buyBtc.toLocaleString() + ' ETH</span><span class="practice-action buy">Buy $' + buyBtc.toLocaleString() + ' BTC</span></div><p style="color: #888; font-size: 0.85rem; margin-bottom: 4px;">BTC fell — add to it, trim ETH.</p><p style="color: #aaa; font-size: 0.8rem; margin: 0;">It\'s the same $' + buyBtc.toLocaleString() + ' — you sell ETH, get cash, use that cash to buy BTC. Your total stays $' + portfolio.toLocaleString() + '.</p>';
     }
 };
 
