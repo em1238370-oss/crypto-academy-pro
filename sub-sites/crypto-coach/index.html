@@ -1643,7 +1643,7 @@
                                        <div id="rebalanceExperimentResult" class="result-box rebalance-result-box" style="display: none; margin-top: 16px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff;"></div>
 
                                        <!-- 1. Glossary: Rebalance terms -->
-                                       <div class="rebalance-extra-section rebalance-glossary-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
+                                       <div id="rebalanceGlossary" class="rebalance-extra-section rebalance-glossary-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
                                            <h5 style="color: #ffd700; margin-bottom: 16px; font-size: 1.05rem;">📖 Rebalance terms — hover for details</h5>
                                            <p style="color: #888; font-size: 0.85rem; margin-bottom: 16px;">Hover over the icon next to each term to see the full explanation.</p>
                                            <div class="rebalance-glossary-grid">
@@ -1739,7 +1739,7 @@
                                        </div>
 
                                        <!-- 4. Common mistakes -->
-                                       <div class="rebalance-extra-section rebalance-mistakes-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
+                                       <div id="rebalanceCommonMistakes" class="rebalance-extra-section rebalance-mistakes-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
                                            <h5 style="color: #ffd700; margin-bottom: 16px; font-size: 1.1rem;">⚠️ Common mistakes — tap to expand</h5>
                                            <div class="rebalance-mistakes-grid">
                                                <details class="rebalance-mistake-card">
@@ -1765,6 +1765,8 @@
                                        <div class="rebalance-extra-section rebalance-checklist-section" style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12);">
                                            <h5 class="rebalance-checklist-title">✅ Before I rebalance</h5>
                                            <p class="rebalance-checklist-subtitle">Quick checklist — tick when ready</p>
+                                           <div class="rebalance-check-remember">💡 Remember: Rebalancing is not trading. You're restoring your target allocation, not chasing gains.</div>
+                                           <p class="rebalance-check-protip">⚡ Pro tip: Do this checklist the day before your planned rebalance, not during market volatility.</p>
                                            <div id="rebalanceCheckProgress" class="rebalance-check-progress">0/4</div>
                                            <div class="rebalance-checklist-grid">
                                                <div class="rebalance-check-card-wrap"><label class="rebalance-check-card" data-tooltip="e.g. 60% BTC, 40% ETH — your goal weights"><input type="checkbox" id="rebalanceCheck1"><span class="rebalance-check-emoji">🎯</span><span class="rebalance-check-text">I know my target allocation</span></label><details class="rebalance-check-why" onclick="event.stopPropagation()"><summary>Why?</summary><p>Without a target, you don't know when to rebalance. Define your weights first.</p></details></div>
@@ -1778,6 +1780,7 @@
                                                <button type="button" class="btn rebalance-check-reset-btn" onclick="resetRebalanceChecklist()">↺ Reset</button>
                                                <button type="button" class="btn rebalance-check-add-notes-btn" id="rebalanceCheckAddNotesBtn" onclick="addCheckResultToNotes()" style="display:none;">📋 Add to my notes</button>
                                            </div>
+                                           <p class="rebalance-check-see-also">See also: <a href="#rebalanceCommonMistakes" class="rebalance-check-link">Common mistakes</a> ↑ · <a href="#rebalanceGlossary" class="rebalance-check-link">Rebalance terms</a> ↑</p>
                                        </div>
                                    </div>
                                </div>
