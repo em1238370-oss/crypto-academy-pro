@@ -7926,6 +7926,64 @@ function dcaComputeResult(amount, months, coins, showLumpSum, includeFee) {
     return { totalInvested: totalInvested, totalValue: totalValue, valueAfterFee: valueAfterFee, lines: lines, lumpSumValue: lumpSumValue, includeFee: includeFee };
 }
 
+window.fillDcaExample = function fillDcaExample() {
+    var a = document.getElementById('dcaExperimentAmount');
+    var p = document.getElementById('dcaExperimentPeriod');
+    var f = document.getElementById('dcaFrequency');
+    var c1 = document.getElementById('dcaExperimentCoin1');
+    var c2 = document.getElementById('dcaExperimentCoin2');
+    var c3 = document.getElementById('dcaExperimentCoin3');
+    var a1 = document.getElementById('dcaAlloc1');
+    var a2 = document.getElementById('dcaAlloc2');
+    var a3 = document.getElementById('dcaAlloc3');
+    if (a) a.value = 100;
+    if (p) p.value = 12;
+    if (f) f.value = 'monthly';
+    if (c1) c1.value = 'BTC';
+    if (c2) c2.value = 'ETH';
+    if (c3) c3.value = '';
+    if (a1) a1.value = 70;
+    if (a2) a2.value = 30;
+    if (a3) a3.value = 0;
+    var cb = document.getElementById('dcaShowLumpSum');
+    if (cb) cb.checked = true;
+};
+window.fillWhatIfExample = function fillWhatIfExample() {
+    var p = document.getElementById('whatIfPortfolio');
+    var s = document.getElementById('whatIfScenario');
+    var a = document.getElementById('whatIfMyAnswer');
+    if (p) p.value = 10000;
+    if (s) s.value = 'crash';
+    if (a) a.value = 'I would hold and not sell. I set a stop-loss at -40% before entering. I will re-evaluate in 2 weeks.';
+};
+window.fillMoneySimExample = function fillMoneySimExample() {
+    var port = document.getElementById('moneySimPortfolio');
+    var risk = document.getElementById('moneySimRisk');
+    var riskVal = document.getElementById('moneySimRiskVal');
+    if (port) port.value = 10000;
+    if (risk) { risk.value = 50; risk.dispatchEvent(new Event('input')); }
+    if (riskVal) riskVal.textContent = '50';
+};
+window.fillReportCardExample = function fillReportCardExample() {
+    var el = document.getElementById('reportCardStrategy');
+    if (el) el.value = '50% BTC, 30% ETH, 20% SOL. DCA monthly. Rebalance quarterly.';
+};
+window.fillRebalanceExample = function fillRebalanceExample() {
+    window.rebalanceSelectedCoins = ['BTC', 'ETH'];
+    var pv = document.getElementById('rebalancePortfolioValue');
+    var freq = document.getElementById('rebalanceFrequency');
+    if (pv) pv.value = 10000;
+    if (freq) freq.value = 'quarterly';
+    initRebalanceAllocationInputs();
+    var tBtc = document.getElementById('rebalanceTarget_BTC');
+    var tEth = document.getElementById('rebalanceTarget_ETH');
+    var cBtc = document.getElementById('rebalanceCurrent_BTC');
+    var cEth = document.getElementById('rebalanceCurrent_ETH');
+    if (tBtc) tBtc.value = 60;
+    if (tEth) tEth.value = 40;
+    if (cBtc) cBtc.value = 72;
+    if (cEth) cEth.value = 28;
+};
 window.runDcaExperiment = function runDcaExperiment() {
     const amount = parseInt(document.getElementById('dcaExperimentAmount')?.value || 100, 10);
     const months = parseInt(document.getElementById('dcaExperimentPeriod')?.value || 12, 10);

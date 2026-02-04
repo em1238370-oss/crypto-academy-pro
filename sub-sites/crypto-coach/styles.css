@@ -3549,6 +3549,12 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     color: #90c090;
 }
 
+.module-d-hint-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.module-d-fill-btn { padding: 8px 16px; font-size: 0.9rem; font-weight: 600; border-radius: 8px; border: 2px solid rgba(255,215,0,0.5); background: linear-gradient(135deg, rgba(255,215,0,0.25) 0%, rgba(200,165,0,0.35) 100%); color: #ffffff; cursor: pointer; }
+.module-d-fill-btn:hover { background: linear-gradient(135deg, rgba(255,215,0,0.35) 0%, rgba(200,165,0,0.45) 100%); border-color: rgba(255,215,0,0.7); }
+.module-d-hint-text { color: #b8b0a0; font-size: 0.9rem; }
+.module-d-hint-text strong { color: #ffd700; }
+
 .rebalance-checklist-section { max-width: 520px; margin-left: auto; margin-right: auto; text-align: center; }
 .rebalance-checklist-title { color: #ffd700 !important; margin-bottom: 4px !important; font-size: 1.15rem !important; }
 .rebalance-checklist-subtitle { color: #aaa; font-size: 0.9rem; margin-bottom: 12px; }

@@ -1339,11 +1339,19 @@
                                        <div id="compareABResult" class="result-box" style="display: none; margin-top: 14px; padding: 16px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; color: #ffffff; border-left: 4px solid rgba(255, 215, 0, 0.5);"></div>
                                    </div>
 
+                                   <div class="module-d-hint-row" style="background: rgba(255, 255, 255, 0.05); padding: 14px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); margin-bottom: 20px;">
+                                       <span class="module-d-hint-text" style="font-size: 0.95rem;">💡 <strong>How to use assignments 2–5:</strong> Each has a <strong>Fill with example</strong> button → fill the form → click the action button (Calculate, Show my plan, Run Money Simulator, etc.) → save your result where available.</span>
+                                   </div>
+
                                    <!-- Assignment 2: DCA experiment -->
                                    <div class="section-box module-d-assignment dca-assignment-block">
                                        <span class="module-d-assignment-badge">2</span>
                                        <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 2: What if I had DCA'd over the last year?</h4>
                                        <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Enter <strong style="color: #ffffff;">your deposit</strong> (how much you invest per period) — all results below are calculated from this amount. Choose one to three coins and allocation; see total invested, value per coin, and optional DCA vs lump sum comparison. For education only; real results depend on the market.</p>
+                                       <div class="module-d-hint-row" style="margin-bottom: 14px;">
+                                           <button type="button" class="btn btn-red module-d-fill-btn" onclick="fillDcaExample()">✨ Fill with example</button>
+                                           <span class="module-d-hint-text">→ then click <strong>Calculate</strong> to see the result. Save scenario to compare later.</span>
+                                       </div>
                                        <details style="margin-bottom: 16px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,215,0,0.2);">
                                            <summary style="color: #ffd700; cursor: pointer; font-weight: 600;">What is DCA and why average in?</summary>
                                            <p style="color: #cccccc; font-size: 0.9rem; margin-top: 10px; line-height: 1.5;">DCA (Dollar Cost Averaging) means investing a fixed amount on a schedule (e.g. every week or every month) instead of one big lump sum. That way you buy more when the price is low and less when it is high, which can smooth out volatility and reduce the risk of buying everything at a bad time. It does not guarantee profit — it is just one way to discipline yourself and spread risk over time.</p>
@@ -1522,6 +1530,10 @@
                                        <span class="module-d-assignment-badge">3</span>
                                        <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 3: What would I do if…?</h4>
                                        <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Enter your portfolio, pick a scenario, and write what you would do. You’ll see illustrative numbers, a mini chart, what people usually do, a checklist of your plan, and an expert verdict. Save or download your plan for later.</p>
+                                       <div class="module-d-hint-row" style="margin-bottom: 14px;">
+                                           <button type="button" class="btn btn-red module-d-fill-btn" onclick="fillWhatIfExample()">✨ Fill with example</button>
+                                           <span class="module-d-hint-text">→ then click <strong>Show my plan</strong>. Save your plan after viewing the result.</span>
+                                       </div>
                                        <div class="whatif-form-center">
                                        <div class="form-group">
                                            <label style="color: #ffffff;">My portfolio (USD):</label>
@@ -1570,6 +1582,10 @@
                                        <div class="assignment-4-card">
                                            <h5 class="section-box-header" style="color: #ffd700; font-size: 1.1rem;">💰 Money Simulator — Best / Base / Worst</h5>
                                            <p style="color: #cccccc; text-align: center; margin-bottom: 12px; font-size: 0.95rem;">Portfolio & risk level → three scenarios in dollars.</p>
+                                           <div class="module-d-hint-row" style="margin-bottom: 10px; justify-content: center;">
+                                               <button type="button" class="btn module-d-fill-btn" onclick="fillMoneySimExample()" style="padding: 6px 14px; font-size: 0.88rem;">✨ Fill example</button>
+                                               <span class="module-d-hint-text" style="font-size: 0.88rem;">→ click <strong>Run Money Simulator</strong></span>
+                                           </div>
                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                                                <div><label style="color: #fff; display: block; margin-bottom: 6px; text-align: center;">Portfolio ($)</label><input type="number" id="moneySimPortfolio" value="10000" min="100" step="100" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,165,0,0.3); border-radius: 8px; color: #fff;"></div>
                                                <div><label style="color: #fff; display: block; margin-bottom: 6px; text-align: center;">Risk: <span id="moneySimRiskVal">50</span>%</label><input type="range" id="moneySimRisk" min="10" max="90" value="50" oninput="document.getElementById('moneySimRiskVal').textContent=this.value" style="width: 100%;"></div>
@@ -1606,6 +1622,10 @@
                                        <div class="assignment-4-card">
                                            <h5 class="section-box-header" style="color: #ffd700; font-size: 1.1rem;">📋 Strategy Report Card</h5>
                                            <p style="color: #cccccc; text-align: center; margin-bottom: 12px; font-size: 0.95rem;">AI grades: diversification, risk-return, liquidity.</p>
+                                           <div class="module-d-hint-row" style="margin-bottom: 8px; justify-content: center;">
+                                               <button type="button" class="btn module-d-fill-btn" onclick="fillReportCardExample()" style="padding: 6px 14px; font-size: 0.88rem;">✨ Fill example</button>
+                                               <span class="module-d-hint-text" style="font-size: 0.88rem;">→ click <strong>Get Report Card</strong></span>
+                                           </div>
                                            <div style="margin-bottom: 12px;"><label style="color: #fff; display: block; margin-bottom: 6px; text-align: center;">Describe your strategy:</label><textarea id="reportCardStrategy" rows="3" placeholder="e.g.: 50% BTC, 30% ETH, 20% SOL. DCA monthly." style="width: 100%; padding: 12px; background: rgba(0,0,0,0.4); border: 2px solid rgba(255,215,0,0.3); border-radius: 8px; color: #fff; box-sizing: border-box;"></textarea></div>
                                            <button type="button" class="btn btn-red" onclick="runStrategyReportCard()" style="width: 100%;">📋 Get Report Card</button>
                                            <div id="reportCardResult" style="margin-top: 15px; display: none; text-align: center;"></div>
@@ -1617,6 +1637,10 @@
                                        <span class="module-d-assignment-badge">5</span>
                                        <h4 style="color: #ffd700; margin-bottom: 12px; font-size: 1.1rem;">Assignment 5: Rebalance experiment</h4>
                                        <p style="color: #cccccc; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.55;">Simulate rebalancing a multi-coin portfolio: see before/after, compare strategies, and get exact sell/buy amounts. For education only.</p>
+                                       <div class="module-d-hint-row" style="margin-bottom: 12px;">
+                                           <button type="button" class="btn module-d-fill-btn" onclick="fillRebalanceExample()">✨ Fill with example</button>
+                                           <span class="module-d-hint-text">→ then click <strong>Run rebalance</strong> to see sell/buy amounts. Use <strong>Save</strong> below to log your rebalance notes.</span>
+                                       </div>
                                        <details class="rebalance-calc-help" style="margin-bottom: 14px; padding: 12px 14px; background: rgba(0,0,0,0.25); border-radius: 8px; border-left: 4px solid rgba(255,215,0,0.4);">
                                            <summary style="cursor: pointer; color: #ffd700; font-weight: 600; font-size: 0.9rem;">❓ What do Portfolio, Target %, Current % mean? (click to expand)</summary>
                                            <p style="color: #ccc; font-size: 0.88rem; margin: 10px 0 0 0; line-height: 1.5;"><strong>Portfolio value</strong> = your total $ in these coins. <strong>Target %</strong> = how you WANT to split (e.g. 60% BTC, 40% ETH). <strong>Current %</strong> = how it is NOW after prices moved. Example: $10,000, target 60/40, current 72/28 — you need to sell some BTC, buy ETH to get back to 60/40.</p>
