@@ -1023,6 +1023,24 @@ html {
        font-size: 13px;
    }
 
+   /* Мобильная: меньше фоновых элементов для производительности */
+   .blockchain-block.block-2,
+   .blockchain-block.block-3,
+   .transaction-data.data-2,
+   .transaction-data.data-3,
+   .transaction-data.data-4,
+   .price-chart-line.chart-2,
+   .price-chart-line.chart-3,
+   .blockchain-connection-line.conn-2,
+   .blockchain-connection-line.conn-3,
+   .blockchain-connection-line.conn-4,
+   .business-indicator.indicator-2,
+   .business-indicator.indicator-3,
+   .data-line.line-2,
+   .data-line.line-3 {
+       display: none !important;
+   }
+
    .hero h1 {
        font-size: 26px;
    }
