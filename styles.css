@@ -1287,6 +1287,17 @@ html {
    opacity: 1;
 }
 
+/* План главной: БЛОК 1 — радикальное упрощение фона (Apple-минимализм) */
+.crypto-background-elements .blockchain-grid,
+.crypto-background-elements .blockchain-block,
+.crypto-background-elements .transaction-data,
+.crypto-background-elements .price-chart-line,
+.crypto-background-elements .blockchain-connection-line,
+.crypto-background-elements .business-indicator,
+.crypto-background-elements .data-line {
+   display: none !important;
+}
+
 /* Animation for form elements */
 @keyframes fadeInUp {
    from {
