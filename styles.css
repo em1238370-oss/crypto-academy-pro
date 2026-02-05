@@ -999,13 +999,28 @@ html {
        font-size: 32px;
    }
 
-   /* Овал на мобильной — без выпрыгивания при нажатии */
+   /* Овал на мобильной — мягкий квадрат, чётко влезает в экран */
+   .oval-item {
+       width: calc(100% - 32px);
+       max-width: 100%;
+       height: auto;
+       min-height: 140px;
+       padding: 20px 24px;
+       border-radius: 16px;
+       margin: 0 auto;
+   }
+
    .oval-item:hover {
        transform: scale(1.02);
    }
 
+   .oval-item h3 {
+       font-size: 18px;
+       line-height: 1.35;
+   }
+
    .oval-item:hover h3 {
-       font-size: 24px;
+       font-size: 19px;
    }
 
    .explore-section {
