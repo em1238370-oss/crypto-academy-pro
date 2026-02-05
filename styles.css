@@ -259,7 +259,7 @@ body {
    align-items: center;
    justify-content: center;
    text-align: center;
-   padding: 60px 20px;
+   padding: 80px 20px;
    min-height: 100vh;
 }
 
@@ -285,7 +285,7 @@ body {
    font-size: 175px;
    color: #FFFFFF;
    font-weight: 700;
-   line-height: 1.4;
+   line-height: 1.2;
    text-align: center;
    max-width: 90vw;
    margin: 0 auto;
@@ -366,53 +366,49 @@ html {
 
 /* Секция для текста после заголовка */
 .main-text-section {
-   padding: 0 20px;
-   margin-top: 10cm;
-   margin-bottom: 0;
-   margin-left: 1cm;
+   padding: 80px 20px 120px;
+   margin: 120px auto 0;
    text-align: center;
    position: relative;
    z-index: 1;
    display: block;
+   max-width: 800px;
 }
 
-.main-text-section .overlay-text {
+.main-text-headline {
    font-family: 'Raleway', sans-serif;
-   font-size: 67px;
-   color: #FFFFFF;
+   font-size: 42px;
    font-weight: 700;
-   line-height: 1.4;
-   text-align: center;
-   margin: 0 auto;
-   max-width: 80%;
-   /* Упрощенный стиль - без анимаций и проблемных свойств */
-   opacity: 1;
-   visibility: visible;
-   display: block;
-   padding: 0;
-   position: relative;
-   /* Убираем все что может вызывать глюки */
-   animation: none !important;
-   will-change: auto !important;
-   transform: none !important;
-   backface-visibility: visible !important;
-   contain: none !important;
-   text-shadow: 0 0 15px rgba(167, 3, 96, 0.6), 0 0 25px rgba(167, 3, 96, 0.4);
+   color: #FFFFFF;
+   line-height: 1.3;
+   margin: 0 0 24px;
    text-rendering: optimizeLegibility;
    -webkit-font-smoothing: antialiased;
    -moz-osx-font-smoothing: grayscale;
 }
 
-/* Круги начинаются через 5 см после текста */
+.main-text-description {
+   font-family: 'Poppins', sans-serif;
+   font-size: 18px;
+   font-weight: 400;
+   color: #FFFFFF;
+   line-height: 1.6;
+   margin: 0;
+   text-rendering: optimizeLegibility;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Круги начинаются после текста */
 .explore-section {
-   padding: 50px 20px 150px;
+   padding: 80px 20px 150px;
    text-align: center;
    min-height: 100vh;
    display: flex;
    flex-direction: column;
    align-items: center;
-   gap: 250px;
-   margin-top: 5cm;
+   gap: 160px;
+   margin-top: 0;
    margin-bottom: 0;
    overflow: visible !important;
    position: relative;
@@ -458,6 +454,7 @@ html {
 .oval-item h3 {
    font-size: 45px;
    font-weight: bold;
+   line-height: 1.2;
    margin: 10px 0;
    transition: font-size 0.25s ease;
    text-align: center;
@@ -466,7 +463,7 @@ html {
 
 .oval-item h3 {
    font-size: 35px;
-   line-height: 1.2;
+   line-height: 1.3;
 }
 
 .menu-item:hover,
@@ -491,6 +488,7 @@ html {
    font-size: 0;
    margin: 10px 0;
    opacity: 0;
+   line-height: 1.5;
    transition: font-size 0.3s ease, opacity 0.3s ease;
    max-height: 0;
    color: #FFFFFF;
