@@ -529,7 +529,7 @@ html {
    text-decoration: none;
    color: #FFFFFF;
    background: rgba(255, 255, 255, 0.02);
-   border: 2px solid rgba(255, 255, 255, 0.12);
+   border: 1px solid rgba(255, 255, 255, 0.12);
    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.5s ease, border-color 0.4s ease;
    cursor: pointer;
@@ -575,7 +575,7 @@ html {
 
 .menu-item:hover,
 .oval-item:hover {
-   transform: scale(1.08);
+   transform: scale(1.05);
    z-index: 100 !important;
    position: relative;
    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
@@ -589,7 +589,7 @@ html {
 }
 
 .menu-item:hover h3 {
-   font-size: 64px;
+   font-size: 52px;
 }
 
 .oval-item:hover h3 {
@@ -3295,7 +3295,7 @@ html {
 
 .menu-item:hover,
 .oval-item:hover {
-    transform: scale(1.08) translateZ(0) !important;
+    transform: scale(1.05) translateZ(0) !important;
 }
 
 /* Убираем искажения при скролле - упрощаем фон */
