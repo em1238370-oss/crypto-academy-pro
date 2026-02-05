@@ -449,6 +449,24 @@ html {
    letter-spacing: 0.08em;
 }
 
+/* Миссия / философия бренда */
+.mission-section {
+   padding: 0 24px 80px;
+   margin: 0 auto;
+   max-width: 640px;
+   text-align: center;
+}
+
+.mission-text {
+   font-family: 'Raleway', sans-serif;
+   font-size: 20px;
+   font-weight: 700;
+   color: rgba(255, 255, 255, 0.75);
+   line-height: 1.5;
+   margin: 0;
+   letter-spacing: 0.02em;
+}
+
 .trust-stats::before {
    content: '';
    position: absolute;
@@ -487,7 +505,7 @@ html {
    color: #FFFFFF;
    background: rgba(255, 255, 255, 0.02);
    border: 2px solid rgba(255, 255, 255, 0.15);
-   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
    cursor: pointer;
    box-sizing: border-box;
@@ -535,7 +553,7 @@ html {
    transform: scale(1.08);
    z-index: 100 !important;
    position: relative;
-   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
    border-color: rgba(255, 255, 255, 0.25);
    overflow: visible !important;
 }
@@ -574,7 +592,7 @@ html {
    border: 1px solid rgba(255, 255, 255, 0.18);
    border-radius: 20px;
    background: rgba(0, 0, 0, 0.55);
-   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
    display: flex;
    align-items: center;
    justify-content: space-between;
@@ -964,6 +982,38 @@ html {
        font-size: 12px;
    }
 
+   .mission-section {
+       padding: 0 20px 60px;
+   }
+
+   .mission-text {
+       font-size: 17px;
+   }
+
+   .menu-item {
+       width: 320px;
+       height: 320px;
+   }
+
+   .menu-item h3 {
+       font-size: 32px;
+   }
+
+   .oval-item {
+       width: 100%;
+       max-width: 340px;
+       height: 200px;
+   }
+
+   .oval-item h3 {
+       font-size: 22px;
+   }
+
+   .explore-section {
+       gap: 100px;
+       padding: 60px 16px 100px;
+   }
+
    .hero h1 {
        font-size: 26px;
    }
@@ -1007,7 +1057,7 @@ html {
    border: 1px solid rgba(255, 255, 255, 0.18);
    border-radius: 20px;
    padding: 28px 28px 32px;
-   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
    z-index: 1300;
    color: #FFFFFF;
    backdrop-filter: blur(18px);
