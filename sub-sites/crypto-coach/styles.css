@@ -3732,6 +3732,68 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     padding-bottom: 5px;
 }
 
+/* Module A - Match Module C typography (identical font sizes) */
+#drawerA .drawer-content > h3 {
+    font-size: 1.15rem !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+}
+#drawerA .section-box h4,
+#drawerA .market-heatmap-section h4,
+#drawerA .ai-recommendations h4,
+#drawerA .leaderboard h4,
+#drawerA .multi-timeframe-section h4 {
+    font-size: 1.3rem !important;
+    color: #ffffff !important;
+}
+#drawerA .portfolio-share-section h4 {
+    font-size: 1.2rem !important;
+    color: #ffd700 !important;
+}
+#drawerA .section-title {
+    font-size: 1.15rem !important;
+    color: #ffffff !important;
+}
+#drawerA .portfolio-section h3 {
+    font-size: 1.15rem !important;
+    color: #ffffff !important;
+}
+#drawerA .portfolio-section label,
+#drawerA .portfolio-section .health-metric > div:first-child,
+#drawerA .leaderboard label,
+#drawerA label[for="portfolioInput"],
+#drawerA label[for="portfolioName"] {
+    font-size: 0.9rem !important;
+}
+#drawerA .portfolio-health-score h4 {
+    font-size: 1.2rem !important;
+    color: #ffd700 !important;
+}
+#drawerA #healthScoreLabel,
+#drawerA .portfolio-share-section .share-card-placeholder {
+    font-size: 0.9rem !important;
+}
+#drawerA .health-metric > div:first-child {
+    font-size: 0.9rem !important;
+}
+#drawerA .time-range-btn,
+#drawerA .portfolio-share-section .btn {
+    font-size: 0.9rem !important;
+}
+#drawerA #portfolioName,
+#drawerA #savedPortfolioSelect {
+    font-size: 0.9rem !important;
+}
+#drawerA .coin-card {
+    font-size: 0.9rem !important;
+}
+#drawerA .coin-card h4 {
+    font-size: 0.95rem !important;
+}
+#drawerA #recommendationsContent p {
+    font-size: 0.9rem !important;
+}
+
 /* Module A - Trading Simulator Styles */
 .trading-interface {
     display: grid;
@@ -3778,6 +3840,9 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     line-height: 1.5;
 }
 
+#drawerA .portfolio-input {
+    font-size: 0.9rem;
+}
 .portfolio-input:focus {
     outline: none;
     border-color: #ff0000;

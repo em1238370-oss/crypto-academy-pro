@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=35.0">
+    <link rel="stylesheet" href="styles.css?v=36.0">
    <!-- Chart.js for portfolio graphs -->
    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
    <script src="scripts/table-modules.js?v=38.0"></script>
@@ -91,7 +91,7 @@
                                <h3 style="color: #ffffff; margin-bottom: 20px;">Virtual environment for trading practice without real money</h3>
                                
                                <div class="section-box" style="margin-bottom: 25px;">
-                                   <h4 style="color: #ffffff; margin-bottom: 15px; font-size: 1.2rem;">Portfolio Management</h4>
+                                   <h4 style="color: #ffffff; margin-bottom: 15px;">Portfolio Management</h4>
                                    <div style="display: flex; justify-content: flex-start; align-items: stretch; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                                        <button class="btn btn-red" onclick="fillExamplePortfolio()" style="
                                            flex: 0 0 auto;
@@ -153,7 +153,7 @@
                                <div class="portfolio-section">
                                    <h3>Your Portfolio</h3>
                                   <div class="portfolio-input-wrapper">
-                                      <label for="portfolioInput" style="display: block; color: #ffffff; margin-bottom: 10px; font-size: 1rem; line-height: 1.5;">Enter your portfolio value:</label>
+                                      <label for="portfolioInput" style="display: block; color: #ffffff; margin-bottom: 10px; font-size: 0.9rem; line-height: 1.5;">Enter your portfolio value:</label>
                                       <input type="number" id="portfolioInput" class="portfolio-input" value="10000" min="1" step="0.01" placeholder="Enter amount">
                                    <div class="portfolio-value" id="portfolioValue">$10,000.00</div>
                                   </div>
@@ -180,7 +180,7 @@
                                                margin-bottom: 5px;
                                            ">0</div>
                                            <div id="healthScoreLabel" style="
-                                               font-size: 1.1rem;
+                                               font-size: 0.9rem;
                                                color: #ffffff;
                                                font-weight: 500;
                                            ">Calculating...</div>
@@ -224,7 +224,7 @@
 
                                <!-- Live Market Heatmap -->
                                <div class="market-heatmap-section" style="margin-bottom: 30px;">
-                                   <h4 style="color: #ffffff; margin-bottom: 15px; font-size: 1.3rem;">📊 Live Market Heatmap</h4>
+                                   <h4 style="color: #ffffff; margin-bottom: 15px;">📊 Live Market Heatmap</h4>
                                    <div id="marketHeatmap" style="
                                        background: rgba(0, 0, 0, 0.5);
                                        border: 2px solid rgba(255, 215, 0, 0.3);
@@ -254,7 +254,7 @@
                                <div class="leaderboard">
                                   <h4>My Portfolio Tracker</h4>
                                   <div id="portfolioSelector" style="margin-bottom: 20px;">
-                                      <label for="portfolioName" style="display: block; color: #ffffff; margin-bottom: 10px; font-size: 1rem;">Portfolio Name:</label>
+                                      <label for="portfolioName" style="display: block; color: #ffffff; margin-bottom: 10px; font-size: 0.9rem;">Portfolio Name:</label>
                                       <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                                           <input type="text" id="portfolioName" placeholder="Enter portfolio name (e.g., My Crypto Portfolio)" 
                                                  style="flex: 1; padding: 10px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(255, 0, 0, 0.3); border-radius: 8px; color: #ffffff; font-size: 1rem;">
@@ -268,7 +268,7 @@
                                   <div id="portfolioGraphContainer" style="display: none; margin-bottom: 20px;">
                                       <!-- Multi-Timeframe View -->
                                       <div class="multi-timeframe-section" style="margin-bottom: 20px;">
-                                          <h4 style="color: #ffffff; margin-bottom: 15px; font-size: 1.2rem; text-align: center;">📈 Multi-Timeframe View</h4>
+                                          <h4 style="color: #ffffff; margin-bottom: 15px; text-align: center;">📈 Multi-Timeframe View</h4>
                                           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
                                               <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; padding: 10px;">
                                                   <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px; text-align: center;">1 Hour</div>
@@ -290,7 +290,7 @@
                                       </div>
                                       
                                       <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                                          <label style="color: #ffffff; font-size: 0.95rem; margin-right: 10px;">Time Range:</label>
+                                          <label style="color: #ffffff; font-size: 0.9rem; margin-right: 10px;">Time Range:</label>
                                           <button class="time-range-btn" data-range="30m" onclick="changeTimeRange('30m')" style="padding: 8px 15px; background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); border-radius: 5px; color: #ffffff; cursor: pointer; font-size: 0.9rem;">30 min</button>
                                           <button class="time-range-btn" data-range="2h" onclick="changeTimeRange('2h')" style="padding: 8px 15px; background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); border-radius: 5px; color: #ffffff; cursor: pointer; font-size: 0.9rem;">2 hours</button>
                                           <button class="time-range-btn" data-range="8h" onclick="changeTimeRange('8h')" style="padding: 8px 15px; background: rgba(255, 0, 0, 0.3); border: 1px solid rgba(255, 0, 0, 0.5); border-radius: 5px; color: #ffffff; cursor: pointer; font-size: 0.9rem;">8 hours</button>
@@ -322,7 +322,7 @@
                                        border-radius: 15px;
                                        box-shadow: 0 0 25px rgba(255, 215, 0, 0.2);
                                    ">
-                                       <h4 style="color: #ffd700; margin-bottom: 20px; font-size: 1.3rem; text-align: center;">📱 Share Your Portfolio</h4>
+                                       <h4 style="color: #ffd700; margin-bottom: 20px; font-size: 1.2rem; text-align: center;">📱 Share Your Portfolio</h4>
                                        <div id="shareCardPreview" style="
                                            background: rgba(0, 0, 0, 0.6);
                                            border: 2px solid rgba(255, 215, 0, 0.3);
@@ -336,7 +336,7 @@
                                            justify-content: center;
                                            align-items: center;
                                        ">
-                                           <div style="color: #ffffff; font-size: 1.1rem; margin-bottom: 10px;">Create a portfolio to generate share card</div>
+                                           <div style="color: #ffffff; font-size: 0.9rem; margin-bottom: 10px;">Create a portfolio to generate share card</div>
                                        </div>
                                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                                            <button onclick="generateShareCard()" class="btn btn-red" style="padding: 12px 25px; font-size: 1rem;">Generate Share Card</button>
