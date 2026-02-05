@@ -367,7 +367,7 @@ html {
 /* Секция для текста после заголовка */
 .main-text-section {
    padding: 80px 20px 120px;
-   margin: 120px auto 0;
+   margin: 2.5cm auto 0;
    text-align: center;
    position: relative;
    z-index: 1;
