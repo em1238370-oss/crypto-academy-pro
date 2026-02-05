@@ -1602,55 +1602,35 @@ div:has-text("Experience Points") {
     text-align: center !important;
 }
 
-/* Уникальный дизайн заголовка для FREE блока - ЗОЛОТОЙ когда закрыт */
+/* Module A: классический стиль — как у других модулей, без золота */
 #drawerA .drawer-header {
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 200, 0, 0.25) 100%);
-    border-bottom: 3px solid rgba(255, 215, 0, 0.5);
-    box-shadow: 0 2px 15px rgba(255, 215, 0, 0.3);
-    position: relative;
-    overflow: hidden;
-    transition: all 0.5s ease;
+    background: rgba(255, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 0, 0, 0.3);
+    box-shadow: none;
+    transition: background 0.3s ease;
 }
 
 #drawerA .drawer-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    animation: headerShine 3s infinite;
-    transition: opacity 0.5s ease;
-}
-
-@keyframes headerShine {
-    0% { left: -100%; }
-    100% { left: 100%; }
+    display: none;
 }
 
 #drawerA .drawer-header:hover {
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(255, 200, 0, 0.35) 100%);
-    box-shadow: 0 4px 20px rgba(255, 215, 0, 0.5);
-    transform: translateY(0);
+    background: rgba(255, 0, 0, 0.3);
+    box-shadow: none;
 }
 
-/* Когда блок открыт - заголовок становится КРАСНЫМ как у других блоков */
 #drawerA.open .drawer-header {
-    background: rgba(255, 0, 0, 0.2); /* Стандартный красный фон */
-    border-bottom: 2px solid rgba(255, 0, 0, 0.3); /* Красная граница */
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    transition: all 0.5s ease;
+    background: rgba(255, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 0, 0, 0.3);
+    box-shadow: none;
 }
 
 #drawerA.open .drawer-header::before {
-    opacity: 0;
-    animation: none;
+    display: none;
 }
 
 #drawerA.open .drawer-header:hover {
-    background: rgba(255, 0, 0, 0.3); /* Красный hover */
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 0, 0, 0.3);
 }
 
 .drawer-header:hover {
@@ -1666,16 +1646,10 @@ div:has-text("Experience Points") {
     transform: translateY(0);
 }
 
-/* Анимация пульсации для FREE бейджа */
+/* FREE badge — без анимации, классический стиль */
 @keyframes badgePulse {
-    0%, 100% {
-        box-shadow: 0 0 15px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
-        transform: scale(1);
-    }
-    50% {
-        box-shadow: 0 0 25px rgba(255, 215, 0, 0.9), inset 0 0 15px rgba(255, 255, 255, 0.5);
-        transform: scale(1.05);
-    }
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1); }
 }
 
 .drawer-header h2 {
@@ -3747,8 +3721,8 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     color: #ffffff !important;
 }
 #drawerA .portfolio-share-section h4 {
-    font-size: 1.2rem !important;
-    color: #ffd700 !important;
+    font-size: 1.1rem !important;
+    color: #ffffff !important;
 }
 #drawerA .section-title {
     font-size: 1.15rem !important;
@@ -3767,7 +3741,7 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 }
 #drawerA .portfolio-health-score h4 {
     font-size: 1.2rem !important;
-    color: #ffd700 !important;
+    color: #ffffff !important;
 }
 #drawerA #healthScoreLabel,
 #drawerA .portfolio-share-section .share-card-placeholder {
@@ -3792,6 +3766,37 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 }
 #drawerA #recommendationsContent p {
     font-size: 0.9rem !important;
+}
+/* Module A: сдержанный классический стиль */
+#drawerA .section-box {
+    background: rgba(255, 0, 0, 0.06) !important;
+    border: 1px solid rgba(255, 0, 0, 0.2) !important;
+    border-radius: 6px !important;
+    padding: 18px !important;
+}
+#drawerA .portfolio-section {
+    background: rgba(255, 0, 0, 0.06) !important;
+    border: 1px solid rgba(255, 0, 0, 0.2) !important;
+    border-radius: 6px !important;
+    padding: 18px !important;
+}
+#drawerA .section-title {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+    padding-bottom: 8px !important;
+}
+#drawerA .coin-card {
+    border: 1px solid rgba(255, 0, 0, 0.25) !important;
+    border-radius: 6px !important;
+    padding: 12px !important;
+    box-shadow: none !important;
+}
+#drawerA .coin-card:hover {
+    border-color: rgba(255, 0, 0, 0.4) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+#drawerA .portfolio-input {
+    border: 1px solid rgba(255, 0, 0, 0.25) !important;
+    border-radius: 6px !important;
 }
 
 /* Module A - Trading Simulator Styles */

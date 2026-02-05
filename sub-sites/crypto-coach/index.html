@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Telegraf:wght@700&display=swap" rel="stylesheet">
    <link href="https://fonts.cdnfonts.com/css/telegraf" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=36.0">
+    <link rel="stylesheet" href="styles.css?v=37.0">
    <!-- Chart.js for portfolio graphs -->
    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
    <script src="scripts/table-modules.js?v=38.0"></script>
@@ -71,19 +71,16 @@
                               <div class="drawer-header" onclick="toggleDrawerWithInit('drawerA')">
                                <h2>A. Interactive Trading Simulator 
                                    <span class="free-badge" style="
-                                       background: linear-gradient(135deg, rgba(255, 215, 0, 0.8) 0%, rgba(255, 200, 0, 0.9) 100%);
-                                       padding: 5px 15px;
-                                       border-radius: 20px;
-                                       font-size: 0.9rem;
-                                       margin-left: 15px;
-                                       color: #000000;
-                                       font-weight: bold;
-                                       text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-                                       box-shadow: 0 0 15px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
-                                       animation: badgePulse 2s ease-in-out infinite;
+                                       background: rgba(255, 0, 0, 0.3);
+                                       padding: 4px 12px;
+                                       border-radius: 6px;
+                                       font-size: 0.85rem;
+                                       margin-left: 12px;
+                                       color: #ffffff;
+                                       font-weight: 600;
+                                       border: 1px solid rgba(255, 255, 255, 0.2);
                                        display: inline-block;
-                                       position: relative;
-                                   ">✨ FREE ✨</span>
+                                   ">FREE</span>
                                </h2>
                                <span class="drawer-icon">▼</span>
                            </div>
@@ -95,55 +92,52 @@
                                    <div style="display: flex; justify-content: flex-start; align-items: stretch; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                                        <button class="btn btn-red" onclick="fillExamplePortfolio()" style="
                                            flex: 0 0 auto;
-                                           min-width: 140px;
+                                           min-width: 120px;
                                            max-width: 100%;
-                                           padding: 10px 20px;
+                                           padding: 8px 16px;
                                            font-size: 0.9rem;
                                            font-weight: 600;
                                            margin: 0;
-                                           border-radius: 8px;
-                                           border: 2px solid rgba(255, 215, 0, 0.5);
-                                           background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 200, 0, 0.4) 100%);
-                                           color: #000000;
+                                           border-radius: 6px;
+                                           border: 1px solid rgba(255, 0, 0, 0.5);
+                                           background: rgba(255, 0, 0, 0.25);
+                                           color: #ffffff;
                                            cursor: pointer;
-                                           transition: all 0.3s ease;
-                                           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                                           transition: background 0.2s ease;
                                            box-sizing: border-box;
                                            white-space: nowrap;
                                        ">📋 Fill Example</button>
                                        <button class="btn btn-red" onclick="showPortfolioHistory()" style="
                                            flex: 0 0 auto;
-                                           min-width: 140px;
+                                           min-width: 120px;
                                            max-width: 100%;
-                                           padding: 10px 20px;
+                                           padding: 8px 16px;
                                            font-size: 0.9rem;
                                            font-weight: 600;
                                            margin: 0;
-                                           border-radius: 8px;
-                                           border: 2px solid rgba(255, 215, 0, 0.5);
-                                           background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 200, 0, 0.4) 100%);
-                                           color: #000000;
+                                           border-radius: 6px;
+                                           border: 1px solid rgba(255, 0, 0, 0.5);
+                                           background: rgba(255, 0, 0, 0.25);
+                                           color: #ffffff;
                                            cursor: pointer;
-                                           transition: all 0.3s ease;
-                                           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                                           transition: background 0.2s ease;
                                            box-sizing: border-box;
                                            white-space: nowrap;
                                        ">📚 History</button>
                                        <button class="btn btn-red" onclick="savePortfolioToPDF()" style="
                                            flex: 0 0 auto;
-                                           min-width: 140px;
+                                           min-width: 120px;
                                            max-width: 100%;
-                                           padding: 10px 20px;
+                                           padding: 8px 16px;
                                            font-size: 0.9rem;
                                            font-weight: 600;
                                            margin: 0;
-                                           border-radius: 8px;
-                                           border: 2px solid rgba(255, 215, 0, 0.5);
-                                           background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 200, 0, 0.4) 100%);
-                                           color: #000000;
+                                           border-radius: 6px;
+                                           border: 1px solid rgba(255, 0, 0, 0.5);
+                                           background: rgba(255, 0, 0, 0.25);
+                                           color: #ffffff;
                                            cursor: pointer;
-                                           transition: all 0.3s ease;
-                                           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                                           transition: background 0.2s ease;
                                            box-sizing: border-box;
                                            white-space: nowrap;
                                        ">💾 Save to PDF</button>
@@ -164,19 +158,17 @@
                                    <!-- Portfolio Health Score -->
                                    <div class="portfolio-health-score" style="
                                        margin-top: 25px;
-                                       padding: 20px;
-                                       background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 200, 0, 0.15) 100%);
-                                       border: 2px solid rgba(255, 215, 0, 0.4);
-                                       border-radius: 12px;
-                                       box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+                                       padding: 18px;
+                                       background: rgba(255, 0, 0, 0.08);
+                                       border: 1px solid rgba(255, 0, 0, 0.25);
+                                       border-radius: 8px;
                                    ">
-                                       <h4 style="color: #ffd700; margin-bottom: 15px; font-size: 1.2rem; text-align: center;">🎯 Portfolio Health Score</h4>
-                                       <div style="text-align: center; margin-bottom: 15px;">
+                                       <h4 style="color: #ffffff; margin-bottom: 12px; font-size: 1.2rem; text-align: center;">Portfolio Health Score</h4>
+                                       <div style="text-align: center; margin-bottom: 12px;">
                                            <div id="healthScoreValue" style="
-                                               font-size: 3rem;
+                                               font-size: 2.5rem;
                                                font-weight: bold;
-                                               color: #ffd700;
-                                               text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+                                               color: #ff6666;
                                                margin-bottom: 5px;
                                            ">0</div>
                                            <div id="healthScoreLabel" style="
@@ -195,27 +187,27 @@
                                                text-align: center;
                                                padding: 10px;
                                                background: rgba(0, 0, 0, 0.3);
-                                               border-radius: 8px;
+                                               border-radius: 6px;
                                            ">
-                                               <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px;">Diversification</div>
+                                               <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">Diversification</div>
                                                <div id="diversificationScore" style="color: #ffffff; font-weight: bold;">-</div>
                                            </div>
                                            <div class="health-metric" style="
                                                text-align: center;
                                                padding: 10px;
                                                background: rgba(0, 0, 0, 0.3);
-                                               border-radius: 8px;
+                                               border-radius: 6px;
                                            ">
-                                               <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px;">Balance</div>
+                                               <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">Balance</div>
                                                <div id="balanceScore" style="color: #ffffff; font-weight: bold;">-</div>
                                            </div>
                                            <div class="health-metric" style="
                                                text-align: center;
                                                padding: 10px;
                                                background: rgba(0, 0, 0, 0.3);
-                                               border-radius: 8px;
+                                               border-radius: 6px;
                                            ">
-                                               <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px;">Risk Level</div>
+                                               <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px;">Risk Level</div>
                                                <div id="riskScore" style="color: #ffffff; font-weight: bold;">-</div>
                                            </div>
                                        </div>
@@ -226,10 +218,10 @@
                                <div class="market-heatmap-section" style="margin-bottom: 30px;">
                                    <h4 style="color: #ffffff; margin-bottom: 15px;">📊 Live Market Heatmap</h4>
                                    <div id="marketHeatmap" style="
-                                       background: rgba(0, 0, 0, 0.5);
-                                       border: 2px solid rgba(255, 215, 0, 0.3);
-                                       border-radius: 12px;
-                                       padding: 20px;
+                                       background: rgba(0, 0, 0, 0.4);
+                                       border: 1px solid rgba(255, 0, 0, 0.25);
+                                       border-radius: 8px;
+                                       padding: 16px;
                                        display: grid;
                                        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
                                        gap: 15px;
@@ -269,21 +261,21 @@
                                       <!-- Multi-Timeframe View -->
                                       <div class="multi-timeframe-section" style="margin-bottom: 20px;">
                                           <h4 style="color: #ffffff; margin-bottom: 15px; text-align: center;">📈 Multi-Timeframe View</h4>
-                                          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
-                                              <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; padding: 10px;">
-                                                  <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px; text-align: center;">1 Hour</div>
+                                          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 15px;">
+                                              <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 0, 0, 0.2); border-radius: 6px; padding: 10px;">
+                                                  <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px; text-align: center;">1 Hour</div>
                                                   <canvas id="timeframe1h" style="width: 100%; height: 120px;"></canvas>
                                               </div>
-                                              <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; padding: 10px;">
-                                                  <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px; text-align: center;">4 Hours</div>
+                                              <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 0, 0, 0.2); border-radius: 6px; padding: 10px;">
+                                                  <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px; text-align: center;">4 Hours</div>
                                                   <canvas id="timeframe4h" style="width: 100%; height: 120px;"></canvas>
                                               </div>
-                                              <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; padding: 10px;">
-                                                  <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px; text-align: center;">1 Day</div>
+                                              <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 0, 0, 0.2); border-radius: 6px; padding: 10px;">
+                                                  <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px; text-align: center;">1 Day</div>
                                                   <canvas id="timeframe1d" style="width: 100%; height: 120px;"></canvas>
                                               </div>
-                                              <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; padding: 10px;">
-                                                  <div style="color: #ffd700; font-size: 0.9rem; margin-bottom: 5px; text-align: center;">1 Week</div>
+                                              <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 0, 0, 0.2); border-radius: 6px; padding: 10px;">
+                                                  <div style="color: #cccccc; font-size: 0.85rem; margin-bottom: 5px; text-align: center;">1 Week</div>
                                                   <canvas id="timeframe1w" style="width: 100%; height: 120px;"></canvas>
                                               </div>
                                           </div>
@@ -315,19 +307,18 @@
                                    
                                    <!-- Portfolio Share Card -->
                                    <div class="portfolio-share-section" style="
-                                       margin-top: 30px;
-                                       padding: 25px;
-                                       background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 200, 0, 0.15) 100%);
-                                       border: 2px solid rgba(255, 215, 0, 0.4);
-                                       border-radius: 15px;
-                                       box-shadow: 0 0 25px rgba(255, 215, 0, 0.2);
+                                       margin-top: 25px;
+                                       padding: 20px;
+                                       background: rgba(255, 0, 0, 0.06);
+                                       border: 1px solid rgba(255, 0, 0, 0.2);
+                                       border-radius: 8px;
                                    ">
-                                       <h4 style="color: #ffd700; margin-bottom: 20px; font-size: 1.2rem; text-align: center;">📱 Share Your Portfolio</h4>
+                                       <h4 style="color: #ffffff; margin-bottom: 16px; font-size: 1.1rem; text-align: center;">Share Your Portfolio</h4>
                                        <div id="shareCardPreview" style="
-                                           background: rgba(0, 0, 0, 0.6);
-                                           border: 2px solid rgba(255, 215, 0, 0.3);
-                                           border-radius: 12px;
-                                           padding: 20px;
+                                           background: rgba(0, 0, 0, 0.5);
+                                           border: 1px solid rgba(255, 0, 0, 0.2);
+                                           border-radius: 6px;
+                                           padding: 16px;
                                            margin-bottom: 20px;
                                            text-align: center;
                                            min-height: 200px;
