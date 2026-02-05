@@ -9,13 +9,13 @@
 
 body {
     font-family: 'Poppins', sans-serif;
-    /* Временный CSS-фон, имитирующий описанное изображение + блокчейн сетка */
+    /* Выровнено с главной страницей: тёмно-фиолетовый + золотые акценты */
     background: 
-        linear-gradient(rgba(255, 204, 21, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 204, 21, 0.03) 1px, transparent 1px),
-        radial-gradient(circle at 85% 15%, rgba(255, 180, 40, 0.4) 0%, transparent 50%),
-        radial-gradient(circle at 15% 85%, rgba(255, 200, 50, 0.4) 0%, transparent 50%),
-        #000000;
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        radial-gradient(circle at 85% 15%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 15% 85%, rgba(88, 28, 135, 0.15) 0%, transparent 50%),
+        #1C0038;
     background-size: 50px 50px, 50px 50px, 7250px 1750px, 7250px 1750px, 100% 100%;
     background-position: 0 0, 0 0, center center, center center, 0 0;
     background-attachment: fixed, fixed, fixed, fixed, fixed;
@@ -52,15 +52,15 @@ body {
 }
 */
 
-/* Усиливаем желтые акценты через overlay - яркий фон */
+/* Overlay — мягкие акценты как на главной */
 body::before {
     content: '';
     position: fixed;
     inset: 0;
     background: 
-        radial-gradient(circle at 85% 15%, rgba(255, 200, 50, 0.25), transparent 50%),
-        radial-gradient(circle at 15% 85%, rgba(255, 180, 40, 0.25), transparent 50%),
-        radial-gradient(circle at 50% 50%, rgba(255, 220, 60, 0.1), transparent 70%);
+        radial-gradient(circle at 20% 20%, rgba(74, 25, 66, 0.18), transparent 60%),
+        radial-gradient(circle at 80% 10%, rgba(88, 28, 135, 0.14), transparent 55%),
+        radial-gradient(circle at 30% 85%, rgba(74, 25, 66, 0.12), transparent 55%);
     pointer-events: none;
     z-index: 0;
 }
@@ -69,9 +69,75 @@ body::after {
     content: '';
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.12);
     pointer-events: none;
     z-index: 0;
+}
+
+/* Навигация — назад на главную */
+.news-nav {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    z-index: 100;
+}
+
+.news-nav-link {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    transition: color 0.2s ease;
+}
+
+.news-nav-link:hover {
+    color: #d4af37;
+}
+
+/* Футер News */
+.news-footer {
+    padding: 60px 24px 40px;
+    margin-top: 80px;
+    text-align: center;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    position: relative;
+}
+
+.news-footer::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5), transparent);
+}
+
+.news-footer-text {
+    font-size: 14px;
+    color: #888888;
+    margin: 0;
+}
+
+.news-footer-crafted {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.35);
+    margin: 12px 0 0;
+    letter-spacing: 0.06em;
+}
+
+.news-footer-link {
+    display: inline-block;
+    margin-top: 20px;
+    font-size: 13px;
+    color: rgba(212, 175, 55, 0.8);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.news-footer-link:hover {
+    color: #d4af37;
 }
 
 
@@ -650,43 +716,15 @@ body::after {
 }
 
 .section-title {
-    font-size: 67px;
-    font-weight: bold;
-    margin-bottom: 40px;
-    border: 4px solid #FBCC22;
-    padding: 20px;
-    border-radius: 15px;
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 48px;
+    padding: 0;
     display: inline-block;
     color: #FFFFFF;
-    font-family: 'TT Firs Neue', sans-serif;
+    font-family: 'Raleway', sans-serif;
     position: relative;
-    background: rgba(0, 0, 0, 0.3);
-    box-shadow: 
-        0 0 20px rgba(251, 204, 34, 0.4),
-        0 0 40px rgba(251, 204, 34, 0.2),
-        inset 0 0 20px rgba(251, 204, 34, 0.1);
-    animation: title-glow 3s ease-in-out infinite;
-    transition: all 0.3s ease;
-}
-
-.section-title::before {
-    content: '₿';
-    position: absolute;
-    top: -15px;
-    left: -15px;
-    font-size: 30px;
-    color: rgba(251, 204, 34, 0.6);
-    animation: crypto-float-title 4s ease-in-out infinite;
-}
-
-.section-title::after {
-    content: 'Ξ';
-    position: absolute;
-    bottom: -15px;
-    right: -15px;
-    font-size: 30px;
-    color: rgba(251, 204, 34, 0.6);
-    animation: crypto-float-title 5s ease-in-out infinite reverse;
+    letter-spacing: -0.02em;
 }
 
 /* Дополнительные крипто-символы вокруг заголовка */
@@ -760,8 +798,8 @@ body::after {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(0, 0, 0, 0.4);
-    border: 4px solid #FBCC22;
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px solid rgba(255, 255, 255, 0.12);
     border-radius: 20px;
     padding: 25px;
     margin: 25px 0;
@@ -773,9 +811,12 @@ body::after {
     backdrop-filter: blur(5px);
     animation: row-fade-in 0.6s ease forwards;
     opacity: 0;
-    box-shadow: 
-        0 0 15px rgba(251, 204, 34, 0.2),
-        inset 0 0 20px rgba(251, 204, 34, 0.05);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+}
+
+.news-row:hover {
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 0 24px rgba(212, 175, 55, 0.08);
 }
 
 /* Блокчейн-блоки в углах строк */
@@ -968,11 +1009,8 @@ body::after {
 }
 
 .news-row:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 
-        0 15px 40px rgba(251, 204, 34, 0.5),
-        0 0 60px rgba(251, 204, 34, 0.3),
-        inset 0 0 30px rgba(251, 204, 34, 0.15);
+    transform: translateY(-4px) scale(1.01);
+}
     border-color: #FFD700;
     background: rgba(0, 0, 0, 0.6);
 }
@@ -1004,11 +1042,7 @@ body::after {
 }
 
 .news-row:hover .news-site {
-    color: #FFD700;
-    text-shadow: 
-        0 0 20px rgba(255, 215, 0, 0.6),
-        0 0 40px rgba(255, 215, 0, 0.3),
-        0 2px 4px rgba(0, 0, 0, 0.5);
+    color: #d4af37;
     transform: translateX(5px);
 }
 
@@ -1034,53 +1068,26 @@ body::after {
 }
 
 .news-link {
-    background: rgba(251, 204, 34, 0.1);
-    border: 4px solid #FBCC22;
+    background: rgba(212, 175, 55, 0.08);
+    border: 2px solid rgba(212, 175, 55, 0.4);
     color: #FFFFFF;
-    padding: 17px 29px;
+    padding: 14px 24px;
     text-decoration: none;
-    border-radius: 30px;
-    font-size: 17px;
-    font-weight: bold;
-    transition: all 0.4s ease;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.3s ease;
     white-space: nowrap;
     flex-shrink: 0;
-    font-family: 'TT Firs Neue', sans-serif;
+    font-family: 'Poppins', sans-serif;
     position: relative;
-    overflow: hidden;
-    box-shadow: 
-        0 0 15px rgba(251, 204, 34, 0.3),
-        inset 0 0 10px rgba(251, 204, 34, 0.1);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
-.news-link::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s ease, height 0.6s ease;
-}
-
-.news-link:hover::before {
-    width: 300px;
-    height: 300px;
 }
 
 .news-link:hover {
-    background: linear-gradient(135deg, #FBCC22, #FFD700);
-    transform: scale(1.1) translateY(-2px);
-    color: #000000;
-    box-shadow: 
-        0 10px 30px rgba(251, 204, 34, 0.6),
-        0 0 50px rgba(255, 215, 0, 0.4),
-        inset 0 0 20px rgba(255, 255, 255, 0.2);
-    border-color: #FFD700;
+    background: rgba(212, 175, 55, 0.2);
+    border-color: #d4af37;
+    transform: scale(1.02);
+    color: #FFFFFF;
     text-shadow: none;
 }
 
@@ -1112,7 +1119,7 @@ body::after {
 
 /* Градиентная рамка при hover */
 .news-row:hover {
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(20, 20, 20, 0.6));
+    background: rgba(255, 255, 255, 0.04);
 }
 
 /* Дополнительные крипто-символы в углах при hover */
