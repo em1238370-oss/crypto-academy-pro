@@ -9,8 +9,8 @@
 body {
    font-family: 'Poppins', sans-serif;
    background-image: 
-       linear-gradient(rgba(255, 79, 197, 0.04) 1px, transparent 1px),
-       linear-gradient(90deg, rgba(122, 0, 255, 0.04) 1px, transparent 1px),
+       linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+       linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
        url('assets/crypto-academy-bg-v2.png');
    background-repeat: repeat, repeat, no-repeat;
    background-position: 0 0, 0 0, center top;
@@ -33,9 +33,9 @@ body::before {
    content: '';
    position: fixed;
    inset: -40px;
-   background: radial-gradient(circle at 20% 20%, rgba(120, 0, 72, 0.45), transparent 60%),
-       radial-gradient(circle at 80% 10%, rgba(141, 31, 170, 0.4), transparent 55%),
-       radial-gradient(circle at 30% 85%, rgba(112, 0, 92, 0.35), transparent 55%),
+   background: radial-gradient(circle at 20% 20%, rgba(91, 33, 182, 0.12), transparent 60%),
+       radial-gradient(circle at 80% 10%, rgba(124, 58, 237, 0.1), transparent 55%),
+       radial-gradient(circle at 30% 85%, rgba(91, 33, 182, 0.08), transparent 55%),
        linear-gradient(160deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.8));
    pointer-events: none;
    z-index: 0;
@@ -231,8 +231,8 @@ body::after {
 /* Блокчейн-сетка в розово-фиолетовых тонах */
 body {
     background-image: 
-        linear-gradient(rgba(255, 79, 197, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(122, 0, 255, 0.02) 1px, transparent 1px);
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
     background-size: 60px 60px;
 }
 
@@ -398,7 +398,7 @@ html {
    font-family: 'Poppins', sans-serif;
    font-size: 21px;
    font-weight: 400;
-   color: rgba(255, 255, 255, 0.9);
+   color: #cccccc;
    line-height: 1.65;
    margin: 0;
    text-align: center;
@@ -435,7 +435,7 @@ html {
    text-decoration: none;
    color: #FFFFFF;
    background: transparent;
-   border: 9px solid #630038;
+   border: 2px solid rgba(255, 255, 255, 0.15);
    transition: transform 0.3s ease, box-shadow 0.3s ease;
    cursor: pointer;
    box-sizing: border-box;
@@ -560,14 +560,14 @@ html {
    font-size: 16px;
    font-weight: 600;
    cursor: pointer;
-   background: linear-gradient(130deg, #ff4fc5, #7a00ff);
+   background: linear-gradient(135deg, #7c3aed, #5b21b6);
    color: #FFFFFF;
    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .subscription-pay-btn:hover:not(:disabled) {
    transform: scale(1.02) translateY(-2px);
-   box-shadow: 0 12px 30px rgba(122, 0, 255, 0.35);
+   box-shadow: 0 12px 30px rgba(124, 58, 237, 0.25);
    border-radius: inherit;
    opacity: inherit;
 }
@@ -1036,7 +1036,7 @@ html {
    text-align: center;
    padding: 12px 20px;
    border-radius: 16px;
-   background: linear-gradient(120deg, #ff4fc5, #7a00ff);
+   background: linear-gradient(135deg, #7c3aed, #5b21b6);
    color: #FFFFFF;
    text-decoration: none;
    font-weight: 600;
@@ -1050,7 +1050,7 @@ html {
 
 .payment-link:hover {
    transform: scale(1.02) translateY(-1px);
-   box-shadow: 0 12px 24px rgba(122, 0, 255, 0.35);
+   box-shadow: 0 12px 24px rgba(124, 58, 237, 0.25);
    border-radius: inherit;
    opacity: inherit;
 }
@@ -2062,22 +2062,22 @@ html {
     }
 }
 
-/* Дополнительные яркие эффекты для заметности */
+/* Дополнительные эффекты фона - приглушённые */
 body::before {
     background: 
-        radial-gradient(circle at 20% 20%, rgba(120, 0, 72, 0.45), transparent 60%),
-        radial-gradient(circle at 80% 10%, rgba(141, 31, 170, 0.4), transparent 55%),
-        radial-gradient(circle at 30% 85%, rgba(112, 0, 92, 0.35), transparent 55%),
-        radial-gradient(circle at 70% 70%, rgba(255, 79, 197, 0.2), transparent 50%),
-        radial-gradient(circle at 10% 50%, rgba(122, 0, 255, 0.2), transparent 50%),
+        radial-gradient(circle at 20% 20%, rgba(91, 33, 182, 0.1), transparent 60%),
+        radial-gradient(circle at 80% 10%, rgba(124, 58, 237, 0.08), transparent 55%),
+        radial-gradient(circle at 30% 85%, rgba(91, 33, 182, 0.06), transparent 55%),
+        radial-gradient(circle at 70% 70%, rgba(124, 58, 237, 0.05), transparent 50%),
+        radial-gradient(circle at 10% 50%, rgba(91, 33, 182, 0.05), transparent 50%),
         linear-gradient(160deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.8));
 }
 
 /* Усиливаем блокчейн-сетку */
 body {
     background-image: 
-        linear-gradient(rgba(255, 79, 197, 0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(122, 0, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
         url('assets/crypto-academy-bg-v2.png');
 }
 
@@ -3194,7 +3194,7 @@ button:not(.chat-button):not(.send-button):focus {
 /* Subscription and payment buttons */
 .subscription-pay-btn:hover:not(:disabled) {
     transform: scale(1.02) translateY(-2px);
-    box-shadow: 0 12px 30px rgba(122, 0, 255, 0.35);
+    box-shadow: 0 12px 30px rgba(124, 58, 237, 0.25);
     border-radius: inherit;
     opacity: inherit;
 }
@@ -3222,7 +3222,7 @@ button:not(.chat-button):not(.send-button):focus {
 /* Payment links */
 .payment-link:hover {
     transform: scale(1.02) translateY(-1px);
-    box-shadow: 0 12px 24px rgba(122, 0, 255, 0.35);
+    box-shadow: 0 12px 24px rgba(124, 58, 237, 0.25);
     border-radius: inherit;
     opacity: inherit;
 }
