@@ -1429,6 +1429,19 @@ div:has-text("Experience Points") {
     border-bottom-right-radius: 15px !important;
 }
 
+/* Module A: sticky when open — stays fixed on screen when user scrolls */
+.drawer-container:has(#drawerA.open) {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+/* Module A: prevent content overflow */
+#drawerA.open .drawer-content {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+}
+
 /* Уникальный дизайн для FREE блока (drawerA) - ЗОЛОТОЙ когда закрыт */
 #drawerA {
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(20, 10, 0, 0.8) 100%);
@@ -3711,7 +3724,9 @@ div[style*="display:flex"] button:not([style*="flex"]) {
 
 .section-title {
     color: #ffffff;
-    font-size: 1.2rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
     margin-bottom: 15px;
     border-bottom: 2px solid rgba(255, 255, 255, 0.3);
     padding-bottom: 5px;
@@ -3730,13 +3745,17 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     padding: 20px;
     border-radius: 10px;
     border: 1px solid rgba(255, 0, 0, 0.3);
-    line-height: 1.6; /* Улучшенное расстояние между строчками */
+    line-height: 1.6;
+    font-family: 'Poppins', sans-serif;
 }
 
 .portfolio-section h3 {
     color: #ffffff;
-    margin-bottom: 20px; /* Увеличен отступ */
+    margin-bottom: 20px;
     line-height: 1.5;
+    font-size: 1.15rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
 }
 
 .portfolio-input-wrapper {
@@ -3800,19 +3819,26 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     color: #ff6666;
 }
 
+/* Module A: coins grid — same font & colors as other modules, no overflow */
 .coins-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 12px;
     margin-top: 15px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
 }
 
 .coin-card {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.5);
     border: 2px solid rgba(255, 0, 0, 0.3);
     border-radius: 12px;
     padding: 16px;
     min-height: 160px;
+    min-width: 0;
     transition: all 0.3s ease;
     text-align: center;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
@@ -3820,6 +3846,8 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.95rem;
 }
 
 .coin-card:hover {
@@ -3833,11 +3861,16 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     color: #ffffff;
     margin: 0 0 8px 0;
     text-align: center;
-    font-size: 1.1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
 }
 .coin-card label {
     text-align: center;
     width: 100%;
+    color: #cccccc;
+    font-size: 0.9rem;
+    font-family: 'Poppins', sans-serif;
 }
 .coin-card > div {
     width: 100%;
@@ -3903,11 +3936,14 @@ div[style*="display:flex"] button:not([style*="flex"]) {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    font-family: 'Poppins', sans-serif;
 }
 
 .ai-recommendations h4 {
     color: #ffffff;
     margin-bottom: 15px;
+    font-size: 1.15rem;
+    font-weight: 600;
 }
 
 .recommendation-item {
