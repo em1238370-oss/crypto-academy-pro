@@ -3352,7 +3352,3 @@ button:not(.chat-button):not(.send-button):focus {
     opacity: inherit;
 }
 
-/* Скрыть фоновые декоративные элементы для чистого премиум-вида */
-.crypto-background-elements > * {
-    display: none !important;
-}
