@@ -13,6 +13,57 @@ button:focus-visible {
    outline-offset: 3px;
 }
 
+/* Apple-style: минималистичная верхняя навигация */
+.main-nav {
+   position: fixed;
+   top: 0;
+   left: 0;
+   right: 0;
+   z-index: 100;
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   padding: 18px 32px;
+   background: rgba(28, 0, 56, 0.85);
+   backdrop-filter: blur(12px);
+   -webkit-backdrop-filter: blur(12px);
+   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.main-nav-brand {
+   font-family: 'Raleway', sans-serif;
+   font-size: 18px;
+   font-weight: 700;
+   color: #FFFFFF;
+   text-decoration: none;
+   letter-spacing: -0.02em;
+}
+
+.main-nav-links {
+   display: flex;
+   gap: 32px;
+}
+
+.main-nav-links a {
+   font-size: 14px;
+   color: rgba(255, 255, 255, 0.8);
+   text-decoration: none;
+   transition: color 0.2s ease;
+}
+
+.main-nav-links a:hover {
+   color: #FFFFFF;
+}
+
+.explore-heading {
+   font-family: 'Raleway', sans-serif;
+   font-size: 28px;
+   font-weight: 700;
+   color: rgba(255, 255, 255, 0.9);
+   margin-bottom: 48px;
+   letter-spacing: -0.02em;
+}
+
 body {
    font-family: 'Poppins', sans-serif;
    background-image: 
@@ -251,6 +302,7 @@ body {
    position: relative;
    z-index: 1;
    transform: none !important;
+   padding-top: 56px;
 }
 
 .hero {
@@ -291,7 +343,7 @@ body {
    text-align: center;
    max-width: 90vw;
    margin: 0 auto;
-   animation: float 6s ease-in-out infinite;
+   animation: float 25s ease-in-out infinite;
    will-change: transform;
    transform: translateZ(0);
    backface-visibility: hidden;
@@ -300,20 +352,14 @@ body {
 .floating-text span {
    font-style: italic;
    color: #e8c547;
-   text-shadow: 0 0 30px rgba(232, 197, 71, 0.3);
 }
 
 @keyframes float {
-   0% {
+   0%, 100% {
        transform: translate(0, 0);
    }
-
    50% {
-       transform: translate(20px, -20px);
-   }
-
-   100% {
-       transform: translate(0, 0);
+       transform: translate(8px, -8px);
    }
 }
 
@@ -979,8 +1025,27 @@ html {
    opacity: inherit;
 }
 
+@media (max-width: 768px) {
+   .main-nav {
+       padding: 14px 20px;
+   }
+   .main-nav-links {
+       gap: 20px;
+   }
+   .main-nav-links a {
+       font-size: 13px;
+   }
+   .explore-heading {
+       font-size: 22px;
+       margin-bottom: 32px;
+   }
+}
+
 /* Responsive design */
 @media (max-width: 600px) {
+   .main-nav-links {
+       display: none;
+   }
    .hero {
        padding: 40px 16px;
    }
