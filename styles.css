@@ -1767,6 +1767,18 @@ html {
     animation-delay: 8s;
 }
 
+.transaction-data.data-4 {
+    top: 40%;
+    right: 8%;
+    animation-delay: 2s;
+}
+
+.transaction-data.data-5 {
+    top: 85%;
+    left: 15%;
+    animation-delay: 6s;
+}
+
 @keyframes data-fade {
     0%, 100% {
         opacity: 0.3;
@@ -2959,18 +2971,13 @@ body.scrolling .blockchain-block {
     opacity: 0.15 !important;
 }
 
-/* МАКСИМАЛЬНАЯ ОПТИМИЗАЦИЯ - отключаем ВСЕ анимации */
-.crypto-background-elements > * {
-    animation: none !important;
-    will-change: auto !important;
-}
+/* Анимации фоновых элементов включены */
 
-/* Делаем все элементы статичными */
+/* Делаем статичными только элементы, которых нет в HTML */
 .crypto-orb,
 .crypto-glow-circle,
 .crypto-pulse-ring,
 .crypto-coin,
-.blockchain-block,
 .crypto-particle,
 .crypto-connection {
     animation: none !important;
@@ -2996,9 +3003,8 @@ body::before {
     -webkit-backdrop-filter: none !important;
 }
 
-/* Убираем все лишние элементы */
+/* Убираем элементы, которых нет в HTML */
 .crypto-connection,
-.blockchain-block,
 .crypto-particle,
 .crypto-glow-circle,
 .crypto-pulse-ring,
