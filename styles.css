@@ -3408,3 +3408,19 @@ button:not(.chat-button):not(.send-button):focus {
     opacity: inherit;
 }
 
+/* Футер главной страницы */
+.main-footer {
+   padding: 60px 24px 40px;
+   text-align: center;
+   border-top: 1px solid rgba(255, 255, 255, 0.08);
+   margin-top: 40px;
+}
+
+.footer-text {
+   font-family: 'Poppins', sans-serif;
+   font-size: 14px;
+   color: #888888;
+   margin: 0;
+   letter-spacing: 0.02em;
+}
+
