@@ -1287,8 +1287,7 @@ html {
    opacity: 1;
 }
 
-/* План главной: БЛОК 1 — радикальное упрощение фона (Apple-минимализм) */
-.crypto-background-elements .blockchain-grid,
+/* План главной: БЛОК 1 — упрощение фона (оставляем сетку) */
 .crypto-background-elements .blockchain-block,
 .crypto-background-elements .transaction-data,
 .crypto-background-elements .price-chart-line,
