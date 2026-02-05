@@ -33,9 +33,9 @@ body::before {
    content: '';
    position: fixed;
    inset: -40px;
-   background: radial-gradient(circle at 20% 20%, rgba(91, 33, 182, 0.12), transparent 60%),
-       radial-gradient(circle at 80% 10%, rgba(124, 58, 237, 0.1), transparent 55%),
-       radial-gradient(circle at 30% 85%, rgba(91, 33, 182, 0.08), transparent 55%),
+   background: radial-gradient(circle at 20% 20%, rgba(59, 7, 100, 0.15), transparent 60%),
+       radial-gradient(circle at 80% 10%, rgba(91, 33, 182, 0.12), transparent 55%),
+       radial-gradient(circle at 30% 85%, rgba(59, 7, 100, 0.1), transparent 55%),
        linear-gradient(160deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.8));
    pointer-events: none;
    z-index: 0;
@@ -560,14 +560,14 @@ html {
    font-size: 16px;
    font-weight: 600;
    cursor: pointer;
-   background: linear-gradient(135deg, #7c3aed, #5b21b6);
+   background: linear-gradient(135deg, #5b21b6, #3b0764);
    color: #FFFFFF;
    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .subscription-pay-btn:hover:not(:disabled) {
    transform: scale(1.02) translateY(-2px);
-   box-shadow: 0 12px 30px rgba(124, 58, 237, 0.25);
+   box-shadow: 0 12px 30px rgba(91, 33, 182, 0.3);
    border-radius: inherit;
    opacity: inherit;
 }
@@ -1036,7 +1036,7 @@ html {
    text-align: center;
    padding: 12px 20px;
    border-radius: 16px;
-   background: linear-gradient(135deg, #7c3aed, #5b21b6);
+   background: linear-gradient(135deg, #5b21b6, #3b0764);
    color: #FFFFFF;
    text-decoration: none;
    font-weight: 600;
@@ -1050,7 +1050,7 @@ html {
 
 .payment-link:hover {
    transform: scale(1.02) translateY(-1px);
-   box-shadow: 0 12px 24px rgba(124, 58, 237, 0.25);
+   box-shadow: 0 12px 24px rgba(91, 33, 182, 0.3);
    border-radius: inherit;
    opacity: inherit;
 }
@@ -2062,14 +2062,14 @@ html {
     }
 }
 
-/* Дополнительные эффекты фона - приглушённые */
+/* Дополнительные эффекты фона - тёмный фиолетовый */
 body::before {
     background: 
-        radial-gradient(circle at 20% 20%, rgba(91, 33, 182, 0.1), transparent 60%),
-        radial-gradient(circle at 80% 10%, rgba(124, 58, 237, 0.08), transparent 55%),
-        radial-gradient(circle at 30% 85%, rgba(91, 33, 182, 0.06), transparent 55%),
-        radial-gradient(circle at 70% 70%, rgba(124, 58, 237, 0.05), transparent 50%),
-        radial-gradient(circle at 10% 50%, rgba(91, 33, 182, 0.05), transparent 50%),
+        radial-gradient(circle at 20% 20%, rgba(59, 7, 100, 0.12), transparent 60%),
+        radial-gradient(circle at 80% 10%, rgba(91, 33, 182, 0.1), transparent 55%),
+        radial-gradient(circle at 30% 85%, rgba(59, 7, 100, 0.08), transparent 55%),
+        radial-gradient(circle at 70% 70%, rgba(91, 33, 182, 0.06), transparent 50%),
+        radial-gradient(circle at 10% 50%, rgba(59, 7, 100, 0.06), transparent 50%),
         linear-gradient(160deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.8));
 }
 
@@ -3194,7 +3194,7 @@ button:not(.chat-button):not(.send-button):focus {
 /* Subscription and payment buttons */
 .subscription-pay-btn:hover:not(:disabled) {
     transform: scale(1.02) translateY(-2px);
-    box-shadow: 0 12px 30px rgba(124, 58, 237, 0.25);
+    box-shadow: 0 12px 30px rgba(91, 33, 182, 0.3);
     border-radius: inherit;
     opacity: inherit;
 }
@@ -3222,7 +3222,7 @@ button:not(.chat-button):not(.send-button):focus {
 /* Payment links */
 .payment-link:hover {
     transform: scale(1.02) translateY(-1px);
-    box-shadow: 0 12px 24px rgba(124, 58, 237, 0.25);
+    box-shadow: 0 12px 24px rgba(91, 33, 182, 0.3);
     border-radius: inherit;
     opacity: inherit;
 }
