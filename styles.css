@@ -528,14 +528,6 @@ html {
    font-weight: 700;
 }
 
-.mission-tagline {
-   font-size: 13px;
-   color: rgba(255, 255, 255, 0.4);
-   letter-spacing: 0.1em;
-   text-transform: uppercase;
-   margin-top: 16px;
-}
-
 .trust-stats::before {
    content: '';
    position: absolute;
@@ -554,15 +546,6 @@ html {
    color: rgba(255, 255, 255, 0.45);
    letter-spacing: 0.12em;
    text-transform: uppercase;
-   text-align: center;
-}
-
-.trust-sources {
-   width: 100%;
-   margin-top: 12px;
-   font-size: 11px;
-   color: rgba(255, 255, 255, 0.35);
-   letter-spacing: 0.06em;
    text-align: center;
 }
 
