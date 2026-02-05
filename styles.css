@@ -409,6 +409,57 @@ html {
    -moz-osx-font-smoothing: grayscale;
 }
 
+/* Блок доверия / статистика */
+.trust-stats {
+   position: relative;
+   display: flex;
+   justify-content: center;
+   align-items: flex-start;
+   gap: 80px;
+   padding: 60px 24px 80px;
+   margin: 0 auto;
+   max-width: 900px;
+   flex-wrap: wrap;
+}
+
+.trust-stat {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   text-align: center;
+   min-width: 140px;
+}
+
+.trust-stat-number {
+   font-family: 'Raleway', sans-serif;
+   font-size: 48px;
+   font-weight: 700;
+   color: #c9a227;
+   line-height: 1.2;
+   letter-spacing: -0.02em;
+   margin-bottom: 8px;
+}
+
+.trust-stat-label {
+   font-family: 'Poppins', sans-serif;
+   font-size: 14px;
+   font-weight: 400;
+   color: #888888;
+   text-transform: uppercase;
+   letter-spacing: 0.08em;
+}
+
+.trust-stats::before {
+   content: '';
+   position: absolute;
+   left: 50%;
+   top: 0;
+   transform: translateX(-50%);
+   width: 120px;
+   height: 1px;
+   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
 /* Круги начинаются после текста */
 .explore-section {
    padding: 80px 20px 150px;
@@ -434,9 +485,10 @@ html {
    align-items: center;
    text-decoration: none;
    color: #FFFFFF;
-   background: transparent;
+   background: rgba(255, 255, 255, 0.02);
    border: 2px solid rgba(255, 255, 255, 0.15);
-   transition: transform 0.3s ease, box-shadow 0.3s ease;
+   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
    cursor: pointer;
    box-sizing: border-box;
    will-change: transform;
@@ -483,7 +535,8 @@ html {
    transform: scale(1.08);
    z-index: 100 !important;
    position: relative;
-   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.34);
+   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+   border-color: rgba(255, 255, 255, 0.25);
    overflow: visible !important;
 }
 
@@ -896,6 +949,19 @@ html {
    .main-text-description {
        font-size: 16px;
        line-height: 1.6;
+   }
+
+   .trust-stats {
+       gap: 48px;
+       padding: 48px 20px 60px;
+   }
+
+   .trust-stat-number {
+       font-size: 36px;
+   }
+
+   .trust-stat-label {
+       font-size: 12px;
    }
 
    .hero h1 {
