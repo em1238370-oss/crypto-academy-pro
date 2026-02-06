@@ -1011,8 +1011,8 @@ app.post('/api/payments/stripe/webhook', express.raw({ type: 'application/json' 
 });
 
 // --- Dynamic News (Regulation / Macro / Market + News heat) ---
-const NEWS_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min cache for raw articles
-const NEWS_FETCH_INTERVAL_MS = 15 * 60 * 1000; // 15 min fetch (free tier: ~96/day)
+const NEWS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 min cache — faster reaction to new news
+const NEWS_FETCH_INTERVAL_MS = 10 * 60 * 1000; // 10 min background refresh
 let articlesCache = null; // raw articles, refreshed every 10 min
 let articlesCacheTime = 0;
 
@@ -1068,11 +1068,10 @@ function summarizeOne(article, maxLen = 200) {
   return out;
 }
 
-// Pick random from top N articles — different output each call
-function pickFromTop(articles, n = 5) {
+// Use most recent article — reflects latest real news
+function getLatestArticle(articles) {
   if (!articles || articles.length === 0) return null;
-  const top = articles.slice(0, n);
-  return top[Math.floor(Math.random() * top.length)];
+  return articles[0];
 }
 
 async function fetchNewsFromNewsApi() {
@@ -1094,7 +1093,7 @@ async function fetchNewsFromTheNewsApi() {
   if (!theNewsApiKey) return null;
   try {
     const res = await axios.get(
-      `https://api.thenewsapi.net/crypto?apikey=${theNewsApiKey}&q=bitcoin OR ethereum OR crypto&langs=en&size=10`,
+      `https://api.thenewsapi.net/crypto?apikey=${theNewsApiKey}&q=bitcoin OR ethereum OR crypto&langs=en&size=50`,
       { timeout: 8000 }
     );
     const results = res.data?.data?.results || res.data?.results || [];
@@ -1121,34 +1120,49 @@ async function refreshNewsCache() {
     articlesCache = null;
     return;
   }
+  // Sort by publishedAt descending (newest first)
+  articles.sort((a, b) => {
+    const ta = new Date(a.publishedAt || a.published_at || a.published || 0).getTime();
+    const tb = new Date(b.publishedAt || b.published_at || b.published || 0).getTime();
+    return tb - ta;
+  });
   articlesCache = articles;
   articlesCacheTime = Date.now();
 }
 
 function buildDynamicResponse() {
-  // Always build fresh response — random pick each time so text changes every visit
   if (!articlesCache || articlesCache.length === 0) {
     return getRandomFallback();
   }
+  // Articles are sorted by publishedAt (newest first)
   const reg = articlesCache.filter(a => categorizeArticle(a.title, a.description) === 'regulation');
   const macro = articlesCache.filter(a => categorizeArticle(a.title, a.description) === 'macro');
   const market = articlesCache.filter(a => categorizeArticle(a.title, a.description) === 'market');
   const total = articlesCache.length;
+  const now = Date.now();
   const recentCount = articlesCache.filter(a => {
     const pub = a.publishedAt || a.published_at || a.published;
     if (!pub) return true;
     const t = new Date(pub).getTime();
-    return Date.now() - t < 6 * 60 * 60 * 1000;
+    return now - t < 6 * 60 * 60 * 1000; // last 6 hours
   }).length;
+  const veryRecentCount = articlesCache.filter(a => {
+    const pub = a.publishedAt || a.published_at || a.published;
+    if (!pub) return true;
+    const t = new Date(pub).getTime();
+    return now - t < 2 * 60 * 60 * 1000; // last 2 hours
+  }).length;
+  // News heat reacts to market: more recent news = hotter
   let heat = 'balanced';
-  if (total >= 25 || recentCount >= 15) heat = 'hot';
-  else if (total <= 6 || recentCount <= 2) heat = 'calm';
+  if (total >= 20 || recentCount >= 12 || veryRecentCount >= 5) heat = 'hot';
+  else if (total <= 8 || recentCount <= 2 || veryRecentCount === 0) heat = 'calm';
   const defReg = pickFallback(FALLBACK_REGULATION);
   const defMacro = pickFallback(FALLBACK_MACRO);
   const defMarket = pickFallback(FALLBACK_MARKET);
-  const regArt = pickFromTop(reg, 5);
-  const macroArt = pickFromTop(macro, 5);
-  const marketArt = pickFromTop(market, 5);
+  // Use most recent article per category — reflects latest real news
+  const regArt = getLatestArticle(reg);
+  const macroArt = getLatestArticle(macro);
+  const marketArt = getLatestArticle(market);
   return {
     regulation: { text: summarizeOne(regArt) || defReg, url: regArt?.url || null },
     macro: { text: summarizeOne(macroArt) || defMacro, url: macroArt?.url || null },
