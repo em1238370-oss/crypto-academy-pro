@@ -275,51 +275,34 @@ body {
     position: relative;
 }
 
-/* Крупная типографика + глубинные тени */
+/* Hero как News: Raleway, сдержанные размеры */
 .crypto-risk-wrapper h1 {
-    font-size: clamp(56px, 10vw, 140px);
+    font-family: 'Raleway', sans-serif;
+    font-size: clamp(48px, 8vw, 96px);
     margin: 0 0 16px 0;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.97) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
     opacity: 1 !important;
-    letter-spacing: -0.03em;
-    line-height: 1.12;
-    text-shadow: 
-        0 2px 4px rgba(0, 0, 0, 0.4),
-        0 4px 20px rgba(0, 0, 0, 0.3);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
     animation: heroReveal 1s ease-out;
 }
 
-/* Акценты — DuoView: золотой для важного (п.3 плана) */
+/* Акценты — как News: золотой без свечения */
 .crypto-risk-wrapper .hero-accent {
     font-style: italic;
     font-weight: 700;
-    display: inline-block;
-    background: linear-gradient(
-        135deg,
-        var(--risk-gold) 0%,
-        #ffe55c 30%,
-        var(--risk-gold) 50%,
-        #ffec8b 70%,
-        var(--risk-gold) 100%
-    );
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: none;
-    animation: accentShimmer 4s ease-in-out infinite, accentGlow 3s ease-in-out infinite;
-    filter: drop-shadow(0 0 12px var(--risk-gold-soft)) drop-shadow(0 0 30px rgba(255, 215, 0, 0.3));
+    color: var(--risk-gold) !important;
 }
 
-/* Подзаголовок — лаконичный, элегантный */
+/* Подзаголовок — как News subtitle */
 .crypto-risk-wrapper .hero-sub {
-    font-family: 'Raleway', sans-serif;
-    font-size: clamp(14px, 1.8vw, 20px);
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
     font-weight: 600;
-    color: var(--risk-text-secondary) !important;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.75) !important;
+    letter-spacing: 0.02em;
+    text-transform: none;
     margin: 0;
     opacity: 0;
     animation: heroSubReveal 0.8s ease-out 0.4s forwards;
