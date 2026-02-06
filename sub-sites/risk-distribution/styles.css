@@ -26,12 +26,13 @@ body {
 body::before {
     content: '' !important;
     background: 
-        linear-gradient(rgba(150, 220, 150, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(150, 220, 150, 0.03) 1px, transparent 1px),
-        radial-gradient(ellipse at 50% 50%, rgba(0, 60, 0, 0.25), transparent 60%),
+        linear-gradient(rgba(150, 220, 150, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(150, 220, 150, 0.04) 1px, transparent 1px),
+        radial-gradient(ellipse 120% 80% at 50% 0%, rgba(0, 80, 0, 0.2), transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(0, 60, 0, 0.2), transparent 60%),
         #001a00 !important;
-    background-size: 50px 50px, 50px 50px, 100% 100%, 100% 100% !important;
-    background-repeat: repeat, repeat, no-repeat, no-repeat !important;
+    background-size: 50px 50px, 50px 50px, 100% 100%, 100% 100%, 100% 100% !important;
+    background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat !important;
 }
 body::after {
     background: rgba(0, 0, 0, 0.06) !important;
@@ -43,14 +44,17 @@ body::after {
     border-bottom: 1px solid rgba(150, 220, 150, 0.12) !important;
 }
 
-/* Hero accent — светлый на зелёном */
+/* Hero accent — DuoView: золотой точечно для важного */
 .news-hero-title .hero-accent {
-    color: #9FE89F !important;
+    color: #B8E8B0 !important;
+    text-shadow: 0 0 24px rgba(212, 175, 55, 0.15);
 }
 
-/* Content glow */
+/* Content glow — два мягких луча */
 .content::after {
-    background: radial-gradient(circle, rgba(159, 232, 159, 0.05), transparent 70%) !important;
+    background: 
+        radial-gradient(ellipse 400px 400px at 15% 85%, rgba(159, 232, 159, 0.04), transparent),
+        radial-gradient(ellipse 300px 300px at 85% 15%, rgba(212, 175, 55, 0.03), transparent) !important;
 }
 
 /* Scroll-progress линия */
@@ -72,7 +76,7 @@ body::after {
     top: 0;
     width: 100%;
     height: var(--progress);
-    background: linear-gradient(180deg, rgba(159, 232, 159, 0.4), #9FE89F);
+    background: linear-gradient(180deg, rgba(159, 232, 159, 0.5), #9FE89F, rgba(212, 175, 55, 0.4));
     transition: height 0.1s ease-out;
 }
 
@@ -86,7 +90,7 @@ html {
     width: 80px;
     height: 2px;
     margin: 0 auto 48px;
-    background: linear-gradient(90deg, transparent, rgba(159, 232, 159, 0.5), transparent);
+    background: linear-gradient(90deg, transparent, rgba(159, 232, 159, 0.6), rgba(212, 175, 55, 0.25), rgba(159, 232, 159, 0.6), transparent);
 }
 
 .risk-section-reveal,
@@ -174,6 +178,7 @@ html {
 .risk-trust-stat:hover {
     background: rgba(0, 0, 0, 0.22);
     transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 .risk-trust-number {
     font-family: 'Raleway', sans-serif;
@@ -192,6 +197,8 @@ html {
 }
 .risk-trust-hero .risk-trust-number {
     font-size: clamp(48px, 7vw, 72px);
+    color: #B8E8B0;
+    text-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
 }
 
 .risk-section {
@@ -634,6 +641,7 @@ html {
 
 .risk-calculator-wrapper button:hover {
     background: linear-gradient(135deg, #3dab3d 0%, #2D8B2D 100%);
+    box-shadow: 0 4px 16px rgba(45, 139, 45, 0.35);
 }
 
 .magnetic-wrap:hover .risk-calculator-wrapper button {
@@ -713,7 +721,7 @@ html {
 .strategy:hover {
     background: rgba(0, 0, 0, 0.22);
     transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
 }
 
 .strategy-title {
