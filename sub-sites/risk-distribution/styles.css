@@ -3,7 +3,7 @@
 
 /* Переопределяем News-переменные для Risk (DuoView Pro палитра) */
 :root {
-    --news-bg: #F5F5F0;
+    --news-bg: #E8F4E8;
     --news-text: #1A1A1A;
     --news-accent: #2D6B2D;
     --news-highlight: #1A1A1A;
@@ -19,26 +19,29 @@
     --progress: 0%;
 }
 
-/* Фон Risk — светлый, чёрный шрифт */
+/* Фон Risk — светлые оттенки зелёного */
 body {
-    background: #F5F5F0 !important;
+    background: #E8F4E8 !important;
 }
 body::before {
     content: '' !important;
     background: 
-        linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-        #F5F5F0 !important;
-    background-size: 50px 50px, 50px 50px, 100% 100% !important;
+        linear-gradient(rgba(45, 107, 45, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(45, 107, 45, 0.04) 1px, transparent 1px),
+        radial-gradient(ellipse at 20% 20%, rgba(150, 200, 150, 0.15), transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(120, 180, 120, 0.1), transparent 50%),
+        #E8F4E8 !important;
+    background-size: 50px 50px, 50px 50px, 100% 100%, 100% 100%, 100% 100% !important;
+    background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat !important;
 }
 body::after {
     background: transparent !important;
 }
 
-/* Nav — светлый */
+/* Nav — светлый зелёный оттенок */
 .main-nav {
-    background: rgba(245, 245, 240, 0.96) !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background: rgba(232, 244, 232, 0.96) !important;
+    border-bottom: 1px solid rgba(45, 107, 45, 0.12) !important;
 }
 
 /* Hero accent — тёмный зелёный на светлом фоне */
@@ -602,7 +605,7 @@ html {
 }
 
 .risk-calculator-wrapper select option {
-    background: #F5F5F0;
+    background: #E8F4E8;
     color: #1A1A1A;
 }
 
