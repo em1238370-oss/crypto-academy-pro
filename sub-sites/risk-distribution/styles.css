@@ -295,12 +295,67 @@ body {
     50% { filter: drop-shadow(0 0 18px rgba(150, 248, 145, 0.7)) drop-shadow(0 0 40px var(--risk-accent-dim)); }
 }
 
-/* Текст о риск-менеджменте — воздух, удобно читать */
+/* Секции — DuoView: логичная последовательность, визуальные блоки */
+.risk-section {
+    width: 100%;
+    max-width: 90%;
+    margin: 0 auto var(--risk-section-gap);
+    padding: 0 24px;
+}
+
+.risk-section-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.95);
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+    text-align: center;
+    position: relative;
+}
+
+.risk-section-title::after {
+    content: '';
+    display: block;
+    width: 48px;
+    height: 1px;
+    margin: 16px auto 0;
+    background: linear-gradient(90deg, transparent, var(--risk-accent-dim), transparent);
+    opacity: 0.7;
+}
+
+.risk-section-sub {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    color: var(--risk-text-secondary);
+    text-align: center;
+    margin: -8px 0 40px;
+    letter-spacing: 0.05em;
+}
+
+.risk-calculator-heading {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(24px, 3vw, 36px) !important;
+    font-weight: 600 !important;
+    color: #FFFFFF !important;
+    margin-bottom: 32px !important;
+    text-align: center;
+}
+
+/* DuoView: каждая секция — чёткие границы через отступы */
+.risk-section:first-of-type {
+    margin-top: var(--risk-section-gap);
+}
+
+.risk-section + .risk-section {
+    margin-top: 0;
+}
+
 .risk-text-wrapper {
     background: transparent;
     margin: 0 auto;
-    margin-top: 10cm;
-    margin-bottom: var(--risk-section-gap);
+    margin-top: 0;
+    margin-bottom: 0;
     padding: var(--risk-block-padding) 40px;
     font-family: 'Orbitron', sans-serif;
     opacity: 1 !important;
@@ -420,61 +475,12 @@ body {
     }
 }
 
-/* Why Risk Distribution Matters */
-.floating-text-wrapper {
-    background: transparent;
-    margin: 0 auto;
-    margin-left: 20px;
-    margin-top: 5cm;
-    margin-bottom: var(--risk-section-gap);
-    padding: var(--risk-block-padding) 40px;
-    font-family: 'Orbitron', sans-serif;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
-.floating-text {
-    font-size: clamp(36px, 6vw, 72px);
-    color: #ffffff !important;
-    font-weight: 700;
-    line-height: 1.5;
-    letter-spacing: -0.01em;
-    text-align: left;
-    opacity: 1 !important;
-    visibility: visible !important;
-    animation: floatRiskMove 6s ease-in-out infinite;
-    text-shadow: 0 0 8px var(--risk-accent-dim), 0 0 20px rgba(150, 248, 145, 0.15);
-}
-
-.floating-text span {
-    font-style: italic;
-}
-
-@keyframes floatRiskMove {
-    0% {
-        transform: translate(0, 0);
-        opacity: 1;
-        color: #ffffff;
-    }
-    50% {
-        transform: translate(20px, -20px);
-        opacity: 1;
-        color: #ffffff;
-    }
-    100% {
-        transform: translate(0, 0);
-        opacity: 1;
-        color: #ffffff;
-    }
-}
-
-/* Crypto markets... */
+/* Section 2 content */
 .crypto-storm-wrapper {
     background: transparent;
     margin: 0 auto;
-    margin-bottom: var(--risk-section-gap);
     padding: var(--risk-block-padding) 40px;
-    margin-top: 2.5cm;
+    margin-top: 0;
     font-family: 'Orbitron', sans-serif;
     opacity: 1 !important;
     visibility: visible !important;
@@ -540,7 +546,7 @@ body {
     }
 }
 
- borderPulse {
+@keyframes borderPulse {
     0%, 100% {
         box-shadow: 
             0 0 20px rgba(150, 248, 145, 0.25),
@@ -557,7 +563,7 @@ body {
     }
 }
 
- symbolFloat {
+@keyframes symbolFloat {
     0%, 100% {
         transform: translateY(0) scale(1);
         opacity: 0.3;
@@ -567,75 +573,6 @@ body {
         opacity: 0.6;
     }
 }
-
-/* Легкий градиентный фон */
-
-/* Улучшенный hover эффект */
-
- borderPulse {
-    0%, 100% {
-        box-shadow: 
-            0 0 20px rgba(150, 248, 145, 0.25),
-            0 0 40px rgba(150, 248, 145, 0.12),
-            inset 0 0 30px rgba(150, 248, 145, 0.06);
-        border-color: var(--risk-accent);
-    }
-    50% {
-        box-shadow: 
-            0 0 30px rgba(150, 248, 145, 0.4),
-            0 0 60px rgba(150, 248, 145, 0.2),
-            inset 0 0 40px rgba(150, 248, 145, 0.08);
-        border-color: #7ae87a;
-    }
-}
-
- symbolFloat {
-    0%, 100% {
-        transform: translateY(0) scale(1);
-        opacity: 0.3;
-    }
-    50% {
-        transform: translateY(-8px) scale(1.1);
-        opacity: 0.6;
-    }
-}
-
-/* Легкий градиентный фон */
-
-/* Улучшенный hover эффект */
-
-}
-
-}
-
-/* ОПАСНОЕ ПУЛЬСИРОВАНИЕ */
-
-}
-
-/* ОСТРОЕ СВЕЧЕНИЕ */
-
-}
-
-/* ОПАСНОЕ ВРАЩЕНИЕ МОЛНИИ */
-
-    50% {
-        transform: rotate(0deg) scale(1.2);
-    }
-    75% {
-        transform: rotate(15deg) scale(1.1);
-    }
-}
-
-/* ОПАСНОЕ ТРЯСЕНИЕ ПРЕДУПРЕЖДЕНИЯ */
-
-    20%, 40%, 60%, 80% {
-        transform: translate(3px, 3px) rotate(5deg);
-    }
-}
-
-/* УЛУЧШЕННЫЙ HOVER - ОПАСНОЕ РЕАГИРОВАНИЕ */
-
-/* ДОПОЛНИТЕЛЬНЫЕ ОСТРЫЕ ЭЛЕМЕНТЫ - УГЛЫ */
 
 .why-section {
     margin-top: 20px;
@@ -672,7 +609,7 @@ body {
     }
     .risk-trust-stats {
         gap: 48px;
-        padding: 40px 20px 60px;
+        padding: 40px 20px;
     }
     .risk-trust-number {
         font-size: 36px;
@@ -703,8 +640,8 @@ body {
     justify-content: center;
     align-items: flex-start;
     gap: 72px;
-    padding: var(--risk-block-padding) 24px 80px;
-    margin: 0 auto;
+    padding: var(--risk-block-padding) 24px;
+    margin: 0 auto var(--risk-section-gap);
     max-width: 900px;
     flex-wrap: wrap;
     position: relative;
@@ -849,15 +786,7 @@ body {
     font-weight: 700;
 }
 
-
-
-/* Усиленная пульсация свечения */
-
-}
-
 /* БОЛЬШИЕ символы биткоина во всех 4 углах */
-
-
 
 
 /* Дополнительные символы в других углах через wrapper */
@@ -899,23 +828,7 @@ body {
     position: relative;
 }
 
-
-}
-
-/* УСИЛЕННЫЙ hover эффект - больше подъем и свечение */
-
-
-/* Легкая пульсация свечения - только box-shadow */
-
-}
-
 /* Декоративные крипто-символы в углах - только 2 штуки */
-
-
-
-
-
-}
 
 /* Улучшенный hover эффект */
 
@@ -940,14 +853,6 @@ body {
         radial-gradient(circle at 80% 70%, rgba(150, 248, 145, 0.08) 0%, transparent 60%);
 }
 
-.risk-calculator-wrapper h1 {
-    color: #FFFFFF !important;
-    font-size: 48px;
-    margin-bottom: 30px;
-    text-align: center;
-    font-weight: 600;
-    opacity: 1 !important;
-}
 
 .form-wrapper {
     display: flex;
@@ -1078,7 +983,7 @@ body {
     margin-top: 56px;
 }
 
-.risk-calculator-wrapper .results h2 {
+.results-title {
     color: #FFFFFF !important;
     font-size: 28px;
     margin-bottom: 20px;
@@ -1265,40 +1170,17 @@ body {
     /* Усиленная пульсация свечения */
     animation: gentleGlowPulse 3s ease-in-out infinite;
 }
-
-/* Усиленная пульсация свечения */
-
 }
 
-/* БОЛЬШИЕ символы биткоина во всех 4 углах */
-
-
-
-
 /* Дополнительные символы в других углах через wrapper */
-
 
 .risk-calculator-wrapper {
     position: relative;
 }
 
-
-}
-
-/* УСИЛЕННЫЙ hover эффект - больше подъем и свечение */
-
-
-/* Легкая пульсация свечения - только box-shadow */
-
-/* Декоративные крипто-символы в углах - только 2 штуки */
-
-
-
-/* Улучшенный hover эффект */
-
-    
-    .risk-calculator-wrapper h1 {
-        font-size: 36px;
+@media (max-width: 768px) {
+    .risk-calculator-heading {
+        font-size: 28px !important;
     }
 }
 
