@@ -26,9 +26,9 @@
    </nav>
    <div class="page" id="top">
        <div class="content">
-           <!-- Hero — статичный, без хаотичных анимаций (Apple) -->
+           <!-- Hero — A/B тест заголовка (варианты из плана) -->
            <section class="news-hero">
-               <h1 class="news-hero-title">Essential News.</h1>
+               <h1 class="news-hero-title" data-variant-a="Essential News." data-variant-b="News that helps you choose.">Essential News.</h1>
                <p class="news-hero-subtitle">Curated sources. No hype.</p>
                <p class="news-hero-description">Five sources we trust—clear coverage, actionable insights. Stay informed. Make better decisions.</p>
            </section>
@@ -181,6 +181,19 @@
    <script src="https://unpkg.com/lenis@1.3.17/dist/lenis.min.js"></script>
    <script src="../../scripts/smooth-scroll.js"></script>
    <script src="../../scripts/chatbot.js?v=28"></script>
+   <script>
+       (function() {
+           var key = 'news-hero-ab';
+           var title = document.querySelector('.news-hero-title');
+           if (!title || !title.dataset.variantA || !title.dataset.variantB) return;
+           var variant = sessionStorage.getItem(key);
+           if (!variant) {
+               variant = Math.random() < 0.5 ? 'a' : 'b';
+               sessionStorage.setItem(key, variant);
+           }
+           title.textContent = variant === 'a' ? title.dataset.variantA : title.dataset.variantB;
+       })();
+   </script>
 </body>
 </html>
 
