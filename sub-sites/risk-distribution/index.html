@@ -69,11 +69,11 @@
                        <span class="risk-trust-number" data-count="3">0</span>
                        <span class="risk-trust-label">Strategies per result—compare & choose</span>
                    </div>
-                   <div class="risk-trust-stat">
+                   <div class="risk-trust-stat risk-trust-reveal">
                        <span class="risk-trust-number">AI</span>
                        <span class="risk-trust-label">Powered explanations</span>
                    </div>
-                   <div class="risk-trust-stat">
+                   <div class="risk-trust-stat risk-trust-reveal">
                        <span class="risk-trust-number">Free</span>
                        <span class="risk-trust-label">No subscription</span>
                    </div>
@@ -505,6 +505,23 @@
                });
            }, opts);
            els.forEach(function(el) { observer.observe(el); });
+       })();
+
+       // Trust stats AI/Free — staggered reveal при появлении
+       (function() {
+           if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+           const cards = document.querySelectorAll('.risk-trust-reveal');
+           const obs = new IntersectionObserver(function(entries) {
+               entries.forEach(function(e) {
+                   if (!e.isIntersecting) return;
+                   obs.unobserve(e.target);
+                   e.target.classList.add('risk-trust-revealed');
+               });
+           }, { threshold: 0.3 });
+           cards.forEach(function(c, i) {
+               c.style.transitionDelay = (i * 0.1) + 's';
+               obs.observe(c);
+           });
        })();
    </script>
    

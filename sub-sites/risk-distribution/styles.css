@@ -353,10 +353,21 @@ body {
     margin-bottom: 16px;
     opacity: 0.9;
     text-align: center;
+    transition: opacity var(--risk-transition), letter-spacing var(--risk-transition);
+}
+
+.risk-section:hover .risk-section-num {
+    opacity: 1;
+    letter-spacing: 0.35em;
 }
 
 .risk-section-num-trust {
     text-align: center;
+}
+
+.risk-trust-stats:hover .risk-section-num-trust {
+    opacity: 1;
+    letter-spacing: 0.35em;
 }
 
 /* Scroll-reveal: появление при прокрутке */
@@ -797,7 +808,17 @@ body {
     background: rgba(150, 248, 145, 0.04);
     border: 1px solid rgba(150, 248, 145, 0.15);
     border-radius: 12px;
-    transition: background var(--risk-transition), border-color var(--risk-transition), transform var(--risk-transition);
+    transition: background var(--risk-transition), border-color var(--risk-transition), transform var(--risk-transition), opacity var(--risk-transition);
+}
+
+.risk-trust-reveal {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+}
+
+.risk-trust-reveal.risk-trust-revealed {
+    opacity: 1;
+    transform: translateY(0) scale(1);
 }
 
 .risk-trust-stat:hover {
@@ -1275,6 +1296,8 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-left: 3px solid var(--risk-accent);
     transition: background var(--risk-transition), border-color var(--risk-transition), transform 0.25s ease;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
 }
 
 .strategy:hover {
