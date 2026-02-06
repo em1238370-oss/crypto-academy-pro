@@ -296,9 +296,9 @@ body::after {
 .news-heat {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: center;
     gap: 6px;
-    text-align: right;
+    text-align: center;
 }
 
 .news-heat-label {
@@ -456,6 +456,7 @@ body::after {
     font-weight: 700;
     color: var(--news-text);
     margin-bottom: 12px;
+    text-align: center;
 }
 
 .signal-noise-intro {
@@ -644,6 +645,7 @@ body::after {
     font-weight: 700;
     color: var(--news-text);
     margin-bottom: 12px;
+    text-align: center;
 }
 
 .editor-lens-text {
