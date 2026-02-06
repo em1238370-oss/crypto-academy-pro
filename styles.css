@@ -1371,10 +1371,13 @@ html {
    }
 }
 
-/* Hero и первый блок — сразу видны */
+/* Hero, круги навигации и первый блок — сразу видны */
 .hero,
-.crypto-background-elements {
-   opacity: 1;
+.crypto-background-elements,
+.explore-section,
+.explore-section .menu-item,
+.explore-section .oval-item {
+   opacity: 1 !important;
 }
 
 /* Animation for form elements */
