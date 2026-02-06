@@ -87,6 +87,14 @@ body::after {
     background: rgba(0, 0, 0, 0.06) !important;
 }
 
+/* Футер Risk — как News, в зелёной палитре */
+.news-footer {
+    border-top-color: rgba(150, 220, 150, 0.15) !important;
+}
+.news-footer::before {
+    background: linear-gradient(90deg, transparent, rgba(159, 232, 159, 0.5), transparent) !important;
+}
+
 /* Nav — зелёный */
 .main-nav {
     background: rgba(0, 26, 0, 0.94) !important;
