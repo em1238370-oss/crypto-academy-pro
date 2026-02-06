@@ -10,161 +10,78 @@
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
-   <link href="https://fonts.googleapis.com/css2?family=TT+Firs+Neue:wght@400;700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="styles.css">
+   <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
 </head>
 <body>
-   <nav class="news-nav">
-       <a href="../../index.html" class="news-nav-link">← Back to Crypto Academy Pro</a>
+   <!-- Навигация как на главной (DuoView + Apple) -->
+   <nav class="main-nav" aria-label="Main navigation">
+       <a href="../../index.html" class="main-nav-brand">Crypto Academy Pro</a>
+       <div class="main-nav-links">
+           <a href="index.html" class="active">News</a>
+           <a href="../risk-distribution/index.html" target="_blank">Risk</a>
+           <a href="../crypto-basics/index.html" target="_blank">Basics</a>
+           <a href="../crypto-coach/index.html" target="_blank">Coach</a>
+       </div>
    </nav>
    <div class="page">
        <div class="content">
-           <!-- Крипто-элементы фона -->
-           <div class="crypto-elements">
-               <div class="crypto-node node-1"></div>
-               <div class="crypto-node node-2"></div>
-               <div class="crypto-node node-3"></div>
-               <div class="crypto-line line-1"></div>
-               <div class="crypto-line line-2"></div>
-               <div class="crypto-line line-3"></div>
-           </div>
+           <!-- Hero — статичный, без хаотичных анимаций (Apple) -->
+           <section class="news-hero">
+               <h1 class="news-hero-title">Essential News.</h1>
+               <p class="news-hero-subtitle">Curated sources. No hype.</p>
+               <p class="news-hero-description">Five sources we trust—clear coverage, actionable insights. Stay informed. Make better decisions.</p>
+           </section>
            
-           <!-- Крипто-график в фоне -->
-           <div class="crypto-chart">
-               <svg class="chart-line" viewBox="0 0 200 100" preserveAspectRatio="none">
-                   <polyline points="0,80 20,70 40,60 60,65 80,50 100,45 120,40 140,35 160,30 180,25 200,20" 
-                             fill="none" stroke="rgba(255, 204, 21, 0.3)" stroke-width="2"/>
-               </svg>
-           </div>
-           
-           <!-- Новостной тикер -->
-           <div class="news-ticker">
-               <div class="ticker-content">
-                   <span class="ticker-item">📰 Bitcoin surges 5% on regulatory clarity</span>
-                   <span class="ticker-item">📰 Ethereum upgrade boosts network efficiency</span>
-                   <span class="ticker-item">📰 Market cap reaches new milestone</span>
-                   <span class="ticker-item">📰 Institutional adoption accelerates</span>
-               </div>
-           </div>
-           
-           <!-- Индикатор волатильности -->
-           <div class="volatility-indicator">
-               <div class="volatility-bar"></div>
-               <span class="volatility-label">Market Activity</span>
-           </div>
-           
-           <div class="header">
-               <div class="line">
-                   <span class="word">News</span>
-                   <span class="word">that</span>
-                   <span class="word">helps</span>
-                   <span class="word">to</span>
-                   <span class="word">make</span>
-               </div>
-               <div class="line">
-                   <span class="word">the</span>
-                   <span class="word italic">right</span>
-                   <span class="word">choice!</span>
-               </div>
-           </div>
-           <div class="overlay-text">
-               In today's crypto market, technical analysis alone is no longer enough. News drives price movements—regulatory announcements, market updates, and global events can cause sudden volatility. We've curated five essential sources that respect your time: clear, actionable, no fluff. Stay informed. Make better decisions.
-           </div>
-           <div class="floating-text">
-               <span class="word">Essential</span>
-               <span class="word">News</span>
-               <span class="word">Sources</span>
-               <span class="word">for</span>
-               <span class="word italic">Informed</span>
-               <span class="word">Decisions</span>
-           </div>
-           <div class="overlay-text-secondary">
-               Curated with care. Five sources we trust—clear coverage, actionable insights. No overwhelm, no hype.
-           </div>
+           <!-- Блок доверия (DuoView) -->
+           <section class="news-trust-stats">
+               <p class="news-trust-badge">5 curated sources • Updated regularly • No sponsored content</p>
+               <p class="news-trust-tagline">Selected for: clarity, reliability, no hype.</p>
+           </section>
            
            <div class="news-sources-section">
                <h2 class="section-title">Essential Crypto News Sources</h2>
                <div class="news-table-container">
                    <!-- Cointelegraph -->
-                   <div class="news-row">
-                       <div class="blockchain-corner top-left"></div>
-                       <div class="blockchain-corner top-right"></div>
-                       <div class="blockchain-corner bottom-left"></div>
-                       <div class="blockchain-corner bottom-right"></div>
-                       <div class="blockchain-connector"></div>
-                       <div class="crypto-pulse"></div>
-                       <div class="crypto-symbol btc">₿</div>
-                       <div class="crypto-symbol eth">Ξ</div>
+                   <a href="https://cointelegraph.com" target="_blank" rel="noopener noreferrer" class="news-row">
                        <div class="news-site">Cointelegraph</div>
                        <div class="news-description">Leading source of crypto news with infographics on news (regulations, hype), price/trend charts, video analytics — embeddable news and chart widgets.</div>
-                       <a href="https://cointelegraph.com" target="_blank" class="news-link">Visit Site</a>
-                   </div>
+                       <span class="news-link">Visit</span>
+                   </a>
                    
                    <!-- CoinDesk -->
-                   <div class="news-row">
-                       <div class="blockchain-corner top-left"></div>
-                       <div class="blockchain-corner top-right"></div>
-                       <div class="blockchain-corner bottom-left"></div>
-                       <div class="blockchain-corner bottom-right"></div>
-                       <div class="blockchain-connector"></div>
-                       <div class="crypto-pulse"></div>
-                       <div class="crypto-symbol btc">₿</div>
-                       <div class="crypto-symbol eth">Ξ</div>
+                   <a href="https://www.coindesk.com" target="_blank" rel="noopener noreferrer" class="news-row">
                        <div class="news-site">CoinDesk</div>
                        <div class="news-description">In-depth news and analytics focused on the market. Charts tied to news (trading volumes, flash crashes), interactive reports — embeddable alerts and visuals.</div>
-                       <a href="https://www.coindesk.com" target="_blank" class="news-link">Visit Site</a>
-                   </div>
+                       <span class="news-link">Visit</span>
+                   </a>
                    
                    <!-- The Block -->
-                   <div class="news-row">
-                       <div class="blockchain-corner top-left"></div>
-                       <div class="blockchain-corner top-right"></div>
-                       <div class="blockchain-corner bottom-left"></div>
-                       <div class="blockchain-corner bottom-right"></div>
-                       <div class="blockchain-connector"></div>
-                       <div class="crypto-pulse"></div>
-                       <div class="crypto-symbol btc">₿</div>
-                       <div class="crypto-symbol eth">Ξ</div>
+                   <a href="https://www.theblock.co" target="_blank" rel="noopener noreferrer" class="news-row">
                        <div class="news-site">The Block</div>
                        <div class="news-description">Professional-grade crypto news and research with institutional focus. Data-driven reporting on DeFi, institutional adoption, and market analysis.</div>
-                       <a href="https://www.theblock.co" target="_blank" class="news-link">Visit Site</a>
-                   </div>
+                       <span class="news-link">Visit</span>
+                   </a>
                    
                    <!-- Decrypt -->
-                   <div class="news-row">
-                       <div class="blockchain-corner top-left"></div>
-                       <div class="blockchain-corner top-right"></div>
-                       <div class="blockchain-corner bottom-left"></div>
-                       <div class="blockchain-corner bottom-right"></div>
-                       <div class="blockchain-connector"></div>
-                       <div class="crypto-pulse"></div>
-                       <div class="crypto-symbol btc">₿</div>
-                       <div class="crypto-symbol eth">Ξ</div>
+                   <a href="https://decrypt.co" target="_blank" rel="noopener noreferrer" class="news-row">
                        <div class="news-site">Decrypt</div>
                        <div class="news-description">Accessible crypto news with clear explanations for beginners and experts alike. Covers DeFi, NFTs, and emerging blockchain technologies.</div>
-                       <a href="https://decrypt.co" target="_blank" class="news-link">Visit Site</a>
-                   </div>
+                       <span class="news-link">Visit</span>
+                   </a>
                    
                    <!-- Bitcoin Magazine -->
-                   <div class="news-row">
-                       <div class="blockchain-corner top-left"></div>
-                       <div class="blockchain-corner top-right"></div>
-                       <div class="blockchain-corner bottom-left"></div>
-                       <div class="blockchain-corner bottom-right"></div>
-                       <div class="blockchain-connector"></div>
-                       <div class="crypto-pulse"></div>
-                       <div class="crypto-symbol btc">₿</div>
-                       <div class="crypto-symbol eth">Ξ</div>
+                   <a href="https://bitcoinmagazine.com" target="_blank" rel="noopener noreferrer" class="news-row">
                        <div class="news-site">Bitcoin Magazine</div>
                        <div class="news-description">The oldest and most established Bitcoin publication. Deep technical analysis, market insights, and Bitcoin-focused news coverage.</div>
-                       <a href="https://bitcoinmagazine.com" target="_blank" class="news-link">Visit Site</a>
-                   </div>
+                       <span class="news-link">Visit</span>
+                   </a>
                </div>
            </div>
            <footer class="news-footer">
                <p class="news-footer-text">Crypto Academy Pro — tools for those who think for themselves.</p>
                <p class="news-footer-crafted">Crafted with respect for your time.</p>
-               <a href="../../index.html" class="news-footer-link">Back to main</a>
+               <a href="../../index.html" class="news-footer-link">← Back to main</a>
            </footer>
        </div>
    </div>
@@ -228,6 +145,8 @@
        </div>
    </div>
    
+   <script src="https://unpkg.com/lenis@1.3.17/dist/lenis.min.js"></script>
+   <script src="../../scripts/smooth-scroll.js"></script>
    <script src="../../scripts/chatbot.js?v=28"></script>
 </body>
 </html>
