@@ -48,13 +48,26 @@
 
           <!-- What actually matters today + News heat -->
           <section class="news-today">
-              <div class="news-today-header">
-                  <h2 class="news-today-title">What actually matters today</h2>
-                  <div class="news-heat" aria-label="Current news intensity">
-                      <span class="news-heat-label">News heat</span>
-                      <span class="news-heat-value news-heat-balanced">Balanced</span>
-                  </div>
-              </div>
+             <div class="news-today-header">
+                 <h2 class="news-today-title">What actually matters today</h2>
+                 <div class="news-heat" aria-label="Current news intensity">
+                     <span class="news-heat-label">News heat</span>
+                     <div class="news-heat-scale">
+                         <div class="news-heat-point">
+                             <span class="news-heat-dot"></span>
+                             <span class="news-heat-point-label">Calm</span>
+                         </div>
+                         <div class="news-heat-point news-heat-point--active">
+                             <span class="news-heat-dot"></span>
+                             <span class="news-heat-point-label">Balanced</span>
+                         </div>
+                         <div class="news-heat-point">
+                             <span class="news-heat-dot"></span>
+                             <span class="news-heat-point-label">Hot</span>
+                         </div>
+                     </div>
+                 </div>
+             </div>
               <ul class="news-today-list">
                   <li class="news-today-item">
                       <span class="news-today-tag">Regulation</span>
