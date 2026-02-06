@@ -4,12 +4,12 @@
 /* Переопределяем News-переменные для Risk (DuoView Pro палитра) */
 :root {
     --news-bg: #001800;
-    --news-text: #F5F5F5;
+    --news-text: #FFFFFF;
     --news-accent: #9FE89F;
-    --news-highlight: #E8E8E8;
-    --news-subtle: #cccccc;
-    --news-muted: #888888;
-    --news-dim: #666666;
+    --news-highlight: #FFFFFF;
+    --news-subtle: #E8E8E8;
+    --news-muted: #CCCCCC;
+    --news-dim: #AAAAAA;
     --risk-bg-base: #001800;
     --risk-accent: #9FE89F;
     --risk-accent-dim: rgba(159, 232, 159, 0.25);
