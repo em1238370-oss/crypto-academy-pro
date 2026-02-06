@@ -222,17 +222,23 @@ body {
     animation: floatRisk 6s ease-in-out infinite;
 }
 
+/* DuoView п.2: Hero — крупная типографика 140px+, контраст иерархии */
 .crypto-risk-wrapper h1 {
-    font-size: 130px;
+    font-size: clamp(48px, 10vw, 140px);
     margin: 0;
     font-weight: 700;
-    text-shadow: 0 0 3px #96F891, 0 0 6px #96F891;
-    color: #ffffff !important;
+    color: rgba(255, 255, 255, 0.95) !important;
     opacity: 1 !important;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
 }
 
-.crypto-risk-wrapper .italic {
+.crypto-risk-wrapper .hero-accent {
     font-style: italic;
+    color: #ffd700 !important;
+    text-shadow: 
+        0 0 20px rgba(255, 215, 0, 0.5),
+        0 0 40px rgba(255, 215, 0, 0.25);
 }
 
 @keyframes floatRisk {
