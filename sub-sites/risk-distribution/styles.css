@@ -1,18 +1,19 @@
 /* Risk = News + только переопределения фона и Risk-специфики */
+/* DuoView: акценты точечно, градации серого для глубины, не дешёвый жёлтый */
 
-/* Переопределяем News-переменные для Risk (зелёный фон) */
+/* Переопределяем News-переменные для Risk (DuoView Pro палитра) */
 :root {
     --news-bg: #001800;
-    --news-text: rgba(255, 255, 255, 0.95);
-    --news-accent: #96F891;
-    --news-highlight: rgba(255, 255, 255, 0.9);
-    --news-subtle: rgba(255, 255, 255, 0.82);
-    --news-muted: rgba(255, 255, 255, 0.58);
-    --news-dim: rgba(255, 255, 255, 0.45);
+    --news-text: #F5F5F5;
+    --news-accent: #9FE89F;
+    --news-highlight: #E8E8E8;
+    --news-subtle: #cccccc;
+    --news-muted: #888888;
+    --news-dim: #666666;
     --risk-bg-base: #001800;
-    --risk-accent: #96F891;
-    --risk-accent-dim: rgba(150, 248, 145, 0.25);
-    --risk-gold: #ffd700;
+    --risk-accent: #9FE89F;
+    --risk-accent-dim: rgba(159, 232, 159, 0.25);
+    --risk-gold: #D4AF37;
     --risk-transition: 0.3s ease;
     --progress: 0%;
 }
@@ -38,14 +39,14 @@ body::after {
     background: rgba(0, 24, 0, 0.94) !important;
 }
 
-/* Hero accent — золотой */
+/* Hero accent — DuoView: золотой точечно, премиальный оттенок */
 .news-hero-title .hero-accent {
     color: var(--risk-gold) !important;
 }
 
-/* Content glow — зелёный оттенок */
+/* Content glow — мягкий, DuoView: не перегружать */
 .content::after {
-    background: radial-gradient(circle, rgba(150, 248, 145, 0.06), transparent 70%) !important;
+    background: radial-gradient(circle, rgba(159, 232, 159, 0.04), transparent 70%) !important;
 }
 
 /* Scroll-progress линия */
@@ -67,7 +68,7 @@ body::after {
     top: 0;
     width: 100%;
     height: var(--progress);
-    background: linear-gradient(180deg, rgba(255, 215, 0, 0.2), var(--risk-gold));
+    background: linear-gradient(180deg, rgba(212, 175, 55, 0.3), var(--risk-gold));
     transition: height 0.1s ease-out;
 }
 
@@ -76,12 +77,12 @@ html {
     overflow-x: hidden;
 }
 
-/* Risk trust bento + calculator + разделитель */
+/* Risk trust bento + calculator + разделитель — DuoView: градации, не ярко */
 .risk-section-divider {
     width: 80px;
     height: 2px;
     margin: 0 auto 48px;
-    background: linear-gradient(90deg, transparent, rgba(150, 248, 145, 0.45), transparent);
+    background: linear-gradient(90deg, transparent, rgba(159, 232, 159, 0.4), transparent);
 }
 
 .risk-section-reveal,
@@ -99,16 +100,16 @@ html {
 @keyframes borderPulse {
     0%, 100% {
         box-shadow: 
-            0 0 20px rgba(150, 248, 145, 0.25),
-            0 0 40px rgba(150, 248, 145, 0.12),
-            inset 0 0 30px rgba(150, 248, 145, 0.06);
+            0 0 20px rgba(159, 232, 159, 0.25),
+            0 0 40px rgba(159, 232, 159, 0.12),
+            inset 0 0 30px rgba(159, 232, 159, 0.06);
         border-color: var(--risk-accent);
     }
     50% {
         box-shadow: 
-            0 0 30px rgba(150, 248, 145, 0.4),
-            0 0 60px rgba(150, 248, 145, 0.2),
-            inset 0 0 40px rgba(150, 248, 145, 0.08);
+            0 0 30px rgba(159, 232, 159, 0.4),
+            0 0 60px rgba(159, 232, 159, 0.2),
+            inset 0 0 40px rgba(159, 232, 159, 0.08);
         border-color: #7ae87a;
     }
 }
@@ -129,7 +130,7 @@ html {
     padding: 20px;
     background: rgba(255, 255, 255, 0.02);
     border-radius: 10px;
-    border-left: 3px solid rgba(150, 248, 145, 0.5);
+    border-left: 3px solid rgba(159, 232, 159, 0.5);
 }
 
 .why-title {
@@ -163,7 +164,7 @@ html {
     padding: 14px 16px 14px 18px;
     background: rgba(0, 0, 0, 0.12);
     border-radius: 12px;
-    border-left: 2px solid rgba(150, 248, 145, 0.5);
+    border-left: 2px solid rgba(159, 232, 159, 0.5);
     transition: background 0.25s ease, transform 0.2s ease;
 }
 .risk-trust-stat:hover {
@@ -308,7 +309,7 @@ html {
     width: 64px;
     height: 1px;
     margin: 0 auto 48px;
-    background: linear-gradient(90deg, transparent, rgba(150, 248, 145, 0.4), transparent);
+    background: linear-gradient(90deg, transparent, rgba(159, 232, 159, 0.4), transparent);
 }
 
 .risk-calculator-container {
@@ -322,7 +323,7 @@ html {
 }
 
 .risk-calculator-container:hover {
-    border-color: rgba(150, 248, 145, 0.2);
+    border-color: rgba(159, 232, 159, 0.2);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
 }
 
@@ -395,15 +396,15 @@ html {
     font-size: 13px;
     font-weight: 500;
     color: var(--risk-accent);
-    background: rgba(150, 248, 145, 0.08);
-    border: 1px solid rgba(150, 248, 145, 0.2);
+    background: rgba(159, 232, 159, 0.08);
+    border: 1px solid rgba(159, 232, 159, 0.2);
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .api-key-toggle:hover {
-    background: rgba(150, 248, 145, 0.12);
+    background: rgba(159, 232, 159, 0.12);
 }
 
 .api-key-hint {
@@ -505,7 +506,7 @@ html {
 
 .risk-calculator-wrapper input[type="number"]:focus {
     outline: none;
-    border-color: rgba(150, 248, 145, 0.4);
+    border-color: rgba(159, 232, 159, 0.4);
 }
 
 .risk-calculator-wrapper input[type="number"]::placeholder {
@@ -530,7 +531,7 @@ html {
     transform: translateY(-50%);
     width: var(--fill);
     height: 6px;
-    background: linear-gradient(90deg, rgba(150, 248, 145, 0.4), var(--risk-accent));
+    background: linear-gradient(90deg, rgba(159, 232, 159, 0.4), var(--risk-accent));
     border-radius: 3px;
     pointer-events: none;
     transition: width 0.15s ease-out;
@@ -595,7 +596,7 @@ html {
 
 .risk-calculator-wrapper select:focus {
     outline: none;
-    border-color: rgba(150, 248, 145, 0.4);
+    border-color: rgba(159, 232, 159, 0.4);
 }
 
 .risk-calculator-wrapper select option {
@@ -616,7 +617,7 @@ html {
 .risk-calculator-wrapper button {
     width: 260px;
     padding: 18px 28px;
-    background: linear-gradient(135deg, var(--risk-gold) 0%, #ffe55c 100%);
+    background: linear-gradient(135deg, var(--risk-gold) 0%, #E5C76B 100%);
     color: #001800 !important;
     border: none;
     border-radius: 10px;
@@ -629,7 +630,7 @@ html {
 }
 
 .risk-calculator-wrapper button:hover {
-    background: linear-gradient(135deg, #ffe55c 0%, var(--risk-gold) 100%);
+    background: linear-gradient(135deg, #E5C76B 0%, var(--risk-gold) 100%);
 }
 
 .magnetic-wrap:hover .risk-calculator-wrapper button {
@@ -702,7 +703,7 @@ html {
     background: rgba(0, 0, 0, 0.12);
     padding: 14px 16px 14px 18px;
     border-radius: 12px;
-    border-left: 2px solid rgba(150, 248, 145, 0.5);
+    border-left: 2px solid rgba(159, 232, 159, 0.5);
     transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -736,7 +737,7 @@ html {
 .strategy-allocation {
     margin-bottom: 15px;
     padding-bottom: 15px;
-    border-bottom: 1px solid rgba(150, 248, 145, 0.25);
+    border-bottom: 1px solid rgba(159, 232, 159, 0.25);
     color: #FFFFFF !important;
     opacity: 1 !important;
 }
@@ -746,7 +747,7 @@ html {
     padding: 20px;
     background: rgba(255, 255, 255, 0.02);
     border-radius: 10px;
-    border-left: 3px solid rgba(150, 248, 145, 0.5);
+    border-left: 3px solid rgba(159, 232, 159, 0.5);
 }
 
 .why-title {
@@ -779,7 +780,7 @@ html {
 }
 
 .spinner {
-    border: 2px solid rgba(150, 248, 145, 0.25);
+    border: 2px solid rgba(159, 232, 159, 0.25);
     border-top: 2px solid var(--risk-accent);
     border-radius: 50%;
     width: 16px;
