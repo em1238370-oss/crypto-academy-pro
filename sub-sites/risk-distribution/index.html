@@ -22,6 +22,9 @@
            <a href="../crypto-coach/index.html" target="_blank">Coach</a>
        </div>
    </nav>
+   <!-- Минимализм: линия прогресса чтения -->
+   <div class="scroll-progress" aria-hidden="true"></div>
+
    <div class="page">
        <div class="content">
            <div class="crypto-risk-wrapper">
@@ -35,11 +38,9 @@
            <section class="risk-section risk-section-reveal" aria-labelledby="section-why-risk">
                <span class="risk-section-num" aria-hidden="true">01</span>
                <h2 id="section-why-risk" class="risk-section-title">Why Risk Matters</h2>
-               <blockquote class="risk-pull-quote">The cornerstone of success in any endeavor where uncertainty reigns</blockquote>
+               <blockquote class="risk-pull-quote">The cornerstone of success where uncertainty reigns</blockquote>
                <div class="risk-text-wrapper risk-align-left">
-                   <div class="overlay-text">
-                       Risk management isn't optional—it's your edge. You could analyze charts a thousand times, craft the most brilliant strategies, and still fall short without a disciplined approach. Embrace the wisdom of risk management, and let this tool guide you through the storm.
-                   </div>
+                   <p class="overlay-text">Risk management isn't optional—it's your edge. Analyze charts forever, craft brilliant strategies, still fall short. Discipline wins. Let this tool guide you.</p>
                </div>
            </section>
            
@@ -50,11 +51,9 @@
            <section class="risk-section risk-section-reveal" aria-labelledby="section-what-gives">
                <span class="risk-section-num" aria-hidden="true">02</span>
                <h2 id="section-what-gives" class="risk-section-title">What Risk Management Gives You</h2>
-               <blockquote class="risk-pull-quote risk-pull-quote-right">Your lifeline in volatile markets—control, confidence, capital protection</blockquote>
+               <blockquote class="risk-pull-quote risk-pull-quote-right">Control. Confidence. Capital protection.</blockquote>
                <div class="crypto-storm-wrapper risk-align-right">
-                   <div class="storm-text">
-                       Crypto markets are a brutal rollercoaster—prices can skyrocket or crash in hours. Without solid risk management, it's all just noise. Smart risk management protects your capital, keeps your strategy on track, and gives you control to navigate the chaos. Stay sharp. Survive the storm.
-                   </div>
+                   <p class="storm-text">Crypto is a rollercoaster. Without risk management—noise. With it—control. Protect capital. Stay on track. Survive the storm.</p>
                </div>
            </section>
            
@@ -491,6 +490,19 @@
                });
            }
        }
+
+       // Scroll progress line — минимализм: линия заполняется при скролле
+       (function() {
+           const line = document.querySelector('.scroll-progress');
+           if (!line) return;
+           function update() {
+               const h = document.documentElement.scrollHeight - window.innerHeight;
+               const p = h > 0 ? (window.scrollY / h) * 100 : 0;
+               line.style.setProperty('--progress', p + '%');
+           }
+           window.addEventListener('scroll', update, { passive: true });
+           update();
+       })();
 
        // Scroll-reveal: секции появляются при прокрутке
        (function() {

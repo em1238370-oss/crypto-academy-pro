@@ -12,11 +12,34 @@
     --risk-accent-dim: rgba(150, 248, 145, 0.25);
     --risk-muted: #668866;
     --risk-text-secondary: #99aa99;
-    /* Воздух — много пространства, удобно читать */
     --risk-section-gap: 140px;
     --risk-block-padding: 60px;
     --risk-read-max: 52ch;
     --risk-transition: 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    --progress: 0%;
+}
+
+/* Минимализм: линия прогресса чтения — «дыхание» страницы */
+.scroll-progress {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 2px;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.04);
+    z-index: 50;
+    pointer-events: none;
+}
+
+.scroll-progress::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: var(--progress);
+    background: linear-gradient(180deg, var(--risk-accent-dim), var(--risk-accent));
+    transition: height 0.1s ease-out;
 }
 
 /* DuoView п.5: focus-visible для доступности */
@@ -343,8 +366,12 @@ body {
 }
 
 /* Номера секций — editorial feel */
+/* Минимализм: «дыхательная точка» у номера секции */
 .risk-section-num {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
     font-family: 'Raleway', sans-serif;
     font-size: clamp(14px, 1.5vw, 18px);
     font-weight: 600;
@@ -354,6 +381,24 @@ body {
     opacity: 0.9;
     text-align: center;
     transition: opacity var(--risk-transition), letter-spacing var(--risk-transition);
+}
+
+.risk-section-num::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--risk-accent);
+    animation: breath 4s ease-in-out infinite;
+}
+
+@keyframes breath {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .risk-section-num::before { animation: none; opacity: 0.6; }
 }
 
 .risk-section:hover .risk-section-num {
@@ -527,9 +572,14 @@ body {
     opacity: 0.6;
 }
 
+.overlay-text,
+.storm-text {
+    margin: 0;
+}
+
 .overlay-text {
     font-family: 'Inter', sans-serif;
-    font-size: clamp(28px, 4vw, 42px);
+    font-size: clamp(24px, 3.5vw, 36px);
     font-weight: 600;
     line-height: 1.75;
     letter-spacing: 0.02em;
@@ -540,8 +590,7 @@ body {
     opacity: 1 !important;
     visibility: visible !important;
     position: relative;
-    padding: 48px 0;
-    /* GPU-ускорение */
+    padding: 40px 0;
     transform: translateZ(0);
     backface-visibility: hidden;
     will-change: background-position;
@@ -631,9 +680,9 @@ body {
 
 .storm-text {
     font-family: 'Inter', sans-serif;
-    font-size: clamp(28px, 4vw, 42px);
+    font-size: clamp(24px, 3.5vw, 36px);
     font-weight: 600;
-    line-height: 1.75;
+    line-height: 1.7;
     letter-spacing: 0.02em;
     text-align: left;
     max-width: var(--risk-read-max);
@@ -642,8 +691,7 @@ body {
     opacity: 1 !important;
     visibility: visible !important;
     position: relative;
-    padding: 48px 0;
-    /* GPU-ускорение */
+    padding: 40px 0;
     transform: translateZ(0);
     backface-visibility: hidden;
     will-change: background-position;
