@@ -228,6 +228,15 @@ body::after {
     max-width: 720px;
 }
 
+.news-hero-label {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 16px;
+    font-family: 'Poppins', sans-serif;
+}
+
 .news-hero-title {
     font-family: 'Raleway', sans-serif;
     font-size: clamp(48px, 8vw, 96px);
@@ -459,6 +468,11 @@ body::after {
     
     .news-hero {
         margin-bottom: 64px;
+    }
+    
+    .news-hero-label {
+        font-size: 11px;
+        margin-bottom: 12px;
     }
     
     .news-hero-title {

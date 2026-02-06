@@ -26,12 +26,25 @@
    </nav>
    <div class="page" id="top">
        <div class="content">
-           <!-- Hero — A/B тест заголовка (варианты из плана) -->
-           <section class="news-hero">
-               <h1 class="news-hero-title" data-variant-a="Essential News." data-variant-b="News that helps you choose.">Essential News.</h1>
-               <p class="news-hero-subtitle">Curated sources. No hype.</p>
-               <p class="news-hero-description">Five sources we trust—clear coverage, actionable insights. Stay informed. Make better decisions.</p>
-           </section>
+          <!-- Hero — A/B тест заголовка и описания (варианты из плана) -->
+          <section class="news-hero">
+              <p class="news-hero-label">Crypto Academy Pro · News</p>
+              <h1
+                  class="news-hero-title"
+                  data-variant-a="Essential News."
+                  data-variant-b="News that helps you choose."
+              >
+                  Essential News.
+              </h1>
+              <p class="news-hero-subtitle">Curated sources. No hype.</p>
+              <p
+                  class="news-hero-description"
+                  data-desc-a="Five sources we trust—clear coverage, actionable insights. Stay informed. Make better decisions."
+                  data-desc-b="A quick, curated scan of the market—no feeds, no doomscrolling. Just what matters today."
+              >
+                  Five sources we trust—clear coverage, actionable insights. Stay informed. Make better decisions.
+              </p>
+          </section>
            
            <!-- Блок доверия (DuoView) -->
            <section class="news-trust-stats">
@@ -185,6 +198,7 @@
        (function() {
            var key = 'news-hero-ab';
            var title = document.querySelector('.news-hero-title');
+           var desc = document.querySelector('.news-hero-description');
            if (!title || !title.dataset.variantA || !title.dataset.variantB) return;
            var variant = sessionStorage.getItem(key);
            if (!variant) {
@@ -192,6 +206,9 @@
                sessionStorage.setItem(key, variant);
            }
            title.textContent = variant === 'a' ? title.dataset.variantA : title.dataset.variantB;
+           if (desc && desc.dataset.descA && desc.dataset.descB) {
+               desc.textContent = variant === 'a' ? desc.dataset.descA : desc.dataset.descB;
+           }
        })();
    </script>
 </body>
