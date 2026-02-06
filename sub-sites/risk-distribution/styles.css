@@ -12,6 +12,9 @@
     --risk-accent-dim: rgba(150, 248, 145, 0.25);
     --risk-muted: #668866;
     --risk-text-secondary: #99aa99;
+    /* Белое пространство (DuoView п.4) */
+    --risk-section-gap: 100px;
+    --risk-block-padding: 50px;
 }
 
 /* Навигация как на главной (п.1 плана DuoView) */
@@ -185,7 +188,7 @@ body {
 .crypto-risk-wrapper {
     background: transparent;
     margin: 0 auto;
-    padding: 24px 20px 32px;
+    padding: var(--risk-block-padding) 40px 60px;
     font-family: 'Orbitron', sans-serif;
     color: #ffffff !important;
     text-align: center;
@@ -292,12 +295,13 @@ body {
     50% { filter: drop-shadow(0 0 18px rgba(150, 248, 145, 0.7)) drop-shadow(0 0 40px var(--risk-accent-dim)); }
 }
 
-/* Текст о риск-менеджменте - 10 см ниже заголовка */
+/* Текст о риск-менеджменте */
 .risk-text-wrapper {
     background: transparent;
     margin: 0 auto;
     margin-top: 10cm;
-    padding: 20px;
+    margin-bottom: var(--risk-section-gap);
+    padding: var(--risk-block-padding);
     font-family: 'Orbitron', sans-serif;
     opacity: 1 !important;
     visibility: visible !important;
@@ -318,12 +322,12 @@ body {
     opacity: 1 !important;
     visibility: visible !important;
     position: relative;
-    padding: 20px 0;
+    padding: 40px 0;
     /* GPU-ускорение */
     transform: translateZ(0);
     backface-visibility: hidden;
     will-change: background-position;
-    /* Градиентное свечение — золотой акцент */
+    /* Градиентное свечение */
     background: linear-gradient(
         90deg,
         #FFFFFF 0%,
@@ -336,7 +340,6 @@ body {
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    /* Красивое перетекание свечения по буквам каждые 7 секунд */
     animation: textGlowFlow 7s ease-in-out infinite, textReveal 1.2s ease-out;
 }
 
@@ -406,13 +409,14 @@ body {
     }
 }
 
-/* Новый текст - Why Risk Distribution Matters - 5 см ниже */
+/* Why Risk Distribution Matters */
 .floating-text-wrapper {
     background: transparent;
-    margin: 0;
-    padding: 20px;
+    margin: 0 auto;
     margin-left: 20px;
     margin-top: 5cm;
+    margin-bottom: var(--risk-section-gap);
+    padding: var(--risk-block-padding);
     font-family: 'Orbitron', sans-serif;
     opacity: 1 !important;
     visibility: visible !important;
@@ -452,11 +456,12 @@ body {
     }
 }
 
-/* Новый текст - Crypto markets... - 2.5 см ниже, по центру */
+/* Crypto markets... */
 .crypto-storm-wrapper {
     background: transparent;
     margin: 0 auto;
-    padding: 20px;
+    margin-bottom: var(--risk-section-gap);
+    padding: var(--risk-block-padding);
     margin-top: 2.5cm;
     font-family: 'Orbitron', sans-serif;
     opacity: 1 !important;
@@ -477,12 +482,12 @@ body {
     opacity: 1 !important;
     visibility: visible !important;
     position: relative;
-    padding: 20px 0;
+    padding: 40px 0;
     /* GPU-ускорение */
     transform: translateZ(0);
     backface-visibility: hidden;
     will-change: background-position;
-    /* Градиентное свечение — золотой акцент */
+    /* Градиентное свечение */
     background: linear-gradient(
         90deg,
         #FFFFFF 0%,
@@ -609,8 +614,8 @@ body {
 /* ДОПОЛНИТЕЛЬНЫЕ ОСТРЫЕ ЭЛЕМЕНТЫ - УГЛЫ */
 
 .why-section {
-    margin-top: 15px;
-    padding: 15px;
+    margin-top: 20px;
+    padding: 20px;
     background: rgba(150, 248, 145, 0.12);
     border-radius: 8px;
     border-left: 3px solid var(--risk-accent);
@@ -636,6 +641,10 @@ body {
 }
 
 @media (max-width: 768px) {
+    :root {
+        --risk-section-gap: 60px;
+        --risk-block-padding: 32px;
+    }
     .main-nav {
         padding: 14px 20px;
     }
@@ -653,13 +662,14 @@ body {
 }
 
 
-/* Risk Management Strategy Calculator - 5 см ниже */
+/* Risk Management Strategy Calculator */
 .risk-calculator-wrapper {
     font-family: 'Orbitron', sans-serif;
     background: transparent;
-    padding: 20px;
+    padding: var(--risk-block-padding);
     margin: 0 auto;
     margin-top: 5cm;
+    margin-bottom: var(--risk-section-gap);
     max-width: 1400px;
     opacity: 1 !important;
     visibility: visible !important;
@@ -674,7 +684,7 @@ body {
         radial-gradient(circle at 80% 70%, rgba(150, 248, 145, 0.05) 0%, transparent 60%);
     border: 4px solid var(--risk-accent);
     border-radius: 10px;
-    padding: 40px 60px;
+    padding: 50px 60px;
     transition: all 0.4s ease;
     opacity: 1 !important;
     visibility: visible !important;
@@ -834,10 +844,10 @@ body {
 .form-wrapper {
     display: flex;
     flex-wrap: wrap;
-    gap: 40px;
+    gap: 48px;
     align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
 }
 
 .form-group {
@@ -957,7 +967,7 @@ body {
 }
 
 .results {
-    margin-top: 40px;
+    margin-top: 48px;
 }
 
 .risk-calculator-wrapper .results h2 {
@@ -981,12 +991,12 @@ body {
 .strategies-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    gap: 28px;
 }
 
 .strategy {
     background: rgba(255, 255, 255, 0.1);
-    padding: 20px;
+    padding: 28px;
     border-radius: 8px;
     border-left: 4px solid var(--risk-accent);
     opacity: 1 !important;
@@ -1001,8 +1011,8 @@ body {
 }
 
 .strategy-info {
-    margin-bottom: 20px;
-    padding: 15px;
+    margin-bottom: 24px;
+    padding: 20px;
     background: rgba(150, 248, 145, 0.08);
     border-radius: 8px;
     text-align: center;
@@ -1021,8 +1031,8 @@ body {
 }
 
 .why-section {
-    margin-top: 15px;
-    padding: 15px;
+    margin-top: 20px;
+    padding: 20px;
     background: rgba(150, 248, 145, 0.12);
     border-radius: 8px;
     border-left: 3px solid var(--risk-accent);
@@ -1126,7 +1136,7 @@ body {
         radial-gradient(circle at 80% 70%, rgba(150, 248, 145, 0.05) 0%, transparent 60%);
     border: 4px solid var(--risk-accent);
     border-radius: 10px;
-    padding: 40px 60px;
+    padding: 50px 60px;
     transition: all 0.4s ease;
     opacity: 1 !important;
     visibility: visible !important;
