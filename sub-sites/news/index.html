@@ -110,17 +110,38 @@
                </ul>
            </section>
 
-           <!-- Before you react: micro prompts -->
+           <!-- Before you react: micro prompts (click to reveal hint) -->
            <section class="before-react">
                <h4 class="before-react-title">Before you react, ask yourself:</h4>
                <div class="before-react-grid">
-                   <div class="before-chip">What does this change for me?</div>
-                   <div class="before-chip">Do I act — or is it just FOMO?</div>
-                   <div class="before-chip">Is this signal or just noise?</div>
-                   <div class="before-chip">Would I act without seeing the price?</div>
-                   <div class="before-chip">Can I explain this in one sentence?</div>
-                   <div class="before-chip">What happens if I do nothing?</div>
-                   <div class="before-chip">How much of this is just emotions?</div>
+                   <div class="before-chip" tabindex="0" role="button" data-hint="If you can't answer clearly, it might not affect your plan.">
+                       <span class="before-chip-q">What does this change for me?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
+                   <div class="before-chip" tabindex="0" role="button" data-hint="If it's FOMO, pause. Real opportunities usually wait.">
+                       <span class="before-chip-q">Do I act — or is it just FOMO?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
+                   <div class="before-chip" tabindex="0" role="button" data-hint="If it's noise, you can safely ignore it.">
+                       <span class="before-chip-q">Is this signal or just noise?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
+                   <div class="before-chip" tabindex="0" role="button" data-hint="If you need the price to decide, the news alone isn't enough.">
+                       <span class="before-chip-q">Would I act without seeing the price?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
+                   <div class="before-chip" tabindex="0" role="button" data-hint="If not, you might not understand it well enough to act.">
+                       <span class="before-chip-q">Can I explain this in one sentence?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
+                   <div class="before-chip" tabindex="0" role="button" data-hint="Often nothing bad. Inaction is a valid choice.">
+                       <span class="before-chip-q">What happens if I do nothing?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
+                   <div class="before-chip" tabindex="0" role="button" data-hint="If it's mostly emotions, wait before acting.">
+                       <span class="before-chip-q">How much of this is just emotions?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
                </div>
            </section>
 
@@ -291,6 +312,22 @@
            if (desc && desc.dataset.descA && desc.dataset.descB) {
                desc.textContent = variant === 'a' ? desc.dataset.descA : desc.dataset.descB;
            }
+       })();
+       (function() {
+           document.querySelectorAll('.before-chip').forEach(function(chip) {
+               var hint = chip.querySelector('.before-chip-hint');
+               if (!hint || !chip.dataset.hint) return;
+               hint.textContent = chip.dataset.hint;
+               chip.addEventListener('click', function() {
+                   chip.classList.toggle('before-chip--open');
+               });
+               chip.addEventListener('keydown', function(e) {
+                   if (e.key === 'Enter' || e.key === ' ') {
+                       e.preventDefault();
+                       chip.classList.toggle('before-chip--open');
+                   }
+               });
+           });
        })();
    </script>
 </body>
