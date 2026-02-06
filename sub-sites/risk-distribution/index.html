@@ -92,31 +92,41 @@
                <p class="risk-section-sub">Calculate your personalized strategy in 30 seconds.</p>
                <div class="risk-calculator-wrapper">
                    <div class="risk-calculator-container">
-                       <h3 class="risk-calculator-heading">Risk Management Strategy Calculator</h3>
-                   
-                   <div class="api-key-group">
-                       <label for="apiKey">Google API Key (for AI explanations)</label>
-                       <input type="password" id="apiKey" value="AIzaSyA_aPJUNEl8Hpe032jW2d0ZLRmJQ0A13qs">
-                       <div class="api-key-info">Enter your Google API key to get AI-powered explanations for strategy recommendations</div>
-                   </div>
+                       <h3 class="risk-calculator-heading">3 inputs. 3 strategies. 30 seconds.</h3>
 
-                   <form id="strategyForm">
+                   <details class="api-key-details">
+                       <summary>🔑 Optional: Add API key for AI explanations</summary>
+                       <div class="api-key-group">
+                           <label for="apiKey">Google API Key</label>
+                           <input type="password" id="apiKey" placeholder="Paste your key" value="AIzaSyA_aPJUNEl8Hpe032jW2d0ZLRmJQ0A13qs">
+                       </div>
+                   </details>
+
+                   <form id="strategyForm" class="risk-calc-form">
                        <div class="form-wrapper">
-                           <div class="form-group">
-                               <label for="deposit">Your Deposit ($)</label>
-                               <input type="number" id="deposit" placeholder="Enter amount" min="0" step="100">
-                           </div>
-
-                           <div class="form-group">
-                               <label for="risk">Your Risk Level (0-100%)</label>
-                               <div class="slider-container">
-                                   <input type="range" id="risk" min="0" max="100" step="10" value="0">
-                                   <span class="slider-value">Current Risk: <span id="riskValue">0</span>%</span>
+                           <div class="form-group form-group-deposit">
+                               <label for="deposit"><span class="form-step">01</span> Your Deposit</label>
+                               <div class="input-with-suffix">
+                                   <input type="number" id="deposit" placeholder="1000" min="0" step="100">
+                                   <span class="input-suffix">$</span>
                                </div>
                            </div>
 
-                           <div class="form-group">
-                               <label for="goal">Your Goal</label>
+                           <div class="form-group form-group-risk">
+                               <label for="risk"><span class="form-step">02</span> Risk Tolerance</label>
+                               <div class="slider-container">
+                                   <div class="slider-labels">
+                                       <span>Low</span>
+                                       <span id="riskLabel">Conservative</span>
+                                       <span>High</span>
+                                   </div>
+                                   <input type="range" id="risk" min="0" max="100" step="10" value="0" class="risk-slider">
+                                   <span class="slider-value"><span id="riskValue">0</span>%</span>
+                               </div>
+                           </div>
+
+                           <div class="form-group form-group-goal">
+                               <label for="goal"><span class="form-step">03</span> Your Goal</label>
                                <select id="goal">
                                    <option value="Savings">Savings</option>
                                    <option value="Growth">Growth</option>
@@ -126,12 +136,12 @@
                        </div>
 
                        <div class="button-wrapper">
-                           <button type="button" onclick="getStrategies()">Get Strategies</button>
+                           <button type="button" id="getStrategiesBtn" onclick="getStrategies()">Get My Strategies</button>
                        </div>
                    </form>
 
                    <div class="results hidden" id="results">
-                       <h3 class="results-title">Your Strategies</h3>
+                       <h3 class="results-title">Your 3 Strategies</h3>
                        <div class="strategy-info" id="strategyInfo"></div>
                        <div class="strategies">
                            <div class="strategies-grid" id="strategiesOutput"></div>
@@ -203,13 +213,22 @@
    </div>
 
    <script>
-       // Update risk slider value display
+       // Risk slider: update value + label
        const riskSlider = document.getElementById('risk');
        const riskValue = document.getElementById('riskValue');
+       const riskLabel = document.getElementById('riskLabel');
+       
+       function updateRiskLabel(val) {
+           riskValue.textContent = val;
+           if (val <= 30) riskLabel.textContent = 'Conservative';
+           else if (val <= 70) riskLabel.textContent = 'Moderate';
+           else riskLabel.textContent = 'Aggressive';
+       }
        
        riskSlider.addEventListener('input', function() {
-           riskValue.textContent = this.value;
+           updateRiskLabel(this.value);
        });
+       updateRiskLabel(riskSlider.value);
 
        // Strategy database
        const strategies = {
@@ -375,9 +394,12 @@
                output += `</div>`;
            });
            
-           // Display results
+           // Display results with reveal
            document.getElementById('strategiesOutput').innerHTML = output;
-           document.getElementById('results').classList.remove('hidden');
+           const resultsEl = document.getElementById('results');
+           resultsEl.classList.remove('hidden');
+           resultsEl.classList.add('results-revealed');
+           resultsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
            
            // Generate explanations for each strategy
            strategyKeys.forEach((key, index) => {

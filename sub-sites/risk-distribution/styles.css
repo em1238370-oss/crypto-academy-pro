@@ -433,12 +433,13 @@ body {
 }
 
 .risk-calculator-heading {
-    font-family: 'Orbitron', sans-serif;
-    font-size: clamp(24px, 3vw, 36px) !important;
+    font-family: 'Raleway', sans-serif;
+    font-size: clamp(20px, 2.5vw, 28px) !important;
     font-weight: 600 !important;
-    color: #FFFFFF !important;
-    margin-bottom: 32px !important;
+    color: var(--risk-text-secondary) !important;
+    margin-bottom: 40px !important;
     text-align: center;
+    letter-spacing: 0.02em;
 }
 
 /* DuoView: каждая секция — чёткие границы через отступы */
@@ -999,10 +1000,40 @@ body {
 }
 
 
-.form-wrapper {
+/* API key — collapsible */
+.api-key-details {
+    margin-bottom: 40px;
+}
+
+.api-key-details summary {
+    font-size: 13px;
+    color: var(--risk-muted);
+    cursor: pointer;
+    user-select: none;
+}
+
+.api-key-details[open] summary {
+    margin-bottom: 12px;
+}
+
+.api-key-group {
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+.api-key-group label {
+    font-size: 12px !important;
+}
+
+.api-key-group input {
+    margin-top: 8px;
+}
+
+.risk-calc-form .form-wrapper {
     display: flex;
     flex-wrap: wrap;
-    gap: 56px;
+    gap: 40px;
     align-items: flex-start;
     justify-content: space-between;
     margin-bottom: 48px;
@@ -1010,16 +1041,57 @@ body {
 
 .form-group {
     flex: 1;
-    min-width: 280px;
+    min-width: 260px;
+}
+
+.form-step {
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    color: var(--risk-accent);
+    letter-spacing: 0.1em;
+    margin-right: 8px;
 }
 
 .risk-calculator-wrapper label {
     display: block;
     color: #FFFFFF !important;
-    font-size: 24px;
-    margin-bottom: 15px;
-    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    margin-bottom: 12px;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
     opacity: 1 !important;
+}
+
+.input-with-suffix {
+    position: relative;
+}
+
+.input-suffix {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: var(--risk-muted);
+}
+
+.input-with-suffix input {
+    padding-right: 40px;
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--risk-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.slider-labels span:nth-child(2) {
+    color: var(--risk-accent);
+    font-weight: 600;
 }
 
 .risk-calculator-wrapper input[type="number"] {
@@ -1043,20 +1115,14 @@ body {
     flex-direction: column;
 }
 
-.slider-value {
-    color: #FFFFFF !important;
-    font-size: 20px;
-    margin-top: 10px;
-    font-weight: 600;
-    opacity: 1 !important;
-}
 
+.risk-slider,
 .risk-calculator-wrapper input[type="range"] {
     width: 100%;
-    height: 10px;
-    background: rgba(255, 255, 255, 0.3);
+    height: 8px;
+    background: linear-gradient(90deg, rgba(150, 248, 145, 0.2) 0%, rgba(150, 248, 145, 0.6) 100%);
     outline: none;
-    border-radius: 5px;
+    border-radius: 4px;
     -webkit-appearance: none;
     appearance: none;
 }
@@ -1064,20 +1130,34 @@ body {
 .risk-calculator-wrapper input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     background: var(--risk-accent);
     cursor: pointer;
     border-radius: 50%;
+    box-shadow: 0 0 20px var(--risk-accent-soft);
+    transition: transform 0.2s ease;
+}
+
+.risk-calculator-wrapper input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
 }
 
 .risk-calculator-wrapper input[type="range"]::-moz-range-thumb {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     background: var(--risk-accent);
     cursor: pointer;
     border-radius: 50%;
     border: none;
+    box-shadow: 0 0 20px var(--risk-accent-soft);
+}
+
+.slider-value {
+    margin-top: 12px;
+    font-size: 24px !important;
+    color: var(--risk-accent) !important;
+    font-weight: 700 !important;
 }
 
 .risk-calculator-wrapper select {
@@ -1104,28 +1184,63 @@ body {
 }
 
 .risk-calculator-wrapper button {
-    width: 250px;
-    padding: 18px;
-    background: var(--risk-accent);
-    color: #FFFFFF !important;
+    width: 280px;
+    padding: 20px 32px;
+    background: linear-gradient(135deg, var(--risk-accent) 0%, #7ae87a 100%);
+    color: #001800 !important;
     border: none;
-    border-radius: 10px;
-    font-size: 22px;
-    font-family: 'Orbitron', sans-serif;
+    border-radius: 12px;
+    font-size: 18px;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     opacity: 1 !important;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 
 .risk-calculator-wrapper button:hover {
-    background: var(--risk-accent);
-    opacity: 0.8;
-    transform: scale(1.05);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 40px rgba(150, 248, 145, 0.4);
+}
+
+.risk-calculator-wrapper button:active {
+    transform: translateY(-1px);
 }
 
 .results {
     margin-top: 56px;
+    opacity: 0;
+    transform: translateY(24px);
+}
+
+.results.results-revealed {
+    animation: resultsReveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes resultsReveal {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.results-revealed .strategy {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: strategyReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.results-revealed .strategy:nth-child(1) { animation-delay: 0.15s; }
+.results-revealed .strategy:nth-child(2) { animation-delay: 0.25s; }
+.results-revealed .strategy:nth-child(3) { animation-delay: 0.35s; }
+
+@keyframes strategyReveal {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .results-title {
@@ -1153,11 +1268,15 @@ body {
 }
 
 .strategy {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
     padding: 32px 28px;
-    border-radius: 8px;
+    border-radius: 10px;
     border-left: 4px solid var(--risk-accent);
-    opacity: 1 !important;
+    transition: transform 0.3s ease;
+}
+
+.strategy:hover {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .strategy-title {
@@ -1169,15 +1288,17 @@ body {
 }
 
 .strategy-info {
-    margin-bottom: 24px;
-    padding: 20px;
-    background: rgba(150, 248, 145, 0.08);
-    border-radius: 8px;
+    margin-bottom: 28px;
+    padding: 16px 24px;
+    background: rgba(150, 248, 145, 0.06);
+    border: 1px solid rgba(150, 248, 145, 0.2);
+    border-radius: 10px;
     text-align: center;
-    color: var(--risk-accent) !important;
-    font-weight: 600;
-    font-size: 18px;
+    color: var(--risk-text-secondary) !important;
+    font-weight: 500;
+    font-size: 15px;
     opacity: 1 !important;
+    letter-spacing: 0.03em;
 }
 
 .strategy-allocation {
@@ -1238,14 +1359,7 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-.api-key-group {
-    display: none;
-    margin-bottom: 30px;
-    padding: 20px;
-    background: rgba(150, 248, 145, 0.06);
-    border-radius: 8px;
-    border: 2px solid rgba(150, 248, 145, 0.25);
-}
+/* api-key-group styled above in api-key-details */
 
 .risk-calculator-wrapper input[type="password"] {
     width: 100%;
@@ -1280,9 +1394,14 @@ body {
         grid-template-columns: 1fr;
     }
     
+    .risk-calc-form .form-wrapper,
     .form-wrapper {
         flex-direction: column;
-        gap: 20px;
+        gap: 24px;
+    }
+    
+    .risk-calculator-wrapper button {
+        width: 100%;
     }
     
 .risk-calculator-container {
