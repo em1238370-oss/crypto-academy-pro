@@ -1,6 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap');
 
+/* Палитра News: #423200 + тёплые акценты (Apple — минимализм, премиум) */
+:root {
+    --news-bg: #423200;
+    --news-text: #F5F0E1;
+    --news-accent: #E8D5B7;
+    --news-subtle: rgba(245, 240, 225, 0.7);
+    --news-muted: rgba(245, 240, 225, 0.5);
+    --news-dim: rgba(245, 240, 225, 0.4);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -10,7 +20,7 @@
 /* Доступность: видимый фокус (DuoView + Apple) */
 a:focus-visible,
 button:focus-visible {
-    outline: 2px solid rgba(212, 175, 55, 0.6);
+    outline: 2px solid rgba(232, 213, 183, 0.6);
     outline-offset: 3px;
 }
 
@@ -25,17 +35,17 @@ button:focus-visible {
     align-items: center;
     justify-content: space-between;
     padding: 18px 32px;
-    background: rgba(28, 0, 56, 0.85);
+    background: rgba(66, 50, 0, 0.92);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(245, 240, 225, 0.08);
 }
 
 .main-nav-brand {
     font-family: 'Raleway', sans-serif;
     font-size: 18px;
     font-weight: 700;
-    color: #FFFFFF;
+    color: var(--news-text);
     text-decoration: none;
     letter-spacing: -0.02em;
 }
@@ -47,14 +57,14 @@ button:focus-visible {
 
 .main-nav-links a {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--news-subtle);
     text-decoration: none;
     transition: color 0.2s ease;
 }
 
 .main-nav-links a:hover,
 .main-nav-links a.active {
-    color: #d4af37;
+    color: var(--news-accent);
 }
 
 @media (max-width: 600px) {
@@ -65,13 +75,12 @@ button:focus-visible {
 
 body {
     font-family: 'Poppins', sans-serif;
-    /* Выровнено с главной страницей: тёмно-фиолетовый + золотые акценты */
     background: 
-        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        radial-gradient(circle at 85% 15%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 15% 85%, rgba(88, 28, 135, 0.15) 0%, transparent 50%),
-        #1C0038;
+        linear-gradient(rgba(245, 240, 225, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245, 240, 225, 0.03) 1px, transparent 1px),
+        radial-gradient(circle at 85% 15%, rgba(232, 213, 183, 0.06) 0%, transparent 50%),
+        radial-gradient(circle at 15% 85%, rgba(184, 140, 0, 0.08) 0%, transparent 50%),
+        var(--news-bg);
     background-size: 50px 50px, 50px 50px, 7250px 1750px, 7250px 1750px, 100% 100%;
     background-position: 0 0, 0 0, center center, center center, 0 0;
     background-attachment: fixed, fixed, fixed, fixed, fixed;
@@ -108,15 +117,15 @@ body {
 }
 */
 
-/* Overlay — мягкие акценты как на главной */
+/* Overlay — тёплые акценты под #423200 */
 body::before {
     content: '';
     position: fixed;
     inset: 0;
     background: 
-        radial-gradient(circle at 20% 20%, rgba(74, 25, 66, 0.18), transparent 60%),
-        radial-gradient(circle at 80% 10%, rgba(88, 28, 135, 0.14), transparent 55%),
-        radial-gradient(circle at 30% 85%, rgba(74, 25, 66, 0.12), transparent 55%);
+        radial-gradient(circle at 20% 20%, rgba(184, 140, 0, 0.06), transparent 60%),
+        radial-gradient(circle at 80% 10%, rgba(232, 213, 183, 0.05), transparent 55%),
+        radial-gradient(circle at 30% 85%, rgba(184, 140, 0, 0.05), transparent 55%);
     pointer-events: none;
     z-index: 0;
 }
@@ -125,7 +134,7 @@ body::after {
     content: '';
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.12);
+    background: rgba(0, 0, 0, 0.08);
     pointer-events: none;
     z-index: 0;
 }
@@ -135,7 +144,7 @@ body::after {
     padding: 60px 24px 40px;
     margin-top: 80px;
     text-align: center;
-    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    border-top: 1px solid rgba(232, 213, 183, 0.2);
     position: relative;
 }
 
@@ -147,18 +156,18 @@ body::after {
     transform: translateX(-50%);
     width: 80px;
     height: 2px;
-    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5), transparent);
+    background: linear-gradient(90deg, transparent, rgba(232, 213, 183, 0.5), transparent);
 }
 
 .news-footer-text {
     font-size: 14px;
-    color: #888888;
+    color: var(--news-muted);
     margin: 0;
 }
 
 .news-footer-crafted {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--news-dim);
     margin: 12px 0 0;
     letter-spacing: 0.06em;
 }
@@ -173,13 +182,13 @@ body::after {
 
 .news-footer-link {
     font-size: 13px;
-    color: rgba(212, 175, 55, 0.8);
+    color: var(--news-accent);
     text-decoration: none;
     transition: color 0.2s ease;
 }
 
 .news-footer-link:hover {
-    color: #d4af37;
+    color: var(--news-text);
 }
 
 
@@ -193,7 +202,7 @@ body::after {
     left: 15%;
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, rgba(255, 204, 21, 0.08), transparent 70%);
+    background: radial-gradient(circle, rgba(232, 213, 183, 0.06), transparent 70%);
     border-radius: 50%;
     filter: blur(60px);
     z-index: -1;
@@ -232,7 +241,7 @@ body::after {
     font-size: 12px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--news-muted);
     margin-bottom: 16px;
     font-family: 'Poppins', sans-serif;
 }
@@ -241,7 +250,7 @@ body::after {
     font-family: 'Raleway', sans-serif;
     font-size: clamp(48px, 8vw, 96px);
     font-weight: 700;
-    color: #FFFFFF;
+    color: var(--news-text);
     letter-spacing: -0.02em;
     line-height: 1.15;
     margin-bottom: 16px;
@@ -249,7 +258,7 @@ body::after {
 
 .news-hero-subtitle {
     font-size: 20px;
-    color: #d4af37;
+    color: var(--news-accent);
     font-weight: 600;
     margin-bottom: 24px;
     letter-spacing: 0.02em;
@@ -257,7 +266,7 @@ body::after {
 
 .news-hero-description {
     font-size: 18px;
-    color: rgba(255, 255, 255, 0.82);
+    color: var(--news-subtle);
     line-height: 1.65;
 }
 
@@ -268,7 +277,7 @@ body::after {
 
 .news-trust-badge {
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--news-muted);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     margin-bottom: 8px;
@@ -276,7 +285,7 @@ body::after {
 
 .news-trust-tagline {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--news-dim);
     letter-spacing: 0.06em;
 }
 
@@ -336,7 +345,7 @@ body::after {
     margin-bottom: 56px;
     padding: 0;
     display: inline-block;
-    color: #FFFFFF;
+    color: var(--news-text);
     font-family: 'Raleway', sans-serif;
     letter-spacing: -0.02em;
 }
@@ -352,8 +361,8 @@ body::after {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(245, 240, 225, 0.04);
+    border: 1px solid rgba(245, 240, 225, 0.12);
     border-radius: 16px;
     padding: 32px 36px;
     margin: 24px 0;
@@ -366,9 +375,9 @@ body::after {
 }
 
 .news-row:hover {
-    border-color: rgba(212, 175, 55, 0.4);
+    border-color: rgba(232, 213, 183, 0.4);
     transform: scale(1.01);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(245, 240, 225, 0.06);
 }
 
 .news-row-main {
@@ -389,7 +398,7 @@ body::after {
 .news-row-number {
     font-size: 11px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.25);
+    color: var(--news-dim);
     letter-spacing: 0.08em;
     font-variant-numeric: tabular-nums;
     font-family: 'Raleway', sans-serif;
@@ -397,42 +406,42 @@ body::after {
 }
 
 .news-row:hover .news-row-number {
-    color: rgba(212, 175, 55, 0.5);
+    color: var(--news-accent);
 }
 
 .news-site {
     font-size: 24px;
     font-weight: 700;
     text-align: left;
-    color: #FFFFFF;
+    color: var(--news-text);
     font-family: 'Raleway', sans-serif;
     transition: color 0.3s ease;
 }
 
 .news-row:hover .news-site {
-    color: #d4af37;
+    color: var(--news-accent);
 }
 
 .news-description {
     text-align: left;
     font-size: 16px;
     line-height: 1.6;
-    color: rgba(255, 255, 255, 0.82);
+    color: var(--news-subtle);
     font-family: 'Poppins', sans-serif;
 }
 
 .news-source-meta {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--news-muted);
     letter-spacing: 0.04em;
     margin: 4px 0 0;
     font-family: 'Poppins', sans-serif;
 }
 
 .news-link {
-    background: rgba(212, 175, 55, 0.08);
-    border: 1px solid rgba(212, 175, 55, 0.4);
-    color: #FFFFFF;
+    background: rgba(232, 213, 183, 0.1);
+    border: 1px solid rgba(232, 213, 183, 0.35);
+    color: var(--news-text);
     padding: 12px 20px;
     text-decoration: none;
     border-radius: 8px;
@@ -455,9 +464,9 @@ body::after {
 }
 
 .news-link:hover {
-    background: rgba(212, 175, 55, 0.15);
-    border-color: #d4af37;
-    color: #FFFFFF;
+    background: rgba(232, 213, 183, 0.18);
+    border-color: var(--news-accent);
+    color: var(--news-text);
 }
 
 /* Блок 8: Мобильная версия (Apple — tap-area 44px+, адаптивность) */
@@ -571,7 +580,7 @@ body::after {
 
 /* Все анимации удалены для оптимизации производительности */
 
-/* Дополнительные желтые акценты - более тонкие для крипто-стиля */
+/* Мягкое свечение (тёплая палитра) */
 .content::before {
     content: '';
     position: absolute;
@@ -579,25 +588,11 @@ body::after {
     right: 10%;
     width: 300px;
     height: 300px;
-    background: radial-gradient(circle, rgba(255, 204, 21, 0.08), transparent 70%);
+    background: radial-gradient(circle, rgba(232, 213, 183, 0.06), transparent 70%);
     border-radius: 50%;
     filter: blur(50px);
     z-index: -1;
     animation: subtle-glow 15s ease-in-out infinite;
-}
-
-.content::after {
-    content: '';
-    position: absolute;
-    bottom: 15%;
-    left: 15%;
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(255, 204, 21, 0.08), transparent 70%);
-    border-radius: 50%;
-    filter: blur(60px);
-    z-index: -1;
-    animation: subtle-glow 18s ease-in-out infinite reverse;
 }
 
 @keyframes subtle-glow {
