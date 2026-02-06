@@ -1,5 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 /* Цветовая схема — база #001800 */
 :root {
@@ -14,8 +15,8 @@
     --risk-gold-soft: rgba(255, 215, 0, 0.7);
     --risk-muted: #888888;
     --risk-text-secondary: #cccccc;
-    --risk-section-gap: 140px;
-    --risk-block-padding: 60px;
+    --risk-section-gap: 96px;
+    --risk-block-padding: 40px;
     --risk-read-max: 52ch;
     --risk-transition: 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     --progress: 0%;
@@ -436,14 +437,14 @@ body {
 
 /* Pull quotes — цитаты-акценты */
 .risk-pull-quote {
-    font-family: 'Raleway', sans-serif;
-    font-size: clamp(18px, 2.2vw, 24px);
-    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
     font-style: italic;
-    color: var(--risk-accent-soft);
-    max-width: 36ch;
-    margin: 0 auto 32px;
-    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.75);
+    max-width: 42ch;
+    margin: 0 auto 24px;
+    line-height: 1.6;
     padding: 0 20px;
     transition: color var(--risk-transition);
 }
@@ -497,11 +498,11 @@ body {
 
 .risk-section-title {
     font-family: 'Raleway', sans-serif;
-    font-size: clamp(28px, 4vw, 40px);
+    font-size: 22px;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.95);
-    letter-spacing: -0.02em;
-    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
     text-align: center;
     position: relative;
 }
@@ -528,19 +529,19 @@ body {
 
 .risk-section-sub {
     font-family: 'Poppins', sans-serif;
-    font-size: 16px;
+    font-size: 15px;
     color: var(--risk-text-secondary);
     text-align: center;
-    margin: -8px 0 40px;
-    letter-spacing: 0.05em;
+    margin: 0 0 32px;
+    line-height: 1.6;
 }
 
 .risk-calculator-heading {
-    font-family: 'Inter', sans-serif;
-    font-size: clamp(18px, 2.2vw, 22px);
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
     font-weight: 500;
     color: var(--risk-text-secondary);
-    margin-bottom: 40px;
+    margin-bottom: 32px;
     text-align: center;
 }
 
@@ -556,22 +557,22 @@ body {
 .risk-text-wrapper {
     background: transparent;
     margin: 0 auto;
-    padding: var(--risk-block-padding) 40px;
-    font-family: 'Inter', sans-serif;
+    padding: 24px 40px 32px;
+    font-family: 'Poppins', sans-serif;
     opacity: 1 !important;
     visibility: visible !important;
     width: 100%;
-    max-width: 85%;
-    text-align: center;
+    max-width: 720px;
+    text-align: left;
     position: relative;
 }
 
 .risk-text-wrapper::before {
     content: '';
     display: block;
-    width: 60px;
+    width: 48px;
     height: 1px;
-    margin: 0 auto 48px;
+    margin: 0 auto 24px;
     background: linear-gradient(90deg, transparent, var(--risk-accent-dim), transparent);
     opacity: 0.6;
 }
@@ -581,40 +582,23 @@ body {
     margin: 0;
 }
 
+/* Типографика как News: Poppins, 18px, line-height 1.65 */
 .overlay-text {
-    font-family: 'Inter', sans-serif;
-    font-size: clamp(24px, 3.5vw, 36px);
-    font-weight: 600;
-    line-height: 1.75;
-    letter-spacing: 0.02em;
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.65;
+    letter-spacing: 0;
     text-align: left;
-    max-width: var(--risk-read-max);
-    margin: 0 auto;
-    margin-left: 0;
+    max-width: 100%;
+    margin: 0;
     opacity: 1 !important;
     visibility: visible !important;
     position: relative;
-    padding: 40px 0;
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    will-change: background-position;
-    /* Градиентное свечение */
-    background: linear-gradient(
-        90deg,
-        #FFFFFF 0%,
-        #FFFFFF 30%,
-        var(--risk-accent-soft) 50%,
-        #FFFFFF 70%,
-        #FFFFFF 100%
-    );
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: textGlowFlow 7s ease-in-out infinite, textReveal 1.2s ease-out;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.88);
 }
 
-/* Убираем сканирующую линию на фоне */
 .overlay-text::before {
     display: none;
 }
@@ -662,70 +646,41 @@ body {
 .crypto-storm-wrapper {
     background: transparent;
     margin: 0 auto;
-    padding: var(--risk-block-padding) 40px;
-    font-family: 'Inter', sans-serif;
+    padding: 24px 40px 32px;
+    font-family: 'Poppins', sans-serif;
     opacity: 1 !important;
     visibility: visible !important;
     width: 100%;
-    max-width: 85%;
-    text-align: center;
+    max-width: 720px;
+    text-align: left;
     position: relative;
 }
 
 .crypto-storm-wrapper::before {
     content: '';
     display: block;
-    width: 80px;
+    width: 48px;
     height: 1px;
-    margin: 0 auto 56px;
+    margin: 0 auto 24px;
     background: linear-gradient(90deg, transparent, var(--risk-accent-dim), transparent);
     opacity: 0.6;
 }
 
+/* Типографика как News: Poppins, 18px, line-height 1.65 */
 .storm-text {
-    font-family: 'Inter', sans-serif;
-    font-size: clamp(24px, 3.5vw, 36px);
-    font-weight: 600;
-    line-height: 1.7;
-    letter-spacing: 0.02em;
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.65;
+    letter-spacing: 0;
     text-align: left;
-    max-width: var(--risk-read-max);
-    margin: 0 auto;
-    margin-left: 0;
+    max-width: 100%;
+    margin: 0;
     opacity: 1 !important;
     visibility: visible !important;
     position: relative;
-    padding: 40px 0;
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    will-change: background-position;
-    /* Градиентное свечение */
-    background: linear-gradient(
-        90deg,
-        #FFFFFF 0%,
-        #FFFFFF 30%,
-        var(--risk-accent-soft) 50%,
-        #FFFFFF 70%,
-        #FFFFFF 100%
-    );
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    /* Красивое перетекание свечения по буквам каждые 7 секунд */
-    animation: textGlowFlow 7s ease-in-out infinite;
-}
-
-@keyframes textGlowFlow {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
+    padding: 0;
+    color: rgba(255, 255, 255, 0.88);
 }
 
 @keyframes borderPulse {
@@ -777,10 +732,10 @@ body {
 }
 
 .why-content {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Poppins', sans-serif;
     color: rgba(255, 255, 255, 0.88);
     font-size: 15px;
-    line-height: 1.65;
+    line-height: 1.6;
     font-weight: 400;
 }
 
@@ -804,7 +759,8 @@ body {
     }
     .risk-text-wrapper,
     .crypto-storm-wrapper {
-        padding: 32px 20px;
+        padding: 20px 24px 28px;
+        max-width: 100%;
     }
     /* п.11 Apple HIG: tap-area минимум 44px */
     .risk-calculator-wrapper button,
@@ -883,11 +839,11 @@ body {
         font-size: clamp(42px, 12vw, 56px);
     }
     .risk-section-title {
-        font-size: clamp(22px, 5vw, 28px);
+        font-size: 20px;
     }
     .overlay-text,
     .storm-text {
-        font-size: 18px;
+        font-size: 16px;
     }
 }
 @media (max-width: 600px) {
@@ -979,11 +935,12 @@ body {
 
 .risk-trust-badge {
     width: 100%;
-    margin-top: 28px;
+    margin-top: 24px;
+    font-family: 'Poppins', sans-serif;
     font-size: 12px;
     color: var(--risk-text-secondary);
-    opacity: 0.8;
-    letter-spacing: 0.12em;
+    opacity: 0.85;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     text-align: center;
 }
@@ -1392,10 +1349,10 @@ body {
 
 .strategies {
     width: 100%;
-    color: rgba(255, 255, 255, 0.9) !important;
-    font-size: 16px;
-    font-family: 'Inter', sans-serif;
-    line-height: 1.8;
+    color: rgba(255, 255, 255, 0.88) !important;
+    font-size: 15px;
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.65;
     opacity: 1 !important;
 }
 
@@ -1437,10 +1394,10 @@ body {
     border-radius: 10px;
     text-align: center;
     color: var(--risk-text-secondary);
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 400;
     font-size: 14px;
-    letter-spacing: 0.02em;
+    line-height: 1.6;
 }
 
 .strategy-allocation {
@@ -1472,10 +1429,10 @@ body {
 }
 
 .why-content {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Poppins', sans-serif;
     color: rgba(255, 255, 255, 0.88);
     font-size: 15px;
-    line-height: 1.65;
+    line-height: 1.6;
     font-weight: 400;
 }
 
