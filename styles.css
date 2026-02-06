@@ -1026,6 +1026,19 @@ html {
 }
 
 @media (max-width: 768px) {
+   html, body {
+       overflow-x: hidden !important;
+       overscroll-behavior-x: none;
+       -webkit-overflow-scrolling: touch;
+       width: 100%;
+       max-width: 100vw;
+       position: relative;
+   }
+   .page {
+       overflow-x: hidden !important;
+       max-width: 100vw;
+       width: 100%;
+   }
    .main-nav {
        padding: 14px 20px;
    }
@@ -1039,10 +1052,22 @@ html {
        font-size: 22px;
        margin-bottom: 32px;
    }
+   .content, .main-text-section, .trust-stats, .mission-section, .explore-section {
+       max-width: 100%;
+       overflow-wrap: break-word;
+   }
+   img, video, iframe {
+       max-width: 100%;
+       height: auto;
+   }
 }
 
 /* Responsive design */
 @media (max-width: 600px) {
+   html, body {
+       overflow-x: hidden !important;
+       overscroll-behavior: none;
+   }
    .main-nav-links {
        display: none;
    }
@@ -1830,6 +1855,10 @@ html {
 }
 
 @media (max-width: 480px) {
+   html, body {
+       overflow-x: hidden !important;
+       overscroll-behavior: none;
+   }
    .chat-container {
        width: calc(100vw - 40px);
        height: calc(100vh - 120px);
