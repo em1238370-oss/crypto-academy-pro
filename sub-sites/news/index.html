@@ -354,13 +354,25 @@
            var regEl = document.getElementById('newsBlockRegulation');
            var macroEl = document.getElementById('newsBlockMacro');
            var marketEl = document.getElementById('newsBlockMarket');
-           if (regEl) regEl.textContent = pick(regulation);
-           if (macroEl) macroEl.textContent = pick(macro);
-           if (marketEl) marketEl.textContent = pick(market);
+           var heatEl = document.getElementById('newsHeat');
            fetch('/api/news/dynamic').then(function(r) { return r.json(); }).then(function(data) {
-               var heat = document.getElementById('newsHeat');
-               if (heat && data.heat) heat.setAttribute('data-state', data.heat);
-           }).catch(function() {});
+               if (data) {
+                   if (regEl && data.regulation) regEl.textContent = data.regulation.text || pick(regulation);
+                   if (macroEl && data.macro) macroEl.textContent = data.macro.text || pick(macro);
+                   if (marketEl && data.market) marketEl.textContent = data.market.text || pick(market);
+                   if (heatEl && data.heat) heatEl.setAttribute('data-state', data.heat);
+               } else {
+                   if (regEl) regEl.textContent = pick(regulation);
+                   if (macroEl) macroEl.textContent = pick(macro);
+                   if (marketEl) marketEl.textContent = pick(market);
+                   if (heatEl) heatEl.setAttribute('data-state', 'balanced');
+               }
+           }).catch(function() {
+               if (regEl) regEl.textContent = pick(regulation);
+               if (macroEl) macroEl.textContent = pick(macro);
+               if (marketEl) marketEl.textContent = pick(market);
+               if (heatEl) heatEl.setAttribute('data-state', 'balanced');
+           });
        })();
        (function() {
            document.querySelectorAll('.before-chip').forEach(function(chip) {

@@ -1012,24 +1012,25 @@ app.post('/api/payments/stripe/webhook', express.raw({ type: 'application/json' 
 
 // --- Dynamic News (Regulation / Macro / Market + News heat) ---
 const NEWS_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min cache
-const NEWS_FETCH_INTERVAL_MS = 30 * 60 * 1000; // 30 min fetch (free tier limits)
+const NEWS_FETCH_INTERVAL_MS = 15 * 60 * 1000; // 15 min fetch (free tier: ~96/day)
 let newsCache = null;
 let newsCacheTime = 0;
 
 function categorizeArticle(title, desc) {
   const text = ((title || '') + ' ' + (desc || '')).toLowerCase();
-  if (/\b(regulation|sec|etf|licensing|ban|approval|cftc|compliance)\b/.test(text)) return 'regulation';
-  if (/\b(inflation|rates|fed|fomc|dollar|macro|interest rate|gdp)\b/.test(text)) return 'macro';
-  if (/\b(funding|open interest|liquidity|volume|whale|exchange)\b/.test(text)) return 'market';
+  if (/\b(regulation|sec|etf|licensing|ban|approval|cftc|compliance|policy|legal|court|lawsuit|supervisory)\b/.test(text)) return 'regulation';
+  if (/\b(inflation|rates|fed|fomc|dollar|macro|interest rate|gdp|cpi|employment|jobs|monetary)\b/.test(text)) return 'macro';
+  if (/\b(funding|open interest|liquidity|volume|whale|exchange|derivatives|options|oi)\b/.test(text)) return 'market';
   return null;
 }
 
-function summarizeForBlock(articles, category, maxLen = 180) {
+function summarizeForBlock(articles, category, maxLen = 200) {
   if (!articles || articles.length === 0) return null;
   const a = articles[0];
-  const title = a.title || a.headline || '';
-  const desc = a.description || a.snippet || '';
+  const title = (a.title || a.headline || '').trim();
+  const desc = (a.description || a.snippet || a.summary || '').trim();
   let out = title || desc;
+  if (!out) return null;
   if (out.length > maxLen) out = out.slice(0, maxLen - 3) + '…';
   return out;
 }
@@ -1061,7 +1062,8 @@ async function fetchNewsFromTheNewsApi() {
       return results.map(r => ({
         title: r.title || r.headline,
         description: r.description || r.summary || r.snippet,
-        url: r.url
+        url: r.url,
+        publishedAt: r.published_at || r.publishedAt || r.published
       }));
     }
     return null;
@@ -1089,9 +1091,15 @@ async function refreshNewsCache() {
   const macro = articles.filter(a => categorizeArticle(a.title, a.description) === 'macro');
   const market = articles.filter(a => categorizeArticle(a.title, a.description) === 'market');
   const total = articles.length;
+  const recentCount = articles.filter(a => {
+    const pub = a.publishedAt || a.published_at || a.published;
+    if (!pub) return true;
+    const t = new Date(pub).getTime();
+    return Date.now() - t < 6 * 60 * 60 * 1000;
+  }).length;
   let heat = 'balanced';
-  if (total >= 35) heat = 'hot';
-  else if (total <= 12) heat = 'calm';
+  if (total >= 25 || recentCount >= 15) heat = 'hot';
+  else if (total <= 6 || recentCount <= 2) heat = 'calm';
   const defReg = 'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.';
   const defMacro = 'Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.';
   const defMarket = 'Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it\'s just narrative.';
