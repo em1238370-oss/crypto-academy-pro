@@ -1011,10 +1011,10 @@ app.post('/api/payments/stripe/webhook', express.raw({ type: 'application/json' 
 });
 
 // --- Dynamic News (Regulation / Macro / Market + News heat) ---
-const NEWS_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min cache
+const NEWS_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min cache for raw articles
 const NEWS_FETCH_INTERVAL_MS = 15 * 60 * 1000; // 15 min fetch (free tier: ~96/day)
-let newsCache = null;
-let newsCacheTime = 0;
+let articlesCache = null; // raw articles, refreshed every 10 min
+let articlesCacheTime = 0;
 
 const FALLBACK_REGULATION = [
   'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.',
@@ -1058,15 +1058,21 @@ function categorizeArticle(title, desc) {
   return null;
 }
 
-function summarizeForBlock(articles, category, maxLen = 200) {
-  if (!articles || articles.length === 0) return null;
-  const a = articles[0];
-  const title = (a.title || a.headline || '').trim();
-  const desc = (a.description || a.snippet || a.summary || '').trim();
+function summarizeOne(article, maxLen = 200) {
+  if (!article) return null;
+  const title = (article.title || article.headline || '').trim();
+  const desc = (article.description || article.snippet || article.summary || '').trim();
   let out = title || desc;
   if (!out) return null;
   if (out.length > maxLen) out = out.slice(0, maxLen - 3) + '…';
   return out;
+}
+
+// Pick random from top N articles — different output each call
+function pickFromTop(articles, n = 5) {
+  if (!articles || articles.length === 0) return null;
+  const top = articles.slice(0, n);
+  return top[Math.floor(Math.random() * top.length)];
 }
 
 async function fetchNewsFromNewsApi() {
@@ -1111,15 +1117,24 @@ async function refreshNewsCache() {
   let articles = await fetchNewsFromNewsApi();
   if (!articles || articles.length === 0) articles = await fetchNewsFromTheNewsApi();
   if (!articles || articles.length === 0) {
-    if (newsCache && !newsCache.isFallback) return; // keep stale real cache
-    newsCache = null; // no cache when APIs fail — endpoint will return random fallback each time
+    if (articlesCache) return; // keep stale articles
+    articlesCache = null;
     return;
   }
-  const reg = articles.filter(a => categorizeArticle(a.title, a.description) === 'regulation');
-  const macro = articles.filter(a => categorizeArticle(a.title, a.description) === 'macro');
-  const market = articles.filter(a => categorizeArticle(a.title, a.description) === 'market');
-  const total = articles.length;
-  const recentCount = articles.filter(a => {
+  articlesCache = articles;
+  articlesCacheTime = Date.now();
+}
+
+function buildDynamicResponse() {
+  // Always build fresh response — random pick each time so text changes every visit
+  if (!articlesCache || articlesCache.length === 0) {
+    return getRandomFallback();
+  }
+  const reg = articlesCache.filter(a => categorizeArticle(a.title, a.description) === 'regulation');
+  const macro = articlesCache.filter(a => categorizeArticle(a.title, a.description) === 'macro');
+  const market = articlesCache.filter(a => categorizeArticle(a.title, a.description) === 'market');
+  const total = articlesCache.length;
+  const recentCount = articlesCache.filter(a => {
     const pub = a.publishedAt || a.published_at || a.published;
     if (!pub) return true;
     const t = new Date(pub).getTime();
@@ -1128,16 +1143,18 @@ async function refreshNewsCache() {
   let heat = 'balanced';
   if (total >= 25 || recentCount >= 15) heat = 'hot';
   else if (total <= 6 || recentCount <= 2) heat = 'calm';
-  const defReg = 'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.';
-  const defMacro = 'Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.';
-  const defMarket = 'Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it\'s just narrative.';
-  newsCache = {
-    regulation: { text: summarizeForBlock(reg, 'regulation') || defReg, url: reg[0]?.url || null },
-    macro: { text: summarizeForBlock(macro, 'macro') || defMacro, url: macro[0]?.url || null },
-    market: { text: summarizeForBlock(market, 'market') || defMarket, url: market[0]?.url || null },
+  const defReg = pickFallback(FALLBACK_REGULATION);
+  const defMacro = pickFallback(FALLBACK_MACRO);
+  const defMarket = pickFallback(FALLBACK_MARKET);
+  const regArt = pickFromTop(reg, 5);
+  const macroArt = pickFromTop(macro, 5);
+  const marketArt = pickFromTop(market, 5);
+  return {
+    regulation: { text: summarizeOne(regArt) || defReg, url: regArt?.url || null },
+    macro: { text: summarizeOne(macroArt) || defMacro, url: macroArt?.url || null },
+    market: { text: summarizeOne(marketArt) || defMarket, url: marketArt?.url || null },
     heat
   };
-  newsCacheTime = Date.now();
 }
 
 app.get('/api/news/dynamic', async (req, res) => {
@@ -1145,11 +1162,10 @@ app.get('/api/news/dynamic', async (req, res) => {
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
   try {
-    if (!newsCache || Date.now() - newsCacheTime > NEWS_CACHE_TTL_MS) {
+    if (!articlesCache || Date.now() - articlesCacheTime > NEWS_CACHE_TTL_MS) {
       await refreshNewsCache();
     }
-    // When APIs fail, newsCache is null — return random fallback so content updates each visit
-    const data = newsCache || getRandomFallback();
+    const data = buildDynamicResponse();
     res.json(data);
   } catch (e) {
     console.error('News dynamic error:', e);
