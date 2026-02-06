@@ -289,6 +289,24 @@ body::after {
     transform: translateY(0);
 }
 
+/* Доступность: prefers-reduced-motion (Apple) */
+@media (prefers-reduced-motion: reduce) {
+    .scroll-reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+    .news-row.scroll-reveal:nth-child(n) {
+        transition-delay: 0s;
+    }
+    .news-link::after {
+        transition: none;
+    }
+    .news-row:hover {
+        transform: none;
+    }
+}
+
 /* Секция источников */
 .news-sources-section {
     padding: 0;
