@@ -32,28 +32,36 @@
                </div>
            </div>
            
-           <!-- Секция 1: Почему риск важен (DuoView п.6) -->
-           <section class="risk-section" aria-labelledby="section-why-risk">
-               <h2 id="section-why-risk" class="risk-section-title">Why Risk Matters</h2>
+           <!-- Секция 1: Почему риск важен — zigzag left -->
+           <section class="risk-section risk-section-alt risk-section-left reveal-on-scroll" aria-labelledby="section-why-risk">
+               <div class="risk-section-header">
+                   <span class="risk-section-num">01</span>
+                   <h2 id="section-why-risk" class="risk-section-title">Why Risk Matters</h2>
+               </div>
+               <p class="risk-pull-quote">The cornerstone of success—where uncertainty reigns.</p>
                <div class="risk-text-wrapper">
                    <div class="overlay-text">
-                       Risk management is the cornerstone of success—not just in trading, sports, or cryptocurrency, but in any endeavor where uncertainty reigns. You could analyze charts a thousand times, craft the most brilliant strategies, and still fall short without a disciplined approach to risk. Embrace the wisdom of risk management, and let this tool guide you.
+                       Risk management isn't optional—not in trading, sports, or cryptocurrency. You could analyze charts a thousand times, craft the most brilliant strategies, and still fall short without a disciplined approach. Embrace the wisdom of risk management, and let this tool guide you.
                    </div>
                </div>
            </section>
            
-           <!-- Секция 2: Что даёт управление рисками -->
-           <section class="risk-section" aria-labelledby="section-what-gives">
-               <h2 id="section-what-gives" class="risk-section-title">What Risk Management Gives You</h2>
+           <!-- Секция 2: Что даёт управление рисками — zigzag right -->
+           <section class="risk-section risk-section-alt risk-section-right reveal-on-scroll" aria-labelledby="section-what-gives">
+               <div class="risk-section-header">
+                   <span class="risk-section-num">02</span>
+                   <h2 id="section-what-gives" class="risk-section-title">What Risk Management Gives You</h2>
+               </div>
+               <p class="risk-pull-quote">Your lifeline in the chaos—control, confidence, capital protection.</p>
                <div class="crypto-storm-wrapper">
                    <div class="storm-text">
-                       Crypto markets are a brutal rollercoaster—prices can skyrocket or crash in hours. Without solid risk management, it's all just noise. Smart risk management isn't optional—it's your lifeline. It protects your capital, keeps your strategy on track, and gives you control and confidence to navigate the chaos. Use tailored risk management plans to stay sharp and survive the storm.
+                       Crypto markets are a brutal rollercoaster—prices can skyrocket or crash in hours. Without solid risk management, it's all just noise. Smart risk management protects your capital, keeps your strategy on track, and gives you the control to navigate the storm. Tailored plans keep you sharp and ready.
                    </div>
                </div>
            </section>
            
-           <!-- Секция 3: Элементы доверия (DuoView п.5) -->
-           <section class="risk-trust-stats" aria-label="Why trust this tool">
+           <!-- Секция 3: Элементы доверия — bento style -->
+           <section class="risk-trust-stats reveal-on-scroll" aria-label="Why trust this tool">
                <div class="risk-trust-stat">
                    <span class="risk-trust-number">3</span>
                    <span class="risk-trust-label">Strategies per result</span>
@@ -70,8 +78,11 @@
            </section>
            
            <!-- Секция 4: Калькулятор стратегий -->
-           <section class="risk-section risk-section-calculator" aria-labelledby="section-calculator">
-               <h2 id="section-calculator" class="risk-section-title">Strategy Calculator</h2>
+           <section class="risk-section risk-section-calculator reveal-on-scroll" aria-labelledby="section-calculator">
+               <div class="risk-section-header">
+                   <span class="risk-section-num">03</span>
+                   <h2 id="section-calculator" class="risk-section-title">Strategy Calculator</h2>
+               </div>
                <p class="risk-section-sub">Calculate your personalized strategy in 30 seconds.</p>
                <div class="risk-calculator-wrapper">
                    <div class="risk-calculator-container">
@@ -381,6 +392,20 @@
    </script>
    
    <script src="../../scripts/chatbot.js?v=30"></script>
+   <script>
+       (function() {
+           const els = document.querySelectorAll('.reveal-on-scroll');
+           const obs = new IntersectionObserver(function(entries) {
+               entries.forEach(function(e) {
+                   if (e.isIntersecting) {
+                       e.target.classList.add('revealed');
+                       obs.unobserve(e.target);
+                   }
+               });
+           }, { rootMargin: '0px 0px -80px 0px', threshold: 0.1 });
+           els.forEach(function(el) { obs.observe(el); });
+       })();
+   </script>
    
    <!-- Дополнительный скрипт для ГАРАНТИИ видимости чата -->
    <script>

@@ -295,12 +295,72 @@ body {
     50% { filter: drop-shadow(0 0 18px rgba(150, 248, 145, 0.7)) drop-shadow(0 0 40px var(--risk-accent-dim)); }
 }
 
-/* Секции — DuoView: логичная последовательность, визуальные блоки */
+/* Секции — DuoView + свежая импровизация */
 .risk-section {
     width: 100%;
     max-width: 90%;
     margin: 0 auto var(--risk-section-gap);
     padding: 0 24px;
+}
+
+/* Нумерованные заголовки — визуальный ритм */
+.risk-section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.risk-section-num {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(14px, 1.5vw, 18px);
+    font-weight: 700;
+    color: var(--risk-accent);
+    letter-spacing: 0.15em;
+    opacity: 0.9;
+}
+
+.risk-section-calculator .risk-section-header {
+    justify-content: center;
+}
+
+.risk-section-left .risk-section-header,
+.risk-section-right .risk-section-header {
+    justify-content: flex-start;
+}
+
+.risk-section-right .risk-section-header {
+    justify-content: flex-end;
+}
+
+/* Pull quote — цепляющая фраза над текстом */
+.risk-pull-quote {
+    font-family: 'Raleway', sans-serif;
+    font-size: clamp(18px, 2.2vw, 24px);
+    font-weight: 600;
+    color: var(--risk-accent);
+    letter-spacing: 0.08em;
+    max-width: 42ch;
+    margin: 0 0 32px;
+    line-height: 1.5;
+    opacity: 0.95;
+}
+
+.risk-section-left .risk-pull-quote {
+    margin-left: 0;
+    margin-right: auto;
+    text-align: left;
+}
+
+.risk-section-right .risk-pull-quote {
+    margin-left: auto;
+    margin-right: 0;
+    text-align: right;
+}
+
+.risk-section-calculator .risk-pull-quote {
+    display: none;
 }
 
 .risk-section-title {
@@ -309,7 +369,7 @@ body {
     font-weight: 700;
     color: rgba(255, 255, 255, 0.95);
     letter-spacing: -0.02em;
-    margin-bottom: 24px;
+    margin-bottom: 0;
     text-align: center;
     position: relative;
 }
@@ -322,6 +382,86 @@ body {
     margin: 16px auto 0;
     background: linear-gradient(90deg, transparent, var(--risk-accent-dim), transparent);
     opacity: 0.7;
+}
+
+/* Zigzag — секция 1 слева, секция 2 справа */
+.risk-section-left .risk-text-wrapper,
+.risk-section-left .crypto-storm-wrapper {
+    margin-left: 0;
+    margin-right: auto;
+    text-align: left;
+}
+
+.risk-section-right .risk-text-wrapper,
+.risk-section-right .crypto-storm-wrapper {
+    margin-left: auto;
+    margin-right: 0;
+    text-align: right;
+}
+
+.risk-section-right .overlay-text,
+.risk-section-right .storm-text {
+    margin-left: auto;
+    margin-right: 0;
+    text-align: right;
+}
+
+/* Scroll reveal — плавное появление при прокрутке */
+.reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.reveal-on-scroll.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Небольшая задержка для stagger-эффекта */
+.risk-trust-stats.reveal-on-scroll { transition-delay: 0.1s; }
+.risk-section-calculator.reveal-on-scroll { transition-delay: 0.15s; }
+
+/* Лёгкий акцент фона для секций — глубина */
+.risk-section-left {
+    position: relative;
+}
+
+.risk-section-left::before {
+    content: '';
+    position: absolute;
+    left: -5%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40%;
+    height: 80%;
+    background: radial-gradient(ellipse at left center, rgba(150, 248, 145, 0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.risk-section-right {
+    position: relative;
+}
+
+.risk-section-right::before {
+    content: '';
+    position: absolute;
+    right: -5%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40%;
+    height: 80%;
+    background: radial-gradient(ellipse at right center, rgba(150, 248, 145, 0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.risk-section-left > *,
+.risk-section-right > * {
+    position: relative;
+    z-index: 1;
 }
 
 .risk-section-sub {
@@ -607,9 +747,33 @@ body {
         --risk-block-padding: 40px;
         --risk-read-max: 90%;
     }
+    .risk-section-left .risk-section-header,
+    .risk-section-right .risk-section-header { justify-content: center; }
+    .risk-section-left .risk-pull-quote,
+    .risk-section-right .risk-pull-quote {
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+    }
+    .risk-section-left .risk-text-wrapper,
+    .risk-section-left .crypto-storm-wrapper,
+    .risk-section-right .risk-text-wrapper,
+    .risk-section-right .crypto-storm-wrapper {
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+    }
+    .risk-section-right .overlay-text,
+    .risk-section-right .storm-text {
+        text-align: center;
+    }
     .risk-trust-stats {
-        gap: 48px;
+        gap: 20px;
         padding: 40px 20px;
+    }
+    .risk-trust-stat {
+        min-width: 120px;
+        padding: 24px 20px;
     }
     .risk-trust-number {
         font-size: 36px;
@@ -634,15 +798,15 @@ body {
 }
 
 
-/* Элементы доверия (DuoView п.5) */
+/* Элементы доверия — bento-карточки с hover */
 .risk-trust-stats {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
-    gap: 72px;
+    align-items: stretch;
+    gap: 24px;
     padding: var(--risk-block-padding) 24px;
     margin: 0 auto var(--risk-section-gap);
-    max-width: 900px;
+    max-width: 920px;
     flex-wrap: wrap;
     position: relative;
 }
@@ -651,8 +815,21 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     text-align: center;
-    min-width: 140px;
+    min-width: 160px;
+    flex: 1;
+    padding: 32px 28px;
+    background: linear-gradient(135deg, rgba(150, 248, 145, 0.04) 0%, transparent 50%, rgba(150, 248, 145, 0.02) 100%);
+    border: 1px solid rgba(150, 248, 145, 0.12);
+    border-radius: 16px;
+    transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.risk-trust-stat:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3), 0 0 40px rgba(150, 248, 145, 0.08);
+    border-color: rgba(150, 248, 145, 0.25);
 }
 
 .risk-trust-number {
