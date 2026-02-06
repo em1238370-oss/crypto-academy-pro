@@ -1087,6 +1087,24 @@ body {
     flex-direction: column;
 }
 
+.slider-track-wrap {
+    position: relative;
+    --fill: 0%;
+}
+
+.slider-track-wrap::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: var(--fill);
+    height: 6px;
+    background: linear-gradient(90deg, rgba(150, 248, 145, 0.4), var(--risk-accent));
+    border-radius: 3px;
+    pointer-events: none;
+    transition: width 0.15s ease-out;
+}
 
 .risk-slider,
 .risk-calculator-wrapper input[type="range"] {
@@ -1160,6 +1178,11 @@ body {
     margin-top: 20px;
 }
 
+.magnetic-wrap {
+    display: inline-block;
+    padding: 8px;
+}
+
 .risk-calculator-wrapper button {
     width: 260px;
     padding: 18px 28px;
@@ -1171,12 +1194,15 @@ body {
     font-family: 'Raleway', sans-serif;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: transform 0.25s ease, background 0.25s ease;
     letter-spacing: 0.03em;
 }
 
 .risk-calculator-wrapper button:hover {
     background: #7ae87a;
+}
+
+.magnetic-wrap:hover .risk-calculator-wrapper button {
     transform: translateY(-2px);
 }
 
@@ -1248,7 +1274,7 @@ body {
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-left: 3px solid var(--risk-accent);
-    transition: background var(--risk-transition), border-color var(--risk-transition);
+    transition: background var(--risk-transition), border-color var(--risk-transition), transform 0.25s ease;
 }
 
 .strategy:hover {

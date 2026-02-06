@@ -66,7 +66,7 @@
                <span class="risk-section-num risk-section-num-trust" aria-hidden="true">03</span>
                <div class="risk-trust-bento">
                    <div class="risk-trust-stat risk-trust-hero">
-                       <span class="risk-trust-number">3</span>
+                       <span class="risk-trust-number" data-count="3">0</span>
                        <span class="risk-trust-label">Strategies per result—compare & choose</span>
                    </div>
                    <div class="risk-trust-stat">
@@ -123,7 +123,9 @@
                                        <span id="riskLabel">Conservative</span>
                                        <span>High</span>
                                    </div>
-                                   <input type="range" id="risk" min="0" max="100" step="10" value="0" class="risk-slider">
+                                   <div class="slider-track-wrap" style="--fill: 0%">
+                                       <input type="range" id="risk" min="0" max="100" step="10" value="0" class="risk-slider">
+                                   </div>
                                    <span class="slider-value"><span id="riskValue">0</span>%</span>
                                </div>
                            </div>
@@ -139,7 +141,9 @@
                        </div>
 
                        <div class="button-wrapper">
-                           <button type="button" id="getStrategiesBtn" onclick="getStrategies()">Get My Strategies</button>
+                           <div class="magnetic-wrap">
+                               <button type="button" id="getStrategiesBtn" onclick="getStrategies()">Get My Strategies</button>
+                           </div>
                        </div>
                    </form>
 
@@ -230,8 +234,48 @@
        
        riskSlider.addEventListener('input', function() {
            updateRiskLabel(this.value);
+           this.closest('.slider-track-wrap').style.setProperty('--fill', this.value + '%');
        });
        updateRiskLabel(riskSlider.value);
+       riskSlider.closest('.slider-track-wrap')?.style.setProperty('--fill', riskSlider.value + '%');
+
+       // Magnetic button — кнопка тянется к курсору (если не prefers-reduced-motion)
+       (function() {
+           if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+           const wrap = document.querySelector('.magnetic-wrap');
+           const btn = document.getElementById('getStrategiesBtn');
+           if (!wrap || !btn) return;
+           wrap.addEventListener('mousemove', function(e) {
+               const rect = wrap.getBoundingClientRect();
+               const x = (e.clientX - rect.left - rect.width/2) * 0.25;
+               const y = (e.clientY - rect.top - rect.height/2) * 0.25;
+               btn.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+           });
+           wrap.addEventListener('mouseleave', function() {
+               btn.style.transform = 'translate(0, 0)';
+           });
+       })();
+
+       // Count-up: trust number "3" анимируется при появлении
+       (function() {
+           const el = document.querySelector('.risk-trust-number[data-count]');
+           if (!el) return;
+           const target = parseInt(el.dataset.count, 10);
+           const obs = new IntersectionObserver(function(entries) {
+               entries.forEach(function(e) {
+                   if (!e.isIntersecting) return;
+                   obs.unobserve(e.target);
+                   let n = 0;
+                   const step = target / 20;
+                   const id = setInterval(function() {
+                       n += step;
+                       if (n >= target) { el.textContent = target; clearInterval(id); return; }
+                       el.textContent = Math.floor(n);
+                   }, 40);
+               });
+           }, { threshold: 0.5 });
+           obs.observe(el);
+       })();
 
        // API key show/hide toggle
        const apiKeyInput = document.getElementById('apiKey');
@@ -424,13 +468,28 @@
                    goal,
                    deposit,
                    risk,
-                   key  // Pass strategy key (A, B, or C) for unique explanations
+                   key
                );
                const whyElement = document.getElementById(`why-${index}`);
                if (whyElement) {
                    whyElement.innerHTML = explanation;
                }
            });
+
+           // 3D tilt on strategy cards (если не prefers-reduced-motion)
+           if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+               document.querySelectorAll('.strategy').forEach(function(card) {
+                   card.addEventListener('mousemove', function(e) {
+                       const rect = card.getBoundingClientRect();
+                       const x = (e.clientX - rect.left) / rect.width - 0.5;
+                       const y = (e.clientY - rect.top) / rect.height - 0.5;
+                       card.style.transform = 'perspective(600px) rotateX(' + (y * -6) + 'deg) rotateY(' + (x * 6) + 'deg)';
+                   });
+                   card.addEventListener('mouseleave', function() {
+                       card.style.transform = '';
+                   });
+               });
+           }
        }
 
        // Scroll-reveal: секции появляются при прокрутке
