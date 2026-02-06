@@ -355,7 +355,7 @@
            var macroEl = document.getElementById('newsBlockMacro');
            var marketEl = document.getElementById('newsBlockMarket');
            var heatEl = document.getElementById('newsHeat');
-           fetch('/api/news/dynamic').then(function(r) { return r.json(); }).then(function(data) {
+           fetch('/api/news/dynamic?t=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(data) {
                if (data) {
                    if (regEl && data.regulation) regEl.textContent = data.regulation.text || pick(regulation);
                    if (macroEl && data.macro) macroEl.textContent = data.macro.text || pick(macro);

@@ -1113,6 +1113,7 @@ async function refreshNewsCache() {
 }
 
 app.get('/api/news/dynamic', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   try {
     if (!newsCache || Date.now() - newsCacheTime > NEWS_CACHE_TTL_MS) {
       await refreshNewsCache();
