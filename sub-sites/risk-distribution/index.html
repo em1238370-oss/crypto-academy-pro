@@ -7,10 +7,10 @@
    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%23001800' width='32' height='32' rx='6'/><text x='16' y='22' font-size='18' font-weight='bold' fill='%2396F891' text-anchor='middle'>R</text></svg>">
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=4">
+   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
+   <link rel="stylesheet" href="../news/styles.css">
+   <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -28,46 +28,29 @@
 
    <div class="page">
        <div class="content">
-           <div class="crypto-risk-wrapper">
-               <div class="crypto-risk-container">
-                   <h1>Balance The <span class="hero-accent">Storm</span>: Crypto <span class="hero-accent">Risk</span> Guide</h1>
-                   <p class="hero-sub">Your edge in volatile markets</p>
-               </div>
-           </div>
-           
-           <!-- Секция 1: Почему риск важен -->
-           <section class="risk-section risk-section-reveal" aria-labelledby="section-why-risk">
-               <span class="risk-section-num" aria-hidden="true">01</span>
-               <h2 id="section-why-risk" class="risk-section-title">Why Risk Matters</h2>
-               <blockquote class="risk-pull-quote">The cornerstone of success where uncertainty reigns</blockquote>
-               <div class="risk-text-wrapper risk-align-left">
-                   <p class="overlay-text">Risk management isn't optional—it's your edge. Analyze charts forever, craft brilliant strategies, still fall short. Discipline wins. Let this tool guide you.</p>
-               </div>
+           <!-- Hero — как News: те же классы -->
+           <section class="news-hero">
+               <p class="news-hero-label">Crypto Academy Pro · Risk</p>
+               <h1 class="news-hero-title">Balance The <span class="hero-accent">Storm</span>: Crypto <span class="hero-accent">Risk</span> Guide</h1>
+               <p class="news-hero-subtitle">Your edge in volatile markets</p>
+               <p class="news-hero-description">Risk management isn't optional—it's your edge. Analyze charts forever, craft brilliant strategies, still fall short. Discipline wins. Let this tool guide you.</p>
            </section>
            
-           <!-- Разделитель с анимацией -->
-           <div class="risk-section-divider" aria-hidden="true"></div>
-
-           <!-- Секция 2: Что даёт управление рисками -->
-           <section class="risk-section risk-section-reveal" aria-labelledby="section-what-gives">
-               <span class="risk-section-num" aria-hidden="true">02</span>
-               <h2 id="section-what-gives" class="risk-section-title">What Risk Management Gives You</h2>
-               <blockquote class="risk-pull-quote risk-pull-quote-right">Control. Confidence. Capital protection.</blockquote>
-               <div class="crypto-storm-wrapper risk-align-right">
-                   <p class="storm-text">Crypto is a rollercoaster. Without risk management—noise. With it—control. Protect capital. Stay on track. Survive the storm.</p>
-               </div>
+           <!-- Секция 1: Что даёт управление рисками — как News signal-noise -->
+           <section class="signal-noise risk-section-reveal" aria-labelledby="section-what-gives">
+               <h3 class="signal-noise-title" id="section-what-gives">What Risk Management Gives You</h3>
+               <p class="signal-noise-intro">Control. Confidence. Capital protection. Crypto is a rollercoaster. Without risk management—noise. With it—control. Protect capital. Stay on track. Survive the storm.</p>
            </section>
            
            <!-- Разделитель -->
            <div class="risk-section-divider" aria-hidden="true"></div>
 
-           <!-- Секция 3: Элементы доверия — bento-style -->
-           <section class="risk-trust-stats risk-section-reveal" aria-label="Why trust this tool">
-               <span class="risk-section-num risk-section-num-trust" aria-hidden="true">03</span>
+           <!-- Блок доверия — как News -->
+           <section class="news-trust-stats risk-trust-stats risk-section-reveal" aria-label="Why trust this tool">
                <div class="risk-trust-bento">
                    <div class="risk-trust-stat risk-trust-hero">
                        <span class="risk-trust-number" data-count="3">0</span>
-                       <span class="risk-trust-label">Strategies per result—compare & choose</span>
+                       <span class="risk-trust-label">Strategies per result</span>
                    </div>
                    <div class="risk-trust-stat risk-trust-reveal">
                        <span class="risk-trust-number">AI</span>
@@ -78,17 +61,17 @@
                        <span class="risk-trust-label">No subscription</span>
                    </div>
                </div>
-               <p class="risk-trust-badge">Personalized in 30 seconds. No signup.</p>
+               <p class="news-trust-badge">Personalized in 30 seconds. No signup.</p>
+               <p class="news-trust-tagline">3 strategies per result • Compare & choose</p>
            </section>
            
            <!-- Разделитель -->
            <div class="risk-section-divider" aria-hidden="true"></div>
 
-           <!-- Секция 4: Калькулятор стратегий -->
+           <!-- Калькулятор стратегий -->
            <section class="risk-section risk-section-calculator risk-section-reveal" aria-labelledby="section-calculator">
-               <span class="risk-section-num" aria-hidden="true">04</span>
-               <h2 id="section-calculator" class="risk-section-title">Strategy Calculator</h2>
-               <p class="risk-section-sub">Calculate your personalized strategy in 30 seconds.</p>
+               <h2 id="section-calculator" class="news-today-title">Strategy Calculator</h2>
+               <p class="signal-noise-intro">Calculate your personalized strategy in 30 seconds.</p>
                <div class="risk-calculator-wrapper">
                    <div class="risk-calculator-container">
                        <h3 class="risk-calculator-heading">3 inputs. 3 strategies. 30 seconds.</h3>

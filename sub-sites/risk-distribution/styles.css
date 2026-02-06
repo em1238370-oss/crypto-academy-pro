@@ -1,31 +1,54 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+/* Risk = News + только переопределения фона и Risk-специфики */
 
-/* Цветовая схема — база #001800 (иерархия текста как News) */
+/* Переопределяем News-переменные для Risk (зелёный фон) */
 :root {
+    --news-bg: #001800;
+    --news-text: rgba(255, 255, 255, 0.95);
+    --news-accent: #96F891;
+    --news-highlight: rgba(255, 255, 255, 0.9);
+    --news-subtle: rgba(255, 255, 255, 0.82);
+    --news-muted: rgba(255, 255, 255, 0.58);
+    --news-dim: rgba(255, 255, 255, 0.45);
     --risk-bg-base: #001800;
-    --risk-bg-dark: #001200;
-    --risk-bg-light: #002200;
-    --risk-bg-warm: #001c00;
     --risk-accent: #96F891;
-    --risk-accent-soft: rgba(150, 248, 145, 0.6);
     --risk-accent-dim: rgba(150, 248, 145, 0.25);
     --risk-gold: #ffd700;
-    --risk-gold-soft: rgba(255, 215, 0, 0.7);
-    --risk-text: rgba(255, 255, 255, 0.95);
-    --risk-subtle: rgba(255, 255, 255, 0.82);
-    --risk-muted: rgba(255, 255, 255, 0.58);
-    --risk-dim: rgba(255, 255, 255, 0.45);
-    --risk-text-secondary: #cccccc;
-    --risk-section-gap: 72px;
-    --risk-block-padding: 40px;
-    --risk-read-max: 52ch;
-    --risk-transition: 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    --risk-transition: 0.3s ease;
     --progress: 0%;
 }
 
-/* Минимализм: линия прогресса чтения — «дыхание» страницы */
+/* Фон Risk — только переопределение (News даёт остальное) */
+body {
+    background: var(--risk-bg-base) !important;
+}
+body::before {
+    content: '' !important;
+    background: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        var(--risk-bg-base) !important;
+    background-size: 50px 50px, 50px 50px, 100% 100% !important;
+}
+body::after {
+    background: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Nav — зелёный под Risk */
+.main-nav {
+    background: rgba(0, 24, 0, 0.94) !important;
+}
+
+/* Hero accent — золотой */
+.news-hero-title .hero-accent {
+    color: var(--risk-gold) !important;
+}
+
+/* Content glow — зелёный оттенок */
+.content::after {
+    background: radial-gradient(circle, rgba(150, 248, 145, 0.06), transparent 70%) !important;
+}
+
+/* Scroll-progress линия */
 .scroll-progress {
     position: fixed;
     left: 0;
@@ -48,402 +71,12 @@
     transition: height 0.1s ease-out;
 }
 
-/* DuoView п.5: focus-visible для доступности */
-a:focus-visible,
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-summary:focus-visible {
-    outline: 2px solid rgba(150, 248, 145, 0.6);
-    outline-offset: 2px;
-}
-
-/* DuoView: prefers-reduced-motion — уважаем предпочтения пользователя */
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-/* Навигация — идентично News */
-.main-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 32px;
-    background: rgba(0, 24, 0, 0.94);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-.main-nav-brand {
-    font-family: 'Raleway', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--risk-text);
-    text-decoration: none;
-    letter-spacing: -0.02em;
-}
-.main-nav-links {
-    display: flex;
-    gap: 32px;
-}
-.main-nav-links a {
-    font-size: 14px;
-    color: var(--risk-subtle);
-    text-decoration: none;
-    transition: color 0.2s ease;
-}
-.main-nav-links a:hover,
-.main-nav-links a.active {
-    color: var(--risk-text);
-}
-
 html {
     scroll-behavior: smooth;
     overflow-x: hidden;
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-
-
-
-
-body {
-    font-family: 'Poppins', sans-serif;
-    background-color: var(--risk-bg-base);
-    min-height: 100vh;
-    overflow-x: hidden;
-    position: relative;
-    overflow-x: hidden;
-    /* Гарантируем, что fixed элементы работают правильно */
-    transform: none !important;
-    will-change: auto !important;
-    /* Убираем артефакты и улучшаем качество изображения - без пикселизации */
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-    image-rendering: high-quality;
-    image-rendering: auto;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    /* Улучшаем качество отображения */
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    transform: translateZ(0);
-    /* Предотвращаем размытие и артефакты */
-    -webkit-transform: translateZ(0);
-    will-change: auto;
-}
-
-/* Фон — база #001800 */
-body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: 
-        url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0 L30 52 L60 0 Z' fill='none' stroke='rgba(150, 248, 145, 0.08)' stroke-width='0.5'/%3E%3Cpath d='M30 0 L60 52 L90 0' fill='none' stroke='rgba(150, 248, 145, 0.08)' stroke-width='0.5'/%3E%3C/svg%3E"),
-        radial-gradient(circle at 50% 50%, rgba(0, 40, 0, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 50% 50%, transparent 20%, rgba(0, 36, 0, 0.2) 25%, transparent 30%),
-        radial-gradient(circle at 30% 30%, rgba(0, 48, 0, 0.15) 0%, transparent 40%),
-        radial-gradient(circle at 70% 70%, rgba(0, 48, 0, 0.15) 0%, transparent 40%),
-        linear-gradient(135deg, var(--risk-bg-dark) 0%, var(--risk-bg-base) 30%, var(--risk-bg-light) 50%, var(--risk-bg-base) 70%, var(--risk-bg-dark) 100%);
-    background-size: 60px 60px, 8000px 1750px, 8000px 1750px, 4000px 2000px, 4000px 2000px, 100% 100%;
-    background-position: 0 0, center center, center center, center center, center center, 0 0;
-    background-attachment: fixed, fixed, fixed, fixed, fixed, fixed;
-    background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-    z-index: 0;
-    pointer-events: none;
-}
-
-body {
-    position: relative;
-}
-
-/* Мягкое свечение в фоне — как News */
-.content::after {
-    content: '';
-    position: absolute;
-    bottom: 15%;
-    left: 15%;
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(150, 248, 145, 0.06), transparent 70%);
-    border-radius: 50%;
-    filter: blur(60px);
-    z-index: -1;
-}
-
-/* Когда будет реальное изображение, раскомментируйте это и закомментируйте background выше */
-/*
-body {
-    font-family: 'Poppins', sans-serif;
-    background-image: url('assets/risk-distribution-bg.jpg');
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: 8000px 1750px;
-    background-attachment: fixed;
-    background-color: #000000;
-    min-height: 100vh;
-    position: relative;
-    overflow-x: hidden;
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-    image-rendering: high-quality;
-    image-rendering: auto;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    will-change: auto;
-}
-*/
-
-.page {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    position: relative;
-    z-index: 1;
-    padding-top: 56px;
-}
-
-.content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 100px 24px 80px;
-    text-align: center;
-    position: relative;
-    z-index: 1;
-    min-height: 100vh;
-}
-
-/* Hero — идентично News */
-.crypto-risk-wrapper {
-    background: transparent;
-    margin: 0 auto 96px;
-    padding: 0 40px 0;
-    font-family: 'Raleway', sans-serif;
-    color: var(--risk-text) !important;
-    text-align: center;
-    line-height: 1.3;
-    opacity: 1 !important;
-    visibility: visible !important;
-    width: 100%;
-    max-width: 720px;
-    position: relative;
-}
-
-.crypto-risk-container {
-    display: inline-block;
-    opacity: 1 !important;
-    visibility: visible !important;
-    animation: heroFloat 8s ease-in-out infinite;
-    position: relative;
-}
-
-/* Hero как News: Raleway, сдержанные размеры */
-.crypto-risk-wrapper h1 {
-    font-family: 'Raleway', sans-serif;
-    font-size: clamp(48px, 8vw, 96px);
-    margin: 0 0 16px 0;
-    font-weight: 700;
-    color: var(--risk-text) !important;
-    opacity: 1 !important;
-    letter-spacing: -0.02em;
-    line-height: 1.15;
-    animation: heroReveal 1s ease-out;
-}
-
-/* Акценты — как News: золотой без свечения */
-.crypto-risk-wrapper .hero-accent {
-    font-style: italic;
-    font-weight: 700;
-    color: var(--risk-gold) !important;
-}
-
-/* Подзаголовок — как News subtitle */
-.crypto-risk-wrapper .hero-sub {
-    font-family: 'Poppins', sans-serif;
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--risk-subtle) !important;
-    letter-spacing: 0.02em;
-    text-transform: none;
-    margin: 0;
-    opacity: 0;
-    animation: heroSubReveal 0.8s ease-out 0.4s forwards;
-}
-
-@keyframes heroFloat {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(0, -8px) scale(1.002); }
-}
-
-@keyframes heroReveal {
-    0% {
-        opacity: 0;
-        transform: translateY(24px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes heroSubReveal {
-    0% {
-        opacity: 0;
-        transform: translateY(12px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes accentShimmer {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-}
-
-@keyframes accentGlow {
-    0%, 100% { filter: drop-shadow(0 0 12px var(--risk-accent-soft)) drop-shadow(0 0 30px var(--risk-accent-dim)); }
-    50% { filter: drop-shadow(0 0 18px rgba(150, 248, 145, 0.7)) drop-shadow(0 0 40px var(--risk-accent-dim)); }
-}
-
-/* Секции — идентично News (max-width 900px, margin 72px) */
-.risk-section {
-    width: 100%;
-    max-width: 900px;
-    margin: 0 auto var(--risk-section-gap);
-    padding: 0 24px;
-}
-
-/* Номера секций — editorial feel */
-/* Минимализм: «дыхательная точка» у номера секции */
-.risk-section-num {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    font-family: 'Raleway', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--risk-dim);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    margin-bottom: 16px;
-    opacity: 0.9;
-    text-align: center;
-    transition: opacity var(--risk-transition), letter-spacing var(--risk-transition);
-}
-
-.risk-section-num::before {
-    content: '';
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--risk-accent);
-    animation: breath 4s ease-in-out infinite;
-}
-
-@keyframes breath {
-    0%, 100% { opacity: 0.4; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.3); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .risk-section-num::before { animation: none; opacity: 0.6; }
-}
-
-.risk-section:hover .risk-section-num {
-    opacity: 1;
-    letter-spacing: 0.35em;
-}
-
-.risk-section-num-trust {
-    text-align: center;
-}
-
-.risk-trust-stats:hover .risk-section-num-trust {
-    opacity: 1;
-    letter-spacing: 0.35em;
-}
-
-/* Scroll-reveal: появление при прокрутке */
-.risk-section-reveal,
-.risk-section-divider {
-    opacity: 0;
-    transform: translateY(36px);
-    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.risk-section-reveal.risk-revealed,
-.risk-section-divider.risk-revealed {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Pull quotes — цитаты-акценты */
-.risk-pull-quote {
-    font-family: 'Poppins', sans-serif;
-    font-size: 15px;
-    font-weight: 500;
-    font-style: italic;
-    color: var(--risk-subtle);
-    max-width: 42ch;
-    margin: 0 auto 24px;
-    line-height: 1.6;
-    padding: 0 20px;
-    transition: color var(--risk-transition);
-}
-.risk-pull-quote:hover {
-    color: var(--risk-text);
-}
-
-.risk-pull-quote-right {
-    margin-left: auto;
-    margin-right: 0;
-}
-
-.risk-align-left .overlay-text,
-.risk-align-left .storm-text {
-    margin-left: 0;
-    margin-right: auto;
-}
-
-.risk-align-right .storm-text {
-    margin-left: auto;
-    margin-right: 0;
-}
-
-.risk-align-right {
-    text-align: right;
-}
-
-.risk-align-right .storm-text {
-    text-align: right;
-}
-
-/* Разделитель — как News footer */
+/* Risk trust bento + calculator + разделитель */
 .risk-section-divider {
     width: 80px;
     height: 2px;
@@ -451,182 +84,16 @@ body {
     background: linear-gradient(90deg, transparent, rgba(150, 248, 145, 0.45), transparent);
 }
 
-.risk-section-title {
-    font-family: 'Raleway', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--risk-text);
-    letter-spacing: -0.01em;
-    margin-bottom: 16px;
-    text-align: center;
-    position: relative;
+.risk-section-reveal,
+.risk-section-divider {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
 }
-
-.risk-section-title::after {
-    content: '';
-    display: block;
-    width: 80px;
-    height: 2px;
-    margin: 16px auto 0;
-    background: linear-gradient(90deg, transparent, rgba(150, 248, 145, 0.45), transparent);
-}
-
-.risk-section-title:hover {
-    color: var(--risk-text);
-}
-
-.risk-section-sub {
-    font-family: 'Poppins', sans-serif;
-    font-size: 15px;
-    color: var(--risk-muted);
-    text-align: center;
-    margin: 0 0 32px;
-    line-height: 1.6;
-}
-
-.risk-calculator-heading {
-    font-family: 'Poppins', sans-serif;
-    font-size: 16px;
-    font-weight: 500;
-    color: var(--risk-muted);
-    margin-bottom: 32px;
-    text-align: center;
-}
-
-/* DuoView: каждая секция — чёткие границы через отступы */
-.risk-section:first-of-type {
-    margin-top: var(--risk-section-gap);
-}
-
-.risk-section + .risk-section {
-    margin-top: 0;
-}
-
-.risk-text-wrapper {
-    background: transparent;
-    margin: 0 auto;
-    padding: 24px 40px 32px;
-    font-family: 'Poppins', sans-serif;
-    opacity: 1 !important;
-    visibility: visible !important;
-    width: 100%;
-    max-width: 720px;
-    text-align: left;
-    position: relative;
-}
-
-.risk-text-wrapper::before {
-    content: '';
-    display: block;
-    width: 80px;
-    height: 2px;
-    margin: 0 auto 24px;
-    background: linear-gradient(90deg, transparent, rgba(150, 248, 145, 0.45), transparent);
-}
-
-.overlay-text,
-.storm-text {
-    margin: 0;
-}
-
-/* Типографика как News: Poppins, 18px, line-height 1.65 */
-.overlay-text {
-    font-family: 'Poppins', sans-serif;
-    font-size: 18px;
-    font-weight: 400;
-    line-height: 1.65;
-    letter-spacing: 0;
-    text-align: left;
-    max-width: 100%;
-    margin: 0;
-    opacity: 1 !important;
-    visibility: visible !important;
-    position: relative;
-    padding: 0;
-    color: var(--risk-subtle);
-}
-
-.overlay-text::before {
-    display: none;
-}
-
-/* DuoView: минимум — без лишних декоративных символов */
-
-/* Красивое перетекание свечения по буквам */
-@keyframes textGlowFlow {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
-}
-
-/* Плавающее движение символов */
-@keyframes floatSymbol {
-    0%, 100% {
-        transform: translateY(0) scale(1);
-        opacity: 0.2;
-    }
-    50% {
-        transform: translateY(-15px) scale(1.3);
-        opacity: 0.4;
-    }
-}
-
-/* Появление текста при загрузке */
-@keyframes textReveal {
-    0% {
-        opacity: 0;
-        transform: translateY(15px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Section 2 content */
-.crypto-storm-wrapper {
-    background: transparent;
-    margin: 0 auto;
-    padding: 24px 40px 32px;
-    font-family: 'Poppins', sans-serif;
-    opacity: 1 !important;
-    visibility: visible !important;
-    width: 100%;
-    max-width: 720px;
-    text-align: left;
-    position: relative;
-}
-
-.crypto-storm-wrapper::before {
-    content: '';
-    display: block;
-    width: 80px;
-    height: 2px;
-    margin: 0 auto 24px;
-    background: linear-gradient(90deg, transparent, rgba(150, 248, 145, 0.45), transparent);
-}
-
-/* Типографика как News: Poppins, 18px, line-height 1.65 */
-.storm-text {
-    font-family: 'Poppins', sans-serif;
-    font-size: 18px;
-    font-weight: 400;
-    line-height: 1.65;
-    letter-spacing: 0;
-    text-align: left;
-    max-width: 100%;
-    margin: 0;
-    opacity: 1 !important;
-    visibility: visible !important;
-    position: relative;
-    padding: 0;
-    color: var(--risk-subtle);
+.risk-section-reveal.risk-revealed,
+.risk-section-divider.risk-revealed {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 @keyframes borderPulse {
@@ -685,28 +152,62 @@ body {
     font-weight: 400;
 }
 
+/* Risk trust bento — как news-today-item */
+.risk-trust-bento {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 14px;
+    margin: 24px 0 0;
+}
+.risk-trust-stat {
+    padding: 14px 16px 14px 18px;
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    border-left: 2px solid rgba(150, 248, 145, 0.5);
+    transition: background 0.25s ease, transform 0.2s ease;
+}
+.risk-trust-stat:hover {
+    background: rgba(0, 0, 0, 0.18);
+    transform: translateY(-2px);
+}
+.risk-trust-number {
+    font-family: 'Raleway', sans-serif;
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 700;
+    color: var(--risk-gold);
+}
+.risk-trust-label {
+    font-size: 12px;
+    color: var(--news-muted);
+    letter-spacing: 0.08em;
+}
+.risk-trust-hero {
+    grid-column: 1;
+    grid-row: 1 / -1;
+}
+.risk-trust-hero .risk-trust-number {
+    font-size: clamp(48px, 7vw, 72px);
+}
+
+.risk-section {
+    max-width: 900px;
+    margin: 0 auto 72px;
+}
+.risk-calculator-heading {
+    font-size: 16px;
+    color: var(--news-muted);
+    margin-bottom: 24px;
+}
+
 @media (max-width: 768px) {
-    :root {
-        --risk-section-gap: 80px;
-        --risk-block-padding: 40px;
-        --risk-read-max: 90%;
-    }
     .page {
         padding-top: 60px;
     }
     .content {
         padding: 40px 24px max(80px, env(safe-area-inset-bottom));
     }
-    .crypto-risk-wrapper {
-        padding: 32px 24px 48px;
-    }
     .risk-section {
         padding: 0 20px;
-    }
-    .risk-text-wrapper,
-    .crypto-storm-wrapper {
-        padding: 20px 24px 28px;
-        max-width: 100%;
     }
     /* п.11 Apple HIG: tap-area минимум 44px */
     .risk-calculator-wrapper button,
@@ -735,20 +236,6 @@ body {
     .risk-trust-hero {
         grid-column: 1;
         grid-row: auto;
-        padding: 40px 24px;
-    }
-    .risk-trust-stat {
-        padding: 28px 20px;
-    }
-    .risk-pull-quote-right {
-        margin-left: auto;
-        margin-right: auto;
-        text-align: center;
-    }
-    .risk-align-right .storm-text {
-        text-align: left;
-        margin-left: 0;
-        margin-right: auto;
     }
     .risk-trust-number {
         font-size: 44px;
@@ -781,16 +268,6 @@ body {
     .risk-section {
         padding: 0 16px;
     }
-    .crypto-risk-wrapper h1 {
-        font-size: clamp(42px, 12vw, 56px);
-    }
-    .risk-section-title {
-        font-size: 20px;
-    }
-    .overlay-text,
-    .storm-text {
-        font-size: 16px;
-    }
 }
 @media (max-width: 600px) {
     .main-nav-links {
@@ -799,110 +276,24 @@ body {
 }
 
 
-/* Элементы доверия — bento-style */
-.risk-trust-stats {
-    padding: var(--risk-block-padding) 24px;
-    margin: 0 auto var(--risk-section-gap);
-    max-width: 900px;
-    position: relative;
-}
-
-.risk-trust-bento {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr;
-    grid-template-rows: auto;
-    gap: 24px;
-    align-items: stretch;
-}
-
 .risk-trust-stat {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 14px 16px 14px 18px;
-    background: rgba(0, 0, 0, 0.12);
-    border-left: 2px solid rgba(150, 248, 145, 0.5);
-    border-radius: 12px;
-    transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
-
 .risk-trust-reveal {
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: translateY(12px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
 }
-
 .risk-trust-reveal.risk-trust-revealed {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
 }
 
-.risk-trust-stat:hover {
-    background: rgba(0, 0, 0, 0.18);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
-}
-
-.risk-trust-hero {
-    grid-column: 1;
-    grid-row: 1 / -1;
-    padding: 28px 24px;
-}
-
-.risk-trust-hero .risk-trust-number {
-    font-size: clamp(64px, 10vw, 100px);
-    color: var(--risk-gold);
-}
-
-.risk-trust-hero .risk-trust-label {
-    font-size: 14px;
-}
-
-.risk-trust-number {
-    font-family: 'Raleway', sans-serif;
-    font-size: clamp(48px, 7vw, 72px);
-    font-weight: 700;
-    color: var(--risk-gold);
-    text-shadow: 0 0 24px var(--risk-accent-dim);
-    line-height: 1.2;
-    letter-spacing: -0.02em;
-    margin-bottom: 10px;
-}
-
-.risk-trust-label {
-    font-family: 'Poppins', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--risk-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-}
-
-.risk-trust-badge {
-    width: 100%;
-    margin-top: 28px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 13px;
-    color: var(--risk-muted);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    text-align: center;
-}
-
-.risk-trust-stats::before {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 0;
-    transform: translateX(-50%);
-    width: 80px;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--risk-accent-dim), transparent);
-    opacity: 0.7;
-}
-
-/* Risk Calculator — идентично News */
+/* Risk Calculator */
 .risk-calculator-wrapper {
     font-family: 'Poppins', sans-serif;
     padding: var(--risk-block-padding) 40px;
