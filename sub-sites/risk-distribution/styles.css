@@ -10,8 +10,10 @@
     --risk-accent: #96F891;
     --risk-accent-soft: rgba(150, 248, 145, 0.6);
     --risk-accent-dim: rgba(150, 248, 145, 0.25);
-    --risk-muted: #668866;
-    --risk-text-secondary: #99aa99;
+    --risk-gold: #ffd700;
+    --risk-gold-soft: rgba(255, 215, 0, 0.7);
+    --risk-muted: #888888;
+    --risk-text-secondary: #cccccc;
     --risk-section-gap: 140px;
     --risk-block-padding: 60px;
     --risk-read-max: 52ch;
@@ -38,7 +40,7 @@
     top: 0;
     width: 100%;
     height: var(--progress);
-    background: linear-gradient(180deg, var(--risk-accent-dim), var(--risk-accent));
+    background: linear-gradient(180deg, rgba(255, 215, 0, 0.2), var(--risk-gold));
     transition: height 0.1s ease-out;
 }
 
@@ -107,7 +109,7 @@ summary:focus-visible {
     left: 0;
     width: 0;
     height: 1px;
-    background: var(--risk-accent);
+    background: var(--risk-gold);
     transition: width var(--risk-transition);
 }
 .main-nav-links a:hover::after,
@@ -133,6 +135,7 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     background-color: var(--risk-bg-base);
     min-height: 100vh;
+    overflow-x: hidden;
     position: relative;
     overflow-x: hidden;
     /* Гарантируем, что fixed элементы работают правильно */
@@ -272,7 +275,7 @@ body {
 
 /* Крупная типографика + глубинные тени */
 .crypto-risk-wrapper h1 {
-    font-size: clamp(42px, 9vw, 150px);
+    font-size: clamp(56px, 10vw, 140px);
     margin: 0 0 16px 0;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.97) !important;
@@ -285,18 +288,18 @@ body {
     animation: heroReveal 1s ease-out;
 }
 
-/* Акценты — градиент под базу #001800 */
+/* Акценты — DuoView: золотой для важного (п.3 плана) */
 .crypto-risk-wrapper .hero-accent {
     font-style: italic;
     font-weight: 700;
     display: inline-block;
     background: linear-gradient(
         135deg,
-        var(--risk-accent) 0%,
-        #b8feb5 25%,
-        #7ae87a 50%,
-        var(--risk-accent) 75%,
-        #b8feb5 100%
+        var(--risk-gold) 0%,
+        #ffe55c 30%,
+        var(--risk-gold) 50%,
+        #ffec8b 70%,
+        var(--risk-gold) 100%
     );
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -304,7 +307,7 @@ body {
     -webkit-text-fill-color: transparent;
     text-shadow: none;
     animation: accentShimmer 4s ease-in-out infinite, accentGlow 3s ease-in-out infinite;
-    filter: drop-shadow(0 0 12px var(--risk-accent-soft)) drop-shadow(0 0 30px var(--risk-accent-dim));
+    filter: drop-shadow(0 0 12px var(--risk-gold-soft)) drop-shadow(0 0 30px rgba(255, 215, 0, 0.3));
 }
 
 /* Подзаголовок — лаконичный, элегантный */
@@ -508,7 +511,7 @@ body {
     width: 48px;
     height: 1px;
     margin: 16px auto 0;
-    background: linear-gradient(90deg, transparent, var(--risk-accent-dim), transparent);
+    background: linear-gradient(90deg, transparent, var(--risk-gold-soft), transparent);
     opacity: 0.7;
     transition: width 0.3s ease, opacity 0.3s ease;
 }
@@ -786,6 +789,13 @@ body {
         --risk-block-padding: 40px;
         --risk-read-max: 90%;
     }
+    /* п.11 Apple HIG: tap-area минимум 44px */
+    .risk-calculator-wrapper button,
+    .risk-calculator-wrapper input,
+    .risk-calculator-wrapper select,
+    .api-key-toggle {
+        min-height: 44px;
+    }
     .risk-trust-stats {
         padding: 40px 20px;
     }
@@ -808,7 +818,10 @@ body {
         margin-right: auto;
     }
     .risk-trust-number {
-        font-size: 36px;
+        font-size: 44px;
+    }
+    .risk-trust-hero .risk-trust-number {
+        font-size: 56px;
     }
     .risk-trust-label {
         font-size: 11px;
@@ -882,7 +895,8 @@ body {
 }
 
 .risk-trust-hero .risk-trust-number {
-    font-size: clamp(56px, 8vw, 80px);
+    font-size: clamp(64px, 10vw, 100px);
+    color: var(--risk-gold);
 }
 
 .risk-trust-hero .risk-trust-label {
@@ -891,9 +905,9 @@ body {
 
 .risk-trust-number {
     font-family: 'Raleway', sans-serif;
-    font-size: clamp(40px, 6vw, 56px);
+    font-size: clamp(48px, 7vw, 72px);
     font-weight: 700;
-    color: var(--risk-accent);
+    color: var(--risk-gold);
     text-shadow: 0 0 24px var(--risk-accent-dim);
     line-height: 1.2;
     letter-spacing: -0.02em;
@@ -1255,7 +1269,7 @@ body {
 .risk-calculator-wrapper button {
     width: 260px;
     padding: 18px 28px;
-    background: var(--risk-accent);
+    background: linear-gradient(135deg, var(--risk-gold) 0%, #ffe55c 100%);
     color: #001800 !important;
     border: none;
     border-radius: 10px;
@@ -1268,7 +1282,7 @@ body {
 }
 
 .risk-calculator-wrapper button:hover {
-    background: #7ae87a;
+    background: linear-gradient(135deg, #ffe55c 0%, var(--risk-gold) 100%);
 }
 
 .magnetic-wrap:hover .risk-calculator-wrapper button {
