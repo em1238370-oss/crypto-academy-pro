@@ -12,9 +12,10 @@
     --risk-accent-dim: rgba(150, 248, 145, 0.25);
     --risk-muted: #668866;
     --risk-text-secondary: #99aa99;
-    /* Белое пространство (DuoView п.4) */
-    --risk-section-gap: 100px;
-    --risk-block-padding: 50px;
+    /* Воздух — много пространства, удобно читать */
+    --risk-section-gap: 140px;
+    --risk-block-padding: 60px;
+    --risk-read-max: 52ch;
 }
 
 /* Навигация как на главной (п.1 плана DuoView) */
@@ -176,12 +177,11 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 0;
+    padding: calc(50vh - 200px) 32px 120px;
     text-align: center;
     position: relative;
     z-index: 1;
     min-height: 100vh;
-    padding-top: calc(50vh - 200px);
 }
 
 /* Hero — сочный, уникальный, приятный глазу */
@@ -295,34 +295,45 @@ body {
     50% { filter: drop-shadow(0 0 18px rgba(150, 248, 145, 0.7)) drop-shadow(0 0 40px var(--risk-accent-dim)); }
 }
 
-/* Текст о риск-менеджменте */
+/* Текст о риск-менеджменте — воздух, удобно читать */
 .risk-text-wrapper {
     background: transparent;
     margin: 0 auto;
     margin-top: 10cm;
     margin-bottom: var(--risk-section-gap);
-    padding: var(--risk-block-padding);
+    padding: var(--risk-block-padding) 40px;
     font-family: 'Orbitron', sans-serif;
     opacity: 1 !important;
     visibility: visible !important;
     width: 100%;
-    max-width: 80%;
+    max-width: 85%;
     text-align: center;
     position: relative;
 }
 
+.risk-text-wrapper::before {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 1px;
+    margin: 0 auto 48px;
+    background: linear-gradient(90deg, transparent, var(--risk-accent-dim), transparent);
+    opacity: 0.6;
+}
+
 .overlay-text {
-    font-size: 67px;
-    font-weight: 700;
-    line-height: 1.4;
+    font-size: clamp(32px, 4.5vw, 48px);
+    font-weight: 600;
+    line-height: 1.75;
+    letter-spacing: 0.02em;
     text-align: left;
-    max-width: 100%;
+    max-width: var(--risk-read-max);
     margin: 0 auto;
-    margin-left: 1cm;
+    margin-left: 0;
     opacity: 1 !important;
     visibility: visible !important;
     position: relative;
-    padding: 40px 0;
+    padding: 48px 0;
     /* GPU-ускорение */
     transform: translateZ(0);
     backface-visibility: hidden;
@@ -360,7 +371,7 @@ body {
     pointer-events: none;
 }
 
-/* Дополнительный декоративный элемент */
+/* Декоративный элемент */
 .risk-text-wrapper::after {
     content: '◉';
     position: absolute;
@@ -416,17 +427,18 @@ body {
     margin-left: 20px;
     margin-top: 5cm;
     margin-bottom: var(--risk-section-gap);
-    padding: var(--risk-block-padding);
+    padding: var(--risk-block-padding) 40px;
     font-family: 'Orbitron', sans-serif;
     opacity: 1 !important;
     visibility: visible !important;
 }
 
 .floating-text {
-    font-size: 85px;
+    font-size: clamp(36px, 6vw, 72px);
     color: #ffffff !important;
     font-weight: 700;
-    line-height: 1.4;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
     text-align: left;
     opacity: 1 !important;
     visibility: visible !important;
@@ -461,28 +473,40 @@ body {
     background: transparent;
     margin: 0 auto;
     margin-bottom: var(--risk-section-gap);
-    padding: var(--risk-block-padding);
+    padding: var(--risk-block-padding) 40px;
     margin-top: 2.5cm;
     font-family: 'Orbitron', sans-serif;
     opacity: 1 !important;
     visibility: visible !important;
     width: 100%;
-    max-width: 80%;
+    max-width: 85%;
     text-align: center;
+    position: relative;
+}
+
+.crypto-storm-wrapper::before {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 1px;
+    margin: 0 auto 56px;
+    background: linear-gradient(90deg, transparent, var(--risk-accent-dim), transparent);
+    opacity: 0.6;
 }
 
 .storm-text {
-    font-size: 67px;
-    font-weight: 700;
-    line-height: 1.4;
+    font-size: clamp(32px, 4.5vw, 48px);
+    font-weight: 600;
+    line-height: 1.75;
+    letter-spacing: 0.02em;
     text-align: left;
-    max-width: 100%;
+    max-width: var(--risk-read-max);
     margin: 0 auto;
-    margin-left: 1cm;
+    margin-left: 0;
     opacity: 1 !important;
     visibility: visible !important;
     position: relative;
-    padding: 40px 0;
+    padding: 48px 0;
     /* GPU-ускорение */
     transform: translateZ(0);
     backface-visibility: hidden;
@@ -642,8 +666,9 @@ body {
 
 @media (max-width: 768px) {
     :root {
-        --risk-section-gap: 60px;
-        --risk-block-padding: 32px;
+        --risk-section-gap: 80px;
+        --risk-block-padding: 40px;
+        --risk-read-max: 90%;
     }
     .main-nav {
         padding: 14px 20px;
@@ -666,13 +691,22 @@ body {
 .risk-calculator-wrapper {
     font-family: 'Orbitron', sans-serif;
     background: transparent;
-    padding: var(--risk-block-padding);
+    padding: var(--risk-block-padding) 40px;
     margin: 0 auto;
     margin-top: 5cm;
-    margin-bottom: var(--risk-section-gap);
+    margin-bottom: 160px;
     max-width: 1400px;
-    opacity: 1 !important;
-    visibility: visible !important;
+    position: relative;
+}
+
+.risk-calculator-wrapper::before {
+    content: '';
+    display: block;
+    width: 100px;
+    height: 1px;
+    margin: 0 auto 64px;
+    background: linear-gradient(90deg, transparent, var(--risk-accent-dim), transparent);
+    opacity: 0.6;
 }
 
 .risk-calculator-container {
@@ -844,10 +878,10 @@ body {
 .form-wrapper {
     display: flex;
     flex-wrap: wrap;
-    gap: 48px;
+    gap: 56px;
     align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 40px;
+    margin-bottom: 48px;
 }
 
 .form-group {
@@ -967,7 +1001,7 @@ body {
 }
 
 .results {
-    margin-top: 48px;
+    margin-top: 56px;
 }
 
 .risk-calculator-wrapper .results h2 {
@@ -991,12 +1025,12 @@ body {
 .strategies-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 28px;
+    gap: 36px;
 }
 
 .strategy {
     background: rgba(255, 255, 255, 0.1);
-    padding: 28px;
+    padding: 32px 28px;
     border-radius: 8px;
     border-left: 4px solid var(--risk-accent);
     opacity: 1 !important;
