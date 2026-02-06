@@ -446,7 +446,7 @@ body::after {
 /* Signal vs noise */
 .signal-noise {
     max-width: 900px;
-    margin: 0 auto 72px;
+    margin: 0 auto 40px;
     text-align: left;
 }
 
@@ -498,6 +498,48 @@ body::after {
     font-size: 14px;
     color: var(--news-subtle);
     line-height: 1.6;
+}
+
+/* Before you react — micro prompts as chips */
+.before-react {
+    max-width: 900px;
+    margin: 0 auto 72px;
+    text-align: left;
+}
+
+.before-react-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--news-dim);
+    margin-bottom: 12px;
+}
+
+.before-react-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    row-gap: 10px;
+}
+
+.before-chip {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(201, 184, 150, 0.45);
+    font-size: 12px;
+    color: var(--news-subtle);
+    background: rgba(0, 0, 0, 0.12);
+    white-space: nowrap;
+    cursor: default;
+    transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.15s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.before-chip:hover {
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--news-text);
+    border-color: var(--news-highlight);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
 }
 
 /* Scroll-reveal с каскадом (Apple — плавные переходы) */

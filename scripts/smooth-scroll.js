@@ -28,7 +28,7 @@
         if (prefersReducedMotion) return;
 
         const sections = document.querySelectorAll(
-            '.main-text-section, .trust-stats, .mission-section, .explore-section, .news-hero, .news-today, .news-trust-stats, .signal-noise, .news-sources-section, .editor-lens, .news-row'
+            '.main-text-section, .trust-stats, .mission-section, .explore-section, .news-hero, .news-today, .news-trust-stats, .signal-noise, .before-react, .news-sources-section, .editor-lens, .news-row'
         );
 
         const observer = new IntersectionObserver((entries) => {
