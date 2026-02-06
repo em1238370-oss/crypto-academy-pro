@@ -1,6 +1,55 @@
 /* Risk = News + только переопределения фона и Risk-специфики */
 /* DuoView: акценты точечно, градации серого для глубины, не дешёвый жёлтый */
 
+/* Все заголовки и текст строго по центру */
+.news-hero,
+.news-hero-label,
+.news-hero-title,
+.news-hero-subtitle,
+.news-hero-description,
+.signal-noise,
+.signal-noise-title,
+.signal-noise-intro,
+.news-trust-stats,
+.news-trust-badge,
+.news-trust-tagline,
+.risk-section-calculator .news-today-title,
+.risk-section-calculator .signal-noise-intro,
+.risk-calculator-heading,
+.results-title,
+.strategy-info,
+.strategy-title,
+.strategy-allocation,
+.why-section,
+.why-title,
+.why-content {
+    text-align: center;
+}
+.why-title {
+    justify-content: center;
+}
+.strategy {
+    text-align: center;
+}
+.form-group,
+.form-group label,
+.api-key-summary,
+.api-key-group,
+.api-key-group label,
+.api-key-hint,
+.risk-calculator-container,
+.form-wrapper {
+    text-align: center;
+}
+.button-wrapper {
+    display: flex;
+    justify-content: center;
+}
+.risk-section,
+.risk-section-calculator {
+    text-align: center;
+}
+
 /* Переопределяем News-переменные для Risk (DuoView Pro палитра) */
 :root {
     --news-bg: #001a00;
