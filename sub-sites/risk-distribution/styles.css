@@ -3,50 +3,52 @@
 
 /* Переопределяем News-переменные для Risk (DuoView Pro палитра) */
 :root {
-    --news-bg: #001800;
-    --news-text: #FFFFFF;
-    --news-accent: #9FE89F;
-    --news-highlight: #FFFFFF;
-    --news-subtle: #E8E8E8;
-    --news-muted: #CCCCCC;
-    --news-dim: #AAAAAA;
+    --news-bg: #F5F5F0;
+    --news-text: #1A1A1A;
+    --news-accent: #2D6B2D;
+    --news-highlight: #1A1A1A;
+    --news-subtle: #333333;
+    --news-muted: #555555;
+    --news-dim: #666666;
     --risk-bg-base: #001800;
     --risk-accent: #9FE89F;
     --risk-accent-dim: rgba(159, 232, 159, 0.25);
     --risk-gold: #D4AF37;
+    --risk-text-secondary: #555555;
     --risk-transition: 0.3s ease;
     --progress: 0%;
 }
 
-/* Фон Risk — только переопределение (News даёт остальное) */
+/* Фон Risk — светлый, чёрный шрифт */
 body {
-    background: var(--risk-bg-base) !important;
+    background: #F5F5F0 !important;
 }
 body::before {
     content: '' !important;
     background: 
-        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        var(--risk-bg-base) !important;
+        linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+        #F5F5F0 !important;
     background-size: 50px 50px, 50px 50px, 100% 100% !important;
 }
 body::after {
-    background: rgba(0, 0, 0, 0.08) !important;
+    background: transparent !important;
 }
 
-/* Nav — зелёный под Risk */
+/* Nav — светлый */
 .main-nav {
-    background: rgba(0, 24, 0, 0.94) !important;
+    background: rgba(245, 245, 240, 0.96) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Hero accent — DuoView: золотой точечно, премиальный оттенок */
+/* Hero accent — тёмный зелёный на светлом фоне */
 .news-hero-title .hero-accent {
-    color: var(--risk-gold) !important;
+    color: #2D6B2D !important;
 }
 
-/* Content glow — мягкий, DuoView: не перегружать */
+/* Content glow — мягкий */
 .content::after {
-    background: radial-gradient(circle, rgba(159, 232, 159, 0.04), transparent 70%) !important;
+    background: radial-gradient(circle, rgba(45, 107, 45, 0.06), transparent 70%) !important;
 }
 
 /* Scroll-progress линия */
@@ -56,7 +58,7 @@ body::after {
     top: 0;
     width: 2px;
     height: 100vh;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(0, 0, 0, 0.06);
     z-index: 50;
     pointer-events: none;
 }
@@ -68,7 +70,7 @@ body::after {
     top: 0;
     width: 100%;
     height: var(--progress);
-    background: linear-gradient(180deg, rgba(212, 175, 55, 0.3), var(--risk-gold));
+    background: linear-gradient(180deg, rgba(45, 107, 45, 0.5), #2D6B2D);
     transition: height 0.1s ease-out;
 }
 
@@ -82,7 +84,7 @@ html {
     width: 80px;
     height: 2px;
     margin: 0 auto 48px;
-    background: linear-gradient(90deg, transparent, rgba(159, 232, 159, 0.4), transparent);
+    background: linear-gradient(90deg, transparent, rgba(45, 107, 45, 0.5), transparent);
 }
 
 .risk-section-reveal,
@@ -128,9 +130,9 @@ html {
 .why-section {
     margin-top: 20px;
     padding: 20px;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.8);
     border-radius: 10px;
-    border-left: 3px solid rgba(159, 232, 159, 0.5);
+    border-left: 3px solid rgba(45, 107, 45, 0.6);
 }
 
 .why-title {
@@ -162,20 +164,20 @@ html {
 }
 .risk-trust-stat {
     padding: 14px 16px 14px 18px;
-    background: rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.9);
     border-radius: 12px;
-    border-left: 2px solid rgba(159, 232, 159, 0.5);
+    border-left: 2px solid rgba(45, 107, 45, 0.6);
     transition: background 0.25s ease, transform 0.2s ease;
 }
 .risk-trust-stat:hover {
-    background: rgba(0, 0, 0, 0.18);
+    background: rgba(255, 255, 255, 1);
     transform: translateY(-2px);
 }
 .risk-trust-number {
     font-family: 'Raleway', sans-serif;
     font-size: clamp(36px, 5vw, 56px);
     font-weight: 700;
-    color: var(--risk-gold);
+    color: #2D6B2D;
 }
 .risk-trust-label {
     font-size: 12px;
@@ -315,16 +317,16 @@ html {
 .risk-calculator-container {
     width: 100%;
     min-height: 360px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 16px;
     padding: 48px 56px;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .risk-calculator-container:hover {
-    border-color: rgba(159, 232, 159, 0.2);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    border-color: rgba(45, 107, 45, 0.3);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
 
@@ -344,7 +346,7 @@ html {
     transition: color var(--risk-transition);
 }
 .api-key-summary:hover {
-    color: rgba(255, 255, 255, 0.9);
+    color: #1A1A1A;
 }
 
 .api-key-summary::-webkit-details-marker {
@@ -367,8 +369,8 @@ html {
 
 .api-key-group {
     padding: 20px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 12px;
 }
 
@@ -376,7 +378,7 @@ html {
     display: block;
     font-size: 13px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.8);
+    color: #333333;
     margin-bottom: 10px;
 }
 
@@ -451,7 +453,7 @@ html {
 
 .risk-calculator-wrapper label {
     display: block;
-    color: #FFFFFF !important;
+    color: #1A1A1A !important;
     font-size: 18px;
     margin-bottom: 12px;
     font-family: 'Raleway', sans-serif;
@@ -497,20 +499,20 @@ html {
     font-size: 18px;
     font-family: 'Inter', sans-serif;
     font-weight: 500;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.12);
     border-radius: 10px;
-    color: rgba(255, 255, 255, 0.95) !important;
+    color: #1A1A1A !important;
     transition: border-color 0.2s ease;
 }
 
 .risk-calculator-wrapper input[type="number"]:focus {
     outline: none;
-    border-color: rgba(159, 232, 159, 0.4);
+    border-color: rgba(45, 107, 45, 0.5);
 }
 
 .risk-calculator-wrapper input[type="number"]::placeholder {
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(0, 0, 0, 0.35);
 }
 
 .slider-container {
@@ -541,7 +543,7 @@ html {
 .risk-calculator-wrapper input[type="range"] {
     width: 100%;
     height: 6px;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.1);
     outline: none;
     border-radius: 3px;
     -webkit-appearance: none;
@@ -586,22 +588,22 @@ html {
     font-size: 18px;
     font-family: 'Inter', sans-serif;
     font-weight: 500;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.12);
     border-radius: 10px;
-    color: rgba(255, 255, 255, 0.95) !important;
+    color: #1A1A1A !important;
     cursor: pointer;
     transition: border-color 0.2s ease;
 }
 
 .risk-calculator-wrapper select:focus {
     outline: none;
-    border-color: rgba(159, 232, 159, 0.4);
+    border-color: rgba(45, 107, 45, 0.5);
 }
 
 .risk-calculator-wrapper select option {
-    background: #001800;
-    color: rgba(255, 255, 255, 0.95);
+    background: #F5F5F0;
+    color: #1A1A1A;
 }
 
 .button-wrapper {
@@ -617,8 +619,8 @@ html {
 .risk-calculator-wrapper button {
     width: 260px;
     padding: 18px 28px;
-    background: linear-gradient(135deg, var(--risk-gold) 0%, #E5C76B 100%);
-    color: #001800 !important;
+    background: linear-gradient(135deg, #2D6B2D 0%, #3d8b3d 100%);
+    color: #FFFFFF !important;
     border: none;
     border-radius: 10px;
     font-size: 16px;
@@ -630,7 +632,7 @@ html {
 }
 
 .risk-calculator-wrapper button:hover {
-    background: linear-gradient(135deg, #E5C76B 0%, var(--risk-gold) 100%);
+    background: linear-gradient(135deg, #3d8b3d 0%, #2D6B2D 100%);
 }
 
 .magnetic-wrap:hover .risk-calculator-wrapper button {
@@ -676,7 +678,7 @@ html {
 }
 
 .results-title {
-    color: rgba(255, 255, 255, 0.95) !important;
+    color: #1A1A1A !important;
     font-size: 24px;
     margin-bottom: 24px;
     font-family: 'Raleway', sans-serif;
@@ -686,7 +688,7 @@ html {
 
 .strategies {
     width: 100%;
-    color: rgba(255, 255, 255, 0.88) !important;
+    color: #333333 !important;
     font-size: 15px;
     font-family: 'Poppins', sans-serif;
     line-height: 1.65;
@@ -700,15 +702,15 @@ html {
 }
 
 .strategy {
-    background: rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.9);
     padding: 14px 16px 14px 18px;
     border-radius: 12px;
-    border-left: 2px solid rgba(159, 232, 159, 0.5);
+    border-left: 2px solid rgba(45, 107, 45, 0.6);
     transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .strategy:hover {
-    background: rgba(0, 0, 0, 0.18);
+    background: rgba(255, 255, 255, 1);
     transform: translateY(-2px);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 }
@@ -724,7 +726,7 @@ html {
 .strategy-info {
     margin-bottom: 28px;
     padding: 16px 24px;
-    background: rgba(0, 0, 0, 0.08);
+    background: rgba(0, 0, 0, 0.04);
     border-radius: 10px;
     text-align: center;
     color: var(--risk-subtle);
@@ -737,17 +739,17 @@ html {
 .strategy-allocation {
     margin-bottom: 15px;
     padding-bottom: 15px;
-    border-bottom: 1px solid rgba(159, 232, 159, 0.25);
-    color: #FFFFFF !important;
+    border-bottom: 1px solid rgba(45, 107, 45, 0.3);
+    color: #1A1A1A !important;
     opacity: 1 !important;
 }
 
 .why-section {
     margin-top: 20px;
     padding: 20px;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.8);
     border-radius: 10px;
-    border-left: 3px solid rgba(159, 232, 159, 0.5);
+    border-left: 3px solid rgba(45, 107, 45, 0.6);
 }
 
 .why-title {
@@ -800,14 +802,14 @@ html {
     padding: 12px 16px;
     font-size: 15px;
     font-family: 'Inter', monospace;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.12);
     border-radius: 8px;
-    color: rgba(255, 255, 255, 0.9);
+    color: #1A1A1A;
 }
 
 .risk-calculator-wrapper input[type="password"]::placeholder {
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(0, 0, 0, 0.35);
 }
 
 
