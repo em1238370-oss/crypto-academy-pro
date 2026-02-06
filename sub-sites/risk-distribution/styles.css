@@ -670,6 +670,16 @@ body {
         --risk-block-padding: 40px;
         --risk-read-max: 90%;
     }
+    .risk-trust-stats {
+        gap: 48px;
+        padding: 40px 20px 60px;
+    }
+    .risk-trust-number {
+        font-size: 36px;
+    }
+    .risk-trust-label {
+        font-size: 11px;
+    }
     .main-nav {
         padding: 14px 20px;
     }
@@ -687,13 +697,77 @@ body {
 }
 
 
+/* Элементы доверия (DuoView п.5) */
+.risk-trust-stats {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 72px;
+    padding: var(--risk-block-padding) 24px 80px;
+    margin: 0 auto;
+    max-width: 900px;
+    flex-wrap: wrap;
+    position: relative;
+}
+
+.risk-trust-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-width: 140px;
+}
+
+.risk-trust-number {
+    font-family: 'Raleway', sans-serif;
+    font-size: clamp(40px, 6vw, 56px);
+    font-weight: 700;
+    color: var(--risk-accent);
+    text-shadow: 0 0 24px var(--risk-accent-dim);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    margin-bottom: 10px;
+}
+
+.risk-trust-label {
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--risk-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.risk-trust-badge {
+    width: 100%;
+    margin-top: 28px;
+    font-size: 12px;
+    color: var(--risk-text-secondary);
+    opacity: 0.8;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.risk-trust-stats::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--risk-accent-dim), transparent);
+    opacity: 0.7;
+}
+
 /* Risk Management Strategy Calculator */
 .risk-calculator-wrapper {
     font-family: 'Orbitron', sans-serif;
     background: transparent;
     padding: var(--risk-block-padding) 40px;
     margin: 0 auto;
-    margin-top: 5cm;
+    margin-top: 0;
     margin-bottom: 160px;
     max-width: 1400px;
     position: relative;
