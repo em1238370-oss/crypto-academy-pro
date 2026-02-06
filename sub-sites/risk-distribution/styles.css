@@ -16,6 +16,26 @@
     --risk-section-gap: 140px;
     --risk-block-padding: 60px;
     --risk-read-max: 52ch;
+    --risk-transition: 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* DuoView п.5: focus-visible для доступности */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+    outline: 2px solid rgba(150, 248, 145, 0.6);
+    outline-offset: 2px;
+}
+
+/* DuoView: prefers-reduced-motion — уважаем предпочтения пользователя */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 /* Навигация как на главной (п.1 плана DuoView) */
@@ -50,11 +70,30 @@
     font-size: 14px;
     color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color var(--risk-transition);
+    position: relative;
 }
 .main-nav-links a:hover,
 .main-nav-links a.active {
     color: #FFFFFF;
+}
+.main-nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--risk-accent);
+    transition: width var(--risk-transition);
+}
+.main-nav-links a:hover::after,
+.main-nav-links a.active::after {
+    width: 100%;
+}
+
+html {
+    scroll-behavior: smooth;
 }
 
 * {
@@ -325,8 +364,8 @@ body {
 .risk-section-divider {
     opacity: 0;
     transform: translateY(36px);
-    transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .risk-section-reveal.risk-revealed,
@@ -346,6 +385,10 @@ body {
     margin: 0 auto 32px;
     line-height: 1.5;
     padding: 0 20px;
+    transition: color var(--risk-transition);
+}
+.risk-pull-quote:hover {
+    color: var(--risk-accent);
 }
 
 .risk-pull-quote-right {
@@ -754,14 +797,13 @@ body {
     background: rgba(150, 248, 145, 0.04);
     border: 1px solid rgba(150, 248, 145, 0.15);
     border-radius: 12px;
-    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: background var(--risk-transition), border-color var(--risk-transition), transform var(--risk-transition);
 }
 
 .risk-trust-stat:hover {
     background: rgba(150, 248, 145, 0.08);
-    border-color: var(--risk-accent-dim);
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    border-color: rgba(150, 248, 145, 0.3);
+    transform: translateY(-3px);
 }
 
 .risk-trust-hero {
@@ -868,6 +910,10 @@ body {
     cursor: pointer;
     user-select: none;
     list-style: none;
+    transition: color var(--risk-transition);
+}
+.api-key-summary:hover {
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .api-key-summary::-webkit-details-marker {
@@ -958,6 +1004,10 @@ body {
 .form-group {
     flex: 1;
     min-width: 260px;
+    transition: transform var(--risk-transition);
+}
+.form-group:focus-within {
+    transform: translateY(-1px);
 }
 
 .form-step {
@@ -1198,12 +1248,12 @@ body {
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-left: 3px solid var(--risk-accent);
-    transition: background 0.2s ease, border-color 0.2s ease;
+    transition: background var(--risk-transition), border-color var(--risk-transition);
 }
 
 .strategy:hover {
     background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(150, 248, 145, 0.15);
+    border-color: rgba(150, 248, 145, 0.2);
 }
 
 .strategy-title {
