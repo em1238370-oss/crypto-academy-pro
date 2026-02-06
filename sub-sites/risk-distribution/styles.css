@@ -223,16 +223,20 @@ body {
 }
 
 .crypto-risk-wrapper h1 {
-    font-size: 130px;
+    font-size: clamp(56px, 9vw, 140px);
     margin: 0;
     font-weight: 700;
-    text-shadow: 0 0 3px #96F891, 0 0 6px #96F891;
     color: #ffffff !important;
     opacity: 1 !important;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
 }
 
+/* DuoView: акценты Storm и Risk — золотой цвет (#ffd700) */
 .crypto-risk-wrapper .italic {
     font-style: italic;
+    color: #ffd700 !important;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.3);
 }
 
 @keyframes floatRisk {

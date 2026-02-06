@@ -1011,9 +1011,9 @@ app.post('/api/payments/stripe/webhook', express.raw({ type: 'application/json' 
 });
 
 // --- Dynamic News (Regulation / Macro / Market + News heat) ---
-const NEWS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 min cache — faster reaction to new news
-const NEWS_FETCH_INTERVAL_MS = 10 * 60 * 1000; // 10 min background refresh
-let articlesCache = null; // raw articles, refreshed every 10 min
+const NEWS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 min cache
+const NEWS_FETCH_INTERVAL_MS = 5 * 60 * 1000; // 5 min refresh — heat updates every 5 min
+let articlesCache = null;
 let articlesCacheTime = 0;
 
 const FALLBACK_REGULATION = [
@@ -1152,10 +1152,10 @@ function buildDynamicResponse() {
     const t = new Date(pub).getTime();
     return now - t < 2 * 60 * 60 * 1000; // last 2 hours
   }).length;
-  // News heat reacts to market: more recent news = hotter
+  // News heat updates every 5 min — reacts quickly to news flow
   let heat = 'balanced';
-  if (total >= 20 || recentCount >= 12 || veryRecentCount >= 5) heat = 'hot';
-  else if (total <= 8 || recentCount <= 2 || veryRecentCount === 0) heat = 'calm';
+  if (total >= 18 || recentCount >= 10 || veryRecentCount >= 3) heat = 'hot';
+  else if (total <= 6 || recentCount <= 2 || veryRecentCount === 0) heat = 'calm';
   const defReg = pickFallback(FALLBACK_REGULATION);
   const defMacro = pickFallback(FALLBACK_MACRO);
   const defMarket = pickFallback(FALLBACK_MARKET);
@@ -1187,7 +1187,7 @@ app.get('/api/news/dynamic', async (req, res) => {
   }
 });
 
-// Start periodic news refresh (every 30 min to respect free tier)
+// Start periodic news refresh (every 5 min — heat reacts quickly)
 if (newsApiKey || theNewsApiKey) {
   refreshNewsCache().then(() => console.log('✅ News cache initialized'));
   setInterval(refreshNewsCache, NEWS_FETCH_INTERVAL_MS);
