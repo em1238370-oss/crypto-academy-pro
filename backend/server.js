@@ -52,6 +52,8 @@ const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, { apiVersion: '2024
 const subscriptionPriceUsd = parseFloat(process.env.SUBSCRIPTION_PRICE_USD ?? '10');
 const subscriptionPeriodDays = parseInt(process.env.SUBSCRIPTION_PERIOD_DAYS ?? '30', 10);
 const appBaseUrl = process.env.APP_BASE_URL ?? 'http://localhost:4000';
+const newsApiKey = process.env.NEWS_API_KEY;
+const theNewsApiKey = process.env.THENEWSAPI_KEY;
 
 if (!mistralKey) {
  console.warn('⚠️  MISTRAL_API_KEY is not set. AI responses will fail until it is provided.');
@@ -1007,6 +1009,130 @@ app.post('/api/payments/stripe/webhook', express.raw({ type: 'application/json' 
 
  res.json({ received: true });
 });
+
+// --- Dynamic News (Regulation / Macro / Market + News heat) ---
+const NEWS_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min cache
+const NEWS_FETCH_INTERVAL_MS = 30 * 60 * 1000; // 30 min fetch (free tier limits)
+let newsCache = null;
+let newsCacheTime = 0;
+
+function categorizeArticle(title, desc) {
+  const text = ((title || '') + ' ' + (desc || '')).toLowerCase();
+  if (/\b(regulation|sec|etf|licensing|ban|approval|cftc|compliance)\b/.test(text)) return 'regulation';
+  if (/\b(inflation|rates|fed|fomc|dollar|macro|interest rate|gdp)\b/.test(text)) return 'macro';
+  if (/\b(funding|open interest|liquidity|volume|whale|exchange)\b/.test(text)) return 'market';
+  return null;
+}
+
+function summarizeForBlock(articles, category, maxLen = 180) {
+  if (!articles || articles.length === 0) return null;
+  const a = articles[0];
+  const title = a.title || a.headline || '';
+  const desc = a.description || a.snippet || '';
+  let out = title || desc;
+  if (out.length > maxLen) out = out.slice(0, maxLen - 3) + '…';
+  return out;
+}
+
+async function fetchNewsFromNewsApi() {
+  if (!newsApiKey) return null;
+  try {
+    const from = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const res = await axios.get(
+      `https://newsapi.org/v2/everything?q=crypto OR bitcoin OR ethereum&from=${from}&sortBy=publishedAt&pageSize=50&language=en&apiKey=${newsApiKey}`,
+      { timeout: 8000 }
+    );
+    return res.data?.articles || [];
+  } catch (e) {
+    console.warn('NewsAPI fetch failed:', e?.response?.status || e.message);
+    return null;
+  }
+}
+
+async function fetchNewsFromTheNewsApi() {
+  if (!theNewsApiKey) return null;
+  try {
+    const res = await axios.get(
+      `https://api.thenewsapi.net/crypto?apikey=${theNewsApiKey}&q=bitcoin OR ethereum OR crypto&langs=en&size=10`,
+      { timeout: 8000 }
+    );
+    const results = res.data?.data?.results || res.data?.results || [];
+    if (Array.isArray(results)) {
+      return results.map(r => ({
+        title: r.title || r.headline,
+        description: r.description || r.summary || r.snippet,
+        url: r.url
+      }));
+    }
+    return null;
+  } catch (e) {
+    console.warn('TheNewsAPI fetch failed:', e?.response?.status || e.message);
+    return null;
+  }
+}
+
+async function refreshNewsCache() {
+  let articles = await fetchNewsFromNewsApi();
+  if (!articles || articles.length === 0) articles = await fetchNewsFromTheNewsApi();
+  if (!articles || articles.length === 0) {
+    if (newsCache) return; // keep stale cache
+    newsCache = {
+      regulation: { text: 'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.', url: null },
+      macro: { text: 'Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.', url: null },
+      market: { text: 'Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it\'s just narrative.', url: null },
+      heat: 'balanced'
+    };
+    newsCacheTime = Date.now();
+    return;
+  }
+  const reg = articles.filter(a => categorizeArticle(a.title, a.description) === 'regulation');
+  const macro = articles.filter(a => categorizeArticle(a.title, a.description) === 'macro');
+  const market = articles.filter(a => categorizeArticle(a.title, a.description) === 'market');
+  const total = articles.length;
+  let heat = 'balanced';
+  if (total >= 35) heat = 'hot';
+  else if (total <= 12) heat = 'calm';
+  const defReg = 'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.';
+  const defMacro = 'Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.';
+  const defMarket = 'Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it\'s just narrative.';
+  newsCache = {
+    regulation: { text: summarizeForBlock(reg, 'regulation') || defReg, url: reg[0]?.url || null },
+    macro: { text: summarizeForBlock(macro, 'macro') || defMacro, url: macro[0]?.url || null },
+    market: { text: summarizeForBlock(market, 'market') || defMarket, url: market[0]?.url || null },
+    heat
+  };
+  newsCacheTime = Date.now();
+}
+
+app.get('/api/news/dynamic', async (req, res) => {
+  try {
+    if (!newsCache || Date.now() - newsCacheTime > NEWS_CACHE_TTL_MS) {
+      await refreshNewsCache();
+    }
+    res.json(newsCache || {
+      regulation: { text: 'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.', url: null },
+      macro: { text: 'Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.', url: null },
+      market: { text: 'Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it\'s just narrative.', url: null },
+      heat: 'balanced'
+    });
+  } catch (e) {
+    console.error('News dynamic error:', e);
+    res.status(500).json({
+      regulation: { text: 'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.', url: null },
+      macro: { text: 'Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.', url: null },
+      market: { text: 'Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it\'s just narrative.', url: null },
+      heat: 'balanced'
+    });
+  }
+});
+
+// Start periodic news refresh (every 30 min to respect free tier)
+if (newsApiKey || theNewsApiKey) {
+  refreshNewsCache().then(() => console.log('✅ News cache initialized'));
+  setInterval(refreshNewsCache, NEWS_FETCH_INTERVAL_MS);
+} else {
+  console.warn('⚠️ NEWS_API_KEY and THENEWSAPI_KEY not set. Dynamic news will use static fallback.');
+}
 
 app.use((err, req, res, next) => {
  if (err.type === 'entity.parse.failed') {

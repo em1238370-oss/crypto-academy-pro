@@ -22,16 +22,22 @@
 4. **MISTRAL_API_KEY** (если есть)
    - Value: ваш ключ Mistral AI
 
-5. **SUBSCRIPTION_PRICE_USD**
+5. **NEWS_API_KEY** (для динамических блоков News)
+   - Value: ваш ключ NewsAPI.org
+
+6. **THENEWSAPI_KEY** (для динамических блоков News)
+   - Value: ваш ключ TheNewsAPI.net
+
+7. **SUBSCRIPTION_PRICE_USD**
    - Value: `10`
 
-6. **SUBSCRIPTION_PERIOD_DAYS**
+8. **SUBSCRIPTION_PERIOD_DAYS**
    - Value: `30`
 
-7. **FREE_TRIAL_HOURS**
+9. **FREE_TRIAL_HOURS**
    - Value: `24`
 
-8. **PORT**
+10. **PORT**
    - Value: `10000` (Render использует порт 10000)
 
 ---
@@ -54,6 +60,7 @@
 - Сайт будет доступен по ссылке
 - Оплата картами заработает
 - Чатбот будет работать
+- Динамические блоки News (Regulation/Macro/Market + News heat) будут обновляться каждые 30 мин
 
 ---
 
