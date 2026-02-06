@@ -1016,6 +1016,40 @@ const NEWS_FETCH_INTERVAL_MS = 15 * 60 * 1000; // 15 min fetch (free tier: ~96/d
 let newsCache = null;
 let newsCacheTime = 0;
 
+const FALLBACK_REGULATION = [
+  'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.',
+  'Key regulatory moves — ETF approvals, licensing, bans — affect liquidity and risk far beyond the headlines.',
+  'Regulatory shifts (ETFs, licensing, bans) reshape liquidity and long-term risk. Headlines are just the surface.',
+  'Major regulatory decisions — on ETFs, licensing, bans — drive liquidity and risk. Don\'t stop at the headline.',
+  'ETF approvals, licensing, bans: regulatory moves that reshape liquidity and risk. Headlines only scratch the surface.',
+  'Regulatory outcomes — ETF approvals, licensing, bans — determine liquidity dynamics and risk structure more than headlines.'
+];
+const FALLBACK_MACRO = [
+  'Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.',
+  'Fed decisions, inflation data, and dollar moves shape risk appetite for all assets — crypto included.',
+  'Rates, inflation, and dollar strength drive risk appetite. Crypto follows the same macro forces.',
+  'Macro prints — inflation, rates, dollar — still set risk appetite for crypto and all risk assets.',
+  'Monetary policy, inflation releases, and FX dynamics govern risk appetite for crypto and traditional assets alike.',
+  'FOMC outcomes, inflation prints, and dollar strength determine risk appetite for crypto and risk assets.'
+];
+const FALLBACK_MARKET = [
+  'Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it\'s just narrative.',
+  'Funding rates, open interest, and liquidity reveal if news is backed by real capital or just narrative.',
+  'Check funding, open interest, and liquidity: they show whether news has capital behind it or is just noise.',
+  'Funding, OI, and liquidity in major pairs separate news backed by capital from purely narrative-driven moves.',
+  'Perpetual funding, aggregate open interest, and order-book liquidity indicate whether news has capital conviction.',
+  'Derivatives funding, open interest, and spot liquidity reveal if news translates into real capital flows.'
+];
+function pickFallback(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function getRandomFallback() {
+  return {
+    regulation: { text: pickFallback(FALLBACK_REGULATION), url: null },
+    macro: { text: pickFallback(FALLBACK_MACRO), url: null },
+    market: { text: pickFallback(FALLBACK_MARKET), url: null },
+    heat: ['calm', 'balanced', 'hot'][Math.floor(Math.random() * 3)]
+  };
+}
+
 function categorizeArticle(title, desc) {
   const text = ((title || '') + ' ' + (desc || '')).toLowerCase();
   if (/\b(regulation|sec|etf|licensing|ban|approval|cftc|compliance|policy|legal|court|lawsuit|supervisory)\b/.test(text)) return 'regulation';
@@ -1077,14 +1111,8 @@ async function refreshNewsCache() {
   let articles = await fetchNewsFromNewsApi();
   if (!articles || articles.length === 0) articles = await fetchNewsFromTheNewsApi();
   if (!articles || articles.length === 0) {
-    if (newsCache) return; // keep stale cache
-    newsCache = {
-      regulation: { text: 'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.', url: null },
-      macro: { text: 'Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.', url: null },
-      market: { text: 'Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it\'s just narrative.', url: null },
-      heat: 'balanced'
-    };
-    newsCacheTime = Date.now();
+    if (newsCache && !newsCache.isFallback) return; // keep stale real cache
+    newsCache = null; // no cache when APIs fail — endpoint will return random fallback each time
     return;
   }
   const reg = articles.filter(a => categorizeArticle(a.title, a.description) === 'regulation');
@@ -1114,24 +1142,18 @@ async function refreshNewsCache() {
 
 app.get('/api/news/dynamic', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   try {
     if (!newsCache || Date.now() - newsCacheTime > NEWS_CACHE_TTL_MS) {
       await refreshNewsCache();
     }
-    res.json(newsCache || {
-      regulation: { text: 'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.', url: null },
-      macro: { text: 'Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.', url: null },
-      market: { text: 'Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it\'s just narrative.', url: null },
-      heat: 'balanced'
-    });
+    // When APIs fail, newsCache is null — return random fallback so content updates each visit
+    const data = newsCache || getRandomFallback();
+    res.json(data);
   } catch (e) {
     console.error('News dynamic error:', e);
-    res.status(500).json({
-      regulation: { text: 'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.', url: null },
-      macro: { text: 'Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.', url: null },
-      market: { text: 'Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it\'s just narrative.', url: null },
-      heat: 'balanced'
-    });
+    res.status(500).json(getRandomFallback());
   }
 });
 
