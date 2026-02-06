@@ -94,10 +94,14 @@
                        <h3 class="risk-calculator-heading">3 inputs. 3 strategies. 30 seconds.</h3>
 
                    <details class="api-key-details">
-                       <summary>🔑 Optional: Add API key for AI explanations</summary>
+                       <summary class="api-key-summary">API Key for AI explanations (optional)</summary>
                        <div class="api-key-group">
-                           <label for="apiKey">Google API Key</label>
-                           <input type="password" id="apiKey" placeholder="Paste your key" value="AIzaSyA_aPJUNEl8Hpe032jW2d0ZLRmJQ0A13qs">
+                           <label for="apiKey">Google Gemini API Key</label>
+                           <div class="api-key-input-wrap">
+                               <input type="password" id="apiKey" placeholder="Paste your key here" autocomplete="off">
+                               <button type="button" class="api-key-toggle" id="apiKeyToggle" aria-label="Show key">Show</button>
+                           </div>
+                           <p class="api-key-hint">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Used only for strategy explanations.</p>
                        </div>
                    </details>
 
@@ -228,6 +232,18 @@
            updateRiskLabel(this.value);
        });
        updateRiskLabel(riskSlider.value);
+
+       // API key show/hide toggle
+       const apiKeyInput = document.getElementById('apiKey');
+       const apiKeyToggle = document.getElementById('apiKeyToggle');
+       if (apiKeyInput && apiKeyToggle) {
+           apiKeyToggle.addEventListener('click', function() {
+               const isPass = apiKeyInput.type === 'password';
+               apiKeyInput.type = isPass ? 'text' : 'password';
+               apiKeyToggle.textContent = isPass ? 'Hide' : 'Show';
+               apiKeyToggle.setAttribute('aria-label', isPass ? 'Hide key' : 'Show key');
+           });
+       }
 
        // Strategy database
        const strategies = {

@@ -855,34 +855,95 @@ body {
 }
 
 
-/* API key — collapsible */
+/* API Key — DuoView: минимализм, понятно */
 .api-key-details {
-    margin-bottom: 40px;
+    margin-bottom: 36px;
 }
 
-.api-key-details summary {
-    font-size: 13px;
-    color: var(--risk-muted);
+.api-key-summary {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--risk-text-secondary);
     cursor: pointer;
     user-select: none;
+    list-style: none;
 }
 
-.api-key-details[open] summary {
-    margin-bottom: 12px;
+.api-key-summary::-webkit-details-marker {
+    display: none;
+}
+
+.api-key-summary::before {
+    content: '+ ';
+    color: var(--risk-accent);
+    font-weight: 600;
+}
+
+.api-key-details[open] .api-key-summary::before {
+    content: '− ';
+}
+
+.api-key-details[open] .api-key-summary {
+    margin-bottom: 16px;
 }
 
 .api-key-group {
-    padding: 16px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
 }
 
 .api-key-group label {
-    font-size: 12px !important;
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 10px;
 }
 
-.api-key-group input {
-    margin-top: 8px;
+.api-key-input-wrap {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.api-key-input-wrap input {
+    flex: 1;
+}
+
+.api-key-toggle {
+    padding: 10px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--risk-accent);
+    background: rgba(150, 248, 145, 0.08);
+    border: 1px solid rgba(150, 248, 145, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.api-key-toggle:hover {
+    background: rgba(150, 248, 145, 0.12);
+}
+
+.api-key-hint {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--risk-muted);
+    line-height: 1.5;
+}
+
+.api-key-hint a {
+    color: var(--risk-accent);
+    text-decoration: none;
+}
+
+.api-key-hint a:hover {
+    text-decoration: underline;
 }
 
 .risk-calc-form .form-wrapper {
@@ -1243,13 +1304,6 @@ body {
     color: rgba(255, 255, 255, 0.35);
 }
 
-.api-key-info {
-    font-size: 14px;
-    color: var(--risk-muted) !important;
-    margin-top: 10px;
-    font-style: italic;
-    opacity: 1 !important;
-}
 
 .hidden {
     display: none;
