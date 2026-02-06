@@ -1,6 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap');
 
+/* DuoView п.3: Цветовая схема — тёмная тема + золотые акценты */
+:root {
+    --risk-accent: #ffd700;
+    --risk-accent-soft: rgba(255, 215, 0, 0.6);
+    --risk-accent-dim: rgba(255, 215, 0, 0.25);
+    --risk-muted: #888888;
+    --risk-text-secondary: #cccccc;
+    --risk-bg-dark: #0d0d0d;
+    --risk-bg-warm: #1a1810;
+}
+
 /* Навигация как на главной (п.1 плана DuoView) */
 .main-nav {
     position: fixed;
@@ -75,30 +86,27 @@ body {
     will-change: auto;
 }
 
-/* Фон с биткоин-монетой - темно-зеленый с треугольничками */
+/* Фон — тёмная тема + тонкие золотые акценты */
 body::before {
     content: '';
     position: fixed;
     inset: 0;
     background: 
-        /* Паттерн треугольничков */
-        url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0 L30 52 L60 0 Z' fill='none' stroke='rgba(20, 83, 45, 0.15)' stroke-width='0.5'/%3E%3Cpath d='M30 0 L60 52 L90 0' fill='none' stroke='rgba(20, 83, 45, 0.15)' stroke-width='0.5'/%3E%3C/svg%3E"),
-        /* Центральная биткоин-монета - темно-зеленый градиент (затемненный) */
-        radial-gradient(circle at 50% 50%, rgba(10, 50, 25, 0.25) 0%, rgba(5, 25, 12, 0.2) 25%, transparent 60%),
-        /* Темно-зеленый базовый фон */
-        linear-gradient(135deg, #000000 0%, #0a1a0a 30%, #001a0a 50%, #0a1a0a 70%, #000000 100%);
-    background-size: 
-        60px 60px,
-        8000px 1750px,
-        100% 100%;
-    background-position: 0 0, center center, 0 0;
-    background-attachment: fixed, fixed, fixed;
-    background-repeat: repeat, no-repeat, no-repeat;
+        /* Паттерн — золотые треугольники */
+        url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0 L30 52 L60 0 Z' fill='none' stroke='rgba(255, 215, 0, 0.08)' stroke-width='0.5'/%3E%3Cpath d='M30 0 L60 52 L90 0' fill='none' stroke='rgba(255, 215, 0, 0.08)' stroke-width='0.5'/%3E%3C/svg%3E"),
+        radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, transparent 20%, rgba(255, 215, 0, 0.02) 25%, transparent 30%),
+        radial-gradient(circle at 30% 30%, rgba(255, 200, 0, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 70% 70%, rgba(255, 200, 0, 0.03) 0%, transparent 40%),
+        linear-gradient(135deg, #000000 0%, var(--risk-bg-dark) 30%, var(--risk-bg-warm) 50%, var(--risk-bg-dark) 70%, #000000 100%);
+    background-size: 60px 60px, 8000px 1750px, 8000px 1750px, 4000px 2000px, 4000px 2000px, 100% 100%;
+    background-position: 0 0, center center, center center, center center, center center, 0 0;
+    background-attachment: fixed, fixed, fixed, fixed, fixed, fixed;
+    background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
     z-index: 0;
     pointer-events: none;
 }
 
-/* Большой символ биткоина на фоне + затемненные зеленые акценты */
 body::after {
     content: '₿';
     position: fixed;
@@ -107,46 +115,18 @@ body::after {
     transform: translate(-10%, -30%);
     font-size: 3500px;
     font-weight: 700;
-    color: rgba(10, 50, 25, 0.12);
+    color: rgba(255, 215, 0, 0.04);
     z-index: 0;
     pointer-events: none;
     font-family: 'Arial', sans-serif;
     line-height: 1;
     white-space: nowrap;
     opacity: 1;
-    /* Дополнительные затемненные зеленые акценты */
-    text-shadow: 
-        0 0 100px rgba(10, 50, 25, 0.1),
-        0 0 200px rgba(10, 50, 25, 0.05);
+    text-shadow: 0 0 100px rgba(255, 215, 0, 0.03), 0 0 200px rgba(255, 215, 0, 0.02);
 }
 
-/* Дополнительный слой для затемненных зеленых акцентов */
 body {
     position: relative;
-}
-
-body::before {
-    background: 
-        /* Паттерн треугольничков */
-        url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0 L30 52 L60 0 Z' fill='none' stroke='rgba(20, 83, 45, 0.15)' stroke-width='0.5'/%3E%3Cpath d='M30 0 L60 52 L90 0' fill='none' stroke='rgba(20, 83, 45, 0.15)' stroke-width='0.5'/%3E%3C/svg%3E"),
-        /* Центральная биткоин-монета - темно-зеленый градиент (затемненный) */
-        radial-gradient(circle at 50% 50%, rgba(10, 50, 25, 0.25) 0%, rgba(5, 25, 12, 0.2) 25%, transparent 60%),
-        /* Затемненные зеленые акценты */
-        radial-gradient(circle at 50% 50%, transparent 20%, rgba(10, 50, 25, 0.06) 25%, transparent 30%),
-        radial-gradient(circle at 30% 30%, rgba(15, 60, 30, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 70% 70%, rgba(8, 40, 20, 0.08) 0%, transparent 40%),
-        /* Темно-зеленый базовый фон */
-        linear-gradient(135deg, #000000 0%, #0a1a0a 30%, #001a0a 50%, #0a1a0a 70%, #000000 100%);
-    background-size: 
-        60px 60px,
-        8000px 1750px,
-        8000px 1750px,
-        4000px 2000px,
-        4000px 2000px,
-        100% 100%;
-    background-position: 0 0, center center, center center, center center, center center, 0 0;
-    background-attachment: fixed, fixed, fixed, fixed, fixed, fixed;
-    background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
 }
 
 /* Когда будет реальное изображение, раскомментируйте это и закомментируйте background выше */
@@ -266,7 +246,7 @@ body {
     font-family: 'Raleway', sans-serif;
     font-size: clamp(14px, 1.8vw, 20px);
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.65) !important;
+    color: var(--risk-text-secondary) !important;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     margin: 0;
@@ -342,12 +322,12 @@ body {
     transform: translateZ(0);
     backface-visibility: hidden;
     will-change: background-position;
-    /* Градиентное свечение только на буквах */
+    /* Градиентное свечение — золотой акцент */
     background: linear-gradient(
         90deg,
         #FFFFFF 0%,
         #FFFFFF 30%,
-        rgba(150, 248, 145, 0.9) 50%,
+        var(--risk-accent-soft) 50%,
         #FFFFFF 70%,
         #FFFFFF 100%
     );
@@ -371,7 +351,7 @@ body {
     right: -50px;
     top: 20%;
     font-size: 16px;
-    color: rgba(150, 248, 145, 0.2);
+    color: var(--risk-accent-dim);
     animation: floatSymbol 5s ease-in-out infinite;
     pointer-events: none;
 }
@@ -383,7 +363,7 @@ body {
     left: -50px;
     bottom: 20%;
     font-size: 16px;
-    color: rgba(150, 248, 145, 0.2);
+    color: var(--risk-accent-dim);
     animation: floatSymbol 6s ease-in-out infinite 1s;
     pointer-events: none;
 }
@@ -446,7 +426,7 @@ body {
     opacity: 1 !important;
     visibility: visible !important;
     animation: floatRiskMove 6s ease-in-out infinite;
-    text-shadow: 0 0 3px #96F891, 0 0 6px #96F891;
+    text-shadow: 0 0 8px var(--risk-accent-dim), 0 0 20px rgba(255, 215, 0, 0.15);
 }
 
 .floating-text span {
@@ -501,12 +481,12 @@ body {
     transform: translateZ(0);
     backface-visibility: hidden;
     will-change: background-position;
-    /* Градиентное свечение только на буквах (как у первого текста) */
+    /* Градиентное свечение — золотой акцент */
     background: linear-gradient(
         90deg,
         #FFFFFF 0%,
         #FFFFFF 30%,
-        rgba(150, 248, 145, 0.9) 50%,
+        var(--risk-accent-soft) 50%,
         #FFFFFF 70%,
         #FFFFFF 100%
     );
@@ -533,17 +513,17 @@ body {
  borderPulse {
     0%, 100% {
         box-shadow: 
-            0 0 20px rgba(150, 248, 145, 0.3),
-            0 0 40px rgba(150, 248, 145, 0.15),
-            inset 0 0 30px rgba(150, 248, 145, 0.05);
-        border-color: #96F891;
+            0 0 20px rgba(255, 215, 0, 0.25),
+            0 0 40px rgba(255, 215, 0, 0.12),
+            inset 0 0 30px rgba(255, 215, 0, 0.06);
+        border-color: var(--risk-accent);
     }
     50% {
         box-shadow: 
-            0 0 30px rgba(150, 248, 145, 0.5),
-            0 0 60px rgba(150, 248, 145, 0.25),
-            inset 0 0 40px rgba(150, 248, 145, 0.1);
-        border-color: #7AE875;
+            0 0 30px rgba(255, 215, 0, 0.4),
+            0 0 60px rgba(255, 215, 0, 0.2),
+            inset 0 0 40px rgba(255, 215, 0, 0.08);
+        border-color: #ffc107;
     }
 }
 
@@ -565,17 +545,17 @@ body {
  borderPulse {
     0%, 100% {
         box-shadow: 
-            0 0 20px rgba(150, 248, 145, 0.3),
-            0 0 40px rgba(150, 248, 145, 0.15),
-            inset 0 0 30px rgba(150, 248, 145, 0.05);
-        border-color: #96F891;
+            0 0 20px rgba(255, 215, 0, 0.25),
+            0 0 40px rgba(255, 215, 0, 0.12),
+            inset 0 0 30px rgba(255, 215, 0, 0.06);
+        border-color: var(--risk-accent);
     }
     50% {
         box-shadow: 
-            0 0 30px rgba(150, 248, 145, 0.5),
-            0 0 60px rgba(150, 248, 145, 0.25),
-            inset 0 0 40px rgba(150, 248, 145, 0.1);
-        border-color: #7AE875;
+            0 0 30px rgba(255, 215, 0, 0.4),
+            0 0 60px rgba(255, 215, 0, 0.2),
+            inset 0 0 40px rgba(255, 215, 0, 0.08);
+        border-color: #ffc107;
     }
 }
 
@@ -630,14 +610,14 @@ body {
 .why-section {
     margin-top: 15px;
     padding: 15px;
-    background: rgba(150, 248, 145, 0.15);
+    background: rgba(255, 215, 0, 0.12);
     border-radius: 8px;
-    border-left: 3px solid #96F891;
+    border-left: 3px solid var(--risk-accent);
 }
 
 .why-title {
     font-weight: 700;
-    color: #96F891 !important;
+    color: var(--risk-accent) !important;
     font-size: 18px;
     margin-bottom: 10px;
     display: flex;
@@ -688,10 +668,10 @@ body {
     width: calc(100% + 5cm);
     min-height: 400px;
     background: 
-        linear-gradient(135deg, rgba(150, 248, 145, 0.08) 0%, rgba(150, 248, 145, 0.03) 30%, transparent 50%, rgba(150, 248, 145, 0.03) 70%, rgba(150, 248, 145, 0.08) 100%),
-        radial-gradient(circle at 20% 30%, rgba(150, 248, 145, 0.06) 0%, transparent 60%),
-        radial-gradient(circle at 80% 70%, rgba(150, 248, 145, 0.06) 0%, transparent 60%);
-    border: 4px solid #96F891;
+        linear-gradient(135deg, rgba(255, 215, 0, 0.06) 0%, rgba(255, 215, 0, 0.03) 30%, transparent 50%, rgba(255, 215, 0, 0.03) 70%, rgba(255, 215, 0, 0.06) 100%),
+        radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.05) 0%, transparent 60%),
+        radial-gradient(circle at 80% 70%, rgba(255, 215, 0, 0.05) 0%, transparent 60%);
+    border: 4px solid var(--risk-accent);
     border-radius: 10px;
     padding: 40px 60px;
     transition: all 0.4s ease;
@@ -703,10 +683,10 @@ body {
     overflow: visible;
     /* Усиленное свечение */
     box-shadow: 
-        0 0 35px rgba(150, 248, 145, 0.4),
-        0 0 70px rgba(150, 248, 145, 0.2),
-        0 0 100px rgba(150, 248, 145, 0.1),
-        inset 0 0 40px rgba(150, 248, 145, 0.08);
+        0 0 35px rgba(255, 215, 0, 0.35),
+        0 0 70px rgba(255, 215, 0, 0.18),
+        0 0 100px rgba(255, 215, 0, 0.08),
+        inset 0 0 40px rgba(255, 215, 0, 0.06);
     /* GPU-ускорение */
     transform: translateZ(0);
     backface-visibility: hidden;
@@ -722,12 +702,12 @@ body {
     top: -30px;
     left: -30px;
     font-size: 45px;
-    color: rgba(150, 248, 145, 0.6);
+    color: rgba(255, 215, 0, 0.5);
     opacity: 0.7;
     animation: symbolFloat 5s ease-in-out infinite;
     pointer-events: none;
     z-index: 1;
-    text-shadow: 0 0 15px rgba(150, 248, 145, 0.8), 0 0 30px rgba(150, 248, 145, 0.4);
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.35);
     transform: translateZ(0);
     backface-visibility: hidden;
     font-weight: 700;
@@ -739,12 +719,12 @@ body {
     bottom: -30px;
     right: -30px;
     font-size: 45px;
-    color: rgba(150, 248, 145, 0.6);
+    color: rgba(255, 215, 0, 0.5);
     opacity: 0.7;
     animation: symbolFloat 6s ease-in-out infinite 1s;
     pointer-events: none;
     z-index: 1;
-    text-shadow: 0 0 15px rgba(150, 248, 145, 0.8), 0 0 30px rgba(150, 248, 145, 0.4);
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.35);
     transform: translateZ(0);
     backface-visibility: hidden;
     font-weight: 700;
@@ -768,12 +748,12 @@ body {
     top: -30px;
     right: -30px;
     font-size: 45px;
-    color: rgba(150, 248, 145, 0.6);
+    color: rgba(255, 215, 0, 0.5);
     opacity: 0.7;
     animation: symbolFloat 5.5s ease-in-out infinite 0.5s;
     pointer-events: none;
     z-index: 1;
-    text-shadow: 0 0 15px rgba(150, 248, 145, 0.8), 0 0 30px rgba(150, 248, 145, 0.4);
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.35);
     transform: translateZ(0);
     backface-visibility: hidden;
     font-weight: 700;
@@ -785,12 +765,12 @@ body {
     bottom: -30px;
     left: -30px;
     font-size: 45px;
-    color: rgba(150, 248, 145, 0.6);
+    color: rgba(255, 215, 0, 0.5);
     opacity: 0.7;
     animation: symbolFloat 6.5s ease-in-out infinite 1.5s;
     pointer-events: none;
     z-index: 1;
-    text-shadow: 0 0 15px rgba(150, 248, 145, 0.8), 0 0 30px rgba(150, 248, 145, 0.4);
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.35);
     transform: translateZ(0);
     backface-visibility: hidden;
     font-weight: 700;
@@ -829,16 +809,16 @@ body {
 /* УСИЛЕННЫЙ hover эффект - больше подъем и свечение */
 .risk-calculator-container:hover {
     box-shadow: 
-        0 0 60px rgba(150, 248, 145, 0.7),
-        0 0 120px rgba(150, 248, 145, 0.4),
-        0 0 180px rgba(150, 248, 145, 0.25),
-        inset 0 0 80px rgba(150, 248, 145, 0.15);
+        0 0 60px rgba(255, 215, 0, 0.5),
+        0 0 120px rgba(255, 215, 0, 0.35),
+        0 0 180px rgba(255, 215, 0, 0.2),
+        inset 0 0 80px rgba(255, 215, 0, 0.12);
     transform: translateZ(0) translateY(-8px) scale(1.01);
-    border-color: #7AE875;
+    border-color: #ffc107;
     background: 
-        linear-gradient(135deg, rgba(150, 248, 145, 0.12) 0%, rgba(150, 248, 145, 0.05) 30%, transparent 50%, rgba(150, 248, 145, 0.05) 70%, rgba(150, 248, 145, 0.12) 100%),
-        radial-gradient(circle at 20% 30%, rgba(150, 248, 145, 0.1) 0%, transparent 60%),
-        radial-gradient(circle at 80% 70%, rgba(150, 248, 145, 0.1) 0%, transparent 60%);
+        linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.06) 30%, transparent 50%, rgba(255, 215, 0, 0.06) 70%, rgba(255, 215, 0, 0.1) 100%),
+        radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.08) 0%, transparent 60%),
+        radial-gradient(circle at 80% 70%, rgba(255, 215, 0, 0.08) 0%, transparent 60%);
 }
 
 .risk-calculator-wrapper h1 {
@@ -917,7 +897,7 @@ body {
     appearance: none;
     width: 30px;
     height: 30px;
-    background: #96F891;
+    background: var(--risk-accent);
     cursor: pointer;
     border-radius: 50%;
 }
@@ -925,7 +905,7 @@ body {
 .risk-calculator-wrapper input[type="range"]::-moz-range-thumb {
     width: 30px;
     height: 30px;
-    background: #96F891;
+    background: var(--risk-accent);
     cursor: pointer;
     border-radius: 50%;
     border: none;
@@ -957,7 +937,7 @@ body {
 .risk-calculator-wrapper button {
     width: 250px;
     padding: 18px;
-    background: #96F891;
+    background: var(--risk-accent);
     color: #FFFFFF !important;
     border: none;
     border-radius: 10px;
@@ -970,7 +950,7 @@ body {
 }
 
 .risk-calculator-wrapper button:hover {
-    background: #96F891;
+    background: var(--risk-accent);
     opacity: 0.8;
     transform: scale(1.05);
 }
@@ -1007,13 +987,13 @@ body {
     background: rgba(255, 255, 255, 0.1);
     padding: 20px;
     border-radius: 8px;
-    border-left: 4px solid #96F891;
+    border-left: 4px solid var(--risk-accent);
     opacity: 1 !important;
 }
 
 .strategy-title {
     font-weight: 600;
-    color: #96F891 !important;
+    color: var(--risk-accent) !important;
     margin-bottom: 10px;
     font-size: 20px;
     opacity: 1 !important;
@@ -1022,10 +1002,10 @@ body {
 .strategy-info {
     margin-bottom: 20px;
     padding: 15px;
-    background: rgba(150, 248, 145, 0.1);
+    background: rgba(255, 215, 0, 0.08);
     border-radius: 8px;
     text-align: center;
-    color: #96F891 !important;
+    color: var(--risk-accent) !important;
     font-weight: 600;
     font-size: 18px;
     opacity: 1 !important;
@@ -1034,7 +1014,7 @@ body {
 .strategy-allocation {
     margin-bottom: 15px;
     padding-bottom: 15px;
-    border-bottom: 1px solid rgba(150, 248, 145, 0.3);
+    border-bottom: 1px solid rgba(255, 215, 0, 0.25);
     color: #FFFFFF !important;
     opacity: 1 !important;
 }
@@ -1042,14 +1022,14 @@ body {
 .why-section {
     margin-top: 15px;
     padding: 15px;
-    background: rgba(150, 248, 145, 0.15);
+    background: rgba(255, 215, 0, 0.12);
     border-radius: 8px;
-    border-left: 3px solid #96F891;
+    border-left: 3px solid var(--risk-accent);
 }
 
 .why-title {
     font-weight: 700;
-    color: #96F891 !important;
+    color: var(--risk-accent) !important;
     font-size: 18px;
     margin-bottom: 10px;
     display: flex;
@@ -1067,7 +1047,7 @@ body {
 }
 
 .loading {
-    color: #96F891 !important;
+    color: var(--risk-accent) !important;
     font-style: italic;
     display: flex;
     align-items: center;
@@ -1076,8 +1056,8 @@ body {
 }
 
 .spinner {
-    border: 2px solid rgba(150, 248, 145, 0.3);
-    border-top: 2px solid #96F891;
+    border: 2px solid rgba(255, 215, 0, 0.25);
+    border-top: 2px solid var(--risk-accent);
     border-radius: 50%;
     width: 16px;
     height: 16px;
@@ -1093,9 +1073,9 @@ body {
     display: none;
     margin-bottom: 30px;
     padding: 20px;
-    background: rgba(150, 248, 145, 0.05);
+    background: rgba(255, 215, 0, 0.06);
     border-radius: 8px;
-    border: 2px solid rgba(150, 248, 145, 0.3);
+    border: 2px solid rgba(255, 215, 0, 0.25);
 }
 
 .risk-calculator-wrapper input[type="password"] {
@@ -1116,7 +1096,7 @@ body {
 
 .api-key-info {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: var(--risk-muted) !important;
     margin-top: 10px;
     font-style: italic;
     opacity: 1 !important;
@@ -1140,10 +1120,10 @@ body {
     width: calc(100% + 5cm);
     min-height: 400px;
     background: 
-        linear-gradient(135deg, rgba(150, 248, 145, 0.08) 0%, rgba(150, 248, 145, 0.03) 30%, transparent 50%, rgba(150, 248, 145, 0.03) 70%, rgba(150, 248, 145, 0.08) 100%),
-        radial-gradient(circle at 20% 30%, rgba(150, 248, 145, 0.06) 0%, transparent 60%),
-        radial-gradient(circle at 80% 70%, rgba(150, 248, 145, 0.06) 0%, transparent 60%);
-    border: 4px solid #96F891;
+        linear-gradient(135deg, rgba(255, 215, 0, 0.06) 0%, rgba(255, 215, 0, 0.03) 30%, transparent 50%, rgba(255, 215, 0, 0.03) 70%, rgba(255, 215, 0, 0.06) 100%),
+        radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.05) 0%, transparent 60%),
+        radial-gradient(circle at 80% 70%, rgba(255, 215, 0, 0.05) 0%, transparent 60%);
+    border: 4px solid var(--risk-accent);
     border-radius: 10px;
     padding: 40px 60px;
     transition: all 0.4s ease;
@@ -1155,10 +1135,10 @@ body {
     overflow: visible;
     /* Усиленное свечение */
     box-shadow: 
-        0 0 35px rgba(150, 248, 145, 0.4),
-        0 0 70px rgba(150, 248, 145, 0.2),
-        0 0 100px rgba(150, 248, 145, 0.1),
-        inset 0 0 40px rgba(150, 248, 145, 0.08);
+        0 0 35px rgba(255, 215, 0, 0.35),
+        0 0 70px rgba(255, 215, 0, 0.18),
+        0 0 100px rgba(255, 215, 0, 0.08),
+        inset 0 0 40px rgba(255, 215, 0, 0.06);
     /* GPU-ускорение */
     transform: translateZ(0);
     backface-visibility: hidden;
