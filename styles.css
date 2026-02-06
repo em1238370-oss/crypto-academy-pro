@@ -549,21 +549,24 @@ html {
    text-align: center;
 }
 
-/* Круги начинаются после текста */
+/* Круги навигации — Explore tools */
 .explore-section {
-   padding: 80px 20px 150px;
+   padding: 60px 20px 120px;
    text-align: center;
-   min-height: 100vh;
-   display: flex;
+   min-height: auto;
+   display: flex !important;
    flex-direction: column;
    align-items: center;
-   gap: 160px;
+   gap: 120px;
    margin-top: 0;
    margin-bottom: 0;
    overflow: visible !important;
    position: relative;
+   z-index: 10;
    width: 100%;
    box-sizing: border-box;
+   visibility: visible !important;
+   opacity: 1 !important;
 }
 
 .menu-item,
