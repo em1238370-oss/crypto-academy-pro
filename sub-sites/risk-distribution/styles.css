@@ -250,6 +250,15 @@ html {
     text-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
 }
 
+/* Отступ между карточками и текстом внизу */
+.risk-trust-stats .news-trust-badge {
+    margin-top: 40px;
+    margin-bottom: 16px;
+}
+.risk-trust-stats .news-trust-tagline {
+    margin-top: 4px;
+}
+
 .risk-section {
     max-width: 900px;
     margin: 0 auto 72px;
