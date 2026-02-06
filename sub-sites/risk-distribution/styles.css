@@ -1,6 +1,45 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap');
 
+/* Навигация как на главной (п.1 плана DuoView) */
+.main-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    background: rgba(28, 0, 56, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.main-nav-brand {
+    font-family: 'Raleway', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #FFFFFF;
+    text-decoration: none;
+    letter-spacing: -0.02em;
+}
+.main-nav-links {
+    display: flex;
+    gap: 32px;
+}
+.main-nav-links a {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+.main-nav-links a:hover,
+.main-nav-links a.active {
+    color: #FFFFFF;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -143,7 +182,7 @@ body {
     min-height: 100vh;
     position: relative;
     z-index: 1;
-    /* Гарантируем, что fixed элементы вне .page работают правильно */
+    padding-top: 70px; /* место под fixed nav */
     transform: none !important;
 }
 
@@ -555,10 +594,20 @@ body {
 }
 
 @media (max-width: 768px) {
-    
-    
-
-    
+    .main-nav {
+        padding: 14px 20px;
+    }
+    .main-nav-links {
+        gap: 20px;
+    }
+    .main-nav-links a {
+        font-size: 13px;
+    }
+}
+@media (max-width: 600px) {
+    .main-nav-links {
+        display: none;
+    }
 }
 
 
