@@ -314,15 +314,37 @@
            }
        })();
        (function() {
+           var regulation = [
+               'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.',
+               'Key regulatory moves — ETF approvals, licensing, bans — affect liquidity and risk far beyond the headlines.',
+               'Regulatory shifts (ETFs, licensing, bans) reshape liquidity and long-term risk. Headlines are just the surface.',
+               'Major regulatory decisions — on ETFs, licensing, bans — drive liquidity and risk. Don\'t stop at the headline.',
+               'ETF approvals, licensing, bans: regulatory moves that reshape liquidity and risk. Headlines only scratch the surface.'
+           ];
+           var macro = [
+               'Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.',
+               'Fed decisions, inflation data, and dollar moves shape risk appetite for all assets — crypto included.',
+               'Rates, inflation, and dollar strength drive risk appetite. Crypto follows the same macro forces.',
+               'Inflation, rate decisions, and dollar strength: the macro drivers of risk appetite across assets, including crypto.',
+               'Macro prints — inflation, rates, dollar — still set risk appetite for crypto and all risk assets.'
+           ];
+           var market = [
+               'Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it\'s just narrative.',
+               'Funding rates, open interest, and liquidity reveal if news is backed by real capital or just narrative.',
+               'Check funding, open interest, and liquidity: they show whether news has capital behind it or is just noise.',
+               'Funding, open interest, and liquidity in key pairs — the data that shows if news is backed by capital or narrative.',
+               'Open interest, funding, and liquidity tell you if the news is backed by real capital or just narrative.'
+           ];
+           function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+           var regEl = document.getElementById('newsBlockRegulation');
+           var macroEl = document.getElementById('newsBlockMacro');
+           var marketEl = document.getElementById('newsBlockMarket');
+           if (regEl) regEl.textContent = pick(regulation);
+           if (macroEl) macroEl.textContent = pick(macro);
+           if (marketEl) marketEl.textContent = pick(market);
            fetch('/api/news/dynamic').then(function(r) { return r.json(); }).then(function(data) {
                var heat = document.getElementById('newsHeat');
-               var reg = document.getElementById('newsBlockRegulation');
-               var macro = document.getElementById('newsBlockMacro');
-               var market = document.getElementById('newsBlockMarket');
                if (heat && data.heat) heat.setAttribute('data-state', data.heat);
-               if (reg && data.regulation) reg.textContent = data.regulation.text;
-               if (macro && data.macro) macro.textContent = data.macro.text;
-               if (market && data.market) market.textContent = data.market.text;
            }).catch(function() {});
        })();
        (function() {
