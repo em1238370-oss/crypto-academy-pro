@@ -875,6 +875,12 @@ body::after {
         gap: 24px;
         text-align: center;
         padding: 32px 28px;
+        align-items: center;
+    }
+    
+    .news-link::after {
+        content: none;
+        display: none;
     }
     
     .news-link {
