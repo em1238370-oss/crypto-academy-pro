@@ -1,15 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap');
 
-/* DuoView п.3: Цветовая схема — тёмная тема + золотые акценты */
+/* Цветовая схема — база #001800 */
 :root {
-    --risk-accent: #ffd700;
-    --risk-accent-soft: rgba(255, 215, 0, 0.6);
-    --risk-accent-dim: rgba(255, 215, 0, 0.25);
-    --risk-muted: #888888;
-    --risk-text-secondary: #cccccc;
-    --risk-bg-dark: #0d0d0d;
-    --risk-bg-warm: #1a1810;
+    --risk-bg-base: #001800;
+    --risk-bg-dark: #001200;
+    --risk-bg-light: #002200;
+    --risk-bg-warm: #001c00;
+    --risk-accent: #96F891;
+    --risk-accent-soft: rgba(150, 248, 145, 0.6);
+    --risk-accent-dim: rgba(150, 248, 145, 0.25);
+    --risk-muted: #668866;
+    --risk-text-secondary: #99aa99;
 }
 
 /* Навигация как на главной (п.1 плана DuoView) */
@@ -63,7 +65,7 @@
 
 body {
     font-family: 'Poppins', sans-serif;
-    background-color: #000000;
+    background-color: var(--risk-bg-base);
     min-height: 100vh;
     position: relative;
     overflow-x: hidden;
@@ -86,19 +88,18 @@ body {
     will-change: auto;
 }
 
-/* Фон — тёмная тема + тонкие золотые акценты */
+/* Фон — база #001800 */
 body::before {
     content: '';
     position: fixed;
     inset: 0;
     background: 
-        /* Паттерн — золотые треугольники */
-        url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0 L30 52 L60 0 Z' fill='none' stroke='rgba(255, 215, 0, 0.08)' stroke-width='0.5'/%3E%3Cpath d='M30 0 L60 52 L90 0' fill='none' stroke='rgba(255, 215, 0, 0.08)' stroke-width='0.5'/%3E%3C/svg%3E"),
-        radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.04) 0%, transparent 50%),
-        radial-gradient(circle at 50% 50%, transparent 20%, rgba(255, 215, 0, 0.02) 25%, transparent 30%),
-        radial-gradient(circle at 30% 30%, rgba(255, 200, 0, 0.03) 0%, transparent 40%),
-        radial-gradient(circle at 70% 70%, rgba(255, 200, 0, 0.03) 0%, transparent 40%),
-        linear-gradient(135deg, #000000 0%, var(--risk-bg-dark) 30%, var(--risk-bg-warm) 50%, var(--risk-bg-dark) 70%, #000000 100%);
+        url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0 L30 52 L60 0 Z' fill='none' stroke='rgba(150, 248, 145, 0.08)' stroke-width='0.5'/%3E%3Cpath d='M30 0 L60 52 L90 0' fill='none' stroke='rgba(150, 248, 145, 0.08)' stroke-width='0.5'/%3E%3C/svg%3E"),
+        radial-gradient(circle at 50% 50%, rgba(0, 40, 0, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, transparent 20%, rgba(0, 36, 0, 0.2) 25%, transparent 30%),
+        radial-gradient(circle at 30% 30%, rgba(0, 48, 0, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 70% 70%, rgba(0, 48, 0, 0.15) 0%, transparent 40%),
+        linear-gradient(135deg, var(--risk-bg-dark) 0%, var(--risk-bg-base) 30%, var(--risk-bg-light) 50%, var(--risk-bg-base) 70%, var(--risk-bg-dark) 100%);
     background-size: 60px 60px, 8000px 1750px, 8000px 1750px, 4000px 2000px, 4000px 2000px, 100% 100%;
     background-position: 0 0, center center, center center, center center, center center, 0 0;
     background-attachment: fixed, fixed, fixed, fixed, fixed, fixed;
@@ -115,14 +116,14 @@ body::after {
     transform: translate(-10%, -30%);
     font-size: 3500px;
     font-weight: 700;
-    color: rgba(255, 215, 0, 0.04);
+    color: rgba(0, 40, 0, 0.4);
     z-index: 0;
     pointer-events: none;
     font-family: 'Arial', sans-serif;
     line-height: 1;
     white-space: nowrap;
     opacity: 1;
-    text-shadow: 0 0 100px rgba(255, 215, 0, 0.03), 0 0 200px rgba(255, 215, 0, 0.02);
+    text-shadow: 0 0 100px rgba(0, 48, 0, 0.2), 0 0 200px rgba(0, 40, 0, 0.15);
 }
 
 body {
@@ -219,18 +220,18 @@ body {
     animation: heroReveal 1s ease-out;
 }
 
-/* Акценты — градиент золото→янтарь + пульсирующее свечение */
+/* Акценты — градиент под базу #001800 */
 .crypto-risk-wrapper .hero-accent {
     font-style: italic;
     font-weight: 700;
     display: inline-block;
     background: linear-gradient(
         135deg,
-        #ffd700 0%,
-        #ffec8b 25%,
-        #ffb347 50%,
-        #ffd700 75%,
-        #ffec8b 100%
+        var(--risk-accent) 0%,
+        #b8feb5 25%,
+        #7ae87a 50%,
+        var(--risk-accent) 75%,
+        #b8feb5 100%
     );
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -238,7 +239,7 @@ body {
     -webkit-text-fill-color: transparent;
     text-shadow: none;
     animation: accentShimmer 4s ease-in-out infinite, accentGlow 3s ease-in-out infinite;
-    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 30px rgba(255, 184, 71, 0.35));
+    filter: drop-shadow(0 0 12px var(--risk-accent-soft)) drop-shadow(0 0 30px var(--risk-accent-dim));
 }
 
 /* Подзаголовок — лаконичный, элегантный */
@@ -287,8 +288,8 @@ body {
 }
 
 @keyframes accentGlow {
-    0%, 100% { filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 30px rgba(255, 184, 71, 0.35)); }
-    50% { filter: drop-shadow(0 0 18px rgba(255, 215, 0, 0.8)) drop-shadow(0 0 40px rgba(255, 184, 71, 0.5)); }
+    0%, 100% { filter: drop-shadow(0 0 12px var(--risk-accent-soft)) drop-shadow(0 0 30px var(--risk-accent-dim)); }
+    50% { filter: drop-shadow(0 0 18px rgba(150, 248, 145, 0.7)) drop-shadow(0 0 40px var(--risk-accent-dim)); }
 }
 
 /* Текст о риск-менеджменте - 10 см ниже заголовка */
@@ -426,7 +427,7 @@ body {
     opacity: 1 !important;
     visibility: visible !important;
     animation: floatRiskMove 6s ease-in-out infinite;
-    text-shadow: 0 0 8px var(--risk-accent-dim), 0 0 20px rgba(255, 215, 0, 0.15);
+    text-shadow: 0 0 8px var(--risk-accent-dim), 0 0 20px rgba(150, 248, 145, 0.15);
 }
 
 .floating-text span {
@@ -513,17 +514,17 @@ body {
  borderPulse {
     0%, 100% {
         box-shadow: 
-            0 0 20px rgba(255, 215, 0, 0.25),
-            0 0 40px rgba(255, 215, 0, 0.12),
-            inset 0 0 30px rgba(255, 215, 0, 0.06);
+            0 0 20px rgba(150, 248, 145, 0.25),
+            0 0 40px rgba(150, 248, 145, 0.12),
+            inset 0 0 30px rgba(150, 248, 145, 0.06);
         border-color: var(--risk-accent);
     }
     50% {
         box-shadow: 
-            0 0 30px rgba(255, 215, 0, 0.4),
-            0 0 60px rgba(255, 215, 0, 0.2),
-            inset 0 0 40px rgba(255, 215, 0, 0.08);
-        border-color: #ffc107;
+            0 0 30px rgba(150, 248, 145, 0.4),
+            0 0 60px rgba(150, 248, 145, 0.2),
+            inset 0 0 40px rgba(150, 248, 145, 0.08);
+        border-color: #7ae87a;
     }
 }
 
@@ -545,17 +546,17 @@ body {
  borderPulse {
     0%, 100% {
         box-shadow: 
-            0 0 20px rgba(255, 215, 0, 0.25),
-            0 0 40px rgba(255, 215, 0, 0.12),
-            inset 0 0 30px rgba(255, 215, 0, 0.06);
+            0 0 20px rgba(150, 248, 145, 0.25),
+            0 0 40px rgba(150, 248, 145, 0.12),
+            inset 0 0 30px rgba(150, 248, 145, 0.06);
         border-color: var(--risk-accent);
     }
     50% {
         box-shadow: 
-            0 0 30px rgba(255, 215, 0, 0.4),
-            0 0 60px rgba(255, 215, 0, 0.2),
-            inset 0 0 40px rgba(255, 215, 0, 0.08);
-        border-color: #ffc107;
+            0 0 30px rgba(150, 248, 145, 0.4),
+            0 0 60px rgba(150, 248, 145, 0.2),
+            inset 0 0 40px rgba(150, 248, 145, 0.08);
+        border-color: #7ae87a;
     }
 }
 
@@ -610,7 +611,7 @@ body {
 .why-section {
     margin-top: 15px;
     padding: 15px;
-    background: rgba(255, 215, 0, 0.12);
+    background: rgba(150, 248, 145, 0.12);
     border-radius: 8px;
     border-left: 3px solid var(--risk-accent);
 }
@@ -668,9 +669,9 @@ body {
     width: calc(100% + 5cm);
     min-height: 400px;
     background: 
-        linear-gradient(135deg, rgba(255, 215, 0, 0.06) 0%, rgba(255, 215, 0, 0.03) 30%, transparent 50%, rgba(255, 215, 0, 0.03) 70%, rgba(255, 215, 0, 0.06) 100%),
-        radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.05) 0%, transparent 60%),
-        radial-gradient(circle at 80% 70%, rgba(255, 215, 0, 0.05) 0%, transparent 60%);
+        linear-gradient(135deg, rgba(150, 248, 145, 0.06) 0%, rgba(150, 248, 145, 0.03) 30%, transparent 50%, rgba(150, 248, 145, 0.03) 70%, rgba(150, 248, 145, 0.06) 100%),
+        radial-gradient(circle at 20% 30%, rgba(150, 248, 145, 0.05) 0%, transparent 60%),
+        radial-gradient(circle at 80% 70%, rgba(150, 248, 145, 0.05) 0%, transparent 60%);
     border: 4px solid var(--risk-accent);
     border-radius: 10px;
     padding: 40px 60px;
@@ -683,10 +684,10 @@ body {
     overflow: visible;
     /* Усиленное свечение */
     box-shadow: 
-        0 0 35px rgba(255, 215, 0, 0.35),
-        0 0 70px rgba(255, 215, 0, 0.18),
-        0 0 100px rgba(255, 215, 0, 0.08),
-        inset 0 0 40px rgba(255, 215, 0, 0.06);
+        0 0 35px rgba(150, 248, 145, 0.35),
+        0 0 70px rgba(150, 248, 145, 0.18),
+        0 0 100px rgba(150, 248, 145, 0.08),
+        inset 0 0 40px rgba(150, 248, 145, 0.06);
     /* GPU-ускорение */
     transform: translateZ(0);
     backface-visibility: hidden;
@@ -702,12 +703,12 @@ body {
     top: -30px;
     left: -30px;
     font-size: 45px;
-    color: rgba(255, 215, 0, 0.5);
+    color: rgba(150, 248, 145, 0.5);
     opacity: 0.7;
     animation: symbolFloat 5s ease-in-out infinite;
     pointer-events: none;
     z-index: 1;
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.35);
+    text-shadow: 0 0 15px rgba(150, 248, 145, 0.6), 0 0 30px rgba(150, 248, 145, 0.35);
     transform: translateZ(0);
     backface-visibility: hidden;
     font-weight: 700;
@@ -719,12 +720,12 @@ body {
     bottom: -30px;
     right: -30px;
     font-size: 45px;
-    color: rgba(255, 215, 0, 0.5);
+    color: rgba(150, 248, 145, 0.5);
     opacity: 0.7;
     animation: symbolFloat 6s ease-in-out infinite 1s;
     pointer-events: none;
     z-index: 1;
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.35);
+    text-shadow: 0 0 15px rgba(150, 248, 145, 0.6), 0 0 30px rgba(150, 248, 145, 0.35);
     transform: translateZ(0);
     backface-visibility: hidden;
     font-weight: 700;
@@ -748,12 +749,12 @@ body {
     top: -30px;
     right: -30px;
     font-size: 45px;
-    color: rgba(255, 215, 0, 0.5);
+    color: rgba(150, 248, 145, 0.5);
     opacity: 0.7;
     animation: symbolFloat 5.5s ease-in-out infinite 0.5s;
     pointer-events: none;
     z-index: 1;
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.35);
+    text-shadow: 0 0 15px rgba(150, 248, 145, 0.6), 0 0 30px rgba(150, 248, 145, 0.35);
     transform: translateZ(0);
     backface-visibility: hidden;
     font-weight: 700;
@@ -765,12 +766,12 @@ body {
     bottom: -30px;
     left: -30px;
     font-size: 45px;
-    color: rgba(255, 215, 0, 0.5);
+    color: rgba(150, 248, 145, 0.5);
     opacity: 0.7;
     animation: symbolFloat 6.5s ease-in-out infinite 1.5s;
     pointer-events: none;
     z-index: 1;
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.35);
+    text-shadow: 0 0 15px rgba(150, 248, 145, 0.6), 0 0 30px rgba(150, 248, 145, 0.35);
     transform: translateZ(0);
     backface-visibility: hidden;
     font-weight: 700;
@@ -809,16 +810,16 @@ body {
 /* УСИЛЕННЫЙ hover эффект - больше подъем и свечение */
 .risk-calculator-container:hover {
     box-shadow: 
-        0 0 60px rgba(255, 215, 0, 0.5),
-        0 0 120px rgba(255, 215, 0, 0.35),
-        0 0 180px rgba(255, 215, 0, 0.2),
-        inset 0 0 80px rgba(255, 215, 0, 0.12);
+        0 0 60px rgba(150, 248, 145, 0.5),
+        0 0 120px rgba(150, 248, 145, 0.35),
+        0 0 180px rgba(150, 248, 145, 0.2),
+        inset 0 0 80px rgba(150, 248, 145, 0.12);
     transform: translateZ(0) translateY(-8px) scale(1.01);
-    border-color: #ffc107;
+    border-color: #7ae87a;
     background: 
-        linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.06) 30%, transparent 50%, rgba(255, 215, 0, 0.06) 70%, rgba(255, 215, 0, 0.1) 100%),
-        radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.08) 0%, transparent 60%),
-        radial-gradient(circle at 80% 70%, rgba(255, 215, 0, 0.08) 0%, transparent 60%);
+        linear-gradient(135deg, rgba(150, 248, 145, 0.1) 0%, rgba(150, 248, 145, 0.06) 30%, transparent 50%, rgba(150, 248, 145, 0.06) 70%, rgba(150, 248, 145, 0.1) 100%),
+        radial-gradient(circle at 20% 30%, rgba(150, 248, 145, 0.08) 0%, transparent 60%),
+        radial-gradient(circle at 80% 70%, rgba(150, 248, 145, 0.08) 0%, transparent 60%);
 }
 
 .risk-calculator-wrapper h1 {
@@ -1002,7 +1003,7 @@ body {
 .strategy-info {
     margin-bottom: 20px;
     padding: 15px;
-    background: rgba(255, 215, 0, 0.08);
+    background: rgba(150, 248, 145, 0.08);
     border-radius: 8px;
     text-align: center;
     color: var(--risk-accent) !important;
@@ -1014,7 +1015,7 @@ body {
 .strategy-allocation {
     margin-bottom: 15px;
     padding-bottom: 15px;
-    border-bottom: 1px solid rgba(255, 215, 0, 0.25);
+    border-bottom: 1px solid rgba(150, 248, 145, 0.25);
     color: #FFFFFF !important;
     opacity: 1 !important;
 }
@@ -1022,7 +1023,7 @@ body {
 .why-section {
     margin-top: 15px;
     padding: 15px;
-    background: rgba(255, 215, 0, 0.12);
+    background: rgba(150, 248, 145, 0.12);
     border-radius: 8px;
     border-left: 3px solid var(--risk-accent);
 }
@@ -1056,7 +1057,7 @@ body {
 }
 
 .spinner {
-    border: 2px solid rgba(255, 215, 0, 0.25);
+    border: 2px solid rgba(150, 248, 145, 0.25);
     border-top: 2px solid var(--risk-accent);
     border-radius: 50%;
     width: 16px;
@@ -1073,9 +1074,9 @@ body {
     display: none;
     margin-bottom: 30px;
     padding: 20px;
-    background: rgba(255, 215, 0, 0.06);
+    background: rgba(150, 248, 145, 0.06);
     border-radius: 8px;
-    border: 2px solid rgba(255, 215, 0, 0.25);
+    border: 2px solid rgba(150, 248, 145, 0.25);
 }
 
 .risk-calculator-wrapper input[type="password"] {
@@ -1120,9 +1121,9 @@ body {
     width: calc(100% + 5cm);
     min-height: 400px;
     background: 
-        linear-gradient(135deg, rgba(255, 215, 0, 0.06) 0%, rgba(255, 215, 0, 0.03) 30%, transparent 50%, rgba(255, 215, 0, 0.03) 70%, rgba(255, 215, 0, 0.06) 100%),
-        radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.05) 0%, transparent 60%),
-        radial-gradient(circle at 80% 70%, rgba(255, 215, 0, 0.05) 0%, transparent 60%);
+        linear-gradient(135deg, rgba(150, 248, 145, 0.06) 0%, rgba(150, 248, 145, 0.03) 30%, transparent 50%, rgba(150, 248, 145, 0.03) 70%, rgba(150, 248, 145, 0.06) 100%),
+        radial-gradient(circle at 20% 30%, rgba(150, 248, 145, 0.05) 0%, transparent 60%),
+        radial-gradient(circle at 80% 70%, rgba(150, 248, 145, 0.05) 0%, transparent 60%);
     border: 4px solid var(--risk-accent);
     border-radius: 10px;
     padding: 40px 60px;
@@ -1135,10 +1136,10 @@ body {
     overflow: visible;
     /* Усиленное свечение */
     box-shadow: 
-        0 0 35px rgba(255, 215, 0, 0.35),
-        0 0 70px rgba(255, 215, 0, 0.18),
-        0 0 100px rgba(255, 215, 0, 0.08),
-        inset 0 0 40px rgba(255, 215, 0, 0.06);
+        0 0 35px rgba(150, 248, 145, 0.35),
+        0 0 70px rgba(150, 248, 145, 0.18),
+        0 0 100px rgba(150, 248, 145, 0.08),
+        inset 0 0 40px rgba(150, 248, 145, 0.06);
     /* GPU-ускорение */
     transform: translateZ(0);
     backface-visibility: hidden;
