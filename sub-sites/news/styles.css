@@ -271,6 +271,81 @@ body::after {
     line-height: 1.65;
 }
 
+/* What actually matters today + News heat */
+.news-today {
+    max-width: 900px;
+    margin: 0 auto 72px;
+    text-align: left;
+}
+
+.news-today-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+.news-today-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--news-text);
+}
+
+.news-heat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    text-align: right;
+}
+
+.news-heat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--news-dim);
+}
+
+.news-heat-value {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(201, 184, 150, 0.5);
+    background: rgba(201, 184, 150, 0.14);
+    color: var(--news-highlight);
+}
+
+.news-today-list {
+    list-style: none;
+    padding: 0;
+    margin: 24px 0 0;
+    display: grid;
+    gap: 12px;
+}
+
+.news-today-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.news-today-tag {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--news-highlight);
+    flex-shrink: 0;
+}
+
+.news-today-text {
+    font-size: 14px;
+    color: var(--news-subtle);
+    line-height: 1.6;
+}
+
 /* Блок доверия (DuoView) */
 .news-trust-stats {
     margin-bottom: 96px;
@@ -288,6 +363,54 @@ body::after {
     font-size: 12px;
     color: var(--news-dim);
     letter-spacing: 0.06em;
+}
+
+/* Signal vs noise */
+.signal-noise {
+    max-width: 900px;
+    margin: 0 auto 72px;
+    text-align: left;
+}
+
+.signal-noise-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--news-text);
+    margin-bottom: 12px;
+}
+
+.signal-noise-intro {
+    font-size: 15px;
+    color: var(--news-subtle);
+    margin-bottom: 16px;
+    line-height: 1.6;
+}
+
+.signal-noise-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 12px;
+}
+
+.signal-noise-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.signal-noise-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--news-text);
+}
+
+.signal-noise-text {
+    font-size: 14px;
+    color: var(--news-subtle);
+    line-height: 1.6;
 }
 
 /* Scroll-reveal с каскадом (Apple — плавные переходы) */
@@ -355,6 +478,29 @@ body::after {
     max-width: 1000px;
     margin: 0 auto;
     width: 100%;
+}
+
+/* Editor's lens */
+.editor-lens {
+    max-width: 900px;
+    margin: 72px auto 40px;
+    text-align: left;
+    border-top: 1px solid rgba(201, 184, 150, 0.22);
+    padding-top: 32px;
+}
+
+.editor-lens-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--news-text);
+    margin-bottom: 12px;
+}
+
+.editor-lens-text {
+    font-size: 15px;
+    color: var(--news-subtle);
+    line-height: 1.7;
 }
 
 /* Карточки — минимализм (Apple + DuoView), вся карточка кликабельна */
@@ -477,7 +623,7 @@ body::after {
     }
     
     .news-hero {
-        margin-bottom: 64px;
+        margin-bottom: 56px;
     }
     
     .news-hero-label {
@@ -554,6 +700,25 @@ body::after {
     
     .news-hero-title {
         font-size: 40px;
+    }
+    
+    .news-today {
+        margin-bottom: 56px;
+    }
+    
+    .news-today-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .news-heat {
+        align-items: flex-start;
+        text-align: left;
+    }
+    
+    .signal-noise {
+        margin-bottom: 56px;
     }
     
     .news-row {
