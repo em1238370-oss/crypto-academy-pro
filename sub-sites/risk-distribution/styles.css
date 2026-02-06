@@ -119,6 +119,7 @@ summary:focus-visible {
 
 html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
 }
 
 * {
@@ -789,23 +790,53 @@ body {
         --risk-block-padding: 40px;
         --risk-read-max: 90%;
     }
+    .page {
+        padding-top: 60px;
+    }
+    .content {
+        padding: 40px 24px max(80px, env(safe-area-inset-bottom));
+    }
+    .crypto-risk-wrapper {
+        padding: 32px 24px 48px;
+    }
+    .risk-section {
+        padding: 0 20px;
+    }
+    .risk-text-wrapper,
+    .crypto-storm-wrapper {
+        padding: 32px 20px;
+    }
     /* п.11 Apple HIG: tap-area минимум 44px */
     .risk-calculator-wrapper button,
-    .risk-calculator-wrapper input,
+    .risk-calculator-wrapper input[type="number"],
+    .risk-calculator-wrapper input[type="password"],
     .risk-calculator-wrapper select,
     .api-key-toggle {
         min-height: 44px;
+        padding: 14px 18px;
+    }
+    .risk-calculator-wrapper input[type="range"]::-webkit-slider-thumb {
+        width: 36px;
+        height: 36px;
+    }
+    .risk-calculator-wrapper input[type="range"]::-moz-range-thumb {
+        width: 36px;
+        height: 36px;
     }
     .risk-trust-stats {
         padding: 40px 20px;
     }
     .risk-trust-bento {
         grid-template-columns: 1fr;
-        grid-template-rows: auto;
+        gap: 16px;
     }
     .risk-trust-hero {
         grid-column: 1;
         grid-row: auto;
+        padding: 40px 24px;
+    }
+    .risk-trust-stat {
+        padding: 28px 20px;
     }
     .risk-pull-quote-right {
         margin-left: auto;
@@ -824,16 +855,39 @@ body {
         font-size: 56px;
     }
     .risk-trust-label {
-        font-size: 11px;
+        font-size: 12px;
     }
     .main-nav {
         padding: 14px 20px;
+        padding-top: max(14px, env(safe-area-inset-top));
     }
     .main-nav-links {
         gap: 20px;
     }
     .main-nav-links a {
         font-size: 13px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .content {
+        padding: 32px 16px max(60px, env(safe-area-inset-bottom));
+    }
+    .risk-section {
+        padding: 0 16px;
+    }
+    .crypto-risk-wrapper h1 {
+        font-size: clamp(42px, 12vw, 56px);
+    }
+    .risk-section-title {
+        font-size: clamp(22px, 5vw, 28px);
+    }
+    .overlay-text,
+    .storm-text {
+        font-size: 18px;
     }
 }
 @media (max-width: 600px) {
@@ -1507,8 +1561,8 @@ body {
 
 .chat-widget {
     position: fixed !important;
-    bottom: 20px !important;
-    right: 20px !important;
+    bottom: max(20px, env(safe-area-inset-bottom)) !important;
+    right: max(20px, env(safe-area-inset-right)) !important;
     top: auto !important;
     left: auto !important;
     z-index: 2147483647 !important;
