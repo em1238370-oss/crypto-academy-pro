@@ -328,11 +328,6 @@ body::after {
     opacity: 1;
 }
 
-.news-heat-point--active {
-    color: var(--news-highlight);
-    opacity: 1;
-}
-
 .news-heat-dot {
     width: 8px;
     height: 8px;
@@ -342,9 +337,40 @@ body::after {
     transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
-.news-heat-point--active .news-heat-dot {
+/* Активные состояния для Calm / Balanced / Hot */
+.news-heat[data-state="calm"] .news-heat-point[data-level="calm"],
+.news-heat[data-state="balanced"] .news-heat-point[data-level="balanced"],
+.news-heat[data-state="hot"] .news-heat-point[data-level="hot"] {
+    opacity: 1;
+}
+
+.news-heat[data-state="calm"] .news-heat-point[data-level="calm"] {
+    color: var(--news-text);
+}
+
+.news-heat[data-state="calm"] .news-heat-point[data-level="calm"] .news-heat-dot {
+    background: var(--news-text);
+    border-color: var(--news-text);
+}
+
+.news-heat[data-state="balanced"] .news-heat-point[data-level="balanced"] {
+    color: var(--news-highlight);
+}
+
+.news-heat[data-state="balanced"] .news-heat-point[data-level="balanced"] .news-heat-dot {
     background: var(--news-highlight);
     border-color: var(--news-highlight);
+}
+
+/* Hot — когда рынок «горит» */
+.news-heat[data-state="hot"] .news-heat-point[data-level="hot"] {
+    color: #FDE9E4;
+}
+
+.news-heat[data-state="hot"] .news-heat-point[data-level="hot"] .news-heat-dot {
+    background: #2B0400;
+    border-color: #FDE9E4;
+    box-shadow: 0 0 0 1px rgba(253, 233, 228, 0.45);
 }
 
 .news-today-list {
