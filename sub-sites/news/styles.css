@@ -790,16 +790,16 @@ body::after {
         width: 100%;
     }
     .content {
-        padding: 80px 20px 60px;
+        padding: 96px 24px 80px;
     }
     
     .news-hero {
-        margin-bottom: 80px;
+        margin-bottom: 112px;
     }
     
     .news-hero-label {
         font-size: 11px;
-        margin-bottom: 12px;
+        margin-bottom: 16px;
     }
     
     .news-hero-title {
@@ -815,66 +815,66 @@ body::after {
     }
     
     .news-today {
-        margin-bottom: 88px;
+        margin-bottom: 120px;
     }
     
     .news-today-header {
-        gap: 24px;
+        gap: 32px;
     }
     
     .news-today-list {
-        margin-top: 36px;
-        gap: 20px;
+        margin-top: 48px;
+        gap: 28px;
     }
     
     .news-trust-stats {
-        margin-bottom: 96px;
+        margin-bottom: 120px;
     }
     
     .signal-noise {
-        margin-bottom: 88px;
+        margin-bottom: 120px;
     }
     
     .signal-noise-title {
-        margin-bottom: 20px;
+        margin-bottom: 28px;
     }
     
     .signal-noise-intro {
-        margin-bottom: 24px;
+        margin-bottom: 32px;
     }
     
     .signal-noise-list {
-        gap: 20px;
+        gap: 28px;
     }
     
     .before-react {
-        margin-bottom: 88px;
+        margin-bottom: 120px;
     }
     
     .before-react-title {
-        margin-bottom: 20px;
+        margin-bottom: 28px;
     }
     
     .section-title {
         font-size: 28px;
-        margin-bottom: 72px;
+        margin-bottom: 96px;
     }
     
     .editor-lens {
-        margin-top: 96px;
-        margin-bottom: 64px;
-        padding-top: 40px;
+        margin-top: 120px;
+        margin-bottom: 88px;
+        padding-top: 48px;
     }
     
     .editor-lens-title {
-        margin-bottom: 20px;
+        margin-bottom: 28px;
     }
     
     .news-row {
         flex-direction: column;
-        gap: 20px;
+        gap: 24px;
         text-align: center;
-        padding: 28px 24px;
+        padding: 32px 28px;
     }
     
     .news-link {
@@ -939,11 +939,11 @@ body::after {
         overscroll-behavior: none;
     }
     .content {
-        padding: 72px 16px 48px;
+        padding: 88px 20px 64px;
     }
     
     .news-hero {
-        margin-bottom: 72px;
+        margin-bottom: 96px;
     }
     
     .news-hero-title {
@@ -951,7 +951,7 @@ body::after {
     }
     
     .news-today {
-        margin-bottom: 80px;
+        margin-bottom: 104px;
     }
     
     .news-today-list {
@@ -972,24 +972,24 @@ body::after {
     }
     
     .signal-noise {
-        margin-bottom: 80px;
+        margin-bottom: 104px;
     }
     
     .news-trust-stats {
-        margin-bottom: 88px;
+        margin-bottom: 104px;
     }
     
     .before-react {
-        margin-bottom: 80px;
+        margin-bottom: 104px;
     }
     
     .section-title {
-        margin-bottom: 64px;
+        margin-bottom: 88px;
     }
     
     .news-row {
-        padding: 24px 20px;
-        margin: 28px 0;
+        padding: 28px 24px;
+        margin: 36px 0;
     }
 }
 
