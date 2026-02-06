@@ -1,5 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@600;700&display=swap');
 
 /* Цветовая схема — база #001800 */
 :root {
@@ -68,7 +68,7 @@
 
 
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     background-color: var(--risk-bg-base);
     min-height: 100vh;
     position: relative;
@@ -184,12 +184,12 @@ body {
     min-height: 100vh;
 }
 
-/* Hero — сочный, уникальный, приятный глазу */
+/* Hero — DuoView: смелые заголовки, Raleway */
 .crypto-risk-wrapper {
     background: transparent;
     margin: 0 auto;
     padding: var(--risk-block-padding) 40px 60px;
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Raleway', sans-serif;
     color: #ffffff !important;
     text-align: center;
     line-height: 1.3;
@@ -306,7 +306,7 @@ body {
 /* Номера секций — editorial feel */
 .risk-section-num {
     display: block;
-    font-family: 'Orbitron', monospace;
+    font-family: 'Raleway', sans-serif;
     font-size: clamp(14px, 1.5vw, 18px);
     font-weight: 600;
     color: var(--risk-accent);
@@ -433,13 +433,12 @@ body {
 }
 
 .risk-calculator-heading {
-    font-family: 'Raleway', sans-serif;
-    font-size: clamp(20px, 2.5vw, 28px) !important;
-    font-weight: 600 !important;
-    color: var(--risk-text-secondary) !important;
-    margin-bottom: 40px !important;
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(18px, 2.2vw, 22px);
+    font-weight: 500;
+    color: var(--risk-text-secondary);
+    margin-bottom: 40px;
     text-align: center;
-    letter-spacing: 0.02em;
 }
 
 /* DuoView: каждая секция — чёткие границы через отступы */
@@ -454,10 +453,8 @@ body {
 .risk-text-wrapper {
     background: transparent;
     margin: 0 auto;
-    margin-top: 0;
-    margin-bottom: 0;
     padding: var(--risk-block-padding) 40px;
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Inter', sans-serif;
     opacity: 1 !important;
     visibility: visible !important;
     width: 100%;
@@ -477,7 +474,8 @@ body {
 }
 
 .overlay-text {
-    font-size: clamp(32px, 4.5vw, 48px);
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(28px, 4vw, 42px);
     font-weight: 600;
     line-height: 1.75;
     letter-spacing: 0.02em;
@@ -514,29 +512,7 @@ body {
     display: none;
 }
 
-/* Легкие декоративные символы вокруг текста (только 2 штуки) */
-.overlay-text::after {
-    content: '◉';
-    position: absolute;
-    right: -50px;
-    top: 20%;
-    font-size: 16px;
-    color: var(--risk-accent-dim);
-    animation: floatSymbol 5s ease-in-out infinite;
-    pointer-events: none;
-}
-
-/* Декоративный элемент */
-.risk-text-wrapper::after {
-    content: '◉';
-    position: absolute;
-    left: -50px;
-    bottom: 20%;
-    font-size: 16px;
-    color: var(--risk-accent-dim);
-    animation: floatSymbol 6s ease-in-out infinite 1s;
-    pointer-events: none;
-}
+/* DuoView: минимум — без лишних декоративных символов */
 
 /* Красивое перетекание свечения по буквам */
 @keyframes textGlowFlow {
@@ -580,8 +556,7 @@ body {
     background: transparent;
     margin: 0 auto;
     padding: var(--risk-block-padding) 40px;
-    margin-top: 0;
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Inter', sans-serif;
     opacity: 1 !important;
     visibility: visible !important;
     width: 100%;
@@ -601,7 +576,8 @@ body {
 }
 
 .storm-text {
-    font-size: clamp(32px, 4.5vw, 48px);
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(28px, 4vw, 42px);
     font-weight: 600;
     line-height: 1.75;
     letter-spacing: 0.02em;
@@ -677,15 +653,16 @@ body {
 .why-section {
     margin-top: 20px;
     padding: 20px;
-    background: rgba(150, 248, 145, 0.12);
-    border-radius: 8px;
-    border-left: 3px solid var(--risk-accent);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+    border-left: 3px solid rgba(150, 248, 145, 0.5);
 }
 
 .why-title {
-    font-weight: 700;
-    color: var(--risk-accent) !important;
-    font-size: 18px;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
+    color: var(--risk-accent);
+    font-size: 16px;
     margin-bottom: 10px;
     display: flex;
     align-items: center;
@@ -694,11 +671,11 @@ body {
 }
 
 .why-content {
-    color: #FFFFFF !important;
-    font-size: 16px;
-    line-height: 1.6;
+    font-family: 'Inter', sans-serif;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 15px;
+    line-height: 1.65;
     font-weight: 400;
-    opacity: 1 !important;
 }
 
 @media (max-width: 768px) {
@@ -844,159 +821,37 @@ body {
     opacity: 0.7;
 }
 
-/* Risk Management Strategy Calculator */
+/* Risk Calculator — DuoView: минимализм, премиум, без лишнего */
 .risk-calculator-wrapper {
-    font-family: 'Orbitron', sans-serif;
-    background: transparent;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     padding: var(--risk-block-padding) 40px;
-    margin: 0 auto;
-    margin-top: 0;
-    margin-bottom: 160px;
-    max-width: 1400px;
+    margin: 0 auto 160px;
+    max-width: 900px;
     position: relative;
 }
 
 .risk-calculator-wrapper::before {
     content: '';
     display: block;
-    width: 100px;
+    width: 64px;
     height: 1px;
-    margin: 0 auto 64px;
-    background: linear-gradient(90deg, transparent, var(--risk-accent-dim), transparent);
-    opacity: 0.6;
+    margin: 0 auto 48px;
+    background: linear-gradient(90deg, transparent, rgba(150, 248, 145, 0.4), transparent);
 }
 
 .risk-calculator-container {
-    width: calc(100% + 5cm);
-    min-height: 400px;
-    background: 
-        linear-gradient(135deg, rgba(150, 248, 145, 0.06) 0%, rgba(150, 248, 145, 0.03) 30%, transparent 50%, rgba(150, 248, 145, 0.03) 70%, rgba(150, 248, 145, 0.06) 100%),
-        radial-gradient(circle at 20% 30%, rgba(150, 248, 145, 0.05) 0%, transparent 60%),
-        radial-gradient(circle at 80% 70%, rgba(150, 248, 145, 0.05) 0%, transparent 60%);
-    border: 4px solid var(--risk-accent);
-    border-radius: 10px;
-    padding: 50px 60px;
-    transition: all 0.4s ease;
-    opacity: 1 !important;
-    visibility: visible !important;
-    margin-left: -2.5cm;
-    margin-right: -2.5cm;
-    position: relative;
-    overflow: visible;
-    /* Усиленное свечение */
-    box-shadow: 
-        0 0 35px rgba(150, 248, 145, 0.35),
-        0 0 70px rgba(150, 248, 145, 0.18),
-        0 0 100px rgba(150, 248, 145, 0.08),
-        inset 0 0 40px rgba(150, 248, 145, 0.06);
-    /* GPU-ускорение */
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    will-change: box-shadow, transform;
-    /* Усиленная пульсация свечения */
-    animation: gentleGlowPulse 3s ease-in-out infinite;
+    width: 100%;
+    min-height: 360px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 48px 56px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* БОЛЬШИЕ символы биткоина в углах контейнера */
-.risk-calculator-container::before {
-    content: '₿';
-    position: absolute;
-    top: -30px;
-    left: -30px;
-    font-size: 45px;
-    color: rgba(150, 248, 145, 0.5);
-    opacity: 0.7;
-    animation: symbolFloat 5s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 1;
-    text-shadow: 0 0 15px rgba(150, 248, 145, 0.6), 0 0 30px rgba(150, 248, 145, 0.35);
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    font-weight: 700;
-}
-
-.risk-calculator-container::after {
-    content: '₿';
-    position: absolute;
-    bottom: -30px;
-    right: -30px;
-    font-size: 45px;
-    color: rgba(150, 248, 145, 0.5);
-    opacity: 0.7;
-    animation: symbolFloat 6s ease-in-out infinite 1s;
-    pointer-events: none;
-    z-index: 1;
-    text-shadow: 0 0 15px rgba(150, 248, 145, 0.6), 0 0 30px rgba(150, 248, 145, 0.35);
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    font-weight: 700;
-}
-
-/* БОЛЬШИЕ символы биткоина во всех 4 углах */
-
-
-/* Дополнительные символы в других углах через wrapper */
-.risk-calculator-wrapper::before {
-    content: '₿';
-    position: absolute;
-    top: -30px;
-    right: -30px;
-    font-size: 45px;
-    color: rgba(150, 248, 145, 0.5);
-    opacity: 0.7;
-    animation: symbolFloat 5.5s ease-in-out infinite 0.5s;
-    pointer-events: none;
-    z-index: 1;
-    text-shadow: 0 0 15px rgba(150, 248, 145, 0.6), 0 0 30px rgba(150, 248, 145, 0.35);
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    font-weight: 700;
-}
-
-.risk-calculator-wrapper::after {
-    content: '₿';
-    position: absolute;
-    bottom: -30px;
-    left: -30px;
-    font-size: 45px;
-    color: rgba(150, 248, 145, 0.5);
-    opacity: 0.7;
-    animation: symbolFloat 6.5s ease-in-out infinite 1.5s;
-    pointer-events: none;
-    z-index: 1;
-    text-shadow: 0 0 15px rgba(150, 248, 145, 0.6), 0 0 30px rgba(150, 248, 145, 0.35);
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    font-weight: 700;
-}
-
-.risk-calculator-wrapper {
-    position: relative;
-}
-
-/* Декоративные крипто-символы в углах - только 2 штуки */
-
-/* Улучшенный hover эффект */
-
-
-
-
-
-
-
-/* УСИЛЕННЫЙ hover эффект - больше подъем и свечение */
 .risk-calculator-container:hover {
-    box-shadow: 
-        0 0 60px rgba(150, 248, 145, 0.5),
-        0 0 120px rgba(150, 248, 145, 0.35),
-        0 0 180px rgba(150, 248, 145, 0.2),
-        inset 0 0 80px rgba(150, 248, 145, 0.12);
-    transform: translateZ(0) translateY(-8px) scale(1.01);
-    border-color: #7ae87a;
-    background: 
-        linear-gradient(135deg, rgba(150, 248, 145, 0.1) 0%, rgba(150, 248, 145, 0.06) 30%, transparent 50%, rgba(150, 248, 145, 0.06) 70%, rgba(150, 248, 145, 0.1) 100%),
-        radial-gradient(circle at 20% 30%, rgba(150, 248, 145, 0.08) 0%, transparent 60%),
-        radial-gradient(circle at 80% 70%, rgba(150, 248, 145, 0.08) 0%, transparent 60%);
+    border-color: rgba(150, 248, 145, 0.2);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
 }
 
 
@@ -1045,7 +900,7 @@ body {
 }
 
 .form-step {
-    font-family: 'Orbitron', monospace;
+    font-family: 'Raleway', sans-serif;
     font-size: 12px;
     color: var(--risk-accent);
     letter-spacing: 0.1em;
@@ -1096,18 +951,24 @@ body {
 
 .risk-calculator-wrapper input[type="number"] {
     width: 100%;
-    padding: 15px;
-    font-size: 20px;
-    font-family: 'Orbitron', sans-serif;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid #FFFFFF;
-    border-radius: 5px;
-    color: #FFFFFF !important;
-    opacity: 1 !important;
+    padding: 16px 18px;
+    font-size: 18px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.95) !important;
+    transition: border-color 0.2s ease;
+}
+
+.risk-calculator-wrapper input[type="number"]:focus {
+    outline: none;
+    border-color: rgba(150, 248, 145, 0.4);
 }
 
 .risk-calculator-wrapper input[type="number"]::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.35);
 }
 
 .slider-container {
@@ -1119,10 +980,10 @@ body {
 .risk-slider,
 .risk-calculator-wrapper input[type="range"] {
     width: 100%;
-    height: 8px;
-    background: linear-gradient(90deg, rgba(150, 248, 145, 0.2) 0%, rgba(150, 248, 145, 0.6) 100%);
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
     outline: none;
-    border-radius: 4px;
+    border-radius: 3px;
     -webkit-appearance: none;
     appearance: none;
 }
@@ -1130,52 +991,57 @@ body {
 .risk-calculator-wrapper input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     background: var(--risk-accent);
     cursor: pointer;
     border-radius: 50%;
-    box-shadow: 0 0 20px var(--risk-accent-soft);
     transition: transform 0.2s ease;
 }
 
 .risk-calculator-wrapper input[type="range"]::-webkit-slider-thumb:hover {
-    transform: scale(1.1);
+    transform: scale(1.08);
 }
 
 .risk-calculator-wrapper input[type="range"]::-moz-range-thumb {
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     background: var(--risk-accent);
     cursor: pointer;
     border-radius: 50%;
     border: none;
-    box-shadow: 0 0 20px var(--risk-accent-soft);
 }
 
 .slider-value {
     margin-top: 12px;
-    font-size: 24px !important;
-    color: var(--risk-accent) !important;
-    font-weight: 700 !important;
+    font-size: 20px;
+    color: var(--risk-accent);
+    font-weight: 600;
+    font-family: 'Raleway', sans-serif;
 }
 
 .risk-calculator-wrapper select {
     width: 100%;
-    padding: 15px;
-    font-size: 20px;
-    font-family: 'Orbitron', sans-serif;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid #FFFFFF;
-    border-radius: 5px;
-    color: #FFFFFF !important;
+    padding: 16px 18px;
+    font-size: 18px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.95) !important;
     cursor: pointer;
-    opacity: 1 !important;
+    transition: border-color 0.2s ease;
+}
+
+.risk-calculator-wrapper select:focus {
+    outline: none;
+    border-color: rgba(150, 248, 145, 0.4);
 }
 
 .risk-calculator-wrapper select option {
-    background: transparent;
-    color: #FFFFFF;
+    background: #001800;
+    color: rgba(255, 255, 255, 0.95);
 }
 
 .button-wrapper {
@@ -1184,29 +1050,27 @@ body {
 }
 
 .risk-calculator-wrapper button {
-    width: 280px;
-    padding: 20px 32px;
-    background: linear-gradient(135deg, var(--risk-accent) 0%, #7ae87a 100%);
+    width: 260px;
+    padding: 18px 28px;
+    background: var(--risk-accent);
     color: #001800 !important;
     border: none;
-    border-radius: 12px;
-    font-size: 18px;
+    border-radius: 10px;
+    font-size: 16px;
     font-family: 'Raleway', sans-serif;
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-    opacity: 1 !important;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    transition: all 0.25s ease;
+    letter-spacing: 0.03em;
 }
 
 .risk-calculator-wrapper button:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 12px 40px rgba(150, 248, 145, 0.4);
+    background: #7ae87a;
+    transform: translateY(-2px);
 }
 
 .risk-calculator-wrapper button:active {
-    transform: translateY(-1px);
+    transform: translateY(0);
 }
 
 .results {
@@ -1244,19 +1108,19 @@ body {
 }
 
 .results-title {
-    color: #FFFFFF !important;
-    font-size: 28px;
-    margin-bottom: 20px;
-    font-family: 'Orbitron', sans-serif;
+    color: rgba(255, 255, 255, 0.95) !important;
+    font-size: 24px;
+    margin-bottom: 24px;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
     text-align: center;
-    opacity: 1 !important;
 }
 
 .strategies {
     width: 100%;
-    color: #FFFFFF !important;
-    font-size: 18px;
-    font-family: 'Orbitron', sans-serif;
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 16px;
+    font-family: 'Inter', sans-serif;
     line-height: 1.8;
     opacity: 1 !important;
 }
@@ -1268,37 +1132,39 @@ body {
 }
 
 .strategy {
-    background: rgba(255, 255, 255, 0.06);
-    padding: 32px 28px;
-    border-radius: 10px;
-    border-left: 4px solid var(--risk-accent);
-    transition: transform 0.3s ease;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 28px 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: 3px solid var(--risk-accent);
+    transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .strategy:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(150, 248, 145, 0.15);
 }
 
 .strategy-title {
+    font-family: 'Raleway', sans-serif;
     font-weight: 600;
-    color: var(--risk-accent) !important;
-    margin-bottom: 10px;
-    font-size: 20px;
-    opacity: 1 !important;
+    color: var(--risk-accent);
+    margin-bottom: 12px;
+    font-size: 18px;
 }
 
 .strategy-info {
     margin-bottom: 28px;
     padding: 16px 24px;
-    background: rgba(150, 248, 145, 0.06);
-    border: 1px solid rgba(150, 248, 145, 0.2);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 10px;
     text-align: center;
-    color: var(--risk-text-secondary) !important;
+    color: var(--risk-text-secondary);
+    font-family: 'Inter', sans-serif;
     font-weight: 500;
-    font-size: 15px;
-    opacity: 1 !important;
-    letter-spacing: 0.03em;
+    font-size: 14px;
+    letter-spacing: 0.02em;
 }
 
 .strategy-allocation {
@@ -1312,15 +1178,16 @@ body {
 .why-section {
     margin-top: 20px;
     padding: 20px;
-    background: rgba(150, 248, 145, 0.12);
-    border-radius: 8px;
-    border-left: 3px solid var(--risk-accent);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+    border-left: 3px solid rgba(150, 248, 145, 0.5);
 }
 
 .why-title {
-    font-weight: 700;
-    color: var(--risk-accent) !important;
-    font-size: 18px;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
+    color: var(--risk-accent);
+    font-size: 16px;
     margin-bottom: 10px;
     display: flex;
     align-items: center;
@@ -1329,11 +1196,11 @@ body {
 }
 
 .why-content {
-    color: #FFFFFF !important;
-    font-size: 16px;
-    line-height: 1.6;
+    font-family: 'Inter', sans-serif;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 15px;
+    line-height: 1.65;
     font-weight: 400;
-    opacity: 1 !important;
 }
 
 .loading {
@@ -1363,18 +1230,17 @@ body {
 
 .risk-calculator-wrapper input[type="password"] {
     width: 100%;
-    padding: 15px;
-    font-size: 18px;
-    font-family: 'Courier New', monospace;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid #FFFFFF;
-    border-radius: 5px;
-    color: #FFFFFF !important;
-    opacity: 1 !important;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-family: 'Inter', monospace;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .risk-calculator-wrapper input[type="password"]::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.35);
 }
 
 .api-key-info {
@@ -1404,47 +1270,18 @@ body {
         width: 100%;
     }
     
-.risk-calculator-container {
-    width: calc(100% + 5cm);
-    min-height: 400px;
-    background: 
-        linear-gradient(135deg, rgba(150, 248, 145, 0.06) 0%, rgba(150, 248, 145, 0.03) 30%, transparent 50%, rgba(150, 248, 145, 0.03) 70%, rgba(150, 248, 145, 0.06) 100%),
-        radial-gradient(circle at 20% 30%, rgba(150, 248, 145, 0.05) 0%, transparent 60%),
-        radial-gradient(circle at 80% 70%, rgba(150, 248, 145, 0.05) 0%, transparent 60%);
-    border: 4px solid var(--risk-accent);
-    border-radius: 10px;
-    padding: 50px 60px;
-    transition: all 0.4s ease;
-    opacity: 1 !important;
-    visibility: visible !important;
-    margin-left: -2.5cm;
-    margin-right: -2.5cm;
-    position: relative;
-    overflow: visible;
-    /* Усиленное свечение */
-    box-shadow: 
-        0 0 35px rgba(150, 248, 145, 0.35),
-        0 0 70px rgba(150, 248, 145, 0.18),
-        0 0 100px rgba(150, 248, 145, 0.08),
-        inset 0 0 40px rgba(150, 248, 145, 0.06);
-    /* GPU-ускорение */
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    will-change: box-shadow, transform;
-    /* Усиленная пульсация свечения */
-    animation: gentleGlowPulse 3s ease-in-out infinite;
-}
-}
-
-/* Дополнительные символы в других углах через wrapper */
-
-.risk-calculator-wrapper {
-    position: relative;
+    .risk-calculator-container {
+        padding: 32px 24px;
+    }
+    
+    .risk-calculator-wrapper {
+        padding: var(--risk-block-padding) 20px;
+    }
 }
 
 @media (max-width: 768px) {
     .risk-calculator-heading {
-        font-size: 28px !important;
+        font-size: 18px;
     }
 }
 
