@@ -774,7 +774,21 @@ body::after {
 }
 
 /* Блок 8: Мобильная версия (Apple — tap-area 44px+, адаптивность) */
+/* Фиксация экрана: без горизонтального скролла, без шатания влево-вправо */
 @media (max-width: 768px) {
+    html, body {
+        overflow-x: hidden !important;
+        overscroll-behavior-x: none;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        max-width: 100vw;
+        position: relative;
+    }
+    .page, .content {
+        overflow-x: hidden !important;
+        max-width: 100vw;
+        width: 100%;
+    }
     .content {
         padding: 80px 20px 60px;
     }
@@ -848,9 +862,34 @@ body::after {
         font-size: 28px;
         margin-bottom: 40px;
     }
+    .news-today, .signal-noise, .before-react, .editor-lens, .news-trust-stats {
+        max-width: 100%;
+        overflow-wrap: break-word;
+    }
+    .news-today-list, .signal-noise-list, .before-react-grid {
+        max-width: 100%;
+    }
+    .news-row, .news-table-container, .news-sources-section {
+        max-width: 100%;
+    }
+    .before-chip {
+        white-space: normal;
+        max-width: 100%;
+    }
+    .before-react-grid {
+        max-width: 100%;
+    }
+    img, video, iframe {
+        max-width: 100%;
+        height: auto;
+    }
 }
 
 @media (max-width: 480px) {
+    html, body {
+        overflow-x: hidden !important;
+        overscroll-behavior: none;
+    }
     .content {
         padding: 72px 16px 48px;
     }
