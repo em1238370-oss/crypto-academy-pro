@@ -422,6 +422,7 @@ html {
    flex-direction: column;
    justify-content: center;
    align-items: center;
+   position: relative;
 }
 
 .main-hero-title {
@@ -431,9 +432,14 @@ html {
    color: #FFFFFF;
    letter-spacing: -0.02em;
    line-height: 1.15;
-   margin-bottom: 16px;
+   margin-bottom: 0;
    text-align: center;
    white-space: nowrap;
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   width: 100%;
 }
 
 .main-hero-title span {
@@ -447,7 +453,8 @@ html {
    color: rgba(255, 255, 255, 0.82);
    line-height: 1.65;
    text-align: center;
-   margin-top: 5cm;
+   margin-top: calc(50vh + 5cm);
+   max-width: 720px;
 }
 
 /* Real data section */
