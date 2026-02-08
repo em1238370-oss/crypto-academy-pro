@@ -416,14 +416,18 @@ html {
 
 /* Секция для текста после заголовка */
 .main-text-section {
-   padding: 0 20px;
-   margin-top: 0;
-   margin-bottom: 0;
-   margin-left: 1cm;
+   padding: 40px 20px;
+   margin: 0 auto;
    text-align: center;
    position: relative;
    z-index: 1;
-   display: block;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+   max-width: 1200px;
+   width: 100%;
+   box-sizing: border-box;
 }
 
 .main-text-section > * {
@@ -454,14 +458,13 @@ html {
    line-height: 1.4;
    text-align: center;
    margin: 0 auto;
-   max-width: 80%;
-   /* Упрощенный стиль - без анимаций и проблемных свойств */
+   max-width: 90%;
+   width: 100%;
    opacity: 1;
    visibility: visible;
    display: block;
    padding: 0;
    position: relative;
-   /* Убираем все что может вызывать глюки */
    animation: none !important;
    will-change: auto !important;
    transform: none !important;
