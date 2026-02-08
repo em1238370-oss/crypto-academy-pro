@@ -425,6 +425,7 @@ html {
    letter-spacing: -0.02em;
    line-height: 1.15;
    margin-bottom: 24px;
+   white-space: nowrap;
 }
 
 .main-hero-title span {
@@ -439,6 +440,7 @@ html {
    line-height: 1.65;
    text-align: center;
    max-width: 100%;
+   margin-top: 5cm;
 }
 
 /* Real data section */
