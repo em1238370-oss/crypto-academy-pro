@@ -311,7 +311,7 @@ body {
    justify-content: center;
    text-align: center;
    padding: 80px 20px;
-   min-height: 100vh;
+   min-height: auto;
    width: 100%;
    box-sizing: border-box;
 }
@@ -416,19 +416,14 @@ html {
 
 /* Секция для текста после заголовка */
 .main-text-section {
-   padding: 40px 20px;
+   padding: 0 20px;
    margin-top: 0;
    margin-bottom: 0;
-   margin-left: 0;
+   margin-left: 1cm;
    text-align: center;
    position: relative;
    z-index: 1;
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-   max-width: 800px;
-   width: 100%;
-   box-sizing: border-box;
+   display: block;
 }
 
 .main-text-section > * {
@@ -451,27 +446,28 @@ html {
    -moz-osx-font-smoothing: grayscale;
 }
 
-/* Стили для overlay-text (старый класс, используется в index.html) */
 .main-text-section .overlay-text {
    font-family: 'Raleway', sans-serif;
-   font-size: 24px;
+   font-size: 67px;
    color: #FFFFFF;
-   font-weight: 400;
-   line-height: 1.6;
+   font-weight: 700;
+   line-height: 1.4;
    text-align: center;
    margin: 0 auto;
-   max-width: 90%;
+   max-width: 80%;
+   /* Упрощенный стиль - без анимаций и проблемных свойств */
    opacity: 1;
    visibility: visible;
    display: block;
-   padding: 20px;
+   padding: 0;
    position: relative;
+   /* Убираем все что может вызывать глюки */
    animation: none !important;
    will-change: auto !important;
    transform: none !important;
    backface-visibility: visible !important;
    contain: none !important;
-   text-shadow: none;
+   text-shadow: 0 0 15px rgba(167, 3, 96, 0.6), 0 0 25px rgba(167, 3, 96, 0.4);
    text-rendering: optimizeLegibility;
    -webkit-font-smoothing: antialiased;
    -moz-osx-font-smoothing: grayscale;
