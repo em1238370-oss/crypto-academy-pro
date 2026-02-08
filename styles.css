@@ -421,10 +421,6 @@ html {
 @media (min-width: 768px) {
    .main-hero {
       height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
       padding: 0 24px;
       margin: 0;
       position: relative;
@@ -452,6 +448,11 @@ html {
       margin: 0;
       width: 100%;
       padding-top: 0;
+      position: fixed;
+      top: 50vh;
+      left: 50vw;
+      transform: translate(-50%, -50%);
+      z-index: 10;
    }
 }
 
