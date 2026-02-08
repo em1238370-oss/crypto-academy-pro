@@ -426,8 +426,10 @@ html {
       justify-content: center;
       align-items: center;
       padding: 0 24px;
-      margin: 0 auto;
+      margin: 0;
       position: relative;
+      width: 100vw;
+      max-width: 100vw;
    }
 }
 
@@ -447,6 +449,12 @@ html {
 @media (min-width: 768px) {
    .main-hero-title {
       font-size: clamp(72px, 10vw, 120px);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      margin: 0;
    }
 }
 
@@ -467,10 +475,11 @@ html {
 
 @media (min-width: 768px) {
    .main-hero-description {
-      margin-top: 50vh;
+      margin-top: calc(50vh + 15cm);
       margin-bottom: 10cm;
       padding-bottom: 5cm;
       max-width: 900px;
+      position: relative;
    }
 }
 
