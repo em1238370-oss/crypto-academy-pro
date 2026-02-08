@@ -417,6 +417,11 @@ html {
    margin-right: auto;
    padding: 0 24px;
    text-align: center;
+   min-height: 100vh;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   align-items: center;
 }
 
 .main-hero-title {
