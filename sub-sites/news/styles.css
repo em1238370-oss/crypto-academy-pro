@@ -1,21 +1,87 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap');
 
+/* Палитра News: #2D2200 + тёплые акценты (премиум) */
+:root {
+    --news-bg: #2D2200;
+    --news-text: #F5F0E6;
+    --news-accent: #C9B896;
+    --news-highlight: #E0D4BC;
+    --news-subtle: rgba(245, 240, 230, 0.82);
+    --news-muted: rgba(245, 240, 230, 0.58);
+    --news-dim: rgba(245, 240, 230, 0.45);
+}
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* Доступность: видимый фокус (DuoView + Apple) */
+a:focus-visible,
+button:focus-visible {
+    outline: 2px solid rgba(201, 184, 150, 0.7);
+    outline-offset: 3px;
+}
+
+/* Навигация как на главной (Apple-style) */
+.main-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    background: rgba(45, 34, 0, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(245, 240, 225, 0.08);
+}
+
+.main-nav-brand {
+    font-family: 'Raleway', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--news-text);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+}
+
+.main-nav-links {
+    display: flex;
+    gap: 32px;
+}
+
+.main-nav-links a {
+    font-size: 14px;
+    color: var(--news-subtle);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.main-nav-links a:hover,
+.main-nav-links a.active {
+    color: var(--news-highlight);
+}
+
+@media (max-width: 600px) {
+    .main-nav-links {
+        display: none;
+    }
+}
+
 body {
     font-family: 'Poppins', sans-serif;
-    /* Временный CSS-фон, имитирующий описанное изображение + блокчейн сетка */
     background: 
-        linear-gradient(rgba(255, 204, 21, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 204, 21, 0.03) 1px, transparent 1px),
-        radial-gradient(circle at 85% 15%, rgba(255, 180, 40, 0.4) 0%, transparent 50%),
-        radial-gradient(circle at 15% 85%, rgba(255, 200, 50, 0.4) 0%, transparent 50%),
-        #000000;
+        linear-gradient(rgba(245, 240, 230, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245, 240, 230, 0.04) 1px, transparent 1px),
+        radial-gradient(circle at 85% 15%, rgba(201, 184, 150, 0.07) 0%, transparent 50%),
+        radial-gradient(circle at 15% 85%, rgba(160, 120, 0, 0.06) 0%, transparent 50%),
+        var(--news-bg);
     background-size: 50px 50px, 50px 50px, 7250px 1750px, 7250px 1750px, 100% 100%;
     background-position: 0 0, 0 0, center center, center center, 0 0;
     background-attachment: fixed, fixed, fixed, fixed, fixed;
@@ -52,15 +118,15 @@ body {
 }
 */
 
-/* Усиливаем желтые акценты через overlay - яркий фон */
+/* Overlay — тёплые акценты под #423200 */
 body::before {
     content: '';
     position: fixed;
     inset: 0;
     background: 
-        radial-gradient(circle at 85% 15%, rgba(255, 200, 50, 0.25), transparent 50%),
-        radial-gradient(circle at 15% 85%, rgba(255, 180, 40, 0.25), transparent 50%),
-        radial-gradient(circle at 50% 50%, rgba(255, 220, 60, 0.1), transparent 70%);
+        radial-gradient(circle at 20% 20%, rgba(160, 120, 0, 0.05), transparent 60%),
+        radial-gradient(circle at 80% 10%, rgba(201, 184, 150, 0.05), transparent 55%),
+        radial-gradient(circle at 30% 85%, rgba(160, 120, 0, 0.04), transparent 55%);
     pointer-events: none;
     z-index: 0;
 }
@@ -69,239 +135,67 @@ body::after {
     content: '';
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.08);
     pointer-events: none;
     z-index: 0;
 }
 
-
-/* Плавающие крипто-элементы */
-.crypto-elements {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    overflow: hidden;
-}
-
-.crypto-node {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: rgba(255, 204, 21, 0.4);
-    border-radius: 50%;
-    box-shadow: 0 0 15px rgba(255, 204, 21, 0.3);
-    animation: float-node 20s ease-in-out infinite;
-}
-
-.crypto-node.node-1 {
-    top: 15%;
-    left: 10%;
-    animation-delay: 0s;
-}
-
-.crypto-node.node-2 {
-    top: 60%;
-    right: 15%;
-    animation-delay: 5s;
-    width: 6px;
-    height: 6px;
-}
-
-.crypto-node.node-3 {
-    bottom: 20%;
-    left: 20%;
-    animation-delay: 10s;
-    width: 10px;
-    height: 10px;
-}
-
-.crypto-line {
-    position: absolute;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 204, 21, 0.2), transparent);
-    animation: pulse-line 8s ease-in-out infinite;
-}
-
-.crypto-line.line-1 {
-    top: 25%;
-    left: 5%;
-    width: 200px;
-    transform: rotate(25deg);
-    animation-delay: 0s;
-}
-
-.crypto-line.line-2 {
-    bottom: 30%;
-    right: 10%;
-    width: 150px;
-    transform: rotate(-35deg);
-    animation-delay: 3s;
-}
-
-.crypto-line.line-3 {
-    top: 50%;
-    left: 50%;
-    width: 180px;
-    transform: rotate(45deg);
-    animation-delay: 6s;
-}
-
-@keyframes float-node {
-    0%, 100% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.4;
-    }
-    25% {
-        transform: translate(30px, -20px) scale(1.1);
-        opacity: 0.6;
-    }
-    50% {
-        transform: translate(-20px, 30px) scale(0.9);
-        opacity: 0.5;
-    }
-    75% {
-        transform: translate(20px, 20px) scale(1.05);
-        opacity: 0.55;
-    }
-}
-
-@keyframes pulse-line {
-    0%, 100% {
-        opacity: 0.2;
-        transform: scaleX(1);
-    }
-    50% {
-        opacity: 0.4;
-        transform: scaleX(1.2);
-    }
-}
-
-/* Крипто-график в фоне */
-.crypto-chart {
-    position: fixed;
-    bottom: 15%;
-    left: 5%;
-    width: 300px;
-    height: 120px;
-    opacity: 0.15;
-    z-index: 0;
-    pointer-events: none;
-    animation: chart-pulse 8s ease-in-out infinite;
-}
-
-.chart-line {
-    width: 100%;
-    height: 100%;
-    filter: drop-shadow(0 0 8px rgba(255, 204, 21, 0.3));
-}
-
-@keyframes chart-pulse {
-    0%, 100% {
-        opacity: 0.15;
-        transform: translateY(0);
-    }
-    50% {
-        opacity: 0.25;
-        transform: translateY(-5px);
-    }
-}
-
-/* Новостной тикер */
-.news-ticker {
-    position: fixed;
-    top: 10%;
-    right: 0;
-    width: 400px;
-    height: 40px;
-    overflow: hidden;
-    z-index: 1;
-    pointer-events: none;
-    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.3) 20%, rgba(0, 0, 0, 0.3) 80%, transparent);
-    padding: 10px 0;
-}
-
-.ticker-content {
-    display: flex;
-    animation: ticker-scroll 30s linear infinite;
-    white-space: nowrap;
-}
-
-.ticker-item {
-    display: inline-block;
-    color: rgba(255, 204, 21, 0.7);
-    font-size: 14px;
-    font-weight: 600;
-    font-family: 'TT Firs Neue', sans-serif;
-    margin-right: 80px;
-    text-shadow: 0 0 10px rgba(255, 204, 21, 0.3);
-}
-
-@keyframes ticker-scroll {
-    0% {
-        transform: translateX(100%);
-    }
-    100% {
-        transform: translateX(-100%);
-    }
-}
-
-/* Индикатор волатильности */
-.volatility-indicator {
-    position: fixed;
-    top: 20%;
-    left: 5%;
-    z-index: 1;
-    pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-start;
-}
-
-.volatility-bar {
-    width: 200px;
-    height: 4px;
-    background: rgba(255, 204, 21, 0.2);
-    border-radius: 2px;
-    overflow: hidden;
+/* Футер News */
+.news-footer {
+    padding: 60px 24px 40px;
+    margin-top: 80px;
+    text-align: center;
+    border-top: 1px solid rgba(212, 196, 168, 0.2);
     position: relative;
 }
 
-.volatility-bar::after {
+.news-footer::before {
     content: '';
     position: absolute;
-    left: 0;
+    left: 50%;
     top: 0;
-    height: 100%;
-    width: 65%;
-    background: linear-gradient(90deg, rgba(255, 204, 21, 0.6), rgba(255, 204, 21, 0.3));
-    border-radius: 2px;
-    animation: volatility-pulse 3s ease-in-out infinite;
-    box-shadow: 0 0 10px rgba(255, 204, 21, 0.4);
+    transform: translateX(-50%);
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(201, 184, 150, 0.45), transparent);
 }
 
-.volatility-label {
+.news-footer-text {
+    font-size: 14px;
+    color: var(--news-muted);
+    margin: 0;
+}
+
+.news-footer-crafted {
     font-size: 12px;
-    color: rgba(255, 204, 21, 0.6);
-    font-family: 'TT Firs Neue', sans-serif;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    color: var(--news-dim);
+    margin: 12px 0 0;
+    letter-spacing: 0.06em;
 }
 
-@keyframes volatility-pulse {
-    0%, 100% {
-        width: 60%;
-        opacity: 0.6;
-    }
-    50% {
-        width: 75%;
-        opacity: 0.8;
-    }
+.news-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 20px;
 }
 
-/* Цифры/статистика в углу */
+.news-footer-link {
+    font-size: 13px;
+    color: var(--news-highlight);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.news-footer-link:hover {
+    color: var(--news-text);
+}
+
+
+/* Минимализм: фоновые элементы убраны (Apple + DuoView) */
+
+/* Мягкое свечение в фоне */
 .content::after {
     content: '';
     position: absolute;
@@ -309,49 +203,11 @@ body::after {
     left: 15%;
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, rgba(255, 204, 21, 0.08), transparent 70%);
+    background: radial-gradient(circle, rgba(201, 184, 150, 0.06), transparent 70%);
     border-radius: 50%;
     filter: blur(60px);
     z-index: -1;
     animation: subtle-glow 18s ease-in-out infinite reverse;
-}
-
-/* Добавляем крипто-символы в фоне */
-.crypto-elements::before {
-    content: '₿';
-    position: absolute;
-    top: 25%;
-    right: 8%;
-    font-size: 120px;
-    color: rgba(255, 204, 21, 0.05);
-    font-weight: 700;
-    z-index: 0;
-    animation: symbol-float 25s ease-in-out infinite;
-    font-family: 'TT Firs Neue', sans-serif;
-}
-
-.crypto-elements::after {
-    content: 'Ξ';
-    position: absolute;
-    bottom: 25%;
-    right: 12%;
-    font-size: 100px;
-    color: rgba(255, 204, 21, 0.05);
-    font-weight: 700;
-    z-index: 0;
-    animation: symbol-float 30s ease-in-out infinite reverse;
-    font-family: 'TT Firs Neue', sans-serif;
-}
-
-@keyframes symbol-float {
-    0%, 100% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.05;
-    }
-    50% {
-        transform: translate(20px, -30px) scale(1.1);
-        opacity: 0.08;
-    }
 }
 
 .page {
@@ -360,6 +216,7 @@ body::after {
     min-height: 100vh;
     position: relative;
     z-index: 1;
+    padding-top: 56px;
 }
 
 .content {
@@ -368,811 +225,777 @@ body::after {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 0;
+    padding: 100px 24px 80px;
     text-align: center;
     position: relative;
     z-index: 1;
     min-height: 100vh;
-    padding-top: calc(50vh - 200px);
 }
 
-/* Заголовок - белый цвет, хаотичное движение, по центру экрана */
-.header {
-    text-align: center;
+/* Hero — статичный, минимализм (Apple + DuoView) */
+.news-hero {
+    margin-bottom: 96px;
+    max-width: 720px;
+}
+
+.news-hero-label {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--news-muted);
+    margin-bottom: 16px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.news-hero-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: clamp(48px, 8vw, 96px);
+    font-weight: 700;
+    color: var(--news-text);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 16px;
+}
+
+.news-hero-subtitle {
+    font-size: 20px;
+    color: var(--news-accent);
+    font-weight: 600;
+    margin-bottom: 24px;
+    letter-spacing: 0.02em;
+}
+
+.news-hero-description {
+    font-size: 18px;
+    color: var(--news-subtle);
+    line-height: 1.65;
+}
+
+/* What actually matters today + News heat */
+.news-today {
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto 72px;
+    text-align: left;
+}
+
+.news-today-header {
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    gap: 20px;
+    justify-content: center;
+    gap: 16px;
+    text-align: center;
+}
+
+.news-today-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--news-text);
+    text-align: center !important;
+    width: 100%;
     margin: 0 auto;
 }
 
-.header .line {
-    font-size: 140px;
-    font-weight: 700;
-    color: #FFFFFF;
-    margin: 0;
+.news-heat {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    gap: 30px;
-    font-family: 'TT Firs Neue', sans-serif;
-    text-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.5),
-        0 0 15px rgba(255, 255, 255, 0.1);
-    letter-spacing: -1px;
-}
-
-.header .line .word {
-    display: inline-block;
-    animation: chaotic-move 50s ease-in-out infinite;
-}
-
-/* Хаотичное движение для каждого слова - максимально медленно */
-.header .line .word:nth-child(1) {
-    animation-delay: 0s;
-    animation-name: chaotic-move-1;
-    animation-duration: 50s;
-}
-
-.header .line .word:nth-child(2) {
-    animation-delay: 2s;
-    animation-name: chaotic-move-2;
-    animation-duration: 50s;
-}
-
-.header .line .word:nth-child(3) {
-    animation-delay: 4s;
-    animation-name: chaotic-move-3;
-    animation-duration: 50s;
-}
-
-.header .line .word:nth-child(4) {
-    animation-delay: 6s;
-    animation-name: chaotic-move-4;
-    animation-duration: 50s;
-}
-
-.header .line .word:nth-child(5) {
-    animation-delay: 8s;
-    animation-name: chaotic-move-5;
-    animation-duration: 50s;
-}
-
-
-.header .line .italic {
-    font-style: italic;
-    font-weight: 400;
-    color: #FFFFFF;
-}
-
-/* Хаотичные движения - разные направления для каждого слова */
-@keyframes chaotic-move-1 {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(15px, -12px); }
-    50% { transform: translate(-10px, 18px); }
-    75% { transform: translate(12px, 10px); }
-}
-
-@keyframes chaotic-move-2 {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(-18px, 15px); }
-    50% { transform: translate(20px, -10px); }
-    75% { transform: translate(-15px, -18px); }
-}
-
-@keyframes chaotic-move-3 {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(10px, 20px); }
-    50% { transform: translate(-12px, -15px); }
-    75% { transform: translate(18px, 12px); }
-}
-
-@keyframes chaotic-move-4 {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(-20px, -10px); }
-    50% { transform: translate(15px, 18px); }
-    75% { transform: translate(-12px, 15px); }
-}
-
-@keyframes chaotic-move-5 {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(18px, 12px); }
-    50% { transform: translate(-15px, -20px); }
-    75% { transform: translate(10px, -18px); }
-}
-
-/* Текст с пульсирующим свечением - через 10 см после заголовка */
-.overlay-text {
-    font-size: 67px;
-    color: #FFFFFF !important;
-    font-weight: 700;
-    line-height: 1.4;
-    text-align: left;
-    margin-top: 10cm;
-    max-width: 80%;
-    margin-left: auto;
-    margin-right: auto;
-    opacity: 1 !important;
-    visibility: visible !important;
-    font-family: 'TT Firs Neue', sans-serif;
-    position: relative;
-    z-index: 2;
-    text-shadow: 
-        0 2px 10px rgba(0, 0, 0, 0.5),
-        0 0 15px rgba(255, 204, 21, 0.15);
-    padding: 20px 0;
-    border-left: 3px solid rgba(251, 204, 34, 0.4);
-    padding-left: 20px;
-}
-
-.floating-text {
-    font-size: 85px;
-    color: #ffffff !important;
-    font-weight: 700;
-    line-height: 1.4;
+    gap: 6px;
     text-align: center;
-    margin-top: 5cm;
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 90%;
-    opacity: 1 !important;
-    visibility: visible !important;
-    animation: none;
-    font-family: 'TT Firs Neue', sans-serif;
-    position: relative;
-    z-index: 2;
-    text-shadow: 
-        0 2px 10px rgba(0, 0, 0, 0.5),
-        0 0 20px rgba(255, 204, 21, 0.1);
+}
+
+.news-heat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--news-dim);
+}
+
+.news-heat-scale {
     display: flex;
-    justify-content: center;
+    gap: 10px;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 30px;
 }
 
-.floating-text .word {
-    display: inline-block;
+.news-heat-point {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--news-muted);
+    opacity: 0.7;
+    transition: opacity 0.25s ease, color 0.25s ease;
+}
+
+.news-heat-point:hover {
+    opacity: 1;
+}
+
+.news-heat-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    border: 1px solid var(--news-muted);
+    background: transparent;
+    transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+/* Активные состояния для Calm / Balanced / Hot */
+.news-heat[data-state="calm"] .news-heat-point[data-level="calm"],
+.news-heat[data-state="balanced"] .news-heat-point[data-level="balanced"],
+.news-heat[data-state="hot"] .news-heat-point[data-level="hot"] {
+    opacity: 1;
+}
+
+.news-heat[data-state="calm"] .news-heat-point[data-level="calm"] {
+    color: var(--news-text);
+}
+
+.news-heat[data-state="calm"] .news-heat-point[data-level="calm"] .news-heat-dot {
+    background: var(--news-text);
+    border-color: var(--news-text);
+}
+
+.news-heat[data-state="balanced"] .news-heat-point[data-level="balanced"] {
+    color: var(--news-highlight);
+}
+
+.news-heat[data-state="balanced"] .news-heat-point[data-level="balanced"] .news-heat-dot {
+    background: var(--news-highlight);
+    border-color: var(--news-highlight);
+}
+
+/* Hot — когда рынок «горит» */
+.news-heat[data-state="hot"] .news-heat-point[data-level="hot"] {
+    color: #FDE9E4;
+}
+
+.news-heat[data-state="hot"] .news-heat-point[data-level="hot"] .news-heat-dot {
+    background: #2B0400;
+    border-color: #FDE9E4;
+    box-shadow: 0 0 0 1px rgba(253, 233, 228, 0.45);
+}
+
+.news-today-list {
+    list-style: none;
+    padding: 0;
+    margin: 24px 0 0;
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.news-today-item {
     position: relative;
-    animation: chaotic-move-float-1 50s ease-in-out infinite;
+    padding: 14px 16px 14px 18px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.12);
+    border-left: 2px solid rgba(201, 184, 150, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.floating-text .word:nth-child(1) {
-    animation-name: chaotic-move-float-1;
+.news-today-item::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 18px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--news-highlight);
 }
 
-.floating-text .word:nth-child(2) {
-    animation-name: chaotic-move-float-2;
+.news-today-item:hover {
+    background: rgba(0, 0, 0, 0.18);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 }
 
-.floating-text .word:nth-child(3) {
-    animation-name: chaotic-move-float-3;
+.news-today-tag {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--news-highlight);
 }
 
-.floating-text .word:nth-child(4) {
-    animation-name: chaotic-move-float-4;
+.news-today-text {
+    font-size: 14px;
+    color: var(--news-subtle);
+    line-height: 1.6;
 }
 
-.floating-text .word:nth-child(5) {
-    animation-name: chaotic-move-float-5;
+/* Блок доверия (DuoView) */
+.news-trust-stats {
+    margin-bottom: 96px;
 }
 
-.floating-text .word:nth-child(6) {
-    animation-name: chaotic-move-float-6;
+.news-trust-badge {
+    font-size: 13px;
+    color: var(--news-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
 }
 
-.floating-text .word.italic {
-    font-style: italic;
+.news-trust-tagline {
+    font-size: 12px;
+    color: var(--news-dim);
+    letter-spacing: 0.06em;
 }
 
-@keyframes chaotic-move-float-1 {
-    0%, 100% { transform: translate(0, 0); }
-    20% { transform: translate(15px, -12px); }
-    40% { transform: translate(-10px, 18px); }
-    60% { transform: translate(12px, 10px); }
-    80% { transform: translate(-8px, -15px); }
-}
-
-@keyframes chaotic-move-float-2 {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(-18px, 15px); }
-    50% { transform: translate(10px, -20px); }
-    75% { transform: translate(-12px, 8px); }
-}
-
-@keyframes chaotic-move-float-3 {
-    0%, 100% { transform: translate(0, 0); }
-    30% { transform: translate(20px, 12px); }
-    60% { transform: translate(-15px, -18px); }
-}
-
-@keyframes chaotic-move-float-4 {
-    0%, 100% { transform: translate(0, 0); }
-    35% { transform: translate(-10px, -15px); }
-    70% { transform: translate(18px, 10px); }
-}
-
-@keyframes chaotic-move-float-5 {
-    0%, 100% { transform: translate(0, 0); }
-    22% { transform: translate(12px, 20px); }
-    44% { transform: translate(-20px, -10px); }
-    66% { transform: translate(8px, 15px); }
-    88% { transform: translate(-15px, -18px); }
-}
-
-@keyframes chaotic-move-float-6 {
-    0%, 100% { transform: translate(0, 0); }
-    28% { transform: translate(-18px, 12px); }
-    56% { transform: translate(15px, -20px); }
-    84% { transform: translate(-10px, 18px); }
-}
-
-/* Второй текст с пульсирующим свечением - через 2,5 см после заголовка */
-.overlay-text-secondary {
-    font-size: 67px;
-    color: #FFFFFF !important;
-    font-weight: 700;
-    line-height: 1.4;
+/* Signal vs noise */
+.signal-noise {
+    max-width: 900px;
+    margin: 0 auto 40px;
     text-align: left;
-    margin-top: 2.5cm;
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 80%;
-    padding-left: 0.5cm;
-    opacity: 1 !important;
-    visibility: visible !important;
-    font-family: 'TT Firs Neue', sans-serif;
-    position: relative;
-    z-index: 2;
-    text-shadow: 
-        0 2px 10px rgba(0, 0, 0, 0.5),
-        0 0 15px rgba(255, 204, 21, 0.15);
-    padding: 20px 0;
-    border-right: 3px solid rgba(251, 204, 34, 0.4);
-    padding-right: 20px;
 }
 
-/* Упрощенная версия - только легкие эффекты */
+.signal-noise-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--news-text);
+    margin-bottom: 12px;
+    text-align: center;
+}
 
-/* Таблица с новостными источниками - через 5 см после текста */
+.signal-noise-intro {
+    font-size: 15px;
+    color: var(--news-subtle);
+    margin-bottom: 16px;
+    line-height: 1.6;
+}
+
+.signal-noise-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 14px;
+}
+
+.signal-noise-item {
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.12);
+    border-left: 2px solid rgba(201, 184, 150, 0.5);
+    transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.signal-noise-item:hover {
+    background: rgba(0, 0, 0, 0.18);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.signal-noise-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--news-text);
+    margin-bottom: 4px;
+}
+
+.signal-noise-text {
+    font-size: 14px;
+    color: var(--news-subtle);
+    line-height: 1.6;
+}
+
+/* Before you react — micro prompts as chips */
+.before-react {
+    max-width: 900px;
+    margin: 0 auto 72px;
+    text-align: left;
+}
+
+.before-react-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--news-dim);
+    margin-bottom: 12px;
+}
+
+.before-react-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    row-gap: 10px;
+}
+
+.before-chip {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(201, 184, 150, 0.45);
+    font-size: 12px;
+    color: var(--news-subtle);
+    background: rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.15s ease, color 0.2s ease, border-color 0.2s ease, border-radius 0.2s ease;
+}
+
+.before-chip:hover {
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--news-text);
+    border-color: var(--news-highlight);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.before-chip--open {
+    border-radius: 12px;
+    white-space: normal;
+}
+
+.before-chip-hint {
+    display: none;
+    font-size: 11px;
+    color: var(--news-dim);
+    margin-top: 6px;
+    line-height: 1.4;
+    max-width: 220px;
+}
+
+.before-chip--open .before-chip-hint {
+    display: block;
+}
+
+/* Scroll-reveal с каскадом (Apple — плавные переходы) */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.news-row.scroll-reveal:nth-child(1) { transition-delay: 0s; }
+.news-row.scroll-reveal:nth-child(2) { transition-delay: 0.06s; }
+.news-row.scroll-reveal:nth-child(3) { transition-delay: 0.12s; }
+.news-row.scroll-reveal:nth-child(4) { transition-delay: 0.18s; }
+.news-row.scroll-reveal:nth-child(5) { transition-delay: 0.24s; }
+
+.scroll-revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Доступность: prefers-reduced-motion (Apple) */
+@media (prefers-reduced-motion: reduce) {
+    .scroll-reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+    .news-row.scroll-reveal:nth-child(n) {
+        transition-delay: 0s;
+    }
+    .news-link::after {
+        transition: none;
+    }
+    .news-row:hover {
+        transform: none;
+    }
+}
+
+/* Секция источников */
 .news-sources-section {
     padding: 0;
     text-align: center;
     background: transparent;
-    margin-top: 5cm;
+    margin-top: 0;
     margin-left: auto;
     margin-right: auto;
-    max-width: calc(1200px + 5cm);
-    width: calc(90% + 5cm);
+    max-width: 1000px;
+    width: 100%;
     position: relative;
     z-index: 2;
 }
 
 .section-title {
-    font-size: 67px;
-    font-weight: bold;
-    margin-bottom: 40px;
-    border: 4px solid #FBCC22;
-    padding: 20px;
-    border-radius: 15px;
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 56px;
+    padding: 0;
     display: inline-block;
-    color: #FFFFFF;
-    font-family: 'TT Firs Neue', sans-serif;
-    position: relative;
-    background: rgba(0, 0, 0, 0.3);
-    box-shadow: 
-        0 0 20px rgba(251, 204, 34, 0.4),
-        0 0 40px rgba(251, 204, 34, 0.2),
-        inset 0 0 20px rgba(251, 204, 34, 0.1);
-    animation: title-glow 3s ease-in-out infinite;
-    transition: all 0.3s ease;
-}
-
-.section-title::before {
-    content: '₿';
-    position: absolute;
-    top: -15px;
-    left: -15px;
-    font-size: 30px;
-    color: rgba(251, 204, 34, 0.6);
-    animation: crypto-float-title 4s ease-in-out infinite;
-}
-
-.section-title::after {
-    content: 'Ξ';
-    position: absolute;
-    bottom: -15px;
-    right: -15px;
-    font-size: 30px;
-    color: rgba(251, 204, 34, 0.6);
-    animation: crypto-float-title 5s ease-in-out infinite reverse;
-}
-
-/* Дополнительные крипто-символы вокруг заголовка */
-.section-title {
-    overflow: visible;
-}
-
-.section-title .crypto-decoration {
-    position: absolute;
-    font-size: 20px;
-    color: rgba(251, 204, 34, 0.4);
-    animation: orbit 8s linear infinite;
-    pointer-events: none;
-}
-
-.section-title .crypto-decoration:nth-child(1) {
-    top: -30px;
-    left: 20%;
-    animation-delay: 0s;
-}
-
-.section-title .crypto-decoration:nth-child(2) {
-    top: -30px;
-    right: 20%;
-    animation-delay: 2s;
-    content: 'BNB';
-}
-
-@keyframes orbit {
-    0% {
-        transform: rotate(0deg) translateX(40px) rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg) translateX(40px) rotate(-360deg);
-    }
-}
-
-@keyframes title-glow {
-    0%, 100% {
-        box-shadow: 
-            0 0 20px rgba(251, 204, 34, 0.4),
-            0 0 40px rgba(251, 204, 34, 0.2),
-            inset 0 0 20px rgba(251, 204, 34, 0.1);
-    }
-    50% {
-        box-shadow: 
-            0 0 30px rgba(251, 204, 34, 0.6),
-            0 0 60px rgba(251, 204, 34, 0.4),
-            inset 0 0 30px rgba(251, 204, 34, 0.2);
-    }
-}
-
-@keyframes crypto-float-title {
-    0%, 100% {
-        transform: translate(0, 0) rotate(0deg);
-        opacity: 0.6;
-    }
-    50% {
-        transform: translate(10px, -10px) rotate(180deg);
-        opacity: 1;
-    }
+    color: var(--news-text);
+    font-family: 'Raleway', sans-serif;
+    letter-spacing: -0.02em;
 }
 
 .news-table-container {
-    max-width: calc(1200px + 5cm);
+    max-width: 1000px;
     margin: 0 auto;
     width: 100%;
 }
 
+/* Editor's lens */
+.editor-lens {
+    max-width: 900px;
+    margin: 72px auto 40px;
+    text-align: left;
+    border-top: 1px solid rgba(201, 184, 150, 0.22);
+    padding-top: 32px;
+}
+
+.editor-lens-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--news-text);
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.editor-lens-text {
+    font-size: 15px;
+    color: var(--news-subtle);
+    line-height: 1.7;
+}
+
+/* Карточки — минимализм (Apple + DuoView), вся карточка кликабельна */
 .news-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(0, 0, 0, 0.4);
-    border: 4px solid #FBCC22;
-    border-radius: 20px;
-    padding: 25px;
-    margin: 25px 0;
-    transition: all 0.4s ease;
+    background: rgba(245, 240, 230, 0.05);
+    border: 1px solid rgba(245, 240, 230, 0.14);
+    border-radius: 16px;
+    padding: 32px 36px;
+    margin: 24px 0;
+    transition: all 0.3s ease;
     cursor: pointer;
-    gap: 40px;
+    gap: 32px;
     position: relative;
-    overflow: visible;
-    backdrop-filter: blur(5px);
-    animation: row-fade-in 0.6s ease forwards;
-    opacity: 0;
-    box-shadow: 
-        0 0 15px rgba(251, 204, 34, 0.2),
-        inset 0 0 20px rgba(251, 204, 34, 0.05);
-}
-
-/* Блокчейн-блоки в углах строк */
-.news-row::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(251, 204, 34, 0.1), transparent);
-    transition: left 0.5s ease;
-    z-index: 1;
-}
-
-.news-row .blockchain-corner {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    border: 2px solid rgba(251, 204, 34, 0.5);
-    border-radius: 2px;
-    opacity: 0;
-    transition: all 0.4s ease;
-    z-index: 2;
-}
-
-.news-row .blockchain-corner.top-left {
-    top: -6px;
-    left: -6px;
-    border-top-color: #FBCC22;
-    border-left-color: #FBCC22;
-}
-
-.news-row .blockchain-corner.top-right {
-    top: -6px;
-    right: -6px;
-    border-top-color: #FBCC22;
-    border-right-color: #FBCC22;
-}
-
-.news-row .blockchain-corner.bottom-left {
-    bottom: -6px;
-    left: -6px;
-    border-bottom-color: #FBCC22;
-    border-left-color: #FBCC22;
-}
-
-.news-row .blockchain-corner.bottom-right {
-    bottom: -6px;
-    right: -6px;
-    border-bottom-color: #FBCC22;
-    border-right-color: #FBCC22;
-}
-
-.news-row:hover .blockchain-corner {
-    opacity: 1;
-    transform: scale(1.5);
-    box-shadow: 0 0 10px rgba(251, 204, 34, 0.8);
-}
-
-.news-row:nth-child(1) {
-    animation-delay: 0.1s;
-}
-
-.news-row:nth-child(2) {
-    animation-delay: 0.2s;
-}
-
-.news-row:nth-child(3) {
-    animation-delay: 0.3s;
-}
-
-.news-row:nth-child(4) {
-    animation-delay: 0.4s;
-}
-
-.news-row:nth-child(5) {
-    animation-delay: 0.5s;
-}
-
-.news-row::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(251, 204, 34, 0.1), transparent);
-    transition: left 0.5s ease;
-}
-
-.news-row:hover::before {
-    left: 100%;
-}
-
-.news-row::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 10px;
-    width: 4px;
-    height: 0;
-    background: linear-gradient(180deg, #FBCC22, transparent);
-    border-radius: 2px;
-    transition: height 0.4s ease;
-    transform: translateY(-50%);
-}
-
-.news-row:hover::after {
-    height: 80%;
-}
-
-/* Пульсирующий крипто-элемент в центре строки */
-.news-row .crypto-pulse {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(251, 204, 34, 0.3), transparent);
-    opacity: 0;
-    transition: all 0.6s ease;
-    pointer-events: none;
-    z-index: 0;
-}
-
-.news-row:hover .crypto-pulse {
-    width: 200px;
-    height: 200px;
-    opacity: 1;
-    animation: pulse-expand 2s ease-in-out infinite;
-}
-
-@keyframes pulse-expand {
-    0%, 100% {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 0.3;
-    }
-    50% {
-        transform: translate(-50%, -50%) scale(1.2);
-        opacity: 0.5;
-    }
-}
-
-/* Дополнительные частицы вокруг строк */
-.news-row .particle {
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    background: rgba(251, 204, 34, 0.6);
-    border-radius: 50%;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.news-row:hover .particle {
-    animation: particle-float 3s ease-in-out infinite;
-}
-
-.news-row .particle:nth-child(1) {
-    top: 20%;
-    left: 5%;
-    animation-delay: 0s;
-}
-
-.news-row .particle:nth-child(2) {
-    top: 60%;
-    right: 5%;
-    animation-delay: 0.5s;
-}
-
-.news-row .particle:nth-child(3) {
-    bottom: 20%;
-    left: 10%;
-    animation-delay: 1s;
-}
-
-@keyframes particle-float {
-    0%, 100% {
-        transform: translate(0, 0);
-        opacity: 0;
-    }
-    50% {
-        transform: translate(10px, -15px);
-        opacity: 0.8;
-    }
+    text-decoration: none;
+    color: inherit;
 }
 
 .news-row:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 
-        0 15px 40px rgba(251, 204, 34, 0.5),
-        0 0 60px rgba(251, 204, 34, 0.3),
-        inset 0 0 30px rgba(251, 204, 34, 0.15);
-    border-color: #FFD700;
-    background: rgba(0, 0, 0, 0.6);
+    border-color: rgba(212, 196, 168, 0.45);
+    transform: scale(1.01);
+    background: rgba(245, 240, 225, 0.06);
 }
 
-@keyframes row-fade-in {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.news-row-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Изюминка: нумерация curated list (Apple — качество в деталях) */
+.news-row-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.news-row-number {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--news-dim);
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+    font-family: 'Raleway', sans-serif;
+    transition: color 0.3s ease;
+}
+
+.news-row:hover .news-row-number {
+    color: var(--news-highlight);
 }
 
 .news-site {
-    flex: 1;
-    font-size: 47px;
-    font-weight: bold;
+    font-size: 24px;
+    font-weight: 700;
     text-align: left;
-    color: #FFFFFF;
-    min-width: 0;
-    font-family: 'TT Firs Neue', sans-serif;
-    position: relative;
-    text-shadow: 
-        0 0 10px rgba(251, 204, 34, 0.3),
-        0 2px 4px rgba(0, 0, 0, 0.5);
-    transition: all 0.3s ease;
+    color: var(--news-text);
+    font-family: 'Raleway', sans-serif;
+    transition: color 0.3s ease;
 }
 
 .news-row:hover .news-site {
-    color: #FFD700;
-    text-shadow: 
-        0 0 20px rgba(255, 215, 0, 0.6),
-        0 0 40px rgba(255, 215, 0, 0.3),
-        0 2px 4px rgba(0, 0, 0, 0.5);
-    transform: translateX(5px);
+    color: var(--news-highlight);
 }
 
 .news-description {
-    flex: 2;
     text-align: left;
-    font-size: 27px;
-    opacity: 0.9;
-    line-height: 1.5;
-    color: #FFFFFF;
-    min-width: 0;
-    font-family: 'TT Firs Neue', sans-serif;
-    transition: all 0.3s ease;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--news-subtle);
+    font-family: 'Poppins', sans-serif;
 }
 
-.news-row:hover .news-description {
-    opacity: 1;
-    color: rgba(255, 255, 255, 0.95);
-    text-shadow: 
-        0 0 10px rgba(251, 204, 34, 0.2),
-        0 1px 3px rgba(0, 0, 0, 0.5);
+.news-source-meta {
+    font-size: 12px;
+    color: var(--news-muted);
+    letter-spacing: 0.04em;
+    margin: 4px 0 0;
+    font-family: 'Poppins', sans-serif;
 }
 
 .news-link {
-    background: rgba(251, 204, 34, 0.1);
-    border: 4px solid #FBCC22;
-    color: #FFFFFF;
-    padding: 17px 29px;
+    background: rgba(201, 184, 150, 0.14);
+    border: 1px solid rgba(201, 184, 150, 0.4);
+    color: var(--news-text);
+    padding: 12px 20px;
     text-decoration: none;
-    border-radius: 30px;
-    font-size: 17px;
-    font-weight: bold;
-    transition: all 0.4s ease;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
     white-space: nowrap;
     flex-shrink: 0;
-    font-family: 'TT Firs Neue', sans-serif;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 
-        0 0 15px rgba(251, 204, 34, 0.3),
-        inset 0 0 10px rgba(251, 204, 34, 0.1);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    font-family: 'Poppins', sans-serif;
 }
 
-.news-link::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s ease, height 0.6s ease;
-}
-
-.news-link:hover::before {
-    width: 300px;
-    height: 300px;
-}
-
-.news-link:hover {
-    background: linear-gradient(135deg, #FBCC22, #FFD700);
-    transform: scale(1.1) translateY(-2px);
-    color: #000000;
-    box-shadow: 
-        0 10px 30px rgba(251, 204, 34, 0.6),
-        0 0 50px rgba(255, 215, 0, 0.4),
-        inset 0 0 20px rgba(255, 255, 255, 0.2);
-    border-color: #FFD700;
-    text-shadow: none;
-}
-
-/* Дополнительный эффект "блокчейн-соединения" между строками */
-.news-row .blockchain-connector {
-    content: '';
-    position: absolute;
-    bottom: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 2px;
-    height: 0;
-    background: linear-gradient(180deg, #FBCC22, transparent);
-    transition: height 0.4s ease;
+.news-link::after {
+    content: ' ↗';
     opacity: 0;
-    z-index: 0;
+    transition: opacity 0.25s ease;
 }
 
-.news-row:not(:last-child) .blockchain-connector {
-    height: 12px;
-    opacity: 0.3;
-}
-
-.news-row:hover .blockchain-connector {
-    height: 24px;
-    opacity: 0.6;
-    box-shadow: 0 0 10px rgba(251, 204, 34, 0.5);
-}
-
-/* Градиентная рамка при hover */
-.news-row:hover {
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(20, 20, 20, 0.6));
-}
-
-/* Дополнительные крипто-символы в углах при hover */
-.news-row .crypto-symbol {
-    position: absolute;
-    font-size: 16px;
-    color: rgba(251, 204, 34, 0.4);
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    z-index: 3;
-    pointer-events: none;
-}
-
-.news-row .crypto-symbol.btc {
-    top: 10px;
-    left: 10px;
-    animation: symbol-spin 3s linear infinite;
-}
-
-.news-row .crypto-symbol.eth {
-    bottom: 10px;
-    right: 10px;
-    animation: symbol-spin 3s linear infinite reverse;
-}
-
-.news-row:hover .crypto-symbol {
+.news-row:hover .news-link::after {
     opacity: 1;
 }
 
-@keyframes symbol-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+.news-link:hover {
+    background: rgba(212, 196, 168, 0.18);
+    border-color: var(--news-accent);
+    color: var(--news-text);
 }
 
+/* Блок 8: Мобильная версия (Apple — tap-area 44px+, адаптивность) */
+/* Фиксация экрана: без горизонтального скролла, без шатания влево-вправо */
 @media (max-width: 768px) {
+    html, body {
+        overflow-x: hidden !important;
+        overscroll-behavior-x: none;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        max-width: 100vw;
+        position: relative;
+    }
+    .page, .content {
+        overflow-x: hidden !important;
+        max-width: 100vw;
+        width: 100%;
+    }
+    .content {
+        padding: 96px 24px 80px;
+    }
+    
+    .news-hero {
+        margin-bottom: 112px;
+    }
+    
+    .news-hero-label {
+        font-size: 11px;
+        margin-bottom: 16px;
+    }
+    
+    .news-hero-title {
+        font-size: clamp(40px, 10vw, 56px);
+    }
+    
+    .news-hero-subtitle {
+        font-size: 18px;
+    }
+    
+    .news-hero-description {
+        font-size: 16px;
+    }
+    
+    .news-today {
+        margin-bottom: 120px;
+    }
+    
+    .news-today-header {
+        gap: 32px;
+    }
+    
+    .news-today-list {
+        margin-top: 48px;
+        gap: 28px;
+    }
+    
+    .news-trust-stats {
+        margin-bottom: 120px;
+    }
+    
+    .signal-noise {
+        margin-bottom: 120px;
+    }
+    
+    .signal-noise-title {
+        margin-bottom: 28px;
+    }
+    
+    .signal-noise-intro {
+        margin-bottom: 32px;
+    }
+    
+    .signal-noise-list {
+        gap: 28px;
+    }
+    
+    .before-react {
+        margin-bottom: 120px;
+    }
+    
+    .before-react-title {
+        margin-bottom: 28px;
+    }
+    
+    .section-title {
+        font-size: 28px;
+        margin-bottom: 96px;
+    }
+    
+    .editor-lens {
+        margin-top: 120px;
+        margin-bottom: 88px;
+        padding-top: 48px;
+    }
+    
+    .editor-lens-title {
+        margin-bottom: 28px;
+    }
+    
     .news-row {
         flex-direction: column;
-        gap: 15px;
+        gap: 24px;
+        text-align: center;
+        padding: 32px 28px;
+        align-items: center;
+    }
+    
+    .news-link::after {
+        content: none;
+        display: none;
+    }
+    
+    .news-link {
+        padding: 14px 24px;
+        font-size: 14px;
+        min-height: 44px;
+        min-width: 120px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .news-row-main {
         text-align: center;
     }
     
+    .news-row-header {
+        justify-content: center;
+    }
+    
     .news-site {
-        font-size: 24px;
+        font-size: 22px;
+        text-align: center;
     }
     
     .news-description {
         font-size: 14px;
+        text-align: center;
     }
     
-    .news-link {
-        padding: 10px 20px;
-        font-size: 14px;
+    .news-source-meta {
+        font-size: 11px;
+        text-align: center;
+    }
+    
+    .news-today, .signal-noise, .before-react, .editor-lens, .news-trust-stats {
+        max-width: 100%;
+        overflow-wrap: break-word;
+    }
+    .news-today-list, .signal-noise-list, .before-react-grid {
+        max-width: 100%;
+    }
+    .news-row, .news-table-container, .news-sources-section {
+        max-width: 100%;
+    }
+    .before-chip {
+        white-space: normal;
+        max-width: 100%;
+    }
+    .before-react-grid {
+        max-width: 100%;
+    }
+    img, video, iframe {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    html, body {
+        overflow-x: hidden !important;
+        overscroll-behavior: none;
+    }
+    .content {
+        padding: 88px 20px 64px;
+    }
+    
+    .news-hero {
+        margin-bottom: 96px;
+    }
+    
+    .news-hero-title {
+        font-size: 40px;
+    }
+    
+    .news-today {
+        margin-bottom: 104px;
+    }
+    
+    .news-today-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    
+    .news-today-header {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 12px;
+    }
+    
+    .news-heat {
+        align-items: center;
+        text-align: center;
+    }
+    
+    .signal-noise {
+        margin-bottom: 104px;
+    }
+    
+    .news-trust-stats {
+        margin-bottom: 104px;
+    }
+    
+    .before-react {
+        margin-bottom: 104px;
     }
     
     .section-title {
-        font-size: 45px;
+        margin-bottom: 88px;
+    }
+    
+    .news-row {
+        padding: 28px 24px;
+        margin: 36px 0;
     }
 }
 
@@ -1196,7 +1019,7 @@ body::after {
 
 /* Все анимации удалены для оптимизации производительности */
 
-/* Дополнительные желтые акценты - более тонкие для крипто-стиля */
+/* Мягкое свечение (тёплая палитра) */
 .content::before {
     content: '';
     position: absolute;
@@ -1204,25 +1027,11 @@ body::after {
     right: 10%;
     width: 300px;
     height: 300px;
-    background: radial-gradient(circle, rgba(255, 204, 21, 0.08), transparent 70%);
+    background: radial-gradient(circle, rgba(201, 184, 150, 0.06), transparent 70%);
     border-radius: 50%;
     filter: blur(50px);
     z-index: -1;
     animation: subtle-glow 15s ease-in-out infinite;
-}
-
-.content::after {
-    content: '';
-    position: absolute;
-    bottom: 15%;
-    left: 15%;
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(255, 204, 21, 0.08), transparent 70%);
-    border-radius: 50%;
-    filter: blur(60px);
-    z-index: -1;
-    animation: subtle-glow 18s ease-in-out infinite reverse;
 }
 
 @keyframes subtle-glow {

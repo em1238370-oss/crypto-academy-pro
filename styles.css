@@ -6,17 +6,75 @@
    box-sizing: border-box;
 }
 
+/* Доступность: видимый фокус для клавиатурной навигации */
+a:focus-visible,
+button:focus-visible {
+   outline: 2px solid rgba(212, 175, 55, 0.6);
+   outline-offset: 3px;
+}
+
+/* Apple-style: минималистичная верхняя навигация */
+.main-nav {
+   position: fixed;
+   top: 0;
+   left: 0;
+   right: 0;
+   z-index: 100;
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   padding: 18px 32px;
+   background: rgba(28, 0, 56, 0.85);
+   backdrop-filter: blur(12px);
+   -webkit-backdrop-filter: blur(12px);
+   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.main-nav-brand {
+   font-family: 'Raleway', sans-serif;
+   font-size: 18px;
+   font-weight: 700;
+   color: #FFFFFF;
+   text-decoration: none;
+   letter-spacing: -0.02em;
+}
+
+.main-nav-links {
+   display: flex;
+   gap: 32px;
+}
+
+.main-nav-links a {
+   font-size: 14px;
+   color: rgba(255, 255, 255, 0.8);
+   text-decoration: none;
+   transition: color 0.2s ease;
+}
+
+.main-nav-links a:hover {
+   color: #FFFFFF;
+}
+
+.explore-heading {
+   font-family: 'Raleway', sans-serif;
+   font-size: 28px;
+   font-weight: 700;
+   color: rgba(255, 255, 255, 0.9);
+   margin-bottom: 48px;
+   letter-spacing: -0.02em;
+}
+
 body {
    font-family: 'Poppins', sans-serif;
    background-image: 
-       linear-gradient(rgba(255, 79, 197, 0.04) 1px, transparent 1px),
-       linear-gradient(90deg, rgba(122, 0, 255, 0.04) 1px, transparent 1px),
+       linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+       linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
        url('assets/crypto-academy-bg-v2.png');
    background-repeat: repeat, repeat, no-repeat;
    background-position: 0 0, 0 0, center top;
    background-size: 50px 50px, 50px 50px, 1750px 9000px;
    background-attachment: fixed, fixed, scroll;
-   background-color: #000000;
+   background-color: #1C0038;
    min-height: 100vh;
    position: relative;
    overflow-x: hidden;
@@ -33,9 +91,9 @@ body::before {
    content: '';
    position: fixed;
    inset: -40px;
-   background: radial-gradient(circle at 20% 20%, rgba(120, 0, 72, 0.45), transparent 60%),
-       radial-gradient(circle at 80% 10%, rgba(141, 31, 170, 0.4), transparent 55%),
-       radial-gradient(circle at 30% 85%, rgba(112, 0, 92, 0.35), transparent 55%),
+   background: radial-gradient(circle at 20% 20%, rgba(74, 25, 66, 0.18), transparent 60%),
+       radial-gradient(circle at 80% 10%, rgba(88, 28, 135, 0.14), transparent 55%),
+       radial-gradient(circle at 30% 85%, rgba(74, 25, 66, 0.12), transparent 55%),
        linear-gradient(160deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.8));
    pointer-events: none;
    z-index: 0;
@@ -49,7 +107,7 @@ body::after {
    content: '';
    position: fixed;
    inset: 0;
-   background: rgba(0, 0, 0, 0.35);
+   background: rgba(0, 0, 0, 0.12);
    pointer-events: none;
    z-index: 0;
 }
@@ -231,27 +289,20 @@ body::after {
 /* Блокчейн-сетка в розово-фиолетовых тонах */
 body {
     background-image: 
-        linear-gradient(rgba(255, 79, 197, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(122, 0, 255, 0.02) 1px, transparent 1px);
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
     background-size: 60px 60px;
 }
 
 .page {
    display: flex;
    flex-direction: column;
+   align-items: stretch;
    min-height: 100vh;
    position: relative;
    z-index: 1;
-   /* Гарантируем, что fixed элементы вне .page работают правильно */
    transform: none !important;
-}
-
-.page {
-   display: flex;
-   flex-direction: column;
-   min-height: 100vh;
-   position: relative;
-   z-index: 1;
+   padding-top: 56px;
 }
 
 .hero {
@@ -259,8 +310,10 @@ body {
    align-items: center;
    justify-content: center;
    text-align: center;
-   padding: 60px 20px;
+   padding: 80px 20px;
    min-height: 100vh;
+   width: 100%;
+   box-sizing: border-box;
 }
 
 .scroll-section {
@@ -282,14 +335,15 @@ body {
 
 .floating-text {
    font-family: 'Raleway', sans-serif;
-   font-size: 175px;
+   font-size: 140px;
    color: #FFFFFF;
    font-weight: 700;
-   line-height: 1.4;
+   line-height: 1.15;
+   letter-spacing: -0.03em;
    text-align: center;
    max-width: 90vw;
    margin: 0 auto;
-   animation: float 6s ease-in-out infinite;
+   animation: float 25s ease-in-out infinite;
    will-change: transform;
    transform: translateZ(0);
    backface-visibility: hidden;
@@ -297,19 +351,15 @@ body {
 
 .floating-text span {
    font-style: italic;
+   color: #e8c547;
 }
 
 @keyframes float {
-   0% {
+   0%, 100% {
        transform: translate(0, 0);
    }
-
    50% {
-       transform: translate(20px, -20px);
-   }
-
-   100% {
-       transform: translate(0, 0);
+       transform: translate(8px, -8px);
    }
 }
 
@@ -373,9 +423,35 @@ html {
    text-align: center;
    position: relative;
    z-index: 1;
-   display: block;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   max-width: 800px;
+   width: 100%;
+   box-sizing: border-box;
 }
 
+.main-text-section > * {
+   max-width: 100%;
+}
+
+.main-text-headline {
+   font-family: 'Raleway', sans-serif;
+   font-size: 52px;
+   font-weight: 700;
+   color: #FFFFFF;
+   line-height: 1.35;
+   letter-spacing: -0.025em;
+   margin: 0 0 24px;
+   text-align: center;
+   width: 100%;
+   max-width: 100%;
+   text-rendering: optimizeLegibility;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Стили для overlay-text (старый класс, используется в index.html) */
 .main-text-section .overlay-text {
    font-family: 'Raleway', sans-serif;
    font-size: 24px;
@@ -385,13 +461,11 @@ html {
    text-align: center;
    margin: 0 auto;
    max-width: 90%;
-   /* Упрощенный стиль - без анимаций и проблемных свойств */
    opacity: 1;
    visibility: visible;
    display: block;
    padding: 20px;
    position: relative;
-   /* Убираем все что может вызывать глюки */
    animation: none !important;
    will-change: auto !important;
    transform: none !important;
@@ -403,19 +477,124 @@ html {
    -moz-osx-font-smoothing: grayscale;
 }
 
-/* Круги начинаются через 5 см после текста */
-.explore-section {
-   padding: 50px 20px 150px;
+.main-text-description {
+   font-family: 'Poppins', sans-serif;
+   font-size: 20px;
+   font-weight: 400;
+   color: rgba(255, 255, 255, 0.82);
+   line-height: 1.75;
+   margin: 0;
    text-align: center;
-   min-height: 100vh;
+   width: 100%;
+   max-width: 100%;
+   text-rendering: optimizeLegibility;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Блок доверия / статистика */
+.trust-stats {
+   position: relative;
+   display: flex;
+   justify-content: center;
+   align-items: flex-start;
+   gap: 80px;
+   padding: 60px 24px 80px;
+   margin: 0 auto;
+   max-width: 900px;
+   flex-wrap: wrap;
+}
+
+.trust-stat {
    display: flex;
    flex-direction: column;
    align-items: center;
-   gap: 250px;
-   margin-top: 5cm;
+   text-align: center;
+   min-width: 140px;
+}
+
+.trust-stat-number {
+   font-family: 'Raleway', sans-serif;
+   font-size: 52px;
+   font-weight: 700;
+   color: #d4af37;
+   text-shadow: 0 0 24px rgba(212, 175, 55, 0.25);
+   line-height: 1.2;
+   letter-spacing: -0.02em;
+   margin-bottom: 8px;
+}
+
+.trust-stat-label {
+   font-family: 'Poppins', sans-serif;
+   font-size: 14px;
+   font-weight: 400;
+   color: #888888;
+   text-transform: uppercase;
+   letter-spacing: 0.08em;
+}
+
+/* Миссия / философия бренда */
+.mission-section {
+   padding: 0 24px 80px;
+   margin: 0 auto;
+   max-width: 640px;
+   text-align: center;
+}
+
+.mission-text {
+   font-family: 'Raleway', sans-serif;
+   font-size: 20px;
+   font-weight: 700;
+   color: rgba(255, 255, 255, 0.85);
+   line-height: 1.6;
+   margin: 0;
+   letter-spacing: 0.02em;
+}
+
+.mission-text .accent {
+   color: #d4af37;
+   font-weight: 700;
+}
+
+.trust-stats::before {
+   content: '';
+   position: absolute;
+   left: 50%;
+   top: 0;
+   transform: translateX(-50%);
+   width: 120px;
+   height: 1px;
+   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.trust-badge {
+   width: 100%;
+   margin-top: 24px;
+   font-size: 12px;
+   color: rgba(255, 255, 255, 0.45);
+   letter-spacing: 0.12em;
+   text-transform: uppercase;
+   text-align: center;
+}
+
+/* Круги навигации — Explore tools */
+.explore-section {
+   padding: 60px 20px 120px;
+   text-align: center;
+   min-height: auto;
+   display: flex !important;
+   flex-direction: column;
+   align-items: center;
+   gap: 120px;
+   margin-top: 0;
    margin-bottom: 0;
    overflow: visible !important;
    position: relative;
+   z-index: 10;
+   width: 100%;
+   box-sizing: border-box;
+   visibility: visible !important;
+   opacity: 1 !important;
 }
 
 .menu-item,
@@ -426,16 +605,17 @@ html {
    align-items: center;
    text-decoration: none;
    color: #FFFFFF;
-   background: transparent;
-   border: 9px solid #630038;
-   transition: transform 0.3s ease, box-shadow 0.3s ease;
+   background: rgba(255, 255, 255, 0.02);
+   border: 1px solid rgba(255, 255, 255, 0.12);
+   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+   transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.5s ease, border-color 0.4s ease;
    cursor: pointer;
    box-sizing: border-box;
    will-change: transform;
    margin: 0 auto;
    transform-origin: center;
    backface-visibility: hidden;
-   transform: translateX(calc(-18px + 1cm));
+   transform: none;
    overflow: visible !important;
    position: relative;
    z-index: 1;
@@ -458,6 +638,7 @@ html {
 .oval-item h3 {
    font-size: 45px;
    font-weight: bold;
+   line-height: 1.2;
    margin: 10px 0;
    transition: font-size 0.25s ease;
    text-align: center;
@@ -466,20 +647,26 @@ html {
 
 .oval-item h3 {
    font-size: 35px;
-   line-height: 1.2;
+   line-height: 1.3;
 }
 
 .menu-item:hover,
 .oval-item:hover {
-   transform: translateX(calc(-18px + 1cm)) scale(1.65);
+   transform: scale(1.05);
    z-index: 100 !important;
    position: relative;
-   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.34);
+   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+   border-color: rgba(255, 255, 255, 0.25);
    overflow: visible !important;
 }
 
+.menu-item.premium:hover {
+   border-color: rgba(212, 175, 55, 0.4);
+   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28), 0 0 24px rgba(212, 175, 55, 0.08);
+}
+
 .menu-item:hover h3 {
-   font-size: 64px;
+   font-size: 52px;
 }
 
 .oval-item:hover h3 {
@@ -491,6 +678,7 @@ html {
    font-size: 0;
    margin: 10px 0;
    opacity: 0;
+   line-height: 1.5;
    transition: font-size 0.3s ease, opacity 0.3s ease;
    max-height: 0;
    color: #FFFFFF;
@@ -511,7 +699,7 @@ html {
    border: 1px solid rgba(255, 255, 255, 0.18);
    border-radius: 20px;
    background: rgba(0, 0, 0, 0.55);
-   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
    display: flex;
    align-items: center;
    justify-content: space-between;
@@ -550,14 +738,22 @@ html {
    font-size: 16px;
    font-weight: 600;
    cursor: pointer;
-   background: linear-gradient(130deg, #ff4fc5, #7a00ff);
+   background: linear-gradient(135deg, #581c87, #2d1b4e);
    color: #FFFFFF;
    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .subscription-pay-btn:hover:not(:disabled) {
-   transform: translateY(-2px);
-   box-shadow: 0 12px 30px rgba(122, 0, 255, 0.35);
+   transform: scale(1.02) translateY(-2px);
+   box-shadow: 0 12px 30px rgba(88, 28, 135, 0.3);
+   border-radius: inherit;
+   opacity: inherit;
+}
+
+.subscription-pay-btn:active:not(:disabled) {
+   transform: scale(1) translateY(0);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .subscription-pay-btn:disabled {
@@ -655,11 +851,15 @@ html {
 .chat-expired-btn:hover {
    background: #3a3a3a;
    border-color: #4a4a4a;
-   transform: translateY(-2px);
+   transform: scale(1.02) translateY(-2px);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .chat-expired-btn:active {
-   transform: translateY(0);
+   transform: scale(1) translateY(0);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .chat-expired-btn:disabled {
@@ -701,12 +901,16 @@ html {
 .payment-method-btn:hover:not(:disabled) {
    background: #3a3a3a;
    border-color: #4a4a4a;
-   transform: translateY(-2px);
+   transform: scale(1.02) translateY(-2px);
    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .payment-method-btn:active:not(:disabled) {
-   transform: translateY(0);
+   transform: scale(1) translateY(0);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .payment-method-btn:disabled {
@@ -764,11 +968,15 @@ html {
 .subscription-overlay-btn:hover {
    background: #3a3a3a;
    border-color: #4a4a4a;
-   transform: translateY(-2px);
+   transform: scale(1.02) translateY(-2px);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .subscription-overlay-btn:active {
-   transform: translateY(0);
+   transform: scale(1) translateY(0);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .main-content {
@@ -836,18 +1044,171 @@ html {
 }
 
 .submit-btn:hover {
-   transform: translateY(-2px);
+   transform: scale(1.02) translateY(-2px);
    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .submit-btn:active {
-   transform: translateY(-1px);
+   transform: scale(1) translateY(-1px);
+   border-radius: inherit;
+   opacity: inherit;
+}
+
+@media (max-width: 768px) {
+   html, body {
+       overflow-x: hidden !important;
+       overscroll-behavior-x: none;
+       -webkit-overflow-scrolling: touch;
+       width: 100%;
+       max-width: 100vw;
+       position: relative;
+   }
+   .page {
+       overflow-x: hidden !important;
+       max-width: 100vw;
+       width: 100%;
+   }
+   .main-nav {
+       padding: 14px 20px;
+   }
+   .main-nav-links {
+       gap: 20px;
+   }
+   .main-nav-links a {
+       font-size: 13px;
+   }
+   .explore-heading {
+       font-size: 22px;
+       margin-bottom: 32px;
+   }
+   .content, .main-text-section, .trust-stats, .mission-section, .explore-section {
+       max-width: 100%;
+       overflow-wrap: break-word;
+   }
+   img, video, iframe {
+       max-width: 100%;
+       height: auto;
+   }
 }
 
 /* Responsive design */
 @media (max-width: 600px) {
+   html, body {
+       overflow-x: hidden !important;
+       overscroll-behavior: none;
+   }
+   .main-nav-links {
+       display: none;
+   }
    .hero {
        padding: 40px 16px;
+   }
+
+   .floating-text {
+       font-size: 56px;
+       line-height: 1.15;
+   }
+
+   .main-text-headline {
+       font-size: 24px;
+   }
+
+   .main-text-description {
+       font-size: 16px;
+       line-height: 1.6;
+   }
+
+   .trust-stats {
+       gap: 48px;
+       padding: 48px 20px 60px;
+   }
+
+   .trust-stat-number {
+       font-size: 36px;
+   }
+
+   .trust-stat-label {
+       font-size: 12px;
+   }
+
+   .mission-section {
+       padding: 0 20px 60px;
+   }
+
+   .mission-text {
+       font-size: 17px;
+   }
+
+   .menu-item {
+       width: 320px;
+       height: 320px;
+   }
+
+   .menu-item h3 {
+       font-size: 32px;
+   }
+
+   /* Овал на мобильной — мягкий квадрат, чётко влезает в экран */
+   .oval-item {
+       width: calc(100% - 32px);
+       max-width: 100%;
+       height: auto;
+       min-height: 140px;
+       padding: 20px 24px;
+       border-radius: 16px;
+       margin: 0 auto;
+   }
+
+   .oval-item:hover {
+       transform: scale(1.02);
+   }
+
+   .oval-item h3 {
+       font-size: 18px;
+       line-height: 1.35;
+   }
+
+   .oval-item:hover h3 {
+       font-size: 19px;
+   }
+
+   .explore-section {
+       gap: 100px;
+       padding: 60px 16px 100px;
+   }
+
+   .main-footer {
+       padding: 40px 20px 30px;
+       margin-top: 20px;
+   }
+
+   .footer-text {
+       font-size: 13px;
+   }
+
+   .footer-crafted {
+       font-size: 11px;
+       margin-top: 10px;
+   }
+
+   /* Мобильная: меньше фоновых элементов для производительности */
+   .blockchain-block.block-2,
+   .blockchain-block.block-3,
+   .transaction-data.data-2,
+   .transaction-data.data-3,
+   .transaction-data.data-4,
+   .price-chart-line.chart-2,
+   .price-chart-line.chart-3,
+   .blockchain-connection-line.conn-2,
+   .blockchain-connection-line.conn-3,
+   .blockchain-connection-line.conn-4,
+   .business-indicator.indicator-2,
+   .business-indicator.indicator-3,
+   .data-line.line-2,
+   .data-line.line-3 {
+       display: none !important;
    }
 
    .hero h1 {
@@ -893,7 +1254,7 @@ html {
    border: 1px solid rgba(255, 255, 255, 0.18);
    border-radius: 20px;
    padding: 28px 28px 32px;
-   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
    z-index: 1300;
    color: #FFFFFF;
    backdrop-filter: blur(18px);
@@ -971,6 +1332,15 @@ html {
 
 .copy-btn:hover {
    background: rgba(255, 255, 255, 0.2);
+   transform: scale(1.02);
+   border-radius: inherit;
+   opacity: inherit;
+}
+
+.copy-btn:active {
+   transform: scale(1);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .payment-link {
@@ -979,7 +1349,7 @@ html {
    text-align: center;
    padding: 12px 20px;
    border-radius: 16px;
-   background: linear-gradient(120deg, #ff4fc5, #7a00ff);
+   background: linear-gradient(135deg, #581c87, #2d1b4e);
    color: #FFFFFF;
    text-decoration: none;
    font-weight: 600;
@@ -992,8 +1362,16 @@ html {
 }
 
 .payment-link:hover {
-   transform: translateY(-1px);
-   box-shadow: 0 12px 24px rgba(122, 0, 255, 0.35);
+   transform: scale(1.02) translateY(-1px);
+   box-shadow: 0 12px 24px rgba(88, 28, 135, 0.3);
+   border-radius: inherit;
+   opacity: inherit;
+}
+
+.payment-link:active {
+   transform: scale(1);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .payment-note {
@@ -1001,6 +1379,36 @@ html {
    font-size: 13px;
    color: rgba(255, 255, 255, 0.6);
    line-height: 1.6;
+}
+
+/* Scroll-triggered reveal — секции плавно появляются при прокрутке */
+.scroll-reveal {
+   opacity: 0;
+   transform: translateY(36px);
+   transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+               transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.scroll-reveal.scroll-revealed {
+   opacity: 1;
+   transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .scroll-reveal {
+       opacity: 1;
+       transform: none;
+       transition: none;
+   }
+}
+
+/* Hero, круги навигации и первый блок — сразу видны */
+.hero,
+.crypto-background-elements,
+.explore-section,
+.explore-section .menu-item,
+.explore-section .oval-item {
+   opacity: 1 !important;
 }
 
 /* Animation for form elements */
@@ -1468,15 +1876,23 @@ html {
    background: #3a3a3a;
    color: #cccccc;
    border-color: #4a4a4a;
-   transform: translateY(-2px);
+   transform: scale(1.02) translateY(-2px);
    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 .quick-question-btn:active {
-   transform: translateY(0);
+   transform: scale(1) translateY(0);
+   border-radius: inherit;
+   opacity: inherit;
 }
 
 @media (max-width: 480px) {
+   html, body {
+       overflow-x: hidden !important;
+       overscroll-behavior: none;
+   }
    .chat-container {
        width: calc(100vw - 40px);
        height: calc(100vh - 120px);
@@ -1630,6 +2046,18 @@ html {
     bottom: 20%;
     left: 50%;
     animation-delay: 8s;
+}
+
+.transaction-data.data-4 {
+    top: 40%;
+    right: 8%;
+    animation-delay: 2s;
+}
+
+.transaction-data.data-5 {
+    top: 85%;
+    left: 15%;
+    animation-delay: 6s;
 }
 
 @keyframes data-fade {
@@ -1993,22 +2421,22 @@ html {
     }
 }
 
-/* Дополнительные яркие эффекты для заметности */
+/* Дополнительные эффекты фона - тёмно-фиолетовый (без синего) */
 body::before {
     background: 
-        radial-gradient(circle at 20% 20%, rgba(120, 0, 72, 0.45), transparent 60%),
-        radial-gradient(circle at 80% 10%, rgba(141, 31, 170, 0.4), transparent 55%),
-        radial-gradient(circle at 30% 85%, rgba(112, 0, 92, 0.35), transparent 55%),
-        radial-gradient(circle at 70% 70%, rgba(255, 79, 197, 0.2), transparent 50%),
-        radial-gradient(circle at 10% 50%, rgba(122, 0, 255, 0.2), transparent 50%),
+        radial-gradient(circle at 20% 20%, rgba(74, 25, 66, 0.15), transparent 60%),
+        radial-gradient(circle at 80% 10%, rgba(88, 28, 135, 0.12), transparent 55%),
+        radial-gradient(circle at 30% 85%, rgba(74, 25, 66, 0.1), transparent 55%),
+        radial-gradient(circle at 70% 70%, rgba(88, 28, 135, 0.08), transparent 50%),
+        radial-gradient(circle at 10% 50%, rgba(74, 25, 66, 0.08), transparent 50%),
         linear-gradient(160deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.8));
 }
 
 /* Усиливаем блокчейн-сетку */
 body {
     background-image: 
-        linear-gradient(rgba(255, 79, 197, 0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(122, 0, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
         url('assets/crypto-academy-bg-v2.png');
 }
 
@@ -2824,18 +3252,13 @@ body.scrolling .blockchain-block {
     opacity: 0.15 !important;
 }
 
-/* МАКСИМАЛЬНАЯ ОПТИМИЗАЦИЯ - отключаем ВСЕ анимации */
-.crypto-background-elements > * {
-    animation: none !important;
-    will-change: auto !important;
-}
+/* Анимации фоновых элементов включены */
 
-/* Делаем все элементы статичными */
+/* Делаем статичными только элементы, которых нет в HTML */
 .crypto-orb,
 .crypto-glow-circle,
 .crypto-pulse-ring,
 .crypto-coin,
-.blockchain-block,
 .crypto-particle,
 .crypto-connection {
     animation: none !important;
@@ -2861,9 +3284,8 @@ body::before {
     -webkit-backdrop-filter: none !important;
 }
 
-/* Убираем все лишние элементы */
+/* Убираем элементы, которых нет в HTML */
 .crypto-connection,
-.blockchain-block,
 .crypto-particle,
 .crypto-glow-circle,
 .crypto-pulse-ring,
@@ -2928,6 +3350,10 @@ body {
     }
 }
 
+* {
+    -webkit-backdrop-filter: none !important;
+}
+
 /* ТОЧЕЧНАЯ ОПТИМИЗАЦИЯ - исправляем искажения без ущерба для дизайна */
 .hero,
 .overlay-section,
@@ -2950,14 +3376,14 @@ body {
 /* Исправляем искажения кругляшков */
 .menu-item,
 .oval-item {
-    transform: translateX(calc(-18px + 1cm)) translateZ(0);
+    transform: translateZ(0);
     backface-visibility: hidden;
     will-change: transform;
 }
 
 .menu-item:hover,
 .oval-item:hover {
-    transform: translateX(calc(-18px + 1cm)) scale(1.65) translateZ(0);
+    transform: scale(1.08) translateZ(0);
 }
 
 /* Убираем искажения фона при скролле */
@@ -2991,13 +3417,13 @@ html {
 /* Исправляем искажения кругляшков */
 .menu-item,
 .oval-item {
-    transform: translateX(calc(-18px + 1cm)) translateZ(0) !important;
+    transform: translateZ(0) !important;
     backface-visibility: hidden;
 }
 
 .menu-item:hover,
 .oval-item:hover {
-    transform: translateX(calc(-18px + 1cm)) scale(1.65) translateZ(0) !important;
+    transform: scale(1.05) translateZ(0) !important;
 }
 
 /* Убираем искажения при скролле - упрощаем фон */
@@ -3097,3 +3523,156 @@ body::before {
         0 0 20px rgba(0, 255, 163, 0.8),
         0 0 40px rgba(0, 255, 163, 0.5) !important;
 }
+
+/* ========== GLOBAL BUTTON HOVER EFFECT - SITE WIDE ========== */
+/* Subtle, barely noticeable scale increase (2%) for all buttons on hover */
+/* This applies to all buttons across the entire site */
+
+/* General button hover - subtle scale */
+button:not(.chat-button):not(.send-button):hover {
+    transform: scale(1.02);
+    border-radius: inherit;
+    opacity: inherit;
+    transition: transform 0.2s ease, background 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+}
+
+button:not(.chat-button):not(.send-button):active,
+button:not(.chat-button):not(.send-button):focus {
+    transform: scale(1);
+    border-radius: inherit;
+    opacity: inherit;
+    outline: none;
+}
+
+/* Subscription and payment buttons */
+.subscription-pay-btn:hover:not(:disabled) {
+    transform: scale(1.02) translateY(-2px);
+    box-shadow: 0 12px 30px rgba(88, 28, 135, 0.3);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.subscription-pay-btn:active:not(:disabled) {
+    transform: scale(1) translateY(0);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+/* Submit buttons */
+.submit-btn:hover {
+    transform: scale(1.02) translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.submit-btn:active {
+    transform: scale(1) translateY(-1px);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+/* Payment links */
+.payment-link:hover {
+    transform: scale(1.02) translateY(-1px);
+    box-shadow: 0 12px 24px rgba(88, 28, 135, 0.3);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.payment-link:active {
+    transform: scale(1);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+/* Copy buttons */
+.copy-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.02);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.copy-btn:active {
+    transform: scale(1);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+/* Payment method buttons */
+.payment-method-btn:hover:not(:disabled) {
+    transform: scale(1.02);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.payment-method-btn:active:not(:disabled) {
+    transform: scale(1);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+/* Subscription overlay buttons */
+.subscription-overlay-btn:hover {
+    transform: scale(1.02);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.subscription-overlay-btn:active {
+    transform: scale(1);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+/* Chat expired buttons */
+.chat-expired-btn:hover {
+    transform: scale(1.02);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+.chat-expired-btn:active {
+    transform: scale(1);
+    border-radius: inherit;
+    opacity: inherit;
+}
+
+/* Футер главной страницы */
+.main-footer {
+   padding: 60px 24px 40px;
+   text-align: center;
+   border-top: 1px solid rgba(212, 175, 55, 0.2);
+   margin-top: 40px;
+   position: relative;
+}
+
+.main-footer::before {
+   content: '';
+   position: absolute;
+   left: 50%;
+   top: 0;
+   transform: translateX(-50%);
+   width: 80px;
+   height: 2px;
+   background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5), transparent);
+}
+
+.footer-text {
+   font-family: 'Poppins', sans-serif;
+   font-size: 14px;
+   color: #888888;
+   margin: 0;
+   letter-spacing: 0.02em;
+}
+
+.footer-crafted {
+   font-family: 'Poppins', sans-serif;
+   font-size: 12px;
+   color: rgba(255, 255, 255, 0.35);
+   margin: 12px 0 0;
+   letter-spacing: 0.06em;
+   font-weight: 400;
+}
+

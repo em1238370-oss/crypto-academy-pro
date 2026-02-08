@@ -52,6 +52,8 @@ const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, { apiVersion: '2024
 const subscriptionPriceUsd = parseFloat(process.env.SUBSCRIPTION_PRICE_USD ?? '10');
 const subscriptionPeriodDays = parseInt(process.env.SUBSCRIPTION_PERIOD_DAYS ?? '30', 10);
 const appBaseUrl = process.env.APP_BASE_URL ?? 'http://localhost:4000';
+const newsApiKey = process.env.NEWS_API_KEY;
+const theNewsApiKey = process.env.THENEWSAPI_KEY;
 
 if (!mistralKey) {
  console.warn('⚠️  MISTRAL_API_KEY is not set. AI responses will fail until it is provided.');
@@ -1007,6 +1009,191 @@ app.post('/api/payments/stripe/webhook', express.raw({ type: 'application/json' 
 
  res.json({ received: true });
 });
+
+// --- Dynamic News (Regulation / Macro / Market + News heat) ---
+const NEWS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 min cache
+const NEWS_FETCH_INTERVAL_MS = 5 * 60 * 1000; // 5 min refresh — heat updates every 5 min
+let articlesCache = null;
+let articlesCacheTime = 0;
+
+const FALLBACK_REGULATION = [
+  'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.',
+  'Key regulatory moves — ETF approvals, licensing, bans — affect liquidity and risk far beyond the headlines.',
+  'Regulatory shifts (ETFs, licensing, bans) reshape liquidity and long-term risk. Headlines are just the surface.',
+  'Major regulatory decisions — on ETFs, licensing, bans — drive liquidity and risk. Don\'t stop at the headline.',
+  'ETF approvals, licensing, bans: regulatory moves that reshape liquidity and risk. Headlines only scratch the surface.',
+  'Regulatory outcomes — ETF approvals, licensing, bans — determine liquidity dynamics and risk structure more than headlines.'
+];
+const FALLBACK_MACRO = [
+  'Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.',
+  'Fed decisions, inflation data, and dollar moves shape risk appetite for all assets — crypto included.',
+  'Rates, inflation, and dollar strength drive risk appetite. Crypto follows the same macro forces.',
+  'Macro prints — inflation, rates, dollar — still set risk appetite for crypto and all risk assets.',
+  'Monetary policy, inflation releases, and FX dynamics govern risk appetite for crypto and traditional assets alike.',
+  'FOMC outcomes, inflation prints, and dollar strength determine risk appetite for crypto and risk assets.'
+];
+const FALLBACK_MARKET = [
+  'Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it\'s just narrative.',
+  'Funding rates, open interest, and liquidity reveal if news is backed by real capital or just narrative.',
+  'Check funding, open interest, and liquidity: they show whether news has capital behind it or is just noise.',
+  'Funding, OI, and liquidity in major pairs separate news backed by capital from purely narrative-driven moves.',
+  'Perpetual funding, aggregate open interest, and order-book liquidity indicate whether news has capital conviction.',
+  'Derivatives funding, open interest, and spot liquidity reveal if news translates into real capital flows.'
+];
+function pickFallback(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function getRandomFallback() {
+  return {
+    regulation: { text: pickFallback(FALLBACK_REGULATION), url: null },
+    macro: { text: pickFallback(FALLBACK_MACRO), url: null },
+    market: { text: pickFallback(FALLBACK_MARKET), url: null },
+    heat: ['calm', 'balanced', 'hot'][Math.floor(Math.random() * 3)]
+  };
+}
+
+function categorizeArticle(title, desc) {
+  const text = ((title || '') + ' ' + (desc || '')).toLowerCase();
+  if (/\b(regulation|sec|etf|licensing|ban|approval|cftc|compliance|policy|legal|court|lawsuit|supervisory)\b/.test(text)) return 'regulation';
+  if (/\b(inflation|rates|fed|fomc|dollar|macro|interest rate|gdp|cpi|employment|jobs|monetary)\b/.test(text)) return 'macro';
+  if (/\b(funding|open interest|liquidity|volume|whale|exchange|derivatives|options|oi)\b/.test(text)) return 'market';
+  return null;
+}
+
+function summarizeOne(article, maxLen = 200) {
+  if (!article) return null;
+  const title = (article.title || article.headline || '').trim();
+  const desc = (article.description || article.snippet || article.summary || '').trim();
+  let out = title || desc;
+  if (!out) return null;
+  if (out.length > maxLen) out = out.slice(0, maxLen - 3) + '…';
+  return out;
+}
+
+// Use most recent article — reflects latest real news
+function getLatestArticle(articles) {
+  if (!articles || articles.length === 0) return null;
+  return articles[0];
+}
+
+async function fetchNewsFromNewsApi() {
+  if (!newsApiKey) return null;
+  try {
+    const from = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const res = await axios.get(
+      `https://newsapi.org/v2/everything?q=crypto OR bitcoin OR ethereum&from=${from}&sortBy=publishedAt&pageSize=50&language=en&apiKey=${newsApiKey}`,
+      { timeout: 8000 }
+    );
+    return res.data?.articles || [];
+  } catch (e) {
+    console.warn('NewsAPI fetch failed:', e?.response?.status || e.message);
+    return null;
+  }
+}
+
+async function fetchNewsFromTheNewsApi() {
+  if (!theNewsApiKey) return null;
+  try {
+    const res = await axios.get(
+      `https://api.thenewsapi.net/crypto?apikey=${theNewsApiKey}&q=bitcoin OR ethereum OR crypto&langs=en&size=50`,
+      { timeout: 8000 }
+    );
+    const results = res.data?.data?.results || res.data?.results || [];
+    if (Array.isArray(results)) {
+      return results.map(r => ({
+        title: r.title || r.headline,
+        description: r.description || r.summary || r.snippet,
+        url: r.url,
+        publishedAt: r.published_at || r.publishedAt || r.published
+      }));
+    }
+    return null;
+  } catch (e) {
+    console.warn('TheNewsAPI fetch failed:', e?.response?.status || e.message);
+    return null;
+  }
+}
+
+async function refreshNewsCache() {
+  let articles = await fetchNewsFromNewsApi();
+  if (!articles || articles.length === 0) articles = await fetchNewsFromTheNewsApi();
+  if (!articles || articles.length === 0) {
+    if (articlesCache) return; // keep stale articles
+    articlesCache = null;
+    return;
+  }
+  // Sort by publishedAt descending (newest first)
+  articles.sort((a, b) => {
+    const ta = new Date(a.publishedAt || a.published_at || a.published || 0).getTime();
+    const tb = new Date(b.publishedAt || b.published_at || b.published || 0).getTime();
+    return tb - ta;
+  });
+  articlesCache = articles;
+  articlesCacheTime = Date.now();
+}
+
+function buildDynamicResponse() {
+  if (!articlesCache || articlesCache.length === 0) {
+    return getRandomFallback();
+  }
+  // Articles are sorted by publishedAt (newest first)
+  const reg = articlesCache.filter(a => categorizeArticle(a.title, a.description) === 'regulation');
+  const macro = articlesCache.filter(a => categorizeArticle(a.title, a.description) === 'macro');
+  const market = articlesCache.filter(a => categorizeArticle(a.title, a.description) === 'market');
+  const total = articlesCache.length;
+  const now = Date.now();
+  const recentCount = articlesCache.filter(a => {
+    const pub = a.publishedAt || a.published_at || a.published;
+    if (!pub) return true;
+    const t = new Date(pub).getTime();
+    return now - t < 6 * 60 * 60 * 1000; // last 6 hours
+  }).length;
+  const veryRecentCount = articlesCache.filter(a => {
+    const pub = a.publishedAt || a.published_at || a.published;
+    if (!pub) return true;
+    const t = new Date(pub).getTime();
+    return now - t < 2 * 60 * 60 * 1000; // last 2 hours
+  }).length;
+  // News heat updates every 5 min — reacts quickly to news flow
+  let heat = 'balanced';
+  if (total >= 18 || recentCount >= 10 || veryRecentCount >= 3) heat = 'hot';
+  else if (total <= 6 || recentCount <= 2 || veryRecentCount === 0) heat = 'calm';
+  const defReg = pickFallback(FALLBACK_REGULATION);
+  const defMacro = pickFallback(FALLBACK_MACRO);
+  const defMarket = pickFallback(FALLBACK_MARKET);
+  // Use most recent article per category — reflects latest real news
+  const regArt = getLatestArticle(reg);
+  const macroArt = getLatestArticle(macro);
+  const marketArt = getLatestArticle(market);
+  return {
+    regulation: { text: summarizeOne(regArt) || defReg, url: regArt?.url || null },
+    macro: { text: summarizeOne(macroArt) || defMacro, url: macroArt?.url || null },
+    market: { text: summarizeOne(marketArt) || defMarket, url: marketArt?.url || null },
+    heat
+  };
+}
+
+app.get('/api/news/dynamic', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  try {
+    if (!articlesCache || Date.now() - articlesCacheTime > NEWS_CACHE_TTL_MS) {
+      await refreshNewsCache();
+    }
+    const data = buildDynamicResponse();
+    res.json(data);
+  } catch (e) {
+    console.error('News dynamic error:', e);
+    res.status(500).json(getRandomFallback());
+  }
+});
+
+// Start periodic news refresh (every 5 min — heat reacts quickly)
+if (newsApiKey || theNewsApiKey) {
+  refreshNewsCache().then(() => console.log('✅ News cache initialized'));
+  setInterval(refreshNewsCache, NEWS_FETCH_INTERVAL_MS);
+} else {
+  console.warn('⚠️ NEWS_API_KEY and THENEWSAPI_KEY not set. Dynamic news will use static fallback.');
+}
 
 app.use((err, req, res, next) => {
  if (err.type === 'entity.parse.failed') {

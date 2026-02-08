@@ -143,3 +143,4 @@ cp /Users/macmini/crypto-website/.env ~/Desktop/crypto-env-backup.txt
 ```
 Потом просто перетащите файл с Desktop куда нужно!
 
+

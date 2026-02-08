@@ -2,160 +2,237 @@
 <html lang="en">
 <head>
    <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Crypto News - Crypto Academy Pro</title>
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+   <meta name="description" content="Essential crypto news sources curated for informed decisions. Cointelegraph, CoinDesk, The Block, Decrypt, Bitcoin Magazine — real data, no hype.">
+   <title>News — Crypto Academy Pro</title>
+   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%232D2200' width='32' height='32' rx='6'/><text x='16' y='22' font-size='18' font-weight='bold' fill='%23C9B896' text-anchor='middle'>C</text></svg>">
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
-   <link href="https://fonts.googleapis.com/css2?family=TT+Firs+Neue:wght@400;700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="styles.css">
+   <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
 </head>
 <body>
-   <div class="page">
+   <!-- Навигация как на главной (DuoView + Apple) -->
+   <nav class="main-nav" aria-label="Main navigation">
+       <a href="../../index.html" class="main-nav-brand">Crypto Academy Pro</a>
+       <div class="main-nav-links">
+           <a href="index.html" class="active">News</a>
+           <a href="../risk-distribution/index.html" target="_blank">Risk</a>
+           <a href="../crypto-basics/index.html" target="_blank">Basics</a>
+           <a href="../crypto-coach/index.html" target="_blank">Coach</a>
+       </div>
+   </nav>
+   <div class="page" id="top">
        <div class="content">
-           <!-- Крипто-элементы фона -->
-           <div class="crypto-elements">
-               <div class="crypto-node node-1"></div>
-               <div class="crypto-node node-2"></div>
-               <div class="crypto-node node-3"></div>
-               <div class="crypto-line line-1"></div>
-               <div class="crypto-line line-2"></div>
-               <div class="crypto-line line-3"></div>
-           </div>
+          <!-- Hero — A/B тест заголовка и описания (варианты из плана) -->
+          <section class="news-hero">
+              <p class="news-hero-label">Crypto Academy Pro · News</p>
+              <h1
+                  class="news-hero-title"
+                  data-variant-a="Essential News."
+                  data-variant-b="News that helps you choose."
+              >
+                  Essential News.
+              </h1>
+              <p class="news-hero-subtitle">Curated sources. No hype.</p>
+              <p
+                  class="news-hero-description"
+                  data-desc-a="Today, technical analysis alone is not enough in crypto. Price moves are increasingly driven by news—regulatory decisions, market updates, and global events. But chasing every headline only distracts you and leads to bad decisions. The important signals will reach you anyway; your edge is in filtering the noise and reading them calmly. Stay informed without falling into the news trap—and make more measured decisions."
+                  data-desc-b="Today, technical analysis alone is not enough in crypto. Price moves are increasingly driven by news—regulatory decisions, market updates, and global events. But chasing every headline only distracts you and leads to bad decisions. The important signals will reach you anyway; your edge is in filtering the noise and reading them calmly. Stay informed without falling into the news trap—and make more measured decisions."
+              >
+                  Today, technical analysis alone is not enough in crypto. Price moves are increasingly driven by news—regulatory decisions, market updates, and global events. But chasing every headline only distracts you and leads to bad decisions. The important signals will reach you anyway; your edge is in filtering the noise and reading them calmly. Stay informed without falling into the news trap—and make more measured decisions.
+              </p>
+          </section>
+
+          <!-- What actually matters today + News heat -->
+          <section class="news-today">
+             <div class="news-today-header">
+                 <h2 class="news-today-title">What actually matters today</h2>
+                 <div class="news-heat" id="newsHeat" aria-label="Current news intensity" data-state="balanced">
+                     <span class="news-heat-label">News heat</span>
+                     <div class="news-heat-scale">
+                         <div class="news-heat-point" data-level="calm">
+                             <span class="news-heat-dot"></span>
+                             <span class="news-heat-point-label">Calm</span>
+                         </div>
+                         <div class="news-heat-point" data-level="balanced">
+                             <span class="news-heat-dot"></span>
+                             <span class="news-heat-point-label">Balanced</span>
+                         </div>
+                         <div class="news-heat-point" data-level="hot">
+                             <span class="news-heat-dot"></span>
+                             <span class="news-heat-point-label">Hot</span>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+              <ul class="news-today-list">
+                  <li class="news-today-item">
+                      <span class="news-today-tag">Regulation</span>
+                      <span class="news-today-text" id="newsBlockRegulation">Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.</span>
+                  </li>
+                  <li class="news-today-item">
+                      <span class="news-today-tag">Macro</span>
+                      <span class="news-today-text" id="newsBlockMacro">Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.</span>
+                  </li>
+                  <li class="news-today-item">
+                      <span class="news-today-tag">Market structure</span>
+                      <span class="news-today-text" id="newsBlockMarket">Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it’s just narrative.</span>
+                  </li>
+              </ul>
+          </section>
+
+           <!-- Блок доверия (DuoView) -->
+           <section class="news-trust-stats">
+               <p class="news-trust-badge">5 curated sources • Updated regularly • No sponsored content</p>
+               <p class="news-trust-tagline">Selected for: clarity, reliability, no hype.</p>
+           </section>
            
-           <!-- Крипто-график в фоне -->
-           <div class="crypto-chart">
-               <svg class="chart-line" viewBox="0 0 200 100" preserveAspectRatio="none">
-                   <polyline points="0,80 20,70 40,60 60,65 80,50 100,45 120,40 140,35 160,30 180,25 200,20" 
-                             fill="none" stroke="rgba(255, 204, 21, 0.3)" stroke-width="2"/>
-               </svg>
-           </div>
-           
-           <!-- Новостной тикер -->
-           <div class="news-ticker">
-               <div class="ticker-content">
-                   <span class="ticker-item">📰 Bitcoin surges 5% on regulatory clarity</span>
-                   <span class="ticker-item">📰 Ethereum upgrade boosts network efficiency</span>
-                   <span class="ticker-item">📰 Market cap reaches new milestone</span>
-                   <span class="ticker-item">📰 Institutional adoption accelerates</span>
+          <!-- Signal vs noise: how to read news without panic -->
+          <section class="signal-noise">
+               <h3 class="signal-noise-title">Signal vs noise</h3>
+               <p class="signal-noise-intro">You don’t need to chase every headline. You need a simple lens to separate real signals from the stream of noise.</p>
+               <ul class="signal-noise-list">
+                   <li class="signal-noise-item">
+                       <span class="signal-noise-label">Check the source</span>
+                       <span class="signal-noise-text">Official regulators, exchanges, and audited research carry more weight than anonymous X threads or “insiders”.</span>
+                   </li>
+                   <li class="signal-noise-item">
+                       <span class="signal-noise-label">Define the timeframe</span>
+                       <span class="signal-noise-text">Is this a 1‑day story or a 1‑year story? A macro print or a meme tweet should not change your long‑term thesis the same way.</span>
+                   </li>
+                   <li class="signal-noise-item">
+                       <span class="signal-noise-label">Link it to risk</span>
+                       <span class="signal-noise-text">Ask: what does this change in liquidity, regulation, or fundamentals? If the answer is “almost nothing”, it’s noise.</span>
+                   </li>
+               </ul>
+           </section>
+
+           <!-- Before you react: 7 micro prompts (click to reveal hint) -->
+           <section class="before-react">
+               <h4 class="before-react-title">Before you react, ask yourself:</h4>
+               <div class="before-react-grid">
+                   <div class="before-chip" tabindex="0" role="button" data-hint="If you can't answer clearly, it might not affect your plan.">
+                       <span class="before-chip-q">Why do I need this news?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
+                   <div class="before-chip" tabindex="0" role="button" data-hint="If it's FOMO, pause. Real opportunities usually wait.">
+                       <span class="before-chip-q">Should I do something right now?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
+                   <div class="before-chip" tabindex="0" role="button" data-hint="If it's noise, you can safely ignore it.">
+                       <span class="before-chip-q">Is this signal or just noise?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
+                   <div class="before-chip" tabindex="0" role="button" data-hint="If you need the price to decide, the news alone isn't enough.">
+                       <span class="before-chip-q">How would I react without the price on the chart?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
+                   <div class="before-chip" tabindex="0" role="button" data-hint="If not, you might not understand it well enough to act.">
+                       <span class="before-chip-q">Can I explain this to another person?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
+                   <div class="before-chip" tabindex="0" role="button" data-hint="Often nothing bad. Inaction is a valid choice.">
+                       <span class="before-chip-q">What will happen if I do nothing?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
+                   <div class="before-chip" tabindex="0" role="button" data-hint="If it's mostly emotions, wait before acting.">
+                       <span class="before-chip-q">What part of this is just market emotions?</span>
+                       <span class="before-chip-hint"></span>
+                   </div>
                </div>
-           </div>
-           
-           <!-- Индикатор волатильности -->
-           <div class="volatility-indicator">
-               <div class="volatility-bar"></div>
-               <span class="volatility-label">Market Activity</span>
-           </div>
-           
-           <div class="header">
-               <div class="line">
-                   <span class="word">News</span>
-                   <span class="word">that</span>
-                   <span class="word">helps</span>
-                   <span class="word">to</span>
-                   <span class="word">make</span>
-               </div>
-               <div class="line">
-                   <span class="word">the</span>
-                   <span class="word italic">right</span>
-                   <span class="word">choice!</span>
-               </div>
-           </div>
-           <div class="overlay-text">
-               In today's crypto market, technical analysis alone is no longer enough. The landscape has shifted dramatically, with news playing a pivotal role in driving price movements. Regulatory announcements, market updates, and global events can cause sudden volatility, often overshadowing traditional indicators. Staying informed with the latest news helps traders make smarter, more timely decisions, giving you an edge in this fast-evolving world. This section highlights why news is your key to navigating the crypto market effectively.
-           </div>
-           <div class="floating-text">
-               <span class="word">Essential</span>
-               <span class="word">News</span>
-               <span class="word">Sources</span>
-               <span class="word">for</span>
-               <span class="word italic">Informed</span>
-               <span class="word">Decisions</span>
-           </div>
-           <div class="overlay-text-secondary">
-               To make the right choices in crypto, it's crucial to rely on reliable sources that provide clear, actionable insights. From the 1000+ options available, we've curated five of the most simple and essential websites. These platforms offer straightforward coverage, helping you analyze market shifts and understand why certain events unfold. Whether it's a price surge or a regulatory change, they enable quick, informed conclusion without overwhelming details.
-           </div>
-           
+           </section>
+
            <div class="news-sources-section">
                <h2 class="section-title">Essential Crypto News Sources</h2>
                <div class="news-table-container">
                    <!-- Cointelegraph -->
-                   <div class="news-row">
-                       <div class="blockchain-corner top-left"></div>
-                       <div class="blockchain-corner top-right"></div>
-                       <div class="blockchain-corner bottom-left"></div>
-                       <div class="blockchain-corner bottom-right"></div>
-                       <div class="blockchain-connector"></div>
-                       <div class="crypto-pulse"></div>
-                       <div class="crypto-symbol btc">₿</div>
-                       <div class="crypto-symbol eth">Ξ</div>
-                       <div class="news-site">Cointelegraph</div>
-                       <div class="news-description">Leading source of crypto news with infographics on news (regulations, hype), price/trend charts, video analytics — embeddable news and chart widgets.</div>
-                       <a href="https://cointelegraph.com" target="_blank" class="news-link">Visit Site</a>
-                   </div>
+                   <a href="https://cointelegraph.com" target="_blank" rel="noopener noreferrer" class="news-row">
+                       <div class="news-row-main">
+                           <div class="news-row-header">
+                               <span class="news-row-number" aria-hidden="true">01</span>
+                               <div class="news-site">Cointelegraph</div>
+                           </div>
+                           <div class="news-description">Leading source of crypto news with infographics on news (regulations, hype), price/trend charts, video analytics — embeddable news and chart widgets.</div>
+                           <p class="news-source-meta">Since 2013 • 10M+ readers</p>
+                       </div>
+                       <span class="news-link">Visit</span>
+                   </a>
                    
                    <!-- CoinDesk -->
-                   <div class="news-row">
-                       <div class="blockchain-corner top-left"></div>
-                       <div class="blockchain-corner top-right"></div>
-                       <div class="blockchain-corner bottom-left"></div>
-                       <div class="blockchain-corner bottom-right"></div>
-                       <div class="blockchain-connector"></div>
-                       <div class="crypto-pulse"></div>
-                       <div class="crypto-symbol btc">₿</div>
-                       <div class="crypto-symbol eth">Ξ</div>
-                       <div class="news-site">CoinDesk</div>
-                       <div class="news-description">In-depth news and analytics focused on the market. Charts tied to news (trading volumes, flash crashes), interactive reports — embeddable alerts and visuals.</div>
-                       <a href="https://www.coindesk.com" target="_blank" class="news-link">Visit Site</a>
-                   </div>
+                   <a href="https://www.coindesk.com" target="_blank" rel="noopener noreferrer" class="news-row">
+                       <div class="news-row-main">
+                           <div class="news-row-header">
+                               <span class="news-row-number" aria-hidden="true">02</span>
+                               <div class="news-site">CoinDesk</div>
+                           </div>
+                           <div class="news-description">In-depth news and analytics focused on the market. Charts tied to news (trading volumes, flash crashes), interactive reports — embeddable alerts and visuals.</div>
+                           <p class="news-source-meta">Industry standard • Events & research</p>
+                       </div>
+                       <span class="news-link">Visit</span>
+                   </a>
                    
                    <!-- The Block -->
-                   <div class="news-row">
-                       <div class="blockchain-corner top-left"></div>
-                       <div class="blockchain-corner top-right"></div>
-                       <div class="blockchain-corner bottom-left"></div>
-                       <div class="blockchain-corner bottom-right"></div>
-                       <div class="blockchain-connector"></div>
-                       <div class="crypto-pulse"></div>
-                       <div class="crypto-symbol btc">₿</div>
-                       <div class="crypto-symbol eth">Ξ</div>
-                       <div class="news-site">The Block</div>
-                       <div class="news-description">Professional-grade crypto news and research with institutional focus. Data-driven reporting on DeFi, institutional adoption, and market analysis.</div>
-                       <a href="https://www.theblock.co" target="_blank" class="news-link">Visit Site</a>
-                   </div>
+                   <a href="https://www.theblock.co" target="_blank" rel="noopener noreferrer" class="news-row">
+                       <div class="news-row-main">
+                           <div class="news-row-header">
+                               <span class="news-row-number" aria-hidden="true">03</span>
+                               <div class="news-site">The Block</div>
+                           </div>
+                           <div class="news-description">Professional-grade crypto news and research with institutional focus. Data-driven reporting on DeFi, institutional adoption, and market analysis.</div>
+                           <p class="news-source-meta">Institutional focus • Data-driven</p>
+                       </div>
+                       <span class="news-link">Visit</span>
+                   </a>
                    
                    <!-- Decrypt -->
-                   <div class="news-row">
-                       <div class="blockchain-corner top-left"></div>
-                       <div class="blockchain-corner top-right"></div>
-                       <div class="blockchain-corner bottom-left"></div>
-                       <div class="blockchain-corner bottom-right"></div>
-                       <div class="blockchain-connector"></div>
-                       <div class="crypto-pulse"></div>
-                       <div class="crypto-symbol btc">₿</div>
-                       <div class="crypto-symbol eth">Ξ</div>
-                       <div class="news-site">Decrypt</div>
-                       <div class="news-description">Accessible crypto news with clear explanations for beginners and experts alike. Covers DeFi, NFTs, and emerging blockchain technologies.</div>
-                       <a href="https://decrypt.co" target="_blank" class="news-link">Visit Site</a>
-                   </div>
+                   <a href="https://decrypt.co" target="_blank" rel="noopener noreferrer" class="news-row">
+                       <div class="news-row-main">
+                           <div class="news-row-header">
+                               <span class="news-row-number" aria-hidden="true">04</span>
+                               <div class="news-site">Decrypt</div>
+                           </div>
+                           <div class="news-description">Accessible crypto news with clear explanations for beginners and experts alike. Covers DeFi, NFTs, and emerging blockchain technologies.</div>
+                           <p class="news-source-meta">Beginners & experts • DeFi, NFTs</p>
+                       </div>
+                       <span class="news-link">Visit</span>
+                   </a>
                    
                    <!-- Bitcoin Magazine -->
-                   <div class="news-row">
-                       <div class="blockchain-corner top-left"></div>
-                       <div class="blockchain-corner top-right"></div>
-                       <div class="blockchain-corner bottom-left"></div>
-                       <div class="blockchain-corner bottom-right"></div>
-                       <div class="blockchain-connector"></div>
-                       <div class="crypto-pulse"></div>
-                       <div class="crypto-symbol btc">₿</div>
-                       <div class="crypto-symbol eth">Ξ</div>
-                       <div class="news-site">Bitcoin Magazine</div>
-                       <div class="news-description">The oldest and most established Bitcoin publication. Deep technical analysis, market insights, and Bitcoin-focused news coverage.</div>
-                       <a href="https://bitcoinmagazine.com" target="_blank" class="news-link">Visit Site</a>
-                   </div>
+                   <a href="https://bitcoinmagazine.com" target="_blank" rel="noopener noreferrer" class="news-row">
+                       <div class="news-row-main">
+                           <div class="news-row-header">
+                               <span class="news-row-number" aria-hidden="true">05</span>
+                               <div class="news-site">Bitcoin Magazine</div>
+                           </div>
+                           <div class="news-description">The oldest and most established Bitcoin publication. Deep technical analysis, market insights, and Bitcoin-focused news coverage.</div>
+                           <p class="news-source-meta">Oldest Bitcoin publication • Technical analysis</p>
+                       </div>
+                       <span class="news-link">Visit</span>
+                   </a>
                </div>
            </div>
+
+           <!-- Editor's lens: your weekly perspective -->
+           <section class="editor-lens">
+               <h3 class="editor-lens-title">Editor’s lens</h3>
+               <p class="editor-lens-text">
+                   Each week, there is at least one story that everyone chases — and a few quiet shifts that actually matter for risk. 
+                   Use this page as a calm filter: come here to see which narratives are worth your attention and which ones you can safely ignore.
+                   The goal is simple: stay informed, keep your head clear, and make decisions that respect your time and capital.
+               </p>
+           </section>
+           <footer class="news-footer">
+               <p class="news-footer-text">Crypto Academy Pro — tools for those who think for themselves.</p>
+               <p class="news-footer-crafted">Crafted with respect for your time.</p>
+               <div class="news-footer-links">
+                   <a href="#top" class="news-footer-link">Back to top</a>
+                   <a href="../../index.html" class="news-footer-link">← Back to main</a>
+               </div>
+           </footer>
        </div>
    </div>
    
@@ -218,7 +295,103 @@
        </div>
    </div>
    
+   <script src="https://unpkg.com/lenis@1.3.17/dist/lenis.min.js"></script>
+   <script src="../../scripts/smooth-scroll.js"></script>
    <script src="../../scripts/chatbot.js?v=28"></script>
+   <script>
+       (function() {
+           var key = 'news-hero-ab';
+           var title = document.querySelector('.news-hero-title');
+           var desc = document.querySelector('.news-hero-description');
+           if (!title || !title.dataset.variantA || !title.dataset.variantB) return;
+           var variant = sessionStorage.getItem(key);
+           if (!variant) {
+               variant = Math.random() < 0.5 ? 'a' : 'b';
+               sessionStorage.setItem(key, variant);
+           }
+           title.textContent = variant === 'a' ? title.dataset.variantA : title.dataset.variantB;
+           if (desc && desc.dataset.descA && desc.dataset.descB) {
+               desc.textContent = variant === 'a' ? desc.dataset.descA : desc.dataset.descB;
+           }
+       })();
+       (function() {
+           var regulation = [
+               'Watch major regulatory decisions (ETFs, licensing, bans) — they reshape liquidity and long-term risk, not just headlines.',
+               'Key regulatory moves — ETF approvals, licensing, bans — affect liquidity and risk far beyond the headlines.',
+               'Regulatory shifts (ETFs, licensing, bans) reshape liquidity and long-term risk. Headlines are just the surface.',
+               'Major regulatory decisions — on ETFs, licensing, bans — drive liquidity and risk. Don\'t stop at the headline.',
+               'ETF approvals, licensing, bans: regulatory moves that reshape liquidity and risk. Headlines only scratch the surface.',
+               'Policy changes — ETF approvals, licensing frameworks, prohibitions — materially alter liquidity and structural risk.',
+               'Regulatory developments (ETFs, licensing, bans) have lasting impact on liquidity and risk profile beyond news cycles.',
+               'Authoritative decisions on ETFs, licensing, and bans reshape market liquidity and long-term risk exposure.',
+               'Regulatory outcomes — ETF approvals, licensing, bans — determine liquidity dynamics and risk structure more than headlines.',
+               'Supervisory rulings on ETFs, licensing, and prohibitions drive liquidity shifts and risk rebalancing across markets.'
+           ];
+           var macro = [
+               'Inflation prints, rates decisions, and dollar strength still drive risk appetite across all assets, including crypto.',
+               'Fed decisions, inflation data, and dollar moves shape risk appetite for all assets — crypto included.',
+               'Rates, inflation, and dollar strength drive risk appetite. Crypto follows the same macro forces.',
+               'Inflation, rate decisions, and dollar strength: the macro drivers of risk appetite across assets, including crypto.',
+               'Macro prints — inflation, rates, dollar — still set risk appetite for crypto and all risk assets.',
+               'Monetary policy, inflation releases, and FX dynamics govern risk appetite for crypto and traditional assets alike.',
+               'Central bank signals, CPI data, and dollar index movements remain primary drivers of cross-asset risk sentiment.',
+               'Interest rate expectations, inflation metrics, and USD strength shape risk appetite across crypto and equities.',
+               'Macroeconomic data — inflation, rates, FX — continues to drive risk-on/risk-off sentiment including in crypto.',
+               'FOMC outcomes, inflation prints, and dollar strength determine risk appetite for crypto and risk assets.'
+           ];
+           var market = [
+               'Funding, open interest, and liquidity in key pairs show whether news is truly backed by capital — or it\'s just narrative.',
+               'Funding rates, open interest, and liquidity reveal if news is backed by real capital or just narrative.',
+               'Check funding, open interest, and liquidity: they show whether news has capital behind it or is just noise.',
+               'Funding, open interest, and liquidity in key pairs — the data that shows if news is backed by capital or narrative.',
+               'Open interest, funding, and liquidity tell you if the news is backed by real capital or just narrative.',
+               'Perpetual funding, aggregate open interest, and order-book liquidity indicate whether news has capital conviction.',
+               'Funding rates, OI levels, and liquidity metrics distinguish capital-backed moves from narrative-driven noise.',
+               'Derivatives funding, open interest, and spot liquidity reveal if news translates into real capital flows.',
+               'Funding, OI, and liquidity in major pairs separate news backed by capital from purely narrative-driven moves.',
+               'Perp funding, open interest, and liquidity depth show whether news is substantiated by capital or merely narrative.'
+           ];
+           function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+           var regEl = document.getElementById('newsBlockRegulation');
+           var macroEl = document.getElementById('newsBlockMacro');
+           var marketEl = document.getElementById('newsBlockMarket');
+           var heatEl = document.getElementById('newsHeat');
+           fetch('/api/news/dynamic?t=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(data) {
+               if (data) {
+                   if (regEl && data.regulation) regEl.textContent = data.regulation.text || pick(regulation);
+                   if (macroEl && data.macro) macroEl.textContent = data.macro.text || pick(macro);
+                   if (marketEl && data.market) marketEl.textContent = data.market.text || pick(market);
+                   if (heatEl && data.heat) heatEl.setAttribute('data-state', data.heat);
+               } else {
+                   if (regEl) regEl.textContent = pick(regulation);
+                   if (macroEl) macroEl.textContent = pick(macro);
+                   if (marketEl) marketEl.textContent = pick(market);
+                   if (heatEl) heatEl.setAttribute('data-state', 'balanced');
+               }
+           }).catch(function() {
+               if (regEl) regEl.textContent = pick(regulation);
+               if (macroEl) macroEl.textContent = pick(macro);
+               if (marketEl) marketEl.textContent = pick(market);
+               if (heatEl) heatEl.setAttribute('data-state', 'balanced');
+           });
+       })();
+       (function() {
+           document.querySelectorAll('.before-chip').forEach(function(chip) {
+               var hint = chip.querySelector('.before-chip-hint');
+               if (!hint || !chip.dataset.hint) return;
+               hint.textContent = chip.dataset.hint;
+               chip.addEventListener('click', function() {
+                   chip.classList.toggle('before-chip--open');
+               });
+               chip.addEventListener('keydown', function(e) {
+                   if (e.key === 'Enter' || e.key === ' ') {
+                       e.preventDefault();
+                       chip.classList.toggle('before-chip--open');
+                   }
+               });
+           });
+       })();
+   </script>
 </body>
 </html>
 

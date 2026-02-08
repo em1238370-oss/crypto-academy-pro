@@ -2,68 +2,119 @@
 <html lang="en">
 <head>
    <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
    <title>Risk Distribution - Crypto Academy Pro</title>
+   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%23001800' width='32' height='32' rx='6'/><text x='16' y='22' font-size='18' font-weight='bold' fill='%2396F891' text-anchor='middle'>R</text></svg>">
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
-   <link href="https://fonts.googleapis.com/css2?family=TT+Firs+Neue:wght@400;700&display=swap" rel="stylesheet">
-   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css">
+   <link rel="stylesheet" href="../news/styles.css">
+   <link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
-   <div class="page">
+   <!-- Навигация как на главной (DuoView п.1) -->
+   <nav class="main-nav" aria-label="Main navigation">
+       <a href="../../index.html" class="main-nav-brand">Crypto Academy Pro</a>
+       <div class="main-nav-links">
+           <a href="../news/index.html" target="_blank">News</a>
+           <a href="index.html" class="active">Risk</a>
+           <a href="../crypto-basics/index.html" target="_blank">Basics</a>
+           <a href="../crypto-coach/index.html" target="_blank">Coach</a>
+       </div>
+   </nav>
+   <!-- Минимализм: линия прогресса чтения -->
+   <div class="scroll-progress" aria-hidden="true"></div>
+
+   <div class="page" id="top">
        <div class="content">
-           <div class="crypto-risk-wrapper">
-               <div class="crypto-risk-container">
-                   <h1>Balance The <span class="italic">Storm</span>: Crypto <span class="italic">Risk</span> Guide</h1>
-               </div>
-           </div>
+           <!-- Hero — как News: те же классы -->
+           <section class="news-hero">
+               <p class="news-hero-label">Crypto Academy Pro · Risk</p>
+               <h1 class="news-hero-title">Balance The <span class="hero-accent">Storm</span>: Crypto <span class="hero-accent">Risk</span> Guide</h1>
+               <p class="news-hero-subtitle">Your edge in volatile markets</p>
+               <p class="news-hero-description">Risk management isn't optional—it's your edge. Analyze charts forever, craft brilliant strategies, still fall short. Discipline wins. This tool helps you stay disciplined—let it guide you.</p>
+           </section>
            
-           <div class="risk-text-wrapper">
-               <div class="overlay-text">
-                   Risk management is the cornerstone of success—not just in trading, sports, or cryptocurrency, but in any endeavor where uncertainty reigns. You could analyze charts a thousand times, craft the most brilliant strategies, and still fall short without a disciplined approach to risk. Even with relentless effort, neglecting this vital principle dooms your efforts to failure. Embrace the wisdom of risk management, and let this tool guide you—or consider exploring other resources to refine your skills.
-               </div>
-           </div>
+           <!-- Секция 1: Что даёт управление рисками — как News signal-noise -->
+           <section class="signal-noise risk-section-reveal" aria-labelledby="section-what-gives">
+               <h3 class="signal-noise-title" id="section-what-gives">What Risk Management Gives You</h3>
+               <p class="signal-noise-intro">Control. Confidence. Capital protection. Crypto is a rollercoaster. Without risk management—noise. With it—control. Protect capital. Stay on track. Survive the storm.</p>
+           </section>
            
-           <div class="floating-text-wrapper">
-               <div class="floating-text">Why Risk Distribution Matters</div>
-           </div>
-           
-           <div class="crypto-storm-wrapper">
-               <div class="storm-text">
-                   Crypto markets are a brutal rollercoaster—prices can skyrocket or crash in hours, wiping out gains or entire portfolios. You can spend a thousand hours analyzing charts, crafting strategies, and studying trends, but without solid risk management, it's all just noise. Ignoring it turns trading into a reckless gamble, like rolling dice in a casino. Smart risk management isn't optional—it's your lifeline. It protects your capital, keeps your strategy on track, and gives you the control and confidence to navigate the chaos. One lucky trade might feel like a win, but relying on luck isn't trading; it's gambling. And in crypto, the house always wins unless you're disciplined. Use tailored risk management plans to stay sharp and survive the storm.
-               </div>
-           </div>
-           
-           <div class="risk-calculator-wrapper">
-               <div class="risk-calculator-container">
-                   <h1>Risk Management Strategy Calculator</h1>
-                   
-                   <div class="api-key-group">
-                       <label for="apiKey">Google API Key (for AI explanations)</label>
-                       <input type="password" id="apiKey" value="AIzaSyA_aPJUNEl8Hpe032jW2d0ZLRmJQ0A13qs">
-                       <div class="api-key-info">Enter your Google API key to get AI-powered explanations for strategy recommendations</div>
+           <!-- Разделитель -->
+           <div class="risk-section-divider" aria-hidden="true"></div>
+
+           <!-- Блок доверия — как News -->
+           <section class="news-trust-stats risk-trust-stats risk-section-reveal" aria-label="Why trust this tool">
+               <div class="risk-trust-bento">
+                   <div class="risk-trust-stat risk-trust-hero">
+                       <span class="risk-trust-number" data-count="3">0</span>
+                       <span class="risk-trust-label">Strategies per result</span>
                    </div>
+                   <div class="risk-trust-stat risk-trust-reveal">
+                       <span class="risk-trust-number">Clear</span>
+                       <span class="risk-trust-label">Plain-language rationale</span>
+                   </div>
+                   <div class="risk-trust-stat risk-trust-reveal">
+                       <span class="risk-trust-number">Free</span>
+                       <span class="risk-trust-label">No subscription</span>
+                   </div>
+               </div>
+               <p class="news-trust-badge">30 sec. No gates. Your edge.</p>
+               <p class="news-trust-tagline">3 strategies • Compare • Commit.</p>
+           </section>
+           
+           <!-- Разделитель -->
+           <div class="risk-section-divider" aria-hidden="true"></div>
 
-                   <form id="strategyForm">
-                       <div class="form-wrapper">
-                           <div class="form-group">
-                               <label for="deposit">Your Deposit ($)</label>
-                               <input type="number" id="deposit" placeholder="Enter amount" min="0" step="100">
+           <!-- Калькулятор стратегий -->
+           <section class="risk-section risk-section-calculator risk-section-reveal" aria-labelledby="section-calculator">
+               <h2 id="section-calculator" class="news-today-title">Strategy Calculator</h2>
+               <p class="signal-noise-intro">Calculate your personalized strategy in 30 seconds.</p>
+               <div class="risk-calculator-wrapper">
+                   <div class="risk-calculator-container">
+                       <h3 class="risk-calculator-heading">3 inputs. 3 strategies. 30 seconds.</h3>
+
+                   <details class="api-key-details">
+                       <summary class="api-key-summary">API Key for AI explanations (optional)</summary>
+                       <div class="api-key-group">
+                           <label for="apiKey">Google Gemini API Key</label>
+                           <div class="api-key-input-wrap">
+                               <input type="password" id="apiKey" placeholder="Paste your key here" autocomplete="off">
+                               <button type="button" class="api-key-toggle" id="apiKeyToggle" aria-label="Show key">Show</button>
                            </div>
+                           <p class="api-key-hint">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Used only for strategy explanations.</p>
+                       </div>
+                   </details>
 
-                           <div class="form-group">
-                               <label for="risk">Your Risk Level (0-100%)</label>
-                               <div class="slider-container">
-                                   <input type="range" id="risk" min="0" max="100" step="10" value="0">
-                                   <span class="slider-value">Current Risk: <span id="riskValue">0</span>%</span>
+                   <form id="strategyForm" class="risk-calc-form">
+                       <div class="form-wrapper">
+                           <div class="form-group form-group-deposit">
+                               <label for="deposit"><span class="form-step">01</span> Your Deposit</label>
+                               <div class="input-with-suffix">
+                                   <input type="number" id="deposit" placeholder="1000" min="0" step="100">
+                                   <span class="input-suffix">$</span>
                                </div>
                            </div>
 
-                           <div class="form-group">
-                               <label for="goal">Your Goal</label>
+                           <div class="form-group form-group-risk">
+                               <label for="risk"><span class="form-step">02</span> Risk Tolerance</label>
+                               <div class="slider-container">
+                                   <div class="slider-labels">
+                                       <span>Low</span>
+                                       <span id="riskLabel">Conservative</span>
+                                       <span>High</span>
+                                   </div>
+                                   <div class="slider-track-wrap" style="--fill: 0%">
+                                       <input type="range" id="risk" min="0" max="100" step="10" value="0" class="risk-slider">
+                                   </div>
+                                   <span class="slider-value"><span id="riskValue">0</span>%</span>
+                               </div>
+                           </div>
+
+                           <div class="form-group form-group-goal">
+                               <label for="goal"><span class="form-step">03</span> Your Goal</label>
                                <select id="goal">
                                    <option value="Savings">Savings</option>
                                    <option value="Growth">Growth</option>
@@ -73,12 +124,14 @@
                        </div>
 
                        <div class="button-wrapper">
-                           <button type="button" onclick="getStrategies()">Get Strategies</button>
+                           <div class="magnetic-wrap">
+                               <button type="button" id="getStrategiesBtn" onclick="getStrategies()">Get My Strategies</button>
+                           </div>
                        </div>
                    </form>
 
                    <div class="results hidden" id="results">
-                       <h2>Your Strategies</h2>
+                       <h3 class="results-title">Your 3 Strategies</h3>
                        <div class="strategy-info" id="strategyInfo"></div>
                        <div class="strategies">
                            <div class="strategies-grid" id="strategiesOutput"></div>
@@ -86,6 +139,17 @@
                    </div>
                </div>
            </div>
+           </section>
+           
+           <!-- Футер как у News — по смыслу Risk -->
+           <footer class="news-footer">
+               <p class="news-footer-text">Crypto Academy Pro — tools for those who think for themselves.</p>
+               <p class="news-footer-crafted">Control the storm. Protect your capital.</p>
+               <div class="news-footer-links">
+                   <a href="#top" class="news-footer-link">Back to top</a>
+                   <a href="../../index.html" class="news-footer-link">← Back to main</a>
+               </div>
+           </footer>
        </div>
    </div>
    
@@ -149,13 +213,74 @@
    </div>
 
    <script>
-       // Update risk slider value display
+       // Risk slider: update value + label
        const riskSlider = document.getElementById('risk');
        const riskValue = document.getElementById('riskValue');
+       const riskLabel = document.getElementById('riskLabel');
+       
+       function updateRiskLabel(val) {
+           riskValue.textContent = val;
+           if (val <= 30) riskLabel.textContent = 'Conservative';
+           else if (val <= 70) riskLabel.textContent = 'Moderate';
+           else riskLabel.textContent = 'Aggressive';
+       }
        
        riskSlider.addEventListener('input', function() {
-           riskValue.textContent = this.value;
+           updateRiskLabel(this.value);
+           this.closest('.slider-track-wrap').style.setProperty('--fill', this.value + '%');
        });
+       updateRiskLabel(riskSlider.value);
+       riskSlider.closest('.slider-track-wrap')?.style.setProperty('--fill', riskSlider.value + '%');
+
+       // Magnetic button — кнопка тянется к курсору (если не prefers-reduced-motion)
+       (function() {
+           if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+           const wrap = document.querySelector('.magnetic-wrap');
+           const btn = document.getElementById('getStrategiesBtn');
+           if (!wrap || !btn) return;
+           wrap.addEventListener('mousemove', function(e) {
+               const rect = wrap.getBoundingClientRect();
+               const x = (e.clientX - rect.left - rect.width/2) * 0.25;
+               const y = (e.clientY - rect.top - rect.height/2) * 0.25;
+               btn.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+           });
+           wrap.addEventListener('mouseleave', function() {
+               btn.style.transform = 'translate(0, 0)';
+           });
+       })();
+
+       // Count-up: trust number "3" анимируется при появлении
+       (function() {
+           const el = document.querySelector('.risk-trust-number[data-count]');
+           if (!el) return;
+           const target = parseInt(el.dataset.count, 10);
+           const obs = new IntersectionObserver(function(entries) {
+               entries.forEach(function(e) {
+                   if (!e.isIntersecting) return;
+                   obs.unobserve(e.target);
+                   let n = 0;
+                   const step = target / 20;
+                   const id = setInterval(function() {
+                       n += step;
+                       if (n >= target) { el.textContent = target; clearInterval(id); return; }
+                       el.textContent = Math.floor(n);
+                   }, 40);
+               });
+           }, { threshold: 0.5 });
+           obs.observe(el);
+       })();
+
+       // API key show/hide toggle
+       const apiKeyInput = document.getElementById('apiKey');
+       const apiKeyToggle = document.getElementById('apiKeyToggle');
+       if (apiKeyInput && apiKeyToggle) {
+           apiKeyToggle.addEventListener('click', function() {
+               const isPass = apiKeyInput.type === 'password';
+               apiKeyInput.type = isPass ? 'text' : 'password';
+               apiKeyToggle.textContent = isPass ? 'Hide' : 'Show';
+               apiKeyToggle.setAttribute('aria-label', isPass ? 'Hide key' : 'Show key');
+           });
+       }
 
        // Strategy database
        const strategies = {
@@ -321,9 +446,12 @@
                output += `</div>`;
            });
            
-           // Display results
+           // Display results with reveal
            document.getElementById('strategiesOutput').innerHTML = output;
-           document.getElementById('results').classList.remove('hidden');
+           const resultsEl = document.getElementById('results');
+           resultsEl.classList.remove('hidden');
+           resultsEl.classList.add('results-revealed');
+           resultsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
            
            // Generate explanations for each strategy
            strategyKeys.forEach((key, index) => {
@@ -333,14 +461,74 @@
                    goal,
                    deposit,
                    risk,
-                   key  // Pass strategy key (A, B, or C) for unique explanations
+                   key
                );
                const whyElement = document.getElementById(`why-${index}`);
                if (whyElement) {
                    whyElement.innerHTML = explanation;
                }
            });
+
+           // 3D tilt on strategy cards (если не prefers-reduced-motion)
+           if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+               document.querySelectorAll('.strategy').forEach(function(card) {
+                   card.addEventListener('mousemove', function(e) {
+                       const rect = card.getBoundingClientRect();
+                       const x = (e.clientX - rect.left) / rect.width - 0.5;
+                       const y = (e.clientY - rect.top) / rect.height - 0.5;
+                       card.style.transform = 'perspective(600px) rotateX(' + (y * -6) + 'deg) rotateY(' + (x * 6) + 'deg)';
+                   });
+                   card.addEventListener('mouseleave', function() {
+                       card.style.transform = '';
+                   });
+               });
+           }
        }
+
+       // Scroll progress line — минимализм: линия заполняется при скролле
+       (function() {
+           const line = document.querySelector('.scroll-progress');
+           if (!line) return;
+           function update() {
+               const h = document.documentElement.scrollHeight - window.innerHeight;
+               const p = h > 0 ? (window.scrollY / h) * 100 : 0;
+               line.style.setProperty('--progress', p + '%');
+           }
+           window.addEventListener('scroll', update, { passive: true });
+           update();
+       })();
+
+       // Scroll-reveal: секции появляются при прокрутке
+       (function() {
+           const els = document.querySelectorAll('.risk-section-reveal, .risk-section-divider');
+           const opts = { rootMargin: '0px 0px -80px 0px', threshold: 0.1 };
+           const observer = new IntersectionObserver(function(entries) {
+               entries.forEach(function(e) {
+                   if (e.isIntersecting) {
+                       e.target.classList.add('risk-revealed');
+                       observer.unobserve(e.target);
+                   }
+               });
+           }, opts);
+           els.forEach(function(el) { observer.observe(el); });
+       })();
+
+       // Trust stats AI/Free — staggered reveal при появлении
+       (function() {
+           if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+           const cards = document.querySelectorAll('.risk-trust-reveal');
+           const obs = new IntersectionObserver(function(entries) {
+               entries.forEach(function(e) {
+                   if (!e.isIntersecting) return;
+                   obs.unobserve(e.target);
+                   e.target.classList.add('risk-trust-revealed');
+               });
+           }, { threshold: 0.3 });
+           cards.forEach(function(c, i) {
+               c.style.transitionDelay = (i * 0.1) + 's';
+               obs.observe(c);
+           });
+       })();
    </script>
    
    <script src="../../scripts/chatbot.js?v=30"></script>
