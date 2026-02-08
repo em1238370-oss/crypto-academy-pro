@@ -424,7 +424,7 @@ html {
    color: #FFFFFF;
    letter-spacing: -0.02em;
    line-height: 1.15;
-   margin-bottom: 24px;
+   margin-bottom: 0;
    white-space: nowrap;
 }
 
