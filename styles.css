@@ -411,7 +411,8 @@ html {
 
 /* Hero в стиле News */
 .main-hero {
-   max-width: 720px;
+   max-width: 100%;
+   width: 100%;
    margin: 0 auto 96px;
    padding: 100px 24px 0;
    text-align: center;
@@ -426,6 +427,14 @@ html {
    line-height: 1.15;
    margin-bottom: 0;
    white-space: nowrap;
+   width: 100%;
+   text-align: center;
+}
+
+@media (min-width: 768px) {
+   .main-hero-title {
+      font-size: clamp(72px, 10vw, 120px);
+   }
 }
 
 .main-hero-title span {
@@ -440,7 +449,7 @@ html {
    line-height: 1.65;
    text-align: center;
    max-width: 100%;
-   margin-top: 5cm;
+   margin-top: 10cm;
 }
 
 /* Real data section */
