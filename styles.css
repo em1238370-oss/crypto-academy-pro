@@ -411,26 +411,12 @@ html {
 
 /* Hero в стиле News */
 .main-hero {
-   max-width: 100%;
-   width: 100%;
-   margin: 0 auto 96px;
-   padding: 0 24px 0;
+   margin-bottom: 96px;
+   max-width: 720px;
+   margin-left: auto;
+   margin-right: auto;
+   padding: 0 24px;
    text-align: center;
-}
-
-@media (min-width: 768px) {
-   .main-hero {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 0 24px;
-      margin: 0;
-      position: relative;
-      width: 100vw;
-      max-width: 100vw;
-   }
 }
 
 .main-hero-title {
@@ -440,19 +426,8 @@ html {
    color: #FFFFFF;
    letter-spacing: -0.02em;
    line-height: 1.15;
-   margin-bottom: 0;
-   white-space: nowrap;
-   width: 100%;
+   margin-bottom: 16px;
    text-align: center;
-}
-
-@media (min-width: 768px) {
-   .main-hero-title {
-      font-size: clamp(72px, 10vw, 120px);
-      margin: 0;
-      width: 100%;
-      padding-top: 0;
-   }
 }
 
 .main-hero-title span {
@@ -466,22 +441,6 @@ html {
    color: rgba(255, 255, 255, 0.82);
    line-height: 1.65;
    text-align: center;
-   max-width: 100%;
-   margin-top: 5cm;
-}
-
-@media (min-width: 768px) {
-   .main-hero-description {
-      margin-top: calc(50vh + 5cm);
-      margin-bottom: 10cm;
-      padding-bottom: 5cm;
-      max-width: 900px;
-      margin-left: auto;
-      margin-right: auto;
-      padding-left: 24px;
-      padding-right: 24px;
-      position: relative;
-   }
 }
 
 /* Real data section */
