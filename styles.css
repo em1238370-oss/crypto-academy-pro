@@ -420,7 +420,7 @@ html {
 
 @media (min-width: 768px) {
    .main-hero {
-      min-height: 100vh;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -430,6 +430,7 @@ html {
       position: relative;
       width: 100vw;
       max-width: 100vw;
+      overflow: hidden;
    }
 }
 
@@ -449,12 +450,8 @@ html {
 @media (min-width: 768px) {
    .main-hero-title {
       font-size: clamp(72px, 10vw, 120px);
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 100%;
       margin: 0;
+      width: 100%;
    }
 }
 
@@ -471,6 +468,19 @@ html {
    text-align: center;
    max-width: 100%;
    margin-top: 10cm;
+}
+
+@media (min-width: 768px) {
+   .main-hero-description {
+      margin-top: 100vh;
+      margin-bottom: 10cm;
+      padding-bottom: 5cm;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      padding-left: 24px;
+      padding-right: 24px;
+   }
 }
 
 @media (min-width: 768px) {
