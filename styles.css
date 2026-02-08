@@ -297,6 +297,7 @@ body {
 
 .floating-text span {
    font-style: italic;
+   color: #FFD700;
 }
 
 @keyframes float {
@@ -367,9 +368,8 @@ html {
 /* Секция для текста после заголовка */
 .main-text-section {
    padding: 0 20px;
-   margin-top: 10cm;
+   margin-top: 2cm;
    margin-bottom: 0;
-   margin-left: 1cm;
    text-align: center;
    position: relative;
    z-index: 1;
@@ -401,6 +401,83 @@ html {
    text-rendering: optimizeLegibility;
    -webkit-font-smoothing: antialiased;
    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Real data section */
+.real-data-section {
+   padding: 0 20px;
+   margin-top: 2cm;
+   margin-bottom: 0;
+   text-align: center;
+   position: relative;
+   z-index: 1;
+   display: block;
+}
+
+.real-data-text {
+   font-family: 'Raleway', sans-serif;
+   font-size: 67px;
+   color: #FFFFFF;
+   font-weight: 700;
+   line-height: 1.4;
+   text-align: center;
+   margin: 0 auto;
+   max-width: 80%;
+   opacity: 1;
+   visibility: visible;
+   display: block;
+   padding: 0;
+   position: relative;
+   animation: none !important;
+   will-change: auto !important;
+   transform: none !important;
+   backface-visibility: visible !important;
+   contain: none !important;
+   text-shadow: 0 0 15px rgba(167, 3, 96, 0.6), 0 0 25px rgba(167, 3, 96, 0.4);
+   text-rendering: optimizeLegibility;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Built for those section */
+.built-for-section {
+   padding: 0 20px;
+   margin-top: 2cm;
+   margin-bottom: 0;
+   text-align: center;
+   position: relative;
+   z-index: 1;
+   display: block;
+}
+
+.built-for-text {
+   font-family: 'Raleway', sans-serif;
+   font-size: 67px;
+   color: #FFFFFF;
+   font-weight: 700;
+   line-height: 1.4;
+   text-align: center;
+   margin: 0 auto;
+   max-width: 80%;
+   opacity: 1;
+   visibility: visible;
+   display: block;
+   padding: 0;
+   position: relative;
+   animation: none !important;
+   will-change: auto !important;
+   transform: none !important;
+   backface-visibility: visible !important;
+   contain: none !important;
+   text-shadow: 0 0 15px rgba(167, 3, 96, 0.6), 0 0 25px rgba(167, 3, 96, 0.4);
+   text-rendering: optimizeLegibility;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+}
+
+.clarity-highlight {
+   color: #FFD700;
+   font-weight: 700;
 }
 
 /* Круги начинаются через 5 см после текста */
@@ -2914,15 +2991,18 @@ body {
 }
 
 /* Отключаем все keyframes анимации */
-@keyframes float,
-@keyframes pulseGlow {
+@keyframes float {
     0%, 100% {
         transform: none;
         opacity: 1;
     }
 }
 
-    -webkit-backdrop-filter: none !important;
+@keyframes pulseGlow {
+    0%, 100% {
+        transform: none;
+        opacity: 1;
+    }
 }
 
 /* ТОЧЕЧНАЯ ОПТИМИЗАЦИЯ - исправляем искажения без ущерба для дизайна */
