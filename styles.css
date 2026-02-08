@@ -420,7 +420,7 @@ html {
 
 @media (min-width: 768px) {
    .main-hero {
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -471,16 +471,14 @@ html {
 
 @media (min-width: 768px) {
    .main-hero-description {
-      position: absolute;
-      top: calc(100vh + 15cm);
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 900px;
-      margin: 0;
+      margin-top: 15cm;
       margin-bottom: 10cm;
-      padding: 0 24px 5cm;
-      box-sizing: border-box;
+      padding-bottom: 5cm;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      padding-left: 24px;
+      padding-right: 24px;
    }
 }
 
