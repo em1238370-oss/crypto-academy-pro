@@ -414,8 +414,19 @@ html {
    max-width: 100%;
    width: 100%;
    margin: 0 auto 96px;
-   padding: 100px 24px 0;
+   padding: 0 24px;
    text-align: center;
+   min-height: 100vh;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   align-items: center;
+}
+
+@media (min-width: 768px) {
+   .main-hero {
+      min-height: 100vh;
+   }
 }
 
 .main-hero-title {
@@ -450,6 +461,8 @@ html {
    text-align: center;
    max-width: 100%;
    margin-top: 10cm;
+   margin-bottom: 10cm;
+   padding-bottom: 5cm;
 }
 
 /* Real data section */
