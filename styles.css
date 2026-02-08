@@ -428,6 +428,7 @@ html {
    line-height: 1.15;
    margin-bottom: 16px;
    text-align: center;
+   white-space: nowrap;
 }
 
 .main-hero-title span {
