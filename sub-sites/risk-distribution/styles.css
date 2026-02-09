@@ -516,6 +516,53 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     }
 }
 
+/* Визуалы в углах при hover на избранные таблички */
+.risk-corner-visual {
+    position: fixed !important;
+    width: 200px !important;
+    height: 200px !important;
+    pointer-events: none !important;
+    z-index: 9998 !important;
+    opacity: 0 !important;
+    transition: opacity 0.4s ease !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-radius: 10px !important;
+    padding: 10px !important;
+}
+
+.risk-corner-visual svg {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.risk-corner-top-right {
+    top: 20px !important;
+    right: 20px !important;
+}
+
+.risk-corner-bottom-left {
+    bottom: 20px !important;
+    left: 20px !important;
+}
+
+.risk-favorite-item:hover ~ .risk-corner-visual,
+body:has(.risk-favorite-item:hover) .risk-corner-visual {
+    opacity: 0.9 !important;
+}
+
+/* Показываем визуалы при hover на избранные таблички */
+.risk-favorite-item:hover ~ .risk-corner-top-right,
+body:has(.risk-favorite-item:hover) .risk-corner-top-right {
+    opacity: 0.9 !important;
+    display: block !important;
+}
+
+.risk-favorite-item:hover ~ .risk-corner-bottom-left,
+body:has(.risk-favorite-item:hover) .risk-corner-bottom-left {
+    opacity: 0.9 !important;
+    display: block !important;
+}
+
 /* Иконки в конце важных фраз - используем отдельный элемент через JavaScript */
 .risk-icon-indicator {
     position: absolute !important;
