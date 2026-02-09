@@ -148,57 +148,93 @@ body {
     color: #FFFFFF !important;
 }
 
-/* Серьезный дизайн для секций Risk - передает важность */
+/* Профессиональная визуализация для секций Risk - улучшает концентрацию */
 .signal-noise-list {
-    gap: 16px !important;
+    gap: 20px !important;
 }
 
 .signal-noise-item {
-    padding: 20px 24px !important;
-    background: rgba(0, 0, 0, 0.18) !important;
-    border-left: 2px solid rgba(159, 232, 159, 0.4) !important;
-    border-radius: 8px !important;
-    transition: all 0.25s ease !important;
+    padding: 24px 28px !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-left: 3px solid rgba(159, 232, 159, 0.5) !important;
+    border-radius: 10px !important;
+    transition: all 0.3s ease !important;
     position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
 }
 
-.signal-noise-item::after {
+.signal-noise-item::before {
     content: '';
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
-    width: 2px;
-    background: rgba(159, 232, 159, 0.6);
+    width: 3px;
+    background: linear-gradient(180deg, rgba(159, 232, 159, 0.8) 0%, rgba(159, 232, 159, 0.4) 100%);
     opacity: 0;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.3s ease;
+}
+
+.signal-noise-item::after {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: rgba(159, 232, 159, 0.6);
+    border-radius: 50%;
+    opacity: 0;
+    transition: all 0.3s ease;
 }
 
 .signal-noise-item:hover {
-    background: rgba(0, 0, 0, 0.25) !important;
-    transform: translateX(4px) !important;
-    border-left-color: rgba(159, 232, 159, 0.7) !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+    background: rgba(0, 0, 0, 0.28) !important;
+    transform: translateX(6px) !important;
+    border-left-color: rgba(159, 232, 159, 0.8) !important;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(159, 232, 159, 0.1) !important;
+}
+
+.signal-noise-item:hover::before {
+    opacity: 1;
 }
 
 .signal-noise-item:hover::after {
     opacity: 1;
+    left: -6px;
+    transform: translateY(-50%) scale(1.2);
 }
 
 .signal-noise-label {
-    font-size: 15px !important;
-    font-weight: 600 !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
     color: #FFFFFF !important;
-    margin-bottom: 8px !important;
+    margin-bottom: 10px !important;
     font-family: 'Poppins', sans-serif;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+    line-height: 1.4;
+    display: block;
+}
+
+.signal-noise-label strong {
+    color: rgba(159, 232, 159, 0.9);
+    font-weight: 700;
 }
 
 .signal-noise-text {
-    font-size: 14px !important;
-    color: rgba(255, 255, 255, 0.75) !important;
-    line-height: 1.65 !important;
+    font-size: 15px !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    line-height: 1.7 !important;
     font-family: 'Poppins', sans-serif;
+    display: block;
+}
+
+.signal-noise-text strong {
+    color: rgba(159, 232, 159, 0.85);
+    font-weight: 600;
 }
 
 /* Nav — зелёный */
