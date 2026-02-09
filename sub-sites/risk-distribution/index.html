@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=30">
+   <link rel="stylesheet" href="styles.css?v=31">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -814,6 +814,39 @@
                item.style.position = 'relative';
                item.appendChild(topRightVisual);
                item.appendChild(bottomLeftVisual);
+               
+               // На мобильных - автоматический показ при появлении на экране
+               if (window.innerWidth <= 768) {
+                   const observer = new IntersectionObserver(function(entries) {
+                       entries.forEach(function(entry) {
+                           if (entry.isIntersecting) {
+                               // Показываем визуалы автоматически на мобильных
+                               if (visuals[visualType]) {
+                                   topRightVisual.innerHTML = visuals[visualType].topRight;
+                                   bottomLeftVisual.innerHTML = visuals[visualType].bottomLeft;
+                                   
+                                   topRightVisual.style.setProperty('opacity', '1', 'important');
+                                   topRightVisual.style.setProperty('display', 'block', 'important');
+                                   topRightVisual.style.setProperty('visibility', 'visible', 'important');
+                                   topRightVisual.classList.add('show');
+                                   
+                                   bottomLeftVisual.style.setProperty('opacity', '1', 'important');
+                                   bottomLeftVisual.style.setProperty('display', 'block', 'important');
+                                   bottomLeftVisual.style.setProperty('visibility', 'visible', 'important');
+                                   bottomLeftVisual.classList.add('show');
+                               }
+                           } else {
+                               // Скрываем когда уходит с экрана
+                               topRightVisual.style.setProperty('opacity', '0', 'important');
+                               topRightVisual.style.setProperty('display', 'none', 'important');
+                               bottomLeftVisual.style.setProperty('opacity', '0', 'important');
+                               bottomLeftVisual.style.setProperty('display', 'none', 'important');
+                           }
+                       });
+                   }, { threshold: 0.3, rootMargin: '0px' });
+                   
+                   observer.observe(item);
+               }
                
                // Функция показа визуалов
                function showVisuals() {

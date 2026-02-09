@@ -571,31 +571,40 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
 }
 
 @media (max-width: 600px) {
-    /* На мобильных - размещаем визуалы внутри таблички */
+    /* На мобильных - размещаем визуалы внутри таблички с большими отступами */
     .risk-corner-visual {
-        width: 110px !important;
-        height: 110px !important;
-        padding: 8px !important;
-        background: rgba(0, 0, 0, 0.5) !important;
-        border: 1px solid rgba(159, 232, 159, 0.4) !important;
+        width: 100px !important;
+        height: 100px !important;
+        padding: 6px !important;
+        background: rgba(0, 0, 0, 0.6) !important;
+        border: 1px solid rgba(159, 232, 159, 0.5) !important;
         z-index: 15 !important;
     }
     
-    /* Верхний правый - внутри таблички справа вверху */
+    /* Верхний правый - справа вверху, но с отступом от текста */
     .risk-corner-top-right {
-        top: 8px !important;
-        right: 8px !important;
+        top: 10px !important;
+        right: 10px !important;
     }
     
-    /* Нижний левый - внутри таблички слева внизу */
+    /* Нижний левый - слева внизу, но с отступом от текста */
     .risk-corner-bottom-left {
-        bottom: 8px !important;
-        left: 8px !important;
+        bottom: 10px !important;
+        left: 10px !important;
+    }
+    
+    /* Увеличиваем padding таблички, чтобы визуалы не закрывали текст */
+    .risk-favorite-item {
+        padding-right: 120px !important; /* Место для верхнего правого визуала */
+        padding-bottom: 120px !important; /* Место для нижнего левого визуала */
+        padding-left: 120px !important; /* Место для нижнего левого визуала */
+        padding-top: 120px !important; /* Место для верхнего правого визуала */
+        min-height: 200px !important; /* Минимальная высота для размещения визуалов */
     }
     
     /* Уменьшаем размер текста */
     .risk-corner-visual svg text {
-        font-size: 10px !important;
+        font-size: 9px !important;
     }
     
     /* Уменьшаем stroke-width для линий */
@@ -616,26 +625,35 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
 @media (max-width: 480px) {
     /* На очень маленьких экранах - еще меньше, но видимые */
     .risk-corner-visual {
-        width: 90px !important;
-        height: 90px !important;
-        padding: 6px !important;
-        background: rgba(0, 0, 0, 0.6) !important;
-        border: 1px solid rgba(159, 232, 159, 0.5) !important;
+        width: 85px !important;
+        height: 85px !important;
+        padding: 5px !important;
+        background: rgba(0, 0, 0, 0.65) !important;
+        border: 1px solid rgba(159, 232, 159, 0.6) !important;
         z-index: 15 !important;
     }
     
     .risk-corner-top-right {
-        top: 5px !important;
-        right: 5px !important;
+        top: 8px !important;
+        right: 8px !important;
     }
     
     .risk-corner-bottom-left {
-        bottom: 5px !important;
-        left: 5px !important;
+        bottom: 8px !important;
+        left: 8px !important;
+    }
+    
+    /* Увеличиваем padding таблички на маленьких экранах */
+    .risk-favorite-item {
+        padding-right: 100px !important;
+        padding-bottom: 100px !important;
+        padding-left: 100px !important;
+        padding-top: 100px !important;
+        min-height: 180px !important;
     }
     
     .risk-corner-visual svg text {
-        font-size: 9px !important;
+        font-size: 8px !important;
     }
     
     /* Убеждаемся, что визуалы видны */
