@@ -1046,7 +1046,7 @@ html {
         padding-top: 0;
     }
     .content {
-        padding: 96px 44px 80px !important; /* Боковые отступы увеличены на 0.5 см (20px) */
+        padding: 96px 34px 80px !important; /* Боковые отступы увеличены на 0.25 см (10px) */
     }
     .risk-section {
         padding: 0 20px;
@@ -1160,7 +1160,7 @@ html {
         overscroll-behavior: none;
     }
     .content {
-        padding: 88px 40px 64px !important; /* Боковые отступы увеличены на 0.5 см (20px) */
+        padding: 88px 30px 64px !important; /* Боковые отступы увеличены на 0.25 см (10px) */
     }
     .risk-section {
         padding: 0 16px;
