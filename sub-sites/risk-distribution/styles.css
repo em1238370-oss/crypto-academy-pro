@@ -91,10 +91,9 @@ body::after {
 .news-footer {
     border-top-color: rgba(150, 220, 150, 0.15) !important;
     margin-top: 180px !important;
-    padding: 40px 24px 60px !important;
+    padding: 40px 24px 0.5cm !important;
     position: relative;
     margin-bottom: 0 !important;
-    padding-bottom: 1cm !important;
 }
 
 body {
