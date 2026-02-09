@@ -519,17 +519,17 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
 /* Визуалы около табличек при hover на избранные таблички */
 .risk-corner-visual {
     position: absolute !important;
-    width: 180px !important;
-    height: 180px !important;
+    width: 160px !important;
+    height: 160px !important;
     pointer-events: none !important;
     z-index: 10 !important;
     opacity: 0 !important;
     transition: opacity 0.4s ease !important;
-    background: rgba(0, 0, 0, 0.4) !important;
-    border-radius: 10px !important;
-    padding: 12px !important;
-    backdrop-filter: blur(5px) !important;
-    border: 1px solid rgba(159, 232, 159, 0.3) !important;
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-radius: 8px !important;
+    padding: 10px !important;
+    backdrop-filter: blur(4px) !important;
+    border: 1px solid rgba(159, 232, 159, 0.2) !important;
 }
 
 .risk-corner-visual svg {
@@ -537,24 +537,31 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     height: 100% !important;
 }
 
+/* Верхний правый угол - справа от таблички */
 .risk-corner-top-right {
-    top: -10px !important;
-    right: -10px !important;
+    top: 0 !important;
+    right: -180px !important;
 }
 
+/* Нижний левый угол - слева от таблички */
 .risk-corner-bottom-left {
-    bottom: -10px !important;
-    left: -10px !important;
+    bottom: 0 !important;
+    left: -180px !important;
 }
 
 .risk-corner-visual.show {
-    opacity: 0.95 !important;
+    opacity: 0.9 !important;
     display: block !important;
 }
 
-/* Убеждаемся, что таблички имеют position relative */
+/* Убеждаемся, что таблички имеют position relative и overflow visible */
 .risk-favorite-item {
     position: relative !important;
+    overflow: visible !important;
+}
+
+/* Убеждаемся, что список тоже не обрезает визуалы */
+.signal-noise-list {
     overflow: visible !important;
 }
 
