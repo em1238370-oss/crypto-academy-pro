@@ -151,10 +151,6 @@ body::after {
 }
 
 .news-footer::before {
-    top: 0;
-}
-
-.news-footer::before {
     content: '';
     position: absolute;
     left: 50%;
