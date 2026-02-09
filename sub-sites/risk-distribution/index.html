@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=23">
+   <link rel="stylesheet" href="styles.css?v=24">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -774,21 +774,9 @@
            window.addEventListener('resize', checkCenterPosition);
        })();
 
-       // Визуалы в углах при hover на избранные таблички
+       // Визуалы около табличек при hover на избранные таблички
        (function() {
            const favoriteItems = document.querySelectorAll('.risk-favorite-item');
-           
-           // Создаем контейнеры для визуалов
-           const topRightVisual = document.createElement('div');
-           topRightVisual.className = 'risk-corner-visual risk-corner-top-right';
-           topRightVisual.style.display = 'none';
-           
-           const bottomLeftVisual = document.createElement('div');
-           bottomLeftVisual.className = 'risk-corner-visual risk-corner-bottom-left';
-           bottomLeftVisual.style.display = 'none';
-           
-           document.body.appendChild(topRightVisual);
-           document.body.appendChild(bottomLeftVisual);
            
            // Визуалы для каждой таблички
            const visuals = {
@@ -880,6 +868,20 @@
            favoriteItems.forEach(function(item) {
                const visualType = item.getAttribute('data-visual');
                
+               // Создаем визуалы для каждой таблички отдельно
+               const topRightVisual = document.createElement('div');
+               topRightVisual.className = 'risk-corner-visual risk-corner-top-right';
+               topRightVisual.style.display = 'none';
+               
+               const bottomLeftVisual = document.createElement('div');
+               bottomLeftVisual.className = 'risk-corner-visual risk-corner-bottom-left';
+               bottomLeftVisual.style.display = 'none';
+               
+               // Добавляем визуалы внутрь таблички
+               item.style.position = 'relative';
+               item.appendChild(topRightVisual);
+               item.appendChild(bottomLeftVisual);
+               
                item.addEventListener('mouseenter', function() {
                    if (visuals[visualType]) {
                        topRightVisual.innerHTML = visuals[visualType].topRight;
@@ -893,7 +895,7 @@
                        bottomLeftVisual.style.setProperty('display', 'block', 'important');
                        bottomLeftVisual.classList.add('show');
                        
-                       console.log('✅ Corner visuals shown for:', visualType);
+                       console.log('✅ Visuals shown for:', visualType);
                    }
                });
                

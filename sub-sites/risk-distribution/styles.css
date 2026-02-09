@@ -516,20 +516,20 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     }
 }
 
-/* Визуалы в углах при hover на избранные таблички */
+/* Визуалы около табличек при hover на избранные таблички */
 .risk-corner-visual {
-    position: fixed !important;
-    width: 220px !important;
-    height: 220px !important;
+    position: absolute !important;
+    width: 180px !important;
+    height: 180px !important;
     pointer-events: none !important;
-    z-index: 9998 !important;
+    z-index: 10 !important;
     opacity: 0 !important;
-    transition: opacity 0.5s ease !important;
-    background: rgba(0, 0, 0, 0.3) !important;
-    border-radius: 12px !important;
-    padding: 15px !important;
+    transition: opacity 0.4s ease !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+    border-radius: 10px !important;
+    padding: 12px !important;
     backdrop-filter: blur(5px) !important;
-    border: 1px solid rgba(159, 232, 159, 0.2) !important;
+    border: 1px solid rgba(159, 232, 159, 0.3) !important;
 }
 
 .risk-corner-visual svg {
@@ -538,18 +538,24 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
 }
 
 .risk-corner-top-right {
-    top: 20px !important;
-    right: 20px !important;
+    top: -10px !important;
+    right: -10px !important;
 }
 
 .risk-corner-bottom-left {
-    bottom: 20px !important;
-    left: 20px !important;
+    bottom: -10px !important;
+    left: -10px !important;
 }
 
 .risk-corner-visual.show {
     opacity: 0.95 !important;
     display: block !important;
+}
+
+/* Убеждаемся, что таблички имеют position relative */
+.risk-favorite-item {
+    position: relative !important;
+    overflow: visible !important;
 }
 
 /* Иконки в конце важных фраз - используем отдельный элемент через JavaScript */
