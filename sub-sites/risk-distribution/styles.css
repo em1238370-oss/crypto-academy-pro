@@ -250,6 +250,26 @@ html {
     margin-top: 8px;
 }
 
+/* Десктоп: квадратики побольше */
+@media (min-width: 769px) {
+    .risk-trust-bento {
+        gap: 28px;
+        margin: 32px 0 0;
+    }
+    .risk-trust-stat {
+        padding: 40px 32px;
+        min-height: 160px;
+        border-radius: 16px;
+    }
+    .risk-trust-number {
+        font-size: clamp(52px, 6vw, 72px);
+    }
+    .risk-trust-label {
+        font-size: 14px;
+        margin-top: 12px;
+    }
+}
+
 /* Отступ между карточками и текстом внизу */
 .risk-trust-stats .news-trust-badge {
     margin-top: 40px;
