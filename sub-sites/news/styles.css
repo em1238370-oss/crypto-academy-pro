@@ -193,6 +193,17 @@ body::after {
     color: var(--news-text);
 }
 
+body {
+    padding-bottom: 0 !important;
+}
+
+.page {
+    padding-bottom: 0 !important;
+}
+
+.content {
+    padding-bottom: 0 !important;
+}
 
 /* Минимализм: фоновые элементы убраны (Apple + DuoView) */
 
