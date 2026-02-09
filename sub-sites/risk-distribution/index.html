@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=13">
+   <link rel="stylesheet" href="styles.css?v=14">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -69,8 +69,8 @@
            <div class="risk-section-divider" aria-hidden="true"></div>
 
            <!-- Секция 2: Правила риск-менеджмента -->
-           <section class="signal-noise risk-section-reveal" aria-labelledby="section-rules">
-               <h3 class="signal-noise-title" id="section-rules">Rules That Keep You Safe</h3>
+           <section class="signal-noise risk-section-reveal" id="section-rules" aria-labelledby="section-rules">
+               <h3 class="signal-noise-title">Rules That Keep You Safe</h3>
                <p class="signal-noise-intro">Discipline beats emotion. These rules protect your capital when markets turn against you.</p>
                <ul class="signal-noise-list">
                    <li class="signal-noise-item">
@@ -108,8 +108,8 @@
            <div class="risk-section-divider" aria-hidden="true"></div>
 
            <!-- Секция 3: Стратегии защиты капитала -->
-           <section class="signal-noise risk-section-reveal" aria-labelledby="section-protection">
-               <h3 class="signal-noise-title" id="section-protection">How Experts Protect Capital</h3>
+           <section class="signal-noise risk-section-reveal" id="section-protection" aria-labelledby="section-protection">
+               <h3 class="signal-noise-title">How Experts Protect Capital</h3>
                <p class="signal-noise-intro">Professional traders survive because they protect capital first. Here's how they do it.</p>
                <ul class="signal-noise-list">
                    <li class="signal-noise-item">
@@ -606,6 +606,89 @@
                c.style.transitionDelay = (i * 0.1) + 's';
                obs.observe(c);
            });
+       })();
+
+       // Интерактивные эффекты при попадании в центр экрана
+       (function() {
+           if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+           
+           const riskSections = document.querySelectorAll('#section-rules, #section-protection');
+           const viewportCenter = window.innerHeight / 2;
+           
+           // Создаем визуальные элементы по бокам
+           function createSideVisuals() {
+               const leftVisual = document.createElement('div');
+               leftVisual.className = 'risk-side-visual risk-side-visual-left';
+               leftVisual.innerHTML = `
+                   <svg class="risk-chart-visual" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                       <defs>
+                           <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                               <stop offset="0%" style="stop-color:rgba(159, 232, 159, 0.3);stop-opacity:1" />
+                               <stop offset="100%" style="stop-color:rgba(159, 232, 159, 0);stop-opacity:1" />
+                           </linearGradient>
+                       </defs>
+                       <path class="risk-chart-line" d="M 20 160 L 60 120 L 100 80 L 140 100 L 180 60" stroke="rgba(159, 232, 159, 0.5)"/>
+                       <path class="risk-chart-line" d="M 20 180 L 60 140 L 100 100 L 140 120 L 180 80" stroke="rgba(255, 100, 100, 0.4)" style="animation-delay: 0.5s"/>
+                   </svg>
+               `;
+               
+               const rightVisual = document.createElement('div');
+               rightVisual.className = 'risk-side-visual risk-side-visual-right';
+               rightVisual.innerHTML = `
+                   <svg class="risk-chart-visual" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                       <circle cx="100" cy="100" r="60" fill="none" stroke="rgba(159, 232, 159, 0.2)" stroke-width="2"/>
+                       <circle cx="100" cy="100" r="40" fill="none" stroke="rgba(159, 232, 159, 0.3)" stroke-width="2" style="animation-delay: 0.3s"/>
+                       <circle cx="100" cy="100" r="20" fill="rgba(159, 232, 159, 0.1)"/>
+                   </svg>
+               `;
+               
+               document.body.appendChild(leftVisual);
+               document.body.appendChild(rightVisual);
+           }
+           
+           function checkCenterPosition() {
+               riskSections.forEach(function(section) {
+                   const rect = section.getBoundingClientRect();
+                   const sectionCenter = rect.top + (rect.height / 2);
+                   const viewportCenter = window.innerHeight / 2;
+                   const isInCenter = Math.abs(sectionCenter - viewportCenter) < 250; // ±250px от центра
+                   
+                   if (isInCenter) {
+                       section.classList.add('risk-in-center');
+                       // Показываем боковые визуалы
+                       document.querySelectorAll('.risk-side-visual').forEach(function(v) {
+                           v.style.opacity = '0.5';
+                       });
+                   } else {
+                       section.classList.remove('risk-in-center');
+                       // Скрываем боковые визуалы
+                       document.querySelectorAll('.risk-side-visual').forEach(function(v) {
+                           v.style.opacity = '0';
+                       });
+                   }
+               });
+           }
+           
+           // Создаем визуалы при загрузке
+           if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', createSideVisuals);
+           } else {
+               createSideVisuals();
+           }
+           
+           // Проверяем при скролле
+           let scrollTimeout;
+           window.addEventListener('scroll', function() {
+               clearTimeout(scrollTimeout);
+               scrollTimeout = setTimeout(checkCenterPosition, 10);
+               checkCenterPosition();
+           }, { passive: true });
+           
+           // Проверяем при изменении размера окна
+           window.addEventListener('resize', checkCenterPosition);
+           
+           // Проверяем при загрузке
+           checkCenterPosition();
        })();
    </script>
    
