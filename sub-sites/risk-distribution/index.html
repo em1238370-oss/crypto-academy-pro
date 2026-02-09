@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=21">
+   <link rel="stylesheet" href="styles.css?v=22">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -884,14 +884,29 @@
                    if (visuals[visualType]) {
                        topRightVisual.innerHTML = visuals[visualType].topRight;
                        bottomLeftVisual.innerHTML = visuals[visualType].bottomLeft;
-                       topRightVisual.style.display = 'block';
-                       bottomLeftVisual.style.display = 'block';
+                       
+                       topRightVisual.style.setProperty('opacity', '0.95', 'important');
+                       topRightVisual.style.setProperty('display', 'block', 'important');
+                       topRightVisual.classList.add('show');
+                       
+                       bottomLeftVisual.style.setProperty('opacity', '0.95', 'important');
+                       bottomLeftVisual.style.setProperty('display', 'block', 'important');
+                       bottomLeftVisual.classList.add('show');
+                       
+                       console.log('✅ Corner visuals shown for:', visualType);
                    }
                });
                
                item.addEventListener('mouseleave', function() {
-                   topRightVisual.style.display = 'none';
-                   bottomLeftVisual.style.display = 'none';
+                   topRightVisual.style.setProperty('opacity', '0', 'important');
+                   bottomLeftVisual.style.setProperty('opacity', '0', 'important');
+                   
+                   setTimeout(function() {
+                       topRightVisual.style.setProperty('display', 'none', 'important');
+                       bottomLeftVisual.style.setProperty('display', 'none', 'important');
+                       topRightVisual.classList.remove('show');
+                       bottomLeftVisual.classList.remove('show');
+                   }, 500);
                });
            });
        })();
