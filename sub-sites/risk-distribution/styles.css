@@ -436,30 +436,7 @@ body {
     display: none !important;
 }
 
-/* Визуальные элементы по бокам экрана */
-.risk-side-visual {
-    position: fixed !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    width: 300px !important;
-    height: 300px !important;
-    pointer-events: none !important;
-    z-index: 9999 !important;
-    opacity: 0 !important;
-    transition: opacity 0.6s ease !important;
-    display: block !important;
-    visibility: visible !important;
-    background: rgba(0, 0, 0, 0.1) !important;
-    border-radius: 10px !important;
-}
-
-.risk-side-visual-left {
-    left: 20px !important;
-}
-
-.risk-side-visual-right {
-    right: 20px !important;
-}
+/* Боковые визуалы убраны - оставляем только визуалы около табличек */
 
 /* Показываем визуалы когда секция в центре */
 body:has(#section-rules.risk-in-center) .risk-side-visual-left,
