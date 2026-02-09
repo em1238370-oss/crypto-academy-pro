@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=19">
+   <link rel="stylesheet" href="styles.css?v=20">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -616,7 +616,11 @@
            
            // Создаем визуальные элементы по бокам - тематические иллюстрации
            function createSideVisuals() {
-               if (document.querySelector('.risk-side-visual-left')) return; // Уже созданы
+               // Удаляем старые если есть
+               const oldLeft = document.querySelector('.risk-side-visual-left');
+               const oldRight = document.querySelector('.risk-side-visual-right');
+               if (oldLeft) oldLeft.remove();
+               if (oldRight) oldRight.remove();
                
                // Левый визуал - падение биткоина (красная линия вниз)
                const leftVisual = document.createElement('div');
@@ -659,7 +663,23 @@
                
                document.body.appendChild(leftVisual);
                document.body.appendChild(rightVisual);
-               console.log('✅ Side visuals created');
+               
+               // Принудительно делаем видимыми для проверки
+               setTimeout(function() {
+                   leftVisual.style.setProperty('opacity', '0.9', 'important');
+                   leftVisual.style.setProperty('display', 'block', 'important');
+                   leftVisual.style.setProperty('visibility', 'visible', 'important');
+                   leftVisual.style.setProperty('z-index', '9999', 'important');
+                   
+                   rightVisual.style.setProperty('opacity', '0.9', 'important');
+                   rightVisual.style.setProperty('display', 'block', 'important');
+                   rightVisual.style.setProperty('visibility', 'visible', 'important');
+                   rightVisual.style.setProperty('z-index', '9999', 'important');
+                   
+                   console.log('✅ Side visuals created and FORCED visible');
+                   console.log('Left visual:', leftVisual);
+                   console.log('Right visual:', rightVisual);
+               }, 100);
            }
            
            function checkCenterPosition() {
@@ -667,22 +687,27 @@
                let anyInCenter = false;
                
                riskSections.forEach(function(section) {
+                   if (!section) return;
+                   
                    const rect = section.getBoundingClientRect();
                    const sectionTop = rect.top;
                    const sectionBottom = rect.bottom;
-                   // Проверяем, пересекается ли секция с центром экрана
-                   const isInCenter = sectionTop <= viewportCenter && sectionBottom >= viewportCenter;
+                   const sectionCenter = rect.top + (rect.height / 2);
+                   
+                   // Проверяем, пересекается ли секция с центром экрана (более широкая зона)
+                   const distanceFromCenter = Math.abs(sectionCenter - viewportCenter);
+                   const isInCenter = distanceFromCenter < 400; // ±400px от центра
                    
                    if (isInCenter) {
                        if (!section.classList.contains('risk-in-center')) {
                            section.classList.add('risk-in-center');
-                           console.log('Section in center:', section.id);
+                           console.log('✅ Section in center:', section.id, 'distance:', distanceFromCenter);
                        }
                        anyInCenter = true;
                    } else {
                        if (section.classList.contains('risk-in-center')) {
                            section.classList.remove('risk-in-center');
-                           console.log('Section left center:', section.id);
+                           console.log('❌ Section left center:', section.id);
                        }
                    }
                });
@@ -691,25 +716,27 @@
                const leftVisual = document.querySelector('.risk-side-visual-left');
                const rightVisual = document.querySelector('.risk-side-visual-right');
                
+               if (!leftVisual || !rightVisual) {
+                   console.warn('⚠️ Visuals not found!');
+                   return;
+               }
+               
                if (anyInCenter) {
-                   if (leftVisual) {
-                       leftVisual.style.setProperty('opacity', '0.8', 'important');
-                       leftVisual.style.setProperty('display', 'block', 'important');
-                       leftVisual.style.setProperty('visibility', 'visible', 'important');
-                   }
-                   if (rightVisual) {
-                       rightVisual.style.setProperty('opacity', '0.8', 'important');
-                       rightVisual.style.setProperty('display', 'block', 'important');
-                       rightVisual.style.setProperty('visibility', 'visible', 'important');
-                   }
-                   console.log('✅ Side visuals shown');
+                   leftVisual.style.setProperty('opacity', '0.9', 'important');
+                   leftVisual.style.setProperty('display', 'block', 'important');
+                   leftVisual.style.setProperty('visibility', 'visible', 'important');
+                   leftVisual.style.setProperty('z-index', '9999', 'important');
+                   
+                   rightVisual.style.setProperty('opacity', '0.9', 'important');
+                   rightVisual.style.setProperty('display', 'block', 'important');
+                   rightVisual.style.setProperty('visibility', 'visible', 'important');
+                   rightVisual.style.setProperty('z-index', '9999', 'important');
+                   
+                   console.log('✅ Side visuals SHOWN - opacity:', leftVisual.style.opacity);
                } else {
-                   if (leftVisual) {
-                       leftVisual.style.setProperty('opacity', '0', 'important');
-                   }
-                   if (rightVisual) {
-                       rightVisual.style.setProperty('opacity', '0', 'important');
-                   }
+                   leftVisual.style.setProperty('opacity', '0', 'important');
+                   rightVisual.style.setProperty('opacity', '0', 'important');
+                   console.log('❌ Side visuals HIDDEN');
                }
            }
            

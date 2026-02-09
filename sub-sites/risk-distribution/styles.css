@@ -441,20 +441,24 @@ body {
     position: fixed !important;
     top: 50% !important;
     transform: translateY(-50%) !important;
-    width: 280px !important;
-    height: 280px !important;
+    width: 300px !important;
+    height: 300px !important;
     pointer-events: none !important;
-    z-index: 10 !important;
+    z-index: 9999 !important;
     opacity: 0 !important;
     transition: opacity 0.6s ease !important;
+    display: block !important;
+    visibility: visible !important;
+    background: rgba(0, 0, 0, 0.1) !important;
+    border-radius: 10px !important;
 }
 
 .risk-side-visual-left {
-    left: 30px !important;
+    left: 20px !important;
 }
 
 .risk-side-visual-right {
-    right: 30px !important;
+    right: 20px !important;
 }
 
 /* Показываем визуалы когда секция в центре */
