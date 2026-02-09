@@ -483,10 +483,8 @@ body {
     }
 }
 
-/* Иконки в конце важных фраз - переопределяем существующий ::before */
-#section-rules.risk-in-center .signal-noise-item::before,
-#section-protection.risk-in-center .signal-noise-item::before {
-    content: '⚠' !important;
+/* Иконки в конце важных фраз - используем отдельный элемент через JavaScript */
+.risk-icon-indicator {
     position: absolute !important;
     right: 24px !important;
     top: 50% !important;
@@ -496,7 +494,6 @@ body {
     background: radial-gradient(circle, rgba(159, 232, 159, 0.4), rgba(159, 232, 159, 0.1)) !important;
     border-radius: 50% !important;
     opacity: 0 !important;
-    animation: iconAppear 0.5s ease-out 0.4s forwards !important;
     z-index: 2 !important;
     display: flex !important;
     align-items: center !important;
@@ -504,6 +501,18 @@ body {
     font-size: 16px !important;
     color: rgba(159, 232, 159, 0.9) !important;
     box-shadow: 0 0 12px rgba(159, 232, 159, 0.4) !important;
+    pointer-events: none !important;
+}
+
+#section-rules.risk-in-center .signal-noise-item .risk-icon-indicator,
+#section-protection.risk-in-center .signal-noise-item .risk-icon-indicator {
+    animation: iconAppear 0.5s ease-out 0.4s forwards !important;
+}
+
+#section-rules:not(.risk-in-center) .signal-noise-item .risk-icon-indicator,
+#section-protection:not(.risk-in-center) .signal-noise-item .risk-icon-indicator {
+    opacity: 0 !important;
+    animation: none !important;
 }
 
 @keyframes iconAppear {
@@ -533,11 +542,6 @@ body {
     animation: none !important;
 }
 
-#section-rules:not(.risk-in-center) .signal-noise-item::before,
-#section-protection:not(.risk-in-center) .signal-noise-item::before {
-    opacity: 0 !important;
-    animation: none !important;
-}
 
 /* Улучшенные боковые визуалы */
 .risk-side-visual {

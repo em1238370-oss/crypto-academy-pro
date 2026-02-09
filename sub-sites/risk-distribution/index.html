@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=17">
+   <link rel="stylesheet" href="styles.css?v=18">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -679,9 +679,24 @@
                }
            }
            
+           // Добавляем иконки к карточкам
+           function addIcons() {
+               const items = document.querySelectorAll('#section-rules .signal-noise-item, #section-protection .signal-noise-item');
+               items.forEach(function(item) {
+                   if (!item.querySelector('.risk-icon-indicator')) {
+                       const icon = document.createElement('div');
+                       icon.className = 'risk-icon-indicator';
+                       icon.textContent = '⚠';
+                       item.style.position = 'relative';
+                       item.appendChild(icon);
+                   }
+               });
+           }
+           
            // Создаем визуалы при загрузке
            function init() {
                createSideVisuals();
+               addIcons();
                checkCenterPosition();
            }
            
