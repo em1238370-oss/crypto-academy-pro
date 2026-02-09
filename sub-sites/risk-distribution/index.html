@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=15">
+   <link rel="stylesheet" href="styles.css?v=16">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -647,6 +647,8 @@
            }
            
            function checkCenterPosition() {
+               let anyInCenter = false;
+               
                riskSections.forEach(function(section) {
                    const rect = section.getBoundingClientRect();
                    const sectionCenter = rect.top + (rect.height / 2);
@@ -655,18 +657,23 @@
                    
                    if (isInCenter) {
                        section.classList.add('risk-in-center');
-                       // Показываем боковые визуалы
-                       document.querySelectorAll('.risk-side-visual').forEach(function(v) {
-                           v.style.opacity = '0.5';
-                       });
+                       anyInCenter = true;
                    } else {
                        section.classList.remove('risk-in-center');
-                       // Скрываем боковые визуалы
-                       document.querySelectorAll('.risk-side-visual').forEach(function(v) {
-                           v.style.opacity = '0';
-                       });
                    }
                });
+               
+               // Показываем/скрываем боковые визуалы
+               const leftVisual = document.querySelector('.risk-side-visual-left');
+               const rightVisual = document.querySelector('.risk-side-visual-right');
+               
+               if (anyInCenter) {
+                   if (leftVisual) leftVisual.style.opacity = '0.5';
+                   if (rightVisual) rightVisual.style.opacity = '0.5';
+               } else {
+                   if (leftVisual) leftVisual.style.opacity = '0';
+                   if (rightVisual) rightVisual.style.opacity = '0';
+               }
            }
            
            // Создаем визуалы при загрузке
