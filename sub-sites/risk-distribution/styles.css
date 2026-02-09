@@ -397,12 +397,14 @@ body {
 }
 
 /* Эффекты работают ТОЛЬКО когда секция в центре экрана */
-.risk-in-center .signal-noise-item strong {
+#section-rules.risk-in-center .signal-noise-item strong,
+#section-protection.risk-in-center .signal-noise-item strong {
     position: relative;
     transition: all 0.4s ease;
 }
 
-.risk-in-center .signal-noise-item strong::after {
+#section-rules.risk-in-center .signal-noise-item strong::after,
+#section-protection.risk-in-center .signal-noise-item strong::after {
     content: '';
     position: absolute;
     bottom: -2px;
@@ -415,18 +417,21 @@ body {
     box-shadow: 0 0 8px rgba(159, 232, 159, 0.4);
 }
 
-.risk-in-center .signal-noise-item:nth-child(odd) strong::after {
+#section-rules.risk-in-center .signal-noise-item:nth-child(odd) strong::after,
+#section-protection.risk-in-center .signal-noise-item:nth-child(odd) strong::after {
     animation-delay: 0.1s;
 }
 
-.risk-in-center .signal-noise-item:nth-child(even) strong {
+#section-rules.risk-in-center .signal-noise-item:nth-child(even) strong,
+#section-protection.risk-in-center .signal-noise-item:nth-child(even) strong {
     animation: highlightFade 0.5s ease-out forwards;
     padding: 2px 4px;
     border-radius: 4px;
     animation-delay: 0.15s;
 }
 
-.risk-in-center .signal-noise-item:nth-child(even) strong::after {
+#section-rules.risk-in-center .signal-noise-item:nth-child(even) strong::after,
+#section-protection.risk-in-center .signal-noise-item:nth-child(even) strong::after {
     display: none;
 }
 
@@ -478,7 +483,8 @@ body {
 }
 
 /* Иконки в конце важных фраз */
-.risk-in-center .signal-noise-item::before {
+#section-rules.risk-in-center .signal-noise-item::before,
+#section-protection.risk-in-center .signal-noise-item::before {
     content: '';
     position: absolute;
     right: 20px;
@@ -490,6 +496,7 @@ body {
     border-radius: 50%;
     opacity: 0;
     animation: iconAppear 0.4s ease-out 0.3s forwards;
+    z-index: 1;
 }
 
 @keyframes iconAppear {
@@ -504,24 +511,23 @@ body {
 }
 
 /* Когда секция уходит из центра - все эффекты прекращаются */
-.risk-in-center .signal-noise-item strong::after {
-    transition: width 0.3s ease, opacity 0.3s ease;
-}
-
-.signal-noise-item:not(.risk-in-center .signal-noise-item) strong::after {
+#section-rules:not(.risk-in-center) .signal-noise-item strong::after,
+#section-protection:not(.risk-in-center) .signal-noise-item strong::after {
     width: 0 !important;
     opacity: 0 !important;
     animation: none !important;
 }
 
-.signal-noise-item:not(.risk-in-center .signal-noise-item) strong {
+#section-rules:not(.risk-in-center) .signal-noise-item strong,
+#section-protection:not(.risk-in-center) .signal-noise-item strong {
     background-color: transparent !important;
     box-shadow: none !important;
     padding: 0 !important;
     animation: none !important;
 }
 
-.signal-noise-item:not(.risk-in-center .signal-noise-item)::before {
+#section-rules:not(.risk-in-center) .signal-noise-item::before,
+#section-protection:not(.risk-in-center) .signal-noise-item::before {
     opacity: 0 !important;
     animation: none !important;
 }
@@ -531,8 +537,8 @@ body {
     transition: opacity 0.4s ease;
 }
 
-.risk-in-center ~ .risk-side-visual,
-body:has(.risk-in-center) .risk-side-visual {
+body:has(#section-rules.risk-in-center) .risk-side-visual-left,
+body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     opacity: 0.5;
 }
 
