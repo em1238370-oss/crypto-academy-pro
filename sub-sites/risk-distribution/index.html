@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=18">
+   <link rel="stylesheet" href="styles.css?v=19">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -614,31 +614,52 @@
            
            const riskSections = document.querySelectorAll('#section-rules, #section-protection');
            
-           // Создаем визуальные элементы по бокам
+           // Создаем визуальные элементы по бокам - тематические иллюстрации
            function createSideVisuals() {
                if (document.querySelector('.risk-side-visual-left')) return; // Уже созданы
                
+               // Левый визуал - падение биткоина (красная линия вниз)
                const leftVisual = document.createElement('div');
                leftVisual.className = 'risk-side-visual risk-side-visual-left';
                leftVisual.innerHTML = `
-                   <svg class="risk-chart-visual" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                       <path class="risk-chart-line" d="M 20 160 L 60 120 L 100 80 L 140 100 L 180 60" stroke="rgba(159, 232, 159, 0.5)" stroke-width="2" fill="none"/>
-                       <path class="risk-chart-line" d="M 20 180 L 60 140 L 100 100 L 140 120 L 180 80" stroke="rgba(255, 100, 100, 0.4)" stroke-width="2" fill="none"/>
+                   <svg class="risk-chart-visual" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                       <!-- Фон графика -->
+                       <rect x="20" y="20" width="260" height="260" fill="rgba(0, 0, 0, 0.3)" rx="5"/>
+                       <!-- Сетка -->
+                       <line x1="20" y1="80" x2="280" y2="80" stroke="rgba(159, 232, 159, 0.1)" stroke-width="1"/>
+                       <line x1="20" y1="150" x2="280" y2="150" stroke="rgba(159, 232, 159, 0.1)" stroke-width="1"/>
+                       <line x1="20" y1="220" x2="280" y2="220" stroke="rgba(159, 232, 159, 0.1)" stroke-width="1"/>
+                       <!-- Падающая линия биткоина (красная) -->
+                       <path class="risk-chart-line risk-falling-line" d="M 40 60 L 80 80 L 120 100 L 160 140 L 200 180 L 240 220 L 260 240" 
+                             stroke="rgba(255, 80, 80, 0.7)" stroke-width="3" fill="none" stroke-linecap="round"/>
+                       <!-- Стрелка вниз -->
+                       <path d="M 250 230 L 260 240 L 250 250" stroke="rgba(255, 80, 80, 0.7)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                       <!-- Текст "BTC" -->
+                       <text x="40" y="50" fill="rgba(255, 80, 80, 0.8)" font-size="14" font-weight="bold">BTC ↓</text>
                    </svg>
                `;
                
+               // Правый визуал - уменьшение портфеля (круги уменьшаются)
                const rightVisual = document.createElement('div');
                rightVisual.className = 'risk-side-visual risk-side-visual-right';
                rightVisual.innerHTML = `
-                   <svg class="risk-chart-visual" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                       <circle cx="100" cy="100" r="60" fill="none" stroke="rgba(159, 232, 159, 0.2)" stroke-width="2"/>
-                       <circle cx="100" cy="100" r="40" fill="none" stroke="rgba(159, 232, 159, 0.3)" stroke-width="2"/>
-                       <circle cx="100" cy="100" r="20" fill="rgba(159, 232, 159, 0.1)"/>
+                   <svg class="risk-chart-visual" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                       <!-- Большой круг (начальный портфель) -->
+                       <circle class="risk-portfolio-big" cx="150" cy="150" r="80" fill="none" stroke="rgba(159, 232, 159, 0.4)" stroke-width="3" stroke-dasharray="5,5"/>
+                       <!-- Средний круг (после потери) -->
+                       <circle class="risk-portfolio-medium" cx="150" cy="150" r="50" fill="none" stroke="rgba(255, 200, 80, 0.5)" stroke-width="2.5" stroke-dasharray="5,5"/>
+                       <!-- Маленький круг (после большой потери) -->
+                       <circle class="risk-portfolio-small" cx="150" cy="150" r="30" fill="rgba(255, 100, 100, 0.3)" stroke="rgba(255, 100, 100, 0.6)" stroke-width="2"/>
+                       <!-- Стрелка уменьшения -->
+                       <path d="M 150 70 L 150 50 M 140 60 L 150 50 L 160 60" stroke="rgba(255, 100, 100, 0.7)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                       <!-- Текст -->
+                       <text x="150" y="40" fill="rgba(255, 100, 100, 0.8)" font-size="12" font-weight="bold" text-anchor="middle">Portfolio ↓</text>
                    </svg>
                `;
                
                document.body.appendChild(leftVisual);
                document.body.appendChild(rightVisual);
+               console.log('✅ Side visuals created');
            }
            
            function checkCenterPosition() {
@@ -671,11 +692,24 @@
                const rightVisual = document.querySelector('.risk-side-visual-right');
                
                if (anyInCenter) {
-                   if (leftVisual) leftVisual.style.setProperty('opacity', '0.6', 'important');
-                   if (rightVisual) rightVisual.style.setProperty('opacity', '0.6', 'important');
+                   if (leftVisual) {
+                       leftVisual.style.setProperty('opacity', '0.8', 'important');
+                       leftVisual.style.setProperty('display', 'block', 'important');
+                       leftVisual.style.setProperty('visibility', 'visible', 'important');
+                   }
+                   if (rightVisual) {
+                       rightVisual.style.setProperty('opacity', '0.8', 'important');
+                       rightVisual.style.setProperty('display', 'block', 'important');
+                       rightVisual.style.setProperty('visibility', 'visible', 'important');
+                   }
+                   console.log('✅ Side visuals shown');
                } else {
-                   if (leftVisual) leftVisual.style.setProperty('opacity', '0', 'important');
-                   if (rightVisual) rightVisual.style.setProperty('opacity', '0', 'important');
+                   if (leftVisual) {
+                       leftVisual.style.setProperty('opacity', '0', 'important');
+                   }
+                   if (rightVisual) {
+                       rightVisual.style.setProperty('opacity', '0', 'important');
+                   }
                }
            }
            
