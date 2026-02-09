@@ -2,9 +2,12 @@
 /* DuoView: акценты точечно, градации серого для глубины, не дешёвый жёлтый */
 
 /* Все заголовки и текст строго по центру */
-.news-hero {
-    margin-bottom: 96px !important; /* Пространство как на News - примерно 2см */
-    max-width: 720px;
+/* Пространство после hero секции - как на News (примерно 2см) */
+.content > .news-hero {
+    margin-bottom: 96px !important;
+    max-width: 720px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
 }
 
 .news-hero-label,
@@ -1035,8 +1038,10 @@ html {
         padding: 0 20px;
     }
     /* Пространство после hero на мобильных - как на News */
-    .news-hero {
+    .content > .news-hero {
         margin-bottom: 80px !important;
+        max-width: 100% !important;
+        padding: 0 24px !important;
     }
     /* п.11 Apple HIG: tap-area минимум 44px */
     .risk-calculator-wrapper button,
