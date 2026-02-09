@@ -90,13 +90,14 @@ body::after {
 /* Футер Risk — как News, в зелёной палитре */
 .news-footer {
     border-top-color: rgba(150, 220, 150, 0.15) !important;
-    margin-top: 120px !important;
-    padding: 80px 24px 60px !important;
+    margin-top: 180px !important;
+    padding: 40px 24px 60px !important;
     position: relative;
 }
 
 .news-footer::before {
     background: linear-gradient(90deg, transparent, rgba(159, 232, 159, 0.5), transparent) !important;
+    top: 0 !important;
 }
 
 .news-footer-text {
