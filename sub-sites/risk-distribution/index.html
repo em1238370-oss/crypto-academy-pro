@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=32">
+   <link rel="stylesheet" href="styles.css?v=33">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -635,14 +635,21 @@
                    const sectionBottom = rect.bottom;
                    const sectionCenter = rect.top + (rect.height / 2);
                    
-                   // Проверяем, пересекается ли секция с центром экрана (более широкая зона)
+                   // Проверяем, пересекается ли секция с центром экрана
+                   // На мобильных делаем зону шире для лучшей работы подчёркивания
+                   const isMobile = window.innerWidth <= 768;
+                   const centerZone = isMobile ? 600 : 400; // ±600px на мобильных, ±400px на десктопе
                    const distanceFromCenter = Math.abs(sectionCenter - viewportCenter);
-                   const isInCenter = distanceFromCenter < 400; // ±400px от центра
+                   const isInCenter = distanceFromCenter < centerZone;
                    
-                   if (isInCenter) {
+                   // Также проверяем, видна ли секция на экране (для мобильных)
+                   const isVisible = sectionTop < window.innerHeight && sectionBottom > 0;
+                   const shouldActivate = isInCenter && (isMobile ? isVisible : true);
+                   
+                   if (shouldActivate) {
                        if (!section.classList.contains('risk-in-center')) {
                            section.classList.add('risk-in-center');
-                           console.log('✅ Section in center:', section.id, 'distance:', distanceFromCenter);
+                           console.log('✅ Section in center:', section.id, 'distance:', distanceFromCenter, 'mobile:', isMobile);
                        }
                        anyInCenter = true;
                    } else {
@@ -815,38 +822,46 @@
                item.appendChild(topRightVisual);
                item.appendChild(bottomLeftVisual);
                
-               // На мобильных - автоматический показ при появлении на экране
+               // На мобильных - автоматический показ при появлении на экране с плавной анимацией
                function setupMobileAutoShow() {
                    if (window.innerWidth <= 768) {
                        const observer = new IntersectionObserver(function(entries) {
                            entries.forEach(function(entry) {
                                if (entry.isIntersecting) {
-                                   // Показываем визуалы автоматически на мобильных
+                                   // Показываем визуалы автоматически на мобильных с плавной анимацией
                                    if (visuals[visualType]) {
                                        topRightVisual.innerHTML = visuals[visualType].topRight;
                                        bottomLeftVisual.innerHTML = visuals[visualType].bottomLeft;
                                        
-                                       topRightVisual.style.setProperty('opacity', '1', 'important');
+                                       // Плавное появление
                                        topRightVisual.style.setProperty('display', 'block', 'important');
                                        topRightVisual.style.setProperty('visibility', 'visible', 'important');
-                                       topRightVisual.classList.add('show');
+                                       topRightVisual.classList.add('show', 'mobile-fade-in');
                                        
-                                       bottomLeftVisual.style.setProperty('opacity', '1', 'important');
                                        bottomLeftVisual.style.setProperty('display', 'block', 'important');
                                        bottomLeftVisual.style.setProperty('visibility', 'visible', 'important');
-                                       bottomLeftVisual.classList.add('show');
+                                       bottomLeftVisual.classList.add('show', 'mobile-fade-in');
                                        
                                        console.log('✅ Mobile: Visuals auto-shown for:', visualType);
                                    }
                                } else {
-                                   // Скрываем когда уходит с экрана
-                                   topRightVisual.style.setProperty('opacity', '0', 'important');
-                                   topRightVisual.style.setProperty('display', 'none', 'important');
-                                   bottomLeftVisual.style.setProperty('opacity', '0', 'important');
-                                   bottomLeftVisual.style.setProperty('display', 'none', 'important');
+                                   // Плавное скрытие когда уходит с экрана
+                                   topRightVisual.classList.remove('show', 'mobile-fade-in');
+                                   bottomLeftVisual.classList.remove('show', 'mobile-fade-in');
+                                   
+                                   setTimeout(function() {
+                                       if (!topRightVisual.classList.contains('show')) {
+                                           topRightVisual.style.setProperty('display', 'none', 'important');
+                                           topRightVisual.style.setProperty('visibility', 'hidden', 'important');
+                                       }
+                                       if (!bottomLeftVisual.classList.contains('show')) {
+                                           bottomLeftVisual.style.setProperty('display', 'none', 'important');
+                                           bottomLeftVisual.style.setProperty('visibility', 'hidden', 'important');
+                                       }
+                                   }, 300);
                                }
                            });
-                       }, { threshold: 0.2, rootMargin: '50px' });
+                       }, { threshold: 0.15, rootMargin: '80px' });
                        
                        observer.observe(item);
                    }
@@ -856,8 +871,12 @@
                setupMobileAutoShow();
                
                // Пересоздаем при изменении размера окна
+               let resizeTimeout;
                window.addEventListener('resize', function() {
-                   setupMobileAutoShow();
+                   clearTimeout(resizeTimeout);
+                   resizeTimeout = setTimeout(function() {
+                       setupMobileAutoShow();
+                   }, 250);
                });
                
                // Функция показа визуалов

@@ -200,6 +200,7 @@ body {
     opacity: 0;
     animation: fadeInUp 0.6s ease-out forwards;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    margin-bottom: 24px !important; /* Увеличенный отступ между табличками */
 }
 
 .signal-noise-item:nth-child(1) { animation-delay: 0.1s; }
@@ -501,7 +502,7 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     pointer-events: none !important;
     z-index: 10 !important;
     opacity: 0 !important;
-    transition: opacity 0.3s ease !important;
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
     background: rgba(0, 0, 0, 0.3) !important;
     border-radius: 8px !important;
     padding: 10px !important;
@@ -509,6 +510,28 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     border: 1px solid rgba(159, 232, 159, 0.2) !important;
     display: none !important;
     visibility: hidden !important;
+    transform: scale(0.8) translateY(10px) !important;
+}
+
+/* Плавная анимация появления для мобильных */
+@keyframes mobileVisualFadeIn {
+    from {
+        opacity: 0 !important;
+        transform: scale(0.85) translateY(15px) !important;
+    }
+    to {
+        opacity: 1 !important;
+        transform: scale(1) translateY(0) !important;
+    }
+}
+
+.risk-corner-visual.mobile-fade-in {
+    animation: mobileVisualFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+.risk-corner-visual.show {
+    opacity: 1 !important;
+    transform: scale(1) translateY(0) !important;
 }
 
 .risk-corner-visual svg {
@@ -571,53 +594,64 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
 }
 
 @media (max-width: 600px) {
-    /* На мобильных - размещаем визуалы внутри таблички с большими отступами */
+    /* Увеличиваем отступы между табличками на мобильных */
+    .signal-noise-item {
+        margin-bottom: 32px !important;
+    }
+    
+    /* На мобильных - размещаем визуалы в уголках, не закрывая текст */
     .risk-corner-visual {
-        width: 90px !important;
-        height: 90px !important;
-        padding: 5px !important;
-        background: rgba(0, 0, 0, 0.65) !important;
-        border: 1px solid rgba(159, 232, 159, 0.6) !important;
+        width: 80px !important;
+        height: 80px !important;
+        padding: 4px !important;
+        background: rgba(0, 0, 0, 0.7) !important;
+        border: 1px solid rgba(159, 232, 159, 0.7) !important;
         z-index: 15 !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
     }
     
-    /* Верхний правый - справа вверху, но с большим отступом от текста */
+    /* Верхний правый - в правом верхнем уголке */
     .risk-corner-top-right {
-        top: 5px !important;
-        right: 5px !important;
+        top: 2px !important;
+        right: 2px !important;
     }
     
-    /* Нижний левый - слева внизу, но с большим отступом от текста */
+    /* Нижний левый - в левом нижнем уголке */
     .risk-corner-bottom-left {
-        bottom: 5px !important;
-        left: 5px !important;
+        bottom: 2px !important;
+        left: 2px !important;
     }
     
     /* Увеличиваем padding таблички, чтобы визуалы не закрывали текст */
-    /* Используем более специфичный селектор чтобы не переопределить базовый padding */
     .signal-noise-list .risk-favorite-item {
-        padding: 20px 110px 110px 20px !important; /* top right bottom left - место для визуалов */
-        min-height: 200px !important;
+        padding: 18px 95px 95px 18px !important; /* top right bottom left - место для визуалов в уголках */
+        min-height: 180px !important;
     }
     
-    /* Убеждаемся, что текст внутри имеет правильные отступы */
+    /* Убеждаемся, что текст внутри имеет правильные отступы и не перекрывается */
     .risk-favorite-item .signal-noise-label,
     .risk-favorite-item .signal-noise-text {
         padding-right: 0 !important;
         padding-left: 0 !important;
-        max-width: calc(100% - 20px) !important; /* Не перекрываем визуалы */
+        max-width: calc(100% - 10px) !important; /* Текст не перекрывается визуалами */
+        word-wrap: break-word !important;
     }
     
     /* Уменьшаем размер текста в визуалах */
     .risk-corner-visual svg text {
-        font-size: 8px !important;
+        font-size: 7px !important;
     }
     
     /* Уменьшаем stroke-width для линий */
     .risk-corner-visual svg path,
     .risk-corner-visual svg line,
     .risk-corner-visual svg circle {
-        stroke-width: 2 !important;
+        stroke-width: 1.8 !important;
+    }
+    
+    /* Плавная анимация появления на мобильных */
+    .risk-corner-visual.mobile-fade-in {
+        animation: mobileVisualFadeIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
     }
     
     /* Убеждаемся, что визуалы видны */
@@ -625,34 +659,41 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         opacity: 1 !important;
         display: block !important;
         visibility: visible !important;
+        transform: scale(1) translateY(0) !important;
     }
 }
 
 @media (max-width: 480px) {
+    /* Еще больше отступов между табличками на маленьких экранах */
+    .signal-noise-item {
+        margin-bottom: 28px !important;
+    }
+    
     /* На очень маленьких экранах - еще меньше, но видимые */
     .risk-corner-visual {
-        width: 75px !important;
-        height: 75px !important;
-        padding: 4px !important;
-        background: rgba(0, 0, 0, 0.7) !important;
-        border: 1px solid rgba(159, 232, 159, 0.7) !important;
+        width: 70px !important;
+        height: 70px !important;
+        padding: 3px !important;
+        background: rgba(0, 0, 0, 0.75) !important;
+        border: 1px solid rgba(159, 232, 159, 0.8) !important;
         z-index: 15 !important;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5) !important;
     }
     
     .risk-corner-top-right {
-        top: 3px !important;
-        right: 3px !important;
+        top: 1px !important;
+        right: 1px !important;
     }
     
     .risk-corner-bottom-left {
-        bottom: 3px !important;
-        left: 3px !important;
+        bottom: 1px !important;
+        left: 1px !important;
     }
     
     /* Увеличиваем padding таблички на маленьких экранах */
     .signal-noise-list .risk-favorite-item {
-        padding: 15px 85px 85px 15px !important; /* top right bottom left */
-        min-height: 170px !important;
+        padding: 16px 80px 80px 16px !important; /* top right bottom left */
+        min-height: 160px !important;
     }
     
     /* Убеждаемся, что текст не перекрывается */
@@ -660,11 +701,17 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     .risk-favorite-item .signal-noise-text {
         padding-right: 0 !important;
         padding-left: 0 !important;
-        max-width: calc(100% - 15px) !important;
+        max-width: calc(100% - 8px) !important;
+        word-wrap: break-word !important;
     }
     
     .risk-corner-visual svg text {
-        font-size: 7px !important;
+        font-size: 6px !important;
+    }
+    
+    /* Плавная анимация появления на маленьких экранах */
+    .risk-corner-visual.mobile-fade-in {
+        animation: mobileVisualFadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
     }
     
     /* Убеждаемся, что визуалы видны */
@@ -672,6 +719,7 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         opacity: 1 !important;
         display: block !important;
         visibility: visible !important;
+        transform: scale(1) translateY(0) !important;
     }
 }
 
