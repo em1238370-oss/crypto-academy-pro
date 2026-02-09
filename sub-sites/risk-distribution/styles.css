@@ -573,62 +573,76 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
 @media (max-width: 600px) {
     /* На мобильных - размещаем визуалы внутри таблички */
     .risk-corner-visual {
-        width: 100px !important;
-        height: 100px !important;
-        padding: 6px !important;
-        background: rgba(0, 0, 0, 0.4) !important;
+        width: 110px !important;
+        height: 110px !important;
+        padding: 8px !important;
+        background: rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(159, 232, 159, 0.4) !important;
+        z-index: 15 !important;
     }
     
     /* Верхний правый - внутри таблички справа вверху */
     .risk-corner-top-right {
-        top: 5px !important;
-        right: 5px !important;
+        top: 8px !important;
+        right: 8px !important;
     }
     
     /* Нижний левый - внутри таблички слева внизу */
     .risk-corner-bottom-left {
-        bottom: 5px !important;
-        left: 5px !important;
+        bottom: 8px !important;
+        left: 8px !important;
     }
     
     /* Уменьшаем размер текста */
     .risk-corner-visual svg text {
-        font-size: 9px !important;
+        font-size: 10px !important;
     }
     
     /* Уменьшаем stroke-width для линий */
     .risk-corner-visual svg path,
     .risk-corner-visual svg line,
     .risk-corner-visual svg circle {
-        stroke-width: 2 !important;
+        stroke-width: 2.5 !important;
+    }
+    
+    /* Убеждаемся, что визуалы видны */
+    .risk-corner-visual.show {
+        opacity: 1 !important;
+        display: block !important;
+        visibility: visible !important;
     }
 }
 
 @media (max-width: 480px) {
-    /* На очень маленьких экранах - еще меньше */
+    /* На очень маленьких экранах - еще меньше, но видимые */
     .risk-corner-visual {
-        width: 80px !important;
-        height: 80px !important;
-        padding: 4px !important;
+        width: 90px !important;
+        height: 90px !important;
+        padding: 6px !important;
+        background: rgba(0, 0, 0, 0.6) !important;
+        border: 1px solid rgba(159, 232, 159, 0.5) !important;
+        z-index: 15 !important;
     }
     
     .risk-corner-top-right {
-        top: 3px !important;
-        right: 3px !important;
+        top: 5px !important;
+        right: 5px !important;
     }
     
     .risk-corner-bottom-left {
-        bottom: 3px !important;
-        left: 3px !important;
+        bottom: 5px !important;
+        left: 5px !important;
     }
     
     .risk-corner-visual svg text {
-        font-size: 8px !important;
+        font-size: 9px !important;
     }
     
-    /* Упрощаем визуалы - убираем текст на очень маленьких экранах */
-    .risk-corner-visual svg text {
-        display: none !important;
+    /* Убеждаемся, что визуалы видны */
+    .risk-corner-visual.show {
+        opacity: 1 !important;
+        display: block !important;
+        visibility: visible !important;
     }
 }
 

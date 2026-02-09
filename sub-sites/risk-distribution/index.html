@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=29">
+   <link rel="stylesheet" href="styles.css?v=30">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -815,8 +815,8 @@
                item.appendChild(topRightVisual);
                item.appendChild(bottomLeftVisual);
                
-               // Визуалы работают ТОЛЬКО пока мышка на табличке
-               item.addEventListener('mouseenter', function() {
+               // Функция показа визуалов
+               function showVisuals() {
                    if (visuals[visualType]) {
                        topRightVisual.innerHTML = visuals[visualType].topRight;
                        bottomLeftVisual.innerHTML = visuals[visualType].bottomLeft;
@@ -832,12 +832,12 @@
                        bottomLeftVisual.style.setProperty('visibility', 'visible', 'important');
                        bottomLeftVisual.classList.add('show');
                        
-                       console.log('✅ Visuals ON - mouse on table:', visualType);
+                       console.log('✅ Visuals ON:', visualType);
                    }
-               });
+               }
                
-               item.addEventListener('mouseleave', function() {
-                   // Скрываем сразу когда мышка уходит
+               // Функция скрытия визуалов
+               function hideVisuals() {
                    topRightVisual.style.setProperty('opacity', '0', 'important');
                    topRightVisual.style.setProperty('display', 'none', 'important');
                    topRightVisual.style.setProperty('visibility', 'hidden', 'important');
@@ -848,16 +848,37 @@
                    bottomLeftVisual.style.setProperty('visibility', 'hidden', 'important');
                    bottomLeftVisual.classList.remove('show');
                    
-                   console.log('❌ Visuals OFF - mouse left table:', visualType);
-               });
+                   console.log('❌ Visuals OFF:', visualType);
+               }
                
-               // Дополнительная проверка - если мышка не на табличке, визуалы не работают
-               item.addEventListener('mouseout', function(e) {
-                   if (!item.contains(e.relatedTarget)) {
-                       topRightVisual.style.setProperty('opacity', '0', 'important');
-                       topRightVisual.style.setProperty('display', 'none', 'important');
-                       bottomLeftVisual.style.setProperty('opacity', '0', 'important');
-                       bottomLeftVisual.style.setProperty('display', 'none', 'important');
+               // Для десктопа - mouseenter/mouseleave
+               item.addEventListener('mouseenter', showVisuals);
+               item.addEventListener('mouseleave', hideVisuals);
+               
+               // Для мобильных - touchstart/touchend
+               item.addEventListener('touchstart', function(e) {
+                   e.preventDefault();
+                   showVisuals();
+               }, { passive: false });
+               
+               item.addEventListener('touchend', function(e) {
+                   e.preventDefault();
+                   // Небольшая задержка для мобильных, чтобы пользователь успел увидеть
+                   setTimeout(hideVisuals, 2000);
+               }, { passive: false });
+               
+               // Также поддерживаем click для мобильных
+               let touchTimer;
+               item.addEventListener('click', function(e) {
+                   if (window.innerWidth <= 768) {
+                       // На мобильных - toggle при клике
+                       if (topRightVisual.style.opacity === '0' || topRightVisual.style.display === 'none') {
+                           showVisuals();
+                           clearTimeout(touchTimer);
+                           touchTimer = setTimeout(hideVisuals, 3000);
+                       } else {
+                           hideVisuals();
+                       }
                    }
                });
            });
