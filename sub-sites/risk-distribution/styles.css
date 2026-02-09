@@ -501,12 +501,14 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     pointer-events: none !important;
     z-index: 10 !important;
     opacity: 0 !important;
-    transition: opacity 0.4s ease !important;
+    transition: opacity 0.3s ease !important;
     background: rgba(0, 0, 0, 0.3) !important;
     border-radius: 8px !important;
     padding: 10px !important;
     backdrop-filter: blur(4px) !important;
     border: 1px solid rgba(159, 232, 159, 0.2) !important;
+    display: none !important;
+    visibility: hidden !important;
 }
 
 .risk-corner-visual svg {
@@ -527,8 +529,9 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
 }
 
 .risk-corner-visual.show {
-    opacity: 0.9 !important;
+    opacity: 0.95 !important;
     display: block !important;
+    visibility: visible !important;
 }
 
 /* Убеждаемся, что таблички имеют position relative и overflow visible */

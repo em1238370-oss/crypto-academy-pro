@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=27">
+   <link rel="stylesheet" href="styles.css?v=28">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -815,33 +815,50 @@
                item.appendChild(topRightVisual);
                item.appendChild(bottomLeftVisual);
                
+               // Визуалы работают ТОЛЬКО пока мышка на табличке
                item.addEventListener('mouseenter', function() {
                    if (visuals[visualType]) {
                        topRightVisual.innerHTML = visuals[visualType].topRight;
                        bottomLeftVisual.innerHTML = visuals[visualType].bottomLeft;
                        
+                       // Показываем сразу
                        topRightVisual.style.setProperty('opacity', '0.95', 'important');
                        topRightVisual.style.setProperty('display', 'block', 'important');
+                       topRightVisual.style.setProperty('visibility', 'visible', 'important');
                        topRightVisual.classList.add('show');
                        
                        bottomLeftVisual.style.setProperty('opacity', '0.95', 'important');
                        bottomLeftVisual.style.setProperty('display', 'block', 'important');
+                       bottomLeftVisual.style.setProperty('visibility', 'visible', 'important');
                        bottomLeftVisual.classList.add('show');
                        
-                       console.log('✅ Visuals shown for:', visualType);
+                       console.log('✅ Visuals ON - mouse on table:', visualType);
                    }
                });
                
                item.addEventListener('mouseleave', function() {
+                   // Скрываем сразу когда мышка уходит
                    topRightVisual.style.setProperty('opacity', '0', 'important');
-                   bottomLeftVisual.style.setProperty('opacity', '0', 'important');
+                   topRightVisual.style.setProperty('display', 'none', 'important');
+                   topRightVisual.style.setProperty('visibility', 'hidden', 'important');
+                   topRightVisual.classList.remove('show');
                    
-                   setTimeout(function() {
+                   bottomLeftVisual.style.setProperty('opacity', '0', 'important');
+                   bottomLeftVisual.style.setProperty('display', 'none', 'important');
+                   bottomLeftVisual.style.setProperty('visibility', 'hidden', 'important');
+                   bottomLeftVisual.classList.remove('show');
+                   
+                   console.log('❌ Visuals OFF - mouse left table:', visualType);
+               });
+               
+               // Дополнительная проверка - если мышка не на табличке, визуалы не работают
+               item.addEventListener('mouseout', function(e) {
+                   if (!item.contains(e.relatedTarget)) {
+                       topRightVisual.style.setProperty('opacity', '0', 'important');
                        topRightVisual.style.setProperty('display', 'none', 'important');
+                       bottomLeftVisual.style.setProperty('opacity', '0', 'important');
                        bottomLeftVisual.style.setProperty('display', 'none', 'important');
-                       topRightVisual.classList.remove('show');
-                       bottomLeftVisual.classList.remove('show');
-                   }, 500);
+                   }
                });
            });
        })();
