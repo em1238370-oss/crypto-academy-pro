@@ -526,7 +526,8 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
 }
 
 .risk-corner-visual.mobile-fade-in {
-    animation: mobileVisualFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    animation: mobileVisualFadeIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+    opacity: 0 !important; /* Начинаем с прозрачности для анимации */
 }
 
 .risk-corner-visual.show {
