@@ -185,7 +185,8 @@ body {
 }
 
 
-/* Карточки: симметричная гравировка слева и справа, без точек */
+/* Карточки: симметричная гравировка слева и справа, без точек — принудительно на всех экранах */
+.content .signal-noise-list .signal-noise-item,
 .signal-noise-item {
     padding: 24px 28px !important;
     background: rgba(0, 0, 0, 0.2) !important;
@@ -194,15 +195,16 @@ body {
     border-right: 3px solid rgba(159, 232, 159, 0.4) !important;
     border-radius: 12px !important;
     transition: background 0.25s ease, box-shadow 0.25s ease !important;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
     margin-bottom: 20px !important;
-    text-align: left;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    text-align: left !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
+.content .signal-noise-list .signal-noise-item:hover,
 .signal-noise-item:hover {
     background: rgba(0, 0, 0, 0.26) !important;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
@@ -460,17 +462,18 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         object-fit: contain;
     }
     
+    .content .signal-noise-list .signal-noise-item,
     .signal-noise-item {
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
         padding: 18px 20px !important;
         gap: 8px !important;
-        background: rgba(0, 0, 0, 0.18) !important;
+        background: rgba(0, 0, 0, 0.2) !important;
         border: 1px solid rgba(159, 232, 159, 0.15) !important;
-        border-left: 3px solid rgba(159, 232, 159, 0.4) !important;
-        border-right: 3px solid rgba(159, 232, 159, 0.4) !important;
-        margin-bottom: 16px !important;
+        border-left: 3px solid rgba(159, 232, 159, 0.5) !important;
+        border-right: 3px solid rgba(159, 232, 159, 0.5) !important;
+        margin-bottom: 14px !important;
     }
     
     .signal-noise-label,
@@ -500,10 +503,10 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         align-items: center !important;
         padding: 18px 20px !important;
         gap: 8px !important;
-        background: rgba(0, 0, 0, 0.18) !important;
+        background: rgba(0, 0, 0, 0.2) !important;
         border: 1px solid rgba(159, 232, 159, 0.15) !important;
-        border-left: 3px solid rgba(159, 232, 159, 0.4) !important;
-        border-right: 3px solid rgba(159, 232, 159, 0.4) !important;
+        border-left: 3px solid rgba(159, 232, 159, 0.5) !important;
+        border-right: 3px solid rgba(159, 232, 159, 0.5) !important;
     }
     
     .risk-favorite-item .signal-noise-label,
@@ -968,14 +971,16 @@ html {
     .signal-noise-list {
         gap: 28px !important; /* Как на News */
     }
-    /* Таблички — гравировка слева и справа */
+    /* Таблички — гравировка слева и справа (мобильная версия) */
+    .content .signal-noise-list .signal-noise-item,
     .signal-noise-item {
-        padding: 16px 18px !important;
-        margin-bottom: 12px !important;
-        background: rgba(0, 0, 0, 0.18) !important;
+        padding: 18px 20px !important;
+        margin-bottom: 14px !important;
+        background: rgba(0, 0, 0, 0.2) !important;
         border: 1px solid rgba(159, 232, 159, 0.15) !important;
-        border-left: 3px solid rgba(159, 232, 159, 0.4) !important;
-        border-right: 3px solid rgba(159, 232, 159, 0.4) !important;
+        border-left: 3px solid rgba(159, 232, 159, 0.5) !important;
+        border-right: 3px solid rgba(159, 232, 159, 0.5) !important;
+        border-radius: 12px !important;
     }
     .signal-noise-label {
         font-size: 13px !important; /* Как на News */
@@ -2260,5 +2265,16 @@ html {
         width: calc(100vw - 40px);
         height: calc(100vh - 120px);
         right: 20px;
+    }
+}
+
+/* Финальное переопределение для мобильных табличек Risk — гравировка слева и справа */
+@media (max-width: 768px) {
+    #section-rules .signal-noise-item,
+    #section-protection .signal-noise-item {
+        border-left: 3px solid rgba(159, 232, 159, 0.5) !important;
+        border-right: 3px solid rgba(159, 232, 159, 0.5) !important;
+        border-top: 1px solid rgba(159, 232, 159, 0.15) !important;
+        border-bottom: 1px solid rgba(159, 232, 159, 0.15) !important;
     }
 }
