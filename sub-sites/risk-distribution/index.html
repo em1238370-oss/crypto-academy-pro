@@ -822,151 +822,24 @@
                item.appendChild(topRightVisual);
                item.appendChild(bottomLeftVisual);
                
-               // На мобильных - автоматический показ при появлении на экране с плавной анимацией
-               let mobileObserver = null;
-               
-               function setupMobileAutoShow() {
-                   // Удаляем старый observer если есть
-                   if (mobileObserver) {
-                       mobileObserver.disconnect();
-                       mobileObserver = null;
-                   }
-                   
-                   // Проверяем размер экрана
-                   const isMobile = window.innerWidth <= 768;
-                   
-                   if (isMobile && visuals[visualType]) {
-                       // Заполняем визуалы сразу
-                       topRightVisual.innerHTML = visuals[visualType].topRight;
-                       bottomLeftVisual.innerHTML = visuals[visualType].bottomLeft;
-                       
-                       mobileObserver = new IntersectionObserver(function(entries) {
-                           entries.forEach(function(entry) {
-                               if (entry.isIntersecting) {
-                                   // Показываем визуалы автоматически на мобильных с плавной анимацией
-                                   requestAnimationFrame(function() {
-                                       topRightVisual.style.setProperty('display', 'block', 'important');
-                                       topRightVisual.style.setProperty('visibility', 'visible', 'important');
-                                       topRightVisual.style.setProperty('opacity', '0', 'important');
-                                       
-                                       bottomLeftVisual.style.setProperty('display', 'block', 'important');
-                                       bottomLeftVisual.style.setProperty('visibility', 'visible', 'important');
-                                       bottomLeftVisual.style.setProperty('opacity', '0', 'important');
-                                       
-                                       // Добавляем классы для анимации
-                                       topRightVisual.classList.add('show', 'mobile-fade-in');
-                                       bottomLeftVisual.classList.add('show', 'mobile-fade-in');
-                                       
-                                       console.log('✅ Mobile: Visuals auto-shown for:', visualType);
-                                   });
-                               } else {
-                                   // Плавное скрытие когда уходит с экрана
-                                   topRightVisual.classList.remove('show', 'mobile-fade-in');
-                                   bottomLeftVisual.classList.remove('show', 'mobile-fade-in');
-                                   
-                                   setTimeout(function() {
-                                       if (!topRightVisual.classList.contains('show')) {
-                                           topRightVisual.style.setProperty('display', 'none', 'important');
-                                           topRightVisual.style.setProperty('visibility', 'hidden', 'important');
-                                       }
-                                       if (!bottomLeftVisual.classList.contains('show')) {
-                                           bottomLeftVisual.style.setProperty('display', 'none', 'important');
-                                           bottomLeftVisual.style.setProperty('visibility', 'hidden', 'important');
-                                       }
-                                   }, 400);
-                               }
-                           });
-                       }, { 
-                           threshold: 0.1, 
-                           rootMargin: '100px 0px 100px 0px' 
-                       });
-                       
-                       mobileObserver.observe(item);
-                   } else {
-                       // На десктопе - только hover
-                       topRightVisual.style.display = 'none';
-                       bottomLeftVisual.style.display = 'none';
-                   }
+               if (visuals[visualType]) {
+                   topRightVisual.innerHTML = visuals[visualType].topRight;
+                   bottomLeftVisual.innerHTML = visuals[visualType].bottomLeft;
                }
                
-               // Настраиваем автоматический показ сразу
-               setupMobileAutoShow();
-               
-               // Пересоздаем при изменении размера окна
-               let resizeTimeout;
-               window.addEventListener('resize', function() {
-                   clearTimeout(resizeTimeout);
-                   resizeTimeout = setTimeout(function() {
-                       setupMobileAutoShow();
-                   }, 300);
-               });
-               
-               // Функция показа визуалов
-               function showVisuals() {
-                   if (visuals[visualType]) {
-                       topRightVisual.innerHTML = visuals[visualType].topRight;
-                       bottomLeftVisual.innerHTML = visuals[visualType].bottomLeft;
-                       
-                       // Показываем сразу
-                       topRightVisual.style.setProperty('opacity', '0.95', 'important');
-                       topRightVisual.style.setProperty('display', 'block', 'important');
-                       topRightVisual.style.setProperty('visibility', 'visible', 'important');
-                       topRightVisual.classList.add('show');
-                       
-                       bottomLeftVisual.style.setProperty('opacity', '0.95', 'important');
-                       bottomLeftVisual.style.setProperty('display', 'block', 'important');
-                       bottomLeftVisual.style.setProperty('visibility', 'visible', 'important');
-                       bottomLeftVisual.classList.add('show');
-                       
-                       console.log('✅ Visuals ON:', visualType);
-                   }
+               function revealVisuals() {
+                   topRightVisual.style.setProperty('display', 'block', 'important');
+                   topRightVisual.style.setProperty('visibility', 'visible', 'important');
+                   topRightVisual.style.setProperty('opacity', '1', 'important');
+                   topRightVisual.classList.add('show');
+                   
+                   bottomLeftVisual.style.setProperty('display', 'block', 'important');
+                   bottomLeftVisual.style.setProperty('visibility', 'visible', 'important');
+                   bottomLeftVisual.style.setProperty('opacity', '1', 'important');
+                   bottomLeftVisual.classList.add('show');
                }
                
-               // Функция скрытия визуалов
-               function hideVisuals() {
-                   topRightVisual.style.setProperty('opacity', '0', 'important');
-                   topRightVisual.style.setProperty('display', 'none', 'important');
-                   topRightVisual.style.setProperty('visibility', 'hidden', 'important');
-                   topRightVisual.classList.remove('show');
-                   
-                   bottomLeftVisual.style.setProperty('opacity', '0', 'important');
-                   bottomLeftVisual.style.setProperty('display', 'none', 'important');
-                   bottomLeftVisual.style.setProperty('visibility', 'hidden', 'important');
-                   bottomLeftVisual.classList.remove('show');
-                   
-                   console.log('❌ Visuals OFF:', visualType);
-               }
-               
-               // Для десктопа - mouseenter/mouseleave
-               item.addEventListener('mouseenter', showVisuals);
-               item.addEventListener('mouseleave', hideVisuals);
-               
-               // Для мобильных - touchstart/touchend
-               item.addEventListener('touchstart', function(e) {
-                   e.preventDefault();
-                   showVisuals();
-               }, { passive: false });
-               
-               item.addEventListener('touchend', function(e) {
-                   e.preventDefault();
-                   // Небольшая задержка для мобильных, чтобы пользователь успел увидеть
-                   setTimeout(hideVisuals, 2000);
-               }, { passive: false });
-               
-               // Также поддерживаем click для мобильных
-               let touchTimer;
-               item.addEventListener('click', function(e) {
-                   if (window.innerWidth <= 768) {
-                       // На мобильных - toggle при клике
-                       if (topRightVisual.style.opacity === '0' || topRightVisual.style.display === 'none') {
-                           showVisuals();
-                           clearTimeout(touchTimer);
-                           touchTimer = setTimeout(hideVisuals, 3000);
-                       } else {
-                           hideVisuals();
-                       }
-                   }
-               });
+               revealVisuals();
            });
        })();
    </script>
