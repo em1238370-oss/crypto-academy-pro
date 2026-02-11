@@ -925,16 +925,16 @@ html {
 /* Risk trust bento + calculator + разделитель — DuoView: градации, не ярко */
 /* Убрано: разделители полос */
 
-/* DuoView: на мобильной всё после hero появляется при прокрутке */
+/* DuoView: на мобильной всё после hero появляется при прокрутке — выразительный эффект */
 @media (max-width: 768px) {
     .risk-scroll-reveal {
         opacity: 0 !important;
-        transform: translateY(20px);
-        transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+        transform: translateY(50px) scale(0.97);
+        transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .risk-scroll-reveal.risk-scroll-revealed {
         opacity: 1 !important;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
     .risk-scroll-reveal .signal-noise-item {
         animation: none !important;
