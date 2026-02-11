@@ -1250,6 +1250,23 @@ html {
     transform: translateY(0);
 }
 
+/* Таблички "3 strategies", "Clear", "Free" — плавно как все остальные (переопределяет 0.6s выше) */
+.content .risk-scroll-reveal.risk-trust-stat,
+.content .risk-scroll-reveal.risk-trust-reveal,
+.content .risk-scroll-reveal.news-trust-badge,
+.content .risk-scroll-reveal.news-trust-tagline {
+    opacity: 0 !important;
+    transform: translateY(14px);
+    transition: opacity 3.2s cubic-bezier(0.22, 1, 0.36, 1), transform 3.2s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+.content .risk-scroll-reveal.risk-scroll-revealed.risk-trust-stat,
+.content .risk-scroll-reveal.risk-scroll-revealed.risk-trust-reveal,
+.content .risk-scroll-reveal.risk-scroll-revealed.news-trust-badge,
+.content .risk-scroll-reveal.risk-scroll-revealed.news-trust-tagline {
+    opacity: 1 !important;
+    transform: translateY(0);
+}
+
 /* Risk Calculator */
 .risk-calculator-wrapper {
     font-family: 'Poppins', sans-serif;
