@@ -1080,7 +1080,7 @@ html {
     }
     /* Секции signal-noise - как на News */
     .signal-noise {
-        margin-bottom: 80px !important;
+        margin-bottom: 48px !important;
     }
     .signal-noise-title {
         margin-bottom: 28px !important;
@@ -1109,7 +1109,10 @@ html {
         font-size: 14px !important; /* Как на News */
     }
     .news-trust-stats {
-        margin-bottom: 80px !important;
+        margin-bottom: 72px !important;
+    }
+    .risk-section-divider {
+        margin: 36px auto !important;
     }
     /* п.11 Apple HIG: tap-area минимум 44px */
     .risk-calculator-wrapper button,
@@ -1176,10 +1179,13 @@ html {
         font-size: 40px !important;
     }
     .signal-noise {
-        margin-bottom: 104px !important;
+        margin-bottom: 56px !important;
     }
     .news-trust-stats {
-        margin-bottom: 104px !important;
+        margin-bottom: 68px !important;
+    }
+    .risk-section-divider {
+        margin: 32px auto !important;
     }
 }
 @media (max-width: 600px) {
