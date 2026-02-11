@@ -229,14 +229,14 @@ body {
     gap: 12px !important;
     margin-bottom: 20px !important;
     text-align: left !important;
-    box-shadow: inset 2px 0 0 rgba(159, 232, 159, 0.12), 0 2px 12px rgba(0, 0, 0, 0.15) !important;
+    box-shadow: inset 2px 0 0 rgba(159, 232, 159, 0.12), 0 2px 12px rgba(0, 0, 0, 0.15), 0 0 40px rgba(159, 232, 159, 0.08) !important;
 }
 
 .content .signal-noise-list .signal-noise-item:hover,
 .signal-noise-item:hover {
     background: rgba(0, 0, 0, 0.26) !important;
     transform: translateY(-2px) scale(1.01) !important;
-    box-shadow: inset 2px 0 0 rgba(159, 232, 159, 0.18), 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(159, 232, 159, 0.08) !important;
+    box-shadow: inset 2px 0 0 rgba(159, 232, 159, 0.18), 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 60px rgba(159, 232, 159, 0.12), 0 0 0 1px rgba(159, 232, 159, 0.08) !important;
 }
 
 .signal-noise-label {
