@@ -184,49 +184,26 @@ body {
     }
 }
 
-/* Scroll-reveal как на DuoView: появление при прокрутке — слева/справа по очереди */
-@keyframes riskSlideFromLeft {
-    from {
-        opacity: 0;
-        transform: translateX(-28px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes riskSlideFromRight {
-    from {
-        opacity: 0;
-        transform: translateX(28px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-.signal-noise-item.risk-scroll-item {
-    opacity: 0 !important;
+/* Scroll-reveal: карточки плавно появляются при прокрутке — синхронный fade-in */
+#section-rules .signal-noise-item,
+#section-protection .signal-noise-item {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
     animation: none !important;
 }
 
-.signal-noise-item.risk-scroll-item.risk-scroll-revealed.risk-from-left {
-    animation: riskSlideFromLeft 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-.signal-noise-item.risk-scroll-item.risk-scroll-revealed.risk-from-right {
-    animation: riskSlideFromRight 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+#section-rules.risk-cards-revealed .signal-noise-item,
+#section-protection.risk-cards-revealed .signal-noise-item {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .signal-noise-item.risk-scroll-item {
+    #section-rules .signal-noise-item,
+    #section-protection .signal-noise-item {
         opacity: 1;
-    }
-    .signal-noise-item.risk-scroll-item.risk-scroll-revealed.risk-from-left,
-    .signal-noise-item.risk-scroll-item.risk-scroll-revealed.risk-from-right {
-        animation: none;
+        transform: none;
     }
 }
 
