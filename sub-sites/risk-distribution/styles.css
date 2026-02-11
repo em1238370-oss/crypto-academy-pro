@@ -785,6 +785,14 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     margin-top: 18px !important;
 }
 
+.risk-favorite-item[data-visual="diversify"] .risk-corner-bottom-left svg {
+    transform: scale(1.08) translateY(-6px);
+}
+
+.risk-favorite-item[data-visual="diversify"] .risk-corner-top-right svg {
+    transform: scale(1.12) translateY(-2px);
+}
+
 @media (max-width: 768px) {
     .risk-favorite-item {
         padding: 24px 48px !important;
