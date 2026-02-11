@@ -880,6 +880,10 @@ html {
     box-shadow: 0 0 12px rgba(159, 232, 159, 0.2);
 }
 
+#section-rules .risk-section-divider {
+    display: none !important;
+}
+
 .risk-section-divider::before {
     content: '';
     position: absolute;
