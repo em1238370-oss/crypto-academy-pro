@@ -925,15 +925,28 @@ html {
 /* Risk trust bento + calculator + разделитель — DuoView: градации, не ярко */
 /* Убрано: разделители полос */
 
-/* Каждая табличка выскакивает сама по себе при прокрутке; калькулятор — без анимации */
+/* DuoView Pro: карточки плавно выезжают, чуть поднимаются на ~5px и оседают на место */
 .risk-scroll-reveal {
     opacity: 0 !important;
-    transform: translateY(40px) scale(0.98);
-    transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1), transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(18px);
 }
 .risk-scroll-reveal.risk-scroll-revealed {
     opacity: 1 !important;
-    transform: translateY(0) scale(1);
+    animation: riskRevealPop 0.85s cubic-bezier(0.34, 1.12, 0.64, 1) forwards;
+}
+@keyframes riskRevealPop {
+    0% {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+    75% {
+        opacity: 1;
+        transform: translateY(-5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
