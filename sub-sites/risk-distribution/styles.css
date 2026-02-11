@@ -161,7 +161,7 @@ body {
     gap: 20px !important;
 }
 
-/* Десктоп: карточки одного размера, поуже — ограничиваем всю секцию */
+/* Десктоп: карточки одного размера, текст по центру, без лишней пустоты */
 @media (min-width: 769px) {
     .content .signal-noise#section-rules,
     .content .signal-noise#section-protection {
@@ -177,8 +177,16 @@ body {
     .content #section-protection .signal-noise-item {
         width: 100% !important;
         min-width: 0 !important;
-        min-height: 220px !important;
+        min-height: 0 !important;
         box-sizing: border-box !important;
+        align-items: center !important;
+        text-align: center !important;
+    }
+    .content #section-rules .signal-noise-label,
+    .content #section-rules .signal-noise-text,
+    .content #section-protection .signal-noise-label,
+    .content #section-protection .signal-noise-text {
+        text-align: center !important;
     }
 }
 
