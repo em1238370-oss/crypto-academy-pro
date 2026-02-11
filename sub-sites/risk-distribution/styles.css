@@ -911,7 +911,7 @@ html {
 .risk-scroll-reveal {
     opacity: 0 !important;
     transform: translateY(16px);
-    transition: opacity 1.15s cubic-bezier(0.22, 1, 0.36, 1), transform 1.15s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity 1.8s cubic-bezier(0.22, 1, 0.36, 1), transform 1.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .risk-scroll-reveal.risk-scroll-revealed {
     opacity: 1 !important;
