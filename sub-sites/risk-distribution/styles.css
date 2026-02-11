@@ -158,7 +158,7 @@ body {
 
 /* Профессиональная визуализация для секций Risk - улучшает концентрацию */
 .signal-noise-list {
-    gap: 20px !important;
+    gap: 14px !important;
 }
 
 /* Десктоп: карточки одного размера, поуже — ограничиваем всю секцию */
@@ -214,14 +214,13 @@ body {
 }
 
 
-/* Карточки: симметричная гравировка слева и справа, без точек — принудительно на всех экранах */
+/* Карточки: как News — левая граница, компактный padding */
 .content .signal-noise-list .signal-noise-item,
 .signal-noise-item {
-    padding: 24px 28px !important;
+    padding: 14px 16px !important;
     background: rgba(0, 0, 0, 0.2) !important;
     border: 1px solid rgba(159, 232, 159, 0.15) !important;
-    border-left: 3px solid rgba(159, 232, 159, 0.4) !important;
-    border-right: 3px solid rgba(159, 232, 159, 0.4) !important;
+    border-left: 2px solid rgba(159, 232, 159, 0.5) !important;
     border-radius: 12px !important;
     transition: background 0.25s ease, box-shadow 0.25s ease !important;
     display: flex !important;
@@ -240,7 +239,7 @@ body {
 }
 
 .signal-noise-label {
-    font-size: 15px !important;
+    font-size: 13px !important;
     font-weight: 600 !important;
     color: #FFFFFF !important;
     margin-bottom: 4px !important;
@@ -263,22 +262,22 @@ body {
     color: rgba(159, 232, 159, 0.9);
 }
 
-/* Заголовки секций — DuoView: чёткая иерархия */
+/* Заголовки секций — как News */
 .signal-noise-title {
-    font-size: clamp(28px, 4vw, 42px) !important;
+    font-size: 20px !important;
     font-weight: 700 !important;
     color: #FFFFFF !important;
-    margin-bottom: 16px !important;
+    margin-bottom: 12px !important;
     font-family: 'Raleway', sans-serif !important;
     letter-spacing: -0.02em !important;
     line-height: 1.2 !important;
 }
 
 .signal-noise-intro {
-    font-size: 16px !important;
+    font-size: 15px !important;
     color: rgba(255, 255, 255, 0.7) !important;
     line-height: 1.6 !important;
-    margin-bottom: 32px !important;
+    margin-bottom: 16px !important;
     font-family: 'Poppins', sans-serif !important;
     max-width: 720px;
     margin-left: auto;
@@ -469,10 +468,15 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     overflow: visible !important;
 }
 
+/* Как News */
+.signal-noise {
+    margin: 0 auto 40px !important;
+}
+
 /* Мобильная версия — стиль как News (768px) */
 @media (max-width: 768px) {
     .signal-noise-list {
-        gap: 28px !important; /* Как News */
+        gap: 14px !important;
         justify-items: center !important;
     }
     .signal-noise-list > li {
@@ -496,12 +500,11 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        padding: 18px 20px !important;
+        padding: 14px 16px !important;
         gap: 8px !important;
         background: rgba(0, 0, 0, 0.2) !important;
         border: 1px solid rgba(159, 232, 159, 0.15) !important;
-        border-left: 3px solid rgba(159, 232, 159, 0.5) !important;
-        border-right: 3px solid rgba(159, 232, 159, 0.5) !important;
+        border-left: 2px solid rgba(159, 232, 159, 0.5) !important;
         margin-bottom: 14px !important;
     }
     
@@ -530,12 +533,11 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        padding: 18px 20px !important;
+        padding: 14px 16px !important;
         gap: 8px !important;
         background: rgba(0, 0, 0, 0.2) !important;
         border: 1px solid rgba(159, 232, 159, 0.15) !important;
-        border-left: 3px solid rgba(159, 232, 159, 0.5) !important;
-        border-right: 3px solid rgba(159, 232, 159, 0.5) !important;
+        border-left: 2px solid rgba(159, 232, 159, 0.5) !important;
     }
     
     .risk-favorite-item .signal-noise-label,
@@ -1005,17 +1007,16 @@ html {
         font-size: 15px !important; /* Размер как в News на мобильных */
     }
     .signal-noise-list {
-        gap: 28px !important; /* Как на News */
+        gap: 14px !important;
     }
-    /* Таблички — гравировка слева и справа (мобильная версия) */
+    /* Таблички — как News: левая граница, компактный padding */
     .content .signal-noise-list .signal-noise-item,
     .signal-noise-item {
-        padding: 18px 20px !important;
+        padding: 14px 16px !important;
         margin-bottom: 14px !important;
         background: rgba(0, 0, 0, 0.2) !important;
         border: 1px solid rgba(159, 232, 159, 0.15) !important;
-        border-left: 3px solid rgba(159, 232, 159, 0.5) !important;
-        border-right: 3px solid rgba(159, 232, 159, 0.5) !important;
+        border-left: 2px solid rgba(159, 232, 159, 0.5) !important;
         border-radius: 12px !important;
     }
     .signal-noise-label {
