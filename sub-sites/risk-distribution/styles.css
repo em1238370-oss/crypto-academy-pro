@@ -863,39 +863,7 @@ html {
 }
 
 /* Risk trust bento + calculator + разделитель — DuoView: градации, не ярко */
-.risk-section-divider {
-    width: 120px;
-    height: 3px;
-    margin: 64px auto;
-    background: linear-gradient(90deg, 
-        transparent 0%, 
-        rgba(159, 232, 159, 0.3) 20%,
-        rgba(159, 232, 159, 0.7) 50%,
-        rgba(159, 232, 159, 0.3) 80%,
-        transparent 100%);
-    border-radius: 2px;
-    position: relative;
-    opacity: 0;
-    animation: fadeInUp 0.8s ease-out forwards;
-    box-shadow: 0 0 12px rgba(159, 232, 159, 0.2);
-}
-
-#section-rules .risk-section-divider {
-    display: none !important;
-}
-
-.risk-section-divider::before {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 8px;
-    height: 8px;
-    background: rgba(159, 232, 159, 0.8);
-    border-radius: 50%;
-    box-shadow: 0 0 16px rgba(159, 232, 159, 0.5);
-}
+/* Убрано: разделители полос */
 
 .risk-section-reveal,
 .risk-section-divider {
