@@ -553,6 +553,15 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     height: 100% !important;
 }
 
+.risk-visual-row {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+
 /* Верхний правый угол - справа от таблички */
 .risk-corner-top-right {
     top: 0 !important;
@@ -611,6 +620,13 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         display: none !important;
     }
     
+    .risk-visual-row {
+        display: flex !important;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
     .risk-favorite-item {
         display: grid !important;
         grid-auto-rows: auto;
@@ -638,7 +654,7 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         opacity: 1 !important;
         transform: none !important;
         margin: 18px auto 0 !important;
-        width: 150px !important;
+        width: 180px !important;
     }
     
     .risk-favorite-item .risk-corner-visual svg {
@@ -667,8 +683,12 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         visibility: visible !important;
         opacity: 1 !important;
         transform: none !important;
-        width: 140px !important;
+        width: 160px !important;
         margin: 16px auto 0 !important;
+    }
+    
+    .risk-visual-row {
+        gap: 16px;
     }
 }
 
@@ -694,8 +714,12 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         visibility: visible !important;
         opacity: 1 !important;
         transform: none !important;
-        width: 120px !important;
+        width: 140px !important;
         margin: 14px auto 0 !important;
+    }
+    
+    .risk-visual-row {
+        gap: 14px;
     }
 }
 

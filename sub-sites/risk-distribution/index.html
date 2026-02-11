@@ -819,8 +819,13 @@
                
                // Добавляем визуалы внутрь таблички
                item.style.position = 'relative';
-               item.appendChild(topRightVisual);
-               item.appendChild(bottomLeftVisual);
+               const visualRow = document.createElement('div');
+               visualRow.className = 'risk-visual-row';
+               visualRow.style.display = 'none';
+               
+               visualRow.appendChild(topRightVisual);
+               visualRow.appendChild(bottomLeftVisual);
+               item.appendChild(visualRow);
                
                if (visuals[visualType]) {
                    topRightVisual.innerHTML = visuals[visualType].topRight;
@@ -828,6 +833,7 @@
                }
                
                function showVisuals() {
+                   visualRow.style.setProperty('display', 'flex', 'important');
                    topRightVisual.style.setProperty('display', 'block', 'important');
                    topRightVisual.style.setProperty('visibility', 'visible', 'important');
                    topRightVisual.style.setProperty('opacity', '1', 'important');
@@ -840,6 +846,7 @@
                }
                
                function hideVisuals() {
+                   visualRow.style.setProperty('display', 'none', 'important');
                    topRightVisual.style.setProperty('opacity', '0', 'important');
                    topRightVisual.style.setProperty('display', 'none', 'important');
                    topRightVisual.style.setProperty('visibility', 'hidden', 'important');
