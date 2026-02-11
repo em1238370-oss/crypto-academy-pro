@@ -1109,10 +1109,10 @@ html {
         font-size: 14px !important; /* Как на News */
     }
     .news-trust-stats {
-        margin-bottom: 72px !important;
+        margin-bottom: 56px !important;
     }
     .risk-section-divider {
-        margin: 24px auto !important;
+        margin: 16px auto !important;
     }
     /* п.11 Apple HIG: tap-area минимум 44px */
     .risk-calculator-wrapper button,
@@ -1182,10 +1182,10 @@ html {
         margin-bottom: 56px !important;
     }
     .news-trust-stats {
-        margin-bottom: 68px !important;
+        margin-bottom: 52px !important;
     }
     .risk-section-divider {
-        margin: 24px auto !important;
+        margin: 16px auto !important;
     }
 }
 @media (max-width: 600px) {
