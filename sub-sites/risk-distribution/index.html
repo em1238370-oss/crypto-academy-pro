@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=46">
+   <link rel="stylesheet" href="styles.css?v=47">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -598,7 +598,7 @@
                    obs.unobserve(e.target);
                    e.target.classList.add('risk-scroll-revealed');
                });
-           }, { rootMargin: '0px 0px -20px 0px', threshold: 0.08 });
+           }, { rootMargin: '0px 0px -35% 0px', threshold: 0.1 });
            afterHero.forEach(function(el) { obs.observe(el); });
        })();
 
