@@ -346,6 +346,10 @@ body {
     box-shadow: 0 0 8px rgba(159, 232, 159, 0.3);
 }
 
+#section-rules .signal-noise-title::after {
+    display: none !important;
+}
+
 .signal-noise-intro {
     font-size: 18px !important;
     color: rgba(255, 255, 255, 0.75) !important;
