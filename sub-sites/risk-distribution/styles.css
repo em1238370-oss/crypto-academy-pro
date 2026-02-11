@@ -209,6 +209,11 @@ body {
     animation: fadeInUp 0.6s ease-out forwards;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     margin-bottom: 24px !important; /* Увеличенный отступ между табличками */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
 }
 
 .signal-noise-item:nth-child(1) { animation-delay: 0.1s; }
@@ -277,21 +282,13 @@ body {
     line-height: 1.5;
     display: block;
     position: relative;
-    padding-left: 16px;
 }
 
 .signal-noise-label::before {
-    content: '▸';
-    position: absolute;
-    left: 0;
-    color: rgba(159, 232, 159, 0.6);
-    font-size: 11px;
-    transition: all 0.3s ease;
+    display: none;
 }
 
 .signal-noise-item:hover .signal-noise-label::before {
-    color: rgba(159, 232, 159, 0.9);
-    transform: translateX(4px);
 }
 
 .signal-noise-label strong {
@@ -306,7 +303,6 @@ body {
     line-height: 1.6 !important;
     font-family: 'Poppins', sans-serif;
     display: block;
-    padding-left: 16px;
 }
 
 .signal-noise-text strong {
