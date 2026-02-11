@@ -1116,7 +1116,7 @@ html {
     }
     .risk-trust-bento {
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: 0.5cm !important;
     }
     .risk-trust-number {
         font-size: 44px;
