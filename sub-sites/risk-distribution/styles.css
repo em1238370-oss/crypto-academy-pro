@@ -972,11 +972,11 @@ html {
 }
 .risk-calculator-heading {
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--news-muted);
     margin-bottom: 24px;
     font-family: 'Poppins', sans-serif;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
 }
 
 @media (max-width: 768px) {
@@ -1238,16 +1238,17 @@ html {
     max-width: 640px;
     margin: 0 auto;
     min-height: 320px;
-    background: rgba(0, 0, 0, 0.25);
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(159, 232, 159, 0.12);
     border-radius: 8px;
     padding: 40px 48px;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: inset 0 1px 0 rgba(159, 232, 159, 0.04), 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .risk-calculator-container:hover {
     border-color: rgba(159, 232, 159, 0.2);
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 1px 0 rgba(159, 232, 159, 0.06), 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 
@@ -1371,8 +1372,9 @@ html {
 .form-step {
     font-family: 'Raleway', sans-serif;
     font-size: 11px;
+    font-weight: 700;
     color: var(--risk-accent);
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     margin-right: 6px;
 }
 
@@ -1409,9 +1411,10 @@ html {
     justify-content: space-between;
     margin-bottom: 6px;
     font-size: 11px;
-    color: #FFFFFF;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
 }
 
 .slider-labels span:nth-child(2) {
@@ -1560,10 +1563,10 @@ html {
     border-radius: 6px;
     font-size: 14px;
     font-family: 'Raleway', sans-serif;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: background 0.25s ease, border-color 0.25s ease;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.05em;
 }
 
 .risk-calculator-wrapper button:hover {
@@ -1638,11 +1641,13 @@ html {
 }
 
 .strategy {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.25);
     padding: 14px 16px 14px 18px;
     border-radius: 8px;
-    border-left: 2px solid rgba(159, 232, 159, 0.35);
+    border: 1px solid rgba(159, 232, 159, 0.1);
+    border-left: 2px solid rgba(159, 232, 159, 0.4);
     transition: background 0.25s ease, border-color 0.2s ease;
+    box-shadow: inset 0 1px 0 rgba(159, 232, 159, 0.03);
 }
 
 .strategy:hover {
