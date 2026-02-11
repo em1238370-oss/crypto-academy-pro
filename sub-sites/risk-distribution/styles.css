@@ -214,37 +214,40 @@ body {
 }
 
 
-/* Карточки: как News — левая граница, компактный padding */
+/* Карточки: DuoView-стиль — левая граница-гравировка, больше воздуха */
 .content .signal-noise-list .signal-noise-item,
 .signal-noise-item {
-    padding: 14px 16px !important;
+    padding: 16px 20px !important;
     background: rgba(0, 0, 0, 0.2) !important;
     border: 1px solid rgba(159, 232, 159, 0.15) !important;
-    border-left: 2px solid rgba(159, 232, 159, 0.5) !important;
+    border-left: 3px solid rgba(159, 232, 159, 0.5) !important;
     border-radius: 12px !important;
-    transition: background 0.25s ease, box-shadow 0.25s ease !important;
+    transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
-    gap: 10px !important;
+    gap: 12px !important;
     margin-bottom: 20px !important;
     text-align: left !important;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
+    box-shadow: inset 2px 0 0 rgba(159, 232, 159, 0.12), 0 2px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 .content .signal-noise-list .signal-noise-item:hover,
 .signal-noise-item:hover {
     background: rgba(0, 0, 0, 0.26) !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+    transform: translateY(-2px) scale(1.01) !important;
+    box-shadow: inset 2px 0 0 rgba(159, 232, 159, 0.18), 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(159, 232, 159, 0.08) !important;
 }
 
 .signal-noise-label {
-    font-size: 13px !important;
+    font-size: 14px !important;
     font-weight: 600 !important;
     color: #FFFFFF !important;
     margin-bottom: 4px !important;
+    padding-bottom: 8px !important;
     font-family: 'Poppins', sans-serif;
     line-height: 1.5;
+    letter-spacing: 0.02em;
 }
 
 .signal-noise-label strong {
@@ -253,8 +256,8 @@ body {
 
 .signal-noise-text {
     font-size: 14px !important;
-    color: rgba(255, 255, 255, 0.75) !important;
-    line-height: 1.6 !important;
+    color: rgba(255, 255, 255, 0.82) !important;
+    line-height: 1.65 !important;
     font-family: 'Poppins', sans-serif;
 }
 
@@ -1023,9 +1026,10 @@ html {
         border-radius: 12px !important;
     }
     .signal-noise-label {
-        font-size: 13px !important; /* Как на News */
+        font-size: 13px !important;
         font-weight: 600 !important;
         margin-bottom: 4px !important;
+        padding-bottom: 0 !important;
     }
     .signal-noise-text {
         font-size: 14px !important; /* Как на News */
