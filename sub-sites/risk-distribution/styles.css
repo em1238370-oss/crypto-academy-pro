@@ -165,7 +165,7 @@ body {
 @media (min-width: 769px) {
     .content .signal-noise#section-rules,
     .content .signal-noise#section-protection {
-        max-width: 560px !important;
+        max-width: 720px !important;
         margin-left: auto !important;
         margin-right: auto !important;
     }
