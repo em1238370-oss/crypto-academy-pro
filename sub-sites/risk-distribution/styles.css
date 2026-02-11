@@ -972,10 +972,11 @@ html {
 }
 .risk-calculator-heading {
     font-size: 14px;
+    font-weight: 600;
     color: var(--news-muted);
     margin-bottom: 24px;
     font-family: 'Poppins', sans-serif;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.08em;
 }
 
 @media (max-width: 768px) {
@@ -1229,7 +1230,7 @@ html {
     width: 64px;
     height: 1px;
     margin: 0 auto 48px;
-    background: linear-gradient(90deg, transparent, rgba(159, 232, 159, 0.4), transparent);
+    background: linear-gradient(90deg, transparent, rgba(159, 232, 159, 0.25), transparent);
 }
 
 .risk-calculator-container {
@@ -1237,16 +1238,16 @@ html {
     max-width: 640px;
     margin: 0 auto;
     min-height: 320px;
-    background: rgba(0, 0, 0, 0.12);
-    border: 1px solid rgba(159, 232, 159, 0.15);
-    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(159, 232, 159, 0.12);
+    border-radius: 8px;
     padding: 40px 48px;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .risk-calculator-container:hover {
-    border-color: rgba(159, 232, 159, 0.25);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    border-color: rgba(159, 232, 159, 0.2);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
 }
 
 
@@ -1289,9 +1290,9 @@ html {
 
 .api-key-group {
     padding: 20px;
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(159, 232, 159, 0.15);
-    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(159, 232, 159, 0.12);
+    border-radius: 8px;
 }
 
 .api-key-group label {
@@ -1321,7 +1322,7 @@ html {
     color: var(--risk-accent);
     background: rgba(159, 232, 159, 0.08);
     border: 1px solid rgba(159, 232, 159, 0.2);
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: background 0.2s ease, border-color 0.2s ease;
 }
@@ -1382,6 +1383,7 @@ html {
     margin-bottom: 10px;
     font-family: 'Poppins', sans-serif;
     font-weight: 600;
+    letter-spacing: 0.03em;
     opacity: 1 !important;
 }
 
@@ -1423,9 +1425,9 @@ html {
     font-size: 14px;
     font-family: 'Poppins', sans-serif;
     font-weight: 500;
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(159, 232, 159, 0.2);
-    border-radius: 10px;
+    border-radius: 6px;
     color: #FFFFFF !important;
     transition: border-color 0.2s ease;
     appearance: textfield;
@@ -1441,7 +1443,7 @@ html {
 
 .risk-calculator-wrapper input[type="number"]:focus {
     outline: none;
-    border-color: rgba(159, 232, 159, 0.4);
+    border-color: rgba(159, 232, 159, 0.35);
 }
 
 .risk-calculator-wrapper input[type="number"]::placeholder {
@@ -1465,9 +1467,9 @@ html {
     top: 50%;
     transform: translateY(-50%);
     width: var(--fill);
-    height: 6px;
-    background: linear-gradient(90deg, rgba(159, 232, 159, 0.4), var(--risk-accent));
-    border-radius: 3px;
+    height: 4px;
+    background: linear-gradient(90deg, rgba(159, 232, 159, 0.3), var(--risk-accent));
+    border-radius: 2px;
     pointer-events: none;
     transition: width 0.15s ease-out;
 }
@@ -1475,10 +1477,10 @@ html {
 .risk-slider,
 .risk-calculator-wrapper input[type="range"] {
     width: 100%;
-    height: 6px;
-    background: rgba(0, 0, 0, 0.25);
+    height: 4px;
+    background: rgba(0, 0, 0, 0.3);
     outline: none;
-    border-radius: 3px;
+    border-radius: 2px;
     -webkit-appearance: none;
     appearance: none;
 }
@@ -1486,24 +1488,24 @@ html {
 .risk-calculator-wrapper input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 22px;
-    height: 22px;
+    width: 16px;
+    height: 16px;
     background: var(--risk-accent);
     cursor: pointer;
-    border-radius: 50%;
+    border-radius: 2px;
     transition: transform 0.2s ease;
 }
 
 .risk-calculator-wrapper input[type="range"]::-webkit-slider-thumb:hover {
-    transform: scale(1.08);
+    transform: scale(1.05);
 }
 
 .risk-calculator-wrapper input[type="range"]::-moz-range-thumb {
-    width: 22px;
-    height: 22px;
+    width: 16px;
+    height: 16px;
     background: var(--risk-accent);
     cursor: pointer;
-    border-radius: 50%;
+    border-radius: 2px;
     border: none;
 }
 
@@ -1521,9 +1523,9 @@ html {
     font-size: 14px;
     font-family: 'Poppins', sans-serif;
     font-weight: 500;
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(159, 232, 159, 0.2);
-    border-radius: 10px;
+    border-radius: 6px;
     color: #FFFFFF !important;
     cursor: pointer;
     transition: border-color 0.2s ease;
@@ -1531,7 +1533,7 @@ html {
 
 .risk-calculator-wrapper select:focus {
     outline: none;
-    border-color: rgba(159, 232, 159, 0.4);
+    border-color: rgba(159, 232, 159, 0.35);
 }
 
 .risk-calculator-wrapper select option {
@@ -1552,24 +1554,25 @@ html {
 .risk-calculator-wrapper button {
     width: 220px;
     padding: 14px 24px;
-    background: linear-gradient(135deg, #2D8B2D 0%, #3dab3d 100%);
-    color: #001a00 !important;
-    border-radius: 10px;
+    background: transparent;
+    color: #9FE89F !important;
+    border: 2px solid rgba(159, 232, 159, 0.5);
+    border-radius: 6px;
     font-size: 14px;
     font-family: 'Raleway', sans-serif;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.25s ease, background 0.25s ease;
+    transition: background 0.25s ease, border-color 0.25s ease;
     letter-spacing: 0.03em;
 }
 
 .risk-calculator-wrapper button:hover {
-    background: linear-gradient(135deg, #3dab3d 0%, #2D8B2D 100%);
-    box-shadow: 0 4px 16px rgba(45, 139, 45, 0.35);
+    background: rgba(159, 232, 159, 0.08);
+    border-color: rgba(159, 232, 159, 0.7);
 }
 
 .magnetic-wrap:hover .risk-calculator-wrapper button {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
 .risk-calculator-wrapper button:active {
@@ -1635,17 +1638,16 @@ html {
 }
 
 .strategy {
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.2);
     padding: 14px 16px 14px 18px;
-    border-radius: 12px;
-    border-left: 2px solid rgba(159, 232, 159, 0.5);
-    transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 8px;
+    border-left: 2px solid rgba(159, 232, 159, 0.35);
+    transition: background 0.25s ease, border-color 0.2s ease;
 }
 
 .strategy:hover {
-    background: rgba(0, 0, 0, 0.22);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+    background: rgba(0, 0, 0, 0.26);
+    border-left-color: rgba(159, 232, 159, 0.5);
 }
 
 .strategy-title {
@@ -1659,8 +1661,8 @@ html {
 .strategy-info {
     margin-bottom: 24px;
     padding: 14px 20px;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
     text-align: center;
     color: var(--risk-subtle);
     font-family: 'Poppins', sans-serif;
@@ -1737,9 +1739,9 @@ html {
     padding: 10px 14px;
     font-size: 13px;
     font-family: 'Poppins', sans-serif;
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(159, 232, 159, 0.2);
-    border-radius: 8px;
+    border-radius: 6px;
     color: #FFFFFF !important;
 }
 
