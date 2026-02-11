@@ -1088,6 +1088,7 @@ html {
     }
     .signal-noise-intro {
         margin-bottom: 32px !important;
+        font-size: 15px !important; /* Размер как в News на мобильных */
     }
     .signal-noise-list {
         gap: 28px !important; /* Как на News */
