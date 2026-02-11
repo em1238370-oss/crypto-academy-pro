@@ -1672,6 +1672,13 @@ html {
     letter-spacing: 0.03em;
 }
 
+.horizon-note {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--risk-accent);
+    font-weight: 600;
+}
+
 .strategy-info {
     margin-bottom: 24px;
     padding: 12px 20px;
@@ -1687,15 +1694,62 @@ html {
     line-height: 1.55;
 }
 
-.strategy-allocation {
+.strategy-allocation-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     margin-bottom: 12px;
     padding-bottom: 12px;
     border-bottom: 1px solid rgba(159, 232, 159, 0.3);
+}
+
+.strategy-allocation {
+    flex: 1;
     color: #F0F8F0 !important;
     font-size: 14px;
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
     opacity: 1 !important;
+}
+
+.strategy-copy-btn {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--risk-accent);
+    border: 1px solid rgba(159, 232, 159, 0.4);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.strategy-copy-btn:hover {
+    background: rgba(159, 232, 159, 0.08);
+    border-color: rgba(159, 232, 159, 0.6);
+}
+
+.risk-tips {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(159, 232, 159, 0.1);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px 24px;
+}
+
+.risk-tip {
+    font-size: 12px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    color: rgba(255, 255, 255, 0.85);
 }
 
 .why-section {
