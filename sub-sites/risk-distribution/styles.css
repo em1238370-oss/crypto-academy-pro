@@ -594,6 +594,11 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
 @media (max-width: 768px) {
     .signal-noise-list {
         gap: 28px !important; /* Как News */
+        justify-items: center !important;
+    }
+    .signal-noise-list > li {
+        width: 100%;
+        max-width: 100%;
     }
     .risk-corner-visual {
         width: 100px !important;
@@ -608,6 +613,9 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     }
     
     .signal-noise-item {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
         padding: 14px 16px !important;
         gap: 8px !important;
         background: rgba(0, 0, 0, 0.12) !important;
@@ -619,6 +627,7 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     .signal-noise-text {
         padding-left: 0 !important;
         padding-right: 0 !important;
+        text-align: center !important;
     }
     
     .signal-noise-label::before {
@@ -629,11 +638,16 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         display: flex !important;
         gap: 16px;
         flex-wrap: wrap;
-        justify-content: center;
+        justify-content: center !important;
+        align-items: center !important;
         margin-top: 14px !important;
+        width: 100%;
     }
 
     .risk-favorite-item {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
         padding: 14px 16px !important;
         gap: 8px !important;
         background: rgba(0, 0, 0, 0.12) !important;
@@ -645,7 +659,7 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         padding-left: 0 !important;
         padding-right: 0 !important;
         max-width: 100% !important;
-        text-align: left !important;
+        text-align: center !important;
     }
     
     .risk-favorite-item .signal-noise-label::before {
@@ -683,18 +697,21 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     }
 }
 
-/* 600px — как News */
+/* 600px — как News, всё по центру */
 @media (max-width: 600px) {
     .signal-noise-item {
         margin-bottom: 0 !important;
+        align-items: center !important;
     }
     .risk-favorite-item {
         padding: 14px 16px !important;
         gap: 8px !important;
+        align-items: center !important;
     }
     .risk-favorite-item .signal-noise-label,
     .risk-favorite-item .signal-noise-text {
         max-width: 100% !important;
+        text-align: center !important;
     }
     .risk-favorite-item .risk-corner-visual {
         width: 92px !important;
@@ -709,18 +726,21 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     }
 }
 
-/* 480px — как News, компактнее */
+/* 480px — как News, компактнее, всё по центру */
 @media (max-width: 480px) {
     .signal-noise-item {
         margin-bottom: 0 !important;
+        align-items: center !important;
     }
     .risk-favorite-item {
         padding: 14px 16px !important;
         gap: 8px !important;
+        align-items: center !important;
     }
     .risk-favorite-item .signal-noise-label,
     .risk-favorite-item .signal-noise-text {
         max-width: 100% !important;
+        text-align: center !important;
     }
     .risk-favorite-item .risk-corner-visual {
         width: 88px !important;
