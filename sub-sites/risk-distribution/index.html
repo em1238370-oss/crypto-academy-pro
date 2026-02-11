@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=47">
+   <link rel="stylesheet" href="styles.css?v=48">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -576,7 +576,7 @@
            update();
        })();
 
-       // DuoView-стиль: всё после hero появляется при прокрутке (мобильная версия)
+       // DuoView: заголовок, абзац, каждая табличка выскакивают по очереди; калькулятор — без анимации
        (function() {
            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
            var content = document.querySelector('.content');
@@ -589,33 +589,56 @@
                afterHero.push(el);
                el = el.nextElementSibling;
            }
-           afterHero.forEach(function(el) {
-               el.classList.add('risk-scroll-reveal');
-           });
-           var obs = new IntersectionObserver(function(entries) {
+           var staggerStep = 0.15; // секунд между каждым элементом
+           var obsSection = new IntersectionObserver(function(entries) {
                entries.forEach(function(e) {
                    if (!e.isIntersecting) return;
-                   obs.unobserve(e.target);
+                   obsSection.unobserve(e.target);
+                   e.target.classList.add('risk-section-revealed');
+                   var items = e.target.querySelectorAll('.risk-reveal-item');
+                   items.forEach(function(item, i) {
+                       item.style.transitionDelay = (i * staggerStep) + 's';
+                   });
+               });
+           }, { rootMargin: '0px 0px -25% 0px', threshold: 0.08 });
+           var obsSingle = new IntersectionObserver(function(entries) {
+               entries.forEach(function(e) {
+                   if (!e.isIntersecting) return;
+                   obsSingle.unobserve(e.target);
                    e.target.classList.add('risk-scroll-revealed');
                });
-           }, { rootMargin: '0px 0px -35% 0px', threshold: 0.1 });
-           afterHero.forEach(function(el) { obs.observe(el); });
-       })();
-
-       // Trust stats AI/Free — staggered reveal при появлении
-       (function() {
-           if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-           const cards = document.querySelectorAll('.risk-trust-reveal');
-           const obs = new IntersectionObserver(function(entries) {
-               entries.forEach(function(e) {
-                   if (!e.isIntersecting) return;
-                   obs.unobserve(e.target);
-                   e.target.classList.add('risk-trust-revealed');
-               });
-           }, { threshold: 0.3 });
-           cards.forEach(function(c, i) {
-               c.style.transitionDelay = (i * 0.1) + 's';
-               obs.observe(c);
+           }, { rootMargin: '0px 0px -25% 0px', threshold: 0.08 });
+           afterHero.forEach(function(el) {
+               if (el.classList.contains('risk-section-calculator')) return; // калькулятор — без анимации
+               if (el.classList.contains('risk-section-divider')) {
+                   el.classList.add('risk-scroll-reveal');
+                   obsSingle.observe(el);
+                   return;
+               }
+               if (el.classList.contains('signal-noise')) {
+                   var title = el.querySelector('.signal-noise-title');
+                   var intro = el.querySelector('.signal-noise-intro');
+                   var items = el.querySelectorAll('.signal-noise-item');
+                   if (title) title.classList.add('risk-reveal-item');
+                   if (intro) intro.classList.add('risk-reveal-item');
+                   items.forEach(function(item) { item.classList.add('risk-reveal-item'); });
+                   obsSection.observe(el);
+                   return;
+               }
+               if (el.classList.contains('news-trust-stats')) {
+                   el.querySelectorAll('.risk-trust-stat').forEach(function(s) { s.classList.add('risk-reveal-item'); });
+                   var badge = el.querySelector('.news-trust-badge');
+                   var tagline = el.querySelector('.news-trust-tagline');
+                   if (badge) badge.classList.add('risk-reveal-item');
+                   if (tagline) tagline.classList.add('risk-reveal-item');
+                   obsSection.observe(el);
+                   return;
+               }
+               if (el.classList.contains('news-footer')) {
+                   el.querySelectorAll('p, .news-footer-links').forEach(function(c) { c.classList.add('risk-reveal-item'); });
+                   obsSection.observe(el);
+                   return;
+               }
            });
        })();
 

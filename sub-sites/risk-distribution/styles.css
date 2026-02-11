@@ -925,34 +925,31 @@ html {
 /* Risk trust bento + calculator + разделитель — DuoView: градации, не ярко */
 /* Убрано: разделители полос */
 
-/* DuoView: на мобильной всё после hero появляется при прокрутке — выразительный эффект */
-@media (max-width: 768px) {
-    .risk-scroll-reveal {
-        opacity: 0 !important;
-        transform: translateY(50px) scale(0.97);
-        transition: opacity 1.6s cubic-bezier(0.16, 1, 0.3, 1), transform 1.6s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .risk-scroll-reveal.risk-scroll-revealed {
-        opacity: 1 !important;
-        transform: translateY(0) scale(1);
-    }
-    .risk-scroll-reveal .signal-noise-item {
-        animation: none !important;
-        opacity: 1 !important;
-        transform: none !important;
-    }
+/* DuoView: заголовок, абзац, каждая табличка выскакивают по очереди; калькулятор — без анимации (все экраны) */
+/* Разделители — целиком */
+.risk-scroll-reveal {
+    opacity: 0 !important;
+    transform: translateY(40px) scale(0.98);
+    transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1), transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-/* Десктоп: контент виден сразу */
-@media (min-width: 769px) {
-    .risk-scroll-reveal {
-        opacity: 1 !important;
-        transform: none !important;
-    }
+.risk-scroll-reveal.risk-scroll-revealed {
+    opacity: 1 !important;
+    transform: translateY(0) scale(1);
+}
+/* Дочерние элементы секций: заголовок, абзац, каждая табличка — по одному */
+.risk-reveal-item {
+    opacity: 0 !important;
+    transform: translateY(40px) scale(0.98);
+    transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1), transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.risk-section-revealed .risk-reveal-item {
+    opacity: 1 !important;
+    transform: translateY(0) scale(1);
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .risk-scroll-reveal {
+    .risk-scroll-reveal,
+    .risk-reveal-item {
         opacity: 1 !important;
         transform: none !important;
     }
