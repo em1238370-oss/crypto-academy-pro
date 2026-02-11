@@ -4,7 +4,7 @@
 /* Все заголовки и текст строго по центру */
 /* Пространство после hero секции - как на News (примерно 2см) */
 .content > .news-hero {
-    margin-top: 1cm !important; /* 1 см между навигацией и hero-секцией */
+    margin-top: 0.5cm !important; /* 0.5 см между навигацией и hero-секцией */
     margin-bottom: 96px !important;
     max-width: 720px !important;
     margin-left: auto !important;
@@ -971,7 +971,7 @@ html {
     }
     /* Пространство после hero на мобильных - как на News */
     .content > .news-hero {
-        margin-top: 0 !important;
+        margin-top: -0.5cm !important;
         margin-bottom: 112px !important; /* Как на News */
         max-width: 100% !important;
         padding: 0 !important;
@@ -1098,7 +1098,7 @@ html {
     }
     /* Пространство после hero на маленьких экранах - как на News */
     .content > .news-hero {
-        margin-top: 0 !important;
+        margin-top: -0.5cm !important;
         margin-bottom: 96px !important; /* Как на News */
     }
     .news-hero-title {
