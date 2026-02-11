@@ -161,19 +161,22 @@ body {
     gap: 20px !important;
 }
 
-/* Десктоп: карточки одного размера, поуже — как первая версия сверху */
+/* Десктоп: карточки одного размера, поуже — ограничиваем всю секцию */
 @media (min-width: 769px) {
-    .signal-noise-list {
-        max-width: 600px !important;
+    .content .signal-noise#section-rules,
+    .content .signal-noise#section-protection {
+        max-width: 560px !important;
         margin-left: auto !important;
         margin-right: auto !important;
-        padding: 0 !important;
     }
-    .content .signal-noise-list .signal-noise-item,
-    .signal-noise-item {
+    .content #section-rules .signal-noise-list,
+    .content #section-protection .signal-noise-list {
+        grid-template-columns: 1fr !important;
+    }
+    .content #section-rules .signal-noise-item,
+    .content #section-protection .signal-noise-item {
         width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
+        min-width: 0 !important;
     }
 }
 
