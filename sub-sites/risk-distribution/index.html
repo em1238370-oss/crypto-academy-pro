@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=72">
+   <link rel="stylesheet" href="styles.css?v=73">
    <style id="risk-reveal-inline">
    /* Плавное появление карточек при скролле — inline, чтобы точно работало */
    .content .risk-scroll-reveal {
@@ -820,10 +820,12 @@
               },
               cutlosses: {
                   topRight: icon(`
-                    <polygon points="165,35 85,115 105,135" fill="${stroke}"/>
+                    <path d="M100 55 Q105 100 100 145" stroke="${stroke}" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <polygon points="100,160 90,140 110,140" fill="${stroke}"/>
                   `),
                   bottomLeft: icon(`
-                    <polygon points="165,165 85,85 105,65" fill="${stroke}"/>
+                    <path d="M100 150 Q95 100 100 60" stroke="${stroke}" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <polygon points="100,45 90,65 110,65" fill="${stroke}"/>
                   `)
               }
           };
