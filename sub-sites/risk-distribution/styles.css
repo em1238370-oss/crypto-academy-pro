@@ -161,6 +161,22 @@ body {
     gap: 20px !important;
 }
 
+/* Десктоп: карточки одного размера, поуже — как первая версия сверху */
+@media (min-width: 769px) {
+    .signal-noise-list {
+        max-width: 600px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        padding: 0 !important;
+    }
+    .content .signal-noise-list .signal-noise-item,
+    .signal-noise-item {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+}
+
 /* Анимация появления при скролле */
 @keyframes fadeInUp {
     from {
