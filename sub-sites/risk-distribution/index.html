@@ -591,6 +591,27 @@
            els.forEach(function(el) { observer.observe(el); });
        })();
 
+       // DuoView-стиль: карточки появляются при прокрутке — слева/справа по очереди
+       (function() {
+           if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+           const items = document.querySelectorAll('#section-rules .signal-noise-item, #section-protection .signal-noise-item');
+           items.forEach(function(item, i) {
+               item.classList.add('risk-scroll-item');
+               item.classList.add(i % 2 === 0 ? 'risk-from-left' : 'risk-from-right');
+           });
+           const obs = new IntersectionObserver(function(entries) {
+               entries.forEach(function(e) {
+                   if (!e.isIntersecting) return;
+                   obs.unobserve(e.target);
+                   e.target.classList.add('risk-scroll-revealed');
+               });
+           }, { rootMargin: '0px 0px -60px 0px', threshold: 0.1 });
+           items.forEach(function(item, i) {
+               item.style.animationDelay = (i % 4) * 0.08 + 's';
+               obs.observe(item);
+           });
+       })();
+
        // Trust stats AI/Free — staggered reveal при появлении
        (function() {
            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;

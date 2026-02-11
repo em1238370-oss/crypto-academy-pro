@@ -184,6 +184,52 @@ body {
     }
 }
 
+/* Scroll-reveal как на DuoView: появление при прокрутке — слева/справа по очереди */
+@keyframes riskSlideFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-28px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes riskSlideFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(28px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.signal-noise-item.risk-scroll-item {
+    opacity: 0 !important;
+    animation: none !important;
+}
+
+.signal-noise-item.risk-scroll-item.risk-scroll-revealed.risk-from-left {
+    animation: riskSlideFromLeft 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.signal-noise-item.risk-scroll-item.risk-scroll-revealed.risk-from-right {
+    animation: riskSlideFromRight 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .signal-noise-item.risk-scroll-item {
+        opacity: 1;
+    }
+    .signal-noise-item.risk-scroll-item.risk-scroll-revealed.risk-from-left,
+    .signal-noise-item.risk-scroll-item.risk-scroll-revealed.risk-from-right {
+        animation: none;
+    }
+}
+
 .risk-section-reveal {
     opacity: 0;
     animation: fadeInUp 0.8s ease-out forwards;
@@ -693,7 +739,9 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     /* Одна иконка в ряд на мобильном — как DuoView */
     .risk-favorite-item .risk-visual-row {
         flex-direction: row;
-        justify-content: center;
+        justify-content: center !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
 }
 
