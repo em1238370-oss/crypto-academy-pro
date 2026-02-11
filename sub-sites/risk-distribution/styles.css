@@ -1059,11 +1059,11 @@ html {
         margin-bottom: 48px !important;
     }
     .signal-noise-title {
-        margin-bottom: 28px !important;
+        margin-bottom: 18px !important;
         font-size: 22px !important; /* Размер как в News на мобильных */
     }
     .signal-noise-intro {
-        margin-bottom: 32px !important;
+        margin-bottom: 22px !important;
         font-size: 15px !important; /* Размер как в News на мобильных */
     }
     .signal-noise-list {
