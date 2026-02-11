@@ -793,15 +793,6 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     transform: scale(1.12) translateY(-2px);
 }
 
-
-.risk-favorite-item[data-visual="fomo"] .risk-corner-top-right svg {
-    transform: scale(1.06) translateY(-4px);
-}
-
-.risk-favorite-item[data-visual="fomo"] .risk-corner-bottom-left svg {
-    transform: scale(1.02) translateY(-2px);
-}
-
 @media (max-width: 768px) {
     .risk-favorite-item {
         padding: 24px 48px !important;
@@ -1509,13 +1500,11 @@ html {
     border-radius: 10px;
     color: #FFFFFF !important;
     transition: border-color 0.2s ease;
-    appearance: textfield;
     -moz-appearance: textfield;
 }
 
 .risk-calculator-wrapper input[type="number"]::-webkit-outer-spin-button,
 .risk-calculator-wrapper input[type="number"]::-webkit-inner-spin-button {
-    appearance: none;
     -webkit-appearance: none;
     margin: 0;
 }
