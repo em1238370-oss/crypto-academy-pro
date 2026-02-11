@@ -185,13 +185,15 @@ body {
 }
 
 
-/* DuoView Pro: карточки как на duoviewpro.com — чистые, видны сразу, лёгкий hover */
+/* Карточки: симметричная гравировка слева и справа, без точек */
 .signal-noise-item {
     padding: 24px 28px !important;
     background: rgba(0, 0, 0, 0.2) !important;
-    border: 1px solid rgba(159, 232, 159, 0.2) !important;
-    border-radius: 16px !important;
-    transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease !important;
+    border: 1px solid rgba(159, 232, 159, 0.15) !important;
+    border-left: 3px solid rgba(159, 232, 159, 0.4) !important;
+    border-right: 3px solid rgba(159, 232, 159, 0.4) !important;
+    border-radius: 12px !important;
+    transition: background 0.25s ease, box-shadow 0.25s ease !important;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -202,9 +204,8 @@ body {
 }
 
 .signal-noise-item:hover {
-    background: rgba(0, 0, 0, 0.28) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+    background: rgba(0, 0, 0, 0.26) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
 .signal-noise-label {
@@ -295,45 +296,7 @@ body {
     }
 }
 
-/* Эффекты работают ТОЛЬКО когда секция в центре экрана */
-#section-rules.risk-in-center .signal-noise-item strong,
-#section-protection.risk-in-center .signal-noise-item strong {
-    position: relative !important;
-    display: inline-block !important;
-}
-
-#section-rules.risk-in-center .signal-noise-item strong::after,
-#section-protection.risk-in-center .signal-noise-item strong::after {
-    content: '' !important;
-    position: absolute !important;
-    bottom: -3px !important;
-    left: 0 !important;
-    width: 0 !important;
-    height: 3px !important;
-    background: linear-gradient(90deg, rgba(159, 232, 159, 0.9), rgba(159, 232, 159, 0.5)) !important;
-    border-radius: 2px !important;
-    animation: underlineDraw 0.7s ease-out forwards !important;
-    box-shadow: 0 0 10px rgba(159, 232, 159, 0.5) !important;
-    z-index: 1 !important;
-}
-
-#section-rules.risk-in-center .signal-noise-item:nth-child(odd) strong::after,
-#section-protection.risk-in-center .signal-noise-item:nth-child(odd) strong::after {
-    animation-delay: 0.15s !important;
-}
-
-#section-rules.risk-in-center .signal-noise-item:nth-child(even) strong,
-#section-protection.risk-in-center .signal-noise-item:nth-child(even) strong {
-    animation: highlightFade 0.6s ease-out forwards !important;
-    padding: 3px 6px !important;
-    border-radius: 5px !important;
-    animation-delay: 0.2s !important;
-}
-
-#section-rules.risk-in-center .signal-noise-item:nth-child(even) strong::after,
-#section-protection.risk-in-center .signal-noise-item:nth-child(even) strong::after {
-    display: none !important;
-}
+/* Эффекты подсветки отключены — не высвечиваются при скролле */
 
 /* Боковые визуалы убраны - оставляем только визуалы около табличек */
 
@@ -501,11 +464,13 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        padding: 14px 16px !important;
+        padding: 18px 20px !important;
         gap: 8px !important;
-        background: rgba(0, 0, 0, 0.12) !important;
-        border-left: 2px solid rgba(159, 232, 159, 0.5) !important;
-        margin-bottom: 0 !important;
+        background: rgba(0, 0, 0, 0.18) !important;
+        border: 1px solid rgba(159, 232, 159, 0.15) !important;
+        border-left: 3px solid rgba(159, 232, 159, 0.4) !important;
+        border-right: 3px solid rgba(159, 232, 159, 0.4) !important;
+        margin-bottom: 16px !important;
     }
     
     .signal-noise-label,
@@ -533,10 +498,12 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        padding: 14px 16px !important;
+        padding: 18px 20px !important;
         gap: 8px !important;
-        background: rgba(0, 0, 0, 0.12) !important;
-        border-left: 2px solid rgba(159, 232, 159, 0.5) !important;
+        background: rgba(0, 0, 0, 0.18) !important;
+        border: 1px solid rgba(159, 232, 159, 0.15) !important;
+        border-left: 3px solid rgba(159, 232, 159, 0.4) !important;
+        border-right: 3px solid rgba(159, 232, 159, 0.4) !important;
     }
     
     .risk-favorite-item .signal-noise-label,
@@ -667,16 +634,7 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     display: none !important;
 }
 
-#section-rules.risk-in-center .signal-noise-item .risk-icon-indicator,
-#section-protection.risk-in-center .signal-noise-item .risk-icon-indicator {
-    animation: iconAppear 0.5s ease-out 0.4s forwards !important;
-}
-
-#section-rules:not(.risk-in-center) .signal-noise-item .risk-icon-indicator,
-#section-protection:not(.risk-in-center) .signal-noise-item .risk-icon-indicator {
-    opacity: 0 !important;
-    animation: none !important;
-}
+/* risk-icon-indicator скрыт */
 
 /* --- Favorite card layout — только десктоп (мобильный в @media выше) --- */
 .risk-favorite-item {
@@ -733,16 +691,9 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     }
 }
 
-/* Когда секция уходит из центра - все эффекты прекращаются */
-#section-rules:not(.risk-in-center) .signal-noise-item strong::after,
-#section-protection:not(.risk-in-center) .signal-noise-item strong::after {
-    width: 0 !important;
-    opacity: 0 !important;
-    animation: none !important;
-}
-
-#section-rules:not(.risk-in-center) .signal-noise-item strong,
-#section-protection:not(.risk-in-center) .signal-noise-item strong {
+/* Эффекты подсветки отключены */
+#section-rules .signal-noise-item strong,
+#section-protection .signal-noise-item strong {
     background-color: transparent !important;
     box-shadow: none !important;
     padding: 0 !important;
@@ -1017,12 +968,14 @@ html {
     .signal-noise-list {
         gap: 28px !important; /* Как на News */
     }
-    /* Таблички - как на News */
+    /* Таблички — гравировка слева и справа */
     .signal-noise-item {
-        padding: 14px 16px !important; /* Как на News */
-        margin-bottom: 0 !important; /* Убираем margin-bottom, используем gap в списке */
-        background: rgba(0, 0, 0, 0.12) !important; /* Как на News */
-        border-left: 2px solid rgba(159, 232, 159, 0.5) !important; /* Как на News */
+        padding: 16px 18px !important;
+        margin-bottom: 12px !important;
+        background: rgba(0, 0, 0, 0.18) !important;
+        border: 1px solid rgba(159, 232, 159, 0.15) !important;
+        border-left: 3px solid rgba(159, 232, 159, 0.4) !important;
+        border-right: 3px solid rgba(159, 232, 159, 0.4) !important;
     }
     .signal-noise-label {
         font-size: 13px !important; /* Как на News */
