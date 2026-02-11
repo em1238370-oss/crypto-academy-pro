@@ -1272,38 +1272,18 @@ html {
     display: flex;
     flex-wrap: wrap;
     gap: 32px;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     margin-bottom: 40px;
 }
 
-.risk-calculator-wrapper .form-group,
-.risk-section-calculator .form-group {
+.form-group {
     flex: 0 1 260px;
     min-width: 220px;
     max-width: 280px;
     margin: 0 auto;
     transition: transform var(--risk-transition);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
 }
-
-.risk-calculator-wrapper .form-group label,
-.risk-section-calculator .form-group label {
-    text-align: center;
-}
-
-.risk-calculator-wrapper .form-group > div,
-.risk-section-calculator .form-group > div {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.risk-calculator-wrapper .form-group:focus-within,
 .form-group:focus-within {
     transform: translateY(-1px);
 }
