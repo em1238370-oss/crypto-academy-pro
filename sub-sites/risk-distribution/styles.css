@@ -507,7 +507,7 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     }
 }
 
-/* Визуалы около табличек при hover на избранные таблички */
+/* Визуалы — DuoView Pro: минимализм, один кадр */
 .risk-corner-visual {
     position: absolute !important;
     width: 160px !important;
@@ -516,15 +516,13 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     z-index: 10 !important;
     opacity: 0 !important;
     transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    background: rgba(12, 48, 22, 0.35) !important;
-    border-radius: 16px !important;
-    padding: 12px !important;
-    backdrop-filter: blur(6px) !important;
-    border: 1px solid rgba(159, 232, 159, 0.25) !important;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35) !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    border: 1px solid rgba(159, 232, 159, 0.15) !important;
     display: none !important;
     visibility: hidden !important;
-    transform: scale(0.85) translateY(12px) !important;
+    transform: scale(0.95) !important;
 }
 
 /* Плавная анимация появления для мобильных */
@@ -592,12 +590,15 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     overflow: visible !important;
 }
 
-/* Адаптация для мобильных устройств — 768px */
+/* Мобильная версия — стиль как News (768px) */
 @media (max-width: 768px) {
+    .signal-noise-list {
+        gap: 28px !important; /* Как News */
+    }
     .risk-corner-visual {
-        width: 110px !important;
-        height: 110px !important;
-        padding: 8px !important;
+        width: 100px !important;
+        height: 100px !important;
+        padding: 16px !important;
     }
     
     .risk-corner-visual svg {
@@ -606,15 +607,12 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         object-fit: contain;
     }
     
-    .risk-corner-visual svg text {
-        font-size: 10px !important;
-    }
-    
     .signal-noise-item {
-        align-items: center;
-        text-align: center;
-        padding: 22px 24px !important;
-        gap: 16px !important;
+        padding: 14px 16px !important;
+        gap: 8px !important;
+        background: rgba(0, 0, 0, 0.12) !important;
+        border-left: 2px solid rgba(159, 232, 159, 0.5) !important;
+        margin-bottom: 0 !important;
     }
     
     .signal-noise-label,
@@ -629,99 +627,114 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     
     .risk-visual-row {
         display: flex !important;
-        gap: 20px;
+        gap: 16px;
         flex-wrap: wrap;
         justify-content: center;
+        margin-top: 14px !important;
     }
 
     .risk-favorite-item {
-        display: grid !important;
-        grid-auto-rows: auto;
-        justify-items: center;
-        text-align: center !important;
-        padding: 24px 56px !important;
-        gap: 16px !important;
+        padding: 14px 16px !important;
+        gap: 8px !important;
+        background: rgba(0, 0, 0, 0.12) !important;
+        border-left: 2px solid rgba(159, 232, 159, 0.5) !important;
     }
     
     .risk-favorite-item .signal-noise-label,
     .risk-favorite-item .signal-noise-text {
         padding-left: 0 !important;
         padding-right: 0 !important;
-        max-width: 320px !important;
+        max-width: 100% !important;
+        text-align: left !important;
     }
     
     .risk-favorite-item .signal-noise-label::before {
         display: none !important;
     }
     
+    /* DuoView-стиль: один контейнер, иконка полностью видна */
     .risk-favorite-item .risk-corner-visual {
         position: static !important;
-        display: block !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         visibility: visible !important;
         opacity: 1 !important;
         transform: none !important;
-        margin: 18px auto 0 !important;
-        width: min(240px, 78vw) !important;
-        padding: 14px !important;
+        margin: 14px auto 0 !important;
+        width: 100px !important;
+        height: 100px !important;
+        padding: 16px !important;
+        background: rgba(0, 0, 0, 0.2) !important;
+        border: 1px solid rgba(159, 232, 159, 0.18) !important;
+        border-radius: 12px !important;
     }
     
     .risk-favorite-item .risk-corner-visual svg {
         width: 100% !important;
-        height: auto !important;
+        height: 100% !important;
         object-fit: contain;
-        filter: drop-shadow(0 10px 20px rgba(159, 232, 159, 0.35));
+    }
+    
+    /* Одна иконка в ряд на мобильном — как DuoView */
+    .risk-favorite-item .risk-visual-row {
+        flex-direction: row;
+        justify-content: center;
     }
 }
 
-/* 600px: отступы и размеры иконок */
+/* 600px — как News */
 @media (max-width: 600px) {
     .signal-noise-item {
-        margin-bottom: 32px !important;
+        margin-bottom: 0 !important;
     }
     .risk-favorite-item {
-        padding: 22px 36px !important;
-        gap: 18px !important;
+        padding: 14px 16px !important;
+        gap: 8px !important;
     }
     .risk-favorite-item .signal-noise-label,
     .risk-favorite-item .signal-noise-text {
-        max-width: 300px !important;
+        max-width: 100% !important;
     }
     .risk-favorite-item .risk-corner-visual {
-        width: min(220px, 88vw) !important;
-        padding: 13px !important;
-        border-radius: 22px !important;
+        width: 92px !important;
+        height: 92px !important;
+        padding: 14px !important;
+        border-radius: 12px !important;
+        margin-top: 12px !important;
     }
     .risk-visual-row {
-        gap: 20px;
-        margin-top: 22px;
+        gap: 12px;
+        margin-top: 12px !important;
     }
 }
 
-/* 480px: компактные отступы и иконки — два иконки помещаются в ряд */
+/* 480px — как News, компактнее */
 @media (max-width: 480px) {
     .signal-noise-item {
-        margin-bottom: 28px !important;
+        margin-bottom: 0 !important;
     }
     .risk-favorite-item {
-        padding: 20px 30px !important;
-        gap: 14px !important;
+        padding: 14px 16px !important;
+        gap: 8px !important;
     }
     .risk-favorite-item .signal-noise-label,
     .risk-favorite-item .signal-noise-text {
-        max-width: 240px !important;
+        max-width: 100% !important;
     }
     .risk-favorite-item .risk-corner-visual {
-        width: min(175px, calc(50vw - 40px)) !important;
-        padding: 11px !important;
-        border-radius: 20px !important;
-        min-height: 110px !important;
+        width: 88px !important;
+        height: 88px !important;
+        padding: 12px !important;
+        border-radius: 10px !important;
+        margin-top: 12px !important;
     }
     .risk-favorite-item .risk-corner-visual svg {
-        min-height: 90px !important;
+        min-height: 60px !important;
     }
     .risk-visual-row {
-        gap: 14px;
-        margin-top: 18px;
+        gap: 10px;
+        margin-top: 12px !important;
     }
 }
 
@@ -758,154 +771,49 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     animation: none !important;
 }
 
-/* --- Favorite card layout overrides --- */
+/* --- Favorite card layout — только десктоп (мобильный в @media выше) --- */
 .risk-favorite-item {
     max-width: 100%;
 }
 
-.risk-favorite-item .risk-corner-visual {
-    position: static !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    transform: none !important;
-    margin: 8px auto 0 !important;
-    width: min(232px, 84vw) !important;
-    padding: 16px !important;
-    border-radius: 24px !important;
-    background: linear-gradient(135deg, rgba(28, 92, 48, 0.62), rgba(8, 30, 18, 0.44)) !important;
-    border: 1px solid rgba(159, 232, 159, 0.32) !important;
-    box-shadow: 0 24px 50px rgba(5, 18, 11, 0.58) !important;
-    overflow: hidden !important;
-}
-
-.risk-favorite-item .risk-corner-visual svg {
-    width: 100% !important;
-    max-width: none !important;
-    height: auto !important;
-    max-height: 100% !important;
-    min-height: 140px;
-    margin: 0 auto !important;
-    transform: none;
-    transform-origin: center;
-    object-fit: contain;
-    filter: drop-shadow(0 16px 36px rgba(159, 232, 159, 0.28));
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-    letter-spacing: 0.2px;
-}
-
-.risk-favorite-item .risk-corner-top-right,
-.risk-favorite-item .risk-corner-bottom-left {
-    margin-top: 18px !important;
-}
-
-.risk-favorite-item[data-visual="diversify"] .risk-corner-top-right svg {
-    transform: translateY(-6px);
-}
-
-.risk-favorite-item[data-visual="diversify"] .risk-corner-bottom-left svg {
-    transform: translateY(-4px);
-}
-
-.risk-favorite-item[data-visual="fomo"] .risk-corner-top-right svg {
-    transform: translateY(-8px);
-}
-
-.risk-favorite-item[data-visual="fomo"] .risk-corner-bottom-left svg {
-    transform: translateY(-6px);
-}
-
-/* 768px: icon sizes and padding for new SVGs */
-@media (max-width: 768px) {
-    .risk-favorite-item {
-        padding: 24px 48px !important;
-        gap: 18px !important;
-    }
-    .risk-favorite-item .signal-noise-label,
-    .risk-favorite-item .signal-noise-text {
-        max-width: 320px !important;
-    }
+@media (min-width: 769px) {
     .risk-favorite-item .risk-corner-visual {
-        width: min(240px, 78vw) !important;
-        padding: 14px !important;
-        min-height: 140px;
-    }
-    .risk-favorite-item .risk-corner-visual svg {
-        min-height: 120px;
-    }
-    .risk-favorite-item[data-visual="diversify"] .risk-corner-top-right svg,
-    .risk-favorite-item[data-visual="diversify"] .risk-corner-bottom-left svg,
-    .risk-favorite-item[data-visual="fomo"] .risk-corner-top-right svg,
-    .risk-favorite-item[data-visual="fomo"] .risk-corner-bottom-left svg,
-    .risk-favorite-item[data-visual="emergency"] .risk-corner-visual svg,
-    .risk-favorite-item[data-visual="position"] .risk-corner-visual svg,
-    .risk-favorite-item[data-visual="correlation"] .risk-corner-visual svg,
-    .risk-favorite-item[data-visual="time"] .risk-corner-visual svg,
-    .risk-favorite-item[data-visual="cutlosses"] .risk-corner-visual svg {
-        transform: none;
-    }
-    .risk-visual-row {
+        position: static !important;
         display: flex !important;
-        justify-content: center;
-        align-items: center;
-        gap: 22px;
-        flex-wrap: wrap;
-        margin-top: 22px;
+        align-items: center !important;
+        justify-content: center !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        transform: none !important;
+        margin: 8px auto 0 !important;
+        width: min(232px, 84vw) !important;
+        padding: 20px !important;
+        border-radius: 12px !important;
+        background: rgba(0, 0, 0, 0.25) !important;
+        border: 1px solid rgba(159, 232, 159, 0.12) !important;
+        overflow: hidden !important;
+    }
+
+    .risk-favorite-item .risk-corner-visual svg {
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        max-height: 100% !important;
+        min-height: 140px;
+        margin: 0 auto !important;
+        transform: none;
+        transform-origin: center;
+        object-fit: contain;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .risk-favorite-item .risk-corner-top-right,
+    .risk-favorite-item .risk-corner-bottom-left {
+        margin-top: 18px !important;
     }
 }
 
-/* 600px: tighter padding, scaled icon box */
-@media (max-width: 600px) {
-    .risk-favorite-item {
-        padding: 22px 32px !important;
-        gap: 18px !important;
-    }
-    .risk-favorite-item .signal-noise-label,
-    .risk-favorite-item .signal-noise-text {
-        max-width: 300px !important;
-    }
-    .risk-favorite-item .risk-corner-visual {
-        width: min(220px, 88vw) !important;
-        padding: 13px !important;
-        border-radius: 24px !important;
-        min-height: 130px;
-    }
-    .risk-favorite-item .risk-corner-visual svg {
-        min-height: 110px;
-    }
-    .risk-visual-row {
-        gap: 20px;
-        margin-top: 22px;
-    }
-}
 
-/* 480px: compact layout, icon box fits narrow screens — 2 icons side by side */
-@media (max-width: 480px) {
-    .risk-favorite-item {
-        padding: 20px 26px !important;
-        gap: 16px !important;
-    }
-    .risk-favorite-item .signal-noise-label,
-    .risk-favorite-item .signal-noise-text {
-        max-width: 230px !important;
-    }
-    .risk-favorite-item .risk-corner-visual {
-        width: min(175px, calc(50vw - 40px)) !important;
-        padding: 11px !important;
-        border-radius: 22px !important;
-        min-height: 110px !important;
-    }
-    .risk-favorite-item .risk-corner-visual svg {
-        min-height: 90px !important;
-    }
-    .risk-visual-row {
-        gap: 14px;
-        margin-top: 18px;
-    }
-}
 
 @keyframes iconAppear {
     from {
@@ -1290,7 +1198,7 @@ html {
         overscroll-behavior: none;
     }
     .content {
-        padding: 88px 30px 64px !important; /* Боковые отступы увеличены на 0.25 см (10px) */
+        padding: 88px 20px 64px !important; /* Как News */
     }
     .risk-section {
         padding: 0 16px;

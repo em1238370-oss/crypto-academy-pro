@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=41">
+   <link rel="stylesheet" href="styles.css?v=43">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -697,230 +697,110 @@
            window.addEventListener('resize', checkCenterPosition);
        })();
 
-       // Визуалы около табличек при hover на избранные таблички
+       // Визуалы около табличек — DuoView Pro: минимализм, один кадр, полный рисунок
        (function() {
            const favoriteItems = document.querySelectorAll('.risk-favorite-item');
-           
-          // Базовая функция для компактных SVG в премиальном стиле
-          function createRiskIcon({ id, inner, gradientStops = ['rgba(32, 116, 76, 0.95)', 'rgba(8, 32, 20, 0.78)'], defs = '', frame = {}, contentTransform = '' }) {
-              const gradientId = `risk-icon-gradient-${id}`;
-              const width = frame.width ?? 164;
-              const height = frame.height ?? 164;
-              const x = frame.x ?? (200 - width) / 2;
-              const y = frame.y ?? (200 - height) / 2;
-              const radius = frame.radius ?? 28;
-              const borderColor = frame.borderColor ?? 'rgba(159, 232, 159, 0.36)';
-              const opacity = frame.opacity ?? 0.9;
-              const [startColor, endColor] = gradientStops;
-              const groupTransform = contentTransform ? ` transform="${contentTransform}"` : '';
-              
-              return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                      <linearGradient id="${gradientId}" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stop-color="${startColor}"/>
-                          <stop offset="100%" stop-color="${endColor}"/>
-                      </linearGradient>
-                      ${defs}
-                  </defs>
-                  <rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${radius}" fill="url(#${gradientId})" opacity="${opacity}"/>
-                  <rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${radius}" stroke="${borderColor}" stroke-width="2.2" fill="none"/>
-                  <g${groupTransform}>
-                      ${inner}
-                  </g>
-              </svg>`;
-          }
-          
-          // Визуалы для каждой таблички — обновлённые SVG в стиле DuoView (минимализм, единая рамка, stroke 2–2.5)
-          const visuals = {
+           const stroke = 'rgba(159, 232, 159, 0.75)';
+           const strokeDim = 'rgba(159, 232, 159, 0.4)';
+
+           // Один чистый кадр — без вложенных квадратов. Рисунок занимает весь viewBox.
+           function icon(inner) {
+               return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><g>${inner}</g></svg>`;
+           }
+
+           const visuals = {
               diversify: {
-                  topRight: createRiskIcon({
-                      id: 'diversify-top',
-                      gradientStops: ['rgba(46, 160, 112, 0.95)', 'rgba(16, 54, 34, 0.82)'],
-                      contentTransform: 'translate(34 38)',
-                      inner: `
-                        <circle cx="32" cy="40" r="14" fill="none" stroke="rgba(159, 232, 159, 0.88)" stroke-width="2.2"/>
-                        <circle cx="72" cy="24" r="14" fill="none" stroke="rgba(159, 232, 159, 0.75)" stroke-width="2.2"/>
-                        <circle cx="100" cy="48" r="14" fill="none" stroke="rgba(159, 232, 159, 0.7)" stroke-width="2.2"/>
-                        <path d="M44 36 L62 30" stroke="rgba(159, 232, 159, 0.5)" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M82 30 L88 42" stroke="rgba(159, 232, 159, 0.5)" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M38 48 L92 52" stroke="rgba(159, 232, 159, 0.35)" stroke-width="2" stroke-dasharray="6 6" stroke-linecap="round"/>
-                      `
-                  }),
-                  bottomLeft: createRiskIcon({
-                      id: 'diversify-bottom',
-                      gradientStops: ['rgba(255, 140, 86, 0.94)', 'rgba(118, 40, 22, 0.88)'],
-                      contentTransform: 'translate(32 36)',
-                      inner: `
-                        <rect x="8" y="12" width="36" height="28" rx="8" fill="none" stroke="rgba(255, 196, 150, 0.65)" stroke-width="2.2"/>
-                        <rect x="52" y="24" width="36" height="28" rx="8" fill="none" stroke="rgba(255, 196, 150, 0.5)" stroke-width="2.2"/>
-                        <rect x="28" y="44" width="36" height="28" rx="8" fill="none" stroke="rgba(255, 196, 150, 0.5)" stroke-width="2.2"/>
-                        <path d="M38 54 L62 38" stroke="rgba(255, 255, 255, 0.22)" stroke-width="2" stroke-dasharray="5 6" stroke-linecap="round"/>
-                        <path d="M52 68 L68 68" stroke="rgba(255, 118, 118, 0.7)" stroke-width="2.5" stroke-linecap="round"/>
-                        <circle cx="60" cy="68" r="4" fill="none" stroke="rgba(255, 118, 118, 0.8)" stroke-width="2"/>
-                      `
-                  })
+                  topRight: icon(`
+                    <circle cx="50" cy="70" r="22" fill="none" stroke="${stroke}" stroke-width="1.8"/>
+                    <circle cx="100" cy="50" r="22" fill="none" stroke="${stroke}" stroke-width="1.8"/>
+                    <circle cx="150" cy="90" r="22" fill="none" stroke="${stroke}" stroke-width="1.8"/>
+                    <path d="M68 62 L88 58" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round"/>
+                    <path d="M118 66 L128 82" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round"/>
+                  `),
+                  bottomLeft: icon(`
+                    <circle cx="55" cy="55" r="22" fill="none" stroke="${stroke}" stroke-width="1.8"/>
+                    <circle cx="100" cy="90" r="22" fill="none" stroke="${stroke}" stroke-width="1.8"/>
+                    <circle cx="145" cy="60" r="22" fill="none" stroke="${stroke}" stroke-width="1.8"/>
+                    <path d="M72 68 L88 78" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round"/>
+                    <path d="M112 82 L128 68" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round"/>
+                  `)
               },
               fomo: {
-                  topRight: createRiskIcon({
-                      id: 'fomo-top',
-                      gradientStops: ['rgba(255, 150, 84, 0.95)', 'rgba(124, 40, 30, 0.88)'],
-                      contentTransform: 'translate(30 32)',
-                      inner: `
-                        <path d="M12 88 L36 68 L60 52 L88 36 L120 22" stroke="rgba(255, 210, 150, 0.9)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-                        <circle cx="24" cy="82" r="8" fill="none" stroke="rgba(255, 210, 150, 0.85)" stroke-width="2.2"/>
-                        <circle cx="56" cy="54" r="6" fill="none" stroke="rgba(255, 210, 150, 0.7)" stroke-width="2"/>
-                        <circle cx="92" cy="34" r="6" fill="none" stroke="rgba(255, 210, 150, 0.7)" stroke-width="2"/>
-                        <path d="M108 24 L124 18 L118 36 Z" fill="none" stroke="rgba(255, 118, 118, 0.9)" stroke-width="2.2" stroke-linejoin="round"/>
-                        <path d="M98 28 L114 22" stroke="rgba(255, 200, 180, 0.55)" stroke-width="2" stroke-linecap="round"/>
-                      `
-                  }),
-                  bottomLeft: createRiskIcon({
-                      id: 'fomo-bottom',
-                      gradientStops: ['rgba(40, 128, 92, 0.94)', 'rgba(16, 48, 32, 0.82)'],
-                      contentTransform: 'translate(28 38)',
-                      inner: `
-                        <path d="M12 62 L36 50 L64 58 L96 44 L132 36" stroke="rgba(159, 232, 159, 0.85)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-                        <path d="M124 34 L140 48 L122 50 Z" fill="rgba(159, 232, 159, 0.4)" stroke="rgba(159, 232, 159, 0.88)" stroke-width="2.2" stroke-linejoin="round"/>
-                        <circle cx="28" cy="54" r="6" fill="none" stroke="rgba(159, 232, 159, 0.8)" stroke-width="2"/>
-                        <circle cx="72" cy="56" r="5" fill="none" stroke="rgba(159, 232, 159, 0.7)" stroke-width="2"/>
-                        <circle cx="108" cy="42" r="5" fill="none" stroke="rgba(159, 232, 159, 0.7)" stroke-width="2"/>
-                        <path d="M16 78 L136 78" stroke="rgba(159, 232, 159, 0.28)" stroke-width="2" stroke-dasharray="8 10" stroke-linecap="round"/>
-                      `
-                  })
+                  topRight: icon(`
+                    <path d="M40 150 L70 110 L100 90 L130 65 L160 45" stroke="${stroke}" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <path d="M140 50 L165 35 L158 55 Z" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linejoin="round"/>
+                  `),
+                  bottomLeft: icon(`
+                    <path d="M40 50 L75 75 L110 60 L145 85 L170 70" stroke="${stroke}" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <path d="M155 72 L178 58 L170 78 Z" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linejoin="round"/>
+                  `)
               },
               emergency: {
-                  topRight: createRiskIcon({
-                      id: 'emergency-top',
-                      gradientStops: ['rgba(72, 164, 168, 0.95)', 'rgba(18, 46, 58, 0.82)'],
-                      contentTransform: 'translate(34 28)',
-                      inner: `
-                        <path d="M36 8 L76 8 C88 8 96 16 96 28 V56 C96 76 76 92 52 100 L52 100 C28 92 8 76 8 56 V28 C8 16 16 8 28 8 Z" fill="none" stroke="rgba(170, 240, 240, 0.7)" stroke-width="2.2" stroke-linejoin="round"/>
-                        <circle cx="52" cy="52" r="18" fill="none" stroke="rgba(170, 240, 240, 0.75)" stroke-width="2.2"/>
-                        <path d="M52 38 L52 66" stroke="rgba(170, 240, 240, 0.9)" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M40 52 L64 52" stroke="rgba(170, 240, 240, 0.9)" stroke-width="2.5" stroke-linecap="round"/>
-                      `
-                  }),
-                  bottomLeft: createRiskIcon({
-                      id: 'emergency-bottom',
-                      gradientStops: ['rgba(255, 118, 118, 0.94)', 'rgba(124, 32, 32, 0.88)'],
-                      contentTransform: 'translate(30 36)',
-                      inner: `
-                        <rect x="10" y="24" width="108" height="36" rx="10" fill="none" stroke="rgba(255, 182, 182, 0.7)" stroke-width="2.2"/>
-                        <path d="M10 42 L118 42" stroke="rgba(255, 210, 210, 0.35)" stroke-width="2" stroke-dasharray="6 8" stroke-linecap="round"/>
-                        <path d="M28 12 L28 72" stroke="rgba(255, 118, 118, 0.85)" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M54 12 L54 72" stroke="rgba(255, 118, 118, 0.6)" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M80 12 L80 72" stroke="rgba(255, 118, 118, 0.6)" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M106 12 L106 72" stroke="rgba(255, 118, 118, 0.85)" stroke-width="2.5" stroke-linecap="round"/>
-                      `
-                  })
+                  topRight: icon(`
+                    <path d="M100 35 L150 55 L150 100 Q150 140 100 165 Q50 140 50 100 L50 55 Z" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linejoin="round"/>
+                    <circle cx="100" cy="100" r="28" fill="none" stroke="${stroke}" stroke-width="1.6"/>
+                    <path d="M100 78 L100 122" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M80 100 L120 100" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
+                  `),
+                  bottomLeft: icon(`
+                    <path d="M50 80 L50 120 L100 150 L150 120 L150 80 L100 50 Z" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M75 100 L125 100" stroke="${strokeDim}" stroke-width="1.4" stroke-dasharray="6 8" stroke-linecap="round"/>
+                  `)
               },
               position: {
-                  topRight: createRiskIcon({
-                      id: 'position-top',
-                      gradientStops: ['rgba(52, 156, 118, 0.95)', 'rgba(14, 52, 34, 0.82)'],
-                      contentTransform: 'translate(34 30)',
-                      inner: `
-                        <path d="M12 56 L100 56" stroke="rgba(170, 240, 210, 0.75)" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M12 56 Q28 40 56 40 Q84 40 100 56" fill="none" stroke="rgba(170, 240, 210, 0.45)" stroke-width="2.2" stroke-linecap="round"/>
-                        <path d="M12 56 Q28 72 56 72 Q84 72 100 56" fill="none" stroke="rgba(170, 240, 210, 0.45)" stroke-width="2.2" stroke-linecap="round"/>
-                        <rect x="50" y="18" width="6" height="76" rx="3" fill="none" stroke="rgba(170, 240, 210, 0.6)" stroke-width="2"/>
-                        <circle cx="56" cy="56" r="12" fill="none" stroke="rgba(170, 240, 210, 0.7)" stroke-width="2.2"/>
-                        <circle cx="20" cy="58" r="10" fill="none" stroke="rgba(170, 240, 210, 0.55)" stroke-width="2"/>
-                        <circle cx="92" cy="58" r="10" fill="none" stroke="rgba(170, 240, 210, 0.55)" stroke-width="2"/>
-                      `
-                  }),
-                  bottomLeft: createRiskIcon({
-                      id: 'position-bottom',
-                      gradientStops: ['rgba(88, 132, 226, 0.94)', 'rgba(24, 42, 84, 0.82)'],
-                      contentTransform: 'translate(36 34)',
-                      inner: `
-                        <circle cx="52" cy="44" r="36" fill="none" stroke="rgba(178, 196, 255, 0.65)" stroke-width="2.2"/>
-                        <path d="M52 12 L52 44" stroke="rgba(178, 196, 255, 0.85)" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M52 44 L82 58" stroke="rgba(178, 196, 255, 0.85)" stroke-width="2.5" stroke-linecap="round"/>
-                        <circle cx="52" cy="44" r="8" fill="none" stroke="rgba(178, 196, 255, 0.9)" stroke-width="2.2"/>
-                        <path d="M24 72 L80 72" stroke="rgba(178, 196, 255, 0.35)" stroke-width="2" stroke-dasharray="6 8" stroke-linecap="round"/>
-                      `
-                  })
+                  topRight: icon(`
+                    <path d="M50 130 L150 130" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M50 130 Q75 90 100 90 Q125 90 150 130" fill="none" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round"/>
+                    <path d="M50 130 Q75 170 100 170 Q125 170 150 130" fill="none" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round"/>
+                    <line x1="100" y1="50" x2="100" y2="170" stroke="${stroke}" stroke-width="1.6"/>
+                    <circle cx="100" cy="90" r="18" fill="none" stroke="${stroke}" stroke-width="1.8"/>
+                  `),
+                  bottomLeft: icon(`
+                    <circle cx="100" cy="75" r="55" fill="none" stroke="${stroke}" stroke-width="1.6"/>
+                    <path d="M100 25 L100 75" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M100 75 L140 105" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="100" cy="75" r="10" fill="none" stroke="${stroke}" stroke-width="1.6"/>
+                  `)
               },
               correlation: {
-                  topRight: createRiskIcon({
-                      id: 'correlation-top',
-                      gradientStops: ['rgba(58, 156, 118, 0.95)', 'rgba(20, 50, 34, 0.85)'],
-                      contentTransform: 'translate(28 40)',
-                      inner: `
-                        <path d="M8 36 Q40 16 72 28 Q104 40 128 24" stroke="rgba(170, 240, 210, 0.85)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-                        <path d="M8 56 Q40 36 72 48 Q104 60 128 44" stroke="rgba(170, 240, 210, 0.5)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-                        <circle cx="24" cy="32" r="4" fill="none" stroke="rgba(170, 240, 210, 0.7)" stroke-width="2"/>
-                        <circle cx="72" cy="28" r="4" fill="none" stroke="rgba(170, 240, 210, 0.7)" stroke-width="2"/>
-                        <circle cx="116" cy="22" r="4" fill="none" stroke="rgba(170, 240, 210, 0.7)" stroke-width="2"/>
-                      `
-                  }),
-                  bottomLeft: createRiskIcon({
-                      id: 'correlation-bottom',
-                      gradientStops: ['rgba(100, 142, 234, 0.94)', 'rgba(24, 38, 88, 0.82)'],
-                      contentTransform: 'translate(30 36)',
-                      inner: `
-                        <rect x="12" y="28" width="28" height="48" rx="8" fill="none" stroke="rgba(182, 198, 255, 0.65)" stroke-width="2.2"/>
-                        <rect x="54" y="10" width="28" height="64" rx="8" fill="none" stroke="rgba(182, 198, 255, 0.65)" stroke-width="2.2"/>
-                        <rect x="96" y="40" width="28" height="36" rx="8" fill="none" stroke="rgba(182, 198, 255, 0.65)" stroke-width="2.2"/>
-                        <path d="M12 82 L124 82" stroke="rgba(182, 198, 255, 0.3)" stroke-width="2" stroke-dasharray="6 8" stroke-linecap="round"/>
-                      `
-                  })
+                  topRight: icon(`
+                    <path d="M35 80 Q70 45 105 65 Q140 85 165 55" stroke="${stroke}" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <path d="M35 115 Q70 80 105 100 Q140 120 165 90" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+                  `),
+                  bottomLeft: icon(`
+                    <path d="M50 60 L50 140" stroke="${stroke}" stroke-width="1.8"/>
+                    <path d="M100 40 L100 160" stroke="${stroke}" stroke-width="1.8"/>
+                    <path d="M150 80 L150 120" stroke="${stroke}" stroke-width="1.8"/>
+                    <path d="M40 150 L160 150" stroke="${strokeDim}" stroke-width="1.2" stroke-dasharray="4 6" stroke-linecap="round"/>
+                  `)
               },
               time: {
-                  topRight: createRiskIcon({
-                      id: 'time-top',
-                      gradientStops: ['rgba(60, 156, 118, 0.95)', 'rgba(18, 50, 34, 0.85)'],
-                      contentTransform: 'translate(34 30)',
-                      inner: `
-                        <circle cx="56" cy="48" r="40" fill="none" stroke="rgba(170, 240, 210, 0.65)" stroke-width="2.2"/>
-                        <circle cx="56" cy="48" r="28" fill="none" stroke="rgba(170, 240, 210, 0.35)" stroke-width="2" stroke-dasharray="6 8"/>
-                        <path d="M56 20 L56 48" stroke="rgba(170, 240, 210, 0.9)" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M56 48 L78 58" stroke="rgba(170, 240, 210, 0.9)" stroke-width="2.5" stroke-linecap="round"/>
-                        <circle cx="56" cy="48" r="6" fill="rgba(170, 240, 210, 0.9)"/>
-                      `
-                  }),
-                  bottomLeft: createRiskIcon({
-                      id: 'time-bottom',
-                      gradientStops: ['rgba(255, 140, 86, 0.94)', 'rgba(118, 40, 22, 0.88)'],
-                      contentTransform: 'translate(34 34)',
-                      inner: `
-                        <rect x="14" y="16" width="76" height="60" rx="12" fill="none" stroke="rgba(255, 196, 150, 0.65)" stroke-width="2.2"/>
-                        <path d="M14 36 L90 36" stroke="rgba(255, 196, 150, 0.4)" stroke-width="2" stroke-linecap="round"/>
-                        <circle cx="32" cy="26" r="6" fill="none" stroke="rgba(255, 118, 118, 0.75)" stroke-width="2"/>
-                        <circle cx="52" cy="26" r="6" fill="none" stroke="rgba(255, 118, 118, 0.55)" stroke-width="2"/>
-                        <path d="M38 52 L62 76" stroke="rgba(255, 118, 118, 0.8)" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M62 52 L38 76" stroke="rgba(255, 118, 118, 0.8)" stroke-width="2.5" stroke-linecap="round"/>
-                      `
-                  })
+                  topRight: icon(`
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="${stroke}" stroke-width="1.6"/>
+                    <circle cx="100" cy="100" r="50" fill="none" stroke="${strokeDim}" stroke-width="1.2" stroke-dasharray="4 6"/>
+                    <path d="M100 45 L100 100" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M100 100 L135 120" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="100" cy="100" r="6" fill="${stroke}"/>
+                  `),
+                  bottomLeft: icon(`
+                    <path d="M60 55 L140 55 L140 145 L60 145 Z" fill="none" stroke="${stroke}" stroke-width="1.8"/>
+                    <path d="M60 90 L140 90" stroke="${strokeDim}" stroke-width="1.2" stroke-linecap="round"/>
+                    <path d="M80 70 L95 70" stroke="${stroke}" stroke-width="1.4"/>
+                    <path d="M75 115 L95 135" stroke="${stroke}" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M105 115 L85 135" stroke="${stroke}" stroke-width="1.6" stroke-linecap="round"/>
+                  `)
               },
               cutlosses: {
-                  topRight: createRiskIcon({
-                      id: 'cutlosses-top',
-                      gradientStops: ['rgba(255, 118, 118, 0.95)', 'rgba(126, 36, 36, 0.88)'],
-                      contentTransform: 'translate(28 32)',
-                      inner: `
-                        <path d="M8 88 L40 64 L68 52 L100 38 L136 28" stroke="rgba(255, 210, 210, 0.85)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-                        <circle cx="72" cy="56" r="10" fill="none" stroke="rgba(255, 210, 210, 0.8)" stroke-width="2.2"/>
-                        <path d="M78 50 L94 68" stroke="rgba(255, 118, 118, 0.9)" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M90 50 L74 68" stroke="rgba(255, 118, 118, 0.9)" stroke-width="2.5" stroke-linecap="round"/>
-                        <path d="M120 26 L144 20 L138 38 Z" fill="rgba(159, 232, 159, 0.35)" stroke="rgba(159, 232, 159, 0.85)" stroke-width="2.2" stroke-linejoin="round"/>
-                        <path d="M18 78 L44 72" stroke="rgba(255, 210, 210, 0.4)" stroke-width="2" stroke-dasharray="5 6" stroke-linecap="round"/>
-                      `
-                  }),
-                  bottomLeft: createRiskIcon({
-                      id: 'cutlosses-bottom',
-                      gradientStops: ['rgba(46, 158, 110, 0.95)', 'rgba(14, 52, 34, 0.82)'],
-                      contentTransform: 'translate(28 36)',
-                      inner: `
-                        <path d="M10 76 L34 62 L60 52 L88 42 L124 34" stroke="rgba(159, 232, 159, 0.85)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-                        <path d="M116 32 L134 46 L114 48 Z" fill="rgba(159, 232, 159, 0.4)" stroke="rgba(159, 232, 159, 0.88)" stroke-width="2.2" stroke-linejoin="round"/>
-                        <circle cx="26" cy="68" r="6" fill="none" stroke="rgba(159, 232, 159, 0.75)" stroke-width="2"/>
-                        <circle cx="58" cy="52" r="6" fill="none" stroke="rgba(159, 232, 159, 0.75)" stroke-width="2"/>
-                        <circle cx="96" cy="40" r="6" fill="none" stroke="rgba(159, 232, 159, 0.75)" stroke-width="2"/>
-                        <path d="M14 88 L132 88" stroke="rgba(159, 232, 159, 0.28)" stroke-width="2" stroke-dasharray="8 10" stroke-linecap="round"/>
-                      `
-                  })
+                  topRight: icon(`
+                    <path d="M45 155 L85 115 L120 90 L155 60 L185 35" stroke="${stroke}" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <path d="M118 94 L134 78" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M130 94 L114 78" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M165 55 L188 42 L180 62 Z" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linejoin="round"/>
+                  `),
+                  bottomLeft: icon(`
+                    <path d="M45 45 L80 75 L115 95 L150 115 L185 130" stroke="${stroke}" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <path d="M170 125 L192 110 L182 132 Z" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linejoin="round"/>
+                  `)
               }
           };
           
