@@ -729,17 +729,39 @@
                    </svg>`
                },
                fomo: {
-                   topRight: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                       <path d="M 20 160 L 50 140 L 80 100 L 110 60 L 140 40 L 170 25 L 180 20" stroke="rgba(255, 200, 80, 0.8)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-                       <circle cx="180" cy="20" r="10" fill="rgba(255, 100, 100, 0.9)" stroke="rgba(255, 100, 100, 1)" stroke-width="2"/>
-                       <path d="M 175 15 L 180 20 L 185 15" stroke="rgba(255, 100, 100, 1)" stroke-width="2" fill="none" stroke-linecap="round"/>
-                       <text x="100" y="190" fill="rgba(255, 100, 100, 0.9)" font-size="13" font-weight="bold" text-anchor="middle">⚠ PUMP</text>
+                   topRight: `<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+                       <defs>
+                           <linearGradient id="fomoFlare" x1="0%" y1="100%" x2="100%" y2="0%">
+                               <stop offset="0%" stop-color="rgba(255, 158, 47, 0.92)"/>
+                               <stop offset="100%" stop-color="rgba(255, 74, 74, 0.85)"/>
+                           </linearGradient>
+                           <radialGradient id="fomoTrail" cx="50%" cy="80%" r="70%">
+                               <stop offset="0%" stop-color="rgba(255, 210, 140, 0.65)"/>
+                               <stop offset="100%" stop-color="rgba(255, 140, 56, 0.0)"/>
+                           </radialGradient>
+                       </defs>
+                       <rect x="18" y="24" width="184" height="116" rx="26" fill="rgba(18, 18, 18, 0.88)" stroke="rgba(255, 220, 180, 0.32)" stroke-width="2"/>
+                       <path d="M28 124 C 72 112 116 78 156 36" stroke="url(#fomoFlare)" stroke-width="8" stroke-linecap="round" fill="none"/>
+                       <path d="M130 52 L144 20 L174 38 L158 70 Z" fill="url(#fomoFlare)" stroke="rgba(255, 248, 240, 0.4)" stroke-width="2"/>
+                       <path d="M136 46 L151 32" stroke="rgba(255, 248, 240, 0.9)" stroke-width="3" stroke-linecap="round"/>
+                       <ellipse cx="72" cy="140" rx="62" ry="24" fill="url(#fomoTrail)"/>
+                       <text x="110" y="150" fill="rgba(255, 240, 224, 0.88)" font-size="16" font-weight="700" text-anchor="middle">IMPULSE BUY</text>
+                       <text x="110" y="170" fill="rgba(255, 240, 224, 0.6)" font-size="11" text-anchor="middle">Chasing the wick</text>
                    </svg>`,
-                   bottomLeft: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                       <path d="M 20 50 L 60 70 L 100 90 L 140 110 L 180 130" stroke="rgba(159, 232, 159, 0.8)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-                       <circle cx="20" cy="50" r="6" fill="rgba(159, 232, 159, 0.9)"/>
-                       <text x="100" y="160" fill="rgba(159, 232, 159, 0.9)" font-size="13" font-weight="bold" text-anchor="middle">Wait</text>
-                       <text x="100" y="180" fill="rgba(159, 232, 159, 0.7)" font-size="11" text-anchor="middle">for Pullback</text>
+                   bottomLeft: `<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+                       <defs>
+                           <linearGradient id="fomoWait" x1="0%" y1="0%" x2="100%" y2="100%">
+                               <stop offset="0%" stop-color="rgba(126, 227, 183, 0.9)"/>
+                               <stop offset="100%" stop-color="rgba(42, 132, 96, 0.75)"/>
+                           </linearGradient>
+                       </defs>
+                       <rect x="22" y="26" width="176" height="118" rx="22" fill="rgba(12, 40, 30, 0.92)" stroke="rgba(110, 220, 190, 0.4)" stroke-width="2"/>
+                       <path d="M 38 120 Q 80 84 126 98 T 186 118" stroke="rgba(126, 227, 183, 0.85)" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="18 12"/>
+                       <circle cx="48" cy="118" r="9" fill="rgba(126, 227, 183, 1)"/>
+                       <circle cx="126" cy="102" r="9" fill="rgba(126, 227, 183, 0.9)"/>
+                       <circle cx="182" cy="120" r="9" fill="rgba(126, 227, 183, 0.75)"/>
+                       <text x="110" y="154" fill="rgba(200, 255, 232, 0.9)" font-size="14" font-weight="700" text-anchor="middle">BREATHE &amp; OBSERVE</text>
+                       <text x="110" y="172" fill="rgba(200, 255, 232, 0.6)" font-size="11" text-anchor="middle">Plan the entry, don't chase</text>
                    </svg>`
                },
                emergency: {
