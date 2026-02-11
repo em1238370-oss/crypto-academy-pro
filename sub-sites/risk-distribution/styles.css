@@ -184,38 +184,6 @@ body {
     }
 }
 
-/* Scroll-reveal: карточки плавно появляются при прокрутке — синхронный fade-in */
-#section-rules .signal-noise-item,
-#section-protection .signal-noise-item {
-    opacity: 0;
-    transform: translateY(12px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-    animation: none !important;
-}
-
-#section-rules.risk-cards-revealed .signal-noise-item,
-#section-protection.risk-cards-revealed .signal-noise-item {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-@media (prefers-reduced-motion: reduce) {
-    #section-rules .signal-noise-item,
-    #section-protection .signal-noise-item {
-        opacity: 1;
-        transform: none;
-    }
-}
-
-.risk-section-reveal {
-    opacity: 0;
-    animation: fadeInUp 0.8s ease-out forwards;
-}
-
-.risk-section-reveal:nth-child(1) { animation-delay: 0.1s; }
-.risk-section-reveal:nth-child(2) { animation-delay: 0.2s; }
-.risk-section-reveal:nth-child(3) { animation-delay: 0.3s; }
-.risk-section-reveal:nth-child(4) { animation-delay: 0.4s; }
 
 .signal-noise-item {
     padding: 26px 32px !important;
@@ -957,16 +925,37 @@ html {
 /* Risk trust bento + calculator + разделитель — DuoView: градации, не ярко */
 /* Убрано: разделители полос */
 
-.risk-section-reveal,
-.risk-section-divider {
-    opacity: 0;
-    transform: translateY(24px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
+/* DuoView: на мобильной всё после hero появляется при прокрутке */
+@media (max-width: 768px) {
+    .risk-scroll-reveal {
+        opacity: 0 !important;
+        transform: translateY(20px);
+        transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .risk-scroll-reveal.risk-scroll-revealed {
+        opacity: 1 !important;
+        transform: translateY(0);
+    }
+    .risk-scroll-reveal .signal-noise-item {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
 }
-.risk-section-reveal.risk-revealed,
-.risk-section-divider.risk-revealed {
-    opacity: 1;
-    transform: translateY(0);
+
+/* Десктоп: контент виден сразу */
+@media (min-width: 769px) {
+    .risk-scroll-reveal {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .risk-scroll-reveal {
+        opacity: 1 !important;
+        transform: none !important;
+    }
 }
 
 @keyframes borderPulse {

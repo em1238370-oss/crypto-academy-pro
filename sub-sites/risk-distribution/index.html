@@ -10,7 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=45">
+   <link rel="stylesheet" href="styles.css?v=46">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -576,33 +576,30 @@
            update();
        })();
 
-       // Scroll-reveal: секции появляются при прокрутке
-       (function() {
-           const els = document.querySelectorAll('.risk-section-reveal, .risk-section-divider');
-           const opts = { rootMargin: '0px 0px -80px 0px', threshold: 0.1 };
-           const observer = new IntersectionObserver(function(entries) {
-               entries.forEach(function(e) {
-                   if (e.isIntersecting) {
-                       e.target.classList.add('risk-revealed');
-                       observer.unobserve(e.target);
-                   }
-               });
-           }, opts);
-           els.forEach(function(el) { observer.observe(el); });
-       })();
-
-       // Карточки плавно появляются при прокрутке — синхронный fade-in
+       // DuoView-стиль: всё после hero появляется при прокрутке (мобильная версия)
        (function() {
            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-           const sections = document.querySelectorAll('#section-rules, #section-protection');
-           const obs = new IntersectionObserver(function(entries) {
+           var content = document.querySelector('.content');
+           if (!content) return;
+           var hero = content.querySelector('.news-hero');
+           if (!hero) return;
+           var afterHero = [];
+           var el = hero.nextElementSibling;
+           while (el) {
+               afterHero.push(el);
+               el = el.nextElementSibling;
+           }
+           afterHero.forEach(function(el) {
+               el.classList.add('risk-scroll-reveal');
+           });
+           var obs = new IntersectionObserver(function(entries) {
                entries.forEach(function(e) {
                    if (!e.isIntersecting) return;
                    obs.unobserve(e.target);
-                   e.target.classList.add('risk-cards-revealed');
+                   e.target.classList.add('risk-scroll-revealed');
                });
-           }, { rootMargin: '0px 0px -80px 0px', threshold: 0.05 });
-           sections.forEach(function(s) { obs.observe(s); });
+           }, { rootMargin: '0px 0px -50px 0px', threshold: 0.02 });
+           afterHero.forEach(function(el) { obs.observe(el); });
        })();
 
        // Trust stats AI/Free — staggered reveal при появлении
