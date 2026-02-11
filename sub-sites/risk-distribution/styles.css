@@ -1080,7 +1080,7 @@ html {
     }
     /* Секции signal-noise - как на News */
     .signal-noise {
-        margin-bottom: 120px !important;
+        margin-bottom: 80px !important;
     }
     .signal-noise-title {
         margin-bottom: 28px !important;
@@ -1109,7 +1109,7 @@ html {
         font-size: 14px !important; /* Как на News */
     }
     .news-trust-stats {
-        margin-bottom: 120px !important;
+        margin-bottom: 80px !important;
     }
     /* п.11 Apple HIG: tap-area минимум 44px */
     .risk-calculator-wrapper button,
