@@ -1682,27 +1682,75 @@ html {
     .form-wrapper {
         flex-direction: column;
         gap: 24px;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    .risk-calculator-wrapper .form-group,
+    .risk-section-calculator .form-group {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        text-align: center !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+    
+    .risk-calculator-wrapper .form-group label,
+    .risk-section-calculator .form-group label {
+        text-align: center !important;
+    }
+    
+    .risk-calculator-wrapper .input-with-suffix,
+    .risk-calculator-wrapper .slider-container,
+    .risk-calculator-wrapper .slider-track-wrap,
+    .risk-section-calculator .form-group > div {
+        width: 100% !important;
+        max-width: 320px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+    
+    .risk-calculator-wrapper .slider-labels {
+        justify-content: space-between;
+    }
+    
+    .risk-calculator-wrapper select {
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
     
     .risk-calculator-wrapper button {
         width: 100%;
+        max-width: 320px;
+        margin-left: auto;
+        margin-right: auto;
     }
     
     .risk-calculator-container {
         padding: 32px 24px;
+        text-align: center !important;
     }
     
     .risk-calculator-wrapper {
         padding: var(--risk-block-padding) 20px;
     }
-}
-
-@media (max-width: 768px) {
+    
     .risk-calculator-heading {
         font-size: 14px;
     }
-    .risk-calculator-container {
-        padding: 32px 24px;
+    
+    .api-key-details {
+        text-align: center !important;
+    }
+    
+    .api-key-group {
+        text-align: center !important;
+        margin-left: auto;
+        margin-right: auto;
     }
 }
 
