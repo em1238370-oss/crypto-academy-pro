@@ -525,6 +525,18 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     transform: scale(0.8) translateY(10px) !important;
 }
 
+.risk-favorite-item .risk-corner-visual {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    width: 120px !important;
+    height: 120px !important;
+}
+.risk-favorite-item .risk-corner-visual svg {
+    filter: drop-shadow(0 8px 16px rgba(159, 232, 159, 0.35));
+}
+
 /* Плавная анимация появления для мобильных */
 @keyframes mobileVisualFadeIn {
     from {
@@ -564,6 +576,19 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     left: -180px !important;
 }
 
+.risk-favorite-item .risk-corner-top-right {
+    top: 50% !important;
+    right: -56px !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+}
+.risk-favorite-item .risk-corner-bottom-left {
+    top: 50% !important;
+    bottom: auto !important;
+    left: -56px !important;
+    transform: translateY(-50%) !important;
+}
+
 .risk-corner-visual.show {
     opacity: 0.95 !important;
     display: block !important;
@@ -574,11 +599,25 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
 .risk-favorite-item {
     position: relative !important;
     overflow: visible !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding: 24px 72px !important;
+    gap: 18px !important;
 }
 
 /* Убеждаемся, что список тоже не обрезает визуалы */
 .signal-noise-list {
     overflow: visible !important;
+}
+
+.risk-favorite-item .signal-noise-label,
+.risk-favorite-item .signal-noise-text {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.risk-favorite-item .signal-noise-label::before {
+    display: none !important;
 }
 
 /* Адаптация для мобильных устройств */
@@ -603,6 +642,33 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     /* Уменьшаем размер текста в SVG */
     .risk-corner-visual svg text {
         font-size: 10px !important;
+    }
+
+    .risk-favorite-item {
+        padding: 24px 80px !important;
+    }
+    
+    .risk-favorite-item .risk-corner-visual {
+        width: 110px !important;
+        height: 110px !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .risk-favorite-item .risk-corner-top-right {
+        top: 50% !important;
+        right: -54px !important;
+        bottom: auto !important;
+        transform: translateY(-50%) !important;
+    }
+    
+    .risk-favorite-item .risk-corner-bottom-left {
+        top: 50% !important;
+        left: -54px !important;
+        bottom: auto !important;
+        transform: translateY(-50%) !important;
     }
 }
 
@@ -674,6 +740,33 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         visibility: visible !important;
         transform: scale(1) translateY(0) !important;
     }
+
+    .risk-favorite-item {
+        padding: 24px 68px !important;
+    }
+    
+    .risk-favorite-item .risk-corner-visual {
+        width: 96px !important;
+        height: 96px !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .risk-favorite-item .risk-corner-top-right {
+        right: -46px !important;
+        top: 50% !important;
+        bottom: auto !important;
+        transform: translateY(-50%) !important;
+    }
+    
+    .risk-favorite-item .risk-corner-bottom-left {
+        left: -46px !important;
+        top: 50% !important;
+        bottom: auto !important;
+        transform: translateY(-50%) !important;
+    }
 }
 
 @media (max-width: 480px) {
@@ -733,6 +826,23 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         display: block !important;
         visibility: visible !important;
         transform: scale(1) translateY(0) !important;
+    }
+
+    .risk-favorite-item {
+        padding: 22px 60px !important;
+    }
+    
+    .risk-favorite-item .risk-corner-visual {
+        width: 84px !important;
+        height: 84px !important;
+    }
+    
+    .risk-favorite-item .risk-corner-top-right {
+        right: -40px !important;
+    }
+    
+    .risk-favorite-item .risk-corner-bottom-left {
+        left: -40px !important;
     }
 }
 
