@@ -1373,6 +1373,7 @@ html {
     font-family: 'Raleway', sans-serif;
     font-size: 11px;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
     color: var(--risk-accent);
     letter-spacing: 0.12em;
     margin-right: 6px;
@@ -1384,8 +1385,8 @@ html {
     font-size: 14px;
     margin-bottom: 10px;
     font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-    letter-spacing: 0.03em;
+    font-weight: 700;
+    letter-spacing: 0.05em;
     opacity: 1 !important;
 }
 
@@ -1428,6 +1429,7 @@ html {
     font-size: 14px;
     font-family: 'Poppins', sans-serif;
     font-weight: 500;
+    font-feature-settings: "tnum";
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(159, 232, 159, 0.2);
     border-radius: 6px;
@@ -1526,6 +1528,7 @@ html {
     font-size: 14px;
     font-family: 'Poppins', sans-serif;
     font-weight: 500;
+    font-feature-settings: "tnum";
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(159, 232, 159, 0.2);
     border-radius: 6px;
@@ -1564,9 +1567,10 @@ html {
     font-size: 14px;
     font-family: 'Raleway', sans-serif;
     font-weight: 700;
+    text-transform: uppercase;
     cursor: pointer;
     transition: background 0.25s ease, border-color 0.25s ease;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
 }
 
 .risk-calculator-wrapper button:hover {
@@ -1583,7 +1587,9 @@ html {
 }
 
 .results {
-    margin-top: 56px;
+    width: 100%;
+    max-width: 900px;
+    margin: 56px auto 0;
     opacity: 0;
     transform: translateY(24px);
 }
@@ -1618,10 +1624,12 @@ html {
 
 .results-title {
     color: #F0F8F0 !important;
-    font-size: 18px;
+    font-size: 14px;
     margin-bottom: 20px;
     font-family: 'Raleway', sans-serif;
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     text-align: center;
 }
 
@@ -1637,15 +1645,15 @@ html {
 .strategies-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 36px;
+    gap: 40px;
 }
 
 .strategy {
     background: rgba(0, 0, 0, 0.25);
     padding: 14px 16px 14px 18px;
     border-radius: 8px;
-    border: 1px solid rgba(159, 232, 159, 0.1);
-    border-left: 2px solid rgba(159, 232, 159, 0.4);
+    border: 1px solid rgba(159, 232, 159, 0.12);
+    border-left: 2px solid rgba(159, 232, 159, 0.35);
     transition: background 0.25s ease, border-color 0.2s ease;
     box-shadow: inset 0 1px 0 rgba(159, 232, 159, 0.03);
 }
@@ -1661,18 +1669,21 @@ html {
     color: var(--risk-accent);
     margin-bottom: 10px;
     font-size: 15px;
+    letter-spacing: 0.03em;
 }
 
 .strategy-info {
     margin-bottom: 24px;
-    padding: 14px 20px;
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 8px;
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(159, 232, 159, 0.1);
+    border-radius: 6px;
     text-align: center;
     color: var(--risk-subtle);
     font-family: 'Poppins', sans-serif;
     font-weight: 400;
-    font-size: 13px;
+    font-size: 12px;
+    letter-spacing: 0.04em;
     line-height: 1.55;
 }
 
@@ -1682,6 +1693,8 @@ html {
     border-bottom: 1px solid rgba(159, 232, 159, 0.3);
     color: #F0F8F0 !important;
     font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
     opacity: 1 !important;
 }
 
@@ -1697,12 +1710,10 @@ html {
     font-family: 'Raleway', sans-serif;
     font-weight: 600;
     color: var(--risk-accent);
-    font-size: 14px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
     opacity: 1 !important;
 }
 
@@ -1837,6 +1848,10 @@ html {
         text-align: center !important;
         margin-left: auto;
         margin-right: auto;
+    }
+    
+    .strategy-info {
+        font-size: 11px;
     }
 }
 
