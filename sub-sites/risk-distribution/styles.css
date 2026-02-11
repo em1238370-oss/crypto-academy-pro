@@ -161,7 +161,7 @@ body {
     gap: 20px !important;
 }
 
-/* Десктоп: карточки одного размера, текст по центру, без лишней пустоты */
+/* Десктоп: карточки одного размера, поуже — ограничиваем всю секцию */
 @media (min-width: 769px) {
     .content .signal-noise#section-rules,
     .content .signal-noise#section-protection {
@@ -177,7 +177,7 @@ body {
     .content #section-protection .signal-noise-item {
         width: 100% !important;
         min-width: 0 !important;
-        min-height: 0 !important;
+        min-height: 160px !important;
         box-sizing: border-box !important;
         align-items: center !important;
         text-align: center !important;
