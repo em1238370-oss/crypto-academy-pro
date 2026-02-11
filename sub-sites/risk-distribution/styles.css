@@ -783,6 +783,9 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     transform: none;
     transform-origin: center;
     filter: drop-shadow(0 16px 36px rgba(159, 232, 159, 0.28));
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.2px;
 }
 
 .risk-favorite-item .risk-corner-top-right,
