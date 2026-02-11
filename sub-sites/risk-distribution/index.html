@@ -10,30 +10,27 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=62">
+   <link rel="stylesheet" href="styles.css?v=64">
    <style id="risk-reveal-inline">
    /* Плавное появление карточек при скролле — inline, чтобы точно работало */
    .content .risk-scroll-reveal {
        opacity: 0 !important;
-       transform: translateY(50px);
-       transition: opacity 5s cubic-bezier(0.22, 1, 0.36, 1), transform 5s cubic-bezier(0.22, 1, 0.36, 1) !important;
+       transition: opacity 2.2s ease !important;
    }
    .content .risk-scroll-reveal.risk-scroll-revealed {
        opacity: 1 !important;
-       transform: translateY(0);
    }
    .content .risk-scroll-reveal.signal-noise-item {
-       transform: translateY(50px);
-       transition: opacity 5.5s cubic-bezier(0.22, 1, 0.36, 1), transform 5.5s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease, box-shadow 0.25s ease !important;
+       transition: opacity 2.5s ease, background 0.25s ease, box-shadow 0.25s ease !important;
    }
    @media (prefers-reduced-motion: reduce) {
-       .content .risk-scroll-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+       .content .risk-scroll-reveal { opacity: 1 !important; transition: none !important; }
    }
-   /* Мобильная: плавное появление таблиц при прокрутке */
+   /* Мобильная: плавное проявление, в 2 раза быстрее */
    @media (max-width: 768px) {
-       .content .risk-scroll-reveal { opacity: 0 !important; transform: translateY(50px); transition: opacity 5s ease, transform 5s ease !important; }
-       .content .risk-scroll-reveal.risk-scroll-revealed { opacity: 1 !important; transform: translateY(0); }
-       .content .risk-scroll-reveal.signal-noise-item { transition: opacity 5.5s ease, transform 5.5s ease !important; }
+       .content .risk-scroll-reveal { opacity: 0 !important; transition: opacity 2.5s ease !important; }
+       .content .risk-scroll-reveal.risk-scroll-revealed { opacity: 1 !important; }
+       .content .risk-scroll-reveal.signal-noise-item { transition: opacity 2.5s ease !important; }
    }
    </style>
 </head>

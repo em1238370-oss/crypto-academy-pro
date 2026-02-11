@@ -755,38 +755,27 @@ html {
 /* Risk trust bento + calculator + разделитель — DuoView: градации, не ярко */
 /* Убрано: разделители полос */
 
-/* Очень медленное появление — пустое место, потом таблица выезжает снизу */
+/* Плавное проявление через прозрачность — в 2 раза быстрее */
 .content .risk-scroll-reveal {
     opacity: 0 !important;
-    transform: translateY(50px);
-    transition: opacity 5s cubic-bezier(0.22, 1, 0.36, 1), transform 5s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity 2.2s ease;
 }
 .content .risk-scroll-reveal.risk-scroll-revealed {
     opacity: 1 !important;
-    transform: translateY(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .content .risk-scroll-reveal {
-        opacity: 1 !important;
-        transform: none !important;
-    }
+    .content .risk-scroll-reveal { opacity: 1 !important; transition: none !important; }
 }
 
-/* Мобильная: плавное появление при прокрутке */
+/* Мобильная: проявление в 2 раза быстрее */
 @media (max-width: 768px) {
     .content .risk-scroll-reveal {
         opacity: 0 !important;
-        transform: translateY(50px);
-        transition: opacity 5s cubic-bezier(0.22, 1, 0.36, 1), transform 5s cubic-bezier(0.22, 1, 0.36, 1) !important;
+        transition: opacity 2.5s ease !important;
     }
-    .content .risk-scroll-reveal.risk-scroll-revealed {
-        opacity: 1 !important;
-        transform: translateY(0);
-    }
-    .content .risk-scroll-reveal.signal-noise-item {
-        transition: opacity 5.5s cubic-bezier(0.22, 1, 0.36, 1), transform 5.5s cubic-bezier(0.22, 1, 0.36, 1) !important;
-    }
+    .content .risk-scroll-reveal.risk-scroll-revealed { opacity: 1 !important; }
+    .content .risk-scroll-reveal.signal-noise-item { transition: opacity 2.5s ease !important; }
 }
 
 @keyframes borderPulse {
@@ -1118,15 +1107,13 @@ html {
     transform: translateY(0);
 }
 
-/* Таблички Rules / How Experts — очень медленно выезжают (5.5s) */
+/* Таблички Rules / How Experts — проявление в 2 раза быстрее */
 .content .risk-scroll-reveal.signal-noise-item {
     opacity: 0 !important;
-    transform: translateY(50px);
-    transition: opacity 5.5s cubic-bezier(0.22, 1, 0.36, 1), transform 5.5s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease, box-shadow 0.25s ease !important;
+    transition: opacity 2.5s ease, background 0.25s ease, box-shadow 0.25s ease !important;
 }
 .content .risk-scroll-reveal.risk-scroll-revealed.signal-noise-item {
     opacity: 1 !important;
-    transform: translateY(0);
 }
 
 /* Таблички "3 strategies", "Clear", "Free" — плавно как все остальные */
