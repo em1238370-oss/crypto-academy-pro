@@ -1116,7 +1116,7 @@ html {
         margin-bottom: 56px !important;
     }
     .risk-section-divider {
-        margin: 16px auto !important;
+        margin: 10px auto !important;
     }
     /* п.11 Apple HIG: tap-area минимум 44px */
     .risk-calculator-wrapper button,
@@ -1189,7 +1189,7 @@ html {
         margin-bottom: 52px !important;
     }
     .risk-section-divider {
-        margin: 16px auto !important;
+        margin: 8px auto !important;
     }
 }
 @media (max-width: 600px) {
