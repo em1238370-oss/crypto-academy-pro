@@ -764,9 +764,9 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     visibility: visible !important;
     opacity: 1 !important;
     transform: none !important;
-    margin: 10px auto 0 !important;
-    width: min(220px, 82vw) !important;
-    padding: 18px !important;
+    margin: 8px auto 0 !important;
+    width: min(232px, 84vw) !important;
+    padding: 16px !important;
     border-radius: 24px !important;
     background: linear-gradient(135deg, rgba(28, 92, 48, 0.62), rgba(8, 30, 18, 0.44)) !important;
     border: 1px solid rgba(159, 232, 159, 0.32) !important;
@@ -775,19 +775,35 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
 }
 
 .risk-favorite-item .risk-corner-visual svg {
-    width: 92% !important;
-    max-width: 200px !important;
+    width: 100% !important;
+    max-width: none !important;
     height: auto !important;
-    max-height: 92% !important;
+    max-height: 100% !important;
     margin: 0 auto !important;
-    transform: none !important;
+    transform: none;
     transform-origin: center;
-    filter: drop-shadow(0 12px 28px rgba(159, 232, 159, 0.24));
+    filter: drop-shadow(0 16px 36px rgba(159, 232, 159, 0.28));
 }
 
 .risk-favorite-item .risk-corner-top-right,
 .risk-favorite-item .risk-corner-bottom-left {
     margin-top: 18px !important;
+}
+
+.risk-favorite-item[data-visual="diversify"] .risk-corner-top-right svg {
+    transform: translateY(-6px);
+}
+
+.risk-favorite-item[data-visual="diversify"] .risk-corner-bottom-left svg {
+    transform: translateY(-4px);
+}
+
+.risk-favorite-item[data-visual="fomo"] .risk-corner-top-right svg {
+    transform: translateY(-8px);
+}
+
+.risk-favorite-item[data-visual="fomo"] .risk-corner-bottom-left svg {
+    transform: translateY(-6px);
 }
 
 @media (max-width: 768px) {
