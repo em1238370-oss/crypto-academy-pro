@@ -1679,7 +1679,7 @@ html {
     border: 1px solid rgba(159, 232, 159, 0.1);
     border-radius: 6px;
     text-align: center;
-    color: var(--risk-subtle);
+    color: #FFFFFF !important;
     font-family: 'Poppins', sans-serif;
     font-weight: 400;
     font-size: 12px;
