@@ -925,8 +925,7 @@ html {
 /* Risk trust bento + calculator + разделитель — DuoView: градации, не ярко */
 /* Убрано: разделители полос */
 
-/* DuoView: заголовок, абзац, каждая табличка выскакивают по очереди; калькулятор — без анимации (все экраны) */
-/* Разделители — целиком */
+/* Каждая табличка выскакивает сама по себе при прокрутке; калькулятор — без анимации */
 .risk-scroll-reveal {
     opacity: 0 !important;
     transform: translateY(40px) scale(0.98);
@@ -936,20 +935,9 @@ html {
     opacity: 1 !important;
     transform: translateY(0) scale(1);
 }
-/* Дочерние элементы секций: заголовок, абзац, каждая табличка — по одному */
-.risk-reveal-item {
-    opacity: 0 !important;
-    transform: translateY(40px) scale(0.98);
-    transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1), transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.risk-section-revealed .risk-reveal-item {
-    opacity: 1 !important;
-    transform: translateY(0) scale(1);
-}
 
 @media (prefers-reduced-motion: reduce) {
-    .risk-scroll-reveal,
-    .risk-reveal-item {
+    .risk-scroll-reveal {
         opacity: 1 !important;
         transform: none !important;
     }

@@ -576,70 +576,42 @@
            update();
        })();
 
-       // DuoView: заголовок, абзац, каждая табличка выскакивают по очереди; калькулятор — без анимации
+       // Каждая табличка выскакивает сама по себе, когда человек прокручивает к ней; калькулятор — без анимации
        (function() {
            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
            var content = document.querySelector('.content');
            if (!content) return;
            var hero = content.querySelector('.news-hero');
            if (!hero) return;
-           var afterHero = [];
-           var el = hero.nextElementSibling;
-           while (el) {
-               afterHero.push(el);
-               el = el.nextElementSibling;
-           }
-           var staggerStep = 0.15; // секунд между каждым элементом
-           var obsSection = new IntersectionObserver(function(entries) {
+           var obs = new IntersectionObserver(function(entries) {
                entries.forEach(function(e) {
                    if (!e.isIntersecting) return;
-                   obsSection.unobserve(e.target);
-                   e.target.classList.add('risk-section-revealed');
-                   var items = e.target.querySelectorAll('.risk-reveal-item');
-                   items.forEach(function(item, i) {
-                       item.style.transitionDelay = (i * staggerStep) + 's';
-                   });
-               });
-           }, { rootMargin: '0px 0px -25% 0px', threshold: 0.08 });
-           var obsSingle = new IntersectionObserver(function(entries) {
-               entries.forEach(function(e) {
-                   if (!e.isIntersecting) return;
-                   obsSingle.unobserve(e.target);
+                   obs.unobserve(e.target);
                    e.target.classList.add('risk-scroll-revealed');
                });
-           }, { rootMargin: '0px 0px -25% 0px', threshold: 0.08 });
-           afterHero.forEach(function(el) {
-               if (el.classList.contains('risk-section-calculator')) return; // калькулятор — без анимации
+           }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+           function addReveal(el) {
+               el.classList.add('risk-scroll-reveal');
+               obs.observe(el);
+           }
+           var el = hero.nextElementSibling;
+           while (el) {
+               if (el.classList.contains('risk-section-calculator')) { el = el.nextElementSibling; continue; }
                if (el.classList.contains('risk-section-divider')) {
-                   el.classList.add('risk-scroll-reveal');
-                   obsSingle.observe(el);
-                   return;
+                   addReveal(el);
+               } else if (el.classList.contains('signal-noise')) {
+                   var t = el.querySelector('.signal-noise-title'); if (t) addReveal(t);
+                   var i = el.querySelector('.signal-noise-intro'); if (i) addReveal(i);
+                   el.querySelectorAll('.signal-noise-item').forEach(addReveal);
+               } else if (el.classList.contains('news-trust-stats')) {
+                   el.querySelectorAll('.risk-trust-stat').forEach(addReveal);
+                   var b = el.querySelector('.news-trust-badge'); if (b) addReveal(b);
+                   var tg = el.querySelector('.news-trust-tagline'); if (tg) addReveal(tg);
+               } else if (el.classList.contains('news-footer')) {
+                   el.querySelectorAll('p, .news-footer-links').forEach(addReveal);
                }
-               if (el.classList.contains('signal-noise')) {
-                   var title = el.querySelector('.signal-noise-title');
-                   var intro = el.querySelector('.signal-noise-intro');
-                   var items = el.querySelectorAll('.signal-noise-item');
-                   if (title) title.classList.add('risk-reveal-item');
-                   if (intro) intro.classList.add('risk-reveal-item');
-                   items.forEach(function(item) { item.classList.add('risk-reveal-item'); });
-                   obsSection.observe(el);
-                   return;
-               }
-               if (el.classList.contains('news-trust-stats')) {
-                   el.querySelectorAll('.risk-trust-stat').forEach(function(s) { s.classList.add('risk-reveal-item'); });
-                   var badge = el.querySelector('.news-trust-badge');
-                   var tagline = el.querySelector('.news-trust-tagline');
-                   if (badge) badge.classList.add('risk-reveal-item');
-                   if (tagline) tagline.classList.add('risk-reveal-item');
-                   obsSection.observe(el);
-                   return;
-               }
-               if (el.classList.contains('news-footer')) {
-                   el.querySelectorAll('p, .news-footer-links').forEach(function(c) { c.classList.add('risk-reveal-item'); });
-                   obsSection.observe(el);
-                   return;
-               }
-           });
+               el = el.nextElementSibling;
+           }
        })();
 
        // Интерактивные эффекты при попадании в центр экрана
