@@ -214,29 +214,51 @@ body {
 }
 
 
-/* Карточки: DuoView-стиль — левая граница-гравировка, больше воздуха */
+/* Карточки: DuoView-стиль — гравировка, асимметричное свечение, inner glow */
 .content .signal-noise-list .signal-noise-item,
 .signal-noise-item {
+    position: relative !important;
     padding: 16px 20px !important;
     background: rgba(0, 0, 0, 0.2) !important;
     border: 1px solid rgba(159, 232, 159, 0.15) !important;
     border-left: 3px solid rgba(159, 232, 159, 0.5) !important;
     border-radius: 12px !important;
-    transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
+    transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.35s ease, border-color 0.3s ease !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 12px !important;
     margin-bottom: 20px !important;
     text-align: left !important;
-    box-shadow: inset 2px 0 0 rgba(159, 232, 159, 0.12), 0 2px 12px rgba(0, 0, 0, 0.15), 0 0 40px rgba(159, 232, 159, 0.08) !important;
+    box-shadow: inset 2px 0 0 rgba(159, 232, 159, 0.12), 0 2px 12px rgba(0, 0, 0, 0.15), -8px 12px 50px rgba(159, 232, 159, 0.06), 0 0 40px rgba(159, 232, 159, 0.06) !important;
+    overflow: hidden !important;
+}
+.content .signal-noise-list .signal-noise-item::before,
+.signal-noise-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, transparent 40%, rgba(159, 232, 159, 0.03) 100%);
+    pointer-events: none;
+}
+
+.content .signal-noise-list .signal-noise-item:nth-child(even),
+.signal-noise-item:nth-child(even) {
+    box-shadow: inset 2px 0 0 rgba(159, 232, 159, 0.12), 0 2px 12px rgba(0, 0, 0, 0.15), -6px 10px 45px rgba(159, 232, 159, 0.07), 0 0 38px rgba(159, 232, 159, 0.06) !important;
 }
 
 .content .signal-noise-list .signal-noise-item:hover,
 .signal-noise-item:hover {
     background: rgba(0, 0, 0, 0.26) !important;
     transform: translateY(-2px) scale(1.01) !important;
-    box-shadow: inset 2px 0 0 rgba(159, 232, 159, 0.18), 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 60px rgba(159, 232, 159, 0.12), 0 0 0 1px rgba(159, 232, 159, 0.08) !important;
+    border-left-color: rgba(159, 232, 159, 0.7) !important;
+    border-color: rgba(159, 232, 159, 0.12) !important;
+    box-shadow: inset 2px 0 0 rgba(159, 232, 159, 0.18), 0 8px 24px rgba(0, 0, 0, 0.25), -12px 16px 60px rgba(159, 232, 159, 0.1), 0 0 60px rgba(159, 232, 159, 0.1), 0 0 0 1px rgba(159, 232, 159, 0.08) !important;
+}
+.content .signal-noise-list .signal-noise-item:nth-child(even):hover,
+.signal-noise-item:nth-child(even):hover {
+    box-shadow: inset 2px 0 0 rgba(159, 232, 159, 0.18), 0 8px 24px rgba(0, 0, 0, 0.25), -10px 14px 55px rgba(159, 232, 159, 0.09), 0 0 58px rgba(159, 232, 159, 0.09), 0 0 0 1px rgba(159, 232, 159, 0.08) !important;
 }
 
 .signal-noise-label {
@@ -248,10 +270,17 @@ body {
     font-family: 'Poppins', sans-serif;
     line-height: 1.5;
     letter-spacing: 0.02em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .signal-noise-label strong {
     color: rgba(159, 232, 159, 0.95);
+    transition: color 0.25s ease, text-shadow 0.25s ease;
+}
+
+.signal-noise-item:hover .signal-noise-label strong {
+    color: rgba(159, 232, 159, 1);
+    text-shadow: 0 0 12px rgba(159, 232, 159, 0.3);
 }
 
 .signal-noise-text {
@@ -1146,13 +1175,26 @@ html {
     transform: translateY(0);
 }
 
-/* Таблички Rules / How Experts — проявление в 2 раза быстрее */
+/* Таблички Rules / How Experts — scroll-reveal с translateY */
 .content .risk-scroll-reveal.signal-noise-item {
     opacity: 0 !important;
-    transition: opacity 2.5s ease, background 0.25s ease, box-shadow 0.25s ease !important;
+    transform: translateY(20px) !important;
+    transition: opacity 2.2s cubic-bezier(0.22, 1, 0.36, 1), transform 2.2s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease, box-shadow 0.25s ease !important;
 }
 .content .risk-scroll-reveal.risk-scroll-revealed.signal-noise-item {
     opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+.content .risk-scroll-reveal.risk-scroll-revealed.signal-noise-item:hover {
+    transform: translateY(-2px) scale(1.01) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .content .risk-scroll-reveal.signal-noise-item {
+        transform: none !important;
+        transition: opacity 0.5s ease !important;
+    }
 }
 
 /* Таблички "3 strategies", "Clear", "Free" — плавно как все остальные */
