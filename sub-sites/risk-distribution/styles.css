@@ -773,6 +773,22 @@ html {
     }
 }
 
+/* Мобильная: плавное появление при прокрутке */
+@media (max-width: 768px) {
+    .content .risk-scroll-reveal {
+        opacity: 0 !important;
+        transform: translateY(50px);
+        transition: opacity 5s cubic-bezier(0.22, 1, 0.36, 1), transform 5s cubic-bezier(0.22, 1, 0.36, 1) !important;
+    }
+    .content .risk-scroll-reveal.risk-scroll-revealed {
+        opacity: 1 !important;
+        transform: translateY(0);
+    }
+    .content .risk-scroll-reveal.signal-noise-item {
+        transition: opacity 5.5s cubic-bezier(0.22, 1, 0.36, 1), transform 5.5s cubic-bezier(0.22, 1, 0.36, 1) !important;
+    }
+}
+
 @keyframes borderPulse {
     0%, 100% {
         box-shadow: 
