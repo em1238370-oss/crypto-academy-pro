@@ -1102,7 +1102,18 @@ html {
     transform: translateY(0);
 }
 
-/* Таблички "3 strategies", "Clear", "Free" — плавно как все остальные (переопределяет 0.6s выше) */
+/* Таблички Rules / How Experts — плавное появление при прокрутке (переопределяет transition !important) */
+.content .risk-scroll-reveal.signal-noise-item {
+    opacity: 0 !important;
+    transform: translateY(14px);
+    transition: opacity 3s cubic-bezier(0.22, 1, 0.36, 1), transform 3s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease, box-shadow 0.25s ease !important;
+}
+.content .risk-scroll-reveal.risk-scroll-revealed.signal-noise-item {
+    opacity: 1 !important;
+    transform: translateY(0);
+}
+
+/* Таблички "3 strategies", "Clear", "Free" — плавно как все остальные */
 .content .risk-scroll-reveal.risk-trust-stat,
 .content .risk-scroll-reveal.risk-trust-reveal,
 .content .risk-scroll-reveal.news-trust-badge,
