@@ -827,7 +827,7 @@
                    bottomLeftVisual.innerHTML = visuals[visualType].bottomLeft;
                }
                
-               function revealVisuals() {
+               function showVisuals() {
                    topRightVisual.style.setProperty('display', 'block', 'important');
                    topRightVisual.style.setProperty('visibility', 'visible', 'important');
                    topRightVisual.style.setProperty('opacity', '1', 'important');
@@ -839,7 +839,32 @@
                    bottomLeftVisual.classList.add('show');
                }
                
-               revealVisuals();
+               function hideVisuals() {
+                   topRightVisual.style.setProperty('opacity', '0', 'important');
+                   topRightVisual.style.setProperty('display', 'none', 'important');
+                   topRightVisual.style.setProperty('visibility', 'hidden', 'important');
+                   topRightVisual.classList.remove('show');
+                   
+                   bottomLeftVisual.style.setProperty('opacity', '0', 'important');
+                   bottomLeftVisual.style.setProperty('display', 'none', 'important');
+                   bottomLeftVisual.style.setProperty('visibility', 'hidden', 'important');
+                   bottomLeftVisual.classList.remove('show');
+               }
+               
+               function applyMode() {
+                   const isMobile = window.innerWidth <= 768;
+                   if (isMobile) {
+                       showVisuals();
+                   } else {
+                       hideVisuals();
+                   }
+                   
+                   item.onmouseenter = isMobile ? null : showVisuals;
+                   item.onmouseleave = isMobile ? null : hideVisuals;
+               }
+               
+               applyMode();
+               window.addEventListener('resize', applyMode);
            });
        })();
    </script>
