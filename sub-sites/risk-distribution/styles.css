@@ -794,11 +794,13 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
 }
 
 .risk-favorite-item[data-visual="fomo"] .risk-corner-top-right svg {
-    transform: scale(0.96) translateY(-6px);
+    transform: scale(0.84) translate(-6px, -14px);
+    filter: drop-shadow(0 10px 24px rgba(159, 232, 159, 0.22));
 }
 
 .risk-favorite-item[data-visual="fomo"] .risk-corner-bottom-left svg {
-    transform: scale(0.9) translateY(-4px);
+    transform: scale(0.82) translate(-6px, -10px);
+    filter: drop-shadow(0 10px 24px rgba(159, 232, 159, 0.22));
 }
 
 @media (max-width: 768px) {
