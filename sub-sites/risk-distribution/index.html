@@ -10,20 +10,21 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="styles.css?v=60">
+   <link rel="stylesheet" href="styles.css?v=61">
    <style id="risk-reveal-inline">
    /* Плавное появление карточек при скролле — inline, чтобы точно работало */
    .content .risk-scroll-reveal {
        opacity: 0 !important;
-       transform: translateY(14px);
-       transition: opacity 3.5s cubic-bezier(0.22, 1, 0.36, 1), transform 3.5s cubic-bezier(0.22, 1, 0.36, 1) !important;
+       transform: translateY(50px);
+       transition: opacity 5s cubic-bezier(0.22, 1, 0.36, 1), transform 5s cubic-bezier(0.22, 1, 0.36, 1) !important;
    }
    .content .risk-scroll-reveal.risk-scroll-revealed {
        opacity: 1 !important;
        transform: translateY(0);
    }
    .content .risk-scroll-reveal.signal-noise-item {
-       transition: opacity 3s cubic-bezier(0.22, 1, 0.36, 1), transform 3s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease, box-shadow 0.25s ease !important;
+       transform: translateY(50px);
+       transition: opacity 5.5s cubic-bezier(0.22, 1, 0.36, 1), transform 5.5s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease, box-shadow 0.25s ease !important;
    }
    @media (prefers-reduced-motion: reduce) {
        .content .risk-scroll-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
@@ -607,7 +608,7 @@
                    obs.unobserve(e.target);
                    e.target.classList.add('risk-scroll-revealed');
                });
-           }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+           }, { rootMargin: '0px 0px -15% 0px', threshold: 0.02 });
            function addReveal(el) {
                el.classList.add('risk-scroll-reveal');
                obs.observe(el);

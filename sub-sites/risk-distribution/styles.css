@@ -755,11 +755,11 @@ html {
 /* Risk trust bento + calculator + разделитель — DuoView: градации, не ярко */
 /* Убрано: разделители полос */
 
-/* DuoView Pro (Design Analysis §6): плавные scroll-анимации — элементы плавно появляются при скролле */
+/* Очень медленное появление — пустое место, потом таблица выезжает снизу */
 .content .risk-scroll-reveal {
     opacity: 0 !important;
-    transform: translateY(14px);
-    transition: opacity 3.2s cubic-bezier(0.22, 1, 0.36, 1), transform 3.2s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateY(50px);
+    transition: opacity 5s cubic-bezier(0.22, 1, 0.36, 1), transform 5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .content .risk-scroll-reveal.risk-scroll-revealed {
     opacity: 1 !important;
@@ -1102,11 +1102,11 @@ html {
     transform: translateY(0);
 }
 
-/* Таблички Rules / How Experts — плавное появление при прокрутке (переопределяет transition !important) */
+/* Таблички Rules / How Experts — очень медленно выезжают (5.5s) */
 .content .risk-scroll-reveal.signal-noise-item {
     opacity: 0 !important;
-    transform: translateY(14px);
-    transition: opacity 3s cubic-bezier(0.22, 1, 0.36, 1), transform 3s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease, box-shadow 0.25s ease !important;
+    transform: translateY(50px);
+    transition: opacity 5.5s cubic-bezier(0.22, 1, 0.36, 1), transform 5.5s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease, box-shadow 0.25s ease !important;
 }
 .content .risk-scroll-reveal.risk-scroll-revealed.signal-noise-item {
     opacity: 1 !important;
