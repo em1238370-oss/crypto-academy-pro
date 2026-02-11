@@ -185,174 +185,72 @@ body {
 }
 
 
+/* DuoView Pro: карточки как на duoviewpro.com — чистые, видны сразу, лёгкий hover */
 .signal-noise-item {
-    padding: 26px 32px !important;
-    background: rgba(0, 0, 0, 0.25) !important;
-    border-left: 4px solid rgba(159, 232, 159, 0.5) !important;
-    border-radius: 12px !important;
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    position: relative;
+    padding: 24px 28px !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(159, 232, 159, 0.2) !important;
+    border-radius: 16px !important;
+    transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease !important;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
-    opacity: 0;
-    animation: fadeInUp 0.6s ease-out forwards;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    margin-bottom: 24px !important; /* Увеличенный отступ между табличками */
+    gap: 10px;
+    margin-bottom: 20px !important;
     text-align: left;
-}
-
-.signal-noise-item:nth-child(1) { animation-delay: 0.1s; }
-.signal-noise-item:nth-child(2) { animation-delay: 0.15s; }
-.signal-noise-item:nth-child(3) { animation-delay: 0.2s; }
-.signal-noise-item:nth-child(4) { animation-delay: 0.25s; }
-.signal-noise-item:nth-child(5) { animation-delay: 0.3s; }
-.signal-noise-item:nth-child(6) { animation-delay: 0.35s; }
-.signal-noise-item:nth-child(7) { animation-delay: 0.4s; }
-
-.signal-noise-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(180deg, rgba(159, 232, 159, 0.9) 0%, rgba(159, 232, 159, 0.5) 50%, rgba(159, 232, 159, 0.3) 100%);
-    opacity: 0;
-    transition: opacity 0.35s ease;
-    border-radius: 12px 0 0 12px;
-}
-
-.signal-noise-item::after {
-    content: '';
-    position: absolute;
-    left: -6px;
-    top: 50%;
-    transform: translateY(-50%) scale(0);
-    width: 12px;
-    height: 12px;
-    background: radial-gradient(circle, rgba(159, 232, 159, 0.9) 0%, rgba(159, 232, 159, 0.4) 100%);
-    border-radius: 50%;
-    opacity: 0;
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 12px rgba(159, 232, 159, 0.5);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 }
 
 .signal-noise-item:hover {
-    background: rgba(0, 0, 0, 0.35) !important;
-    transform: translateX(8px) translateY(-2px) !important;
-    border-left-color: rgba(159, 232, 159, 0.9) !important;
-    box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.5),
-        0 0 0 1px rgba(159, 232, 159, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-}
-
-.signal-noise-item:hover::before {
-    opacity: 1;
-}
-
-.signal-noise-item:hover::after {
-    opacity: 1;
-    left: -8px;
-    transform: translateY(-50%) scale(1);
+    background: rgba(0, 0, 0, 0.28) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
 }
 
 .signal-noise-label {
-    font-size: 13px !important;
+    font-size: 15px !important;
     font-weight: 600 !important;
     color: #FFFFFF !important;
     margin-bottom: 4px !important;
     font-family: 'Poppins', sans-serif;
-    letter-spacing: -0.01em;
     line-height: 1.5;
-    display: block;
-    position: relative;
-    padding-left: 16px;
-}
-
-.signal-noise-label::before {
-    content: '▸';
-    position: absolute;
-    left: 0;
-    color: rgba(159, 232, 159, 0.6);
-    font-size: 11px;
-    transition: all 0.3s ease;
-}
-
-.signal-noise-item:hover .signal-noise-label::before {
-    color: rgba(159, 232, 159, 0.9);
-    transform: translateX(4px);
 }
 
 .signal-noise-label strong {
     color: rgba(159, 232, 159, 0.95);
-    font-weight: 700;
-    text-shadow: 0 0 8px rgba(159, 232, 159, 0.3);
 }
 
 .signal-noise-text {
     font-size: 14px !important;
-    color: rgba(255, 255, 255, 0.82) !important;
+    color: rgba(255, 255, 255, 0.75) !important;
     line-height: 1.6 !important;
     font-family: 'Poppins', sans-serif;
-    display: block;
-    padding-left: 16px;
 }
 
 .signal-noise-text strong {
     color: rgba(159, 232, 159, 0.9);
-    font-weight: 600;
-    text-shadow: 0 0 6px rgba(159, 232, 159, 0.2);
 }
 
-/* Улучшенные заголовки секций */
+/* Заголовки секций — DuoView: чёткая иерархия */
 .signal-noise-title {
-    font-size: clamp(32px, 5vw, 48px) !important;
+    font-size: clamp(28px, 4vw, 42px) !important;
     font-weight: 700 !important;
     color: #FFFFFF !important;
-    margin-bottom: 20px !important;
+    margin-bottom: 16px !important;
     font-family: 'Raleway', sans-serif !important;
-    letter-spacing: -0.03em !important;
+    letter-spacing: -0.02em !important;
     line-height: 1.2 !important;
-    position: relative;
-    padding-bottom: 16px;
-    opacity: 0;
-    animation: fadeInUp 0.8s ease-out 0.2s forwards;
-}
-
-.signal-noise-title::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
-    height: 3px;
-    background: linear-gradient(90deg, 
-        transparent 0%,
-        rgba(159, 232, 159, 0.6) 50%,
-        transparent 100%);
-    border-radius: 2px;
-    box-shadow: 0 0 8px rgba(159, 232, 159, 0.3);
-}
-
-#section-rules .signal-noise-title::after {
-    display: none !important;
 }
 
 .signal-noise-intro {
-    font-size: 18px !important;
-    color: rgba(255, 255, 255, 0.75) !important;
-    line-height: 1.7 !important;
-    margin-bottom: 40px !important;
+    font-size: 16px !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    line-height: 1.6 !important;
+    margin-bottom: 32px !important;
     font-family: 'Poppins', sans-serif !important;
-    max-width: 800px;
+    max-width: 720px;
     margin-left: auto;
     margin-right: auto;
-    opacity: 0;
-    animation: fadeInUp 0.8s ease-out 0.3s forwards;
 }
 
 /* Визуальные метрики в карточках */
@@ -372,10 +270,6 @@ body {
     50% {
         opacity: 1;
     }
-}
-
-.signal-noise-item:hover .signal-noise-label::before {
-    animation: pulse 1.5s ease-in-out infinite;
 }
 
 /* Интерактивные эффекты при попадании в центр экрана */
