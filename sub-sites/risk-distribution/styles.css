@@ -907,19 +907,19 @@ html {
 /* Risk trust bento + calculator + разделитель — DuoView: градации, не ярко */
 /* Убрано: разделители полос */
 
-/* DuoView Pro: одно плавное движение вверх, медленнее */
-.risk-scroll-reveal {
+/* DuoView Pro (Design Analysis §6): плавные scroll-анимации — элементы плавно появляются при скролле */
+.content .risk-scroll-reveal {
     opacity: 0 !important;
-    transform: translateY(16px);
-    transition: opacity 1.8s cubic-bezier(0.22, 1, 0.36, 1), transform 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateY(14px);
+    transition: opacity 3.2s cubic-bezier(0.22, 1, 0.36, 1), transform 3.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.risk-scroll-reveal.risk-scroll-revealed {
+.content .risk-scroll-reveal.risk-scroll-revealed {
     opacity: 1 !important;
     transform: translateY(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .risk-scroll-reveal {
+    .content .risk-scroll-reveal {
         opacity: 1 !important;
         transform: none !important;
     }
