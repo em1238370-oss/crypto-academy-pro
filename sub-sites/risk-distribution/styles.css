@@ -899,15 +899,15 @@ html {
     font-weight: 400;
 }
 
-/* Risk trust bento — 3 компактных блока в ряд */
+/* Risk trust bento — 3 квадратика в ряд (мобильная — без изменений) */
 .risk-trust-bento {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin: 20px 0 0;
+    gap: 20px;
+    margin: 24px 0 0;
 }
 .risk-trust-stat {
-    padding: 20px 16px;
+    padding: 24px 20px;
     background: rgba(0, 0, 0, 0.15);
     border-radius: 12px;
     border-left: 2px solid rgba(159, 232, 159, 0.5);
