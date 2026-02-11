@@ -516,14 +516,15 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     z-index: 10 !important;
     opacity: 0 !important;
     transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    background: rgba(0, 0, 0, 0.3) !important;
-    border-radius: 8px !important;
-    padding: 10px !important;
-    backdrop-filter: blur(4px) !important;
-    border: 1px solid rgba(159, 232, 159, 0.2) !important;
+    background: rgba(12, 48, 22, 0.35) !important;
+    border-radius: 16px !important;
+    padding: 12px !important;
+    backdrop-filter: blur(6px) !important;
+    border: 1px solid rgba(159, 232, 159, 0.25) !important;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35) !important;
     display: none !important;
     visibility: hidden !important;
-    transform: scale(0.8) translateY(10px) !important;
+    transform: scale(0.85) translateY(12px) !important;
 }
 
 /* Плавная анимация появления для мобильных */
@@ -670,25 +671,22 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
         margin-bottom: 32px !important;
     }
     .risk-favorite-item {
-        padding: 22px 44px !important;
-        gap: 15px !important;
+        padding: 22px 40px !important;
+        gap: 16px !important;
     }
     .risk-favorite-item .signal-noise-label,
     .risk-favorite-item .signal-noise-text {
         max-width: 300px !important;
     }
     .risk-favorite-item .risk-corner-visual {
-        position: static !important;
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        transform: none !important;
-        width: 160px !important;
-        margin: 16px auto 0 !important;
+        width: min(210px, 76vw) !important;
+        padding: 16px !important;
+        border-radius: 20px !important;
     }
     
     .risk-visual-row {
-        gap: 16px;
+        gap: 18px;
+        margin-top: 20px;
     }
 }
 
@@ -699,27 +697,24 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     }
     
     .risk-favorite-item {
-        padding: 20px 32px !important;
+        padding: 20px 30px !important;
         gap: 14px !important;
     }
     
     .risk-favorite-item .signal-noise-label,
     .risk-favorite-item .signal-noise-text {
-        max-width: 260px !important;
+        max-width: 240px !important;
     }
     
     .risk-favorite-item .risk-corner-visual {
-        position: static !important;
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        transform: none !important;
-        width: 140px !important;
-        margin: 14px auto 0 !important;
+        width: min(190px, 82vw) !important;
+        padding: 14px !important;
+        border-radius: 18px !important;
     }
     
     .risk-visual-row {
-        gap: 14px;
+        gap: 16px;
+        margin-top: 18px;
     }
 }
 
@@ -766,15 +761,20 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
     visibility: visible !important;
     opacity: 1 !important;
     transform: none !important;
-    margin: 18px auto 0 !important;
-    width: 180px !important;
+    margin: 12px auto 0 !important;
+    width: 200px !important;
     max-width: 80%;
+    padding: 18px !important;
+    border-radius: 22px !important;
+    background: linear-gradient(135deg, rgba(26, 88, 46, 0.55), rgba(12, 42, 24, 0.38)) !important;
+    border: 1px solid rgba(159, 232, 159, 0.28) !important;
+    box-shadow: 0 24px 48px rgba(6, 20, 12, 0.55) !important;
 }
 
 .risk-favorite-item .risk-corner-visual svg {
     width: 100% !important;
     height: auto !important;
-    filter: drop-shadow(0 10px 20px rgba(159, 232, 159, 0.35));
+    filter: drop-shadow(0 18px 36px rgba(159, 232, 159, 0.35));
 }
 
 .risk-favorite-item .risk-corner-top-right,
@@ -784,15 +784,23 @@ body:has(#section-protection.risk-in-center) .risk-side-visual-right {
 
 @media (max-width: 768px) {
     .risk-favorite-item {
-        padding: 24px 64px !important;
-        gap: 16px !important;
+        padding: 24px 56px !important;
+        gap: 18px !important;
     }
     .risk-favorite-item .signal-noise-label,
     .risk-favorite-item .signal-noise-text {
         max-width: 320px !important;
     }
     .risk-favorite-item .risk-corner-visual {
-        width: 160px !important;
+        width: min(230px, 72vw) !important;
+    }
+    .risk-visual-row {
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+        gap: 22px;
+        flex-wrap: wrap;
+        margin-top: 22px;
     }
 }
 
