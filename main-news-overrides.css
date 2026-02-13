@@ -121,3 +121,68 @@ body::before {
 .news-footer::before {
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
 }
+
+/* Mobile — те же эффекты, адаптированные */
+@media (max-width: 768px) {
+    /* Фон — тот же */
+    body {
+        background: 
+            linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
+            #0d0515 !important;
+    }
+
+    /* Hero — компактнее, разрешаем перенос на узких экранах */
+    .news-hero {
+        margin-bottom: 80px;
+    }
+
+    .news-hero-title {
+        font-size: clamp(36px, 10vw, 56px);
+        white-space: nowrap;
+    }
+
+    /* Trust stats */
+    .news-trust-stats {
+        margin-bottom: 60px;
+    }
+
+    /* Explore — те же карточки, меньший gap */
+    .explore-section {
+        gap: 80px;
+        padding: 60px 16px 100px;
+    }
+
+    .explore-section .menu-item,
+    .explore-section .oval-item {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .explore-section .menu-item:active,
+    .explore-section .oval-item:active {
+        transform: scale(0.98);
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+}
+
+@media (max-width: 480px) {
+    .news-hero {
+        margin-bottom: 60px;
+    }
+
+    .news-hero-title {
+        font-size: clamp(28px, 9vw, 44px);
+        white-space: normal;
+    }
+
+    .news-trust-stats {
+        margin-bottom: 48px;
+    }
+
+    .explore-section {
+        gap: 60px;
+        padding: 48px 16px 80px;
+    }
+}
