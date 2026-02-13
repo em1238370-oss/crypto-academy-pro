@@ -33,7 +33,15 @@ body::before {
     border-bottom-color: rgba(255, 255, 255, 0.06) !important;
 }
 
-/* 3. Hero — gold accent, larger typography */
+/* 3. Hero — gold accent, larger typography, по центру */
+.news-hero,
+.news-hero-label,
+.news-hero-title,
+.news-hero-subtitle,
+.news-hero-description {
+    text-align: center;
+}
+
 .news-hero {
     margin-bottom: 120px;
 }
@@ -48,7 +56,13 @@ body::before {
     font-style: italic;
 }
 
-/* 4. Trust stats — spacing */
+/* 4. Trust stats — spacing, по центру */
+.news-trust-stats,
+.news-trust-stats .news-trust-badge,
+.news-trust-stats .news-trust-tagline {
+    text-align: center;
+}
+
 .news-trust-stats {
     margin-bottom: 80px;
 }
