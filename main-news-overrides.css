@@ -51,7 +51,7 @@ body::before {
 .news-hero-title {
     font-size: clamp(56px, 10vw, 120px);
     white-space: normal;
-    margin-bottom: 8cm;
+    margin-bottom: 8.1cm;
 }
 
 .news-hero-title .hero-accent {
