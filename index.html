@@ -242,12 +242,17 @@
        (function() {
            var els = document.querySelectorAll('.scroll-reveal');
            if (!els.length) return;
+           function reveal(el) { el.classList.add('revealed'); }
            var obs = new IntersectionObserver(function(entries) {
                entries.forEach(function(e) {
-                   if (e.isIntersecting) e.target.classList.add('revealed');
+                   if (e.isIntersecting) reveal(e.target);
                });
-           }, { threshold: 0.15 });
-           els.forEach(function(el) { obs.observe(el); });
+           }, { threshold: 0 });
+           els.forEach(function(el) {
+               obs.observe(el);
+               var r = el.getBoundingClientRect();
+               if (r.top < window.innerHeight) reveal(el);
+           });
        })();
    </script>
    <script src="scripts/chatbot.js?v=39"></script>
