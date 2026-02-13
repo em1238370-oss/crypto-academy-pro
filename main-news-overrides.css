@@ -70,6 +70,79 @@ body::before {
     margin-bottom: 80px;
 }
 
+/* Main trust stats — 3 columns, gold headings, grid decor */
+.main-trust-stats {
+    position: relative;
+    padding: 48px 24px 56px;
+    background:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.06), transparent 50%);
+    background-size: 40px 40px, 40px 40px, 100% 100%;
+    background-position: 0 0, 0 0, center;
+    border-radius: 12px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.main-trust-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px 24px;
+    margin-bottom: 40px;
+}
+
+.main-trust-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+}
+
+.main-trust-value {
+    font-family: 'Raleway', sans-serif;
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 700;
+    color: #d4af37;
+    line-height: 1.1;
+}
+
+.main-trust-label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--news-text);
+}
+
+.main-trust-stats .news-trust-badge {
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    color: var(--news-text);
+    margin-bottom: 16px;
+}
+
+.main-trust-hex {
+    font-family: monospace;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.25);
+    letter-spacing: 0.08em;
+    margin-bottom: 24px;
+}
+
+.main-trust-stats .news-trust-tagline {
+    font-size: 16px;
+    color: var(--news-subtle);
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.main-trust-stats .news-trust-tagline .hero-accent {
+    color: #d4af37;
+    font-style: normal;
+}
+
 /* 5. Explore cards — premium, clean */
 .explore-section {
     gap: 140px;
@@ -165,6 +238,16 @@ body::before {
         margin-bottom: 60px;
     }
 
+    .main-trust-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        margin-bottom: 32px;
+    }
+
+    .main-trust-stats {
+        padding: 36px 20px 44px;
+    }
+
     /* Explore — те же карточки, меньший gap */
     .explore-section {
         gap: 80px;
@@ -196,6 +279,19 @@ body::before {
 
     .news-trust-stats {
         margin-bottom: 48px;
+    }
+
+    .main-trust-grid {
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+
+    .main-trust-stats {
+        padding: 28px 16px 36px;
+    }
+
+    .main-trust-value {
+        font-size: clamp(28px, 8vw, 44px);
     }
 
     .explore-section {
