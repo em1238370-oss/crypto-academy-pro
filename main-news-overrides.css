@@ -34,21 +34,23 @@ body::before {
 }
 
 /* 3. Hero — gold accent, larger typography, по центру */
-.news-hero,
-.news-hero-label,
-.news-hero-title,
-.news-hero-subtitle,
-.news-hero-description {
-    text-align: center;
+.content .news-hero,
+.content .news-hero * {
+    text-align: center !important;
 }
 
-.news-hero {
+.content .news-hero {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100%;
+    max-width: 720px;
     margin-bottom: 120px;
+    overflow: visible;
 }
 
 .news-hero-title {
     font-size: clamp(56px, 10vw, 120px);
-    white-space: nowrap;
+    white-space: normal;
 }
 
 .news-hero-title .hero-accent {
@@ -154,7 +156,7 @@ body::before {
 
     .news-hero-title {
         font-size: clamp(36px, 10vw, 56px);
-        white-space: nowrap;
+        white-space: normal;
     }
 
     /* Trust stats */
