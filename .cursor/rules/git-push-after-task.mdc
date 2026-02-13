@@ -1,0 +1,15 @@
+---
+description: After completing any task, commit and push changes to GitHub
+globs: 
+alwaysApply: true
+---
+
+# Git Push After Task
+
+After completing a coding task in this project:
+
+1. Stage changes: `git add`
+2. Commit with a clear message describing what was done
+3. Push to origin: `git push origin main`
+
+Do this automatically at the end of each task — no need for the user to remind you.
