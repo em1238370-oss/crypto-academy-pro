@@ -28,6 +28,37 @@ body::before {
 }
 
 /* 1b. Background effects — data nodes + lines (DuoView style) */
+@keyframes bg-dot-pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.85; }
+}
+
+@keyframes bg-line-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .bg-dot { animation: bg-dot-pulse 4s ease-in-out infinite; }
+    .bg-dot-1 { animation-delay: 0s; }
+    .bg-dot-2 { animation-delay: 0.5s; }
+    .bg-dot-3 { animation-delay: 1s; }
+    .bg-dot-4 { animation-delay: 1.5s; }
+    .bg-dot-5 { animation-delay: 2s; }
+    .bg-dot-6 { animation-delay: 2.5s; }
+    .bg-dot-7 { animation-delay: 0.3s; }
+    .bg-dot-8 { animation-delay: 0.8s; }
+    .bg-dot-9 { animation-delay: 1.3s; }
+    .bg-dot-10 { animation-delay: 1.8s; }
+    .bg-line { animation: bg-line-pulse 3s ease-in-out infinite; }
+    .bg-line-1 { animation-delay: 0s; }
+    .bg-line-2 { animation-delay: 0.6s; }
+    .bg-line-3 { animation-delay: 1.2s; }
+    .bg-line-4 { animation-delay: 0.3s; }
+    .bg-line-5 { animation-delay: 0.9s; }
+    .bg-line-6 { animation-delay: 1.5s; }
+}
+
 .main-bg-effects {
     position: fixed;
     inset: 0;
@@ -84,6 +115,18 @@ body::before {
 .bg-hex-2 { bottom: 5%; right: 10%; left: auto; color: rgba(212, 175, 55, 0.2); }
 .bg-hex-3 { top: 48%; right: 5%; left: auto; font-size: 9px; color: rgba(139, 92, 246, 0.18); }
 
+/* 2a. Scroll reveal — DuoView-style section appearance */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* 2. Nav — subtle */
 .main-nav {
     background: rgba(13, 5, 21, 0.95) !important;
@@ -131,7 +174,7 @@ body::before {
     margin-bottom: 80px;
 }
 
-/* Main trust stats — 3 columns, gold headings, DuoView glow */
+/* Main trust stats — 3 columns, gold headings, DuoView glow + shadow */
 .main-trust-stats {
     position: relative;
     padding: 48px 24px 56px;
@@ -140,6 +183,7 @@ body::before {
     max-width: 900px;
     margin-left: auto;
     margin-right: auto;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2), 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .main-trust-grid {
@@ -225,14 +269,14 @@ body::before {
 
 .explore-section .menu-item:hover,
 .explore-section .oval-item:hover {
-    transform: scale(1.02);
+    transform: scale(1.03);
     border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 24px rgba(139, 92, 246, 0.08);
 }
 
 .explore-section .menu-item.premium:hover {
     border-color: rgba(212, 175, 55, 0.3);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(212, 175, 55, 0.1);
 }
 
 /* 6. Subscription banner */
@@ -256,7 +300,7 @@ body::before {
 
 .subscription-pay-btn:hover:not(:disabled) {
     background: var(--news-highlight);
-    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3), 0 0 24px rgba(139, 92, 246, 0.35);
 }
 
 /* 7. Footer — subtle */
@@ -279,9 +323,9 @@ body::before {
             #0d0515 !important;
     }
 
-    /* Background effects — softer on mobile */
-    .bg-dot { opacity: 0.4; }
-    .bg-line { opacity: 0.6; }
+    /* Background effects — softer on mobile, no pulse animation */
+    .bg-dot { opacity: 0.4; animation: none; }
+    .bg-line { opacity: 0.6; animation: none; }
     .bg-hex { opacity: 0.7; }
 
     /* Hero — компактнее, разрешаем перенос на узких экранах */
