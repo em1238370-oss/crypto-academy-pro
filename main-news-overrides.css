@@ -290,8 +290,16 @@ body::before {
     color: var(--news-text);
 }
 
+/* Oval — шире, заголовок в одну строку */
+.explore-section .oval-item {
+    width: min(920px, 95vw);
+    white-space: nowrap;
+}
+
+.explore-section .oval-item h3,
 .explore-section .oval-item:hover h3 {
-    font-size: 35px;
+    font-size: 22px;
+    white-space: nowrap;
 }
 
 .explore-section .menu-item p,
@@ -395,6 +403,14 @@ body::before {
     .explore-section .oval-item {
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .explore-section .oval-item {
+        white-space: normal;
+    }
+
+    .explore-section .oval-item h3 {
+        white-space: normal;
     }
 
     .explore-section .menu-item:active,
