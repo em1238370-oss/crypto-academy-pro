@@ -1,0 +1,61 @@
+/* Main page overrides for News design palette */
+
+/* Hero accent for "Madness" */
+.news-hero-title .hero-accent {
+    color: var(--news-accent);
+    font-style: italic;
+}
+
+/* Explore section — News palette */
+.explore-section .menu-item,
+.explore-section .oval-item {
+    color: var(--news-text);
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(201, 184, 150, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.explore-section .menu-item h3,
+.explore-section .oval-item h3 {
+    color: var(--news-text);
+}
+
+.explore-section .menu-item p,
+.explore-section .oval-item p {
+    color: var(--news-subtle);
+}
+
+.explore-section .menu-item:hover,
+.explore-section .oval-item:hover {
+    border-color: rgba(201, 184, 150, 0.4);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+
+.explore-section .menu-item.premium:hover {
+    border-color: rgba(201, 184, 150, 0.5);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3), 0 0 24px rgba(201, 184, 150, 0.12);
+}
+
+/* Subscription banner — News palette */
+.subscription-banner {
+    border-color: rgba(201, 184, 150, 0.2);
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.subscription-title {
+    color: var(--news-text);
+}
+
+.subscription-message {
+    color: var(--news-subtle);
+}
+
+.subscription-pay-btn {
+    background: var(--news-accent);
+    color: var(--news-bg);
+}
+
+.subscription-pay-btn:hover:not(:disabled) {
+    background: var(--news-highlight);
+    box-shadow: 0 12px 30px rgba(201, 184, 150, 0.25);
+}

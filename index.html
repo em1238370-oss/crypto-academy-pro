@@ -2,66 +2,41 @@
 <html lang="en">
 <head>
    <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
    <title>Crypto Academy Pro</title>
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="styles.css">
+   <link rel="stylesheet" href="sub-sites/news/styles.css">
+   <link rel="stylesheet" href="main-news-overrides.css">
 </head>
 <body style="margin: 0; padding: 0; position: relative;">
-   <div class="page">
-       <!-- Крипто-элементы фона - деловой стиль -->
-       <div class="crypto-background-elements">
-           <!-- Блокчейн-сетка (деловая) -->
-           <div class="blockchain-grid"></div>
-           <!-- Блокчейн-блоки (сдержанные) -->
-           <div class="blockchain-block block-1"></div>
-           <div class="blockchain-block block-2"></div>
-           <div class="blockchain-block block-3"></div>
-           <!-- Данные транзакций (деловые) -->
-           <div class="transaction-data data-1">0x1a2b3c4d5e6f...</div>
-           <div class="transaction-data data-2">0x7g8h9i0j1k2l...</div>
-           <div class="transaction-data data-3">0x3m4n5o6p7q8r...</div>
-           <div class="transaction-data data-4">0x9s0t1u2v3w4x...</div>
-           <div class="transaction-data data-5">0x5y6z7a8b9c0d...</div>
-           <!-- График цены (деловой) -->
-           <div class="price-chart-line chart-1"></div>
-           <div class="price-chart-line chart-2"></div>
-           <div class="price-chart-line chart-3"></div>
-           <!-- Блокчейн-соединения (тонкие линии) -->
-           <div class="blockchain-connection-line conn-1"></div>
-           <div class="blockchain-connection-line conn-2"></div>
-           <div class="blockchain-connection-line conn-3"></div>
-           <div class="blockchain-connection-line conn-4"></div>
-           <!-- Деловые индикаторы -->
-           <div class="business-indicator indicator-1"></div>
-           <div class="business-indicator indicator-2"></div>
-           <div class="business-indicator indicator-3"></div>
-           <!-- Деловые линии данных -->
-           <div class="data-line line-1"></div>
-           <div class="data-line line-2"></div>
-           <div class="data-line line-3"></div>
+   <nav class="main-nav" aria-label="Main navigation">
+       <a href="index.html" class="main-nav-brand">Crypto Academy Pro</a>
+       <div class="main-nav-links">
+           <a href="sub-sites/news/index.html" target="_blank">News</a>
+           <a href="sub-sites/risk-distribution/index.html" target="_blank">Risk</a>
+           <a href="sub-sites/crypto-basics/index.html" target="_blank">Basics</a>
+           <a href="sub-sites/crypto-coach/index.html" target="_blank">Coach</a>
        </div>
-       
-       <!-- Hero в стиле News -->
-       <section class="main-hero">
-           <h1 class="main-hero-title">Crypto: Not Just <span>Madness</span></h1>
-           <p class="main-hero-description">
-               Step into the world of cryptocurrency with confidence. Most platforms try to profit from you. We don't. Here you don't just read and listen—you use tools, build your own experience, and draw your own conclusions. The market is learned only through experience—no theory or AI can replace it. We built these tools because we believe you deserve clarity, not hype. Follow risk management, and let the data speak.
-           </p>
-       </section>
-       
-       <!-- Real data section -->
-       <section class="main-real-data">
-           <p class="main-real-data-text">Real data. Real tools. Crafted with care.</p>
-       </section>
-       
-       <!-- Built for those section -->
-       <section class="main-built-for">
-           <p class="main-built-for-text">Built for those who demand <span class="clarity-highlight">clarity</span>. We respect your time and intelligence—no hype, no noise, no shortcuts.</p>
-       </section>
+   </nav>
+   <div class="page" id="top">
+       <div class="content">
+           <section class="news-hero">
+               <p class="news-hero-label">Crypto Academy Pro</p>
+               <h1 class="news-hero-title">Crypto: Not Just <span class="hero-accent">Madness</span></h1>
+               <p class="news-hero-subtitle">Tools. Clarity. No hype.</p>
+               <p class="news-hero-description">
+                   Step into the world of cryptocurrency with confidence. Most platforms try to profit from you. We don't. Here you don't just read and listen—you use tools, build your own experience, and draw your own conclusions. The market is learned only through experience—no theory or AI can replace it. We built these tools because we believe you deserve clarity, not hype. Follow risk management, and let the data speak.
+               </p>
+           </section>
+           
+           <section class="news-trust-stats">
+               <p class="news-trust-badge">Real data. Real tools. Crafted with care.</p>
+               <p class="news-trust-tagline">Built for those who demand clarity—no hype, no noise, no shortcuts.</p>
+           </section>
        
        <section class="subscription-banner" id="subscriptionBanner" style="display: none;">
            <div class="subscription-info">
@@ -116,11 +91,15 @@
            </a>
        </section>
        
-       <!-- Футер в стиле News -->
-       <footer class="main-footer">
-           <p class="main-footer-text">Crypto Academy Pro — tools for those who think for themselves.</p>
-           <p class="main-footer-crafted">Crafted with respect for your time.</p>
+       <footer class="news-footer">
+           <p class="news-footer-text">Crypto Academy Pro — tools for those who think for themselves.</p>
+           <p class="news-footer-crafted">Crafted with respect for your time.</p>
+           <div class="news-footer-links">
+               <a href="#top" class="news-footer-link">Back to top</a>
+               <a href="index.html" class="news-footer-link">← Back to main</a>
+           </div>
        </footer>
+       </div>
    </div>
    
    <div class="payment-backdrop hidden" id="paymentBackdrop"></div>
@@ -162,8 +141,6 @@
            </button>
        </div>
    </div>
-   </div>
-</div>
    
    <!-- Chat Widget - ВСЕГДА В ПРАВОМ НИЖНЕМ УГЛУ ЭКРАНА, ВНЕ .page, НА УРОВНЕ body -->
    <div class="chat-widget" id="chatWidget" style="position: fixed !important; bottom: 20px !important; right: 20px !important; top: auto !important; left: auto !important; z-index: 2147483647 !important; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; margin: 0 !important; padding: 0 !important; transform: none !important; width: auto !important; height: auto !important;">
