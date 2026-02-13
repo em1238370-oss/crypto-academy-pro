@@ -43,14 +43,14 @@ body::before {
     margin-left: auto !important;
     margin-right: auto !important;
     width: 100%;
-    max-width: min(1100px, 95vw);
+    max-width: 720px;
     margin-bottom: 120px;
     overflow: visible;
 }
 
 .news-hero-title {
     font-size: clamp(56px, 10vw, 120px);
-    white-space: nowrap;
+    white-space: normal;
     margin-bottom: 8.1cm;
 }
 
