@@ -1,7 +1,7 @@
 /* Main page — DuoView Pro premium design */
 
 :root {
-    --news-bg: #0a0a0a;
+    --news-bg: #0d0515;
     --news-text: #ffffff;
     --news-accent: #8b5cf6;
     --news-highlight: #a78bfa;
@@ -16,7 +16,7 @@ body {
         linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
         radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
-        #0a0a0a !important;
+        #0d0515 !important;
 }
 
 body::before {
@@ -29,7 +29,7 @@ body::before {
 
 /* 2. Nav — subtle */
 .main-nav {
-    background: rgba(10, 10, 10, 0.95) !important;
+    background: rgba(13, 5, 21, 0.95) !important;
     border-bottom-color: rgba(255, 255, 255, 0.06) !important;
 }
 
