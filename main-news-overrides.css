@@ -50,6 +50,10 @@ body::before {
 .bg-dot-4 { top: 80%; right: 15%; left: auto; background: rgba(212, 175, 55, 0.5); }
 .bg-dot-5 { top: 8%; left: 50%; transform: translateX(-50%); }
 .bg-dot-6 { bottom: 8%; left: 50%; transform: translateX(-50%); background: rgba(139, 92, 246, 0.5); }
+.bg-dot-7 { top: 45%; left: 10%; background: rgba(139, 92, 246, 0.5); }
+.bg-dot-8 { top: 35%; right: 22%; left: auto; background: rgba(212, 175, 55, 0.4); }
+.bg-dot-9 { bottom: 25%; left: 25%; background: rgba(139, 92, 246, 0.45); }
+.bg-dot-10 { top: 55%; right: 8%; left: auto; background: rgba(212, 175, 55, 0.4); }
 
 .bg-line {
     position: absolute;
@@ -61,6 +65,24 @@ body::before {
 .bg-line-1 { top: 16%; left: 20%; transform: rotate(25deg); }
 .bg-line-2 { top: 78%; right: 18%; left: auto; transform: rotate(-15deg); background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.06), transparent); }
 .bg-line-3 { top: 50%; left: 8%; transform: rotate(-30deg); width: 100px; }
+.bg-line-4 { top: 30%; right: 15%; left: auto; transform: rotate(40deg); width: 90px; }
+.bg-line-5 { bottom: 35%; left: 20%; transform: rotate(-20deg); background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.07), transparent); }
+.bg-line-6 { top: 65%; right: 25%; left: auto; transform: rotate(15deg); width: 80px; background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.05), transparent); }
+
+/* Hex snippets — wallet/blockchain feel */
+.bg-hex {
+    position: absolute;
+    font-family: monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: rgba(139, 92, 246, 0.25);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.bg-hex-1 { top: 5%; left: 8%; }
+.bg-hex-2 { bottom: 5%; right: 10%; left: auto; color: rgba(212, 175, 55, 0.2); }
+.bg-hex-3 { top: 48%; right: 5%; left: auto; font-size: 9px; color: rgba(139, 92, 246, 0.18); }
 
 /* 2. Nav — subtle */
 .main-nav {
@@ -260,6 +282,7 @@ body::before {
     /* Background effects — softer on mobile */
     .bg-dot { opacity: 0.4; }
     .bg-line { opacity: 0.6; }
+    .bg-hex { opacity: 0.7; }
 
     /* Hero — компактнее, разрешаем перенос на узких экранах */
     .news-hero {
@@ -308,6 +331,7 @@ body::before {
 @media (max-width: 480px) {
     .bg-dot { opacity: 0.3; }
     .bg-line { opacity: 0.5; }
+    .bg-hex { opacity: 0.5; }
 
     .news-hero {
         margin-bottom: 60px;
