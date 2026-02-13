@@ -10,12 +10,12 @@
     --news-dim: #888888;
 }
 
-/* 1. Background — minimalist */
+/* 1. Background — minimalist DuoView (no grid, soft radial glows) */
 body {
     background: 
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.05) 0%, transparent 45%),
+        radial-gradient(circle at 15% 85%, rgba(139, 92, 246, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.02) 0%, transparent 60%),
         #0d0515 !important;
 }
 
@@ -74,16 +74,11 @@ body::before {
     margin-bottom: 80px;
 }
 
-/* Main trust stats — 3 columns, gold headings, grid decor */
+/* Main trust stats — 3 columns, gold headings, DuoView glow */
 .main-trust-stats {
     position: relative;
     padding: 48px 24px 56px;
-    background:
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.06), transparent 50%);
-    background-size: 40px 40px, 40px 40px, 100% 100%;
-    background-position: 0 0, 0 0, center;
+    background: radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.06), transparent 55%);
     border-radius: 12px;
     max-width: 900px;
     margin-left: auto;
@@ -218,12 +213,12 @@ body::before {
 
 /* Mobile — те же эффекты, адаптированные */
 @media (max-width: 768px) {
-    /* Фон — тот же */
+    /* Фон — тот же DuoView (radial glow, no grid) */
     body {
         background: 
-            linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-            radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
+            radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.05) 0%, transparent 45%),
+            radial-gradient(circle at 15% 85%, rgba(139, 92, 246, 0.03) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.02) 0%, transparent 60%),
             #0d0515 !important;
     }
 
