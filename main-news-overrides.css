@@ -171,15 +171,16 @@ body::before {
     margin-left: auto !important;
     margin-right: auto !important;
     width: 100%;
-    max-width: 720px;
+    max-width: min(960px, 95vw);
     margin-bottom: 120px;
     overflow: visible;
 }
 
 .news-hero-title {
     font-size: clamp(56px, 10vw, 120px);
-    white-space: normal;
+    white-space: nowrap;
     margin-bottom: 8.1cm;
+    text-align: center;
 }
 
 .news-hero-title .hero-accent {
