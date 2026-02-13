@@ -59,6 +59,10 @@ body::before {
     font-style: italic;
 }
 
+.news-hero-subtitle {
+    color: #d4af37;
+}
+
 /* 4. Trust stats — spacing, по центру */
 .news-trust-stats,
 .news-trust-stats .news-trust-badge,
