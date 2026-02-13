@@ -27,6 +27,41 @@ body::before {
     background: radial-gradient(circle, rgba(139, 92, 246, 0.03), transparent 70%) !important;
 }
 
+/* 1b. Background effects — data nodes + lines (DuoView style) */
+.main-bg-effects {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.bg-dot {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.6);
+}
+
+.bg-dot-1 { top: 12%; left: 18%; }
+.bg-dot-2 { top: 22%; right: 12%; left: auto; background: rgba(212, 175, 55, 0.5); }
+.bg-dot-3 { top: 75%; left: 15%; background: rgba(139, 92, 246, 0.5); }
+.bg-dot-4 { top: 80%; right: 15%; left: auto; background: rgba(212, 175, 55, 0.5); }
+.bg-dot-5 { top: 8%; left: 50%; transform: translateX(-50%); }
+.bg-dot-6 { bottom: 8%; left: 50%; transform: translateX(-50%); background: rgba(139, 92, 246, 0.5); }
+
+.bg-line {
+    position: absolute;
+    height: 1px;
+    width: 120px;
+    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.08), transparent);
+}
+
+.bg-line-1 { top: 16%; left: 20%; transform: rotate(25deg); }
+.bg-line-2 { top: 78%; right: 18%; left: auto; transform: rotate(-15deg); background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.06), transparent); }
+.bg-line-3 { top: 50%; left: 8%; transform: rotate(-30deg); width: 100px; }
+
 /* 2. Nav — subtle */
 .main-nav {
     background: rgba(13, 5, 21, 0.95) !important;
@@ -222,6 +257,10 @@ body::before {
             #0d0515 !important;
     }
 
+    /* Background effects — softer on mobile */
+    .bg-dot { opacity: 0.4; }
+    .bg-line { opacity: 0.6; }
+
     /* Hero — компактнее, разрешаем перенос на узких экранах */
     .news-hero {
         margin-bottom: 80px;
@@ -267,6 +306,9 @@ body::before {
 }
 
 @media (max-width: 480px) {
+    .bg-dot { opacity: 0.3; }
+    .bg-line { opacity: 0.5; }
+
     .news-hero {
         margin-bottom: 60px;
     }
