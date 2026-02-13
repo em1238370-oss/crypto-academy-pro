@@ -290,6 +290,10 @@ body::before {
     color: var(--news-text);
 }
 
+.explore-section .oval-item:hover h3 {
+    font-size: 35px;
+}
+
 .explore-section .menu-item p,
 .explore-section .oval-item p {
     color: var(--news-subtle);
