@@ -67,6 +67,26 @@ body::before {
     overflow: hidden;
 }
 
+.main-bg-effects .bg-dot {
+    pointer-events: auto;
+    cursor: default;
+    transition: background 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+}
+
+.main-bg-effects:has(.bg-dot:hover) .bg-dot {
+    background: rgba(212, 175, 55, 0.6) !important;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+.main-bg-effects:has(.bg-dot:hover) .bg-line {
+    opacity: 1;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.12), transparent) !important;
+}
+
+.main-bg-effects:has(.bg-dot:hover) .bg-hex {
+    color: rgba(212, 175, 55, 0.4);
+}
+
 .bg-dot {
     position: absolute;
     width: 5px;
@@ -91,6 +111,7 @@ body::before {
     height: 1px;
     width: 120px;
     background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.08), transparent);
+    transition: opacity 0.3s ease, background 0.3s ease;
 }
 
 .bg-line-1 { top: 16%; left: 20%; transform: rotate(25deg); }
@@ -109,11 +130,18 @@ body::before {
     color: rgba(139, 92, 246, 0.25);
     white-space: nowrap;
     pointer-events: none;
+    transition: color 0.3s ease;
 }
 
 .bg-hex-1 { top: 5%; left: 8%; }
 .bg-hex-2 { bottom: 5%; right: 10%; left: auto; color: rgba(212, 175, 55, 0.2); }
 .bg-hex-3 { top: 48%; right: 5%; left: auto; font-size: 9px; color: rgba(139, 92, 246, 0.18); }
+.bg-hex-4 { top: 5%; right: 12%; left: auto; font-size: 9px; }
+.bg-hex-5 { bottom: 8%; left: 10%; color: rgba(212, 175, 55, 0.18); }
+.bg-hex-6 { top: 35%; left: 5%; font-size: 9px; color: rgba(139, 92, 246, 0.2); }
+.bg-hex-7 { top: 65%; right: 8%; left: auto; font-size: 9px; }
+.bg-hex-8 { top: 18%; right: 20%; left: auto; font-size: 8px; color: rgba(139, 92, 246, 0.15); }
+.bg-hex-9 { bottom: 22%; left: 20%; font-size: 8px; color: rgba(212, 175, 55, 0.15); }
 
 /* 2a. Scroll reveal — DuoView-style section appearance */
 .scroll-reveal {
