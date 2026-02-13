@@ -1,18 +1,49 @@
-/* Main page overrides for News design palette */
+/* Main page — палитра на основе #250038 */
 
-/* Hero accent for "Madness" */
+:root {
+    --news-bg: #250038;
+    --news-text: #F0E8F5;
+    --news-accent: #8B5EB8;
+    --news-highlight: #A078C8;
+    --news-subtle: rgba(240, 232, 245, 0.88);
+    --news-muted: rgba(240, 232, 245, 0.65);
+    --news-dim: rgba(240, 232, 245, 0.48);
+}
+
+body {
+    background: 
+        linear-gradient(rgba(139, 94, 184, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139, 94, 184, 0.06) 1px, transparent 1px),
+        radial-gradient(circle at 85% 15%, rgba(139, 94, 184, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 15% 85%, rgba(107, 61, 140, 0.08) 0%, transparent 50%),
+        #250038 !important;
+}
+
+body::before {
+    background: 
+        radial-gradient(circle at 20% 20%, rgba(139, 94, 184, 0.06), transparent 60%),
+        radial-gradient(circle at 80% 10%, rgba(160, 104, 200, 0.05), transparent 55%),
+        radial-gradient(circle at 30% 85%, rgba(107, 61, 140, 0.05), transparent 55%) !important;
+}
+
+.main-nav {
+    background: rgba(37, 0, 56, 0.94) !important;
+    border-bottom-color: rgba(139, 94, 184, 0.15) !important;
+}
+
+/* Hero accent */
 .news-hero-title .hero-accent {
     color: var(--news-accent);
     font-style: italic;
 }
 
-/* Explore section — News palette */
+/* Explore section */
 .explore-section .menu-item,
 .explore-section .oval-item {
     color: var(--news-text);
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(201, 184, 150, 0.2);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(139, 94, 184, 0.25);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 .explore-section .menu-item h3,
@@ -27,19 +58,19 @@
 
 .explore-section .menu-item:hover,
 .explore-section .oval-item:hover {
-    border-color: rgba(201, 184, 150, 0.4);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+    border-color: rgba(139, 94, 184, 0.5);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
 
 .explore-section .menu-item.premium:hover {
-    border-color: rgba(201, 184, 150, 0.5);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3), 0 0 24px rgba(201, 184, 150, 0.12);
+    border-color: rgba(160, 104, 200, 0.55);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), 0 0 24px rgba(139, 94, 184, 0.15);
 }
 
-/* Subscription banner — News palette */
+/* Subscription banner */
 .subscription-banner {
-    border-color: rgba(201, 184, 150, 0.2);
-    background: rgba(0, 0, 0, 0.25);
+    border-color: rgba(139, 94, 184, 0.25);
+    background: rgba(0, 0, 0, 0.3);
 }
 
 .subscription-title {
@@ -52,10 +83,24 @@
 
 .subscription-pay-btn {
     background: var(--news-accent);
-    color: var(--news-bg);
+    color: var(--news-text);
 }
 
 .subscription-pay-btn:hover:not(:disabled) {
     background: var(--news-highlight);
-    box-shadow: 0 12px 30px rgba(201, 184, 150, 0.25);
+    box-shadow: 0 12px 30px rgba(139, 94, 184, 0.35);
+}
+
+/* Content glow */
+.content::after {
+    background: radial-gradient(circle, rgba(139, 94, 184, 0.08), transparent 70%) !important;
+}
+
+/* Footer */
+.news-footer {
+    border-top-color: rgba(139, 94, 184, 0.2) !important;
+}
+
+.news-footer::before {
+    background: linear-gradient(90deg, transparent, rgba(139, 94, 184, 0.5), transparent) !important;
 }
