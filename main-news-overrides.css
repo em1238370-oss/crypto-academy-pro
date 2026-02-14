@@ -29,13 +29,13 @@ body::before {
 
 /* 1b. Background effects — data nodes + lines (DuoView style) */
 @keyframes bg-dot-pulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 0.85; }
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 0.4; }
 }
 
 @keyframes bg-line-pulse {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.5; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -45,11 +45,6 @@ body::before {
     .bg-dot-3 { animation-delay: 1s; }
     .bg-dot-4 { animation-delay: 1.5s; }
     .bg-dot-5 { animation-delay: 2s; }
-    .bg-dot-6 { animation-delay: 2.5s; }
-    .bg-dot-7 { animation-delay: 0.3s; }
-    .bg-dot-8 { animation-delay: 0.8s; }
-    .bg-dot-9 { animation-delay: 1.3s; }
-    .bg-dot-10 { animation-delay: 1.8s; }
     .bg-line { animation: bg-line-pulse 3s ease-in-out infinite; }
     .bg-line-1 { animation-delay: 0s; }
     .bg-line-2 { animation-delay: 0.6s; }
@@ -68,23 +63,7 @@ body::before {
 }
 
 .main-bg-effects .bg-dot {
-    pointer-events: auto;
-    cursor: default;
-    transition: background 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
-}
-
-.main-bg-effects:has(.bg-dot:hover) .bg-dot {
-    background: rgba(212, 175, 55, 0.6) !important;
-    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
-}
-
-.main-bg-effects:has(.bg-dot:hover) .bg-line {
-    opacity: 1;
-    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.12), transparent) !important;
-}
-
-.main-bg-effects:has(.bg-dot:hover) .bg-hex {
-    color: rgba(212, 175, 55, 0.4);
+    pointer-events: none;
 }
 
 .bg-dot {
@@ -92,56 +71,51 @@ body::before {
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: rgba(139, 92, 246, 0.6);
+    background: rgba(139, 92, 246, 0.35);
 }
 
 .bg-dot-1 { top: 12%; left: 18%; }
-.bg-dot-2 { top: 22%; right: 12%; left: auto; background: rgba(212, 175, 55, 0.5); }
-.bg-dot-3 { top: 75%; left: 15%; background: rgba(139, 92, 246, 0.5); }
-.bg-dot-4 { top: 80%; right: 15%; left: auto; background: rgba(212, 175, 55, 0.5); }
+.bg-dot-2 { top: 22%; right: 12%; left: auto; background: rgba(212, 175, 55, 0.3); }
+.bg-dot-3 { top: 75%; left: 15%; background: rgba(139, 92, 246, 0.3); }
+.bg-dot-4 { top: 80%; right: 15%; left: auto; background: rgba(212, 175, 55, 0.3); }
 .bg-dot-5 { top: 8%; left: 50%; transform: translateX(-50%); }
-.bg-dot-6 { bottom: 8%; left: 50%; transform: translateX(-50%); background: rgba(139, 92, 246, 0.5); }
-.bg-dot-7 { top: 45%; left: 10%; background: rgba(139, 92, 246, 0.5); }
-.bg-dot-8 { top: 35%; right: 22%; left: auto; background: rgba(212, 175, 55, 0.4); }
-.bg-dot-9 { bottom: 25%; left: 25%; background: rgba(139, 92, 246, 0.45); }
-.bg-dot-10 { top: 55%; right: 8%; left: auto; background: rgba(212, 175, 55, 0.4); }
 
 .bg-line {
     position: absolute;
     height: 1px;
     width: 120px;
-    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.08), transparent);
+    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.05), transparent);
     transition: opacity 0.3s ease, background 0.3s ease;
 }
 
 .bg-line-1 { top: 16%; left: 20%; transform: rotate(25deg); }
-.bg-line-2 { top: 78%; right: 18%; left: auto; transform: rotate(-15deg); background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.06), transparent); }
+.bg-line-2 { top: 78%; right: 18%; left: auto; transform: rotate(-15deg); background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.04), transparent); }
 .bg-line-3 { top: 50%; left: 8%; transform: rotate(-30deg); width: 100px; }
 .bg-line-4 { top: 30%; right: 15%; left: auto; transform: rotate(40deg); width: 90px; }
-.bg-line-5 { bottom: 35%; left: 20%; transform: rotate(-20deg); background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.07), transparent); }
-.bg-line-6 { top: 65%; right: 25%; left: auto; transform: rotate(15deg); width: 80px; background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.05), transparent); }
+.bg-line-5 { bottom: 35%; left: 20%; transform: rotate(-20deg); background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.04), transparent); }
+.bg-line-6 { top: 65%; right: 25%; left: auto; transform: rotate(15deg); width: 80px; background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.03), transparent); }
 
-/* Hex snippets — wallet/blockchain feel */
+/* Hex snippets — wallet/blockchain feel, minimal */
 .bg-hex {
     position: absolute;
     font-family: monospace;
     font-size: 10px;
     letter-spacing: 0.08em;
-    color: rgba(139, 92, 246, 0.25);
+    color: rgba(139, 92, 246, 0.12);
     white-space: nowrap;
     pointer-events: none;
     transition: color 0.3s ease;
 }
 
 .bg-hex-1 { top: 5%; left: 8%; }
-.bg-hex-2 { bottom: 5%; right: 10%; left: auto; color: rgba(212, 175, 55, 0.2); }
-.bg-hex-3 { top: 48%; right: 5%; left: auto; font-size: 9px; color: rgba(139, 92, 246, 0.18); }
+.bg-hex-2 { bottom: 5%; right: 10%; left: auto; color: rgba(212, 175, 55, 0.1); }
+.bg-hex-3 { top: 48%; right: 5%; left: auto; font-size: 9px; color: rgba(139, 92, 246, 0.1); }
 .bg-hex-4 { top: 5%; right: 12%; left: auto; font-size: 9px; }
-.bg-hex-5 { bottom: 8%; left: 10%; color: rgba(212, 175, 55, 0.18); }
-.bg-hex-6 { top: 35%; left: 5%; font-size: 9px; color: rgba(139, 92, 246, 0.2); }
+.bg-hex-5 { bottom: 8%; left: 10%; color: rgba(212, 175, 55, 0.1); }
+.bg-hex-6 { top: 35%; left: 5%; font-size: 9px; color: rgba(139, 92, 246, 0.1); }
 .bg-hex-7 { top: 65%; right: 8%; left: auto; font-size: 9px; }
-.bg-hex-8 { top: 18%; right: 20%; left: auto; font-size: 8px; color: rgba(139, 92, 246, 0.15); }
-.bg-hex-9 { bottom: 22%; left: 20%; font-size: 8px; color: rgba(212, 175, 55, 0.15); }
+.bg-hex-8 { top: 18%; right: 20%; left: auto; font-size: 8px; color: rgba(139, 92, 246, 0.08); }
+.bg-hex-9 { bottom: 22%; left: 20%; font-size: 8px; color: rgba(212, 175, 55, 0.08); }
 
 /* 2a. Scroll reveal — DuoView-style section appearance */
 .scroll-reveal {
@@ -172,7 +146,7 @@ body::before {
     margin-right: auto !important;
     width: 100%;
     max-width: calc(100vw - 2cm);
-    margin-bottom: 120px;
+    margin-bottom: 140px;
     overflow: visible;
     padding-top: 18vh;
 }
@@ -276,34 +250,14 @@ body::before {
 
 .main-trust-stats .news-trust-badge {
     font-size: 14px;
-    letter-spacing: 0.1em;
-    color: var(--news-text);
-    margin-bottom: 16px;
-}
-
-.main-trust-hex {
-    font-family: monospace;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.25);
     letter-spacing: 0.08em;
-    margin-bottom: 24px;
-}
-
-.main-trust-stats .news-trust-tagline {
-    font-size: 16px;
     color: var(--news-subtle);
-    max-width: 640px;
-    margin: 0 auto;
-}
-
-.main-trust-stats .news-trust-tagline .hero-accent {
-    color: #d4af37;
-    font-style: normal;
+    margin-bottom: 0;
 }
 
 /* 5. Explore cards — premium, clean */
 .explore-section {
-    gap: 140px;
+    gap: 160px;
 }
 
 .explore-section .menu-item,
@@ -311,8 +265,8 @@ body::before {
     color: var(--news-text);
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.25s ease, border-color 0.25s ease;
 }
 
 .explore-section .menu-item h3,
@@ -339,14 +293,12 @@ body::before {
 
 .explore-section .menu-item:hover,
 .explore-section .oval-item:hover {
-    transform: scale(1.03);
+    transform: scale(1.01);
     border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 24px rgba(139, 92, 246, 0.08);
 }
 
 .explore-section .menu-item.premium:hover {
-    border-color: rgba(212, 175, 55, 0.3);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(212, 175, 55, 0.1);
+    border-color: rgba(212, 175, 55, 0.25);
 }
 
 /* 6. Subscription banner */
