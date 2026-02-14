@@ -171,7 +171,7 @@ body::before {
     margin-left: auto !important;
     margin-right: auto !important;
     width: 100%;
-    max-width: 720px;
+    max-width: calc(100vw - 2cm);
     margin-bottom: 120px;
     overflow: visible;
     padding-top: 18vh;
@@ -200,6 +200,9 @@ body::before {
     font-size: 18px;
     color: #d4af37;
     margin-top: 0.5cm;
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .news-hero-description {
@@ -207,6 +210,9 @@ body::before {
     font-family: 'Poppins', sans-serif;
     color: rgba(255, 255, 255, 0.82);
     line-height: 1.65;
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* 4. Trust stats — spacing, по центру */
