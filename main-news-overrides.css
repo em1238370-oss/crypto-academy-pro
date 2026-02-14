@@ -178,7 +178,7 @@ body::before {
 }
 
 .news-hero-title {
-    font-size: clamp(56px, 6vw, 90px);
+    font-size: clamp(112px, 12vw, 180px);
     white-space: nowrap;
     margin-bottom: 8.1cm;
     text-align: center;
@@ -189,8 +189,17 @@ body::before {
     font-style: italic;
 }
 
+.news-hero-label {
+    font-size: 24px;
+}
+
 .news-hero-subtitle {
+    font-size: 40px;
     color: #d4af37;
+}
+
+.news-hero-description {
+    font-size: 36px;
 }
 
 /* 4. Trust stats — spacing, по центру */
