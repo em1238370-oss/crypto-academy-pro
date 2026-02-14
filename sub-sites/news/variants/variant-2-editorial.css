@@ -1,0 +1,86 @@
+/* Variant 2: Editorial Refinement — журнальный стиль */
+
+/* Разделители между секциями */
+.news-today {
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(90deg, transparent, rgba(201, 184, 150, 0.3), transparent) 1;
+    padding-top: 48px;
+    margin-top: 24px;
+}
+
+.news-trust-stats {
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(90deg, transparent, rgba(201, 184, 150, 0.25), transparent) 1;
+    padding-top: 48px;
+    margin-top: 24px;
+}
+
+.signal-noise {
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(90deg, transparent, rgba(201, 184, 150, 0.25), transparent) 1;
+    padding-top: 48px;
+    margin-top: 24px;
+}
+
+.before-react {
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(90deg, transparent, rgba(201, 184, 150, 0.25), transparent) 1;
+    padding-top: 48px;
+    margin-top: 24px;
+}
+
+/* Hero: подзаголовок с акцентной полоской */
+.news-hero-subtitle {
+    position: relative;
+    padding-left: 24px;
+}
+
+.news-hero-subtitle::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 1.2em;
+    background: linear-gradient(180deg, var(--news-accent), transparent);
+    border-radius: 2px;
+}
+
+/* Section titles: больше, подчёркивание */
+.section-title {
+    font-size: 40px;
+    letter-spacing: -0.03em;
+    border-bottom: 2px solid transparent;
+    border-image: linear-gradient(90deg, var(--news-accent), transparent) 1;
+    padding-bottom: 12px;
+}
+
+.news-today-title {
+    font-size: 24px;
+    letter-spacing: -0.03em;
+}
+
+.signal-noise-title {
+    font-size: 22px;
+    letter-spacing: -0.03em;
+}
+
+/* Signal-noise: лейбл как рубрика */
+.signal-noise-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--news-accent);
+}
+
+/* News heat: ring на активной точке */
+.news-heat[data-state="calm"] .news-heat-point[data-level="calm"] .news-heat-dot,
+.news-heat[data-state="balanced"] .news-heat-point[data-level="balanced"] .news-heat-dot,
+.news-heat[data-state="hot"] .news-heat-point[data-level="hot"] .news-heat-dot {
+    box-shadow: 0 0 0 2px rgba(201, 184, 150, 0.4);
+}
+
+.news-heat[data-state="hot"] .news-heat-point[data-level="hot"] .news-heat-dot {
+    box-shadow: 0 0 0 2px rgba(253, 233, 228, 0.5), 0 0 0 1px rgba(253, 233, 228, 0.45);
+}

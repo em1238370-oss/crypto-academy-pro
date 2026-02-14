@@ -1,0 +1,113 @@
+/* Variant 3: Dark Premium — как главная страница */
+
+:root {
+    --news-bg: #0d0515;
+    --news-text: #ffffff;
+    --news-accent: #8b5cf6;
+    --news-highlight: #a78bfa;
+    --news-subtle: rgba(255, 255, 255, 0.82);
+    --news-muted: rgba(255, 255, 255, 0.6);
+    --news-dim: rgba(255, 255, 255, 0.45);
+}
+
+/* Навигация */
+.main-nav {
+    background: rgba(13, 5, 21, 0.94);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Фон */
+body {
+    background: 
+        radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.05) 0%, transparent 45%),
+        radial-gradient(circle at 15% 85%, rgba(139, 92, 246, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.02) 0%, transparent 60%),
+        var(--news-bg);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+    background-attachment: fixed, fixed, fixed, fixed;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+}
+
+body::before {
+    background: 
+        radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.04), transparent 60%),
+        radial-gradient(circle at 80% 10%, rgba(212, 175, 55, 0.03), transparent 55%),
+        radial-gradient(circle at 30% 85%, rgba(139, 92, 246, 0.03), transparent 55%);
+}
+
+body::after {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+/* Карточки */
+.news-row {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.news-row:hover {
+    border-color: rgba(139, 92, 246, 0.35);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.news-link {
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+}
+
+.news-link:hover {
+    background: rgba(139, 92, 246, 0.18);
+    border-color: var(--news-accent);
+}
+
+/* Signal-noise */
+.signal-noise-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 3px solid rgba(139, 92, 246, 0.5);
+}
+
+.signal-noise-item:hover {
+    border-color: rgba(139, 92, 246, 0.2);
+    border-left-color: rgba(139, 92, 246, 0.7);
+}
+
+/* News-today */
+.news-today-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 2px solid rgba(139, 92, 246, 0.4);
+}
+
+.news-today-item::before {
+    background: var(--news-highlight);
+}
+
+/* Before-chip */
+.before-chip {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.before-chip:hover {
+    border-color: var(--news-accent);
+}
+
+/* Hero accent */
+.news-hero-subtitle {
+    color: var(--news-accent);
+}
+
+/* Footer */
+.news-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.news-footer::before {
+    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.4), transparent);
+}
+
+/* Content glow */
+.content::after,
+.content::before {
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.05), transparent 70%);
+}

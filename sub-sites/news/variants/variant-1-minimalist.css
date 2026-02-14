@@ -1,0 +1,61 @@
+/* Variant 1: Minimalist Edge — Bloomberg/FT style */
+
+/* Фон: убрать grid, один мягкий radial */
+body {
+    background: 
+        radial-gradient(circle at 50% 30%, rgba(201, 184, 150, 0.06) 0%, transparent 55%),
+        var(--news-bg);
+    background-size: 100% 100%, 100% 100%;
+    background-attachment: fixed, fixed;
+    background-repeat: no-repeat, no-repeat;
+}
+
+/* Trust: один badge, скрыть tagline */
+.news-trust-stats .news-trust-tagline {
+    display: none;
+}
+
+/* Hero: letter-spacing label, меньше subtitle */
+.news-hero-label {
+    letter-spacing: 0.18em;
+}
+
+.news-hero-subtitle {
+    font-size: 17px;
+}
+
+/* Карточки news-row: без scale, только border */
+.news-row:hover {
+    transform: none;
+    border-color: rgba(212, 196, 168, 0.35);
+}
+
+/* Signal-noise: убрать glow */
+.signal-noise-item {
+    box-shadow: none;
+    border-left: 2px solid rgba(201, 184, 150, 0.4);
+}
+
+.signal-noise-item:nth-child(even) {
+    box-shadow: none;
+}
+
+.signal-noise-item:hover {
+    box-shadow: none;
+    transform: none;
+    border-left-color: rgba(201, 184, 150, 0.6);
+}
+
+.signal-noise-item:nth-child(even):hover {
+    box-shadow: none;
+}
+
+/* Before-chip: плоский, без теней */
+.before-chip {
+    box-shadow: none;
+}
+
+.before-chip:hover {
+    box-shadow: none;
+    transform: none;
+}

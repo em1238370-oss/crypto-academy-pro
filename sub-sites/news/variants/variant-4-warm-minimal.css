@@ -1,0 +1,65 @@
+/* Variant 4: Warm Minimal — успокоение, меньше шума */
+
+/* Фон: убрать grid, 1–2 radial с низкой opacity */
+body {
+    background: 
+        radial-gradient(circle at 85% 15%, rgba(201, 184, 150, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 15% 85%, rgba(160, 120, 0, 0.04) 0%, transparent 50%),
+        var(--news-bg);
+    background-size: 7250px 1750px, 7250px 1750px, 100% 100%;
+    background-position: center center, center center, 0 0;
+    background-attachment: fixed, fixed, fixed;
+    background-repeat: no-repeat, no-repeat, no-repeat;
+}
+
+/* Content glow: снизить opacity */
+.content::after {
+    background: radial-gradient(circle, rgba(201, 184, 150, 0.03), transparent 70%);
+}
+
+.content::before {
+    background: radial-gradient(circle, rgba(201, 184, 150, 0.03), transparent 70%);
+}
+
+/* News-today-item: без translateY и box-shadow на hover */
+.news-today-item:hover {
+    transform: none;
+    box-shadow: none;
+    border-left-color: rgba(201, 184, 150, 0.6);
+}
+
+/* Signal-noise: убрать inset/glow */
+.signal-noise-item {
+    box-shadow: none;
+    border-left: 2px solid rgba(201, 184, 150, 0.45);
+}
+
+.signal-noise-item:nth-child(even) {
+    box-shadow: none;
+}
+
+.signal-noise-item:hover {
+    box-shadow: none;
+    transform: none;
+    border-left-color: rgba(201, 184, 150, 0.65);
+}
+
+.signal-noise-item:nth-child(even):hover {
+    box-shadow: none;
+}
+
+.signal-noise-item::before {
+    display: none;
+}
+
+/* Before-chip: без box-shadow на hover */
+.before-chip:hover {
+    box-shadow: none;
+    transform: none;
+}
+
+/* News-row: без scale */
+.news-row:hover {
+    transform: none;
+    border-color: rgba(212, 196, 168, 0.4);
+}

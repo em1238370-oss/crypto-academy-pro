@@ -1,0 +1,64 @@
+/* Variant 5: Tactile Depth — премиальный печатный вид */
+
+/* Карточки news-row: многослойная тень */
+.news-row {
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.15),
+        0 12px 40px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.news-row:hover {
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.2),
+        0 20px 50px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Номера 01–05: tabular-nums + letter-spacing */
+.news-row-number {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.1em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Signal-noise: inset сверху + тень снизу */
+.signal-noise-item {
+    box-shadow: 
+        inset 0 1px 0 rgba(201, 184, 150, 0.08),
+        0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.signal-noise-item:nth-child(even) {
+    box-shadow: 
+        inset 0 1px 0 rgba(201, 184, 150, 0.08),
+        0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.signal-noise-item:hover {
+    box-shadow: 
+        inset 0 1px 0 rgba(201, 184, 150, 0.12),
+        0 8px 28px rgba(0, 0, 0, 0.25);
+}
+
+/* Before-chip: подъём при hover */
+.before-chip {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.before-chip:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    border-color: rgba(201, 184, 150, 0.6);
+}
+
+/* Разделители: гравировка */
+.news-footer::before {
+    background: linear-gradient(90deg, transparent, rgba(201, 184, 150, 0.25), transparent);
+    height: 1px;
+}
+
+.editor-lens {
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(90deg, transparent, rgba(201, 184, 150, 0.2), transparent) 1;
+}
