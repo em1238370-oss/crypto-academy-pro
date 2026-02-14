@@ -409,6 +409,10 @@ body::before {
         transform: scale(0.98);
         border-color: rgba(255, 255, 255, 0.12);
     }
+
+    .news-footer {
+        padding-bottom: calc(1.5cm + env(safe-area-inset-bottom, 0px)) !important;
+    }
 }
 
 @media (max-width: 480px) {

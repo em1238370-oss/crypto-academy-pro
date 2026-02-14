@@ -924,6 +924,10 @@ body {
         margin-bottom: 28px;
     }
     
+    .news-footer {
+        padding-bottom: calc(1.5cm + env(safe-area-inset-bottom, 0px));
+    }
+    
     .news-row {
         flex-direction: column;
         gap: 24px;

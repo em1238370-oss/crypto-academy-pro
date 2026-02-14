@@ -1117,6 +1117,9 @@ html {
         display: flex;
         align-items: center;
     }
+    .news-footer {
+        padding-bottom: calc(1.5cm + env(safe-area-inset-bottom, 0px)) !important;
+    }
 }
 
 @media (max-width: 480px) {
