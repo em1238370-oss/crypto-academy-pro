@@ -179,6 +179,15 @@ body::before {
     margin-right: auto;
 }
 
+.news-hero-context {
+    font-size: 16px;
+    font-family: 'Poppins', sans-serif;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+    max-width: 720px;
+    margin-bottom: 1em;
+}
+
 .news-hero-description {
     font-size: 18px;
     font-family: 'Poppins', sans-serif;
@@ -253,6 +262,15 @@ body::before {
     letter-spacing: 0.08em;
     color: var(--news-subtle);
     margin-bottom: 0;
+}
+
+/* 4b. Main hub intro — orient visitor */
+.main-hub-intro {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.6);
+    font-family: 'Poppins', sans-serif;
+    max-width: 720px;
+    margin: 0 0 2em;
 }
 
 /* 5. Explore cards — premium, clean */
