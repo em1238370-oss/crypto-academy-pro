@@ -215,6 +215,12 @@ body::before {
     margin-right: auto;
 }
 
+@media (min-width: 769px) {
+    .news-hero-subtitle {
+        margin-top: 2.5cm;
+    }
+}
+
 /* 4. Trust stats — spacing, по центру */
 .news-trust-stats,
 .news-trust-stats .news-trust-badge,
