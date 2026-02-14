@@ -178,7 +178,7 @@ body::before {
 }
 
 .news-hero-title {
-    font-size: clamp(112px, 12vw, 180px);
+    font-size: clamp(90px, 10vw, 140px);
     white-space: nowrap;
     margin-bottom: 8.1cm;
     text-align: center;
