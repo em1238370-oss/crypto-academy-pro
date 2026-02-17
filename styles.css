@@ -13,17 +13,17 @@ button:focus-visible {
    outline-offset: 3px;
 }
 
-/* ===== Крипта без розовых очков — крипто-свежая палитра: синеватый фон, бирюзовый акцент ===== */
+/* ===== Крипта без розовых очков — палитра: тёмный фон, янтарный акцент (крипто, без копирования) ===== */
 .kro-main,
 .kro-step1,
 .kro-feature1 {
-   --kro-bg: #0a0e17;
-   --kro-bg-mid: #0f1419;
-   --kro-bg-soft: #131c2b;
-   --kro-accent: #06b6d4;
-   --kro-accent-hover: #22d3ee;
-   --kro-glow: rgba(6, 182, 212, 0.12);
-   --kro-glow-soft: rgba(6, 182, 212, 0.06);
+   --kro-bg: #0c0f14;
+   --kro-bg-mid: #11141c;
+   --kro-bg-soft: #151922;
+   --kro-accent: #f59e0b;
+   --kro-accent-hover: #fbbf24;
+   --kro-glow: rgba(245, 158, 11, 0.08);
+   --kro-glow-soft: rgba(245, 158, 11, 0.04);
 }
 
 .kro-step1 {
@@ -151,8 +151,8 @@ button:focus-visible {
 }
 
 .kro-tag:hover {
-   border-color: rgba(6, 182, 212, 0.5);
-   background: rgba(6, 182, 212, 0.1);
+   border-color: rgba(245, 158, 11, 0.5);
+   background: rgba(245, 158, 11, 0.1);
    color: rgba(255, 255, 255, 0.95);
 }
 
