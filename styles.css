@@ -92,32 +92,9 @@ button:focus-visible {
    padding-top: 0;
 }
 
-/* Футер главной: в тон Шага 1, отступ 32px (раздел 4.6) */
-.kro-footer {
-   margin-top: 32px;
-   padding: 32px 24px 24px;
-   background-color: #0d0d0d;
-   border-top: 1px solid rgba(255, 255, 255, 0.08);
-   text-align: center;
-}
-.kro-footer .news-footer-text,
-.kro-footer .news-footer-crafted {
-   color: rgba(255, 255, 255, 0.9);
-   margin-bottom: 8px;
-}
-.kro-footer .news-footer-links {
-   margin-top: 16px;
-   display: flex;
-   justify-content: center;
-   gap: 24px;
-   flex-wrap: wrap;
-}
-.kro-footer .news-footer-link {
-   color: rgba(255, 255, 255, 0.8);
-   text-decoration: none;
-}
-.kro-footer .news-footer-link:hover {
-   color: #e53935;
+/* На главной футер скрыт — только hero и чекеры */
+.kro-main .kro-footer {
+   display: none !important;
 }
 
 /* Apple-style: минималистичная верхняя навигация */
