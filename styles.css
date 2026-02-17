@@ -213,7 +213,7 @@ button:focus-visible {
    position: absolute;
    inset: 0;
    z-index: -1;
-   background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+   background: radial-gradient(ellipse 80% 50% at 50% 20%, rgba(245, 158, 11, 0.06) 0%, transparent 50%),
                linear-gradient(180deg, var(--kro-bg-soft) 0%, var(--kro-bg-mid) 50%, var(--kro-bg) 100%);
 }
 
@@ -221,7 +221,7 @@ button:focus-visible {
    content: '';
    position: absolute;
    inset: 0;
-   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.025) 1px, transparent 0);
+   background-image: radial-gradient(circle at 1px 1px, rgba(245, 158, 11, 0.04) 1px, transparent 0);
    background-size: 28px 28px;
    pointer-events: none;
 }
@@ -232,6 +232,10 @@ button:focus-visible {
    color: var(--kro-accent);
    letter-spacing: 0.08em;
    text-transform: uppercase;
+   display: inline-block;
+   border: 1px solid rgba(245, 158, 11, 0.5);
+   border-radius: 999px;
+   padding: 6px 14px;
    margin-bottom: 24px;
 }
 
@@ -243,7 +247,7 @@ button:focus-visible {
    display: block;
    font-size: clamp(28px, 6vw, 44px);
    font-weight: 600;
-   color: rgba(255, 255, 255, 0.95);
+   color: var(--kro-accent);
    line-height: 1.05;
 }
 
@@ -293,11 +297,17 @@ button:focus-visible {
    transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
 
+.kro-feature1 .kro-card {
+   border-color: rgba(245, 158, 11, 0.2);
+   background: rgba(245, 158, 11, 0.04);
+   box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2);
+}
+
 .kro-feature1-stat.kro-card:hover,
-.kro-top3-item.kro-card:hover {
-   border-color: rgba(255, 255, 255, 0.12);
-   background: rgba(255, 255, 255, 0.06);
-   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+.kro-feature1-top3 .kro-card:hover {
+   border-color: rgba(245, 158, 11, 0.35);
+   background: rgba(245, 158, 11, 0.08);
+   box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.35), 0 2px 12px rgba(0, 0, 0, 0.15);
    transform: scale(1.01);
 }
 
