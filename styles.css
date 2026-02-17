@@ -236,12 +236,12 @@ button:focus-visible {
 }
 
 .kro-feature1-hero-number {
-   margin-bottom: 40px;
+   margin-bottom: 32px;
 }
 
 .kro-feature1-hero-value {
    display: block;
-   font-size: clamp(48px, 12vw, 80px);
+   font-size: clamp(28px, 6vw, 44px);
    font-weight: 600;
    color: rgba(255, 255, 255, 0.95);
    line-height: 1.05;
@@ -249,9 +249,9 @@ button:focus-visible {
 
 .kro-feature1-hero-label {
    display: block;
-   font-size: clamp(14px, 2.5vw, 18px);
+   font-size: clamp(12px, 2vw, 15px);
    color: rgba(255, 255, 255, 0.75);
-   margin-top: 8px;
+   margin-top: 6px;
 }
 
 .kro-feature1-heading {
@@ -302,15 +302,22 @@ button:focus-visible {
 }
 
 .kro-feature1-stat-value {
-   font-size: clamp(28px, 5vw, 48px);
+   font-size: clamp(16px, 2.2vw, 22px);
    font-weight: 600;
    color: rgba(255, 255, 255, 0.95);
-   line-height: 1.1;
+   line-height: 1.2;
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
 }
 
 .kro-feature1-stat-label {
-   font-size: clamp(13px, 1.5vw, 15px);
+   font-size: clamp(12px, 1.4vw, 13px);
    color: rgba(255, 255, 255, 0.75);
+}
+
+.kro-feature1-stat.kro-card {
+   padding: 14px 18px;
 }
 
 .kro-feature1-table-wrap {
