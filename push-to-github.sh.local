@@ -1,0 +1,10 @@
+#!/bin/bash
+# Скрипт для отправки изменений на GitHub
+cd "/Users/macmini/Documents/Crypto academy pro/crypto-academy-pro1"
+echo "📤 Отправка на GitHub..."
+git push origin main
+if [ $? -eq 0 ]; then
+    echo "✅ Готово! Сайт обновится на Render в течение нескольких минут."
+else
+    echo "❌ Ошибка. Проверьте подключение к интернету и доступ к GitHub."
+fi

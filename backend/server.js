@@ -1195,6 +1195,143 @@ if (newsApiKey || theNewsApiKey) {
   console.warn('⚠️ NEWS_API_KEY and THENEWSAPI_KEY not set. Dynamic news will use static fallback.');
 }
 
+// --- KRO Live Counter (Google Sheets) ---
+const kroSheetId = process.env.KRO_SHEET_ID;
+const kroCredentialsJson = process.env.KRO_GOOGLE_CREDENTIALS_JSON;
+const kroCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+
+function getTodayMSK() {
+  const d = new Date();
+  const msk = new Date(d.toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
+  const day = String(msk.getDate()).padStart(2, '0');
+  const month = String(msk.getMonth() + 1).padStart(2, '0');
+  const year = msk.getFullYear();
+  return { day, month, year, dateKey: `${day}.${month}.${year}`, dateShort: `${day}.${month}` };
+}
+
+async function getKroSheetsClient() {
+  if (!kroSheetId) return null;
+  let credentials;
+  if (kroCredentialsJson) {
+    try {
+      credentials = JSON.parse(kroCredentialsJson);
+    } catch (e) {
+      console.warn('KRO: invalid KRO_GOOGLE_CREDENTIALS_JSON');
+      return null;
+    }
+  } else if (kroCredentialsPath && fs.existsSync(kroCredentialsPath)) {
+    credentials = JSON.parse(fs.readFileSync(kroCredentialsPath, 'utf8'));
+  } else {
+    return null;
+  }
+  try {
+    const { google } = await import('googleapis');
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
+    return { sheets };
+  } catch (e) {
+    console.warn('KRO Sheets init failed:', e.message);
+    return null;
+  }
+}
+
+const KRO_FALLBACK = {
+  channelsToday: 47,
+  totalLost: 12847300,
+  telegramCount: 37,
+  coursesCount: 10,
+  top3: [
+    { channel: '@TONPumpElite', sum: 2100000, status: 'Удалён' },
+    { channel: 'BTC Курс миллионера', sum: 847000, status: 'Активен' },
+    { channel: 'crypto-fast.pro', sum: 673000, status: 'Блок' }
+  ]
+};
+
+function parseSheetRow(row, headerIndex) {
+  const dateVal = (row[0] || '').toString().trim();
+  const channel = (row[1] || '').toString().trim();
+  const sumRaw = (row[2] ?? '').toString().replace(/\s/g, '');
+  const sum = parseInt(sumRaw, 10) || 0;
+  const type = (row[3] || '').toString().trim();
+  const status = (row[4] || '').toString().trim();
+  const from = (row[5] || '').toString().trim();
+  return { dateVal, channel, sum, type, status, from };
+}
+
+function isRowToday(dateVal, today) {
+  if (!dateVal) return false;
+  const s = dateVal.replace(/\s/g, '');
+  return s === today.dateKey || s === today.dateShort || s.startsWith(today.dateShort + '.') || s.endsWith(today.dateShort);
+}
+
+app.get('/api/kro/live-counter', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  try {
+    const client = await getKroSheetsClient();
+    if (!client) {
+      return res.json(KRO_FALLBACK);
+    }
+    const today = getTodayMSK();
+    const range = 'A2:F';
+    const response = await client.sheets.spreadsheets.values.get({
+      spreadsheetId: kroSheetId,
+      range
+    });
+    const rows = response.data.values || [];
+    const data = rows.map((r) => parseSheetRow(r));
+    const todayRows = data.filter((r) => isRowToday(r.dateVal, today));
+    const channelsToday = todayRows.length;
+    const totalLost = data.reduce((acc, r) => acc + r.sum, 0);
+    const telegramCount = data.filter((r) => /^TG$/i.test(r.type)).length;
+    const coursesCount = data.filter((r) => /курс|фейк|course/i.test(r.type)).length;
+    const top3 = todayRows
+      .sort((a, b) => b.sum - a.sum)
+      .slice(0, 3)
+      .map((r) => ({ channel: r.channel, sum: r.sum, status: r.status || 'Активен' }));
+    res.json({
+      channelsToday,
+      totalLost,
+      telegramCount,
+      coursesCount,
+      top3: top3.length ? top3 : KRO_FALLBACK.top3
+    });
+  } catch (e) {
+    console.error('KRO live-counter error:', e);
+    res.json(KRO_FALLBACK);
+  }
+});
+
+app.post('/api/kro/report-scam', express.json(), async (req, res) => {
+  const channel = (req.body?.channel ?? '').toString().trim();
+  const sumRub = Number(req.body?.sumRub);
+  const from = (req.body?.from ?? '').toString().trim();
+  if (!channel || !Number.isFinite(sumRub) || sumRub < 0) {
+    return res.status(400).json({ error: 'channel and sumRub (non-negative number) are required' });
+  }
+  try {
+    const client = await getKroSheetsClient();
+    if (!client) {
+      return res.status(503).json({ error: 'live_counter_not_configured' });
+    }
+    const today = getTodayMSK();
+    const row = [[today.dateKey, channel, sumRub, 'TG', 'Активен', from || '']];
+    await client.sheets.spreadsheets.values.append({
+      spreadsheetId: kroSheetId,
+      range: 'A:F',
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: { values: row }
+    });
+    res.status(200).json({ ok: true });
+  } catch (e) {
+    console.error('KRO report-scam error:', e);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 app.use((err, req, res, next) => {
  if (err.type === 'entity.parse.failed') {
    return res.status(400).json({ error: 'invalid_json' });

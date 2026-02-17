@@ -90,14 +90,33 @@ button:focus-visible {
    color: #b8a038;
    letter-spacing: 0.08em;
    text-transform: uppercase;
-   margin-bottom: 32px;
+   margin-bottom: 24px;
+}
+
+.kro-feature1-hero-number {
+   margin-bottom: 40px;
+}
+
+.kro-feature1-hero-value {
+   display: block;
+   font-size: clamp(48px, 12vw, 80px);
+   font-weight: 600;
+   color: rgba(255, 255, 255, 0.95);
+   line-height: 1.05;
+}
+
+.kro-feature1-hero-label {
+   display: block;
+   font-size: clamp(14px, 2.5vw, 18px);
+   color: rgba(255, 255, 255, 0.75);
+   margin-top: 8px;
 }
 
 .kro-feature1-heading {
    font-size: clamp(18px, 3vw, 22px);
    font-weight: 600;
    color: rgba(255, 255, 255, 0.95);
-   margin-bottom: 40px;
+   margin-bottom: 24px;
 }
 
 .kro-feature1-stats {
@@ -160,6 +179,106 @@ button:focus-visible {
 
 .kro-status-removed {
    color: rgba(200, 140, 140, 0.95);
+}
+
+.kro-status-block {
+   color: rgba(220, 100, 100, 0.95);
+}
+
+.kro-feature1-top3 {
+   list-style: none;
+   padding: 0;
+   margin: 0 auto 40px;
+   max-width: 560px;
+   text-align: left;
+}
+
+.kro-feature1-top3 li {
+   padding: 12px 0;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+   font-size: clamp(14px, 2vw, 16px);
+   color: rgba(255, 255, 255, 0.9);
+}
+
+.kro-feature1-top3 li:last-child {
+   border-bottom: none;
+}
+
+.kro-top3-channel {
+   font-weight: 600;
+}
+
+.kro-top3-status {
+   white-space: nowrap;
+}
+
+.kro-feature1-report {
+   max-width: 420px;
+   margin: 0 auto;
+   text-align: left;
+}
+
+.kro-feature1-report-intro {
+   font-size: clamp(14px, 2vw, 16px);
+   color: rgba(255, 255, 255, 0.85);
+   margin-bottom: 16px;
+}
+
+.kro-report-form {
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+}
+
+.kro-report-label {
+   display: flex;
+   flex-direction: column;
+   gap: 4px;
+   font-size: 14px;
+   color: rgba(255, 255, 255, 0.8);
+}
+
+.kro-report-label input {
+   padding: 10px 12px;
+   border: 1px solid rgba(255, 255, 255, 0.2);
+   border-radius: 8px;
+   background: rgba(255, 255, 255, 0.06);
+   color: #fff;
+   font-family: inherit;
+   font-size: 15px;
+}
+
+.kro-report-label input::placeholder {
+   color: rgba(255, 255, 255, 0.4);
+}
+
+.kro-report-submit {
+   margin-top: 8px;
+   padding: 14px 24px;
+   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   font-size: 15px;
+   font-weight: 600;
+   color: #16161a;
+   background-color: #b8a038;
+   border: none;
+   border-radius: 8px;
+   cursor: pointer;
+   transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.kro-report-submit:hover {
+   background-color: #c4a83a;
+   opacity: 0.95;
+}
+
+.kro-feature1-report-message {
+   margin-top: 16px;
+   font-size: 14px;
+   color: rgba(255, 255, 255, 0.9);
+}
+
+.kro-feature1 .hidden {
+   display: none !important;
 }
 
 @media (max-width: 600px) {

@@ -54,41 +54,42 @@
            <a href="#checkers" class="kro-step1-cta">Проверь своего гуру</a>
        </section>
 
-       <!-- Фишка 1: Живой счётчик -->
+       <!-- Фишка 1: Живой счётчик обманов -->
        <section class="kro-feature1" aria-labelledby="kro-feature1-heading">
-           <p class="kro-feature1-date" id="kro-feature1-date">ОБНАРУЖЕНО СЕГОДНЯ <span id="kro-live-datetime">—</span></p>
-           <h2 class="kro-feature1-heading" id="kro-feature1-heading">Масштаб проблемы</h2>
+           <p class="kro-feature1-date" id="kro-feature1-date">LIVE: <span id="kro-live-datetime">—</span> MSK</p>
+           <div class="kro-feature1-hero-number">
+               <span class="kro-feature1-hero-value" id="kro-stat-channels-today">47</span>
+               <span class="kro-feature1-hero-label">новых скам-каналов за день</span>
+           </div>
            <div class="kro-feature1-stats">
                <div class="kro-feature1-stat">
-                   <span class="kro-feature1-stat-value" id="kro-stat-channels">47</span>
-                   <span class="kro-feature1-stat-label">Telegram-каналов</span>
+                   <span class="kro-feature1-stat-value" id="kro-stat-lost">12 847 300</span>
+                   <span class="kro-feature1-stat-label">Потеряно ₽</span>
                </div>
                <div class="kro-feature1-stat">
-                   <span class="kro-feature1-stat-value" id="kro-stat-courses">23</span>
-                   <span class="kro-feature1-stat-label">курсов-проказа</span>
+                   <span class="kro-feature1-stat-value" id="kro-stat-channels">37</span>
+                   <span class="kro-feature1-stat-label">Telegram каналов</span>
                </div>
                <div class="kro-feature1-stat">
-                   <span class="kro-feature1-stat-value" id="kro-stat-lost">12 400 000</span>
-                   <span class="kro-feature1-stat-label">потеряно ₽</span>
+                   <span class="kro-feature1-stat-value" id="kro-stat-courses">10</span>
+                   <span class="kro-feature1-stat-label">Курсы фейк-продуктов</span>
                </div>
            </div>
-           <div class="kro-feature1-table-wrap">
-               <table class="kro-feature1-table">
-                   <thead>
-                       <tr>
-                           <th>Канал</th>
-                           <th>Сумма</th>
-                           <th>Статус</th>
-                       </tr>
-                   </thead>
-                   <tbody>
-                       <tr><td>@CryptoMoon2026</td><td>120 000 ₽</td><td class="kro-status-active">Активен</td></tr>
-                       <tr><td>@PumpSignalPro</td><td>85 000 ₽</td><td class="kro-status-removed">Удалён</td></tr>
-                       <tr><td>@SafeCryptoEarn</td><td>210 000 ₽</td><td class="kro-status-active">Активен</td></tr>
-                       <tr><td>@FastProfitChannel</td><td>67 000 ₽</td><td class="kro-status-removed">Удалён</td></tr>
-                       <tr><td>@TrustCryptoCourse</td><td>156 000 ₽</td><td class="kro-status-active">Активен</td></tr>
-                   </tbody>
-               </table>
+           <h2 class="kro-feature1-heading" id="kro-feature1-heading">Топ-3 сегодня</h2>
+           <ol class="kro-feature1-top3" id="kro-feature1-top3">
+               <li class="kro-top3-item"><span class="kro-top3-channel" id="kro-top3-1-channel">@TONPumpElite</span> → <span class="kro-top3-sum" id="kro-top3-1-sum">2.1млн₽</span> → <span class="kro-top3-status kro-status-removed" id="kro-top3-1-status">Удалён</span></li>
+               <li class="kro-top3-item"><span class="kro-top3-channel" id="kro-top3-2-channel">BTC Курс миллионера</span> → <span class="kro-top3-sum" id="kro-top3-2-sum">847к₽</span> → <span class="kro-top3-status kro-status-active" id="kro-top3-2-status">Активен</span></li>
+               <li class="kro-top3-item"><span class="kro-top3-channel" id="kro-top3-3-channel">crypto-fast.pro</span> → <span class="kro-top3-sum" id="kro-top3-3-sum">673к₽</span> → <span class="kro-top3-status kro-status-block" id="kro-top3-3-status">Блок</span></li>
+           </ol>
+           <div class="kro-feature1-report" id="kro-feature1-report">
+               <p class="kro-feature1-report-intro">Сообщить о разводе → добавим за 30 мин</p>
+               <form class="kro-report-form" id="kro-report-form" novalidate>
+                   <label class="kro-report-label">Канал / ссылка <input type="text" name="channel" id="kro-report-channel" required placeholder="@channel или ссылка"></label>
+                   <label class="kro-report-label">Сумма ₽ <input type="number" name="sumRub" id="kro-report-sum" required min="0" placeholder="0"></label>
+                   <label class="kro-report-label">От кого (необязательно) <input type="text" name="from" id="kro-report-from" placeholder="Имя или аноним"></label>
+                   <button type="submit" class="kro-report-submit">Отправить</button>
+               </form>
+               <p class="kro-feature1-report-message hidden" id="kro-report-message"></p>
            </div>
        </section>
 
@@ -333,11 +334,11 @@
    </script>
    <script>
        (function() {
-           var months = ['ЯНВ', 'ФЕВ', 'МАР', 'АПР', 'МАЙ', 'ИЮН', 'ИЮЛ', 'АВГ', 'СЕН', 'ОКТ', 'НОЯ', 'ДЕК'];
+           var months = ['ЯНВАРЯ', 'ФЕВРАЛЯ', 'МАРТА', 'АПРЕЛЯ', 'МАЯ', 'ИЮНЯ', 'ИЮЛЯ', 'АВГУСТА', 'СЕНТЯБРЯ', 'ОКТЯБРЯ', 'НОЯБРЯ', 'ДЕКАБРЯ'];
            function updateLiveDatetime() {
                var el = document.getElementById('kro-live-datetime');
                if (!el) return;
-               var d = new Date();
+               var d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
                var day = d.getDate();
                var month = months[d.getMonth()];
                var h = d.getHours();
@@ -350,6 +351,88 @@
                updateLiveDatetime();
            }
            setInterval(updateLiveDatetime, 60000);
+       })();
+   </script>
+   <script>
+       (function() {
+           var base = window.location.origin;
+           function formatSum(n) {
+               if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'млн₽';
+               if (n >= 1000) return (n / 1000).toFixed(0) + 'к₽';
+               return n + ' ₽';
+           }
+           function formatFull(n) {
+               return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+           }
+           function statusClass(s) {
+               if (/удалён/i.test(s)) return 'kro-status-removed';
+               if (/блок/i.test(s)) return 'kro-status-block';
+               return 'kro-status-active';
+           }
+           function applyData(data) {
+               var el;
+               if ((el = document.getElementById('kro-stat-channels-today'))) el.textContent = data.channelsToday;
+               if ((el = document.getElementById('kro-stat-lost'))) el.textContent = formatFull(data.totalLost);
+               if ((el = document.getElementById('kro-stat-channels'))) el.textContent = data.telegramCount;
+               if ((el = document.getElementById('kro-stat-courses'))) el.textContent = data.coursesCount;
+               var top3 = data.top3 || [];
+               for (var i = 0; i < 3; i++) {
+                   var r = top3[i];
+                   if (!r) continue;
+                   if ((el = document.getElementById('kro-top3-' + (i + 1) + '-channel'))) el.textContent = r.channel;
+                   if ((el = document.getElementById('kro-top3-' + (i + 1) + '-sum'))) el.textContent = formatSum(r.sum);
+                   if ((el = document.getElementById('kro-top3-' + (i + 1) + '-status'))) {
+                       el.textContent = r.status;
+                       el.className = 'kro-top3-status ' + statusClass(r.status);
+                   }
+               }
+           }
+           function fetchLiveCounter() {
+               if (!document.querySelector('.kro-feature1')) return;
+               fetch(base + '/api/kro/live-counter').then(function(r) { return r.json(); }).then(applyData).catch(function() {});
+           }
+           if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', fetchLiveCounter);
+           } else {
+               fetchLiveCounter();
+           }
+           var form = document.getElementById('kro-report-form');
+           var msgEl = document.getElementById('kro-report-message');
+           if (form && msgEl) {
+               form.addEventListener('submit', function(e) {
+                   e.preventDefault();
+                   var channel = (document.getElementById('kro-report-channel') || {}).value.trim();
+                   var sumRub = parseInt((document.getElementById('kro-report-sum') || {}).value, 10);
+                   if (!channel || isNaN(sumRub) || sumRub < 0) {
+                       msgEl.textContent = 'Укажите канал и сумму (число ≥ 0).';
+                       msgEl.classList.remove('hidden');
+                       return;
+                   }
+                   var from = (document.getElementById('kro-report-from') || {}).value.trim();
+                   msgEl.textContent = '';
+                   msgEl.classList.add('hidden');
+                   fetch(base + '/api/kro/report-scam', {
+                       method: 'POST',
+                       headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify({ channel: channel, sumRub: sumRub, from: from || undefined })
+                   }).then(function(r) {
+                       if (r.ok) {
+                           msgEl.textContent = 'Спасибо. Мы проверим и добавим.';
+                           msgEl.classList.remove('hidden');
+                           form.reset();
+                           fetchLiveCounter();
+                       } else {
+                           return r.json().then(function(j) {
+                               msgEl.textContent = j.error === 'live_counter_not_configured' ? 'Сервис пока не настроен.' : 'Ошибка отправки.';
+                               msgEl.classList.remove('hidden');
+                           });
+                       }
+                   }).catch(function() {
+                       msgEl.textContent = 'Ошибка отправки.';
+                       msgEl.classList.remove('hidden');
+                   });
+               });
+           }
        })();
    </script>
 </body>
