@@ -13,9 +13,8 @@ button:focus-visible {
    outline-offset: 3px;
 }
 
-/* ===== Крипта без розовых очков — профессиональный вид: Inter, сдержанная палитра, воздух ===== */
+/* ===== Крипта без розовых очков — в духе Artem OSO: глубина фона, теги, карточки, scroll reveal ===== */
 .kro-step1 {
-   background-color: #16161a;
    min-height: 100vh;
    display: flex;
    flex-direction: column;
@@ -25,6 +24,25 @@ button:focus-visible {
    padding: 80px 24px 80px;
    position: relative;
    z-index: 1;
+   overflow: hidden;
+}
+
+.kro-step1-bg {
+   position: absolute;
+   inset: 0;
+   z-index: -1;
+   background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(184, 160, 56, 0.06) 0%, transparent 50%),
+               radial-gradient(ellipse 100% 100% at 50% 100%, rgba(30, 28, 35, 0.95) 0%, transparent 60%),
+               linear-gradient(180deg, #0f0f12 0%, #16161a 45%, #131316 100%);
+}
+
+.kro-step1-bg::after {
+   content: '';
+   position: absolute;
+   inset: 0;
+   background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0);
+   background-size: 32px 32px;
+   pointer-events: none;
 }
 
 .kro-step1-title {
@@ -44,7 +62,33 @@ button:focus-visible {
    line-height: 1.5;
    letter-spacing: 0.01em;
    max-width: 520px;
-   margin: 0 auto 40px;
+   margin: 0 auto 24px;
+}
+
+.kro-step1-tags {
+   display: flex;
+   flex-wrap: wrap;
+   justify-content: center;
+   gap: 10px;
+   margin-bottom: 40px;
+}
+
+.kro-tag {
+   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   font-size: 12px;
+   font-weight: 500;
+   letter-spacing: 0.04em;
+   color: rgba(255, 255, 255, 0.7);
+   padding: 8px 14px;
+   border: 1px solid rgba(255, 255, 255, 0.15);
+   border-radius: 999px;
+   background: rgba(255, 255, 255, 0.03);
+   transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.kro-tag:hover {
+   border-color: rgba(184, 160, 56, 0.4);
+   background: rgba(184, 160, 56, 0.08);
 }
 
 .kro-step1-cta {
@@ -70,18 +114,48 @@ button:focus-visible {
    outline-offset: 3px;
 }
 
+/* Scroll reveal (Artem OSO style) */
+.kro-reveal {
+   opacity: 0;
+   transform: translateY(24px);
+   transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.kro-reveal.kro-reveal-visible {
+   opacity: 1;
+   transform: translateY(0);
+}
+
 .kro-checkers-anchor {
    min-height: 1px;
    padding: 0;
    margin: 0;
 }
 
-/* Фишка 1: Живой счётчик — дата, три цифры, мини-таблица */
+/* Фишка 1: Живой счётчик — карточки метрик, фон с глубиной */
 .kro-feature1 {
-   background-color: #16161a;
    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    padding: 80px 24px 80px;
    text-align: center;
+   position: relative;
+   overflow: hidden;
+}
+
+.kro-feature1-bg {
+   position: absolute;
+   inset: 0;
+   z-index: -1;
+   background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(184, 160, 56, 0.04) 0%, transparent 50%),
+               linear-gradient(180deg, #131316 0%, #16161a 50%, #0f0f12 100%);
+}
+
+.kro-feature1-bg::after {
+   content: '';
+   position: absolute;
+   inset: 0;
+   background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.025) 1px, transparent 0);
+   background-size: 28px 28px;
+   pointer-events: none;
 }
 
 .kro-feature1-date {
@@ -131,6 +205,21 @@ button:focus-visible {
    display: flex;
    flex-direction: column;
    gap: 8px;
+}
+
+.kro-card {
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   border-radius: 12px;
+   background: rgba(255, 255, 255, 0.03);
+   padding: 20px 24px;
+   transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.kro-feature1-stat.kro-card:hover,
+.kro-top3-item.kro-card:hover {
+   border-color: rgba(255, 255, 255, 0.14);
+   background: rgba(255, 255, 255, 0.06);
+   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .kro-feature1-stat-value {
@@ -194,14 +283,13 @@ button:focus-visible {
 }
 
 .kro-feature1-top3 li {
-   padding: 12px 0;
-   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+   margin-bottom: 8px;
    font-size: clamp(14px, 2vw, 16px);
    color: rgba(255, 255, 255, 0.9);
 }
 
 .kro-feature1-top3 li:last-child {
-   border-bottom: none;
+   margin-bottom: 0;
 }
 
 .kro-top3-channel {
@@ -296,7 +384,8 @@ button:focus-visible {
    display: none !important;
 }
 .kro-main {
-   background-color: #16161a;
+   background: linear-gradient(180deg, #0f0f12 0%, #16161a 30%, #131316 100%);
+   min-height: 100vh;
 }
 
 /* На главной навбар скрыт — только hero «Крипта без розовых очков» */

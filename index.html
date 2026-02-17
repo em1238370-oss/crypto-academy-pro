@@ -47,39 +47,47 @@
    </nav>
    <div class="page" id="top">
        <div class="content">
-       <!-- Шаг 1: Удар правды (Крипта без розовых очков — Стиль 1) -->
-       <section class="kro-step1" id="hero">
+       <!-- Шаг 1: Удар правды (Крипта без розовых очков — в духе Artem OSO) -->
+       <section class="kro-step1 kro-reveal" id="hero">
+           <div class="kro-step1-bg" aria-hidden="true"></div>
            <h1 class="kro-step1-title">Крипто отстой</h1>
            <p class="kro-step1-subtitle">Но поэтому на ней зарабатывают не трейдеры, а продавцы курсов</p>
+           <div class="kro-step1-tags">
+               <span class="kro-tag">Курсы</span>
+               <span class="kro-tag">Каналы</span>
+               <span class="kro-tag">Разводы</span>
+               <span class="kro-tag">Проверка</span>
+           </div>
            <a href="#checkers" class="kro-step1-cta">Проверь своего гуру</a>
        </section>
 
        <!-- Фишка 1: Живой счётчик обманов -->
-       <section class="kro-feature1" aria-labelledby="kro-feature1-heading">
+       <section class="kro-feature1 kro-reveal" aria-labelledby="kro-feature1-heading">
+           <div class="kro-feature1-bg" aria-hidden="true"></div>
            <p class="kro-feature1-date" id="kro-feature1-date">LIVE: <span id="kro-live-datetime">—</span> MSK</p>
            <div class="kro-feature1-hero-number">
                <span class="kro-feature1-hero-value" id="kro-stat-channels-today">47</span>
                <span class="kro-feature1-hero-label">новых скам-каналов за день</span>
            </div>
            <div class="kro-feature1-stats">
-               <div class="kro-feature1-stat">
+               <div class="kro-feature1-stat kro-card">
                    <span class="kro-feature1-stat-value" id="kro-stat-lost">12 847 300</span>
                    <span class="kro-feature1-stat-label">Потеряно ₽</span>
                </div>
-               <div class="kro-feature1-stat">
+               <div class="kro-feature1-stat kro-card">
                    <span class="kro-feature1-stat-value" id="kro-stat-channels">37</span>
                    <span class="kro-feature1-stat-label">Telegram каналов</span>
                </div>
-               <div class="kro-feature1-stat">
+               <div class="kro-feature1-stat kro-card">
                    <span class="kro-feature1-stat-value" id="kro-stat-courses">10</span>
                    <span class="kro-feature1-stat-label">Курсы фейк-продуктов</span>
                </div>
            </div>
            <h2 class="kro-feature1-heading" id="kro-feature1-heading">Топ-3 сегодня</h2>
            <ol class="kro-feature1-top3" id="kro-feature1-top3">
-               <li class="kro-top3-item"><span class="kro-top3-channel" id="kro-top3-1-channel">@TONPumpElite</span> → <span class="kro-top3-sum" id="kro-top3-1-sum">2.1млн₽</span> → <span class="kro-top3-status kro-status-removed" id="kro-top3-1-status">Удалён</span></li>
-               <li class="kro-top3-item"><span class="kro-top3-channel" id="kro-top3-2-channel">BTC Курс миллионера</span> → <span class="kro-top3-sum" id="kro-top3-2-sum">847к₽</span> → <span class="kro-top3-status kro-status-active" id="kro-top3-2-status">Активен</span></li>
-               <li class="kro-top3-item"><span class="kro-top3-channel" id="kro-top3-3-channel">crypto-fast.pro</span> → <span class="kro-top3-sum" id="kro-top3-3-sum">673к₽</span> → <span class="kro-top3-status kro-status-block" id="kro-top3-3-status">Блок</span></li>
+               <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-1-channel">@TONPumpElite</span> → <span class="kro-top3-sum" id="kro-top3-1-sum">2.1млн₽</span> → <span class="kro-top3-status kro-status-removed" id="kro-top3-1-status">Удалён</span></li>
+               <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-2-channel">BTC Курс миллионера</span> → <span class="kro-top3-sum" id="kro-top3-2-sum">847к₽</span> → <span class="kro-top3-status kro-status-active" id="kro-top3-2-status">Активен</span></li>
+               <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-3-channel">crypto-fast.pro</span> → <span class="kro-top3-sum" id="kro-top3-3-sum">673к₽</span> → <span class="kro-top3-status kro-status-block" id="kro-top3-3-status">Блок</span></li>
            </ol>
            <div class="kro-feature1-report" id="kro-feature1-report">
                <p class="kro-feature1-report-intro">Сообщить о разводе → добавим за 30 мин</p>
@@ -433,6 +441,20 @@
                    });
                });
            }
+       })();
+   </script>
+   <script>
+       (function() {
+           var observer = new IntersectionObserver(function(entries) {
+               entries.forEach(function(entry) {
+                   if (entry.isIntersecting) entry.target.classList.add('kro-reveal-visible');
+               });
+           }, { rootMargin: '0px 0px -8% 0px', threshold: 0.1 });
+           function initReveal() {
+               document.querySelectorAll('.kro-reveal').forEach(function(el) { observer.observe(el); });
+           }
+           if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initReveal);
+           else initReveal();
        })();
    </script>
 </body>
