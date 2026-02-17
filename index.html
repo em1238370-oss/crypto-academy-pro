@@ -191,6 +191,11 @@
    <!-- Дополнительный скрипт для ГАРАНТИИ видимости чата -->
    <script>
        (function() {
+           if (document.body.classList.contains('kro-main')) {
+               var w = document.getElementById('chatWidget');
+               if (w) { w.style.display = 'none'; w.style.visibility = 'hidden'; w.style.pointerEvents = 'none'; }
+               return;
+           }
            function forceChatPosition() {
                const chatWidget = document.getElementById('chatWidget');
                if (!chatWidget) {
