@@ -34,16 +34,16 @@ button:focus-visible {
    color: #e53935;
    line-height: 1.1;
    letter-spacing: -0.02em;
-   margin-bottom: 24px;
+   margin-bottom: 28px;
 }
 
 .kro-step1-subtitle {
    font-family: 'Poppins', sans-serif;
    font-size: clamp(18px, 3.5vw, 36px);
    color: #ffffff;
-   line-height: 1.4;
+   line-height: 1.45;
    max-width: 640px;
-   margin: 0 auto 48px;
+   margin: 0 auto 32px;
 }
 
 .kro-step1-cta {
@@ -54,14 +54,15 @@ button:focus-visible {
    color: #ffffff;
    background-color: #e53935;
    padding: 18px 40px;
-   border-radius: 8px;
+   border-radius: 12px;
    text-decoration: none;
-   transition: background-color 0.2s ease, box-shadow 0.2s ease;
+   transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .kro-step1-cta:hover {
    background-color: #c62828;
-   box-shadow: 0 4px 20px rgba(229, 57, 53, 0.4);
+   box-shadow: 0 6px 24px rgba(229, 57, 53, 0.45);
+   transform: translateY(-2px);
 }
 
 .kro-step1-cta:focus-visible {
@@ -73,6 +74,57 @@ button:focus-visible {
    min-height: 1px;
    padding: 0;
    margin: 0;
+}
+
+/* На главной (Крипта без розовых очков) не показывать декоративный фон — только тёмный hero */
+.kro-main .main-bg-effects {
+   display: none !important;
+}
+.kro-main {
+   background-color: #0d0d0d;
+}
+
+/* Навбар в тон главной: тёмный фон, светлый текст, красный акцент */
+.kro-main .main-nav {
+   background: rgba(13, 13, 13, 0.97);
+   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.kro-main .main-nav-brand {
+   color: #ffffff;
+}
+.kro-main .main-nav-links a {
+   color: rgba(255, 255, 255, 0.85);
+}
+.kro-main .main-nav-links a:hover {
+   color: #e53935;
+}
+
+/* Футер главной: в тон Шага 1, отступ 32px (раздел 4.6) */
+.kro-footer {
+   margin-top: 32px;
+   padding: 32px 24px 24px;
+   background-color: #0d0d0d;
+   border-top: 1px solid rgba(255, 255, 255, 0.08);
+   text-align: center;
+}
+.kro-footer .news-footer-text,
+.kro-footer .news-footer-crafted {
+   color: rgba(255, 255, 255, 0.9);
+   margin-bottom: 8px;
+}
+.kro-footer .news-footer-links {
+   margin-top: 16px;
+   display: flex;
+   justify-content: center;
+   gap: 24px;
+   flex-wrap: wrap;
+}
+.kro-footer .news-footer-link {
+   color: rgba(255, 255, 255, 0.8);
+   text-decoration: none;
+}
+.kro-footer .news-footer-link:hover {
+   color: #e53935;
 }
 
 /* Apple-style: минималистичная верхняя навигация */
