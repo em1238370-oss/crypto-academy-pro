@@ -39,12 +39,64 @@ button:focus-visible {
    overflow: hidden;
 }
 
+.kro-step1-inner {
+   width: 100%;
+   max-width: 1000px;
+   margin: 0 auto;
+}
+
+.kro-step1-left {
+   margin-bottom: 40px;
+}
+
+.kro-step1-right {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   gap: 12px;
+}
+
+.kro-step1-cta-note {
+   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   font-size: 13px;
+   color: rgba(255, 255, 255, 0.5);
+   margin: 0;
+}
+
+@media (min-width: 900px) {
+   .kro-step1-inner {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 48px;
+      text-align: left;
+   }
+   .kro-step1-left {
+      flex: 1;
+      max-width: 520px;
+      margin-bottom: 0;
+      text-align: left;
+   }
+   .kro-step1-tags {
+      justify-content: flex-start;
+   }
+   .kro-step1-right {
+      flex: 0 0 auto;
+      align-items: flex-start;
+      padding-left: 48px;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+   }
+   .kro-step1 {
+      text-align: left;
+   }
+}
+
 .kro-step1-bg {
    position: absolute;
    inset: 0;
    z-index: -1;
-   background: radial-gradient(ellipse 80% 60% at 50% 20%, var(--kro-glow) 0%, transparent 50%),
-               radial-gradient(ellipse 100% 100% at 50% 100%, rgba(15, 20, 31, 0.95) 0%, transparent 60%),
+   background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
                linear-gradient(180deg, var(--kro-bg) 0%, var(--kro-bg-mid) 45%, var(--kro-bg-soft) 100%);
 }
 
@@ -52,24 +104,24 @@ button:focus-visible {
    content: '';
    position: absolute;
    inset: 0;
-   background-image: radial-gradient(circle at 1px 1px, rgba(6, 182, 212, 0.06) 1px, transparent 0);
+   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.03) 1px, transparent 0);
    background-size: 32px 32px;
    pointer-events: none;
 }
 
 .kro-step1-title {
-   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-   font-size: clamp(28px, 8vw, 56px);
-   font-weight: 600;
+   font-family: 'Raleway', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   font-size: clamp(42px, 10vw, 72px);
+   font-weight: 700;
    color: rgba(255, 255, 255, 0.95);
-   line-height: 1.15;
+   line-height: 1.1;
    letter-spacing: -0.02em;
-   margin-bottom: 32px;
+   margin-bottom: 24px;
 }
 
 .kro-step1-subtitle {
    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-   font-size: clamp(16px, 2.5vw, 22px);
+   font-size: clamp(17px, 2.5vw, 22px);
    color: rgba(255, 255, 255, 0.85);
    line-height: 1.5;
    letter-spacing: 0.01em;
@@ -119,7 +171,6 @@ button:focus-visible {
 
 .kro-step1-cta:hover {
    background-color: var(--kro-accent-hover);
-   box-shadow: 0 0 24px rgba(6, 182, 212, 0.35);
 }
 
 .kro-step1-cta:focus-visible {
@@ -158,7 +209,7 @@ button:focus-visible {
    position: absolute;
    inset: 0;
    z-index: -1;
-   background: radial-gradient(ellipse 70% 50% at 50% 0%, var(--kro-glow-soft) 0%, transparent 50%),
+   background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
                linear-gradient(180deg, var(--kro-bg-soft) 0%, var(--kro-bg-mid) 50%, var(--kro-bg) 100%);
 }
 
@@ -166,7 +217,7 @@ button:focus-visible {
    content: '';
    position: absolute;
    inset: 0;
-   background-image: radial-gradient(circle at 1px 1px, rgba(6, 182, 212, 0.05) 1px, transparent 0);
+   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.025) 1px, transparent 0);
    background-size: 28px 28px;
    pointer-events: none;
 }
@@ -220,19 +271,30 @@ button:focus-visible {
    gap: 8px;
 }
 
+.kro-feature1.kro-reveal .kro-feature1-stat {
+   opacity: 0;
+   transform: translateY(12px);
+   transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.kro-feature1.kro-reveal-visible .kro-feature1-stat:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0s; }
+.kro-feature1.kro-reveal-visible .kro-feature1-stat:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.06s; }
+.kro-feature1.kro-reveal-visible .kro-feature1-stat:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.12s; }
+
 .kro-card {
    border: 1px solid rgba(255, 255, 255, 0.08);
    border-radius: 12px;
    background: rgba(255, 255, 255, 0.03);
    padding: 20px 24px;
-   transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+   transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
 
 .kro-feature1-stat.kro-card:hover,
 .kro-top3-item.kro-card:hover {
-   border-color: rgba(6, 182, 212, 0.25);
-   background: rgba(6, 182, 212, 0.06);
-   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1);
+   border-color: rgba(255, 255, 255, 0.12);
+   background: rgba(255, 255, 255, 0.06);
+   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+   transform: scale(1.01);
 }
 
 .kro-feature1-stat-value {
@@ -305,6 +367,16 @@ button:focus-visible {
    margin-bottom: 0;
 }
 
+.kro-feature1.kro-reveal .kro-feature1-top3 li {
+   opacity: 0;
+   transform: translateY(12px);
+   transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.kro-feature1.kro-reveal-visible .kro-feature1-top3 li:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0s; }
+.kro-feature1.kro-reveal-visible .kro-feature1-top3 li:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.06s; }
+.kro-feature1.kro-reveal-visible .kro-feature1-top3 li:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.12s; }
+
 .kro-top3-channel {
    font-weight: 600;
 }
@@ -369,7 +441,6 @@ button:focus-visible {
 
 .kro-report-submit:hover {
    background-color: var(--kro-accent-hover);
-   box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
 }
 
 .kro-feature1-report-message {
