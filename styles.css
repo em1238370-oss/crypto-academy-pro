@@ -241,6 +241,7 @@ button:focus-visible {
 
 .kro-feature1-hero-number {
    margin-bottom: 32px;
+   text-align: center;
 }
 
 .kro-feature1-hero-value {
@@ -249,6 +250,7 @@ button:focus-visible {
    font-weight: 600;
    color: var(--kro-accent);
    line-height: 1.05;
+   font-variant-numeric: tabular-nums;
 }
 
 .kro-feature1-hero-label {
@@ -262,14 +264,15 @@ button:focus-visible {
    font-size: clamp(18px, 3vw, 22px);
    font-weight: 600;
    color: rgba(255, 255, 255, 0.95);
-   margin-bottom: 24px;
+   max-width: 640px;
+   margin: 0 auto 24px;
 }
 
 .kro-feature1-stats {
    display: grid;
    grid-template-columns: repeat(3, 1fr);
    gap: 32px 24px;
-   max-width: 720px;
+   max-width: 640px;
    margin: 0 auto 40px;
 }
 
@@ -277,6 +280,8 @@ button:focus-visible {
    display: flex;
    flex-direction: column;
    gap: 8px;
+   align-items: center;
+   text-align: center;
 }
 
 .kro-feature1.kro-reveal .kro-feature1-stat {
@@ -319,6 +324,7 @@ button:focus-visible {
    white-space: nowrap;
    overflow: hidden;
    text-overflow: ellipsis;
+   font-variant-numeric: tabular-nums;
 }
 
 .kro-feature1-stat-label {
@@ -374,7 +380,7 @@ button:focus-visible {
    list-style: none;
    padding: 0;
    margin: 0 auto 40px;
-   max-width: 560px;
+   max-width: 640px;
    text-align: left;
 }
 
@@ -382,10 +388,30 @@ button:focus-visible {
    margin-bottom: 8px;
    font-size: clamp(14px, 2vw, 16px);
    color: rgba(255, 255, 255, 0.9);
+   display: flex;
+   flex-wrap: nowrap;
+   align-items: center;
+   gap: 8px;
 }
 
 .kro-feature1-top3 li:last-child {
    margin-bottom: 0;
+}
+
+.kro-feature1-top3 .kro-top3-channel {
+   flex: 1 1 0;
+   min-width: 0;
+}
+
+.kro-feature1-top3 .kro-top3-sum {
+   flex: 0 0 72px;
+   text-align: right;
+   font-variant-numeric: tabular-nums;
+}
+
+.kro-feature1-top3 .kro-top3-status {
+   flex: 0 0 82px;
+   text-align: right;
 }
 
 .kro-feature1.kro-reveal .kro-feature1-top3 li {
@@ -407,7 +433,7 @@ button:focus-visible {
 }
 
 .kro-feature1-report {
-   max-width: 420px;
+   max-width: 640px;
    margin: 0 auto;
    text-align: left;
 }
