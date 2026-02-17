@@ -54,6 +54,44 @@
            <a href="#checkers" class="kro-step1-cta">Проверь своего гуру</a>
        </section>
 
+       <!-- Фишка 1: Живой счётчик -->
+       <section class="kro-feature1" aria-labelledby="kro-feature1-heading">
+           <p class="kro-feature1-date" id="kro-feature1-date">ОБНАРУЖЕНО СЕГОДНЯ <span id="kro-live-datetime">—</span></p>
+           <h2 class="kro-feature1-heading" id="kro-feature1-heading">Масштаб проблемы</h2>
+           <div class="kro-feature1-stats">
+               <div class="kro-feature1-stat">
+                   <span class="kro-feature1-stat-value" id="kro-stat-channels">47</span>
+                   <span class="kro-feature1-stat-label">Telegram-каналов</span>
+               </div>
+               <div class="kro-feature1-stat">
+                   <span class="kro-feature1-stat-value" id="kro-stat-courses">23</span>
+                   <span class="kro-feature1-stat-label">курсов-проказа</span>
+               </div>
+               <div class="kro-feature1-stat">
+                   <span class="kro-feature1-stat-value" id="kro-stat-lost">12 400 000</span>
+                   <span class="kro-feature1-stat-label">потеряно ₽</span>
+               </div>
+           </div>
+           <div class="kro-feature1-table-wrap">
+               <table class="kro-feature1-table">
+                   <thead>
+                       <tr>
+                           <th>Канал</th>
+                           <th>Сумма</th>
+                           <th>Статус</th>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       <tr><td>@CryptoMoon2026</td><td>120 000 ₽</td><td class="kro-status-active">Активен</td></tr>
+                       <tr><td>@PumpSignalPro</td><td>85 000 ₽</td><td class="kro-status-removed">Удалён</td></tr>
+                       <tr><td>@SafeCryptoEarn</td><td>210 000 ₽</td><td class="kro-status-active">Активен</td></tr>
+                       <tr><td>@FastProfitChannel</td><td>67 000 ₽</td><td class="kro-status-removed">Удалён</td></tr>
+                       <tr><td>@TrustCryptoCourse</td><td>156 000 ₽</td><td class="kro-status-active">Активен</td></tr>
+                   </tbody>
+               </table>
+           </div>
+       </section>
+
        <!-- Якорь для кнопки «Проверь своего гуру» (блок чекеров будет ниже) -->
        <section class="kro-checkers-anchor" id="checkers" aria-hidden="true"></section>
        
@@ -291,6 +329,27 @@
            }, 1000);
            
            console.log('✅ Chat position force script loaded');
+       })();
+   </script>
+   <script>
+       (function() {
+           var months = ['ЯНВ', 'ФЕВ', 'МАР', 'АПР', 'МАЙ', 'ИЮН', 'ИЮЛ', 'АВГ', 'СЕН', 'ОКТ', 'НОЯ', 'ДЕК'];
+           function updateLiveDatetime() {
+               var el = document.getElementById('kro-live-datetime');
+               if (!el) return;
+               var d = new Date();
+               var day = d.getDate();
+               var month = months[d.getMonth()];
+               var h = d.getHours();
+               var m = d.getMinutes();
+               el.textContent = day + ' ' + month + ' ' + (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+           }
+           if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', updateLiveDatetime);
+           } else {
+               updateLiveDatetime();
+           }
+           setInterval(updateLiveDatetime, 60000);
        })();
    </script>
 </body>

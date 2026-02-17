@@ -76,6 +76,102 @@ button:focus-visible {
    margin: 0;
 }
 
+/* Фишка 1: Живой счётчик — дата, три цифры, мини-таблица */
+.kro-feature1 {
+   background-color: #16161a;
+   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   padding: 80px 24px 80px;
+   text-align: center;
+}
+
+.kro-feature1-date {
+   font-size: clamp(12px, 2vw, 14px);
+   font-weight: 600;
+   color: #b8a038;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   margin-bottom: 32px;
+}
+
+.kro-feature1-heading {
+   font-size: clamp(18px, 3vw, 22px);
+   font-weight: 600;
+   color: rgba(255, 255, 255, 0.95);
+   margin-bottom: 40px;
+}
+
+.kro-feature1-stats {
+   display: grid;
+   grid-template-columns: repeat(3, 1fr);
+   gap: 32px 24px;
+   max-width: 720px;
+   margin: 0 auto 40px;
+}
+
+.kro-feature1-stat {
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+}
+
+.kro-feature1-stat-value {
+   font-size: clamp(28px, 5vw, 48px);
+   font-weight: 600;
+   color: rgba(255, 255, 255, 0.95);
+   line-height: 1.1;
+}
+
+.kro-feature1-stat-label {
+   font-size: clamp(13px, 1.5vw, 15px);
+   color: rgba(255, 255, 255, 0.75);
+}
+
+.kro-feature1-table-wrap {
+   overflow-x: auto;
+   max-width: 560px;
+   margin: 0 auto;
+}
+
+.kro-feature1-table {
+   width: 100%;
+   border-collapse: collapse;
+   font-size: clamp(13px, 1.5vw, 15px);
+   text-align: left;
+}
+
+.kro-feature1-table th,
+.kro-feature1-table td {
+   padding: 12px 16px;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.kro-feature1-table th {
+   font-weight: 600;
+   color: rgba(255, 255, 255, 0.85);
+}
+
+.kro-feature1-table td {
+   color: rgba(255, 255, 255, 0.9);
+}
+
+.kro-status-active {
+   color: rgba(180, 200, 140, 0.95);
+}
+
+.kro-status-removed {
+   color: rgba(200, 140, 140, 0.95);
+}
+
+@media (max-width: 600px) {
+   .kro-feature1-stats {
+      grid-template-columns: 1fr;
+      gap: 24px;
+   }
+   .kro-feature1 {
+      padding: 64px 20px 64px;
+   }
+}
+
 /* На главной (Крипта без розовых очков) не показывать декоративный фон — только тёмный hero */
 .kro-main .main-bg-effects {
    display: none !important;
