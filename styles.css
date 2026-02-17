@@ -84,19 +84,12 @@ button:focus-visible {
    background-color: #0d0d0d;
 }
 
-/* Навбар в тон главной: тёмный фон, светлый текст, красный акцент */
+/* На главной навбар скрыт — только hero «Крипта без розовых очков» */
 .kro-main .main-nav {
-   background: rgba(13, 13, 13, 0.97);
-   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+   display: none !important;
 }
-.kro-main .main-nav-brand {
-   color: #ffffff;
-}
-.kro-main .main-nav-links a {
-   color: rgba(255, 255, 255, 0.85);
-}
-.kro-main .main-nav-links a:hover {
-   color: #e53935;
+.kro-main .page {
+   padding-top: 0;
 }
 
 /* Футер главной: в тон Шага 1, отступ 32px (раздел 4.6) */
