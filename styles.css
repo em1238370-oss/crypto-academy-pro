@@ -97,6 +97,13 @@ button:focus-visible {
    display: none !important;
 }
 
+/* На главной скрыт чат-бот (Crypto AI Assistant) */
+.kro-main .chat-widget {
+   display: none !important;
+   visibility: hidden !important;
+   pointer-events: none !important;
+}
+
 /* Apple-style: минималистичная верхняя навигация */
 .main-nav {
    position: fixed;
