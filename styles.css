@@ -13,7 +13,19 @@ button:focus-visible {
    outline-offset: 3px;
 }
 
-/* ===== Крипта без розовых очков — в духе Artem OSO: глубина фона, теги, карточки, scroll reveal ===== */
+/* ===== Крипта без розовых очков — крипто-свежая палитра: синеватый фон, бирюзовый акцент ===== */
+.kro-main,
+.kro-step1,
+.kro-feature1 {
+   --kro-bg: #0a0e17;
+   --kro-bg-mid: #0f1419;
+   --kro-bg-soft: #131c2b;
+   --kro-accent: #06b6d4;
+   --kro-accent-hover: #22d3ee;
+   --kro-glow: rgba(6, 182, 212, 0.12);
+   --kro-glow-soft: rgba(6, 182, 212, 0.06);
+}
+
 .kro-step1 {
    min-height: 100vh;
    display: flex;
@@ -31,16 +43,16 @@ button:focus-visible {
    position: absolute;
    inset: 0;
    z-index: -1;
-   background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(184, 160, 56, 0.06) 0%, transparent 50%),
-               radial-gradient(ellipse 100% 100% at 50% 100%, rgba(30, 28, 35, 0.95) 0%, transparent 60%),
-               linear-gradient(180deg, #0f0f12 0%, #16161a 45%, #131316 100%);
+   background: radial-gradient(ellipse 80% 60% at 50% 20%, var(--kro-glow) 0%, transparent 50%),
+               radial-gradient(ellipse 100% 100% at 50% 100%, rgba(15, 20, 31, 0.95) 0%, transparent 60%),
+               linear-gradient(180deg, var(--kro-bg) 0%, var(--kro-bg-mid) 45%, var(--kro-bg-soft) 100%);
 }
 
 .kro-step1-bg::after {
    content: '';
    position: absolute;
    inset: 0;
-   background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0);
+   background-image: radial-gradient(circle at 1px 1px, rgba(6, 182, 212, 0.06) 1px, transparent 0);
    background-size: 32px 32px;
    pointer-events: none;
 }
@@ -87,8 +99,9 @@ button:focus-visible {
 }
 
 .kro-tag:hover {
-   border-color: rgba(184, 160, 56, 0.4);
-   background: rgba(184, 160, 56, 0.08);
+   border-color: rgba(6, 182, 212, 0.5);
+   background: rgba(6, 182, 212, 0.1);
+   color: rgba(255, 255, 255, 0.95);
 }
 
 .kro-step1-cta {
@@ -96,21 +109,21 @@ button:focus-visible {
    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    font-size: clamp(15px, 1.8vw, 17px);
    font-weight: 600;
-   color: #16161a;
-   background-color: #b8a038;
+   color: #0a0e17;
+   background-color: var(--kro-accent);
    padding: 16px 32px;
    border-radius: 8px;
    text-decoration: none;
-   transition: background-color 0.2s ease, opacity 0.2s ease;
+   transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .kro-step1-cta:hover {
-   background-color: #c4a83a;
-   opacity: 0.95;
+   background-color: var(--kro-accent-hover);
+   box-shadow: 0 0 24px rgba(6, 182, 212, 0.35);
 }
 
 .kro-step1-cta:focus-visible {
-   outline: 2px solid rgba(255, 255, 255, 0.6);
+   outline: 2px solid var(--kro-accent-hover);
    outline-offset: 3px;
 }
 
@@ -145,15 +158,15 @@ button:focus-visible {
    position: absolute;
    inset: 0;
    z-index: -1;
-   background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(184, 160, 56, 0.04) 0%, transparent 50%),
-               linear-gradient(180deg, #131316 0%, #16161a 50%, #0f0f12 100%);
+   background: radial-gradient(ellipse 70% 50% at 50% 0%, var(--kro-glow-soft) 0%, transparent 50%),
+               linear-gradient(180deg, var(--kro-bg-soft) 0%, var(--kro-bg-mid) 50%, var(--kro-bg) 100%);
 }
 
 .kro-feature1-bg::after {
    content: '';
    position: absolute;
    inset: 0;
-   background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.025) 1px, transparent 0);
+   background-image: radial-gradient(circle at 1px 1px, rgba(6, 182, 212, 0.05) 1px, transparent 0);
    background-size: 28px 28px;
    pointer-events: none;
 }
@@ -161,7 +174,7 @@ button:focus-visible {
 .kro-feature1-date {
    font-size: clamp(12px, 2vw, 14px);
    font-weight: 600;
-   color: #b8a038;
+   color: var(--kro-accent);
    letter-spacing: 0.08em;
    text-transform: uppercase;
    margin-bottom: 24px;
@@ -217,9 +230,9 @@ button:focus-visible {
 
 .kro-feature1-stat.kro-card:hover,
 .kro-top3-item.kro-card:hover {
-   border-color: rgba(255, 255, 255, 0.14);
-   background: rgba(255, 255, 255, 0.06);
-   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+   border-color: rgba(6, 182, 212, 0.25);
+   background: rgba(6, 182, 212, 0.06);
+   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(6, 182, 212, 0.1);
 }
 
 .kro-feature1-stat-value {
@@ -346,17 +359,17 @@ button:focus-visible {
    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    font-size: 15px;
    font-weight: 600;
-   color: #16161a;
-   background-color: #b8a038;
+   color: var(--kro-bg);
+   background-color: var(--kro-accent);
    border: none;
    border-radius: 8px;
    cursor: pointer;
-   transition: background-color 0.2s ease, opacity 0.2s ease;
+   transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .kro-report-submit:hover {
-   background-color: #c4a83a;
-   opacity: 0.95;
+   background-color: var(--kro-accent-hover);
+   box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
 }
 
 .kro-feature1-report-message {
@@ -384,8 +397,14 @@ button:focus-visible {
    display: none !important;
 }
 .kro-main {
-   background: linear-gradient(180deg, #0f0f12 0%, #16161a 30%, #131316 100%);
+   background: linear-gradient(180deg, var(--kro-bg) 0%, var(--kro-bg-mid) 30%, var(--kro-bg-soft) 100%);
    min-height: 100vh;
+}
+
+.kro-main a:focus-visible,
+.kro-main button:focus-visible {
+   outline: 2px solid var(--kro-accent);
+   outline-offset: 3px;
 }
 
 /* На главной навбар скрыт — только hero «Крипта без розовых очков» */
