@@ -13,9 +13,9 @@ button:focus-visible {
    outline-offset: 3px;
 }
 
-/* ===== Крипта без розовых очков — Стиль 1: Шаг 1 (Удар правды) ===== */
+/* ===== Крипта без розовых очков — по документу: фиолетовый фон, золотой акцент, Raleway ===== */
 .kro-step1 {
-   background-color: #0d0d0d;
+   background-color: #1C0038;
    min-height: 100vh;
    display: flex;
    flex-direction: column;
@@ -28,10 +28,10 @@ button:focus-visible {
 }
 
 .kro-step1-title {
-   font-family: 'Oswald', sans-serif;
+   font-family: 'Raleway', sans-serif;
    font-size: clamp(32px, 10vw, 72px);
    font-weight: 700;
-   color: #e53935;
+   color: #e8c547;
    line-height: 1.1;
    letter-spacing: -0.02em;
    margin-bottom: 28px;
@@ -40,7 +40,7 @@ button:focus-visible {
 .kro-step1-subtitle {
    font-family: 'Poppins', sans-serif;
    font-size: clamp(18px, 3.5vw, 36px);
-   color: #ffffff;
+   color: rgba(255, 255, 255, 0.9);
    line-height: 1.45;
    max-width: 640px;
    margin: 0 auto 32px;
@@ -48,11 +48,11 @@ button:focus-visible {
 
 .kro-step1-cta {
    display: inline-block;
-   font-family: 'Oswald', sans-serif;
+   font-family: 'Raleway', sans-serif;
    font-size: clamp(18px, 2vw, 22px);
-   font-weight: 600;
-   color: #ffffff;
-   background-color: #e53935;
+   font-weight: 700;
+   color: #1C0038;
+   background-color: #e8c547;
    padding: 18px 40px;
    border-radius: 12px;
    text-decoration: none;
@@ -60,13 +60,13 @@ button:focus-visible {
 }
 
 .kro-step1-cta:hover {
-   background-color: #c62828;
-   box-shadow: 0 6px 24px rgba(229, 57, 53, 0.45);
+   background-color: #d4b03d;
+   box-shadow: 0 6px 24px rgba(232, 197, 71, 0.45);
    transform: translateY(-2px);
 }
 
 .kro-step1-cta:focus-visible {
-   outline: 2px solid rgba(255, 255, 255, 0.9);
+   outline: 2px solid #e8c547;
    outline-offset: 3px;
 }
 
@@ -81,7 +81,7 @@ button:focus-visible {
    display: none !important;
 }
 .kro-main {
-   background-color: #0d0d0d;
+   background-color: #1C0038;
 }
 
 /* На главной навбар скрыт — только hero «Крипта без розовых очков» */
