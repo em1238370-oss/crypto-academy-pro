@@ -132,18 +132,20 @@
                    <h2 class="kro-f1-math-title">ВОТ ЧТО ТЫ БЫ УВИДЕЛ НА СВОЁМ ДЕПОЗИТЕ:</h2>
                    <div class="kro-f1-math-slider-wrap">
                        <div class="kro-f1-math-slider" id="kro-f1-math-slider">
-                           <div class="kro-f1-math-slide" data-slide="0">
-                               <p class="kro-f1-math-slide-head">СКРИН 1: $10 → $25 (+150%)</p>
-                               <p class="kro-f1-math-slide-body">ТВОЙ $1000: +$1500 (но риск 80% → 1 ошибка = -800$)</p>
-                           </div>
-                           <div class="kro-f1-math-slide" data-slide="1">
-                               <p class="kro-f1-math-slide-head">СКРИН 2: $7 → $17 (+140%)</p>
-                               <p class="kro-f1-math-slide-body">ТВОЙ $1000: +$1400 (но 5 минусов = -85% банка)</p>
-                           </div>
-                           <div class="kro-f1-math-slide" data-slide="2">
-                               <p class="kro-f1-math-slide-head">СКРИН 3: «ТОЧНОСТЬ 92%»</p>
-                               <p class="kro-f1-math-slide-body">ТВОЙ $1000: 92 выигрыша х $20 = +1840$</p>
-                               <p class="kro-f1-math-slide-body">МИНУС 8 сливов по 20% = -160$ → итог +1680$</p>
+                           <div class="kro-f1-math-track" id="kro-f1-math-track">
+                               <div class="kro-f1-math-slide" data-slide="0">
+                                   <p class="kro-f1-math-slide-head">СКРИН 1: $10 → $25 (+150%)</p>
+                                   <p class="kro-f1-math-slide-body">ТВОЙ $1000: +$1500 (но риск 80% → 1 ошибка = -800$)</p>
+                               </div>
+                               <div class="kro-f1-math-slide" data-slide="1">
+                                   <p class="kro-f1-math-slide-head">СКРИН 2: $7 → $17 (+140%)</p>
+                                   <p class="kro-f1-math-slide-body">ТВОЙ $1000: +$1400 (но 5 минусов = -85% банка)</p>
+                               </div>
+                               <div class="kro-f1-math-slide" data-slide="2">
+                                   <p class="kro-f1-math-slide-head">СКРИН 3: «ТОЧНОСТЬ 92%»</p>
+                                   <p class="kro-f1-math-slide-body">ТВОЙ $1000: 92 выигрыша х $20 = +1840$</p>
+                                   <p class="kro-f1-math-slide-body">МИНУС 8 сливов по 20% = -160$ → итог +1680$</p>
+                               </div>
                            </div>
                        </div>
                        <div class="kro-f1-math-dots" aria-label="Переключение слайдов">
@@ -549,16 +551,85 @@
            function initMathSlider() {
                var wrap = document.querySelector('.kro-f1-math-slider-wrap');
                if (!wrap) return;
+               var slider = document.getElementById('kro-f1-math-slider');
+               var track = document.getElementById('kro-f1-math-track');
                var slides = wrap.querySelectorAll('.kro-f1-math-slide');
                var dots = wrap.querySelectorAll('.kro-f1-math-dot');
+               var currentIndex = 0;
+               var startX = 0;
+               var startIndex = 0;
+               var slideWidth = 0;
+
                function goTo(i) {
                    i = Math.max(0, Math.min(i, slides.length - 1));
-                   slides.forEach(function(s, j) { s.classList.toggle('is-active', j === i); });
+                   currentIndex = i;
+                   if (track) track.style.transform = 'translateX(-' + (i * 33.333) + '%)';
                    dots.forEach(function(d, j) { d.classList.toggle('is-active', j === i); });
                }
+
+               function onMove(clientX) {
+                   var deltaX = clientX - startX;
+                   var maxDrag = slideWidth || slider.offsetWidth;
+                   deltaX = Math.max(-maxDrag, Math.min(maxDrag, deltaX));
+                   track.style.transform = 'translateX(' + (-startIndex * maxDrag + deltaX) + 'px)';
+               }
+
+               function endDrag(clientX) {
+                   var deltaX = clientX - startX;
+                   var width = slideWidth || slider.offsetWidth;
+                   var threshold = Math.min(50, width * 0.15);
+                   slider.classList.remove('dragging');
+                   track.style.transition = '';
+                   if (Math.abs(deltaX) > threshold) {
+                       if (deltaX < 0) goTo(startIndex + 1);
+                       else goTo(startIndex - 1);
+                   } else {
+                       goTo(startIndex);
+                   }
+               }
+
+               function startDrag(clientX) {
+                   startX = clientX;
+                   startIndex = currentIndex;
+                   slideWidth = slider.offsetWidth;
+                   slider.classList.add('dragging');
+                   track.style.transition = 'none';
+               }
+
+               if (slider && track) {
+                   slider.addEventListener('mousedown', function(e) {
+                       e.preventDefault();
+                       startDrag(e.clientX);
+                       function move(e) { onMove(e.clientX); }
+                       function up(e) {
+                           endDrag(e.clientX);
+                           document.removeEventListener('mousemove', move);
+                           document.removeEventListener('mouseup', up);
+                       }
+                       document.addEventListener('mousemove', move);
+                       document.addEventListener('mouseup', up);
+                   });
+
+                   var touchStartX = 0;
+                   slider.addEventListener('touchstart', function(e) {
+                       touchStartX = e.touches[0].clientX;
+                       startDrag(e.touches[0].clientX);
+                   }, { passive: true });
+                   slider.addEventListener('touchmove', function(e) {
+                       var dx = e.touches[0].clientX - touchStartX;
+                       if (Math.abs(dx) > 10) e.preventDefault();
+                       onMove(e.touches[0].clientX);
+                   }, { passive: false });
+                   slider.addEventListener('touchend', function(e) {
+                       if (e.changedTouches && e.changedTouches[0])
+                           endDrag(e.changedTouches[0].clientX);
+                   }, { passive: true });
+               }
+
                dots.forEach(function(dot, i) {
                    dot.addEventListener('click', function() { goTo(i); });
                });
+
                goTo(0);
            }
            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initMathSlider);

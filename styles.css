@@ -524,16 +524,31 @@ button:focus-visible {
    border-radius: 12px;
    background: var(--kro-card-bg);
    border: 1px solid var(--kro-card-border-accent);
+   cursor: grab;
+   user-select: none;
+   touch-action: pan-y;
+}
+
+.kro-f1-math-slider.dragging {
+   cursor: grabbing;
+}
+
+.kro-f1-math-track {
+   display: flex;
+   width: 300%;
+   transition: transform 0.35s ease;
+}
+
+.kro-f1-math-slider.dragging .kro-f1-math-track {
+   transition: none;
 }
 
 .kro-f1-math-slide {
-   display: none;
+   flex: 0 0 33.333%;
+   min-width: 33.333%;
+   box-sizing: border-box;
    padding: 24px;
    min-height: 100px;
-}
-
-.kro-f1-math-slide.is-active {
-   display: block;
 }
 
 .kro-f1-math-slide-head {
@@ -564,7 +579,7 @@ button:focus-visible {
 .kro-f1-math-dot {
    width: 10px;
    height: 10px;
-   border-radius: 50%;
+   border-radius: 2px;
    border: 2px solid rgba(255, 255, 255, 0.25);
    background: transparent;
    cursor: pointer;
