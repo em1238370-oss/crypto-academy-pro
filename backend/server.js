@@ -7,6 +7,7 @@ import https from 'https';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { spawnSync } from 'child_process';
 import Stripe from 'stripe';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1301,6 +1302,48 @@ function normalizeChannel(channel) {
   return s.startsWith('@') ? s : '@' + s;
 }
 
+/** Canonical form for matching report row channel to requested channel (@name vs t.me/name). */
+function channelMatchKey(channel) {
+  const s = (channel || '').toString().trim().toLowerCase().replace(/\s/g, '');
+  if (!s) return '';
+  if (s.startsWith('t.me/+')) return s;
+  if (s.startsWith('t.me/')) return s.slice(6);
+  return s.startsWith('@') ? s.slice(1) : s;
+}
+
+/** Get complaints count and total_loss from reports sheet (first sheet A2:F, B=channel, C=sum). */
+async function getComplaintsAndLossForChannel(client, channel) {
+  if (!client || !kroSheetId) return { complaints: null, total_loss: null };
+  try {
+    const response = await client.sheets.spreadsheets.values.get({
+      spreadsheetId: kroSheetId,
+      range: 'A2:F'
+    });
+    const rows = response.data.values || [];
+    const key = channelMatchKey(channel);
+    if (!key) return { complaints: null, total_loss: null };
+    let complaints = 0;
+    let totalSum = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const rowChannel = (rows[i][1] || '').toString().trim();
+      const rowKey = channelMatchKey(rowChannel);
+      if (!rowKey || rowKey !== key) continue;
+      complaints += 1;
+      const sumRaw = (rows[i][2] ?? '').toString().replace(/\s/g, '');
+      totalSum += parseInt(sumRaw, 10) || 0;
+    }
+    if (complaints === 0) return { complaints: null, total_loss: null };
+    const total_loss = totalSum >= 1000000
+      ? (totalSum / 1000000).toFixed(1).replace(/\.0$/, '') + 'млн₽'
+      : totalSum >= 1000
+        ? (totalSum / 1000).toFixed(0) + 'к₽'
+        : totalSum + '₽';
+    return { complaints, total_loss };
+  } catch (e) {
+    return { complaints: null, total_loss: null };
+  }
+}
+
 app.get('/api/kro/check', async (req, res) => {
   const raw = (req.query.channel ?? '').toString().trim();
   const channel = normalizeChannel(raw);
@@ -1326,6 +1369,14 @@ app.get('/api/kro/check', async (req, res) => {
       const row = parseScamBaseRow(rows[i]);
       const rowChannel = (row.username || '').toLowerCase();
       if (rowChannel === channelLower || rowChannel === channelLower.slice(1)) {
+        let complaints = row.complaints;
+        let total_loss = row.total_loss;
+        const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
+        if (empty(complaints) || empty(total_loss)) {
+          const report = await getComplaintsAndLossForChannel(client, channel);
+          if (report.complaints != null) complaints = report.complaints;
+          if (report.total_loss != null) total_loss = report.total_loss;
+        }
         return res.json({
           found: true,
           username: row.username,
@@ -1333,12 +1384,54 @@ app.get('/api/kro/check', async (req, res) => {
           ads_per_week: row.ads_per_week,
           bot_pct: row.bot_pct,
           vip_price: row.vip_price,
-          complaints: row.complaints,
-          total_loss: row.total_loss,
+          complaints,
+          total_loss,
           verdict: row.verdict
         });
       }
     }
+
+    const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
+    const hasPython = (process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath));
+    if (hasPython) {
+      try {
+        const child = spawnSync('python3', [scriptPath, channel], {
+          cwd: join(__dirname, 'kro-worker'),
+          timeout: 60000,
+          encoding: 'utf8',
+          env: { ...process.env }
+        });
+        const stdout = (child.stdout || '').trim();
+        const line = stdout.split('\n').find((l) => l.trim().startsWith('{'));
+        if (line) {
+          const parsed = JSON.parse(line);
+          if (parsed && parsed.found === true && (parsed.risk_score != null || parsed.verdict)) {
+            let complaints = parsed.complaints;
+            let total_loss = parsed.total_loss;
+            const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
+            if (empty(complaints) || empty(total_loss)) {
+              const report = await getComplaintsAndLossForChannel(client, channel);
+              if (report.complaints != null) complaints = report.complaints;
+              if (report.total_loss != null) total_loss = report.total_loss;
+            }
+            return res.json({
+              found: true,
+              username: parsed.username,
+              risk_score: parsed.risk_score,
+              ads_per_week: parsed.ads_per_week,
+              bot_pct: parsed.bot_pct,
+              vip_price: parsed.vip_price,
+              complaints,
+              total_loss,
+              verdict: parsed.verdict
+            });
+          }
+        }
+      } catch (e) {
+        console.error('KRO check_once error:', e.message);
+      }
+    }
+
     if (kroCheckQueueRange && client) {
       try {
         await client.sheets.spreadsheets.values.append({

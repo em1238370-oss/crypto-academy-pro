@@ -568,9 +568,9 @@
                        checkResult.classList.remove('hidden');
                        return;
                    }
-                   checkResult.textContent = 'Загрузка…';
                    checkResult.classList.remove('hidden');
                    if (isExchangerUrl(raw)) {
+                       checkResult.textContent = 'Загрузка…';
                        fetch(base + '/api/kro/check-exchanger?url=' + encodeURIComponent(raw.trim())).then(function(r) { return r.json(); }).then(function(data) {
                            if (!data.found) {
                                checkResult.textContent = (data.message || ('Обменник не найден в базе.'));
@@ -595,9 +595,10 @@
                        checkResult.className = 'kro-check-result';
                        return;
                    }
+                   checkResult.textContent = 'Анализируем канал… может занять до минуты';
                    fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(data) {
                        if (!data.found) {
-                           checkResult.textContent = (data.message || 'Проверяем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
+                           checkResult.textContent = (data.message || 'Анализируем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
                            if (data.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
                            checkResult.className = 'kro-check-result';
                            return;
