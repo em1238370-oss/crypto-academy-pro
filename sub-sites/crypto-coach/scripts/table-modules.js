@@ -5369,7 +5369,7 @@ function shareOptimizerResults() {
         return;
     }
     
-    const shareText = `Check out my strategy optimization results!\n\nStrategy: ${latest.strategyTemplate}\nBest Parameters: X=${latest.xMin}%, Y=${latest.yMin}%\n\nOptimized on Crypto Academy Pro`;
+    const shareText = `Check out my strategy optimization results!\n\nStrategy: ${latest.strategyTemplate}\nBest Parameters: X=${latest.xMin}%, Y=${latest.yMin}%\n\nOptimized on Prover Kriptu`;
     const shareUrl = window.location.href;
     
     if (navigator.share) {

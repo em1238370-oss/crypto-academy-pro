@@ -924,7 +924,7 @@ app.post('/api/payments/stripe/invoice', async (req, res) => {
          price_data: {
            currency: 'usd',
            product_data: {
-             name: description || 'Crypto Academy Pro Subscription',
+             name: description || 'Prover Kriptu Subscription',
              description: `Monthly subscription - $${invoiceAmount.toFixed(2)}`
            },
            unit_amount: Math.round(invoiceAmount * 100), // Stripe uses cents
