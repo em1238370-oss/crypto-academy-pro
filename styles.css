@@ -26,6 +26,12 @@ button:focus-visible {
    --kro-glow-soft: rgba(245, 158, 11, 0.04);
 }
 
+.kro-feature1 {
+   --kro-danger: #ff4444;
+   --kro-protection: #00cc00;
+   --kro-gold: #ffd700;
+}
+
 .kro-step1 {
    min-height: 100vh;
    display: flex;
@@ -320,41 +326,25 @@ button:focus-visible {
 .kro-feature1.kro-reveal-visible .kro-feature1-stat:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.12s; }
 
 /* Блок «Стоп перед подпиской» — появление каскадом вниз (как чай), по референсу DuoView */
-.kro-feature1.kro-reveal .kro-f1-stop-pill,
-.kro-feature1.kro-reveal .kro-f1-stop-heading,
-.kro-feature1.kro-reveal .kro-f1-stop-sub,
-.kro-feature1.kro-reveal .kro-f1-stop-grid,
-.kro-feature1.kro-reveal .kro-f1-card {
+.kro-feature1.kro-reveal .kro-f1-block {
    opacity: 0;
    transform: translateY(14px);
    transition: opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
                transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.kro-feature1.kro-reveal-visible .kro-f1-stop-pill { opacity: 1; transform: translateY(0); transition-delay: 0.05s; }
-.kro-feature1.kro-reveal-visible .kro-f1-stop-heading { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
-.kro-feature1.kro-reveal-visible .kro-f1-stop-sub { opacity: 1; transform: translateY(0); transition-delay: 0.16s; }
-.kro-feature1.kro-reveal-visible .kro-f1-stop-grid { opacity: 1; transform: translateY(0); transition-delay: 0.22s; }
-.kro-feature1.kro-reveal-visible .kro-f1-card:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0.28s; }
-.kro-feature1.kro-reveal-visible .kro-f1-card:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.34s; }
-.kro-feature1.kro-reveal-visible .kro-f1-card:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.4s; }
-.kro-feature1.kro-reveal-visible .kro-f1-card:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.46s; }
+.kro-feature1.kro-reveal-visible .kro-f1-block.kro-f1-shock { opacity: 1; transform: translateY(0); transition-delay: 0.05s; }
+.kro-feature1.kro-reveal-visible .kro-f1-block.kro-f1-loh { opacity: 1; transform: translateY(0); transition-delay: 0.12s; }
+.kro-feature1.kro-reveal-visible .kro-f1-block.kro-f1-math { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
+.kro-feature1.kro-reveal-visible .kro-f1-block.kro-f1-choice-wrap { opacity: 1; transform: translateY(0); transition-delay: 0.28s; }
 
 @media (prefers-reduced-motion: reduce) {
-   .kro-feature1.kro-reveal .kro-f1-stop-pill,
-   .kro-feature1.kro-reveal .kro-f1-stop-heading,
-   .kro-feature1.kro-reveal .kro-f1-stop-sub,
-   .kro-feature1.kro-reveal .kro-f1-stop-grid,
-   .kro-feature1.kro-reveal .kro-f1-card {
+   .kro-feature1.kro-reveal .kro-f1-block {
        opacity: 1;
        transform: none;
        transition: none;
    }
-   .kro-feature1.kro-reveal-visible .kro-f1-stop-pill,
-   .kro-feature1.kro-reveal-visible .kro-f1-stop-heading,
-   .kro-feature1.kro-reveal-visible .kro-f1-stop-sub,
-   .kro-feature1.kro-reveal-visible .kro-f1-stop-grid,
-   .kro-feature1.kro-reveal-visible .kro-f1-card { transition-delay: 0s; }
+   .kro-feature1.kro-reveal-visible .kro-f1-block { transition-delay: 0s; }
 }
 
 .kro-card {
@@ -399,201 +389,248 @@ button:focus-visible {
    padding: 14px 18px;
 }
 
-/* Фишка 1: Стоп перед подпиской — широкая секция в стиле DuoView (2x2 карточки) */
-.kro-f1-stop {
+/* Фишка 1: четыре блока (шок, типы лоха, математика, выбор) */
+.kro-f1-blocks {
    max-width: 1000px;
    margin: 0 auto 48px;
    padding: 0 24px;
    text-align: left;
 }
 
-.kro-f1-stop-pill {
-   display: inline-block;
-   font-size: 12px;
-   font-weight: 600;
-   letter-spacing: 0.06em;
-   color: rgba(255, 255, 255, 0.85);
-   border: 1px solid rgba(245, 158, 11, 0.45);
-   border-radius: 999px;
-   padding: 6px 14px;
-   margin-bottom: 20px;
-}
-
-.kro-f1-stop-heading {
-   font-size: clamp(22px, 3.5vw, 32px);
-   font-weight: 700;
-   color: rgba(255, 255, 255, 0.95);
-   line-height: 1.2;
-   margin-bottom: 12px;
-}
-
-.kro-f1-stop-accent {
-   color: var(--kro-accent);
-}
-
-.kro-f1-stop-sub {
-   font-size: clamp(14px, 1.8vw, 16px);
-   color: rgba(255, 255, 255, 0.7);
-   line-height: 1.5;
-   margin-bottom: 32px;
-   max-width: 720px;
-}
-
-.kro-f1-stop-grid {
-   display: grid;
-   grid-template-columns: repeat(2, 1fr);
-   gap: 24px;
-}
-
-.kro-f1-card {
+/* Блок 1: Шок-цифры */
+.kro-f1-block.kro-f1-shock {
    background: rgba(28, 24, 20, 0.55);
-   border: 1px solid rgba(245, 158, 11, 0.16);
+   border: 1px solid rgba(255, 68, 68, 0.25);
    border-radius: 12px;
    padding: 24px;
-   min-height: 0;
+   margin-bottom: 32px;
 }
 
-/* Иконки карточек: круг, один акцент (как DuoView — чёткие, не «недорисованные») */
-.kro-f1-card-icon {
-   display: block;
-   width: 40px;
-   height: 40px;
-   margin-bottom: 14px;
-   border-radius: 50%;
-   flex-shrink: 0;
-   background: rgba(245, 158, 11, 0.55);
-}
-
-/* Молния — заливка (как на референсе), чёткая */
-.kro-f1-icon-shock {
-   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/%3E%3C/svg%3E") no-repeat center;
-   mask-size: 22px 22px;
-   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/%3E%3C/svg%3E") no-repeat center;
-   -webkit-mask-size: 22px 22px;
-}
-
-/* Вопрос в круге — контур потолще, читаемый */
-.kro-f1-icon-questions {
-   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E") no-repeat center;
-   mask-size: 22px 22px;
-   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E") no-repeat center;
-   -webkit-mask-size: 22px 22px;
-}
-
-/* Галочка в круге — чёткий контур */
-.kro-f1-icon-rules {
-   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z'/%3E%3Cpath d='M9 12l2 2 4-4'/%3E%3C/svg%3E") no-repeat center;
-   mask-size: 22px 22px;
-   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z'/%3E%3Cpath d='M9 12l2 2 4-4'/%3E%3C/svg%3E") no-repeat center;
-   -webkit-mask-size: 22px 22px;
-}
-
-/* Щит — контур потолще */
-.kro-f1-icon-verdict {
-   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3C/svg%3E") no-repeat center;
-   mask-size: 22px 22px;
-   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3C/svg%3E") no-repeat center;
-   -webkit-mask-size: 22px 22px;
-}
-
-.kro-f1-shock-label {
-   font-size: clamp(13px, 1.5vw, 15px);
-   color: rgba(255, 255, 255, 0.75);
-   margin-bottom: 6px;
-}
-
-.kro-f1-shock-value {
-   font-size: clamp(28px, 4vw, 40px);
-   font-weight: 700;
-   color: #dc2626;
-   line-height: 1.1;
-   margin: 0 0 4px;
-}
-
-.kro-f1-shock-caption {
-   font-size: clamp(12px, 1.4vw, 14px);
-   color: rgba(255, 255, 255, 0.65);
-   margin: 0;
-}
-
-.kro-f1-questions-title {
-   font-size: clamp(15px, 1.8vw, 17px);
+.kro-f1-shock-heading {
+   font-size: clamp(11px, 1.4vw, 13px);
    font-weight: 600;
-   color: rgba(255, 255, 255, 0.95);
-   margin-bottom: 12px;
+   letter-spacing: 0.08em;
+   color: var(--kro-gold);
+   text-transform: uppercase;
+   margin: 0 0 8px;
 }
 
-.kro-f1-questions-list {
-   list-style: none;
-   padding: 0;
-   margin: 0;
-}
-
-.kro-f1-questions-list li {
-   font-size: clamp(13px, 1.5vw, 15px);
-   color: rgba(255, 255, 255, 0.88);
-   padding: 5px 0;
-   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.kro-f1-questions-list li:last-child {
-   border-bottom: none;
-}
-
-.kro-f1-rules-title {
-   font-size: clamp(15px, 1.8vw, 17px);
-   font-weight: 600;
-   color: rgba(255, 255, 255, 0.95);
-   margin-bottom: 12px;
-}
-
-.kro-f1-rules-list {
-   list-style: none;
-   padding: 0;
-   margin: 0;
-}
-
-.kro-f1-rules-list li {
-   display: flex;
-   align-items: center;
-   gap: 10px;
-   font-size: clamp(13px, 1.5vw, 15px);
-   color: rgba(255, 255, 255, 0.88);
-   padding: 6px 0;
-}
-
-.kro-f1-rules-icon {
-   width: 18px;
-   height: 18px;
-   flex-shrink: 0;
-   background: #16a34a;
-   border-radius: 50%;
-   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") no-repeat center;
-   mask-size: 10px 10px;
-   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E") no-repeat center;
-   -webkit-mask-size: 10px 10px;
-}
-
-.kro-f1-verdict {
-   border-color: rgba(220, 38, 38, 0.35);
-   background: rgba(220, 38, 38, 0.06);
-}
-
-.kro-f1-verdict-text {
+.kro-f1-shock-text {
    font-size: clamp(14px, 1.7vw, 16px);
-   color: rgba(255, 255, 255, 0.95);
-   margin: 0 0 6px;
+   color: rgba(255, 255, 255, 0.85);
+   margin: 0 0 12px;
 }
 
-.kro-f1-verdict-text strong {
-   color: #dc2626;
-}
-
-.kro-f1-verdict-cta {
-   font-size: clamp(13px, 1.5vw, 15px);
-   font-weight: 600;
-   color: rgba(255, 255, 255, 0.9);
+.kro-f1-shock-total {
+   font-size: clamp(32px, 5vw, 48px);
+   font-weight: 700;
+   color: var(--kro-danger);
+   line-height: 1.1;
    margin: 0;
+}
+
+/* Блок 2: Твой тип лоха */
+.kro-f1-block.kro-f1-loh {
+   margin-bottom: 32px;
+}
+
+.kro-f1-loh-title {
+   font-size: clamp(18px, 2.5vw, 24px);
+   font-weight: 700;
+   color: rgba(255, 255, 255, 0.95);
+   margin-bottom: 20px;
+   text-transform: uppercase;
+   letter-spacing: 0.02em;
+}
+
+.kro-f1-loh-types {
+   display: grid;
+   grid-template-columns: repeat(3, 1fr);
+   gap: 20px;
+}
+
+.kro-f1-loh-card {
+   background: rgba(28, 24, 20, 0.55);
+   border: 1px solid rgba(255, 215, 0, 0.2);
+   border-radius: 12px;
+   padding: 20px;
+   text-align: left;
+}
+
+.kro-f1-loh-avatar {
+   display: block;
+   font-size: 32px;
+   line-height: 1;
+   margin-bottom: 12px;
+}
+
+.kro-f1-loh-name {
+   font-size: clamp(14px, 1.6vw, 16px);
+   font-weight: 700;
+   color: var(--kro-gold);
+   text-transform: uppercase;
+   letter-spacing: 0.03em;
+   margin: 0 0 8px;
+}
+
+.kro-f1-loh-quote {
+   font-size: clamp(13px, 1.5vw, 15px);
+   color: rgba(255, 255, 255, 0.9);
+   font-style: italic;
+   margin: 0 0 8px;
+}
+
+.kro-f1-loh-result {
+   font-size: clamp(12px, 1.4vw, 14px);
+   color: var(--kro-danger);
+   margin: 0;
+}
+
+/* Блок 3: Реальная математика — слайдер */
+.kro-f1-block.kro-f1-math {
+   margin-bottom: 32px;
+}
+
+.kro-f1-math-title {
+   font-size: clamp(18px, 2.5vw, 24px);
+   font-weight: 700;
+   color: rgba(255, 255, 255, 0.95);
+   margin-bottom: 20px;
+   text-transform: uppercase;
+   letter-spacing: 0.02em;
+}
+
+.kro-f1-math-slider-wrap {
+   position: relative;
+}
+
+.kro-f1-math-slider {
+   overflow: hidden;
+   border-radius: 12px;
+   background: rgba(28, 24, 20, 0.55);
+   border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.kro-f1-math-slide {
+   display: none;
+   padding: 24px;
+   min-height: 100px;
+}
+
+.kro-f1-math-slide.is-active {
+   display: block;
+}
+
+.kro-f1-math-slide-head {
+   font-size: clamp(15px, 1.8vw, 18px);
+   font-weight: 700;
+   color: var(--kro-gold);
+   margin: 0 0 12px;
+}
+
+.kro-f1-math-slide-body {
+   font-size: clamp(14px, 1.6vw, 16px);
+   color: rgba(255, 255, 255, 0.9);
+   line-height: 1.5;
+   margin: 0 0 8px;
+}
+
+.kro-f1-math-slide-body:last-child {
+   margin-bottom: 0;
+}
+
+.kro-f1-math-dots {
+   display: flex;
+   justify-content: center;
+   gap: 12px;
+   margin-top: 16px;
+}
+
+.kro-f1-math-dot {
+   width: 10px;
+   height: 10px;
+   border-radius: 50%;
+   border: 2px solid rgba(255, 255, 255, 0.4);
+   background: transparent;
+   cursor: pointer;
+   padding: 0;
+   transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.kro-f1-math-dot:hover {
+   border-color: var(--kro-gold);
+   background: rgba(255, 215, 0, 0.3);
+}
+
+.kro-f1-math-dot.is-active {
+   background: var(--kro-gold);
+   border-color: var(--kro-gold);
+}
+
+/* Блок 4: Твой выбор — две кнопки 50/50 */
+.kro-f1-block.kro-f1-choice-wrap {
+   margin-bottom: 0;
+}
+
+.kro-f1-choice {
+   display: grid;
+   grid-template-columns: 1fr 1fr;
+   gap: 16px;
+   margin-bottom: 12px;
+}
+
+.kro-f1-choice-btn {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+   min-height: 80px;
+   padding: 20px 16px;
+   border-radius: 12px;
+   text-decoration: none;
+   text-align: center;
+   font-weight: 700;
+   transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.kro-f1-choice-btn:hover {
+   opacity: 0.95;
+   transform: scale(1.02);
+}
+
+.kro-f1-choice-red {
+   background: var(--kro-danger);
+   border: 2px solid var(--kro-danger);
+   color: #fff;
+}
+
+.kro-f1-choice-green {
+   background: var(--kro-protection);
+   border: 2px solid var(--kro-protection);
+   color: #0c0f14;
+}
+
+.kro-f1-choice-main {
+   font-size: clamp(14px, 1.8vw, 18px);
+   display: block;
+   margin-bottom: 4px;
+}
+
+.kro-f1-choice-sub {
+   font-size: clamp(12px, 1.4vw, 14px);
+   opacity: 0.9;
+}
+
+.kro-f1-choice-green .kro-f1-choice-sub {
+   opacity: 0.85;
+}
+
+.kro-f1-choice-disclaimer {
+   font-size: 12px;
+   color: rgba(255, 255, 255, 0.5);
+   font-style: italic;
+   margin: 0;
+   text-align: center;
 }
 
 .kro-feature1-table-wrap {
@@ -769,17 +806,21 @@ button:focus-visible {
       width: 100%;
       max-width: 100%;
    }
-   .kro-f1-stop {
+   .kro-f1-blocks {
       padding-left: 20px;
       padding-right: 20px;
       max-width: 100%;
       box-sizing: border-box;
    }
-   .kro-f1-stop-grid {
+   .kro-f1-loh-types {
       grid-template-columns: 1fr;
-      gap: 20px;
+      gap: 16px;
    }
-   .kro-f1-card {
+   .kro-f1-choice {
+      grid-template-columns: 1fr;
+   }
+   .kro-f1-block.kro-f1-shock,
+   .kro-f1-loh-card {
       padding: 20px;
    }
    .kro-feature1 {

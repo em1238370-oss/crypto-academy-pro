@@ -96,40 +96,76 @@
                    <span class="kro-feature1-stat-label">Курсы фейк-продуктов</span>
                </div>
            </div>
-           <div class="kro-f1-stop">
-               <p class="kro-f1-stop-pill">Реальность</p>
-               <h2 class="kro-f1-stop-heading">Почему нужна <span class="kro-f1-stop-accent">защита до подписки</span></h2>
-               <p class="kro-f1-stop-sub">Сигналы с «гарантией» сливают депозит. Три вопроса и три правила — прежде чем платить.</p>
-               <div class="kro-f1-stop-grid">
-                   <div class="kro-f1-card kro-f1-shock">
-                       <span class="kro-f1-card-icon kro-f1-icon-shock" aria-hidden="true"></span>
-                       <p class="kro-f1-shock-label">Сколько реально теряют?</p>
-                       <p class="kro-f1-shock-value">−1,24 млн₽</p>
-                       <p class="kro-f1-shock-caption">73 сигнала с «гарантией» за 24ч</p>
+           <div class="kro-f1-blocks">
+               <!-- Блок 1: Шок-цифры -->
+               <div class="kro-f1-block kro-f1-shock">
+                   <p class="kro-f1-shock-heading">ЗА ПОСЛЕДНИЕ 24 ЧАСА:</p>
+                   <p class="kro-f1-shock-text">73 человека купили «гарантию прибыли»</p>
+                   <p class="kro-f1-shock-total">ИТОГО: -1 240 000₽</p>
+               </div>
+               <!-- Блок 2: Твой тип лоха -->
+               <div class="kro-f1-block kro-f1-loh">
+                   <h2 class="kro-f1-loh-title">ВОТ КТО ТЫ ПРЯМО СЕЙЧАС:</h2>
+                   <div class="kro-f1-loh-types">
+                       <div class="kro-f1-loh-card">
+                           <span class="kro-f1-loh-avatar" aria-hidden="true">🐑</span>
+                           <h3 class="kro-f1-loh-name">ФОМО‑ОВЦА</h3>
+                           <p class="kro-f1-loh-quote">«Срочно TON x10! Все уже в деле!»</p>
+                           <p class="kro-f1-loh-result">→ сливает 80% депозита за 3 дня</p>
+                       </div>
+                       <div class="kro-f1-loh-card">
+                           <span class="kro-f1-loh-avatar" aria-hidden="true">🎰</span>
+                           <h3 class="kro-f1-loh-name">ЛОТОРЕЙЩИК</h3>
+                           <p class="kro-f1-loh-quote">«Плечо х50, риск 30% банка»</p>
+                           <p class="kro-f1-loh-result">→ слив за 2 ошибки подряд</p>
+                       </div>
+                       <div class="kro-f1-loh-card">
+                           <span class="kro-f1-loh-avatar" aria-hidden="true">📉</span>
+                           <h3 class="kro-f1-loh-name">СЛЕПОЙ ВЕРИЛЬЩИК</h3>
+                           <p class="kro-f1-loh-quote">«У них точность 92%! Беру VIP!»</p>
+                           <p class="kro-f1-loh-result">→ платит 5к₽/мес x 6 месяцев = 30к₽</p>
+                       </div>
                    </div>
-                   <div class="kro-f1-card kro-f1-questions">
-                       <span class="kro-f1-card-icon kro-f1-icon-questions" aria-hidden="true"></span>
-                       <h3 class="kro-f1-questions-title">Перед подпиской спроси себя</h3>
-                       <ul class="kro-f1-questions-list">
-                           <li>Ты знаешь свой риск %?</li>
-                           <li>Сколько минусов подряд выдержишь?</li>
-                           <li>Когда стоп на месяц?</li>
-                       </ul>
+               </div>
+               <!-- Блок 3: Реальная математика одного скрина -->
+               <div class="kro-f1-block kro-f1-math">
+                   <h2 class="kro-f1-math-title">ВОТ ЧТО ТЫ БЫ УВИДЕЛ НА СВОЁМ ДЕПОЗИТЕ:</h2>
+                   <div class="kro-f1-math-slider-wrap">
+                       <div class="kro-f1-math-slider" id="kro-f1-math-slider">
+                           <div class="kro-f1-math-slide" data-slide="0">
+                               <p class="kro-f1-math-slide-head">СКРИН 1: $10 → $25 (+150%)</p>
+                               <p class="kro-f1-math-slide-body">ТВОЙ $1000: +$1500 (но риск 80% → 1 ошибка = -800$)</p>
+                           </div>
+                           <div class="kro-f1-math-slide" data-slide="1">
+                               <p class="kro-f1-math-slide-head">СКРИН 2: $7 → $17 (+140%)</p>
+                               <p class="kro-f1-math-slide-body">ТВОЙ $1000: +$1400 (но 5 минусов = -85% банка)</p>
+                           </div>
+                           <div class="kro-f1-math-slide" data-slide="2">
+                               <p class="kro-f1-math-slide-head">СКРИН 3: «ТОЧНОСТЬ 92%»</p>
+                               <p class="kro-f1-math-slide-body">ТВОЙ $1000: 92 выигрыша х $20 = +1840$</p>
+                               <p class="kro-f1-math-slide-body">МИНУС 8 сливов по 20% = -160$ → итог +1680$</p>
+                           </div>
+                       </div>
+                       <div class="kro-f1-math-dots" aria-label="Переключение слайдов">
+                           <button type="button" class="kro-f1-math-dot is-active" data-slide="0" aria-label="Скрин 1"></button>
+                           <button type="button" class="kro-f1-math-dot" data-slide="1" aria-label="Скрин 2"></button>
+                           <button type="button" class="kro-f1-math-dot" data-slide="2" aria-label="Скрин 3"></button>
+                       </div>
                    </div>
-                   <div class="kro-f1-card kro-f1-rules">
-                       <span class="kro-f1-card-icon kro-f1-icon-rules" aria-hidden="true"></span>
-                       <h3 class="kro-f1-rules-title">Три правила</h3>
-                       <ul class="kro-f1-rules-list">
-                           <li><span class="kro-f1-rules-icon" aria-hidden="true"></span>1–2% риск на сделку</li>
-                           <li><span class="kro-f1-rules-icon" aria-hidden="true"></span>5 минусов подряд = стоп</li>
-                           <li><span class="kro-f1-rules-icon" aria-hidden="true"></span>20% просадка = пауза</li>
-                       </ul>
+               </div>
+               <!-- Блок 4: Твой выбор прямо сейчас -->
+               <div class="kro-f1-block kro-f1-choice-wrap">
+                   <div class="kro-f1-choice">
+                       <a href="#checkers" class="kro-f1-choice-btn kro-f1-choice-red">
+                           <span class="kro-f1-choice-main">ЛАДНО, ПОЙДУ В СИГНАЛЫ</span>
+                           <span class="kro-f1-choice-sub">(95% слив через месяц)</span>
+                       </a>
+                       <a href="#payment" class="kro-f1-choice-btn kro-f1-choice-green">
+                           <span class="kro-f1-choice-main">СНАЧАЛА ЗАЩИТА</span>
+                           <span class="kro-f1-choice-sub">(5 разборов + риск‑план)</span>
+                       </a>
                    </div>
-                   <div class="kro-f1-card kro-f1-verdict">
-                       <span class="kro-f1-card-icon kro-f1-icon-verdict" aria-hidden="true"></span>
-                       <p class="kro-f1-verdict-text">Без этих правил = <strong>95% слив</strong></p>
-                       <p class="kro-f1-verdict-cta">Нужна защита</p>
-                   </div>
+                   <p class="kro-f1-choice-disclaimer">*я не продаю сигналы. я показываю, как их не боятся*</p>
                </div>
            </div>
            <h2 class="kro-feature1-heading" id="kro-feature1-heading">Топ-3 сегодня</h2>
@@ -164,6 +200,7 @@
        </div>
    </div>
    
+   <span id="payment" tabindex="-1" aria-hidden="true"></span>
    <div class="payment-backdrop hidden" id="paymentBackdrop"></div>
    <div class="payment-modal hidden" id="paymentModal" role="dialog" aria-modal="true" aria-labelledby="paymentModalTitle">
        <button class="payment-close" id="paymentCloseButton" aria-label="Close window">&times;</button>
@@ -505,6 +542,27 @@
            }
            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initReveal);
            else initReveal();
+       })();
+   </script>
+   <script>
+       (function() {
+           function initMathSlider() {
+               var wrap = document.querySelector('.kro-f1-math-slider-wrap');
+               if (!wrap) return;
+               var slides = wrap.querySelectorAll('.kro-f1-math-slide');
+               var dots = wrap.querySelectorAll('.kro-f1-math-dot');
+               function goTo(i) {
+                   i = Math.max(0, Math.min(i, slides.length - 1));
+                   slides.forEach(function(s, j) { s.classList.toggle('is-active', j === i); });
+                   dots.forEach(function(d, j) { d.classList.toggle('is-active', j === i); });
+               }
+               dots.forEach(function(dot, i) {
+                   dot.addEventListener('click', function() { goTo(i); });
+               });
+               goTo(0);
+           }
+           if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initMathSlider);
+           else initMathSlider();
        })();
    </script>
 </body>
