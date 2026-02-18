@@ -30,6 +30,13 @@ button:focus-visible {
    --kro-danger: #ff4444;
    --kro-protection: #00cc00;
    --kro-gold: #ffd700;
+   /* Приглушённые варианты в стиле DuoView: точечные акценты, без «дешёвой» яркости */
+   --kro-danger-soft: rgba(255, 68, 68, 0.75);
+   --kro-protection-soft: rgba(0, 204, 0, 0.6);
+   --kro-gold-soft: rgba(255, 215, 0, 0.72);
+   --kro-card-bg: rgba(22, 22, 26, 0.5);
+   --kro-card-border: rgba(255, 255, 255, 0.07);
+   --kro-card-border-accent: rgba(255, 215, 0, 0.12);
 }
 
 .kro-step1 {
@@ -260,11 +267,11 @@ button:focus-visible {
 .kro-feature1-date {
    font-size: clamp(12px, 2vw, 14px);
    font-weight: 600;
-   color: var(--kro-accent);
+   color: var(--kro-gold-soft);
    letter-spacing: 0.08em;
    text-transform: uppercase;
    display: inline-block;
-   border: 1px solid rgba(245, 158, 11, 0.5);
+   border: 1px solid rgba(255, 215, 0, 0.28);
    border-radius: 999px;
    padding: 6px 14px;
    margin-bottom: 24px;
@@ -279,7 +286,7 @@ button:focus-visible {
    display: block;
    font-size: clamp(28px, 6vw, 44px);
    font-weight: 600;
-   color: var(--kro-accent);
+   color: var(--kro-gold-soft);
    line-height: 1.05;
    font-variant-numeric: tabular-nums;
 }
@@ -287,14 +294,14 @@ button:focus-visible {
 .kro-feature1-hero-label {
    display: block;
    font-size: clamp(12px, 2vw, 15px);
-   color: rgba(255, 255, 255, 0.75);
+   color: rgba(255, 255, 255, 0.68);
    margin-top: 6px;
 }
 
 .kro-feature1-heading {
    font-size: clamp(18px, 3vw, 22px);
    font-weight: 600;
-   color: rgba(255, 255, 255, 0.95);
+   color: rgba(255, 255, 255, 0.88);
    max-width: 640px;
    margin: 0 auto 24px;
 }
@@ -356,23 +363,23 @@ button:focus-visible {
 }
 
 .kro-feature1 .kro-card {
-   border-color: rgba(245, 158, 11, 0.2);
-   background: rgba(245, 158, 11, 0.04);
-   box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2);
+   border-color: rgba(255, 255, 255, 0.08);
+   background: var(--kro-card-bg);
+   box-shadow: none;
 }
 
 .kro-feature1-stat.kro-card:hover,
 .kro-feature1-top3 .kro-card:hover {
-   border-color: rgba(245, 158, 11, 0.35);
-   background: rgba(245, 158, 11, 0.08);
-   box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.35), 0 2px 12px rgba(0, 0, 0, 0.15);
+   border-color: rgba(255, 215, 0, 0.18);
+   background: rgba(28, 26, 24, 0.6);
+   box-shadow: none;
    transform: scale(1.01);
 }
 
 .kro-feature1-stat-value {
    font-size: clamp(16px, 2.2vw, 22px);
    font-weight: 600;
-   color: rgba(255, 255, 255, 0.95);
+   color: rgba(255, 255, 255, 0.88);
    line-height: 1.2;
    white-space: nowrap;
    overflow: hidden;
@@ -382,7 +389,7 @@ button:focus-visible {
 
 .kro-feature1-stat-label {
    font-size: clamp(12px, 1.4vw, 13px);
-   color: rgba(255, 255, 255, 0.75);
+   color: rgba(255, 255, 255, 0.62);
 }
 
 .kro-feature1-stat.kro-card {
@@ -397,10 +404,10 @@ button:focus-visible {
    text-align: left;
 }
 
-/* Блок 1: Шок-цифры */
+/* Блок 1: Шок-цифры — в стиле DuoView: сдержанно, акцент точечно */
 .kro-f1-block.kro-f1-shock {
-   background: rgba(28, 24, 20, 0.55);
-   border: 1px solid rgba(255, 68, 68, 0.25);
+   background: var(--kro-card-bg);
+   border: 1px solid var(--kro-card-border);
    border-radius: 12px;
    padding: 24px;
    margin-bottom: 32px;
@@ -410,21 +417,21 @@ button:focus-visible {
    font-size: clamp(11px, 1.4vw, 13px);
    font-weight: 600;
    letter-spacing: 0.08em;
-   color: var(--kro-gold);
+   color: var(--kro-gold-soft);
    text-transform: uppercase;
    margin: 0 0 8px;
 }
 
 .kro-f1-shock-text {
    font-size: clamp(14px, 1.7vw, 16px);
-   color: rgba(255, 255, 255, 0.85);
+   color: rgba(255, 255, 255, 0.72);
    margin: 0 0 12px;
 }
 
 .kro-f1-shock-total {
    font-size: clamp(32px, 5vw, 48px);
    font-weight: 700;
-   color: var(--kro-danger);
+   color: var(--kro-danger-soft);
    line-height: 1.1;
    margin: 0;
 }
@@ -437,7 +444,7 @@ button:focus-visible {
 .kro-f1-loh-title {
    font-size: clamp(18px, 2.5vw, 24px);
    font-weight: 700;
-   color: rgba(255, 255, 255, 0.95);
+   color: rgba(255, 255, 255, 0.9);
    margin-bottom: 20px;
    text-transform: uppercase;
    letter-spacing: 0.02em;
@@ -450,8 +457,8 @@ button:focus-visible {
 }
 
 .kro-f1-loh-card {
-   background: rgba(28, 24, 20, 0.55);
-   border: 1px solid rgba(255, 215, 0, 0.2);
+   background: var(--kro-card-bg);
+   border: 1px solid var(--kro-card-border-accent);
    border-radius: 12px;
    padding: 20px;
    text-align: left;
@@ -459,15 +466,16 @@ button:focus-visible {
 
 .kro-f1-loh-avatar {
    display: block;
-   font-size: 32px;
+   font-size: 28px;
    line-height: 1;
    margin-bottom: 12px;
+   opacity: 0.9;
 }
 
 .kro-f1-loh-name {
    font-size: clamp(14px, 1.6vw, 16px);
    font-weight: 700;
-   color: var(--kro-gold);
+   color: var(--kro-gold-soft);
    text-transform: uppercase;
    letter-spacing: 0.03em;
    margin: 0 0 8px;
@@ -475,14 +483,14 @@ button:focus-visible {
 
 .kro-f1-loh-quote {
    font-size: clamp(13px, 1.5vw, 15px);
-   color: rgba(255, 255, 255, 0.9);
+   color: rgba(255, 255, 255, 0.78);
    font-style: italic;
    margin: 0 0 8px;
 }
 
 .kro-f1-loh-result {
    font-size: clamp(12px, 1.4vw, 14px);
-   color: var(--kro-danger);
+   color: var(--kro-danger-soft);
    margin: 0;
 }
 
@@ -494,7 +502,7 @@ button:focus-visible {
 .kro-f1-math-title {
    font-size: clamp(18px, 2.5vw, 24px);
    font-weight: 700;
-   color: rgba(255, 255, 255, 0.95);
+   color: rgba(255, 255, 255, 0.9);
    margin-bottom: 20px;
    text-transform: uppercase;
    letter-spacing: 0.02em;
@@ -507,8 +515,8 @@ button:focus-visible {
 .kro-f1-math-slider {
    overflow: hidden;
    border-radius: 12px;
-   background: rgba(28, 24, 20, 0.55);
-   border: 1px solid rgba(255, 215, 0, 0.2);
+   background: var(--kro-card-bg);
+   border: 1px solid var(--kro-card-border-accent);
 }
 
 .kro-f1-math-slide {
@@ -524,13 +532,13 @@ button:focus-visible {
 .kro-f1-math-slide-head {
    font-size: clamp(15px, 1.8vw, 18px);
    font-weight: 700;
-   color: var(--kro-gold);
+   color: var(--kro-gold-soft);
    margin: 0 0 12px;
 }
 
 .kro-f1-math-slide-body {
    font-size: clamp(14px, 1.6vw, 16px);
-   color: rgba(255, 255, 255, 0.9);
+   color: rgba(255, 255, 255, 0.78);
    line-height: 1.5;
    margin: 0 0 8px;
 }
@@ -550,7 +558,7 @@ button:focus-visible {
    width: 10px;
    height: 10px;
    border-radius: 50%;
-   border: 2px solid rgba(255, 255, 255, 0.4);
+   border: 2px solid rgba(255, 255, 255, 0.25);
    background: transparent;
    cursor: pointer;
    padding: 0;
@@ -558,13 +566,13 @@ button:focus-visible {
 }
 
 .kro-f1-math-dot:hover {
-   border-color: var(--kro-gold);
-   background: rgba(255, 215, 0, 0.3);
+   border-color: var(--kro-gold-soft);
+   background: rgba(255, 215, 0, 0.15);
 }
 
 .kro-f1-math-dot.is-active {
-   background: var(--kro-gold);
-   border-color: var(--kro-gold);
+   background: rgba(255, 215, 0, 0.5);
+   border-color: var(--kro-gold-soft);
 }
 
 /* Блок 4: Твой выбор — две кнопки 50/50 */
@@ -590,24 +598,33 @@ button:focus-visible {
    text-decoration: none;
    text-align: center;
    font-weight: 700;
-   transition: opacity 0.2s ease, transform 0.15s ease;
+   transition: opacity 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .kro-f1-choice-btn:hover {
-   opacity: 0.95;
-   transform: scale(1.02);
+   opacity: 1;
 }
 
 .kro-f1-choice-red {
-   background: var(--kro-danger);
-   border: 2px solid var(--kro-danger);
-   color: #fff;
+   background: rgba(255, 68, 68, 0.18);
+   border: 1px solid rgba(255, 68, 68, 0.45);
+   color: rgba(255, 255, 255, 0.95);
+}
+
+.kro-f1-choice-red:hover {
+   background: rgba(255, 68, 68, 0.28);
+   border-color: rgba(255, 68, 68, 0.55);
 }
 
 .kro-f1-choice-green {
-   background: var(--kro-protection);
-   border: 2px solid var(--kro-protection);
-   color: #0c0f14;
+   background: rgba(0, 204, 0, 0.15);
+   border: 1px solid rgba(0, 204, 0, 0.4);
+   color: rgba(255, 255, 255, 0.95);
+}
+
+.kro-f1-choice-green:hover {
+   background: rgba(0, 204, 0, 0.25);
+   border-color: rgba(0, 204, 0, 0.55);
 }
 
 .kro-f1-choice-main {
@@ -618,7 +635,7 @@ button:focus-visible {
 
 .kro-f1-choice-sub {
    font-size: clamp(12px, 1.4vw, 14px);
-   opacity: 0.9;
+   opacity: 0.88;
 }
 
 .kro-f1-choice-green .kro-f1-choice-sub {
@@ -627,7 +644,7 @@ button:focus-visible {
 
 .kro-f1-choice-disclaimer {
    font-size: 12px;
-   color: rgba(255, 255, 255, 0.5);
+   color: rgba(255, 255, 255, 0.42);
    font-style: italic;
    margin: 0;
    text-align: center;
