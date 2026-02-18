@@ -599,7 +599,7 @@
                    fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(data) {
                        if (!data.found) {
                            checkResult.textContent = (data.message || 'Анализируем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
-                           if (data.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
+                           if (data.pending && !data.error_detail) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
                            checkResult.className = 'kro-check-result';
                            return;
                        }

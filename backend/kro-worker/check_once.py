@@ -40,6 +40,17 @@ async def get_entity(client, channel_id):
     channel_id = (channel_id or '').strip()
     if not channel_id:
         return None
+    # Для инвайт-ссылки t.me/+hash сначала входим в чат, иначе get_entity часто не находит
+    if channel_id.startswith('t.me/+'):
+        hash_part = channel_id.replace('t.me/+', '').strip()
+        if hash_part:
+            try:
+                res = await client(ImportChatInviteRequest(hash_part))
+                if res.chats:
+                    return res.chats[0]
+            except Exception as e:
+                raise RuntimeError(f'Не удалось войти по инвайт-ссылке: {e}') from e
+        return None
     try:
         if channel_id.startswith('t.me/'):
             link = 'https://t.me/' + channel_id.replace('t.me/', '', 1)

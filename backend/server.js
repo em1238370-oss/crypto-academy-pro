@@ -1393,6 +1393,7 @@ app.get('/api/kro/check', async (req, res) => {
 
     const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
     const hasPython = (process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath));
+    let checkOnceError = null;
     if (hasPython) {
       try {
         const child = spawnSync('python3', [scriptPath, channel], {
@@ -1402,34 +1403,49 @@ app.get('/api/kro/check', async (req, res) => {
           env: { ...process.env }
         });
         const stdout = (child.stdout || '').trim();
+        const stderr = (child.stderr || '').trim();
         const line = stdout.split('\n').find((l) => l.trim().startsWith('{'));
         if (line) {
-          const parsed = JSON.parse(line);
-          if (parsed && parsed.found === true && (parsed.risk_score != null || parsed.verdict)) {
-            let complaints = parsed.complaints;
-            let total_loss = parsed.total_loss;
-            const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
-            if (empty(complaints) || empty(total_loss)) {
-              const report = await getComplaintsAndLossForChannel(client, channel);
-              if (report.complaints != null) complaints = report.complaints;
-              if (report.total_loss != null) total_loss = report.total_loss;
+          try {
+            const parsed = JSON.parse(line);
+            if (parsed && parsed.found === true && (parsed.risk_score != null || parsed.verdict)) {
+              let complaints = parsed.complaints;
+              let total_loss = parsed.total_loss;
+              const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
+              if (empty(complaints) || empty(total_loss)) {
+                const report = await getComplaintsAndLossForChannel(client, channel);
+                if (report.complaints != null) complaints = report.complaints;
+                if (report.total_loss != null) total_loss = report.total_loss;
+              }
+              return res.json({
+                found: true,
+                username: parsed.username,
+                risk_score: parsed.risk_score,
+                ads_per_week: parsed.ads_per_week,
+                bot_pct: parsed.bot_pct,
+                vip_price: parsed.vip_price,
+                complaints,
+                total_loss,
+                verdict: parsed.verdict
+              });
             }
-            return res.json({
-              found: true,
-              username: parsed.username,
-              risk_score: parsed.risk_score,
-              ads_per_week: parsed.ads_per_week,
-              bot_pct: parsed.bot_pct,
-              vip_price: parsed.vip_price,
-              complaints,
-              total_loss,
-              verdict: parsed.verdict
-            });
+            if (parsed && parsed.found === false && parsed.error) {
+              checkOnceError = parsed.error;
+            }
+          } catch (parseErr) {
+            console.error('KRO check_once parse error:', parseErr.message);
+            checkOnceError = stderr || 'Ошибка ответа скрипта';
           }
+        } else {
+          checkOnceError = stderr || (child.status !== 0 ? 'Скрипт завершился с ошибкой' : null);
         }
+        if (stderr) console.error('KRO check_once stderr:', stderr);
       } catch (e) {
         console.error('KRO check_once error:', e.message);
+        checkOnceError = e.message || 'Запуск проверки не удался';
       }
+    } else {
+      checkOnceError = 'На сервере не настроены TELEGRAM_API_ID/Telethon — живая проверка недоступна.';
     }
 
     if (kroCheckQueueRange && client) {
@@ -1445,11 +1461,15 @@ app.get('/api/kro/check', async (req, res) => {
         console.error('KRO check queue append error:', e);
       }
     }
+    const finalMessage = checkOnceError
+      ? `Не удалось проверить канал: ${checkOnceError}${kroCheckQueueRange ? ' Канал добавлен в очередь — попробуйте нажать «Проверить» через 1–2 минуты.' : ''}`
+      : checkingMessage;
     return res.json({
       found: false,
-      pending: true,
+      pending: !!kroCheckQueueRange,
       channel,
-      message: checkingMessage
+      message: finalMessage,
+      error_detail: checkOnceError || undefined
     });
   } catch (e) {
     console.error('KRO check error:', e);
