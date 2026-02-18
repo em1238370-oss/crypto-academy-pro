@@ -530,8 +530,32 @@ button:focus-visible {
       grid-template-columns: 1fr;
       gap: 24px;
    }
+   .kro-feature1-stat.kro-card {
+      width: 100%;
+      max-width: 100%;
+   }
    .kro-feature1 {
       padding: 64px 20px 64px;
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
+   }
+   .kro-feature1-top3 li {
+      overflow: hidden;
+      min-width: 0;
+   }
+   .kro-feature1-top3 .kro-top3-channel {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+   }
+   .kro-feature1-report {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+   }
+   .kro-feature1-report .kro-report-label input {
+      width: 100%;
+      box-sizing: border-box;
    }
 }
 
@@ -568,6 +592,48 @@ button:focus-visible {
    display: none !important;
    visibility: hidden !important;
    pointer-events: none !important;
+}
+
+/* Мобильная главная: без горизонтального скролла и hero */
+@media (max-width: 768px) {
+   .kro-main {
+      overflow-x: hidden;
+      max-width: 100%;
+   }
+   .kro-main .page,
+   .kro-main .content {
+      overflow-x: hidden;
+      max-width: 100%;
+      width: 100%;
+   }
+   .kro-step1 {
+      padding: 56px 20px 56px;
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
+   }
+   .kro-step1-inner {
+      padding: 0 16px;
+      min-width: 0;
+   }
+   .kro-step1-title {
+      overflow-wrap: break-word;
+      word-break: break-word;
+   }
+   .kro-step1-cta {
+      max-width: 100%;
+      width: 100%;
+   }
+}
+
+@media (max-width: 480px) {
+   .kro-step1-tags {
+      gap: 8px;
+   }
+   .kro-feature1 {
+      padding: 48px 16px 48px;
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+   }
 }
 
 /* Apple-style: минималистичная верхняя навигация */
