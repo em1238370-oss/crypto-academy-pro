@@ -768,6 +768,41 @@ button:focus-visible {
    white-space: nowrap;
 }
 
+.kro-feature1-check {
+   max-width: 640px;
+   margin: 0 auto 32px;
+   text-align: left;
+}
+
+.kro-feature1-check-intro {
+   font-size: clamp(14px, 2vw, 16px);
+   color: rgba(255, 255, 255, 0.85);
+   margin-bottom: 12px;
+}
+
+.kro-feature1-check-row {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: flex-end;
+   gap: 12px;
+}
+
+.kro-feature1-check-row .kro-report-label {
+   flex: 1;
+   min-width: 160px;
+}
+
+.kro-feature1-check-row .kro-report-submit {
+   margin-top: 0;
+}
+
+.kro-check-result {
+   margin-top: 12px;
+   font-size: 14px;
+   color: rgba(255, 255, 255, 0.85);
+   line-height: 1.45;
+}
+
 .kro-feature1-report {
    max-width: 640px;
    margin: 0 auto;
@@ -875,6 +910,15 @@ button:focus-visible {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+   }
+   .kro-feature1-check {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+   }
+   .kro-feature1-check-row .kro-report-label input {
+      width: 100%;
+      box-sizing: border-box;
    }
    .kro-feature1-report {
       width: 100%;

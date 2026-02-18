@@ -1199,6 +1199,7 @@ if (newsApiKey || theNewsApiKey) {
 const kroSheetId = process.env.KRO_SHEET_ID;
 const kroCredentialsJson = process.env.KRO_GOOGLE_CREDENTIALS_JSON;
 const kroCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+const kroScamBaseRange = process.env.KRO_SCAM_BASE_RANGE || '';
 
 function getTodayMSK() {
   const d = new Date();
@@ -1266,6 +1267,71 @@ function isRowToday(dateVal, today) {
   const s = dateVal.replace(/\s/g, '');
   return s === today.dateKey || s === today.dateShort || s.startsWith(today.dateShort + '.') || s.endsWith(today.dateShort);
 }
+
+function parseScamBaseRow(row) {
+  const username = (row[0] || '').toString().trim();
+  const riskScoreRaw = (row[1] ?? '').toString().replace(/\s/g, '');
+  const risk_score = parseInt(riskScoreRaw, 10);
+  const adsPerWeekRaw = (row[2] ?? '').toString().replace(/\s/g, '');
+  const ads_per_week = parseInt(adsPerWeekRaw, 10);
+  const bot_pct = (row[3] ?? '').toString().trim();
+  const vip_price = (row[4] ?? '').toString().trim();
+  const complaintsRaw = (row[5] ?? '').toString().replace(/\s/g, '');
+  const complaints = parseInt(complaintsRaw, 10);
+  const total_loss = (row[6] ?? '').toString().trim();
+  const verdict = (row[7] ?? '').toString().trim();
+  return { username, risk_score: Number.isFinite(risk_score) ? risk_score : null, ads_per_week: Number.isFinite(ads_per_week) ? ads_per_week : null, bot_pct, vip_price, complaints: Number.isFinite(complaints) ? complaints : null, total_loss, verdict };
+}
+
+function normalizeChannel(channel) {
+  const s = (channel || '').toString().trim().replace(/\s/g, '');
+  if (!s) return '';
+  return s.startsWith('@') ? s : '@' + s;
+}
+
+app.get('/api/kro/check', async (req, res) => {
+  const raw = (req.query.channel ?? '').toString().trim();
+  const channel = normalizeChannel(raw);
+  if (!channel) {
+    return res.status(400).json({ error: 'channel query is required', found: false });
+  }
+  if (!kroScamBaseRange || !kroSheetId) {
+    return res.json({ found: false, channel });
+  }
+  try {
+    const client = await getKroSheetsClient();
+    if (!client) {
+      return res.json({ found: false, channel });
+    }
+    const response = await client.sheets.spreadsheets.values.get({
+      spreadsheetId: kroSheetId,
+      range: kroScamBaseRange
+    });
+    const rows = response.data.values || [];
+    const channelLower = channel.toLowerCase();
+    for (let i = 0; i < rows.length; i++) {
+      const row = parseScamBaseRow(rows[i]);
+      const rowChannel = (row.username || '').toLowerCase();
+      if (rowChannel === channelLower || rowChannel === channelLower.slice(1)) {
+        return res.json({
+          found: true,
+          username: row.username,
+          risk_score: row.risk_score,
+          ads_per_week: row.ads_per_week,
+          bot_pct: row.bot_pct,
+          vip_price: row.vip_price,
+          complaints: row.complaints,
+          total_loss: row.total_loss,
+          verdict: row.verdict
+        });
+      }
+    }
+    return res.json({ found: false, channel });
+  } catch (e) {
+    console.error('KRO check error:', e);
+    return res.status(500).json({ found: false, channel, error: 'internal_error' });
+  }
+});
 
 app.get('/api/kro/live-counter', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');

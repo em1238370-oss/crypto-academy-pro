@@ -176,6 +176,14 @@
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-2-channel">BTC Курс миллионера</span> → <span class="kro-top3-sum" id="kro-top3-2-sum">847к₽</span> → <span class="kro-top3-status kro-status-active" id="kro-top3-2-status">Активен</span></li>
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-3-channel">crypto-fast.pro</span> → <span class="kro-top3-sum" id="kro-top3-3-sum">673к₽</span> → <span class="kro-top3-status kro-status-block" id="kro-top3-3-status">Блок</span></li>
            </ol>
+           <div class="kro-feature1-check" id="kro-feature1-check">
+               <p class="kro-feature1-check-intro">Проверить канал</p>
+               <div class="kro-feature1-check-row">
+                   <label class="kro-report-label" for="kro-check-channel">@username <input type="text" id="kro-check-channel" placeholder="@channel" autocomplete="off"></label>
+                   <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить</button>
+               </div>
+               <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
+           </div>
            <div class="kro-feature1-report" id="kro-feature1-report">
                <p class="kro-feature1-report-intro">Сообщить о разводе → добавим за 30 мин</p>
                <form class="kro-report-form" id="kro-report-form" novalidate>
@@ -527,6 +535,44 @@
                    }).catch(function() {
                        msgEl.textContent = 'Ошибка отправки.';
                        msgEl.classList.remove('hidden');
+                   });
+               });
+           }
+           var checkBtn = document.getElementById('kro-check-btn');
+           var checkInput = document.getElementById('kro-check-channel');
+           var checkResult = document.getElementById('kro-check-result');
+           if (checkBtn && checkInput && checkResult) {
+               function normChannel(s) {
+                   var t = (s || '').trim().replace(/\s/g, '');
+                   return t ? (t.charAt(0) === '@' ? t : '@' + t) : '';
+               }
+               checkBtn.addEventListener('click', function() {
+                   var channel = normChannel(checkInput.value);
+                   if (!channel) {
+                       checkResult.textContent = 'Введите @username канала.';
+                       checkResult.classList.remove('hidden');
+                       return;
+                   }
+                   checkResult.textContent = 'Загрузка…';
+                   checkResult.classList.remove('hidden');
+                   fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(data) {
+                       if (!data.found) {
+                           checkResult.textContent = 'Канал ' + channel + ' не найден в базе.';
+                           checkResult.className = 'kro-check-result';
+                           return;
+                       }
+                       var risk = data.risk_score;
+                       var riskStr = risk != null ? risk + '/100' : '—';
+                       var verdict = data.verdict || '—';
+                       var parts = ['Риск: ' + riskStr + '. Вердикт: ' + verdict];
+                       if (data.ads_per_week != null) parts.push('Реклама: ' + data.ads_per_week + '/нед');
+                       if (data.bot_pct) parts.push('Боты: ' + data.bot_pct);
+                       if (data.complaints != null || data.total_loss) parts.push('Жалобы: ' + (data.complaints != null ? data.complaints : '—') + ' чел, ' + (data.total_loss || '—'));
+                       checkResult.textContent = parts.join(' ');
+                       checkResult.className = 'kro-check-result';
+                   }).catch(function() {
+                       checkResult.textContent = 'Ошибка запроса.';
+                       checkResult.className = 'kro-check-result';
                    });
                });
            }
