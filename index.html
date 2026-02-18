@@ -597,7 +597,7 @@
                    }
                    fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(data) {
                        if (!data.found) {
-                           checkResult.textContent = (data.message || ('Канал ' + channel + ' не найден в базе.'));
+                           checkResult.textContent = (data.message || 'Проверяем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
                            if (data.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
                            checkResult.className = 'kro-check-result';
                            return;
@@ -673,7 +673,7 @@
                                }
                                fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(chData) {
                                    if (!chData.found) {
-                                       checkResult.textContent = (chData.message || ('Канал ' + channel + ' не найден в базе.'));
+                                       checkResult.textContent = (chData.message || 'Проверяем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
                                        if (chData.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
                                        checkResult.className = 'kro-check-result';
                                        return;

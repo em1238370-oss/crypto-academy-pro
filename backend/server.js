@@ -1307,13 +1307,14 @@ app.get('/api/kro/check', async (req, res) => {
   if (!channel) {
     return res.status(400).json({ error: 'channel query is required', found: false });
   }
+  const checkingMessage = 'Проверяем канал по Telegram. Подождите 1–2 минуты и нажмите «Проверить» снова.';
   if (!kroScamBaseRange || !kroSheetId) {
-    return res.json({ found: false, channel });
+    return res.json({ found: false, channel, pending: true, message: checkingMessage });
   }
   try {
     const client = await getKroSheetsClient();
     if (!client) {
-      return res.json({ found: false, channel });
+      return res.json({ found: false, channel, pending: true, message: checkingMessage });
     }
     const response = await client.sheets.spreadsheets.values.get({
       spreadsheetId: kroSheetId,
@@ -1353,15 +1354,13 @@ app.get('/api/kro/check', async (req, res) => {
     }
     return res.json({
       found: false,
-      pending: !!kroCheckQueueRange,
+      pending: true,
       channel,
-      message: kroCheckQueueRange
-        ? 'Проверяем канал по Telegram. Подождите 1–2 минуты и нажмите «Проверить» снова.'
-        : 'Канал не в базе. Подождите 1–2 минуты и нажмите «Проверить» снова — мы проверяем новые каналы.'
+      message: checkingMessage
     });
   } catch (e) {
     console.error('KRO check error:', e);
-    return res.status(500).json({ found: false, channel, error: 'internal_error' });
+    return res.status(500).json({ found: false, channel, pending: true, message: checkingMessage, error: 'internal_error' });
   }
 });
 
