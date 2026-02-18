@@ -800,7 +800,19 @@ button:focus-visible {
    margin-top: 12px;
    font-size: 14px;
    color: rgba(255, 255, 255, 0.85);
-   line-height: 1.45;
+   line-height: 1.55;
+   white-space: pre-line;
+}
+.kro-check-result .kro-check-result-block {
+   display: block;
+   margin-bottom: 6px;
+}
+
+.kro-feature1-check-screenshot {
+   margin-top: 10px;
+}
+.kro-feature1-check-screenshot input[type="file"] {
+   margin-left: 8px;
 }
 
 .kro-feature1-report {

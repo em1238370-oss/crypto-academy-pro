@@ -179,8 +179,12 @@
            <div class="kro-feature1-check" id="kro-feature1-check">
                <p class="kro-feature1-check-intro">Проверить канал</p>
                <div class="kro-feature1-check-row">
-                   <label class="kro-report-label" for="kro-check-channel">@username <input type="text" id="kro-check-channel" placeholder="@channel" autocomplete="off"></label>
+                   <label class="kro-report-label" for="kro-check-channel">@username / ссылка на канал или обменник <input type="text" id="kro-check-channel" placeholder="@channel, t.me/..., или ссылка на обменник" autocomplete="off"></label>
                    <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить</button>
+               </div>
+               <div class="kro-feature1-check-row kro-feature1-check-screenshot">
+                   <label class="kro-report-label">или загрузите скрин <input type="file" id="kro-check-screenshot" accept="image/jpeg,image/png,image/webp,image/gif"></label>
+                   <button type="button" class="kro-report-submit" id="kro-check-screenshot-btn">Проверить по скрину</button>
                </div>
                <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
            </div>
@@ -553,36 +557,148 @@
                    }
                    return t.charAt(0) === '@' ? t : '@' + t;
                }
+               function isExchangerUrl(s) {
+                   var t = (s || '').trim();
+                   return (t.indexOf('http://') === 0 || t.indexOf('https://') === 0) && t.toLowerCase().indexOf('t.me') === -1;
+               }
                checkBtn.addEventListener('click', function() {
-                   var channel = normChannel(checkInput.value);
-                   if (!channel) {
-                       checkResult.textContent = 'Введите @username или ссылку (t.me/канал или t.me/+invite).';
+                   var raw = checkInput.value;
+                   if (!raw || !raw.trim()) {
+                       checkResult.textContent = 'Введите @username, ссылку на канал (t.me/...) или ссылку на обменник.';
                        checkResult.classList.remove('hidden');
                        return;
                    }
                    checkResult.textContent = 'Загрузка…';
                    checkResult.classList.remove('hidden');
+                   if (isExchangerUrl(raw)) {
+                       fetch(base + '/api/kro/check-exchanger?url=' + encodeURIComponent(raw.trim())).then(function(r) { return r.json(); }).then(function(data) {
+                           if (!data.found) {
+                               checkResult.textContent = (data.message || ('Обменник не найден в базе.'));
+                               checkResult.className = 'kro-check-result';
+                               return;
+                           }
+                           var riskStr = (data.risk_score != null) ? data.risk_score + '/100' : '—';
+                           var lines = ['Риск ' + riskStr];
+                           if (data.total_loss) lines.push('💸 Потери пользователей: ' + data.total_loss);
+                           lines.push('📊 Вердикт: ' + (data.verdict || '—'));
+                           checkResult.textContent = lines.join('\n');
+                           checkResult.className = 'kro-check-result';
+                       }).catch(function() {
+                           checkResult.textContent = 'Ошибка запроса.';
+                           checkResult.className = 'kro-check-result';
+                       });
+                       return;
+                   }
+                   var channel = normChannel(raw);
+                   if (!channel) {
+                       checkResult.textContent = 'Введите @username или ссылку (t.me/канал или t.me/+invite).';
+                       checkResult.className = 'kro-check-result';
+                       return;
+                   }
                    fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(data) {
                        if (!data.found) {
                            checkResult.textContent = (data.message || ('Канал ' + channel + ' не найден в базе.'));
-                           if (data.pending) checkResult.textContent += ' Нажмите «Проверить» снова через 1–2 минуты.';
+                           if (data.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
                            checkResult.className = 'kro-check-result';
                            return;
                        }
                        var risk = data.risk_score;
                        var riskStr = risk != null ? risk + '/100' : '—';
-                       var verdict = data.verdict || '—';
-                       var parts = ['Риск: ' + riskStr + '. Вердикт: ' + verdict];
-                       if (data.ads_per_week != null) parts.push('Реклама: ' + data.ads_per_week + '/нед');
-                       if (data.bot_pct) parts.push('Боты: ' + data.bot_pct);
-                       if (data.complaints != null || data.total_loss) parts.push('Жалобы: ' + (data.complaints != null ? data.complaints : '—') + ' чел, ' + (data.total_loss || '—'));
-                       checkResult.textContent = parts.join(' ');
+                       var lines = ['Риск ' + riskStr];
+                       if (data.ads_per_week != null) lines.push('⚠️ ' + data.ads_per_week + ' реклам/неделя');
+                       if (data.bot_pct) lines.push('⚠️ ' + data.bot_pct + ' ботов в комментах');
+                       var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : '—');
+                       lines.push('💸 Потери пользователей: ' + lossStr);
+                       lines.push('📊 Вердикт: ' + (data.verdict || '—'));
+                       checkResult.textContent = lines.join('\n');
                        checkResult.className = 'kro-check-result';
                    }).catch(function() {
                        checkResult.textContent = 'Ошибка запроса.';
                        checkResult.className = 'kro-check-result';
                    });
                });
+               var screenshotInput = document.getElementById('kro-check-screenshot');
+               var screenshotBtn = document.getElementById('kro-check-screenshot-btn');
+               if (screenshotBtn && screenshotInput && checkResult) {
+                   screenshotBtn.addEventListener('click', function() {
+                       var file = screenshotInput && screenshotInput.files && screenshotInput.files[0];
+                       if (!file) {
+                           checkResult.textContent = 'Выберите изображение (скрин канала или обменника).';
+                           checkResult.classList.remove('hidden');
+                           checkResult.className = 'kro-check-result';
+                           return;
+                       }
+                       checkResult.textContent = 'Загрузка…';
+                       checkResult.classList.remove('hidden');
+                       var reader = new FileReader();
+                       reader.onload = function() {
+                           var dataUrl = reader.result;
+                           fetch(base + '/api/kro/check-screenshot', {
+                               method: 'POST',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({ image: dataUrl })
+                           }).then(function(r) { return r.json(); }).then(function(data) {
+                               var extracted = (data.extracted || []).filter(Boolean);
+                               if (!extracted.length) {
+                                   checkResult.textContent = 'На скрине не найдено ни @ника, ни ссылки на канал/обменник.';
+                                   checkResult.className = 'kro-check-result';
+                                   return;
+                               }
+                               var first = extracted[0];
+                               var isExch = (first.indexOf('http://') === 0 || first.indexOf('https://') === 0) && first.toLowerCase().indexOf('t.me') === -1;
+                               if (isExch) {
+                                   fetch(base + '/api/kro/check-exchanger?url=' + encodeURIComponent(first)).then(function(r) { return r.json(); }).then(function(exData) {
+                                       if (!exData.found) {
+                                           checkResult.textContent = (exData.message || 'Обменник не найден в базе.');
+                                           checkResult.className = 'kro-check-result';
+                                           return;
+                                       }
+                                       var riskStr = (exData.risk_score != null) ? exData.risk_score + '/100' : '—';
+                                       var lines = ['Риск ' + riskStr];
+                                       if (exData.total_loss) lines.push('💸 Потери пользователей: ' + exData.total_loss);
+                                       lines.push('📊 Вердикт: ' + (exData.verdict || '—'));
+                                       checkResult.textContent = lines.join('\n');
+                                       checkResult.className = 'kro-check-result';
+                                   }).catch(function() {
+                                       checkResult.textContent = 'Ошибка запроса.';
+                                       checkResult.className = 'kro-check-result';
+                                   });
+                                   return;
+                               }
+                               var channel = normChannel(first);
+                               if (!channel) {
+                                   checkResult.textContent = 'Не удалось определить канал из скрина.';
+                                   checkResult.className = 'kro-check-result';
+                                   return;
+                               }
+                               fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(chData) {
+                                   if (!chData.found) {
+                                       checkResult.textContent = (chData.message || ('Канал ' + channel + ' не найден в базе.'));
+                                       if (chData.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
+                                       checkResult.className = 'kro-check-result';
+                                       return;
+                                   }
+                                   var risk = chData.risk_score;
+                                   var riskStr = risk != null ? risk + '/100' : '—';
+                                   var chLines = ['Риск ' + riskStr];
+                                   if (chData.ads_per_week != null) chLines.push('⚠️ ' + chData.ads_per_week + ' реклам/неделя');
+                                   if (chData.bot_pct) chLines.push('⚠️ ' + chData.bot_pct + ' ботов в комментах');
+                                   chLines.push('💸 Потери пользователей: ' + (chData.total_loss || (chData.complaints != null ? chData.complaints + ' жалоб' : '—')));
+                                   chLines.push('📊 Вердикт: ' + (chData.verdict || '—'));
+                                   checkResult.textContent = chLines.join('\n');
+                                   checkResult.className = 'kro-check-result';
+                               }).catch(function() {
+                                   checkResult.textContent = 'Ошибка запроса.';
+                                   checkResult.className = 'kro-check-result';
+                               });
+                           }).catch(function() {
+                               checkResult.textContent = 'Ошибка распознавания скрина.';
+                               checkResult.className = 'kro-check-result';
+                           });
+                       };
+                       reader.readAsDataURL(file);
+                   });
+               }
            }
        })();
    </script>

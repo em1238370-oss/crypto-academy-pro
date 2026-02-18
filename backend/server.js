@@ -1365,6 +1365,102 @@ app.get('/api/kro/check', async (req, res) => {
   }
 });
 
+app.get('/api/kro/check-exchanger', async (req, res) => {
+  const url = (req.query.url ?? '').toString().trim();
+  if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+    return res.status(400).json({ error: 'url query required (http/https)', found: false });
+  }
+  const kroExchangerRange = process.env.KRO_EXCHANGER_BASE_RANGE || '';
+  if (!kroExchangerRange || !kroSheetId) {
+    return res.json({
+      found: false,
+      url,
+      message: 'Обменник в базе не найден. Отправьте жалобу через форму ниже — добавим в отчёт.'
+    });
+  }
+  try {
+    const client = await getKroSheetsClient();
+    if (!client) {
+      return res.json({ found: false, url, message: 'Обменник в базе не найден.' });
+    }
+    const response = await client.sheets.spreadsheets.values.get({
+      spreadsheetId: kroSheetId,
+      range: kroExchangerRange
+    });
+    const rows = response.data.values || [];
+    const urlLower = url.toLowerCase();
+    for (let i = 0; i < rows.length; i++) {
+      const rowUrl = (rows[i][0] || '').toString().trim().toLowerCase();
+      const rowName = (rows[i][1] || '').toString().trim();
+      if (rowUrl && (urlLower.includes(rowUrl) || rowUrl.includes(urlLower))) {
+        const risk = parseInt((rows[i][2] || '').toString(), 10);
+        const totalLoss = (rows[i][3] || '').toString().trim();
+        const verdict = (rows[i][4] || '').toString().trim();
+        return res.json({
+          found: true,
+          url: rowUrl,
+          name: rowName,
+          risk_score: Number.isFinite(risk) ? risk : null,
+          total_loss: totalLoss,
+          verdict: verdict
+        });
+      }
+    }
+    return res.json({
+      found: false,
+      url,
+      message: 'Обменник в базе не найден. Отправьте жалобу через форму ниже — добавим в отчёт.'
+    });
+  } catch (e) {
+    console.error('KRO check-exchanger error:', e);
+    return res.status(500).json({ found: false, url, error: 'internal_error' });
+  }
+});
+
+app.post('/api/kro/check-screenshot', express.json({ limit: '10mb' }), async (req, res) => {
+  const imageDataUrl = (req.body?.image ?? '').toString().trim();
+  if (!imageDataUrl || (!imageDataUrl.startsWith('data:image/') || imageDataUrl.indexOf('base64,') === -1)) {
+    return res.status(400).json({ error: 'image (data URL) required', extracted: [] });
+  }
+  if (!mistralKey) {
+    return res.status(500).json({ error: 'AI not configured', extracted: [] });
+  }
+  try {
+    const aiResponse = await axios.post(
+      'https://api.mistral.ai/v1/chat/completions',
+      {
+        model: 'mistral-small-latest',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Look at this image. Extract ONLY: Telegram @usernames (e.g. @ChannelName), t.me links (full URL or t.me/xxx), or crypto exchanger/swap site URLs (http/https). Return one per line, nothing else. If none found, return exactly: NONE'
+              },
+              { type: 'image_url', image_url: imageDataUrl }
+            ]
+          }
+        ],
+        max_tokens: 300
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${mistralKey}`
+        }
+      }
+    );
+    const raw = aiResponse.data?.choices?.[0]?.message?.content ?? '';
+    const lines = raw.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    const extracted = lines.filter((s) => s !== 'NONE' && (s.startsWith('@') || /t\.me\//i.test(s) || /^https?:\/\//i.test(s)));
+    res.json({ extracted });
+  } catch (e) {
+    console.error('KRO check-screenshot error:', e?.response?.data ?? e.message);
+    res.status(500).json({ error: 'vision_failed', extracted: [] });
+  }
+});
+
 app.get('/api/kro/live-counter', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   try {
