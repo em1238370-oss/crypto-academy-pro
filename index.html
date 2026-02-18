@@ -544,12 +544,19 @@
            if (checkBtn && checkInput && checkResult) {
                function normChannel(s) {
                    var t = (s || '').trim().replace(/\s/g, '');
-                   return t ? (t.charAt(0) === '@' ? t : '@' + t) : '';
+                   if (!t) return '';
+                   var lower = t.toLowerCase();
+                   if (lower.indexOf('t.me/') !== -1) {
+                       var path = t.replace(/^https?:\/\/t\.me\//i, '').replace(/^t\.me\//i, '').trim();
+                       if (path.indexOf('+') === 0) return 't.me/' + path;
+                       return path ? (path.charAt(0) === '@' ? path : '@' + path) : '';
+                   }
+                   return t.charAt(0) === '@' ? t : '@' + t;
                }
                checkBtn.addEventListener('click', function() {
                    var channel = normChannel(checkInput.value);
                    if (!channel) {
-                       checkResult.textContent = 'Введите @username канала.';
+                       checkResult.textContent = 'Введите @username или ссылку (t.me/канал или t.me/+invite).';
                        checkResult.classList.remove('hidden');
                        return;
                    }
@@ -557,7 +564,8 @@
                    checkResult.classList.remove('hidden');
                    fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(data) {
                        if (!data.found) {
-                           checkResult.textContent = 'Канал ' + channel + ' не найден в базе.';
+                           checkResult.textContent = (data.message || ('Канал ' + channel + ' не найден в базе.'));
+                           if (data.pending) checkResult.textContent += ' Нажмите «Проверить» снова через 1–2 минуты.';
                            checkResult.className = 'kro-check-result';
                            return;
                        }

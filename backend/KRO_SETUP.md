@@ -12,6 +12,20 @@
 | `KRO_GOOGLE_CREDENTIALS_JSON` | JSON сервисного аккаунта Google (строка). Альтернатива: использовать файл и указать путь в `GOOGLE_APPLICATION_CREDENTIALS`. |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Путь к файлу `credentials.json` сервисного аккаунта. Используется, если `KRO_GOOGLE_CREDENTIALS_JSON` не задан. |
 | `KRO_SCAM_BASE_RANGE` | Диапазон листа «база каналов» для API проверки. Например: `scam_base!A2:H` или `Sheet2!A2:H`. Если не задан, `GET /api/kro/check` всегда возвращает `found: false`. |
+| `KRO_CHECK_QUEUE_RANGE` | Диапазон листа «очередь проверки» для живой проверки. Например: `check_queue!A2:B`. Если задан, при отсутствии канала в базе он добавляется в очередь; воркер (Python + Telethon) раз в 1–2 мин проверяет канал и дописывает результат в scam_base. |
+
+---
+
+## Живая проверка каналов (без базы)
+
+Если включена очередь (`KRO_CHECK_QUEUE_RANGE`), пользователь может ввести **любую** ссылку (например `https://t.me/+7qOXr33dDTZjNDAy` или `@channel`). Канал не обязан быть заранее в базе:
+
+1. Пользователь нажимает «Проверить» → бэкенд ищет канал в scam_base.
+2. Если не найден — канал добавляется в лист **check_queue** и пользователю показывается: *«Проверяем канал по Telegram. Подождите 1–2 минуты и нажмите «Проверить» снова.»*
+3. Воркер (см. `kro-worker/`) периодически читает очередь, подключается к Telegram, анализирует канал и дописывает строку в **scam_base**.
+4. При повторном нажатии «Проверить» канал уже будет в базе и пользователь увидит оценку риска.
+
+Ссылки вида `t.me/username` и `t.me/+inviteHash` парсятся автоматически (не показывается «@https://t.me/...»).
 
 ---
 
@@ -56,8 +70,26 @@
 
 ---
 
+## Лист 3: check_queue (очередь живой проверки)
+
+Используется, когда включена живая проверка (`KRO_CHECK_QUEUE_RANGE`). Воркер читает этот лист и дописывает результаты в scam_base.
+
+**Колонки A:B (заголовки в первой строке, данные с A2):**
+
+| A: channel | B: added_at |
+|------------|-------------|
+| @CryptoChannel | 2026-02-18T12:00:00.000Z |
+| t.me/+7qOXr33dDTZjNDAy | 2026-02-18T12:01:00.000Z |
+
+- **channel** — идентификатор канала (@username или t.me/+invite).
+- **added_at** — время добавления в очередь (ISO).
+
+Задайте диапазон, например: **`check_queue!A2:B`**.
+
+---
+
 ## API
 
 - **GET /api/kro/live-counter** — агрегаты для Фишки 1 (количество каналов за день, потери, Топ-3). Читает лист отчётов A2:F.
 - **POST /api/kro/report-scam** — принять жалобу (channel, sumRub, from). Добавляет строку в лист отчётов.
-- **GET /api/kro/check?channel=@username** — проверка канала по базе scam_base. Ответ: `{ found, username?, risk_score?, ads_per_week?, bot_pct?, vip_price?, complaints?, total_loss?, verdict? }` или `{ found: false, channel }`.
+- **GET /api/kro/check?channel=@username** (или `channel=https://t.me/...`, `channel=t.me/+invite`) — проверка канала по базе scam_base. Ссылки t.me парсятся автоматически. Ответ: `{ found, username?, risk_score?, ... }` или при отсутствии в базе: `{ found: false, pending?: true, channel, message }` — если задан `KRO_CHECK_QUEUE_RANGE`, канал ставится в очередь живой проверки и пользователю нужно нажать «Проверить» снова через 1–2 минуты.

@@ -1200,6 +1200,7 @@ const kroSheetId = process.env.KRO_SHEET_ID;
 const kroCredentialsJson = process.env.KRO_GOOGLE_CREDENTIALS_JSON;
 const kroCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 const kroScamBaseRange = process.env.KRO_SCAM_BASE_RANGE || '';
+const kroCheckQueueRange = process.env.KRO_CHECK_QUEUE_RANGE || '';
 
 function getTodayMSK() {
   const d = new Date();
@@ -1286,6 +1287,17 @@ function parseScamBaseRow(row) {
 function normalizeChannel(channel) {
   const s = (channel || '').toString().trim().replace(/\s/g, '');
   if (!s) return '';
+  const lower = s.toLowerCase();
+  if (lower.startsWith('https://t.me/') || lower.startsWith('http://t.me/')) {
+    const path = s.replace(/^https?:\/\/t\.me\//i, '').trim();
+    if (path.startsWith('+')) return 't.me/' + path;
+    return path ? (path.startsWith('@') ? path : '@' + path) : '';
+  }
+  if (lower.startsWith('t.me/')) {
+    const path = s.replace(/^t\.me\//i, '').trim();
+    if (path.startsWith('+')) return 't.me/' + path;
+    return path ? (path.startsWith('@') ? path : '@' + path) : '';
+  }
   return s.startsWith('@') ? s : '@' + s;
 }
 
@@ -1326,7 +1338,27 @@ app.get('/api/kro/check', async (req, res) => {
         });
       }
     }
-    return res.json({ found: false, channel });
+    if (kroCheckQueueRange && client) {
+      try {
+        await client.sheets.spreadsheets.values.append({
+          spreadsheetId: kroSheetId,
+          range: kroCheckQueueRange,
+          valueInputOption: 'USER_ENTERED',
+          insertDataOption: 'INSERT_ROWS',
+          requestBody: { values: [[channel, new Date().toISOString()]] }
+        });
+      } catch (e) {
+        console.error('KRO check queue append error:', e);
+      }
+    }
+    return res.json({
+      found: false,
+      pending: !!kroCheckQueueRange,
+      channel,
+      message: kroCheckQueueRange
+        ? 'Проверяем канал по Telegram. Подождите 1–2 минуты и нажмите «Проверить» снова.'
+        : 'Канал не в базе. Подождите 1–2 минуты и нажмите «Проверить» снова — мы проверяем новые каналы.'
+    });
   } catch (e) {
     console.error('KRO check error:', e);
     return res.status(500).json({ found: false, channel, error: 'internal_error' });
