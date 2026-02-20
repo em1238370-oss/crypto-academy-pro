@@ -10,5 +10,11 @@ build/
 *.swo
 *~
 *.session
-backend/kro-worker/credentials.json
 
+# KRO worker: секреты и окружение — не коммитить
+backend/kro-worker/env
+backend/kro-worker/venv/
+venv/
+backend/kro-worker/*.png
+backend/kro-worker/credentials.json
+backend/kro-worker/*.session
