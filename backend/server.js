@@ -1225,6 +1225,7 @@ async function getKroSheetsClient() {
   } else if (kroCredentialsPath && fs.existsSync(kroCredentialsPath)) {
     credentials = JSON.parse(fs.readFileSync(kroCredentialsPath, 'utf8'));
   } else {
+    console.warn('KRO: KRO_GOOGLE_CREDENTIALS_JSON and GOOGLE_APPLICATION_CREDENTIALS are not set');
     return null;
   }
   try {
@@ -1268,6 +1269,37 @@ function isRowToday(dateVal, today) {
   if (!dateVal) return false;
   const s = dateVal.replace(/\s/g, '');
   return s === today.dateKey || s === today.dateShort || s.startsWith(today.dateShort + '.') || s.endsWith(today.dateShort);
+}
+
+/** Парсит bot_pct: "78%" или "78" → число 0–100. */
+function parseBotPct(bot_pct) {
+  if (bot_pct == null || bot_pct === '') return null;
+  const s = (bot_pct).toString().trim().replace(/%/g, '');
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : null;
+}
+
+/** Парсит vip_price: "7000₽", "7000" → число. */
+function parseVipPrice(vip_price) {
+  if (vip_price == null || vip_price === '') return null;
+  const s = (vip_price).toString().replace(/\s/g, '').replace(/[^\d]/g, '');
+  const n = parseInt(s, 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Формула риска MVP: реклама×0.4 + боты×0.3 + жалобы×0.2 (нормализовано к 0–100), +10 если vip > 5000.
+ * Вход: ads_per_week (0–25 типично), bot_pct (0–100), complaints (0–50 типично), vip_price (строка или число).
+ */
+function computeRiskScoreFromFeatures(ads_per_week, bot_pct, complaints, vip_price) {
+  const ads = Math.min(25, Math.max(0, ads_per_week ?? 0));
+  const botNum = parseBotPct(bot_pct);
+  const bots = botNum != null ? botNum : 0;
+  const comp = Math.min(50, Math.max(0, complaints ?? 0));
+  const vipNum = typeof vip_price === 'number' ? vip_price : parseVipPrice(vip_price);
+  const vipBonus = (vipNum != null && vipNum > 5000) ? 10 : 0;
+  const risk = Math.round((ads / 25) * 40 + (bots / 100) * 30 + (comp / 50) * 30 + vipBonus);
+  return Math.min(100, Math.max(0, risk));
 }
 
 function parseScamBaseRow(row) {
@@ -1364,11 +1396,10 @@ app.get('/api/kro/check', async (req, res) => {
       range: kroScamBaseRange
     });
     const rows = response.data.values || [];
-    const channelLower = channel.toLowerCase();
+    const requestKey = channelMatchKey(channel);
     for (let i = 0; i < rows.length; i++) {
       const row = parseScamBaseRow(rows[i]);
-      const rowChannel = (row.username || '').toLowerCase();
-      if (rowChannel === channelLower || rowChannel === channelLower.slice(1)) {
+      if (requestKey && channelMatchKey(row.username) === requestKey) {
         let complaints = row.complaints;
         let total_loss = row.total_loss;
         const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
@@ -1417,10 +1448,13 @@ app.get('/api/kro/check', async (req, res) => {
                 if (report.complaints != null) complaints = report.complaints;
                 if (report.total_loss != null) total_loss = report.total_loss;
               }
+              const risk_score = parsed.risk_score != null
+                ? parsed.risk_score
+                : computeRiskScoreFromFeatures(parsed.ads_per_week, parsed.bot_pct, complaints ?? parsed.complaints, parsed.vip_price);
               return res.json({
                 found: true,
                 username: parsed.username,
-                risk_score: parsed.risk_score,
+                risk_score,
                 ads_per_week: parsed.ads_per_week,
                 bot_pct: parsed.bot_pct,
                 vip_price: parsed.vip_price,

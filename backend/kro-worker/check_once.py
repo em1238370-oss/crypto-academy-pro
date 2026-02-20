@@ -10,13 +10,15 @@ import re
 import sys
 import json
 import asyncio
+from datetime import datetime, timezone, timedelta
 
 from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest
 from telethon.errors import ChannelPrivateError, InviteHashExpiredError, UsernameNotOccupiedError
 
-TELEGRAM_API_ID = int(os.environ.get('TELEGRAM_API_ID', '0'))
-TELEGRAM_API_HASH = os.environ.get('TELEGRAM_API_HASH', '')
+_raw_id = (os.environ.get('TELEGRAM_API_ID') or '').strip()
+TELEGRAM_API_ID = int(_raw_id) if _raw_id.isdigit() else 0
+TELEGRAM_API_HASH = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
 TELEGRAM_SESSION_NAME = os.environ.get('TELEGRAM_SESSION_NAME', 'kro_worker')
 
 KRO_SHEET_ID = os.environ.get('KRO_SHEET_ID', '')
@@ -105,6 +107,67 @@ def extract_vip_price(texts):
     return '—'
 
 
+def _is_ad_like(text):
+    """Пост считается рекламным, если содержит ключевые слова риска."""
+    if not text or len(text) < 5:
+        return False
+    lower = text.lower()
+    for kw in RISK_KEYWORDS:
+        if kw in lower:
+            return True
+    return False
+
+
+def ads_per_week_from_messages(messages):
+    """
+    Считает число рекламных постов за последнюю неделю.
+    messages: список (text, date) где date — datetime или None.
+    """
+    now = datetime.now(timezone.utc)
+    week_ago = now - timedelta(days=7)
+    ad_count = 0
+    for text, msg_date in messages:
+        if not _is_ad_like(text):
+            continue
+        if msg_date is None:
+            ad_count += 1
+            continue
+        if msg_date.tzinfo is None:
+            msg_date = msg_date.replace(tzinfo=timezone.utc)
+        if msg_date >= week_ago:
+            ad_count += 1
+    return min(99, ad_count)
+
+
+def bot_pct_from_reply_texts(reply_texts):
+    """
+    Эвристика: «ботоподобные» комментарии — очень короткие или дубликаты.
+    Возвращает строку "N%" или "—" если комментариев нет.
+    """
+    if not reply_texts:
+        return '—'
+    stripped = []
+    for t in reply_texts:
+        s = (t or '').strip()
+        if s:
+            stripped.append(s)
+    if not stripped:
+        return '—'
+    bot_like = 0
+    seen = {}
+    for s in stripped:
+        if len(s) < 12:
+            bot_like += 1
+        else:
+            key = s.lower()[:50]
+            seen[key] = seen.get(key, 0) + 1
+    for count in seen.values():
+        if count >= 3:
+            bot_like += count
+    pct = min(100, int(100 * bot_like / len(stripped)))
+    return f'{pct}%'
+
+
 async def run_check(channel_id):
     client = TelegramClient(
         TELEGRAM_SESSION_NAME,
@@ -118,12 +181,30 @@ async def run_check(channel_id):
             return None
         messages = await client.get_messages(entity, limit=80)
         texts = []
+        messages_with_dates = []
         for m in messages:
             if m and m.text:
                 texts.append(m.text)
+                messages_with_dates.append((m.text, m.date))
         risk, _ = analyze_messages(texts)
         vip = extract_vip_price(texts)
-        ads_week = min(99, len(texts))
+        ads_week = ads_per_week_from_messages(messages_with_dates) if messages_with_dates else 0
+
+        reply_texts = []
+        try:
+            for m in messages[:25]:
+                if not m or not getattr(m.replies, 'replies', 0):
+                    continue
+                replies = await client.get_messages(entity, reply_to=m.id, limit=15)
+                for r in replies:
+                    if r and r.text:
+                        reply_texts.append(r.text)
+                if len(reply_texts) >= 50:
+                    break
+        except Exception:
+            pass
+        bot_pct = bot_pct_from_reply_texts(reply_texts)
+
         if risk >= 70:
             verdict = 'scam'
         elif risk >= 35:
@@ -135,7 +216,7 @@ async def run_check(channel_id):
             'username': channel_id,
             'risk_score': risk,
             'ads_per_week': ads_week,
-            'bot_pct': '—',
+            'bot_pct': bot_pct,
             'vip_price': vip,
             'complaints': None,
             'total_loss': None,
@@ -145,7 +226,7 @@ async def run_check(channel_id):
         await client.disconnect()
 
 
-def append_to_scam_base(channel_id, risk, ads_week, vip, verdict):
+def append_to_scam_base(channel_id, risk, ads_week, bot_pct, vip, verdict):
     if not KRO_SHEET_ID or not KRO_SCAM_BASE_RANGE:
         return
     try:
@@ -161,7 +242,7 @@ def append_to_scam_base(channel_id, risk, ads_week, vip, verdict):
         if not creds:
             return
         sheets = build('sheets', 'v4', credentials=creds)
-        row = [channel_id, risk, ads_week, '—', vip, '—', '—', verdict]
+        row = [channel_id, risk, ads_week, bot_pct or '—', vip, '—', '—', verdict]
         sheets.spreadsheets().values().append(
             spreadsheetId=KRO_SHEET_ID,
             range=f'{SCAM_BASE_SHEET_NAME}!A:H',
@@ -190,6 +271,7 @@ def main():
             channel_id,
             result['risk_score'],
             result['ads_per_week'],
+            result['bot_pct'],
             result['vip_price'],
             result['verdict']
         )

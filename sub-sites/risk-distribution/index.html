@@ -10,30 +10,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
-   <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
-   <link rel="stylesheet" href="styles.css?v=87">
-   <style id="risk-reveal-inline">
-   /* Плавное появление карточек при скролле — inline, чтобы точно работало */
-   .content .risk-scroll-reveal {
-       opacity: 0 !important;
-       transition: opacity 2.2s ease !important;
-   }
-   .content .risk-scroll-reveal.risk-scroll-revealed {
-       opacity: 1 !important;
-   }
-   .content .risk-scroll-reveal.signal-noise-item {
-       transition: opacity 2.5s ease, background 0.25s ease, box-shadow 0.25s ease !important;
-   }
-   @media (prefers-reduced-motion: reduce) {
-       .content .risk-scroll-reveal { opacity: 1 !important; transition: none !important; }
-   }
-   /* Мобильная: плавное проявление, в 2 раза быстрее */
-   @media (max-width: 768px) {
-       .content .risk-scroll-reveal { opacity: 0 !important; transition: opacity 2.5s ease !important; }
-       .content .risk-scroll-reveal.risk-scroll-revealed { opacity: 1 !important; }
-       .content .risk-scroll-reveal.signal-noise-item { transition: opacity 2.5s ease !important; }
-   }
-   </style>
+   <link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
    <!-- Навигация как на главной (DuoView п.1) -->
@@ -59,7 +36,7 @@
                <p class="news-hero-label">Prover Kriptu · Risk</p>
                <h1 class="news-hero-title">Balance The <span class="hero-accent">Storm</span>: Crypto <span class="hero-accent">Risk</span> Guide</h1>
                <p class="news-hero-subtitle">Your edge in volatile markets</p>
-               <p class="news-hero-description">Risk management isn't optional—it's your edge. Analyze charts forever, craft brilliant strategies, still fall short. Discipline wins. This tool helps you stay disciplined—let it guide you.</p>
+               <p class="news-hero-description">Risk management isn't an add-on—it's the foundation. Endless chart analysis and "perfect" strategies mean nothing without discipline. Discipline is what separates the pro from the amateur. If you don't follow risk management, no subscriptions or courses will help. This tool helps you keep it. Use it.</p>
            </section>
            
            <!-- Секция 1: Что даёт управление рисками — как News signal-noise -->
@@ -71,18 +48,18 @@
            <!-- Разделитель -->
            <div class="risk-section-divider" aria-hidden="true"></div>
 
-           <!-- Блок доверия — как News -->
+           <!-- Блок доверия — 3 квадратика в ряд -->
            <section class="news-trust-stats risk-trust-stats risk-section-reveal" aria-label="Why trust this tool">
                <div class="risk-trust-bento">
-                   <div class="risk-trust-stat risk-trust-hero">
+                   <div class="risk-trust-stat">
                        <span class="risk-trust-number" data-count="3">0</span>
                        <span class="risk-trust-label">Strategies per result</span>
                    </div>
-                   <div class="risk-trust-stat risk-trust-reveal">
+                   <div class="risk-trust-stat">
                        <span class="risk-trust-number">Clear</span>
                        <span class="risk-trust-label">Plain-language rationale</span>
                    </div>
-                   <div class="risk-trust-stat risk-trust-reveal">
+                   <div class="risk-trust-stat">
                        <span class="risk-trust-number">Free</span>
                        <span class="risk-trust-label">No subscription</span>
                    </div>
@@ -94,91 +71,13 @@
            <!-- Разделитель -->
            <div class="risk-section-divider" aria-hidden="true"></div>
 
-           <!-- Секция 2: Правила риск-менеджмента -->
-           <section class="signal-noise risk-section-reveal" id="section-rules" aria-labelledby="section-rules">
-               <h3 class="signal-noise-title">Rules That Keep You Safe</h3>
-               <p class="signal-noise-intro">Discipline beats emotion. These rules protect your capital when markets turn against you.</p>
-               <ul class="signal-noise-list">
-                   <li class="signal-noise-item">
-                       <span class="signal-noise-label">Never invest more than <strong>you can afford to lose</strong></span>
-                       <span class="signal-noise-text">Crypto is volatile. Only use money you can lose completely without affecting your life.</span>
-                   </li>
-                   <li class="signal-noise-item risk-favorite-item" data-visual="diversify">
-                       <span class="signal-noise-label">Diversify, but <strong>don't over-diversify</strong></span>
-                       <span class="signal-noise-text">Spread risk across assets, but too many positions dilute focus and returns.</span>
-                   </li>
-                   <li class="signal-noise-item">
-                       <span class="signal-noise-label">Set <strong>stop-losses before entering</strong></span>
-                       <span class="signal-noise-text">Decide your exit point before you buy. Emotion kills discipline in real-time.</span>
-                   </li>
-                   <li class="signal-noise-item risk-favorite-item" data-visual="fomo">
-                       <span class="signal-noise-label">Don't <strong>FOMO into pumps</strong></span>
-                       <span class="signal-noise-text">If everyone is talking about it, you're probably too late. Wait for pullbacks.</span>
-                   </li>
-                   <li class="signal-noise-item">
-                       <span class="signal-noise-label">Take profits <strong>systematically</strong></span>
-                       <span class="signal-noise-text">Lock in gains at predetermined levels. Greed turns winners into losers.</span>
-                   </li>
-                   <li class="signal-noise-item risk-favorite-item" data-visual="emergency">
-                       <span class="signal-noise-label">Keep <strong>emergency funds separate</strong></span>
-                       <span class="signal-noise-text">Never risk money you might need for emergencies. Crypto can lock up for months.</span>
-                   </li>
-                   <li class="signal-noise-item">
-                       <span class="signal-noise-label">Review and adjust <strong>regularly</strong></span>
-                       <span class="signal-noise-text">Markets change. Your risk tolerance changes. Update your strategy quarterly.</span>
-                   </li>
-               </ul>
-           </section>
-
-           <!-- Разделитель -->
-           <div class="risk-section-divider" aria-hidden="true"></div>
-
-           <!-- Секция 3: Стратегии защиты капитала -->
-           <section class="signal-noise risk-section-reveal" id="section-protection" aria-labelledby="section-protection">
-               <h3 class="signal-noise-title">How Experts Protect Capital</h3>
-               <p class="signal-noise-intro">Professional traders survive because they protect capital first. Here's how they do it.</p>
-               <ul class="signal-noise-list">
-                   <li class="signal-noise-item risk-favorite-item" data-visual="position">
-                       <span class="signal-noise-label"><strong>Position sizing</strong> is everything</span>
-                       <span class="signal-noise-text">Risk <strong>1-2% per trade</strong> maximum. Even if you're wrong 10 times in a row, you survive to trade again.</span>
-                   </li>
-                   <li class="signal-noise-item">
-                       <span class="signal-noise-label">Use the <strong>2% rule</strong></span>
-                       <span class="signal-noise-text">Never risk more than <strong>2% of total capital</strong> on a single trade. This keeps you in the game long-term.</span>
-                   </li>
-                   <li class="signal-noise-item risk-favorite-item" data-visual="correlation">
-                       <span class="signal-noise-label"><strong>Correlation</strong> matters</span>
-                       <span class="signal-noise-text">Bitcoin and altcoins often move together. True diversification means <strong>different asset classes</strong>, not just different coins.</span>
-                   </li>
-                   <li class="signal-noise-item">
-                       <span class="signal-noise-label">Protect with <strong>stablecoins</strong></span>
-                       <span class="signal-noise-text">Keep <strong>20-30% in stablecoins</strong>. It's your safety net when markets crash and you need to wait.</span>
-                   </li>
-                   <li class="signal-noise-item risk-favorite-item" data-visual="time">
-                       <span class="signal-noise-label"><strong>Time horizon</strong> defines risk</span>
-                       <span class="signal-noise-text">Money you need in <strong>6 months</strong> shouldn't be in crypto. Match your timeline to volatility tolerance.</span>
-                   </li>
-                   <li class="signal-noise-item">
-                       <span class="signal-noise-label">Track your <strong>risk-reward ratio</strong></span>
-                       <span class="signal-noise-text">Only take trades where potential profit is <strong>2-3x your potential loss</strong>. Math works in your favor.</span>
-                   </li>
-                   <li class="signal-noise-item risk-favorite-item" data-visual="cutlosses">
-                       <span class="signal-noise-label"><strong>Cut losses fast</strong>, let winners run</span>
-                       <span class="signal-noise-text">Exit losing positions quickly. Hold winning positions longer. Most traders do the opposite.</span>
-                   </li>
-               </ul>
-           </section>
-
-           <!-- Разделитель -->
-           <div class="risk-section-divider" aria-hidden="true"></div>
-
            <!-- Калькулятор стратегий -->
            <section class="risk-section risk-section-calculator risk-section-reveal" aria-labelledby="section-calculator">
-               <h2 id="section-calculator" class="news-today-title">Your Risk Strategy</h2>
-               <p class="signal-noise-intro">Three strategies. 30 seconds. Your choice.</p>
+               <h2 id="section-calculator" class="news-today-title">Strategy Calculator</h2>
+               <p class="signal-noise-intro">Calculate your personalized strategy in 30 seconds.</p>
                <div class="risk-calculator-wrapper">
                    <div class="risk-calculator-container">
-                       <h3 class="risk-calculator-heading">4 inputs. 3 strategies. 30 seconds.</h3>
+                       <h3 class="risk-calculator-heading">3 inputs. 3 strategies. 30 seconds.</h3>
 
                    <details class="api-key-details">
                        <summary class="api-key-summary">API Key for AI explanations (optional)</summary>
@@ -225,16 +124,6 @@
                                    <option value="Retirement">Retirement</option>
                                </select>
                            </div>
-
-                           <div class="form-group form-group-horizon">
-                               <label for="horizon"><span class="form-step">04</span> Time Horizon</label>
-                               <select id="horizon">
-                                   <option value="6m">6 months</option>
-                                   <option value="1y">1 year</option>
-                                   <option value="3y" selected>3 years</option>
-                                   <option value="5y">5+ years</option>
-                               </select>
-                           </div>
                        </div>
 
                        <div class="button-wrapper">
@@ -243,19 +132,16 @@
                            </div>
                        </div>
                    </form>
-                   </div>
+
                    <div class="results hidden" id="results">
                        <h3 class="results-title">Your 3 Strategies</h3>
                        <div class="strategy-info" id="strategyInfo"></div>
                        <div class="strategies">
                            <div class="strategies-grid" id="strategiesOutput"></div>
                        </div>
-                       <div class="risk-tips" id="riskTips">
-                           <span class="risk-tip" id="positionSizingTip"></span>
-                           <span class="risk-tip risk-tip-rebalance">Review allocation quarterly</span>
-                       </div>
                    </div>
                </div>
+           </div>
            </section>
            
            <!-- Футер как у News — по смыслу Risk -->
@@ -525,13 +411,10 @@
            return explanations[riskCategory][goal][strategyKey];
        }
 
-       const horizonLabels = { '6m': '6 months', '1y': '1 year', '3y': '3 years', '5y': '5+ years' };
-
        async function getStrategies() {
            const deposit = document.getElementById('deposit').value;
            const risk = parseInt(document.getElementById('risk').value);
            const goal = document.getElementById('goal').value;
-           const horizon = document.getElementById('horizon').value;
 
            // Validate deposit
            if (!deposit || deposit <= 0) {
@@ -539,41 +422,28 @@
                return;
            }
 
-           const depositNum = parseFloat(deposit);
-
            // Get risk category
            const riskCategory = getRiskCategory(risk);
            
            // Get strategies for this combination
            const strategiesForGoal = strategies[riskCategory][goal];
            
-           // Build info header (with horizon)
-           let infoOutput = `Deposit: $${depositNum.toLocaleString()} | Risk: ${risk}% (${riskCategory.toUpperCase()}) | Goal: ${goal} | Horizon: ${horizonLabels[horizon]}`;
-           if (horizon === '6m' || horizon === '1y') {
-               infoOutput = '<span class="horizon-note">Short horizon — favor the most conservative option.</span> ' + infoOutput;
-           }
+           // Build info header
+           const infoOutput = `Deposit: $${parseFloat(deposit).toLocaleString()} | Risk Level: ${risk}% (${riskCategory.toUpperCase()}) | Goal: ${goal}`;
            document.getElementById('strategyInfo').innerHTML = infoOutput;
-
-           // 2% rule and rebalance tips
-           const maxPerTrade = Math.round(depositNum * 0.02);
-           document.getElementById('positionSizingTip').textContent = '2% rule: max $' + maxPerTrade.toLocaleString() + ' per trade';
            
-           // Build strategies output with loading state for WHY sections + Copy button
+           // Build strategies output with loading state for WHY sections
            let output = '';
            const strategyKeys = ['A', 'B', 'C'];
            
            strategyKeys.forEach((key, index) => {
-               const allocationText = strategiesForGoal[key];
                output += `<div class="strategy" id="strategy-${index}">`;
                output += `<div class="strategy-title">Strategy ${key}</div>`;
-               output += `<div class="strategy-allocation-wrap">`;
-               output += `<span class="strategy-allocation">${allocationText}</span>`;
-               output += `<button type="button" class="strategy-copy-btn" aria-label="Copy strategy">Copy</button>`;
-               output += `</div>`;
+               output += `<div class="strategy-allocation">${strategiesForGoal[key]}</div>`;
                
                // Add WHY section
                output += `<div class="why-section">`;
-               output += `<div class="why-title">WHY THIS STRATEGY</div>`;
+               output += `<div class="why-title">💡 WHY this strategy?</div>`;
                output += `<div class="why-content" id="why-${index}"></div>`;
                output += `</div>`;
                
@@ -601,21 +471,6 @@
                if (whyElement) {
                    whyElement.innerHTML = explanation;
                }
-           });
-
-           // Copy strategy buttons
-           document.querySelectorAll('.strategy-copy-btn').forEach(function(btn) {
-               btn.addEventListener('click', function() {
-                   const card = this.closest('.strategy');
-                   const alloc = card ? card.querySelector('.strategy-allocation') : null;
-                   const text = alloc ? alloc.textContent : '';
-                   if (text && navigator.clipboard && navigator.clipboard.writeText) {
-                       navigator.clipboard.writeText(text).then(function() {
-                           btn.textContent = 'Copied';
-                           setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
-                       });
-                   }
-               });
            });
 
            // 3D tilt on strategy cards (если не prefers-reduced-motion)
@@ -647,305 +502,35 @@
            update();
        })();
 
-       // Каждая табличка выскакивает сама по себе, когда человек прокручивает к ней; калькулятор — без анимации
+       // Scroll-reveal: секции появляются при прокрутке
+       (function() {
+           const els = document.querySelectorAll('.risk-section-reveal, .risk-section-divider');
+           const opts = { rootMargin: '0px 0px -80px 0px', threshold: 0.1 };
+           const observer = new IntersectionObserver(function(entries) {
+               entries.forEach(function(e) {
+                   if (e.isIntersecting) {
+                       e.target.classList.add('risk-revealed');
+                       observer.unobserve(e.target);
+                   }
+               });
+           }, opts);
+           els.forEach(function(el) { observer.observe(el); });
+       })();
+
+       // Trust stats AI/Free — staggered reveal при появлении
        (function() {
            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-           var content = document.querySelector('.content');
-           if (!content) return;
-           var hero = content.querySelector('.news-hero');
-           if (!hero) return;
-           var obs = new IntersectionObserver(function(entries) {
+           const cards = document.querySelectorAll('.risk-trust-reveal');
+           const obs = new IntersectionObserver(function(entries) {
                entries.forEach(function(e) {
                    if (!e.isIntersecting) return;
                    obs.unobserve(e.target);
-                   e.target.classList.add('risk-scroll-revealed');
+                   e.target.classList.add('risk-trust-revealed');
                });
-           }, { rootMargin: '0px 0px -15% 0px', threshold: 0.02 });
-           function addReveal(el) {
-               el.classList.add('risk-scroll-reveal');
-               obs.observe(el);
-           }
-           var el = hero.nextElementSibling;
-           while (el) {
-               if (el.classList.contains('risk-section-calculator')) { el = el.nextElementSibling; continue; }
-               if (el.classList.contains('risk-section-divider')) {
-                   addReveal(el);
-               } else if (el.classList.contains('signal-noise')) {
-                   var t = el.querySelector('.signal-noise-title'); if (t) addReveal(t);
-                   var i = el.querySelector('.signal-noise-intro'); if (i) addReveal(i);
-                   el.querySelectorAll('.signal-noise-item').forEach(addReveal);
-               } else if (el.classList.contains('news-trust-stats')) {
-                   el.querySelectorAll('.risk-trust-stat').forEach(addReveal);
-                   var b = el.querySelector('.news-trust-badge'); if (b) addReveal(b);
-                   var tg = el.querySelector('.news-trust-tagline'); if (tg) addReveal(tg);
-               } else if (el.classList.contains('news-footer')) {
-                   el.querySelectorAll('p, .news-footer-links').forEach(addReveal);
-               }
-               el = el.nextElementSibling;
-           }
-       })();
-
-       // Интерактивные эффекты при попадании в центр экрана
-       (function() {
-           if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-           
-           const riskSections = document.querySelectorAll('#section-rules, #section-protection');
-           
-           // Убираем боковые визуалы (те, что далеко от табличек)
-           function createSideVisuals() {
-               // Удаляем все боковые визуалы
-               const oldLeft = document.querySelector('.risk-side-visual-left');
-               const oldRight = document.querySelector('.risk-side-visual-right');
-               if (oldLeft) oldLeft.remove();
-               if (oldRight) oldRight.remove();
-           }
-           
-           function checkCenterPosition() {
-               const viewportCenter = window.innerHeight / 2;
-               let anyInCenter = false;
-               
-               riskSections.forEach(function(section) {
-                   if (!section) return;
-                   
-                   const rect = section.getBoundingClientRect();
-                   const sectionTop = rect.top;
-                   const sectionBottom = rect.bottom;
-                   const sectionCenter = rect.top + (rect.height / 2);
-                   
-                   // Проверяем, пересекается ли секция с центром экрана
-                   // На мобильных делаем зону шире для лучшей работы подчёркивания
-                   const isMobile = window.innerWidth <= 768;
-                   const centerZone = isMobile ? 600 : 400; // ±600px на мобильных, ±400px на десктопе
-                   const distanceFromCenter = Math.abs(sectionCenter - viewportCenter);
-                   const isInCenter = distanceFromCenter < centerZone;
-                   
-                   // Также проверяем, видна ли секция на экране (для мобильных)
-                   const isVisible = sectionTop < window.innerHeight && sectionBottom > 0;
-                   const shouldActivate = isInCenter && (isMobile ? isVisible : true);
-                   
-                   if (shouldActivate) {
-                       if (!section.classList.contains('risk-in-center')) {
-                           section.classList.add('risk-in-center');
-                           console.log('✅ Section in center:', section.id, 'distance:', distanceFromCenter, 'mobile:', isMobile);
-                       }
-                       anyInCenter = true;
-                   } else {
-                       if (section.classList.contains('risk-in-center')) {
-                           section.classList.remove('risk-in-center');
-                           console.log('❌ Section left center:', section.id);
-                       }
-                   }
-               });
-               
-               // Боковые визуалы убраны - оставляем только визуалы около табличек
-           }
-           
-           // Добавляем иконки к карточкам
-           function addIcons() {
-               const items = document.querySelectorAll('#section-rules .signal-noise-item, #section-protection .signal-noise-item');
-               items.forEach(function(item) {
-                   if (!item.querySelector('.risk-icon-indicator')) {
-                       const icon = document.createElement('div');
-                       icon.className = 'risk-icon-indicator';
-                       icon.textContent = '⚠';
-                       item.style.position = 'relative';
-                       item.appendChild(icon);
-                   }
-               });
-           }
-           
-           // Создаем визуалы при загрузке
-           function init() {
-               createSideVisuals();
-               addIcons();
-               checkCenterPosition();
-           }
-           
-           if (document.readyState === 'loading') {
-               document.addEventListener('DOMContentLoaded', init);
-           } else {
-               setTimeout(init, 100);
-           }
-           
-           // Проверяем при скролле (часто для плавности)
-           window.addEventListener('scroll', checkCenterPosition, { passive: true });
-           
-           // Проверяем при изменении размера окна
-           window.addEventListener('resize', checkCenterPosition);
-       })();
-
-       // Визуалы около табличек — DuoView Pro: минимализм, один кадр, полный рисунок
-       (function() {
-           const favoriteItems = document.querySelectorAll('.risk-favorite-item');
-           const stroke = 'rgba(159, 232, 159, 0.75)';
-           const strokeDim = 'rgba(159, 232, 159, 0.4)';
-
-           // Один чистый кадр — без вложенных квадратов. Рисунок занимает весь viewBox.
-           function icon(inner) {
-               return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><g>${inner}</g></svg>`;
-           }
-
-           const visuals = {
-              diversify: {
-                  topRight: icon(`
-                    <circle cx="50" cy="70" r="22" fill="none" stroke="${stroke}" stroke-width="1.8"/>
-                    <circle cx="100" cy="50" r="22" fill="none" stroke="${stroke}" stroke-width="1.8"/>
-                    <circle cx="150" cy="90" r="22" fill="none" stroke="${stroke}" stroke-width="1.8"/>
-                    <path d="M68 62 L88 58" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round"/>
-                    <path d="M118 66 L128 82" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round"/>
-                  `),
-                  bottomLeft: icon(`
-                    <circle cx="55" cy="55" r="22" fill="none" stroke="${stroke}" stroke-width="1.8"/>
-                    <circle cx="100" cy="90" r="22" fill="none" stroke="${stroke}" stroke-width="1.8"/>
-                    <circle cx="145" cy="60" r="22" fill="none" stroke="${stroke}" stroke-width="1.8"/>
-                    <path d="M72 68 L88 78" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round"/>
-                    <path d="M112 82 L128 68" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round"/>
-                  `)
-              },
-              fomo: {
-                  topRight: icon(`
-                    <path d="M40 150 L70 110 L100 90 L130 65 L160 45" stroke="${stroke}" stroke-width="2" stroke-linecap="round" fill="none"/>
-                    <path d="M140 50 L165 35 L158 55 Z" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linejoin="round"/>
-                  `),
-                  bottomLeft: icon(`
-                    <path d="M40 50 L75 75 L110 60 L145 85 L170 70" stroke="${stroke}" stroke-width="2" stroke-linecap="round" fill="none"/>
-                    <path d="M155 72 L178 58 L170 78 Z" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linejoin="round"/>
-                  `)
-              },
-              emergency: {
-                  topRight: icon(`
-                    <path d="M100 35 L150 55 L150 100 Q150 140 100 165 Q50 140 50 100 L50 55 Z" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linejoin="round"/>
-                    <circle cx="100" cy="100" r="28" fill="none" stroke="${stroke}" stroke-width="1.6"/>
-                    <path d="M100 78 L100 122" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M80 100 L120 100" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
-                  `),
-                  bottomLeft: icon(`
-                    <path d="M50 80 L50 120 L100 150 L150 120 L150 80 L100 50 Z" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linejoin="round"/>
-                    <path d="M75 100 L125 100" stroke="${strokeDim}" stroke-width="1.4" stroke-dasharray="6 8" stroke-linecap="round"/>
-                  `)
-              },
-              position: {
-                  topRight: icon(`
-                    <path d="M50 130 L150 130" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M50 130 Q75 90 100 90 Q125 90 150 130" fill="none" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round"/>
-                    <path d="M50 130 Q75 170 100 170 Q125 170 150 130" fill="none" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round"/>
-                    <line x1="100" y1="50" x2="100" y2="170" stroke="${stroke}" stroke-width="1.6"/>
-                    <circle cx="100" cy="90" r="18" fill="none" stroke="${stroke}" stroke-width="1.8"/>
-                  `),
-                  bottomLeft: icon(`
-                    <circle cx="100" cy="75" r="55" fill="none" stroke="${stroke}" stroke-width="1.6"/>
-                    <path d="M100 25 L100 75" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M100 75 L140 105" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
-                    <circle cx="100" cy="75" r="10" fill="none" stroke="${stroke}" stroke-width="1.6"/>
-                  `)
-              },
-              correlation: {
-                  topRight: icon(`
-                    <path d="M35 80 Q70 45 105 65 Q140 85 165 55" stroke="${stroke}" stroke-width="2" stroke-linecap="round" fill="none"/>
-                    <path d="M35 115 Q70 80 105 100 Q140 120 165 90" stroke="${strokeDim}" stroke-width="1.4" stroke-linecap="round" fill="none"/>
-                  `),
-                  bottomLeft: icon(`
-                    <path d="M50 60 L50 140" stroke="${stroke}" stroke-width="1.8"/>
-                    <path d="M100 40 L100 160" stroke="${stroke}" stroke-width="1.8"/>
-                    <path d="M150 80 L150 120" stroke="${stroke}" stroke-width="1.8"/>
-                    <path d="M40 150 L160 150" stroke="${strokeDim}" stroke-width="1.2" stroke-dasharray="4 6" stroke-linecap="round"/>
-                  `)
-              },
-              time: {
-                  topRight: icon(`
-                    <circle cx="100" cy="100" r="70" fill="none" stroke="${stroke}" stroke-width="1.6"/>
-                    <circle cx="100" cy="100" r="50" fill="none" stroke="${strokeDim}" stroke-width="1.2" stroke-dasharray="4 6"/>
-                    <path d="M100 45 L100 100" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M100 100 L135 120" stroke="${stroke}" stroke-width="2" stroke-linecap="round"/>
-                    <circle cx="100" cy="100" r="6" fill="${stroke}"/>
-                  `),
-                  bottomLeft: icon(`
-                    <path d="M60 55 L140 55 L140 145 L60 145 Z" fill="none" stroke="${stroke}" stroke-width="1.8"/>
-                    <path d="M60 90 L140 90" stroke="${strokeDim}" stroke-width="1.2" stroke-linecap="round"/>
-                    <path d="M80 70 L95 70" stroke="${stroke}" stroke-width="1.4"/>
-                    <path d="M75 115 L95 135" stroke="${stroke}" stroke-width="1.6" stroke-linecap="round"/>
-                    <path d="M105 115 L85 135" stroke="${stroke}" stroke-width="1.6" stroke-linecap="round"/>
-                  `)
-              },
-              cutlosses: {
-                  topRight: icon(`
-                    <path d="M100 55 Q105 100 100 145" stroke="${stroke}" stroke-width="2" fill="none" stroke-linecap="round"/>
-                    <polygon points="100,160 90,140 110,140" fill="${stroke}"/>
-                  `),
-                  bottomLeft: icon(`
-                    <path d="M100 150 Q95 100 100 60" stroke="${stroke}" stroke-width="2" fill="none" stroke-linecap="round"/>
-                    <polygon points="100,45 90,65 110,65" fill="${stroke}"/>
-                  `)
-              }
-          };
-          
-          favoriteItems.forEach(function(item) {
-               const visualType = item.getAttribute('data-visual');
-               
-               // Создаем визуалы для каждой таблички отдельно
-               const topRightVisual = document.createElement('div');
-               topRightVisual.className = 'risk-corner-visual risk-corner-top-right';
-               topRightVisual.style.display = 'none';
-               
-               const bottomLeftVisual = document.createElement('div');
-               bottomLeftVisual.className = 'risk-corner-visual risk-corner-bottom-left';
-               bottomLeftVisual.style.display = 'none';
-               
-               // Добавляем визуалы внутрь таблички
-               item.style.position = 'relative';
-               const visualRow = document.createElement('div');
-               visualRow.className = 'risk-visual-row';
-               visualRow.style.display = 'none';
-               
-               visualRow.appendChild(topRightVisual);
-               visualRow.appendChild(bottomLeftVisual);
-               item.appendChild(visualRow);
-               
-               if (visuals[visualType]) {
-                   topRightVisual.innerHTML = visuals[visualType].topRight;
-                   bottomLeftVisual.innerHTML = visuals[visualType].bottomLeft;
-               }
-               
-               function showVisuals() {
-                   visualRow.style.setProperty('display', 'flex', 'important');
-                   topRightVisual.style.setProperty('display', 'block', 'important');
-                   topRightVisual.style.setProperty('visibility', 'visible', 'important');
-                   topRightVisual.style.setProperty('opacity', '1', 'important');
-                   topRightVisual.classList.add('show');
-                   
-                   bottomLeftVisual.style.setProperty('display', 'block', 'important');
-                   bottomLeftVisual.style.setProperty('visibility', 'visible', 'important');
-                   bottomLeftVisual.style.setProperty('opacity', '1', 'important');
-                   bottomLeftVisual.classList.add('show');
-               }
-               
-               function hideVisuals() {
-                   visualRow.style.setProperty('display', 'none', 'important');
-                   topRightVisual.style.setProperty('opacity', '0', 'important');
-                   topRightVisual.style.setProperty('display', 'none', 'important');
-                   topRightVisual.style.setProperty('visibility', 'hidden', 'important');
-                   topRightVisual.classList.remove('show');
-                   
-                   bottomLeftVisual.style.setProperty('opacity', '0', 'important');
-                   bottomLeftVisual.style.setProperty('display', 'none', 'important');
-                   bottomLeftVisual.style.setProperty('visibility', 'hidden', 'important');
-                   bottomLeftVisual.classList.remove('show');
-               }
-               
-               function applyMode() {
-                   const isMobile = window.innerWidth <= 768;
-                   if (isMobile) {
-                       showVisuals();
-                   } else {
-                       showVisuals();
-                   }
-                   
-                   item.onmouseenter = null;
-                   item.onmouseleave = null;
-               }
-               
-               applyMode();
-               window.addEventListener('resize', applyMode);
+           }, { threshold: 0.3 });
+           cards.forEach(function(c, i) {
+               c.style.transitionDelay = (i * 0.1) + 's';
+               obs.observe(c);
            });
        })();
    </script>
@@ -1051,8 +636,6 @@
            console.log('✅ Chat position force script loaded');
        })();
    </script>
-   <script src="https://unpkg.com/lenis@1.3.17/dist/lenis.min.js"></script>
-   <script src="../../scripts/smooth-scroll.js"></script>
 </body>
 </html>
 

@@ -9,4 +9,6 @@ build/
 *.swp
 *.swo
 *~
+*.session
+backend/kro-worker/credentials.json
 

@@ -580,7 +580,7 @@
                            var riskStr = (data.risk_score != null) ? data.risk_score + '/100' : '—';
                            var lines = ['Риск ' + riskStr];
                            if (data.total_loss) lines.push('💸 Потери пользователей: ' + data.total_loss);
-                           lines.push('📊 Вердикт: ' + (data.verdict || '—'));
+                           lines.push('📊 Вердикт: ' + (data.verdictText || data.verdict || '—'));
                            checkResult.textContent = lines.join('\n');
                            checkResult.className = 'kro-check-result';
                        }).catch(function() {
@@ -610,7 +610,7 @@
                        if (data.bot_pct) lines.push('⚠️ ' + data.bot_pct + ' ботов в комментах');
                        var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : '—');
                        lines.push('💸 Потери пользователей: ' + lossStr);
-                       lines.push('📊 Вердикт: ' + (data.verdict || '—'));
+                       lines.push('📊 Вердикт: ' + (data.verdictText || data.verdict || '—'));
                        checkResult.textContent = lines.join('\n');
                        checkResult.className = 'kro-check-result';
                    }).catch(function() {
@@ -674,8 +674,8 @@
                                }
                                fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(chData) {
                                    if (!chData.found) {
-                                       checkResult.textContent = (chData.message || 'Проверяем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
-                                       if (chData.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
+                                       checkResult.textContent = (chData.message || 'Канал добавлен в очередь. Обычно результат через 1–3 минуты. Нажмите «Проверить» снова.');
+                                       if (chData.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–3 минуты.';
                                        checkResult.className = 'kro-check-result';
                                        return;
                                    }

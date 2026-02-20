@@ -75,7 +75,7 @@ def check_channel(message):
     complaints = data.get("complaints")
     complaints_str = str(complaints) if complaints is not None else "—"
     total_loss = data.get("total_loss") or "—"
-    verdict = data.get("verdict") or "—"
+    verdict = data.get("verdictText") or data.get("verdict") or "—"
     reply = f"""🔍 АНАЛИЗ {data.get('username', channel)}
 Риск: {risk_str} ({verdict_emoji})
 📢 Реклама: {ads_str}/нед
