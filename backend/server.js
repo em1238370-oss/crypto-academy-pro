@@ -7,7 +7,7 @@ import https from 'https';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { spawnSync } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import Stripe from 'stripe';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1270,6 +1270,16 @@ function isRowToday(dateVal, today) {
   return s === today.dateKey || s === today.dateShort || s.startsWith(today.dateShort + '.') || s.endsWith(today.dateShort);
 }
 
+const VERDICT_PHRASES = { scam: 'живут на VIP-подписках', grey: 'серая зона', safe: 'низкий риск' };
+
+function buildReasonsFromRow(row) {
+  const reasons = [];
+  if (row.ads_per_week != null) reasons.push(`реклама (${row.ads_per_week} постов/нед)`);
+  reasons.push(row.bot_pct && row.bot_pct !== '—' ? `боты (${row.bot_pct})` : 'боты: —');
+  if (row.vip_price && row.vip_price !== '—') reasons.push(`VIP (${row.vip_price})`);
+  return reasons.length ? reasons : ['нет данных'];
+}
+
 function parseScamBaseRow(row) {
   const username = (row[0] || '').toString().trim();
   const riskScoreRaw = (row[1] ?? '').toString().replace(/\s/g, '');
@@ -1300,6 +1310,38 @@ function normalizeChannel(channel) {
     return path ? (path.startsWith('@') ? path : '@' + path) : '';
   }
   return s.startsWith('@') ? s : '@' + s;
+}
+
+/** URL публичной страницы t.me для канала (без входа в Telegram можно получить title/description). */
+function channelToTmeUrl(channel) {
+  const n = normalizeChannel(channel);
+  if (!n) return null;
+  if (n.startsWith('t.me/')) return 'https://t.me/' + n.slice(6);
+  const name = n.startsWith('@') ? n.slice(1) : n;
+  return 'https://t.me/' + name;
+}
+
+/** Загрузить HTML страницы t.me и вытащить og:title и og:description (без логина). */
+async function fetchTmePreview(channel) {
+  const url = channelToTmeUrl(channel);
+  if (!url) return null;
+  try {
+    const response = await axios.get(url, {
+      timeout: 8000,
+      maxRedirects: 3,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KRO-Checker/1.0)' },
+      validateStatus: (s) => s === 200
+    });
+    const html = response.data && typeof response.data === 'string' ? response.data : '';
+    const titleMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]*)"/) || html.match(/<meta\s+content="([^"]*)"\s+property="og:title"/);
+    const descMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]*)"/) || html.match(/<meta\s+content="([^"]*)"\s+property="og:description"/);
+    const title = titleMatch ? titleMatch[1].replace(/&quot;/g, '"').trim() : null;
+    const description = descMatch ? descMatch[1].replace(/&quot;/g, '"').trim() : null;
+    if (title || description) return { title: title || null, description: description || null };
+    return null;
+  } catch (e) {
+    return null;
+  }
 }
 
 /** Canonical form for matching report row channel to requested channel (@name vs t.me/name). */
@@ -1377,6 +1419,8 @@ app.get('/api/kro/check', async (req, res) => {
           if (report.complaints != null) complaints = report.complaints;
           if (report.total_loss != null) total_loss = report.total_loss;
         }
+        const verdict_phrase = VERDICT_PHRASES[row.verdict] || row.verdict || '—';
+        const reasons = buildReasonsFromRow(row);
         return res.json({
           found: true,
           username: row.username,
@@ -1386,69 +1430,94 @@ app.get('/api/kro/check', async (req, res) => {
           vip_price: row.vip_price,
           complaints,
           total_loss,
-          verdict: row.verdict
+          verdict: row.verdict,
+          verdict_phrase,
+          reasons
         });
       }
     }
 
     const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
     const hasPython = (process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath));
-    let checkOnceError = null;
-    if (hasPython) {
-      try {
-        const child = spawnSync('python3', [scriptPath, channel], {
+    const CHECK_ONCE_TIMEOUT_MS = 25000;
+
+    function runCheckOnceAsync() {
+      return new Promise((resolve) => {
+        if (!hasPython) {
+          resolve({ error: 'На сервере не настроены TELEGRAM_API_ID/Telethon — живая проверка недоступна.' });
+          return;
+        }
+        const child = spawn('python3', [scriptPath, channel], {
           cwd: join(__dirname, 'kro-worker'),
-          timeout: 60000,
           encoding: 'utf8',
           env: { ...process.env }
         });
-        const stdout = (child.stdout || '').trim();
-        const stderr = (child.stderr || '').trim();
-        const line = stdout.split('\n').find((l) => l.trim().startsWith('{'));
-        if (line) {
-          try {
-            const parsed = JSON.parse(line);
-            if (parsed && parsed.found === true && (parsed.risk_score != null || parsed.verdict)) {
-              let complaints = parsed.complaints;
-              let total_loss = parsed.total_loss;
-              const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
-              if (empty(complaints) || empty(total_loss)) {
-                const report = await getComplaintsAndLossForChannel(client, channel);
-                if (report.complaints != null) complaints = report.complaints;
-                if (report.total_loss != null) total_loss = report.total_loss;
+        let stdout = '';
+        let stderr = '';
+        child.stdout?.on('data', (chunk) => { stdout += chunk; });
+        child.stderr?.on('data', (chunk) => { stderr += chunk; });
+        const timer = setTimeout(() => {
+          child.kill('SIGTERM');
+          resolve({ error: 'Таймаут проверки по Telegram (25 сек). Показаны данные с t.me.', timeout: true });
+        }, CHECK_ONCE_TIMEOUT_MS);
+        child.on('close', (code) => {
+          clearTimeout(timer);
+          const line = stdout.split('\n').find((l) => l.trim().startsWith('{'));
+          if (line) {
+            try {
+              const parsed = JSON.parse(line);
+              if (parsed && parsed.found === true && (parsed.risk_score != null || parsed.verdict)) {
+                resolve({ found: true, parsed });
+                return;
               }
-              return res.json({
-                found: true,
-                username: parsed.username,
-                risk_score: parsed.risk_score,
-                ads_per_week: parsed.ads_per_week,
-                bot_pct: parsed.bot_pct,
-                vip_price: parsed.vip_price,
-                complaints,
-                total_loss,
-                verdict: parsed.verdict
-              });
+              if (parsed && parsed.found === false && parsed.error) resolve({ error: parsed.error });
+              else resolve({ error: stderr || 'Ошибка ответа скрипта' });
+            } catch (e) {
+              resolve({ error: stderr || 'Ошибка ответа скрипта' });
             }
-            if (parsed && parsed.found === false && parsed.error) {
-              checkOnceError = parsed.error;
-            }
-          } catch (parseErr) {
-            console.error('KRO check_once parse error:', parseErr.message);
-            checkOnceError = stderr || 'Ошибка ответа скрипта';
-          }
-        } else {
-          checkOnceError = stderr || (child.status !== 0 ? 'Скрипт завершился с ошибкой' : null);
-        }
-        if (stderr) console.error('KRO check_once stderr:', stderr);
-      } catch (e) {
-        console.error('KRO check_once error:', e.message);
-        checkOnceError = e.message || 'Запуск проверки не удался';
-      }
-    } else {
-      checkOnceError = 'На сервере не настроены TELEGRAM_API_ID/Telethon — живая проверка недоступна.';
+          } else resolve({ error: stderr || (code !== 0 ? 'Скрипт завершился с ошибкой' : null) });
+        });
+        child.on('error', (err) => {
+          clearTimeout(timer);
+          resolve({ error: err.message || 'Запуск проверки не удался' });
+        });
+      });
     }
 
-    if (kroCheckQueueRange && client) {
+    const [tmePreview, checkOnceResult] = await Promise.all([
+      fetchTmePreview(channel).catch(() => null),
+      runCheckOnceAsync()
+    ]);
+
+    if (checkOnceResult?.found === true && checkOnceResult.parsed) {
+      let complaints = checkOnceResult.parsed.complaints;
+      let total_loss = checkOnceResult.parsed.total_loss;
+      const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
+      if (empty(complaints) || empty(total_loss)) {
+        const report = await getComplaintsAndLossForChannel(client, channel);
+        if (report.complaints != null) complaints = report.complaints;
+        if (report.total_loss != null) total_loss = report.total_loss;
+      }
+      const p = checkOnceResult.parsed;
+      return res.json({
+        found: true,
+        username: p.username,
+        risk_score: p.risk_score,
+        ads_per_week: p.ads_per_week,
+        bot_pct: p.bot_pct,
+        vip_price: p.vip_price,
+        complaints,
+        total_loss,
+        verdict: p.verdict,
+        verdict_phrase: p.verdict_phrase || VERDICT_PHRASES[p.verdict] || p.verdict,
+        reasons: p.reasons || buildReasonsFromRow(p),
+        risk_pct: p.risk_pct
+      });
+    }
+
+    const checkOnceError = checkOnceResult?.error || null;
+
+    if (kroCheckQueueRange && client && !checkOnceError) {
       try {
         await client.sheets.spreadsheets.values.append({
           spreadsheetId: kroSheetId,
@@ -1461,15 +1530,37 @@ app.get('/api/kro/check', async (req, res) => {
         console.error('KRO check queue append error:', e);
       }
     }
-    const finalMessage = checkOnceError
-      ? `Не удалось проверить канал: ${checkOnceError}${kroCheckQueueRange ? ' Канал добавлен в очередь — попробуйте нажать «Проверить» через 1–2 минуты.' : ''}`
-      : checkingMessage;
+    const needLogin = checkOnceError && (checkOnceError.includes('kro-login') || checkOnceError.includes('войдите в Telegram'));
+    let complaintsFromReports = null;
+    let totalLossFromReports = null;
+    if (client && (tmePreview || needLogin)) {
+      const report = await getComplaintsAndLossForChannel(client, channel);
+      complaintsFromReports = report.complaints;
+      totalLossFromReports = report.total_loss;
+    }
+    const finalMessage = tmePreview
+      ? (tmePreview.title ? `Канал: ${tmePreview.title}.` : '') +
+        (tmePreview.description ? ` ${tmePreview.description.slice(0, 200)}${tmePreview.description.length > 200 ? '…' : ''}.` : '') +
+        (complaintsFromReports != null && complaintsFromReports > 0 ? ` По жалобам: ${complaintsFromReports}, потери: ${totalLossFromReports || '—'}.` : '') +
+        (checkOnceError && checkOnceError.includes('Таймаут') ? ' Проверка по Telegram заняла больше 25 сек.' : '') +
+        ' Оценка риска по сообщениям — после настройки входа в Telegram.'
+      : checkOnceError
+        ? (needLogin
+            ? 'Чтобы по ссылке сразу получать результат, один раз войди в Telegram (команда ниже).'
+            : `Канал не найден в базе. ${checkOnceError}`)
+        : kroCheckQueueRange
+          ? checkingMessage
+          : 'Канал не найден в базе. Добавьте каналы в таблицу scam_base или настройте живую проверку по Telegram.';
     return res.json({
       found: false,
-      pending: !!kroCheckQueueRange,
+      pending: !!kroCheckQueueRange && !checkOnceError,
       channel,
       message: finalMessage,
-      error_detail: checkOnceError || undefined
+      error_detail: checkOnceError || undefined,
+      needLogin: needLogin || undefined,
+      tme_preview: tmePreview || undefined,
+      complaints: complaintsFromReports ?? undefined,
+      total_loss: totalLossFromReports ?? undefined
     });
   } catch (e) {
     console.error('KRO check error:', e);

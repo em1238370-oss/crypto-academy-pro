@@ -10,6 +10,7 @@ import re
 import sys
 import json
 import asyncio
+from datetime import datetime, timedelta, timezone
 
 from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest
@@ -30,6 +31,12 @@ RISK_KEYWORDS = [
     'развод', 'скам', 'scam', 'крипта', 'крипто', 'crypto', 'btc', 'eth',
     'usdt', 'ton', 'телеграм', 'telegram', 'бот', 'bot'
 ]
+
+VERDICT_PHRASES = {
+    'scam': 'живут на VIP-подписках',
+    'grey': 'серая зона',
+    'safe': 'низкий риск'
+}
 
 
 def out(obj):
@@ -72,6 +79,7 @@ async def get_entity(client, channel_id):
 
 
 def analyze_messages(texts):
+    """Возвращает risk (0–100), matches, total, risk_pct (доля постов с VIP/сигналы/курс)."""
     total = 0
     matches = 0
     for t in texts:
@@ -84,10 +92,30 @@ def analyze_messages(texts):
                 matches += 1
                 break
     if total == 0:
-        return 0, 0
-    pct = (matches / total) * 100
-    risk = min(100, int(pct * 1.2))
-    return risk, matches
+        return 0, 0, 0, 0
+    risk_pct = round((matches / total) * 100)
+    risk = min(100, int(risk_pct * 1.2))
+    return risk, matches, total, risk_pct
+
+
+def count_ads_last_7_days(messages_with_dates):
+    """Считает посты с рекламными ключевыми словами за последние 7 дней. messages_with_dates: [(text, date), ...]."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=7)
+    count = 0
+    for text, msg_date in messages_with_dates:
+        if not text or len(text) < 5:
+            continue
+        if msg_date and getattr(msg_date, 'tzinfo', None) is None:
+            msg_date = msg_date.replace(tzinfo=timezone.utc)
+        if msg_date and msg_date < cutoff:
+            continue
+        lower = text.lower()
+        for kw in RISK_KEYWORDS:
+            if kw in lower:
+                count += 1
+                break
+    return min(99, count)
 
 
 def extract_vip_price(texts):
@@ -118,18 +146,27 @@ async def run_check(channel_id):
             return None
         messages = await client.get_messages(entity, limit=80)
         texts = []
+        messages_with_dates = []
         for m in messages:
             if m and m.text:
                 texts.append(m.text)
-        risk, _ = analyze_messages(texts)
+                messages_with_dates.append((m.text, m.date))
+        risk, _matches, _total, risk_pct = analyze_messages(texts)
         vip = extract_vip_price(texts)
-        ads_week = min(99, len(texts))
+        ads_week = count_ads_last_7_days(messages_with_dates)
         if risk >= 70:
             verdict = 'scam'
         elif risk >= 35:
             verdict = 'grey'
         else:
             verdict = 'safe'
+        verdict_phrase = VERDICT_PHRASES.get(verdict, verdict)
+        reasons = []
+        reasons.append(f'реклама ({ads_week} постов/нед)')
+        # bot_pct всегда "—": Telegram Client API не даёт доступ к комментариям под постами канала для подсчёта ботов
+        reasons.append('боты: —')
+        if vip and vip != '—':
+            reasons.append(f'VIP ({vip})')
         return {
             'found': True,
             'username': channel_id,
@@ -139,7 +176,10 @@ async def run_check(channel_id):
             'vip_price': vip,
             'complaints': None,
             'total_loss': None,
-            'verdict': verdict
+            'verdict': verdict,
+            'verdict_phrase': verdict_phrase,
+            'reasons': reasons,
+            'risk_pct': risk_pct
         }
     finally:
         await client.disconnect()
@@ -180,6 +220,13 @@ def main():
         return
     if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
         out({'found': False, 'error': 'telegram not configured'})
+        return
+    session_file = TELEGRAM_SESSION_NAME + '.session'
+    if not os.path.isfile(session_file):
+        out({
+            'found': False,
+            'error': 'Сначала один раз войдите в Telegram. В терминале из папки проекта выполните: node scripts/kro-login.js'
+        })
         return
     try:
         result = asyncio.run(run_check(channel_id))

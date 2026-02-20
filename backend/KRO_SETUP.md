@@ -27,7 +27,9 @@
 
 - Python 3 и зависимости из `kro-worker/requirements.txt`
 - Переменные окружения: `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`
-- При первом запуске — выполнен вход в Telethon (сессия сохраняется в `kro-worker`)
+- При первом запуске — выполнен вход в Telethon (сессия сохраняется в `kro-worker`). Варианты: номер телефона + код из приложения Telegram (код может прийти в приложение на телефоне или в Telegram Desktop); если заходишь в Telegram Desktop по QR-коду, для проверки каналов всё равно один раз запусти `node scripts/kro-login.js` или `python3 backend/kro-worker/login_telegram.py` (номер + код), чтобы создался файл `kro_worker.session` в `backend/kro-worker`.
+
+**Проверка:** в папке `backend/kro-worker` должен быть файл `kro_worker.session`. Если его нет — живая проверка по ссылке будет показывать название/описание с t.me и подсказку про вход.
 
 Таймаут вызова — 60 секунд. Результат (риск, причины, вердикт) возвращается клиенту без ожидания и повторного нажатия «Проверить». Опционально при заданных `KRO_SHEET_ID` и `KRO_SCAM_BASE_RANGE` скрипт дописывает строку в scam_base.
 

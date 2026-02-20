@@ -8,7 +8,7 @@ KRO live-check worker: читает очередь check_queue в Google Sheets,
 import os
 import re
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 # Google Sheets
 from google.oauth2 import service_account
@@ -94,7 +94,7 @@ async def get_entity(client, channel_id):
 
 
 def analyze_messages(texts):
-    """Простой анализ: количество «рекламных» ключевых слов, оценка риска 0–100."""
+    """Возвращает risk (0–100), matches, total, risk_pct (доля постов с VIP/сигналы/курс)."""
     total = 0
     matches = 0
     for t in texts:
@@ -107,10 +107,30 @@ def analyze_messages(texts):
                 matches += 1
                 break
     if total == 0:
-        return 0, 0
-    pct = (matches / total) * 100
-    risk = min(100, int(pct * 1.2))
-    return risk, matches
+        return 0, 0, 0, 0
+    risk_pct = round((matches / total) * 100)
+    risk = min(100, int(risk_pct * 1.2))
+    return risk, matches, total, risk_pct
+
+
+def count_ads_last_7_days(messages_with_dates):
+    """Посты с рекламными ключевыми словами за последние 7 дней."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=7)
+    count = 0
+    for text, msg_date in messages_with_dates:
+        if not text or len(text) < 5:
+            continue
+        if msg_date and getattr(msg_date, 'tzinfo', None) is None:
+            msg_date = msg_date.replace(tzinfo=timezone.utc)
+        if msg_date and msg_date < cutoff:
+            continue
+        lower = text.lower()
+        for kw in RISK_KEYWORDS:
+            if kw in lower:
+                count += 1
+                break
+    return min(99, count)
 
 
 def extract_vip_price(texts):
@@ -182,19 +202,21 @@ def run_worker_once():
                 return None
             messages = await client.get_messages(entity, limit=80)
             texts = []
+            messages_with_dates = []
             for m in messages:
                 if m and m.text:
                     texts.append(m.text)
-            risk, _ = analyze_messages(texts)
+                    messages_with_dates.append((m.text, m.date))
+            risk, _, _, _ = analyze_messages(texts)
             vip = extract_vip_price(texts)
-            ads_week = min(99, len(texts))
+            ads_week = count_ads_last_7_days(messages_with_dates)
             if risk >= 70:
                 verdict = 'scam'
             elif risk >= 35:
                 verdict = 'grey'
             else:
                 verdict = 'safe'
-            # В базу пишем тот же channel_id, что в очереди, чтобы повторный запрос пользователя нашёл строку
+            # bot_pct "—": API не даёт комментарии под постами канала для расчёта % ботов
             return [
                 channel_id,
                 risk,

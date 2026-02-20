@@ -10,3 +10,7 @@ build/
 *.swo
 *~
 
+# Telegram session (создаётся при входе через login_telegram.py, не коммитить)
+backend/kro-worker/*.session
+backend/kro-worker/*.session-journal
+
