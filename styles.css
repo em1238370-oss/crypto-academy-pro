@@ -560,6 +560,14 @@ button:focus-visible {
    box-sizing: border-box;
    padding: 24px;
    min-height: 100px;
+   border-left: 1px solid rgba(255, 255, 255, 0.06);
+   transition: background 0.2s ease;
+}
+.kro-f1-math-slide:first-child {
+   border-left: none;
+}
+.kro-f1-math-slider:hover .kro-f1-math-slide {
+   background: rgba(255, 255, 255, 0.02);
 }
 
 .kro-f1-math-slide-head {
@@ -1016,10 +1024,7 @@ button:focus-visible {
    font-weight: 700;
    margin-bottom: 12px;
    box-shadow: 0 0 16px rgba(139, 92, 246, 0.2);
-   transition: box-shadow 0.25s ease, transform 0.25s ease;
-}
-.kro-result-minicard:hover .kro-result-minicard-icon {
-   transform: translateY(-4px);
+   transition: box-shadow 0.25s ease;
 }
 /* Разные акценты + мягкое свечение иконок (как на скрине) */
 .kro-result-minicard:nth-child(1) .kro-result-minicard-icon {
