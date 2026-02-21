@@ -1345,26 +1345,6 @@ button:focus-visible {
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
-      text-align: center;
-   }
-   .kro-feature1-check .kro-check-tag {
-      margin-left: auto;
-      margin-right: auto;
-   }
-   .kro-feature1-check-intro {
-      text-align: center;
-   }
-   .kro-feature1-check-subtitle {
-      text-align: center;
-   }
-   .kro-feature1-heading {
-      text-align: center;
-   }
-   .kro-f1-math-title {
-      text-align: center;
-   }
-   .kro-feature1-report-intro {
-      text-align: center;
    }
    .kro-result-grid {
       grid-template-columns: 1fr;
@@ -1423,17 +1403,25 @@ button:focus-visible {
    pointer-events: none !important;
 }
 
-/* Мобильная главная: без горизонтального скролла и hero */
+/* Мобильная главная: без горизонтального скролла, тёмный низ (без белого при доводке), скролл сразу */
 @media (max-width: 768px) {
+   html, body.kro-main {
+      background: #0c0f14;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+   }
    .kro-main {
       overflow-x: hidden;
       max-width: 100%;
+      min-height: 100%;
    }
    .kro-main .page,
    .kro-main .content {
       overflow-x: hidden;
       max-width: 100%;
       width: 100%;
+      overflow-y: visible;
    }
    .kro-step1 {
       padding: 56px 20px 56px;
