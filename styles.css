@@ -1080,6 +1080,16 @@ button:focus-visible {
    color: rgba(255, 255, 255, 0.4);
    margin-left: 2px;
 }
+.kro-result-minicard-value .kro-result-risk-pending {
+   font-size: 0.9em;
+   font-weight: 600;
+   color: rgba(255, 255, 255, 0.65);
+   font-style: italic;
+}
+.kro-result-card-preview .kro-result-period-banner {
+   background: rgba(245, 158, 11, 0.12);
+   border-color: rgba(245, 158, 11, 0.3);
+}
 .kro-result-verdict-badge {
    display: inline-block;
    padding: 6px 12px;
@@ -1127,11 +1137,12 @@ button:focus-visible {
    user-select: all;
 }
 
-.kro-feature1-check-screenshot {
-   margin-top: 10px;
-}
-.kro-feature1-check-screenshot input[type="file"] {
-   margin-left: 8px;
+.kro-check-disclaimer {
+   margin-top: 0.5em;
+   margin-bottom: 0.5em;
+   font-size: 0.85em;
+   color: rgba(255, 255, 255, 0.65);
+   max-width: 100%;
 }
 
 .kro-feature1-report {

@@ -1633,7 +1633,7 @@ app.get('/api/kro/check-exchanger', async (req, res) => {
   try {
     const client = await getKroSheetsClient();
     if (!client) {
-      return res.json({ found: false, url, message: 'Обменник в базе не найден.' });
+      return res.json({ found: false, url, message: 'По этой ссылке в нашей базе записей об обменнике нет.' });
     }
     const response = await client.sheets.spreadsheets.values.get({
       spreadsheetId: kroSheetId,

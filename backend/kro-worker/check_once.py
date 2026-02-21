@@ -277,7 +277,7 @@ async def run_check(channel_id, period_days=30):
         if bot_pct and bot_pct != '—':
             reasons.append(f'боты ({bot_pct} — по комментариям под постами канала)')
         else:
-            reasons.append('боты: нет данных (комментарии под постами канала недоступны через API или у канала отключено обсуждение)')
+            reasons.append('по каналу комментарии не пришли (обсуждение отключено или API не отдаёт)')
         if vip and vip != '—':
             reasons.append(f'VIP ({vip})')
         risk_explanation = f'Оценка по доле постов с признаками рекламы (VIP, сигналы, крипта и т.д.) среди {messages_analyzed} постов канала за выбранный период.'
