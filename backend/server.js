@@ -1593,8 +1593,8 @@ app.get('/api/kro/check', async (req, res) => {
       : checkOnceError
         ? (needLogin
             ? 'Чтобы по ссылке сразу получать результат, один раз войди в Telegram (команда ниже).'
-            : `Канал не найден в базе. ${checkOnceError}`)
-        : 'Канал не найден в базе. Не удалось загрузить данные с t.me — проверьте ссылку или попробуйте позже.';
+            : `По этой ссылке в базе проверенных каналов записи нет. ${checkOnceError}`)
+        : 'По этой ссылке в базе записей нет. Данные с t.me по каналу не загрузились — проверьте ссылку или попробуйте позже.';
     return res.json({
       found: false,
       pending: addedToQueue || (!!kroCheckQueueRange && !!client),
@@ -1633,7 +1633,7 @@ app.get('/api/kro/check-exchanger', async (req, res) => {
   try {
     const client = await getKroSheetsClient();
     if (!client) {
-      return res.json({ found: false, url, message: 'По этой ссылке в нашей базе записей об обменнике нет.' });
+      return res.json({ found: false, url, message: 'Обменник в базе не найден.' });
     }
     const response = await client.sheets.spreadsheets.values.get({
       spreadsheetId: kroSheetId,

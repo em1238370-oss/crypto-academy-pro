@@ -605,8 +605,21 @@
                    var botBlock = '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">◐</div>' +
                        '<div class="kro-result-minicard-title">Боты</div>' +
-                       '<div class="kro-result-minicard-value">' + (botPct ? escapeHtml(botPct) : 'нет данных') + '</div>' +
+                       '<div class="kro-result-minicard-value">' + (botPct ? escapeHtml(botPct) : 'по каналу не пришли') + '</div>' +
                        '<p class="kro-result-minicard-hint">' + escapeHtml(botExpl) + '</p></div>';
+                   var reviewsHtml = '';
+                   if (data.reviews && data.reviews.length) {
+                       var list = [];
+                       for (var r = 0; r < data.reviews.length; r++) {
+                           var rev = data.reviews[r];
+                           list.push('<li class="kro-result-review-item">' +
+                               '<span class="kro-result-review-from">' + escapeHtml(rev.from || 'Аноним') + '</span>: ' +
+                               '<span class="kro-result-review-sum">' + escapeHtml(rev.sumFormatted || rev.sum || '') + '</span>' +
+                               (rev.date ? ' <span class="kro-result-review-date">' + escapeHtml(rev.date) + '</span>' : '') +
+                               '</li>');
+                       }
+                       reviewsHtml = '<div class="kro-result-reviews"><h4 class="kro-result-reviews-title">Отзывы потерпевших</h4><p class="kro-result-reviews-hint">Жалобы по этому каналу, отправленные через форму «Сообщить о разводе».</p><ul class="kro-result-reviews-list">' + list.join('') + '</ul></div>';
+                   }
                    return '<div class="kro-result-card">' +
                        '<div class="kro-result-period-banner">' + escapeHtml(periodBanner) + '</div>' +
                        '<div class="kro-result-header">' +
@@ -624,7 +637,7 @@
                        '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">≡</div>' +
                        '<div class="kro-result-minicard-title">Причины</div>' +
-                       '<div class="kro-result-minicard-value">' + (reasonsStr ? escapeHtml(reasonsStr) : '—') + '</div>' +
+                       '<div class="kro-result-minicard-value">' + (reasonsStr ? escapeHtml(reasonsStr) : 'будут после разбора постов канала') + '</div>' +
                        '<p class="kro-result-minicard-hint">' + escapeHtml(reasonsExpl) + '</p></div>' +
                        '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">₽</div>' +
@@ -638,6 +651,7 @@
                        '<p class="kro-result-minicard-hint">' + escapeHtml(verdictExpl) + '</p></div>' +
                        botBlock +
                        '</div>' +
+                       (reviewsHtml ? reviewsHtml : '') +
                        '</div>';
                }
                checkBtn.addEventListener('click', function() {
@@ -654,7 +668,7 @@
                        checkResult.textContent = 'Загрузка…';
                        fetch(base + '/api/kro/check-exchanger?url=' + encodeURIComponent(raw.trim())).then(function(r) { return r.json(); }).then(function(data) {
                            if (!data.found) {
-                               checkResult.textContent = (data.message || ('По этой ссылке в нашей базе записей об обменнике нет.'));
+                               checkResult.textContent = (data.message || ('Обменник не найден в базе.'));
                                checkResult.className = 'kro-check-result';
                                return;
                            }
@@ -695,7 +709,16 @@
                            } else {
                                msg = data.message || 'Не удалось получить результат. Проверьте ссылку или попробуйте позже.';
                            }
-                           checkResult.innerHTML = '<p class="kro-result-message">' + escapeHtml(msg).replace(/\n/g, '<br>') + '</p>';
+                           var previewHtml = '<p class="kro-result-message">' + escapeHtml(msg).replace(/\n/g, '<br>') + '</p>';
+                           if (data.reviews && data.reviews.length) {
+                               var revList = [];
+                               for (var r = 0; r < data.reviews.length; r++) {
+                                   var rev = data.reviews[r];
+                                   revList.push('<li class="kro-result-review-item">' + escapeHtml(rev.from || 'Аноним') + ': ' + escapeHtml(rev.sumFormatted || rev.sum || '') + (rev.date ? ' ' + escapeHtml(rev.date) : '') + '</li>');
+                               }
+                               previewHtml += '<div class="kro-result-reviews"><h4 class="kro-result-reviews-title">Отзывы потерпевших</h4><p class="kro-result-reviews-hint">Жалобы по этому каналу, отправленные через форму «Сообщить о разводе».</p><ul class="kro-result-reviews-list">' + revList.join('') + '</ul></div>';
+                           }
+                           checkResult.innerHTML = previewHtml;
                            checkResult.className = 'kro-check-result';
                            if (periodActionsEl) periodActionsEl.classList.add('hidden');
                            if (data.needLogin && hintEl) {
