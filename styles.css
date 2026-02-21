@@ -852,30 +852,35 @@ button:focus-visible {
 
 .kro-feature1-check-row {
    display: flex;
-   flex-wrap: wrap;
-   align-items: flex-end;
+   flex-direction: column;
    gap: 12px;
+   width: 100%;
 }
 
 .kro-feature1-check-row .kro-report-label {
-   flex: 1;
-   min-width: 160px;
+   width: 100%;
+   min-width: 0;
+}
+
+.kro-feature1-check-row .kro-report-label input {
+   width: 100%;
+   box-sizing: border-box;
+   border-radius: 999px;
+   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .kro-feature1-check-row .kro-report-submit {
+   width: 100%;
    margin-top: 0;
-   border-radius: 10px;
+   border-radius: 999px;
    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .kro-feature1-check-row .kro-report-submit:hover {
    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.2);
 }
-.kro-feature1-check-row .kro-report-submit:active {
-   transform: translateY(1px);
-}
-.kro-feature1-check-row .kro-report-label input {
-   border-radius: 10px;
-   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+.kro-feature1-check-row .kro-report-submit:active,
+.kro-feature1-check-row .kro-report-submit:focus {
+   border-radius: 999px;
 }
 .kro-feature1-check-row .kro-report-label input:focus {
    outline: none;
@@ -888,13 +893,16 @@ button:focus-visible {
    margin-bottom: 0.25cm;
 }
 .kro-period-btn {
+   width: 100%;
+   border-radius: 999px;
    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .kro-period-btn:hover {
    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.2);
 }
-.kro-period-btn:active {
-   transform: translateY(1px);
+.kro-period-btn:active,
+.kro-period-btn:focus {
+   border-radius: 999px;
 }
 
 .kro-check-result {
@@ -1144,6 +1152,15 @@ button:focus-visible {
    gap: 12px;
 }
 
+.kro-report-form .kro-report-label {
+   width: 100%;
+}
+
+.kro-report-form .kro-report-label input {
+   width: 100%;
+   box-sizing: border-box;
+}
+
 .kro-report-label {
    display: flex;
    flex-direction: column;
@@ -1168,25 +1185,31 @@ button:focus-visible {
 
 .kro-report-submit {
    margin-top: 8px;
-   padding: 14px 24px;
+   padding: 12px 22px;
+   width: 100%;
+   box-sizing: border-box;
    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-   font-size: 15px;
+   font-size: clamp(13px, 1.5vw, 15px);
    font-weight: 600;
-   color: #fff;
-   background-color: rgba(245, 158, 11, 0.45);
-   border: 1px solid rgba(245, 158, 11, 0.6);
-   border-radius: 8px;
+   letter-spacing: 0.04em;
+   text-transform: uppercase;
+   color: rgba(255, 230, 200, 0.95);
+   background-color: rgba(245, 158, 11, 0.08);
+   border: 1px solid rgba(245, 158, 11, 0.4);
+   border-radius: 999px;
    cursor: pointer;
-   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+   transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .kro-report-submit:hover {
-   background-color: rgba(251, 191, 36, 0.5);
-   border-color: rgba(251, 191, 36, 0.7);
+   border-color: rgba(245, 158, 11, 0.6);
+   background-color: rgba(245, 158, 11, 0.14);
+   color: rgba(255, 240, 220, 0.98);
 }
 
-.kro-report-submit:active {
-   transform: translateY(1px);
+.kro-report-submit:active,
+.kro-report-submit:focus {
+   border-radius: 999px;
 }
 
 .kro-feature1-report-message {
