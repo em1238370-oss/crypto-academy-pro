@@ -1302,20 +1302,6 @@ button:focus-visible {
 }
 
 @media (max-width: 600px) {
-   /* Чекер, канал, скример, скам — ровно по центру на телефоне */
-   .kro-feature1-date,
-   .kro-feature1-hero-number,
-   .kro-feature1-hero-label,
-   .kro-feature1-stat,
-   .kro-feature1-stat-value,
-   .kro-feature1-stat-label,
-   .kro-feature1-heading,
-   .kro-feature1-check-intro,
-   .kro-feature1-check-subtitle,
-   .kro-feature1-report-intro,
-   .kro-f1-math-title {
-      text-align: center;
-   }
    .kro-feature1-stats {
       grid-template-columns: 1fr;
       gap: 24px;
@@ -1451,6 +1437,7 @@ button:focus-visible {
 @media (max-width: 480px) {
    .kro-step1-tags {
       gap: 8px;
+      justify-content: center;
    }
    .kro-feature1 {
       padding: 48px 16px 48px;
