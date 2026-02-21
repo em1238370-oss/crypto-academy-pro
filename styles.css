@@ -560,14 +560,6 @@ button:focus-visible {
    box-sizing: border-box;
    padding: 24px;
    min-height: 100px;
-   border-left: 1px solid rgba(255, 255, 255, 0.06);
-   transition: background 0.2s ease;
-}
-.kro-f1-math-slide:first-child {
-   border-left: none;
-}
-.kro-f1-math-slider:hover .kro-f1-math-slide {
-   background: rgba(255, 255, 255, 0.02);
 }
 
 .kro-f1-math-slide-head {
@@ -635,37 +627,46 @@ button:focus-visible {
    justify-content: center;
    min-height: 80px;
    padding: 20px 16px;
-   border-radius: 12px;
+   border-radius: 14px;
    text-decoration: none;
    text-align: center;
    font-weight: 700;
-   transition: opacity 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
 }
 
 .kro-f1-choice-btn:hover {
    opacity: 1;
+   transform: translateY(-5px);
+}
+
+.kro-f1-choice-btn:active {
+   transform: translateY(0) scale(0.98);
 }
 
 .kro-f1-choice-red {
-   background: rgba(184, 74, 74, 0.14);
-   border: 1px solid rgba(184, 74, 74, 0.4);
-   color: rgba(255, 255, 255, 0.94);
+   background: rgba(184, 74, 74, 0.2);
+   border: 2px solid rgba(184, 74, 74, 0.5);
+   color: rgba(255, 255, 255, 0.98);
+   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 24px rgba(184, 74, 74, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .kro-f1-choice-red:hover {
-   background: rgba(184, 74, 74, 0.22);
-   border-color: rgba(184, 74, 74, 0.55);
+   background: rgba(184, 74, 74, 0.35);
+   border-color: rgba(184, 74, 74, 0.7);
+   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4), 0 0 48px rgba(184, 74, 74, 0.4), 0 0 64px rgba(184, 74, 74, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .kro-f1-choice-green {
-   background: rgba(55, 85, 55, 0.25);
-   border: 1px solid rgba(65, 100, 65, 0.45);
-   color: rgba(255, 255, 255, 0.94);
+   background: rgba(55, 85, 55, 0.35);
+   border: 2px solid rgba(65, 100, 65, 0.55);
+   color: rgba(255, 255, 255, 0.98);
+   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 24px rgba(55, 85, 55, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .kro-f1-choice-green:hover {
-   background: rgba(55, 85, 55, 0.38);
-   border-color: rgba(75, 110, 75, 0.55);
+   background: rgba(55, 85, 55, 0.5);
+   border-color: rgba(75, 110, 75, 0.75);
+   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4), 0 0 48px rgba(55, 85, 55, 0.4), 0 0 64px rgba(55, 85, 55, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .kro-f1-choice-main {

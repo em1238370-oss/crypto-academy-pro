@@ -981,10 +981,15 @@
                }
 
                dots.forEach(function(dot, i) {
-                   dot.addEventListener('click', function() { goTo(i); });
+                   dot.addEventListener('click', function() {
+                       goTo(i);
+                       stopAutoPlay();
+                       startAutoPlay();
+                   });
                });
 
                goTo(0);
+               startAutoPlay();
            }
            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initMathSlider);
            else initMathSlider();
