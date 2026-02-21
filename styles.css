@@ -1302,32 +1302,6 @@ button:focus-visible {
 }
 
 @media (max-width: 600px) {
-   /* Фишка 1: все шрифты на 2 размера крупнее (только мобильная) */
-   .kro-feature1 {
-      font-size: 1.125rem;
-   }
-   .kro-feature1-date { font-size: 0.9rem; }
-   .kro-feature1-hero-value { font-size: clamp(32px, 7.5vw, 48px); }
-   .kro-feature1-hero-label { font-size: 1rem; }
-   .kro-feature1-stat-value { font-size: clamp(20px, 2.6vw, 26px); }
-   .kro-feature1-stat-label { font-size: 1rem; }
-   .kro-feature1-heading { font-size: clamp(22px, 3.6vw, 26px); }
-   .kro-feature1-check-intro { font-size: clamp(1.75rem, 4.6vw, 2.2rem); }
-   .kro-feature1-check-subtitle { font-size: 1.0625rem; }
-   .kro-feature1-report-intro { font-size: 1.0625rem; }
-   .kro-feature1-top3 li { font-size: clamp(17px, 2.3vw, 19px); }
-   .kro-f1-shock-heading { font-size: 0.875rem; }
-   .kro-f1-shock-text { font-size: 1.0625rem; }
-   .kro-f1-shock-total { font-size: clamp(36px, 5.6vw, 52px); }
-   .kro-f1-loh-title { font-size: clamp(22px, 2.9vw, 28px); }
-   .kro-f1-loh-name { font-size: 1.0625rem; }
-   .kro-f1-loh-quote { font-size: 1rem; }
-   .kro-f1-loh-result { font-size: 0.9rem; }
-   .kro-f1-math-title { font-size: clamp(22px, 2.9vw, 28px); }
-   .kro-f1-math-slide-head { font-size: clamp(17px, 2.1vw, 20px); }
-   .kro-f1-math-slide-body { font-size: 1rem; }
-   .kro-f1-choice-main { font-size: clamp(16px, 2.1vw, 20px); }
-   .kro-f1-choice-sub { font-size: 0.9375rem; }
    .kro-feature1-stats {
       grid-template-columns: 1fr;
       gap: 24px;
@@ -1352,6 +1326,9 @@ button:focus-visible {
    .kro-f1-block.kro-f1-shock,
    .kro-f1-loh-card {
       padding: 20px;
+   }
+   .kro-f1-shock-total {
+      font-size: clamp(20px, 5.2vw, 26px);
    }
    .kro-feature1 {
       padding: 64px 20px 64px;
