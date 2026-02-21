@@ -320,7 +320,7 @@ button:focus-visible {
    font-size: clamp(18px, 3vw, 22px);
    font-weight: 600;
    color: rgba(255, 255, 255, 0.88);
-   max-width: 640px;
+   max-width: calc(640px + 4cm);
    margin: 0 auto 24px;
 }
 
@@ -328,7 +328,7 @@ button:focus-visible {
    display: grid;
    grid-template-columns: repeat(3, 1fr);
    gap: 32px 24px;
-   max-width: 640px;
+   max-width: calc(640px + 4cm);
    margin: 0 auto 40px;
 }
 
@@ -733,7 +733,7 @@ button:focus-visible {
    list-style: none;
    padding: 0;
    margin: 0 auto 40px;
-   max-width: 640px;
+   max-width: calc(640px + 4cm);
    text-align: left;
 }
 
@@ -794,7 +794,7 @@ button:focus-visible {
 
 /* Блок «Проверить канал» — SiteLove: luminous карточка со свечением */
 .kro-feature1-check {
-   max-width: 640px;
+   max-width: calc(640px + 4cm);
    margin: 0 auto 40px;
    text-align: left;
    position: relative;
@@ -1197,7 +1197,7 @@ button:focus-visible {
 
 /* Блок «Сообщить о разводе» — SiteLove: luminous контейнер */
 .kro-feature1-report {
-   max-width: 640px;
+   max-width: calc(640px + 4cm);
    margin: 0 auto;
    text-align: left;
    position: relative;
