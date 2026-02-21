@@ -608,7 +608,7 @@ button:focus-visible {
    border-color: var(--kro-accent-muted);
 }
 
-/* Блок 4: Твой выбор — две кнопки 50/50 */
+/* Блок 4: Твой выбор — SiteLove: кнопки с подъёмом, свечением, active scale */
 .kro-f1-block.kro-f1-choice-wrap {
    margin-bottom: 0;
 }
@@ -616,7 +616,7 @@ button:focus-visible {
 .kro-f1-choice {
    display: grid;
    grid-template-columns: 1fr 1fr;
-   gap: 16px;
+   gap: 18px;
    margin-bottom: 12px;
 }
 
@@ -625,59 +625,65 @@ button:focus-visible {
    flex-direction: column;
    align-items: center;
    justify-content: center;
-   min-height: 80px;
-   padding: 20px 16px;
-   border-radius: 12px;
+   min-height: 88px;
+   padding: 22px 18px;
+   border-radius: 18px;
    text-decoration: none;
    text-align: center;
    font-weight: 700;
-   transition: opacity 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+   transition: transform 0.2s ease, box-shadow 0.3s ease, border-color 0.25s ease, background 0.25s ease;
+   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.kro-f1-choice-btn:active {
+   transform: translateY(0) scale(var(--kro-btn-active-scale));
+   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .kro-f1-choice-btn:hover {
-   opacity: 1;
+   transform: translateY(var(--kro-btn-hover-y));
 }
 
 .kro-f1-choice-red {
-   background: rgba(184, 74, 74, 0.14);
-   border: 1px solid rgba(184, 74, 74, 0.4);
-   color: rgba(255, 255, 255, 0.94);
+   background: linear-gradient(180deg, rgba(184, 74, 74, 0.22) 0%, rgba(184, 74, 74, 0.12) 100%);
+   border: 1px solid rgba(184, 74, 74, 0.5);
+   color: rgba(255, 255, 255, 0.96);
 }
-
 .kro-f1-choice-red:hover {
-   background: rgba(184, 74, 74, 0.22);
-   border-color: rgba(184, 74, 74, 0.55);
+   background: linear-gradient(180deg, rgba(184, 74, 74, 0.3) 0%, rgba(184, 74, 74, 0.18) 100%);
+   border-color: rgba(184, 74, 74, 0.65);
+   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), 0 0 36px var(--kro-glow-red-soft), 0 0 50px rgba(184, 74, 74, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .kro-f1-choice-green {
-   background: rgba(55, 85, 55, 0.25);
-   border: 1px solid rgba(65, 100, 65, 0.45);
-   color: rgba(255, 255, 255, 0.94);
+   background: linear-gradient(180deg, rgba(55, 95, 55, 0.35) 0%, rgba(45, 75, 45, 0.2) 100%);
+   border: 1px solid rgba(75, 120, 75, 0.5);
+   color: rgba(255, 255, 255, 0.96);
 }
-
 .kro-f1-choice-green:hover {
-   background: rgba(55, 85, 55, 0.38);
-   border-color: rgba(75, 110, 75, 0.55);
+   background: linear-gradient(180deg, rgba(55, 105, 55, 0.45) 0%, rgba(50, 90, 50, 0.28) 100%);
+   border-color: rgba(85, 130, 85, 0.65);
+   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), 0 0 36px var(--kro-glow-green-soft), 0 0 50px rgba(55, 135, 55, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .kro-f1-choice-main {
    font-size: clamp(14px, 1.8vw, 18px);
    display: block;
    margin-bottom: 4px;
+   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .kro-f1-choice-sub {
    font-size: clamp(12px, 1.4vw, 14px);
-   opacity: 0.88;
+   opacity: 0.9;
 }
 
 .kro-f1-choice-green .kro-f1-choice-sub {
-   opacity: 0.85;
+   opacity: 0.88;
 }
 
 .kro-f1-choice-disclaimer {
    font-size: 12px;
-   color: rgba(255, 255, 255, 0.38);
+   color: rgba(255, 255, 255, 0.4);
    font-style: italic;
    margin: 0;
    text-align: center;
@@ -732,15 +738,22 @@ button:focus-visible {
 }
 
 .kro-feature1-top3 li {
-   margin-bottom: 8px;
+   margin-bottom: 10px;
    font-size: clamp(14px, 2vw, 16px);
-   color: rgba(255, 255, 255, 0.9);
+   color: rgba(255, 255, 255, 0.92);
    display: flex;
    flex-wrap: nowrap;
    align-items: center;
    gap: 8px;
+   border-radius: 14px;
+   padding: 14px 18px;
+   transition: transform 0.25s ease, box-shadow 0.3s ease, border-color 0.25s ease;
 }
-
+.kro-feature1-top3 li:hover {
+   transform: translateY(-2px);
+   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), 0 0 28px var(--kro-glow-amber-soft), 0 0 40px rgba(245, 158, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   border-color: rgba(255, 255, 255, 0.1);
+}
 .kro-feature1-top3 li:last-child {
    margin-bottom: 0;
 }
@@ -779,50 +792,66 @@ button:focus-visible {
    white-space: nowrap;
 }
 
+/* Блок «Проверить канал» — SiteLove: luminous карточка со свечением */
 .kro-feature1-check {
    max-width: 640px;
    margin: 0 auto 40px;
    text-align: left;
    position: relative;
    padding: 28px 24px 32px;
-   border-radius: 20px;
-   background: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(255, 255, 255, 0.025) 0%, transparent 50%);
-   transition: background 0.3s ease;
+   border-radius: 24px;
+   background: linear-gradient(165deg, rgba(28, 24, 38, 0.95) 0%, rgba(18, 16, 24, 0.98) 50%, rgba(14, 12, 20, 0.99) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.06);
+   box-shadow: var(--kro-shadow-layer1), var(--kro-shadow-layer2), var(--kro-shadow-layer3), 0 0 0 1px rgba(255, 255, 255, 0.03), 0 0 40px var(--kro-glow-purple-soft), 0 0 80px rgba(139, 92, 246, 0.08);
+   transition: box-shadow 0.35s ease, border-color 0.3s ease, transform 0.25s ease;
+}
+.kro-feature1-check::before {
+   content: '';
+   position: absolute;
+   inset: 0;
+   border-radius: inherit;
+   pointer-events: none;
+   box-shadow: var(--kro-inset-light);
+}
+.kro-feature1-check:hover {
+   box-shadow: var(--kro-shadow-layer1), 0 12px 32px rgba(0, 0, 0, 0.2), 0 24px 56px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 50px var(--kro-glow-purple-soft), 0 0 100px rgba(139, 92, 246, 0.12);
+   border-color: rgba(255, 255, 255, 0.08);
 }
 
 .kro-check-tag {
    display: inline-flex;
    align-items: center;
    gap: 6px;
-   padding: 6px 12px;
-   margin-bottom: 12px;
-   background: rgba(0, 0, 0, 0.4);
-   border: 1px solid var(--kro-violet-border);
+   padding: 8px 16px;
+   margin-bottom: 14px;
+   background: linear-gradient(180deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.06) 100%);
+   border: 1px solid rgba(139, 92, 246, 0.5);
    border-radius: 999px;
    font-size: 0.75rem;
    font-weight: 600;
    text-transform: uppercase;
-   letter-spacing: 0.06em;
-   color: var(--kro-gray-soft);
-   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35), 0 0 24px rgba(139, 92, 246, 0.12);
-   transition: box-shadow 0.25s ease, transform 0.2s ease;
+   letter-spacing: 0.08em;
+   color: rgba(255, 255, 255, 0.95);
+   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 20px var(--kro-glow-purple-soft), 0 0 40px rgba(139, 92, 246, 0.12);
+   transition: box-shadow 0.3s ease, transform 0.2s ease, border-color 0.25s ease;
 }
 .kro-check-tag:hover {
-   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 32px rgba(139, 92, 246, 0.18);
+   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 32px var(--kro-glow-purple-soft), 0 0 56px rgba(139, 92, 246, 0.2);
+   border-color: rgba(139, 92, 246, 0.65);
 }
 .kro-check-tag-icon {
    display: inline-flex;
    align-items: center;
    justify-content: center;
-   width: 16px;
-   height: 16px;
-   background: var(--kro-violet);
+   width: 18px;
+   height: 18px;
+   background: linear-gradient(180deg, var(--kro-violet) 0%, #7c3aed 100%);
    color: #fff;
    border-radius: 50%;
    font-size: 0.7rem;
    font-weight: 700;
    font-style: italic;
-   box-shadow: 0 0 12px rgba(139, 92, 246, 0.5);
+   box-shadow: 0 0 14px var(--kro-glow-purple), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .kro-feature1-check-intro {
@@ -832,9 +861,15 @@ button:focus-visible {
    margin: 0 0 8px 0;
    line-height: 1.2;
    letter-spacing: -0.02em;
+   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 .kro-check-intro-accent {
-   color: var(--kro-accent);
+   background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 35%, #a78bfa 70%, #8b5cf6 100%);
+   -webkit-background-clip: text;
+   background-clip: text;
+   -webkit-text-fill-color: transparent;
+   text-shadow: none;
+   filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.4));
 }
 
 .kro-feature1-check-subtitle {
@@ -873,19 +908,25 @@ button:focus-visible {
    width: 100%;
    margin-top: 0;
    border-radius: 999px;
-   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+   transition: transform 0.2s ease, box-shadow 0.25s ease, background-color 0.2s ease, border-color 0.2s ease;
+   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2), 0 0 20px var(--kro-glow-amber-soft);
 }
 .kro-feature1-check-row .kro-report-submit:hover {
-   box-shadow: 0 2px 12px rgba(245, 158, 11, 0.13);
+   transform: translateY(var(--kro-btn-hover-y));
+   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 32px var(--kro-glow-amber-soft), 0 0 48px rgba(245, 158, 11, 0.12);
 }
-.kro-feature1-check-row .kro-report-submit:active,
+.kro-feature1-check-row .kro-report-submit:active {
+   transform: translateY(0) scale(var(--kro-btn-active-scale));
+   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), 0 0 16px rgba(245, 158, 11, 0.1);
+   border-radius: 999px;
+}
 .kro-feature1-check-row .kro-report-submit:focus {
    border-radius: 999px;
 }
 .kro-feature1-check-row .kro-report-label input:focus {
    outline: none;
-   border-color: rgba(245, 158, 11, 0.5);
-   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15), 0 0 20px rgba(245, 158, 11, 0.08);
+   border-color: rgba(245, 158, 11, 0.55);
+   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18), 0 0 24px var(--kro-glow-amber-soft), 0 0 40px rgba(245, 158, 11, 0.08);
 }
 .kro-period-prompt {
    color: #fff;
@@ -895,18 +936,24 @@ button:focus-visible {
 .kro-period-btn {
    width: 100%;
    border-radius: 999px;
-   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+   transition: transform 0.2s ease, box-shadow 0.25s ease, background-color 0.2s ease, border-color 0.2s ease;
+   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2), 0 0 18px var(--kro-glow-amber-soft);
 }
 .kro-period-btn:hover {
-   box-shadow: 0 2px 12px rgba(245, 158, 11, 0.13);
+   transform: translateY(var(--kro-btn-hover-y));
+   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25), 0 0 28px var(--kro-glow-amber-soft), 0 0 40px rgba(245, 158, 11, 0.1);
 }
-.kro-period-btn:active,
+.kro-period-btn:active {
+   transform: translateY(0) scale(var(--kro-btn-active-scale));
+   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), 0 0 14px rgba(245, 158, 11, 0.08);
+   border-radius: 999px;
+}
 .kro-period-btn:focus {
    border-radius: 999px;
 }
 
 .kro-check-result {
-   margin-top: 16px;
+   margin-top: 20px;
    font-size: 14px;
    color: rgba(255, 255, 255, 0.85);
    line-height: 1.55;
@@ -974,35 +1021,34 @@ button:focus-visible {
    line-height: 1.5;
    margin: 0 0 18px 0;
    padding: 12px 14px;
-   background: linear-gradient(90deg, rgba(139, 92, 246, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-   border-radius: 12px;
+   background: rgba(255, 255, 255, 0.025);
+   border-radius: 10px;
    border-left: 3px solid var(--kro-violet-border);
-   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), 0 0 20px rgba(139, 92, 246, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .kro-result-grid {
    display: grid;
    grid-template-columns: 1fr 1fr;
-   gap: 16px;
+   gap: 14px;
 }
 .kro-result-minicard {
-   background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-   border: 1px solid rgba(255, 255, 255, 0.07);
-   border-radius: 16px;
-   padding: 18px;
-   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-   transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease, box-shadow 0.3s ease;
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.06);
+   border-radius: 14px;
+   padding: 16px;
+   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+   transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
 }
 .kro-result-minicard:hover {
-   background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
-   border-color: rgba(255, 255, 255, 0.12);
-   transform: translateY(-3px);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
+   border-color: rgba(255, 255, 255, 0.1);
 }
-.kro-result-minicard:nth-child(1):hover { border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), 0 0 32px var(--kro-glow-amber-soft), 0 0 48px rgba(245, 158, 11, 0.12); }
-.kro-result-minicard:nth-child(2):hover { border-color: rgba(139, 92, 246, 0.5); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), 0 0 32px var(--kro-glow-purple-soft), 0 0 48px rgba(139, 92, 246, 0.12); }
-.kro-result-minicard:nth-child(3):hover { border-color: var(--kro-cyan-border); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), 0 0 32px rgba(6, 182, 212, 0.2), 0 0 48px rgba(6, 182, 212, 0.1); }
-.kro-result-minicard:nth-child(4):hover { border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), 0 0 32px var(--kro-glow-amber-soft), 0 0 48px rgba(245, 158, 11, 0.12); }
-.kro-result-minicard:nth-child(5):hover { border-color: rgba(139, 92, 246, 0.5); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), 0 0 32px var(--kro-glow-purple-soft), 0 0 48px rgba(139, 92, 246, 0.12); }
+.kro-result-minicard:nth-child(1):hover { border-color: rgba(245, 158, 11, 0.25); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(245, 158, 11, 0.1); }
+.kro-result-minicard:nth-child(2):hover { border-color: var(--kro-violet-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(139, 92, 246, 0.1); }
+.kro-result-minicard:nth-child(3):hover { border-color: var(--kro-cyan-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(6, 182, 212, 0.1); }
+.kro-result-minicard:nth-child(4):hover { border-color: rgba(245, 158, 11, 0.25); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(245, 158, 11, 0.1); }
+.kro-result-minicard:nth-child(5):hover { border-color: var(--kro-violet-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(139, 92, 246, 0.1); }
 .kro-result-minicard-icon {
    width: 36px;
    height: 36px;
@@ -1105,14 +1151,18 @@ button:focus-visible {
 
 .kro-result-message {
    margin: 0;
-   padding: 14px 18px;
-   background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-   border: 1px solid rgba(255, 255, 255, 0.08);
-   border-radius: 12px;
-   color: rgba(255, 255, 255, 0.88);
+   padding: 16px 20px;
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.09);
+   border-radius: 16px;
+   color: rgba(255, 255, 255, 0.9);
    line-height: 1.5;
    font-size: 0.9375rem;
-   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), 0 0 24px rgba(139, 92, 246, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   transition: box-shadow 0.3s ease;
+}
+.kro-result-message:hover {
+   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 32px rgba(139, 92, 246, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .kro-check-login-hint {
@@ -1145,16 +1195,28 @@ button:focus-visible {
    margin-left: 8px;
 }
 
+/* Блок «Сообщить о разводе» — SiteLove: luminous контейнер */
 .kro-feature1-report {
    max-width: 640px;
    margin: 0 auto;
    text-align: left;
+   position: relative;
+   padding: 28px 24px 32px;
+   border-radius: 22px;
+   background: linear-gradient(165deg, rgba(28, 24, 38, 0.9) 0%, rgba(18, 16, 28, 0.95) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.06);
+   box-shadow: var(--kro-shadow-layer1), var(--kro-shadow-layer2), 0 0 35px var(--kro-glow-purple-soft), 0 0 55px rgba(139, 92, 246, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   transition: box-shadow 0.35s ease;
+}
+.kro-feature1-report:hover {
+   box-shadow: var(--kro-shadow-layer1), 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 45px var(--kro-glow-purple-soft), 0 0 70px rgba(139, 92, 246, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .kro-feature1-report-intro {
    font-size: clamp(14px, 2vw, 16px);
-   color: rgba(255, 255, 255, 0.85);
-   margin-bottom: 16px;
+   color: rgba(255, 255, 255, 0.9);
+   margin-bottom: 18px;
+   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .kro-report-form {
@@ -1194,9 +1256,10 @@ button:focus-visible {
    color: rgba(255, 255, 255, 0.4);
 }
 
+/* Кнопки отправки — SiteLove: тень, hover подъём + свечение, active вдавливание */
 .kro-report-submit {
    margin-top: 8px;
-   padding: 12px 22px;
+   padding: 14px 24px;
    width: 100%;
    box-sizing: border-box;
    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -1204,21 +1267,26 @@ button:focus-visible {
    font-weight: 600;
    letter-spacing: 0.04em;
    text-transform: uppercase;
-   color: rgba(255, 230, 200, 0.92);
-   background-color: rgba(245, 158, 11, 0.05);
-   border: 1px solid rgba(245, 158, 11, 0.25);
+   color: rgba(255, 235, 210, 0.95);
+   background: linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%);
+   border: 1px solid rgba(245, 158, 11, 0.4);
    border-radius: 999px;
    cursor: pointer;
-   transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+   transition: transform 0.2s ease, border-color 0.25s ease, background 0.25s ease, color 0.2s ease, box-shadow 0.25s ease;
+   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2), 0 0 18px rgba(245, 158, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
-
 .kro-report-submit:hover {
-   border-color: rgba(245, 158, 11, 0.38);
-   background-color: rgba(245, 158, 11, 0.09);
-   color: rgba(255, 240, 220, 0.98);
+   border-color: rgba(245, 158, 11, 0.55);
+   background: linear-gradient(180deg, rgba(245, 158, 11, 0.18) 0%, rgba(245, 158, 11, 0.1) 100%);
+   color: rgba(255, 248, 235, 1);
+   transform: translateY(var(--kro-btn-hover-y));
+   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 28px rgba(245, 158, 11, 0.15), 0 0 40px rgba(245, 158, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
-
-.kro-report-submit:active,
+.kro-report-submit:active {
+   transform: translateY(0) scale(var(--kro-btn-active-scale));
+   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), 0 0 14px rgba(245, 158, 11, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   border-radius: 999px;
+}
 .kro-report-submit:focus {
    border-radius: 999px;
 }
