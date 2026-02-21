@@ -9,8 +9,19 @@ build/
 *.swp
 *.swo
 *~
+*.session
 
+<<<<<<< HEAD
+# KRO worker: секреты и окружение — не коммитить
+backend/kro-worker/env
+backend/kro-worker/venv/
+venv/
+backend/kro-worker/*.png
+backend/kro-worker/credentials.json
+backend/kro-worker/*.session
+=======
 # Telegram session (создаётся при входе через login_telegram.py, не коммитить)
 backend/kro-worker/*.session
 backend/kro-worker/*.session-journal
 
+>>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))

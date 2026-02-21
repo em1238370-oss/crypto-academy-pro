@@ -96,6 +96,7 @@ Complete documentation in English is in [`docs/en/`](./docs/en/):
 5. **[05_ПОДСАЙТ_RISK_DISTRIBUTION.md](./docs/ru/05_ПОДСАЙТ_RISK_DISTRIBUTION.md)** - Подсайт Risk Distribution
 6. **[06_ПОДСАЙТ_CRYPTO_BASICS.md](./docs/ru/06_ПОДСАЙТ_CRYPTO_BASICS.md)** - Подсайт курса Crypto Basics
 7. **[07_ПОДСАЙТ_CRYPTO_COACH.md](./docs/ru/07_ПОДСАЙТ_CRYPTO_COACH.md)** - Подсайт Crypto Coach
+8. **[10_KRO_ТЕЛЕГРАМ_НАСТРОЙКА_И_ДРУГОЙ_КОМПЬЮТЕР.md](./docs/ru/10_KRO_ТЕЛЕГРАМ_НАСТРОЙКА_И_ДРУГОЙ_КОМПЬЮТЕР.md)** - KRO и Telegram: полная настройка, работа с другого компьютера, все ссылки и документы
 
 ---
 

@@ -1,6 +1,8 @@
 # KRO live-check worker
 
-Воркер раз в 1–2 минуты читает очередь проверки каналов (лист **check_queue** в Google Sheets), подключается к Telegram через Telethon, анализирует последние сообщения канала и дописывает результат в **scam_base**. Так пользователь может ввести любую ссылку (в т.ч. `t.me/+invite`) и через 1–2 минуты получить оценку, без предзаполненной базы.
+Воркер раз в 1–2 минуты читает очередь проверки каналов (лист **check_queue** в Google Sheets), запускает **check_once.py** (Telethon) для проверки канала и дописывает результат в **scam_base**. Так пользователь может ввести любую ссылку (в т.ч. `t.me/+invite`) и через 1–2 минуты получить оценку.
+
+**Полная настройка (вариант Б — Telethon на твоей машине/VPS):** см. [KRO_TELETHON_ВАРИАНТ_B.md](KRO_TELETHON_ВАРИАНТ_B.md).
 
 ## Переменные окружения
 
@@ -42,11 +44,13 @@ python worker.py
 */2 * * * * cd /path/to/project/backend/kro-worker && /path/to/python worker.py >> /tmp/kro-worker.log 2>&1
 ```
 
-Или цикл в скрипте (запуск одним процессом):
+Или скрипт-цикл (рекомендуется):
 
 ```bash
-while true; do python worker.py; sleep 120; done
+./run_worker_loop.sh
 ```
+
+Интервал по умолчанию 90 с; можно задать: `KRO_WORKER_INTERVAL=120 ./run_worker_loop.sh`.
 
 ## Формат данных
 
