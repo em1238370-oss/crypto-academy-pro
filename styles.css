@@ -24,6 +24,17 @@ button:focus-visible {
    --kro-accent-hover: #fbbf24;
    --kro-glow: rgba(245, 158, 11, 0.08);
    --kro-glow-soft: rgba(245, 158, 11, 0.04);
+   /* DuoView: фиолетовый для премиум, золотой для важного */
+   --kro-violet: #8b5cf6;
+   --kro-violet-soft: rgba(139, 92, 246, 0.25);
+   --kro-violet-border: rgba(139, 92, 246, 0.45);
+   /* Третий акцент — данные/потери (холодный) */
+   --kro-cyan: #06b6d4;
+   --kro-cyan-soft: rgba(6, 182, 212, 0.2);
+   --kro-cyan-border: rgba(6, 182, 212, 0.4);
+   /* Градации серого как на DuoView */
+   --kro-gray-mid: #888888;
+   --kro-gray-soft: #cccccc;
 }
 
 /* Фишка 1: по референсу — один сдержанный акцент (приглушённый красный), глубина, без шаблонной яркости */
@@ -781,13 +792,13 @@ button:focus-visible {
    padding: 6px 12px;
    margin-bottom: 12px;
    background: rgba(0, 0, 0, 0.35);
-   border: 1px solid rgba(245, 158, 11, 0.5);
+   border: 1px solid var(--kro-violet-border);
    border-radius: 999px;
    font-size: 0.75rem;
    font-weight: 600;
    text-transform: uppercase;
    letter-spacing: 0.06em;
-   color: rgba(255, 255, 255, 0.9);
+   color: var(--kro-gray-soft);
 }
 .kro-check-tag-icon {
    display: inline-flex;
@@ -795,8 +806,8 @@ button:focus-visible {
    justify-content: center;
    width: 16px;
    height: 16px;
-   background: rgba(245, 158, 11, 0.9);
-   color: #0a0a0a;
+   background: var(--kro-violet);
+   color: #fff;
    border-radius: 50%;
    font-size: 0.7rem;
    font-weight: 700;
@@ -812,12 +823,12 @@ button:focus-visible {
    letter-spacing: -0.02em;
 }
 .kro-check-intro-accent {
-   color: #f59e0b;
+   color: var(--kro-accent);
 }
 
 .kro-feature1-check-subtitle {
    font-size: 0.9375rem;
-   color: rgba(255, 255, 255, 0.6);
+   color: var(--kro-gray-mid);
    margin: 0 0 20px 0;
    line-height: 1.5;
 }
@@ -896,7 +907,7 @@ button:focus-visible {
 .kro-result-period-banner {
    font-size: clamp(1.1rem, 2.5vw, 1.35rem);
    font-weight: 700;
-   color: #f59e0b;
+   color: var(--kro-accent);
    margin: 0 0 18px 0;
    padding: 12px 0;
    border-bottom: 2px solid rgba(245, 158, 11, 0.4);
@@ -916,7 +927,7 @@ button:focus-visible {
 }
 .kro-result-card .kro-result-desc {
    font-size: 0.875rem;
-   color: rgba(255, 255, 255, 0.6);
+   color: var(--kro-gray-soft);
    line-height: 1.5;
    margin: 0 0 10px 0;
 }
@@ -924,18 +935,18 @@ button:focus-visible {
    font-size: 0.6875rem;
    text-transform: uppercase;
    letter-spacing: 0.08em;
-   color: rgba(255, 255, 255, 0.4);
+   color: var(--kro-gray-mid);
 }
 
 .kro-result-card .kro-result-source {
    font-size: 0.8125rem;
-   color: rgba(255, 255, 255, 0.55);
+   color: var(--kro-gray-soft);
    line-height: 1.5;
    margin: 0 0 18px 0;
    padding: 12px 14px;
    background: rgba(255, 255, 255, 0.03);
    border-radius: 8px;
-   border-left: 3px solid rgba(245, 158, 11, 0.4);
+   border-left: 3px solid var(--kro-violet-border);
 }
 
 .kro-result-grid {
@@ -954,26 +965,57 @@ button:focus-visible {
    background: rgba(255, 255, 255, 0.05);
    border-color: rgba(255, 255, 255, 0.1);
 }
+.kro-result-minicard:nth-child(1):hover { border-color: rgba(245, 158, 11, 0.2); }
+.kro-result-minicard:nth-child(2):hover { border-color: var(--kro-violet-border); }
+.kro-result-minicard:nth-child(3):hover { border-color: var(--kro-cyan-border); }
+.kro-result-minicard:nth-child(4):hover { border-color: rgba(245, 158, 11, 0.2); }
+.kro-result-minicard:nth-child(5):hover { border-color: var(--kro-violet-border); }
 .kro-result-minicard-icon {
    width: 36px;
    height: 36px;
    display: flex;
    align-items: center;
    justify-content: center;
-   background: rgba(245, 158, 11, 0.2);
-   border: 1px solid rgba(245, 158, 11, 0.35);
+   background: var(--kro-violet-soft);
+   border: 1px solid var(--kro-violet-border);
    border-radius: 10px;
-   color: #f59e0b;
+   color: var(--kro-violet);
    font-size: 1rem;
    font-weight: 700;
    margin-bottom: 12px;
+}
+/* Разные акценты по блокам: 1 Риск — золото, 2 Причины — фиолет, 3 Потери — циан, 4 Вердикт — золото, 5 Боты — фиолет */
+.kro-result-minicard:nth-child(1) .kro-result-minicard-icon {
+   background: rgba(245, 158, 11, 0.2);
+   border-color: rgba(245, 158, 11, 0.4);
+   color: var(--kro-accent);
+}
+.kro-result-minicard:nth-child(2) .kro-result-minicard-icon {
+   background: var(--kro-violet-soft);
+   border-color: var(--kro-violet-border);
+   color: var(--kro-violet);
+}
+.kro-result-minicard:nth-child(3) .kro-result-minicard-icon {
+   background: var(--kro-cyan-soft);
+   border-color: var(--kro-cyan-border);
+   color: var(--kro-cyan);
+}
+.kro-result-minicard:nth-child(4) .kro-result-minicard-icon {
+   background: rgba(245, 158, 11, 0.2);
+   border-color: rgba(245, 158, 11, 0.4);
+   color: var(--kro-accent);
+}
+.kro-result-minicard:nth-child(5) .kro-result-minicard-icon {
+   background: var(--kro-violet-soft);
+   border-color: var(--kro-violet-border);
+   color: var(--kro-violet);
 }
 .kro-result-minicard-title {
    font-size: 0.75rem;
    font-weight: 600;
    text-transform: uppercase;
    letter-spacing: 0.05em;
-   color: rgba(255, 255, 255, 0.5);
+   color: var(--kro-gray-mid);
    margin-bottom: 6px;
 }
 .kro-result-minicard-value {
@@ -983,14 +1025,14 @@ button:focus-visible {
 }
 .kro-result-minicard-hint {
    font-size: 0.75rem;
-   color: rgba(255, 255, 255, 0.5);
+   color: var(--kro-gray-mid);
    line-height: 1.4;
    margin: 10px 0 0 0;
 }
 .kro-result-minicard-value.kro-result-risk-value {
    font-size: clamp(1.5rem, 3.5vw, 2rem);
    font-weight: 700;
-   color: #f59e0b;
+   color: var(--kro-accent);
    line-height: 1.2;
 }
 .kro-result-minicard-value .kro-result-risk-max {
@@ -1003,11 +1045,11 @@ button:focus-visible {
    display: inline-block;
    padding: 6px 12px;
    background: rgba(245, 158, 11, 0.15);
-   border: 1px solid rgba(245, 158, 11, 0.4);
+   border: 1px solid rgba(245, 158, 11, 0.45);
    border-radius: 8px;
    font-size: 0.875rem;
    font-weight: 600;
-   color: #f59e0b;
+   color: var(--kro-accent);
 }
 
 .kro-result-message {
