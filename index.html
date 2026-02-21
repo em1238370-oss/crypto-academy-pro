@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
    <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1, maximum-scale=5, viewport-fit=cover">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
    <meta name="application-name" content="Check your crypto">
    <meta name="description" content="Check your crypto — не верь, проверь.">
    <title>Check your crypto</title>
@@ -633,7 +633,7 @@
                        '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">≡</div>' +
                        '<div class="kro-result-minicard-title">Причины</div>' +
-                       '<div class="kro-result-minicard-value">' + (reasonsStr ? escapeHtml(reasonsStr) : 'будут после разбора постов канала') + '</div>' +
+                       '<div class="kro-result-minicard-value">' + (reasonsStr && reasonsStr !== 'нет данных' ? escapeHtml(reasonsStr) : 'Причины не рассчитаны. Запустите проверку по Telegram для разбора постов канала или заполните данные в базе.') + '</div>' +
                        '<p class="kro-result-minicard-hint">' + escapeHtml(reasonsExpl) + '</p></div>' +
                        '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">₽</div>' +

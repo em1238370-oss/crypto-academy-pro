@@ -1188,13 +1188,6 @@ button:focus-visible {
    user-select: all;
 }
 
-.kro-feature1-check-screenshot {
-   margin-top: 10px;
-}
-.kro-feature1-check-screenshot input[type="file"] {
-   margin-left: 8px;
-}
-
 /* Блок «Сообщить о разводе» — SiteLove: luminous контейнер */
 .kro-feature1-report {
    max-width: calc(640px + 4cm);
@@ -1326,9 +1319,6 @@ button:focus-visible {
    .kro-f1-block.kro-f1-shock,
    .kro-f1-loh-card {
       padding: 20px;
-   }
-   .kro-f1-shock-total {
-      font-size: clamp(20px, 5.2vw, 26px);
    }
    .kro-feature1 {
       padding: 64px 20px 64px;

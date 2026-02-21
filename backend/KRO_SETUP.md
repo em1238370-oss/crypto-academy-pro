@@ -125,9 +125,17 @@
 
 ---
 
+## Вход для проверки (фишка 1)
+
+Поддерживаются **только два типа ввода**: (1) @username канала или ссылка t.me/… и (2) ссылка на обменник (http/https). Проверка по загрузке скриншота не используется.
+
+---
+
 ## API
 
 - **GET /api/kro/live-counter** — агрегаты для Фишки 1 (количество каналов за день, потери, Топ-3). Читает лист отчётов A2:F.
 - **POST /api/kro/report-scam** — принять жалобу (channel, sumRub, from). Добавляет строку в лист отчётов.
-- **GET /api/kro/check?channel=@username** (или `channel=https://t.me/...`, `channel=t.me/+invite`) — проверка канала по базе scam_base; при отсутствии в базе — синхронный вызов `check_once.py` (живая проверка через Telethon). Ссылки t.me парсятся автоматически. Ответ: `{ found, username?, risk_score?, ads_per_week?, bot_pct?, vip_price?, complaints?, total_loss?, verdict? }`. Поля «жалобы» и «потери» при пустых значениях в базе подставляются из листа отчётов (A2:F) по совпадению канала. При недоступности живой проверки и заданном `KRO_CHECK_QUEUE_RANGE`: `{ found: false, pending: true, channel, message }` — канал ставится в очередь, пользователю нужно нажать «Проверить» снова через 1–2 минуты.
+- **GET /api/kro/check?channel=@username** (или `channel=https://t.me/...`, `channel=t.me/+invite`, опционально `period=30|180|365` — период анализа в днях) — проверка канала по базе scam_base; при отсутствии в базе — синхронный вызов `check_once.py` (живая проверка через Telethon). Ссылки t.me парсятся автоматически.  
+  **Ответ при найденном канале:** `{ found: true, username, risk_score, ads_per_week?, bot_pct?, vip_price?, complaints?, total_loss?, verdict?, verdict_phrase?, reasons?, risk_explanation?, loss_explanation?, verdict_explanation?, period_days?, tme_preview?, messages_analyzed?, replies_count? }`. Поля «жалобы» и «потери» при пустых значениях в базе подставляются из листа отчётов (A2:F). Поля `risk_explanation`, `loss_explanation`, `verdict_explanation` содержат короткие пояснения для отображения на сайте.  
+  При недоступности живой проверки и заданном `KRO_CHECK_QUEUE_RANGE`: `{ found: false, pending: true, channel, message }` — канал ставится в очередь; пользователю нужно нажать «Проверить» снова через 1–2 минуты.
 - **GET /api/kro/check-exchanger?url=...** — проверка обменника по ссылке (база задаётся через `KRO_EXCHANGER_BASE_RANGE`). Ответ: `{ found, url?, name?, risk_score?, total_loss?, verdict? }` или `{ found: false, message }`.

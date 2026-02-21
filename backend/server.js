@@ -1279,7 +1279,11 @@ function buildReasonsFromRow(row) {
   if (row.ads_per_week != null) reasons.push(`реклама (${row.ads_per_week} постов/нед)`);
   reasons.push(row.bot_pct && row.bot_pct !== '—' ? `боты (${row.bot_pct})` : BOTS_NO_DATA_PHRASE);
   if (row.vip_price && row.vip_price !== '—') reasons.push(`VIP (${row.vip_price})`);
-  return reasons.length ? reasons : ['нет данных'];
+  const hasAny = row.ads_per_week != null || (row.vip_price && String(row.vip_price).trim() !== '' && String(row.vip_price).trim() !== '—') || (row.bot_pct && row.bot_pct !== '—');
+  if (!hasAny) {
+    return ['Причины не заполнены в базе. Для расчёта по постам канала настройте проверку по Telegram или заполните столбцы реклама/боты/VIP в таблице.'];
+  }
+  return reasons;
 }
 
 function parseScamBaseRow(row) {
@@ -1540,15 +1544,11 @@ app.get('/api/kro/check', async (req, res) => {
           if (report.complaints != null) complaints = report.complaints;
           if (report.total_loss != null) total_loss = report.total_loss;
         }
-        const verdict_phrase = (row.verdict && row.verdict.trim())
-          ? (VERDICT_PHRASES[row.verdict] || row.verdict)
-          : 'Вердикт не определён (в базе не заполнен). Запустите проверку по Telegram или заполните столбец в таблице.';
+        const verdict_phrase = (row.verdict && row.verdict.trim()) ? (VERDICT_PHRASES[row.verdict] || row.verdict) : 'Вердикт не определён (в базе не заполнен). Запустите проверку по Telegram или заполните столбец в таблице.';
         const reasons = buildReasonsFromRow(row);
-        const risk_explanation = 'Оценка из базы проверенных каналов. Значение было загружено при предыдущей проверке по Telegram или внесено вручную в таблицу.';
-        const loss_explanation = (empty(complaints) || empty(total_loss))
-          ? 'По этому каналу жалоб в форме «Сообщить о разводе» пока не поступало.'
-          : undefined;
         const tmePreview = await fetchTmePreview(channel).catch(() => null);
+        const risk_explanation = 'Оценка из базы проверенных каналов. Значение было загружено при предыдущей проверке по Telegram или внесено вручную в таблицу.';
+        const loss_explanation = (complaints == null && (total_loss == null || String(total_loss).trim() === '' || String(total_loss).trim() === '—')) ? 'По этому каналу жалоб в форме «Сообщить о разводе» пока не поступало.' : undefined;
         return res.json({
           found: true,
           username: row.username,
@@ -1564,7 +1564,7 @@ app.get('/api/kro/check', async (req, res) => {
           period_days: parseInt(period, 10) || 30,
           tme_preview: tmePreview || undefined,
           risk_explanation,
-          loss_explanation: loss_explanation
+          loss_explanation
         });
       }
     }
