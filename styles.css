@@ -808,6 +808,29 @@ button:focus-visible {
    margin-bottom: 6px;
 }
 
+.kro-check-login-hint {
+   margin-top: 14px;
+   padding: 12px 14px;
+   background: rgba(255, 165, 0, 0.12);
+   border: 1px solid rgba(255, 165, 0, 0.35);
+   border-radius: 8px;
+   font-size: 13px;
+}
+.kro-check-login-hint .kro-check-login-title {
+   margin: 0 0 8px 0;
+   color: rgba(255, 255, 255, 0.95);
+}
+.kro-check-login-hint .kro-check-login-cmd {
+   display: block;
+   padding: 10px 12px;
+   background: rgba(0, 0, 0, 0.35);
+   border-radius: 6px;
+   font-family: ui-monospace, monospace;
+   font-size: 14px;
+   color: #f59e0b;
+   user-select: all;
+}
+
 .kro-feature1-check-screenshot {
    margin-top: 10px;
 }

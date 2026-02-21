@@ -7,9 +7,15 @@ KRO live-check worker: читает очередь check_queue в Google Sheets,
 Запуск: раз в 1–2 минуты (cron или run_worker_loop.sh).
 """
 import os
+<<<<<<< HEAD
 import json
 import subprocess
 import sys
+=======
+import re
+import asyncio
+from datetime import datetime, timedelta, timezone
+>>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))
 
 # Google Sheets
 from google.oauth2 import service_account
@@ -101,6 +107,65 @@ def run_check_once(channel_id):
     return None
 
 
+<<<<<<< HEAD
+=======
+def analyze_messages(texts):
+    """Возвращает risk (0–100), matches, total, risk_pct (доля постов с VIP/сигналы/курс)."""
+    total = 0
+    matches = 0
+    for t in texts:
+        if not t or len(t) < 5:
+            continue
+        total += 1
+        lower = t.lower()
+        for kw in RISK_KEYWORDS:
+            if kw in lower:
+                matches += 1
+                break
+    if total == 0:
+        return 0, 0, 0, 0
+    risk_pct = round((matches / total) * 100)
+    risk = min(100, int(risk_pct * 1.2))
+    return risk, matches, total, risk_pct
+
+
+def count_ads_last_7_days(messages_with_dates):
+    """Посты с рекламными ключевыми словами за последние 7 дней."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=7)
+    count = 0
+    for text, msg_date in messages_with_dates:
+        if not text or len(text) < 5:
+            continue
+        if msg_date and getattr(msg_date, 'tzinfo', None) is None:
+            msg_date = msg_date.replace(tzinfo=timezone.utc)
+        if msg_date and msg_date < cutoff:
+            continue
+        lower = text.lower()
+        for kw in RISK_KEYWORDS:
+            if kw in lower:
+                count += 1
+                break
+    return min(99, count)
+
+
+def extract_vip_price(texts):
+    """Попытка вытащить цену VIP из текста (руб, usdt)."""
+    price_patterns = [
+        r'(?:vip|вип|подписк)[^\d]{0,20}(\d[\d\s]{2,10})\s*(?:р|руб|₽|usdt|долл)',
+        r'(\d[\d\s]{2,10})\s*(?:р|руб|₽)\s*(?:vip|вип|на\s+канал)',
+    ]
+    for t in texts:
+        for pat in price_patterns:
+            m = re.search(pat, t, re.I)
+            if m:
+                num = re.sub(r'\s', '', m.group(1))
+                if num.isdigit():
+                    return num + '₽'
+    return '—'
+
+
+>>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))
 def run_worker_once():
     if not KRO_SHEET_ID or not KRO_QUEUE_RANGE or not KRO_SCAM_BASE_RANGE:
         print('KRO_SHEET_ID, KRO_CHECK_QUEUE_RANGE, KRO_SCAM_BASE_RANGE required', file=sys.stderr)
@@ -152,7 +217,50 @@ def run_worker_once():
                 print('Queue update error:', e, file=sys.stderr)
         return
 
+<<<<<<< HEAD
     parsed = run_check_once(channel_id)
+=======
+    async def do_telethon():
+        client = TelegramClient(
+            TELEGRAM_SESSION_NAME,
+            TELEGRAM_API_ID,
+            TELEGRAM_API_HASH
+        )
+        await client.start()
+        try:
+            entity = await get_entity(client, channel_id)
+            if not entity:
+                return None
+            messages = await client.get_messages(entity, limit=80)
+            texts = []
+            messages_with_dates = []
+            for m in messages:
+                if m and m.text:
+                    texts.append(m.text)
+                    messages_with_dates.append((m.text, m.date))
+            risk, _, _, _ = analyze_messages(texts)
+            vip = extract_vip_price(texts)
+            ads_week = count_ads_last_7_days(messages_with_dates)
+            if risk >= 70:
+                verdict = 'scam'
+            elif risk >= 35:
+                verdict = 'grey'
+            else:
+                verdict = 'safe'
+            # bot_pct "—": API не даёт комментарии под постами канала для расчёта % ботов
+            return [
+                channel_id,
+                risk,
+                ads_week,
+                '—',
+                vip,
+                '—',
+                '—',
+                verdict
+            ]
+        finally:
+            await client.disconnect()
+>>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))
 
     if parsed and parsed.get('found') and (parsed.get('risk_score') is not None or parsed.get('verdict')):
         # check_once.py уже дописал в scam_base

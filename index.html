@@ -187,6 +187,10 @@
                    <button type="button" class="kro-report-submit" id="kro-check-screenshot-btn">Проверить по скрину</button>
                </div>
                <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
+               <div class="kro-check-login-hint hidden" id="kro-check-login-hint" aria-live="polite">
+                   <p class="kro-check-login-title">Выполни один раз в терминале из папки проекта:</p>
+                   <code class="kro-check-login-cmd" id="kro-check-login-cmd">node scripts/kro-login.js</code>
+               </div>
            </div>
            <div class="kro-feature1-report" id="kro-feature1-report">
                <p class="kro-feature1-report-intro">Сообщить о разводе → добавим за 30 мин</p>
@@ -595,22 +599,42 @@
                        checkResult.className = 'kro-check-result';
                        return;
                    }
-                   checkResult.textContent = 'Анализируем канал… может занять до минуты';
+                   checkResult.textContent = 'Проверяем канал… обычно до 25 сек';
+                   var loginHintEl = document.getElementById('kro-check-login-hint');
+                   if (loginHintEl) loginHintEl.classList.add('hidden');
                    fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(data) {
+                       var hintEl = document.getElementById('kro-check-login-hint');
+                       if (hintEl) hintEl.classList.add('hidden');
                        if (!data.found) {
-                           checkResult.textContent = (data.message || 'Анализируем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
-                           if (data.pending && !data.error_detail) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
+                           var msg = data.message || 'Анализируем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.';
+                           if (data.pending && !data.error_detail) msg += '\nНажмите «Проверить» снова через 1–2 минуты.';
+                           if (data.tme_preview && data.tme_preview.title) {
+                               msg = '📢 ' + (data.tme_preview.title || 'Канал') + (data.tme_preview.description ? '\n' + data.tme_preview.description.slice(0, 180) + (data.tme_preview.description.length > 180 ? '…' : '') : '');
+                               if (data.complaints != null && data.complaints > 0) msg += '\n💸 По жалобам: ' + data.complaints + (data.total_loss ? ', потери: ' + data.total_loss : '');
+                               msg += '\n\n⚠️ Оценка риска по сообщениям доступна после настройки входа в Telegram.';
+                           }
+                           checkResult.textContent = msg;
                            checkResult.className = 'kro-check-result';
+                           if (data.needLogin && hintEl) {
+                               hintEl.classList.remove('hidden');
+                               var cmdEl = document.getElementById('kro-check-login-cmd');
+                               if (cmdEl) cmdEl.textContent = 'node scripts/kro-login.js';
+                           }
                            return;
                        }
                        var risk = data.risk_score;
                        var riskStr = risk != null ? risk + '/100' : '—';
                        var lines = ['Риск ' + riskStr];
-                       if (data.ads_per_week != null) lines.push('⚠️ ' + data.ads_per_week + ' реклам/неделя');
-                       if (data.bot_pct) lines.push('⚠️ ' + data.bot_pct + ' ботов в комментах');
+                       if (data.reasons && data.reasons.length) lines.push('Причины: ' + data.reasons.join(', '));
+                       if (data.ads_per_week != null && !(data.reasons && data.reasons.length)) lines.push('⚠️ ' + data.ads_per_week + ' реклам/неделя');
+                       if (data.bot_pct && data.bot_pct !== '—' && !(data.reasons && data.reasons.length)) lines.push('⚠️ ' + data.bot_pct + ' ботов в комментах');
                        var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : '—');
                        lines.push('💸 Потери пользователей: ' + lossStr);
+<<<<<<< HEAD
                        lines.push('📊 Вердикт: ' + (data.verdictText || data.verdict || '—'));
+=======
+                       lines.push('📊 Вердикт: ' + (data.verdict_phrase || data.verdict || '—'));
+>>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))
                        checkResult.textContent = lines.join('\n');
                        checkResult.className = 'kro-check-result';
                    }).catch(function() {
@@ -673,19 +697,32 @@
                                    return;
                                }
                                fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(chData) {
+                                   var scHint = document.getElementById('kro-check-login-hint');
+                                   if (scHint) scHint.classList.add('hidden');
                                    if (!chData.found) {
+<<<<<<< HEAD
                                        checkResult.textContent = (chData.message || 'Канал добавлен в очередь. Обычно результат через 1–3 минуты. Нажмите «Проверить» снова.');
                                        if (chData.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–3 минуты.';
+=======
+                                       checkResult.textContent = (chData.message || 'Проверяем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
+                                       if (chData.pending && !chData.error_detail) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
+>>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))
                                        checkResult.className = 'kro-check-result';
+                                       if (chData.needLogin && scHint) {
+                                           scHint.classList.remove('hidden');
+                                           var scCmd = document.getElementById('kro-check-login-cmd');
+                                           if (scCmd) scCmd.textContent = 'node scripts/kro-login.js';
+                                       }
                                        return;
                                    }
                                    var risk = chData.risk_score;
                                    var riskStr = risk != null ? risk + '/100' : '—';
                                    var chLines = ['Риск ' + riskStr];
-                                   if (chData.ads_per_week != null) chLines.push('⚠️ ' + chData.ads_per_week + ' реклам/неделя');
-                                   if (chData.bot_pct) chLines.push('⚠️ ' + chData.bot_pct + ' ботов в комментах');
+                                   if (chData.reasons && chData.reasons.length) chLines.push('Причины: ' + chData.reasons.join(', '));
+                                   if (chData.ads_per_week != null && !(chData.reasons && chData.reasons.length)) chLines.push('⚠️ ' + chData.ads_per_week + ' реклам/неделя');
+                                   if (chData.bot_pct && chData.bot_pct !== '—' && !(chData.reasons && chData.reasons.length)) chLines.push('⚠️ ' + chData.bot_pct + ' ботов в комментах');
                                    chLines.push('💸 Потери пользователей: ' + (chData.total_loss || (chData.complaints != null ? chData.complaints + ' жалоб' : '—')));
-                                   chLines.push('📊 Вердикт: ' + (chData.verdict || '—'));
+                                   chLines.push('📊 Вердикт: ' + (chData.verdict_phrase || chData.verdict || '—'));
                                    checkResult.textContent = chLines.join('\n');
                                    checkResult.className = 'kro-check-result';
                                }).catch(function() {
