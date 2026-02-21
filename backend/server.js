@@ -1225,7 +1225,6 @@ async function getKroSheetsClient() {
   } else if (kroCredentialsPath && fs.existsSync(kroCredentialsPath)) {
     credentials = JSON.parse(fs.readFileSync(kroCredentialsPath, 'utf8'));
   } else {
-    console.warn('KRO: KRO_GOOGLE_CREDENTIALS_JSON and GOOGLE_APPLICATION_CREDENTIALS are not set');
     return null;
   }
   try {
@@ -1271,37 +1270,6 @@ function isRowToday(dateVal, today) {
   return s === today.dateKey || s === today.dateShort || s.startsWith(today.dateShort + '.') || s.endsWith(today.dateShort);
 }
 
-<<<<<<< HEAD
-/** Парсит bot_pct: "78%" или "78" → число 0–100. */
-function parseBotPct(bot_pct) {
-  if (bot_pct == null || bot_pct === '') return null;
-  const s = (bot_pct).toString().trim().replace(/%/g, '');
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : null;
-}
-
-/** Парсит vip_price: "7000₽", "7000" → число. */
-function parseVipPrice(vip_price) {
-  if (vip_price == null || vip_price === '') return null;
-  const s = (vip_price).toString().replace(/\s/g, '').replace(/[^\d]/g, '');
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) ? n : null;
-}
-
-/**
- * Формула риска MVP: реклама×0.4 + боты×0.3 + жалобы×0.2 (нормализовано к 0–100), +10 если vip > 5000.
- * Вход: ads_per_week (0–25 типично), bot_pct (0–100), complaints (0–50 типично), vip_price (строка или число).
- */
-function computeRiskScoreFromFeatures(ads_per_week, bot_pct, complaints, vip_price) {
-  const ads = Math.min(25, Math.max(0, ads_per_week ?? 0));
-  const botNum = parseBotPct(bot_pct);
-  const bots = botNum != null ? botNum : 0;
-  const comp = Math.min(50, Math.max(0, complaints ?? 0));
-  const vipNum = typeof vip_price === 'number' ? vip_price : parseVipPrice(vip_price);
-  const vipBonus = (vipNum != null && vipNum > 5000) ? 10 : 0;
-  const risk = Math.round((ads / 25) * 40 + (bots / 100) * 30 + (comp / 50) * 30 + vipBonus);
-  return Math.min(100, Math.max(0, risk));
-=======
 const VERDICT_PHRASES = { scam: 'живут на VIP-подписках', grey: 'серая зона', safe: 'низкий риск' };
 
 function buildReasonsFromRow(row) {
@@ -1310,7 +1278,6 @@ function buildReasonsFromRow(row) {
   reasons.push(row.bot_pct && row.bot_pct !== '—' ? `боты (${row.bot_pct})` : 'боты: —');
   if (row.vip_price && row.vip_price !== '—') reasons.push(`VIP (${row.vip_price})`);
   return reasons.length ? reasons : ['нет данных'];
->>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))
 }
 
 function parseScamBaseRow(row) {
@@ -1360,16 +1327,22 @@ async function fetchTmePreview(channel) {
   if (!url) return null;
   try {
     const response = await axios.get(url, {
-      timeout: 8000,
-      maxRedirects: 3,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KRO-Checker/1.0)' },
-      validateStatus: (s) => s === 200
+      timeout: 10000,
+      maxRedirects: 5,
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0' },
+      validateStatus: (s) => s >= 200 && s < 400
     });
     const html = response.data && typeof response.data === 'string' ? response.data : '';
-    const titleMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]*)"/) || html.match(/<meta\s+content="([^"]*)"\s+property="og:title"/);
-    const descMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]*)"/) || html.match(/<meta\s+content="([^"]*)"\s+property="og:description"/);
-    const title = titleMatch ? titleMatch[1].replace(/&quot;/g, '"').trim() : null;
-    const description = descMatch ? descMatch[1].replace(/&quot;/g, '"').trim() : null;
+    let title = null;
+    let description = null;
+    const ogTitle = html.match(/<meta\s+property="og:title"\s+content="([^"]*)"/) || html.match(/<meta\s+content="([^"]*)"\s+property="og:title"/);
+    const ogDesc = html.match(/<meta\s+property="og:description"\s+content="([^"]*)"/) || html.match(/<meta\s+content="([^"]*)"\s+property="og:description"/);
+    if (ogTitle) title = ogTitle[1].replace(/&quot;/g, '"').trim();
+    if (ogDesc) description = ogDesc[1].replace(/&quot;/g, '"').trim();
+    if (!title && html.includes('<title>')) {
+      const titleTag = html.match(/<title>([^<]*)<\/title>/);
+      if (titleTag) title = titleTag[1].replace(/&quot;/g, '"').trim();
+    }
     if (title || description) return { title: title || null, description: description || null };
     return null;
   } catch (e) {
@@ -1425,24 +1398,25 @@ app.get('/api/kro/check', async (req, res) => {
   if (!channel) {
     return res.status(400).json({ error: 'channel query is required', found: false });
   }
-  const checkingMessage = 'Проверяем канал по Telegram. Подождите 1–2 минуты и нажмите «Проверить» снова.';
+  const noConfigMessage = 'Не настроена база каналов (KRO_SHEET_ID или Google credentials). Добавьте настройки в .env.';
   if (!kroScamBaseRange || !kroSheetId) {
-    return res.json({ found: false, channel, pending: true, message: checkingMessage });
+    return res.json({ found: false, channel, message: noConfigMessage });
   }
   try {
     const client = await getKroSheetsClient();
     if (!client) {
-      return res.json({ found: false, channel, pending: true, message: checkingMessage });
+      return res.json({ found: false, channel, message: noConfigMessage });
     }
     const response = await client.sheets.spreadsheets.values.get({
       spreadsheetId: kroSheetId,
       range: kroScamBaseRange
     });
     const rows = response.data.values || [];
-    const requestKey = channelMatchKey(channel);
+    const channelLower = channel.toLowerCase();
     for (let i = 0; i < rows.length; i++) {
       const row = parseScamBaseRow(rows[i]);
-      if (requestKey && channelMatchKey(row.username) === requestKey) {
+      const rowChannel = (row.username || '').toLowerCase();
+      if (rowChannel === channelLower || rowChannel === channelLower.slice(1)) {
         let complaints = row.complaints;
         let total_loss = row.total_loss;
         const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
@@ -1502,27 +1476,10 @@ app.get('/api/kro/check', async (req, res) => {
                 resolve({ found: true, parsed });
                 return;
               }
-<<<<<<< HEAD
-              const risk_score = parsed.risk_score != null
-                ? parsed.risk_score
-                : computeRiskScoreFromFeatures(parsed.ads_per_week, parsed.bot_pct, complaints ?? parsed.complaints, parsed.vip_price);
-              return res.json({
-                found: true,
-                username: parsed.username,
-                risk_score,
-                ads_per_week: parsed.ads_per_week,
-                bot_pct: parsed.bot_pct,
-                vip_price: parsed.vip_price,
-                complaints,
-                total_loss,
-                verdict: parsed.verdict
-              });
-=======
               if (parsed && parsed.found === false && parsed.error) resolve({ error: parsed.error });
               else resolve({ error: stderr || 'Ошибка ответа скрипта' });
             } catch (e) {
               resolve({ error: stderr || 'Ошибка ответа скрипта' });
->>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))
             }
           } else resolve({ error: stderr || (code !== 0 ? 'Скрипт завершился с ошибкой' : null) });
         });
@@ -1597,9 +1554,7 @@ app.get('/api/kro/check', async (req, res) => {
         ? (needLogin
             ? 'Чтобы по ссылке сразу получать результат, один раз войди в Telegram (команда ниже).'
             : `Канал не найден в базе. ${checkOnceError}`)
-        : kroCheckQueueRange
-          ? checkingMessage
-          : 'Канал не найден в базе. Добавьте каналы в таблицу scam_base или настройте живую проверку по Telegram.';
+        : 'Канал не найден в базе. Не удалось загрузить данные с t.me — проверьте ссылку или попробуйте позже.';
     return res.json({
       found: false,
       pending: !!kroCheckQueueRange && !checkOnceError,
@@ -1613,7 +1568,7 @@ app.get('/api/kro/check', async (req, res) => {
     });
   } catch (e) {
     console.error('KRO check error:', e);
-    return res.status(500).json({ found: false, channel, pending: true, message: checkingMessage, error: 'internal_error' });
+    return res.status(500).json({ found: false, channel, message: 'Ошибка сервера при проверке канала. Попробуйте позже.', error: 'internal_error' });
   }
 });
 

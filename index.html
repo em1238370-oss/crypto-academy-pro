@@ -606,8 +606,7 @@
                        var hintEl = document.getElementById('kro-check-login-hint');
                        if (hintEl) hintEl.classList.add('hidden');
                        if (!data.found) {
-                           var msg = data.message || 'Анализируем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.';
-                           if (data.pending && !data.error_detail) msg += '\nНажмите «Проверить» снова через 1–2 минуты.';
+                           var msg = data.message || 'Не удалось получить результат. Проверьте ссылку или попробуйте позже.';
                            if (data.tme_preview && data.tme_preview.title) {
                                msg = '📢 ' + (data.tme_preview.title || 'Канал') + (data.tme_preview.description ? '\n' + data.tme_preview.description.slice(0, 180) + (data.tme_preview.description.length > 180 ? '…' : '') : '');
                                if (data.complaints != null && data.complaints > 0) msg += '\n💸 По жалобам: ' + data.complaints + (data.total_loss ? ', потери: ' + data.total_loss : '');
@@ -702,10 +701,8 @@
                                    if (!chData.found) {
 <<<<<<< HEAD
                                        checkResult.textContent = (chData.message || 'Канал добавлен в очередь. Обычно результат через 1–3 минуты. Нажмите «Проверить» снова.');
-                                       if (chData.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–3 минуты.';
 =======
-                                       checkResult.textContent = (chData.message || 'Проверяем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
-                                       if (chData.pending && !chData.error_detail) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
+                                       checkResult.textContent = (chData.message || 'Не удалось получить результат. Проверьте ссылку или попробуйте позже.');
 >>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))
                                        checkResult.className = 'kro-check-result';
                                        if (chData.needLogin && scHint) {
