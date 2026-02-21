@@ -204,10 +204,10 @@ button:focus-visible {
    font-weight: 600;
    letter-spacing: 0.04em;
    text-transform: uppercase;
-   color: rgba(255, 230, 200, 0.95);
-   background-color: rgba(245, 158, 11, 0.08);
+   color: rgba(255, 230, 200, 0.9);
+   background-color: rgba(245, 158, 11, 0.04);
    padding: 12px 22px;
-   border: 1px solid rgba(245, 158, 11, 0.4);
+   border: 1px solid rgba(245, 158, 11, 0.2);
    border-radius: 999px;
    text-decoration: none;
    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
@@ -225,9 +225,9 @@ button:focus-visible {
 }
 
 .kro-step1-cta:hover {
-   border-color: rgba(245, 158, 11, 0.6);
-   background-color: rgba(245, 158, 11, 0.14);
-   color: rgba(255, 240, 220, 0.98);
+   border-color: rgba(245, 158, 11, 0.3);
+   background-color: rgba(245, 158, 11, 0.07);
+   color: rgba(255, 240, 220, 0.95);
 }
 
 .kro-step1-cta:focus-visible {
@@ -876,7 +876,7 @@ button:focus-visible {
    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .kro-feature1-check-row .kro-report-submit:hover {
-   box-shadow: 0 2px 10px rgba(245, 158, 11, 0.2);
+   box-shadow: 0 2px 10px rgba(245, 158, 11, 0.1);
 }
 .kro-feature1-check-row .kro-report-submit:active,
 .kro-feature1-check-row .kro-report-submit:focus {
@@ -898,7 +898,7 @@ button:focus-visible {
    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .kro-period-btn:hover {
-   box-shadow: 0 2px 10px rgba(245, 158, 11, 0.2);
+   box-shadow: 0 2px 10px rgba(245, 158, 11, 0.1);
 }
 .kro-period-btn:active,
 .kro-period-btn:focus {
@@ -1193,18 +1193,18 @@ button:focus-visible {
    font-weight: 600;
    letter-spacing: 0.04em;
    text-transform: uppercase;
-   color: rgba(255, 230, 200, 0.95);
-   background-color: rgba(245, 158, 11, 0.08);
-   border: 1px solid rgba(245, 158, 11, 0.4);
+   color: rgba(255, 230, 200, 0.9);
+   background-color: rgba(245, 158, 11, 0.04);
+   border: 1px solid rgba(245, 158, 11, 0.2);
    border-radius: 999px;
    cursor: pointer;
    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .kro-report-submit:hover {
-   border-color: rgba(245, 158, 11, 0.6);
-   background-color: rgba(245, 158, 11, 0.14);
-   color: rgba(255, 240, 220, 0.98);
+   border-color: rgba(245, 158, 11, 0.3);
+   background-color: rgba(245, 158, 11, 0.07);
+   color: rgba(255, 240, 220, 0.95);
 }
 
 .kro-report-submit:active,
