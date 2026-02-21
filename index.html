@@ -633,7 +633,7 @@
                        '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">≡</div>' +
                        '<div class="kro-result-minicard-title">Причины</div>' +
-                       '<div class="kro-result-minicard-value">' + (reasonsStr && reasonsStr !== 'нет данных' ? escapeHtml(reasonsStr) : 'Причины не рассчитаны. Запустите проверку по Telegram для разбора постов канала или заполните данные в базе.') + '</div>' +
+                       '<div class="kro-result-minicard-value">' + (reasonsStr ? escapeHtml(reasonsStr) : 'будут после разбора постов канала') + '</div>' +
                        '<p class="kro-result-minicard-hint">' + escapeHtml(reasonsExpl) + '</p></div>' +
                        '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">₽</div>' +
@@ -779,8 +779,13 @@
                                periodActions.classList.add('hidden');
                            }
                        }
-                   }).catch(function() {
-                       checkResult.textContent = 'Ошибка запроса или сети. Попробуйте снова.';
+                   }).catch(function(err) {
+                       clearTimeout(periodTimeoutId);
+                       var msg = 'Ошибка запроса или сети. Попробуйте снова.';
+                       if (err && err.name === 'AbortError') msg = 'Запрос занял больше 2 минут. Нажмите «Проверить» и выберите период снова.';
+                       else if (err && err.serverError && err.message) msg = err.message;
+                       checkResult.textContent = msg;
+                       checkResult.className = 'kro-check-result';
                    });
                }
                var btn180 = document.getElementById('kro-check-period-180');
