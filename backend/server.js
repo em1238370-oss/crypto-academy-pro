@@ -1272,10 +1272,12 @@ function isRowToday(dateVal, today) {
 
 const VERDICT_PHRASES = { scam: 'живут на VIP-подписках', grey: 'серая зона', safe: 'низкий риск' };
 
+const BOTS_NO_DATA_PHRASE = 'боты: нет данных (доступ к комментариям канала через API отсутствует)';
+
 function buildReasonsFromRow(row) {
   const reasons = [];
   if (row.ads_per_week != null) reasons.push(`реклама (${row.ads_per_week} постов/нед)`);
-  reasons.push(row.bot_pct && row.bot_pct !== '—' ? `боты (${row.bot_pct})` : 'боты: —');
+  reasons.push(row.bot_pct && row.bot_pct !== '—' ? `боты (${row.bot_pct})` : BOTS_NO_DATA_PHRASE);
   if (row.vip_price && row.vip_price !== '—') reasons.push(`VIP (${row.vip_price})`);
   return reasons.length ? reasons : ['нет данных'];
 }
@@ -1504,7 +1506,8 @@ app.get('/api/kro/check', async (req, res) => {
         verdict_phrase: p.verdict_phrase || VERDICT_PHRASES[p.verdict] || p.verdict,
         reasons: p.reasons || buildReasonsFromRow(p),
         risk_pct: p.risk_pct,
-        period_days: p.period_days != null ? p.period_days : 30
+        period_days: p.period_days != null ? p.period_days : 30,
+        tme_preview: tmePreview || undefined
       });
     }
     if (checkOnceResult?.not_crypto) {
@@ -1536,6 +1539,7 @@ app.get('/api/kro/check', async (req, res) => {
         }
         const verdict_phrase = VERDICT_PHRASES[row.verdict] || row.verdict || '—';
         const reasons = buildReasonsFromRow(row);
+        const tmePreview = await fetchTmePreview(channel).catch(() => null);
         return res.json({
           found: true,
           username: row.username,
@@ -1548,7 +1552,8 @@ app.get('/api/kro/check', async (req, res) => {
           verdict: row.verdict,
           verdict_phrase,
           reasons,
-          period_days: 30
+          period_days: 30,
+          tme_preview: tmePreview || undefined
         });
       }
     }

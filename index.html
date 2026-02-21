@@ -555,6 +555,7 @@
            var checkBtn = document.getElementById('kro-check-btn');
            var checkInput = document.getElementById('kro-check-channel');
            var checkResult = document.getElementById('kro-check-result');
+           var lastCheckedChannel = '';
            if (checkBtn && checkInput && checkResult) {
                function normChannel(s) {
                    var t = (s || '').trim().replace(/\s/g, '');
@@ -570,6 +571,23 @@
                function isExchangerUrl(s) {
                    var t = (s || '').trim();
                    return (t.indexOf('http://') === 0 || t.indexOf('https://') === 0) && t.toLowerCase().indexOf('t.me') === -1;
+               }
+               function buildCheckResultLines(data) {
+                   var lines = [];
+                   var title = (data.tme_preview && data.tme_preview.title) ? data.tme_preview.title : (data.username || 'Канал');
+                   var desc = (data.tme_preview && data.tme_preview.description) ? data.tme_preview.description : '';
+                   if (desc && desc.length > 300) desc = desc.slice(0, 300) + '…';
+                   lines.push('Название канала: ' + title);
+                   if (desc) lines.push('Описание: ' + desc);
+                   var pd = data.period_days != null ? data.period_days : 30;
+                   lines.push(pd === 180 ? 'Проверено за 6 месяцев' : (pd === 365 ? 'Проверено за год' : 'Проверено за месяц'));
+                   var risk = data.risk_score;
+                   lines.push('Риск ' + (risk != null ? risk + '/100' : '—'));
+                   if (data.reasons && data.reasons.length) lines.push('Причины: ' + data.reasons.join(', '));
+                   var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : 'по жалобам данных пока нет (можно отправить через форму «Сообщить о разводе»)');
+                   lines.push('💸 Потери пользователей: ' + lossStr);
+                   lines.push('📊 Вердикт: ' + (data.verdict_phrase || data.verdict || '—'));
+                   return lines;
                }
                checkBtn.addEventListener('click', function() {
                    var raw = checkInput.value;
@@ -636,19 +654,11 @@
                            }
                            return;
                        }
-                       var pd = data.period_days != null ? data.period_days : 30;
-                       var periodLabel = pd === 180 ? 'Проверено за 6 месяцев' : (pd === 365 ? 'Проверено за год' : 'Проверено за месяц');
-                       var risk = data.risk_score;
-                       var riskStr = risk != null ? risk + '/100' : '—';
-                       var lines = [periodLabel, 'Риск ' + riskStr];
-                       if (data.reasons && data.reasons.length) lines.push('Причины: ' + data.reasons.join(', '));
-                       if (data.ads_per_week != null && !(data.reasons && data.reasons.length)) lines.push('⚠️ ' + data.ads_per_week + ' реклам/неделя');
-                       if (data.bot_pct && data.bot_pct !== '—' && !(data.reasons && data.reasons.length)) lines.push('⚠️ ' + data.bot_pct + ' ботов в комментах');
-                       var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : '—');
-                       lines.push('💸 Потери пользователей: ' + lossStr);
-                       lines.push('📊 Вердикт: ' + (data.verdict_phrase || data.verdict || '—'));
+                       lastCheckedChannel = channel;
+                       var lines = buildCheckResultLines(data);
                        checkResult.textContent = lines.join('\n');
                        checkResult.className = 'kro-check-result';
+                       var pd = data.period_days != null ? data.period_days : 30;
                        var periodActions = document.getElementById('kro-check-period-actions');
                        var btn180 = document.getElementById('kro-check-period-180');
                        var btn365 = document.getElementById('kro-check-period-365');
@@ -681,18 +691,10 @@
                            checkResult.textContent = data.message || 'Не удалось получить результат. Проверьте ссылку или попробуйте позже.';
                            return;
                        }
-                       var pd = data.period_days != null ? data.period_days : 30;
-                       var periodLabel = pd === 180 ? 'Проверено за 6 месяцев' : (pd === 365 ? 'Проверено за год' : 'Проверено за месяц');
-                       var risk = data.risk_score;
-                       var riskStr = risk != null ? risk + '/100' : '—';
-                       var lines = [periodLabel, 'Риск ' + riskStr];
-                       if (data.reasons && data.reasons.length) lines.push('Причины: ' + data.reasons.join(', '));
-                       if (data.ads_per_week != null && !(data.reasons && data.reasons.length)) lines.push('⚠️ ' + data.ads_per_week + ' реклам/неделя');
-                       if (data.bot_pct && data.bot_pct !== '—' && !(data.reasons && data.reasons.length)) lines.push('⚠️ ' + data.bot_pct + ' ботов в комментах');
-                       var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : '—');
-                       lines.push('💸 Потери пользователей: ' + lossStr);
-                       lines.push('📊 Вердикт: ' + (data.verdict_phrase || data.verdict || '—'));
+                       lastCheckedChannel = channel;
+                       var lines = buildCheckResultLines(data);
                        checkResult.textContent = lines.join('\n');
+                       var pd = data.period_days != null ? data.period_days : 30;
                        var periodActions = document.getElementById('kro-check-period-actions');
                        var btn180 = document.getElementById('kro-check-period-180');
                        var btn365 = document.getElementById('kro-check-period-365');
@@ -717,12 +719,12 @@
                var btn365 = document.getElementById('kro-check-period-365');
                if (btn180 && btn365 && checkInput) {
                    btn180.addEventListener('click', function() {
-                       var ch = normChannel(checkInput.value);
+                       var ch = normChannel(checkInput.value) || lastCheckedChannel;
                        if (!ch) { checkResult.textContent = 'Введите канал в поле выше.'; checkResult.classList.remove('hidden'); return; }
                        runCheckWithPeriod(ch, 180);
                    });
                    btn365.addEventListener('click', function() {
-                       var ch = normChannel(checkInput.value);
+                       var ch = normChannel(checkInput.value) || lastCheckedChannel;
                        if (!ch) { checkResult.textContent = 'Введите канал в поле выше.'; checkResult.classList.remove('hidden'); return; }
                        runCheckWithPeriod(ch, 365);
                    });
@@ -794,14 +796,8 @@
                                        }
                                        return;
                                    }
-                                   var risk = chData.risk_score;
-                                   var riskStr = risk != null ? risk + '/100' : '—';
-                                   var chLines = ['Риск ' + riskStr];
-                                   if (chData.reasons && chData.reasons.length) chLines.push('Причины: ' + chData.reasons.join(', '));
-                                   if (chData.ads_per_week != null && !(chData.reasons && chData.reasons.length)) chLines.push('⚠️ ' + chData.ads_per_week + ' реклам/неделя');
-                                   if (chData.bot_pct && chData.bot_pct !== '—' && !(chData.reasons && chData.reasons.length)) chLines.push('⚠️ ' + chData.bot_pct + ' ботов в комментах');
-                                   chLines.push('💸 Потери пользователей: ' + (chData.total_loss || (chData.complaints != null ? chData.complaints + ' жалоб' : '—')));
-                                   chLines.push('📊 Вердикт: ' + (chData.verdict_phrase || chData.verdict || '—'));
+                                   lastCheckedChannel = channel;
+                                   var chLines = buildCheckResultLines(chData);
                                    checkResult.textContent = chLines.join('\n');
                                    checkResult.className = 'kro-check-result';
                                }).catch(function() {

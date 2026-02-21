@@ -272,8 +272,7 @@ async def run_check(channel_id, period_days=30):
         verdict_phrase = VERDICT_PHRASES.get(verdict, verdict)
         reasons = []
         reasons.append(f'реклама ({ads_week} постов/нед)')
-        # bot_pct всегда "—": Telegram Client API не даёт доступ к комментариям под постами канала для подсчёта ботов
-        reasons.append('боты: —')
+        reasons.append('боты: нет данных (доступ к комментариям канала через API отсутствует)')
         if vip and vip != '—':
             reasons.append(f'VIP ({vip})')
         return {
