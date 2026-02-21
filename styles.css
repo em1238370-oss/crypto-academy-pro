@@ -710,6 +710,12 @@ button:focus-visible {
 .kro-feature1-table td {
    color: rgba(255, 255, 255, 0.9);
 }
+.kro-feature1-table tbody tr {
+   transition: background 0.15s ease;
+}
+.kro-feature1-table tbody tr:hover {
+   background: rgba(255, 255, 255, 0.03);
+}
 
 .kro-status-active {
    color: rgba(180, 200, 140, 0.95);
@@ -1100,45 +1106,6 @@ button:focus-visible {
    font-weight: 600;
    color: var(--kro-accent);
    box-shadow: 0 0 14px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.kro-result-reviews {
-   margin-top: 1.25rem;
-   padding-top: 1rem;
-   border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-.kro-result-reviews-title {
-   font-size: 0.9375rem;
-   font-weight: 600;
-   color: rgba(255, 255, 255, 0.9);
-   margin: 0 0 0.5rem 0;
-}
-.kro-result-reviews-list {
-   list-style: none;
-   margin: 0;
-   padding: 0;
-}
-.kro-result-review-item {
-   padding: 0.35rem 0;
-   font-size: 0.875rem;
-   color: rgba(255, 255, 255, 0.78);
-   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-.kro-result-review-item:last-child {
-   border-bottom: none;
-}
-.kro-result-review-from {
-   font-weight: 500;
-   color: rgba(255, 255, 255, 0.9);
-}
-.kro-result-review-sum {
-   color: var(--kro-accent);
-   font-weight: 600;
-}
-.kro-result-review-date {
-   font-size: 0.8em;
-   color: rgba(255, 255, 255, 0.5);
-   margin-left: 0.25rem;
 }
 
 .kro-result-message {
