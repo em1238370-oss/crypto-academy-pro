@@ -770,16 +770,57 @@ button:focus-visible {
 
 .kro-feature1-check {
    max-width: 640px;
-   margin: 0 auto 32px;
+   margin: 0 auto 40px;
    text-align: left;
 }
 
-.kro-feature1-check-intro {
-   font-size: clamp(14px, 2vw, 16px);
-   color: rgba(255, 255, 255, 0.85);
-   margin-bottom: 6px;
+.kro-check-tag {
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   padding: 6px 12px;
+   margin-bottom: 12px;
+   background: rgba(0, 0, 0, 0.35);
+   border: 1px solid rgba(245, 158, 11, 0.5);
+   border-radius: 999px;
+   font-size: 0.75rem;
+   font-weight: 600;
+   text-transform: uppercase;
+   letter-spacing: 0.06em;
+   color: rgba(255, 255, 255, 0.9);
+}
+.kro-check-tag-icon {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   width: 16px;
+   height: 16px;
+   background: rgba(245, 158, 11, 0.9);
+   color: #0a0a0a;
+   border-radius: 50%;
+   font-size: 0.7rem;
+   font-weight: 700;
+   font-style: italic;
 }
 
+.kro-feature1-check-intro {
+   font-size: clamp(1.5rem, 4vw, 2rem);
+   font-weight: 700;
+   color: #fff;
+   margin: 0 0 8px 0;
+   line-height: 1.2;
+   letter-spacing: -0.02em;
+}
+.kro-check-intro-accent {
+   color: #f59e0b;
+}
+
+.kro-feature1-check-subtitle {
+   font-size: 0.9375rem;
+   color: rgba(255, 255, 255, 0.6);
+   margin: 0 0 20px 0;
+   line-height: 1.5;
+}
 .kro-feature1-check-note {
    font-size: 13px;
    color: rgba(255, 255, 255, 0.65);
@@ -801,6 +842,27 @@ button:focus-visible {
 
 .kro-feature1-check-row .kro-report-submit {
    margin-top: 0;
+   border-radius: 10px;
+   transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.kro-feature1-check-row .kro-report-submit:hover {
+   transform: translateY(-1px);
+   box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+}
+.kro-feature1-check-row .kro-report-label input {
+   border-radius: 10px;
+   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.kro-feature1-check-row .kro-report-label input:focus {
+   outline: none;
+   border-color: rgba(245, 158, 11, 0.5);
+   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+.kro-period-btn {
+   transition: background-color 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+}
+.kro-period-btn:hover {
+   transform: translateY(-1px);
 }
 
 .kro-check-result {
@@ -818,19 +880,26 @@ button:focus-visible {
    margin-bottom: 6px;
 }
 
-/* Карточка результата проверки — премиальный вид (DuoView / Artem OSO) */
+/* Карточка результата проверки — DuoView: сетка 2x2, иконки в кружках */
 .kro-result-card {
-   background: rgba(255, 255, 255, 0.04);
-   border: 1px solid rgba(255, 255, 255, 0.1);
-   border-radius: 12px;
-   padding: 20px 24px;
+   background: rgba(30, 25, 22, 0.6);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   border-radius: 16px;
+   padding: 24px 24px 28px;
    margin: 0;
+   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.kro-result-card:hover {
+   border-color: rgba(255, 255, 255, 0.12);
+   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 .kro-result-card .kro-result-header {
-   margin-bottom: 16px;
+   margin-bottom: 22px;
+   padding-bottom: 18px;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 .kro-result-card .kro-result-title {
-   font-size: clamp(1rem, 2vw, 1.25rem);
+   font-size: clamp(1.05rem, 2.2vw, 1.25rem);
    font-weight: 600;
    color: #fff;
    margin: 0 0 6px 0;
@@ -838,53 +907,77 @@ button:focus-visible {
 }
 .kro-result-card .kro-result-desc {
    font-size: 0.875rem;
-   color: rgba(255, 255, 255, 0.65);
+   color: rgba(255, 255, 255, 0.6);
    line-height: 1.5;
-   margin: 0;
+   margin: 0 0 10px 0;
 }
 .kro-result-card .kro-result-meta {
    font-size: 0.6875rem;
    text-transform: uppercase;
    letter-spacing: 0.08em;
-   color: rgba(255, 255, 255, 0.45);
-   margin-bottom: 14px;
+   color: rgba(255, 255, 255, 0.4);
 }
-.kro-result-card .kro-result-risk-wrap {
+
+.kro-result-grid {
+   display: grid;
+   grid-template-columns: 1fr 1fr;
+   gap: 14px;
+}
+.kro-result-minicard {
+   background: rgba(255, 255, 255, 0.03);
+   border: 1px solid rgba(255, 255, 255, 0.06);
+   border-radius: 12px;
+   padding: 16px;
+   transition: border-color 0.2s ease, background 0.2s ease;
+}
+.kro-result-minicard:hover {
+   background: rgba(255, 255, 255, 0.05);
+   border-color: rgba(255, 255, 255, 0.1);
+}
+.kro-result-minicard-icon {
+   width: 36px;
+   height: 36px;
    display: flex;
-   align-items: baseline;
-   margin-bottom: 18px;
-}
-.kro-result-card .kro-result-risk-value {
-   font-size: clamp(2rem, 5vw, 2.75rem);
-   font-weight: 700;
+   align-items: center;
+   justify-content: center;
+   background: rgba(245, 158, 11, 0.2);
+   border: 1px solid rgba(245, 158, 11, 0.35);
+   border-radius: 10px;
    color: #f59e0b;
-   line-height: 1;
+   font-size: 1rem;
+   font-weight: 700;
+   margin-bottom: 12px;
 }
-.kro-result-card .kro-result-risk-max {
-   font-size: 1.125rem;
-   color: rgba(255, 255, 255, 0.45);
-   margin-left: 4px;
+.kro-result-minicard-title {
+   font-size: 0.75rem;
+   font-weight: 600;
+   text-transform: uppercase;
+   letter-spacing: 0.05em;
+   color: rgba(255, 255, 255, 0.5);
+   margin-bottom: 6px;
 }
-.kro-result-card .kro-result-reasons {
-   font-size: 0.875rem;
-   color: rgba(255, 255, 255, 0.8);
-   line-height: 1.55;
-   margin-bottom: 14px;
-}
-.kro-result-card .kro-result-reasons-label {
-   color: rgba(255, 255, 255, 0.55);
-   font-weight: 500;
-}
-.kro-result-card .kro-result-loss {
+.kro-result-minicard-value {
    font-size: 0.9375rem;
    color: rgba(255, 255, 255, 0.9);
-   margin-bottom: 14px;
+   line-height: 1.45;
 }
-.kro-result-card .kro-result-verdict {
+.kro-result-minicard-value.kro-result-risk-value {
+   font-size: clamp(1.5rem, 3.5vw, 2rem);
+   font-weight: 700;
+   color: #f59e0b;
+   line-height: 1.2;
+}
+.kro-result-minicard-value .kro-result-risk-max {
+   font-size: 0.75em;
+   font-weight: 600;
+   color: rgba(255, 255, 255, 0.4);
+   margin-left: 2px;
+}
+.kro-result-verdict-badge {
    display: inline-block;
-   padding: 8px 14px;
-   background: rgba(245, 158, 11, 0.12);
-   border: 1px solid rgba(245, 158, 11, 0.35);
+   padding: 6px 12px;
+   background: rgba(245, 158, 11, 0.15);
+   border: 1px solid rgba(245, 158, 11, 0.4);
    border-radius: 8px;
    font-size: 0.875rem;
    font-weight: 600;
@@ -1044,6 +1137,9 @@ button:focus-visible {
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
+   }
+   .kro-result-grid {
+      grid-template-columns: 1fr;
    }
    .kro-feature1-check-row .kro-report-label input {
       width: 100%;

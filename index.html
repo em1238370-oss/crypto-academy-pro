@@ -177,8 +177,9 @@
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-3-channel">crypto-fast.pro</span> → <span class="kro-top3-sum" id="kro-top3-3-sum">673к₽</span> → <span class="kro-top3-status kro-status-block" id="kro-top3-3-status">Блок</span></li>
            </ol>
            <div class="kro-feature1-check" id="kro-feature1-check">
-               <p class="kro-feature1-check-intro">Проверить канал</p>
-                   <p class="kro-feature1-check-note">Вставьте ссылку на любой Telegram-канал — проверим по сообщениям. Проверяем только каналы, связанные с криптой/скрипторием; остальные не проверяем.</p>
+               <div class="kro-check-tag" aria-hidden="true"><span class="kro-check-tag-icon" aria-hidden="true">i</span> Реальность</div>
+               <h2 class="kro-feature1-check-intro">Проверить <span class="kro-check-intro-accent">канал</span></h2>
+               <p class="kro-feature1-check-subtitle">Вставьте ссылку на любой Telegram-канал — проверим по сообщениям. Только каналы про крипту и скрипторий.</p>
                <div class="kro-feature1-check-row">
                    <label class="kro-report-label" for="kro-check-channel">Ссылка на канал или обменник <input type="text" id="kro-check-channel" placeholder="@channel, t.me/канал или ссылка на обменник" autocomplete="off"></label>
                    <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить</button>
@@ -584,23 +585,38 @@
                    var pd = data.period_days != null ? data.period_days : 30;
                    var periodLabel = pd === 180 ? 'Проверено за 6 месяцев' : (pd === 365 ? 'Проверено за год' : 'Проверено за месяц');
                    var risk = data.risk_score;
-                   var riskVal = risk != null ? risk : '—';
                    var reasonsStr = (data.reasons && data.reasons.length) ? data.reasons.join(', ') : '';
-                   var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : 'по жалобам данных пока нет (можно отправить через форму «Сообщить о разводе»)');
+                   var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : 'по жалобам данных пока нет (форма «Сообщить о разводе»)');
                    var verdict = (data.verdict_phrase || data.verdict || '—');
-                   var riskBlock = risk != null
-                       ? '<div class="kro-result-risk-wrap"><span class="kro-result-risk-value">' + escapeHtml(risk) + '</span><span class="kro-result-risk-max">/100</span></div>'
-                       : '<div class="kro-result-risk-wrap"><span class="kro-result-risk-value">—</span></div>';
+                   var riskNum = risk != null ? (risk + '<span class="kro-result-risk-max">/100</span>') : '—';
                    return '<div class="kro-result-card">' +
                        '<div class="kro-result-header">' +
                        '<h3 class="kro-result-title">' + escapeHtml(title) + '</h3>' +
                        (desc ? '<p class="kro-result-desc">' + escapeHtml(desc) + '</p>' : '') +
-                       '</div>' +
                        '<div class="kro-result-meta">' + escapeHtml(periodLabel) + '</div>' +
-                       riskBlock +
-                       (reasonsStr ? '<div class="kro-result-reasons"><span class="kro-result-reasons-label">Причины:</span> ' + escapeHtml(reasonsStr) + '</div>' : '') +
-                       '<div class="kro-result-loss">Потери пользователей: ' + escapeHtml(lossStr) + '</div>' +
-                       '<div class="kro-result-verdict">' + escapeHtml(verdict) + '</div>' +
+                       '</div>' +
+                       '<div class="kro-result-grid">' +
+                       '<div class="kro-result-minicard">' +
+                       '<div class="kro-result-minicard-icon" aria-hidden="true">!</div>' +
+                       '<div class="kro-result-minicard-title">Риск</div>' +
+                       '<div class="kro-result-minicard-value kro-result-risk-value">' + riskNum + '</div>' +
+                       '</div>' +
+                       '<div class="kro-result-minicard">' +
+                       '<div class="kro-result-minicard-icon" aria-hidden="true">≡</div>' +
+                       '<div class="kro-result-minicard-title">Причины</div>' +
+                       '<div class="kro-result-minicard-value">' + (reasonsStr ? escapeHtml(reasonsStr) : '—') + '</div>' +
+                       '</div>' +
+                       '<div class="kro-result-minicard">' +
+                       '<div class="kro-result-minicard-icon" aria-hidden="true">₽</div>' +
+                       '<div class="kro-result-minicard-title">Потери</div>' +
+                       '<div class="kro-result-minicard-value">' + escapeHtml(lossStr) + '</div>' +
+                       '</div>' +
+                       '<div class="kro-result-minicard">' +
+                       '<div class="kro-result-minicard-icon" aria-hidden="true">◉</div>' +
+                       '<div class="kro-result-minicard-title">Вердикт</div>' +
+                       '<div class="kro-result-minicard-value"><span class="kro-result-verdict-badge">' + escapeHtml(verdict) + '</span></div>' +
+                       '</div>' +
+                       '</div>' +
                        '</div>';
                }
                checkBtn.addEventListener('click', function() {
