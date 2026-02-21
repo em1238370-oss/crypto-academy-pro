@@ -974,34 +974,35 @@ button:focus-visible {
    line-height: 1.5;
    margin: 0 0 18px 0;
    padding: 12px 14px;
-   background: rgba(255, 255, 255, 0.025);
-   border-radius: 10px;
+   background: linear-gradient(90deg, rgba(139, 92, 246, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+   border-radius: 12px;
    border-left: 3px solid var(--kro-violet-border);
-   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), 0 0 20px rgba(139, 92, 246, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .kro-result-grid {
    display: grid;
    grid-template-columns: 1fr 1fr;
-   gap: 14px;
+   gap: 16px;
 }
 .kro-result-minicard {
-   background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
-   border: 1px solid rgba(255, 255, 255, 0.06);
-   border-radius: 14px;
-   padding: 16px;
-   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-   transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.07);
+   border-radius: 16px;
+   padding: 18px;
+   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease, box-shadow 0.3s ease;
 }
 .kro-result-minicard:hover {
-   background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
-   border-color: rgba(255, 255, 255, 0.1);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+   border-color: rgba(255, 255, 255, 0.12);
+   transform: translateY(-3px);
 }
-.kro-result-minicard:nth-child(1):hover { border-color: rgba(245, 158, 11, 0.25); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(245, 158, 11, 0.1); }
-.kro-result-minicard:nth-child(2):hover { border-color: var(--kro-violet-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(139, 92, 246, 0.1); }
-.kro-result-minicard:nth-child(3):hover { border-color: var(--kro-cyan-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(6, 182, 212, 0.1); }
-.kro-result-minicard:nth-child(4):hover { border-color: rgba(245, 158, 11, 0.25); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(245, 158, 11, 0.1); }
-.kro-result-minicard:nth-child(5):hover { border-color: var(--kro-violet-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(139, 92, 246, 0.1); }
+.kro-result-minicard:nth-child(1):hover { border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), 0 0 32px var(--kro-glow-amber-soft), 0 0 48px rgba(245, 158, 11, 0.12); }
+.kro-result-minicard:nth-child(2):hover { border-color: rgba(139, 92, 246, 0.5); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), 0 0 32px var(--kro-glow-purple-soft), 0 0 48px rgba(139, 92, 246, 0.12); }
+.kro-result-minicard:nth-child(3):hover { border-color: var(--kro-cyan-border); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), 0 0 32px rgba(6, 182, 212, 0.2), 0 0 48px rgba(6, 182, 212, 0.1); }
+.kro-result-minicard:nth-child(4):hover { border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), 0 0 32px var(--kro-glow-amber-soft), 0 0 48px rgba(245, 158, 11, 0.12); }
+.kro-result-minicard:nth-child(5):hover { border-color: rgba(139, 92, 246, 0.5); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), 0 0 32px var(--kro-glow-purple-soft), 0 0 48px rgba(139, 92, 246, 0.12); }
 .kro-result-minicard-icon {
    width: 36px;
    height: 36px;
@@ -1018,7 +1019,7 @@ button:focus-visible {
    box-shadow: 0 0 16px rgba(139, 92, 246, 0.2);
    transition: box-shadow 0.25s ease;
 }
-/* Разные акценты + мягкое свечение иконок */
+/* Разные акценты + мягкое свечение иконок (как на скрине) */
 .kro-result-minicard:nth-child(1) .kro-result-minicard-icon {
    background: rgba(245, 158, 11, 0.22);
    border-color: rgba(245, 158, 11, 0.45);
