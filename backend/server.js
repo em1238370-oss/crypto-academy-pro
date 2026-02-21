@@ -1409,14 +1409,26 @@ app.get('/api/kro/check', async (req, res) => {
     if (!client) {
       return res.json({ found: false, channel, message: noConfigMessage });
     }
-    const response = await client.sheets.spreadsheets.values.get({
-      spreadsheetId: kroSheetId,
-      range: kroScamBaseRange
-    });
-    const rows = response.data.values || [];
+    let rows;
+    try {
+      const response = await client.sheets.spreadsheets.values.get({
+        spreadsheetId: kroSheetId,
+        range: kroScamBaseRange
+      });
+      rows = response.data.values || [];
+    } catch (sheetErr) {
+      console.error('KRO check: Google Sheets read error', sheetErr.message);
+      return res.json({
+        found: false,
+        channel,
+        message: 'Не удалось прочитать базу каналов. Проверьте в Render переменные KRO_SHEET_ID и KRO_SCAM_BASE_RANGE (имя листа должно совпадать с таблицей, например scam_base!A2:H).'
+      });
+    }
     const channelLower = channel.toLowerCase();
     for (let i = 0; i < rows.length; i++) {
-      const row = parseScamBaseRow(rows[i]);
+      const rawRow = rows[i];
+      if (!rawRow || !Array.isArray(rawRow)) continue;
+      const row = parseScamBaseRow(rawRow);
       const rowChannel = (row.username || '').toLowerCase();
       if (rowChannel === channelLower || rowChannel === channelLower.slice(1)) {
         let complaints = row.complaints;
@@ -1574,7 +1586,12 @@ app.get('/api/kro/check', async (req, res) => {
     });
   } catch (e) {
     console.error('KRO check error:', e);
-    return res.status(500).json({ found: false, channel, message: 'Ошибка сервера при проверке канала. Попробуйте позже.', error: 'internal_error' });
+    const errMsg = (e && e.message) ? e.message : String(e);
+    return res.json({
+      found: false,
+      channel,
+      message: 'Ошибка при проверке канала: ' + (errMsg.length > 120 ? errMsg.slice(0, 120) + '…' : errMsg) + '. Проверьте в Render переменные KRO_* и логи сервиса.'
+    });
   }
 });
 
