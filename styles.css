@@ -804,15 +804,102 @@ button:focus-visible {
 }
 
 .kro-check-result {
-   margin-top: 12px;
+   margin-top: 16px;
    font-size: 14px;
    color: rgba(255, 255, 255, 0.85);
    line-height: 1.55;
    white-space: pre-line;
 }
+.kro-check-result .kro-result-card {
+   white-space: normal;
+}
 .kro-check-result .kro-check-result-block {
    display: block;
    margin-bottom: 6px;
+}
+
+/* Карточка результата проверки — премиальный вид (DuoView / Artem OSO) */
+.kro-result-card {
+   background: rgba(255, 255, 255, 0.04);
+   border: 1px solid rgba(255, 255, 255, 0.1);
+   border-radius: 12px;
+   padding: 20px 24px;
+   margin: 0;
+}
+.kro-result-card .kro-result-header {
+   margin-bottom: 16px;
+}
+.kro-result-card .kro-result-title {
+   font-size: clamp(1rem, 2vw, 1.25rem);
+   font-weight: 600;
+   color: #fff;
+   margin: 0 0 6px 0;
+   letter-spacing: 0.01em;
+}
+.kro-result-card .kro-result-desc {
+   font-size: 0.875rem;
+   color: rgba(255, 255, 255, 0.65);
+   line-height: 1.5;
+   margin: 0;
+}
+.kro-result-card .kro-result-meta {
+   font-size: 0.6875rem;
+   text-transform: uppercase;
+   letter-spacing: 0.08em;
+   color: rgba(255, 255, 255, 0.45);
+   margin-bottom: 14px;
+}
+.kro-result-card .kro-result-risk-wrap {
+   display: flex;
+   align-items: baseline;
+   margin-bottom: 18px;
+}
+.kro-result-card .kro-result-risk-value {
+   font-size: clamp(2rem, 5vw, 2.75rem);
+   font-weight: 700;
+   color: #f59e0b;
+   line-height: 1;
+}
+.kro-result-card .kro-result-risk-max {
+   font-size: 1.125rem;
+   color: rgba(255, 255, 255, 0.45);
+   margin-left: 4px;
+}
+.kro-result-card .kro-result-reasons {
+   font-size: 0.875rem;
+   color: rgba(255, 255, 255, 0.8);
+   line-height: 1.55;
+   margin-bottom: 14px;
+}
+.kro-result-card .kro-result-reasons-label {
+   color: rgba(255, 255, 255, 0.55);
+   font-weight: 500;
+}
+.kro-result-card .kro-result-loss {
+   font-size: 0.9375rem;
+   color: rgba(255, 255, 255, 0.9);
+   margin-bottom: 14px;
+}
+.kro-result-card .kro-result-verdict {
+   display: inline-block;
+   padding: 8px 14px;
+   background: rgba(245, 158, 11, 0.12);
+   border: 1px solid rgba(245, 158, 11, 0.35);
+   border-radius: 8px;
+   font-size: 0.875rem;
+   font-weight: 600;
+   color: #f59e0b;
+}
+
+.kro-result-message {
+   margin: 0;
+   padding: 14px 18px;
+   background: rgba(255, 255, 255, 0.04);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   border-radius: 10px;
+   color: rgba(255, 255, 255, 0.85);
+   line-height: 1.5;
+   font-size: 0.9375rem;
 }
 
 .kro-check-login-hint {

@@ -572,22 +572,36 @@
                    var t = (s || '').trim();
                    return (t.indexOf('http://') === 0 || t.indexOf('https://') === 0) && t.toLowerCase().indexOf('t.me') === -1;
                }
-               function buildCheckResultLines(data) {
-                   var lines = [];
+               function escapeHtml(s) {
+                   if (s == null) return '';
+                   var t = String(s);
+                   return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+               }
+               function buildCheckResultCardHtml(data) {
                    var title = (data.tme_preview && data.tme_preview.title) ? data.tme_preview.title : (data.username || 'Канал');
                    var desc = (data.tme_preview && data.tme_preview.description) ? data.tme_preview.description : '';
                    if (desc && desc.length > 300) desc = desc.slice(0, 300) + '…';
-                   lines.push('Название канала: ' + title);
-                   if (desc) lines.push('Описание: ' + desc);
                    var pd = data.period_days != null ? data.period_days : 30;
-                   lines.push(pd === 180 ? 'Проверено за 6 месяцев' : (pd === 365 ? 'Проверено за год' : 'Проверено за месяц'));
+                   var periodLabel = pd === 180 ? 'Проверено за 6 месяцев' : (pd === 365 ? 'Проверено за год' : 'Проверено за месяц');
                    var risk = data.risk_score;
-                   lines.push('Риск ' + (risk != null ? risk + '/100' : '—'));
-                   if (data.reasons && data.reasons.length) lines.push('Причины: ' + data.reasons.join(', '));
+                   var riskVal = risk != null ? risk : '—';
+                   var reasonsStr = (data.reasons && data.reasons.length) ? data.reasons.join(', ') : '';
                    var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : 'по жалобам данных пока нет (можно отправить через форму «Сообщить о разводе»)');
-                   lines.push('💸 Потери пользователей: ' + lossStr);
-                   lines.push('📊 Вердикт: ' + (data.verdict_phrase || data.verdict || '—'));
-                   return lines;
+                   var verdict = (data.verdict_phrase || data.verdict || '—');
+                   var riskBlock = risk != null
+                       ? '<div class="kro-result-risk-wrap"><span class="kro-result-risk-value">' + escapeHtml(risk) + '</span><span class="kro-result-risk-max">/100</span></div>'
+                       : '<div class="kro-result-risk-wrap"><span class="kro-result-risk-value">—</span></div>';
+                   return '<div class="kro-result-card">' +
+                       '<div class="kro-result-header">' +
+                       '<h3 class="kro-result-title">' + escapeHtml(title) + '</h3>' +
+                       (desc ? '<p class="kro-result-desc">' + escapeHtml(desc) + '</p>' : '') +
+                       '</div>' +
+                       '<div class="kro-result-meta">' + escapeHtml(periodLabel) + '</div>' +
+                       riskBlock +
+                       (reasonsStr ? '<div class="kro-result-reasons"><span class="kro-result-reasons-label">Причины:</span> ' + escapeHtml(reasonsStr) + '</div>' : '') +
+                       '<div class="kro-result-loss">Потери пользователей: ' + escapeHtml(lossStr) + '</div>' +
+                       '<div class="kro-result-verdict">' + escapeHtml(verdict) + '</div>' +
+                       '</div>';
                }
                checkBtn.addEventListener('click', function() {
                    var raw = checkInput.value;
@@ -644,7 +658,7 @@
                            } else {
                                msg = data.message || 'Не удалось получить результат. Проверьте ссылку или попробуйте позже.';
                            }
-                           checkResult.textContent = msg;
+                           checkResult.innerHTML = '<p class="kro-result-message">' + escapeHtml(msg).replace(/\n/g, '<br>') + '</p>';
                            checkResult.className = 'kro-check-result';
                            if (periodActionsEl) periodActionsEl.classList.add('hidden');
                            if (data.needLogin && hintEl) {
@@ -655,8 +669,7 @@
                            return;
                        }
                        lastCheckedChannel = channel;
-                       var lines = buildCheckResultLines(data);
-                       checkResult.textContent = lines.join('\n');
+                       checkResult.innerHTML = buildCheckResultCardHtml(data);
                        checkResult.className = 'kro-check-result';
                        var pd = data.period_days != null ? data.period_days : 30;
                        var periodActions = document.getElementById('kro-check-period-actions');
@@ -692,8 +705,7 @@
                            return;
                        }
                        lastCheckedChannel = channel;
-                       var lines = buildCheckResultLines(data);
-                       checkResult.textContent = lines.join('\n');
+                       checkResult.innerHTML = buildCheckResultCardHtml(data);
                        var pd = data.period_days != null ? data.period_days : 30;
                        var periodActions = document.getElementById('kro-check-period-actions');
                        var btn180 = document.getElementById('kro-check-period-180');
@@ -797,8 +809,7 @@
                                        return;
                                    }
                                    lastCheckedChannel = channel;
-                                   var chLines = buildCheckResultLines(chData);
-                                   checkResult.textContent = chLines.join('\n');
+                                   checkResult.innerHTML = buildCheckResultCardHtml(chData);
                                    checkResult.className = 'kro-check-result';
                                }).catch(function() {
                                    checkResult.textContent = 'Ошибка запроса.';
