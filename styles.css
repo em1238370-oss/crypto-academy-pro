@@ -383,15 +383,15 @@ button:focus-visible {
 .kro-feature1 .kro-card {
    border-color: var(--kro-card-border);
    background: var(--kro-card-bg);
-   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+   box-shadow: none;
 }
 
 .kro-feature1-stat.kro-card:hover,
 .kro-feature1-top3 .kro-card:hover {
    border-color: var(--kro-card-border-accent);
-   background: rgba(32, 28, 28, 0.8);
-   transform: translateY(-4px);
-   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 0 28px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+   background: rgba(32, 28, 28, 0.75);
+   box-shadow: none;
+   transform: scale(1.01);
 }
 
 .kro-feature1-stat-value {
@@ -1016,7 +1016,10 @@ button:focus-visible {
    font-weight: 700;
    margin-bottom: 12px;
    box-shadow: 0 0 16px rgba(139, 92, 246, 0.2);
-   transition: box-shadow 0.25s ease;
+   transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+.kro-result-minicard:hover .kro-result-minicard-icon {
+   transform: translateY(-4px);
 }
 /* Разные акценты + мягкое свечение иконок (как на скрине) */
 .kro-result-minicard:nth-child(1) .kro-result-minicard-icon {
