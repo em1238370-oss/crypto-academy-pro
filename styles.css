@@ -863,13 +863,14 @@ button:focus-visible {
    letter-spacing: -0.02em;
    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
+/* Слово «канал»: сияние несколькими оттенками янтарного (без фиолетового) */
 .kro-check-intro-accent {
-   background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 35%, #a78bfa 70%, #8b5cf6 100%);
+   background: linear-gradient(135deg, #b45309 0%, #d97706 18%, #f59e0b 35%, #fbbf24 50%, #d4a574 68%, #b45309 82%, #fef3c7 100%);
    -webkit-background-clip: text;
    background-clip: text;
    -webkit-text-fill-color: transparent;
    text-shadow: none;
-   filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.4));
+   filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.5)) drop-shadow(0 0 20px rgba(251, 191, 36, 0.25));
 }
 
 .kro-feature1-check-subtitle {
@@ -1437,7 +1438,6 @@ button:focus-visible {
 @media (max-width: 480px) {
    .kro-step1-tags {
       gap: 8px;
-      justify-content: center;
    }
    .kro-feature1 {
       padding: 48px 16px 48px;
