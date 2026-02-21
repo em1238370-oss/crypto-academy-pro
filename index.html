@@ -633,7 +633,7 @@
                        '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">≡</div>' +
                        '<div class="kro-result-minicard-title">Причины</div>' +
-                       '<div class="kro-result-minicard-value">' + escapeHtml(reasonsDisplay) + '</div>' +
+                       '<div class="kro-result-minicard-value">' + (reasonsStr ? escapeHtml(reasonsStr) : 'будут после разбора постов канала') + '</div>' +
                        '<p class="kro-result-minicard-hint">' + escapeHtml(reasonsExpl) + '</p></div>' +
                        '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">₽</div>' +
@@ -779,8 +779,9 @@
                                periodActions.classList.add('hidden');
                            }
                        }
-                   }).catch(function() {
-                       checkResult.textContent = 'Ошибка запроса или сети. Попробуйте снова.';
+                   }).catch(function(err) {
+                       checkResult.textContent = (err && err.message) ? (err.message + ' Попробуйте снова.') : 'Не удалось связаться с сервером проверки. Попробуйте через минуту.';
+                       checkResult.className = 'kro-check-result';
                    });
                }
                var btn180 = document.getElementById('kro-check-period-180');
