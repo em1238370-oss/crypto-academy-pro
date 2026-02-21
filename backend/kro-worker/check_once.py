@@ -250,18 +250,20 @@ async def run_check(channel_id, period_days=30):
 
         reply_texts = []
         try:
-            for m in messages[:25]:
+            for m in messages[:50]:
                 if not m or not getattr(m.replies, 'replies', 0):
                     continue
-                replies = await client.get_messages(entity, reply_to=m.id, limit=15)
+                replies = await client.get_messages(entity, reply_to=m.id, limit=25)
                 for r in replies:
                     if r and r.text:
                         reply_texts.append(r.text)
-                if len(reply_texts) >= 50:
+                if len(reply_texts) >= 100:
                     break
         except Exception:
             pass
         bot_pct = bot_pct_from_reply_texts(reply_texts)
+        messages_analyzed = len(messages)
+        replies_count = len(reply_texts)
 
         if risk >= 70:
             verdict = 'scam'
@@ -272,9 +274,13 @@ async def run_check(channel_id, period_days=30):
         verdict_phrase = VERDICT_PHRASES.get(verdict, verdict)
         reasons = []
         reasons.append(f'реклама ({ads_week} постов/нед)')
-        reasons.append('боты: нет данных (доступ к комментариям канала через API отсутствует)')
+        if bot_pct and bot_pct != '—':
+            reasons.append(f'боты ({bot_pct} — по комментариям под постами канала)')
+        else:
+            reasons.append('боты: нет данных (комментарии под постами канала недоступны через API или у канала отключено обсуждение)')
         if vip and vip != '—':
             reasons.append(f'VIP ({vip})')
+        risk_explanation = f'Оценка по доле постов с признаками рекламы (VIP, сигналы, крипта и т.д.) среди {messages_analyzed} постов канала за выбранный период.'
         return {
             'found': True,
             'username': channel_id,
@@ -288,7 +294,10 @@ async def run_check(channel_id, period_days=30):
             'verdict_phrase': verdict_phrase,
             'reasons': reasons,
             'risk_pct': risk_pct,
-            'period_days': period_days
+            'period_days': period_days,
+            'messages_analyzed': messages_analyzed,
+            'replies_count': replies_count,
+            'risk_explanation': risk_explanation
         }
     finally:
         await client.disconnect()

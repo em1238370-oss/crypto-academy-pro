@@ -581,41 +581,62 @@
                function buildCheckResultCardHtml(data) {
                    var title = (data.tme_preview && data.tme_preview.title) ? data.tme_preview.title : (data.username || 'Канал');
                    var desc = (data.tme_preview && data.tme_preview.description) ? data.tme_preview.description : '';
-                   if (desc && desc.length > 300) desc = desc.slice(0, 300) + '…';
+                   if (desc && desc.length > 400) desc = desc.slice(0, 400) + '…';
                    var pd = data.period_days != null ? data.period_days : 30;
                    var periodLabel = pd === 180 ? 'Проверено за 6 месяцев' : (pd === 365 ? 'Проверено за год' : 'Проверено за месяц');
+                   var periodBanner = pd === 180 ? 'Анализ за 6 месяцев' : (pd === 365 ? 'Анализ за год' : 'Анализ за месяц');
                    var risk = data.risk_score;
-                   var reasonsStr = (data.reasons && data.reasons.length) ? data.reasons.join(', ') : '';
+                   var reasonsStr = (data.reasons && data.reasons.length) ? data.reasons.join('. ') : '';
                    var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : 'по жалобам данных пока нет (форма «Сообщить о разводе»)');
                    var verdict = (data.verdict_phrase || data.verdict || '—');
                    var riskNum = risk != null ? (risk + '<span class="kro-result-risk-max">/100</span>') : '—';
+                   var botPct = (data.bot_pct && data.bot_pct !== '—') ? data.bot_pct : null;
+                   var riskExpl = data.risk_explanation || 'Оценка 0–100 по доле постов с признаками рекламы (VIP, сигналы, крипта) по текстам постов канала за выбранный период.';
+                   var msgCount = data.messages_analyzed;
+                   var repliesCount = data.replies_count;
+                   var sourceLine = [];
+                   if (msgCount != null && msgCount > 0) sourceLine.push('Проанализировано постов канала: ' + msgCount);
+                   if (repliesCount != null && repliesCount >= 0) sourceLine.push('Комментариев под постами получено: ' + repliesCount + (repliesCount === 0 ? ' (у канала может быть отключено обсуждение или API не отдаёт комментарии)' : ''));
+                   var sourceText = sourceLine.length ? sourceLine.join('. ') : 'Данные по каналу: из базы проверенных каналов или с канала по Telegram API (посты и, при наличии, комментарии под постами).';
+                   var botExpl = botPct ? 'Доля коротких или шаблонных комментариев под постами канала (считано по данным с канала).' : 'Комментарии под постами канала через API недоступны или у канала отключено обсуждение — долю ботов посчитать нельзя.';
+                   var reasonsExpl = 'Посчитано по текстам постов канала: рекламных постов в неделю, доля ботоподобных комментариев (если доступны), цена VIP.';
+                   var lossExpl = 'Сумма потерь по жалобам пользователей, отправленным через форму «Сообщить о разводе» на этом сайте.';
+                   var verdictExpl = 'Итог по риску и признакам: высокий риск (живут на VIP/скам), серая зона или низкий риск.';
+                   var botBlock = '<div class="kro-result-minicard">' +
+                       '<div class="kro-result-minicard-icon" aria-hidden="true">◐</div>' +
+                       '<div class="kro-result-minicard-title">Боты</div>' +
+                       '<div class="kro-result-minicard-value">' + (botPct ? escapeHtml(botPct) : 'нет данных') + '</div>' +
+                       '<p class="kro-result-minicard-hint">' + escapeHtml(botExpl) + '</p></div>';
                    return '<div class="kro-result-card">' +
+                       '<div class="kro-result-period-banner">' + escapeHtml(periodBanner) + '</div>' +
                        '<div class="kro-result-header">' +
                        '<h3 class="kro-result-title">' + escapeHtml(title) + '</h3>' +
                        (desc ? '<p class="kro-result-desc">' + escapeHtml(desc) + '</p>' : '') +
                        '<div class="kro-result-meta">' + escapeHtml(periodLabel) + '</div>' +
                        '</div>' +
+                       '<p class="kro-result-source">' + escapeHtml(sourceText) + '</p>' +
                        '<div class="kro-result-grid">' +
                        '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">!</div>' +
                        '<div class="kro-result-minicard-title">Риск</div>' +
                        '<div class="kro-result-minicard-value kro-result-risk-value">' + riskNum + '</div>' +
-                       '</div>' +
+                       '<p class="kro-result-minicard-hint">' + escapeHtml(riskExpl) + '</p></div>' +
                        '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">≡</div>' +
                        '<div class="kro-result-minicard-title">Причины</div>' +
                        '<div class="kro-result-minicard-value">' + (reasonsStr ? escapeHtml(reasonsStr) : '—') + '</div>' +
-                       '</div>' +
+                       '<p class="kro-result-minicard-hint">' + escapeHtml(reasonsExpl) + '</p></div>' +
                        '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">₽</div>' +
                        '<div class="kro-result-minicard-title">Потери</div>' +
                        '<div class="kro-result-minicard-value">' + escapeHtml(lossStr) + '</div>' +
-                       '</div>' +
+                       '<p class="kro-result-minicard-hint">' + escapeHtml(lossExpl) + '</p></div>' +
                        '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">◉</div>' +
                        '<div class="kro-result-minicard-title">Вердикт</div>' +
                        '<div class="kro-result-minicard-value"><span class="kro-result-verdict-badge">' + escapeHtml(verdict) + '</span></div>' +
-                       '</div>' +
+                       '<p class="kro-result-minicard-hint">' + escapeHtml(verdictExpl) + '</p></div>' +
+                       botBlock +
                        '</div>' +
                        '</div>';
                }

@@ -1507,7 +1507,10 @@ app.get('/api/kro/check', async (req, res) => {
         reasons: p.reasons || buildReasonsFromRow(p),
         risk_pct: p.risk_pct,
         period_days: p.period_days != null ? p.period_days : 30,
-        tme_preview: tmePreview || undefined
+        tme_preview: tmePreview || undefined,
+        messages_analyzed: p.messages_analyzed ?? undefined,
+        replies_count: p.replies_count ?? undefined,
+        risk_explanation: p.risk_explanation || undefined
       });
     }
     if (checkOnceResult?.not_crypto) {
@@ -1552,7 +1555,7 @@ app.get('/api/kro/check', async (req, res) => {
           verdict: row.verdict,
           verdict_phrase,
           reasons,
-          period_days: 30,
+          period_days: parseInt(period, 10) || 30,
           tme_preview: tmePreview || undefined
         });
       }

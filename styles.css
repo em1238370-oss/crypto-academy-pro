@@ -893,6 +893,15 @@ button:focus-visible {
    border-color: rgba(255, 255, 255, 0.12);
    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
+.kro-result-period-banner {
+   font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+   font-weight: 700;
+   color: #f59e0b;
+   margin: 0 0 18px 0;
+   padding: 12px 0;
+   border-bottom: 2px solid rgba(245, 158, 11, 0.4);
+   letter-spacing: 0.02em;
+}
 .kro-result-card .kro-result-header {
    margin-bottom: 22px;
    padding-bottom: 18px;
@@ -916,6 +925,17 @@ button:focus-visible {
    text-transform: uppercase;
    letter-spacing: 0.08em;
    color: rgba(255, 255, 255, 0.4);
+}
+
+.kro-result-card .kro-result-source {
+   font-size: 0.8125rem;
+   color: rgba(255, 255, 255, 0.55);
+   line-height: 1.5;
+   margin: 0 0 18px 0;
+   padding: 12px 14px;
+   background: rgba(255, 255, 255, 0.03);
+   border-radius: 8px;
+   border-left: 3px solid rgba(245, 158, 11, 0.4);
 }
 
 .kro-result-grid {
@@ -960,6 +980,12 @@ button:focus-visible {
    font-size: 0.9375rem;
    color: rgba(255, 255, 255, 0.9);
    line-height: 1.45;
+}
+.kro-result-minicard-hint {
+   font-size: 0.75rem;
+   color: rgba(255, 255, 255, 0.5);
+   line-height: 1.4;
+   margin: 10px 0 0 0;
 }
 .kro-result-minicard-value.kro-result-risk-value {
    font-size: clamp(1.5rem, 3.5vw, 2rem);
@@ -1140,6 +1166,10 @@ button:focus-visible {
    }
    .kro-result-grid {
       grid-template-columns: 1fr;
+   }
+   .kro-result-card .kro-result-source {
+      font-size: 0.75rem;
+      padding: 10px 12px;
    }
    .kro-feature1-check-row .kro-report-label input {
       width: 100%;
