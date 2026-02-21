@@ -187,6 +187,11 @@
                    <button type="button" class="kro-report-submit" id="kro-check-screenshot-btn">Проверить по скрину</button>
                </div>
                <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
+               <div class="kro-check-period-actions hidden" id="kro-check-period-actions" aria-live="polite">
+                   <p class="kro-period-prompt">Проверить этот же канал за более длинный период?</p>
+                   <button type="button" class="kro-report-submit kro-period-btn" id="kro-check-period-180">За 6 месяцев (займёт больше времени)</button>
+                   <button type="button" class="kro-report-submit kro-period-btn" id="kro-check-period-365">За год (займёт ещё больше времени)</button>
+               </div>
                <div class="kro-check-login-hint hidden" id="kro-check-login-hint" aria-live="polite">
                    <p class="kro-check-login-title">Выполни один раз в терминале из папки проекта:</p>
                    <code class="kro-check-login-cmd" id="kro-check-login-cmd">node scripts/kro-login.js</code>
@@ -573,6 +578,8 @@
                        return;
                    }
                    checkResult.classList.remove('hidden');
+                   var periodActionsEl = document.getElementById('kro-check-period-actions');
+                   if (periodActionsEl) periodActionsEl.classList.add('hidden');
                    if (isExchangerUrl(raw)) {
                        checkResult.textContent = 'Загрузка…';
                        fetch(base + '/api/kro/check-exchanger?url=' + encodeURIComponent(raw.trim())).then(function(r) { return r.json(); }).then(function(data) {
@@ -599,21 +606,26 @@
                        checkResult.className = 'kro-check-result';
                        return;
                    }
-                   checkResult.textContent = 'Проверяем канал… обычно до 25 сек';
+                       checkResult.textContent = 'Проверяем канал… Может занять до 2–3 минут, не закрывайте страницу.';
                    var loginHintEl = document.getElementById('kro-check-login-hint');
                    if (loginHintEl) loginHintEl.classList.add('hidden');
                    fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(data) {
                        var hintEl = document.getElementById('kro-check-login-hint');
                        if (hintEl) hintEl.classList.add('hidden');
                        if (!data.found) {
-                           var msg = data.message || 'Не удалось получить результат. Проверьте ссылку или попробуйте позже.';
-                           if (data.tme_preview && data.tme_preview.title) {
+                           var msg;
+                           if (data.pending) {
+                               msg = '⏳ Канал добавлен в очередь. Обычно результат через 1–3 минуты. Нажмите «Проверить» снова.';
+                           } else if (data.tme_preview && data.tme_preview.title) {
                                msg = '📢 ' + (data.tme_preview.title || 'Канал') + (data.tme_preview.description ? '\n' + data.tme_preview.description.slice(0, 180) + (data.tme_preview.description.length > 180 ? '…' : '') : '');
                                if (data.complaints != null && data.complaints > 0) msg += '\n💸 По жалобам: ' + data.complaints + (data.total_loss ? ', потери: ' + data.total_loss : '');
                                msg += '\n\n⚠️ Оценка риска по сообщениям доступна после настройки входа в Telegram.';
+                           } else {
+                               msg = data.message || 'Не удалось получить результат. Проверьте ссылку или попробуйте позже.';
                            }
                            checkResult.textContent = msg;
                            checkResult.className = 'kro-check-result';
+                           if (periodActionsEl) periodActionsEl.classList.add('hidden');
                            if (data.needLogin && hintEl) {
                                hintEl.classList.remove('hidden');
                                var cmdEl = document.getElementById('kro-check-login-cmd');
@@ -621,26 +633,97 @@
                            }
                            return;
                        }
+                       var pd = data.period_days != null ? data.period_days : 30;
+                       var periodLabel = pd === 180 ? 'Проверено за 6 месяцев' : (pd === 365 ? 'Проверено за год' : 'Проверено за месяц');
                        var risk = data.risk_score;
                        var riskStr = risk != null ? risk + '/100' : '—';
-                       var lines = ['Риск ' + riskStr];
+                       var lines = [periodLabel, 'Риск ' + riskStr];
                        if (data.reasons && data.reasons.length) lines.push('Причины: ' + data.reasons.join(', '));
                        if (data.ads_per_week != null && !(data.reasons && data.reasons.length)) lines.push('⚠️ ' + data.ads_per_week + ' реклам/неделя');
                        if (data.bot_pct && data.bot_pct !== '—' && !(data.reasons && data.reasons.length)) lines.push('⚠️ ' + data.bot_pct + ' ботов в комментах');
                        var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : '—');
                        lines.push('💸 Потери пользователей: ' + lossStr);
-<<<<<<< HEAD
-                       lines.push('📊 Вердикт: ' + (data.verdictText || data.verdict || '—'));
-=======
                        lines.push('📊 Вердикт: ' + (data.verdict_phrase || data.verdict || '—'));
->>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))
                        checkResult.textContent = lines.join('\n');
                        checkResult.className = 'kro-check-result';
-                   }).catch(function() {
-                       checkResult.textContent = 'Ошибка запроса.';
+                       var periodActions = document.getElementById('kro-check-period-actions');
+                       var btn180 = document.getElementById('kro-check-period-180');
+                       var btn365 = document.getElementById('kro-check-period-365');
+                       if (periodActions && btn180 && btn365) {
+                           if (pd === 30) {
+                               periodActions.classList.remove('hidden');
+                               btn180.classList.remove('hidden');
+                               btn365.classList.remove('hidden');
+                           } else if (pd === 180) {
+                               periodActions.classList.remove('hidden');
+                               btn180.classList.add('hidden');
+                               btn365.classList.remove('hidden');
+                           } else {
+                               periodActions.classList.add('hidden');
+                           }
+                       }
+                   }).catch(function(err) {
+                       checkResult.textContent = 'Ошибка запроса или сети. Проверьте интернет и попробуйте снова.';
                        checkResult.className = 'kro-check-result';
                    });
                });
+               function runCheckWithPeriod(channel, period) {
+                   var loadingMsg = period === 180 ? 'Проверяем канал за 6 месяцев… может занять несколько минут, не закрывайте страницу.' : 'Проверяем канал за год… может занять дольше, не закрывайте страницу.';
+                   checkResult.textContent = loadingMsg;
+                   checkResult.classList.remove('hidden');
+                   var pa = document.getElementById('kro-check-period-actions');
+                   if (pa) pa.classList.add('hidden');
+                   fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel) + '&period=' + period).then(function(r) { return r.json(); }).then(function(data) {
+                       if (!data.found) {
+                           checkResult.textContent = data.message || 'Не удалось получить результат. Проверьте ссылку или попробуйте позже.';
+                           return;
+                       }
+                       var pd = data.period_days != null ? data.period_days : 30;
+                       var periodLabel = pd === 180 ? 'Проверено за 6 месяцев' : (pd === 365 ? 'Проверено за год' : 'Проверено за месяц');
+                       var risk = data.risk_score;
+                       var riskStr = risk != null ? risk + '/100' : '—';
+                       var lines = [periodLabel, 'Риск ' + riskStr];
+                       if (data.reasons && data.reasons.length) lines.push('Причины: ' + data.reasons.join(', '));
+                       if (data.ads_per_week != null && !(data.reasons && data.reasons.length)) lines.push('⚠️ ' + data.ads_per_week + ' реклам/неделя');
+                       if (data.bot_pct && data.bot_pct !== '—' && !(data.reasons && data.reasons.length)) lines.push('⚠️ ' + data.bot_pct + ' ботов в комментах');
+                       var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : '—');
+                       lines.push('💸 Потери пользователей: ' + lossStr);
+                       lines.push('📊 Вердикт: ' + (data.verdict_phrase || data.verdict || '—'));
+                       checkResult.textContent = lines.join('\n');
+                       var periodActions = document.getElementById('kro-check-period-actions');
+                       var btn180 = document.getElementById('kro-check-period-180');
+                       var btn365 = document.getElementById('kro-check-period-365');
+                       if (periodActions && btn180 && btn365) {
+                           if (pd === 30) {
+                               periodActions.classList.remove('hidden');
+                               btn180.classList.remove('hidden');
+                               btn365.classList.remove('hidden');
+                           } else if (pd === 180) {
+                               periodActions.classList.remove('hidden');
+                               btn180.classList.add('hidden');
+                               btn365.classList.remove('hidden');
+                           } else {
+                               periodActions.classList.add('hidden');
+                           }
+                       }
+                   }).catch(function() {
+                       checkResult.textContent = 'Ошибка запроса или сети. Попробуйте снова.';
+                   });
+               }
+               var btn180 = document.getElementById('kro-check-period-180');
+               var btn365 = document.getElementById('kro-check-period-365');
+               if (btn180 && btn365 && checkInput) {
+                   btn180.addEventListener('click', function() {
+                       var ch = normChannel(checkInput.value);
+                       if (!ch) { checkResult.textContent = 'Введите канал в поле выше.'; checkResult.classList.remove('hidden'); return; }
+                       runCheckWithPeriod(ch, 180);
+                   });
+                   btn365.addEventListener('click', function() {
+                       var ch = normChannel(checkInput.value);
+                       if (!ch) { checkResult.textContent = 'Введите канал в поле выше.'; checkResult.classList.remove('hidden'); return; }
+                       runCheckWithPeriod(ch, 365);
+                   });
+               }
                var screenshotInput = document.getElementById('kro-check-screenshot');
                var screenshotBtn = document.getElementById('kro-check-screenshot-btn');
                if (screenshotBtn && screenshotInput && checkResult) {
@@ -699,11 +782,7 @@
                                    var scHint = document.getElementById('kro-check-login-hint');
                                    if (scHint) scHint.classList.add('hidden');
                                    if (!chData.found) {
-<<<<<<< HEAD
-                                       checkResult.textContent = (chData.message || 'Канал добавлен в очередь. Обычно результат через 1–3 минуты. Нажмите «Проверить» снова.');
-=======
-                                       checkResult.textContent = (chData.message || 'Не удалось получить результат. Проверьте ссылку или попробуйте позже.');
->>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))
+                                       checkResult.textContent = (chData.pending ? 'Канал добавлен в очередь. Обычно результат через 1–3 минуты. Нажмите «Проверить» снова.' : (chData.message || 'Не удалось получить результат. Проверьте ссылку или попробуйте позже.'));
                                        checkResult.className = 'kro-check-result';
                                        if (chData.needLogin && scHint) {
                                            scHint.classList.remove('hidden');

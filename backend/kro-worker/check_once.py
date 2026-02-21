@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 KRO check once: проверка одного канала по Telegram (Telethon).
-Принимает один аргумент — идентификатор канала (@name, t.me/+hash).
-Выводит в stdout одну строку JSON: found, risk_score, ads_per_week, bot_pct, vip_price, verdict.
+Принимает: идентификатор канала (@name, t.me/+hash), опционально period_days (30|180|365).
+Выводит в stdout одну строку JSON: found, risk_score, ads_per_week, bot_pct, vip_price, verdict, period_days.
 При ошибке — found: false, error. Код выхода 0 всегда (для парсинга в Node).
 """
 import os
@@ -10,11 +10,7 @@ import re
 import sys
 import json
 import asyncio
-<<<<<<< HEAD
-from datetime import datetime, timezone, timedelta
-=======
 from datetime import datetime, timedelta, timezone
->>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))
 
 from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest
@@ -199,7 +195,7 @@ def bot_pct_from_reply_texts(reply_texts):
     return f'{pct}%'
 
 
-async def run_check(channel_id):
+async def run_check(channel_id, period_days=30):
     client = TelegramClient(
         TELEGRAM_SESSION_NAME,
         TELEGRAM_API_ID,
@@ -210,17 +206,39 @@ async def run_check(channel_id):
         entity = await get_entity(client, channel_id)
         if not entity:
             return None
-        messages = await client.get_messages(entity, limit=80)
+        now = datetime.now(timezone.utc)
+        min_date = now - timedelta(days=period_days)
+
+        if period_days <= 30:
+            raw = await client.get_messages(entity, limit=150)
+            messages = []
+            for m in raw:
+                if not m or not m.date:
+                    continue
+                md = m.date.replace(tzinfo=timezone.utc) if getattr(m.date, 'tzinfo', None) is None else m.date
+                if md >= min_date:
+                    messages.append(m)
+        else:
+            max_count = 500 if period_days <= 180 else 1000
+            messages = []
+            async for m in client.iter_messages(entity, limit=max_count):
+                if not m or not m.date:
+                    continue
+                md = m.date.replace(tzinfo=timezone.utc) if getattr(m.date, 'tzinfo', None) is None else m.date
+                if md < min_date:
+                    break
+                messages.append(m)
+
         texts = []
         messages_with_dates = []
         for m in messages:
             if m and m.text:
                 texts.append(m.text)
                 messages_with_dates.append((m.text, m.date))
-<<<<<<< HEAD
-        risk, _ = analyze_messages(texts)
+
+        risk, _matches, _total, risk_pct = analyze_messages(texts)
         vip = extract_vip_price(texts)
-        ads_week = ads_per_week_from_messages(messages_with_dates) if messages_with_dates else 0
+        ads_week = count_ads_last_7_days(messages_with_dates)
 
         reply_texts = []
         try:
@@ -237,11 +255,6 @@ async def run_check(channel_id):
             pass
         bot_pct = bot_pct_from_reply_texts(reply_texts)
 
-=======
-        risk, _matches, _total, risk_pct = analyze_messages(texts)
-        vip = extract_vip_price(texts)
-        ads_week = count_ads_last_7_days(messages_with_dates)
->>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))
         if risk >= 70:
             verdict = 'scam'
         elif risk >= 35:
@@ -267,7 +280,8 @@ async def run_check(channel_id):
             'verdict': verdict,
             'verdict_phrase': verdict_phrase,
             'reasons': reasons,
-            'risk_pct': risk_pct
+            'risk_pct': risk_pct,
+            'period_days': period_days
         }
     finally:
         await client.disconnect()
@@ -306,6 +320,11 @@ def main():
     if not channel_id:
         out({'found': False, 'error': 'channel required'})
         return
+    period_days = 30
+    if len(sys.argv) > 2:
+        raw = (sys.argv[2] or '').strip()
+        if raw in ('30', '180', '365'):
+            period_days = int(raw)
     if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
         out({'found': False, 'error': 'telegram not configured'})
         return
@@ -317,7 +336,7 @@ def main():
         })
         return
     try:
-        result = asyncio.run(run_check(channel_id))
+        result = asyncio.run(run_check(channel_id, period_days))
         if result is None:
             out({'found': False, 'error': 'channel not found or inaccessible'})
             return

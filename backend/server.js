@@ -1398,6 +1398,8 @@ app.get('/api/kro/check', async (req, res) => {
   if (!channel) {
     return res.status(400).json({ error: 'channel query is required', found: false });
   }
+  const periodRaw = (req.query.period ?? '30').toString().trim();
+  const period = ['30', '180', '365'].includes(periodRaw) ? periodRaw : '30';
   const noConfigMessage = 'Не настроена база каналов (KRO_SHEET_ID или Google credentials). Добавьте настройки в .env.';
   if (!kroScamBaseRange || !kroSheetId) {
     return res.json({ found: false, channel, message: noConfigMessage });
@@ -1438,14 +1440,15 @@ app.get('/api/kro/check', async (req, res) => {
           total_loss,
           verdict: row.verdict,
           verdict_phrase,
-          reasons
+          reasons,
+          period_days: 30
         });
       }
     }
 
     const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
     const hasPython = (process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath));
-    const CHECK_ONCE_TIMEOUT_MS = 25000;
+    const CHECK_ONCE_TIMEOUT_MS = 120000;
 
     function runCheckOnceAsync() {
       return new Promise((resolve) => {
@@ -1453,7 +1456,7 @@ app.get('/api/kro/check', async (req, res) => {
           resolve({ error: 'На сервере не настроены TELEGRAM_API_ID/Telethon — живая проверка недоступна.' });
           return;
         }
-        const child = spawn('python3', [scriptPath, channel], {
+        const child = spawn('python3', [scriptPath, channel, period], {
           cwd: join(__dirname, 'kro-worker'),
           encoding: 'utf8',
           env: { ...process.env }
@@ -1464,7 +1467,7 @@ app.get('/api/kro/check', async (req, res) => {
         child.stderr?.on('data', (chunk) => { stderr += chunk; });
         const timer = setTimeout(() => {
           child.kill('SIGTERM');
-          resolve({ error: 'Таймаут проверки по Telegram (25 сек). Показаны данные с t.me.', timeout: true });
+          resolve({ error: 'Проверка по Telegram заняла больше 2 минут. Данные с t.me выше; полный разбор — после настройки воркера или повторите позже.', timeout: true });
         }, CHECK_ONCE_TIMEOUT_MS);
         child.on('close', (code) => {
           clearTimeout(timer);
@@ -1517,13 +1520,15 @@ app.get('/api/kro/check', async (req, res) => {
         verdict: p.verdict,
         verdict_phrase: p.verdict_phrase || VERDICT_PHRASES[p.verdict] || p.verdict,
         reasons: p.reasons || buildReasonsFromRow(p),
-        risk_pct: p.risk_pct
+        risk_pct: p.risk_pct,
+        period_days: p.period_days != null ? p.period_days : 30
       });
     }
 
     const checkOnceError = checkOnceResult?.error || null;
 
-    if (kroCheckQueueRange && client && !checkOnceError) {
+    let addedToQueue = false;
+    if (kroCheckQueueRange && client) {
       try {
         await client.sheets.spreadsheets.values.append({
           spreadsheetId: kroSheetId,
@@ -1532,6 +1537,7 @@ app.get('/api/kro/check', async (req, res) => {
           insertDataOption: 'INSERT_ROWS',
           requestBody: { values: [[channel, new Date().toISOString()]] }
         });
+        addedToQueue = true;
       } catch (e) {
         console.error('KRO check queue append error:', e);
       }
@@ -1557,7 +1563,7 @@ app.get('/api/kro/check', async (req, res) => {
         : 'Канал не найден в базе. Не удалось загрузить данные с t.me — проверьте ссылку или попробуйте позже.';
     return res.json({
       found: false,
-      pending: !!kroCheckQueueRange && !checkOnceError,
+      pending: addedToQueue || (!!kroCheckQueueRange && !!client),
       channel,
       message: finalMessage,
       error_detail: checkOnceError || undefined,
