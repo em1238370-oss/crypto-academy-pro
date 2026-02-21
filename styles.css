@@ -783,6 +783,11 @@ button:focus-visible {
    max-width: 640px;
    margin: 0 auto 40px;
    text-align: left;
+   position: relative;
+   padding: 28px 24px 32px;
+   border-radius: 20px;
+   background: radial-gradient(ellipse 90% 70% at 50% 0%, rgba(255, 255, 255, 0.025) 0%, transparent 50%);
+   transition: background 0.3s ease;
 }
 
 .kro-check-tag {
@@ -791,7 +796,7 @@ button:focus-visible {
    gap: 6px;
    padding: 6px 12px;
    margin-bottom: 12px;
-   background: rgba(0, 0, 0, 0.35);
+   background: rgba(0, 0, 0, 0.4);
    border: 1px solid var(--kro-violet-border);
    border-radius: 999px;
    font-size: 0.75rem;
@@ -799,6 +804,11 @@ button:focus-visible {
    text-transform: uppercase;
    letter-spacing: 0.06em;
    color: var(--kro-gray-soft);
+   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35), 0 0 24px rgba(139, 92, 246, 0.12);
+   transition: box-shadow 0.25s ease, transform 0.2s ease;
+}
+.kro-check-tag:hover {
+   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 32px rgba(139, 92, 246, 0.18);
 }
 .kro-check-tag-icon {
    display: inline-flex;
@@ -812,6 +822,7 @@ button:focus-visible {
    font-size: 0.7rem;
    font-weight: 700;
    font-style: italic;
+   box-shadow: 0 0 12px rgba(139, 92, 246, 0.5);
 }
 
 .kro-feature1-check-intro {
@@ -867,7 +878,7 @@ button:focus-visible {
 .kro-feature1-check-row .kro-report-label input:focus {
    outline: none;
    border-color: rgba(245, 158, 11, 0.5);
-   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15), 0 0 20px rgba(245, 158, 11, 0.08);
 }
 .kro-period-btn {
    transition: background-color 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
@@ -891,18 +902,19 @@ button:focus-visible {
    margin-bottom: 6px;
 }
 
-/* Карточка результата проверки — DuoView: сетка 2x2, иконки в кружках */
+/* Карточка результата — DuoView + скрин: подъём, мягкое свечение, тёплый фон */
 .kro-result-card {
-   background: rgba(30, 25, 22, 0.6);
+   background: linear-gradient(165deg, rgba(38, 32, 28, 0.85) 0%, rgba(28, 24, 22, 0.9) 100%);
    border: 1px solid rgba(255, 255, 255, 0.08);
-   border-radius: 16px;
+   border-radius: 18px;
    padding: 24px 24px 28px;
    margin: 0;
-   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04);
+   transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
 }
 .kro-result-card:hover {
-   border-color: rgba(255, 255, 255, 0.12);
-   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+   border-color: rgba(255, 255, 255, 0.1);
+   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 48px rgba(245, 158, 11, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 .kro-result-period-banner {
    font-size: clamp(1.1rem, 2.5vw, 1.35rem);
@@ -944,9 +956,10 @@ button:focus-visible {
    line-height: 1.5;
    margin: 0 0 18px 0;
    padding: 12px 14px;
-   background: rgba(255, 255, 255, 0.03);
-   border-radius: 8px;
+   background: rgba(255, 255, 255, 0.025);
+   border-radius: 10px;
    border-left: 3px solid var(--kro-violet-border);
+   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .kro-result-grid {
@@ -955,21 +968,22 @@ button:focus-visible {
    gap: 14px;
 }
 .kro-result-minicard {
-   background: rgba(255, 255, 255, 0.03);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
    border: 1px solid rgba(255, 255, 255, 0.06);
-   border-radius: 12px;
+   border-radius: 14px;
    padding: 16px;
-   transition: border-color 0.2s ease, background 0.2s ease;
+   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+   transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
 }
 .kro-result-minicard:hover {
-   background: rgba(255, 255, 255, 0.05);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
    border-color: rgba(255, 255, 255, 0.1);
 }
-.kro-result-minicard:nth-child(1):hover { border-color: rgba(245, 158, 11, 0.2); }
-.kro-result-minicard:nth-child(2):hover { border-color: var(--kro-violet-border); }
-.kro-result-minicard:nth-child(3):hover { border-color: var(--kro-cyan-border); }
-.kro-result-minicard:nth-child(4):hover { border-color: rgba(245, 158, 11, 0.2); }
-.kro-result-minicard:nth-child(5):hover { border-color: var(--kro-violet-border); }
+.kro-result-minicard:nth-child(1):hover { border-color: rgba(245, 158, 11, 0.25); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(245, 158, 11, 0.1); }
+.kro-result-minicard:nth-child(2):hover { border-color: var(--kro-violet-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(139, 92, 246, 0.1); }
+.kro-result-minicard:nth-child(3):hover { border-color: var(--kro-cyan-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(6, 182, 212, 0.1); }
+.kro-result-minicard:nth-child(4):hover { border-color: rgba(245, 158, 11, 0.25); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(245, 158, 11, 0.1); }
+.kro-result-minicard:nth-child(5):hover { border-color: var(--kro-violet-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(139, 92, 246, 0.1); }
 .kro-result-minicard-icon {
    width: 36px;
    height: 36px;
@@ -978,37 +992,44 @@ button:focus-visible {
    justify-content: center;
    background: var(--kro-violet-soft);
    border: 1px solid var(--kro-violet-border);
-   border-radius: 10px;
+   border-radius: 12px;
    color: var(--kro-violet);
    font-size: 1rem;
    font-weight: 700;
    margin-bottom: 12px;
+   box-shadow: 0 0 16px rgba(139, 92, 246, 0.2);
+   transition: box-shadow 0.25s ease;
 }
-/* Разные акценты по блокам: 1 Риск — золото, 2 Причины — фиолет, 3 Потери — циан, 4 Вердикт — золото, 5 Боты — фиолет */
+/* Разные акценты + мягкое свечение иконок (как на скрине) */
 .kro-result-minicard:nth-child(1) .kro-result-minicard-icon {
-   background: rgba(245, 158, 11, 0.2);
-   border-color: rgba(245, 158, 11, 0.4);
+   background: rgba(245, 158, 11, 0.22);
+   border-color: rgba(245, 158, 11, 0.45);
    color: var(--kro-accent);
+   box-shadow: 0 0 18px rgba(245, 158, 11, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .kro-result-minicard:nth-child(2) .kro-result-minicard-icon {
    background: var(--kro-violet-soft);
    border-color: var(--kro-violet-border);
    color: var(--kro-violet);
+   box-shadow: 0 0 18px rgba(139, 92, 246, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .kro-result-minicard:nth-child(3) .kro-result-minicard-icon {
    background: var(--kro-cyan-soft);
    border-color: var(--kro-cyan-border);
    color: var(--kro-cyan);
+   box-shadow: 0 0 18px rgba(6, 182, 212, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .kro-result-minicard:nth-child(4) .kro-result-minicard-icon {
-   background: rgba(245, 158, 11, 0.2);
-   border-color: rgba(245, 158, 11, 0.4);
+   background: rgba(245, 158, 11, 0.22);
+   border-color: rgba(245, 158, 11, 0.45);
    color: var(--kro-accent);
+   box-shadow: 0 0 18px rgba(245, 158, 11, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .kro-result-minicard:nth-child(5) .kro-result-minicard-icon {
    background: var(--kro-violet-soft);
    border-color: var(--kro-violet-border);
    color: var(--kro-violet);
+   box-shadow: 0 0 18px rgba(139, 92, 246, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .kro-result-minicard-title {
    font-size: 0.75rem;
@@ -1046,21 +1067,23 @@ button:focus-visible {
    padding: 6px 12px;
    background: rgba(245, 158, 11, 0.15);
    border: 1px solid rgba(245, 158, 11, 0.45);
-   border-radius: 8px;
+   border-radius: 10px;
    font-size: 0.875rem;
    font-weight: 600;
    color: var(--kro-accent);
+   box-shadow: 0 0 14px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .kro-result-message {
    margin: 0;
    padding: 14px 18px;
-   background: rgba(255, 255, 255, 0.04);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
    border: 1px solid rgba(255, 255, 255, 0.08);
-   border-radius: 10px;
-   color: rgba(255, 255, 255, 0.85);
+   border-radius: 12px;
+   color: rgba(255, 255, 255, 0.88);
    line-height: 1.5;
    font-size: 0.9375rem;
+   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .kro-check-login-hint {
