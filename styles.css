@@ -880,6 +880,11 @@ button:focus-visible {
    border-color: rgba(245, 158, 11, 0.5);
    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15), 0 0 20px rgba(245, 158, 11, 0.08);
 }
+.kro-period-prompt {
+   color: #fff;
+   margin-top: 0.25cm;
+   margin-bottom: 0.25cm;
+}
 .kro-period-btn {
    transition: background-color 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
 }
