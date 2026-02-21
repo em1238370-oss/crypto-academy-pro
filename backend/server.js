@@ -1593,8 +1593,8 @@ app.get('/api/kro/check', async (req, res) => {
       : checkOnceError
         ? (needLogin
             ? 'Чтобы по ссылке сразу получать результат, один раз войди в Telegram (команда ниже).'
-            : `По этой ссылке в базе проверенных каналов записи нет. ${checkOnceError}`)
-        : 'По этой ссылке в базе записей нет. Данные с t.me по каналу не загрузились — проверьте ссылку или попробуйте позже.';
+            : `Канал не найден в базе. ${checkOnceError}`)
+        : 'Канал не найден в базе. Не удалось загрузить данные с t.me — проверьте ссылку или попробуйте позже.';
     return res.json({
       found: false,
       pending: addedToQueue || (!!kroCheckQueueRange && !!client),
@@ -1666,50 +1666,6 @@ app.get('/api/kro/check-exchanger', async (req, res) => {
   } catch (e) {
     console.error('KRO check-exchanger error:', e);
     return res.status(500).json({ found: false, url, error: 'internal_error' });
-  }
-});
-
-app.post('/api/kro/check-screenshot', express.json({ limit: '10mb' }), async (req, res) => {
-  const imageDataUrl = (req.body?.image ?? '').toString().trim();
-  if (!imageDataUrl || (!imageDataUrl.startsWith('data:image/') || imageDataUrl.indexOf('base64,') === -1)) {
-    return res.status(400).json({ error: 'image (data URL) required', extracted: [] });
-  }
-  if (!mistralKey) {
-    return res.status(500).json({ error: 'AI not configured', extracted: [] });
-  }
-  try {
-    const aiResponse = await axios.post(
-      'https://api.mistral.ai/v1/chat/completions',
-      {
-        model: 'mistral-small-latest',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Look at this image. Extract ONLY: Telegram @usernames (e.g. @ChannelName), t.me links (full URL or t.me/xxx), or crypto exchanger/swap site URLs (http/https). Return one per line, nothing else. If none found, return exactly: NONE'
-              },
-              { type: 'image_url', image_url: imageDataUrl }
-            ]
-          }
-        ],
-        max_tokens: 300
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${mistralKey}`
-        }
-      }
-    );
-    const raw = aiResponse.data?.choices?.[0]?.message?.content ?? '';
-    const lines = raw.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-    const extracted = lines.filter((s) => s !== 'NONE' && (s.startsWith('@') || /t\.me\//i.test(s) || /^https?:\/\//i.test(s)));
-    res.json({ extracted });
-  } catch (e) {
-    console.error('KRO check-screenshot error:', e?.response?.data ?? e.message);
-    res.status(500).json({ error: 'vision_failed', extracted: [] });
   }
 });
 

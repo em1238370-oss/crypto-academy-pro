@@ -664,17 +664,11 @@ button:focus-visible {
    font-size: clamp(14px, 1.8vw, 18px);
    display: block;
    margin-bottom: 4px;
-   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
-   transition: text-shadow 0.2s ease;
-}
-.kro-f1-choice-btn:hover .kro-f1-choice-main {
-   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5), 0 0 24px rgba(255, 255, 255, 0.15);
 }
 
 .kro-f1-choice-sub {
    font-size: clamp(12px, 1.4vw, 14px);
-   opacity: 0.9;
-   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+   opacity: 0.88;
 }
 
 .kro-f1-choice-green .kro-f1-choice-sub {
@@ -1024,7 +1018,7 @@ button:focus-visible {
    box-shadow: 0 0 16px rgba(139, 92, 246, 0.2);
    transition: box-shadow 0.25s ease;
 }
-/* Разные акценты + мягкое свечение иконок (как на скрине) */
+/* Разные акценты + мягкое свечение иконок */
 .kro-result-minicard:nth-child(1) .kro-result-minicard-icon {
    background: rgba(245, 158, 11, 0.22);
    border-color: rgba(245, 158, 11, 0.45);
