@@ -253,7 +253,7 @@ button:focus-visible {
    margin: 0;
 }
 
-/* Фишка 1: Живой счётчик — карточки метрик, фон с глубиной */
+/* Фишка 1: Живой счётчик — карточки метрик, фон с глубиной. Эффекты кнопок/карточек/теней/таблиц по Анализ_эффектов_сайта_SiteLove.md */
 .kro-feature1 {
    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    padding: 80px 24px 80px;
@@ -709,12 +709,6 @@ button:focus-visible {
 
 .kro-feature1-table td {
    color: rgba(255, 255, 255, 0.9);
-}
-.kro-feature1-table tbody tr {
-   transition: background 0.15s ease;
-}
-.kro-feature1-table tbody tr:hover {
-   background: rgba(255, 255, 255, 0.03);
 }
 
 .kro-status-active {
