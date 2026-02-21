@@ -1540,8 +1540,14 @@ app.get('/api/kro/check', async (req, res) => {
           if (report.complaints != null) complaints = report.complaints;
           if (report.total_loss != null) total_loss = report.total_loss;
         }
-        const verdict_phrase = VERDICT_PHRASES[row.verdict] || row.verdict || '—';
+        const verdict_phrase = (row.verdict && row.verdict.trim())
+          ? (VERDICT_PHRASES[row.verdict] || row.verdict)
+          : 'Вердикт не определён (в базе не заполнен). Запустите проверку по Telegram или заполните столбец в таблице.';
         const reasons = buildReasonsFromRow(row);
+        const risk_explanation = 'Оценка из базы проверенных каналов. Значение было загружено при предыдущей проверке по Telegram или внесено вручную в таблицу.';
+        const loss_explanation = (empty(complaints) || empty(total_loss))
+          ? 'По этому каналу жалоб в форме «Сообщить о разводе» пока не поступало.'
+          : undefined;
         const tmePreview = await fetchTmePreview(channel).catch(() => null);
         return res.json({
           found: true,
@@ -1556,7 +1562,9 @@ app.get('/api/kro/check', async (req, res) => {
           verdict_phrase,
           reasons,
           period_days: parseInt(period, 10) || 30,
-          tme_preview: tmePreview || undefined
+          tme_preview: tmePreview || undefined,
+          risk_explanation,
+          loss_explanation: loss_explanation
         });
       }
     }
@@ -1666,6 +1674,50 @@ app.get('/api/kro/check-exchanger', async (req, res) => {
   } catch (e) {
     console.error('KRO check-exchanger error:', e);
     return res.status(500).json({ found: false, url, error: 'internal_error' });
+  }
+});
+
+app.post('/api/kro/check-screenshot', express.json({ limit: '10mb' }), async (req, res) => {
+  const imageDataUrl = (req.body?.image ?? '').toString().trim();
+  if (!imageDataUrl || (!imageDataUrl.startsWith('data:image/') || imageDataUrl.indexOf('base64,') === -1)) {
+    return res.status(400).json({ error: 'image (data URL) required', extracted: [] });
+  }
+  if (!mistralKey) {
+    return res.status(500).json({ error: 'AI not configured', extracted: [] });
+  }
+  try {
+    const aiResponse = await axios.post(
+      'https://api.mistral.ai/v1/chat/completions',
+      {
+        model: 'mistral-small-latest',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Look at this image. Extract ONLY: Telegram @usernames (e.g. @ChannelName), t.me links (full URL or t.me/xxx), or crypto exchanger/swap site URLs (http/https). Return one per line, nothing else. If none found, return exactly: NONE'
+              },
+              { type: 'image_url', image_url: imageDataUrl }
+            ]
+          }
+        ],
+        max_tokens: 300
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${mistralKey}`
+        }
+      }
+    );
+    const raw = aiResponse.data?.choices?.[0]?.message?.content ?? '';
+    const lines = raw.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    const extracted = lines.filter((s) => s !== 'NONE' && (s.startsWith('@') || /t\.me\//i.test(s) || /^https?:\/\//i.test(s)));
+    res.json({ extracted });
+  } catch (e) {
+    console.error('KRO check-screenshot error:', e?.response?.data ?? e.message);
+    res.status(500).json({ error: 'vision_failed', extracted: [] });
   }
 });
 

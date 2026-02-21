@@ -272,15 +272,22 @@ async def run_check(channel_id, period_days=30):
         else:
             verdict = 'safe'
         verdict_phrase = VERDICT_PHRASES.get(verdict, verdict)
+        verdict_explanation = VERDICT_EXPLANATIONS.get(verdict, verdict_phrase)
+        scheme_count = count_scheme_phrase_posts(texts)
         reasons = []
         reasons.append(f'реклама ({ads_week} постов/нед)')
         if bot_pct and bot_pct != '—':
             reasons.append(f'боты ({bot_pct} — по комментариям под постами канала)')
         else:
-            reasons.append('по каналу комментарии не пришли (обсуждение отключено или API не отдаёт)')
+            reasons.append('боты: нет данных (комментарии под постами канала недоступны через API или у канала отключено обсуждение)')
         if vip and vip != '—':
             reasons.append(f'VIP ({vip})')
-        risk_explanation = f'Оценка по доле постов с признаками рекламы (VIP, сигналы, крипта и т.д.) среди {messages_analyzed} постов канала за выбранный период.'
+        if scheme_count > 0:
+            reasons.append(f'фразы схем обмана (в {scheme_count} постах: гарантии, срочность, вывод)')
+        risk_explanation = (
+            f'Риск {risk}: из {messages_analyzed} постов в {matches} найдены признаки рекламы (VIP, сигналы, крипта, скрипты, схемы, FOMO) — '
+            f'доля {risk_pct}%. Учитываются десятки слов и фраз: подписки, гарантии, крипто-активы, обман, копи-трейдинг. Чем выше доля, тем выше риск.'
+        )
         return {
             'found': True,
             'username': channel_id,
@@ -292,6 +299,7 @@ async def run_check(channel_id, period_days=30):
             'total_loss': None,
             'verdict': verdict,
             'verdict_phrase': verdict_phrase,
+            'verdict_explanation': verdict_explanation,
             'reasons': reasons,
             'risk_pct': risk_pct,
             'period_days': period_days,
