@@ -1424,39 +1424,6 @@ app.get('/api/kro/check', async (req, res) => {
         message: 'Не удалось прочитать базу каналов. Проверьте в Render переменные KRO_SHEET_ID и KRO_SCAM_BASE_RANGE (имя листа должно совпадать с таблицей, например scam_base!A2:H).'
       });
     }
-    const channelLower = channel.toLowerCase();
-    for (let i = 0; i < rows.length; i++) {
-      const rawRow = rows[i];
-      if (!rawRow || !Array.isArray(rawRow)) continue;
-      const row = parseScamBaseRow(rawRow);
-      const rowChannel = (row.username || '').toLowerCase();
-      if (rowChannel === channelLower || rowChannel === channelLower.slice(1)) {
-        let complaints = row.complaints;
-        let total_loss = row.total_loss;
-        const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
-        if (empty(complaints) || empty(total_loss)) {
-          const report = await getComplaintsAndLossForChannel(client, channel);
-          if (report.complaints != null) complaints = report.complaints;
-          if (report.total_loss != null) total_loss = report.total_loss;
-        }
-        const verdict_phrase = VERDICT_PHRASES[row.verdict] || row.verdict || '—';
-        const reasons = buildReasonsFromRow(row);
-        return res.json({
-          found: true,
-          username: row.username,
-          risk_score: row.risk_score,
-          ads_per_week: row.ads_per_week,
-          bot_pct: row.bot_pct,
-          vip_price: row.vip_price,
-          complaints,
-          total_loss,
-          verdict: row.verdict,
-          verdict_phrase,
-          reasons,
-          period_days: 30
-        });
-      }
-    }
 
     const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
     const hasPython = (process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath));
@@ -1489,6 +1456,10 @@ app.get('/api/kro/check', async (req, res) => {
               const parsed = JSON.parse(line);
               if (parsed && parsed.found === true && (parsed.risk_score != null || parsed.verdict)) {
                 resolve({ found: true, parsed });
+                return;
+              }
+              if (parsed && parsed.found === false && parsed.not_crypto) {
+                resolve({ not_crypto: true, message: parsed.error || 'Мы проверяем только каналы, связанные с криптой. Другие не проверяем.' });
                 return;
               }
               if (parsed && parsed.found === false && parsed.error) resolve({ error: parsed.error });
@@ -1536,8 +1507,51 @@ app.get('/api/kro/check', async (req, res) => {
         period_days: p.period_days != null ? p.period_days : 30
       });
     }
+    if (checkOnceResult?.not_crypto) {
+      return res.json({
+        found: false,
+        not_crypto: true,
+        channel,
+        message: checkOnceResult.message || 'Мы проверяем только каналы, связанные с криптой/скрипторием. Другие не проверяем.'
+      });
+    }
 
     const checkOnceError = checkOnceResult?.error || null;
+
+    // По таблице — только если живая проверка не дала результата (нет Python или ошибка)
+    const channelLower = channel.toLowerCase();
+    for (let i = 0; i < rows.length; i++) {
+      const rawRow = rows[i];
+      if (!rawRow || !Array.isArray(rawRow)) continue;
+      const row = parseScamBaseRow(rawRow);
+      const rowChannel = (row.username || '').toLowerCase();
+      if (rowChannel === channelLower || rowChannel === channelLower.slice(1)) {
+        let complaints = row.complaints;
+        let total_loss = row.total_loss;
+        const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
+        if (empty(complaints) || empty(total_loss)) {
+          const report = await getComplaintsAndLossForChannel(client, channel);
+          if (report.complaints != null) complaints = report.complaints;
+          if (report.total_loss != null) total_loss = report.total_loss;
+        }
+        const verdict_phrase = VERDICT_PHRASES[row.verdict] || row.verdict || '—';
+        const reasons = buildReasonsFromRow(row);
+        return res.json({
+          found: true,
+          username: row.username,
+          risk_score: row.risk_score,
+          ads_per_week: row.ads_per_week,
+          bot_pct: row.bot_pct,
+          vip_price: row.vip_price,
+          complaints,
+          total_loss,
+          verdict: row.verdict,
+          verdict_phrase,
+          reasons,
+          period_days: 30
+        });
+      }
+    }
 
     let addedToQueue = false;
     if (kroCheckQueueRange && client) {

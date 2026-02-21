@@ -236,7 +236,15 @@ async def run_check(channel_id, period_days=30):
                 texts.append(m.text)
                 messages_with_dates.append((m.text, m.date))
 
-        risk, _matches, _total, risk_pct = analyze_messages(texts)
+        risk, matches, total, risk_pct = analyze_messages(texts)
+        # Канал не про крипту/скрипторий — проверяем только тематические
+        if total >= 5 and matches == 0:
+            return {
+                'found': False,
+                'not_crypto': True,
+                'username': channel_id,
+                'error': 'Канал не связан с криптой. Мы проверяем только каналы, связанные с криптой/скрипторием. Другие не проверяем.'
+            }
         vip = extract_vip_price(texts)
         ads_week = count_ads_last_7_days(messages_with_dates)
 
@@ -339,6 +347,9 @@ def main():
         result = asyncio.run(run_check(channel_id, period_days))
         if result is None:
             out({'found': False, 'error': 'channel not found or inaccessible'})
+            return
+        if result.get('not_crypto'):
+            out(result)
             return
         append_to_scam_base(
             channel_id,

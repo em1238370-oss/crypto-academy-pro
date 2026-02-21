@@ -178,8 +178,9 @@
            </ol>
            <div class="kro-feature1-check" id="kro-feature1-check">
                <p class="kro-feature1-check-intro">Проверить канал</p>
+                   <p class="kro-feature1-check-note">Вставьте ссылку на любой Telegram-канал — проверим по сообщениям. Проверяем только каналы, связанные с криптой/скрипторием; остальные не проверяем.</p>
                <div class="kro-feature1-check-row">
-                   <label class="kro-report-label" for="kro-check-channel">@username / ссылка на канал или обменник <input type="text" id="kro-check-channel" placeholder="@channel, t.me/..., или ссылка на обменник" autocomplete="off"></label>
+                   <label class="kro-report-label" for="kro-check-channel">Ссылка на канал или обменник <input type="text" id="kro-check-channel" placeholder="@channel, t.me/канал или ссылка на обменник" autocomplete="off"></label>
                    <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить</button>
                </div>
                <div class="kro-feature1-check-row kro-feature1-check-screenshot">
@@ -614,7 +615,9 @@
                        if (hintEl) hintEl.classList.add('hidden');
                        if (!data.found) {
                            var msg;
-                           if (data.pending) {
+                           if (data.not_crypto) {
+                               msg = data.message || 'Мы проверяем только каналы, связанные с криптой/скрипторием. Другие не проверяем.';
+                           } else if (data.pending) {
                                msg = '⏳ Канал добавлен в очередь. Обычно результат через 1–3 минуты. Нажмите «Проверить» снова.';
                            } else if (data.tme_preview && data.tme_preview.title) {
                                msg = '📢 ' + (data.tme_preview.title || 'Канал') + (data.tme_preview.description ? '\n' + data.tme_preview.description.slice(0, 180) + (data.tme_preview.description.length > 180 ? '…' : '') : '');
@@ -782,7 +785,7 @@
                                    var scHint = document.getElementById('kro-check-login-hint');
                                    if (scHint) scHint.classList.add('hidden');
                                    if (!chData.found) {
-                                       checkResult.textContent = (chData.pending ? 'Канал добавлен в очередь. Обычно результат через 1–3 минуты. Нажмите «Проверить» снова.' : (chData.message || 'Не удалось получить результат. Проверьте ссылку или попробуйте позже.'));
+                                       checkResult.textContent = (chData.not_crypto ? (chData.message || 'Мы проверяем только каналы про крипту.') : (chData.pending ? 'Канал добавлен в очередь. Обычно результат через 1–3 минуты. Нажмите «Проверить» снова.' : (chData.message || 'Не удалось получить результат. Проверьте ссылку или попробуйте позже.')));
                                        checkResult.className = 'kro-check-result';
                                        if (chData.needLogin && scHint) {
                                            scHint.classList.remove('hidden');

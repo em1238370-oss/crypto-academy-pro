@@ -777,7 +777,14 @@ button:focus-visible {
 .kro-feature1-check-intro {
    font-size: clamp(14px, 2vw, 16px);
    color: rgba(255, 255, 255, 0.85);
+   margin-bottom: 6px;
+}
+
+.kro-feature1-check-note {
+   font-size: 13px;
+   color: rgba(255, 255, 255, 0.65);
    margin-bottom: 12px;
+   line-height: 1.4;
 }
 
 .kro-feature1-check-row {
