@@ -96,7 +96,6 @@
                    <span class="kro-feature1-stat-label">Курсы фейк-продуктов</span>
                </div>
            </div>
-           <p class="kro-feature1-source-caption hidden" id="kro-stat-source-caption" aria-live="polite"></p>
            <div class="kro-f1-blocks">
                <!-- Блок 1: Шок-цифры -->
                <div class="kro-f1-block kro-f1-shock">
@@ -490,6 +489,9 @@
            }
            function applyData(data) {
                var el;
+               if ((el = document.getElementById('kro-stat-source-caption'))) {
+                 if (data.sourceCaption) { el.textContent = data.sourceCaption; el.classList.remove('hidden'); } else { el.textContent = ''; el.classList.add('hidden'); }
+               }
                if ((el = document.getElementById('kro-stat-channels-today'))) el.textContent = data.channelsToday;
                if ((el = document.getElementById('kro-stat-lost'))) el.textContent = formatFull(data.totalLost);
                if ((el = document.getElementById('kro-stat-channels'))) el.textContent = data.telegramCount;

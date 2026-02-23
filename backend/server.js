@@ -1253,6 +1253,28 @@ const KRO_FALLBACK = {
   ]
 };
 
+function getKroReferenceStats() {
+  try {
+    const p = join(__dirname, 'data', 'kro-reference-stats.json');
+    if (fs.existsSync(p)) {
+      const raw = fs.readFileSync(p, 'utf8');
+      const data = JSON.parse(raw);
+      return {
+        channelsToday: data.channelsToday ?? 0,
+        totalLost: data.totalLost ?? 0,
+        telegramCount: data.telegramCount ?? 0,
+        coursesCount: data.coursesCount ?? 0,
+        top3: Array.isArray(data.top3) ? data.top3 : [],
+        source: data.source,
+        sourceCaption: data.sourceCaption
+      };
+    }
+  } catch (e) {
+    console.warn('KRO reference stats load failed:', e.message);
+  }
+  return { channelsToday: 0, totalLost: 0, telegramCount: 0, coursesCount: 0, top3: [] };
+}
+
 function parseSheetRow(row, headerIndex) {
   const dateVal = (row[0] || '').toString().trim();
   const channel = (row[1] || '').toString().trim();
@@ -1746,7 +1768,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
       totalLost,
       telegramCount,
       coursesCount,
-      top3: top3.length ? top3 : []
+      top3: top3.length ? top3 : KRO_FALLBACK.top3
     });
   } catch (e) {
     console.error('KRO live-counter error:', e);
