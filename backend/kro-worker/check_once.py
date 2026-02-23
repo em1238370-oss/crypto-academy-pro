@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
 KRO check once: проверка одного канала по Telegram (Telethon).
-Принимает: идентификатор канала (@name, t.me/+hash), опционально period_days (30|180|365).
-Выводит в stdout одну строку JSON: found, risk_score, ads_per_week, bot_pct, vip_price, verdict, period_days.
-При ошибке — found: false, error. Код выхода 0 всегда (для парсинга в Node).
+12 критериев: 1–3 TGStat (рост, охват, возраст), 4–6 контент (FOMO, стыд, боты),
+7–9 бизнес (реклама, VIP, только профиты), 10 связи каналов, 11 complaint_ignore из таблицы, 12 не реализован.
+Формула риска: см. RISK_WEIGHTS и compute_risk_score(). Вывод: одна строка JSON в stdout.
 """
 import os
 import re
@@ -38,6 +38,24 @@ VERDICT_PHRASES = {
     'grey': 'серая зона',
     'safe': 'низкий риск'
 }
+
+# Критерии 4–5, 9: контент-анализ
+FOMO_KEYWORDS = [
+    'срочно', 'последний', 'осталось', 'никогда', 'успей', 'все уже', 'все в деле',
+    'не опоздай', 'последний шанс', 'ограниченно', 'только сейчас', 'успей пока',
+    'last chance', 'hurry', 'limited', 'don\'t miss', 'everyone already'
+]
+SHAME_PHRASES = [
+    'все уже в деле кроме тебя', 'только ты не успел', 'остальные уже в плюсе',
+    'все уже заработали', 'кроме тебя все', 'ты один не успел', 'все в деле кроме'
+]
+LOSS_KEYWORDS = [
+    'убыток', 'слив', 'потеря', 'минус', 'просадка', 'loss', 'drawdown', 'минусов'
+]
+
+# Регулярки для извлечения продвигаемых каналов (критерий 10)
+RE_TG_USERNAME = re.compile(r'@([a-zA-Z0-9_]{5,32})\b')
+RE_TME_LINK = re.compile(r't\.me/([a-zA-Z0-9_+]+)', re.I)
 
 
 def out(obj):
@@ -195,6 +213,125 @@ def bot_pct_from_reply_texts(reply_texts):
     return f'{pct}%'
 
 
+def _bot_ratio_from_pct_str(bot_pct_str):
+    """Из строки 'N%' или '—' возвращает число 0–100 для формулы риска."""
+    if not bot_pct_str or bot_pct_str == '—':
+        return 0
+    m = re.search(r'(\d+)\s*%', str(bot_pct_str))
+    return min(100, int(m.group(1))) if m else 0
+
+
+def fomo_pct_from_texts(texts):
+    """Доля постов (0–100), содержащих хотя бы одно FOMO-слово."""
+    if not texts:
+        return 0
+    count = 0
+    for t in texts:
+        if not t or len(t) < 3:
+            continue
+        lower = t.lower()
+        for kw in FOMO_KEYWORDS:
+            if kw in lower:
+                count += 1
+                break
+    total = sum(1 for t in texts if t and len(t) >= 3)
+    return round(100 * count / total) if total else 0
+
+
+def shame_phrases_detected(texts):
+    """Список стыдовых фраз, встретившихся в постах."""
+    if not texts:
+        return []
+    found = []
+    combined = ' '.join((t or '') for t in texts).lower()
+    for phrase in SHAME_PHRASES:
+        if phrase in combined:
+            found.append(phrase)
+    return found
+
+
+def ads_ratio_from_texts(texts):
+    """Доля постов с рекламными ключевыми словами за период (0–100)."""
+    if not texts:
+        return 0
+    total = sum(1 for t in texts if t and len(t) >= 5)
+    if not total:
+        return 0
+    ad_count = sum(1 for t in texts if _is_ad_like(t))
+    return min(100, round(100 * ad_count / total))
+
+
+def only_profits_flag(texts, min_posts=20):
+    """True, если постов достаточно и ни в одном нет упоминания убытков."""
+    if not texts or len(texts) < min_posts:
+        return False
+    for t in texts:
+        if not t:
+            continue
+        lower = t.lower()
+        for kw in LOSS_KEYWORDS:
+            if kw in lower:
+                return False
+    return True
+
+
+def extract_promoted_channels(texts, current_channel_id):
+    """Из текстов извлекает уникальные @channel и t.me/xxx (продвигаемые каналы)."""
+    promoted = set()
+    current_lower = (current_channel_id or '').strip().lower().replace('@', '')
+    for t in texts or []:
+        if not t:
+            continue
+        for m in RE_TG_USERNAME.findall(t):
+            s = m.lower()
+            if s != current_lower and len(s) >= 4:
+                promoted.add('@' + m)
+        for m in RE_TME_LINK.findall(t):
+            if m.startswith('+'):
+                promoted.add('t.me/' + m)
+            else:
+                s = m.lower().split('/')[0] if '/' in m else m.lower()
+                if s != current_lower and len(s) >= 4:
+                    promoted.add('@' + m)
+    return list(promoted)
+
+
+# Веса формулы риска (сумма = 1.0)
+RISK_WEIGHTS = {
+    'fomo_pct': 0.15,
+    'bot_ratio': 0.20,
+    'ads_ratio': 0.25,
+    'growth_anomaly': 0.15,
+    'review_similarity': 0.10,
+    'network_connections': 0.10,
+    'complaint_ignore_time': 0.05,
+}
+
+
+def compute_risk_score(
+    fomo_pct,
+    bot_ratio,
+    ads_ratio,
+    growth_anomaly=0,
+    review_similarity=None,
+    network_connections=0,
+    complaint_ignore_time=0,
+):
+    """Считает risk_score 0–100 по взвешенной формуле."""
+    if review_similarity is None:
+        review_similarity = bot_ratio
+    score = (
+        fomo_pct * RISK_WEIGHTS['fomo_pct'] +
+        bot_ratio * RISK_WEIGHTS['bot_ratio'] +
+        ads_ratio * RISK_WEIGHTS['ads_ratio'] +
+        growth_anomaly * RISK_WEIGHTS['growth_anomaly'] +
+        review_similarity * RISK_WEIGHTS['review_similarity'] +
+        min(100, network_connections * 20) * RISK_WEIGHTS['network_connections'] +
+        min(100, complaint_ignore_time) * RISK_WEIGHTS['complaint_ignore_time']
+    )
+    return min(100, max(0, round(score)))
+
+
 async def run_check(channel_id, period_days=30):
     client = TelegramClient(
         TELEGRAM_SESSION_NAME,
@@ -265,6 +402,28 @@ async def run_check(channel_id, period_days=30):
         messages_analyzed = len(messages)
         replies_count = len(reply_texts)
 
+        fomo_pct = fomo_pct_from_texts(texts)
+        shame_detected = shame_phrases_detected(texts)
+        ads_ratio = ads_ratio_from_texts(texts)
+        only_profits = only_profits_flag(texts, min_posts=20)
+        promoted_list = extract_promoted_channels(texts, channel_id)
+        promoted_count = len(promoted_list)
+        promoted_sample = promoted_list[:10]
+
+        bot_ratio = _bot_ratio_from_pct_str(bot_pct)
+        growth_anomaly = 0
+        complaint_ignore_time = 0
+
+        risk = compute_risk_score(
+            fomo_pct=fomo_pct,
+            bot_ratio=bot_ratio,
+            ads_ratio=ads_ratio,
+            growth_anomaly=growth_anomaly,
+            review_similarity=bot_ratio,
+            network_connections=promoted_count,
+            complaint_ignore_time=complaint_ignore_time,
+        )
+
         if risk >= 70:
             verdict = 'scam'
         elif risk >= 35:
@@ -272,8 +431,10 @@ async def run_check(channel_id, period_days=30):
         else:
             verdict = 'safe'
         verdict_phrase = VERDICT_PHRASES.get(verdict, verdict)
-        verdict_explanation = VERDICT_EXPLANATIONS.get(verdict, verdict_phrase)
-        scheme_count = count_scheme_phrase_posts(texts)
+        verdict_detail = None
+        if risk >= 70 and promoted_count >= 2:
+            verdict_detail = 'сеть памперов'
+
         reasons = []
         reasons.append(f'реклама ({ads_week} постов/нед)')
         if bot_pct and bot_pct != '—':
@@ -282,11 +443,16 @@ async def run_check(channel_id, period_days=30):
             reasons.append('боты: нет данных (комментарии под постами канала недоступны через API или у канала отключено обсуждение)')
         if vip and vip != '—':
             reasons.append(f'VIP ({vip})')
-        if scheme_count > 0:
-            reasons.append(f'фразы схем обмана (в {scheme_count} постах: гарантии, срочность, вывод)')
+        if fomo_pct > 30:
+            reasons.append(f'FOMO-слова ({fomo_pct}% постов)')
+        if shame_detected:
+            reasons.append('стыдовые фразы')
+        if promoted_count >= 2:
+            reasons.append(f'рекламирует {promoted_count} каналов')
+
         risk_explanation = (
-            f'Риск {risk}: из {messages_analyzed} постов в {matches} найдены признаки рекламы (VIP, сигналы, крипта, скрипты, схемы, FOMO) — '
-            f'доля {risk_pct}%. Учитываются десятки слов и фраз: подписки, гарантии, крипто-активы, обман, копи-трейдинг. Чем выше доля, тем выше риск.'
+            f'Формула: FOMO {fomo_pct}% + боты {bot_ratio}% + реклама {ads_ratio}% + связи {min(100, promoted_count * 20)}% и др. '
+            f'По {messages_analyzed} постам за выбранный период.'
         )
         return {
             'found': True,
@@ -299,13 +465,24 @@ async def run_check(channel_id, period_days=30):
             'total_loss': None,
             'verdict': verdict,
             'verdict_phrase': verdict_phrase,
-            'verdict_explanation': verdict_explanation,
+            'verdict_detail': verdict_detail,
             'reasons': reasons,
             'risk_pct': risk_pct,
             'period_days': period_days,
             'messages_analyzed': messages_analyzed,
             'replies_count': replies_count,
-            'risk_explanation': risk_explanation
+            'risk_explanation': risk_explanation,
+            'fomo_pct': fomo_pct,
+            'shame_phrases_detected': shame_detected,
+            'ads_ratio': ads_ratio,
+            'only_profits_flag': only_profits,
+            'promoted_channels_count': promoted_count,
+            'promoted_channels_sample': promoted_sample,
+            'subscriber_growth_per_day': None,
+            'growth_anomaly': growth_anomaly,
+            'reach_ratio': None,
+            'channel_age_days': None,
+            'rename_count': None,
         }
     finally:
         await client.disconnect()

@@ -621,6 +621,19 @@
                        }
                        reviewsHtml = '<div class="kro-result-reviews"><h4 class="kro-result-reviews-title">Отзывы потерпевших</h4><p class="kro-result-reviews-hint">Жалобы по этому каналу, отправленные через форму «Сообщить о разводе».</p><ul class="kro-result-reviews-list">' + list.join('') + '</ul></div>';
                    }
+                   var factsItems = [];
+                   if (data.fomo_pct != null && data.fomo_pct !== '') factsItems.push('<li><strong>FOMO:</strong> ' + escapeHtml(data.fomo_pct) + '% постов</li>');
+                   factsItems.push('<li><strong>Боты:</strong> ' + (data.bot_pct && data.bot_pct !== '—' ? escapeHtml(data.bot_pct) : '—') + ' комментов</li>');
+                   var vipLine = (data.vip_price && data.vip_price !== '—' ? escapeHtml(data.vip_price) : '—') + (data.ads_per_week != null ? ' (реклама ' + data.ads_per_week + '/нед)' : '');
+                   factsItems.push('<li><strong>VIP:</strong> ' + vipLine + '</li>');
+                   var connCount = data.promoted_channels_count != null ? data.promoted_channels_count : '';
+                   var sampleArr = data.promoted_channels_sample && data.promoted_channels_sample.length ? data.promoted_channels_sample.slice(0, 3).map(function (x) { return escapeHtml(String(x)); }) : [];
+                   var connLine = connCount !== '' ? 'рекламирует ' + connCount + ' каналов' + (sampleArr.length ? ' (' + sampleArr.join(', ') + (data.promoted_channels_sample.length > 3 ? '…' : '') + ')' : '') : '—';
+                   factsItems.push('<li><strong>Связи:</strong> ' + connLine + '</li>');
+                   var complaintsLine = (data.complaints != null ? data.complaints + ' чел' : '—') + (data.total_loss ? ', ' + escapeHtml(String(data.total_loss)) : '');
+                   if (data.complaint_ignore_hours != null && data.complaint_ignore_hours > 0) complaintsLine += ' (игнор ' + data.complaint_ignore_hours + ' ч)';
+                   factsItems.push('<li><strong>Жалобы:</strong> ' + complaintsLine + '</li>');
+                   var factsHtml = '<div class="kro-result-facts"><h4 class="kro-result-facts-title">ФАКТЫ</h4><ul class="kro-result-facts-list">' + factsItems.join('') + '</ul></div>';
                    return '<div class="kro-result-card">' +
                        '<div class="kro-result-period-banner">' + escapeHtml(periodBanner) + '</div>' +
                        '<div class="kro-result-header">' +
@@ -629,6 +642,7 @@
                        '<div class="kro-result-meta">' + escapeHtml(periodLabel) + '</div>' +
                        '</div>' +
                        '<p class="kro-result-source">' + escapeHtml(sourceText) + '</p>' +
+                       factsHtml +
                        '<div class="kro-result-grid">' +
                        '<div class="kro-result-minicard">' +
                        '<div class="kro-result-minicard-icon" aria-hidden="true">!</div>' +

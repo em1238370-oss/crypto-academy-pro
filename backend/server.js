@@ -1316,7 +1316,9 @@ function parseScamBaseRow(row) {
   const complaints = parseInt(complaintsRaw, 10);
   const total_loss = (row[6] ?? '').toString().trim();
   const verdict = (row[7] ?? '').toString().trim();
-  return { username, risk_score: Number.isFinite(risk_score) ? risk_score : null, ads_per_week: Number.isFinite(ads_per_week) ? ads_per_week : null, bot_pct, vip_price, complaints: Number.isFinite(complaints) ? complaints : null, total_loss, verdict };
+  const complaintIgnoreRaw = (row[8] ?? '').toString().replace(/\s/g, '');
+  const complaint_ignore_hours = complaintIgnoreRaw ? parseInt(complaintIgnoreRaw, 10) : null;
+  return { username, risk_score: Number.isFinite(risk_score) ? risk_score : null, ads_per_week: Number.isFinite(ads_per_week) ? ads_per_week : null, bot_pct, vip_price, complaints: Number.isFinite(complaints) ? complaints : null, total_loss, verdict, complaint_ignore_hours: Number.isFinite(complaint_ignore_hours) ? complaint_ignore_hours : null };
 }
 
 function normalizeChannel(channel) {
@@ -1578,11 +1580,24 @@ app.get('/api/kro/check', async (req, res) => {
           total_loss,
           verdict: row.verdict,
           verdict_phrase,
+          verdict_detail: row.verdict_detail ?? undefined,
           reasons,
           period_days: parseInt(period, 10) || 30,
           tme_preview: tmePreview || undefined,
           risk_explanation,
-          loss_explanation
+          loss_explanation,
+          fomo_pct: row.fomo_pct ?? undefined,
+          shame_phrases_detected: row.shame_phrases_detected ?? undefined,
+          ads_ratio: row.ads_ratio ?? undefined,
+          only_profits_flag: row.only_profits_flag ?? undefined,
+          promoted_channels_count: row.promoted_channels_count ?? undefined,
+          promoted_channels_sample: row.promoted_channels_sample ?? undefined,
+          subscriber_growth_per_day: row.subscriber_growth_per_day ?? undefined,
+          growth_anomaly: row.growth_anomaly ?? undefined,
+          reach_ratio: row.reach_ratio ?? undefined,
+          channel_age_days: row.channel_age_days ?? undefined,
+          rename_count: row.rename_count ?? undefined,
+          complaint_ignore_hours: row.complaint_ignore_hours ?? undefined
         });
       }
     }
