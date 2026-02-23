@@ -864,7 +864,7 @@ button:focus-visible {
    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 .kro-check-intro-accent {
-   background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 35%, #a78bfa 70%, #8b5cf6 100%);
+   background: linear-gradient(135deg, #b45309 0%, #d97706 25%, #f59e0b 50%, #fbbf24 75%, #d4a574 85%, #fef3c7 100%);
    -webkit-background-clip: text;
    background-clip: text;
    -webkit-text-fill-color: transparent;
@@ -1186,6 +1186,13 @@ button:focus-visible {
    font-size: 14px;
    color: #f59e0b;
    user-select: all;
+}
+
+.kro-feature1-check-screenshot {
+   margin-top: 10px;
+}
+.kro-feature1-check-screenshot input[type="file"] {
+   margin-left: 8px;
 }
 
 /* Блок «Сообщить о разводе» — SiteLove: luminous контейнер */
