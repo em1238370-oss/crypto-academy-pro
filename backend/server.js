@@ -1241,7 +1241,7 @@ async function getKroSheetsClient() {
   }
 }
 
-const KRO_EMPTY = {
+const KRO_FALLBACK = {
   channelsToday: 47,
   totalLost: 12847300,
   telegramCount: 37,
@@ -1722,7 +1722,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
   try {
     const client = await getKroSheetsClient();
     if (!client) {
-      return res.json(KRO_EMPTY);
+      return res.json(getKroReferenceStats());
     }
     const today = getTodayMSK();
     const range = 'A2:F';
@@ -1746,11 +1746,11 @@ app.get('/api/kro/live-counter', async (req, res) => {
       totalLost,
       telegramCount,
       coursesCount,
-      top3: top3.length ? top3 : KRO_EMPTY.top3
+      top3: top3.length ? top3 : []
     });
   } catch (e) {
     console.error('KRO live-counter error:', e);
-    res.json(KRO_EMPTY);
+    res.json(getKroReferenceStats());
   }
 });
 
