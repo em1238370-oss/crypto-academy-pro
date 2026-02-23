@@ -79,20 +79,20 @@
            <div class="kro-feature1-bg" aria-hidden="true"></div>
            <p class="kro-feature1-date" id="kro-feature1-date">LIVE: <span id="kro-live-datetime">—</span> MSK</p>
            <div class="kro-feature1-hero-number">
-               <span class="kro-feature1-hero-value" id="kro-stat-channels-today">47</span>
+               <span class="kro-feature1-hero-value" id="kro-stat-channels-today">0</span>
                <span class="kro-feature1-hero-label">новых скам-каналов за день</span>
            </div>
            <div class="kro-feature1-stats">
                <div class="kro-feature1-stat kro-card">
-                   <span class="kro-feature1-stat-value" id="kro-stat-lost">12 847 300</span>
+                   <span class="kro-feature1-stat-value" id="kro-stat-lost">0</span>
                    <span class="kro-feature1-stat-label">Потеряно ₽</span>
                </div>
                <div class="kro-feature1-stat kro-card">
-                   <span class="kro-feature1-stat-value" id="kro-stat-channels">37</span>
+                   <span class="kro-feature1-stat-value" id="kro-stat-channels">0</span>
                    <span class="kro-feature1-stat-label">Telegram каналов</span>
                </div>
                <div class="kro-feature1-stat kro-card">
-                   <span class="kro-feature1-stat-value" id="kro-stat-courses">10</span>
+                   <span class="kro-feature1-stat-value" id="kro-stat-courses">0</span>
                    <span class="kro-feature1-stat-label">Курсы фейк-продуктов</span>
                </div>
            </div>
@@ -101,7 +101,7 @@
                <div class="kro-f1-block kro-f1-shock">
                    <p class="kro-f1-shock-heading">ЗА ПОСЛЕДНИЕ 24 ЧАСА:</p>
                    <p class="kro-f1-shock-text">73 человека купили «гарантию прибыли»</p>
-                   <p class="kro-f1-shock-total">ИТОГО: -1 240 000₽</p>
+                   <p class="kro-f1-shock-total" id="kro-f1-shock-total">ИТОГО: —</p>
                </div>
                <!-- Блок 2: Твой тип лоха -->
                <div class="kro-f1-block kro-f1-loh">
@@ -172,9 +172,9 @@
            </div>
            <h2 class="kro-feature1-heading" id="kro-feature1-heading">Топ-3 сегодня</h2>
            <ol class="kro-feature1-top3" id="kro-feature1-top3">
-               <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-1-channel">@TONPumpElite</span> → <span class="kro-top3-sum" id="kro-top3-1-sum">2.1млн₽</span> → <span class="kro-top3-status kro-status-removed" id="kro-top3-1-status">Удалён</span></li>
-               <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-2-channel">BTC Курс миллионера</span> → <span class="kro-top3-sum" id="kro-top3-2-sum">847к₽</span> → <span class="kro-top3-status kro-status-active" id="kro-top3-2-status">Активен</span></li>
-               <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-3-channel">crypto-fast.pro</span> → <span class="kro-top3-sum" id="kro-top3-3-sum">673к₽</span> → <span class="kro-top3-status kro-status-block" id="kro-top3-3-status">Блок</span></li>
+               <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-1-channel">—</span> → <span class="kro-top3-sum" id="kro-top3-1-sum">—</span> → <span class="kro-top3-status kro-status-active" id="kro-top3-1-status">—</span></li>
+               <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-2-channel">—</span> → <span class="kro-top3-sum" id="kro-top3-2-sum">—</span> → <span class="kro-top3-status kro-status-active" id="kro-top3-2-status">—</span></li>
+               <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-3-channel">—</span> → <span class="kro-top3-sum" id="kro-top3-3-sum">—</span> → <span class="kro-top3-status kro-status-active" id="kro-top3-3-status">—</span></li>
            </ol>
            <div class="kro-feature1-check" id="kro-feature1-check">
                <div class="kro-check-tag" aria-hidden="true"><span class="kro-check-tag-icon" aria-hidden="true">i</span> Реальность</div>
@@ -493,15 +493,15 @@
                if ((el = document.getElementById('kro-stat-lost'))) el.textContent = formatFull(data.totalLost);
                if ((el = document.getElementById('kro-stat-channels'))) el.textContent = data.telegramCount;
                if ((el = document.getElementById('kro-stat-courses'))) el.textContent = data.coursesCount;
+               if ((el = document.getElementById('kro-f1-shock-total'))) el.textContent = (data.totalLost && data.totalLost > 0) ? ('ИТОГО: -' + formatFull(data.totalLost) + '₽') : 'ИТОГО: —';
                var top3 = data.top3 || [];
                for (var i = 0; i < 3; i++) {
                    var r = top3[i];
-                   if (!r) continue;
-                   if ((el = document.getElementById('kro-top3-' + (i + 1) + '-channel'))) el.textContent = r.channel;
-                   if ((el = document.getElementById('kro-top3-' + (i + 1) + '-sum'))) el.textContent = formatSum(r.sum);
+                   if ((el = document.getElementById('kro-top3-' + (i + 1) + '-channel'))) el.textContent = r ? r.channel : '—';
+                   if ((el = document.getElementById('kro-top3-' + (i + 1) + '-sum'))) el.textContent = r ? formatSum(r.sum) : '—';
                    if ((el = document.getElementById('kro-top3-' + (i + 1) + '-status'))) {
-                       el.textContent = r.status;
-                       el.className = 'kro-top3-status ' + statusClass(r.status);
+                       el.textContent = r ? r.status : '—';
+                       el.className = 'kro-top3-status ' + (r ? statusClass(r.status) : 'kro-status-active');
                    }
                }
            }

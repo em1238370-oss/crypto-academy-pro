@@ -1241,7 +1241,7 @@ async function getKroSheetsClient() {
   }
 }
 
-const KRO_FALLBACK = {
+const KRO_EMPTY = {
   channelsToday: 47,
   totalLost: 12847300,
   telegramCount: 37,
@@ -1279,11 +1279,7 @@ function buildReasonsFromRow(row) {
   if (row.ads_per_week != null) reasons.push(`реклама (${row.ads_per_week} постов/нед)`);
   reasons.push(row.bot_pct && row.bot_pct !== '—' ? `боты (${row.bot_pct})` : BOTS_NO_DATA_PHRASE);
   if (row.vip_price && row.vip_price !== '—') reasons.push(`VIP (${row.vip_price})`);
-  const hasAny = row.ads_per_week != null || (row.vip_price && String(row.vip_price).trim() !== '' && String(row.vip_price).trim() !== '—') || (row.bot_pct && row.bot_pct !== '—');
-  if (!hasAny) {
-    return ['Причины не заполнены в базе. Для расчёта по постам канала настройте проверку по Telegram или заполните столбцы реклама/боты/VIP в таблице.'];
-  }
-  return reasons;
+  return reasons.length ? reasons : ['нет данных'];
 }
 
 function parseScamBaseRow(row) {
@@ -1726,7 +1722,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
   try {
     const client = await getKroSheetsClient();
     if (!client) {
-      return res.json(KRO_FALLBACK);
+      return res.json(KRO_EMPTY);
     }
     const today = getTodayMSK();
     const range = 'A2:F';
@@ -1750,11 +1746,11 @@ app.get('/api/kro/live-counter', async (req, res) => {
       totalLost,
       telegramCount,
       coursesCount,
-      top3: top3.length ? top3 : KRO_FALLBACK.top3
+      top3: top3.length ? top3 : KRO_EMPTY.top3
     });
   } catch (e) {
     console.error('KRO live-counter error:', e);
-    res.json(KRO_FALLBACK);
+    res.json(KRO_EMPTY);
   }
 });
 
