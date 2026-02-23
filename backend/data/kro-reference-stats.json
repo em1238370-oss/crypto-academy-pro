@@ -1,15 +1,10 @@
 {
-  "source": "reference",
-  "sourceCaption": "Оценка по открытым отчётам (Chainalysis 2025, F6, OKX). Обновляйте данные в таблице — тогда будут показываться ваши реальные цифры.",
-  "channelsToday": 50,
+  "source": "parsed",
+  "sourceCaption": "Данные из интернета: vklader, tgrev. Обновлено 23.02.2026 11:20 UTC.",
+  "channelsToday": 25,
   "totalLost": 350000000,
-  "telegramCount": 55,
-  "coursesCount": 12,
+  "telegramCount": 257,
+  "coursesCount": 5,
   "top3": [],
-  "_sources": {
-    "channelsToday": "Оценка: по отчётам десятки новых скам-каналов/схем в сутки (F6, CySecurity).",
-    "totalLost": "Chainalysis 2025: ~$46.6 млн/день потерь от криптоскамов глобально; доля рублевого сегмента условно ~350 млн ₽/день.",
-    "telegramCount": "Чёрные списки и базы (vklader.com, tgrev.ru, каналы типа «База SKAM») — десятки каналов в открытых списках.",
-    "coursesCount": "Оценка числа фейковых курсов/продуктов по крипте в открытых источниках."
-  }
+  "updatedAt": "2026-02-23T11:19:54Z"
 }

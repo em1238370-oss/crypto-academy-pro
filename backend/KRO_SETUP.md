@@ -14,6 +14,7 @@
 | `KRO_SCAM_BASE_RANGE` | Диапазон листа «база каналов» для API проверки. Например: `scam_base!A2:H` или `Sheet2!A2:H`. Если не задан, `GET /api/kro/check` всегда возвращает `found: false`. |
 | `KRO_CHECK_QUEUE_RANGE` | Диапазон листа «очередь проверки» для живой проверки. Например: `check_queue!A2:B`. Если задан, при отсутствии канала в базе он добавляется в очередь; воркер (Python + Telethon) раз в 1–2 мин проверяет канал и дописывает результат в scam_base. |
 | `KRO_EXCHANGER_BASE_RANGE` | Диапазон листа «база обменников» для проверки по ссылке. Например: `exchanger_base!A2:E`. Колонки: A — URL/домен, B — название, C — risk_score, D — total_loss, E — verdict. Если не задан, `GET /api/kro/check-exchanger` возвращает «не найден». |
+| `KRO_SOURCE_CHANNELS` | (Для скрипта `fetch_live_stats.py`.) Список Telegram-каналов через запятую (@channel1, @channel2), откуда брать жалобы/скам-листы/сигналы. Используется вместе с Telethon (те же API ID/Hash и сессия, что для проверки каналов). |
 
 ---
 
@@ -58,38 +59,6 @@
 - **Дата** — в формате ДД.ММ.ГГГГ или ДД.ММ (для «сегодня»).
 - **Сумма** — число (только цифры).
 - Форма «Сообщить о разводе» добавляет новую строку в этот лист.
-
-### Google Form «Сообщить о скаме» → тот же лист отчётов
-
-Чтобы ответы из Google Forms попадали в лист отчётов и учитывались в live-counter без изменений бэкенда:
-
-1. Создайте форму с полями: «@username или ссылка на канал», «Сколько потерял (число)».
-2. Привяжите форму к **той же** таблице (KRO_SHEET_ID). Появится лист «Ответы формы» с колонками: Время, Канал, Сумма.
-3. В таблице откройте **Расширения → Apps Script** и вставьте скрипт ниже. Сохраните, затем **Триггеры → Добавить триггер**: функция `onFormSubmit`, событие «При отправке формы».
-4. При каждой отправке формы скрипт возьмёт последнюю строку из «Ответы формы», отформатирует дату и добавит строку на **первый лист** (отчёты) в формате A:F.
-
-**Пример скрипта (подставьте имя первого листа, если он не «Лист1»):**
-
-```javascript
-function onFormSubmit(e) {
-  var sheet = e.source.getActiveSpreadsheet();
-  var formSheet = sheet.getSheetByName('Ответы формы');
-  var reportSheet = sheet.getSheets()[0]; // первый лист = отчёты
-  if (!formSheet || !reportSheet) return;
-  var lastRow = formSheet.getLastRow();
-  if (lastRow < 2) return;
-  var time = formSheet.getRange(lastRow, 1).getValue();
-  var channel = formSheet.getRange(lastRow, 2).getValue();
-  var sumRaw = formSheet.getRange(lastRow, 3).getValue();
-  var sum = isNaN(sumRaw) ? 0 : Math.max(0, parseInt(sumRaw, 10));
-  var dateStr = time instanceof Date
-    ? Utilities.formatDate(time, Session.getScriptTimeZone(), 'dd.MM.yyyy')
-    : '';
-  reportSheet.appendRow([dateStr, channel, sum, 'Форма', 'Активен', '']);
-}
-```
-
-После настройки цифры на главной (live-counter) будут учитывать и жалобы с сайта, и ответы из формы.
 
 ---
 

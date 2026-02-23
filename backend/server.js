@@ -1768,7 +1768,9 @@ app.get('/api/kro/live-counter', async (req, res) => {
       totalLost,
       telegramCount,
       coursesCount,
-      top3: top3.length ? top3 : KRO_FALLBACK.top3
+      top3: top3.length ? top3 : [],
+      source: 'sheet',
+      sourceCaption: 'Данные из вашей таблицы (отчёты и жалобы).'
     });
   } catch (e) {
     console.error('KRO live-counter error:', e);

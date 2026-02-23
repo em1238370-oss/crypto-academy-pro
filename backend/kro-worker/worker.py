@@ -217,50 +217,7 @@ def run_worker_once():
                 print('Queue update error:', e, file=sys.stderr)
         return
 
-<<<<<<< HEAD
     parsed = run_check_once(channel_id)
-=======
-    async def do_telethon():
-        client = TelegramClient(
-            TELEGRAM_SESSION_NAME,
-            TELEGRAM_API_ID,
-            TELEGRAM_API_HASH
-        )
-        await client.start()
-        try:
-            entity = await get_entity(client, channel_id)
-            if not entity:
-                return None
-            messages = await client.get_messages(entity, limit=80)
-            texts = []
-            messages_with_dates = []
-            for m in messages:
-                if m and m.text:
-                    texts.append(m.text)
-                    messages_with_dates.append((m.text, m.date))
-            risk, _, _, _ = analyze_messages(texts)
-            vip = extract_vip_price(texts)
-            ads_week = count_ads_last_7_days(messages_with_dates)
-            if risk >= 70:
-                verdict = 'scam'
-            elif risk >= 35:
-                verdict = 'grey'
-            else:
-                verdict = 'safe'
-            # bot_pct "—": API не даёт комментарии под постами канала для расчёта % ботов
-            return [
-                channel_id,
-                risk,
-                ads_week,
-                '—',
-                vip,
-                '—',
-                '—',
-                verdict
-            ]
-        finally:
-            await client.disconnect()
->>>>>>> 3f7073c (KRO: причины (reasons), вердикт-фраза, реклам/нед по датам, risk_pct; вход в Telegram (login script, доки))
 
     if parsed and parsed.get('found') and (parsed.get('risk_score') is not None or parsed.get('verdict')):
         # check_once.py уже дописал в scam_base
