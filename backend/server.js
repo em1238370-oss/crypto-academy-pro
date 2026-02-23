@@ -1763,6 +1763,10 @@ app.get('/api/kro/live-counter', async (req, res) => {
       .sort((a, b) => b.sum - a.sum)
       .slice(0, 3)
       .map((r) => ({ channel: r.channel, sum: r.sum, status: r.status || 'Активен' }));
+    const hasSheetData = channelsToday > 0 || totalLost > 0 || telegramCount > 0 || coursesCount > 0 || top3.length > 0;
+    if (!hasSheetData) {
+      return res.json(getKroReferenceStats());
+    }
     res.json({
       channelsToday,
       totalLost,
