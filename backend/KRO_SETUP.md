@@ -59,6 +59,38 @@
 - **Сумма** — число (только цифры).
 - Форма «Сообщить о разводе» добавляет новую строку в этот лист.
 
+### Google Form «Сообщить о скаме» → тот же лист отчётов
+
+Чтобы ответы из Google Forms попадали в лист отчётов и учитывались в live-counter без изменений бэкенда:
+
+1. Создайте форму с полями: «@username или ссылка на канал», «Сколько потерял (число)».
+2. Привяжите форму к **той же** таблице (KRO_SHEET_ID). Появится лист «Ответы формы» с колонками: Время, Канал, Сумма.
+3. В таблице откройте **Расширения → Apps Script** и вставьте скрипт ниже. Сохраните, затем **Триггеры → Добавить триггер**: функция `onFormSubmit`, событие «При отправке формы».
+4. При каждой отправке формы скрипт возьмёт последнюю строку из «Ответы формы», отформатирует дату и добавит строку на **первый лист** (отчёты) в формате A:F.
+
+**Пример скрипта (подставьте имя первого листа, если он не «Лист1»):**
+
+```javascript
+function onFormSubmit(e) {
+  var sheet = e.source.getActiveSpreadsheet();
+  var formSheet = sheet.getSheetByName('Ответы формы');
+  var reportSheet = sheet.getSheets()[0]; // первый лист = отчёты
+  if (!formSheet || !reportSheet) return;
+  var lastRow = formSheet.getLastRow();
+  if (lastRow < 2) return;
+  var time = formSheet.getRange(lastRow, 1).getValue();
+  var channel = formSheet.getRange(lastRow, 2).getValue();
+  var sumRaw = formSheet.getRange(lastRow, 3).getValue();
+  var sum = isNaN(sumRaw) ? 0 : Math.max(0, parseInt(sumRaw, 10));
+  var dateStr = time instanceof Date
+    ? Utilities.formatDate(time, Session.getScriptTimeZone(), 'dd.MM.yyyy')
+    : '';
+  reportSheet.appendRow([dateStr, channel, sum, 'Форма', 'Активен', '']);
+}
+```
+
+После настройки цифры на главной (live-counter) будут учитывать и жалобы с сайта, и ответы из формы.
+
 ---
 
 ## Лист 2: scam_base (база для проверки каналов)
@@ -125,17 +157,10 @@
 
 ---
 
-## Вход для проверки (фишка 1)
-
-Поддерживаются **только два типа ввода**: (1) @username канала или ссылка t.me/… и (2) ссылка на обменник (http/https). Проверка по загрузке скриншота не используется.
-
----
-
 ## API
 
 - **GET /api/kro/live-counter** — агрегаты для Фишки 1 (количество каналов за день, потери, Топ-3). Читает лист отчётов A2:F.
 - **POST /api/kro/report-scam** — принять жалобу (channel, sumRub, from). Добавляет строку в лист отчётов.
-- **GET /api/kro/check?channel=@username** (или `channel=https://t.me/...`, `channel=t.me/+invite`, опционально `period=30|180|365` — период анализа в днях) — проверка канала по базе scam_base; при отсутствии в базе — синхронный вызов `check_once.py` (живая проверка через Telethon). Ссылки t.me парсятся автоматически.  
-  **Ответ при найденном канале:** `{ found: true, username, risk_score, ads_per_week?, bot_pct?, vip_price?, complaints?, total_loss?, verdict?, verdict_phrase?, reasons?, risk_explanation?, loss_explanation?, verdict_explanation?, period_days?, tme_preview?, messages_analyzed?, replies_count? }`. Поля «жалобы» и «потери» при пустых значениях в базе подставляются из листа отчётов (A2:F). Поля `risk_explanation`, `loss_explanation`, `verdict_explanation` содержат короткие пояснения для отображения на сайте.  
-  При недоступности живой проверки и заданном `KRO_CHECK_QUEUE_RANGE`: `{ found: false, pending: true, channel, message }` — канал ставится в очередь; пользователю нужно нажать «Проверить» снова через 1–2 минуты.
+- **GET /api/kro/check?channel=@username** (или `channel=https://t.me/...`, `channel=t.me/+invite`) — проверка канала по базе scam_base; при отсутствии в базе — синхронный вызов `check_once.py` (живая проверка через Telethon). Ссылки t.me парсятся автоматически. Ответ: `{ found, username?, risk_score?, ads_per_week?, bot_pct?, vip_price?, complaints?, total_loss?, verdict? }`. Поля «жалобы» и «потери» при пустых значениях в базе подставляются из листа отчётов (A2:F) по совпадению канала. При недоступности живой проверки и заданном `KRO_CHECK_QUEUE_RANGE`: `{ found: false, pending: true, channel, message }` — канал ставится в очередь, пользователю нужно нажать «Проверить» снова через 1–2 минуты.
 - **GET /api/kro/check-exchanger?url=...** — проверка обменника по ссылке (база задаётся через `KRO_EXCHANGER_BASE_RANGE`). Ответ: `{ found, url?, name?, risk_score?, total_loss?, verdict? }` или `{ found: false, message }`.
+- **POST /api/kro/check-screenshot** — тело JSON `{ image: "data:image/...;base64,..." }`. Распознавание скрина через Mistral Vision: извлечение @ников, t.me и URL обменников. Ответ: `{ extracted: ["@channel", "https://..."] }`. На сайте по первому извлечённому выполняется проверка канала или обменника.

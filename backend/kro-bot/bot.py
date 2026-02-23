@@ -85,12 +85,85 @@ def check_channel(message):
     bot.reply_to(message, reply)
 
 
+@bot.message_handler(commands=["new"])
+def new_scams(message):
+    data = _get_live_counter()
+    channels_today = data.get("channelsToday", 0)
+    total_lost = data.get("totalLost", 0)
+    top3 = data.get("top3") or []
+    total_str = _format_sum(total_lost)
+    lines = [
+        f"🔴 НОВЫЕ СКАМЫ за сегодня",
+        f"Каналов: {channels_today}",
+        f"Потери: {total_str}",
+    ]
+    if top3:
+        lines.append("Топ-3 по сумме:")
+        for i, row in enumerate(top3, 1):
+            ch = row.get("channel", "—")
+            s = row.get("sum", 0)
+            st = row.get("status", "—")
+            lines.append(f"  {i}. {ch} → {_format_sum(s)} → {st}")
+    bot.reply_to(message, "\n".join(lines))
+
+
 @bot.message_handler(commands=["report"])
 def report_cmd(message):
+    text = (message.text or "").strip()
+    parts = text.split(maxsplit=2)[1:] if len(text.split()) > 1 else []
+    channel = ""
+    sum_rub = None
+    if len(parts) >= 1:
+        channel = normalize_channel(parts[0])
+    if len(parts) >= 2:
+        raw = re.sub(r"[\s\u00a0,]", "", parts[1])
+        try:
+            sum_rub = int(raw)
+        except ValueError:
+            pass
+    if not channel:
+        bot.reply_to(
+            message,
+            "Укажи канал и сумму: /report @username 50000\n"
+            "Пример: /report @ScamChannel 50000",
+        )
+        return
+    if sum_rub is None or sum_rub < 0:
+        bot.reply_to(
+            message,
+            "Укажи сумму потерь числом: /report @username 50000",
+        )
+        return
+    try:
+        r = requests.post(
+            f"{KRO_API_URL}/api/kro/report-scam",
+            json={"channel": channel, "sumRub": sum_rub, "from": "telegram"},
+            timeout=10,
+        )
+        if r.ok and (r.json() or {}).get("ok"):
+            bot.reply_to(message, "✅ Жалоба добавлена в базу. Спасибо.")
+        else:
+            j = r.json() if r.ok else {}
+            err = j.get("error", "Ошибка сервера")
+            bot.reply_to(message, f"Не удалось добавить: {err}")
+    except Exception as e:
+        bot.reply_to(message, f"Ошибка запроса: {e}")
+
+
+@bot.message_handler(commands=["stats"])
+def stats_cmd(message):
+    data = _get_live_counter()
+    channels_today = data.get("channelsToday", 0)
+    total_lost = data.get("totalLost", 0)
+    telegram_count = data.get("telegramCount", 0)
+    courses_count = data.get("coursesCount", 0)
+    total_str = _format_sum(total_lost)
     bot.reply_to(
         message,
-        "Жалобу можно отправить через сайт (форма «Сообщить о разводе»). "
-        "Укажи канал и сумму потерь — мы добавим в базу.",
+        f"📊 Статистика\n"
+        f"За сегодня: {channels_today} каналов, потери {total_str}\n"
+        f"Всего TG-каналов в базе: {telegram_count}\n"
+        f"Курсы/фейк-продукты: {courses_count}",
     )
 
 
@@ -100,7 +173,9 @@ def start(message):
         message,
         "Проверка крипто-каналов на риск.\n\n"
         "/check @username — проверить канал\n"
-        "/report — как отправить жалобу",
+        "/report @username сумма — отправить жалобу\n"
+        "/new — свежие скамы за день\n"
+        "/stats — общая статистика",
     )
 
 

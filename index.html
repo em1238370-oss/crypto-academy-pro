@@ -205,6 +205,8 @@
                </form>
                <p class="kro-feature1-report-message hidden" id="kro-report-message"></p>
            </div>
+           <!-- Опционально: укажите URL публичного листа (Файл → Поделиться → Опубликовать в интернете → Встроить) в src и уберите display:none -->
+           <iframe id="kro-sheet-embed" src="" width="100%" height="300" title="Отчёты о скаме" style="display:none;" class="kro-feature1-sheet-embed"></iframe>
        </section>
 
        <!-- Якорь для кнопки «Проверь своего гуру» (блок чекеров будет ниже) -->
@@ -779,13 +781,8 @@
                                periodActions.classList.add('hidden');
                            }
                        }
-                   }).catch(function(err) {
-                       clearTimeout(periodTimeoutId);
-                       var msg = 'Ошибка запроса или сети. Попробуйте снова.';
-                       if (err && err.name === 'AbortError') msg = 'Запрос занял больше 2 минут. Нажмите «Проверить» и выберите период снова.';
-                       else if (err && err.serverError && err.message) msg = err.message;
-                       checkResult.textContent = msg;
-                       checkResult.className = 'kro-check-result';
+                   }).catch(function() {
+                       checkResult.textContent = 'Ошибка запроса или сети. Попробуйте снова.';
                    });
                }
                var btn180 = document.getElementById('kro-check-period-180');
