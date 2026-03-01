@@ -109,3 +109,30 @@ def fetch_channel_stats(channel_id):
             except (TypeError, ValueError, KeyError):
                 pass
     return out
+
+
+def search_channels(query, country='ru', limit=100):
+    """
+    Search channels by keyword. Requires TGStat API Stat (S+) plan.
+    Returns list of dicts: username, link, title, participants_count, created_at (unix ts), or [] on error.
+    """
+    if not TGSTAT_API_KEY:
+        return []
+    params = {'q': query, 'country': country, 'limit': min(100, max(1, limit)), 'peer_type': 'channel'}
+    try:
+        data = _fetch('/channels/search', params)
+        if not data or data.get('status') != 'ok':
+            return []
+        items = (data.get('response') or {}).get('items') or []
+        return [
+            {
+                'username': (x.get('username') or '').strip() or ('@' + (x.get('link') or '').replace('https://t.me/', '').replace('t.me/', '')),
+                'link': (x.get('link') or '').strip() or ('https://t.me/' + (x.get('username') or '').lstrip('@')),
+                'title': (x.get('title') or '').strip(),
+                'participants_count': int(x.get('participants_count', 0)) if x.get('participants_count') is not None else None,
+                'created_at': int(x['created_at']) if x.get('created_at') is not None else None,
+            }
+            for x in items
+        ]
+    except Exception:
+        return []

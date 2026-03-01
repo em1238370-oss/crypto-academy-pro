@@ -14,7 +14,6 @@
 | `KRO_SCAM_BASE_RANGE` | Диапазон листа «база каналов» для API проверки. Например: `scam_base!A2:H` или `Sheet2!A2:H`. Если не задан, `GET /api/kro/check` всегда возвращает `found: false`. |
 | `KRO_CHECK_QUEUE_RANGE` | Диапазон листа «очередь проверки» для живой проверки. Например: `check_queue!A2:B`. Если задан, при отсутствии канала в базе он добавляется в очередь; воркер (Python + Telethon) раз в 1–2 мин проверяет канал и дописывает результат в scam_base. |
 | `KRO_EXCHANGER_BASE_RANGE` | Диапазон листа «база обменников» для проверки по ссылке. Например: `exchanger_base!A2:E`. Колонки: A — URL/домен, B — название, C — risk_score, D — total_loss, E — verdict. Если не задан, `GET /api/kro/check-exchanger` возвращает «не найден». |
-| `KRO_SOURCE_CHANNELS` | (Для скрипта `fetch_live_stats.py`.) Список Telegram-каналов через запятую (@channel1, @channel2), откуда брать жалобы/скам-листы/сигналы. Используется вместе с Telethon (те же API ID/Hash и сессия, что для проверки каналов). |
 
 ---
 
@@ -28,9 +27,7 @@
 
 - Python 3 и зависимости из `kro-worker/requirements.txt`
 - Переменные окружения: `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`
-- При первом запуске — выполнен вход в Telethon (сессия сохраняется в `kro-worker`). Варианты: номер телефона + код из приложения Telegram (код может прийти в приложение на телефоне или в Telegram Desktop); если заходишь в Telegram Desktop по QR-коду, для проверки каналов всё равно один раз запусти `node scripts/kro-login.js` или `python3 backend/kro-worker/login_telegram.py` (номер + код), чтобы создался файл `kro_worker.session` в `backend/kro-worker`.
-
-**Проверка:** в папке `backend/kro-worker` должен быть файл `kro_worker.session`. Если его нет — живая проверка по ссылке будет показывать название/описание с t.me и подсказку про вход.
+- При первом запуске — выполнен вход в Telethon (сессия сохраняется в `kro-worker`)
 
 Таймаут вызова — 60 секунд. Результат (риск, причины, вердикт) возвращается клиенту без ожидания и повторного нажатия «Проверить». Опционально при заданных `KRO_SHEET_ID` и `KRO_SCAM_BASE_RANGE` скрипт дописывает строку в scam_base.
 
@@ -68,17 +65,15 @@
 
 Создайте второй лист в той же таблице (или отдельную таблицу и укажите её ID в `KRO_SHEET_ID` для check — тогда нужна отдельная переменная; в текущей реализации используется тот же `KRO_SHEET_ID`, а диапазон задаётся через `KRO_SCAM_BASE_RANGE`).
 
-**Колонки A:H (обязательные), опционально I (первая строка — заголовки, данные со второй):**
+**Колонки A:H (первая строка — заголовки, данные со второй):**
 
-| A: username | B: risk_score | C: ads_per_week | D: bot_pct | E: vip_price | F: complaints | G: total_loss | H: verdict | I: complaint_ignore_hours |
-|-------------|---------------|-----------------|------------|--------------|---------------|---------------|------------|---------------------------|
-| @TONPumpKing | 87 | 14 | 78% | 7000₽ | 23 | 2.1млн₽ | scam | 48 |
-| @CryptoElite | 45 | 7 | 32% | 4900₽ | 4 | 847к₽ | grey | — |
-| @RealTraderPro | 12 | 1 | 8% | нет | 0 | 0₽ | safe | — |
+| A: username | B: risk_score | C: ads_per_week | D: bot_pct | E: vip_price | F: complaints | G: total_loss | H: verdict |
+|-------------|---------------|-----------------|------------|--------------|---------------|---------------|------------|
+| @TONPumpKing | 87 | 14 | 78% | 7000₽ | 23 | 2.1млн₽ | scam |
+| @CryptoElite | 45 | 7 | 32% | 4900₽ | 4 | 847к₽ | grey |
+| @RealTraderPro | 12 | 1 | 8% | нет | 0 | 0₽ | safe |
 
-- **I: complaint_ignore_hours** — (опционально) число часов игнора жалоб; для расчёта риска и отображения в карточке «ФАКТЫ». Если используете колонку I, задайте диапазон `scam_base!A2:I` в `KRO_SCAM_BASE_RANGE`.
-
-**Формула риска (опционально, в колонке J или отдельно):**
+**Формула риска (опционально, в колонке I):**
 
 ```
 =(C2*0.4)+(D2*0.3)+(F2*0.2)+(IF(E2>5000;0.1;0))
@@ -128,16 +123,6 @@
 
 ---
 
-## Факторы цифр на главной и автозапуск парсера
-
-Метрики живого счётчика (новых каналов за день, потери, Топ-3, «за 24 часа») берутся из листа «Отчёты», если таблица настроена и в ней есть данные; иначе — из файла `backend/data/kro-reference-stats.json`, который обновляет скрипт `backend/kro-worker/fetch_live_stats.py` (парсинг vklader, tgrev, опционально Telegram).
-
-**Подробная таблица «метрика → источник → как считается»:** см. [docs/ru/ФАКТОРЫ_ЦИФР_НА_ГЛАВНОЙ.md](../docs/ru/ФАКТОРЫ_ЦИФР_НА_ГЛАВНОЙ.md).
-
-**Автозапуск парсера:** раз в сутки (cron или Render Cron Job) запускайте `python3 fetch_live_stats.py` из папки `backend/kro-worker`. Результат пишется в `backend/data/kro-reference-stats.json`. На Render результат можно сохранять через эндпоинт `POST /api/kro/ingest-parsed` (если реализован) или держать актуальный JSON в репозитории (ручной запуск + коммит или GitHub Actions).
-
----
-
 ## API
 
 - **GET /api/kro/live-counter** — агрегаты для Фишки 1 (количество каналов за день, потери, Топ-3). Читает лист отчётов A2:F.
@@ -145,3 +130,12 @@
 - **GET /api/kro/check?channel=@username** (или `channel=https://t.me/...`, `channel=t.me/+invite`) — проверка канала по базе scam_base; при отсутствии в базе — синхронный вызов `check_once.py` (живая проверка через Telethon). Ссылки t.me парсятся автоматически. Ответ: `{ found, username?, risk_score?, ads_per_week?, bot_pct?, vip_price?, complaints?, total_loss?, verdict? }`. Поля «жалобы» и «потери» при пустых значениях в базе подставляются из листа отчётов (A2:F) по совпадению канала. При недоступности живой проверки и заданном `KRO_CHECK_QUEUE_RANGE`: `{ found: false, pending: true, channel, message }` — канал ставится в очередь, пользователю нужно нажать «Проверить» снова через 1–2 минуты.
 - **GET /api/kro/check-exchanger?url=...** — проверка обменника по ссылке (база задаётся через `KRO_EXCHANGER_BASE_RANGE`). Ответ: `{ found, url?, name?, risk_score?, total_loss?, verdict? }` или `{ found: false, message }`.
 - **POST /api/kro/check-screenshot** — тело JSON `{ image: "data:image/...;base64,..." }`. Распознавание скрина через Mistral Vision: извлечение @ников, t.me и URL обменников. Ответ: `{ extracted: ["@channel", "https://..."] }`. На сайте по первому извлечённому выполняется проверка канала или обменника.
+- **GET /api/kro/daily-stats** — статистика за 12 ч (из `backend/data/kro-12h-stats.json`): `new_scams`, `losses_12h`, `victims_12h`, `top3`, `report_doc_url`, `sourceCaption`, `updatedAt`. Файл обновляется скриптом `run_12h_monitor.py`.
+
+---
+
+## Автомониторинг каждые 12 ч (run_12h_monitor)
+
+Скрипт `kro-worker/run_12h_monitor.py` собирает данные из TGStat, Telega.io и Telegram-чатов за последние 12 ч, применяет критерии скама, пишет отчёт в Google Docs и обновляет `backend/data/kro-12h-stats.json`. Сайт показывает блок «За 12 часов» и ссылку на отчёт через `GET /api/kro/daily-stats`.
+
+**Cron (01:00 и 13:00 MSK):** на сервере с `TZ=Europe/Moscow`: `0 1,13 * * * cd /путь/к/проекту/backend/kro-worker && python3 run_12h_monitor.py`. В UTC: `0 22 * * *` и `0 10 * * *` (те же команды с путём). Нужны: `TGSTAT_API_KEY`, `KRO_SOURCE_CHANNELS`, `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `KRO_SHEET_ID`, `KRO_GOOGLE_CREDENTIALS_JSON`; в Google Cloud должен быть включён Google Docs API.
