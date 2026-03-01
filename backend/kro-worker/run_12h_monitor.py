@@ -32,7 +32,6 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0
 REQUEST_DELAY = 3
 HOURS_12 = 12
 DAYS_7 = 7
-TELEGRAM_PHRASES = ('скам крипта', 'потери крипта', 'развод крипта')
 MSK_TZ = timezone(timedelta(hours=3))
 
 def _load_env():
