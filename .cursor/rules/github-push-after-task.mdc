@@ -10,9 +10,24 @@ alwaysApply: true
 ## Порядок (каждый раз, без исключений!)
 
 1. `git add -A` (или конкретные файлы)
-2. `git commit -m "краткое описание изменений"`
+2. **Всегда** `git commit -m "краткое описание изменений"` — **никогда не делать коммит без `-m`**, иначе откроется Vim и пользователь застрянет.
 3. `git push origin main`
 
-**Не жди просьбы.** Не спрашивай «отправить в GitHub?». Просто делай это после каждой выполненной задачи — будь то правка текста, стилей, логики или что угодно. Пользователь не должен напоминать — это обязательный шаг.
+**Не жди просьбы.** Не спрашивай «отправить в GitHub?». Просто делай это после каждой выполненной задачи.
 
-Если push не проходит (сеть в sandbox) — сообщи: «Коммит готов. Выполни в терминале: `./push-github.sh` или `git push origin main`»
+## Если push отклонился (rejected / non-fast-forward)
+
+1. Удалить старый rebase, если есть: `rm -rf .git/rebase-merge .git/rebase-apply`
+2. Убедиться, что на ветке main: `git checkout main`
+3. Если был коммит в detached HEAD — влить его в main: `git merge <hash>` (hash из сообщения "leaving 1 commit behind"). При конфликтах оставить наши правки: `git checkout --theirs <файл>` по каждому конфликтному файлу, затем `git add` и `git commit -m "Merge: ..."`
+4. Подтянуть remote: `git pull origin main` (или `git pull --rebase origin main` если rebase уже очищен и не нужен merge).
+5. Снова: `git push origin main`
+
+## Если push недоступен из среды (сеть)
+
+Дать пользователю одну команду для вставки в терминал:
+```bash
+cd "/Users/macmini/Documents/Crypto academy pro/crypto-academy-pro1"
+git push origin main
+```
+Либо полный блок: add, commit с `-m`, pull, push — чтобы пользователь скопировал и выполнил сам.

@@ -1,0 +1,1 @@
+0 6 * * * cd "/Users/macmini/Documents/Crypto academy pro/crypto-academy-pro1/backend/kro-worker" && python3 fetch_live_stats.py

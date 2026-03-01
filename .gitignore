@@ -18,3 +18,4 @@ venv/
 backend/kro-worker/*.png
 backend/kro-worker/credentials.json
 backend/kro-worker/*.session
+backend/kro-worker/*.session-journal

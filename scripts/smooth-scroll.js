@@ -9,6 +9,8 @@
 
     function initLenis() {
         if (prefersReducedMotion || typeof Lenis === 'undefined') return null;
+        // На мобильной — только нативный скролл, чтобы можно было сразу листать вниз без нажатия на кнопку
+        if (window.matchMedia('(max-width: 768px)').matches) return null;
 
         const lenis = new Lenis({
             duration: 1.4,        // Длительность «догоняния» — чем больше, тем медленнее

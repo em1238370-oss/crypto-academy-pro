@@ -97,6 +97,7 @@ async def get_entity(client, channel_id):
 
 
 def analyze_messages(texts):
+    """Возвращает risk (0–100), matches, total, risk_pct (доля постов с VIP/сигналы/курс)."""
     total = 0
     matches = 0
     for t in texts:
@@ -109,10 +110,30 @@ def analyze_messages(texts):
                 matches += 1
                 break
     if total == 0:
-        return 0, 0
-    pct = (matches / total) * 100
-    risk = min(100, int(pct * 1.2))
-    return risk, matches
+        return 0, 0, 0, 0
+    risk_pct = round((matches / total) * 100)
+    risk = min(100, int(risk_pct * 1.2))
+    return risk, matches, total, risk_pct
+
+
+def count_ads_last_7_days(messages_with_dates):
+    """Считает посты с рекламными ключевыми словами за последние 7 дней. messages_with_dates: [(text, date), ...]."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=7)
+    count = 0
+    for text, msg_date in messages_with_dates:
+        if not text or len(text) < 5:
+            continue
+        if msg_date and getattr(msg_date, 'tzinfo', None) is None:
+            msg_date = msg_date.replace(tzinfo=timezone.utc)
+        if msg_date and msg_date < cutoff:
+            continue
+        lower = text.lower()
+        for kw in RISK_KEYWORDS:
+            if kw in lower:
+                count += 1
+                break
+    return min(99, count)
 
 
 def extract_vip_price(texts):
@@ -326,31 +347,86 @@ async def run_check(channel_id):
         entity = await get_entity(client, channel_id)
         if not entity:
             return None
-        messages = await client.get_messages(entity, limit=80)
+        now = datetime.now(timezone.utc)
+        min_date = now - timedelta(days=period_days)
+
+        if period_days <= 30:
+            raw = await client.get_messages(entity, limit=150)
+            messages = []
+            for m in raw:
+                if not m or not m.date:
+                    continue
+                md = m.date.replace(tzinfo=timezone.utc) if getattr(m.date, 'tzinfo', None) is None else m.date
+                if md >= min_date:
+                    messages.append(m)
+        else:
+            max_count = 500 if period_days <= 180 else 1000
+            messages = []
+            async for m in client.iter_messages(entity, limit=max_count):
+                if not m or not m.date:
+                    continue
+                md = m.date.replace(tzinfo=timezone.utc) if getattr(m.date, 'tzinfo', None) is None else m.date
+                if md < min_date:
+                    break
+                messages.append(m)
+
         texts = []
         messages_with_dates = []
         for m in messages:
             if m and m.text:
                 texts.append(m.text)
                 messages_with_dates.append((m.text, m.date))
-        risk, _ = analyze_messages(texts)
+
+        risk, matches, total, risk_pct = analyze_messages(texts)
+        # Канал не про крипту/скрипторий — проверяем только тематические
+        if total >= 5 and matches == 0:
+            return {
+                'found': False,
+                'not_crypto': True,
+                'username': channel_id,
+                'error': 'Канал не связан с криптой. Мы проверяем только каналы, связанные с криптой/скрипторием. Другие не проверяем.'
+            }
         vip = extract_vip_price(texts)
-        ads_week = ads_per_week_from_messages(messages_with_dates) if messages_with_dates else 0
+        ads_week = count_ads_last_7_days(messages_with_dates)
 
         reply_texts = []
         try:
-            for m in messages[:25]:
+            for m in messages[:50]:
                 if not m or not getattr(m.replies, 'replies', 0):
                     continue
-                replies = await client.get_messages(entity, reply_to=m.id, limit=15)
+                replies = await client.get_messages(entity, reply_to=m.id, limit=25)
                 for r in replies:
                     if r and r.text:
                         reply_texts.append(r.text)
-                if len(reply_texts) >= 50:
+                if len(reply_texts) >= 100:
                     break
         except Exception:
             pass
         bot_pct = bot_pct_from_reply_texts(reply_texts)
+        messages_analyzed = len(messages)
+        replies_count = len(reply_texts)
+
+        fomo_pct = fomo_pct_from_texts(texts)
+        shame_detected = shame_phrases_detected(texts)
+        ads_ratio = ads_ratio_from_texts(texts)
+        only_profits = only_profits_flag(texts, min_posts=20)
+        promoted_list = extract_promoted_channels(texts, channel_id)
+        promoted_count = len(promoted_list)
+        promoted_sample = promoted_list[:10]
+
+        bot_ratio = _bot_ratio_from_pct_str(bot_pct)
+        growth_anomaly = 0
+        complaint_ignore_time = 0
+
+        risk = compute_risk_score(
+            fomo_pct=fomo_pct,
+            bot_ratio=bot_ratio,
+            ads_ratio=ads_ratio,
+            growth_anomaly=growth_anomaly,
+            review_similarity=bot_ratio,
+            network_connections=promoted_count,
+            complaint_ignore_time=complaint_ignore_time,
+        )
 
         # Новые метрики по 12 критериям (без TGStat/Telemetr пока)
         fomo_pct = _fomo_pct(texts)
@@ -462,13 +538,28 @@ def main():
     if not channel_id:
         out({'found': False, 'error': 'channel required'})
         return
+    period_days = 30
+    if len(sys.argv) > 2:
+        raw = (sys.argv[2] or '').strip()
+        if raw in ('30', '180', '365'):
+            period_days = int(raw)
     if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
         out({'found': False, 'error': 'telegram not configured'})
         return
+    session_file = TELEGRAM_SESSION_NAME + '.session'
+    if not os.path.isfile(session_file):
+        out({
+            'found': False,
+            'error': 'Сначала один раз войдите в Telegram. В терминале из папки проекта выполните: node scripts/kro-login.js'
+        })
+        return
     try:
-        result = asyncio.run(run_check(channel_id))
+        result = asyncio.run(run_check(channel_id, period_days))
         if result is None:
             out({'found': False, 'error': 'channel not found or inaccessible'})
+            return
+        if result.get('not_crypto'):
+            out(result)
             return
         append_to_scam_base(
             channel_id,
