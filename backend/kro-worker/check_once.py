@@ -403,32 +403,8 @@ async def run_check(channel_id):
         except Exception:
             pass
         bot_pct = bot_pct_from_reply_texts(reply_texts)
-        messages_analyzed = len(messages)
-        replies_count = len(reply_texts)
 
-        fomo_pct = fomo_pct_from_texts(texts)
-        shame_detected = shame_phrases_detected(texts)
-        ads_ratio = ads_ratio_from_texts(texts)
-        only_profits = only_profits_flag(texts, min_posts=20)
-        promoted_list = extract_promoted_channels(texts, channel_id)
-        promoted_count = len(promoted_list)
-        promoted_sample = promoted_list[:10]
-
-        bot_ratio = _bot_ratio_from_pct_str(bot_pct)
-        growth_anomaly = 0
-        complaint_ignore_time = 0
-
-        risk = compute_risk_score(
-            fomo_pct=fomo_pct,
-            bot_ratio=bot_ratio,
-            ads_ratio=ads_ratio,
-            growth_anomaly=growth_anomaly,
-            review_similarity=bot_ratio,
-            network_connections=promoted_count,
-            complaint_ignore_time=complaint_ignore_time,
-        )
-
-        # Новые метрики по 12 критериям (без TGStat/Telemetr пока)
+        # Метрики по 12 критериям: наши функции и TGStat
         fomo_pct = _fomo_pct(texts)
         shame_phrases_detected = _shame_phrases_detected(texts)
         ads_ratio = _ads_ratio(messages_with_dates)
