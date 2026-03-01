@@ -1417,7 +1417,8 @@ app.get('/api/kro/check', async (req, res) => {
           vip_price: row.vip_price,
           complaints,
           total_loss,
-          verdict: row.verdict
+          verdict: row.verdict,
+          complaint_ignore_hours: row.complaint_ignore_hours ?? undefined
         });
       }
     }
@@ -1460,7 +1461,17 @@ app.get('/api/kro/check', async (req, res) => {
                 vip_price: parsed.vip_price,
                 complaints,
                 total_loss,
-                verdict: parsed.verdict
+                verdict: parsed.verdict,
+                fomo_pct: parsed.fomo_pct,
+                shame_phrases_detected: parsed.shame_phrases_detected,
+                ads_ratio: parsed.ads_ratio,
+                only_profits_flag: parsed.only_profits_flag,
+                promoted_channels_count: parsed.promoted_channels_count,
+                promoted_channels_sample: parsed.promoted_channels_sample,
+                subscriber_growth_per_day: parsed.subscriber_growth_per_day,
+                growth_anomaly: parsed.growth_anomaly,
+                reach_ratio: parsed.reach_ratio,
+                channel_age_days: parsed.channel_age_days
               });
             }
             if (parsed && parsed.found === false && parsed.error) {

@@ -2,7 +2,12 @@
 """
 KRO check once: проверка одного канала по Telegram (Telethon).
 Принимает один аргумент — идентификатор канала (@name, t.me/+hash).
-Выводит в stdout одну строку JSON: found, risk_score, ads_per_week, bot_pct, vip_price, verdict.
+Выводит в stdout одну строку JSON: found, risk_score, verdict, fomo_pct, promoted_channels_*, и др.
+Формула риска и 12 критериев: см. docs/ru/10_KRO_ТЕЛЕГРАМ_НАСТРОЙКА и план 12 критериев.
+Критерии: 1 рост подписчиков (TGStat), 2 охват vs подписчики (TGStat), 3 возраст/переименования (TGStat),
+4 FOMO-слова, 5 стыдовые фразы, 6 однотипные отзывы (bot_pct), 7 реклама vs трейд (ads_ratio),
+8 цена VIP, 9 только профиты (only_profits_flag), 10 связи каналов (promoted_channels),
+11 скорость ответа на жалобы (complaint_ignore_hours), 12 IP/прокси — не реализован.
 При ошибке — found: false, error. Код выхода 0 всегда (для парсинга в Node).
 """
 import os
@@ -11,6 +16,9 @@ import sys
 import json
 import asyncio
 from datetime import datetime, timezone, timedelta
+from urllib.request import urlopen, Request
+from urllib.parse import urlencode
+from urllib.error import URLError, HTTPError
 
 from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest
@@ -32,6 +40,21 @@ RISK_KEYWORDS = [
     'развод', 'скам', 'scam', 'крипта', 'крипто', 'crypto', 'btc', 'eth',
     'usdt', 'ton', 'телеграм', 'telegram', 'бот', 'bot'
 ]
+
+# Критерий 4: FOMO-слова (доля постов с такими словами)
+FOMO_KEYWORDS = [
+    'срочно', 'последний', 'осталось', 'никогда', 'успей', 'все уже', 'все в деле',
+    'не успел', 'последний шанс', 'ограничен', 'limited', 'last chance', 'hurry'
+]
+
+# Критерий 5: стыдовые фразы
+SHAME_PHRASES = [
+    'все уже в деле кроме тебя', 'только ты не успел', 'остался один ты',
+    'все купили кроме тебя', 'все уже на lambo', 'ты один не в теме'
+]
+
+# Критерий 9: слова убытков (если постов много и нет таких — only_profits_flag)
+LOSS_KEYWORDS = ['убыток', 'слив', 'потеря', 'минус', 'просадка', 'loss', 'drawdown']
 
 
 def out(obj):
@@ -168,6 +191,130 @@ def bot_pct_from_reply_texts(reply_texts):
     return f'{pct}%'
 
 
+def _fomo_pct(texts):
+    """Доля постов (0–100), содержащих хотя бы одно FOMO-слово."""
+    if not texts:
+        return 0
+    total = 0
+    matches = 0
+    for t in texts:
+        if not t or len(t) < 3:
+            continue
+        total += 1
+        lower = t.lower()
+        for kw in FOMO_KEYWORDS:
+            if kw in lower:
+                matches += 1
+                break
+    return round((matches / total) * 100) if total else 0
+
+
+def _shame_phrases_detected(texts):
+    """Список фраз из SHAME_PHRASES, встретившихся в постах."""
+    found = []
+    combined = ' '.join((t or '').lower() for t in texts)
+    for phrase in SHAME_PHRASES:
+        if phrase in combined:
+            found.append(phrase)
+    return found
+
+
+def _ads_ratio(messages):
+    """Доля постов с рекламными ключевыми за период (0–100). messages: (text, date)."""
+    if not messages:
+        return 0
+    total = sum(1 for t, _ in messages if t and len(t) >= 5)
+    if total == 0:
+        return 0
+    ad_count = sum(1 for t, _ in messages if t and _is_ad_like(t))
+    return min(100, round((ad_count / total) * 100))
+
+
+def _only_profits_flag(texts):
+    """True, если постов >= 20 и ни в одном нет LOSS_KEYWORDS."""
+    if not texts or len(texts) < 20:
+        return False
+    combined = ' '.join((t or '').lower() for t in texts)
+    for kw in LOSS_KEYWORDS:
+        if kw in combined:
+            return False
+    return True
+
+
+def _extract_promoted_channels(texts):
+    """Из текстов извлечь t.me/... и @channel, уникальный набор. Возвращает (list, count)."""
+    seen = set()
+    tme_re = re.compile(r't\.me/(\+?[a-zA-Z0-9_]+)', re.I)
+    at_re = re.compile(r'@([a-zA-Z][a-zA-Z0-9_]{4,31})\b')
+    for t in (texts or []):
+        if not t:
+            continue
+        for m in tme_re.finditer(t):
+            seen.add(('t.me/' + m.group(1)).lower())
+        for m in at_re.finditer(t):
+            seen.add(('@' + m.group(1)).lower())
+    lst = sorted(seen)
+    return lst, len(lst)
+
+
+def _bot_ratio_from_pct(bot_pct_str):
+    """Из строки "N%" или "—" извлечь число 0–100."""
+    if not bot_pct_str or bot_pct_str.strip() == '—':
+        return 0
+    m = re.search(r'(\d+)', str(bot_pct_str))
+    return min(100, int(m.group(1))) if m else 0
+
+
+def _fetch_tgstat(channel_id_for_api):
+    """
+    Запрос к TGStat API (критерии 1–2): рост подписчиков, охват.
+    channel_id_for_api: @username или t.me/username (не t.me/+).
+    Возвращает dict: subscriber_growth_per_day, growth_anomaly, reach_ratio, dead_ratio.
+    """
+    out_result = {
+        'subscriber_growth_per_day': 0,
+        'growth_anomaly': 0,
+        'reach_ratio': 0.0,
+        'dead_ratio': 0
+    }
+    token = (os.environ.get('TGSTAT_API_KEY') or '').strip()
+    if not token or not channel_id_for_api or 't.me/+' in channel_id_for_api.lower():
+        return out_result
+    channel_param = channel_id_for_api if channel_id_for_api.startswith('@') else ('@' + channel_id_for_api.replace('t.me/', '', 1).lstrip('/'))
+    timeout = 8
+    try:
+        stat_url = 'https://api.tgstat.ru/channels/stat?' + urlencode({'token': token, 'channelId': channel_param})
+        req = Request(stat_url, headers={'User-Agent': 'KRO-check-once/1'})
+        with urlopen(req, timeout=timeout) as r:
+            stat_data = json.loads(r.read().decode())
+        if stat_data.get('status') == 'ok' and 'response' in stat_data:
+            resp = stat_data['response']
+            participants = int(resp.get('participants_count') or 0)
+            avg_reach = int(resp.get('avg_post_reach') or 0)
+            if participants > 0:
+                out_result['reach_ratio'] = round(avg_reach / participants, 4)
+                out_result['dead_ratio'] = 100 if (avg_reach / participants) < 0.05 else 0
+    except (URLError, HTTPError, ValueError, KeyError, OSError):
+        pass
+    try:
+        sub_url = 'https://api.tgstat.ru/channels/subscribers?' + urlencode({
+            'token': token, 'channelId': channel_param, 'group': 'day'
+        })
+        req = Request(sub_url, headers={'User-Agent': 'KRO-check-once/1'})
+        with urlopen(req, timeout=timeout) as r:
+            sub_data = json.loads(r.read().decode())
+        if sub_data.get('status') == 'ok' and sub_data.get('response') and len(sub_data['response']) >= 2:
+            arr = sub_data['response']
+            cur = int(arr[0].get('participants_count') or 0)
+            prev = int(arr[1].get('participants_count') or 0)
+            growth = cur - prev
+            out_result['subscriber_growth_per_day'] = growth
+            out_result['growth_anomaly'] = 100 if growth > 5000 else 0
+    except (URLError, HTTPError, ValueError, KeyError, OSError):
+        pass
+    return out_result
+
+
 async def run_check(channel_id):
     client = TelegramClient(
         TELEGRAM_SESSION_NAME,
@@ -205,22 +352,78 @@ async def run_check(channel_id):
             pass
         bot_pct = bot_pct_from_reply_texts(reply_texts)
 
-        if risk >= 70:
+        # Новые метрики по 12 критериям (без TGStat/Telemetr пока)
+        fomo_pct = _fomo_pct(texts)
+        shame_phrases_detected = _shame_phrases_detected(texts)
+        ads_ratio = _ads_ratio(messages_with_dates)
+        only_profits_flag = _only_profits_flag(texts)
+        promoted_list, promoted_count = _extract_promoted_channels(texts)
+        promoted_sample = promoted_list[:10] if promoted_list else []
+
+        bot_ratio = _bot_ratio_from_pct(bot_pct)
+        review_similarity = bot_ratio
+        complaint_ignore_time = 0  # Этап 5: таблица
+        network_connections = min(promoted_count * 20, 100)
+
+        # TGStat (критерии 1–2): рост подписчиков, охват
+        channel_id_for_tgstat = getattr(entity, 'username', None) and ('@' + entity.username) or (channel_id if not channel_id.startswith('t.me/+') else None)
+        tgstat = _fetch_tgstat(channel_id_for_tgstat or '') if channel_id_for_tgstat else {}
+        growth_anomaly = tgstat.get('growth_anomaly', 0)
+        dead_ratio = tgstat.get('dead_ratio', 0)
+        subscriber_growth_per_day = tgstat.get('subscriber_growth_per_day', 0)
+        reach_ratio = tgstat.get('reach_ratio', 0.0)
+
+        # Возраст канала (критерий 3) из Telethon
+        channel_age_days = None
+        if getattr(entity, 'date', None):
+            try:
+                created = entity.date
+                if created.tzinfo is None:
+                    created = created.replace(tzinfo=timezone.utc)
+                channel_age_days = (datetime.now(timezone.utc) - created).days
+            except Exception:
+                pass
+
+        # Новая формула риска (все компоненты 0–100); dead_ratio добавляем к growth_anomaly по весу
+        risk_score = round(
+            fomo_pct * 0.15 +
+            bot_ratio * 0.20 +
+            ads_ratio * 0.25 +
+            growth_anomaly * 0.15 +
+            review_similarity * 0.10 +
+            network_connections * 0.10 +
+            complaint_ignore_time * 0.05 +
+            dead_ratio * 0.05  # мёртвая аудитория
+        )
+        risk_score = max(0, min(100, risk_score))
+
+        if risk_score >= 70:
             verdict = 'scam'
-        elif risk >= 35:
+        elif risk_score >= 35:
             verdict = 'grey'
         else:
             verdict = 'safe'
+
         return {
             'found': True,
             'username': channel_id,
-            'risk_score': risk,
+            'risk_score': risk_score,
             'ads_per_week': ads_week,
             'bot_pct': bot_pct,
             'vip_price': vip,
             'complaints': None,
             'total_loss': None,
-            'verdict': verdict
+            'verdict': verdict,
+            'fomo_pct': fomo_pct,
+            'shame_phrases_detected': shame_phrases_detected,
+            'ads_ratio': ads_ratio,
+            'only_profits_flag': only_profits_flag,
+            'promoted_channels_count': promoted_count,
+            'promoted_channels_sample': promoted_sample,
+            'subscriber_growth_per_day': subscriber_growth_per_day,
+            'growth_anomaly': growth_anomaly,
+            'reach_ratio': reach_ratio,
+            'channel_age_days': channel_age_days,
         }
     finally:
         await client.disconnect()

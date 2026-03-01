@@ -807,6 +807,34 @@ button:focus-visible {
    display: block;
    margin-bottom: 6px;
 }
+.kro-check-result .kro-check-card {
+   margin-top: 8px;
+}
+.kro-check-result .kro-check-card-title {
+   font-weight: 600;
+   margin-bottom: 4px;
+}
+.kro-check-result .kro-check-card-risk {
+   margin-bottom: 8px;
+   font-size: 13px;
+}
+.kro-check-result .kro-facts-heading {
+   font-weight: 600;
+   margin: 10px 0 6px;
+   font-size: 13px;
+}
+.kro-check-result .kro-facts {
+   margin: 0 0 10px;
+   padding-left: 20px;
+   list-style-type: disc;
+}
+.kro-check-result .kro-facts li {
+   margin-bottom: 4px;
+}
+.kro-check-result .kro-verdict {
+   margin: 8px 0 0;
+   font-size: 13px;
+}
 
 .kro-feature1-check-screenshot {
    margin-top: 10px;

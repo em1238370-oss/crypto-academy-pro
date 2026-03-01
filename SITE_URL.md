@@ -12,6 +12,9 @@
 1. **Главная страница:**
    - https://crypto-academy-pro.onrender.com/
 
+2. **Чекер каналов (Фишка 1, блок «Проверить канал»):**
+   - https://crypto-academy-pro.onrender.com/index.html#checkers
+
 2. **News:**
    - https://crypto-academy-pro.onrender.com/sub-sites/news/index.html
 
@@ -21,7 +24,7 @@
 4. **Crypto Coach:**
    - https://crypto-academy-pro.onrender.com/sub-sites/crypto-coach/index.html
 
-5. **Risk Distribution:**
+6. **Risk Distribution:**
    - https://crypto-academy-pro.onrender.com/sub-sites/risk-distribution/index.html
 
 ---

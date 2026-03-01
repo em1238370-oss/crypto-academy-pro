@@ -674,19 +674,12 @@
                                }
                                fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(chData) {
                                    if (!chData.found) {
-                                       checkResult.textContent = (chData.message || 'Канал добавлен в очередь. Обычно результат через 1–3 минуты. Нажмите «Проверить» снова.');
-                                       if (chData.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–3 минуты.';
+                                       checkResult.textContent = (chData.message || 'Проверяем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
+                                       if (chData.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
                                        checkResult.className = 'kro-check-result';
                                        return;
                                    }
-                                   var risk = chData.risk_score;
-                                   var riskStr = risk != null ? risk + '/100' : '—';
-                                   var chLines = ['Риск ' + riskStr];
-                                   if (chData.ads_per_week != null) chLines.push('⚠️ ' + chData.ads_per_week + ' реклам/неделя');
-                                   if (chData.bot_pct) chLines.push('⚠️ ' + chData.bot_pct + ' ботов в комментах');
-                                   chLines.push('💸 Потери пользователей: ' + (chData.total_loss || (chData.complaints != null ? chData.complaints + ' жалоб' : '—')));
-                                   chLines.push('📊 Вердикт: ' + (chData.verdict || '—'));
-                                   checkResult.textContent = chLines.join('\n');
+                                   checkResult.innerHTML = buildCheckResultCardHtml(chData);
                                    checkResult.className = 'kro-check-result';
                                }).catch(function() {
                                    checkResult.textContent = 'Ошибка запроса.';
