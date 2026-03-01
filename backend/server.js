@@ -1265,6 +1265,7 @@ function getKroReferenceStats() {
         telegramCount: data.telegramCount ?? 0,
         coursesCount: data.coursesCount ?? 0,
         top3: Array.isArray(data.top3) ? data.top3 : [],
+        victims24h: data.victims24h != null ? data.victims24h : undefined,
         source: data.source,
         sourceCaption: data.sourceCaption
       };
@@ -1272,7 +1273,7 @@ function getKroReferenceStats() {
   } catch (e) {
     console.warn('KRO reference stats load failed:', e.message);
   }
-  return { channelsToday: 0, totalLost: 0, telegramCount: 0, coursesCount: 0, top3: [] };
+  return { channelsToday: 0, totalLost: 0, telegramCount: 0, coursesCount: 0, top3: [], victims24h: undefined };
 }
 
 function parseSheetRow(row, headerIndex) {
@@ -1851,12 +1852,14 @@ app.get('/api/kro/live-counter', async (req, res) => {
     if (!hasSheetData) {
       return res.json(getKroReferenceStats());
     }
+    const victims24h = todayRows.length;
     res.json({
       channelsToday,
       totalLost,
       telegramCount,
       coursesCount,
       top3: top3.length ? top3 : [],
+      victims24h,
       source: 'sheet',
       sourceCaption: 'Данные из вашей таблицы (отчёты и жалобы).'
     });

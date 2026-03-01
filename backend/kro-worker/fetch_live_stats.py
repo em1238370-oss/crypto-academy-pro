@@ -29,6 +29,8 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
 DATA_DIR = os.path.join(BACKEND_DIR, 'data')
 OUTPUT_JSON = os.path.join(DATA_DIR, 'kro-reference-stats.json')
+SNAPSHOT_KEY = 'prevChannelCount'
+SNAPSHOT_DATE_KEY = 'prevDate'
 
 # Загружаем env из kro-worker и из корня проекта
 def _load_env():
@@ -145,10 +147,20 @@ TELEGRAM_API_HASH = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
 TELEGRAM_SESSION_NAME = os.environ.get('TELEGRAM_SESSION_NAME', 'kro_worker')
 KRO_SOURCE_CHANNELS = [x.strip() for x in (os.environ.get('KRO_SOURCE_CHANNELS') or '').split(',') if x.strip()]
 
+def _extract_channel_sum_pairs_from_text(text):
+    """Из текста извлекает пары (канал, сумма) для топ-3: каналы и суммы в одном сообщении."""
+    if not text:
+        return []
+    channels = list(_extract_channels_from_text(text))
+    sums = _extract_sums_from_text(text)
+    sum_val = max(sums) if sums else 0
+    return [(c, sum_val) for c in channels]
+
+
 async def fetch_telegram_sources():
-    """Читает каналы из KRO_SOURCE_CHANNELS за последние 24–48 ч, собирает @/t.me и суммы."""
+    """Читает каналы из KRO_SOURCE_CHANNELS за последние 24–48 ч, собирает @/t.me, суммы и пары (канал, сумма)."""
     if not KRO_SOURCE_CHANNELS or not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
-        return {'channels': set(), 'sums': [], 'messages_today': 0}
+        return {'channels': set(), 'sums': [], 'messages_today': 0, 'channel_sum_pairs': []}
     from telethon import TelegramClient
     from telethon.tl.functions.messages import ImportChatInviteRequest
 
@@ -161,6 +173,7 @@ async def fetch_telegram_sources():
     all_channels = set()
     all_sums = []
     messages_today = 0
+    channel_sum_pairs = []
     now = datetime.now(timezone.utc)
     since = now - timedelta(hours=48)
 
@@ -201,13 +214,36 @@ async def fetch_telegram_sources():
                     text = (msg.text or '') + (getattr(msg, 'message', '') or '')
                     all_channels |= _extract_channels_from_text(text)
                     all_sums.extend(_extract_sums_from_text(text))
+                    channel_sum_pairs.extend(_extract_channel_sum_pairs_from_text(text))
             except Exception as e:
                 print('Telegram channel %s: %s' % (ch, e), file=sys.stderr)
             time.sleep(1)
     finally:
         await client.disconnect()
 
-    return {'channels': all_channels, 'sums': all_sums, 'messages_today': messages_today}
+    return {'channels': all_channels, 'sums': all_sums, 'messages_today': messages_today, 'channel_sum_pairs': channel_sum_pairs}
+
+
+def _build_top3(channel_sum_pairs, web_channels_fallback):
+    """Строит топ-3: агрегация по каналу (сумма), сортировка по убыванию суммы. status «Из парсинга» или «—»."""
+    from collections import defaultdict
+    agg = defaultdict(int)
+    for ch, s in channel_sum_pairs:
+        agg[ch] += s
+    # каналы только с веба с суммой 0
+    for ch in web_channels_fallback:
+        if ch not in agg:
+            agg[ch] = 0
+    items = [(ch, total) for ch, total in agg.items()]
+    items.sort(key=lambda x: -x[1])
+    top3 = []
+    for ch, total in items[:3]:
+        top3.append({
+            'channel': ch,
+            'sum': total,
+            'status': 'Из парсинга' if total == 0 else 'Активен'
+        })
+    return top3
 
 
 def main():
@@ -219,8 +255,20 @@ def main():
         'telegramCount': 0,
         'coursesCount': 0,
         'top3': [],
+        'victims24h': None,
         'updatedAt': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     }
+    today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    prev_count = None
+    prev_date = None
+    if os.path.isfile(OUTPUT_JSON):
+        try:
+            with open(OUTPUT_JSON, 'r', encoding='utf-8') as f:
+                old = json.load(f)
+                prev_count = old.get(SNAPSHOT_KEY)
+                prev_date = old.get(SNAPSHOT_DATE_KEY)
+        except Exception:
+            pass
 
     # 1) Парсим открытые сайты
     vklader_url = 'https://vklader.com/blacklist-telegram/'
@@ -253,51 +301,60 @@ def main():
     tg_channels = set()
     tg_sums = []
     messages_today = 0
+    channel_sum_pairs = []
     if KRO_SOURCE_CHANNELS and TELEGRAM_API_ID and TELEGRAM_API_HASH:
         try:
             tg_data = asyncio.run(fetch_telegram_sources())
             tg_channels = tg_data['channels']
             tg_sums = tg_data['sums']
             messages_today = tg_data['messages_today']
+            channel_sum_pairs = tg_data.get('channel_sum_pairs', [])
         except Exception as e:
             print('Telegram fetch error: %s' % e, file=sys.stderr)
 
     # 3) Агрегация
     all_channels = all_web_channels | tg_channels
     telegram_count = len(all_channels)
-    channels_today = messages_today if messages_today > 0 else min(50, max(1, len(all_channels) // 10))
+    # «Новых за день»: разница с предыдущим снимком, если дата сменилась
+    if prev_date is not None and prev_count is not None and prev_date != today_str:
+        channels_today = max(0, telegram_count - prev_count)
+    elif messages_today > 0:
+        channels_today = messages_today
+    else:
+        channels_today = min(50, max(1, len(all_channels) // 10)) if all_channels else 0
     total_lost = sum(tg_sums) if tg_sums else 0
     courses_count = min(99, courses_keywords // 3) if courses_keywords else 12
+    use_fallback_total = total_lost <= 0
 
     out['channelsToday'] = channels_today
     out['telegramCount'] = telegram_count
-    out['totalLost'] = total_lost if total_lost > 0 else 350_000_000  # fallback оценка
+    out['totalLost'] = total_lost if total_lost > 0 else 350_000_000
     out['coursesCount'] = courses_count
+    out[SNAPSHOT_KEY] = telegram_count
+    out[SNAPSHOT_DATE_KEY] = today_str
+    out['victims24h'] = messages_today if messages_today > 0 else None
+
+    # Топ-3 из распарсенных (канал, сумма); при отсутствии — топ-3 каналов с sum 0 из веба
+    out['top3'] = _build_top3(channel_sum_pairs, list(all_web_channels)[:50])
+
     sources = []
     if all_web_channels:
         sources.append('vklader, tgrev')
     if tg_channels or tg_sums:
         sources.append('Telegram (каналы жалоб/сигналов)')
-    out['sourceCaption'] = 'Данные из интернета: %s. Обновлено %s.' % (
+    caption = 'Данные из интернета: %s. Обновлено %s.' % (
         ', '.join(sources) if sources else 'открытые списки',
         datetime.now(timezone.utc).strftime('%d.%m.%Y %H:%M UTC')
     )
-
-    # Сохраняем предыдущие top3, если есть файл
-    if os.path.isfile(OUTPUT_JSON):
-        try:
-            with open(OUTPUT_JSON, 'r', encoding='utf-8') as f:
-                old = json.load(f)
-                if isinstance(old.get('top3'), list) and old['top3']:
-                    out['top3'] = old['top3']
-        except Exception:
-            pass
+    if use_fallback_total:
+        caption += ' Потери: оценка по отчётам (Chainalysis и др.).'
+    out['sourceCaption'] = caption
 
     os.makedirs(DATA_DIR, exist_ok=True)
     with open(OUTPUT_JSON, 'w', encoding='utf-8') as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
-    print('Written: %s (channelsToday=%s, telegramCount=%s, totalLost=%s)' % (
-        OUTPUT_JSON, out['channelsToday'], out['telegramCount'], out['totalLost']))
+    print('Written: %s (channelsToday=%s, telegramCount=%s, totalLost=%s, victims24h=%s)' % (
+        OUTPUT_JSON, out['channelsToday'], out['telegramCount'], out['totalLost'], out.get('victims24h')))
 
 
 if __name__ == '__main__':

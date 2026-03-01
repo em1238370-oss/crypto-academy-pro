@@ -96,11 +96,12 @@
                    <span class="kro-feature1-stat-label">Курсы фейк-продуктов</span>
                </div>
            </div>
+           <p class="kro-feature1-source-caption hidden" id="kro-stat-source-caption" aria-live="polite"></p>
            <div class="kro-f1-blocks">
                <!-- Блок 1: Шок-цифры -->
                <div class="kro-f1-block kro-f1-shock">
                    <p class="kro-f1-shock-heading">ЗА ПОСЛЕДНИЕ 24 ЧАСА:</p>
-                   <p class="kro-f1-shock-text">73 человека купили «гарантию прибыли»</p>
+                   <p class="kro-f1-shock-text" id="kro-f1-shock-victims">—</p>
                    <p class="kro-f1-shock-total" id="kro-f1-shock-total">ИТОГО: —</p>
                </div>
                <!-- Блок 2: Твой тип лоха -->
@@ -496,6 +497,10 @@
                if ((el = document.getElementById('kro-stat-lost'))) el.textContent = formatFull(data.totalLost);
                if ((el = document.getElementById('kro-stat-channels'))) el.textContent = data.telegramCount;
                if ((el = document.getElementById('kro-stat-courses'))) el.textContent = data.coursesCount;
+               if ((el = document.getElementById('kro-f1-shock-victims'))) {
+                   var v = data.victims24h;
+                   el.textContent = (v != null && Number(v) >= 0) ? (v + ' человек купили «гарантию прибыли»') : 'По данным из таблицы и открытых источников';
+               }
                if ((el = document.getElementById('kro-f1-shock-total'))) el.textContent = (data.totalLost && data.totalLost > 0) ? ('ИТОГО: -' + formatFull(data.totalLost) + '₽') : 'ИТОГО: —';
                var top3 = data.top3 || [];
                for (var i = 0; i < 3; i++) {
