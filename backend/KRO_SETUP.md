@@ -137,9 +137,13 @@
 
 ## Автомониторинг каждые 12 ч (run_12h_monitor)
 
-Скрипт `kro-worker/run_12h_monitor.py` собирает данные из TGStat, Telega.io и Telegram-чатов за последние 12 ч, применяет критерии скама, пишет отчёт в Google Docs и обновляет `backend/data/kro-12h-stats.json`. Сайт показывает блок «За 12 часов» и ссылку на отчёт через `GET /api/kro/daily-stats`.
+Скрипт `kro-worker/run_12h_monitor.py` работает в двух режимах: **collect** (сбор и отчёт) и **publish** (публикация JSON на сайт). Источники: TGStat (крипто, новые за 7 дней), Telega.io и telega.in (каталог крипто), чаты из `KRO_SOURCE_CHANNELS` (сообщения за 12 ч с фразами «скам крипта», «потери крипта», «развод крипта»). Результат collect пишется в `kro-12h-stats-pending.json` и в Google Doc; publish копирует pending в `backend/data/kro-12h-stats.json` с timestamp. Сайт читает только публичный JSON через `GET /api/kro/daily-stats`.
 
-**Cron (01:00 и 13:00 MSK):** на сервере с `TZ=Europe/Moscow`: `0 1,13 * * * cd /путь/к/проекту/backend/kro-worker && python3 run_12h_monitor.py`. В UTC: `0 22 * * *` и `0 10 * * *`. Нужны: `TGSTAT_API_KEY`, `KRO_SOURCE_CHANNELS`, `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `KRO_SHEET_ID`, `KRO_GOOGLE_CREDENTIALS_JSON`; в Google Cloud — Google Docs API.
+**Cron (двухфазный цикл, MSK):**
+- **11:00 и 23:00** — сбор и отчёт: `MODE=collect python3 run_12h_monitor.py` (или `--collect`). В UTC: `0 8 * * *` и `0 20 * * *`.
+- **12:15 и 00:15** — публикация JSON: `MODE=publish python3 run_12h_monitor.py` (или `--publish`). В UTC: `15 8 * * *` и `15 20 * * *`.
+
+Нужны: `TGSTAT_API_KEY`, `KRO_SOURCE_CHANNELS`, `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `KRO_SHEET_ID`, `KRO_GOOGLE_CREDENTIALS_JSON`; в Google Cloud — Google Docs API.
 
 **Единый Google Doc «Источники и данные»:** если задан **`KRO_SOURCES_DOC_ID`** (ID из URL: `https://docs.google.com/document/d/<ID>/edit`), скрипт при каждом запуске обновляет этот документ: вставляет текст со всеми источниками и ссылками (Vklader, TGRev, TGStat, Telega.io, Telegram, таблица) и ссылку на последний автоотчёт. Вся информация приходит в один документ.
 

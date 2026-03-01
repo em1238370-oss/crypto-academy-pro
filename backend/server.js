@@ -1687,6 +1687,57 @@ app.post('/api/kro/report-scam', express.json(), async (req, res) => {
   }
 });
 
+// 12h stats для сайта (из run_12h_monitor.py → kro-12h-stats.json)
+app.get('/api/kro/daily-stats', (req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  try {
+    const p = join(__dirname, 'data', 'kro-12h-stats.json');
+    if (!fs.existsSync(p)) {
+      return res.json({
+        new_scams: 0,
+        losses_12h: 0,
+        victims_12h: 0,
+        telegram_channels: null,
+        courses: null,
+        timestamp: null,
+        top3: [],
+        report_doc_url: null,
+        sourceCaption: null,
+        updatedAt: null
+      });
+    }
+    const raw = fs.readFileSync(p, 'utf8');
+    const data = JSON.parse(raw);
+    const losses12h = data.losses_12h ?? data.losses ?? 0;
+    res.json({
+      new_scams: data.new_scams ?? 0,
+      losses_12h: losses12h,
+      victims_12h: data.victims_12h ?? 0,
+      telegram_channels: data.telegram_channels ?? null,
+      courses: data.courses ?? null,
+      timestamp: data.timestamp || null,
+      top3: Array.isArray(data.top3) ? data.top3 : [],
+      report_doc_url: data.report_doc_url || null,
+      sourceCaption: data.sources ? data.sources.join(', ') : null,
+      updatedAt: data.updatedAt || data.timestamp || null
+    });
+  } catch (e) {
+    console.error('KRO daily-stats error:', e);
+    res.json({
+      new_scams: 0,
+      losses_12h: 0,
+      victims_12h: 0,
+      telegram_channels: null,
+      courses: null,
+      timestamp: null,
+      top3: [],
+      report_doc_url: null,
+      sourceCaption: null,
+      updatedAt: null
+    });
+  }
+});
+
 app.use((err, req, res, next) => {
  if (err.type === 'entity.parse.failed') {
    return res.status(400).json({ error: 'invalid_json' });

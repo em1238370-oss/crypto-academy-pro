@@ -32,6 +32,8 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0
 REQUEST_DELAY = 3
 HOURS_12 = 12
 DAYS_7 = 7
+TELEGRAM_PHRASES = ('скам крипта', 'потери крипта', 'развод крипта')
+MSK_TZ = timezone(timedelta(hours=3))
 
 def _load_env():
     for base in (SCRIPT_DIR, os.path.normpath(os.path.join(SCRIPT_DIR, '..', '..'))):
@@ -356,8 +358,29 @@ def update_sources_google_doc(doc_id, report_title=None, report_url=None):
             creds = service_account.Credentials.from_service_account_file(json_path)
         except Exception:
             pass
+    # Автопоиск файла ключа: папка скрипта, текущая папка, backend/kro-worker от корня
     if not creds:
-        print('Sources doc: нет учётных данных Google (KRO_GOOGLE_CREDENTIALS_JSON или GOOGLE_APPLICATION_CREDENTIALS).', file=sys.stderr)
+        search_dirs = [
+            SCRIPT_DIR,
+            os.getcwd(),
+            os.path.join(BACKEND_DIR, 'kro-worker'),
+        ]
+        for dir_path in search_dirs:
+            if not dir_path:
+                continue
+            for name in ('credentials.json', 'kro-google-credentials.json'):
+                path = os.path.join(dir_path, name)
+                if os.path.isfile(path):
+                    try:
+                        from google.oauth2 import service_account
+                        creds = service_account.Credentials.from_service_account_file(path)
+                        break
+                    except Exception as e:
+                        print('Sources doc: не удалось прочитать %s: %s' % (path, e), file=sys.stderr)
+            if creds:
+                break
+    if not creds:
+        print('Sources doc: нет учётных данных. Проверьте: файл credentials.json в %s или в текущей папке.' % SCRIPT_DIR, file=sys.stderr)
         return None
     try:
         from googleapiclient.discovery import build
@@ -417,6 +440,16 @@ def create_google_doc_report(title, new_channels_rows, complaints_rows, summary_
             creds = service_account.Credentials.from_service_account_file(json_path)
         except Exception:
             pass
+    if not creds:
+        for name in ('credentials.json', 'kro-google-credentials.json'):
+            path = os.path.join(SCRIPT_DIR, name)
+            if os.path.isfile(path):
+                try:
+                    from google.oauth2 import service_account
+                    creds = service_account.Credentials.from_service_account_file(path)
+                    break
+                except Exception:
+                    pass
     if not creds:
         return None, None
     try:
