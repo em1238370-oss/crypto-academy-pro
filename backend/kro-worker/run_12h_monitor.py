@@ -291,6 +291,114 @@ def build_top3(complaints_list, channel_sum_pairs):
     return [{'channel': ch, 'sum': total, 'status': 'Скам' if total > 0 else '—'} for ch, total in items[:3]]
 
 
+# --- Единый Google Doc «Источники и данные» (вся информация для вас) ---
+SOURCES_DOC_TITLE = 'KRO: источники данных и ссылки'
+
+def _get_sources_doc_text(report_title=None, report_url=None):
+    """Текст для документа «Источники и данные» — откуда цифры и все ссылки."""
+    lines = [
+        'ОТКУДА БЕРУТСЯ ЦИФРЫ И ОТЗЫВЫ — ИСТОЧНИКИ И ССЫЛКИ',
+        '',
+        'Этот документ обновляется автоматически. Здесь все источники данных для сайта и прямые ссылки.',
+        '',
+        '=== 1. ОСНОВНЫЕ ЦИФРЫ (главная страница) ===',
+        '',
+        '• Таблица «Отчёты» (Google Sheets) — приоритет: каналы за день, потери, топ-3, жалобы за 24 ч.',
+        '• Резерв (если таблица пуста):',
+        '  Vklader (чёрный список): https://vklader.com/blacklist-telegram/',
+        '  TGRev (скам-каналы):     https://tgrev.ru/scam-telegram-channel',
+        '',
+        '=== 2. БЛОК «ЗА 12 ЧАСОВ» ===',
+        '',
+        '• TGStat — поиск каналов «криптовалюта», новые за 7 дней.',
+        '  Сайт: https://tgstat.ru',
+        '  API:  https://tgstat.ru/docs/ru/api',
+        '',
+        '• Telega.io — каталог крипто-каналов:',
+        '  https://telega.io/catalog/cryptocurrencies',
+        '',
+        '• Telegram — чаты из KRO_SOURCE_CHANNELS, сообщения за 12 ч (жалобы, суммы).',
+        '  https://telegram.org',
+        '',
+        '• Лист «Отчёты» — жалобы за 12 ч; ≥2 жалобы по каналу → статус «Скам».',
+        '',
+        '=== 3. ПОСЛЕДНИЙ АВТООТЧЁТ (за 12 ч) ===',
+        ''
+    ]
+    if report_title and report_url:
+        lines.append(report_title)
+        lines.append(report_url)
+    else:
+        lines.append('(отчёт появится после следующего запуска скрипта в 01:00 или 13:00 MSK)')
+    return '\n'.join(lines)
+
+
+def update_sources_google_doc(doc_id, report_title=None, report_url=None):
+    """
+    Обновляет единый Google Doc «Источники и данные»: подставляет текст с источниками и ссылками
+    и ссылку на последний автоотчёт. Нужен KRO_SOURCES_DOC_ID в env (ID из URL документа).
+    """
+    if not (doc_id and doc_id.strip()):
+        return None
+    doc_id = doc_id.strip()
+    creds = None
+    json_str = os.environ.get('KRO_GOOGLE_CREDENTIALS_JSON')
+    json_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
+    if json_str:
+        try:
+            from google.oauth2 import service_account
+            creds = service_account.Credentials.from_service_account_info(json.loads(json_str))
+        except Exception:
+            pass
+    if not creds and json_path and os.path.isfile(json_path):
+        try:
+            from google.oauth2 import service_account
+            creds = service_account.Credentials.from_service_account_file(json_path)
+        except Exception:
+            pass
+    if not creds:
+        print('Sources doc: нет учётных данных Google (KRO_GOOGLE_CREDENTIALS_JSON или GOOGLE_APPLICATION_CREDENTIALS).', file=sys.stderr)
+        return None
+    try:
+        from googleapiclient.discovery import build
+        service = build('docs', 'v1', credentials=creds)
+    except Exception as e:
+        print('Google Docs (sources) build: %s' % e, file=sys.stderr)
+        return None
+    text = _get_sources_doc_text(report_title, report_url)
+    try:
+        doc = service.documents().get(documentId=doc_id).execute()
+        body = doc.get('body', {})
+        content = body.get('content', [])
+        end_index = 2
+        if content:
+            end_index = content[-1].get('endIndex', 2)
+        if end_index <= 1:
+            end_index = 2
+        requests = []
+        if end_index > 2:
+            requests.append({
+                'deleteContentRange': {
+                    'range': {'startIndex': 1, 'endIndex': end_index}
+                }
+            })
+        requests.append({
+            'insertText': {
+                'location': {'index': 1},
+                'text': text
+            }
+        })
+        service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+        url = 'https://docs.google.com/document/d/' + doc_id + '/edit'
+        print('Updated sources doc: %s' % url, file=sys.stderr)
+        return url
+    except Exception as e:
+        print('Update sources doc: %s' % e, file=sys.stderr)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
+        return None
+
+
 # --- Google Docs: создать отчёт ---
 def create_google_doc_report(title, new_channels_rows, complaints_rows, summary_text, report_number):
     """Создаёт Google Doc с заголовком, таблицами и блоком «На сайт». Возвращает (doc_id, url) или (None, None)."""
@@ -438,6 +546,22 @@ def main():
         summary_text,
         report_number
     )
+
+    # 5b) Обновить единый Google Doc «Источники и данные»
+    sources_doc_id = os.environ.get('KRO_SOURCES_DOC_ID', '').strip()
+    if sources_doc_id:
+        print('Обновляю Google Doc «Источники и данные»...', flush=True)
+        url = update_sources_google_doc(
+            sources_doc_id,
+            report_title=title if report_doc_url else None,
+            report_url=report_doc_url
+        )
+        if url:
+            print('Готово. Документ: %s' % url, flush=True)
+        else:
+            print('Не удалось обновить документ. Проверьте: 1) KRO_GOOGLE_CREDENTIALS_JSON, 2) доступ сервисного аккаунта к документу (Поделиться → email из ключа), 3) Google Docs API включён в Cloud.', flush=True)
+    else:
+        print('KRO_SOURCES_DOC_ID не задан — обновление документа пропущено.', flush=True)
 
     # 6) Write JSON for site
     out = {

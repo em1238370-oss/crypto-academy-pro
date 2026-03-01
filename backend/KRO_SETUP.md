@@ -14,6 +14,7 @@
 | `KRO_SCAM_BASE_RANGE` | Диапазон листа «база каналов» для API проверки. Например: `scam_base!A2:H` или `Sheet2!A2:H`. Если не задан, `GET /api/kro/check` всегда возвращает `found: false`. |
 | `KRO_CHECK_QUEUE_RANGE` | Диапазон листа «очередь проверки» для живой проверки. Например: `check_queue!A2:B`. Если задан, при отсутствии канала в базе он добавляется в очередь; воркер (Python + Telethon) раз в 1–2 мин проверяет канал и дописывает результат в scam_base. |
 | `KRO_EXCHANGER_BASE_RANGE` | Диапазон листа «база обменников» для проверки по ссылке. Например: `exchanger_base!A2:E`. Колонки: A — URL/домен, B — название, C — risk_score, D — total_loss, E — verdict. Если не задан, `GET /api/kro/check-exchanger` возвращает «не найден». |
+| `KRO_SOURCES_DOC_ID` | ID Google Doc для единого документа «Источники и данные». При каждом запуске `run_12h_monitor.py` документ обновляется: все источники, ссылки и ссылка на последний автоотчёт. Из URL: `.../document/d/<KRO_SOURCES_DOC_ID>/edit`. |
 
 ---
 
@@ -130,7 +131,7 @@
 - **GET /api/kro/check?channel=@username** (или `channel=https://t.me/...`, `channel=t.me/+invite`) — проверка канала по базе scam_base; при отсутствии в базе — синхронный вызов `check_once.py` (живая проверка через Telethon). Ссылки t.me парсятся автоматически. Ответ: `{ found, username?, risk_score?, ads_per_week?, bot_pct?, vip_price?, complaints?, total_loss?, verdict? }`. Поля «жалобы» и «потери» при пустых значениях в базе подставляются из листа отчётов (A2:F) по совпадению канала. При недоступности живой проверки и заданном `KRO_CHECK_QUEUE_RANGE`: `{ found: false, pending: true, channel, message }` — канал ставится в очередь, пользователю нужно нажать «Проверить» снова через 1–2 минуты.
 - **GET /api/kro/check-exchanger?url=...** — проверка обменника по ссылке (база задаётся через `KRO_EXCHANGER_BASE_RANGE`). Ответ: `{ found, url?, name?, risk_score?, total_loss?, verdict? }` или `{ found: false, message }`.
 - **POST /api/kro/check-screenshot** — тело JSON `{ image: "data:image/...;base64,..." }`. Распознавание скрина через Mistral Vision: извлечение @ников, t.me и URL обменников. Ответ: `{ extracted: ["@channel", "https://..."] }`. На сайте по первому извлечённому выполняется проверка канала или обменника.
-- **GET /api/kro/daily-stats** — статистика за 12 ч (из `backend/data/kro-12h-stats.json`): `new_scams`, `losses_12h`, `victims_12h`, `top3`, `report_doc_url`, `sourceCaption`, `updatedAt`. Файл обновляется скриптом `run_12h_monitor.py`.
+- **GET /api/kro/daily-stats** — статистика за 12 ч (из `backend/data/kro-12h-stats.json`): `new_scams`, `losses_12h`, `victims_12h`, `top3`, `report_doc_url`. Файл обновляется скриптом `run_12h_monitor.py`.
 
 ---
 
@@ -138,4 +139,8 @@
 
 Скрипт `kro-worker/run_12h_monitor.py` собирает данные из TGStat, Telega.io и Telegram-чатов за последние 12 ч, применяет критерии скама, пишет отчёт в Google Docs и обновляет `backend/data/kro-12h-stats.json`. Сайт показывает блок «За 12 часов» и ссылку на отчёт через `GET /api/kro/daily-stats`.
 
-**Cron (01:00 и 13:00 MSK):** на сервере с `TZ=Europe/Moscow`: `0 1,13 * * * cd /путь/к/проекту/backend/kro-worker && python3 run_12h_monitor.py`. В UTC: `0 22 * * *` и `0 10 * * *` (те же команды с путём). Нужны: `TGSTAT_API_KEY`, `KRO_SOURCE_CHANNELS`, `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `KRO_SHEET_ID`, `KRO_GOOGLE_CREDENTIALS_JSON`; в Google Cloud должен быть включён Google Docs API.
+**Cron (01:00 и 13:00 MSK):** на сервере с `TZ=Europe/Moscow`: `0 1,13 * * * cd /путь/к/проекту/backend/kro-worker && python3 run_12h_monitor.py`. В UTC: `0 22 * * *` и `0 10 * * *`. Нужны: `TGSTAT_API_KEY`, `KRO_SOURCE_CHANNELS`, `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `KRO_SHEET_ID`, `KRO_GOOGLE_CREDENTIALS_JSON`; в Google Cloud — Google Docs API.
+
+**Единый Google Doc «Источники и данные»:** если задан **`KRO_SOURCES_DOC_ID`** (ID из URL: `https://docs.google.com/document/d/<ID>/edit`), скрипт при каждом запуске обновляет этот документ: вставляет текст со всеми источниками и ссылками (Vklader, TGRev, TGStat, Telega.io, Telegram, таблица) и ссылку на последний автоотчёт. Вся информация приходит в один документ.
+
+Как создать документ: (1) В Google Drive создайте новый Google Doc (можно пустой). (2) Скопируйте ID из URL: в адресе после `/d/` и до `/edit`. (3) Дайте доступ на редактирование сервисному аккаунту (email из `client_email` в JSON ключа). (4) В `.env` добавьте `KRO_SOURCES_DOC_ID=ваш_id`. При следующем запуске скрипта документ будет заполнен и далее обновляться при каждом запуске.
