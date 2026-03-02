@@ -1514,7 +1514,7 @@ button:focus-visible {
    pointer-events: none !important;
 }
 
-/* Мобильная главная: без горизонтального скролла и hero */
+/* Мобильная главная: без горизонтального скролла, hero — шире блок, приличные отступы */
 @media (max-width: 768px) {
    .kro-main {
       overflow-x: hidden;
@@ -1527,17 +1527,30 @@ button:focus-visible {
       width: 100%;
    }
    .kro-step1 {
-      padding: 56px 20px 56px;
-      padding-left: max(20px, env(safe-area-inset-left));
-      padding-right: max(20px, env(safe-area-inset-right));
+      padding: 48px 24px 48px;
+      padding-left: max(24px, env(safe-area-inset-left));
+      padding-right: max(24px, env(safe-area-inset-right));
    }
    .kro-step1-inner {
-      padding: 0 16px;
+      padding: 40px 28px 48px;
       min-width: 0;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
    }
    .kro-step1-title {
       overflow-wrap: break-word;
       word-break: break-word;
+      margin-bottom: 24px;
+   }
+   .kro-step1-subtitle {
+      margin-bottom: 32px;
+   }
+   .kro-step1-tags {
+      margin-bottom: 28px;
+   }
+   .kro-step1-right {
+      gap: 20px;
    }
    .kro-step1-cta {
       max-width: 100%;
@@ -1546,6 +1559,13 @@ button:focus-visible {
 }
 
 @media (max-width: 480px) {
+   .kro-step1 {
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
+   }
+   .kro-step1-inner {
+      padding: 36px 24px 44px;
+   }
    .kro-step1-tags {
       gap: 8px;
    }
