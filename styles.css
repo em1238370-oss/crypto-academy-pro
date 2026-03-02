@@ -65,6 +65,8 @@ button:focus-visible {
    position: relative;
    z-index: 1;
    overflow: hidden;
+   background: radial-gradient(ellipse 70% 50% at 50% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+               linear-gradient(180deg, var(--kro-bg) 0%, rgba(15, 18, 24, 0.98) 100%);
 }
 
 .kro-step1-inner {
@@ -77,8 +79,8 @@ button:focus-visible {
    backdrop-filter: blur(12px);
    -webkit-backdrop-filter: blur(12px);
    border-radius: 16px;
-   border: 1px solid rgba(255, 255, 255, 0.06);
-   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+   border: 1px solid rgba(220, 225, 235, 0.06);
+   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .kro-step1-left {
@@ -100,6 +102,47 @@ button:focus-visible {
    line-height: 1.45;
    max-width: 240px;
    margin: 0;
+}
+
+/* Hero: каскадное появление при .kro-reveal-visible (stagger 0.12s) */
+.kro-step1.kro-reveal .kro-step1-title,
+.kro-step1.kro-reveal .kro-step1-subtitle,
+.kro-step1.kro-reveal .kro-step1-tags,
+.kro-step1.kro-reveal .kro-step1-cta,
+.kro-step1.kro-reveal .kro-step1-cta-note {
+   opacity: 0;
+   transform: translateY(20px);
+   transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kro-step1.kro-reveal-visible .kro-step1-title {
+   opacity: 1;
+   transform: translateY(0);
+   transition-delay: 0s;
+}
+
+.kro-step1.kro-reveal-visible .kro-step1-subtitle {
+   opacity: 1;
+   transform: translateY(0);
+   transition-delay: 0.12s;
+}
+
+.kro-step1.kro-reveal-visible .kro-step1-tags {
+   opacity: 1;
+   transform: translateY(0);
+   transition-delay: 0.24s;
+}
+
+.kro-step1.kro-reveal-visible .kro-step1-cta {
+   opacity: 1;
+   transform: translateY(0);
+   transition-delay: 0.36s;
+}
+
+.kro-step1.kro-reveal-visible .kro-step1-cta-note {
+   opacity: 1;
+   transform: translateY(0);
+   transition-delay: 0.48s;
 }
 
 @media (min-width: 900px) {
@@ -140,7 +183,7 @@ button:focus-visible {
    inset: 0;
    z-index: -1;
    background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
-               linear-gradient(180deg, var(--kro-bg) 0%, var(--kro-bg-mid) 45%, var(--kro-bg-soft) 100%);
+               linear-gradient(180deg, var(--kro-bg) 0%, rgba(18, 20, 28, 0.98) 45%, var(--kro-bg-soft) 100%);
 }
 
 .kro-step1-bg::after {
@@ -193,10 +236,12 @@ button:focus-visible {
    border: 1px solid rgba(255, 255, 255, 0.12);
    border-radius: 999px;
    background: transparent;
-   transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
 }
 
 .kro-tag:hover {
+   transform: translateY(-2px);
+   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
    border-color: rgba(255, 255, 255, 0.22);
    background: rgba(255, 255, 255, 0.04);
    color: rgba(255, 255, 255, 0.9);
