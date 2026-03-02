@@ -12,6 +12,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
+   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="styles.css">
    <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
@@ -496,23 +497,9 @@
                    }
                }
            }
-           function applyDailyStats(data) {
-               var el;
-               if ((el = document.getElementById('kro-12h-new'))) el.textContent = data.new_scams != null ? data.new_scams : '0';
-               if ((el = document.getElementById('kro-12h-losses'))) el.textContent = data.losses_12h != null ? formatFull(data.losses_12h) : '0';
-               if ((el = document.getElementById('kro-12h-victims'))) el.textContent = data.victims_12h != null ? data.victims_12h : '0';
-               var link = document.getElementById('kro-12h-report-link');
-               if (link && data.report_doc_url) {
-                   link.href = data.report_doc_url;
-                   link.classList.remove('hidden');
-               } else if (link) {
-                   link.classList.add('hidden');
-               }
-           }
            function fetchLiveCounter() {
                if (!document.querySelector('.kro-feature1')) return;
                fetch(base + '/api/kro/live-counter').then(function(r) { return r.json(); }).then(applyData).catch(function() {});
-               fetch(base + '/api/kro/daily-stats').then(function(r) { return r.json(); }).then(applyDailyStats).catch(function() {});
            }
            if (document.readyState === 'loading') {
                document.addEventListener('DOMContentLoaded', fetchLiveCounter);
@@ -718,6 +705,11 @@
                });
            }, { rootMargin: '0px 0px -8% 0px', threshold: 0.1 });
            function initReveal() {
+               var hero = document.getElementById('hero');
+               if (hero) {
+                   hero.classList.add('kro-reveal-visible');
+                   requestAnimationFrame(function() { hero.classList.add('kro-hero-loaded'); });
+               }
                document.querySelectorAll('.kro-reveal').forEach(function(el) { observer.observe(el); });
            }
            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initReveal);
