@@ -1,0 +1,14 @@
+{
+  "new_scams": 0,
+  "losses_12h": 0,
+  "victims_12h": 0,
+  "top3": [],
+  "report_doc_url": null,
+  "lastReportNumber": 19,
+  "updatedAt": "2026-03-01T21:20:36Z",
+  "sources": [
+    "TGStat search",
+    "Telega.io catalog",
+    "Telegram complaints 12h"
+  ]
+}

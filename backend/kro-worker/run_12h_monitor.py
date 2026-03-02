@@ -32,7 +32,6 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0
 REQUEST_DELAY = 3
 HOURS_12 = 12
 DAYS_7 = 7
-MSK_TZ = timezone(timedelta(hours=3))
 
 def _load_env():
     for base in (SCRIPT_DIR, os.path.normpath(os.path.join(SCRIPT_DIR, '..', '..'))):
@@ -295,6 +294,48 @@ def build_top3(complaints_list, channel_sum_pairs):
 # --- Единый Google Doc «Источники и данные» (вся информация для вас) ---
 SOURCES_DOC_TITLE = 'KRO: источники данных и ссылки'
 
+def _msk_now():
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo('Europe/Moscow'))
+    except ImportError:
+        return datetime.now(timezone.utc) + timedelta(hours=3)
+
+def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, complaints_rows,
+                           new_scams_count, total_losses_12h, telegram_channels_count,
+                           courses, top3, report_url=None):
+    lines = [
+        '# СКАМ-МОНИТОРИНГ КРИПТО | АВТООТЧЁТ', '',
+        '%s → ТВОЯ ПРОВЕРКА (15 мин)' % collect_time_msk, '',
+        '——— ГОТОВЫЕ ЦИФРЫ ДЛЯ САЙТА ———', '',
+        'Новых скам-каналов | %s' % new_scams_count,
+        'Потери за 12 ч | %s ₽' % total_losses_12h,
+        'Telegram каналов | %s' % telegram_channels_count,
+        'Курсов/продуктов | %s' % courses, '', 'ТОП-3 СЕГОДНЯ:', ''
+    ]
+    for i, t in enumerate((top3 or [])[:3], 1):
+        ch = t.get('channel') or t.get('name') or '—'
+        losses = t.get('losses') or t.get('sum') or 0
+        complaints = t.get('complaints', 0)
+        lines.append('  %s. %s — %s ₽, жалоб: %s' % (i, ch, losses, complaints))
+    if not (top3 or []):
+        lines.append('  (нет данных)')
+    lines.extend(['', '——— SOURCE & DATA ———', ''])
+    lines.append('TGStat → %s' % collect_time_msk)
+    for row in (new_tgstat or [])[:25]:
+        ch, date = row.get('channel', '—'), row.get('date', '—')
+        link = row.get('link', 'https://t.me/' + str(ch).lstrip('@'))
+        lines.append('  ✓ %s | %s | %s' % (date, ch, link))
+    lines.extend(['', 'Telega → %s' % collect_time_msk])
+    for row in (telega_channels or [])[:25]:
+        lines.append('  ✓ %s | %s' % (row.get('channel', '—'), row.get('link', '—')))
+    lines.extend(['', 'ЖАЛОБЫ:'])
+    for row in (complaints_rows or [])[:30]:
+        lines.append('  %s — жалоб: %s, потери: %s ₽' % (row.get('channel', '—'), row.get('complaints', 0), row.get('losses', 0)))
+    lines.extend(['', '——— ЧЕКЛИСТ ———', 'Время сбора: %s' % collect_time_msk, 'Статус: ЖДУ ТВОЕГО ✅ / ❌', ''])
+    lines.append(report_url or '(отчёт после 11:00 или 23:00 MSK)')
+    return '\n'.join(lines)
+
 def _get_sources_doc_text(report_title=None, report_url=None):
     """Текст для документа «Источники и данные» — откуда цифры и все ссылки."""
     lines = [
@@ -334,11 +375,8 @@ def _get_sources_doc_text(report_title=None, report_url=None):
     return '\n'.join(lines)
 
 
-def update_sources_google_doc(doc_id, report_title=None, report_url=None):
-    """
-    Обновляет единый Google Doc «Источники и данные»: подставляет текст с источниками и ссылками
-    и ссылку на последний автоотчёт. Нужен KRO_SOURCES_DOC_ID в env (ID из URL документа).
-    """
+def update_sources_google_doc(doc_id, doc_text):
+    """Пишет в документ «Источники и данные» готовый текст doc_text."""
     if not (doc_id and doc_id.strip()):
         return None
     doc_id = doc_id.strip()
@@ -387,7 +425,7 @@ def update_sources_google_doc(doc_id, report_title=None, report_url=None):
     except Exception as e:
         print('Google Docs (sources) build: %s' % e, file=sys.stderr)
         return None
-    text = _get_sources_doc_text(report_title, report_url)
+    text = doc_text
     try:
         doc = service.documents().get(documentId=doc_id).execute()
         body = doc.get('body', {})
@@ -399,9 +437,11 @@ def update_sources_google_doc(doc_id, report_title=None, report_url=None):
             end_index = 2
         requests = []
         if end_index > 2:
+            # API не позволяет удалять диапазон, включающий \n в конце сегмента — удаляем до последнего символа
+            end_delete = max(2, end_index - 1)
             requests.append({
                 'deleteContentRange': {
-                    'range': {'startIndex': 1, 'endIndex': end_index}
+                    'range': {'startIndex': 1, 'endIndex': end_delete}
                 }
             })
         requests.append({
@@ -579,15 +619,18 @@ def main():
         report_number
     )
 
-    # 5b) Обновить единый Google Doc «Источники и данные»
+    # 5b) Обновить документ «Источники и данные» — текст собираем здесь
     sources_doc_id = os.environ.get('KRO_SOURCES_DOC_ID', '').strip()
     if sources_doc_id:
         print('Обновляю Google Doc «Источники и данные»...', flush=True)
-        url = update_sources_google_doc(
-            sources_doc_id,
-            report_title=title if report_doc_url else None,
-            report_url=report_doc_url
+        now_msk_dt = _msk_now()
+        collect_time_msk = now_msk_dt.strftime('%d %B %H:%M MSK').replace('February', 'февраля').replace('March', 'марта').replace('January', 'января')
+        doc_text = build_sources_doc_text(
+            collect_time_msk, new_tgstat, telega_channels, complaints_rows,
+            new_scams_count, total_losses_12h, len(complaints_rows), 0, top3,
+            report_doc_url
         )
+        url = update_sources_google_doc(sources_doc_id, doc_text)
         if url:
             print('Готово. Документ: %s' % url, flush=True)
         else:

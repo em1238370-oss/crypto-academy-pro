@@ -87,11 +87,47 @@ def check_channel(message):
 
 @bot.message_handler(commands=["report"])
 def report_cmd(message):
-    bot.reply_to(
-        message,
-        "Жалобу можно отправить через сайт (форма «Сообщить о разводе»). "
-        "Укажи канал и сумму потерь — мы добавим в базу.",
-    )
+    text = (message.text or "").strip()
+    parts = text.split(maxsplit=2)
+    if len(parts) < 3:
+        bot.reply_to(
+            message,
+            "Укажи канал и сумму: /report @username 50000\nПример: /report @ScamChannel 47к",
+        )
+        return
+    channel = normalize_channel(parts[1])
+    sum_rub = parse_sum_rub(parts[2])
+    if not channel:
+        bot.reply_to(message, "Укажи канал в виде @username.")
+        return
+    if sum_rub is None or sum_rub < 0:
+        bot.reply_to(
+            message,
+            "Укажи сумму потерь числом или 47к / 1.2млн. Пример: /report @channel 47к",
+        )
+        return
+    try:
+        r = requests.post(
+            f"{KRO_API_URL}/api/kro/report-scam",
+            json={"channel": channel, "sumRub": sum_rub},
+            timeout=10,
+        )
+        data = r.json() if r.ok else {}
+    except Exception as e:
+        bot.reply_to(message, f"Ошибка отправки: {e}")
+        return
+    if not r.ok:
+        err = data.get("error", "unknown")
+        if err == "live_counter_not_configured":
+            bot.reply_to(message, "Сервис пока не настроен.")
+        else:
+            bot.reply_to(message, "Не удалось добавить жалобу. Попробуй позже.")
+        return
+    msg = f"Жалоба записана: {channel}, {sum_rub} ₽."
+    complaints = data.get("complaints")
+    if complaints is not None and complaints >= 2:
+        msg += "\nПо этому каналу 2+ жалоб — помечен как скам."
+    bot.reply_to(message, msg)
 
 
 @bot.message_handler(commands=["start", "help"])
