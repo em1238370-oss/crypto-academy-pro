@@ -1518,8 +1518,16 @@ button:focus-visible {
    pointer-events: none !important;
 }
 
-/* Мобильная главная: без горизонтального скролла, hero — шире блок, приличные отступы */
+/* Мобильная главная: без горизонтального скролла, hero — шире блок, приличные отступы; прокрутка вниз не блокируется */
 @media (max-width: 768px) {
+   html,
+   body.kro-main {
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: none;
+      overscroll-behavior-y: auto;
+   }
    .kro-main {
       overflow-x: hidden;
       max-width: 100%;
@@ -1527,10 +1535,14 @@ button:focus-visible {
    .kro-main .page,
    .kro-main .content {
       overflow-x: hidden;
+      overflow-y: visible;
       max-width: 100%;
       width: 100%;
+      touch-action: pan-y;
    }
    .kro-step1 {
+      min-height: 92vh;
+      overflow: visible;
       padding: 48px 24px 48px;
       padding-left: max(24px, env(safe-area-inset-left));
       padding-right: max(24px, env(safe-area-inset-right));
@@ -2807,7 +2819,8 @@ html {
 @media (max-width: 600px) {
    html, body {
        overflow-x: hidden !important;
-       overscroll-behavior: none;
+       overscroll-behavior-x: none;
+       overscroll-behavior-y: auto;
    }
    .main-nav-links {
        display: none;
@@ -3613,7 +3626,8 @@ html {
 @media (max-width: 480px) {
    html, body {
        overflow-x: hidden !important;
-       overscroll-behavior: none;
+       overscroll-behavior-x: none;
+       overscroll-behavior-y: auto;
    }
    .chat-container {
        width: calc(100vw - 40px);
