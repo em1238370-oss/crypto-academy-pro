@@ -104,6 +104,10 @@ button:focus-visible {
    margin: 0;
 }
 
+.kro-cta-note-mobile {
+   display: none;
+}
+
 /* Hero: каскадное появление при .kro-reveal-visible (stagger 0.12s) */
 .kro-step1.kro-reveal .kro-step1-title,
 .kro-step1.kro-reveal .kro-step1-subtitle,
@@ -1537,6 +1541,11 @@ button:focus-visible {
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
+      align-items: center;
+   }
+   .kro-step1-left {
+      text-align: center;
+      margin-bottom: 36px;
    }
    .kro-step1-title {
       overflow-wrap: break-word;
@@ -1547,10 +1556,24 @@ button:focus-visible {
       margin-bottom: 32px;
    }
    .kro-step1-tags {
-      margin-bottom: 28px;
+      justify-content: center;
+      margin-bottom: 32px;
    }
    .kro-step1-right {
-      gap: 20px;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+   }
+   .kro-step1-cta-note {
+      max-width: 280px;
+      margin-left: auto;
+      margin-right: auto;
+   }
+   .kro-cta-note-desktop {
+      display: none;
+   }
+   .kro-cta-note-mobile {
+      display: inline;
    }
    .kro-step1-cta {
       max-width: 100%;
