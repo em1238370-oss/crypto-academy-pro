@@ -75,7 +75,7 @@ button:focus-visible {
 }
 
 .kro-step1-cta-note {
-   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    font-size: 12px;
    color: rgba(255, 255, 255, 0.45);
    line-height: 1.45;
@@ -128,8 +128,8 @@ button:focus-visible {
    content: '';
    position: absolute;
    inset: 0;
-   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.03) 1px, transparent 0);
-   background-size: 32px 32px;
+   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.018) 1px, transparent 0);
+   background-size: 40px 40px;
    pointer-events: none;
 }
 
@@ -144,7 +144,7 @@ button:focus-visible {
 }
 
 .kro-step1-subtitle {
-   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    font-size: clamp(15px, 2vw, 18px);
    color: rgba(255, 255, 255, 0.7);
    line-height: 1.55;
@@ -163,7 +163,7 @@ button:focus-visible {
 }
 
 .kro-tag {
-   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    font-size: 11px;
    font-weight: 600;
    letter-spacing: 0.08em;
@@ -188,7 +188,7 @@ button:focus-visible {
    justify-content: center;
    gap: 8px;
    max-width: 280px;
-   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    font-size: clamp(13px, 1.5vw, 15px);
    font-weight: 600;
    letter-spacing: 0.04em;
@@ -224,11 +224,36 @@ button:focus-visible {
    outline-offset: 3px;
 }
 
-/* Scroll reveal (medvedevart: 0.5–0.8s, 20–40px, ease-out) */
+/* Hero: каскадное появление только первой страницы при загрузке */
+.kro-step1 .kro-step1-title,
+.kro-step1 .kro-step1-subtitle,
+.kro-step1 .kro-step1-tags,
+.kro-step1 .kro-step1-right {
+   opacity: 0;
+   transform: translateY(24px);
+   transition: opacity 0.55s ease-out, transform 0.55s ease-out;
+}
+.kro-step1.kro-hero-loaded .kro-step1-title { opacity: 1; transform: translateY(0); transition-delay: 0s; }
+.kro-step1.kro-hero-loaded .kro-step1-subtitle { opacity: 1; transform: translateY(0); transition-delay: 0.15s; }
+.kro-step1.kro-hero-loaded .kro-step1-tags { opacity: 1; transform: translateY(0); transition-delay: 0.3s; }
+.kro-step1.kro-hero-loaded .kro-step1-right { opacity: 1; transform: translateY(0); transition-delay: 0.45s; }
+
+@media (prefers-reduced-motion: reduce) {
+   .kro-step1 .kro-step1-title,
+   .kro-step1 .kro-step1-subtitle,
+   .kro-step1 .kro-step1-tags,
+   .kro-step1 .kro-step1-right {
+      opacity: 1;
+      transform: none;
+      transition: none;
+   }
+}
+
+/* Scroll reveal (остальные секции; hero не зависит) */
 .kro-reveal {
    opacity: 0;
-   transform: translateY(32px);
-   transition: opacity 0.65s ease-out, transform 0.65s ease-out;
+   transform: translateY(24px);
+   transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
 .kro-reveal.kro-reveal-visible {
@@ -336,8 +361,8 @@ button:focus-visible {
 }
 
 .kro-feature1.kro-reveal-visible .kro-feature1-stat:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0s; }
-.kro-feature1.kro-reveal-visible .kro-feature1-stat:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
-.kro-feature1.kro-reveal-visible .kro-feature1-stat:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
+.kro-feature1.kro-reveal-visible .kro-feature1-stat:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.06s; }
+.kro-feature1.kro-reveal-visible .kro-feature1-stat:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.12s; }
 
 /* Блок «Стоп перед подпиской» — появление каскадом вниз (как чай), по референсу DuoView */
 .kro-feature1.kro-reveal .kro-f1-block {
