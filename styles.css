@@ -77,10 +77,15 @@ button:focus-visible {
 .kro-step1-cta-note {
    font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    font-size: 12px;
-   color: rgba(255, 255, 255, 0.45);
+   font-style: italic;
+   color: rgba(255, 255, 255, 0.5);
    line-height: 1.45;
    max-width: 240px;
    margin: 0;
+   transition: opacity 0.4s ease-out, color 0.3s ease;
+}
+.kro-step1.kro-hero-loaded .kro-step1-cta-note {
+   color: rgba(255, 255, 255, 0.55);
 }
 
 @media (min-width: 900px) {
@@ -133,6 +138,12 @@ button:focus-visible {
    pointer-events: none;
 }
 
+/* Hero: лёгкое свечение заголовка один раз после появления (по анализу medvedevart) */
+@keyframes kro-hero-title-glow {
+   0%, 100% { text-shadow: 0 0 0 rgba(245, 158, 11, 0); }
+   50% { text-shadow: 0 0 32px rgba(245, 158, 11, 0.15), 0 0 60px rgba(245, 158, 11, 0.06); }
+}
+
 .kro-step1-title {
    font-family: 'Raleway', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    font-size: clamp(42px, 10vw, 72px);
@@ -141,16 +152,46 @@ button:focus-visible {
    line-height: 1.08;
    letter-spacing: -0.02em;
    margin-bottom: 20px;
+   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.kro-step1.kro-hero-loaded .kro-step1-title {
+   animation: kro-hero-title-glow 1.2s ease-out 0.15s both;
+}
+/* Тонкая акцентная линия под заголовком — тема разоблачения, премиум без декора */
+.kro-step1-title {
+   position: relative;
+}
+.kro-step1-title::after {
+   content: '';
+   display: block;
+   width: 60px;
+   height: 3px;
+   margin-top: 16px;
+   background: linear-gradient(90deg, var(--kro-accent), transparent);
+   border-radius: 2px;
+   opacity: 0;
+   transform: scaleX(0);
+   transform-origin: left;
+   transition: opacity 0.6s ease-out 0.5s, transform 0.6s ease-out 0.5s;
+}
+.kro-step1.kro-hero-loaded .kro-step1-title::after {
+   opacity: 0.85;
+   transform: scaleX(1);
 }
 
 .kro-step1-subtitle {
    font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    font-size: clamp(15px, 2vw, 18px);
-   color: rgba(255, 255, 255, 0.7);
+   color: rgba(255, 255, 255, 0.72);
    line-height: 1.55;
    letter-spacing: 0.02em;
    max-width: 480px;
    margin: 0 auto 28px;
+   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+   transition: color 0.4s ease-out;
+}
+.kro-step1.kro-hero-loaded .kro-step1-subtitle {
+   color: rgba(255, 255, 255, 0.85);
 }
 
 .kro-step1-tags {
@@ -161,6 +202,17 @@ button:focus-visible {
    margin-bottom: 0;
    max-width: 520px;
 }
+
+/* Hero: теги по одному каскадом (stagger 0.1–0.15 s по анализу) */
+.kro-step1 .kro-tag {
+   opacity: 0;
+   transform: translateY(10px);
+   transition: opacity 0.4s ease-out, transform 0.4s ease-out, border-color 0.25s ease, background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+.kro-step1.kro-hero-loaded .kro-tag:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0.35s; }
+.kro-step1.kro-hero-loaded .kro-tag:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.42s; }
+.kro-step1.kro-hero-loaded .kro-tag:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.49s; }
+.kro-step1.kro-hero-loaded .kro-tag:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.56s; }
 
 .kro-tag {
    font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -173,9 +225,17 @@ button:focus-visible {
    border: 1px solid rgba(255, 255, 255, 0.25);
    border-radius: 999px;
    background: transparent;
-   transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+   transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
 }
 
+/* Hero: яркий hover на тегах — янтарный акцент, тема разоблачения */
+.kro-step1 .kro-tag:hover {
+   border-color: rgba(245, 158, 11, 0.55);
+   background: rgba(245, 158, 11, 0.08);
+   color: rgba(255, 248, 240, 0.98);
+   transform: translateY(-2px);
+   box-shadow: 0 4px 16px rgba(245, 158, 11, 0.12);
+}
 .kro-tag:hover {
    border-color: rgba(255, 255, 255, 0.45);
    background: rgba(255, 255, 255, 0.05);
@@ -199,9 +259,10 @@ button:focus-visible {
    border: 1px solid rgba(245, 158, 11, 0.4);
    border-radius: 999px;
    text-decoration: none;
-   transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+   transition: border-color 0.25s ease, background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
    text-align: center;
    line-height: 1.35;
+   box-shadow: 0 0 0 rgba(245, 158, 11, 0);
 }
 
 .kro-step1-cta::before {
@@ -211,12 +272,18 @@ button:focus-visible {
    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f5c88c' stroke-width='2'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") no-repeat center;
    background-size: contain;
    flex-shrink: 0;
+   transition: transform 0.25s ease;
 }
 
 .kro-step1-cta:hover {
-   border-color: rgba(245, 158, 11, 0.6);
-   background-color: rgba(245, 158, 11, 0.14);
-   color: rgba(255, 240, 220, 0.98);
+   border-color: rgba(245, 158, 11, 0.7);
+   background-color: rgba(245, 158, 11, 0.18);
+   color: rgba(255, 248, 240, 0.98);
+   box-shadow: 0 0 24px rgba(245, 158, 11, 0.2), 0 4px 20px rgba(0, 0, 0, 0.25);
+   transform: translateY(-1px);
+}
+.kro-step1-cta:hover::before {
+   transform: translateX(3px);
 }
 
 .kro-step1-cta:focus-visible {
@@ -247,6 +314,14 @@ button:focus-visible {
       transform: none;
       transition: none;
    }
+   .kro-step1.kro-hero-loaded .kro-step1-title { animation: none; }
+   .kro-step1 .kro-tag {
+      opacity: 1;
+      transform: none;
+      transition-delay: 0s;
+   }
+   .kro-step1.kro-hero-loaded .kro-tag:nth-child(n) { transition-delay: 0s; }
+   .kro-step1-title::after { opacity: 0.85; transform: scaleX(1); transition: none; }
 }
 
 /* Scroll reveal (остальные секции; hero не зависит) */
@@ -1059,6 +1134,11 @@ button:focus-visible {
    .kro-step1-cta {
       max-width: 100%;
       width: 100%;
+      min-height: 48px;
+   }
+   .kro-step1-title::after {
+      width: 48px;
+      margin-top: 12px;
    }
 }
 
