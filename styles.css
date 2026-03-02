@@ -65,13 +65,57 @@ button:focus-visible {
    position: relative;
    z-index: 1;
    overflow: hidden;
+   background: radial-gradient(ellipse 80% 50% at 50% 40%, rgba(255, 193, 7, 0.05), transparent 55%);
+   animation: kroHeroBgPulse 8s ease-in-out infinite;
 }
+
+.kro-step1::before {
+   content: '';
+   position: absolute;
+   inset: 0;
+   background: radial-gradient(circle at 30% 30%, rgba(255, 193, 7, 0.04) 0%, transparent 40%),
+               radial-gradient(circle at 70% 70%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
+   animation: kroHeroOrbMove 12s ease-in-out infinite alternate;
+   pointer-events: none;
+   z-index: 0;
+}
+
+@keyframes kroHeroBgPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.92; } }
+@keyframes kroHeroOrbMove { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(2%, -1%) scale(1.05); } }
 
 .kro-step1-inner {
    width: 100%;
    max-width: 1000px;
    margin: 0 auto;
+   position: relative;
+   padding: 40px 28px 48px;
+   background: rgba(0, 0, 0, 0.3);
+   backdrop-filter: blur(16px);
+   -webkit-backdrop-filter: blur(16px);
+   border-radius: 24px;
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 191, 0, 0.1), 0 0 40px rgba(255, 191, 0, 0.05);
+   animation: kroHeroInnerGlow 5s ease-in-out infinite;
 }
+
+.kro-step1-inner::before {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: 20%;
+   right: 20%;
+   height: 1px;
+   background: linear-gradient(90deg, transparent, rgba(255, 193, 7, 0.5), transparent);
+   border-radius: 2px;
+   animation: kroHeroShineLine 3s ease-in-out infinite;
+}
+
+@keyframes kroHeroInnerGlow {
+   0%, 100% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 191, 0, 0.1), 0 0 40px rgba(255, 191, 0, 0.05); }
+   50% { box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 191, 0, 0.18), 0 0 56px rgba(255, 191, 0, 0.1); }
+}
+
+@keyframes kroHeroShineLine { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
 .kro-step1-left {
    margin-bottom: 40px;
@@ -145,23 +189,39 @@ button:focus-visible {
 }
 
 .kro-step1-title {
-   font-family: 'Raleway', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   font-family: 'Syne', 'Raleway', 'Inter', sans-serif;
    font-size: clamp(42px, 10vw, 72px);
-   font-weight: 700;
-   color: rgba(255, 255, 255, 0.98);
+   font-weight: 800;
    line-height: 1.08;
    letter-spacing: -0.02em;
    margin-bottom: 20px;
+   background: linear-gradient(135deg, #fff 0%, rgba(255, 230, 150, 0.95) 35%, #ffc107 70%, rgba(255, 200, 100, 0.9) 100%);
+   background-size: 200% auto;
+   -webkit-background-clip: text;
+   background-clip: text;
+   -webkit-text-fill-color: transparent;
+   color: #fff;
+   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5))
+           drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35))
+           drop-shadow(0 0 20px rgba(255, 191, 0, 0.35))
+           drop-shadow(0 0 40px rgba(255, 193, 7, 0.2));
+   animation: kroTitleGlow 4s ease-in-out 1s infinite;
+}
+
+@keyframes kroTitleGlow {
+   0%, 100% { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)) drop-shadow(0 4px 12px rgba(0,0,0,0.35)) drop-shadow(0 0 20px rgba(255,191,0,0.35)) drop-shadow(0 0 40px rgba(255,193,7,0.2)); }
+   50% { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)) drop-shadow(0 4px 12px rgba(0,0,0,0.35)) drop-shadow(0 0 28px rgba(255,191,0,0.5)) drop-shadow(0 0 56px rgba(255,193,7,0.35)); }
 }
 
 .kro-step1-subtitle {
    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    font-size: clamp(15px, 2vw, 18px);
-   color: rgba(255, 255, 255, 0.7);
+   color: rgba(255, 255, 255, 0.85);
    line-height: 1.55;
    letter-spacing: 0.02em;
    max-width: 480px;
    margin: 0 auto 28px;
+   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 16px rgba(255, 191, 0, 0.2);
 }
 
 .kro-step1-tags {
@@ -181,16 +241,35 @@ button:focus-visible {
    text-transform: uppercase;
    color: rgba(255, 255, 255, 0.85);
    padding: 8px 16px;
+   position: relative;
+   overflow: hidden;
    border: 1px solid rgba(255, 255, 255, 0.25);
    border-radius: 999px;
    background: transparent;
-   transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease, color 0.3s ease;
+}
+
+.kro-tag::after {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: -100%;
+   width: 60%;
+   height: 100%;
+   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+   transition: left 0.5s ease;
 }
 
 .kro-tag:hover {
-   border-color: rgba(255, 255, 255, 0.45);
-   background: rgba(255, 255, 255, 0.05);
+   transform: translateY(-3px);
+   box-shadow: 0 8px 24px rgba(255, 193, 7, 0.25), 0 0 20px rgba(255, 191, 0, 0.12);
+   border-color: rgba(255, 191, 0, 0.5);
+   background: rgba(255, 193, 7, 0.12);
    color: rgba(255, 255, 255, 0.98);
+}
+
+.kro-tag:hover::after {
+   left: 100%;
 }
 
 .kro-step1-cta {
