@@ -211,22 +211,24 @@ button:focus-visible {
 }
 
 .kro-step1-title {
-   font-family: 'Syne', 'Raleway', 'Inter', sans-serif;
-   font-size: clamp(42px, 10vw, 72px);
-   font-weight: 800;
-   line-height: 1.08;
-   letter-spacing: -0.04em;
+   font-family: 'Oswald', 'Syne', sans-serif;
+   font-size: clamp(42px, 10vw, 76px);
+   font-weight: 700;
+   line-height: 1.05;
+   letter-spacing: 0.02em;
    margin-bottom: 20px;
    color: rgba(255, 255, 255, 0.96);
    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+   text-transform: uppercase;
 }
 
 .kro-step1-subtitle {
    font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    font-size: clamp(15px, 2vw, 18px);
-   color: rgba(255, 255, 255, 0.6);
-   line-height: 1.55;
-   letter-spacing: 0.01em;
+   font-weight: 500;
+   color: rgba(255, 255, 255, 0.65);
+   line-height: 1.5;
+   letter-spacing: 0.02em;
    max-width: 480px;
    margin: 0 auto 28px;
 }
@@ -241,10 +243,10 @@ button:focus-visible {
 }
 
 .kro-tag {
-   font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-   font-size: 11px;
+   font-family: 'Oswald', 'Manrope', sans-serif;
+   font-size: 12px;
    font-weight: 600;
-   letter-spacing: 0.08em;
+   letter-spacing: 0.12em;
    text-transform: uppercase;
    color: rgba(255, 255, 255, 0.7);
    padding: 8px 16px;
