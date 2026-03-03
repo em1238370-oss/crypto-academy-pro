@@ -1573,17 +1573,32 @@ button:focus-visible {
       margin-bottom: 40px;
    }
    .kro-step1-title {
+      font-family: 'Syne', 'Raleway', 'Inter', sans-serif;
+      font-weight: 800;
+      font-size: clamp(42px, 10vw, 72px);
+      line-height: 1.08;
+      letter-spacing: -0.04em;
+      text-transform: none;
       overflow-wrap: break-word;
       word-break: break-word;
       margin-bottom: 28px;
    }
    .kro-step1-subtitle {
+      font-family: 'Manrope', 'Inter', sans-serif;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      color: rgba(255, 255, 255, 0.6);
       margin-bottom: 36px;
    }
    .kro-step1-tags {
       justify-content: center;
       margin-bottom: 36px;
       gap: 12px;
+   }
+   .kro-tag {
+      font-family: 'Manrope', 'Inter', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.08em;
    }
    .kro-step1-right {
       align-items: center;
