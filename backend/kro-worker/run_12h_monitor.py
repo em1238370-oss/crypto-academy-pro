@@ -121,16 +121,16 @@ def fetch_tgstat_new_channels():
     cutoff_14d = now - timedelta(days=DAYS_14)
     for query in ('крипто сигналы', 'сигналы криптовалюта'):
         items = search_channels(query, country='ru', limit=80)
-        for x in items:
-            created_at = x.get('created_at')
-            if created_at is None:
-                continue
-            try:
-                created_dt = datetime.fromtimestamp(created_at, tz=timezone.utc)
+    for x in items:
+        created_at = x.get('created_at')
+        if created_at is None:
+            continue
+        try:
+            created_dt = datetime.fromtimestamp(created_at, tz=timezone.utc)
                 if created_dt < cutoff_14d:
-                    continue
-            except (TypeError, OSError):
                 continue
+        except (TypeError, OSError):
+            continue
             ch = (x.get('username') or x.get('link') or '').strip() or ('@' + (x.get('link') or '').replace('https://t.me/', ''))
             key = ch.lower().replace('@', '')
             if key in seen:
@@ -139,14 +139,14 @@ def fetch_tgstat_new_channels():
             if not _is_crypto_signal_channel(title, ch):
                 continue
             seen.add(key)
-            out.append({
+        out.append({
                 'channel': ch or '—',
                 'title': title or '—',
-                'date': datetime.fromtimestamp(created_at, tz=timezone.utc).strftime('%d.%m.%Y'),
-                'growth': x.get('participants_count'),
-                'vip': '—',
+            'date': datetime.fromtimestamp(created_at, tz=timezone.utc).strftime('%d.%m.%Y'),
+            'growth': x.get('participants_count'),
+            'vip': '—',
                 'link': x.get('link') or ('https://t.me/' + (ch or '').lstrip('@')),
-            })
+        })
     out.sort(key=lambda r: r.get('date', ''), reverse=True)
     return out[:50]
 
@@ -295,29 +295,29 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
             by_channel = defaultdict(lambda: {'complaints': 0, 'sums': [], 'messages': 0})
             victims_12h = 0
             channel_sum_pairs = []
-            for ch in KRO_SOURCE_CHANNELS:
-                try:
-                    entity = await get_entity(ch)
-                    if not entity:
+        for ch in KRO_SOURCE_CHANNELS:
+            try:
+                entity = await get_entity(ch)
+                if not entity:
+                    continue
+                async for msg in client.iter_messages(entity, limit=150):
+                    if not msg or not msg.date:
                         continue
-                    async for msg in client.iter_messages(entity, limit=150):
-                        if not msg or not msg.date:
-                            continue
-                        md = msg.date.replace(tzinfo=timezone.utc) if getattr(msg.date, 'tzinfo', None) is None else msg.date
-                        if md < since:
-                            break
-                        victims_12h += 1
-                        text = (msg.text or '') + (getattr(msg, 'message', '') or '')
-                        sums = _extract_sums(text)
-                        channels_mentioned = _extract_channels_from_text(text)
-                        for c in channels_mentioned:
-                            by_channel[c]['complaints'] += 1
-                            by_channel[c]['messages'] += 1
-                            if sums:
-                                by_channel[c]['sums'].extend(sums)
-                                channel_sum_pairs.append((c, max(sums)))
-                except Exception as e:
-                    print('Telegram %s: %s' % (ch, e), file=sys.stderr)
+                    md = msg.date.replace(tzinfo=timezone.utc) if getattr(msg.date, 'tzinfo', None) is None else msg.date
+                    if md < since:
+                        break
+                    victims_12h += 1
+                    text = (msg.text or '') + (getattr(msg, 'message', '') or '')
+                    sums = _extract_sums(text)
+                    channels_mentioned = _extract_channels_from_text(text)
+                    for c in channels_mentioned:
+                        by_channel[c]['complaints'] += 1
+                        by_channel[c]['messages'] += 1
+                        if sums:
+                            by_channel[c]['sums'].extend(sums)
+                            channel_sum_pairs.append((c, max(sums)))
+            except Exception as e:
+                print('Telegram %s: %s' % (ch, e), file=sys.stderr)
                 await asyncio.sleep(1)
             tg_data = {'by_channel': dict(by_channel), 'victims_12h': victims_12h, 'channel_sum_pairs': channel_sum_pairs}
 
@@ -874,7 +874,9 @@ def _get_table_cell_ranges(body, table_el):
                         if pe.get('startIndex') is not None:
                             if si is None:
                                 si = pe['startIndex']
-                            ei = pe.get('endIndex', pe['startIndex'] + 1)
+                            ei = pe.get('endIndex') or (pe['startIndex'] + 1)
+                if ei is None and si is not None:
+                    ei = si + 1
             if si is not None and ei is not None:
                 out.append((ri, ci, si, ei))
     ncols = len(rows[0].get('tableCells', [])) if rows else 0
@@ -894,32 +896,36 @@ def _discover_tables_in_doc(doc):
 
 
 def _fill_existing_tables(service, doc_id, data):
-    """Заполнить уже созданные в документе таблицы. Первую строку (заголовки) не трогаем — как в документе; заполняем только строки с данными. Таблицы по числу колонок: 7, 4, 8."""
+    """Заполнить уже созданные в документе таблицы. Первую строку (заголовки) не трогаем. Берём последние по порядку таблицы с 6–7, 4–5, 7–9 колонками (объекты, жалобы, риски)."""
     risk_rows = data.get('risk_rows') or []
     complaints_rows = data.get('complaints_rows') or []
     doc = service.documents().get(documentId=doc_id).execute()
     tables = _discover_tables_in_doc(doc)
+    if not tables:
+        return False
+    # Последние таблицы в документе (те, что пользователь вставил в конец) — по числу колонок
     by_cols = {}
     for t in tables:
         c = t['cols']
-        if c not in by_cols:
-            by_cols[c] = t
-    t7 = by_cols.get(7)
-    t4 = by_cols.get(4)
-    t8 = by_cols.get(8)
+        by_cols[c] = t  # перезаписываем — остаётся последняя таблица с таким числом колонок
+    t7 = by_cols.get(7) or by_cols.get(6)
+    t4 = by_cols.get(4) or by_cols.get(5)
+    t8 = by_cols.get(8) or by_cols.get(9)
     if not t7 and not t4 and not t8:
         return False
     replacements = []  # (si, ei, text). Заполняем только строки ri >= 1 (данные), строку 0 (заголовки) оставляем как в документе
 
     if t7 and t7['cells']:
+        ncols7 = min(t7['cols'], 7)
         data_rows = []
         for r in risk_rows:
-            data_rows.append([r['obj'], r['type'], r['source'], r['age'], r['vip'], r['growth'], r['status']])
+            row = [r['obj'], r['type'], r['source'], r['age'], r['vip'], r['growth'], r['status']]
+            data_rows.append(row[:ncols7])
         if not risk_rows:
-            data_rows.append(['(нет данных)', '—', '—', '—', '—', '—', '—'])
+            data_rows.append(['(нет данных)', '—', '—', '—', '—', '—', '—'][:ncols7])
         cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t7['cells']}
         for ri in range(len(data_rows)):
-            for ci in range(7):
+            for ci in range(ncols7):
                 r_idx = ri + 1
                 if (r_idx, ci) not in cells_by_rc:
                     continue
@@ -929,33 +935,36 @@ def _fill_existing_tables(service, doc_id, data):
         def _fmt_k(val):
             v = int(val or 0)
             return '%sк₽' % (v // 1000) if v >= 1000 else '%s ₽' % v
+        ncols4 = min(t4['cols'], 4)
         data_rows = []
         for ri, row in enumerate(complaints_rows):
             n = row.get('complaints', 0) or 0
             links = (row.get('message_links') or '').strip() or ', '.join('t.me/.../%s' % (100 + ri * 100 + i) for i in range(max(1, min(n, 4))))
             if n > 4:
                 links += ', ...'
-            data_rows.append([str(row.get('channel', '—')), str(n), _fmt_k(row.get('losses')), links])
+            data_rows.append([str(row.get('channel', '—')), str(n), _fmt_k(row.get('losses')), links][:ncols4])
         if not complaints_rows:
-            data_rows.append(['(нет данных)', '—', '—', '—'])
+            data_rows.append(['(нет данных)', '—', '—', '—'][:ncols4])
         cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t4['cells']}
         for ri in range(len(data_rows)):
-            for ci in range(4):
+            for ci in range(ncols4):
                 r_idx = ri + 1
                 if (r_idx, ci) not in cells_by_rc:
                     continue
                 si, ei = cells_by_rc[(r_idx, ci)]
                 replacements.append((si, ei, str(data_rows[ri][ci])[:500]))
     if t8 and t8['cells']:
+        ncols8 = min(t8['cols'], 8)
         data_rows = []
         for r in risk_rows:
             ra = r.get('risk_analysis') or {}
-            data_rows.append([r['obj'], ra.get('basic_3_3', '—'), ra.get('agg', '—'), ra.get('kartinki', '—'), ra.get('psevdo', '—'), ra.get('tolko_profit', '—'), ra.get('vip_navyaz', '—'), ra.get('itog', '—')])
+            row = [r['obj'], ra.get('basic_3_3', '—'), ra.get('agg', '—'), ra.get('kartinki', '—'), ra.get('psevdo', '—'), ra.get('tolko_profit', '—'), ra.get('vip_navyaz', '—'), ra.get('itog', '—')]
+            data_rows.append(row[:ncols8])
         if not risk_rows:
-            data_rows.append(['(нет данных)', '—', '—', '—', '—', '—', '—', '—'])
+            data_rows.append(['(нет данных)', '—', '—', '—', '—', '—', '—', '—'][:ncols8])
         cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t8['cells']}
         for ri in range(len(data_rows)):
-            for ci in range(8):
+            for ci in range(ncols8):
                 r_idx = ri + 1
                 if (r_idx, ci) not in cells_by_rc:
                     continue
@@ -1377,7 +1386,10 @@ def update_sources_google_doc(doc_id, doc_text, structured_data=None):
     if structured_data:
         try:
             filled = _fill_existing_tables(service, doc_id, structured_data)
-            if not filled:
+            if filled:
+                print('Sources doc: заполнены существующие таблицы (объекты, жалобы, риски).', file=sys.stderr)
+            else:
+                print('Sources doc: таблицы 7/4/8 колонок не найдены — пересборка документа с нуля.', file=sys.stderr)
                 _build_sources_doc_with_tables(service, doc_id, structured_data)
             _apply_italic_to_times_in_doc(service, doc_id)
             url = 'https://docs.google.com/document/d/' + doc_id + '/edit'
@@ -1518,7 +1530,7 @@ def create_google_doc_report(title, new_channels_rows, complaints_rows, summary_
         if '403' in err_str and 'permission' in err_str.lower():
             print('Создание нового отчёта пропущено: у сервисного аккаунта нет прав на создание документов (403). Документ «Источники и данные» обновляется отдельно.', file=sys.stderr)
         else:
-            print('Google Doc create: %s' % e, file=sys.stderr)
+        print('Google Doc create: %s' % e, file=sys.stderr)
         return None, None
 
 
