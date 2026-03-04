@@ -2,7 +2,7 @@
 """
 KRO 12h auto-monitor: два цикла в день — 11:00 и 23:00 MSK. Собирает данные из TGStat search,
 Telega.io каталога и чатов Telegram; применяет критерии (возраст <14 дн., VIP>10к ₽, рост >500/сутки);
-пишет в JSON и лист; создаёт отчёт и документ SOURCE & DATA. К 11:55/23:55 документ готов на проверку;
+пишет в JSON и лист; создаёт отчёт и документ SOURCE & DATA. Документ обновляется автоматически (проверка «Готово/Не готово» не обязательна);
 Проверка до 12:00 / 00:00; в 12:00 (день) и 00:00 (12 ночи) данные отправляются на сайт (POST /api/kro/update).
 
 Источники: 1) TGStat channels/search (криптовалюта), 2) Telega.io catalog, 3) KRO_SOURCE_CHANNELS (жалобы за 12ч).
@@ -36,6 +36,12 @@ HOURS_12 = 12
 DAYS_14 = 14   # критерий: канал младше 14 дней
 VIP_MIN = 10000   # порог VIP/рекламы, ₽
 GROWTH_MIN = 500  # порог роста подписчиков/сутки
+
+# Итоговые правила для документа Source & Data (ТЗ раздел 8):
+# - Только реальные Telegram-каналы: ссылка t.me/... проверяется (get_entity); несуществующие не попадают в документ.
+# - Все основные данные (каналы, жалобы, причины риска) — в нативных таблицах Google Docs (Вставка → Таблица).
+# - Ничего не придумывать: нет данных — честно писать «нет»; только поведенческие риски — так и писать; источник не работает — предупреждать в блоке ограничений.
+# - Примеры и выдуманные имена каналов запрещены: в отчёте только настоящие объекты.
 
 def _load_env():
     for base in (SCRIPT_DIR, os.path.normpath(os.path.join(SCRIPT_DIR, '..', '..'))):
@@ -524,8 +530,35 @@ def _compute_behavioral_from_title(title_desc):
     return agg, vip_navyaz
 
 
+def _build_reasons_sentence(r):
+    """Сформировать причины риска полными предложениями для таблицы «Причины риска» (ТЗ 4.3, 6)."""
+    has_complaints = r.get('has_complaints', False)
+    ra = r.get('risk_analysis') or {}
+    agg = ra.get('agg', '—')
+    vip_navyaz = ra.get('vip_navyaz', '—')
+    tolko = ra.get('tolko_profit', '—')
+    parts = []
+    if has_complaints:
+        parts.append('По каналу есть жалобы с указанием сумм.')
+    if agg != '—' or vip_navyaz != '—':
+        behavior = []
+        if agg != '—':
+            behavior.append('агрессивные обещания')
+        if vip_navyaz != '—':
+            behavior.append('навязывание VIP')
+        if tolko != '—':
+            behavior.append('жалобы на потери')
+        if behavior:
+            parts.append('По контенту: %s.' % ', '.join(behavior))
+    if not has_complaints and parts:
+        parts.append('За этот период явные жалобы не найдены.')
+    if not has_complaints and not parts:
+        parts.append('Канал выглядит рискованным по поведению (агрессивный маркетинг, обещания, скрытие убытков). За этот период явные жалобы не найдены.')
+    return ' '.join(parts) if parts else 'Риск по структуре канала и поведению.'
+
+
 def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_date_str):
-    """Собрать строки для таблиц 3 и 5. Риск = 3 базовых + минимум 2 поведенческих.
+    """Собрать строки для таблиц 3 и 5. Риск = минимум 2 из 3 базовых + минимум 2 поведенческих (ТЗ 5.1).
     Возвращает (rows, telegram_count, courses_count). В каждой строке risk_analysis для таблицы 5 (8 колонок)."""
     complaints_by_ch = {}
     for r in (complaints_rows or []):
@@ -568,17 +601,20 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         basic_ok = basic_1 + basic_2 + basic_3
         agg_cell, vip_cell = _compute_behavioral_from_title(title)
         behavioral_ok = (1 if agg_cell != '—' else 0) + (1 if vip_cell != '—' else 0)
-        if basic_ok < 3 or behavioral_ok < 2:
+        if basic_ok < 2 or behavioral_ok < 2:
             continue
-        basic_3_3 = CHECKMARK * 3
+        basic_3_3 = '%s/3' % basic_ok
         total_risk = 1 + behavioral_ok
         itog = '%s/6 РИСК' % min(6, total_risk)
 
         link = row.get('link') or _object_link(ch)
+        has_complaints = (comp[0] or 0) > 0 or (comp[1] or 0) > 0
+        ch_type = 'сигналы (закрытый канал)' if ('t.me/+' in (link or '') or (ch or '').strip().startswith('t.me/+')) else 'сигналы'
         rows.append({
-            'obj': ch, 'link': link, 'type': 'сигналы', 'source': 'TGStat', 'age': age_str, 'vip': vip_str,
+            'obj': ch, 'link': link, 'type': ch_type, 'source': 'TGStat', 'age': age_str, 'vip': vip_str,
             'growth': growth_str, 'status': 'РИСК', 'complaints': comp_str,
             'risk_analysis': {'basic_3_3': basic_3_3, 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': '—', 'vip_navyaz': vip_cell, 'itog': itog},
+            'has_complaints': has_complaints,
         })
 
     for row in (telega_channels or [])[:50]:
@@ -596,15 +632,18 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             behavioral_ok = 2
             agg_cell = agg_cell if agg_cell != '—' else '%s контент сигналы' % CHECKMARK
             vip_cell = vip_cell if vip_cell != '—' else '%s VIP от 10к' % CHECKMARK
-        if basic_ok < 3 or behavioral_ok < 2:
+        if basic_ok < 2 or behavioral_ok < 2:
             continue
         total_risk = 1 + behavioral_ok
         itog = '%s/6 РИСК' % min(6, total_risk)
         link = row.get('link') or _object_link(ch)
+        has_complaints = (comp[0] or 0) > 0 or (comp[1] or 0) > 0
+        ch_type = 'сигналы (закрытый канал)' if (link or ch or '').strip().startswith('t.me/+') or 't.me/+' in (link or '') else 'сигналы'
         rows.append({
-            'obj': ch, 'link': link, 'type': 'сигналы', 'source': 'Telega', 'age': 'н/д', 'vip': 'н/д',
+            'obj': ch, 'link': link, 'type': ch_type, 'source': 'Telega', 'age': 'н/д', 'vip': 'н/д',
             'growth': 'н/д', 'status': 'РИСК', 'complaints': comp_str,
-            'risk_analysis': {'basic_3_3': CHECKMARK * 3, 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': '—', 'vip_navyaz': vip_cell, 'itog': itog},
+            'risk_analysis': {'basic_3_3': '3/3', 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': '—', 'vip_navyaz': vip_cell, 'itog': itog},
+            'has_complaints': has_complaints,
         })
 
     for row in (complaints_rows or []):
@@ -630,14 +669,22 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         total_risk = 1 + behavioral_ok
         itog = '%s/6 РИСК' % min(6, total_risk)
         link = _object_link(ch)
+        has_complaints = (comp[0] or 0) > 0 or (comp[1] or 0) > 0
+        if obj_type == 'сигнал‑канал' and ('t.me/+' in (link or '') or (ch or '').strip().startswith('t.me/+')):
+            obj_type = 'сигнал‑канал (закрытый канал)'
         rows.append({
             'obj': ch, 'link': link, 'type': obj_type, 'source': 'Чаты', 'age': 'н/д', 'vip': 'н/д',
             'growth': 'н/д', 'status': 'РИСК', 'complaints': comp_str,
-            'risk_analysis': {'basic_3_3': CHECKMARK * 3, 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': tolko, 'vip_navyaz': vip_cell, 'itog': itog},
+            'risk_analysis': {'basic_3_3': '3/3', 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': tolko, 'vip_navyaz': vip_cell, 'itog': itog},
+            'has_complaints': has_complaints,
         })
 
     for r in rows:
         r['behavior'] = (r.get('risk_analysis') or {}).get('itog', '—')
+        if 'has_complaints' not in r:
+            comp_str = r.get('complaints', '') or ''
+            r['has_complaints'] = bool(comp_str and comp_str != '0 / 0 ₽')
+        r['reasons_sentence'] = _build_reasons_sentence(r)
 
     telegram_count = sum(1 for r in rows if r['type'] in ('сигнал‑канал', 'сигналы'))
     courses_count = sum(1 for r in rows if r['type'] in ('курс/сайт', 'курс / сайт'))
@@ -647,9 +694,10 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
 def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, complaints_rows,
                            new_scams_count, total_losses_12h, telegram_channels_count,
                            courses, top3, report_url=None, period_start=None, period_end=None,
-                           victims_12h=0, complaints_count=None, risk_rows=None):
+                           victims_12h=0, complaints_count=None, risk_rows=None, unavailable_sources=None):
     """Формирует текст документа SOURCE & DATA по спецификации: разделы 0–7, таблицы 3–5, итоги, чек‑лист.
-    Если передан risk_rows — используется он, иначе строится через _build_risk_table_rows."""
+    Если передан risk_rows — используется он, иначе строится через _build_risk_table_rows.
+    unavailable_sources: список имён недоступных источников (TGStat, Telega, Чаты) для блока ограничений."""
     if complaints_count is None:
         complaints_count = sum((r.get('complaints') or 0) for r in (complaints_rows or []))
     report_date_str = (period_end or collect_time_msk).split()[0] if period_end else ''
@@ -680,6 +728,7 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         'Время формирования отчёта: %s' % time_formatted,
         '',
         'В этом документе: откуда берутся все цифры, факты и прямые ссылки на источники (раздел 2).',
+        'Учёт данных: 12‑часовой цикл; для оценки текущего риска учитываются только данные за последние 7 дней. Данные старше 7 дней вне активной зоны.',
         '',
         '***',
         '',
@@ -695,6 +744,8 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         block2_text += '\n\nЧаты с жалобами (источники за 12 ч):\n' + '\n'.join(
             '%s. %s' % (i, c.strip()) for i, c in enumerate(KRO_SOURCE_CHANNELS, 1) if c.strip()
         )
+    if unavailable_sources:
+        block2_text += '\n\nОграничения: Источник(и) %s недоступен(ы), данные по нему могут быть неполными в этом цикле.' % (', '.join(unavailable_sources))
     lines.append(block2_text)
     lines.extend(['', '***', ''])
     # Раздел 3 — Найденные объекты (7 колонок; объект с ссылкой в тексте для последующей подстановки кликабельной ссылки)
@@ -727,7 +778,7 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         loss = row.get('losses', 0)
         lines.append('| %s | %s | %s ₽ | ссылки на сообщения / скрин |' % (ch, comp, loss or 0))
     if not (complaints_rows or []):
-        lines.append('| (нет данных) | — | — | — |')
+        lines.append('| Жалоб не найдено (по данным за период). | — | — | — |')
     lines.extend([
         '',
         '- Учитываются только жалобы за текущий 12‑часовой период.',
@@ -745,7 +796,8 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         '|--------|-----------------|----------------------|'
     ])
     for r in risk_rows:
-        lines.append('| %s | %s | %s |' % (r['obj'], r['type'], r['behavior']))
+        reasons = r.get('reasons_sentence') or r.get('behavior', '—')
+        lines.append('| %s | %s | %s |' % (r['obj'], r['type'], reasons))
     if not risk_rows:
         lines.append('| (нет данных) | — | — |')
     lines.extend(['', '***', ''])
@@ -828,6 +880,7 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         'period_end': period_end or collect_time_msk,
         'time_formatted': time_formatted,
         'report_url': report_url,
+        'unavailable_sources': unavailable_sources or [],
     }
     return '\n'.join(lines), structured_data
 
@@ -911,7 +964,8 @@ def _fill_existing_tables(service, doc_id, data):
     t7 = by_cols.get(7) or by_cols.get(6)
     t4 = by_cols.get(4) or by_cols.get(5)
     t8 = by_cols.get(8) or by_cols.get(9)
-    if not t7 and not t4 and not t8:
+    t3 = by_cols.get(3)
+    if not t7 and not t4 and not t8 and not t3:
         return False
     replacements = []  # (si, ei, text). Заполняем только строки ri >= 1 (данные), строку 0 (заголовки) оставляем как в документе
 
@@ -944,7 +998,7 @@ def _fill_existing_tables(service, doc_id, data):
                 links += ', ...'
             data_rows.append([str(row.get('channel', '—')), str(n), _fmt_k(row.get('losses')), links][:ncols4])
         if not complaints_rows:
-            data_rows.append(['(нет данных)', '—', '—', '—'][:ncols4])
+            data_rows.append(['Жалоб не найдено (по данным за период).', '—', '—', '—'][:ncols4])
         cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t4['cells']}
         for ri in range(len(data_rows)):
             for ci in range(ncols4):
@@ -965,6 +1019,22 @@ def _fill_existing_tables(service, doc_id, data):
         cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t8['cells']}
         for ri in range(len(data_rows)):
             for ci in range(ncols8):
+                r_idx = ri + 1
+                if (r_idx, ci) not in cells_by_rc:
+                    continue
+                si, ei = cells_by_rc[(r_idx, ci)]
+                replacements.append((si, ei, str(data_rows[ri][ci])[:500]))
+    if t3 and t3['cells']:
+        ncols3 = min(t3['cols'], 3)
+        data_rows = []
+        for r in risk_rows:
+            reasons = (r.get('reasons_sentence') or r.get('behavior', '—'))[:500]
+            data_rows.append([r['obj'], r['type'], reasons][:ncols3])
+        if not risk_rows:
+            data_rows.append(['(нет данных)', '—', '—'][:ncols3])
+        cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t3['cells']}
+        for ri in range(len(data_rows)):
+            for ci in range(ncols3):
                 r_idx = ri + 1
                 if (r_idx, ci) not in cells_by_rc:
                     continue
@@ -1000,6 +1070,9 @@ def _build_sources_doc_with_tables(service, doc_id, data):
         block2 += '\n\nЧаты с жалобами (источники за 12 ч):\n' + '\n'.join(
             '%s. %s' % (i, c.strip()) for i, c in enumerate(KRO_SOURCE_CHANNELS, 1) if c.strip()
         )
+    unavail = data.get('unavailable_sources') or []
+    if unavail:
+        block2 += '\n\nОграничения: Источник(и) %s недоступен(ы), данные по нему могут быть неполными в этом цикле.' % (', '.join(unavail))
     report_url = data.get('report_url') or ''
     nothing_found = data.get('nothing_found', False)
 
@@ -1007,7 +1080,8 @@ def _build_sources_doc_with_tables(service, doc_id, data):
         'СКАМ‑МОНИТОРИНГ | Source & Data\n'
         'Период цикла: %s – %s (MSK)\n'
         'Время формирования отчёта: %s\n\n'
-        'В этом документе: откуда берутся все цифры, факты и прямые ссылки на источники (раздел 2).\n\n'
+        'В этом документе: откуда берутся все цифры, факты и прямые ссылки на источники (раздел 2).\n'
+        'Учёт данных: 12‑часовой цикл; для оценки текущего риска учитываются только данные за последние 7 дней. Данные старше 7 дней вне активной зоны.\n\n'
         '***\n\n'
         '1. Живой лог (ключевые события, без спама нулей)\n\n'
         '%s\n\n***\n\n%s\n\n***\n\n'
@@ -1593,11 +1667,22 @@ def main():
     _append_live_log_events(['%s — Старт цикла %s–%s (MSK).' % (time_str, period_start_hm, period_end_hm)])
 
     # 1) TGStat new channels
-    new_tgstat = fetch_tgstat_new_channels()
+    unavailable_sources = []
+    try:
+        new_tgstat = fetch_tgstat_new_channels()
+    except Exception as e:
+        print('TGStat fetch failed: %s' % e, file=sys.stderr)
+        new_tgstat = []
+        unavailable_sources.append('TGStat')
     time.sleep(REQUEST_DELAY)
 
     # 2) Telega catalog
-    telega_channels = fetch_telega_catalog()
+    try:
+        telega_channels = fetch_telega_catalog()
+    except Exception as e:
+        print('Telega fetch failed: %s' % e, file=sys.stderr)
+        telega_channels = []
+        unavailable_sources.append('Telega')
 
     # 3) Telegram complaints last 12h + проверка существования каналов (Правило №1: только реальные)
     tg_data, existing_channel_links = asyncio.run(
@@ -1718,7 +1803,8 @@ def main():
             report_doc_url,
             period_start=period_start, period_end=period_end,
             victims_12h=victims_12h, complaints_count=complaints_count_val,
-            risk_rows=risk_rows
+            risk_rows=risk_rows,
+            unavailable_sources=unavailable_sources
         )
         url = update_sources_google_doc(sources_doc_id, doc_text, structured_data)
         if url:
