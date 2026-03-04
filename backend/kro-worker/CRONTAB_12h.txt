@@ -3,13 +3,13 @@
 # Проверка: crontab -l
 
 # Расписание по Москве (TZ=Europe/Moscow):
-# 11:00 MSK — сбор (TGStat, Telega, Telegram → Doc + pending)
-# 12:15 MSK — публикация (pending → kro-12h-stats.json)
+# 11:00 MSK — сбор (TGStat, Telega, Telegram → Doc + kro-12h-stats.json). На сайт не отправляем.
+# 12:00 MSK — публикация на сайт (POST из kro-12h-stats.json)
 # 23:00 MSK — сбор
-# 00:15 MSK — публикация
-# Скрипт сам читает env из папки kro-worker; запуск python3 без .sh (cron на macOS не выполняет .sh)
+# 00:00 MSK — публикация на сайт
+# Нужен KRO_SITE_UPDATE_URL (и при необходимости KRO_SITE_UPDATE_SECRET).
 
 0 11 * * * TZ=Europe/Moscow cd /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker && MODE=collect python3 run_12h_monitor.py >> /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker/log_collect.txt 2>&1
-15 12 * * * TZ=Europe/Moscow cd /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker && MODE=publish python3 run_12h_monitor.py >> /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker/log_publish.txt 2>&1
+0 12 * * * TZ=Europe/Moscow cd /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker && MODE=publish python3 run_12h_monitor.py >> /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker/log_publish.txt 2>&1
 0 23 * * * TZ=Europe/Moscow cd /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker && MODE=collect python3 run_12h_monitor.py >> /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker/log_collect.txt 2>&1
-15 0 * * * TZ=Europe/Moscow cd /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker && MODE=publish python3 run_12h_monitor.py >> /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker/log_publish.txt 2>&1
+0 0 * * * TZ=Europe/Moscow cd /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker && MODE=publish python3 run_12h_monitor.py >> /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker/log_publish.txt 2>&1

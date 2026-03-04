@@ -435,7 +435,10 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             vip_str = (vip_val or 'н/д')
         comp = complaints_by_ch.get(ch, (0, 0))
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
-        behavior = 'новый канал, VIP, рост подписчиков'
+        # Критерии риска: из фильтров TGStat (возраст <14 дн., VIP≥10к ₽, рост подписчиков). Жалобы — из чатов, если есть.
+        behavior = 'критерии: возраст %s, VIP %s (фильтр <14 дн., ≥10к ₽)' % (age_str, vip_str)
+        if comp[0] or comp[1]:
+            behavior += '; по жалобам: %s' % comp_str
         rows.append({
             'obj': ch, 'type': 'сигнал‑канал', 'source': 'TGStat', 'age': age_str, 'vip': vip_str,
             'behavior': behavior, 'complaints': comp_str, 'status': 'в риске'
@@ -448,9 +451,12 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             continue
         comp = complaints_by_ch.get(ch, (0, 0))
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
+        behavior = 'каталог крипто/сигналы; фильтр VIP от 10к ₽'
+        if comp[0] or comp[1]:
+            behavior += '; по жалобам: %s' % comp_str
         rows.append({
             'obj': ch, 'type': 'сигналы', 'source': 'Telega', 'age': 'н/д', 'vip': 'н/д',
-            'behavior': 'VIP, каталог крипто', 'complaints': comp_str, 'status': 'в риске'
+            'behavior': behavior, 'complaints': comp_str, 'status': 'в риске'
         })
 
     for row in (complaints_rows or []):
@@ -460,9 +466,11 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         obj_type = 'курс/сайт' if '@' not in ch and 't.me/' not in ch else 'сигнал‑канал'
         comp = row.get('complaints', 0), row.get('losses', 0)
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
+        # Только по жалобам в чатах — суммы и кол-во людей из сообщений за 12 ч.
+        behavior = 'по жалобам в чатах (суммы из сообщений за 12 ч): %s' % comp_str
         rows.append({
             'obj': ch, 'type': obj_type, 'source': 'Чаты', 'age': 'н/д', 'vip': 'н/д',
-            'behavior': '"100%% доход" или по жалобам', 'complaints': comp_str, 'status': 'в риске'
+            'behavior': behavior, 'complaints': comp_str, 'status': 'в риске'
         })
 
     telegram_count = sum(1 for r in rows if r['type'] in ('сигнал‑канал', 'сигналы'))
@@ -514,6 +522,8 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     lines.extend([
         '4. Найденные объекты (таблица риска)',
         '',
+        'По каждому объекту: критерии, почему в зоне риска (возраст, VIP, рост подписчиков или жалобы); суммы потерь — только из чатов жалоб за 12 ч, не из воздуха. Повтор канала в следующих циклах допускается.',
+        '',
         '| Объект | Тип | Источник | Возраст | VIP/цена | Поведение | Жалобы (людей/сумма) | Статус |',
         '|--------|-----|----------|---------|---------|-----------|------------------------|--------|'
     ])
@@ -546,6 +556,8 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     ])
     lines.extend([
         '6. Расчёт итогов и связка с сайтом',
+        '',
+        'Публикация на сайт: эти данные уходят в таблицы сайта в 12:00 и 00:00 MSK (после проверки документа). Повтор каналов в разных циклах допускается.',
         '',
         'new_scam_channels: %s' % new_scams_count,
         'losses_12h: %s ₽' % (total_losses_12h or 0),
@@ -872,7 +884,53 @@ def create_google_doc_report(title, new_channels_rows, complaints_rows, summary_
         return None, None
 
 
+def _run_publish_only():
+    """Режим publish: прочитать kro-12h-stats.json и отправить на сайт (12:00 и 00:00 MSK)."""
+    site_url = os.environ.get('KRO_SITE_UPDATE_URL', '').strip()
+    if not site_url:
+        print('MODE=publish: KRO_SITE_UPDATE_URL не задан — отправка на сайт пропущена.', file=sys.stderr)
+        return
+    if not os.path.isfile(OUTPUT_JSON):
+        print('MODE=publish: файл %s не найден. Сначала запустите сбор (11:00 или 23:00 MSK).' % OUTPUT_JSON, file=sys.stderr)
+        return
+    try:
+        with open(OUTPUT_JSON, 'r', encoding='utf-8') as f:
+            out = json.load(f)
+    except Exception as e:
+        print('MODE=publish: не удалось прочитать %s: %s' % (OUTPUT_JSON, e), file=sys.stderr)
+        return
+    top3_today = [(t.get('channel') or t.get('name') or '—') for t in (out.get('top3') or out.get('top3_today') or [])[:3]]
+    payload = {
+        'timestamp': out.get('timestamp', ''),
+        'new_scam_channels': out.get('new_scam_channels', out.get('new_scams', 0)),
+        'losses_12h': out.get('losses_12h', 0),
+        'telegram_channels': out.get('telegram_channels', 0),
+        'courses_products': out.get('courses_products', out.get('courses', 0)),
+        'top3_today': top3_today,
+    }
+    try:
+        import urllib.request
+        data = json.dumps(payload).encode('utf-8')
+        req = urllib.request.Request(site_url, data=data, method='POST', headers={'Content-Type': 'application/json'})
+        secret = os.environ.get('KRO_SITE_UPDATE_SECRET', '').strip()
+        if secret:
+            req.add_header('Authorization', 'Bearer %s' % secret)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            if 200 <= resp.getcode() < 300:
+                print('Данные отправлены на сайт (12:00/00:00): %s' % site_url, file=sys.stderr)
+            else:
+                print('POST %s: код %s' % (site_url, resp.getcode()), file=sys.stderr)
+    except Exception as e:
+        print('MODE=publish: POST %s failed: %s' % (site_url, e), file=sys.stderr)
+
+
 def main():
+    # Режим publish: только отправить уже собранные данные на сайт (12:00 и 00:00 MSK). Сбор не делаем.
+    mode = os.environ.get('MODE', 'collect').strip().lower()
+    if mode == 'publish':
+        _run_publish_only()
+        return
+
     now_msk = datetime.now(timezone.utc)  # можно перевести в MSK для заголовка
     now_msk_str = now_msk.strftime('%d %B %H:%M').replace('February', 'февраля').replace('March', 'марта').replace('January', 'января')
     print('Run 12h monitor at %s UTC' % now_msk.isoformat(), file=sys.stderr)
@@ -1029,32 +1087,7 @@ def main():
         OUTPUT_JSON, out['new_scams'], out['losses_12h'], out['victims_12h'], report_number), file=sys.stderr)
     if report_doc_url:
         print('Report doc: %s' % report_doc_url, file=sys.stderr)
-
-    # 6b) Опционально: POST на сайт (KRO_SITE_UPDATE_URL и при необходимости KRO_SITE_UPDATE_SECRET)
-    site_url = os.environ.get('KRO_SITE_UPDATE_URL', '').strip()
-    if site_url:
-        try:
-            import urllib.request
-            payload = {
-                'timestamp': out['timestamp'],
-                'new_scam_channels': new_scams_count,
-                'losses_12h': total_losses_12h,
-                'telegram_channels': out['telegram_channels'],
-                'courses_products': courses_count_from_risk,
-                'top3_today': top3_today,
-            }
-            data = json.dumps(payload).encode('utf-8')
-            req = urllib.request.Request(site_url, data=data, method='POST', headers={'Content-Type': 'application/json'})
-            secret = os.environ.get('KRO_SITE_UPDATE_SECRET', '').strip()
-            if secret:
-                req.add_header('Authorization', 'Bearer %s' % secret)
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                if 200 <= resp.getcode() < 300:
-                    print('POST %s: ok' % site_url, file=sys.stderr)
-                else:
-                    print('POST %s: %s' % (site_url, resp.getcode()), file=sys.stderr)
-        except Exception as e:
-            print('POST %s failed: %s' % (site_url, e), file=sys.stderr)
+    # На сайт данные уходят только в 12:00 и 00:00 MSK (запуск с MODE=publish).
 
 
 if __name__ == '__main__':
