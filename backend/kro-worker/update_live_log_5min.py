@@ -21,6 +21,33 @@ PLACEHOLDER = 'Обновления каждые 5 мин — см. ниже'
 MAX_LINES = 50
 EMPTY_INTERVAL_MINUTES = 30  # не чаще чем раз в 30 мин писать «новых каналов не найдено»
 
+
+def format_live_log_grouped(lines):
+    """Убрать повторы времени: подряд идущие строки с одним и тем же HH:MM — только первая с временем, остальные «    — событие»."""
+    out = []
+    prev_time = None
+    for raw in lines:
+        s = (raw or '').strip()
+        if not s:
+            out.append('')
+            continue
+        if ' — ' in s:
+            time_part, rest = s.split(' — ', 1)
+            time_part = time_part.strip()
+            if len(time_part) <= 5 and ':' in time_part:
+                if time_part == prev_time:
+                    out.append('    — ' + rest)
+                else:
+                    prev_time = time_part
+                    out.append(s)
+            else:
+                prev_time = None
+                out.append(s)
+        else:
+            prev_time = None
+            out.append(s)
+    return out
+
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
 
 def _load_env():
@@ -302,8 +329,9 @@ def main():
     if not doc_id:
         print('KRO_SOURCES_DOC_ID не задан, только запись в %s' % LIVE_LOG_FILE, file=sys.stderr)
         return
-    content = '\n'.join(lines) + '\n' + PLACEHOLDER
-    last_line = new_line if new_line else (lines[-1] if lines else None)
+    formatted = format_live_log_grouped(lines)
+    content = '\n'.join(formatted) + '\n' + PLACEHOLDER
+    last_line = formatted[-1] if formatted else (new_line if new_line else None)
     if update_doc_placeholder(doc_id, content, last_line=last_line):
         if last_line:
             print('%s ok (жирным: новая строка): %s' % (time_str, last_line), file=sys.stderr)

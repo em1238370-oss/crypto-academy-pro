@@ -444,6 +444,35 @@ SOURCES_DOC_TITLE = 'KRO: источники данных и ссылки'
 # Плейсхолдер в документе для блока живого лога (заменяется на строки лога + снова вставляется)
 LIVE_LOG_PLACEHOLDER = 'Обновления каждые 5 мин — см. ниже'
 
+# Месяцы для заголовка «День: 4 марта 2025»
+_MONTH_NAMES_RU = ('', 'января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря')
+
+def _format_doc_header(period_start, period_end, time_formatted):
+    """Вернуть (day_label, cycle_label, formed_label): дата дня, цикл без повторов, время формирования.
+    День начинается в 00:00; цикл — 00:00–12:00 или 12:00–00:00 (след. день)."""
+    def _parse(s):
+        if not s or ' ' not in s:
+            return None, None
+        parts = s.strip().split(None, 1)
+        try:
+            d, m, y = parts[0].split('.')
+            t = parts[1][:5] if len(parts) > 1 else ''  # HH:MM
+            return (int(d), int(m), int(y)), t
+        except (ValueError, IndexError):
+            return None, None
+    (d_end, m_end, y_end), time_end = _parse(period_end or '')
+    (d_start, m_start, y_start), time_start = _parse(period_start or '')
+    day_label = 'День: %s %s %s' % (d_end or '—', _MONTH_NAMES_RU[m_end] if m_end else '—', y_end or '—') if (d_end and m_end and y_end) else ('День: ' + (period_end or time_formatted or '—'))
+    if time_start and time_end:
+        if (d_start, m_start, y_start) != (d_end, m_end, y_end):
+            cycle_label = 'Цикл: %s – %s (след. день, MSK)' % (time_start, time_end)
+        else:
+            cycle_label = 'Цикл: %s – %s (MSK)' % (time_start, time_end)
+    else:
+        cycle_label = ('Период цикла: %s – %s (MSK)' % (period_start or '—', period_end or '—'))
+    formed_label = ('Время формирования: %s' % (time_formatted or '—'))
+    return day_label, cycle_label, formed_label
+
 # Блок 2: Источники и условия поиска (фиксированный текст) — откуда берутся данные, факты и ссылки
 BLOCK2_SOURCES = '''
 2. Откуда берутся данные: факты и ссылки
@@ -701,9 +730,20 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     if complaints_count is None:
         complaints_count = sum((r.get('complaints') or 0) for r in (complaints_rows or []))
     report_date_str = (period_end or collect_time_msk).split()[0] if period_end else ''
-    time_formatted = (period_end.split()[1] if period_end and ' ' in period_end else collect_time_msk).strip()
-    if time_formatted and not time_formatted.endswith('MSK'):
-        time_formatted = time_formatted + ' MSK'
+    if period_end and ' ' in period_end:
+        parts = period_end.strip().split(None, 1)
+        try:
+            d, m, y = parts[0].split('.')
+            t = parts[1][:5] if len(parts) > 1 else ''
+            time_formatted = '%s %s, %s MSK' % (int(d), _MONTH_NAMES_RU[int(m)], t)
+        except (ValueError, IndexError, KeyError):
+            time_formatted = (period_end.split()[1][:5] if period_end and ' ' in period_end else (collect_time_msk or '').strip())
+            if time_formatted and not time_formatted.endswith('MSK'):
+                time_formatted = time_formatted + ' MSK'
+    else:
+        time_formatted = (collect_time_msk or '').strip()
+        if time_formatted and not time_formatted.endswith('MSK'):
+            time_formatted = time_formatted + ' MSK'
 
     if risk_rows is None:
         risk_rows, telegram_count, courses_count = _build_risk_table_rows(
@@ -722,10 +762,12 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     live_lines = _load_live_log()
     nothing_found = not risk_rows and not (complaints_rows or [])
 
+    day_label, cycle_label, formed_label = _format_doc_header(period_start, period_end, time_formatted)
     lines = [
         'СКАМ‑МОНИТОРИНГ | Source & Data',
-        'Период цикла: %s – %s (MSK)' % (period_start or collect_time_msk, period_end or collect_time_msk),
-        'Время формирования отчёта: %s' % time_formatted,
+        day_label,
+        cycle_label,
+        formed_label,
         '',
         'В этом документе: откуда берутся все цифры, факты и прямые ссылки на источники (раздел 2).',
         'Учёт данных: 12‑часовой цикл; для оценки текущего риска учитываются только данные за последние 7 дней. Данные старше 7 дней вне активной зоны.',
@@ -1076,16 +1118,18 @@ def _build_sources_doc_with_tables(service, doc_id, data):
     report_url = data.get('report_url') or ''
     nothing_found = data.get('nothing_found', False)
 
+    day_label, cycle_label, formed_label = _format_doc_header(period_start, period_end, time_fmt)
     intro = (
         'СКАМ‑МОНИТОРИНГ | Source & Data\n'
-        'Период цикла: %s – %s (MSK)\n'
-        'Время формирования отчёта: %s\n\n'
+        '%s\n'
+        '%s\n'
+        '%s\n\n'
         'В этом документе: откуда берутся все цифры, факты и прямые ссылки на источники (раздел 2).\n'
         'Учёт данных: 12‑часовой цикл; для оценки текущего риска учитываются только данные за последние 7 дней. Данные старше 7 дней вне активной зоны.\n\n'
         '***\n\n'
         '1. Живой лог (ключевые события, без спама нулей)\n\n'
         '%s\n\n***\n\n%s\n\n***\n\n'
-    ) % (period_start, period_end, time_fmt, LIVE_LOG_PLACEHOLDER, block2)
+    ) % (day_label, cycle_label, formed_label, LIVE_LOG_PLACEHOLDER, block2)
     intro += '3. Найденные объекты (каналы / сигналы / сайты)\n\n'
     intro += 'Данные в таблице ниже — из разделов 2.1 и 2.2 (TGStat, Telega). Каждый объект со ссылкой на источник.\n\n'
 
@@ -1391,6 +1435,29 @@ def _apply_italic_to_times_in_doc(service, doc_id):
     except Exception as e:
         print('Sources doc: курсив для времени: %s' % e, file=sys.stderr)
 
+def _update_sources_doc_intro(service, doc_id, data):
+    """Обновить в начале документа блок заголовка (День, Цикл, Время формирования), чтобы изменения всегда попадали в документ даже при заполнении таблиц."""
+    period_start = data.get('period_start', '')
+    period_end = data.get('period_end', '')
+    time_fmt = data.get('time_formatted', '')
+    day_label, cycle_label, formed_label = _format_doc_header(period_start, period_end, time_fmt)
+    new_header = 'СКАМ‑МОНИТОРИНГ | Source & Data\n%s\n%s\n%s\n\n' % (day_label, cycle_label, formed_label)
+    ranges = _find_text_ranges_in_doc(service, doc_id, re.escape('В этом документе'))
+    if not ranges:
+        return
+    end_repl = ranges[0][0]
+    if end_repl <= 1:
+        return
+    try:
+        service.documents().batchUpdate(documentId=doc_id, body={'requests': [
+            {'deleteContentRange': {'range': {'startIndex': 1, 'endIndex': end_repl}}},
+            {'insertText': {'location': {'index': 1}, 'text': new_header}}
+        ]}).execute()
+        print('Sources doc: обновлён заголовок (День, Цикл, Время формирования).', file=sys.stderr)
+    except Exception as e:
+        print('Sources doc: обновление заголовка: %s' % e, file=sys.stderr)
+
+
 def update_sources_google_doc(doc_id, doc_text, structured_data=None):
     """Пишет в документ «Источники и данные». Если передан structured_data — нативные таблицы и кликабельные ссылки; иначе один insertText doc_text. Время выделяет курсивом."""
     if not (doc_id and doc_id.strip()):
@@ -1449,6 +1516,7 @@ def update_sources_google_doc(doc_id, doc_text, structured_data=None):
             else:
                 print('Sources doc: таблицы 7/4/8 колонок не найдены — пересборка документа с нуля.', file=sys.stderr)
                 _build_sources_doc_with_tables(service, doc_id, structured_data)
+            _update_sources_doc_intro(service, doc_id, structured_data)
             _apply_italic_to_times_in_doc(service, doc_id)
             url = 'https://docs.google.com/document/d/' + doc_id + '/edit'
             print('Updated sources doc (таблицы): %s' % url, file=sys.stderr)
