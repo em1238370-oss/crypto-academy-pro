@@ -56,34 +56,55 @@ def _load_env():
 
 _load_env()
 
-# --- TGStat search ---
+# --- Критерии релевантности: только каналы про крипто и сигналы ---
+CRYPTO_SIGNAL_KEYWORDS = [
+    'крипто', 'сигнал', 'crypto', 'bitcoin', 'btc', 'eth', 'трейдинг', 'trading',
+    'криптовалюта', 'фьючерс', 'spot', 'биржа', 'trade', 'pump', 'скам'
+]
+def _is_crypto_signal_channel(title, username):
+    """Проверка: канал связан с криптой/сигналами (по названию или username)."""
+    text = ((title or '') + ' ' + (username or '')).lower()
+    return any(kw in text for kw in CRYPTO_SIGNAL_KEYWORDS)
+
+# --- TGStat search: именно каналы с крипто-сигналами ---
 def fetch_tgstat_new_channels():
-    """Поиск каналов по «криптовалюта», сортировка по новизне, отбор за последние 14 дней."""
+    """Поиск каналов по запросу «крипто сигналы» (и «сигналы криптовалюта»), фильтр по теме, возраст <14 дней."""
     try:
         from tgstat_client import search_channels
     except ImportError:
         return []
-    items = search_channels('криптовалюта', country='ru', limit=100)
+    seen = set()
+    out = []
     now = datetime.now(timezone.utc)
     cutoff_14d = now - timedelta(days=DAYS_14)
-    out = []
-    for x in items:
-        created_at = x.get('created_at')
-        if created_at is None:
-            continue
-        try:
-            created_dt = datetime.fromtimestamp(created_at, tz=timezone.utc)
-            if created_dt < cutoff_14d:
+    for query in ('крипто сигналы', 'сигналы криптовалюта'):
+        items = search_channels(query, country='ru', limit=80)
+        for x in items:
+            created_at = x.get('created_at')
+            if created_at is None:
                 continue
-        except (TypeError, OSError):
-            continue
-        out.append({
-            'channel': x.get('username') or x.get('link') or '—',
-            'date': datetime.fromtimestamp(created_at, tz=timezone.utc).strftime('%d.%m.%Y'),
-            'growth': x.get('participants_count'),
-            'vip': '—',
-            'link': x.get('link') or ('https://t.me/' + (x.get('username') or '').lstrip('@')),
-        })
+            try:
+                created_dt = datetime.fromtimestamp(created_at, tz=timezone.utc)
+                if created_dt < cutoff_14d:
+                    continue
+            except (TypeError, OSError):
+                continue
+            ch = (x.get('username') or x.get('link') or '').strip() or ('@' + (x.get('link') or '').replace('https://t.me/', ''))
+            key = ch.lower().replace('@', '')
+            if key in seen:
+                continue
+            title = (x.get('title') or '').strip()
+            if not _is_crypto_signal_channel(title, ch):
+                continue
+            seen.add(key)
+            out.append({
+                'channel': ch or '—',
+                'title': title or '—',
+                'date': datetime.fromtimestamp(created_at, tz=timezone.utc).strftime('%d.%m.%Y'),
+                'growth': x.get('participants_count'),
+                'vip': '—',
+                'link': x.get('link') or ('https://t.me/' + (ch or '').lstrip('@')),
+            })
     out.sort(key=lambda r: r.get('date', ''), reverse=True)
     return out[:50]
 
@@ -344,17 +365,23 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         'Расчёт: потери %s ₽' % (total_losses_12h if total_losses_12h else 0),
         'ПОИСК ЗАВЕРШЁН: %s' % collect_time_msk,
         '',
+        '——— Обновления каждые 5 мин (00:05, 00:10, … 23:55) ———',
+        'Обновления каждые 5 мин — см. ниже',
+        '',
         'Пункт 3. SOURCE & DATA (полный поиск)',
         '——— SOURCE & DATA ———',
         '',
-        '3.1. TGStat.ru поиск',
-        '   Ссылка: https://tgstat.ru/search?query=криптовалюта&sort=date',
+        '3.1. TGStat.ru поиск (каналы с крипто-сигналами)',
+        '   Запрос: «крипто сигналы», «сигналы криптовалюта». В список попадают только каналы, у которых в названии есть тема крипто/сигналов.',
+        '   Ссылка: https://tgstat.ru/search?query=крипто+сигналы&sort=date',
         '   Время: %s' % collect_time_msk,
-        '   Проверено: %s каналов' % (len(new_tgstat) if new_tgstat else 0),
+        '   Проверено по теме: %s каналов (остальные отсечены — не про крипто/сигналы)' % (len(new_tgstat) if new_tgstat else 0),
+        '   Критерии отбора: возраст <14 дн., в названии — ключевые слова (крипто, сигнал, bitcoin, трейдинг и т.д.); для отметки ✅ дополнительно VIP>10к ₽, рост >500/сутки.',
         ''
     ]
     for row in (new_tgstat or [])[:50]:
         ch = row.get('channel', '—')
+        title = row.get('title', '—')
         link = row.get('link', 'https://t.me/' + str(ch).lstrip('@'))
         date = row.get('date', '—')
         growth = row.get('growth')
@@ -377,16 +404,21 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         else:
             mark, reason = '❌', 'нет даты'
         lines.append('%s %s' % (mark, ch))
+        lines.append('  Название канала: %s' % (title if title != '—' else '(нет)'))
         lines.append('  Ссылка: %s' % link)
         lines.append('  Дата создания: %s | VIP: %s | Рост: %s' % (date, vip_str, growth_str))
+        why = 'Почему выбран: запрос «крипто сигналы»; в названии/username есть тема крипто или сигналов; возраст <14 дн.'
         if reason:
-            lines.append('  Причина отклонения: %s' % reason)
+            lines.append('  Причина отклонения по критериям: %s' % reason)
+        lines.append('  %s' % why)
         lines.append('')
     lines.extend([
         '3.2. Telega.in поиск',
+        '   Каталог «криптовалюты» — все каналы из раздела релевантны теме крипто.',
         '   Ссылка: https://telega.io/catalog/cryptocurrencies',
         '   Время: %s' % collect_time_msk,
         '   Проверено: %s каналов' % (len(telega_channels) if telega_channels else 0),
+        '   Почему выбран источник: каталог Telega — раздел криптовалюты, тема совпадает с задачей (крипто/сигналы).',
         ''
     ])
     for row in (telega_channels or [])[:50]:
@@ -394,6 +426,7 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         link = row.get('link', '—')
         lines.append('✅ %s' % ch)
         lines.append('  Ссылка: %s' % link)
+        lines.append('  Почему выбран: каталог «криптовалюты» Telega — релевантен теме.')
         lines.append('')
     lines.extend([
         '3.3. Чаты с жалобами',
