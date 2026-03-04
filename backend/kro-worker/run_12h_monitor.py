@@ -56,15 +56,28 @@ def _load_env():
 
 _load_env()
 
-# --- Критерии релевантности: только каналы про крипто и сигналы ---
-CRYPTO_SIGNAL_KEYWORDS = [
-    'крипто', 'сигнал', 'crypto', 'bitcoin', 'btc', 'eth', 'трейдинг', 'trading',
-    'криптовалюта', 'фьючерс', 'spot', 'биржа', 'trade', 'pump', 'скам'
-]
+# --- Критерии релевантности: только каналы про крипто и/или сигналы (исключаем VPN, gossip, книги и т.п.) ---
+STRONG_CRYPTO_SIGNAL = (
+    'сигнал', 'сигналы', 'крипто', 'crypto', 'bitcoin', 'btc', 'eth',
+    'трейдинг', 'trading', 'криптовалюта', 'фьючерс', 'биржа', 'trade', 'pump', 'скам'
+)
+# Если в названии/username есть это и нет ни одного STRONG — канал отсекаем (не про крипто/сигналы)
+NOT_CRYPTO_SIGNAL = (
+    'vpn', 'gossip', 'gossipclub', 'bookss', 'books hub', 'nairobigossip',
+    'ashesvpn', 'redblacknews', 'memes_news', 'express', 'pharonic', 'fusion', 'money_networks'
+)
 def _is_crypto_signal_channel(title, username):
-    """Проверка: канал связан с криптой/сигналами (по названию или username)."""
+    """Проверка: канал явно про крипту или сигналы; отсекаем VPN, gossip, книги, общие новости без крипто."""
     text = ((title or '') + ' ' + (username or '')).lower()
-    return any(kw in text for kw in CRYPTO_SIGNAL_KEYWORDS)
+    has_strong = any(kw in text for kw in STRONG_CRYPTO_SIGNAL)
+    if not has_strong:
+        return False
+    # Если в названии есть типично не-крипто темы — оставляем только при явном крипто/сигнале в названии
+    explicit_crypto = ('крипто', 'crypto', 'bitcoin', 'btc', 'eth', 'сигнал', 'криптовалюта')
+    has_explicit = any(e in text for e in explicit_crypto)
+    if any(n in text for n in NOT_CRYPTO_SIGNAL) and not has_explicit:
+        return False
+    return True
 
 # --- TGStat search: именно каналы с крипто-сигналами ---
 def fetch_tgstat_new_channels():
@@ -512,8 +525,57 @@ def _get_sources_doc_text(report_title=None, report_url=None):
     return '\n'.join(lines)
 
 
+def _find_text_ranges_in_doc(service, doc_id, pattern):
+    """Найти в документе все вхождения regex pattern; вернуть список (startIndex, endIndex) в 1-based индексах."""
+    import re
+    try:
+        doc = service.documents().get(documentId=doc_id).execute()
+        body = doc.get('body', {})
+        content = body.get('content', [])
+        segments = []
+        for elem in content:
+            if 'paragraph' in elem:
+                for pe in elem.get('paragraph', {}).get('elements', []):
+                    tr = pe.get('textRun', {})
+                    if tr:
+                        segments.append((pe.get('startIndex', elem.get('startIndex', 1)), tr.get('content', '')))
+        full = ''.join(s[1] for s in segments)
+        ranges = []
+        for m in re.finditer(pattern, full):
+            start_in_full = m.start()
+            end_in_full = m.end()
+            offset = 0
+            seg_start_idx = None
+            seg_end_idx = None
+            for seg_start, seg_text in segments:
+                if offset <= start_in_full < offset + len(seg_text):
+                    seg_start_idx = seg_start + (start_in_full - offset)
+                if offset < end_in_full <= offset + len(seg_text):
+                    seg_end_idx = seg_start + (end_in_full - offset)
+                    break
+                offset += len(seg_text)
+            if seg_start_idx is not None and seg_end_idx is not None:
+                ranges.append((seg_start_idx, seg_end_idx))
+        return ranges
+    except Exception:
+        return []
+
+def _apply_italic_to_times_in_doc(service, doc_id):
+    """Выделить курсивом все вхождения времени (HH:MM, DD.MM.YYYY HH:MM) в документе."""
+    ranges = _find_text_ranges_in_doc(service, doc_id, r'\d{1,2}:\d{2}')
+    if not ranges:
+        return
+    try:
+        requests = [
+            {'updateTextStyle': {'range': {'startIndex': s, 'endIndex': e}, 'textStyle': {'italic': True}, 'fields': 'italic'}}
+            for s, e in ranges
+        ]
+        service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+    except Exception as e:
+        print('Sources doc: курсив для времени: %s' % e, file=sys.stderr)
+
 def update_sources_google_doc(doc_id, doc_text):
-    """Пишет в документ «Источники и данные» готовый текст doc_text."""
+    """Пишет в документ «Источники и данные» готовый текст doc_text; время выделяет курсивом."""
     if not (doc_id and doc_id.strip()):
         return None
     doc_id = doc_id.strip()
@@ -588,6 +650,7 @@ def update_sources_google_doc(doc_id, doc_text):
             }
         })
         service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+        _apply_italic_to_times_in_doc(service, doc_id)
         url = 'https://docs.google.com/document/d/' + doc_id + '/edit'
         print('Updated sources doc: %s' % url, file=sys.stderr)
         return url
