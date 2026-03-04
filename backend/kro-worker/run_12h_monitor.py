@@ -457,11 +457,15 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         'Пункт 4. Расчёт для сайта (эти данные уходят на сайт в 12:00 и 00:00)',
         '——— РАСЧЁТ ДЛЯ САЙТА ———',
         '',
-        'Новые скам-каналы: %s' % new_scams_count,
-        'Потери за 12 ч: %s ₽' % total_losses_12h,
+        'Дата и время отчёта: %s' % collect_time_msk,
+        '',
+        'Новых скам-каналов: %s' % new_scams_count,
+        'Сколько потеряно за 12 ч: %s ₽' % total_losses_12h,
         'Telegram каналов: %s' % telegram_channels_count,
-        'Курсов/продуктов: %s' % (courses or 0),
-        'ТОП-3 за сегодня:',
+        'Курсов/фейк-продуктов за последние 12 ч: %s' % (courses or 0),
+        'Сколько обмануто людей (жалобы за 12 ч): %s' % (victims_12h or complaints_count or 0),
+        '',
+        'ТОП-3 за сегодня (канал — сколько потеряно — статус):',
         ''
     ])
     for i, t in enumerate((top3 or [])[:3], 1):
@@ -526,19 +530,25 @@ def _get_sources_doc_text(report_title=None, report_url=None):
 
 
 def _find_text_ranges_in_doc(service, doc_id, pattern):
-    """Найти в документе все вхождения regex pattern; вернуть список (startIndex, endIndex) в 1-based индексах."""
+    """Найти в документе все вхождения regex pattern; вернуть список (startIndex, endIndex). Индексы 1-based для body."""
     import re
     try:
         doc = service.documents().get(documentId=doc_id).execute()
         body = doc.get('body', {})
         content = body.get('content', [])
+        # Собираем текст по порядку и накапливаем startIndex (1-based), т.к. API может по-разному отдавать индексы
         segments = []
+        run_index = 1
         for elem in content:
-            if 'paragraph' in elem:
-                for pe in elem.get('paragraph', {}).get('elements', []):
-                    tr = pe.get('textRun', {})
-                    if tr:
-                        segments.append((pe.get('startIndex', elem.get('startIndex', 1)), tr.get('content', '')))
+            if 'paragraph' not in elem:
+                continue
+            for pe in elem.get('paragraph', {}).get('elements', []):
+                tr = pe.get('textRun', {})
+                if not tr:
+                    continue
+                text = tr.get('content', '')
+                segments.append((run_index, text))
+                run_index += len(text)
         full = ''.join(s[1] for s in segments)
         ranges = []
         for m in re.finditer(pattern, full):
@@ -557,20 +567,26 @@ def _find_text_ranges_in_doc(service, doc_id, pattern):
             if seg_start_idx is not None and seg_end_idx is not None:
                 ranges.append((seg_start_idx, seg_end_idx))
         return ranges
-    except Exception:
+    except Exception as e:
+        print('Sources doc: поиск времени в документе: %s' % e, file=sys.stderr)
         return []
 
 def _apply_italic_to_times_in_doc(service, doc_id):
-    """Выделить курсивом все вхождения времени (HH:MM, DD.MM.YYYY HH:MM) в документе."""
+    """Выделить курсивом все вхождения времени (HH:MM и т.п.) в документе."""
     ranges = _find_text_ranges_in_doc(service, doc_id, r'\d{1,2}:\d{2}')
     if not ranges:
         return
     try:
         requests = [
-            {'updateTextStyle': {'range': {'startIndex': s, 'endIndex': e}, 'textStyle': {'italic': True}, 'fields': 'italic'}}
-            for s, e in ranges
+            {'updateTextStyle': {
+                'range': {'startIndex': s, 'endIndex': e, 'segmentId': ''},
+                'textStyle': {'italic': True},
+                'fields': 'italic'
+            }}
+            for s, e in ranges[:60]
         ]
         service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+        print('Sources doc: курсив применён к %s фрагментам времени' % len(requests), file=sys.stderr)
     except Exception as e:
         print('Sources doc: курсив для времени: %s' % e, file=sys.stderr)
 
