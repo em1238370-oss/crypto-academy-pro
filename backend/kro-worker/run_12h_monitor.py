@@ -747,7 +747,7 @@ def update_sources_google_doc(doc_id, doc_text):
             end_index = 2
         requests = []
         if end_index > 2:
-            # API не позволяет удалять диапазон, включающий \n в конце сегмента — удаляем до последнего символа
+            # Сначала удаляем весь контент (до end_index; при ошибке API — до end_index-1)
             end_delete = max(2, end_index - 1)
             requests.append({
                 'deleteContentRange': {
@@ -761,6 +761,19 @@ def update_sources_google_doc(doc_id, doc_text):
             }
         })
         service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+        # Удалить хвост старого контента (один символ после вставки), если остался
+        new_len = len(text) + 1
+        try:
+            doc2 = service.documents().get(documentId=doc_id).execute()
+            body2 = doc2.get('body', {})
+            content2 = body2.get('content', [])
+            end2 = content2[-1].get('endIndex', 2) if content2 else 2
+            if end2 > new_len + 1:
+                service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
+                    'deleteContentRange': {'range': {'startIndex': new_len, 'endIndex': end2}}
+                }]}).execute()
+        except Exception:
+            pass
         _apply_italic_to_times_in_doc(service, doc_id)
         url = 'https://docs.google.com/document/d/' + doc_id + '/edit'
         print('Updated sources doc: %s' % url, file=sys.stderr)

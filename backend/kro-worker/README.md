@@ -56,3 +56,16 @@ python worker.py
 
 - **Очередь** (check_queue): колонки A = channel (@username или t.me/+hash), B = added_at.
 - **scam_base**: одна строка добавляется с полями username, risk_score, ads_per_week, bot_pct, vip_price, complaints, total_loss, verdict. Для живой проверки complaints и total_loss заполняются «—»; risk и verdict считаются по ключевым словам в сообщениях канала.
+
+## Документ «Источники и данные» (7 блоков)
+
+Полный цикл мониторинга (TGStat, Telega, жалобы) и обновление Google Doc выполняет **run_12h_monitor.py** (по крону в 11:00 и 23:00 MSK). Текст документа формируется в формате 7 блоков (см. `docs/ru/СТРУКТУРА_ОТЧЁТА_ЦИКЛ_7_БЛОКОВ.md`).
+
+**Чтобы один раз подставить в документ новую структуру** (без полного сбора данных), запустите с включённым интернетом:
+
+```bash
+cd backend/kro-worker
+python3 update_sources_doc_once.py
+```
+
+Нужны переменные: `KRO_SOURCES_DOC_ID`, `KRO_GOOGLE_CREDENTIALS_JSON` (или путь в `GOOGLE_APPLICATION_CREDENTIALS`). После выполнения откройте документ по ссылке из вывода и обновите страницу (F5).
