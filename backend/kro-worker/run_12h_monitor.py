@@ -1184,7 +1184,7 @@ def _build_sources_doc_with_tables(service, doc_id, data):
                     links_cell += ', ...'
             cell_texts.append([ch, str(n), losses_fmt, links_cell])
         if not complaints_rows:
-            cell_texts.append(['(нет данных)', '—', '—', '—'])
+            cell_texts.append(['Жалоб не найдено (по данным за период).', '—', '—', '—'])
         cells_sorted = sorted(cells, key=lambda x: -x[2])
         flat_texts = [str(t)[:500] for row in cell_texts for t in row]
         for (ri, ci, si), text in zip(cells_sorted, flat_texts):
@@ -1227,32 +1227,23 @@ def _build_sources_doc_with_tables(service, doc_id, data):
             idx = el.get('endIndex', idx + 1)
             break
 
-    # Блок 5: АНАЛИЗ РИСКОВ (8 колонок с галочками и ИТОГ)
-    block5_intro = '\n\n***\n\n5. АНАЛИЗ РИСКОВ (галочки = реальные факты)\n\n'
+    # Блок 5: Причины риска (3 колонки — полными предложениями по ТЗ 4.3)
+    block5_intro = '\n\n***\n\n5. Причины риска (по объектам)\n\nДля каждого объекта со статусом «в риске» — причина полными предложениями (не одним словом).\n\n'
     requests = [{'insertText': {'location': {'index': idx}, 'text': block5_intro}}]
     service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
     idx += len(block5_intro)
     rows_t5 = 1 + len(risk_rows) if risk_rows else 1
-    requests = [{'insertTable': {'rows': rows_t5, 'columns': 8, 'location': {'index': idx}}}]
+    requests = [{'insertTable': {'rows': rows_t5, 'columns': 3, 'location': {'index': idx}}}]
     service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
     doc = service.documents().get(documentId=doc_id).execute()
     cells = _get_table_cell_indices(doc.get('body', {}), idx)
     if cells:
-        cell_texts = [['Объект', 'Базовые (3/3)', 'Агрессивные обещания', 'Картинки без док', 'Псевдо-анализ', 'Только профит', 'VIP навязывание', 'ИТОГ']]
+        cell_texts = [['Объект', 'Категория риска', 'Причины риска (полными предложениями)']]
         for r in risk_rows:
-            ra = r.get('risk_analysis') or {}
-            cell_texts.append([
-                r['obj'],
-                ra.get('basic_3_3', '—'),
-                ra.get('agg', '—'),
-                ra.get('kartinki', '—'),
-                ra.get('psevdo', '—'),
-                ra.get('tolko_profit', '—'),
-                ra.get('vip_navyaz', '—'),
-                ra.get('itog', '—'),
-            ])
+            reasons = (r.get('reasons_sentence') or r.get('behavior', '—'))[:500]
+            cell_texts.append([r['obj'], r['type'], reasons])
         if not risk_rows:
-            cell_texts.append(['(нет данных)', '—', '—', '—', '—', '—', '—', '—'])
+            cell_texts.append(['(нет данных)', '—', '—'])
         cells_sorted = sorted(cells, key=lambda x: -x[2])
         flat_texts = [str(t)[:500] for row in cell_texts for t in row]
         for (ri, ci, si), text in zip(cells_sorted, flat_texts):
@@ -1264,13 +1255,6 @@ def _build_sources_doc_with_tables(service, doc_id, data):
                 try:
                     service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
                         'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'link': {'url': url}}, 'fields': 'link'}
-                    }]}).execute()
-                except Exception:
-                    pass
-            if ci == 7 and ri > 0 and ri <= len(risk_rows) and text.strip():
-                try:
-                    service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
-                        'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'bold': True}, 'fields': 'bold'}
                     }]}).execute()
                 except Exception:
                     pass
