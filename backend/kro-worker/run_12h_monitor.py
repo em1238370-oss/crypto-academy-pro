@@ -121,16 +121,16 @@ def fetch_tgstat_new_channels():
     cutoff_14d = now - timedelta(days=DAYS_14)
     for query in ('крипто сигналы', 'сигналы криптовалюта'):
         items = search_channels(query, country='ru', limit=80)
-    for x in items:
-        created_at = x.get('created_at')
-        if created_at is None:
-            continue
-        try:
-            created_dt = datetime.fromtimestamp(created_at, tz=timezone.utc)
-                if created_dt < cutoff_14d:
+        for x in items:
+            created_at = x.get('created_at')
+            if created_at is None:
                 continue
-        except (TypeError, OSError):
-            continue
+            try:
+                created_dt = datetime.fromtimestamp(created_at, tz=timezone.utc)
+                if created_dt < cutoff_14d:
+                    continue
+            except (TypeError, OSError):
+                continue
             ch = (x.get('username') or x.get('link') or '').strip() or ('@' + (x.get('link') or '').replace('https://t.me/', ''))
             key = ch.lower().replace('@', '')
             if key in seen:
@@ -139,14 +139,14 @@ def fetch_tgstat_new_channels():
             if not _is_crypto_signal_channel(title, ch):
                 continue
             seen.add(key)
-        out.append({
+            out.append({
                 'channel': ch or '—',
                 'title': title or '—',
-            'date': datetime.fromtimestamp(created_at, tz=timezone.utc).strftime('%d.%m.%Y'),
-            'growth': x.get('participants_count'),
-            'vip': '—',
+                'date': datetime.fromtimestamp(created_at, tz=timezone.utc).strftime('%d.%m.%Y'),
+                'growth': x.get('participants_count'),
+                'vip': '—',
                 'link': x.get('link') or ('https://t.me/' + (ch or '').lstrip('@')),
-        })
+            })
     out.sort(key=lambda r: r.get('date', ''), reverse=True)
     return out[:50]
 
@@ -1530,7 +1530,7 @@ def create_google_doc_report(title, new_channels_rows, complaints_rows, summary_
         if '403' in err_str and 'permission' in err_str.lower():
             print('Создание нового отчёта пропущено: у сервисного аккаунта нет прав на создание документов (403). Документ «Источники и данные» обновляется отдельно.', file=sys.stderr)
         else:
-        print('Google Doc create: %s' % e, file=sys.stderr)
+            print('Google Doc create: %s' % e, file=sys.stderr)
         return None, None
 
 
