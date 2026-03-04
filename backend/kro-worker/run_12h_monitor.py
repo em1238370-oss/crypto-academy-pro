@@ -362,21 +362,24 @@ SOURCES_DOC_TITLE = 'KRO: источники данных и ссылки'
 # Плейсхолдер в документе для блока живого лога (заменяется на строки лога + снова вставляется)
 LIVE_LOG_PLACEHOLDER = 'Обновления каждые 5 мин — см. ниже'
 
-# Блок 2: Источники и условия поиска (фиксированный текст)
+# Блок 2: Источники и условия поиска (фиксированный текст) — откуда берутся данные, факты и ссылки
 BLOCK2_SOURCES = '''
-2. Источники и условия поиска
+2. Откуда берутся данные: факты и ссылки
 
-2.1. TGStat
-- URL запроса: https://tgstat.ru/search?query=криптовалюта&sort=date
-- Фильтры риска: канал создан менее 14 дней назад; есть VIP/платные услуги от 10 000₽; рост подписчиков за сутки более 500.
+Все цифры и объекты в этом документе взяты только из перечисленных ниже источников. Прямые ссылки:
 
-2.2. Telega
-- URL: https://telega.in/catalog?category=cryptocurrencies
-- Фильтры: категория "cryptocurrencies" / "trading signals"; добавлен в каталог менее 14 дней назад; реклама или VIP‑подписка от 10 000₽.
+2.1. TGStat (поиск каналов по крипто/сигналам)
+- Ссылка: https://tgstat.ru/search?query=криптовалюта&sort=date
+- Документация API: https://tgstat.ru/docs/ru/api
+- Условия отбора: канал создан менее 14 дней назад; есть VIP/платные услуги от 10 000₽; рост подписчиков за сутки более 500.
+
+2.2. Telega (каталог крипто‑каналов)
+- Ссылка: https://telega.in/catalog?category=cryptocurrencies
+- Условия: категория "cryptocurrencies" / "trading signals"; в каталоге менее 14 дней; реклама или VIP от 10 000₽.
 
 2.3. Telegram‑чаты с жалобами
-- Список чатов: название + ссылка (см. KRO_SOURCE_CHANNELS в настройках).
-- Условия отбора жалоб: сообщение за последние 12 часов; упоминание канала/сайта (ник, ссылка или название); указана сумма потерь (или размер депозита); по объекту ≥ 2 разных человека.
+- Чаты задаются в настройках (KRO_SOURCE_CHANNELS). Сообщения за последние 12 часов.
+- Условия: упоминание канала/сайта (ник или ссылка); указана сумма потерь; по объекту ≥ 2 разных человека.
 '''
 
 # Блок 3: Параметры скама для сигнал‑каналов (фиксированный текст)
@@ -552,6 +555,8 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         'Период цикла: %s – %s (MSK)' % (period_start or collect_time_msk, period_end or collect_time_msk),
         'Время формирования отчёта: %s' % time_formatted,
         '',
+        'В этом документе: откуда берутся все цифры, факты и прямые ссылки на источники (раздел 2).',
+        '',
         '***',
         '',
         '1. Живой лог (ключевые события, без спама нулей)',
@@ -568,6 +573,8 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     # Раздел 3 — Найденные объекты (7 колонок; объект с ссылкой в тексте для последующей подстановки кликабельной ссылки)
     lines.extend([
         '3. Найденные объекты (каналы / сигналы / сайты)',
+        '',
+        'Данные в таблице ниже — из разделов 2.1 и 2.2 (TGStat, Telega). Каждый объект со ссылкой на источник.',
         '',
         '| Объект / @юзернейм | Тип | Источник | Возраст / дата | VIP / цена | Рост / активность | Статус риска |',
         '|--------------------|-----|----------|----------------|------------|-------------------|--------------|'
@@ -738,13 +745,16 @@ def _build_sources_doc_with_tables(service, doc_id, data):
     intro = (
         'СКАМ‑МОНИТОРИНГ | Source & Data\n'
         'Период цикла: %s – %s (MSK)\n'
-        'Время формирования отчёта: %s\n\n***\n\n'
+        'Время формирования отчёта: %s\n\n'
+        'В этом документе: откуда берутся все цифры, факты и прямые ссылки на источники (раздел 2).\n\n'
+        '***\n\n'
         '1. Живой лог (ключевые события, без спама нулей)\n\n'
     ) % (period_start, period_end, time_fmt)
     for ln in live_lines:
         intro += '- %s\n' % ln
     intro += '\n%s\n\n***\n\n%s\n\n***\n\n' % (LIVE_LOG_PLACEHOLDER, block2)
     intro += '3. Найденные объекты (каналы / сигналы / сайты)\n\n'
+    intro += 'Данные в таблице ниже — из разделов 2.1 и 2.2 (TGStat, Telega). Каждый объект со ссылкой на источник.\n\n'
 
     # Удалить контент и вставить вводный текст
     doc = service.documents().get(documentId=doc_id).execute()
@@ -759,6 +769,17 @@ def _build_sources_doc_with_tables(service, doc_id, data):
     requests.append({'insertText': {'location': {'index': 1}, 'text': intro}})
     service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
     idx = 1 + len(intro)
+
+    # Сделать кликабельными все https-ссылки во вводном тексте (раздел 2)
+    for m in re.finditer(r'https://[^\s\)\]]+', intro):
+        start_i, end_i = 1 + m.start(), 1 + m.end()
+        url = m.group(0).rstrip('.,;:')
+        try:
+            service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
+                'updateTextStyle': {'range': {'startIndex': start_i, 'endIndex': end_i}, 'textStyle': {'link': {'url': url}}, 'fields': 'link'}
+            }]}).execute()
+        except Exception:
+            pass
 
     # Таблица 3: 7 колонок, 1 + len(risk_rows) строк
     rows_t3 = 1 + len(risk_rows) if risk_rows else 1
@@ -795,7 +816,7 @@ def _build_sources_doc_with_tables(service, doc_id, data):
             break
 
     # Блок 4
-    block4_intro = '\n\n***\n\n4. Жалобы и потери за период (12 часов)\n\n'
+    block4_intro = '\n\n***\n\n4. Жалобы и потери за период (12 часов)\n\nЖалобы взяты из чатов (раздел 2.3) за последние 12 ч; в колонке — объект, число людей, сумма потерь, ссылки на сообщения.\n\n'
     requests = [{'insertText': {'location': {'index': idx}, 'text': block4_intro}}]
     service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
     idx += len(block4_intro)
@@ -835,7 +856,7 @@ def _build_sources_doc_with_tables(service, doc_id, data):
             break
 
     # Блок 5
-    block5_intro = '\n\n***\n\n5. Причины отнесения к риску (по объектам)\n\n'
+    block5_intro = '\n\n***\n\n5. Причины отнесения к риску (по объектам)\n\nПочему объект в риске: по правилам из раздела 2 (возраст, VIP, рост) и по жалобам из таблицы 4. Каждый пункт — отдельная причина.\n\n'
     requests = [{'insertText': {'location': {'index': idx}, 'text': block5_intro}}]
     service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
     idx += len(block5_intro)
