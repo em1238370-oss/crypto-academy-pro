@@ -17,4 +17,6 @@ backend/kro-worker/env
 backend/kro-worker/venv/
 backend/kro-worker/kro_qr_login.png
 backend/kro-worker/log_*.txt
+backend/data/live_log_5min.json
+backend/data/live_log_state.json
 
