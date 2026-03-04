@@ -684,14 +684,12 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         '***',
         '',
         '1. Живой лог (ключевые события, без спама нулей)',
+        '',
+        LIVE_LOG_PLACEHOLDER,
+        '',
+        '***',
         ''
     ]
-    if live_lines:
-        for ln in live_lines[-LIVE_LOG_MAX_LINES:]:
-            lines.append('- %s' % ln)
-    else:
-        lines.append('(пока нет событий за цикл)')
-    lines.extend(['', LIVE_LOG_PLACEHOLDER, '', '***', ''])
     block2_text = BLOCK2_SOURCES.strip()
     if KRO_SOURCE_CHANNELS:
         block2_text += '\n\nЧаты с жалобами (источники за 12 ч):\n' + '\n'.join(
@@ -1003,10 +1001,8 @@ def _build_sources_doc_with_tables(service, doc_id, data):
         'В этом документе: откуда берутся все цифры, факты и прямые ссылки на источники (раздел 2).\n\n'
         '***\n\n'
         '1. Живой лог (ключевые события, без спама нулей)\n\n'
-    ) % (period_start, period_end, time_fmt)
-    for ln in live_lines:
-        intro += '- %s\n' % ln
-    intro += '\n%s\n\n***\n\n%s\n\n***\n\n' % (LIVE_LOG_PLACEHOLDER, block2)
+        '%s\n\n***\n\n%s\n\n***\n\n'
+    ) % (period_start, period_end, time_fmt, LIVE_LOG_PLACEHOLDER, block2)
     intro += '3. Найденные объекты (каналы / сигналы / сайты)\n\n'
     intro += 'Данные в таблице ниже — из разделов 2.1 и 2.2 (TGStat, Telega). Каждый объект со ссылкой на источник.\n\n'
 

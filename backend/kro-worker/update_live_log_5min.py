@@ -174,7 +174,7 @@ def _find_text_start_index(service, doc_id, search_text):
         return None
 
 def update_doc_placeholder(doc_id, new_content, last_line):
-    """Заменить плейсхолдер в документе на new_content и выделить last_line жирным (последняя строка = новое обновление)."""
+    """Заменить только первое вхождение плейсхолдера на new_content; в последней строке выделить жирным только время (HH:MM)."""
     creds = _get_creds()
     if not creds:
         print('update_live_log_5min: нет учётных данных Google', file=sys.stderr)
@@ -182,13 +182,13 @@ def update_doc_placeholder(doc_id, new_content, last_line):
     try:
         from googleapiclient.discovery import build
         service = build('docs', 'v1', credentials=creds)
+        P = _find_text_start_index(service, doc_id, PLACEHOLDER)
+        if P is None:
+            return False
+        # Заменяем только первое вхождение, чтобы не дублировать блок при нескольких плейсхолдерах
         requests = [
-            {
-                'replaceAllText': {
-                    'containsText': {'text': PLACEHOLDER, 'matchCase': True},
-                    'replaceText': new_content
-                }
-            }
+            {'deleteContentRange': {'range': {'startIndex': P, 'endIndex': P + len(PLACEHOLDER)}}},
+            {'insertText': {'location': {'index': P}, 'text': new_content}}
         ]
         service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
         if not last_line:
@@ -199,15 +199,17 @@ def update_doc_placeholder(doc_id, new_content, last_line):
         len_content = len(new_content)
         len_placeholder = len(PLACEHOLDER)
         block_start = P - len_content + len_placeholder
-        # последняя строка в блоке — сразу перед "\n" + PLACEHOLDER
         last_line_start = block_start + len_content - len_placeholder - 1 - len(last_line)
-        last_line_end = last_line_start + len(last_line)
-        if last_line_start < 1 or last_line_end <= last_line_start or last_line_start >= P:
+        # Жирным только время в начале строки (HH:MM или до " — ")
+        time_part = last_line.split(' — ', 1)[0] if ' — ' in last_line else last_line[:5]
+        time_len = len(time_part)
+        bold_end = last_line_start + time_len
+        if last_line_start < 1 or bold_end <= last_line_start or last_line_start >= P:
             return True
         requests2 = [
             {
                 'updateTextStyle': {
-                    'range': {'startIndex': last_line_start, 'endIndex': last_line_end},
+                    'range': {'startIndex': last_line_start, 'endIndex': bold_end},
                     'textStyle': {'bold': True},
                     'fields': 'bold'
                 }
