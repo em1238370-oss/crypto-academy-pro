@@ -303,36 +303,101 @@ def _msk_now():
 
 def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, complaints_rows,
                            new_scams_count, total_losses_12h, telegram_channels_count,
-                           courses, top3, report_url=None):
+                           courses, top3, report_url=None, period_start=None, period_end=None,
+                           victims_12h=0, complaints_count=None):
+    """Формирует текст документа SOURCE & DATA: всё, что нашла сеть (сырые данные + итоги)."""
+    if complaints_count is None:
+        complaints_count = sum((r.get('complaints') or 0) for r in (complaints_rows or []))
     lines = [
-        '# СКАМ-МОНИТОРИНГ КРИПТО | АВТООТЧЁТ', '',
-        '%s → ТВОЯ ПРОВЕРКА (15 мин)' % collect_time_msk, '',
-        '——— ГОТОВЫЕ ЦИФРЫ ДЛЯ САЙТА ———', '',
-        'Новых скам-каналов | %s' % new_scams_count,
-        'Потери за 12 ч | %s ₽' % total_losses_12h,
-        'Telegram каналов | %s' % telegram_channels_count,
-        'Курсов/продуктов | %s' % courses, '', 'ТОП-3 СЕГОДНЯ:', ''
+        'СКАМ‑МОНИТОРИНГ КРИПТО — SOURCE & DATA',
+        '',
+        'Период цикла: с %s по %s (MSK)' % (period_start or collect_time_msk, period_end or collect_time_msk),
+        'Время старта поиска: %s (MSK)' % collect_time_msk,
+        'Время окончания поиска: %s (MSK)' % collect_time_msk,
+        'Время формирования отчёта: %s (MSK)' % collect_time_msk,
+        '',
+        '——— 1. ИСТОЧНИКИ В ЭТОМ ЦИКЛЕ ———',
+        '',
+        '1. TGStat',
+        '   Время начала обращения: %s' % collect_time_msk,
+        '   Поисковый запрос: "криптовалюта", сортировка по новизне',
+        '   Ссылка: https://tgstat.ru/search?query=криптовалюта&sort=date',
+        '',
+        '2. Telega',
+        '   Время начала обращения: %s' % collect_time_msk,
+        '   Раздел: категория "cryptocurrencies"',
+        '   Ссылка: https://telega.io/catalog/cryptocurrencies',
+        '',
+        '3. Чаты с жалобами',
+        '   Время начала просмотра: %s' % collect_time_msk,
+        '   Чаты: KRO_SOURCE_CHANNELS (из настроек скрипта)',
+        '',
+        '——— 2. СЫРОЙ ПОИСК ———',
+        '',
+        'TGStat — сырые результаты поиска',
+        ''
     ]
+    for row in (new_tgstat or [])[:50]:
+        ch = row.get('channel', '—')
+        link = row.get('link', 'https://t.me/' + str(ch).lstrip('@'))
+        date = row.get('date', '—')
+        growth = row.get('growth') or '—'
+        vip = row.get('vip', '—')
+        lines.append('%s — канал %s' % (collect_time_msk, ch))
+        lines.append('  Ссылка: %s' % link)
+        lines.append('  Дата создания: %s' % date)
+        lines.append('  Подписчики/рост: %s' % growth)
+        lines.append('  VIP/платные услуги: %s' % vip)
+        lines.append('')
+    lines.extend([
+        'Telega — сырые результаты поиска',
+        ''
+    ])
+    for row in (telega_channels or [])[:50]:
+        ch = row.get('channel', '—')
+        link = row.get('link', '—')
+        lines.append('%s — канал %s' % (collect_time_msk, ch))
+        lines.append('  Ссылка: %s' % link)
+        lines.append('')
+    lines.extend([
+        'Чаты — сырые жалобы (агрегат по каналам)',
+        ''
+    ])
+    for row in (complaints_rows or [])[:50]:
+        ch = row.get('channel', '—')
+        complaints = row.get('complaints', 0)
+        losses = row.get('losses', 0)
+        status = row.get('status', '—')
+        lines.append('  Канал: %s' % ch)
+        lines.append('  Жалоб: %s, потери: %s ₽' % (complaints, losses))
+        lines.append('  Статус: %s' % status)
+        lines.append('')
+    lines.extend([
+        '——— 3. ИТОГОВЫЕ ЗНАЧЕНИЯ ДЛЯ ПУБЛИКАЦИИ (Блок 5) ———',
+        '',
+        'Новых скам‑каналов за период: %s' % new_scams_count,
+        'Суммарные потери за период: %s ₽' % total_losses_12h,
+        'Количество учтённых жалоб: %s' % (complaints_count if complaints_count is not None else victims_12h),
+        'Telegram каналов (в отчёте): %s' % telegram_channels_count,
+        'Курсов/продуктов: %s' % courses,
+        '',
+        'Список ТОП‑3:',
+        ''
+    ])
     for i, t in enumerate((top3 or [])[:3], 1):
         ch = t.get('channel') or t.get('name') or '—'
         losses = t.get('losses') or t.get('sum') or 0
-        complaints = t.get('complaints', 0)
-        lines.append('  %s. %s — %s ₽, жалоб: %s' % (i, ch, losses, complaints))
+        st = t.get('status', 'Активен')
+        lines.append('  %s) %s — %s ₽ — %s' % (i, ch, losses, st))
     if not (top3 or []):
         lines.append('  (нет данных)')
-    lines.extend(['', '——— SOURCE & DATA ———', ''])
-    lines.append('TGStat → %s' % collect_time_msk)
-    for row in (new_tgstat or [])[:25]:
-        ch, date = row.get('channel', '—'), row.get('date', '—')
-        link = row.get('link', 'https://t.me/' + str(ch).lstrip('@'))
-        lines.append('  ✓ %s | %s | %s' % (date, ch, link))
-    lines.extend(['', 'Telega → %s' % collect_time_msk])
-    for row in (telega_channels or [])[:25]:
-        lines.append('  ✓ %s | %s' % (row.get('channel', '—'), row.get('link', '—')))
-    lines.extend(['', 'ЖАЛОБЫ:'])
-    for row in (complaints_rows or [])[:30]:
-        lines.append('  %s — жалоб: %s, потери: %s ₽' % (row.get('channel', '—'), row.get('complaints', 0), row.get('losses', 0)))
-    lines.extend(['', '——— ЧЕКЛИСТ ———', 'Время сбора: %s' % collect_time_msk, 'Статус: ЖДУ ТВОЕГО ✅ / ❌', ''])
+    lines.extend([
+        '',
+        '——— ЧЕКЛИСТ ———',
+        'Время сбора: %s' % collect_time_msk,
+        'Статус: ЖДУ ТВОЕГО ✅ / ❌',
+        ''
+    ])
     lines.append(report_url or '(отчёт после 11:00 или 23:00 MSK)')
     return '\n'.join(lines)
 
@@ -619,16 +684,22 @@ def main():
         report_number
     )
 
-    # 5b) Обновить документ «Источники и данные» — текст собираем здесь
+    # 5b) Обновить документ «Источники и данные» — текст собираем здесь (всё, что нашла сеть)
     sources_doc_id = os.environ.get('KRO_SOURCES_DOC_ID', '').strip()
     if sources_doc_id:
         print('Обновляю Google Doc «Источники и данные»...', flush=True)
         now_msk_dt = _msk_now()
         collect_time_msk = now_msk_dt.strftime('%d %B %H:%M MSK').replace('February', 'февраля').replace('March', 'марта').replace('January', 'января')
+        period_end = now_msk_dt.strftime('%d.%m.%Y %H:%M')
+        period_start_dt = now_msk_dt - timedelta(hours=HOURS_12)
+        period_start = period_start_dt.strftime('%d.%m.%Y %H:%M')
+        complaints_count_val = sum((r.get('complaints') or 0) for r in complaints_rows)
         doc_text = build_sources_doc_text(
             collect_time_msk, new_tgstat, telega_channels, complaints_rows,
             new_scams_count, total_losses_12h, len(complaints_rows), 0, top3,
-            report_doc_url
+            report_doc_url,
+            period_start=period_start, period_end=period_end,
+            victims_12h=victims_12h, complaints_count=complaints_count_val
         )
         url = update_sources_google_doc(sources_doc_id, doc_text)
         if url:
