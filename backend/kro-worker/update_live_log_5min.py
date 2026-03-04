@@ -15,9 +15,11 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
 DATA_DIR = os.path.join(BACKEND_DIR, 'data')
 LIVE_LOG_FILE = os.path.join(DATA_DIR, 'live_log_5min.json')
+STATE_FILE = os.path.join(DATA_DIR, 'live_log_state.json')
 # Строка в документе, которую скрипт заменяет на актуальные строки лога (и снова вставляет в конец для следующего запуска)
 PLACEHOLDER = 'Обновления каждые 5 мин — см. ниже'
 MAX_LINES = 50
+EMPTY_INTERVAL_MINUTES = 30  # не чаще чем раз в 30 мин писать «новых каналов не найдено»
 
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
 
@@ -81,17 +83,25 @@ def fetch_telega_count():
             channels.add(g.lower())
     return len(channels)
 
-def get_complaints_cached():
-    """Жалобы из последнего kro-12h-stats.json или 0."""
+def get_stats_cached():
+    """Вернуть (victims_12h, losses_12h) из kro-12h-stats.json или (0, 0)."""
     path = os.path.join(DATA_DIR, 'kro-12h-stats.json')
     if not os.path.isfile(path):
-        return 0
+        return 0, 0
     try:
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        return int(data.get('victims_12h') or data.get('complaints_count') or 0)
+        v = int(data.get('victims_12h') or data.get('complaints_count') or 0)
+        l = int(data.get('losses_12h') or 0)
+        return v, l
     except Exception:
-        return 0
+        return 0, 0
+
+
+def get_complaints_cached():
+    """Жалобы из последнего kro-12h-stats.json или 0."""
+    v, _ = get_stats_cached()
+    return v
 
 def load_log_lines():
     if not os.path.isfile(LIVE_LOG_FILE):
@@ -209,32 +219,94 @@ def update_doc_placeholder(doc_id, new_content, last_line):
         print('update_live_log_5min: %s' % e, file=sys.stderr)
         return False
 
+def load_state():
+    """Загрузить последние счётчики и время последнего «ничего не найдено»."""
+    if not os.path.isfile(STATE_FILE):
+        return None
+    try:
+        with open(STATE_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def save_state(state):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(STATE_FILE, 'w', encoding='utf-8') as f:
+        json.dump(state, f, ensure_ascii=False, indent=0)
+
+
 def main():
     now = _msk_now()
-    # Округляем до 5 минут: 13:07 -> 13:05
-    minute = (now.minute // 5) * 5
-    ts = now.replace(minute=minute, second=0, microsecond=0)
-    time_str = ts.strftime('%H:%M')
+    time_str = now.strftime('%H:%M')
 
     tg = fetch_tgstat_count()
     telega = fetch_telega_count()
-    complaints = get_complaints_cached()
-    line = '%s — TGStat: %s каналов (крипто сигналы), Telega: %s, жалоб: %s' % (time_str, tg, telega, complaints)
+    victims, losses = get_stats_cached()
+
+    state = load_state()
+    new_line = None
+
+    if state is None:
+        save_state({
+            'last_tgstat': tg, 'last_telega': telega, 'last_victims': victims, 'last_losses': losses,
+            'last_empty_at': None
+        })
+    else:
+        changed = (
+            state.get('last_tgstat') != tg or state.get('last_telega') != telega
+            or state.get('last_victims') != victims or state.get('last_losses') != losses
+        )
+        if changed:
+            if (state.get('last_losses') != losses or state.get('last_victims') != victims) and (losses or victims):
+                new_line = '%s — Обновлён расчёт: потери %s ₽, жалоб %s.' % (time_str, losses, victims)
+            elif state.get('last_tgstat') != tg or state.get('last_telega') != telega:
+                new_line = '%s — TGStat/Telega: найдено каналов по фильтрам — TGStat %s, Telega %s.' % (time_str, tg, telega)
+            else:
+                new_line = '%s — Обновление счётчиков: TGStat %s, Telega %s, потери %s ₽.' % (time_str, tg, telega, losses)
+            if new_line:
+                lines = load_log_lines()
+                lines.append(new_line)
+                save_log_lines(lines[-MAX_LINES:] if len(lines) > MAX_LINES else lines)
+            save_state({
+                'last_tgstat': tg, 'last_telega': telega, 'last_victims': victims, 'last_losses': losses,
+                'last_empty_at': state.get('last_empty_at')
+            })
+        else:
+            last_empty = state.get('last_empty_at')
+            try:
+                last_empty_dt = datetime.fromisoformat(last_empty.replace('Z', '+00:00')) if last_empty else None
+            except Exception:
+                last_empty_dt = None
+            if last_empty_dt:
+                try:
+                    from zoneinfo import ZoneInfo
+                    last_empty_dt = last_empty_dt.astimezone(ZoneInfo('Europe/Moscow'))
+                except ImportError:
+                    last_empty_dt = last_empty_dt + timedelta(hours=3)
+            delta_min = (now - last_empty_dt).total_seconds() / 60.0 if last_empty_dt else EMPTY_INTERVAL_MINUTES + 1
+            if delta_min >= EMPTY_INTERVAL_MINUTES:
+                new_line = '%s — TGStat/Telega: новых каналов по фильтрам за 30 минут не найдено.' % time_str
+                lines = load_log_lines()
+                lines.append(new_line)
+                save_log_lines(lines[-MAX_LINES:] if len(lines) > MAX_LINES else lines)
+                save_state({
+                    'last_tgstat': tg, 'last_telega': telega, 'last_victims': victims, 'last_losses': losses,
+                    'last_empty_at': now.isoformat()
+                })
 
     lines = load_log_lines()
-    lines.append(line)
-    lines = lines[-MAX_LINES:]
-    save_log_lines(lines)
-
     doc_id = os.environ.get('KRO_SOURCES_DOC_ID', '').strip()
     if not doc_id:
         print('KRO_SOURCES_DOC_ID не задан, только запись в %s' % LIVE_LOG_FILE, file=sys.stderr)
         return
-    # В конце снова вставляем ту же строку, чтобы следующий запуск (через 5 мин) снова нашёл и заменил её
     content = '\n'.join(lines) + '\n' + PLACEHOLDER
-    # Последняя строка (только что добавленная) выделяется жирным, чтобы было видно новое обновление
-    if update_doc_placeholder(doc_id, content, last_line=line):
-        print('%s ok (жирным: новая строка): %s' % (time_str, line), file=sys.stderr)
+    last_line = new_line if new_line else (lines[-1] if lines else None)
+    if update_doc_placeholder(doc_id, content, last_line=last_line):
+        if last_line:
+            print('%s ok (жирным: новая строка): %s' % (time_str, last_line), file=sys.stderr)
+        else:
+            print('%s ok (документ обновлён)' % time_str, file=sys.stderr)
     else:
         print('%s doc update failed' % time_str, file=sys.stderr)
 

@@ -26,6 +26,8 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
 DATA_DIR = os.path.join(BACKEND_DIR, 'data')
 OUTPUT_JSON = os.path.join(DATA_DIR, 'kro-12h-stats.json')
+LIVE_LOG_FILE = os.path.join(DATA_DIR, 'live_log_5min.json')
+LIVE_LOG_MAX_LINES = 50
 REPORT_COUNTER_KEY = 'lastReportNumber'
 
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
@@ -55,6 +57,33 @@ def _load_env():
             break
 
 _load_env()
+
+
+def _load_live_log():
+    """Загрузить строки живого лога (только важные события)."""
+    if not os.path.isfile(LIVE_LOG_FILE):
+        return []
+    try:
+        with open(LIVE_LOG_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def _save_live_log(lines):
+    """Сохранить строки живого лога, оставив последние LIVE_LOG_MAX_LINES."""
+    os.makedirs(DATA_DIR, exist_ok=True)
+    kept = lines[-LIVE_LOG_MAX_LINES:] if len(lines) > LIVE_LOG_MAX_LINES else lines
+    with open(LIVE_LOG_FILE, 'w', encoding='utf-8') as f:
+        json.dump(kept, f, ensure_ascii=False, indent=0)
+
+
+def _append_live_log_events(events):
+    """Добавить события в живой лог и сохранить."""
+    lines = _load_live_log()
+    lines.extend(events)
+    _save_live_log(lines)
+
 
 # --- Критерии релевантности: только каналы про крипто и/или сигналы (исключаем VPN, gossip, книги и т.п.) ---
 STRONG_CRYPTO_SIGNAL = (
@@ -330,6 +359,37 @@ def build_top3(complaints_list, channel_sum_pairs):
 # --- Единый Google Doc «Источники и данные» (вся информация для вас) ---
 SOURCES_DOC_TITLE = 'KRO: источники данных и ссылки'
 
+# Плейсхолдер в документе для блока живого лога (заменяется на строки лога + снова вставляется)
+LIVE_LOG_PLACEHOLDER = 'Обновления каждые 5 мин — см. ниже'
+
+# Блок 2: Источники и условия поиска (фиксированный текст)
+BLOCK2_SOURCES = '''
+2. Источники и условия поиска
+
+2.1. TGStat
+- URL запроса: https://tgstat.ru/search?query=криптовалюта&sort=date
+- Фильтры риска: канал создан менее 14 дней назад; есть VIP/платные услуги от 10 000₽; рост подписчиков за сутки более 500.
+
+2.2. Telega
+- URL: https://telega.in/catalog?category=cryptocurrencies
+- Фильтры: категория "cryptocurrencies" / "trading signals"; добавлен в каталог менее 14 дней назад; реклама или VIP‑подписка от 10 000₽.
+
+2.3. Telegram‑чаты с жалобами
+- Список чатов: KRO_SOURCE_CHANNELS (названия и ссылки).
+- Фильтры: сообщения за последние 12 часов; текст с признаками потерь ("обманули", "скам", "меня кинули", "слили депозит"); указана сумма или диапазон; по объекту минимум 2 разных человека.
+'''
+
+# Блок 3: Параметры скама для сигнал‑каналов (фиксированный текст)
+BLOCK3_SCAM_PARAMS = '''
+3. Параметры скама для сигнал‑каналов (на примере @daytrader_signals)
+
+3.1. Базовые параметры канала: тип "сигнал‑канал / трейдинг‑сигналы"; позиционирование (обещания "гарантированной прибыли", "постоянного профита"); наличие платных подписок / VIP от 10 000₽ и выше; акции "только сегодня скидка".
+
+3.2. Поведенческие признаки риска: агрессивные обещания ("100% прибыль", "без рисков"); давление на срочность ("успей сейчас", "осталось 5 мест в VIP"); отсутствие верифицируемой истории; навязывание перехода в личку; яркие картинки/скриншоты вместо реального анализа.
+
+3.3. Связка с жалобами: канал в зоне повышенного риска, если (1) новый &lt;14 дней и/или резкий рост подписчиков, (2) платный VIP от 10 000₽, (3) в чатах жалоб ≥2 сообщений от разных людей с указанием суммы потерь по этому каналу.
+'''
+
 def _msk_now():
     try:
         from zoneinfo import ZoneInfo
@@ -351,6 +411,65 @@ def _channel_age_days(date_str, report_date_str):
         return None
 
 
+def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_date_str):
+    """Собрать строки для таблицы риска (блок 4). Возвращает (rows, telegram_count, courses_count)."""
+    complaints_by_ch = {}
+    for r in (complaints_rows or []):
+        ch = (r.get('channel') or '').strip()
+        if ch:
+            complaints_by_ch[ch] = (r.get('complaints', 0), r.get('losses', 0))
+
+    tgstat_channels = set()
+    telega_ch_set = set()
+    rows = []
+
+    for row in (new_tgstat or [])[:50]:
+        ch = row.get('channel', '—')
+        tgstat_channels.add(ch)
+        age_days = _channel_age_days(row.get('date', ''), report_date_str)
+        age_str = '%s дн.' % age_days if age_days is not None else 'н/д'
+        vip_val = row.get('vip')
+        if isinstance(vip_val, (int, float)):
+            vip_str = '%s ₽' % vip_val
+        else:
+            vip_str = (vip_val or 'н/д')
+        comp = complaints_by_ch.get(ch, (0, 0))
+        comp_str = '%s / %s ₽' % (comp[0], comp[1])
+        behavior = 'новый канал, VIP, рост подписчиков'
+        rows.append({
+            'obj': ch, 'type': 'сигнал‑канал', 'source': 'TGStat', 'age': age_str, 'vip': vip_str,
+            'behavior': behavior, 'complaints': comp_str, 'status': 'в риске'
+        })
+
+    for row in (telega_channels or [])[:50]:
+        ch = row.get('channel', '—')
+        telega_ch_set.add(ch)
+        if ch in tgstat_channels:
+            continue
+        comp = complaints_by_ch.get(ch, (0, 0))
+        comp_str = '%s / %s ₽' % (comp[0], comp[1])
+        rows.append({
+            'obj': ch, 'type': 'сигналы', 'source': 'Telega', 'age': 'н/д', 'vip': 'н/д',
+            'behavior': 'VIP, каталог крипто', 'complaints': comp_str, 'status': 'в риске'
+        })
+
+    for row in (complaints_rows or []):
+        ch = (row.get('channel') or '—').strip()
+        if not ch or ch in tgstat_channels or ch in telega_ch_set:
+            continue
+        obj_type = 'курс/сайт' if '@' not in ch and 't.me/' not in ch else 'сигнал‑канал'
+        comp = row.get('complaints', 0), row.get('losses', 0)
+        comp_str = '%s / %s ₽' % (comp[0], comp[1])
+        rows.append({
+            'obj': ch, 'type': obj_type, 'source': 'Чаты', 'age': 'н/д', 'vip': 'н/д',
+            'behavior': '"100%% доход" или по жалобам', 'complaints': comp_str, 'status': 'в риске'
+        })
+
+    telegram_count = sum(1 for r in rows if r['type'] in ('сигнал‑канал', 'сигналы'))
+    courses_count = sum(1 for r in rows if r['type'] == 'курс/сайт')
+    return rows, telegram_count, courses_count
+
+
 def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, complaints_rows,
                            new_scams_count, total_losses_12h, telegram_channels_count,
                            courses, top3, report_url=None, period_start=None, period_end=None,
@@ -359,136 +478,112 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     if complaints_count is None:
         complaints_count = sum((r.get('complaints') or 0) for r in (complaints_rows or []))
     report_date_str = (period_end or collect_time_msk).split()[0] if period_end else ''
+    time_formatted = period_end.split()[1] if period_end and ' ' in period_end else collect_time_msk
+
+    risk_rows, telegram_count, courses_count = _build_risk_table_rows(
+        new_tgstat, telega_channels, complaints_rows, report_date_str
+    )
+    if telegram_channels_count is None or (telegram_channels_count == 0 and telegram_count > 0):
+        telegram_channels_count = telegram_count
+    if courses is None and courses_count >= 0:
+        courses = courses_count
+
+    top3_today = [(t.get('channel') or t.get('name') or '—') for t in (top3 or [])[:3]]
+    live_lines = _load_live_log()
 
     lines = [
-        'Пункт 1. Заголовок и период',
-        'СКАМ-МОНИТОРИНГ | Source & Data',
+        'СКАМ‑МОНИТОРИНГ | Source & Data',
+        'Период цикла: %s – %s (MSK)' % (period_start or collect_time_msk, period_end or collect_time_msk),
+        'Время формирования отчёта: %s' % time_formatted,
         '',
-        'Период: %s – %s' % (period_start or collect_time_msk, period_end or collect_time_msk),
-        'Время формирования: %s MSK' % collect_time_msk,
+        '***',
         '',
-        'Пункт 2. Живой лог',
-        '——— ЖИВОЙ ЛОГ (каждые 5 минут) ———',
-        '',
-        'START цикла: %s' % (period_start or collect_time_msk),
-        'TGStat: %s — проверено каналов: %s' % (collect_time_msk, len(new_tgstat) if new_tgstat else '0'),
-        'Telega: %s — проверено каналов: %s' % (collect_time_msk, len(telega_channels) if telega_channels else '0'),
-        'Чаты скам: %s — жалоб: %s' % (collect_time_msk, complaints_count if complaints_count is not None else victims_12h),
-        'Фильтр: %s по фильтру' % (new_scams_count if new_scams_count else 0),
-        'Расчёт: потери %s ₽' % (total_losses_12h if total_losses_12h else 0),
-        'ПОИСК ЗАВЕРШЁН: %s' % collect_time_msk,
-        '',
-        '——— Обновления каждые 5 мин (00:05, 00:10, … 23:55) ———',
-        'Обновления каждые 5 мин — см. ниже',
-        '',
-        'Пункт 3. SOURCE & DATA (полный поиск)',
-        '——— SOURCE & DATA ———',
-        '',
-        '3.1. TGStat.ru поиск (каналы с крипто-сигналами)',
-        '   Запрос: «крипто сигналы», «сигналы криптовалюта». В список попадают только каналы, у которых в названии есть тема крипто/сигналов.',
-        '   Ссылка: https://tgstat.ru/search?query=крипто+сигналы&sort=date',
-        '   Время: %s' % collect_time_msk,
-        '   Проверено по теме: %s каналов (остальные отсечены — не про крипто/сигналы)' % (len(new_tgstat) if new_tgstat else 0),
-        '   Критерии отбора: возраст <14 дн., в названии — ключевые слова (крипто, сигнал, bitcoin, трейдинг и т.д.); для отметки ✅ дополнительно VIP>10к ₽, рост >500/сутки.',
+        '1. Живой лог (только важные события)',
         ''
     ]
-    for row in (new_tgstat or [])[:50]:
+    if live_lines:
+        for ln in live_lines[-LIVE_LOG_MAX_LINES:]:
+            lines.append('- %s' % ln)
+    else:
+        lines.append('(пока нет событий за цикл)')
+    lines.extend(['', LIVE_LOG_PLACEHOLDER, '', '***', ''])
+    lines.append(BLOCK2_SOURCES.strip())
+    lines.extend(['', '***', ''])
+    lines.append(BLOCK3_SCAM_PARAMS.strip())
+    lines.extend(['', '***', ''])
+    lines.extend([
+        '4. Найденные объекты (таблица риска)',
+        '',
+        '| Объект | Тип | Источник | Возраст | VIP/цена | Поведение | Жалобы (людей/сумма) | Статус |',
+        '|--------|-----|----------|---------|---------|-----------|------------------------|--------|'
+    ])
+    for r in risk_rows:
+        lines.append('| %s | %s | %s | %s | %s | %s | %s | %s |' % (
+            r['obj'], r['type'], r['source'], r['age'], r['vip'], r['behavior'], r['complaints'], r['status']
+        ))
+    if not risk_rows:
+        lines.append('| (нет данных) | — | — | — | — | — | — | — |')
+    lines.extend(['', '***', ''])
+    lines.extend([
+        '5. Жалобы и потери',
+        '',
+        '| Объект | Людей пожаловалось | Сумма потерь (12ч) | Примеры сообщений / ссылки |',
+        '|--------|--------------------|---------------------|----------------------------|'
+    ])
+    for row in (complaints_rows or [])[:30]:
         ch = row.get('channel', '—')
-        title = row.get('title', '—')
-        link = row.get('link', 'https://t.me/' + str(ch).lstrip('@'))
-        date = row.get('date', '—')
-        growth = row.get('growth')
-        growth_str = str(growth) if growth is not None else '—'
-        vip_val = row.get('vip')
-        if isinstance(vip_val, (int, float)):
-            vip_str = '%s' % vip_val
-        else:
-            vip_str = (vip_val or '—')
-        age = _channel_age_days(date, report_date_str)
-        if age is not None and age >= DAYS_14:
-            mark, reason = '❌', '>14 дней'
-        elif age is not None and age < DAYS_14:
-            mark = '✅'
-            reason = ''
-            if isinstance(vip_val, (int, float)) and vip_val < VIP_MIN:
-                reason = 'VIP<10к'
-            if isinstance(growth, (int, float)) and growth < GROWTH_MIN:
-                reason = (reason + ' ' if reason else '') + 'рост<500'
-        else:
-            mark, reason = '❌', 'нет даты'
-        lines.append('%s %s' % (mark, ch))
-        lines.append('  Название канала: %s' % (title if title != '—' else '(нет)'))
-        lines.append('  Ссылка: %s' % link)
-        lines.append('  Дата создания: %s | VIP: %s | Рост: %s' % (date, vip_str, growth_str))
-        why = 'Почему выбран: запрос «крипто сигналы»; в названии/username есть тема крипто или сигналов; возраст <14 дн.'
-        if reason:
-            lines.append('  Причина отклонения по критериям: %s' % reason)
-        lines.append('  %s' % why)
-        lines.append('')
-    lines.extend([
-        '3.2. Telega.in поиск',
-        '   Каталог «криптовалюты» — все каналы из раздела релевантны теме крипто.',
-        '   Ссылка: https://telega.io/catalog/cryptocurrencies',
-        '   Время: %s' % collect_time_msk,
-        '   Проверено: %s каналов' % (len(telega_channels) if telega_channels else 0),
-        '   Почему выбран источник: каталог Telega — раздел криптовалюты, тема совпадает с задачей (крипто/сигналы).',
-        ''
-    ])
-    for row in (telega_channels or [])[:50]:
-        ch = row.get('channel', '—')
-        link = row.get('link', '—')
-        lines.append('✅ %s' % ch)
-        lines.append('  Ссылка: %s' % link)
-        lines.append('  Почему выбран: каталог «криптовалюты» Telega — релевантен теме.')
-        lines.append('')
-    lines.extend([
-        '3.3. Чаты с жалобами',
-        '   Чаты: KRO_SOURCE_CHANNELS',
-        '   Количество жалоб: %s' % (complaints_count if complaints_count is not None else victims_12h),
-        ''
-    ])
-    for row in (complaints_rows or [])[:50]:
-        ch = row.get('channel', '—')
-        complaints = row.get('complaints', 0)
-        losses = row.get('losses', 0)
-        lines.append('  Канал: %s — жалоб: %s, сумма: %s ₽' % (ch, complaints, losses))
+        comp = row.get('complaints', 0)
+        loss = row.get('losses', 0)
+        lines.append('| %s | %s | %s ₽ | ссылки на сообщения |' % (ch, comp, loss or 0))
+    if not (complaints_rows or []):
+        lines.append('| (нет данных) | — | — | — |')
     lines.extend([
         '',
-        'Пункт 4. Расчёт для сайта (эти данные уходят на сайт в 12:00 и 00:00)',
-        '——— РАСЧЁТ ДЛЯ САЙТА ———',
+        'Учитывались только жалобы за текущий 12‑часовой период, с указанием суммы и ссылкой на сообщение/скрин. Один человек = одна жалоба на объект.',
         '',
-        'Дата и время отчёта: %s' % collect_time_msk,
-        '',
-        'Новых скам-каналов: %s' % new_scams_count,
-        'Сколько потеряно за 12 ч: %s ₽' % total_losses_12h,
-        'Telegram каналов: %s' % telegram_channels_count,
-        'Курсов/фейк-продуктов за последние 12 ч: %s' % (courses or 0),
-        'Сколько обмануто людей (жалобы за 12 ч): %s' % (victims_12h or complaints_count or 0),
-        '',
-        'ТОП-3 за сегодня (канал — сколько потеряно — статус):',
+        '***',
         ''
     ])
-    for i, t in enumerate((top3 or [])[:3], 1):
-        ch = t.get('channel') or t.get('name') or '—'
-        losses = t.get('losses') or t.get('sum') or 0
-        st = t.get('status', 'Активен')
-        lines.append('  %s) %s — %s ₽ — %s' % (i, ch, losses, st))
-    if not (top3 or []):
-        lines.append('  (нет данных)')
+    lines.extend([
+        '6. Расчёт итогов и связка с сайтом',
+        '',
+        'new_scam_channels: %s' % new_scams_count,
+        'losses_12h: %s ₽' % (total_losses_12h or 0),
+        'telegram_channels: %s' % telegram_channels_count,
+        'courses_products: %s' % (courses or 0),
+        'top3_today: %s' % ', '.join(top3_today) if top3_today else '(нет)',
+        '',
+        'JSON для сайта:',
+        ''
+    ])
+    lines.append(json.dumps({
+        'new_scam_channels': new_scams_count,
+        'losses_12h': total_losses_12h or 0,
+        'telegram_channels': telegram_channels_count,
+        'courses_products': courses or 0,
+        'top3_today': top3_today
+    }, ensure_ascii=False, indent=2))
     lines.extend([
         '',
-        'Пункт 5. Твоя проверка',
-        '——— ТВОЯ ПРОВЕРКА (до 12:00 / до 00:00, затем данные на сайт) ———',
+        'Связка с сайтом: «Новый скам канал» → new_scam_channels, «Потери» → losses_12h, «Телеграм‑каналов» → telegram_channels, «Курсов/продуктов» → courses_products, «Топ‑3 за сегодня» → top3_today.',
         '',
-        '□ Ссылки работают',
-        '□ Каналы <14 дней + VIP>10к ₽, рост >500/сутки',
-        '□ Жалобы реальные',
-        '□ Суммы адекватны',
-        '□ Комментарий:',
+        '***',
         ''
     ])
-    lines.append(report_url or '(отчёт после 11:00 или 23:00 MSK)')
+    lines.extend([
+        '7. Чек‑лист прозрачности',
+        '',
+        '□ У каждого объекта есть источник (ссылка).',
+        '□ Все жалобы содержат суммы и относятся к периоду цикла.',
+        '□ Итоговая сумма потерь = сумме по таблице жалоб.',
+        '□ Поведенческие признаки риска (обещания, срочность, VIP) описаны хотя бы для Топ‑3.',
+        '□ JSON внизу совпадает с цифрами из разделов 3–5.',
+        ''
+    ])
+    if report_url:
+        lines.append(report_url)
     return '\n'.join(lines)
+
 
 def _get_sources_doc_text(report_title=None, report_url=None):
     """Текст для документа «Источники и данные» — откуда цифры и все ссылки."""
@@ -769,6 +864,13 @@ def main():
     now_msk_str = now_msk.strftime('%d %B %H:%M').replace('February', 'февраля').replace('March', 'марта').replace('January', 'января')
     print('Run 12h monitor at %s UTC' % now_msk.isoformat(), file=sys.stderr)
 
+    # 0) Живой лог: старт цикла (событие)
+    now_msk_dt = _msk_now()
+    time_str = now_msk_dt.strftime('%H:%M')
+    period_end_hm = now_msk_dt.strftime('%H:%M')
+    period_start_hm = (now_msk_dt - timedelta(hours=HOURS_12)).strftime('%H:%M')
+    _append_live_log_events(['%s — Старт цикла %s–%s (MSK).' % (time_str, period_start_hm, period_end_hm)])
+
     # 1) TGStat new channels
     new_tgstat = fetch_tgstat_new_channels()
     time.sleep(REQUEST_DELAY)
@@ -814,6 +916,26 @@ def main():
     total_losses_12h = sum(r.get('sum', 0) for r in sheet_reports) + sum(s for _, s in channel_sum_pairs)
     new_scams_count = len(new_tgstat) + len([c for c, d in agg_complaints.items() if d.get('status') == 'Скам'])
 
+    # 4b) Живой лог: события цикла (новые каналы, жалобы, расчёт)
+    now_msk_dt = _msk_now()
+    time_str = now_msk_dt.strftime('%H:%M')
+    events = []
+    for row in (new_tgstat or [])[:30]:
+        ch = row.get('channel', '—')
+        events.append('%s — TGStat: найден новый канал %s, соответствует фильтрам риска.' % (time_str, ch))
+    for row in (telega_channels or [])[:30]:
+        ch = row.get('channel', '—')
+        events.append('%s — Telega: добавлен новый сигнал‑канал %s (VIP > 10 000₽).' % (time_str, ch))
+    for row in (complaints_rows or [])[:20]:
+        ch = row.get('channel', '—')
+        cnt = row.get('complaints', 0)
+        loss = row.get('losses', 0)
+        if cnt and ch:
+            events.append('%s — Чаты: выявлены %s новые жалобы на %s (%s ₽).' % (time_str, cnt, ch, loss or 0))
+    events.append('%s — Обновлён расчёт потерь: %s ₽, %s объектов в зоне риска.' % (time_str, total_losses_12h or 0, new_scams_count or 0))
+    if events:
+        _append_live_log_events(events)
+
     # 5) Report number and Google Doc
     last_report_num = 0
     report_doc_url = None
@@ -840,18 +962,22 @@ def main():
     )
 
     # 5b) Обновить документ «Источники и данные» — текст собираем здесь (всё, что нашла сеть)
+    now_msk_dt = _msk_now()
+    period_end = now_msk_dt.strftime('%d.%m.%Y %H:%M')
+    period_start_dt = now_msk_dt - timedelta(hours=HOURS_12)
+    period_start = period_start_dt.strftime('%d.%m.%Y %H:%M')
+    report_date_str = period_end.split()[0] if period_end else ''
+    _, telegram_count_from_risk, courses_count_from_risk = _build_risk_table_rows(
+        new_tgstat, telega_channels, complaints_rows, report_date_str
+    )
     sources_doc_id = os.environ.get('KRO_SOURCES_DOC_ID', '').strip()
     if sources_doc_id:
         print('Обновляю Google Doc «Источники и данные»...', flush=True)
-        now_msk_dt = _msk_now()
         collect_time_msk = now_msk_dt.strftime('%d %B %H:%M MSK').replace('February', 'февраля').replace('March', 'марта').replace('January', 'января')
-        period_end = now_msk_dt.strftime('%d.%m.%Y %H:%M')
-        period_start_dt = now_msk_dt - timedelta(hours=HOURS_12)
-        period_start = period_start_dt.strftime('%d.%m.%Y %H:%M')
         complaints_count_val = sum((r.get('complaints') or 0) for r in complaints_rows)
         doc_text = build_sources_doc_text(
             collect_time_msk, new_tgstat, telega_channels, complaints_rows,
-            new_scams_count, total_losses_12h, len(complaints_rows), 0, top3,
+            new_scams_count, total_losses_12h, telegram_count_from_risk, courses_count_from_risk, top3,
             report_doc_url,
             period_start=period_start, period_end=period_end,
             victims_12h=victims_12h, complaints_count=complaints_count_val
@@ -866,16 +992,15 @@ def main():
         print('KRO_SOURCES_DOC_ID не задан — обновление документа пропущено.', flush=True)
 
     # 6) Write JSON for site (поля спецификации + обратная совместимость)
-    courses_val = 0  # курсов/продуктов из листа или 0
     top3_today = [(t.get('channel') or t.get('name') or '—') for t in (top3 or [])[:3]]
     out = {
         'new_scams': new_scams_count,
         'new_scam_channels': new_scams_count,
         'losses_12h': total_losses_12h,
         'victims_12h': victims_12h,
-        'telegram_channels': len(complaints_rows),
-        'courses': courses_val,
-        'courses_products': courses_val,
+        'telegram_channels': telegram_count_from_risk,
+        'courses': courses_count_from_risk,
+        'courses_products': courses_count_from_risk,
         'top3': top3,
         'top3_today': top3_today,
         'report_doc_url': report_doc_url,
@@ -902,7 +1027,7 @@ def main():
                 'new_scam_channels': new_scams_count,
                 'losses_12h': total_losses_12h,
                 'telegram_channels': out['telegram_channels'],
-                'courses_products': courses_val,
+                'courses_products': courses_count_from_risk,
                 'top3_today': top3_today,
             }
             data = json.dumps(payload).encode('utf-8')
