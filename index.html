@@ -102,8 +102,8 @@
                <!-- Блок 1: Шок-цифры -->
                <div class="kro-f1-block kro-f1-shock">
                    <p class="kro-f1-shock-heading">ЗА ПОСЛЕДНИЕ 12 ЧАСОВ:</p>
-                   <p class="kro-f1-shock-text">73 человека купили «гарантию прибыли»</p>
-                   <p class="kro-f1-shock-total">ИТОГО: -1 240 000₽</p>
+                   <p class="kro-f1-shock-text" id="kro-f1-shock-text">73 человека купили «гарантию прибыли»</p>
+                   <p class="kro-f1-shock-total" id="kro-f1-shock-total">ИТОГО: -1 240 000₽</p>
                </div>
                <!-- Блок 2: Твой тип лоха -->
                <div class="kro-f1-block kro-f1-loh">
@@ -486,6 +486,8 @@
                if ((el = document.getElementById('kro-stat-lost'))) el.textContent = formatFull(data.totalLost);
                if ((el = document.getElementById('kro-stat-channels'))) el.textContent = data.telegramCount;
                if ((el = document.getElementById('kro-stat-courses'))) el.textContent = data.coursesCount;
+               if ((el = document.getElementById('kro-f1-shock-text'))) el.textContent = data.shockText || '73 человека купили «гарантию прибыли»';
+               if ((el = document.getElementById('kro-f1-shock-total'))) el.textContent = 'ИТОГО: -' + formatFull(data.totalLost) + '₽';
                var top3 = data.top3 || [];
                for (var i = 0; i < 3; i++) {
                    var r = top3[i];

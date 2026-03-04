@@ -1247,6 +1247,8 @@ const KRO_FALLBACK = {
   totalLost: 12847300,
   telegramCount: 37,
   coursesCount: 10,
+  victims_12h: 73,
+  shockText: '73 человека купили «гарантию прибыли»',
   top3: [
     { channel: '@TONPumpElite', sum: 2100000, status: 'Удалён' },
     { channel: 'BTC Курс миллионера', sum: 847000, status: 'Активен' },
@@ -1635,18 +1637,27 @@ app.get('/api/kro/live-counter', async (req, res) => {
         const totalLost = data.losses_12h ?? data.totalLost ?? 0;
         const telegramCount = data.telegram_channels ?? data.telegramCount ?? KRO_FALLBACK.telegramCount;
         const coursesCount = data.courses_products ?? data.courses ?? data.coursesCount ?? KRO_FALLBACK.coursesCount;
+        const victims12h = data.victims_12h ?? KRO_FALLBACK.victims_12h ?? 0;
+        const n = victims12h;
+        const shockText = n <= 0
+          ? (KRO_FALLBACK.shockText || 'Нет новых жалоб за 12 ч')
+          : n === 1
+            ? '1 человек купил «гарантию прибыли»'
+            : n >= 2 && n <= 4
+              ? n + ' человека купили «гарантию прибыли»'
+              : n + ' человек купили «гарантию прибыли»';
         let top3 = KRO_FALLBACK.top3;
-        if (Array.isArray(data.top3_today) && data.top3_today.length) {
-          top3 = data.top3_today.slice(0, 3).map((s) => ({
-            channel: typeof s === 'string' ? s : (s && s.channel) || '—',
-            sum: 0,
-            status: 'Активен'
-          }));
-        } else if (Array.isArray(data.top3) && data.top3.length) {
+        if (Array.isArray(data.top3) && data.top3.length && typeof data.top3[0] === 'object' && (data.top3[0].sum !== undefined || data.top3[0].channel)) {
           top3 = data.top3.slice(0, 3).map((r) => ({
             channel: r.channel || r.name || '—',
             sum: typeof r.sum === 'number' ? r.sum : (r.losses || 0),
             status: r.status || 'Активен'
+          }));
+        } else if (Array.isArray(data.top3_today) && data.top3_today.length) {
+          top3 = data.top3_today.slice(0, 3).map((s) => ({
+            channel: typeof s === 'string' ? s : (s && s.channel) || '—',
+            sum: 0,
+            status: 'Активен'
           }));
         }
         return res.json({
@@ -1654,6 +1665,8 @@ app.get('/api/kro/live-counter', async (req, res) => {
           totalLost,
           telegramCount,
           coursesCount,
+          victims_12h: victims12h,
+          shockText,
           top3
         });
       }
@@ -1684,6 +1697,8 @@ app.get('/api/kro/live-counter', async (req, res) => {
       totalLost,
       telegramCount,
       coursesCount,
+      victims_12h: 0,
+      shockText: KRO_FALLBACK.shockText || '73 человека купили «гарантию прибыли»',
       top3: top3.length ? top3 : KRO_FALLBACK.top3
     });
   } catch (e) {
