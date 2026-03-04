@@ -896,7 +896,7 @@ def _discover_tables_in_doc(doc):
 
 
 def _fill_existing_tables(service, doc_id, data):
-    """Заполнить уже созданные в документе таблицы (заголовки не трогаем). Ищем таблицы по числу колонок: 7, 4, 8."""
+    """Заполнить уже созданные в документе таблицы. Первую строку (заголовки) не трогаем — как в документе; заполняем только строки с данными. Таблицы по числу колонок: 7, 4, 8."""
     risk_rows = data.get('risk_rows') or []
     complaints_rows = data.get('complaints_rows') or []
     doc = service.documents().get(documentId=doc_id).execute()
@@ -911,57 +911,58 @@ def _fill_existing_tables(service, doc_id, data):
     t8 = by_cols.get(8)
     if not t7 and not t4 and not t8:
         return False
-    replacements = []  # (si, ei, text)
+    replacements = []  # (si, ei, text). Заполняем только строки ri >= 1 (данные), строку 0 (заголовки) оставляем как в документе
 
     if t7 and t7['cells']:
-        header = ['Объект', 'Тип', 'Источник', 'Возраст', 'VIP/цена', 'Рост', 'Статус']
-        cell_texts = [header]
+        data_rows = []
         for r in risk_rows:
-            cell_texts.append([r['obj'], r['type'], r['source'], r['age'], r['vip'], r['growth'], r['status']])
+            data_rows.append([r['obj'], r['type'], r['source'], r['age'], r['vip'], r['growth'], r['status']])
         if not risk_rows:
-            cell_texts.append(['(нет данных)', '—', '—', '—', '—', '—', '—'])
+            data_rows.append(['(нет данных)', '—', '—', '—', '—', '—', '—'])
         cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t7['cells']}
-        for ri in range(len(cell_texts)):
+        for ri in range(len(data_rows)):
             for ci in range(7):
-                if (ri, ci) not in cells_by_rc:
+                r_idx = ri + 1
+                if (r_idx, ci) not in cells_by_rc:
                     continue
-                si, ei = cells_by_rc[(ri, ci)]
-                replacements.append((si, ei, str(cell_texts[ri][ci])[:500]))
+                si, ei = cells_by_rc[(r_idx, ci)]
+                replacements.append((si, ei, str(data_rows[ri][ci])[:500]))
     if t4 and t4['cells']:
         def _fmt_k(val):
             v = int(val or 0)
             return '%sк₽' % (v // 1000) if v >= 1000 else '%s ₽' % v
-        cell_texts = [['Объект', 'Люди', 'Сумма 12ч', 'Ссылки']]
+        data_rows = []
         for ri, row in enumerate(complaints_rows):
             n = row.get('complaints', 0) or 0
             links = (row.get('message_links') or '').strip() or ', '.join('t.me/.../%s' % (100 + ri * 100 + i) for i in range(max(1, min(n, 4))))
             if n > 4:
                 links += ', ...'
-            cell_texts.append([str(row.get('channel', '—')), str(n), _fmt_k(row.get('losses')), links])
+            data_rows.append([str(row.get('channel', '—')), str(n), _fmt_k(row.get('losses')), links])
         if not complaints_rows:
-            cell_texts.append(['(нет данных)', '—', '—', '—'])
+            data_rows.append(['(нет данных)', '—', '—', '—'])
         cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t4['cells']}
-        for ri in range(len(cell_texts)):
+        for ri in range(len(data_rows)):
             for ci in range(4):
-                if (ri, ci) not in cells_by_rc:
+                r_idx = ri + 1
+                if (r_idx, ci) not in cells_by_rc:
                     continue
-                si, ei = cells_by_rc[(ri, ci)]
-                replacements.append((si, ei, str(cell_texts[ri][ci])[:500]))
+                si, ei = cells_by_rc[(r_idx, ci)]
+                replacements.append((si, ei, str(data_rows[ri][ci])[:500]))
     if t8 and t8['cells']:
-        header = ['Объект', 'Базовые (3/3)', 'Агрессивные обещания', 'Картинки без док', 'Псевдо-анализ', 'Только профит', 'VIP навязывание', 'ИТОГ']
-        cell_texts = [header]
+        data_rows = []
         for r in risk_rows:
             ra = r.get('risk_analysis') or {}
-            cell_texts.append([r['obj'], ra.get('basic_3_3', '—'), ra.get('agg', '—'), ra.get('kartinki', '—'), ra.get('psevdo', '—'), ra.get('tolko_profit', '—'), ra.get('vip_navyaz', '—'), ra.get('itog', '—')])
+            data_rows.append([r['obj'], ra.get('basic_3_3', '—'), ra.get('agg', '—'), ra.get('kartinki', '—'), ra.get('psevdo', '—'), ra.get('tolko_profit', '—'), ra.get('vip_navyaz', '—'), ra.get('itog', '—')])
         if not risk_rows:
-            cell_texts.append(['(нет данных)', '—', '—', '—', '—', '—', '—', '—'])
+            data_rows.append(['(нет данных)', '—', '—', '—', '—', '—', '—', '—'])
         cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t8['cells']}
-        for ri in range(len(cell_texts)):
+        for ri in range(len(data_rows)):
             for ci in range(8):
-                if (ri, ci) not in cells_by_rc:
+                r_idx = ri + 1
+                if (r_idx, ci) not in cells_by_rc:
                     continue
-                si, ei = cells_by_rc[(ri, ci)]
-                replacements.append((si, ei, str(cell_texts[ri][ci])[:500]))
+                si, ei = cells_by_rc[(r_idx, ci)]
+                replacements.append((si, ei, str(data_rows[ri][ci])[:500]))
 
     if not replacements:
         return False
