@@ -1620,6 +1620,36 @@ app.post('/api/kro/check-screenshot', express.json({ limit: '10mb' }), async (re
 app.get('/api/kro/live-counter', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   try {
+    const kro12hPath = join(__dirname, 'data', 'kro-12h-stats.json');
+    if (fs.existsSync(kro12hPath)) {
+      const raw = fs.readFileSync(kro12hPath, 'utf8');
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch (parseErr) {
+        console.warn('KRO live-counter: invalid kro-12h-stats.json', parseErr?.message);
+      }
+      if (data && (typeof data.new_scams === 'number' || typeof data.channelsToday === 'number')) {
+        const channelsToday = data.new_scams ?? data.channelsToday ?? 0;
+        const totalLost = data.losses_12h ?? data.totalLost ?? 0;
+        const telegramCount = data.telegram_channels ?? data.telegramCount ?? KRO_FALLBACK.telegramCount;
+        const coursesCount = data.courses ?? data.coursesCount ?? KRO_FALLBACK.coursesCount;
+        const top3 = Array.isArray(data.top3) && data.top3.length
+          ? data.top3.slice(0, 3).map((r) => ({
+              channel: r.channel || r.name || '—',
+              sum: typeof r.sum === 'number' ? r.sum : (r.losses || 0),
+              status: r.status || 'Активен'
+            }))
+          : KRO_FALLBACK.top3;
+        return res.json({
+          channelsToday,
+          totalLost,
+          telegramCount,
+          coursesCount,
+          top3
+        });
+      }
+    }
     const client = await getKroSheetsClient();
     if (!client) {
       return res.json(KRO_FALLBACK);
@@ -1631,12 +1661,12 @@ app.get('/api/kro/live-counter', async (req, res) => {
       range
     });
     const rows = response.data.values || [];
-    const data = rows.map((r) => parseSheetRow(r));
-    const todayRows = data.filter((r) => isRowToday(r.dateVal, today));
+    const sheetData = rows.map((r) => parseSheetRow(r));
+    const todayRows = sheetData.filter((r) => isRowToday(r.dateVal, today));
     const channelsToday = todayRows.length;
-    const totalLost = data.reduce((acc, r) => acc + r.sum, 0);
-    const telegramCount = data.filter((r) => /^TG$/i.test(r.type)).length;
-    const coursesCount = data.filter((r) => /курс|фейк|course/i.test(r.type)).length;
+    const totalLost = sheetData.reduce((acc, r) => acc + r.sum, 0);
+    const telegramCount = sheetData.filter((r) => /^TG$/i.test(r.type)).length;
+    const coursesCount = sheetData.filter((r) => /курс|фейк|course/i.test(r.type)).length;
     const top3 = todayRows
       .sort((a, b) => b.sum - a.sum)
       .slice(0, 3)
