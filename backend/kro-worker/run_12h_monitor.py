@@ -427,9 +427,17 @@ def _object_link(ch, link=None):
     return 'https://t.me/' + ch.lstrip('@')
 
 
+def _behavior_as_numbered_list(reasons):
+    """Оформить причины как нумерованный список в одной ячейке: 1. ... 2. ... 3. ..."""
+    if not reasons:
+        return '—'
+    return '\n'.join('%s. %s' % (i, s) for i, s in enumerate(reasons, 1))
+
+
 def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_date_str):
     """Собрать строки для таблиц 3 и 5. Возвращает (rows, telegram_count, courses_count).
-    Каждая строка: obj, link, type, source, age, vip, growth, status, behavior (для таблицы причин)."""
+    Каждая строка: obj, link, type, source, age, vip, growth, status, behavior (для таблицы причин).
+    behavior — нумерованный список пунктов для ячейки «Причины (по пунктам)»."""
     complaints_by_ch = {}
     for r in (complaints_rows or []):
         ch = (r.get('channel') or '').strip()
@@ -447,16 +455,27 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         age_str = '%s дн.' % age_days if age_days is not None else 'н/д'
         vip_val = row.get('vip')
         if isinstance(vip_val, (int, float)):
-            vip_str = '%s ₽' % vip_val
+            vip_str = 'VIP %s ₽' % vip_val
         else:
             vip_str = (vip_val or 'н/д')
+        if vip_str != 'н/д' and not vip_str.startswith('VIP'):
+            vip_str = 'VIP %s' % vip_str
         g = row.get('growth')
         growth_str = str(g) if g is not None and g != '' else 'н/д'
         comp = complaints_by_ch.get(ch, (0, 0))
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
-        behavior = 'новый канал (возраст %s); VIP %s (фильтр <14 дн., ≥10к ₽)' % (age_str, vip_str)
+        reasons = [
+            'новый канал (%s)' % age_str,
+            vip_str + ' (фильтр <14 дн., ≥10к ₽)',
+        ]
+        if growth_str != 'н/д':
+            reasons.append('рост/активность: %s' % growth_str)
         if comp[0] or comp[1]:
-            behavior += '; в чатах жалобы: %s чел., %s ₽' % (comp[0], comp[1])
+            reasons.append('жалобы в чатах: %s чел., %s ₽' % (comp[0], comp[1]))
+        title = (row.get('title') or '').lower()
+        if any(p in title for p in ('без риск', 'х2', '100%', 'профит', 'гарант')):
+            reasons.append('агрессивные обещания в описании/названии')
+        behavior = _behavior_as_numbered_list(reasons)
         link = row.get('link') or _object_link(ch)
         rows.append({
             'obj': ch, 'link': link, 'type': 'сигнал‑канал', 'source': 'TGStat', 'age': age_str, 'vip': vip_str,
@@ -470,9 +489,10 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             continue
         comp = complaints_by_ch.get(ch, (0, 0))
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
-        behavior = 'каталог крипто/сигналы; фильтр VIP от 10к ₽'
+        reasons = ['каталог крипто/сигналы', 'фильтр VIP от 10к ₽']
         if comp[0] or comp[1]:
-            behavior += '; по жалобам: %s чел., %s ₽' % (comp[0], comp[1])
+            reasons.append('по жалобам: %s чел., %s ₽' % (comp[0], comp[1]))
+        behavior = _behavior_as_numbered_list(reasons)
         link = row.get('link') or _object_link(ch)
         rows.append({
             'obj': ch, 'link': link, 'type': 'сигналы', 'source': 'Telega', 'age': 'н/д', 'vip': 'н/д',
@@ -486,7 +506,11 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         obj_type = 'курс/сайт' if '@' not in ch and 't.me/' not in ch else 'сигнал‑канал'
         comp = row.get('complaints', 0), row.get('losses', 0)
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
-        behavior = 'по жалобам в чатах за 12 ч: %s чел., %s ₽' % (comp[0], comp[1])
+        reasons = ['по жалобам в чатах за 12 ч: %s чел., %s ₽' % (comp[0], comp[1])]
+        if obj_type == 'курс/сайт':
+            reasons.insert(0, 'нет прозрачной истории')
+            reasons.append('жалобы на потерю денег')
+        behavior = _behavior_as_numbered_list(reasons)
         link = _object_link(ch)
         rows.append({
             'obj': ch, 'link': link, 'type': obj_type, 'source': 'Чаты', 'age': 'н/д', 'vip': 'н/д',
@@ -751,7 +775,7 @@ def _build_sources_doc_with_tables(service, doc_id, data):
         if not risk_rows:
             cell_texts.append(['(нет данных)', '—', '—', '—', '—', '—', '—'])
         cells_sorted = sorted(cells, key=lambda x: -x[2])
-        flat = [str(t)[:200] for row in cell_texts for t in row]
+        flat = [str(t)[:500] for row in cell_texts for t in row]
         for (ri, ci, si), text in zip(cells_sorted, flat):
             service.documents().batchUpdate(documentId=doc_id, body={'requests': [{'insertText': {'location': {'index': si}, 'text': text}}]}).execute()
             if ci == 0 and ri > 0 and ri <= len(risk_rows) and risk_rows[ri - 1].get('link'):
@@ -783,13 +807,27 @@ def _build_sources_doc_with_tables(service, doc_id, data):
     if cells:
         cell_texts = [['Объект', 'Кол-во людей', 'Сумма потерь за 12ч', 'Ссылки на сообщения / чаты']]
         for row in complaints_rows:
-            cell_texts.append([str(row.get('channel', '—')), str(row.get('complaints', 0)), '%s ₽' % (row.get('losses') or 0), 'ссылки на сообщения / скрин'])
+            ch = str(row.get('channel', '—'))
+            losses_fmt = '%s ₽' % (row.get('losses') or 0)
+            links_cell = (row.get('message_links') or '').strip() or 'см. чаты с жалобами за 12 ч (п. 2.3)'
+            cell_texts.append([ch, str(row.get('complaints', 0)), losses_fmt, links_cell])
         if not complaints_rows:
             cell_texts.append(['(нет данных)', '—', '—', '—'])
         cells_sorted = sorted(cells, key=lambda x: -x[2])
-        flat_texts = [str(t)[:200] for row in cell_texts for t in row]
-        for (_, _, si), text in zip(cells_sorted, flat_texts):
+        flat_texts = [str(t)[:500] for row in cell_texts for t in row]
+        for (ri, ci, si), text in zip(cells_sorted, flat_texts):
             service.documents().batchUpdate(documentId=doc_id, body={'requests': [{'insertText': {'location': {'index': si}, 'text': text}}]}).execute()
+            if ci == 0 and ri > 0 and ri <= len(complaints_rows):
+                row = complaints_rows[ri - 1]
+                ch = row.get('channel') or ''
+                url = _object_link(ch) if ch else None
+                if url:
+                    try:
+                        service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
+                            'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'link': {'url': url}}, 'fields': 'link'}
+                        }]}).execute()
+                    except Exception:
+                        pass
     doc = service.documents().get(documentId=doc_id).execute()
     for el in doc.get('body', {}).get('content', []):
         if el.get('startIndex') == idx and 'table' in el:
@@ -809,11 +847,11 @@ def _build_sources_doc_with_tables(service, doc_id, data):
     if cells:
         cell_texts = [['Объект', 'Категория риска', 'Причины (по пунктам)']]
         for r in risk_rows:
-            cell_texts.append([r['obj'], r['type'], (r.get('behavior') or '')[:500]])
+            cell_texts.append([r['obj'], r['type'], (r.get('behavior') or '—')])
         if not risk_rows:
             cell_texts.append(['(нет данных)', '—', '—'])
         cells_sorted = sorted(cells, key=lambda x: -x[2])
-        flat_texts = [str(t)[:500] for row in cell_texts for t in row]
+        flat_texts = [str(t)[:2000] for row in cell_texts for t in row]
         for (ri, ci, si), text in zip(cells_sorted, flat_texts):
             service.documents().batchUpdate(documentId=doc_id, body={'requests': [{'insertText': {'location': {'index': si}, 'text': text}}]}).execute()
             if ci == 0 and ri > 0 and ri <= len(risk_rows) and risk_rows[ri - 1].get('link'):

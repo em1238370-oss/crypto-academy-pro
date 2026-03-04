@@ -6,6 +6,9 @@
   python3 update_sources_doc_once.py
 """
 import os
+import warnings
+# Убрать шум про Python 3.9 от google-auth / api_core
+warnings.filterwarnings('ignore', category=FutureWarning)
 import sys
 import json
 from datetime import timedelta
