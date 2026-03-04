@@ -2,7 +2,8 @@
 """
 Обновление блока «живой лог каждые 5 мин» в документе SOURCE & DATA.
 Запускать по крону каждые 5 минут: */5 * * * *
-Время MSK: 00:05, 00:10, 00:15, … 23:55. Каждый запуск подтягивает актуальные счётчики и дописывает строку в документ.
+Время MSK: 00:05, 00:10, 00:15, … 23:55. Каждый запуск подтягивает счётчики и дописывает строку.
+Последняя добавленная строка выделяется жирным шрифтом; при следующем обновлении жирной станет только новая строка — так видно, что изменилось.
 """
 import os
 import sys
@@ -106,8 +107,7 @@ def save_log_lines(lines):
     with open(LIVE_LOG_FILE, 'w', encoding='utf-8') as f:
         json.dump(lines, f, ensure_ascii=False, indent=0)
 
-def update_doc_placeholder(doc_id, new_content):
-    """Заменить плейсхолдер <<<LIVE_LOG_5MIN>>> в документе на new_content."""
+def _get_creds():
     creds = None
     json_str = os.environ.get('KRO_GOOGLE_CREDENTIALS_JSON')
     json_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
@@ -133,23 +133,77 @@ def update_doc_placeholder(doc_id, new_content):
                     break
                 except Exception:
                     pass
+    return creds
+
+def _find_text_start_index(service, doc_id, search_text):
+    """Найти startIndex подстроки search_text в документе (индексы в API 1-based). Возвращает None если не найдено."""
+    try:
+        doc = service.documents().get(documentId=doc_id).execute()
+        body = doc.get('body', {})
+        content = body.get('content', [])
+        segments = []
+        for elem in content:
+            if 'paragraph' in elem:
+                for pe in elem.get('paragraph', {}).get('elements', []):
+                    tr = pe.get('textRun', {})
+                    if tr:
+                        run_content = tr.get('content', '')
+                        start = pe.get('startIndex', elem.get('startIndex', 1))
+                        segments.append((start, run_content))
+        full_text = ''.join(s[1] for s in segments)
+        idx = full_text.find(search_text)
+        if idx == -1:
+            return None
+        offset = 0
+        for seg_start, seg_text in segments:
+            if offset + len(seg_text) > idx:
+                return seg_start + (idx - offset)
+            offset += len(seg_text)
+        return None
+    except Exception:
+        return None
+
+def update_doc_placeholder(doc_id, new_content, last_line):
+    """Заменить плейсхолдер в документе на new_content и выделить last_line жирным (последняя строка = новое обновление)."""
+    creds = _get_creds()
     if not creds:
         print('update_live_log_5min: нет учётных данных Google', file=sys.stderr)
         return False
     try:
         from googleapiclient.discovery import build
         service = build('docs', 'v1', credentials=creds)
-        body = {
-            'requests': [
-                {
-                    'replaceAllText': {
-                        'containsText': {'text': PLACEHOLDER, 'matchCase': True},
-                        'replaceText': new_content
-                    }
+        requests = [
+            {
+                'replaceAllText': {
+                    'containsText': {'text': PLACEHOLDER, 'matchCase': True},
+                    'replaceText': new_content
                 }
-            ]
-        }
-        service.documents().batchUpdate(documentId=doc_id, body=body).execute()
+            }
+        ]
+        service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+        if not last_line:
+            return True
+        P = _find_text_start_index(service, doc_id, PLACEHOLDER)
+        if P is None:
+            return True
+        len_content = len(new_content)
+        len_placeholder = len(PLACEHOLDER)
+        block_start = P - len_content + len_placeholder
+        # последняя строка в блоке — сразу перед "\n" + PLACEHOLDER
+        last_line_start = block_start + len_content - len_placeholder - 1 - len(last_line)
+        last_line_end = last_line_start + len(last_line)
+        if last_line_start < 1 or last_line_end <= last_line_start or last_line_start >= P:
+            return True
+        requests2 = [
+            {
+                'updateTextStyle': {
+                    'range': {'startIndex': last_line_start, 'endIndex': last_line_end},
+                    'textStyle': {'bold': True},
+                    'fields': 'bold'
+                }
+            }
+        ]
+        service.documents().batchUpdate(documentId=doc_id, body={'requests': requests2}).execute()
         return True
     except Exception as e:
         print('update_live_log_5min: %s' % e, file=sys.stderr)
@@ -178,8 +232,9 @@ def main():
         return
     # В конце снова вставляем ту же строку, чтобы следующий запуск (через 5 мин) снова нашёл и заменил её
     content = '\n'.join(lines) + '\n' + PLACEHOLDER
-    if update_doc_placeholder(doc_id, content):
-        print('%s ok: %s' % (time_str, line), file=sys.stderr)
+    # Последняя строка (только что добавленная) выделяется жирным, чтобы было видно новое обновление
+    if update_doc_placeholder(doc_id, content, last_line=line):
+        print('%s ok (жирным: новая строка): %s' % (time_str, line), file=sys.stderr)
     else:
         print('%s doc update failed' % time_str, file=sys.stderr)
 
