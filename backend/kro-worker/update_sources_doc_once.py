@@ -70,7 +70,7 @@ def main():
     top3 = stats.get('top3_today', stats.get('top3', []))
     report_url = stats.get('report_doc_url') or ''
 
-    doc_text = build_sources_doc_text(
+    doc_text, structured_data = build_sources_doc_text(
         collect_time_msk,
         [],  # new_tgstat
         [],  # telega_channels
@@ -86,7 +86,7 @@ def main():
         victims_12h=stats.get('victims_12h', 0),
         complaints_count=0,
     )
-    url = update_sources_google_doc(sources_doc_id, doc_text)
+    url = update_sources_google_doc(sources_doc_id, doc_text, structured_data)
     if url:
         print('Документ обновлён до структуры 7 блоков: %s' % url)
         print('Обнови страницу (F5) в браузере.')

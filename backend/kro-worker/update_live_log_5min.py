@@ -286,7 +286,7 @@ def main():
                     last_empty_dt = last_empty_dt + timedelta(hours=3)
             delta_min = (now - last_empty_dt).total_seconds() / 60.0 if last_empty_dt else EMPTY_INTERVAL_MINUTES + 1
             if delta_min >= EMPTY_INTERVAL_MINUTES:
-                new_line = '%s — TGStat/Telega: новых каналов по фильтрам за 30 минут не найдено.' % time_str
+                new_line = '%s — За последние 30 минут новых объектов по фильтрам не найдено, источники доступны.' % time_str
                 lines = load_log_lines()
                 lines.append(new_line)
                 save_log_lines(lines[-MAX_LINES:] if len(lines) > MAX_LINES else lines)

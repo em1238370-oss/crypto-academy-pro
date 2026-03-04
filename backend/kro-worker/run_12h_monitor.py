@@ -375,8 +375,8 @@ BLOCK2_SOURCES = '''
 - Фильтры: категория "cryptocurrencies" / "trading signals"; добавлен в каталог менее 14 дней назад; реклама или VIP‑подписка от 10 000₽.
 
 2.3. Telegram‑чаты с жалобами
-- Список чатов: KRO_SOURCE_CHANNELS (названия и ссылки).
-- Фильтры: сообщения за последние 12 часов; текст с признаками потерь ("обманули", "скам", "меня кинули", "слили депозит"); указана сумма или диапазон; по объекту минимум 2 разных человека.
+- Список чатов: название + ссылка (см. KRO_SOURCE_CHANNELS в настройках).
+- Условия отбора жалоб: сообщение за последние 12 часов; упоминание канала/сайта (ник, ссылка или название); указана сумма потерь (или размер депозита); по объекту ≥ 2 разных человека.
 '''
 
 # Блок 3: Параметры скама для сигнал‑каналов (фиксированный текст)
@@ -411,8 +411,25 @@ def _channel_age_days(date_str, report_date_str):
         return None
 
 
+def _object_link(ch, link=None):
+    """Вернуть URL для объекта: link если есть, иначе t.me/ для @ или t.me/, иначе https:// для домена."""
+    if link:
+        return link if link.startswith('http') else ('https://t.me/' + (link.replace('https://t.me/', '').lstrip('@')))
+    if not ch or ch == '—':
+        return ''
+    ch = (ch or '').strip()
+    if ch.startswith('@'):
+        return 'https://t.me/' + ch.lstrip('@')
+    if 't.me/' in ch:
+        return 'https://' + ch if not ch.startswith('http') else ch
+    if '.' in ch and '@' not in ch:
+        return 'https://' + ch if not ch.startswith('http') else ch
+    return 'https://t.me/' + ch.lstrip('@')
+
+
 def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_date_str):
-    """Собрать строки для таблицы риска (блок 4). Возвращает (rows, telegram_count, courses_count)."""
+    """Собрать строки для таблиц 3 и 5. Возвращает (rows, telegram_count, courses_count).
+    Каждая строка: obj, link, type, source, age, vip, growth, status, behavior (для таблицы причин)."""
     complaints_by_ch = {}
     for r in (complaints_rows or []):
         ch = (r.get('channel') or '').strip()
@@ -433,15 +450,17 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             vip_str = '%s ₽' % vip_val
         else:
             vip_str = (vip_val or 'н/д')
+        g = row.get('growth')
+        growth_str = str(g) if g is not None and g != '' else 'н/д'
         comp = complaints_by_ch.get(ch, (0, 0))
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
-        # Критерии риска: из фильтров TGStat (возраст <14 дн., VIP≥10к ₽, рост подписчиков). Жалобы — из чатов, если есть.
-        behavior = 'критерии: возраст %s, VIP %s (фильтр <14 дн., ≥10к ₽)' % (age_str, vip_str)
+        behavior = 'новый канал (возраст %s); VIP %s (фильтр <14 дн., ≥10к ₽)' % (age_str, vip_str)
         if comp[0] or comp[1]:
-            behavior += '; по жалобам: %s' % comp_str
+            behavior += '; в чатах жалобы: %s чел., %s ₽' % (comp[0], comp[1])
+        link = row.get('link') or _object_link(ch)
         rows.append({
-            'obj': ch, 'type': 'сигнал‑канал', 'source': 'TGStat', 'age': age_str, 'vip': vip_str,
-            'behavior': behavior, 'complaints': comp_str, 'status': 'в риске'
+            'obj': ch, 'link': link, 'type': 'сигнал‑канал', 'source': 'TGStat', 'age': age_str, 'vip': vip_str,
+            'growth': growth_str, 'status': 'в риске', 'behavior': behavior, 'complaints': comp_str
         })
 
     for row in (telega_channels or [])[:50]:
@@ -453,10 +472,11 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
         behavior = 'каталог крипто/сигналы; фильтр VIP от 10к ₽'
         if comp[0] or comp[1]:
-            behavior += '; по жалобам: %s' % comp_str
+            behavior += '; по жалобам: %s чел., %s ₽' % (comp[0], comp[1])
+        link = row.get('link') or _object_link(ch)
         rows.append({
-            'obj': ch, 'type': 'сигналы', 'source': 'Telega', 'age': 'н/д', 'vip': 'н/д',
-            'behavior': behavior, 'complaints': comp_str, 'status': 'в риске'
+            'obj': ch, 'link': link, 'type': 'сигналы', 'source': 'Telega', 'age': 'н/д', 'vip': 'н/д',
+            'growth': 'н/д', 'status': 'в риске', 'behavior': behavior, 'complaints': comp_str
         })
 
     for row in (complaints_rows or []):
@@ -466,11 +486,11 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         obj_type = 'курс/сайт' if '@' not in ch and 't.me/' not in ch else 'сигнал‑канал'
         comp = row.get('complaints', 0), row.get('losses', 0)
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
-        # Только по жалобам в чатах — суммы и кол-во людей из сообщений за 12 ч.
-        behavior = 'по жалобам в чатах (суммы из сообщений за 12 ч): %s' % comp_str
+        behavior = 'по жалобам в чатах за 12 ч: %s чел., %s ₽' % (comp[0], comp[1])
+        link = _object_link(ch)
         rows.append({
-            'obj': ch, 'type': obj_type, 'source': 'Чаты', 'age': 'н/д', 'vip': 'н/д',
-            'behavior': behavior, 'complaints': comp_str, 'status': 'в риске'
+            'obj': ch, 'link': link, 'type': obj_type, 'source': 'Чаты', 'age': 'н/д', 'vip': 'н/д',
+            'growth': 'н/д', 'status': 'в риске', 'behavior': behavior, 'complaints': comp_str
         })
 
     telegram_count = sum(1 for r in rows if r['type'] in ('сигнал‑канал', 'сигналы'))
@@ -482,11 +502,13 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
                            new_scams_count, total_losses_12h, telegram_channels_count,
                            courses, top3, report_url=None, period_start=None, period_end=None,
                            victims_12h=0, complaints_count=None):
-    """Формирует текст документа SOURCE & DATA по спецификации: заголовок, живой лог, SOURCE & DATA 1–3, расчёт, чеклист."""
+    """Формирует текст документа SOURCE & DATA по спецификации: разделы 0–7, таблицы 3–5, итоги, чек‑лист."""
     if complaints_count is None:
         complaints_count = sum((r.get('complaints') or 0) for r in (complaints_rows or []))
     report_date_str = (period_end or collect_time_msk).split()[0] if period_end else ''
-    time_formatted = period_end.split()[1] if period_end and ' ' in period_end else collect_time_msk
+    time_formatted = (period_end.split()[1] if period_end and ' ' in period_end else collect_time_msk).strip()
+    if time_formatted and not time_formatted.endswith('MSK'):
+        time_formatted = time_formatted + ' MSK'
 
     risk_rows, telegram_count, courses_count = _build_risk_table_rows(
         new_tgstat, telega_channels, complaints_rows, report_date_str
@@ -497,7 +519,9 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         courses = courses_count
 
     top3_today = [(t.get('channel') or t.get('name') or '—') for t in (top3 or [])[:3]]
+    complaints_by_ch = { (r.get('channel') or '').strip(): r.get('complaints', 0) for r in (complaints_rows or []) if (r.get('channel') or '').strip() }
     live_lines = _load_live_log()
+    nothing_found = not risk_rows and not (complaints_rows or [])
 
     lines = [
         'СКАМ‑МОНИТОРИНГ | Source & Data',
@@ -506,7 +530,7 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         '',
         '***',
         '',
-        '1. Живой лог (только важные события)',
+        '1. Живой лог (ключевые события, без спама нулей)',
         ''
     ]
     if live_lines:
@@ -517,56 +541,84 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     lines.extend(['', LIVE_LOG_PLACEHOLDER, '', '***', ''])
     lines.append(BLOCK2_SOURCES.strip())
     lines.extend(['', '***', ''])
-    lines.append(BLOCK3_SCAM_PARAMS.strip())
-    lines.extend(['', '***', ''])
+    # Раздел 3 — Найденные объекты (7 колонок; объект с ссылкой в тексте для последующей подстановки кликабельной ссылки)
     lines.extend([
-        '4. Найденные объекты (таблица риска)',
+        '3. Найденные объекты (каналы / сигналы / сайты)',
         '',
-        'По каждому объекту: критерии, почему в зоне риска (возраст, VIP, рост подписчиков или жалобы); суммы потерь — только из чатов жалоб за 12 ч, не из воздуха. Повтор канала в следующих циклах допускается.',
-        '',
-        '| Объект | Тип | Источник | Возраст | VIP/цена | Поведение | Жалобы (людей/сумма) | Статус |',
-        '|--------|-----|----------|---------|---------|-----------|------------------------|--------|'
+        '| Объект / @юзернейм | Тип | Источник | Возраст / дата | VIP / цена | Рост / активность | Статус риска |',
+        '|--------------------|-----|----------|----------------|------------|-------------------|--------------|'
     ])
     for r in risk_rows:
-        lines.append('| %s | %s | %s | %s | %s | %s | %s | %s |' % (
-            r['obj'], r['type'], r['source'], r['age'], r['vip'], r['behavior'], r['complaints'], r['status']
+        obj_display = r['obj'] if r.get('link') else r['obj']
+        lines.append('| %s | %s | %s | %s | %s | %s | %s |' % (
+            obj_display, r['type'], r['source'], r['age'], r['vip'], r['growth'], r['status']
         ))
     if not risk_rows:
-        lines.append('| (нет данных) | — | — | — | — | — | — | — |')
+        lines.append('| (нет данных) | — | — | — | — | — | — |')
     lines.extend(['', '***', ''])
+    # Раздел 4 — Жалобы и потери (4 колонки)
     lines.extend([
-        '5. Жалобы и потери',
+        '4. Жалобы и потери за период (12 часов)',
         '',
-        '| Объект | Людей пожаловалось | Сумма потерь (12ч) | Примеры сообщений / ссылки |',
-        '|--------|--------------------|---------------------|----------------------------|'
+        '| Объект | Кол-во людей | Сумма потерь за 12ч | Ссылки на сообщения / чаты |',
+        '|--------|--------------|----------------------|----------------------------|'
     ])
     for row in (complaints_rows or [])[:30]:
         ch = row.get('channel', '—')
         comp = row.get('complaints', 0)
         loss = row.get('losses', 0)
-        lines.append('| %s | %s | %s ₽ | ссылки на сообщения |' % (ch, comp, loss or 0))
+        lines.append('| %s | %s | %s ₽ | ссылки на сообщения / скрин |' % (ch, comp, loss or 0))
     if not (complaints_rows or []):
         lines.append('| (нет данных) | — | — | — |')
     lines.extend([
         '',
-        'Учитывались только жалобы за текущий 12‑часовой период, с указанием суммы и ссылкой на сообщение/скрин. Один человек = одна жалоба на объект.',
+        '- Учитываются только жалобы за текущий 12‑часовой период.',
+        '- Учитываются только жалобы с суммой и ссылкой/скрином.',
+        '- Один человек учитывается один раз на объект.',
         '',
         '***',
         ''
     ])
+    # Раздел 5 — Причины отнесения к риску (3 колонки)
     lines.extend([
-        '6. Расчёт итогов и связка с сайтом',
+        '5. Причины отнесения к риску (по объектам)',
         '',
-        'Публикация на сайт: эти данные уходят в таблицы сайта в 12:00 и 00:00 MSK (после проверки документа). Повтор каналов в разных циклах допускается.',
+        '| Объект | Категория риска | Причины (по пунктам) |',
+        '|--------|-----------------|----------------------|'
+    ])
+    for r in risk_rows:
+        lines.append('| %s | %s | %s |' % (r['obj'], r['type'], r['behavior']))
+    if not risk_rows:
+        lines.append('| (нет данных) | — | — |')
+    lines.extend(['', '***', ''])
+    # Раздел 6 — Итоги для сайта
+    top3_with_people = []
+    for i, t in enumerate((top3 or [])[:3]):
+        ch = t.get('channel') or t.get('name') or '—'
+        s = t.get('sum', 0)
+        n = complaints_by_ch.get((ch or '').strip(), 0) or 0
+        top3_with_people.append((ch, s, n))
+    lines.extend([
+        '6. Итоги для сайта (поля интерфейса)',
         '',
-        'new_scam_channels: %s' % new_scams_count,
-        'losses_12h: %s ₽' % (total_losses_12h or 0),
-        'telegram_channels: %s' % telegram_channels_count,
-        'courses_products: %s' % (courses or 0),
-        'top3_today: %s' % ', '.join(top3_today) if top3_today else '(нет)',
+        'Итоговые значения для сайта (расчёт):',
         '',
-        'JSON для сайта:',
+        'new_scam_channels = %s' % new_scams_count,
+        'losses_12h = %s' % (total_losses_12h or 0),
+        'telegram_channels = %s' % telegram_channels_count,
+        'courses_products = %s' % (courses or 0),
+        '',
+        'Топ‑3 за 12 часов:',
         ''
+    ])
+    for i, (ch, s, n) in enumerate(top3_with_people, 1):
+        lines.append('%s. %s — %s ₽, %s человек.' % (i, ch, (s or 0), n))
+    if not top3_with_people:
+        lines.append('(нет)')
+    lines.extend([
+        '',
+        'JSON для отправки:',
+        '',
     ])
     lines.append(json.dumps({
         'new_scam_channels': new_scams_count,
@@ -577,24 +629,234 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     }, ensure_ascii=False, indent=2))
     lines.extend([
         '',
-        'Связка с сайтом: «Новый скам канал» → new_scam_channels, «Потери» → losses_12h, «Телеграм‑каналов» → telegram_channels, «Курсов/продуктов» → courses_products, «Топ‑3 за сегодня» → top3_today.',
+        'Эти поля отправляются в интерфейс сайта и соответствуют блокам:',
+        '- «Новый скам канал» — new_scam_channels',
+        '- «Потери за 12 часов» — losses_12h',
+        '- «Телеграм‑каналов» — telegram_channels',
+        '- «Курсы/продукты» — courses_products',
+        '- «Топ‑3 за сегодня» — top3_today',
         '',
         '***',
         ''
     ])
+    # Раздел 7 — Чек‑лист и ограничения
     lines.extend([
-        '7. Чек‑лист прозрачности',
+        '7. Чек‑лист и ограничения',
         '',
-        '□ У каждого объекта есть источник (ссылка).',
-        '□ Все жалобы содержат суммы и относятся к периоду цикла.',
-        '□ Итоговая сумма потерь = сумме по таблице жалоб.',
-        '□ Поведенческие признаки риска (обещания, срочность, VIP) описаны хотя бы для Топ‑3.',
-        '□ JSON внизу совпадает с цифрами из разделов 3–5.',
+        '□ У каждого объекта в таблице «Найденные объекты» есть рабочая кликабельная ссылка.',
+        '□ Все жалобы в таблице «Жалобы и потери» содержат сумму и относятся к текущему 12‑часовому периоду.',
+        '□ Итоговая сумма losses_12h равна сумме по таблице жалоб.',
+        '□ Для всех объектов в статусе «в риске» есть строка в таблице «Причины».',
+        '□ Топ‑3 действительно входят в список найденных объектов.',
         ''
     ])
+    if nothing_found:
+        lines.append('В этом цикле новых сигнал‑каналов по фильтрам не найдено; жалоб нет. Данные не взяты из воздуха — результат проверки источников.')
+        lines.append('')
     if report_url:
         lines.append(report_url)
-    return '\n'.join(lines)
+    structured_data = {
+        'risk_rows': risk_rows,
+        'complaints_rows': (complaints_rows or [])[:30],
+        'top3_with_people': top3_with_people,
+        'new_scams_count': new_scams_count,
+        'total_losses_12h': total_losses_12h or 0,
+        'telegram_count': telegram_channels_count,
+        'courses': courses or 0,
+        'top3_today': top3_today,
+        'live_lines': live_lines[-LIVE_LOG_MAX_LINES:] if live_lines else [],
+        'nothing_found': nothing_found,
+        'period_start': period_start or collect_time_msk,
+        'period_end': period_end or collect_time_msk,
+        'time_formatted': time_formatted,
+        'report_url': report_url,
+    }
+    return '\n'.join(lines), structured_data
+
+
+def _get_table_cell_indices(body, at_index):
+    """Найти таблицу с startIndex at_index и вернуть список (row_idx, col_idx, start_index) для каждой ячейки."""
+    for el in body.get('content', []):
+        if el.get('startIndex') != at_index or 'table' not in el:
+            continue
+        out = []
+        for ri, row in enumerate(el['table'].get('tableRows', [])):
+            for ci, cell in enumerate(row.get('tableCells', [])):
+                si = None
+                for c in cell.get('content', []):
+                    si = c.get('startIndex')
+                    if si is not None:
+                        break
+                    for pe in c.get('paragraph', {}).get('elements', []):
+                        si = pe.get('startIndex')
+                        if si is not None:
+                            break
+                    if si is not None:
+                        break
+                if si is not None:
+                    out.append((ri, ci, si))
+        return out
+    return []
+
+
+def _build_sources_doc_with_tables(service, doc_id, data):
+    """Собрать документ с нативными таблицами Google Docs и кликабельными ссылками в колонке Объект."""
+    risk_rows = data.get('risk_rows') or []
+    complaints_rows = data.get('complaints_rows') or []
+    live_lines = data.get('live_lines') or []
+    time_fmt = data.get('time_formatted', '')
+    period_start = data.get('period_start', '')
+    period_end = data.get('period_end', '')
+    block2 = BLOCK2_SOURCES.strip()
+    report_url = data.get('report_url') or ''
+    nothing_found = data.get('nothing_found', False)
+
+    intro = (
+        'СКАМ‑МОНИТОРИНГ | Source & Data\n'
+        'Период цикла: %s – %s (MSK)\n'
+        'Время формирования отчёта: %s\n\n***\n\n'
+        '1. Живой лог (ключевые события, без спама нулей)\n\n'
+    ) % (period_start, period_end, time_fmt)
+    for ln in live_lines:
+        intro += '- %s\n' % ln
+    intro += '\n%s\n\n***\n\n%s\n\n***\n\n' % (LIVE_LOG_PLACEHOLDER, block2)
+    intro += '3. Найденные объекты (каналы / сигналы / сайты)\n\n'
+
+    # Удалить контент и вставить вводный текст
+    doc = service.documents().get(documentId=doc_id).execute()
+    body = doc.get('body', {})
+    content = body.get('content', [])
+    end_index = content[-1].get('endIndex', 2) if content else 2
+    if end_index <= 1:
+        end_index = 2
+    requests = []
+    if end_index > 2:
+        requests.append({'deleteContentRange': {'range': {'startIndex': 1, 'endIndex': max(2, end_index - 1)}}})
+    requests.append({'insertText': {'location': {'index': 1}, 'text': intro}})
+    service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+    idx = 1 + len(intro)
+
+    # Таблица 3: 7 колонок, 1 + len(risk_rows) строк
+    rows_t3 = 1 + len(risk_rows) if risk_rows else 1
+    requests = [{'insertTable': {'rows': rows_t3, 'columns': 7, 'location': {'index': idx}}}]
+    service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+    doc = service.documents().get(documentId=doc_id).execute()
+    body = doc.get('body', {})
+    cells = _get_table_cell_indices(body, idx)
+    if cells:
+        header = ['Объект / @юзернейм', 'Тип', 'Источник', 'Возраст / дата', 'VIP / цена', 'Рост / активность', 'Статус риска']
+        cell_texts = [header]
+        for r in risk_rows:
+            cell_texts.append([r['obj'], r['type'], r['source'], r['age'], r['vip'], r['growth'], r['status']])
+        if not risk_rows:
+            cell_texts.append(['(нет данных)', '—', '—', '—', '—', '—', '—'])
+        cells_sorted = sorted(cells, key=lambda x: -x[2])
+        flat = [str(t)[:200] for row in cell_texts for t in row]
+        for (ri, ci, si), text in zip(cells_sorted, flat):
+            service.documents().batchUpdate(documentId=doc_id, body={'requests': [{'insertText': {'location': {'index': si}, 'text': text}}]}).execute()
+            if ci == 0 and ri > 0 and ri <= len(risk_rows) and risk_rows[ri - 1].get('link'):
+                url = risk_rows[ri - 1]['link']
+                if not url.startswith('http'):
+                    url = 'https://' + url
+                try:
+                    service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
+                        'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'link': {'url': url}}, 'fields': 'link'}
+                    }]}).execute()
+                except Exception:
+                    pass
+    doc = service.documents().get(documentId=doc_id).execute()
+    for el in doc.get('body', {}).get('content', []):
+        if el.get('startIndex') == idx and 'table' in el:
+            idx = el.get('endIndex', idx + 1)
+            break
+
+    # Блок 4
+    block4_intro = '\n\n***\n\n4. Жалобы и потери за период (12 часов)\n\n'
+    requests = [{'insertText': {'location': {'index': idx}, 'text': block4_intro}}]
+    service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+    idx += len(block4_intro)
+    rows_t4 = 1 + len(complaints_rows) if complaints_rows else 1
+    requests = [{'insertTable': {'rows': rows_t4, 'columns': 4, 'location': {'index': idx}}}]
+    service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+    doc = service.documents().get(documentId=doc_id).execute()
+    cells = _get_table_cell_indices(doc.get('body', {}), idx)
+    if cells:
+        cell_texts = [['Объект', 'Кол-во людей', 'Сумма потерь за 12ч', 'Ссылки на сообщения / чаты']]
+        for row in complaints_rows:
+            cell_texts.append([str(row.get('channel', '—')), str(row.get('complaints', 0)), '%s ₽' % (row.get('losses') or 0), 'ссылки на сообщения / скрин'])
+        if not complaints_rows:
+            cell_texts.append(['(нет данных)', '—', '—', '—'])
+        cells_sorted = sorted(cells, key=lambda x: -x[2])
+        flat_texts = [str(t)[:200] for row in cell_texts for t in row]
+        for (_, _, si), text in zip(cells_sorted, flat_texts):
+            service.documents().batchUpdate(documentId=doc_id, body={'requests': [{'insertText': {'location': {'index': si}, 'text': text}}]}).execute()
+    doc = service.documents().get(documentId=doc_id).execute()
+    for el in doc.get('body', {}).get('content', []):
+        if el.get('startIndex') == idx and 'table' in el:
+            idx = el.get('endIndex', idx + 1)
+            break
+
+    # Блок 5
+    block5_intro = '\n\n***\n\n5. Причины отнесения к риску (по объектам)\n\n'
+    requests = [{'insertText': {'location': {'index': idx}, 'text': block5_intro}}]
+    service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+    idx += len(block5_intro)
+    rows_t5 = 1 + len(risk_rows) if risk_rows else 1
+    requests = [{'insertTable': {'rows': rows_t5, 'columns': 3, 'location': {'index': idx}}}]
+    service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+    doc = service.documents().get(documentId=doc_id).execute()
+    cells = _get_table_cell_indices(doc.get('body', {}), idx)
+    if cells:
+        cell_texts = [['Объект', 'Категория риска', 'Причины (по пунктам)']]
+        for r in risk_rows:
+            cell_texts.append([r['obj'], r['type'], (r.get('behavior') or '')[:500]])
+        if not risk_rows:
+            cell_texts.append(['(нет данных)', '—', '—'])
+        cells_sorted = sorted(cells, key=lambda x: -x[2])
+        flat_texts = [str(t)[:500] for row in cell_texts for t in row]
+        for (ri, ci, si), text in zip(cells_sorted, flat_texts):
+            service.documents().batchUpdate(documentId=doc_id, body={'requests': [{'insertText': {'location': {'index': si}, 'text': text}}]}).execute()
+            if ci == 0 and ri > 0 and ri <= len(risk_rows) and risk_rows[ri - 1].get('link'):
+                url = risk_rows[ri - 1]['link']
+                if not url.startswith('http'):
+                    url = 'https://' + url
+                try:
+                    service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
+                        'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'link': {'url': url}}, 'fields': 'link'}
+                    }]}).execute()
+                except Exception:
+                    pass
+    doc = service.documents().get(documentId=doc_id).execute()
+    for el in doc.get('body', {}).get('content', []):
+        if el.get('startIndex') == idx and 'table' in el:
+            idx = el.get('endIndex', idx + 1)
+            break
+
+    # Блоки 6 и 7 текстом
+    block6_7 = (
+        '\n\n***\n\n6. Итоги для сайта (поля интерфейса)\n\nИтоговые значения для сайта (расчёт):\n\n'
+        'new_scam_channels = %s\nlosses_12h = %s\ntelegram_channels = %s\ncourses_products = %s\n\n'
+        'Топ‑3 за 12 часов:\n\n'
+    ) % (data.get('new_scams_count', 0), data.get('total_losses_12h', 0), data.get('telegram_count', 0), data.get('courses', 0))
+    for i, (ch, s, n) in enumerate(data.get('top3_with_people') or [], 1):
+        block6_7 += '%s. %s — %s ₽, %s человек.\n' % (i, ch, s or 0, n)
+    if not data.get('top3_with_people'):
+        block6_7 += '(нет)\n'
+    block6_7 += '\nJSON для отправки:\n\n%s\n\nЭти поля отправляются в интерфейс сайта и соответствуют блокам:\n' % json.dumps({
+        'new_scam_channels': data.get('new_scams_count', 0),
+        'losses_12h': data.get('total_losses_12h', 0),
+        'telegram_channels': data.get('telegram_count', 0),
+        'courses_products': data.get('courses', 0),
+        'top3_today': data.get('top3_today', [])
+    }, ensure_ascii=False, indent=2)
+    block6_7 += '- «Новый скам канал» — new_scam_channels\n- «Потери за 12 часов» — losses_12h\n- «Телеграм‑каналов» — telegram_channels\n- «Курсы/продукты» — courses_products\n- «Топ‑3 за сегодня» — top3_today\n\n***\n\n7. Чек‑лист и ограничения\n\n'
+    block6_7 += '□ У каждого объекта в таблице «Найденные объекты» есть рабочая кликабельная ссылка.\n□ Все жалобы в таблице «Жалобы и потери» содержат сумму и относятся к текущему 12‑часовому периоду.\n□ Итоговая сумма losses_12h равна сумме по таблице жалоб.\n□ Для всех объектов в статусе «в риске» есть строка в таблице «Причины».\n□ Топ‑3 действительно входят в список найденных объектов.\n\n'
+    if nothing_found:
+        block6_7 += 'В этом цикле новых сигнал‑каналов по фильтрам не найдено; жалоб нет. Данные не взяты из воздуха — результат проверки источников.\n\n'
+    if report_url:
+        block6_7 += report_url
+    requests = [{'insertText': {'location': {'index': idx}, 'text': block6_7}}]
+    service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
 
 
 def _get_sources_doc_text(report_title=None, report_url=None):
@@ -697,8 +959,8 @@ def _apply_italic_to_times_in_doc(service, doc_id):
     except Exception as e:
         print('Sources doc: курсив для времени: %s' % e, file=sys.stderr)
 
-def update_sources_google_doc(doc_id, doc_text):
-    """Пишет в документ «Источники и данные» готовый текст doc_text; время выделяет курсивом."""
+def update_sources_google_doc(doc_id, doc_text, structured_data=None):
+    """Пишет в документ «Источники и данные». Если передан structured_data — нативные таблицы и кликабельные ссылки; иначе один insertText doc_text. Время выделяет курсивом."""
     if not (doc_id and doc_id.strip()):
         return None
     doc_id = doc_id.strip()
@@ -747,6 +1009,15 @@ def update_sources_google_doc(doc_id, doc_text):
     except Exception as e:
         print('Google Docs (sources) build: %s' % e, file=sys.stderr)
         return None
+    if structured_data:
+        try:
+            _build_sources_doc_with_tables(service, doc_id, structured_data)
+            _apply_italic_to_times_in_doc(service, doc_id)
+            url = 'https://docs.google.com/document/d/' + doc_id + '/edit'
+            print('Updated sources doc (таблицы): %s' % url, file=sys.stderr)
+            return url
+        except Exception as e:
+            print('Sources doc (таблицы): %s — подставляю текст.' % e, file=sys.stderr)
     text = doc_text
     try:
         doc = service.documents().get(documentId=doc_id).execute()
@@ -987,7 +1258,7 @@ def main():
     total_losses_12h = sum(r.get('sum', 0) for r in sheet_reports) + sum(s for _, s in channel_sum_pairs)
     new_scams_count = len(new_tgstat) + len([c for c, d in agg_complaints.items() if d.get('status') == 'Скам'])
 
-    # 4b) Живой лог: события цикла (новые каналы, жалобы, расчёт)
+    # 4b) Живой лог: только события (без спама нулей). Если за цикл ничего не найдено — одна понятная строка.
     now_msk_dt = _msk_now()
     time_str = now_msk_dt.strftime('%H:%M')
     events = []
@@ -996,14 +1267,17 @@ def main():
         events.append('%s — TGStat: найден новый канал %s, соответствует фильтрам риска.' % (time_str, ch))
     for row in (telega_channels or [])[:30]:
         ch = row.get('channel', '—')
-        events.append('%s — Telega: добавлен новый сигнал‑канал %s (VIP > 10 000₽).' % (time_str, ch))
+        events.append('%s — Telega: добавлен сигнал‑канал %s (VIP > 10 000₽).' % (time_str, ch))
     for row in (complaints_rows or [])[:20]:
         ch = row.get('channel', '—')
         cnt = row.get('complaints', 0)
         loss = row.get('losses', 0)
         if cnt and ch:
-            events.append('%s — Чаты: выявлены %s новые жалобы на %s (%s ₽).' % (time_str, cnt, ch, loss or 0))
-    events.append('%s — Обновлён расчёт потерь: %s ₽, %s объектов в зоне риска.' % (time_str, total_losses_12h or 0, new_scams_count or 0))
+            events.append('%s — Чаты: %s новые жалобы на %s (%s ₽ суммарно).' % (time_str, cnt, ch, loss or 0))
+    if not new_tgstat and not telega_channels and not any((r.get('complaints') or r.get('losses')) for r in (complaints_rows or [])):
+        events.append('%s — В этом цикле новых сигнал‑каналов по фильтрам не найдено; жалоб нет. Источники доступны.' % time_str)
+    else:
+        events.append('%s — Обновлён расчёт потерь: %s ₽, %s объектов в зоне риска.' % (time_str, total_losses_12h or 0, new_scams_count or 0))
     if events:
         _append_live_log_events(events)
 
@@ -1046,14 +1320,14 @@ def main():
         print('Обновляю Google Doc «Источники и данные»...', flush=True)
         collect_time_msk = now_msk_dt.strftime('%d %B %H:%M MSK').replace('February', 'февраля').replace('March', 'марта').replace('January', 'января')
         complaints_count_val = sum((r.get('complaints') or 0) for r in complaints_rows)
-        doc_text = build_sources_doc_text(
+        doc_text, structured_data = build_sources_doc_text(
             collect_time_msk, new_tgstat, telega_channels, complaints_rows,
             new_scams_count, total_losses_12h, telegram_count_from_risk, courses_count_from_risk, top3,
             report_doc_url,
             period_start=period_start, period_end=period_end,
             victims_12h=victims_12h, complaints_count=complaints_count_val
         )
-        url = update_sources_google_doc(sources_doc_id, doc_text)
+        url = update_sources_google_doc(sources_doc_id, doc_text, structured_data)
         if url:
             print('Готово. Документ «Источники и данные» обновлён: %s' % url, flush=True)
             print('Открой эту ссылку и обнови страницу (F5), чтобы увидеть новую структуру: ЖИВОЙ ЛОГ, SOURCE & DATA, РАСЧЁТ ДЛЯ САЙТА, ТВОЯ ПРОВЕРКА.', flush=True)
