@@ -1629,18 +1629,26 @@ app.get('/api/kro/live-counter', async (req, res) => {
       } catch (parseErr) {
         console.warn('KRO live-counter: invalid kro-12h-stats.json', parseErr?.message);
       }
-      if (data && (typeof data.new_scams === 'number' || typeof data.channelsToday === 'number')) {
-        const channelsToday = data.new_scams ?? data.channelsToday ?? 0;
+      const hasCount = typeof data.new_scams === 'number' || typeof data.channelsToday === 'number' || typeof data.new_scam_channels === 'number';
+      if (data && hasCount) {
+        const channelsToday = data.new_scam_channels ?? data.new_scams ?? data.channelsToday ?? 0;
         const totalLost = data.losses_12h ?? data.totalLost ?? 0;
         const telegramCount = data.telegram_channels ?? data.telegramCount ?? KRO_FALLBACK.telegramCount;
-        const coursesCount = data.courses ?? data.coursesCount ?? KRO_FALLBACK.coursesCount;
-        const top3 = Array.isArray(data.top3) && data.top3.length
-          ? data.top3.slice(0, 3).map((r) => ({
-              channel: r.channel || r.name || '—',
-              sum: typeof r.sum === 'number' ? r.sum : (r.losses || 0),
-              status: r.status || 'Активен'
-            }))
-          : KRO_FALLBACK.top3;
+        const coursesCount = data.courses_products ?? data.courses ?? data.coursesCount ?? KRO_FALLBACK.coursesCount;
+        let top3 = KRO_FALLBACK.top3;
+        if (Array.isArray(data.top3_today) && data.top3_today.length) {
+          top3 = data.top3_today.slice(0, 3).map((s) => ({
+            channel: typeof s === 'string' ? s : (s && s.channel) || '—',
+            sum: 0,
+            status: 'Активен'
+          }));
+        } else if (Array.isArray(data.top3) && data.top3.length) {
+          top3 = data.top3.slice(0, 3).map((r) => ({
+            channel: r.channel || r.name || '—',
+            sum: typeof r.sum === 'number' ? r.sum : (r.losses || 0),
+            status: r.status || 'Активен'
+          }));
+        }
         return res.json({
           channelsToday,
           totalLost,
@@ -1683,6 +1691,54 @@ app.get('/api/kro/live-counter', async (req, res) => {
     res.json(KRO_FALLBACK);
   }
 });
+
+// POST /api/kro/update и /api/update — принять JSON для сайта (12:15 / 00:15), записать в kro-12h-stats.json
+// Спецификация: timestamp, new_scam_channels, losses_12h, telegram_channels, courses_products, top3_today[]
+// Опционально: KRO_UPDATE_SECRET в env — тогда заголовок Authorization: Bearer <secret> или ?secret=...
+function handleKroUpdate(req, res) {
+  const secret = process.env.KRO_UPDATE_SECRET;
+  if (secret) {
+    const auth = req.headers.authorization || '';
+    const bearer = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+    const qSecret = req.query.secret || req.query.kro_secret;
+    if (bearer !== secret && qSecret !== secret) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+  }
+  const body = req.body || {};
+  const newScamChannels = Number(body.new_scam_channels);
+  const losses12h = Number(body.losses_12h);
+  const telegramChannels = Number(body.telegram_channels);
+  const coursesProducts = Number(body.courses_products);
+  const top3Today = Array.isArray(body.top3_today) ? body.top3_today.map((s) => String(s == null ? '' : s)) : [];
+  if (!Number.isFinite(newScamChannels) || !Number.isFinite(losses12h)) {
+    return res.status(400).json({ error: 'new_scam_channels and losses_12h required as numbers' });
+  }
+  const payload = {
+    timestamp: body.timestamp || new Date().toISOString(),
+    new_scam_channels: newScamChannels,
+    new_scams: newScamChannels,
+    losses_12h: losses12h,
+    telegram_channels: Number.isFinite(telegramChannels) ? telegramChannels : null,
+    courses_products: Number.isFinite(coursesProducts) ? coursesProducts : 0,
+    courses: Number.isFinite(coursesProducts) ? coursesProducts : 0,
+    top3_today: top3Today.slice(0, 3),
+    top3: top3Today.slice(0, 3).map((ch) => ({ channel: ch, sum: 0, status: 'Активен' })),
+    updatedAt: body.timestamp || new Date().toISOString()
+  };
+  try {
+    const dataDir = join(__dirname, 'data');
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    const path = join(dataDir, 'kro-12h-stats.json');
+    fs.writeFileSync(path, JSON.stringify(payload, null, 2), 'utf8');
+    res.status(200).json({ ok: true });
+  } catch (e) {
+    console.error('KRO update write error:', e);
+    res.status(500).json({ error: 'write_failed' });
+  }
+}
+app.post('/api/kro/update', express.json(), handleKroUpdate);
+app.post('/api/update', express.json(), handleKroUpdate);
 
 app.post('/api/kro/report-scam', express.json(), async (req, res) => {
   const channel = (req.body?.channel ?? '').toString().trim();

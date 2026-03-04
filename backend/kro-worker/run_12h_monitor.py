@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-KRO 12h auto-monitor: каждые 12 ч (01:00 и 13:00 MSK) собирает данные из TGStat search,
-Telega.io каталога и чатов Telegram; применяет критерии скама; пишет в JSON и лист;
-создаёт отчёт в Google Docs.
+KRO 12h auto-monitor: два цикла в день — 11:00 и 23:00 MSK. Собирает данные из TGStat search,
+Telega.io каталога и чатов Telegram; применяет критерии (возраст <14 дн., VIP>10к ₽, рост >500/сутки);
+пишет в JSON и лист; создаёт отчёт и документ SOURCE & DATA. К 11:55/23:55 документ готов на проверку;
+12:00–12:15 / 00:00–00:15 — проверка; 12:15 / 00:15 — отправка JSON на сайт (POST /api/kro/update).
 
 Источники: 1) TGStat channels/search (криптовалюта), 2) Telega.io catalog, 3) KRO_SOURCE_CHANNELS (жалобы за 12ч).
 
 Запуск: из папки backend/kro-worker:
   python3 run_12h_monitor.py
 
-Cron (01:00 и 13:00 MSK): 
-  0 1,13 * * * TZ=Europe/Moscow cd /path/to/backend/kro-worker && python3 run_12h_monitor.py
-  или 0 22 * * * и 0 10 * * * (UTC).
+Cron (11:00 и 23:00 MSK = 08:00 и 20:00 UTC при MSK=UTC+3):
+  0 8,20 * * * cd /path/to/backend/kro-worker && python3 run_12h_monitor.py
 """
 import os
 import re
@@ -31,7 +31,9 @@ REPORT_COUNTER_KEY = 'lastReportNumber'
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
 REQUEST_DELAY = 3
 HOURS_12 = 12
-DAYS_7 = 7
+DAYS_14 = 14   # критерий: канал младше 14 дней
+VIP_MIN = 10000   # порог VIP/рекламы, ₽
+GROWTH_MIN = 500  # порог роста подписчиков/сутки
 
 def _load_env():
     for base in (SCRIPT_DIR, os.path.normpath(os.path.join(SCRIPT_DIR, '..', '..'))):
@@ -56,14 +58,14 @@ _load_env()
 
 # --- TGStat search ---
 def fetch_tgstat_new_channels():
-    """Поиск каналов по «криптовалюта», сортировка по новизне, отбор за последние 7 дней."""
+    """Поиск каналов по «криптовалюта», сортировка по новизне, отбор за последние 14 дней."""
     try:
         from tgstat_client import search_channels
     except ImportError:
         return []
     items = search_channels('криптовалюта', country='ru', limit=100)
     now = datetime.now(timezone.utc)
-    cutoff_7d = now - timedelta(days=DAYS_7)
+    cutoff_14d = now - timedelta(days=DAYS_14)
     out = []
     for x in items:
         created_at = x.get('created_at')
@@ -71,7 +73,7 @@ def fetch_tgstat_new_channels():
             continue
         try:
             created_dt = datetime.fromtimestamp(created_at, tz=timezone.utc)
-            if created_dt < cutoff_7d:
+            if created_dt < cutoff_14d:
                 continue
         except (TypeError, OSError):
             continue
@@ -213,7 +215,7 @@ async def fetch_telegram_complaints_12h():
 
 # --- Scam criteria (упрощённо: по жалобам и возрасту) ---
 def apply_scam_criteria(new_channels_tgstat, complaints_by_channel):
-    """Пометить каналы: скам если жалоб >=2 по каналу или создан <7 дней (уже отфильтровано в TGStat)."""
+    """Пометить каналы: скам если жалоб >=2 по каналу или создан <14 дней (уже отфильтровано в TGStat)."""
     scam_status = {}
     for ch, data in complaints_by_channel.items():
         if (data.get('complaints') or 0) >= 2:
@@ -301,87 +303,115 @@ def _msk_now():
     except ImportError:
         return datetime.now(timezone.utc) + timedelta(hours=3)
 
+def _channel_age_days(date_str, report_date_str):
+    """Вернуть возраст канала в днях. date_str = dd.mm.YYYY, report_date_str = dd.mm.YYYY или dd.mm.YYYY HH:MM."""
+    if not date_str or not report_date_str:
+        return None
+    try:
+        parts = date_str.strip().split()
+        d = datetime.strptime(parts[0], '%d.%m.%Y')
+        rparts = report_date_str.strip().split()
+        r = datetime.strptime(rparts[0], '%d.%m.%Y')
+        return (r - d).days
+    except (ValueError, IndexError):
+        return None
+
+
 def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, complaints_rows,
                            new_scams_count, total_losses_12h, telegram_channels_count,
                            courses, top3, report_url=None, period_start=None, period_end=None,
                            victims_12h=0, complaints_count=None):
-    """Формирует текст документа SOURCE & DATA: всё, что нашла сеть (сырые данные + итоги)."""
+    """Формирует текст документа SOURCE & DATA по спецификации: заголовок, живой лог, SOURCE & DATA 1–3, расчёт, чеклист."""
     if complaints_count is None:
         complaints_count = sum((r.get('complaints') or 0) for r in (complaints_rows or []))
+    report_date_str = (period_end or collect_time_msk).split()[0] if period_end else ''
+
     lines = [
-        'СКАМ‑МОНИТОРИНГ КРИПТО — SOURCE & DATA',
+        'СКАМ-МОНИТОРИНГ | Source & Data',
         '',
-        'Период цикла: с %s по %s (MSK)' % (period_start or collect_time_msk, period_end or collect_time_msk),
-        'Время старта поиска: %s (MSK)' % collect_time_msk,
-        'Время окончания поиска: %s (MSK)' % collect_time_msk,
-        'Время формирования отчёта: %s (MSK)' % collect_time_msk,
+        'Период: %s – %s' % (period_start or collect_time_msk, period_end or collect_time_msk),
+        'Время формирования: %s MSK' % collect_time_msk,
         '',
-        '——— 1. ИСТОЧНИКИ В ЭТОМ ЦИКЛЕ ———',
+        '——— ЖИВОЙ ЛОГ (каждые 5 минут) ———',
         '',
-        '1. TGStat',
-        '   Время начала обращения: %s' % collect_time_msk,
-        '   Поисковый запрос: "криптовалюта", сортировка по новизне',
+        'START цикла: %s' % (period_start or collect_time_msk),
+        'TGStat: %s — проверено каналов: %s' % (collect_time_msk, len(new_tgstat) if new_tgstat else '0'),
+        'Telega: %s — проверено каналов: %s' % (collect_time_msk, len(telega_channels) if telega_channels else '0'),
+        'Чаты скам: %s — жалоб: %s' % (collect_time_msk, complaints_count if complaints_count is not None else victims_12h),
+        'Фильтр: %s по фильтру' % (new_scams_count if new_scams_count else 0),
+        'Расчёт: потери %s ₽' % (total_losses_12h if total_losses_12h else 0),
+        'ПОИСК ЗАВЕРШЁН: %s' % collect_time_msk,
+        '',
+        '——— SOURCE & DATA (полный поиск) ———',
+        '',
+        '1. TGStat.ru поиск',
         '   Ссылка: https://tgstat.ru/search?query=криптовалюта&sort=date',
-        '',
-        '2. Telega',
-        '   Время начала обращения: %s' % collect_time_msk,
-        '   Раздел: категория "cryptocurrencies"',
-        '   Ссылка: https://telega.io/catalog/cryptocurrencies',
-        '',
-        '3. Чаты с жалобами',
-        '   Время начала просмотра: %s' % collect_time_msk,
-        '   Чаты: KRO_SOURCE_CHANNELS (из настроек скрипта)',
-        '',
-        '——— 2. СЫРОЙ ПОИСК ———',
-        '',
-        'TGStat — сырые результаты поиска',
+        '   Время: %s' % collect_time_msk,
+        '   Проверено: %s каналов' % (len(new_tgstat) if new_tgstat else 0),
         ''
     ]
     for row in (new_tgstat or [])[:50]:
         ch = row.get('channel', '—')
         link = row.get('link', 'https://t.me/' + str(ch).lstrip('@'))
         date = row.get('date', '—')
-        growth = row.get('growth') or '—'
-        vip = row.get('vip', '—')
-        lines.append('%s — канал %s' % (collect_time_msk, ch))
+        growth = row.get('growth')
+        growth_str = str(growth) if growth is not None else '—'
+        vip_val = row.get('vip')
+        if isinstance(vip_val, (int, float)):
+            vip_str = '%s' % vip_val
+        else:
+            vip_str = (vip_val or '—')
+        age = _channel_age_days(date, report_date_str)
+        if age is not None and age >= DAYS_14:
+            mark, reason = '❌', '>14 дней'
+        elif age is not None and age < DAYS_14:
+            mark = '✅'
+            reason = ''
+            if isinstance(vip_val, (int, float)) and vip_val < VIP_MIN:
+                reason = 'VIP<10к'
+            if isinstance(growth, (int, float)) and growth < GROWTH_MIN:
+                reason = (reason + ' ' if reason else '') + 'рост<500'
+        else:
+            mark, reason = '❌', 'нет даты'
+        lines.append('%s %s' % (mark, ch))
         lines.append('  Ссылка: %s' % link)
-        lines.append('  Дата создания: %s' % date)
-        lines.append('  Подписчики/рост: %s' % growth)
-        lines.append('  VIP/платные услуги: %s' % vip)
+        lines.append('  Дата создания: %s | VIP: %s | Рост: %s' % (date, vip_str, growth_str))
+        if reason:
+            lines.append('  Причина отклонения: %s' % reason)
         lines.append('')
     lines.extend([
-        'Telega — сырые результаты поиска',
+        '2. Telega.in поиск',
+        '   Ссылка: https://telega.io/catalog/cryptocurrencies',
+        '   Время: %s' % collect_time_msk,
+        '   Проверено: %s каналов' % (len(telega_channels) if telega_channels else 0),
         ''
     ])
     for row in (telega_channels or [])[:50]:
         ch = row.get('channel', '—')
         link = row.get('link', '—')
-        lines.append('%s — канал %s' % (collect_time_msk, ch))
+        lines.append('✅ %s' % ch)
         lines.append('  Ссылка: %s' % link)
         lines.append('')
     lines.extend([
-        'Чаты — сырые жалобы (агрегат по каналам)',
+        '3. Чаты с жалобами',
+        '   Чаты: KRO_SOURCE_CHANNELS',
+        '   Количество жалоб: %s' % (complaints_count if complaints_count is not None else victims_12h),
         ''
     ])
     for row in (complaints_rows or [])[:50]:
         ch = row.get('channel', '—')
         complaints = row.get('complaints', 0)
         losses = row.get('losses', 0)
-        status = row.get('status', '—')
-        lines.append('  Канал: %s' % ch)
-        lines.append('  Жалоб: %s, потери: %s ₽' % (complaints, losses))
-        lines.append('  Статус: %s' % status)
-        lines.append('')
+        lines.append('  Канал: %s — жалоб: %s, сумма: %s ₽' % (ch, complaints, losses))
     lines.extend([
-        '——— 3. ИТОГОВЫЕ ЗНАЧЕНИЯ ДЛЯ ПУБЛИКАЦИИ (Блок 5) ———',
         '',
-        'Новых скам‑каналов за период: %s' % new_scams_count,
-        'Суммарные потери за период: %s ₽' % total_losses_12h,
-        'Количество учтённых жалоб: %s' % (complaints_count if complaints_count is not None else victims_12h),
-        'Telegram каналов (в отчёте): %s' % telegram_channels_count,
-        'Курсов/продуктов: %s' % courses,
+        '——— РАСЧЁТ ДЛЯ САЙТА ———',
         '',
-        'Список ТОП‑3:',
+        'Новые скам-каналы: %s' % new_scams_count,
+        'Потери за 12 ч: %s ₽' % total_losses_12h,
+        'Telegram каналов: %s' % telegram_channels_count,
+        'Курсов/продуктов: %s' % (courses or 0),
+        'ТОП-3 за сегодня:',
         ''
     ])
     for i, t in enumerate((top3 or [])[:3], 1):
@@ -393,9 +423,13 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         lines.append('  (нет данных)')
     lines.extend([
         '',
-        '——— ЧЕКЛИСТ ———',
-        'Время сбора: %s' % collect_time_msk,
-        'Статус: ЖДУ ТВОЕГО ✅ / ❌',
+        '——— ТВОЯ ПРОВЕРКА (12:00–12:15 / 00:00–00:15) ———',
+        '',
+        '□ Ссылки работают',
+        '□ Каналы <14 дней + VIP>10к ₽, рост >500/сутки',
+        '□ Жалобы реальные',
+        '□ Суммы адекватны',
+        '□ Комментарий:',
         ''
     ])
     lines.append(report_url or '(отчёт после 11:00 или 23:00 MSK)')
@@ -417,7 +451,7 @@ def _get_sources_doc_text(report_title=None, report_url=None):
         '',
         '=== 2. БЛОК «ЗА 12 ЧАСОВ» ===',
         '',
-        '• TGStat — поиск каналов «криптовалюта», новые за 7 дней.',
+        '• TGStat — поиск каналов «криптовалюта», новые за 14 дней.',
         '  Сайт: https://tgstat.ru',
         '  API:  https://tgstat.ru/docs/ru/api',
         '',
@@ -709,15 +743,23 @@ def main():
     else:
         print('KRO_SOURCES_DOC_ID не задан — обновление документа пропущено.', flush=True)
 
-    # 6) Write JSON for site
+    # 6) Write JSON for site (поля спецификации + обратная совместимость)
+    courses_val = 0  # курсов/продуктов из листа или 0
+    top3_today = [(t.get('channel') or t.get('name') or '—') for t in (top3 or [])[:3]]
     out = {
         'new_scams': new_scams_count,
+        'new_scam_channels': new_scams_count,
         'losses_12h': total_losses_12h,
         'victims_12h': victims_12h,
+        'telegram_channels': len(complaints_rows),
+        'courses': courses_val,
+        'courses_products': courses_val,
         'top3': top3,
+        'top3_today': top3_today,
         'report_doc_url': report_doc_url,
         REPORT_COUNTER_KEY: report_number,
         'updatedAt': now_msk.strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'timestamp': now_msk.strftime('%Y-%m-%dT%H:%M:%SZ'),
         'sources': ['TGStat search', 'Telega.io catalog', 'Telegram complaints 12h']
     }
     os.makedirs(DATA_DIR, exist_ok=True)
@@ -727,6 +769,32 @@ def main():
         OUTPUT_JSON, out['new_scams'], out['losses_12h'], out['victims_12h'], report_number), file=sys.stderr)
     if report_doc_url:
         print('Report doc: %s' % report_doc_url, file=sys.stderr)
+
+    # 6b) Опционально: POST на сайт (KRO_SITE_UPDATE_URL и при необходимости KRO_SITE_UPDATE_SECRET)
+    site_url = os.environ.get('KRO_SITE_UPDATE_URL', '').strip()
+    if site_url:
+        try:
+            import urllib.request
+            payload = {
+                'timestamp': out['timestamp'],
+                'new_scam_channels': new_scams_count,
+                'losses_12h': total_losses_12h,
+                'telegram_channels': out['telegram_channels'],
+                'courses_products': courses_val,
+                'top3_today': top3_today,
+            }
+            data = json.dumps(payload).encode('utf-8')
+            req = urllib.request.Request(site_url, data=data, method='POST', headers={'Content-Type': 'application/json'})
+            secret = os.environ.get('KRO_SITE_UPDATE_SECRET', '').strip()
+            if secret:
+                req.add_header('Authorization', 'Bearer %s' % secret)
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                if 200 <= resp.getcode() < 300:
+                    print('POST %s: ok' % site_url, file=sys.stderr)
+                else:
+                    print('POST %s: %s' % (site_url, resp.getcode()), file=sys.stderr)
+        except Exception as e:
+            print('POST %s failed: %s' % (site_url, e), file=sys.stderr)
 
 
 if __name__ == '__main__':
