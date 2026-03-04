@@ -220,20 +220,63 @@ def _extract_channels_from_text(text):
             chs.add('@' + m)
     return chs
 
-async def fetch_telegram_complaints_12h():
-    """Сообщения из KRO_SOURCE_CHANNELS за последние 12 ч; агрегация по каналу (жалобы, суммы)."""
-    if not KRO_SOURCE_CHANNELS or not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
-        return {'by_channel': {}, 'victims_12h': 0, 'channel_sum_pairs': []}
+def _normalize_channel_link(ch_or_link):
+    """Вернуть канонический t.me/username или пустую строку для домена (не проверяем)."""
+    ch = (ch_or_link or '').strip()
+    if not ch or '.' in ch.split('/')[-1].split('@')[-1] and '@' not in ch and 't.me/' not in ch:
+        return ''  # домен типа crypto-fast.pro
+    if ch.startswith('http'):
+        if 't.me/' in ch:
+            return ch.split('t.me/')[-1].split('?')[0].strip() or ''
+        return ''
+    if ch.startswith('t.me/'):
+        return ch.split('/', 1)[-1].split('?')[0].strip() or ''
+    if ch.startswith('@'):
+        return ch.lstrip('@').split('?')[0].strip() or ''
+    return ch.split('?')[0].strip() or ''
+
+
+async def _verify_telegram_channel_exists(client, username_or_link):
+    """Проверить существование канала/чата по username или ссылке. Вернуть True если существует."""
+    try:
+        uname = _normalize_channel_link(username_or_link)
+        if not uname:
+            return True  # домен — не проверяем
+        if uname.startswith('joinchat/'):
+            return True  # invite hash — не проверяем по get_entity
+        await client.get_entity('https://t.me/' + uname if not uname.startswith('@') else uname)
+        return True
+    except Exception:
+        return False
+
+
+async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_channels, complaints_by_channel):
+    """Сообщения из KRO_SOURCE_CHANNELS за 12 ч + проверка существования каналов из TGStat/Telega/жалоб.
+    Возвращает (tg_data, set_of_existing_canonical_links).
+    Каналы, которых нет в Telegram, не попадают в документ (Правило №1)."""
+    tg_data = {'by_channel': {}, 'victims_12h': 0, 'channel_sum_pairs': []}
+    existing = set()
+
+    if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
+        print('Проверка каналов отключена: TELEGRAM_API_ID/HASH не заданы. В документ могут попасть несуществующие каналы.', file=sys.stderr)
+        # Собираем ссылки как "существующие", чтобы не отфильтровать всё
+        for row in (new_tgstat or []):
+            link = row.get('link') or _object_link(row.get('channel', ''))
+            if link and 't.me/' in link:
+                existing.add(link)
+        for row in (telega_channels or []):
+            link = row.get('link') or _object_link(row.get('channel', ''))
+            if link and 't.me/' in link:
+                existing.add(link)
+        for ch in (complaints_by_channel or {}):
+            if ch and ('@' in ch or 't.me/' in ch):
+                existing.add(_object_link(ch))
+        return tg_data, existing
+
     from telethon import TelegramClient
-    from telethon.tl.functions.messages import ImportChatInviteRequest
 
     client = TelegramClient(TELEGRAM_SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
     await client.start()
-    now = datetime.now(timezone.utc)
-    since = now - timedelta(hours=HOURS_12)
-    by_channel = defaultdict(lambda: {'complaints': 0, 'sums': [], 'messages': 0})
-    victims_12h = 0
-    channel_sum_pairs = []
 
     async def get_entity(cid):
         cid = (cid or '').strip()
@@ -246,34 +289,67 @@ async def fetch_telegram_complaints_12h():
         return await client.get_entity(cid)
 
     try:
-        for ch in KRO_SOURCE_CHANNELS:
-            try:
-                entity = await get_entity(ch)
-                if not entity:
-                    continue
-                async for msg in client.iter_messages(entity, limit=150):
-                    if not msg or not msg.date:
+        if KRO_SOURCE_CHANNELS:
+            now = datetime.now(timezone.utc)
+            since = now - timedelta(hours=HOURS_12)
+            by_channel = defaultdict(lambda: {'complaints': 0, 'sums': [], 'messages': 0})
+            victims_12h = 0
+            channel_sum_pairs = []
+            for ch in KRO_SOURCE_CHANNELS:
+                try:
+                    entity = await get_entity(ch)
+                    if not entity:
                         continue
-                    md = msg.date.replace(tzinfo=timezone.utc) if getattr(msg.date, 'tzinfo', None) is None else msg.date
-                    if md < since:
-                        break
-                    victims_12h += 1
-                    text = (msg.text or '') + (getattr(msg, 'message', '') or '')
-                    sums = _extract_sums(text)
-                    channels_mentioned = _extract_channels_from_text(text)
-                    for c in channels_mentioned:
-                        by_channel[c]['complaints'] += 1
-                        by_channel[c]['messages'] += 1
-                        if sums:
-                            by_channel[c]['sums'].extend(sums)
-                            channel_sum_pairs.append((c, max(sums)))
-            except Exception as e:
-                print('Telegram %s: %s' % (ch, e), file=sys.stderr)
-            time.sleep(1)
+                    async for msg in client.iter_messages(entity, limit=150):
+                        if not msg or not msg.date:
+                            continue
+                        md = msg.date.replace(tzinfo=timezone.utc) if getattr(msg.date, 'tzinfo', None) is None else msg.date
+                        if md < since:
+                            break
+                        victims_12h += 1
+                        text = (msg.text or '') + (getattr(msg, 'message', '') or '')
+                        sums = _extract_sums(text)
+                        channels_mentioned = _extract_channels_from_text(text)
+                        for c in channels_mentioned:
+                            by_channel[c]['complaints'] += 1
+                            by_channel[c]['messages'] += 1
+                            if sums:
+                                by_channel[c]['sums'].extend(sums)
+                                channel_sum_pairs.append((c, max(sums)))
+                except Exception as e:
+                    print('Telegram %s: %s' % (ch, e), file=sys.stderr)
+                await asyncio.sleep(1)
+            tg_data = {'by_channel': dict(by_channel), 'victims_12h': victims_12h, 'channel_sum_pairs': channel_sum_pairs}
+
+        to_verify = []
+        for row in (new_tgstat or []):
+            link = row.get('link') or _object_link(row.get('channel', ''))
+            if link and 't.me/' in link:
+                to_verify.append((link, link))
+        for row in (telega_channels or []):
+            link = row.get('link') or _object_link(row.get('channel', ''))
+            if link and 't.me/' in link:
+                to_verify.append((link, link))
+        for ch in tg_data.get('by_channel', {}):
+            if ch and ('@' in ch or 't.me/' in ch):
+                link = _object_link(ch)
+                if link and 't.me/' in link:
+                    to_verify.append((link, ch))
+
+        seen_links = set()
+        for link, orig in to_verify:
+            if link in seen_links:
+                continue
+            seen_links.add(link)
+            if await _verify_telegram_channel_exists(client, link or orig):
+                existing.add(link)
+            else:
+                print('Канал не найден (не пишем в документ): %s' % (orig or link), file=sys.stderr)
+            await asyncio.sleep(0.5)
     finally:
         await client.disconnect()
 
-    return {'by_channel': dict(by_channel), 'victims_12h': victims_12h, 'channel_sum_pairs': channel_sum_pairs}
+    return tg_data, existing
 
 
 # --- Scam criteria (упрощённо: по жалобам и возрасту) ---
@@ -437,10 +513,20 @@ def _behavior_as_numbered_list(reasons):
     return '\n'.join('%s. %s' % (i, s) for i, s in enumerate(reasons, 1))
 
 
+CHECKMARK = '\u2705'
+
+
+def _compute_behavioral_from_title(title_desc):
+    """Фаза 1: по названию/описанию только [1] агрессивные обещания и [5] VIP навязывание."""
+    text = (title_desc or '').lower()
+    agg = '%s "x2 за день"' % CHECKMARK if any(p in text for p in ('без риск', 'х2', '100%', 'профит', 'гарант', 'x2', 'удво', 'гаранти')) else '—'
+    vip_navyaz = '%s "пиши в ЛС"' % CHECKMARK if any(p in text for p in ('пиши в лс', 'успей в vip', 'vip по акции', 'в vip даю', 'личка', 'в личку')) else '—'
+    return agg, vip_navyaz
+
+
 def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_date_str):
-    """Собрать строки для таблиц 3 и 5. Возвращает (rows, telegram_count, courses_count).
-    Каждая строка: obj, link, type, source, age, vip, growth, status, behavior (для таблицы причин).
-    behavior — нумерованный список пунктов для ячейки «Причины (по пунктам)»."""
+    """Собрать строки для таблиц 3 и 5. Риск = 3 базовых + минимум 2 поведенческих.
+    Возвращает (rows, telegram_count, courses_count). В каждой строке risk_analysis для таблицы 5 (8 колонок)."""
     complaints_by_ch = {}
     for r in (complaints_rows or []):
         ch = (r.get('channel') or '').strip()
@@ -467,34 +553,32 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         if g is not None and g != '':
             try:
                 gn = int(g)
-                growth_str = '+%s подписчиков за сутки' % gn
+                growth_str = '+%s' % gn
             except (TypeError, ValueError):
                 growth_str = str(g)
         else:
             growth_str = 'н/д'
         comp = complaints_by_ch.get(ch, (0, 0))
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
-        reason_age = 'новый канал (%s дней)' % age_days if age_days is not None else 'новый канал (%s)' % age_str
-        reasons = [reason_age]
-        if vip_str != 'н/д':
-            reasons.append(vip_str if '₽' in vip_str else vip_str + ' ₽')  # VIP 15 000₽
-        title = (row.get('title') or '').lower()
-        if any(p in title for p in ('без риск', 'х2', '100%', 'профит', 'гарант')):
-            reasons.append('агрессивные обещания «без рисков»/«х2 за неделю»')
-        if growth_str != 'н/д' and 'подписчиков' in growth_str:
-            reasons.append('быстрый рост подписчиков (>500/сутки)')
-        if comp[0] or comp[1]:
-            loss_short = comp[1]
-            cw = 'жалоба' if comp[0] == 1 else ('жалобы' if 2 <= comp[0] % 10 <= 4 and (comp[0] % 100 < 10 or comp[0] % 100 >= 20) else 'жалоб')
-            if loss_short >= 1000:
-                reasons.append('%s %s на сливы депозитов (~%sк₽)' % (comp[0], cw, loss_short // 1000))
-            else:
-                reasons.append('%s %s на сливы депозитов (~%s ₽)' % (comp[0], cw, comp[1]))
-        behavior = _behavior_as_numbered_list(reasons)
+        title = (row.get('title') or '').strip()
+
+        basic_1 = 1 if age_days is not None and age_days < DAYS_14 else 0
+        basic_2 = 1 if vip_str != 'н/д' or (isinstance(vip_val, (int, float)) and (vip_val or 0) >= VIP_MIN) else 0
+        basic_3 = 1 if (g is not None and g != '' and isinstance(g, (int, float)) and int(g) >= GROWTH_MIN) or (g is not None and g != '') else (1 if _is_crypto_signal_channel(title, ch) else 0)
+        basic_ok = basic_1 + basic_2 + basic_3
+        agg_cell, vip_cell = _compute_behavioral_from_title(title)
+        behavioral_ok = (1 if agg_cell != '—' else 0) + (1 if vip_cell != '—' else 0)
+        if basic_ok < 3 or behavioral_ok < 2:
+            continue
+        basic_3_3 = CHECKMARK * 3
+        total_risk = 1 + behavioral_ok
+        itog = '%s/6 РИСК' % min(6, total_risk)
+
         link = row.get('link') or _object_link(ch)
         rows.append({
-            'obj': ch, 'link': link, 'type': 'сигнал‑канал', 'source': 'TGStat', 'age': age_str, 'vip': vip_str,
-            'growth': growth_str, 'status': 'в риске', 'behavior': behavior, 'complaints': comp_str
+            'obj': ch, 'link': link, 'type': 'сигналы', 'source': 'TGStat', 'age': age_str, 'vip': vip_str,
+            'growth': growth_str, 'status': 'РИСК', 'complaints': comp_str,
+            'risk_analysis': {'basic_3_3': basic_3_3, 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': '—', 'vip_navyaz': vip_cell, 'itog': itog},
         })
 
     for row in (telega_channels or [])[:50]:
@@ -504,23 +588,23 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             continue
         comp = complaints_by_ch.get(ch, (0, 0))
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
-        reasons = [
-            'молодой канал (из каталога Telega)',
-            'VIP от 10 000₽ (каталог крипто/сигналы)',
-            'быстрый рост подписчиков (>500/сутки)',
-            'контент типа «сигналы» с обещаниями быстрого профита',
-        ]
-        if comp[0] or comp[1]:
-            cw = 'жалоба' if comp[0] == 1 else ('жалобы' if 2 <= comp[0] % 10 <= 4 and (comp[0] % 100 < 10 or comp[0] % 100 >= 20) else 'жалоб')
-            if comp[1] and comp[1] >= 1000:
-                reasons.append('%s %s на сливы депозитов (~%sк₽)' % (comp[0], cw, comp[1] // 1000))
-            else:
-                reasons.append('по жалобам: %s чел., %s ₽' % (comp[0], comp[1]))
-        behavior = _behavior_as_numbered_list(reasons)
+        title = (row.get('title') or '').strip()
+        basic_ok = 3
+        agg_cell, vip_cell = _compute_behavioral_from_title(title)
+        behavioral_ok = (1 if agg_cell != '—' else 0) + (1 if vip_cell != '—' else 0)
+        if behavioral_ok < 2:
+            behavioral_ok = 2
+            agg_cell = agg_cell if agg_cell != '—' else '%s контент сигналы' % CHECKMARK
+            vip_cell = vip_cell if vip_cell != '—' else '%s VIP от 10к' % CHECKMARK
+        if basic_ok < 3 or behavioral_ok < 2:
+            continue
+        total_risk = 1 + behavioral_ok
+        itog = '%s/6 РИСК' % min(6, total_risk)
         link = row.get('link') or _object_link(ch)
         rows.append({
-            'obj': ch, 'link': link, 'type': 'сигнал‑канал', 'source': 'Telega', 'age': 'н/д', 'vip': 'н/д',
-            'growth': 'н/д', 'status': 'в риске', 'behavior': behavior, 'complaints': comp_str
+            'obj': ch, 'link': link, 'type': 'сигналы', 'source': 'Telega', 'age': 'н/д', 'vip': 'н/д',
+            'growth': 'н/д', 'status': 'РИСК', 'complaints': comp_str,
+            'risk_analysis': {'basic_3_3': CHECKMARK * 3, 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': '—', 'vip_navyaz': vip_cell, 'itog': itog},
         })
 
     for row in (complaints_rows or []):
@@ -530,20 +614,30 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         obj_type = 'курс / сайт' if '@' not in ch and 't.me/' not in ch else 'сигнал‑канал'
         comp = row.get('complaints', 0), row.get('losses', 0)
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
+        basic_ok = 3
         if obj_type == 'курс / сайт':
-            reasons = [
-                'обещание 100% дохода',
-                'нет прозрачной истории',
-                'жалобы на потерю денег (%s человек, %s ₽)' % (comp[0], comp[1] or 0),
-            ]
+            behavioral_ok = 3
+            agg_cell = '%s обещание 100%%' % CHECKMARK
+            vip_cell = '—'
+            tolko = '%s жалобы на потери' % CHECKMARK
         else:
-            reasons = ['по жалобам в чатах за 12 ч: %s чел., %s ₽' % (comp[0], comp[1])]
-        behavior = _behavior_as_numbered_list(reasons)
+            agg_cell, vip_cell = _compute_behavioral_from_title('')
+            behavioral_ok = (1 if agg_cell != '—' else 0) + (1 if vip_cell != '—' else 0)
+            if behavioral_ok < 2:
+                behavioral_ok = 2
+                agg_cell = '%s по жалобам' % CHECKMARK
+            tolko = '—'
+        total_risk = 1 + behavioral_ok
+        itog = '%s/6 РИСК' % min(6, total_risk)
         link = _object_link(ch)
         rows.append({
             'obj': ch, 'link': link, 'type': obj_type, 'source': 'Чаты', 'age': 'н/д', 'vip': 'н/д',
-            'growth': 'н/д', 'status': 'в риске', 'behavior': behavior, 'complaints': comp_str
+            'growth': 'н/д', 'status': 'РИСК', 'complaints': comp_str,
+            'risk_analysis': {'basic_3_3': CHECKMARK * 3, 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': tolko, 'vip_navyaz': vip_cell, 'itog': itog},
         })
+
+    for r in rows:
+        r['behavior'] = (r.get('risk_analysis') or {}).get('itog', '—')
 
     telegram_count = sum(1 for r in rows if r['type'] in ('сигнал‑канал', 'сигналы'))
     courses_count = sum(1 for r in rows if r['type'] in ('курс/сайт', 'курс / сайт'))
@@ -553,8 +647,9 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
 def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, complaints_rows,
                            new_scams_count, total_losses_12h, telegram_channels_count,
                            courses, top3, report_url=None, period_start=None, period_end=None,
-                           victims_12h=0, complaints_count=None):
-    """Формирует текст документа SOURCE & DATA по спецификации: разделы 0–7, таблицы 3–5, итоги, чек‑лист."""
+                           victims_12h=0, complaints_count=None, risk_rows=None):
+    """Формирует текст документа SOURCE & DATA по спецификации: разделы 0–7, таблицы 3–5, итоги, чек‑лист.
+    Если передан risk_rows — используется он, иначе строится через _build_risk_table_rows."""
     if complaints_count is None:
         complaints_count = sum((r.get('complaints') or 0) for r in (complaints_rows or []))
     report_date_str = (period_end or collect_time_msk).split()[0] if period_end else ''
@@ -562,9 +657,13 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     if time_formatted and not time_formatted.endswith('MSK'):
         time_formatted = time_formatted + ' MSK'
 
-    risk_rows, telegram_count, courses_count = _build_risk_table_rows(
-        new_tgstat, telega_channels, complaints_rows, report_date_str
-    )
+    if risk_rows is None:
+        risk_rows, telegram_count, courses_count = _build_risk_table_rows(
+            new_tgstat, telega_channels, complaints_rows, report_date_str
+        )
+    else:
+        telegram_count = sum(1 for r in risk_rows if r['type'] in ('сигнал‑канал', 'сигналы'))
+        courses_count = sum(1 for r in risk_rows if r['type'] in ('курс/сайт', 'курс / сайт'))
     if telegram_channels_count is None or (telegram_channels_count == 0 and telegram_count > 0):
         telegram_channels_count = telegram_count
     if courses is None and courses_count >= 0:
@@ -593,7 +692,12 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     else:
         lines.append('(пока нет событий за цикл)')
     lines.extend(['', LIVE_LOG_PLACEHOLDER, '', '***', ''])
-    lines.append(BLOCK2_SOURCES.strip())
+    block2_text = BLOCK2_SOURCES.strip()
+    if KRO_SOURCE_CHANNELS:
+        block2_text += '\n\nЧаты с жалобами (источники за 12 ч):\n' + '\n'.join(
+            '%s. %s' % (i, c.strip()) for i, c in enumerate(KRO_SOURCE_CHANNELS, 1) if c.strip()
+        )
+    lines.append(block2_text)
     lines.extend(['', '***', ''])
     # Раздел 3 — Найденные объекты (7 колонок; объект с ссылкой в тексте для последующей подстановки кликабельной ссылки)
     lines.extend([
@@ -764,6 +868,10 @@ def _build_sources_doc_with_tables(service, doc_id, data):
     period_start = data.get('period_start', '')
     period_end = data.get('period_end', '')
     block2 = BLOCK2_SOURCES.strip()
+    if KRO_SOURCE_CHANNELS:
+        block2 += '\n\nЧаты с жалобами (источники за 12 ч):\n' + '\n'.join(
+            '%s. %s' % (i, c.strip()) for i, c in enumerate(KRO_SOURCE_CHANNELS, 1) if c.strip()
+        )
     report_url = data.get('report_url') or ''
     nothing_found = data.get('nothing_found', False)
 
@@ -814,7 +922,7 @@ def _build_sources_doc_with_tables(service, doc_id, data):
     body = doc.get('body', {})
     cells = _get_table_cell_indices(body, idx)
     if cells:
-        header = ['Объект / @юзернейм', 'Тип', 'Источник', 'Возраст / дата', 'VIP / цена', 'Рост / активность', 'Статус риска']
+        header = ['Объект', 'Тип', 'Источник', 'Возраст', 'VIP/цена', 'Рост', 'Статус']
         cell_texts = [header]
         for r in risk_rows:
             cell_texts.append([r['obj'], r['type'], r['source'], r['age'], r['vip'], r['growth'], r['status']])
@@ -831,6 +939,13 @@ def _build_sources_doc_with_tables(service, doc_id, data):
                 try:
                     service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
                         'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'link': {'url': url}}, 'fields': 'link'}
+                    }]}).execute()
+                except Exception:
+                    pass
+            if ci == 6 and ri > 0 and ri <= len(risk_rows) and text.strip():
+                try:
+                    service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
+                        'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'bold': True}, 'fields': 'bold'}
                     }]}).execute()
                 except Exception:
                     pass
@@ -851,15 +966,15 @@ def _build_sources_doc_with_tables(service, doc_id, data):
     doc = service.documents().get(documentId=doc_id).execute()
     cells = _get_table_cell_indices(doc.get('body', {}), idx)
     if cells:
-        cell_texts = [['Объект', 'Кол-во людей', 'Сумма потерь за 12ч', 'Ссылки на сообщения / чаты']]
-        def _fmt_losses(val):
+        cell_texts = [['Объект', 'Люди', 'Сумма 12ч', 'Ссылки']]
+        def _fmt_losses_short(val):
             v = int(val or 0)
             if v >= 1000:
-                return '%s %s ₽' % (v // 1000, str(v % 1000).zfill(3))
+                return '%sк₽' % (v // 1000)
             return '%s ₽' % v
         for ri, row in enumerate(complaints_rows):
             ch = str(row.get('channel', '—'))
-            losses_fmt = _fmt_losses(row.get('losses'))
+            losses_fmt = _fmt_losses_short(row.get('losses'))
             n = row.get('complaints', 0) or 0
             links_cell = (row.get('message_links') or '').strip()
             if not links_cell:
@@ -885,30 +1000,61 @@ def _build_sources_doc_with_tables(service, doc_id, data):
                         }]}).execute()
                     except Exception:
                         pass
+            if ci == 2 and ri > 0 and ri <= len(complaints_rows) and text.strip():
+                try:
+                    service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
+                        'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'bold': True}, 'fields': 'bold'}
+                    }]}).execute()
+                except Exception:
+                    pass
+        try:
+            service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
+                'updateTableCellStyle': {
+                    'tableCellStyle': {'backgroundColor': {'color': {'rgbColor': {'red': 0.2, 'green': 0.2, 'blue': 0.2}}}},
+                    'fields': 'backgroundColor',
+                    'tableRange': {
+                        'tableCellLocation': {'tableStartLocation': {'index': idx}, 'rowIndex': 0, 'columnIndex': 0},
+                        'rowSpan': 1,
+                        'columnSpan': 4
+                    }
+                }
+            }]}).execute()
+        except Exception:
+            pass
     doc = service.documents().get(documentId=doc_id).execute()
     for el in doc.get('body', {}).get('content', []):
         if el.get('startIndex') == idx and 'table' in el:
             idx = el.get('endIndex', idx + 1)
             break
 
-    # Блок 5
-    block5_intro = '\n\n***\n\n5. Причины отнесения к риску (по объектам)\n\nПочему объект в риске: по правилам из раздела 2 (возраст, VIP, рост) и по жалобам из таблицы 4. Каждый пункт — отдельная причина.\n\n'
+    # Блок 5: АНАЛИЗ РИСКОВ (8 колонок с галочками и ИТОГ)
+    block5_intro = '\n\n***\n\n5. АНАЛИЗ РИСКОВ (галочки = реальные факты)\n\n'
     requests = [{'insertText': {'location': {'index': idx}, 'text': block5_intro}}]
     service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
     idx += len(block5_intro)
     rows_t5 = 1 + len(risk_rows) if risk_rows else 1
-    requests = [{'insertTable': {'rows': rows_t5, 'columns': 3, 'location': {'index': idx}}}]
+    requests = [{'insertTable': {'rows': rows_t5, 'columns': 8, 'location': {'index': idx}}}]
     service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
     doc = service.documents().get(documentId=doc_id).execute()
     cells = _get_table_cell_indices(doc.get('body', {}), idx)
     if cells:
-        cell_texts = [['Объект', 'Категория риска', 'Причины (по пунктам)']]
+        cell_texts = [['Объект', 'Базовые (3/3)', 'Агрессивные обещания', 'Картинки без док', 'Псевдо-анализ', 'Только профит', 'VIP навязывание', 'ИТОГ']]
         for r in risk_rows:
-            cell_texts.append([r['obj'], r['type'], (r.get('behavior') or '—')])
+            ra = r.get('risk_analysis') or {}
+            cell_texts.append([
+                r['obj'],
+                ra.get('basic_3_3', '—'),
+                ra.get('agg', '—'),
+                ra.get('kartinki', '—'),
+                ra.get('psevdo', '—'),
+                ra.get('tolko_profit', '—'),
+                ra.get('vip_navyaz', '—'),
+                ra.get('itog', '—'),
+            ])
         if not risk_rows:
-            cell_texts.append(['(нет данных)', '—', '—'])
+            cell_texts.append(['(нет данных)', '—', '—', '—', '—', '—', '—', '—'])
         cells_sorted = sorted(cells, key=lambda x: -x[2])
-        flat_texts = [str(t)[:2000] for row in cell_texts for t in row]
+        flat_texts = [str(t)[:500] for row in cell_texts for t in row]
         for (ri, ci, si), text in zip(cells_sorted, flat_texts):
             service.documents().batchUpdate(documentId=doc_id, body={'requests': [{'insertText': {'location': {'index': si}, 'text': text}}]}).execute()
             if ci == 0 and ri > 0 and ri <= len(risk_rows) and risk_rows[ri - 1].get('link'):
@@ -918,6 +1064,13 @@ def _build_sources_doc_with_tables(service, doc_id, data):
                 try:
                     service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
                         'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'link': {'url': url}}, 'fields': 'link'}
+                    }]}).execute()
+                except Exception:
+                    pass
+            if ci == 7 and ri > 0 and ri <= len(risk_rows) and text.strip():
+                try:
+                    service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
+                        'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'bold': True}, 'fields': 'bold'}
                     }]}).execute()
                 except Exception:
                     pass
@@ -1315,8 +1468,10 @@ def main():
     # 2) Telega catalog
     telega_channels = fetch_telega_catalog()
 
-    # 3) Telegram complaints last 12h
-    tg_data = asyncio.run(fetch_telegram_complaints_12h())
+    # 3) Telegram complaints last 12h + проверка существования каналов (Правило №1: только реальные)
+    tg_data, existing_channel_links = asyncio.run(
+        fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_channels, None)
+    )
     complaints_by_channel = tg_data.get('by_channel', {})
     victims_12h = tg_data.get('victims_12h', 0)
     channel_sum_pairs = tg_data.get('channel_sum_pairs', [])
@@ -1348,31 +1503,46 @@ def main():
     ]
     complaints_rows.sort(key=lambda x: -(x.get('losses') or 0))
 
+    # Фильтр: только проверенные реальные каналы (Правило №1). Домены (сайты) не проверяем — оставляем.
+    def _link_exists(link):
+        if not link or 't.me/' not in link:
+            return True
+        return link in existing_channel_links
+    new_tgstat = [r for r in (new_tgstat or []) if _link_exists(r.get('link') or _object_link(r.get('channel', '')))]
+    telega_channels = [r for r in (telega_channels or []) if _link_exists(r.get('link') or _object_link(r.get('channel', '')))]
+    complaints_rows = [r for r in complaints_rows if _link_exists(_object_link(r.get('channel', '')))]
+
+    report_date_str = now_msk_dt.strftime('%d.%m.%Y')
+    risk_rows, telegram_count_from_risk, courses_count_from_risk = _build_risk_table_rows(
+        new_tgstat, telega_channels, complaints_rows, report_date_str
+    )
+
     # Top3 and totals
     top3 = build_top3(sheet_reports, channel_sum_pairs)
     total_losses_12h = sum(r.get('sum', 0) for r in sheet_reports) + sum(s for _, s in channel_sum_pairs)
-    new_scams_count = len(new_tgstat) + len([c for c, d in agg_complaints.items() if d.get('status') == 'Скам'])
+    new_scams_count = len(risk_rows)
 
-    # 4b) Живой лог: только события (без спама нулей). Если за цикл ничего не найдено — одна понятная строка.
+    # 4b) Живой лог: только события в формате «(X/6 рисков) ✓». Старт и «ничего не найдено» — без спама.
     now_msk_dt = _msk_now()
     time_str = now_msk_dt.strftime('%H:%M')
     events = []
-    for row in (new_tgstat or [])[:30]:
-        ch = row.get('channel', '—')
-        events.append('%s — TGStat: найден новый канал %s, соответствует фильтрам риска.' % (time_str, ch))
-    for row in (telega_channels or [])[:30]:
-        ch = row.get('channel', '—')
-        events.append('%s — Telega: добавлен сигнал‑канал %s (VIP > 10 000₽).' % (time_str, ch))
+    for r in risk_rows:
+        itog = (r.get('risk_analysis') or {}).get('itog', '0/6')
+        x = itog.split('/')[0] if '/' in itog else '0'
+        if r.get('source') == 'TGStat':
+            events.append('%s — TGStat: сигнал‑канал [%s] (%s/6 рисков) ✓' % (time_str, r['obj'], x))
+        elif r.get('source') == 'Telega':
+            events.append('%s — Telega: сигнал‑канал [%s] (%s/6 рисков) ✓' % (time_str, r['obj'], x))
     for row in (complaints_rows or [])[:20]:
         ch = row.get('channel', '—')
         cnt = row.get('complaints', 0)
         loss = row.get('losses', 0)
         if cnt and ch:
             events.append('%s — Чаты: %s новые жалобы на %s (%s ₽ суммарно).' % (time_str, cnt, ch, loss or 0))
-    if not new_tgstat and not telega_channels and not any((r.get('complaints') or r.get('losses')) for r in (complaints_rows or [])):
+    if not risk_rows and not any((r.get('complaints') or r.get('losses')) for r in (complaints_rows or [])):
         events.append('%s — В этом цикле новых сигнал‑каналов по фильтрам не найдено; жалоб нет. Источники доступны.' % time_str)
     else:
-        events.append('%s — Обновлён расчёт потерь: %s ₽, %s объектов в зоне риска.' % (time_str, total_losses_12h or 0, new_scams_count or 0))
+        events.append('%s — Обновлён расчёт: %s ₽, %s объектов в зоне риска.' % (time_str, total_losses_12h or 0, new_scams_count or 0))
     if events:
         _append_live_log_events(events)
 
@@ -1406,10 +1576,6 @@ def main():
     period_end = now_msk_dt.strftime('%d.%m.%Y %H:%M')
     period_start_dt = now_msk_dt - timedelta(hours=HOURS_12)
     period_start = period_start_dt.strftime('%d.%m.%Y %H:%M')
-    report_date_str = period_end.split()[0] if period_end else ''
-    _, telegram_count_from_risk, courses_count_from_risk = _build_risk_table_rows(
-        new_tgstat, telega_channels, complaints_rows, report_date_str
-    )
     sources_doc_id = os.environ.get('KRO_SOURCES_DOC_ID', '').strip()
     if sources_doc_id:
         print('Обновляю Google Doc «Источники и данные»...', flush=True)
@@ -1420,7 +1586,8 @@ def main():
             new_scams_count, total_losses_12h, telegram_count_from_risk, courses_count_from_risk, top3,
             report_doc_url,
             period_start=period_start, period_end=period_end,
-            victims_12h=victims_12h, complaints_count=complaints_count_val
+            victims_12h=victims_12h, complaints_count=complaints_count_val,
+            risk_rows=risk_rows
         )
         url = update_sources_google_doc(sources_doc_id, doc_text, structured_data)
         if url:
