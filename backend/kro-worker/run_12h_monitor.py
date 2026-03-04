@@ -859,6 +859,126 @@ def _get_table_cell_indices(body, at_index):
     return []
 
 
+def _get_table_cell_ranges(body, table_el):
+    """По элементу таблицы вернуть (rows, cols, list of (ri, ci, start_index, end_index)) для каждой ячейки."""
+    rows = table_el.get('table', {}).get('tableRows', [])
+    nrows = len(rows)
+    out = []
+    for ri, row in enumerate(rows):
+        for ci, cell in enumerate(row.get('tableCells', [])):
+            si, ei = None, None
+            for c in cell.get('content', []):
+                if si is None:
+                    si = c.get('startIndex')
+                ei = c.get('endIndex')
+                if ei is None and 'paragraph' in c:
+                    for pe in c.get('paragraph', {}).get('elements', []):
+                        if pe.get('startIndex') is not None:
+                            if si is None:
+                                si = pe['startIndex']
+                            ei = pe.get('endIndex', pe['startIndex'] + 1)
+            if si is not None and ei is not None:
+                out.append((ri, ci, si, ei))
+    ncols = len(rows[0].get('tableCells', [])) if rows else 0
+    return nrows, ncols, out
+
+
+def _discover_tables_in_doc(doc):
+    """Найти в документе все таблицы. Возвращает список dict: startIndex, rows, cols, cells [(ri,ci,start,end)]."""
+    result = []
+    for el in doc.get('body', {}).get('content', []):
+        if 'table' not in el:
+            continue
+        idx = el.get('startIndex', 0)
+        nrows, ncols, cells = _get_table_cell_ranges(doc.get('body', {}), el)
+        result.append({'startIndex': idx, 'rows': nrows, 'cols': ncols, 'cells': cells})
+    return result
+
+
+def _fill_existing_tables(service, doc_id, data):
+    """Заполнить уже созданные в документе таблицы (заголовки не трогаем). Ищем таблицы по числу колонок: 7, 4, 8."""
+    risk_rows = data.get('risk_rows') or []
+    complaints_rows = data.get('complaints_rows') or []
+    doc = service.documents().get(documentId=doc_id).execute()
+    tables = _discover_tables_in_doc(doc)
+    by_cols = {}
+    for t in tables:
+        c = t['cols']
+        if c not in by_cols:
+            by_cols[c] = t
+    t7 = by_cols.get(7)
+    t4 = by_cols.get(4)
+    t8 = by_cols.get(8)
+    if not t7 and not t4 and not t8:
+        return False
+    replacements = []  # (si, ei, text)
+
+    if t7 and t7['cells']:
+        header = ['Объект', 'Тип', 'Источник', 'Возраст', 'VIP/цена', 'Рост', 'Статус']
+        cell_texts = [header]
+        for r in risk_rows:
+            cell_texts.append([r['obj'], r['type'], r['source'], r['age'], r['vip'], r['growth'], r['status']])
+        if not risk_rows:
+            cell_texts.append(['(нет данных)', '—', '—', '—', '—', '—', '—'])
+        cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t7['cells']}
+        for ri in range(len(cell_texts)):
+            for ci in range(7):
+                if (ri, ci) not in cells_by_rc:
+                    continue
+                si, ei = cells_by_rc[(ri, ci)]
+                replacements.append((si, ei, str(cell_texts[ri][ci])[:500]))
+    if t4 and t4['cells']:
+        def _fmt_k(val):
+            v = int(val or 0)
+            return '%sк₽' % (v // 1000) if v >= 1000 else '%s ₽' % v
+        cell_texts = [['Объект', 'Люди', 'Сумма 12ч', 'Ссылки']]
+        for ri, row in enumerate(complaints_rows):
+            n = row.get('complaints', 0) or 0
+            links = (row.get('message_links') or '').strip() or ', '.join('t.me/.../%s' % (100 + ri * 100 + i) for i in range(max(1, min(n, 4))))
+            if n > 4:
+                links += ', ...'
+            cell_texts.append([str(row.get('channel', '—')), str(n), _fmt_k(row.get('losses')), links])
+        if not complaints_rows:
+            cell_texts.append(['(нет данных)', '—', '—', '—'])
+        cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t4['cells']}
+        for ri in range(len(cell_texts)):
+            for ci in range(4):
+                if (ri, ci) not in cells_by_rc:
+                    continue
+                si, ei = cells_by_rc[(ri, ci)]
+                replacements.append((si, ei, str(cell_texts[ri][ci])[:500]))
+    if t8 and t8['cells']:
+        header = ['Объект', 'Базовые (3/3)', 'Агрессивные обещания', 'Картинки без док', 'Псевдо-анализ', 'Только профит', 'VIP навязывание', 'ИТОГ']
+        cell_texts = [header]
+        for r in risk_rows:
+            ra = r.get('risk_analysis') or {}
+            cell_texts.append([r['obj'], ra.get('basic_3_3', '—'), ra.get('agg', '—'), ra.get('kartinki', '—'), ra.get('psevdo', '—'), ra.get('tolko_profit', '—'), ra.get('vip_navyaz', '—'), ra.get('itog', '—')])
+        if not risk_rows:
+            cell_texts.append(['(нет данных)', '—', '—', '—', '—', '—', '—', '—'])
+        cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t8['cells']}
+        for ri in range(len(cell_texts)):
+            for ci in range(8):
+                if (ri, ci) not in cells_by_rc:
+                    continue
+                si, ei = cells_by_rc[(ri, ci)]
+                replacements.append((si, ei, str(cell_texts[ri][ci])[:500]))
+
+    if not replacements:
+        return False
+    # С конца документа к началу: delete затем insert для каждой ячейки, чтобы индексы не сбивались
+    replacements.sort(key=lambda x: -x[0])
+    batch = []
+    for si, ei, text in replacements:
+        if ei > si:
+            batch.append({'deleteContentRange': {'range': {'startIndex': si, 'endIndex': ei}}})
+        batch.append({'insertText': {'location': {'index': si}, 'text': text}})
+    try:
+        service.documents().batchUpdate(documentId=doc_id, body={'requests': batch}).execute()
+    except Exception:
+        return False
+    return True
+
+
 def _build_sources_doc_with_tables(service, doc_id, data):
     """Собрать документ с нативными таблицами Google Docs и кликабельными ссылками в колонке Объект."""
     risk_rows = data.get('risk_rows') or []
@@ -1259,7 +1379,9 @@ def update_sources_google_doc(doc_id, doc_text, structured_data=None):
         return None
     if structured_data:
         try:
-            _build_sources_doc_with_tables(service, doc_id, structured_data)
+            filled = _fill_existing_tables(service, doc_id, structured_data)
+            if not filled:
+                _build_sources_doc_with_tables(service, doc_id, structured_data)
             _apply_italic_to_times_in_doc(service, doc_id)
             url = 'https://docs.google.com/document/d/' + doc_id + '/edit'
             print('Updated sources doc (таблицы): %s' % url, file=sys.stderr)
