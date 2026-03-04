@@ -3,7 +3,7 @@
 KRO 12h auto-monitor: два цикла в день — 11:00 и 23:00 MSK. Собирает данные из TGStat search,
 Telega.io каталога и чатов Telegram; применяет критерии (возраст <14 дн., VIP>10к ₽, рост >500/сутки);
 пишет в JSON и лист; создаёт отчёт и документ SOURCE & DATA. К 11:55/23:55 документ готов на проверку;
-12:00–12:15 / 00:00–00:15 — проверка; 12:15 / 00:15 — отправка JSON на сайт (POST /api/kro/update).
+Проверка до 12:00 / 00:00; в 12:00 (день) и 00:00 (12 ночи) данные отправляются на сайт (POST /api/kro/update).
 
 Источники: 1) TGStat channels/search (криптовалюта), 2) Telega.io catalog, 3) KRO_SOURCE_CHANNELS (жалобы за 12ч).
 
@@ -327,11 +327,13 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     report_date_str = (period_end or collect_time_msk).split()[0] if period_end else ''
 
     lines = [
+        'Пункт 1. Заголовок и период',
         'СКАМ-МОНИТОРИНГ | Source & Data',
         '',
         'Период: %s – %s' % (period_start or collect_time_msk, period_end or collect_time_msk),
         'Время формирования: %s MSK' % collect_time_msk,
         '',
+        'Пункт 2. Живой лог',
         '——— ЖИВОЙ ЛОГ (каждые 5 минут) ———',
         '',
         'START цикла: %s' % (period_start or collect_time_msk),
@@ -342,9 +344,10 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         'Расчёт: потери %s ₽' % (total_losses_12h if total_losses_12h else 0),
         'ПОИСК ЗАВЕРШЁН: %s' % collect_time_msk,
         '',
-        '——— SOURCE & DATA (полный поиск) ———',
+        'Пункт 3. SOURCE & DATA (полный поиск)',
+        '——— SOURCE & DATA ———',
         '',
-        '1. TGStat.ru поиск',
+        '3.1. TGStat.ru поиск',
         '   Ссылка: https://tgstat.ru/search?query=криптовалюта&sort=date',
         '   Время: %s' % collect_time_msk,
         '   Проверено: %s каналов' % (len(new_tgstat) if new_tgstat else 0),
@@ -380,7 +383,7 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
             lines.append('  Причина отклонения: %s' % reason)
         lines.append('')
     lines.extend([
-        '2. Telega.in поиск',
+        '3.2. Telega.in поиск',
         '   Ссылка: https://telega.io/catalog/cryptocurrencies',
         '   Время: %s' % collect_time_msk,
         '   Проверено: %s каналов' % (len(telega_channels) if telega_channels else 0),
@@ -393,7 +396,7 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         lines.append('  Ссылка: %s' % link)
         lines.append('')
     lines.extend([
-        '3. Чаты с жалобами',
+        '3.3. Чаты с жалобами',
         '   Чаты: KRO_SOURCE_CHANNELS',
         '   Количество жалоб: %s' % (complaints_count if complaints_count is not None else victims_12h),
         ''
@@ -405,6 +408,7 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         lines.append('  Канал: %s — жалоб: %s, сумма: %s ₽' % (ch, complaints, losses))
     lines.extend([
         '',
+        'Пункт 4. Расчёт для сайта (эти данные уходят на сайт в 12:00 и 00:00)',
         '——— РАСЧЁТ ДЛЯ САЙТА ———',
         '',
         'Новые скам-каналы: %s' % new_scams_count,
@@ -423,7 +427,8 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         lines.append('  (нет данных)')
     lines.extend([
         '',
-        '——— ТВОЯ ПРОВЕРКА (12:00–12:15 / 00:00–00:15) ———',
+        'Пункт 5. Твоя проверка',
+        '——— ТВОЯ ПРОВЕРКА (до 12:00 / до 00:00, затем данные на сайт) ———',
         '',
         '□ Ссылки работают',
         '□ Каналы <14 дней + VIP>10к ₽, рост >500/сутки',
@@ -639,7 +644,11 @@ def create_google_doc_report(title, new_channels_rows, complaints_rows, summary_
         url = 'https://docs.google.com/document/d/' + doc_id + '/edit'
         return doc_id, url
     except Exception as e:
-        print('Google Doc create: %s' % e, file=sys.stderr)
+        err_str = str(e)
+        if '403' in err_str and 'permission' in err_str.lower():
+            print('Создание нового отчёта пропущено: у сервисного аккаунта нет прав на создание документов (403). Документ «Источники и данные» обновляется отдельно.', file=sys.stderr)
+        else:
+            print('Google Doc create: %s' % e, file=sys.stderr)
         return None, None
 
 
@@ -737,7 +746,8 @@ def main():
         )
         url = update_sources_google_doc(sources_doc_id, doc_text)
         if url:
-            print('Готово. Документ: %s' % url, flush=True)
+            print('Готово. Документ «Источники и данные» обновлён: %s' % url, flush=True)
+            print('Открой эту ссылку и обнови страницу (F5), чтобы увидеть новую структуру: ЖИВОЙ ЛОГ, SOURCE & DATA, РАСЧЁТ ДЛЯ САЙТА, ТВОЯ ПРОВЕРКА.', flush=True)
         else:
             print('Не удалось обновить документ. Проверьте: 1) KRO_GOOGLE_CREDENTIALS_JSON, 2) доступ сервисного аккаунта к документу (Поделиться → email из ключа), 3) Google Docs API включён в Cloud.', flush=True)
     else:

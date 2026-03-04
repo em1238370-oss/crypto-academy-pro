@@ -1692,7 +1692,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
   }
 });
 
-// POST /api/kro/update и /api/update — принять JSON для сайта (12:15 / 00:15), записать в kro-12h-stats.json
+// POST /api/kro/update и /api/update — принять JSON для сайта (12:00 и 00:00 MSK), записать в kro-12h-stats.json
 // Спецификация: timestamp, new_scam_channels, losses_12h, telegram_channels, courses_products, top3_today[]
 // Опционально: KRO_UPDATE_SECRET в env — тогда заголовок Authorization: Bearer <secret> или ?secret=...
 function handleKroUpdate(req, res) {
