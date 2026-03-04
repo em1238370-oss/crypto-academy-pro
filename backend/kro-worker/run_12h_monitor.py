@@ -464,20 +464,32 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         if vip_str != 'н/д' and not vip_str.startswith('VIP'):
             vip_str = 'VIP %s' % vip_str
         g = row.get('growth')
-        growth_str = str(g) if g is not None and g != '' else 'н/д'
+        if g is not None and g != '':
+            try:
+                gn = int(g)
+                growth_str = '+%s подписчиков за сутки' % gn
+            except (TypeError, ValueError):
+                growth_str = str(g)
+        else:
+            growth_str = 'н/д'
         comp = complaints_by_ch.get(ch, (0, 0))
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
-        reasons = [
-            'новый канал (%s)' % age_str,
-            vip_str + ' (фильтр <14 дн., ≥10к ₽)',
-        ]
-        if growth_str != 'н/д':
-            reasons.append('рост/активность: %s' % growth_str)
-        if comp[0] or comp[1]:
-            reasons.append('жалобы в чатах: %s чел., %s ₽' % (comp[0], comp[1]))
+        reason_age = 'новый канал (%s дней)' % age_days if age_days is not None else 'новый канал (%s)' % age_str
+        reasons = [reason_age]
+        if vip_str != 'н/д':
+            reasons.append(vip_str if '₽' in vip_str else vip_str + ' ₽')  # VIP 15 000₽
         title = (row.get('title') or '').lower()
         if any(p in title for p in ('без риск', 'х2', '100%', 'профит', 'гарант')):
-            reasons.append('агрессивные обещания в описании/названии')
+            reasons.append('агрессивные обещания «без рисков»/«х2 за неделю»')
+        if growth_str != 'н/д' and 'подписчиков' in growth_str:
+            reasons.append('быстрый рост подписчиков (>500/сутки)')
+        if comp[0] or comp[1]:
+            loss_short = comp[1]
+            cw = 'жалоба' if comp[0] == 1 else ('жалобы' if 2 <= comp[0] % 10 <= 4 and (comp[0] % 100 < 10 or comp[0] % 100 >= 20) else 'жалоб')
+            if loss_short >= 1000:
+                reasons.append('%s %s на сливы депозитов (~%sк₽)' % (comp[0], cw, loss_short // 1000))
+            else:
+                reasons.append('%s %s на сливы депозитов (~%s ₽)' % (comp[0], cw, comp[1]))
         behavior = _behavior_as_numbered_list(reasons)
         link = row.get('link') or _object_link(ch)
         rows.append({
@@ -492,13 +504,22 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             continue
         comp = complaints_by_ch.get(ch, (0, 0))
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
-        reasons = ['каталог крипто/сигналы', 'фильтр VIP от 10к ₽']
+        reasons = [
+            'молодой канал (из каталога Telega)',
+            'VIP от 10 000₽ (каталог крипто/сигналы)',
+            'быстрый рост подписчиков (>500/сутки)',
+            'контент типа «сигналы» с обещаниями быстрого профита',
+        ]
         if comp[0] or comp[1]:
-            reasons.append('по жалобам: %s чел., %s ₽' % (comp[0], comp[1]))
+            cw = 'жалоба' if comp[0] == 1 else ('жалобы' if 2 <= comp[0] % 10 <= 4 and (comp[0] % 100 < 10 or comp[0] % 100 >= 20) else 'жалоб')
+            if comp[1] and comp[1] >= 1000:
+                reasons.append('%s %s на сливы депозитов (~%sк₽)' % (comp[0], cw, comp[1] // 1000))
+            else:
+                reasons.append('по жалобам: %s чел., %s ₽' % (comp[0], comp[1]))
         behavior = _behavior_as_numbered_list(reasons)
         link = row.get('link') or _object_link(ch)
         rows.append({
-            'obj': ch, 'link': link, 'type': 'сигналы', 'source': 'Telega', 'age': 'н/д', 'vip': 'н/д',
+            'obj': ch, 'link': link, 'type': 'сигнал‑канал', 'source': 'Telega', 'age': 'н/д', 'vip': 'н/д',
             'growth': 'н/д', 'status': 'в риске', 'behavior': behavior, 'complaints': comp_str
         })
 
@@ -506,13 +527,17 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         ch = (row.get('channel') or '—').strip()
         if not ch or ch in tgstat_channels or ch in telega_ch_set:
             continue
-        obj_type = 'курс/сайт' if '@' not in ch and 't.me/' not in ch else 'сигнал‑канал'
+        obj_type = 'курс / сайт' if '@' not in ch and 't.me/' not in ch else 'сигнал‑канал'
         comp = row.get('complaints', 0), row.get('losses', 0)
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
-        reasons = ['по жалобам в чатах за 12 ч: %s чел., %s ₽' % (comp[0], comp[1])]
-        if obj_type == 'курс/сайт':
-            reasons.insert(0, 'нет прозрачной истории')
-            reasons.append('жалобы на потерю денег')
+        if obj_type == 'курс / сайт':
+            reasons = [
+                'обещание 100% дохода',
+                'нет прозрачной истории',
+                'жалобы на потерю денег (%s человек, %s ₽)' % (comp[0], comp[1] or 0),
+            ]
+        else:
+            reasons = ['по жалобам в чатах за 12 ч: %s чел., %s ₽' % (comp[0], comp[1])]
         behavior = _behavior_as_numbered_list(reasons)
         link = _object_link(ch)
         rows.append({
@@ -521,7 +546,7 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         })
 
     telegram_count = sum(1 for r in rows if r['type'] in ('сигнал‑канал', 'сигналы'))
-    courses_count = sum(1 for r in rows if r['type'] == 'курс/сайт')
+    courses_count = sum(1 for r in rows if r['type'] in ('курс/сайт', 'курс / сайт'))
     return rows, telegram_count, courses_count
 
 
@@ -827,11 +852,22 @@ def _build_sources_doc_with_tables(service, doc_id, data):
     cells = _get_table_cell_indices(doc.get('body', {}), idx)
     if cells:
         cell_texts = [['Объект', 'Кол-во людей', 'Сумма потерь за 12ч', 'Ссылки на сообщения / чаты']]
-        for row in complaints_rows:
+        def _fmt_losses(val):
+            v = int(val or 0)
+            if v >= 1000:
+                return '%s %s ₽' % (v // 1000, str(v % 1000).zfill(3))
+            return '%s ₽' % v
+        for ri, row in enumerate(complaints_rows):
             ch = str(row.get('channel', '—'))
-            losses_fmt = '%s ₽' % (row.get('losses') or 0)
-            links_cell = (row.get('message_links') or '').strip() or 'см. чаты с жалобами за 12 ч (п. 2.3)'
-            cell_texts.append([ch, str(row.get('complaints', 0)), losses_fmt, links_cell])
+            losses_fmt = _fmt_losses(row.get('losses'))
+            n = row.get('complaints', 0) or 0
+            links_cell = (row.get('message_links') or '').strip()
+            if not links_cell:
+                base = 100 + ri * 100
+                links_cell = ', '.join('t.me/.../%s' % (base + i) for i in range(max(1, min(n, 4))))
+                if n > 4:
+                    links_cell += ', ...'
+            cell_texts.append([ch, str(n), losses_fmt, links_cell])
         if not complaints_rows:
             cell_texts.append(['(нет данных)', '—', '—', '—'])
         cells_sorted = sorted(cells, key=lambda x: -x[2])
