@@ -318,16 +318,36 @@ button:focus-visible {
    outline-offset: 3px;
 }
 
-/* Scroll reveal (Artem OSO style) */
+/* Scroll reveal (референс sitelove: fade-in + translateY вверх, 0.5–0.8 s на блок) */
 .kro-reveal {
    opacity: 0;
-   transform: translateY(24px);
-   transition: opacity 0.6s ease, transform 0.6s ease;
+   transform: translateY(28px);
+   transition: opacity 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .kro-reveal.kro-reveal-visible {
    opacity: 1;
    transform: translateY(0);
+}
+
+/* Scroll-in: появление при входе во вьюпорт (отдельные блоки — заголовок, топ-3, проверка, отчёт, футер) */
+.kro-scroll-in {
+   opacity: 0;
+   transform: translateY(32px);
+   transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.kro-scroll-in.kro-scroll-in-visible {
+   opacity: 1;
+   transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .kro-scroll-in {
+       opacity: 1;
+       transform: none;
+       transition: none;
+   }
 }
 
 .kro-checkers-anchor {
@@ -510,19 +530,58 @@ button:focus-visible {
 .kro-feature1.kro-reveal-visible .kro-f1-block.kro-f1-math { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
 .kro-feature1.kro-reveal-visible .kro-f1-block.kro-f1-choice-wrap { opacity: 1; transform: translateY(0); transition-delay: 0.28s; }
 
+/* Каскад внутри блоков (референс sitelove: stagger +50–150 ms) */
+.kro-feature1.kro-reveal .kro-f1-loh-card {
+   opacity: 0;
+   transform: translateY(14px);
+   transition: opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.kro-feature1.kro-reveal-visible .kro-f1-loh-card:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
+.kro-feature1.kro-reveal-visible .kro-f1-loh-card:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.28s; }
+.kro-feature1.kro-reveal-visible .kro-f1-loh-card:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.36s; }
+
+.kro-feature1.kro-reveal .kro-f1-choice .kro-f1-choice-btn {
+   opacity: 0;
+   transform: translateY(12px);
+   transition: opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.kro-feature1.kro-reveal-visible .kro-f1-choice .kro-f1-choice-btn:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0.34s; }
+.kro-feature1.kro-reveal-visible .kro-f1-choice .kro-f1-choice-btn:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.42s; }
+
+.kro-feature1.kro-reveal .kro-f1-shock-heading,
+.kro-feature1.kro-reveal .kro-f1-shock-text,
+.kro-feature1.kro-reveal .kro-f1-shock-total {
+   opacity: 0;
+   transform: translateY(10px);
+   transition: opacity 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.kro-feature1.kro-reveal-visible .kro-f1-shock-heading { opacity: 1; transform: translateY(0); transition-delay: 0.08s; }
+.kro-feature1.kro-reveal-visible .kro-f1-shock-text { opacity: 1; transform: translateY(0); transition-delay: 0.14s; }
+.kro-feature1.kro-reveal-visible .kro-f1-shock-total { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
+
 @media (prefers-reduced-motion: reduce) {
    .kro-feature1.kro-reveal .kro-f1-block,
    .kro-feature1.kro-reveal .kro-feature1-dashboard,
    .kro-feature1.kro-reveal .kro-f1-content-card,
    .kro-feature1.kro-reveal .kro-feature1-date,
-   .kro-feature1.kro-reveal .kro-feature1-hero-number {
+   .kro-feature1.kro-reveal .kro-feature1-hero-number,
+   .kro-feature1.kro-reveal .kro-f1-loh-card,
+   .kro-feature1.kro-reveal .kro-f1-choice .kro-f1-choice-btn,
+   .kro-feature1.kro-reveal .kro-f1-shock-heading,
+   .kro-feature1.kro-reveal .kro-f1-shock-text,
+   .kro-feature1.kro-reveal .kro-f1-shock-total {
        opacity: 1;
        transform: none;
        transition: none;
    }
    .kro-feature1.kro-reveal-visible .kro-f1-block,
    .kro-feature1.kro-reveal-visible .kro-feature1-date,
-   .kro-feature1.kro-reveal-visible .kro-feature1-hero-number { transition-delay: 0s; }
+   .kro-feature1.kro-reveal-visible .kro-feature1-hero-number,
+   .kro-feature1.kro-reveal-visible .kro-f1-loh-card,
+   .kro-feature1.kro-reveal-visible .kro-f1-choice .kro-f1-choice-btn,
+   .kro-feature1.kro-reveal-visible .kro-f1-shock-heading,
+   .kro-feature1.kro-reveal-visible .kro-f1-shock-text,
+   .kro-feature1.kro-reveal-visible .kro-f1-shock-total { transition-delay: 0s; }
 }
 
 .kro-card {

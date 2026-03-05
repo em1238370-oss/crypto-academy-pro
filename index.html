@@ -174,13 +174,13 @@
                    <p class="kro-f1-choice-disclaimer">*я не продаю сигналы. я показываю, как их не боятся*</p>
                </div>
            </div>
-           <h2 class="kro-feature1-heading" id="kro-feature1-heading">Топ-3 сегодня</h2>
-           <ol class="kro-feature1-top3" id="kro-feature1-top3">
+           <h2 class="kro-feature1-heading kro-scroll-in" id="kro-feature1-heading">Топ-3 сегодня</h2>
+           <ol class="kro-feature1-top3 kro-scroll-in" id="kro-feature1-top3">
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-1-channel">@TONPumpElite</span> → <span class="kro-top3-sum" id="kro-top3-1-sum">2.1млн₽</span> → <span class="kro-top3-status kro-status-removed" id="kro-top3-1-status">Удалён</span></li>
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-2-channel">BTC Курс миллионера</span> → <span class="kro-top3-sum" id="kro-top3-2-sum">847к₽</span> → <span class="kro-top3-status kro-status-active" id="kro-top3-2-status">Активен</span></li>
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-3-channel">crypto-fast.pro</span> → <span class="kro-top3-sum" id="kro-top3-3-sum">673к₽</span> → <span class="kro-top3-status kro-status-block" id="kro-top3-3-status">Блок</span></li>
            </ol>
-           <div class="kro-feature1-check" id="kro-feature1-check">
+           <div class="kro-feature1-check kro-scroll-in" id="kro-feature1-check">
                <p class="kro-feature1-check-intro">Проверить канал</p>
                <div class="kro-feature1-check-row">
                    <label class="kro-report-label" for="kro-check-channel">@username / ссылка на канал или обменник <input type="text" id="kro-check-channel" placeholder="@channel, t.me/..., или ссылка на обменник" autocomplete="off"></label>
@@ -188,7 +188,7 @@
                </div>
                <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
            </div>
-           <div class="kro-feature1-report" id="kro-feature1-report">
+           <div class="kro-feature1-report kro-scroll-in" id="kro-feature1-report">
                <p class="kro-feature1-report-intro">Сообщить о разводе → добавим за 30 мин</p>
                <form class="kro-report-form" id="kro-report-form" novalidate>
                    <label class="kro-report-label">Канал / ссылка <input type="text" name="channel" id="kro-report-channel" required placeholder="@channel или ссылка"></label>
@@ -203,7 +203,7 @@
        <!-- Якорь для кнопки «Проверь своего гуру» (блок чекеров будет ниже) -->
        <section class="kro-checkers-anchor" id="checkers" aria-hidden="true"></section>
        
-       <footer class="news-footer kro-footer">
+       <footer class="news-footer kro-footer kro-scroll-in">
            <p class="news-footer-text">Крипта без розовых очков</p>
            <p class="news-footer-crafted">Crafted with respect for your time.</p>
            <div class="news-footer-links">
@@ -700,18 +700,28 @@
    </script>
    <script>
        (function() {
-           var observer = new IntersectionObserver(function(entries) {
+           var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+           var revealObserver = new IntersectionObserver(function(entries) {
                entries.forEach(function(entry) {
                    if (entry.isIntersecting) entry.target.classList.add('kro-reveal-visible');
                });
            }, { rootMargin: '0px 0px -8% 0px', threshold: 0.1 });
+           var scrollInObserver = prefersReducedMotion ? null : new IntersectionObserver(function(entries) {
+               entries.forEach(function(entry) {
+                   if (entry.isIntersecting) entry.target.classList.add('kro-scroll-in-visible');
+               });
+           }, { rootMargin: '0px 0px -6% 0px', threshold: 0.08 });
            function initReveal() {
                var hero = document.getElementById('hero');
                if (hero) {
                    hero.classList.add('kro-reveal-visible');
                    requestAnimationFrame(function() { hero.classList.add('kro-hero-loaded'); });
                }
-               document.querySelectorAll('.kro-reveal').forEach(function(el) { observer.observe(el); });
+               document.querySelectorAll('.kro-reveal').forEach(function(el) { revealObserver.observe(el); });
+               if (scrollInObserver) document.querySelectorAll('.kro-scroll-in').forEach(function(el) {
+                   scrollInObserver.observe(el);
+                   if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add('kro-scroll-in-visible');
+               });
            }
            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initReveal);
            else initReveal();
