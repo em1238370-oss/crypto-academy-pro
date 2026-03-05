@@ -349,10 +349,11 @@ button:focus-visible {
    position: absolute;
    inset: 0;
    z-index: -1;
-   /* Заметный градиент: глубина + тёплый акцент по центру (референс sitelove) */
-   background: radial-gradient(ellipse 70% 50% at 50% 35%, rgba(72, 48, 42, 0.18) 0%, transparent 55%),
-               radial-gradient(ellipse 100% 80% at 50% 50%, rgba(50, 35, 38, 0.12) 0%, transparent 60%),
-               radial-gradient(ellipse 120% 80% at 50% 0%, rgba(35, 25, 28, 0.25) 0%, transparent 50%),
+   /* Глубина + мягкий нейтральный свет по центру (минимализм, «игра светом») */
+   background: radial-gradient(ellipse 80% 45% at 50% 25%, rgba(255, 255, 255, 0.06) 0%, transparent 55%),
+               radial-gradient(ellipse 70% 50% at 50% 35%, rgba(48, 46, 50, 0.15) 0%, transparent 55%),
+               radial-gradient(ellipse 100% 80% at 50% 50%, rgba(40, 38, 42, 0.1) 0%, transparent 60%),
+               radial-gradient(ellipse 120% 80% at 50% 0%, rgba(30, 28, 32, 0.2) 0%, transparent 50%),
                linear-gradient(180deg, #0f0e10 0%, #0d0c0e 30%, #0b0a0c 60%, #0a090b 100%);
 }
 
@@ -385,6 +386,25 @@ button:focus-visible {
    opacity: 1;
    transform: translateY(0);
 }
+
+/* Каскадное появление внутри дашборда: дата → цифра → карточки */
+.kro-feature1.kro-reveal .kro-feature1-date,
+.kro-feature1.kro-reveal .kro-feature1-hero-number {
+   opacity: 0;
+   transform: translateY(12px);
+   transition: opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.kro-feature1.kro-reveal-visible .kro-feature1-date {
+   opacity: 1;
+   transform: translateY(0);
+   transition-delay: 0.06s;
+}
+.kro-feature1.kro-reveal-visible .kro-feature1-hero-number {
+   opacity: 1;
+   transform: translateY(0);
+   transition-delay: 0.14s;
+}
+
 .kro-feature1.kro-reveal .kro-f1-content-card {
    opacity: 0;
    transform: translateY(20px);
@@ -403,12 +423,17 @@ button:focus-visible {
    letter-spacing: 0.1em;
    text-transform: uppercase;
    display: inline-block;
-   border: 1px solid rgba(184, 74, 74, 0.4);
+   border: 1px solid rgba(255, 255, 255, 0.12);
    border-radius: 999px;
    padding: 8px 18px;
    margin-bottom: 28px;
-   background: rgba(184, 74, 74, 0.08);
-   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 0 20px rgba(184, 74, 74, 0.12);
+   background: rgba(255, 255, 255, 0.04);
+   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+   transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.kro-feature1-date:hover {
+   transform: scale(1.02);
+   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
 .kro-feature1-hero-number {
@@ -420,10 +445,14 @@ button:focus-visible {
    display: block;
    font-size: clamp(36px, 8vw, 56px);
    font-weight: 700;
-   color: var(--kro-accent-muted);
+   color: rgba(255, 255, 255, 0.95);
    line-height: 1.05;
    font-variant-numeric: tabular-nums;
-   text-shadow: 0 0 30px rgba(184, 74, 74, 0.25);
+   text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+   transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.kro-feature1-dashboard:hover .kro-feature1-hero-value {
+   transform: scale(1.02);
 }
 
 .kro-feature1-hero-label {
@@ -484,12 +513,16 @@ button:focus-visible {
 @media (prefers-reduced-motion: reduce) {
    .kro-feature1.kro-reveal .kro-f1-block,
    .kro-feature1.kro-reveal .kro-feature1-dashboard,
-   .kro-feature1.kro-reveal .kro-f1-content-card {
+   .kro-feature1.kro-reveal .kro-f1-content-card,
+   .kro-feature1.kro-reveal .kro-feature1-date,
+   .kro-feature1.kro-reveal .kro-feature1-hero-number {
        opacity: 1;
        transform: none;
        transition: none;
    }
-   .kro-feature1.kro-reveal-visible .kro-f1-block { transition-delay: 0s; }
+   .kro-feature1.kro-reveal-visible .kro-f1-block,
+   .kro-feature1.kro-reveal-visible .kro-feature1-date,
+   .kro-feature1.kro-reveal-visible .kro-feature1-hero-number { transition-delay: 0s; }
 }
 
 .kro-card {
@@ -502,15 +535,15 @@ button:focus-visible {
 
 .kro-feature1 .kro-card {
    border-color: rgba(255, 255, 255, 0.08);
-   background: rgba(28, 24, 28, 0.9);
+   background: rgba(28, 26, 28, 0.9);
    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .kro-feature1-stat.kro-card:hover,
 .kro-feature1-top3 .kro-card:hover {
-   border-color: var(--kro-card-border-accent);
-   background: rgba(36, 30, 30, 0.92);
-   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 0 24px rgba(184, 74, 74, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+   border-color: rgba(255, 255, 255, 0.14);
+   background: rgba(34, 32, 34, 0.94);
+   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.08);
    transform: translateY(-4px);
 }
 
@@ -557,14 +590,19 @@ button:focus-visible {
    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Блок 1: Шок-цифры — заметная карточка с тенью и акцентом */
+/* Блок 1: Шок-цифры — минимализм, нейтральный свет */
 .kro-f1-block.kro-f1-shock {
-   background: linear-gradient(180deg, rgba(32, 26, 26, 0.95) 0%, rgba(26, 22, 22, 0.98) 100%);
-   border: 1px solid rgba(184, 74, 74, 0.25);
+   background: linear-gradient(180deg, rgba(30, 28, 30, 0.95) 0%, rgba(24, 22, 26, 0.98) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.08);
    border-radius: 16px;
    padding: 28px;
    margin-bottom: 32px;
-   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), 0 0 30px rgba(184, 74, 74, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+.kro-f1-block.kro-f1-shock:hover {
+   transform: translateY(-2px);
+   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 .kro-f1-shock-heading {
@@ -585,10 +623,10 @@ button:focus-visible {
 .kro-f1-shock-total {
    font-size: clamp(36px, 5.5vw, 52px);
    font-weight: 800;
-   color: var(--kro-accent-muted);
+   color: rgba(255, 255, 255, 0.95);
    line-height: 1.1;
    margin: 0;
-   text-shadow: 0 0 24px rgba(184, 74, 74, 0.2);
+   text-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
 }
 
 /* Блок 2: Твой тип лоха */
@@ -612,18 +650,18 @@ button:focus-visible {
 }
 
 .kro-f1-loh-card {
-   background: linear-gradient(180deg, rgba(30, 26, 28, 0.95) 0%, rgba(24, 20, 22, 0.98) 100%);
-   border: 1px solid rgba(184, 74, 74, 0.22);
+   background: linear-gradient(180deg, rgba(30, 28, 30, 0.95) 0%, rgba(24, 22, 26, 0.98) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.08);
    border-radius: 16px;
    padding: 24px;
    text-align: left;
    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-   transition: transform 0.25s ease, box-shadow 0.3s ease, border-color 0.25s ease;
+   transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.35s ease;
 }
 .kro-f1-loh-card:hover {
-   transform: translateY(-5px);
-   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), 0 0 32px rgba(184, 74, 74, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.07);
-   border-color: rgba(184, 74, 74, 0.4);
+   transform: translateY(-5px) scale(1.02);
+   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+   border-color: rgba(255, 255, 255, 0.12);
 }
 
 .kro-f1-loh-avatar {
@@ -637,7 +675,7 @@ button:focus-visible {
 .kro-f1-loh-name {
    font-size: clamp(14px, 1.6vw, 16px);
    font-weight: 700;
-   color: var(--kro-accent-muted);
+   color: rgba(255, 255, 255, 0.92);
    text-transform: uppercase;
    letter-spacing: 0.03em;
    margin: 0 0 8px;
@@ -652,7 +690,7 @@ button:focus-visible {
 
 .kro-f1-loh-result {
    font-size: clamp(12px, 1.4vw, 14px);
-   color: var(--kro-accent-muted-subtle);
+   color: rgba(255, 255, 255, 0.6);
    margin: 0;
 }
 
@@ -677,12 +715,16 @@ button:focus-visible {
 .kro-f1-math-slider {
    overflow: hidden;
    border-radius: 16px;
-   background: linear-gradient(180deg, rgba(28, 24, 28, 0.95) 0%, rgba(22, 20, 24, 0.98) 100%);
-   border: 1px solid rgba(184, 74, 74, 0.2);
+   background: linear-gradient(180deg, rgba(28, 26, 30, 0.95) 0%, rgba(22, 20, 26, 0.98) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.08);
    cursor: grab;
    user-select: none;
    touch-action: pan-y;
    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+   transition: box-shadow 0.35s ease;
+}
+.kro-f1-math-slider:hover {
+   box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .kro-f1-math-slider.dragging {
@@ -710,7 +752,7 @@ button:focus-visible {
 .kro-f1-math-slide-head {
    font-size: clamp(15px, 1.8vw, 18px);
    font-weight: 700;
-   color: var(--kro-accent-muted);
+   color: rgba(255, 255, 255, 0.92);
    margin: 0 0 12px;
 }
 
@@ -744,13 +786,13 @@ button:focus-visible {
 }
 
 .kro-f1-math-dot:hover {
-   border-color: var(--kro-accent-muted);
-   background: var(--kro-accent-muted-subtle);
+   border-color: rgba(255, 255, 255, 0.5);
+   background: rgba(255, 255, 255, 0.12);
 }
 
 .kro-f1-math-dot.is-active {
-   background: var(--kro-accent-muted-subtle);
-   border-color: var(--kro-accent-muted);
+   background: rgba(255, 255, 255, 0.2);
+   border-color: rgba(255, 255, 255, 0.5);
 }
 
 /* Блок 4: Твой выбор — SiteLove: кнопки с подъёмом, свечением, active scale */
@@ -789,25 +831,25 @@ button:focus-visible {
 }
 
 .kro-f1-choice-red {
-   background: linear-gradient(180deg, rgba(184, 74, 74, 0.22) 0%, rgba(184, 74, 74, 0.12) 100%);
-   border: 1px solid rgba(184, 74, 74, 0.5);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.12);
    color: rgba(255, 255, 255, 0.96);
 }
 .kro-f1-choice-red:hover {
-   background: linear-gradient(180deg, rgba(184, 74, 74, 0.3) 0%, rgba(184, 74, 74, 0.18) 100%);
-   border-color: rgba(184, 74, 74, 0.65);
-   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), 0 0 36px var(--kro-glow-red-soft), 0 0 50px rgba(184, 74, 74, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.04) 100%);
+   border-color: rgba(255, 255, 255, 0.18);
+   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .kro-f1-choice-green {
-   background: linear-gradient(180deg, rgba(55, 95, 55, 0.35) 0%, rgba(45, 75, 45, 0.2) 100%);
-   border: 1px solid rgba(75, 120, 75, 0.5);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.14);
    color: rgba(255, 255, 255, 0.96);
 }
 .kro-f1-choice-green:hover {
-   background: linear-gradient(180deg, rgba(55, 105, 55, 0.45) 0%, rgba(50, 90, 50, 0.28) 100%);
-   border-color: rgba(85, 130, 85, 0.65);
-   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), 0 0 36px var(--kro-glow-green-soft), 0 0 50px rgba(55, 135, 55, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%);
+   border-color: rgba(255, 255, 255, 0.2);
+   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .kro-f1-choice-main {
@@ -897,7 +939,7 @@ button:focus-visible {
 }
 .kro-feature1-top3 li:hover {
    transform: translateY(-4px);
-   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35), 0 0 32px var(--kro-glow-amber-soft), 0 0 48px rgba(245, 158, 11, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06);
    border-color: rgba(255, 255, 255, 0.12);
 }
 .kro-feature1-top3 li:last-child {
@@ -946,10 +988,10 @@ button:focus-visible {
    position: relative;
    padding: 32px 28px 36px;
    border-radius: 26px;
-   background: linear-gradient(165deg, rgba(30, 26, 40, 0.96) 0%, rgba(20, 18, 28, 0.98) 50%, rgba(16, 14, 24, 0.99) 100%);
-   border: 1px solid rgba(139, 92, 246, 0.25);
-   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 50px rgba(139, 92, 246, 0.15), 0 0 100px rgba(139, 92, 246, 0.08);
-   transition: box-shadow 0.35s ease, border-color 0.3s ease, transform 0.25s ease;
+   background: linear-gradient(165deg, rgba(26, 24, 30, 0.96) 0%, rgba(20, 18, 24, 0.98) 50%, rgba(16, 14, 22, 0.99) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+   transition: box-shadow 0.4s ease, transform 0.35s ease;
 }
 .kro-feature1-check::before {
    content: '';
@@ -957,11 +999,11 @@ button:focus-visible {
    inset: 0;
    border-radius: inherit;
    pointer-events: none;
-   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .kro-feature1-check:hover {
-   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 60px rgba(139, 92, 246, 0.2), 0 0 120px rgba(139, 92, 246, 0.1);
-   border-color: rgba(139, 92, 246, 0.4);
+   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+   transform: translateY(-2px);
 }
 
 .kro-check-tag {
@@ -970,20 +1012,21 @@ button:focus-visible {
    gap: 6px;
    padding: 8px 16px;
    margin-bottom: 14px;
-   background: linear-gradient(180deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.06) 100%);
-   border: 1px solid rgba(139, 92, 246, 0.5);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.14);
    border-radius: 999px;
    font-size: 0.75rem;
    font-weight: 600;
    text-transform: uppercase;
    letter-spacing: 0.08em;
    color: rgba(255, 255, 255, 0.95);
-   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 20px var(--kro-glow-purple-soft), 0 0 40px rgba(139, 92, 246, 0.12);
+   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.04);
    transition: box-shadow 0.3s ease, transform 0.2s ease, border-color 0.25s ease;
 }
 .kro-check-tag:hover {
-   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 32px var(--kro-glow-purple-soft), 0 0 56px rgba(139, 92, 246, 0.2);
-   border-color: rgba(139, 92, 246, 0.65);
+   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08);
+   border-color: rgba(255, 255, 255, 0.2);
+   transform: translateY(-1px);
 }
 .kro-check-tag-icon {
    display: inline-flex;
@@ -991,13 +1034,13 @@ button:focus-visible {
    justify-content: center;
    width: 18px;
    height: 18px;
-   background: linear-gradient(180deg, var(--kro-violet) 0%, #7c3aed 100%);
-   color: #fff;
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.12) 100%);
+   color: rgba(255, 255, 255, 0.95);
    border-radius: 50%;
    font-size: 0.7rem;
    font-weight: 700;
    font-style: italic;
-   box-shadow: 0 0 14px var(--kro-glow-purple), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .kro-feature1-check-intro {
@@ -1010,12 +1053,8 @@ button:focus-visible {
    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 .kro-check-intro-accent {
-   background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 35%, #a78bfa 70%, #8b5cf6 100%);
-   -webkit-background-clip: text;
-   background-clip: text;
-   -webkit-text-fill-color: transparent;
-   text-shadow: none;
-   filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.4));
+   color: rgba(255, 255, 255, 0.95);
+   text-shadow: 0 0 24px rgba(255, 255, 255, 0.15);
 }
 
 .kro-feature1-check-subtitle {
@@ -1399,14 +1438,14 @@ button:focus-visible {
    position: relative;
    padding: 32px 28px 36px;
    border-radius: 24px;
-   background: linear-gradient(165deg, rgba(28, 24, 38, 0.94) 0%, rgba(20, 18, 28, 0.96) 100%);
-   border: 1px solid rgba(139, 92, 246, 0.2);
-   box-shadow: 0 10px 36px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04), 0 0 45px rgba(139, 92, 246, 0.12), 0 0 80px rgba(139, 92, 246, 0.06);
-   transition: box-shadow 0.35s ease;
+   background: linear-gradient(165deg, rgba(26, 24, 30, 0.94) 0%, rgba(20, 18, 24, 0.96) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   box-shadow: 0 10px 36px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+   transition: box-shadow 0.4s ease, transform 0.35s ease;
 }
 .kro-feature1-report:hover {
-   box-shadow: 0 14px 44px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 55px rgba(139, 92, 246, 0.18), 0 0 100px rgba(139, 92, 246, 0.08);
-   border-color: rgba(139, 92, 246, 0.3);
+   box-shadow: 0 14px 44px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   transform: translateY(-2px);
 }
 
 .kro-feature1-report-intro {
