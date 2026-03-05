@@ -95,6 +95,13 @@
        <!-- Фишка 1: Живой счётчик обманов -->
        <section class="kro-feature1 kro-reveal" id="feature1" aria-labelledby="kro-feature1-heading">
            <div class="kro-feature1-bg" aria-hidden="true"></div>
+           <div class="kro-f1-badges-row kro-scroll-in" aria-hidden="true">
+               <span class="kro-f1-badge">LIVE</span>
+               <span class="kro-f1-badge-sep" aria-hidden="true">·</span>
+               <span class="kro-f1-badge">Обновление каждые 12 ч</span>
+               <span class="kro-f1-badge-sep" aria-hidden="true">·</span>
+               <span class="kro-f1-badge">Открытые данные</span>
+           </div>
            <div class="kro-feature1-dashboard">
                <p class="kro-feature1-date" id="kro-feature1-date">LIVE: <span id="kro-live-datetime">—</span> MSK</p>
                <div class="kro-feature1-hero-number">
@@ -115,6 +122,7 @@
                    <span class="kro-feature1-stat-label">Курсы фейк-продуктов</span>
                </div>
                </div>
+               <p class="kro-feature1-dashboard-sub kro-scroll-in">Цифры обновляются автоматически</p>
            </div>
            <div class="kro-f1-blocks kro-f1-content-card">
                <!-- Блок 1: Шок-цифры -->
@@ -133,7 +141,8 @@
                            <p class="kro-f1-loh-quote">«Срочно TON x10! Все уже в деле!»</p>
                            <p class="kro-f1-loh-result">→ сливает 80% депозита за 3 дня</p>
                        </div>
-                       <div class="kro-f1-loh-card">
+                       <div class="kro-f1-loh-card kro-f1-loh-card-popular">
+                           <span class="kro-f1-badge kro-f1-badge-on-card">Чаще всего</span>
                            <span class="kro-f1-loh-avatar" aria-hidden="true">🎰</span>
                            <h3 class="kro-f1-loh-name">ЛОТОРЕЙЩИК</h3>
                            <p class="kro-f1-loh-quote">«Плечо х50, риск 30% банка»</p>
@@ -190,7 +199,11 @@
                    <p class="kro-f1-choice-disclaimer">*я не продаю сигналы. я показываю, как их не боятся*</p>
                </div>
            </div>
-           <h2 class="kro-feature1-heading kro-scroll-in" id="kro-feature1-heading">Топ-3 сегодня</h2>
+           <div class="kro-f1-top3-wrap kro-scroll-in">
+               <span class="kro-f1-badge kro-f1-badge-top3">По потерям за сегодня</span>
+               <h2 class="kro-feature1-heading" id="kro-feature1-heading">Топ-3 сегодня</h2>
+               <p class="kro-feature1-heading-sub">Каналы с самыми большими потерями за сегодня</p>
+           </div>
            <ol class="kro-feature1-top3 kro-scroll-in" id="kro-feature1-top3">
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-1-channel">@TONPumpElite</span> → <span class="kro-top3-sum" id="kro-top3-1-sum">2.1млн₽</span> → <span class="kro-top3-status kro-status-removed" id="kro-top3-1-status">Удалён</span></li>
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-2-channel">BTC Курс миллионера</span> → <span class="kro-top3-sum" id="kro-top3-2-sum">847к₽</span> → <span class="kro-top3-status kro-status-active" id="kro-top3-2-status">Активен</span></li>
@@ -204,6 +217,29 @@
                </div>
                <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
            </div>
+           <div class="kro-f1-faq kro-scroll-in" id="kro-f1-faq">
+               <h3 class="kro-f1-faq-title">Частые вопросы</h3>
+               <div class="kro-f1-faq-list">
+                   <div class="kro-f1-faq-item" data-faq>
+                       <button type="button" class="kro-f1-faq-question" aria-expanded="false" aria-controls="kro-f1-faq-answer-1" id="kro-f1-faq-q1">Как считается топ-3?</button>
+                       <div class="kro-f1-faq-answer" id="kro-f1-faq-answer-1" role="region" aria-labelledby="kro-f1-faq-q1">
+                           <p>Топ-3 — каналы и обменники с самыми большими заявленными потерями за сегодня. Данные обновляются по отчётам пользователей и открытым источникам.</p>
+                       </div>
+                   </div>
+                   <div class="kro-f1-faq-item" data-faq>
+                       <button type="button" class="kro-f1-faq-question" aria-expanded="false" aria-controls="kro-f1-faq-answer-2" id="kro-f1-faq-q2">Откуда цифры?</button>
+                       <div class="kro-f1-faq-answer" id="kro-f1-faq-answer-2" role="region" aria-labelledby="kro-f1-faq-q2">
+                           <p>Суммы потерь и количество каналов считаются по отчётам в форме «Сообщить о разводе», публичным данным и нашим источникам. Цифры на дашборде — ориентир, не аудит.</p>
+                       </div>
+                   </div>
+                   <div class="kro-f1-faq-item" data-faq>
+                       <button type="button" class="kro-f1-faq-question" aria-expanded="false" aria-controls="kro-f1-faq-answer-3" id="kro-f1-faq-q3">Как добавить канал в список?</button>
+                       <div class="kro-f1-faq-answer" id="kro-f1-faq-answer-3" role="region" aria-labelledby="kro-f1-faq-q3">
+                           <p>Заполните форму «Сообщить о разводе» ниже: укажите канал или ссылку и сумму. Мы добавляем в базу в течение примерно 30 минут.</p>
+                       </div>
+                   </div>
+               </div>
+           </div>
            <div class="kro-feature1-report kro-scroll-in" id="kro-feature1-report">
                <p class="kro-feature1-report-intro">Сообщить о разводе → добавим за 30 мин</p>
                <form class="kro-report-form" id="kro-report-form" novalidate>
@@ -213,6 +249,11 @@
                    <button type="submit" class="kro-report-submit">Отправить</button>
                </form>
                <p class="kro-feature1-report-message hidden" id="kro-report-message"></p>
+           </div>
+           <div class="kro-f1-cta-block kro-scroll-in">
+               <h2 class="kro-f1-cta-heading">Готов проверить гуру?</h2>
+               <p class="kro-f1-cta-sub">Один клик — и ты увидишь, что за канал или обменник.</p>
+               <a href="#checkers" class="kro-f1-cta-btn">Проверь своего гуру</a>
            </div>
        </section>
 
@@ -849,6 +890,27 @@
            }
            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initMathSlider);
            else initMathSlider();
+       })();
+   </script>
+   <script>
+       (function() {
+           function initF1Faq() {
+               var items = document.querySelectorAll('.kro-f1-faq-item[data-faq]');
+               items.forEach(function(item) {
+                   var btn = item.querySelector('.kro-f1-faq-question');
+                   if (!btn) return;
+                   btn.addEventListener('click', function() {
+                       var isOpen = item.classList.contains('is-open');
+                       items.forEach(function(other) { other.classList.remove('is-open'); other.querySelector('.kro-f1-faq-question').setAttribute('aria-expanded', 'false'); });
+                       if (!isOpen) {
+                           item.classList.add('is-open');
+                           btn.setAttribute('aria-expanded', 'true');
+                       }
+                   });
+               });
+           }
+           if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initF1Faq);
+           else initF1Faq();
        })();
    </script>
 </body>
