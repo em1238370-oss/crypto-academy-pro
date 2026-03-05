@@ -382,21 +382,11 @@ body.kro-hero-scrolled .kro-step1 {
    position: absolute;
    inset: 0;
    z-index: -1;
-   /* Явно другой тон относительно hero: тёплый тёмный + усиленные пятна, без сияния */
-   background: radial-gradient(ellipse 70% 50% at 50% 35%, rgba(72, 48, 42, 0.28) 0%, transparent 55%),
-               radial-gradient(ellipse 90% 60% at 75% 15%, rgba(60, 45, 80, 0.09) 0%, transparent 50%),
-               radial-gradient(ellipse 100% 80% at 50% 50%, rgba(50, 35, 38, 0.2) 0%, transparent 60%),
-               radial-gradient(ellipse 120% 80% at 50% 0%, rgba(35, 25, 28, 0.3) 0%, transparent 50%),
-               linear-gradient(180deg, #131011 0%, #0f0d0e 40%, #0d0b0c 100%);
-}
-
-.kro-feature1-bg::after {
-   content: '';
-   position: absolute;
-   inset: 0;
-   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.07) 1px, transparent 0);
-   background-size: 28px 28px;
-   pointer-events: none;
+   /* Другой тон относительно hero: мягкий красный «денежный» градиент сзади карточек, без точек */
+   background: radial-gradient(ellipse 80% 70% at 50% 45%, rgba(100, 45, 45, 0.22) 0%, transparent 55%),
+               radial-gradient(ellipse 70% 50% at 50% 35%, rgba(72, 48, 42, 0.18) 0%, transparent 55%),
+               radial-gradient(ellipse 100% 80% at 50% 50%, rgba(50, 30, 32, 0.15) 0%, transparent 65%),
+               linear-gradient(180deg, #140e0f 0%, #110d0e 35%, #0e0b0c 100%);
 }
 
 /* Дашборд: LIVE + большая цифра + 3 карточки (тёплый контрастный фон, без сияния) */
