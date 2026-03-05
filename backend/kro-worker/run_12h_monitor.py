@@ -279,7 +279,23 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
                 existing.add(_object_link(ch))
         return tg_data, existing
 
-    from telethon import TelegramClient
+    try:
+        from telethon import TelegramClient
+    except ImportError as e:
+        print('Telethon не установлен: %s. Установите: pip install telethon. Чаты с жалобами недоступны, отчёт формируется без них.' % e, file=sys.stderr)
+        tg_data['_telegram_unavailable'] = True
+        for row in (new_tgstat or []):
+            link = row.get('link') or _object_link(row.get('channel', ''))
+            if link and 't.me/' in link:
+                existing.add(link)
+        for row in (telega_channels or []):
+            link = row.get('link') or _object_link(row.get('channel', ''))
+            if link and 't.me/' in link:
+                existing.add(link)
+        for ch in (complaints_by_channel or {}):
+            if ch and ('@' in ch or 't.me/' in ch):
+                existing.add(_object_link(ch))
+        return tg_data, existing
 
     client = TelegramClient(TELEGRAM_SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
     await client.start()
@@ -1740,6 +1756,8 @@ def main():
     tg_data, existing_channel_links = asyncio.run(
         fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_channels, None)
     )
+    if tg_data.pop('_telegram_unavailable', False):
+        unavailable_sources.append('Чаты')
     complaints_by_channel = tg_data.get('by_channel', {})
     victims_12h = tg_data.get('victims_12h', 0)
     channel_sum_pairs = tg_data.get('channel_sum_pairs', [])
@@ -1883,7 +1901,10 @@ def main():
         REPORT_COUNTER_KEY: report_number,
         'updatedAt': now_msk.strftime('%Y-%m-%dT%H:%M:%SZ'),
         'timestamp': now_msk.strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'sources': ['TGStat search', 'Telega.io catalog', 'Telegram complaints 12h']
+        'sources': ['TGStat search', 'Telega.io catalog', 'Telegram complaints 12h'],
+        'risk_rows': risk_rows,
+        'complaints_rows': complaints_rows,
+        'unavailable_sources': unavailable_sources or [],
     }
     os.makedirs(DATA_DIR, exist_ok=True)
     with open(OUTPUT_JSON, 'w', encoding='utf-8') as f:

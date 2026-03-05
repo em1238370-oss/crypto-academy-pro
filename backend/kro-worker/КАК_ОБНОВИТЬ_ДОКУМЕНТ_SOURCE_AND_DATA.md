@@ -2,6 +2,23 @@
 
 Документ **SOURCE & DATA** в Google Docs обновляется **только при запуске** скрипта `run_12h_monitor.py`. Пока скрипт не запущен — в документе остаются старые данные и старая структура.
 
+## Разовое обновление вручную
+
+**Важно:** скрипты нужно запускать **из папки `backend/kro-worker`**, иначе будет ошибка «No such file or directory».
+
+```bash
+cd /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker
+python3 update_sources_doc_once.py
+```
+
+Или одной строкой (подставь свой путь к проекту):
+
+```bash
+cd ~/Documents/GitHub/crypto-academy-pro/backend/kro-worker && python3 update_sources_doc_once.py
+```
+
+После выполнения открой ссылку из вывода и обнови страницу (F5) в браузере.
+
 ## Расписание циклов (11:00 и 23:00 MSK)
 
 - **Циклы:** 11:00 и 23:00 MSK (два раза в сутки).

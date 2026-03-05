@@ -72,12 +72,20 @@ def main():
     courses_products = stats.get('courses_products', stats.get('courses', 0))
     top3 = stats.get('top3_today', stats.get('top3', []))
     report_url = stats.get('report_doc_url') or ''
+    risk_rows = stats.get('risk_rows', [])
+    complaints_rows = stats.get('complaints_rows', [])
+    victims_12h = stats.get('victims_12h', 0)
+    complaints_count = sum((r.get('complaints') or 0) for r in complaints_rows)
+    unavailable_sources = stats.get('unavailable_sources', [])
+
+    if not risk_rows and not complaints_rows:
+        print('В kro-12h-stats.json нет risk_rows/complaints_rows — таблицы будут пустыми. Для полных данных запусти: python3 run_12h_monitor.py', file=sys.stderr)
 
     doc_text, structured_data = build_sources_doc_text(
         collect_time_msk,
-        [],  # new_tgstat
+        [],  # new_tgstat (не пересобираем, берём из risk_rows)
         [],  # telega_channels
-        [],  # complaints_rows
+        complaints_rows,
         new_scams,
         losses_12h,
         telegram_channels,
@@ -86,8 +94,10 @@ def main():
         report_url=report_url,
         period_start=period_start,
         period_end=period_end,
-        victims_12h=stats.get('victims_12h', 0),
-        complaints_count=0,
+        victims_12h=victims_12h,
+        complaints_count=complaints_count,
+        risk_rows=risk_rows if risk_rows else None,
+        unavailable_sources=unavailable_sources or None,
     )
     url = update_sources_google_doc(sources_doc_id, doc_text, structured_data)
     if url:
