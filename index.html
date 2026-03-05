@@ -209,13 +209,20 @@
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-2-channel">BTC Курс миллионера</span> → <span class="kro-top3-sum" id="kro-top3-2-sum">847к₽</span> → <span class="kro-top3-status kro-status-active" id="kro-top3-2-status">Активен</span></li>
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-3-channel">crypto-fast.pro</span> → <span class="kro-top3-sum" id="kro-top3-3-sum">673к₽</span> → <span class="kro-top3-status kro-status-block" id="kro-top3-3-status">Блок</span></li>
            </ol>
-           <div class="kro-feature1-check kro-scroll-in" id="kro-feature1-check">
-               <p class="kro-feature1-check-intro">Проверить канал</p>
-               <div class="kro-feature1-check-row">
-                   <label class="kro-report-label" for="kro-check-channel">@username / ссылка на канал или обменник <input type="text" id="kro-check-channel" placeholder="@channel, t.me/..., или ссылка на обменник" autocomplete="off"></label>
-                   <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить</button>
+           <div class="kro-f1-cta-check-wrap kro-scroll-in" id="kro-f1-cta-check-wrap">
+               <div class="kro-f1-cta-block" id="kro-f1-cta-block">
+                   <h2 class="kro-f1-cta-heading">Готов проверить гуру?</h2>
+                   <p class="kro-f1-cta-sub">Один клик — и ты увидишь, что за канал или обменник.</p>
+                   <button type="button" class="kro-f1-cta-btn" id="kro-f1-cta-btn">Проверь своего гуру</button>
                </div>
-               <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
+               <div class="kro-feature1-check kro-f1-check-reveal" id="kro-feature1-check">
+                   <p class="kro-feature1-check-intro">Проверить канал</p>
+                   <div class="kro-feature1-check-row">
+                       <label class="kro-report-label" for="kro-check-channel">@username / ссылка на канал или обменник <input type="text" id="kro-check-channel" placeholder="@channel, t.me/..., или ссылка на обменник" autocomplete="off"></label>
+                       <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить</button>
+                   </div>
+                   <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
+               </div>
            </div>
            <div class="kro-feature1-report kro-scroll-in" id="kro-feature1-report">
                <p class="kro-feature1-report-intro">Сообщить о разводе → добавим за 30 мин</p>
@@ -226,11 +233,6 @@
                    <button type="submit" class="kro-report-submit">Отправить</button>
                </form>
                <p class="kro-feature1-report-message hidden" id="kro-report-message"></p>
-           </div>
-           <div class="kro-f1-cta-block kro-scroll-in">
-               <h2 class="kro-f1-cta-heading">Готов проверить гуру?</h2>
-               <p class="kro-f1-cta-sub">Один клик — и ты увидишь, что за канал или обменник.</p>
-               <a href="#checkers" class="kro-f1-cta-btn">Проверь своего гуру</a>
            </div>
        </section>
 
@@ -867,6 +869,18 @@
            }
            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initMathSlider);
            else initMathSlider();
+       })();
+   </script>
+   <script>
+       (function() {
+           var btn = document.getElementById('kro-f1-cta-btn');
+           var wrap = document.getElementById('kro-f1-cta-check-wrap');
+           if (btn && wrap) {
+               btn.addEventListener('click', function() {
+                   wrap.classList.add('kro-f1-show-check');
+                   wrap.querySelector('#kro-feature1-check').scrollIntoView({ behavior: 'smooth', block: 'center' });
+               });
+           }
        })();
    </script>
 </body>
