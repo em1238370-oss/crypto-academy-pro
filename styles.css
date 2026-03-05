@@ -96,6 +96,131 @@ body.kro-hero-scrolled .kro-step1 {
    }
 }
 
+/* Плавающая навигация (как sitelove): появляется при скролле к фишке 1 */
+.kro-floating-nav {
+   position: fixed;
+   top: 16px;
+   left: 50%;
+   transform: translateX(-50%) translateY(-20px);
+   width: calc(100% - 32px);
+   max-width: 880px;
+   z-index: 200;
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   padding: 12px 20px 12px 24px;
+   border-radius: 999px;
+   background: rgba(22, 20, 26, 0.92);
+   backdrop-filter: blur(16px);
+   -webkit-backdrop-filter: blur(16px);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+   opacity: 0;
+   visibility: hidden;
+   pointer-events: none;
+   transition: opacity 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), visibility 0s linear 0.35s;
+}
+
+body.kro-hero-scrolled .kro-floating-nav {
+   opacity: 1;
+   visibility: visible;
+   pointer-events: auto;
+   transform: translateX(-50%) translateY(0);
+   transition: opacity 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), visibility 0s;
+}
+
+.kro-floating-nav-brand {
+   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+   font-size: 15px;
+   font-weight: 700;
+   color: #fff;
+   text-decoration: none;
+   display: inline-flex;
+   align-items: center;
+   gap: 10px;
+   letter-spacing: -0.02em;
+}
+
+.kro-floating-nav-brand:hover {
+   color: rgba(255, 255, 255, 0.9);
+}
+
+.kro-floating-nav-icon {
+   width: 24px;
+   height: 24px;
+   flex-shrink: 0;
+   background: linear-gradient(135deg, #f59e0b 0%, #b84a4a 100%);
+   border-radius: 8px;
+   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cline x1='5' y1='5' x2='19' y2='19' stroke='black' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
+   mask-size: 14px 14px;
+   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cline x1='5' y1='5' x2='19' y2='19' stroke='black' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
+   -webkit-mask-size: 14px 14px;
+}
+
+.kro-floating-nav-links {
+   display: flex;
+   align-items: center;
+   gap: 24px;
+}
+
+.kro-floating-nav-links a {
+   font-size: 14px;
+   color: rgba(255, 255, 255, 0.85);
+   text-decoration: none;
+   transition: color 0.2s ease;
+}
+
+.kro-floating-nav-links a:hover {
+   color: #fff;
+}
+
+.kro-floating-nav-cta {
+   padding: 10px 20px;
+   border-radius: 999px;
+   background: #fff;
+   color: #0c0f14;
+   font-weight: 700;
+}
+
+.kro-floating-nav-cta:hover {
+   background: rgba(255, 255, 255, 0.95);
+   color: #0c0f14;
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .kro-floating-nav {
+       transition: opacity 0.2s ease, visibility 0s;
+   }
+   body.kro-hero-scrolled .kro-floating-nav {
+       transform: translateX(-50%) translateY(0);
+   }
+}
+
+@media (max-width: 600px) {
+   .kro-floating-nav {
+      padding: 10px 16px 10px 18px;
+      width: calc(100% - 24px);
+      top: 12px;
+   }
+   .kro-floating-nav-brand-text {
+      display: none;
+   }
+   .kro-floating-nav-brand::after {
+      content: 'Крипта';
+      font-family: inherit;
+   }
+   .kro-floating-nav-links {
+      gap: 16px;
+   }
+   .kro-floating-nav-links a {
+      font-size: 13px;
+   }
+   .kro-floating-nav-cta {
+      padding: 8px 16px;
+      font-size: 13px;
+   }
+}
+
 .kro-step1-inner {
    width: 100%;
    max-width: 1000px;
