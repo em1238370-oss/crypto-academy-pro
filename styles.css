@@ -52,6 +52,18 @@ button:focus-visible {
    --kro-card-bg: rgba(26, 24, 24, 0.82);
    --kro-card-border: rgba(255, 255, 255, 0.055);
    --kro-card-border-accent: rgba(184, 74, 74, 0.18);
+   /* Тени слоёв и glow для карточек/блоков (SiteLove-style) */
+   --kro-shadow-layer1: 0 2px 8px rgba(0, 0, 0, 0.2);
+   --kro-shadow-layer2: 0 8px 24px rgba(0, 0, 0, 0.15);
+   --kro-shadow-layer3: 0 16px 48px rgba(0, 0, 0, 0.1);
+   --kro-inset-light: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   --kro-btn-hover-y: -3px;
+   --kro-btn-active-scale: 0.98;
+   --kro-glow-amber-soft: rgba(245, 158, 11, 0.12);
+   --kro-glow-red-soft: rgba(184, 74, 74, 0.2);
+   --kro-glow-green-soft: rgba(55, 135, 55, 0.2);
+   --kro-glow-purple-soft: rgba(139, 92, 246, 0.15);
+   --kro-glow-purple: rgba(139, 92, 246, 0.35);
 }
 
 .kro-step1 {
@@ -337,17 +349,18 @@ button:focus-visible {
    position: absolute;
    inset: 0;
    z-index: -1;
-   /* Глубина как на референсе: тёплое мягкое свечение по центру, не жёлтое */
-   background: radial-gradient(ellipse 100% 100% at 50% 50%, rgba(72, 48, 42, 0.12) 0%, transparent 55%),
+   /* Мягкий градиент: глубина + лёгкий тёплый оттенок по центру (референс sitelove) */
+   background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(72, 48, 42, 0.08) 0%, transparent 50%),
+               radial-gradient(ellipse 100% 100% at 50% 50%, rgba(72, 48, 42, 0.1) 0%, transparent 55%),
                radial-gradient(ellipse 120% 80% at 50% 0%, rgba(40, 28, 26, 0.2) 0%, transparent 50%),
-               linear-gradient(180deg, #0e0e10 0%, #0c0c0e 50%, #0a0a0c 100%);
+               linear-gradient(180deg, #0e0e10 0%, #0d0d0f 25%, #0c0c0e 50%, #0b0b0d 75%, #0a0a0c 100%);
 }
 
 .kro-feature1-bg::after {
    content: '';
    position: absolute;
    inset: 0;
-   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.02) 1px, transparent 0);
+   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.025) 1px, transparent 0);
    background-size: 32px 32px;
    pointer-events: none;
 }
@@ -364,6 +377,7 @@ button:focus-visible {
    padding: 6px 14px;
    margin-bottom: 24px;
    background: transparent;
+   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .kro-feature1-hero-number {
@@ -454,15 +468,15 @@ button:focus-visible {
 .kro-feature1 .kro-card {
    border-color: var(--kro-card-border);
    background: var(--kro-card-bg);
-   box-shadow: none;
+   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), var(--kro-inset-light);
 }
 
 .kro-feature1-stat.kro-card:hover,
 .kro-feature1-top3 .kro-card:hover {
    border-color: var(--kro-card-border-accent);
    background: rgba(32, 28, 28, 0.75);
-   box-shadow: none;
-   transform: scale(1.01);
+   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.15), var(--kro-inset-light);
+   transform: translateY(-3px);
 }
 
 .kro-feature1-stat-value {
@@ -500,13 +514,14 @@ button:focus-visible {
    text-align: left;
 }
 
-/* Блок 1: Шок-цифры — в стиле DuoView: сдержанно, акцент точечно */
+/* Блок 1: Шок-цифры — в стиле DuoView: сдержанно, акцент точечно + тень и верхний highlight */
 .kro-f1-block.kro-f1-shock {
    background: var(--kro-card-bg);
    border: 1px solid var(--kro-card-border);
    border-radius: 12px;
    padding: 24px;
    margin-bottom: 32px;
+   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .kro-f1-shock-heading {
@@ -558,6 +573,13 @@ button:focus-visible {
    border-radius: 12px;
    padding: 20px;
    text-align: left;
+   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+   transition: transform 0.25s ease, box-shadow 0.3s ease, border-color 0.25s ease;
+}
+.kro-f1-loh-card:hover {
+   transform: translateY(-4px);
+   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   border-color: rgba(184, 74, 74, 0.28);
 }
 
 .kro-f1-loh-avatar {
@@ -616,6 +638,7 @@ button:focus-visible {
    cursor: grab;
    user-select: none;
    touch-action: pan-y;
+   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .kro-f1-math-slider.dragging {
@@ -826,10 +849,11 @@ button:focus-visible {
    border-radius: 14px;
    padding: 14px 18px;
    transition: transform 0.25s ease, box-shadow 0.3s ease, border-color 0.25s ease;
+   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 .kro-feature1-top3 li:hover {
-   transform: translateY(-2px);
-   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), 0 0 28px var(--kro-glow-amber-soft), 0 0 40px rgba(245, 158, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   transform: translateY(-3px);
+   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28), 0 0 28px var(--kro-glow-amber-soft), 0 0 40px rgba(245, 158, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05);
    border-color: rgba(255, 255, 255, 0.1);
 }
 .kro-feature1-top3 li:last-child {
@@ -889,7 +913,7 @@ button:focus-visible {
    inset: 0;
    border-radius: inherit;
    pointer-events: none;
-   box-shadow: var(--kro-inset-light);
+   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .kro-feature1-check:hover {
    box-shadow: var(--kro-shadow-layer1), 0 12px 32px rgba(0, 0, 0, 0.2), 0 24px 56px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 50px var(--kro-glow-purple-soft), 0 0 100px rgba(139, 92, 246, 0.12);
@@ -1333,11 +1357,11 @@ button:focus-visible {
    border-radius: 22px;
    background: linear-gradient(165deg, rgba(28, 24, 38, 0.9) 0%, rgba(18, 16, 28, 0.95) 100%);
    border: 1px solid rgba(255, 255, 255, 0.06);
-   box-shadow: var(--kro-shadow-layer1), var(--kro-shadow-layer2), 0 0 35px var(--kro-glow-purple-soft), 0 0 55px rgba(139, 92, 246, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   box-shadow: var(--kro-shadow-layer1), var(--kro-shadow-layer2), 0 0 35px var(--kro-glow-purple-soft), 0 0 55px rgba(139, 92, 246, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.05);
    transition: box-shadow 0.35s ease;
 }
 .kro-feature1-report:hover {
-   box-shadow: var(--kro-shadow-layer1), 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 45px var(--kro-glow-purple-soft), 0 0 70px rgba(139, 92, 246, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+   box-shadow: var(--kro-shadow-layer1), 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 45px var(--kro-glow-purple-soft), 0 0 70px rgba(139, 92, 246, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 .kro-feature1-report-intro {
