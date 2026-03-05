@@ -96,25 +96,25 @@ body.kro-hero-scrolled .kro-step1 {
    }
 }
 
-/* Плавающая навигация (как sitelove): появляется при скролле к фишке 1 */
+/* Плавающая навигация: появляется при скролле, в стилистике сайта (тёмный фон, янтарный акцент) */
 .kro-floating-nav {
    position: fixed;
    top: 16px;
    left: 50%;
    transform: translateX(-50%) translateY(-20px);
    width: calc(100% - 32px);
-   max-width: 880px;
+   max-width: 920px;
    z-index: 200;
    display: flex;
    align-items: center;
    justify-content: space-between;
-   padding: 12px 20px 12px 24px;
+   padding: 12px 24px 12px 24px;
    border-radius: 999px;
-   background: rgba(22, 20, 26, 0.92);
+   background: rgba(18, 16, 20, 0.95);
    backdrop-filter: blur(16px);
    -webkit-backdrop-filter: blur(16px);
-   border: 1px solid rgba(255, 255, 255, 0.08);
-   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+   border: 1px solid rgba(184, 74, 74, 0.12);
+   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.05);
    opacity: 0;
    visibility: hidden;
    pointer-events: none;
@@ -160,31 +160,47 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-floating-nav-links {
    display: flex;
    align-items: center;
-   gap: 24px;
+   gap: 8px;
 }
 
 .kro-floating-nav-links a {
-   font-size: 14px;
-   color: rgba(255, 255, 255, 0.85);
+   font-size: 13px;
+   font-weight: 600;
+   color: rgba(255, 255, 255, 0.82);
    text-decoration: none;
-   transition: color 0.2s ease;
+   padding: 6px 12px;
+   border-radius: 999px;
+   transition: color 0.2s ease, background 0.2s ease;
 }
 
 .kro-floating-nav-links a:hover {
    color: #fff;
+   background: rgba(255, 255, 255, 0.06);
+}
+
+.kro-floating-nav-sep {
+   width: 1px;
+   height: 18px;
+   margin: 0 8px;
+   background: rgba(255, 255, 255, 0.12);
+   flex-shrink: 0;
 }
 
 .kro-floating-nav-cta {
    padding: 10px 20px;
    border-radius: 999px;
-   background: #fff;
-   color: #0c0f14;
+   background: linear-gradient(180deg, rgba(245, 158, 11, 0.25) 0%, rgba(245, 158, 11, 0.14) 100%);
+   border: 1px solid rgba(245, 158, 11, 0.4);
+   color: rgba(255, 248, 235, 1);
    font-weight: 700;
+   font-size: 13px;
+   transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .kro-floating-nav-cta:hover {
-   background: rgba(255, 255, 255, 0.95);
-   color: #0c0f14;
+   background: linear-gradient(180deg, rgba(245, 158, 11, 0.35) 0%, rgba(245, 158, 11, 0.2) 100%);
+   border-color: rgba(245, 158, 11, 0.55);
+   color: #fff;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -196,28 +212,46 @@ body.kro-hero-scrolled .kro-floating-nav {
    }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
    .kro-floating-nav {
-      padding: 10px 16px 10px 18px;
+      padding: 10px 12px 10px 14px;
       width: calc(100% - 24px);
       top: 12px;
+      max-width: none;
    }
+   .kro-floating-nav-links {
+      gap: 4px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      max-width: calc(100vw - 140px);
+   }
+   .kro-floating-nav-links::-webkit-scrollbar {
+      display: none;
+   }
+   .kro-floating-nav-links a {
+      font-size: 12px;
+      padding: 6px 10px;
+      white-space: nowrap;
+   }
+   .kro-floating-nav-sep {
+      margin: 0 4px;
+      height: 14px;
+   }
+   .kro-floating-nav-cta {
+      padding: 8px 14px;
+      font-size: 12px;
+      flex-shrink: 0;
+   }
+}
+
+@media (max-width: 600px) {
    .kro-floating-nav-brand-text {
       display: none;
    }
    .kro-floating-nav-brand::after {
       content: 'Крипта';
       font-family: inherit;
-   }
-   .kro-floating-nav-links {
-      gap: 16px;
-   }
-   .kro-floating-nav-links a {
-      font-size: 13px;
-   }
-   .kro-floating-nav-cta {
-      padding: 8px 16px;
-      font-size: 13px;
    }
 }
 
