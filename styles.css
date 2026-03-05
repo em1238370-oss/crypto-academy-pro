@@ -96,7 +96,7 @@ body.kro-hero-scrolled .kro-step1 {
    }
 }
 
-/* Плавающая навигация: появление без цветной подсветки */
+/* Плавающая навигация: плавное появление и исчезновение (0.5–0.8 s, в стилистике sitelove) */
 .kro-floating-nav {
    position: fixed;
    top: 16px;
@@ -118,7 +118,7 @@ body.kro-hero-scrolled .kro-step1 {
    opacity: 0;
    visibility: hidden;
    pointer-events: none;
-   transition: opacity 0.5s cubic-bezier(0.34, 1.2, 0.64, 1), transform 0.5s cubic-bezier(0.34, 1.2, 0.64, 1), box-shadow 0.5s ease, visibility 0s linear 0.5s;
+   transition: opacity 0.6s cubic-bezier(0.34, 1.2, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.2, 0.64, 1), box-shadow 0.6s ease, visibility 0s linear 0.6s;
 }
 
 body.kro-hero-scrolled .kro-floating-nav {
@@ -127,7 +127,17 @@ body.kro-hero-scrolled .kro-floating-nav {
    pointer-events: auto;
    transform: translateX(-50%) translateY(0) scale(1);
    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-   transition: opacity 0.5s cubic-bezier(0.34, 1.2, 0.64, 1), transform 0.5s cubic-bezier(0.34, 1.2, 0.64, 1), box-shadow 0.5s ease, visibility 0s;
+   transition: opacity 0.6s cubic-bezier(0.34, 1.2, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.2, 0.64, 1), box-shadow 0.6s ease, visibility 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .kro-floating-nav,
+   body.kro-hero-scrolled .kro-floating-nav {
+      transition-duration: 0.2s;
+      transition-timing-function: ease;
+   }
+   .kro-floating-nav { transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, visibility 0s linear 0.2s; }
+   body.kro-hero-scrolled .kro-floating-nav { transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, visibility 0s; }
 }
 
 .kro-floating-nav-brand {
