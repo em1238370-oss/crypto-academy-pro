@@ -734,15 +734,26 @@
                    if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add('kro-scroll-in-visible');
                });
            }
-           function updateHeroScrolled() {
-               if (prefersReducedMotion) return;
-               if (window.scrollY > 180) document.body.classList.add('kro-hero-scrolled');
-               else document.body.classList.remove('kro-hero-scrolled');
+           function initHeroScrolled() {
+               var heroEl = document.getElementById('hero');
+               if (!heroEl) return;
+               var observer = new IntersectionObserver(function(entries) {
+                   entries.forEach(function(entry) {
+                       if (entry.isIntersecting) document.body.classList.remove('kro-hero-scrolled');
+                       else document.body.classList.add('kro-hero-scrolled');
+                   });
+               }, { root: null, rootMargin: '0px', threshold: 0.1 });
+               observer.observe(heroEl);
            }
-           window.addEventListener('scroll', updateHeroScrolled, { passive: true });
-           updateHeroScrolled();
-           if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initReveal);
-           else initReveal();
+           if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', function() {
+                   initReveal();
+                   initHeroScrolled();
+               });
+           } else {
+               initReveal();
+               initHeroScrolled();
+           }
        })();
    </script>
    <script>
