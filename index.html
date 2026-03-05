@@ -15,6 +15,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="styles.css?v=minimal">
    <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
 </head>
@@ -723,6 +724,13 @@
                    if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add('kro-scroll-in-visible');
                });
            }
+           function updateHeroScrolled() {
+               if (prefersReducedMotion) return;
+               if (window.scrollY > 180) document.body.classList.add('kro-hero-scrolled');
+               else document.body.classList.remove('kro-hero-scrolled');
+           }
+           window.addEventListener('scroll', updateHeroScrolled, { passive: true });
+           updateHeroScrolled();
            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initReveal);
            else initReveal();
        })();

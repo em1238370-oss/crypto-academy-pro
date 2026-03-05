@@ -81,6 +81,19 @@ button:focus-visible {
                radial-gradient(ellipse 50% 40% at 15% 25%, rgba(245, 158, 11, 0.03) 0%, transparent 55%),
                radial-gradient(ellipse 70% 50% at 50% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
                linear-gradient(180deg, var(--kro-bg) 0%, rgba(15, 18, 24, 0.98) 100%);
+   transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+body.kro-hero-scrolled .kro-step1 {
+   opacity: 0.75;
+   transform: translateY(-24px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+   body.kro-hero-scrolled .kro-step1 {
+       opacity: 1;
+       transform: none;
+   }
 }
 
 .kro-step1-inner {
@@ -330,11 +343,11 @@ button:focus-visible {
    transform: translateY(0);
 }
 
-/* Scroll-in: появление при входе во вьюпорт (отдельные блоки — заголовок, топ-3, проверка, отчёт, футер) */
+/* Scroll-in: появление при входе во вьюпорт (0.5–0.8 s на блок) */
 .kro-scroll-in {
    opacity: 0;
    transform: translateY(32px);
-   transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+   transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .kro-scroll-in.kro-scroll-in-visible {
@@ -356,9 +369,9 @@ button:focus-visible {
    margin: 0;
 }
 
-/* Фишка 1: Живой счётчик — карточки метрик, фон с глубиной */
+/* Фишка 1: Живой счётчик — карточки метрик, фон с глубиной (отдельный шрифт как на sitelove) */
 .kro-feature1 {
-   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   font-family: 'Plus Jakarta Sans', sans-serif;
    padding: 80px 24px 80px;
    text-align: center;
    position: relative;
@@ -369,41 +382,42 @@ button:focus-visible {
    position: absolute;
    inset: 0;
    z-index: -1;
-   /* Другой фон относительно hero: тёплый акцент по центру + глубина, без сияния */
-   background: radial-gradient(ellipse 70% 50% at 50% 35%, rgba(72, 48, 42, 0.18) 0%, transparent 55%),
-               radial-gradient(ellipse 100% 80% at 50% 50%, rgba(50, 35, 38, 0.12) 0%, transparent 60%),
-               radial-gradient(ellipse 120% 80% at 50% 0%, rgba(35, 25, 28, 0.25) 0%, transparent 50%),
-               linear-gradient(180deg, #0f0e10 0%, #0d0c0e 30%, #0b0a0c 60%, #0a090b 100%);
+   /* Явно другой тон относительно hero: тёплый тёмный + усиленные пятна, без сияния */
+   background: radial-gradient(ellipse 70% 50% at 50% 35%, rgba(72, 48, 42, 0.28) 0%, transparent 55%),
+               radial-gradient(ellipse 90% 60% at 75% 15%, rgba(60, 45, 80, 0.09) 0%, transparent 50%),
+               radial-gradient(ellipse 100% 80% at 50% 50%, rgba(50, 35, 38, 0.2) 0%, transparent 60%),
+               radial-gradient(ellipse 120% 80% at 50% 0%, rgba(35, 25, 28, 0.3) 0%, transparent 50%),
+               linear-gradient(180deg, #131011 0%, #0f0d0e 40%, #0d0b0c 100%);
 }
 
 .kro-feature1-bg::after {
    content: '';
    position: absolute;
    inset: 0;
-   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0);
+   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.07) 1px, transparent 0);
    background-size: 28px 28px;
    pointer-events: none;
 }
 
-/* Дашборд: LIVE + большая цифра + 3 карточки в одной визуальной группе (референс sitelove — чёткие секции) */
+/* Дашборд: LIVE + большая цифра + 3 карточки (тёплый контрастный фон, без сияния) */
 .kro-feature1-dashboard {
    max-width: calc(680px + 4cm);
    margin: 0 auto 48px;
    padding: 36px 28px 40px;
    border-radius: 24px;
-   background: linear-gradient(165deg, rgba(28, 24, 26, 0.92) 0%, rgba(22, 18, 20, 0.96) 100%);
-   border: 1px solid rgba(184, 74, 74, 0.12);
+   background: linear-gradient(165deg, rgba(32, 26, 28, 0.95) 0%, rgba(24, 20, 22, 0.98) 100%);
+   border: 1px solid rgba(184, 74, 74, 0.2);
    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .kro-feature1.kro-reveal .kro-feature1-dashboard {
    opacity: 0;
-   transform: translateY(20px);
-   transition: opacity 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+   transform: translateY(20px) scale(0.98);
+   transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .kro-feature1.kro-reveal-visible .kro-feature1-dashboard {
    opacity: 1;
-   transform: translateY(0);
+   transform: translateY(0) scale(1);
 }
 
 /* Каскадное появление внутри дашборда: дата → цифра → карточки */
@@ -411,7 +425,7 @@ button:focus-visible {
 .kro-feature1.kro-reveal .kro-feature1-hero-number {
    opacity: 0;
    transform: translateY(12px);
-   transition: opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+   transition: opacity 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .kro-feature1.kro-reveal-visible .kro-feature1-date {
    opacity: 1;
@@ -426,13 +440,13 @@ button:focus-visible {
 
 .kro-feature1.kro-reveal .kro-f1-content-card {
    opacity: 0;
-   transform: translateY(20px);
-   transition: opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+   transform: translateY(20px) scale(0.98);
+   transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
    transition-delay: 0.08s;
 }
 .kro-feature1.kro-reveal-visible .kro-f1-content-card {
    opacity: 1;
-   transform: translateY(0);
+   transform: translateY(0) scale(1);
 }
 
 .kro-feature1-date {
@@ -488,7 +502,7 @@ button:focus-visible {
    color: rgba(255, 255, 255, 0.95);
    max-width: calc(640px + 4cm);
    margin: 0 auto 28px;
-   letter-spacing: 0.02em;
+   letter-spacing: 0.04em;
 }
 
 .kro-feature1-stats {
@@ -644,8 +658,8 @@ button:focus-visible {
 .kro-f1-content-card {
    padding: 32px 28px 36px;
    border-radius: 22px;
-   background: linear-gradient(175deg, rgba(24, 22, 26, 0.88) 0%, rgba(18, 16, 22, 0.94) 100%);
-   border: 1px solid rgba(255, 255, 255, 0.07);
+   background: linear-gradient(175deg, rgba(28, 24, 32, 0.9) 0%, rgba(20, 18, 26, 0.94) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.1);
    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
@@ -697,10 +711,10 @@ button:focus-visible {
 .kro-f1-loh-title {
    font-size: clamp(18px, 2.5vw, 24px);
    font-weight: 700;
-   color: rgba(255, 255, 255, 0.92);
+   color: rgba(255, 255, 255, 0.95);
    margin-bottom: 20px;
    text-transform: uppercase;
-   letter-spacing: 0.02em;
+   letter-spacing: 0.04em;
 }
 
 .kro-f1-loh-types {
@@ -762,10 +776,10 @@ button:focus-visible {
 .kro-f1-math-title {
    font-size: clamp(18px, 2.5vw, 24px);
    font-weight: 700;
-   color: rgba(255, 255, 255, 0.92);
+   color: rgba(255, 255, 255, 0.95);
    margin-bottom: 20px;
    text-transform: uppercase;
-   letter-spacing: 0.02em;
+   letter-spacing: 0.04em;
 }
 
 .kro-f1-math-slider-wrap {
@@ -887,7 +901,7 @@ button:focus-visible {
 }
 
 .kro-f1-choice-btn:hover {
-   transform: translateY(var(--kro-btn-hover-y));
+   transform: translateY(var(--kro-btn-hover-y)) scale(1.02);
 }
 
 .kro-f1-choice-red {
@@ -1161,7 +1175,7 @@ button:focus-visible {
    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .kro-feature1-check-row .kro-report-submit:hover {
-   transform: translateY(var(--kro-btn-hover-y));
+   transform: translateY(var(--kro-btn-hover-y)) scale(1.02);
    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .kro-feature1-check-row .kro-report-submit:active {
