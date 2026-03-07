@@ -1183,9 +1183,10 @@ def _build_sources_doc_with_tables(service, doc_id, data):
             cell_texts.append([r['obj'], r['type'], r['source'], r['vip'], r['status'], r['age'], r['growth']])
         if not risk_rows:
             cell_texts.append(['(нет данных)', '—', '—', '—', '—', '—', '—'])
-        cells_sorted = sorted(cells, key=lambda x: -x[2])
+        cells_by_row = sorted(cells, key=lambda x: (x[0], x[1]))
         flat = [str(t)[:500] for row in cell_texts for t in row]
-        for (ri, ci, si), text in zip(cells_sorted, flat):
+        indexed = [(cells_by_row[i][2], flat[i], cells_by_row[i][0], cells_by_row[i][1]) for i in range(min(len(cells_by_row), len(flat)))]
+        for si, text, ri, ci in sorted(indexed, key=lambda x: -x[0]):
             service.documents().batchUpdate(documentId=doc_id, body={'requests': [{'insertText': {'location': {'index': si}, 'text': text}}]}).execute()
             if ci == 0 and ri > 0 and ri <= len(risk_rows) and risk_rows[ri - 1].get('link'):  # Объект — кликабельная ссылка
                 url = risk_rows[ri - 1]['link']
@@ -1240,9 +1241,10 @@ def _build_sources_doc_with_tables(service, doc_id, data):
             cell_texts.append([ch, str(n), links_cell, losses_fmt])
         if not complaints_rows:
             cell_texts.append(['Жалоб за этот период не найдено', '—', '—', '—'])
-        cells_sorted = sorted(cells, key=lambda x: -x[2])
+        cells_by_row = sorted(cells, key=lambda x: (x[0], x[1]))
         flat_texts = [str(t)[:500] for row in cell_texts for t in row]
-        for (ri, ci, si), text in zip(cells_sorted, flat_texts):
+        indexed = [(cells_by_row[i][2], flat_texts[i], cells_by_row[i][0], cells_by_row[i][1]) for i in range(min(len(cells_by_row), len(flat_texts)))]
+        for si, text, ri, ci in sorted(indexed, key=lambda x: -x[0]):
             service.documents().batchUpdate(documentId=doc_id, body={'requests': [{'insertText': {'location': {'index': si}, 'text': text}}]}).execute()
             if ci == 0 and ri > 0 and ri <= len(complaints_rows):
                 row = complaints_rows[ri - 1]
@@ -1301,9 +1303,10 @@ def _build_sources_doc_with_tables(service, doc_id, data):
             cell_texts.append([r['obj'], assessment, reasons])
         if not risk_rows:
             cell_texts.append(['(нет данных)', '—', '—'])
-        cells_sorted = sorted(cells, key=lambda x: -x[2])
+        cells_by_row = sorted(cells, key=lambda x: (x[0], x[1]))
         flat_texts = [str(t)[:500] for row in cell_texts for t in row]
-        for (ri, ci, si), text in zip(cells_sorted, flat_texts):
+        indexed = [(cells_by_row[i][2], flat_texts[i], cells_by_row[i][0], cells_by_row[i][1]) for i in range(min(len(cells_by_row), len(flat_texts)))]
+        for si, text, ri, ci in sorted(indexed, key=lambda x: -x[0]):
             service.documents().batchUpdate(documentId=doc_id, body={'requests': [{'insertText': {'location': {'index': si}, 'text': text}}]}).execute()
             if ci == 0 and ri > 0 and ri <= len(risk_rows) and risk_rows[ri - 1].get('link'):
                 url = risk_rows[ri - 1]['link']
