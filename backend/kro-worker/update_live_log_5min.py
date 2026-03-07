@@ -68,8 +68,12 @@ def format_live_log_grouped(lines):
         return []
     def sort_key(x):
         d, t, _, idx = x
+        try:
+            h, m = (int(t[:2]), int(t[3:5]) if t and len(t) >= 5 else 0) if t and ':' in t else (99, 99)
+        except (ValueError, TypeError):
+            h, m = 99, 99
         if d is None:
-            return (9999, 99, 99, idx)
+            return (0, 0, 0, h, m, idx)
         try:
             parts = d.split('.')
             if len(parts) == 3:
@@ -79,13 +83,7 @@ def format_live_log_grouped(lines):
                 date_ord = (9999, 99, 99)
         except (ValueError, TypeError):
             date_ord = (9999, 99, 99)
-        if not t or ':' not in t:
-            return (date_ord[0], date_ord[1], date_ord[2], 99, 99, idx)
-        try:
-            h, m = int(t[:2]), int(t[3:5]) if len(t) >= 5 else 0
-            return (date_ord[0], date_ord[1], date_ord[2], h, m, idx)
-        except (ValueError, TypeError):
-            return (date_ord[0], date_ord[1], date_ord[2], 99, 99, idx)
+        return (date_ord[0], date_ord[1], date_ord[2], h, m, idx)
     parsed.sort(key=sort_key)
     out = []
     prev_date = None
@@ -106,11 +104,11 @@ def format_live_log_grouped(lines):
             j += 1
         if prev_date is not None and first_date is not None and first_date != prev_date:
             out.append('——— Новый день ———')
-        elif prev_last_time and first_time and first_date is not None and prev_date is not None:
+        elif prev_last_time and first_time:
             try:
                 ph = int(prev_last_time[:2])
                 fh = int(first_time[:2])
-                if ph >= 23 and fh <= 1 and first_date == prev_date:
+                if ph >= 23 and fh <= 1:
                     out.append('——— Новый день ———')
             except (ValueError, TypeError):
                 pass
