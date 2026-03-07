@@ -916,7 +916,7 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         '',
         '***',
         '',
-        '1. Временная линия (события за период)',
+        'Временная линия дня:',
         '',
         LIVE_LOG_PLACEHOLDER,
         '',
@@ -1236,7 +1236,7 @@ def _build_sources_doc_with_tables(service, doc_id, data):
         '%s\n\n'
         'В этом документе: откуда берутся цифры, факты и ссылки (раздел 2). День: с 00:00 до 23:55 MSK. Данные за последние 7 дней.\n\n'
         '***\n\n'
-        '1. Временная линия (события за период)\n\n'
+        'Временная линия дня:\n\n'
         '%s\n\n***\n\n%s\n\n***\n\n'
     ) % (period_label, formed_label, LIVE_LOG_PLACEHOLDER, block2)
     intro += '3. Найденные объекты (каналы / сигналы / сайты)\n\n'
@@ -1746,12 +1746,16 @@ def main():
     now_msk_str = now_msk.strftime('%d %B %H:%M').replace('February', 'февраля').replace('March', 'марта').replace('January', 'января')
     print('Run 12h monitor at %s UTC' % now_msk.isoformat(), file=sys.stderr)
 
-    # 0) Живой лог: старт цикла (с датой для сортировки)
+    # 0) Живой лог: старт цикла и «Начат сбор» (с датой для сортировки)
     now_msk_dt = _msk_now()
     datetime_prefix = now_msk_dt.strftime('%d.%m.%Y %H:%M')
     period_end_hm = now_msk_dt.strftime('%H:%M')
     period_start_hm = (now_msk_dt - timedelta(hours=HOURS_12)).strftime('%H:%M')
     _append_live_log_events(['%s — Старт цикла %s–%s (MSK).' % (datetime_prefix, period_start_hm, period_end_hm)])
+    date_str_0 = now_msk_dt.strftime('%d.%m.%Y')
+    p_start_hm = '00:00' if now_msk_dt.hour < 12 else '12:00'
+    p_end_hm = '11:55' if now_msk_dt.hour < 12 else '23:55'
+    _append_live_log_events(['%s %s — Начат сбор данных за период %s–%s.' % (date_str_0, p_start_hm, p_start_hm, p_end_hm)])
 
     # 1) TGStat new channels
     unavailable_sources = []
@@ -1827,23 +1831,10 @@ def main():
     total_losses_12h = sum(r.get('sum', 0) for r in sheet_reports) + sum(s for _, s in channel_sum_pairs)
     new_scams_count = len(risk_rows)
 
-    # 4b) Живой лог: дата и время в каждой строке (DD.MM.YYYY HH:MM) для сортировки и «Новый день».
+    # 4b) Живой лог: только сводные строки (никаких списков @каналов — каналы только в таблице).
     now_msk_dt = _msk_now()
     datetime_prefix = now_msk_dt.strftime('%d.%m.%Y %H:%M')
     events = []
-    for r in risk_rows:
-        itog = (r.get('risk_analysis') or {}).get('itog', '0/6')
-        x = itog.split('/')[0] if '/' in itog else '0'
-        if r.get('source') == 'TGStat':
-            events.append('%s — TGStat: сигнал‑канал [%s] (%s/6 рисков) ✓' % (datetime_prefix, r['obj'], x))
-        elif r.get('source') == 'Telega':
-            events.append('%s — Telega: сигнал‑канал [%s] (%s/6 рисков) ✓' % (datetime_prefix, r['obj'], x))
-    for row in (complaints_rows or [])[:20]:
-        ch = row.get('channel', '—')
-        cnt = row.get('complaints', 0)
-        loss = row.get('losses', 0)
-        if cnt and ch:
-            events.append('%s — Чаты: %s новые жалобы на %s (%s ₽ суммарно).' % (datetime_prefix, cnt, ch, loss or 0))
     if not risk_rows and not any((r.get('complaints') or r.get('losses')) for r in (complaints_rows or [])):
         events.append('%s — В этом цикле новых сигнал‑каналов по фильтрам не найдено; жалоб нет. Источники доступны.' % datetime_prefix)
     else:
@@ -1907,6 +1898,10 @@ def main():
             print('Не удалось обновить документ. Проверьте: 1) KRO_GOOGLE_CREDENTIALS_JSON, 2) доступ сервисного аккаунта к документу (Поделиться → email из ключа), 3) Google Docs API включён в Cloud.', flush=True)
     else:
         print('KRO_SOURCES_DOC_ID не задан — обновление документа пропущено.', flush=True)
+
+    # Живой лог: «Завершён сбор» после обновления таблиц
+    now_msk_dt = _msk_now()
+    _append_live_log_events(['%s — Завершён сбор данных за день, таблицы обновлены.' % now_msk_dt.strftime('%d.%m.%Y %H:%M')])
 
     # 6) Write JSON for site (поля спецификации + обратная совместимость)
     top3_today = [(t.get('channel') or t.get('name') or '—') for t in (top3 or [])[:3]]
