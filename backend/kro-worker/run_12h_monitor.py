@@ -464,8 +464,7 @@ LIVE_LOG_PLACEHOLDER = 'События за период — ниже'
 _MONTH_NAMES_RU = ('', 'января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря')
 
 def _format_doc_header(period_start, period_end, time_formatted):
-    """Вернуть (period_label, formed_label): период один раз (00:00–11:55 или 12:00–23:55 MSK), время формирования.
-    По ТЗ п.1: период дня указывается один раз в шапке."""
+    """Вернуть (period_label, formed_label): период один раз в шапке (день с 00:00 до 23:55 MSK), время формирования."""
     period_label = 'Период: %s – %s (MSK)' % (period_start or '—', period_end or '—')
     formed_label = 'Время формирования: %s' % (time_formatted or '—')
     return period_label, formed_label
@@ -589,16 +588,18 @@ def _build_reasons_sentence(r):
 
 
 def _build_short_description(row):
-    """Краткое описание объекта 1–2 предложениями по факту, без оценочных слов. До ~400 символов."""
+    """Краткое описание объекта 1–2 предложениями по факту, без оценочных слов и без сумм/денег. До ~400 символов."""
     title = (row.get('title') or '').strip()
     obj_type = (row.get('type') or '').strip().lower()
     obj = (row.get('obj') or '').strip()
     if title and len(title) > 5:
-        # Сокращаем и очищаем от маркетинговых клише
         t = title[:350].strip()
-        if not t.endswith('.'):
-            t += '.'
-        return t
+        t = re.sub(r'\d[\d\s]*\s*[кk]?\s*[₽рруб\.]+', '', t)
+        t = re.sub(r'\s+', ' ', t).strip()
+        if len(t) > 10:
+            if not t.endswith('.'):
+                t += '.'
+            return t
     if 'курс' in obj_type or 'сайт' in obj_type:
         return 'Объект продаёт курс или услуги; найден по жалобам или каталогам.'
     if 'бот' in obj_type:
@@ -609,25 +610,19 @@ def _build_short_description(row):
 
 
 def _build_complaints_summary(row):
-    """Текст для столбца «Жалобы / отзывы»: N человек, потери X ₽ или «Жалоб за период не найдено»."""
+    """Текст для столбца «Жалобы / отзывы»: кратко, без дублирования сумм (суммы — в блоке 6)."""
     comp = (row.get('complaints') or '').strip()
     if not comp or comp == '0 / 0 ₽':
-        return 'Жалоб за период не найдено (поиск по чатам и интернету).'
+        return 'Жалоб за период не найдено.'
     parts = comp.split('/')
     n_str = (parts[0] or '0').strip()
-    sum_str = (parts[1] or '').strip().replace('₽', '').strip() if len(parts) > 1 else ''
     try:
         n = int(n_str)
     except (ValueError, TypeError):
         n = 0
-    if n <= 0 and not sum_str:
-        return 'Жалоб за период не найдено (поиск по чатам и интернету).'
-    msg = []
-    if n > 0:
-        msg.append('%s человек в чатах с жалобами пишут о потерях' % n)
-    if sum_str:
-        msg.append('сумма потерь за период: %s' % sum_str)
-    return '. '.join(msg) + '.' if msg else 'Жалоб за период не найдено.'
+    if n <= 0:
+        return 'Жалоб за период не найдено.'
+    return '%s человек в чатах пишут о потерях.' % n
 
 
 def _build_risk_flags(row):
@@ -917,8 +912,7 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         period_label,
         formed_label,
         '',
-        'В этом документе: откуда берутся все цифры, факты и прямые ссылки на источники (раздел 2).',
-        'Два полу-дня: 00:00–11:55 и 12:00–23:55 MSK; публикация в 12:00 и 00:00. Для оценки риска учитываются данные за последние 7 дней.',
+        'В этом документе: откуда берутся цифры, факты и ссылки (раздел 2). День: с 00:00 до 23:55 MSK. Данные за последние 7 дней.',
         '',
         '***',
         '',
@@ -1240,8 +1234,7 @@ def _build_sources_doc_with_tables(service, doc_id, data):
         'СКАМ‑МОНИТОРИНГ | Source & Data\n'
         '%s\n'
         '%s\n\n'
-        'В этом документе: откуда берутся все цифры, факты и прямые ссылки на источники (раздел 2).\n'
-        'Два полу-дня: 00:00–11:55 и 12:00–23:55 MSK; публикация в 12:00 и 00:00. Для оценки риска учитываются данные за последние 7 дней.\n\n'
+        'В этом документе: откуда берутся цифры, факты и ссылки (раздел 2). День: с 00:00 до 23:55 MSK. Данные за последние 7 дней.\n\n'
         '***\n\n'
         '1. Временная линия (события за период)\n\n'
         '%s\n\n***\n\n%s\n\n***\n\n'
@@ -1342,31 +1335,22 @@ def _build_sources_doc_with_tables(service, doc_id, data):
     service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
     idx += len(block4_5)
 
-    # Блоки 6 и 7 текстом (ТЗ п.9: явная привязка полей к таблицам)
+    # Блоки 6 и 7: цифры один раз, без повторов
+    n_scams = data.get('new_scams_count', 0)
+    losses = data.get('total_losses_12h', 0)
+    tg_count = data.get('telegram_count', 0)
+    courses = data.get('courses', 0)
     block6_7 = (
-        '\n\n***\n\n6. Итоги для сайта (поля интерфейса)\n\n'
-        'Источник цифр — основная таблица (8 столбцов) в этом документе:\n'
-        '• new_scam_channels = число объектов в основной таблице (рисковых за период).\n'
-        '• losses_12h = сумма потерь за период (по жалобам и столбцу «Жалобы / отзывы»).\n'
-        '• telegram_channels, courses_products = по типам в основной таблице.\n'
-        '• top3_today = каналы/объекты по сумме риска и жалоб (топ‑3).\n\n'
-        'Итоговые значения для сайта:\n\n'
+        '\n\n***\n\n6. Итоги для сайта\n\n'
         'new_scam_channels = %s\nlosses_12h = %s\ntelegram_channels = %s\ncourses_products = %s\n\n'
-        'Топ‑3 за период:\n\n'
-    ) % (data.get('new_scams_count', 0), data.get('total_losses_12h', 0), data.get('telegram_count', 0), data.get('courses', 0))
+        'Топ‑3:\n\n'
+    ) % (n_scams, losses, tg_count, courses)
     for i, (ch, s, n) in enumerate(data.get('top3_with_people') or [], 1):
-        block6_7 += '%s. %s — %s ₽, %s человек.\n' % (i, ch, s or 0, n)
+        block6_7 += '%s. %s — %s ₽, %s чел.\n' % (i, ch, s or 0, n)
     if not data.get('top3_with_people'):
         block6_7 += '(нет)\n'
-    block6_7 += '\nJSON для отправки:\n\n%s\n\nЭти поля отправляются в интерфейс сайта и соответствуют блокам:\n' % json.dumps({
-        'new_scam_channels': data.get('new_scams_count', 0),
-        'losses_12h': data.get('total_losses_12h', 0),
-        'telegram_channels': data.get('telegram_count', 0),
-        'courses_products': data.get('courses', 0),
-        'top3_today': data.get('top3_today', [])
-    }, ensure_ascii=False, indent=2)
-    block6_7 += '- «Новый скам канал» — new_scam_channels\n- «Потери за период» — losses_12h\n- «Телеграм‑каналов» — telegram_channels\n- «Курсы/продукты» — courses_products\n- «Топ‑3 за период» — top3_today\n\n***\n\n7. Чек‑лист и ограничения\n\n'
-    block6_7 += '□ У каждого объекта в основной таблице (столбец 1) есть рабочая кликабельная ссылка.\n□ Жалобы (столбец 6) относятся к текущему периоду; при отсутствии указано «Жалоб за период не найдено».\n□ Итоговая сумма losses_12h соответствует данным по жалобам за период.\n□ Признаки риска и итоговый статус (столбцы 7–8) заполнены для всех объектов.\n□ Топ‑3 входят в список объектов основной таблицы.\n\n'
+    block6_7 += '\n***\n\n7. Чек‑лист\n\n'
+    block6_7 += '□ Ссылки в столбце 1 рабочие. □ Жалобы (столбец 6) за период. □ Признаки риска и статус (7–8) заполнены. □ Топ‑3 из основной таблицы.\n\n'
     if nothing_found:
         block6_7 += 'По заданным условиям новых объектов не найдено. Искали: TGStat, Telega, чаты с жалобами (раздел 2). Жалоб за период нет. Данные не взяты из воздуха. При недоступности источника см. блок «Ограничения» выше.\n\n'
     if report_url:
