@@ -55,12 +55,9 @@ def main():
 
     now_msk_dt = _msk_now()
     date_str = now_msk_dt.strftime('%d.%m.%Y')
-    if now_msk_dt.hour < 12:
-        period_start = date_str + ' 00:00'
-        period_end = date_str + ' 11:55'
-    else:
-        period_start = date_str + ' 12:00'
-        period_end = date_str + ' 23:55'
+    # Один период на день по ТЗ: 00:00–23:55 (MSK)
+    period_start = date_str + ' 00:00'
+    period_end = date_str + ' 23:55'
     collect_time_msk = now_msk_dt.strftime('%d %B %H:%M MSK').replace('February', 'февраля').replace('March', 'марта').replace('January', 'января')
 
     stats = {}
