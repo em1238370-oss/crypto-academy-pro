@@ -17,7 +17,7 @@ DATA_DIR = os.path.join(BACKEND_DIR, 'data')
 LIVE_LOG_FILE = os.path.join(DATA_DIR, 'live_log_5min.json')
 STATE_FILE = os.path.join(DATA_DIR, 'live_log_state.json')
 # Строка в документе, которую скрипт заменяет на актуальные строки лога (и снова вставляет в конец для следующего запуска)
-PLACEHOLDER = 'Обновления каждые 5 мин — см. ниже'
+PLACEHOLDER = 'События за период — ниже'
 MAX_LINES = 50
 EMPTY_INTERVAL_MINUTES = 30  # не чаще чем раз в 30 мин писать «новых каналов не найдено»
 
