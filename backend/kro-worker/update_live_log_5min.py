@@ -22,62 +22,99 @@ MAX_LINES = 50
 EMPTY_INTERVAL_MINUTES = 30  # не чаще чем раз в 30 мин писать «новых каналов не найдено»
 
 
-def _parse_time_and_msg(line):
-    """Вернуть (time_str, msg) для строки «HH:MM — текст» или «HH:MM–HH:MM — текст». time_str может быть None."""
+def _parse_line(line, today_ddmm, has_date_only_format=False):
+    """Вернуть (date_ddmm, time_str, msg). date_ddmm = DD.MM.YYYY или None если только HH:MM (старый формат)."""
     s = (line or '').strip()
     if not s or ' — ' not in s:
-        return None, (s or '')
+        return (today_ddmm if has_date_only_format else None, None, (s or ''))
     left, msg = s.split(' — ', 1)
     left = left.strip()
     msg = msg.strip()
     if not left:
-        return None, msg
-    if '–' in left or '-' in left:
+        return (None, None, msg)
+    time_str = None
+    date_str = None
+    if re.search(r'\d{1,2}\.\d{1,2}\.\d{4}', left) and re.search(r'\d{1,2}:\d{2}', left):
+        parts = left.split(None, 1)
+        date_str = parts[0] if parts else None
+        time_str = parts[1][:5] if len(parts) > 1 and ':' in parts[1] else None
+    elif '–' in left or '-' in left:
         part = left.replace('-', '–').split('–')[0].strip()
-        return part if ':' in part else None, msg
-    if len(left) <= 5 and ':' in left:
-        return left, msg
-    return None, msg
+        if ':' in part:
+            time_str = part[:5]
+    elif len(left) >= 5 and ':' in left:
+        time_str = left[:5]
+    if date_str is None and has_date_only_format:
+        date_str = today_ddmm
+    return (date_str, time_str, msg)
 
 
 def format_live_log_grouped(lines):
-    """Объединить подряд идущие строки с одинаковым текстом в одну: «HH:MM–HH:MM — сообщение». Цифры и сообщения не дублируются."""
+    """Сортировка по дате и времени, объединение подряд одинаковых сообщений, разделитель «Новый день» при смене даты."""
     if not lines:
         return []
+    now = _msk_now()
+    today_ddmm = now.strftime('%d.%m.%Y')
     parsed = []
-    for raw in lines:
+    for idx, raw in enumerate(lines):
         s = (raw or '').strip()
         if not s:
-            parsed.append((None, ''))
             continue
-        t, msg = _parse_time_and_msg(s)
-        if t is None and parsed and parsed[-1][1]:
-            t = parsed[-1][0]
-        parsed.append((t, msg))
+        date_str, time_str, msg = _parse_line(s, today_ddmm, has_date_only_format=False)
+        if time_str is None and parsed and parsed[-1][2] == msg:
+            time_str = parsed[-1][1]
+        parsed.append((date_str, time_str, msg, idx))
+    if not parsed:
+        return []
+    def sort_key(x):
+        d, t, _, idx = x
+        if d is None:
+            return (9999, 99, 99, idx)
+        try:
+            parts = d.split('.')
+            if len(parts) == 3:
+                day, month, year = int(parts[0]), int(parts[1]), int(parts[2])
+                date_ord = (year, month, day)
+            else:
+                date_ord = (9999, 99, 99)
+        except (ValueError, TypeError):
+            date_ord = (9999, 99, 99)
+        if not t or ':' not in t:
+            return (date_ord[0], date_ord[1], date_ord[2], 99, 99, idx)
+        try:
+            h, m = int(t[:2]), int(t[3:5]) if len(t) >= 5 else 0
+            return (date_ord[0], date_ord[1], date_ord[2], h, m, idx)
+        except (ValueError, TypeError):
+            return (date_ord[0], date_ord[1], date_ord[2], 99, 99, idx)
+    parsed.sort(key=sort_key)
     out = []
+    prev_date = None
     prev_last_time = None
     i = 0
     while i < len(parsed):
-        t, msg = parsed[i]
+        date_str, t, msg, _ = parsed[i]
         if msg == '':
-            out.append('')
             i += 1
             continue
+        first_date = date_str
         first_time = t
         last_time = t
         j = i + 1
-        while j < len(parsed) and parsed[j][1] == msg:
-            if parsed[j][0]:
-                last_time = parsed[j][0]
+        while j < len(parsed) and parsed[j][2] == msg:
+            if parsed[j][1]:
+                last_time = parsed[j][1]
             j += 1
-        if prev_last_time and first_time:
+        if prev_date is not None and first_date is not None and first_date != prev_date:
+            out.append('——— Новый день ———')
+        elif prev_last_time and first_time and first_date is not None and prev_date is not None:
             try:
-                ph, pm = int(prev_last_time[:2]), int(prev_last_time[3:5]) if len(prev_last_time) >= 5 else 0
-                fh, fm = int(first_time[:2]), int(first_time[3:5]) if len(first_time) >= 5 else 0
-                if ph >= 23 and fh <= 1:
+                ph = int(prev_last_time[:2])
+                fh = int(first_time[:2])
+                if ph >= 23 and fh <= 1 and first_date == prev_date:
                     out.append('——— Новый день ———')
             except (ValueError, TypeError):
                 pass
+        prev_date = first_date
         line = ''
         if first_time and last_time:
             if first_time == last_time:
@@ -313,7 +350,9 @@ def save_state(state):
 
 def main():
     now = _msk_now()
+    date_str = now.strftime('%d.%m.%Y')
     time_str = now.strftime('%H:%M')
+    datetime_prefix = '%s %s' % (date_str, time_str)
 
     tg = fetch_tgstat_count()
     telega = fetch_telega_count()
@@ -334,11 +373,11 @@ def main():
         )
         if changed:
             if (state.get('last_losses') != losses or state.get('last_victims') != victims) and (losses or victims):
-                new_line = '%s — Обновлён расчёт: потери %s ₽, жалоб %s.' % (time_str, losses, victims)
+                new_line = '%s — Обновлён расчёт: потери %s ₽, жалоб %s.' % (datetime_prefix, losses, victims)
             elif state.get('last_tgstat') != tg or state.get('last_telega') != telega:
-                new_line = '%s — TGStat/Telega: найдено каналов по фильтрам — TGStat %s, Telega %s.' % (time_str, tg, telega)
+                new_line = '%s — TGStat/Telega: найдено каналов по фильтрам — TGStat %s, Telega %s.' % (datetime_prefix, tg, telega)
             else:
-                new_line = '%s — Обновление счётчиков: TGStat %s, Telega %s, потери %s ₽.' % (time_str, tg, telega, losses)
+                new_line = '%s — Обновление счётчиков: TGStat %s, Telega %s, потери %s ₽.' % (datetime_prefix, tg, telega, losses)
             if new_line:
                 lines = load_log_lines()
                 lines.append(new_line)
@@ -361,7 +400,7 @@ def main():
                     last_empty_dt = last_empty_dt + timedelta(hours=3)
             delta_min = (now - last_empty_dt).total_seconds() / 60.0 if last_empty_dt else EMPTY_INTERVAL_MINUTES + 1
             if delta_min >= EMPTY_INTERVAL_MINUTES:
-                new_line = '%s — За последние 30 минут новых объектов по фильтрам не найдено, источники доступны.' % time_str
+                new_line = '%s — За последние 30 минут новых объектов по фильтрам не найдено, источники доступны.' % datetime_prefix
                 lines = load_log_lines()
                 lines.append(new_line)
                 save_log_lines(lines[-MAX_LINES:] if len(lines) > MAX_LINES else lines)

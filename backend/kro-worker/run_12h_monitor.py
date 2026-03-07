@@ -1746,12 +1746,12 @@ def main():
     now_msk_str = now_msk.strftime('%d %B %H:%M').replace('February', 'февраля').replace('March', 'марта').replace('January', 'января')
     print('Run 12h monitor at %s UTC' % now_msk.isoformat(), file=sys.stderr)
 
-    # 0) Живой лог: старт цикла (событие)
+    # 0) Живой лог: старт цикла (с датой для сортировки)
     now_msk_dt = _msk_now()
-    time_str = now_msk_dt.strftime('%H:%M')
+    datetime_prefix = now_msk_dt.strftime('%d.%m.%Y %H:%M')
     period_end_hm = now_msk_dt.strftime('%H:%M')
     period_start_hm = (now_msk_dt - timedelta(hours=HOURS_12)).strftime('%H:%M')
-    _append_live_log_events(['%s — Старт цикла %s–%s (MSK).' % (time_str, period_start_hm, period_end_hm)])
+    _append_live_log_events(['%s — Старт цикла %s–%s (MSK).' % (datetime_prefix, period_start_hm, period_end_hm)])
 
     # 1) TGStat new channels
     unavailable_sources = []
@@ -1827,27 +1827,27 @@ def main():
     total_losses_12h = sum(r.get('sum', 0) for r in sheet_reports) + sum(s for _, s in channel_sum_pairs)
     new_scams_count = len(risk_rows)
 
-    # 4b) Живой лог: только события в формате «(X/6 рисков) ✓». Старт и «ничего не найдено» — без спама.
+    # 4b) Живой лог: дата и время в каждой строке (DD.MM.YYYY HH:MM) для сортировки и «Новый день».
     now_msk_dt = _msk_now()
-    time_str = now_msk_dt.strftime('%H:%M')
+    datetime_prefix = now_msk_dt.strftime('%d.%m.%Y %H:%M')
     events = []
     for r in risk_rows:
         itog = (r.get('risk_analysis') or {}).get('itog', '0/6')
         x = itog.split('/')[0] if '/' in itog else '0'
         if r.get('source') == 'TGStat':
-            events.append('%s — TGStat: сигнал‑канал [%s] (%s/6 рисков) ✓' % (time_str, r['obj'], x))
+            events.append('%s — TGStat: сигнал‑канал [%s] (%s/6 рисков) ✓' % (datetime_prefix, r['obj'], x))
         elif r.get('source') == 'Telega':
-            events.append('%s — Telega: сигнал‑канал [%s] (%s/6 рисков) ✓' % (time_str, r['obj'], x))
+            events.append('%s — Telega: сигнал‑канал [%s] (%s/6 рисков) ✓' % (datetime_prefix, r['obj'], x))
     for row in (complaints_rows or [])[:20]:
         ch = row.get('channel', '—')
         cnt = row.get('complaints', 0)
         loss = row.get('losses', 0)
         if cnt and ch:
-            events.append('%s — Чаты: %s новые жалобы на %s (%s ₽ суммарно).' % (time_str, cnt, ch, loss or 0))
+            events.append('%s — Чаты: %s новые жалобы на %s (%s ₽ суммарно).' % (datetime_prefix, cnt, ch, loss or 0))
     if not risk_rows and not any((r.get('complaints') or r.get('losses')) for r in (complaints_rows or [])):
-        events.append('%s — В этом цикле новых сигнал‑каналов по фильтрам не найдено; жалоб нет. Источники доступны.' % time_str)
+        events.append('%s — В этом цикле новых сигнал‑каналов по фильтрам не найдено; жалоб нет. Источники доступны.' % datetime_prefix)
     else:
-        events.append('%s — Обновлён расчёт: %s ₽, %s объектов в зоне риска.' % (time_str, total_losses_12h or 0, new_scams_count or 0))
+        events.append('%s — Обновлён расчёт: %s ₽, %s объектов в зоне риска.' % (datetime_prefix, total_losses_12h or 0, new_scams_count or 0))
     if events:
         _append_live_log_events(events)
 
