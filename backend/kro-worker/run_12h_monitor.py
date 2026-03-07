@@ -938,12 +938,17 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
 
 
 def _get_table_cell_indices(body, at_index):
-    """Найти таблицу с startIndex at_index и вернуть список (row_idx, col_idx, start_index) для каждой ячейки."""
+    """Найти таблицу с startIndex at_index и вернуть список (row_idx, col_idx, start_index) для каждой ячейки.
+    Если API не возвращает startIndex в ячейках (пустая таблица), считаем индексы от начала таблицы.
+    """
     for el in body.get('content', []):
         if el.get('startIndex') != at_index or 'table' not in el:
             continue
+        table_start = el.get('startIndex', at_index)
+        rows = el['table'].get('tableRows', [])
+        ncols = len(rows[0].get('tableCells', [])) if rows else 0
         out = []
-        for ri, row in enumerate(el['table'].get('tableRows', [])):
+        for ri, row in enumerate(rows):
             for ci, cell in enumerate(row.get('tableCells', [])):
                 si = None
                 for c in cell.get('content', []):
@@ -956,6 +961,10 @@ def _get_table_cell_indices(body, at_index):
                             break
                     if si is not None:
                         break
+                if si is None and ncols:
+                    # Пустые ячейки после insertTable могут не содержать startIndex в ответе API.
+                    # Считаем позицию: после начала таблицы каждая ячейка — параграф (1 символ).
+                    si = table_start + 1 + (ri * ncols + ci)
                 if si is not None:
                     out.append((ri, ci, si))
         return out
@@ -963,9 +972,13 @@ def _get_table_cell_indices(body, at_index):
 
 
 def _get_table_cell_ranges(body, table_el):
-    """По элементу таблицы вернуть (rows, cols, list of (ri, ci, start_index, end_index)) для каждой ячейки."""
+    """По элементу таблицы вернуть (rows, cols, list of (ri, ci, start_index, end_index)) для каждой ячейки.
+    Если API не возвращает startIndex/endIndex в ячейках (пустые таблицы), считаем индексы от начала таблицы.
+    """
     rows = table_el.get('table', {}).get('tableRows', [])
     nrows = len(rows)
+    ncols = len(rows[0].get('tableCells', [])) if rows else 0
+    table_start = table_el.get('startIndex', 0)
     out = []
     for ri, row in enumerate(rows):
         for ci, cell in enumerate(row.get('tableCells', [])):
@@ -982,9 +995,12 @@ def _get_table_cell_ranges(body, table_el):
                             ei = pe.get('endIndex') or (pe['startIndex'] + 1)
                 if ei is None and si is not None:
                     ei = si + 1
+            if si is None and ncols > 0:
+                # Пустые ячейки часто без startIndex в API — считаем позицию от начала таблицы
+                si = table_start + 1 + (ri * ncols + ci)
+                ei = si + 1
             if si is not None and ei is not None:
                 out.append((ri, ci, si, ei))
-    ncols = len(rows[0].get('tableCells', [])) if rows else 0
     return nrows, ncols, out
 
 
@@ -1019,6 +1035,12 @@ def _fill_existing_tables(service, doc_id, data):
     t3 = by_cols.get(3)
     if not t7 and not t4 and not t8 and not t3:
         return False
+    cols_found = []
+    if t7: cols_found.append('7')
+    if t4: cols_found.append('4')
+    if t8: cols_found.append('8')
+    if t3: cols_found.append('3')
+    print('Sources doc: таблицы в конце документа (%s колонок) — заполняю ячейки.' % (', '.join(cols_found)), file=sys.stderr)
     replacements = []  # (si, ei, text). Заполняем только строки ri >= 1 (данные), строку 0 (заголовки) оставляем как в документе
 
     if t7 and t7['cells']:
@@ -1682,9 +1704,13 @@ def create_google_doc_report(title, new_channels_rows, complaints_rows, summary_
         return None, None
 
 
+# URL по умолчанию для отправки данных на сайт (можно переопределить через KRO_SITE_UPDATE_URL в .env)
+DEFAULT_SITE_UPDATE_URL = 'https://crypto-academy-pro.onrender.com/api/kro/update'
+
+
 def _send_to_site(payload):
     """Отправить payload на сайт (POST KRO_SITE_UPDATE_URL). Возвращает True при успехе."""
-    site_url = os.environ.get('KRO_SITE_UPDATE_URL', '').strip()
+    site_url = (os.environ.get('KRO_SITE_UPDATE_URL') or DEFAULT_SITE_UPDATE_URL).strip()
     if not site_url:
         print('KRO_SITE_UPDATE_URL не задан — отправка на сайт пропущена.', file=sys.stderr)
         return False

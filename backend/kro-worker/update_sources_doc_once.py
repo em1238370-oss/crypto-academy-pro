@@ -41,6 +41,7 @@ from run_12h_monitor import (
     _msk_now,
     build_sources_doc_text,
     update_sources_google_doc,
+    _send_to_site,
 )
 
 HOURS_12 = 12
@@ -107,6 +108,28 @@ def main():
     if url:
         print('Документ обновлён до структуры 7 блоков: %s' % url)
         print('Обнови страницу (F5) в браузере.')
+        # Отправить те же данные на сайт, чтобы ячейки (LIVE, Топ-3, потери и т.д.) обновились
+        top3_raw = stats.get('top3') or stats.get('top3_today') or []
+        top3_today = []
+        for t in top3_raw[:3]:
+            if isinstance(t, str):
+                top3_today.append(t)
+            else:
+                top3_today.append((t.get('channel') or t.get('name') or '—'))
+        site_payload = {
+            'timestamp': stats.get('timestamp') or stats.get('updatedAt') or '',
+            'new_scam_channels': new_scams,
+            'losses_12h': losses_12h,
+            'telegram_channels': telegram_channels,
+            'courses_products': courses_products,
+            'top3_today': top3_today,
+            'report_doc_url': url,
+            'victims_12h': victims_12h,
+        }
+        if top3_raw and isinstance(top3_raw[0], dict):
+            site_payload['top3'] = [{'channel': (t.get('channel') or t.get('name') or '—'), 'sum': t.get('sum', 0), 'status': t.get('status') or 'Активен'} for t in top3_raw[:3]]
+        if _send_to_site(site_payload):
+            print('Данные отправлены на сайт — ячейки на crypto-academy-pro обновятся.', file=sys.stderr)
     else:
         print('Не удалось обновить документ. См. stderr.', file=sys.stderr)
         sys.exit(1)
