@@ -1302,10 +1302,11 @@ body.kro-hero-scrolled .kro-floating-nav {
    white-space: nowrap;
 }
 
-/* Блок «Проверить канал» — SiteLove: luminous карточка со свечением */
+/* Блок «Проверить канал» — та же ширина, что «Сообщить о разводе» и Топ-3 */
 .kro-feature1-check {
    max-width: calc(640px + 4cm);
-   margin: 0 auto 44px;
+   width: 100%;
+   margin: 0 auto;
    text-align: left;
    position: relative;
    padding: 32px 28px 36px;
@@ -1775,7 +1776,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    transform: translateY(-2px);
 }
 
-/* Обёртка CTA → «Проверить канал»: по клику плавная смена */
+/* Обёртка CTA → «Проверить канал»: та же ширина, что блок «Сообщить о разводе» и Топ-3 */
 .kro-f1-cta-check-wrap {
    display: grid;
    grid-template-columns: 1fr;
@@ -1789,19 +1790,22 @@ body.kro-hero-scrolled .kro-floating-nav {
    grid-area: 1 / 1;
 }
 .kro-f1-cta-check-wrap > .kro-f1-cta-block {
-   transition: opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+   transition: opacity 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .kro-f1-cta-check-wrap > .kro-feature1-check.kro-f1-check-reveal {
    opacity: 0;
+   transform: translateY(20px);
    pointer-events: none;
-   transition: opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+   transition: opacity 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .kro-f1-cta-check-wrap.kro-f1-show-check > .kro-f1-cta-block {
    opacity: 0;
+   transform: translateY(-12px);
    pointer-events: none;
 }
 .kro-f1-cta-check-wrap.kro-f1-show-check > .kro-feature1-check.kro-f1-check-reveal {
    opacity: 1;
+   transform: translateY(0);
    pointer-events: auto;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1809,11 +1813,14 @@ body.kro-hero-scrolled .kro-floating-nav {
    .kro-f1-cta-check-wrap > .kro-feature1-check.kro-f1-check-reveal {
       transition-duration: 0.15s;
    }
+   .kro-f1-cta-check-wrap > .kro-feature1-check.kro-f1-check-reveal { transform: none; }
+   .kro-f1-cta-check-wrap.kro-f1-show-check > .kro-f1-cta-block { transform: none; }
 }
 
-/* Финальный CTA-блок (sitelove: Ready to Start Earning?) — внутри обёртки */
+/* Финальный CTA-блок — та же ширина, что «Проверить канал» и «Сообщить о разводе» */
 .kro-f1-cta-block {
-   max-width: calc(560px + 4cm);
+   max-width: 100%;
+   width: 100%;
    margin: 0 auto;
    padding: 40px 28px 44px;
    border-radius: 24px;
