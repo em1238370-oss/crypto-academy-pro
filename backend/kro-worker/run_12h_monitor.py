@@ -3,7 +3,7 @@
 KRO 12h auto-monitor: два цикла в день — 11:00 и 23:00 MSK. Собирает данные из TGStat search,
 Telega.io каталога и чатов Telegram; применяет критерии (возраст <14 дн., VIP>10к ₽, рост >500/сутки);
 пишет в JSON и лист; создаёт отчёт и документ SOURCE & DATA. Документ обновляется автоматически (проверка «Готово/Не готово» не обязательна);
-Проверка до 12:00 / 00:00; в 12:00 (день) и 00:00 (12 ночи) данные отправляются на сайт (POST /api/kro/update).
+Данные отправляются на сайт (POST KRO_SITE_UPDATE_URL) при каждом запуске сбора, чтобы цифры сразу отражались на сайте.
 
 Источники: 1) TGStat channels/search (криптовалюта), 2) Telega.io catalog, 3) KRO_SOURCE_CHANNELS (жалобы за 12ч).
 
@@ -1676,12 +1676,32 @@ def create_google_doc_report(title, new_channels_rows, complaints_rows, summary_
         return None, None
 
 
-def _run_publish_only():
-    """Режим publish: прочитать kro-12h-stats.json и отправить на сайт (12:00 и 00:00 MSK)."""
+def _send_to_site(payload):
+    """Отправить payload на сайт (POST KRO_SITE_UPDATE_URL). Возвращает True при успехе."""
     site_url = os.environ.get('KRO_SITE_UPDATE_URL', '').strip()
     if not site_url:
-        print('MODE=publish: KRO_SITE_UPDATE_URL не задан — отправка на сайт пропущена.', file=sys.stderr)
-        return
+        print('KRO_SITE_UPDATE_URL не задан — отправка на сайт пропущена.', file=sys.stderr)
+        return False
+    try:
+        import urllib.request
+        data = json.dumps(payload).encode('utf-8')
+        req = urllib.request.Request(site_url, data=data, method='POST', headers={'Content-Type': 'application/json'})
+        secret = os.environ.get('KRO_SITE_UPDATE_SECRET', '').strip()
+        if secret:
+            req.add_header('Authorization', 'Bearer %s' % secret)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            if 200 <= resp.getcode() < 300:
+                print('Данные отправлены на сайт: %s' % site_url, file=sys.stderr)
+                return True
+            print('POST %s: код %s' % (site_url, resp.getcode()), file=sys.stderr)
+            return False
+    except Exception as e:
+        print('POST на сайт failed: %s' % e, file=sys.stderr)
+        return False
+
+
+def _run_publish_only():
+    """Режим publish: прочитать kro-12h-stats.json и отправить на сайт (12:00 и 00:00 MSK)."""
     if not os.path.isfile(OUTPUT_JSON):
         print('MODE=publish: файл %s не найден. Сначала запустите сбор (11:00 или 23:00 MSK).' % OUTPUT_JSON, file=sys.stderr)
         return
@@ -1700,20 +1720,7 @@ def _run_publish_only():
         'courses_products': out.get('courses_products', out.get('courses', 0)),
         'top3_today': top3_today,
     }
-    try:
-        import urllib.request
-        data = json.dumps(payload).encode('utf-8')
-        req = urllib.request.Request(site_url, data=data, method='POST', headers={'Content-Type': 'application/json'})
-        secret = os.environ.get('KRO_SITE_UPDATE_SECRET', '').strip()
-        if secret:
-            req.add_header('Authorization', 'Bearer %s' % secret)
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            if 200 <= resp.getcode() < 300:
-                print('Данные отправлены на сайт (12:00/00:00): %s' % site_url, file=sys.stderr)
-            else:
-                print('POST %s: код %s' % (site_url, resp.getcode()), file=sys.stderr)
-    except Exception as e:
-        print('MODE=publish: POST %s failed: %s' % (site_url, e), file=sys.stderr)
+    _send_to_site(payload)
 
 
 def main():
@@ -1913,7 +1920,16 @@ def main():
         OUTPUT_JSON, out['new_scams'], out['losses_12h'], out['victims_12h'], report_number), file=sys.stderr)
     if report_doc_url:
         print('Report doc: %s' % report_doc_url, file=sys.stderr)
-    # На сайт данные уходят только в 12:00 и 00:00 MSK (запуск с MODE=publish).
+    # Сразу отправить данные на сайт, чтобы цифры отображались после каждого сбора
+    site_payload = {
+        'timestamp': out.get('timestamp', ''),
+        'new_scam_channels': out.get('new_scams', 0),
+        'losses_12h': out.get('losses_12h', 0),
+        'telegram_channels': out.get('telegram_channels', 0),
+        'courses_products': out.get('courses_products', 0),
+        'top3_today': out.get('top3_today', []),
+    }
+    _send_to_site(site_payload)
 
 
 if __name__ == '__main__':
