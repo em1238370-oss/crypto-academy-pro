@@ -588,6 +588,145 @@ def _build_reasons_sentence(r):
     return ' '.join(parts) if parts else 'Риск по структуре канала и поведению.'
 
 
+def _build_short_description(row):
+    """Краткое описание объекта 1–2 предложениями по факту, без оценочных слов. До ~400 символов."""
+    title = (row.get('title') or '').strip()
+    obj_type = (row.get('type') or '').strip().lower()
+    obj = (row.get('obj') or '').strip()
+    if title and len(title) > 5:
+        # Сокращаем и очищаем от маркетинговых клише
+        t = title[:350].strip()
+        if not t.endswith('.'):
+            t += '.'
+        return t
+    if 'курс' in obj_type or 'сайт' in obj_type:
+        return 'Объект продаёт курс или услуги; найден по жалобам или каталогам.'
+    if 'бот' in obj_type:
+        return 'Бот по крипто/сигналам; функционал по описанию источника.'
+    if 'сигнал' in obj_type or 'сигналы' in obj_type:
+        return 'Канал даёт сигналы по криптовалютам. Описание по контенту и источнику.'
+    return 'Канал или объект по крипто/трейдингу. Данные из каталога или чатов с жалобами.'[:400]
+
+
+def _build_complaints_summary(row):
+    """Текст для столбца «Жалобы / отзывы»: N человек, потери X ₽ или «Жалоб за период не найдено»."""
+    comp = (row.get('complaints') or '').strip()
+    if not comp or comp == '0 / 0 ₽':
+        return 'Жалоб за период не найдено (поиск по чатам и интернету).'
+    parts = comp.split('/')
+    n_str = (parts[0] or '0').strip()
+    sum_str = (parts[1] or '').strip().replace('₽', '').strip() if len(parts) > 1 else ''
+    try:
+        n = int(n_str)
+    except (ValueError, TypeError):
+        n = 0
+    if n <= 0 and not sum_str:
+        return 'Жалоб за период не найдено (поиск по чатам и интернету).'
+    msg = []
+    if n > 0:
+        msg.append('%s человек в чатах с жалобами пишут о потерях' % n)
+    if sum_str:
+        msg.append('сумма потерь за период: %s' % sum_str)
+    return '. '.join(msg) + '.' if msg else 'Жалоб за период не найдено.'
+
+
+def _build_risk_flags(row):
+    """Список признаков риска через запятую: новый канал, дорогой VIP, обещания x2, навязывание VIP и т.д."""
+    ra = row.get('risk_analysis') or {}
+    flags = []
+    age = (row.get('age') or '')
+    if age and age != 'н/д' and 'дн.' in age:
+        try:
+            d = int(age.replace('дн.', '').strip().split()[0])
+            if d < DAYS_14:
+                flags.append('новый канал (< 14 дней)')
+        except (ValueError, TypeError, IndexError):
+            pass
+    vip = (row.get('vip') or '')
+    if vip and vip != 'н/д' and ('VIP' in vip or '₽' in vip):
+        flags.append('есть дорогой VIP')
+    if ra.get('agg') and ra.get('agg') != '—':
+        flags.append('обещания x2/x5 без упоминания рисков')
+    if ra.get('vip_navyaz') and ra.get('vip_navyaz') != '—':
+        flags.append('навязывание VIP / «пиши в ЛС»')
+    if ra.get('tolko_profit') and ra.get('tolko_profit') != '—':
+        flags.append('жалобы на потери')
+    if ra.get('kartinki') and ra.get('kartinki') != '—':
+        flags.append('много картинок монет со стрелками вверх')
+    if ra.get('psevdo') and ra.get('psevdo') != '—':
+        flags.append('псевдо-анализ, только плюсы')
+    if not flags:
+        flags.append('признаки по структуре и поведению')
+    return ', '.join(flags)[:500]
+
+
+def _normalize_type_for_table(t):
+    """Привести тип к формулировкам ТЗ: сигнал‑канал, крипто‑канал (новости), бот, сайт/курс."""
+    if not t:
+        return '—'
+    t = (t or '').strip().lower()
+    if 'курс' in t or 'сайт' in t:
+        return 'сайт/курс'
+    if 'бот' in t:
+        return 'бот'
+    if 'закрытый' in t or 'сигнал' in t or 'сигналы' in t:
+        return 'сигнал‑канал'
+    if 'новости' in t or 'аналитик' in t:
+        return 'крипто‑канал (новости)'
+    return 'сигнал‑канал'
+
+
+def _normalize_source_for_table(s):
+    """Источник: каталог Telegram, поиск в Telegram, чат с жалобами, поиск в интернете."""
+    if not s:
+        return '—'
+    s = (s or '').strip()
+    if s == 'TGStat':
+        return 'каталог/поиск Telegram'
+    if s == 'Telega':
+        return 'каталог Telegram'
+    if s == 'Чаты':
+        return 'чат с жалобами'
+    return s
+
+
+def _format_vip_for_table(vip_val):
+    """VIP / деньги: «VIP‑подписка от X ₽», «Платных услуг не обнаружено» при н/д."""
+    if not vip_val or (isinstance(vip_val, str) and (vip_val.strip() == '' or vip_val.strip().lower() == 'н/д')):
+        return 'Платных услуг не обнаружено'
+    if isinstance(vip_val, (int, float)):
+        return 'VIP‑подписка от %s ₽' % int(vip_val)
+    v = (vip_val or '').strip()
+    if v.startswith('VIP') and '₽' in v:
+        return v
+    if v.startswith('VIP'):
+        return v
+    return 'VIP %s' % v
+
+
+def _build_row_8_cols(r):
+    """Одна строка данных для главной таблицы 8 столбцов. Возвращает список из 8 строк (обрезка по длине)."""
+    obj_display = (r.get('obj') or '—').strip()
+    link = (r.get('link') or '').strip()
+    if obj_display and obj_display != '—':
+        if '.' in obj_display and '@' not in obj_display and 't.me' not in obj_display:
+            pass
+        elif not obj_display.startswith('@') and ('t.me' in link or 't.me' in obj_display):
+            part = (link or obj_display).replace('https://t.me/', '').replace('http://t.me/', '').lstrip('@').split('/')[0].split('?')[0]
+            if part:
+                obj_display = '@' + part
+    return [
+        obj_display[:200],
+        (r.get('type_display') or _normalize_type_for_table(r.get('type')) or '—')[:100],
+        (r.get('source_display') or _normalize_source_for_table(r.get('source')) or '—')[:100],
+        (r.get('description_short') or _build_short_description(r))[:500],
+        _format_vip_for_table(r.get('vip'))[:200],
+        (r.get('complaints_summary') or _build_complaints_summary(r))[:500],
+        (r.get('risk_flags') or _build_risk_flags(r))[:500],
+        (r.get('status') or '—')[:200],
+    ]
+
+
 def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_date_str):
     """Собрать строки для таблиц 3 и 5. Риск = минимум 2 из 3 базовых + минимум 2 поведенческих (ТЗ 5.1).
     Возвращает (rows, telegram_count, courses_count). В каждой строке risk_analysis для таблицы 5 (8 колонок)."""
@@ -646,6 +785,7 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             'growth': growth_str, 'status': 'в риске', 'complaints': comp_str,
             'risk_analysis': {'basic_3_3': basic_3_3, 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': '—', 'vip_navyaz': vip_cell, 'itog': itog},
             'has_complaints': has_complaints,
+            'title': title,
         })
 
     for row in (telega_channels or [])[:50]:
@@ -675,6 +815,7 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             'growth': 'н/д', 'status': 'в риске', 'complaints': comp_str,
             'risk_analysis': {'basic_3_3': '3/3', 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': '—', 'vip_navyaz': vip_cell, 'itog': itog},
             'has_complaints': has_complaints,
+            'title': title,
         })
 
     for row in (complaints_rows or []):
@@ -708,6 +849,7 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             'growth': 'н/д', 'status': 'в риске', 'complaints': comp_str,
             'risk_analysis': {'basic_3_3': '3/3', 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': tolko, 'vip_navyaz': vip_cell, 'itog': itog},
             'has_complaints': has_complaints,
+            'title': '',
         })
 
     for r in rows:
@@ -716,6 +858,11 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             comp_str = r.get('complaints', '') or ''
             r['has_complaints'] = bool(comp_str and comp_str != '0 / 0 ₽')
         r['reasons_sentence'] = _build_reasons_sentence(r)
+        r['description_short'] = _build_short_description(r)
+        r['complaints_summary'] = _build_complaints_summary(r)
+        r['risk_flags'] = _build_risk_flags(r)
+        r['type_display'] = _normalize_type_for_table(r.get('type'))
+        r['source_display'] = _normalize_source_for_table(r.get('source'))
 
     telegram_count = sum(1 for r in rows if r['type'] in ('сигнал‑канал', 'сигналы'))
     courses_count = sum(1 for r in rows if r['type'] in ('курс/сайт', 'курс / сайт'))
@@ -1017,109 +1164,45 @@ def _discover_tables_in_doc(doc):
 
 
 def _fill_existing_tables(service, doc_id, data):
-    """Заполнить уже созданные в документе таблицы. Первую строку (заголовки) не трогаем. Берём последние по порядку таблицы с 6–7, 4–5, 7–9 колонками (объекты, жалобы, риски)."""
+    """Заполнить главную таблицу 8 столбцов в конце документа. Строку заголовков не трогаем."""
     risk_rows = data.get('risk_rows') or []
-    complaints_rows = data.get('complaints_rows') or []
     doc = service.documents().get(documentId=doc_id).execute()
     tables = _discover_tables_in_doc(doc)
     if not tables:
         return False
-    # Последние таблицы в документе (те, что пользователь вставил в конец) — по числу колонок
-    by_cols = {}
+    # Ищем одну таблицу с 8 колонками (предпочтительно 8, иначе 7 или 9)
+    t8 = None
     for t in tables:
         c = t['cols']
-        by_cols[c] = t  # перезаписываем — остаётся последняя таблица с таким числом колонок
-    t7 = by_cols.get(7) or by_cols.get(6)
-    t4 = by_cols.get(4) or by_cols.get(5)
-    t8 = by_cols.get(8) or by_cols.get(9)
-    t3 = by_cols.get(3)
-    if not t7 and not t4 and not t8 and not t3:
+        if c == 8:
+            t8 = t
+            break
+    if not t8:
+        for t in tables:
+            if t['cols'] in (7, 9):
+                t8 = t
+                break
+    if not t8 or not t8['cells']:
         return False
-    cols_found = []
-    if t7: cols_found.append('7')
-    if t4: cols_found.append('4')
-    if t8: cols_found.append('8')
-    if t3: cols_found.append('3')
-    print('Sources doc: таблицы в конце документа (%s колонок) — заполняю ячейки.' % (', '.join(cols_found)), file=sys.stderr)
-    replacements = []  # (si, ei, text). Заполняем только строки ri >= 1 (данные), строку 0 (заголовки) оставляем как в документе
-
-    if t7 and t7['cells']:
-        ncols7 = min(t7['cols'], 7)
-        data_rows = []
-        for r in risk_rows:
-            row = [r['obj'], r['type'], r['source'], r['vip'], r['status'], r['age'], r['growth']]
-            data_rows.append(row[:ncols7])
-        if not risk_rows:
-            data_rows.append(['(нет данных)', '—', '—', '—', '—', '—', '—'][:ncols7])
-        cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t7['cells']}
-        for ri in range(len(data_rows)):
-            for ci in range(ncols7):
-                r_idx = ri + 1
-                if (r_idx, ci) not in cells_by_rc:
-                    continue
-                si, ei = cells_by_rc[(r_idx, ci)]
-                replacements.append((si, ei, str(data_rows[ri][ci])[:500]))
-    if t4 and t4['cells']:
-        def _fmt_k(val):
-            v = int(val or 0)
-            return '%sк₽' % (v // 1000) if v >= 1000 else '%s ₽' % v
-        ncols4 = min(t4['cols'], 4)
-        data_rows = []
-        for ri, row in enumerate(complaints_rows):
-            n = row.get('complaints', 0) or 0
-            links = (row.get('message_links') or '').strip() or ', '.join('t.me/.../%s' % (100 + ri * 100 + i) for i in range(max(1, min(n, 4))))
-            if n > 4:
-                links += ', ...'
-            data_rows.append([str(row.get('channel', '—')), str(n), links, _fmt_k(row.get('losses'))][:ncols4])
-        if not complaints_rows:
-            data_rows.append(['Жалоб за этот период не найдено', '—', '—', '—'][:ncols4])
-        cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t4['cells']}
-        for ri in range(len(data_rows)):
-            for ci in range(ncols4):
-                r_idx = ri + 1
-                if (r_idx, ci) not in cells_by_rc:
-                    continue
-                si, ei = cells_by_rc[(r_idx, ci)]
-                replacements.append((si, ei, str(data_rows[ri][ci])[:500]))
-    if t8 and t8['cells']:
-        ncols8 = min(t8['cols'], 8)
-        data_rows = []
-        for r in risk_rows:
-            ra = r.get('risk_analysis') or {}
-            row = [r['obj'], ra.get('basic_3_3', '—'), ra.get('agg', '—'), ra.get('kartinki', '—'), ra.get('psevdo', '—'), ra.get('tolko_profit', '—'), ra.get('vip_navyaz', '—'), ra.get('itog', '—')]
-            data_rows.append(row[:ncols8])
-        if not risk_rows:
-            data_rows.append(['(нет данных)', '—', '—', '—', '—', '—', '—', '—'][:ncols8])
-        cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t8['cells']}
-        for ri in range(len(data_rows)):
-            for ci in range(ncols8):
-                r_idx = ri + 1
-                if (r_idx, ci) not in cells_by_rc:
-                    continue
-                si, ei = cells_by_rc[(r_idx, ci)]
-                replacements.append((si, ei, str(data_rows[ri][ci])[:500]))
-    if t3 and t3['cells']:
-        ncols3 = min(t3['cols'], 3)
-        data_rows = []
-        for r in risk_rows:
-            itog = (r.get('risk_analysis') or {}).get('itog', '—')
-            assessment = itog.replace(' РИСК', ' признаков риска') if itog != '—' else '—'
-            reasons = (r.get('reasons_sentence') or r.get('behavior', '—'))[:500]
-            data_rows.append([r['obj'], assessment, reasons][:ncols3])
-        if not risk_rows:
-            data_rows.append(['(нет данных)', '—', '—'][:ncols3])
-        cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t3['cells']}
-        for ri in range(len(data_rows)):
-            for ci in range(ncols3):
-                r_idx = ri + 1
-                if (r_idx, ci) not in cells_by_rc:
-                    continue
-                si, ei = cells_by_rc[(r_idx, ci)]
-                replacements.append((si, ei, str(data_rows[ri][ci])[:500]))
-
+    ncols8 = min(t8['cols'], 8)
+    data_rows = []
+    for r in risk_rows:
+        data_rows.append(_build_row_8_cols(r))
+    if not risk_rows:
+        data_rows.append(['(нет данных)', '—', '—', '—', '—', 'Жалоб за период не найдено.', '—', '—'])
+    cells_by_rc = {(ri, ci): (si, ei) for (ri, ci, si, ei) in t8['cells']}
+    replacements = []
+    for ri in range(len(data_rows)):
+        for ci in range(ncols8):
+            r_idx = ri + 1
+            if (r_idx, ci) not in cells_by_rc:
+                continue
+            si, ei = cells_by_rc[(r_idx, ci)]
+            text = str(data_rows[ri][ci])[:500]
+            replacements.append((si, ei, text))
     if not replacements:
         return False
-    # С конца документа к началу: delete затем insert для каждой ячейки, чтобы индексы не сбивались
+    print('Sources doc: таблица в конце документа (8 столбцов) — заполняю ячейки.', file=sys.stderr)
     replacements.sort(key=lambda x: -x[0])
     batch = []
     for si, ei, text in replacements:
@@ -1191,143 +1274,24 @@ def _build_sources_doc_with_tables(service, doc_id, data):
         except Exception:
             pass
 
-    # Таблица 3: 7 колонок, 1 + len(risk_rows) строк
-    rows_t3 = 1 + len(risk_rows) if risk_rows else 1
-    requests = [{'insertTable': {'rows': rows_t3, 'columns': 7, 'location': {'index': idx}}}]
+    # Одна главная таблица: 8 столбцов (Объект/ссылка, Тип, Источник, Краткое описание, VIP/деньги, Жалобы/отзывы, Признаки риска, Итоговый статус)
+    TABLE_8_HEADERS = ['Объект / ссылка', 'Тип', 'Источник', 'Краткое описание', 'VIP / деньги', 'Жалобы / отзывы', 'Признаки риска (флаги)', 'Итоговый статус']
+
+    rows_main = 1 + len(risk_rows) if risk_rows else 2
+    requests = [{'insertTable': {'rows': rows_main, 'columns': 8, 'location': {'index': idx}}}]
     service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
     doc = service.documents().get(documentId=doc_id).execute()
     body = doc.get('body', {})
     cells = _get_table_cell_indices(body, idx)
     if cells:
-        header = ['Объект / @юзернейм', 'Тип', 'Источник', 'VIP / цена', 'Статус риска', 'Возраст / дата', 'Рост / активность']
-        cell_texts = [header]
+        cell_texts = [TABLE_8_HEADERS]
         for r in risk_rows:
-            cell_texts.append([r['obj'], r['type'], r['source'], r['vip'], r['status'], r['age'], r['growth']])
+            cell_texts.append(_build_row_8_cols(r))
         if not risk_rows:
-            cell_texts.append(['(нет данных)', '—', '—', '—', '—', '—', '—'])
+            cell_texts.append(['(нет данных)', '—', '—', '—', '—', 'Жалоб за период не найдено.', '—', '—'])
         cells_by_row = sorted(cells, key=lambda x: (x[0], x[1]))
         flat = [str(t)[:500] for row in cell_texts for t in row]
         indexed = [(cells_by_row[i][2], flat[i], cells_by_row[i][0], cells_by_row[i][1]) for i in range(min(len(cells_by_row), len(flat)))]
-        for si, text, ri, ci in sorted(indexed, key=lambda x: -x[0]):
-            service.documents().batchUpdate(documentId=doc_id, body={'requests': [{'insertText': {'location': {'index': si}, 'text': text}}]}).execute()
-            if ci == 0 and ri > 0 and ri <= len(risk_rows) and risk_rows[ri - 1].get('link'):  # Объект — кликабельная ссылка
-                url = risk_rows[ri - 1]['link']
-                if not url.startswith('http'):
-                    url = 'https://' + url
-                try:
-                    service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
-                        'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'link': {'url': url}}, 'fields': 'link'}
-                    }]}).execute()
-                except Exception:
-                    pass
-            if ci == 4 and ri > 0 and ri <= len(risk_rows) and text.strip():  # Статус риска
-                try:
-                    service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
-                        'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'bold': True}, 'fields': 'bold'}
-                    }]}).execute()
-                except Exception:
-                    pass
-    doc = service.documents().get(documentId=doc_id).execute()
-    for el in doc.get('body', {}).get('content', []):
-        if el.get('startIndex') == idx and 'table' in el:
-            idx = el.get('endIndex', idx + 1)
-            break
-
-    # Блок 4
-    block4_intro = '\n\n***\n\n4. Жалобы и потери за период\n\nОбъект, количество людей, жалобы/отзывы (ссылки на сообщения или описания), сумма потерь за период. Если жалоб нет — честно: «Жалоб за этот период не найдено».\n\n'
-    requests = [{'insertText': {'location': {'index': idx}, 'text': block4_intro}}]
-    service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
-    idx += len(block4_intro)
-    rows_t4 = 1 + len(complaints_rows) if complaints_rows else 1
-    requests = [{'insertTable': {'rows': rows_t4, 'columns': 4, 'location': {'index': idx}}}]
-    service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
-    doc = service.documents().get(documentId=doc_id).execute()
-    cells = _get_table_cell_indices(doc.get('body', {}), idx)
-    if cells:
-        cell_texts = [['Объект', 'Количество людей', 'Жалобы / отзывы', 'Сумма потерь за период']]
-        def _fmt_losses_short(val):
-            v = int(val or 0)
-            if v >= 1000:
-                return '%sк₽' % (v // 1000)
-            return '%s ₽' % v
-        for ri, row in enumerate(complaints_rows):
-            ch = str(row.get('channel', '—'))
-            losses_fmt = _fmt_losses_short(row.get('losses'))
-            n = row.get('complaints', 0) or 0
-            links_cell = (row.get('message_links') or '').strip()
-            if not links_cell:
-                base = 100 + ri * 100
-                links_cell = ', '.join('t.me/.../%s' % (base + i) for i in range(max(1, min(n, 4))))
-                if n > 4:
-                    links_cell += ', ...'
-            cell_texts.append([ch, str(n), links_cell, losses_fmt])
-        if not complaints_rows:
-            cell_texts.append(['Жалоб за этот период не найдено', '—', '—', '—'])
-        cells_by_row = sorted(cells, key=lambda x: (x[0], x[1]))
-        flat_texts = [str(t)[:500] for row in cell_texts for t in row]
-        indexed = [(cells_by_row[i][2], flat_texts[i], cells_by_row[i][0], cells_by_row[i][1]) for i in range(min(len(cells_by_row), len(flat_texts)))]
-        for si, text, ri, ci in sorted(indexed, key=lambda x: -x[0]):
-            service.documents().batchUpdate(documentId=doc_id, body={'requests': [{'insertText': {'location': {'index': si}, 'text': text}}]}).execute()
-            if ci == 0 and ri > 0 and ri <= len(complaints_rows):
-                row = complaints_rows[ri - 1]
-                ch = row.get('channel') or ''
-                url = _object_link(ch) if ch else None
-                if url:
-                    try:
-                        service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
-                            'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'link': {'url': url}}, 'fields': 'link'}
-                        }]}).execute()
-                    except Exception:
-                        pass
-            if ci == 3 and ri > 0 and ri <= len(complaints_rows) and text.strip():  # Сумма потерь — жирным
-                try:
-                    service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
-                        'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'bold': True}, 'fields': 'bold'}
-                    }]}).execute()
-                except Exception:
-                    pass
-        try:
-            service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
-                'updateTableCellStyle': {
-                    'tableCellStyle': {'backgroundColor': {'color': {'rgbColor': {'red': 0.2, 'green': 0.2, 'blue': 0.2}}}},
-                    'fields': 'backgroundColor',
-                    'tableRange': {
-                        'tableCellLocation': {'tableStartLocation': {'index': idx}, 'rowIndex': 0, 'columnIndex': 0},
-                        'rowSpan': 1,
-                        'columnSpan': 4
-                    }
-                }
-            }]}).execute()
-        except Exception:
-            pass
-    doc = service.documents().get(documentId=doc_id).execute()
-    for el in doc.get('body', {}).get('content', []):
-        if el.get('startIndex') == idx and 'table' in el:
-            idx = el.get('endIndex', idx + 1)
-            break
-
-    # Блок 5: Причины отнесения к риску (ТЗ п.6: Объект, Оценка риска, Причины полными предложениями)
-    block5_intro = '\n\n***\n\n5. Причины отнесения к риску\n\nОбъект, оценка (например 3/6 признаков риска), причины — полными предложениями с перечислением конкретных признаков.\n\n'
-    requests = [{'insertText': {'location': {'index': idx}, 'text': block5_intro}}]
-    service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
-    idx += len(block5_intro)
-    rows_t5 = 1 + len(risk_rows) if risk_rows else 1
-    requests = [{'insertTable': {'rows': rows_t5, 'columns': 3, 'location': {'index': idx}}}]
-    service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
-    doc = service.documents().get(documentId=doc_id).execute()
-    cells = _get_table_cell_indices(doc.get('body', {}), idx)
-    if cells:
-        cell_texts = [['Объект', 'Оценка риска', 'Причины']]
-        for r in risk_rows:
-            itog = (r.get('risk_analysis') or {}).get('itog', '—')
-            assessment = itog.replace(' РИСК', ' признаков риска') if itog != '—' else '—'
-            reasons = (r.get('reasons_sentence') or r.get('behavior', '—'))[:500]
-            cell_texts.append([r['obj'], assessment, reasons])
-        if not risk_rows:
-            cell_texts.append(['(нет данных)', '—', '—'])
-        cells_by_row = sorted(cells, key=lambda x: (x[0], x[1]))
-        flat_texts = [str(t)[:500] for row in cell_texts for t in row]
-        indexed = [(cells_by_row[i][2], flat_texts[i], cells_by_row[i][0], cells_by_row[i][1]) for i in range(min(len(cells_by_row), len(flat_texts)))]
         for si, text, ri, ci in sorted(indexed, key=lambda x: -x[0]):
             service.documents().batchUpdate(documentId=doc_id, body={'requests': [{'insertText': {'location': {'index': si}, 'text': text}}]}).execute()
             if ci == 0 and ri > 0 and ri <= len(risk_rows) and risk_rows[ri - 1].get('link'):
@@ -1340,19 +1304,51 @@ def _build_sources_doc_with_tables(service, doc_id, data):
                     }]}).execute()
                 except Exception:
                     pass
+            if ri == 0:
+                try:
+                    service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
+                        'updateTextStyle': {'range': {'startIndex': si, 'endIndex': si + len(text)}, 'textStyle': {'bold': True}, 'fields': 'bold'}
+                    }]}).execute()
+                except Exception:
+                    pass
+        try:
+            service.documents().batchUpdate(documentId=doc_id, body={'requests': [{
+                'updateTableCellStyle': {
+                    'tableCellStyle': {'backgroundColor': {'color': {'rgbColor': {'red': 0.9, 'green': 0.9, 'blue': 0.9}}}},
+                    'fields': 'backgroundColor',
+                    'tableRange': {
+                        'tableCellLocation': {'tableStartLocation': {'index': idx}, 'rowIndex': 0, 'columnIndex': 0},
+                        'rowSpan': 1,
+                        'columnSpan': 8
+                    }
+                }
+            }]}).execute()
+        except Exception:
+            pass
     doc = service.documents().get(documentId=doc_id).execute()
     for el in doc.get('body', {}).get('content', []):
         if el.get('startIndex') == idx and 'table' in el:
             idx = el.get('endIndex', idx + 1)
             break
 
+    # Блок 4 и 5 — только текст (данные в основной таблице выше)
+    block4_5 = (
+        '\n\n***\n\n4. Жалобы и потери за период\n\n'
+        'См. столбец «Жалобы / отзывы» в основной таблице выше. Если жалоб нет — указано «Жалоб за период не найдено».\n\n'
+        '***\n\n5. Причины отнесения к риску\n\n'
+        'См. столбцы «Признаки риска (флаги)» и «Итоговый статус» в основной таблице выше.\n\n'
+    )
+    requests = [{'insertText': {'location': {'index': idx}, 'text': block4_5}}]
+    service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+    idx += len(block4_5)
+
     # Блоки 6 и 7 текстом (ТЗ п.9: явная привязка полей к таблицам)
     block6_7 = (
         '\n\n***\n\n6. Итоги для сайта (поля интерфейса)\n\n'
-        'Источник цифр — всё из таблиц этого документа:\n'
-        '• new_scam_channels = число объектов в таблице «Найденные объекты» (рисковых за период).\n'
-        '• losses_12h = сумма по таблице «Жалобы и потери» за период.\n'
-        '• telegram_channels, courses_products = по типам в таблице «Найденные объекты».\n'
+        'Источник цифр — основная таблица (8 столбцов) в этом документе:\n'
+        '• new_scam_channels = число объектов в основной таблице (рисковых за период).\n'
+        '• losses_12h = сумма потерь за период (по жалобам и столбцу «Жалобы / отзывы»).\n'
+        '• telegram_channels, courses_products = по типам в основной таблице.\n'
         '• top3_today = каналы/объекты по сумме риска и жалоб (топ‑3).\n\n'
         'Итоговые значения для сайта:\n\n'
         'new_scam_channels = %s\nlosses_12h = %s\ntelegram_channels = %s\ncourses_products = %s\n\n'
@@ -1370,7 +1366,7 @@ def _build_sources_doc_with_tables(service, doc_id, data):
         'top3_today': data.get('top3_today', [])
     }, ensure_ascii=False, indent=2)
     block6_7 += '- «Новый скам канал» — new_scam_channels\n- «Потери за период» — losses_12h\n- «Телеграм‑каналов» — telegram_channels\n- «Курсы/продукты» — courses_products\n- «Топ‑3 за период» — top3_today\n\n***\n\n7. Чек‑лист и ограничения\n\n'
-    block6_7 += '□ У каждого объекта в таблице «Найденные объекты» есть рабочая кликабельная ссылка.\n□ Жалобы в таблице «Жалобы и потери» относятся к текущему периоду; при отсутствии сумм указано «без указания суммы» или текст жалоб.\n□ Итоговая сумма losses_12h равна сумме по таблице «Жалобы и потери».\n□ Для всех объектов в статусе «в риске» есть строка в таблице «Причины отнесения к риску» с конкретными признаками.\n□ Топ‑3 входят в список найденных объектов.\n\n'
+    block6_7 += '□ У каждого объекта в основной таблице (столбец 1) есть рабочая кликабельная ссылка.\n□ Жалобы (столбец 6) относятся к текущему периоду; при отсутствии указано «Жалоб за период не найдено».\n□ Итоговая сумма losses_12h соответствует данным по жалобам за период.\n□ Признаки риска и итоговый статус (столбцы 7–8) заполнены для всех объектов.\n□ Топ‑3 входят в список объектов основной таблицы.\n\n'
     if nothing_found:
         block6_7 += 'По заданным условиям новых объектов не найдено. Искали: TGStat, Telega, чаты с жалобами (раздел 2). Жалоб за период нет. Данные не взяты из воздуха. При недоступности источника см. блок «Ограничения» выше.\n\n'
     if report_url:
@@ -1556,9 +1552,9 @@ def update_sources_google_doc(doc_id, doc_text, structured_data=None):
         try:
             filled = _fill_existing_tables(service, doc_id, structured_data)
             if filled:
-                print('Sources doc: заполнены существующие таблицы (объекты, жалобы, риски).', file=sys.stderr)
+                print('Sources doc: заполнена основная таблица (8 столбцов).', file=sys.stderr)
             else:
-                print('Sources doc: таблицы 7/4/8 колонок не найдены — пересборка документа с нуля.', file=sys.stderr)
+                print('Sources doc: таблица 8 колонок не найдена — пересборка документа с нуля.', file=sys.stderr)
                 _build_sources_doc_with_tables(service, doc_id, structured_data)
             _update_sources_doc_intro(service, doc_id, structured_data)
             _apply_italic_to_times_in_doc(service, doc_id)
