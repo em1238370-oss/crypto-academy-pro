@@ -22,30 +22,76 @@ MAX_LINES = 50
 EMPTY_INTERVAL_MINUTES = 30  # не чаще чем раз в 30 мин писать «новых каналов не найдено»
 
 
+def _parse_time_and_msg(line):
+    """Вернуть (time_str, msg) для строки «HH:MM — текст» или «HH:MM–HH:MM — текст». time_str может быть None."""
+    s = (line or '').strip()
+    if not s or ' — ' not in s:
+        return None, (s or '')
+    left, msg = s.split(' — ', 1)
+    left = left.strip()
+    msg = msg.strip()
+    if not left:
+        return None, msg
+    if '–' in left or '-' in left:
+        part = left.replace('-', '–').split('–')[0].strip()
+        return part if ':' in part else None, msg
+    if len(left) <= 5 and ':' in left:
+        return left, msg
+    return None, msg
+
+
 def format_live_log_grouped(lines):
-    """Убрать повторы времени: подряд идущие строки с одним и тем же HH:MM — только первая с временем, остальные «    — событие»."""
-    out = []
-    prev_time = None
+    """Объединить подряд идущие строки с одинаковым текстом в одну: «HH:MM–HH:MM — сообщение». Цифры и сообщения не дублируются."""
+    if not lines:
+        return []
+    parsed = []
     for raw in lines:
         s = (raw or '').strip()
         if not s:
-            out.append('')
+            parsed.append((None, ''))
             continue
-        if ' — ' in s:
-            time_part, rest = s.split(' — ', 1)
-            time_part = time_part.strip()
-            if len(time_part) <= 5 and ':' in time_part:
-                if time_part == prev_time:
-                    out.append('    — ' + rest)
-                else:
-                    prev_time = time_part
-                    out.append(s)
+        t, msg = _parse_time_and_msg(s)
+        if t is None and parsed and parsed[-1][1]:
+            t = parsed[-1][0]
+        parsed.append((t, msg))
+    out = []
+    prev_last_time = None
+    i = 0
+    while i < len(parsed):
+        t, msg = parsed[i]
+        if msg == '':
+            out.append('')
+            i += 1
+            continue
+        first_time = t
+        last_time = t
+        j = i + 1
+        while j < len(parsed) and parsed[j][1] == msg:
+            if parsed[j][0]:
+                last_time = parsed[j][0]
+            j += 1
+        if prev_last_time and first_time:
+            try:
+                ph, pm = int(prev_last_time[:2]), int(prev_last_time[3:5]) if len(prev_last_time) >= 5 else 0
+                fh, fm = int(first_time[:2]), int(first_time[3:5]) if len(first_time) >= 5 else 0
+                if ph >= 23 and fh <= 1:
+                    out.append('——— Новый день ———')
+            except (ValueError, TypeError):
+                pass
+        line = ''
+        if first_time and last_time:
+            if first_time == last_time:
+                line = '%s — %s' % (first_time, msg)
             else:
-                prev_time = None
-                out.append(s)
+                line = '%s–%s — %s' % (first_time, last_time, msg)
+        elif first_time:
+            line = '%s — %s' % (first_time, msg)
         else:
-            prev_time = None
-            out.append(s)
+            line = msg
+        if line:
+            out.append(line)
+            prev_last_time = last_time or first_time
+        i = j
     return out
 
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
