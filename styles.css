@@ -2392,34 +2392,34 @@ body.kro-hero-scrolled .kro-floating-nav {
    padding-top: 0;
 }
 
-/* Футер главной: типографика как у Hero — акцент/тело из переменных */
+/* Футер главной: активная нижняя часть — та же атмосфера, что и Hero (премиум, ритм, акценты) */
 .kro-main .news-footer.kro-footer {
    display: block;
    width: 100%;
-   padding: var(--kro-space-5) var(--kro-space-3) 64px;
+   padding: var(--kro-space-5) var(--kro-space-3) 72px;
    margin: 0;
    text-align: center;
    font-family: var(--kro-font-body);
    position: relative;
    overflow: hidden;
-   border-top: none;
+   border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-/* Фон футера: как у Hero — градиент + мягкие блики + сетка точек */
+/* Фон футера: палитра как у главной + янтарный блик + виньетка + сетка точек */
 .kro-main .news-footer.kro-footer .kro-footer-bg {
    position: absolute;
    inset: 0;
    z-index: -1;
-   background: radial-gradient(ellipse 45% 28% at 50% 50%, rgba(245, 158, 11, 0.02) 0%, transparent 60%),
-               radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
-               linear-gradient(180deg, var(--kro-bg) 0%, rgba(18, 20, 28, 0.98) 30%, var(--kro-bg-soft) 100%);
+   background: radial-gradient(ellipse 50% 35% at 50% 30%, rgba(245, 158, 11, 0.04) 0%, transparent 55%),
+               radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.025) 0%, transparent 50%),
+               linear-gradient(180deg, var(--kro-bg) 0%, var(--kro-bg-mid) 25%, var(--kro-bg-soft) 100%);
 }
 
 .kro-main .news-footer.kro-footer .kro-footer-bg::before {
    content: '';
    position: absolute;
    inset: 0;
-   background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.15) 100%);
+   background: radial-gradient(ellipse 100% 70% at 50% 50%, transparent 35%, rgba(0, 0, 0, 0.2) 100%);
    pointer-events: none;
 }
 
@@ -2427,8 +2427,8 @@ body.kro-hero-scrolled .kro-floating-nav {
    content: '';
    position: absolute;
    inset: 0;
-   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.018) 1px, transparent 0),
-                     radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.012) 1px, transparent 0);
+   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.02) 1px, transparent 0),
+                     radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.014) 1px, transparent 0);
    background-size: 32px 32px, 24px 24px;
    pointer-events: none;
 }
@@ -2437,17 +2437,17 @@ body.kro-hero-scrolled .kro-floating-nav {
    font-family: var(--kro-font-heading);
    font-size: clamp(18px, 2.5vw, 22px);
    font-weight: 700;
-   color: rgba(255, 255, 255, 0.94);
-   margin-bottom: 10px;
+   color: var(--kro-text);
+   margin-bottom: var(--kro-space-2);
    letter-spacing: -0.01em;
 }
 
 .kro-main .news-footer.kro-footer .news-footer-crafted {
    font-family: var(--kro-font-body);
-   font-size: clamp(16px, 2vw, 19px);
+   font-size: clamp(17px, 2.1vw, 20px);
    font-weight: 500;
-   color: rgba(255, 255, 255, 0.82);
-   margin-bottom: 32px;
+   color: rgba(255, 255, 255, 0.88);
+   margin-bottom: var(--kro-space-4);
    letter-spacing: 0.02em;
    line-height: 1.55;
 }
@@ -2456,15 +2456,15 @@ body.kro-hero-scrolled .kro-floating-nav {
    display: flex;
    flex-wrap: wrap;
    justify-content: center;
-   gap: 24px;
-   margin-bottom: 28px;
+   gap: var(--kro-space-3);
+   margin-bottom: var(--kro-space-4);
 }
 
 .kro-main .news-footer.kro-footer .news-footer-link {
    font-family: var(--kro-font-body);
    font-size: clamp(14px, 1.6vw, 16px);
    font-weight: 500;
-   color: rgba(255, 255, 255, 0.72);
+   color: rgba(255, 255, 255, 0.75);
    text-decoration: none;
    letter-spacing: 0.02em;
    position: relative;
@@ -2497,10 +2497,10 @@ body.kro-hero-scrolled .kro-floating-nav {
    font-size: clamp(14px, 1.7vw, 16px);
    font-weight: 600;
    letter-spacing: 0.04em;
-   color: rgba(255, 230, 200, 0.92);
-   background-color: rgba(245, 158, 11, 0.12);
-   border: 1px solid rgba(245, 158, 11, 0.35);
-   padding: 12px 22px;
+   color: rgba(255, 230, 200, 0.95);
+   background-color: rgba(245, 158, 11, 0.14);
+   border: 1px solid rgba(245, 158, 11, 0.38);
+   padding: 14px 26px;
    border-radius: 999px;
    text-decoration: none;
    transition: border-color var(--kro-duration-hover) ease, background-color var(--kro-duration-hover) ease, color var(--kro-duration-hover) ease, transform var(--kro-duration-hover) ease, box-shadow var(--kro-duration-hover) ease;
@@ -2508,11 +2508,11 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-main .news-footer.kro-footer .news-footer-cta:hover {
-   border-color: rgba(245, 158, 11, 0.5);
-   background-color: rgba(245, 158, 11, 0.2);
+   border-color: rgba(245, 158, 11, 0.55);
+   background-color: rgba(245, 158, 11, 0.24);
    color: rgba(255, 248, 235, 1);
-   transform: translateY(-2px) scale(1.03);
-   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 24px rgba(245, 158, 11, 0.2);
+   transform: translateY(-3px) scale(1.05);
+   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.3), 0 0 32px rgba(245, 158, 11, 0.22);
 }
 
 .kro-main .news-footer.kro-footer .news-footer-cta:active {
@@ -2526,21 +2526,20 @@ body.kro-hero-scrolled .kro-floating-nav {
    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
 }
 
-/* Нижняя полоса футера: тот же стиль, шрифт, цвет — влияние дизайна до самого конца */
+/* Нижняя полоса футера: ритм отступов, разделитель, копирайт до самого конца */
 .kro-main .news-footer.kro-footer .kro-footer-bottom {
-   margin-top: 40px;
-   padding-top: 24px;
-   border-top: 1px solid rgba(255, 255, 255, 0.06);
+   margin-top: var(--kro-space-5);
+   padding-top: var(--kro-space-3);
+   border-top: 1px solid rgba(255, 255, 255, 0.08);
    text-align: center;
 }
 
-/* Копирайт: моно — нежнее */
 .kro-main .news-footer.kro-footer .kro-footer-legal {
    font-family: var(--kro-font-mono);
    font-size: 12px;
    font-weight: 400;
-   color: rgba(255, 255, 255, 0.42);
-   letter-spacing: 0.1em;
+   color: rgba(255, 255, 255, 0.48);
+   letter-spacing: 0.12em;
    margin: 0;
    line-height: 1.5;
 }

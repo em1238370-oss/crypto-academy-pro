@@ -158,36 +158,36 @@ body {
 
 /* Футер в стиле главной: тот же фон с точками, градиент, цвет #0c0f14, шрифт Manrope, эффекты */
 .news-footer.kro-footer {
-    --kro-bg: #0c0f14;
-    --kro-bg-soft: #151922;
-    padding: 56px 24px 64px !important;
+    --kro-bg: #0a0c10;
+    --kro-bg-mid: #0e1116;
+    --kro-bg-soft: #13161c;
+    padding: 48px 24px 72px !important;
     margin-top: 180px !important;
     text-align: center;
     font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     position: relative;
     overflow: hidden;
-    border-top: none !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
 }
 
 .news-footer.kro-footer::before {
     display: none !important;
 }
 
-/* Фон футера: как на главной — градиент + блик + сетка точек */
 .news-footer.kro-footer .kro-footer-bg {
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: radial-gradient(ellipse 45% 28% at 50% 50%, rgba(245, 158, 11, 0.02) 0%, transparent 60%),
-                radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
-                linear-gradient(180deg, var(--kro-bg) 0%, rgba(18, 20, 28, 0.98) 30%, var(--kro-bg-soft) 100%);
+    background: radial-gradient(ellipse 50% 35% at 50% 30%, rgba(245, 158, 11, 0.04) 0%, transparent 55%),
+                radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.025) 0%, transparent 50%),
+                linear-gradient(180deg, #0a0c10 0%, #0e1116 25%, #13161c 100%);
 }
 
 .news-footer.kro-footer .kro-footer-bg::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.15) 100%);
+    background: radial-gradient(ellipse 100% 70% at 50% 50%, transparent 35%, rgba(0, 0, 0, 0.2) 100%);
     pointer-events: none;
 }
 
@@ -195,8 +195,8 @@ body {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.018) 1px, transparent 0),
-                      radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.012) 1px, transparent 0);
+    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.02) 1px, transparent 0),
+                      radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.014) 1px, transparent 0);
     background-size: 32px 32px, 24px 24px;
     pointer-events: none;
 }
@@ -205,14 +205,14 @@ body {
     font-size: clamp(18px, 2.5vw, 22px);
     font-weight: 700;
     color: rgba(255, 255, 255, 0.94) !important;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
     letter-spacing: -0.01em;
 }
 
 .news-footer.kro-footer .news-footer-crafted {
-    font-size: clamp(16px, 2vw, 19px);
-    color: rgba(255, 255, 255, 0.82) !important;
-    margin-bottom: 28px;
+    font-size: clamp(17px, 2.1vw, 20px);
+    color: rgba(255, 255, 255, 0.88) !important;
+    margin-bottom: 32px;
     font-weight: 500;
     letter-spacing: 0.02em;
     line-height: 1.55;
@@ -223,19 +223,36 @@ body {
     flex-wrap: wrap;
     justify-content: center;
     gap: 24px;
-    margin-bottom: 24px;
+    margin-bottom: 32px;
 }
 
 .news-footer.kro-footer .news-footer-link {
     font-size: clamp(14px, 1.6vw, 16px);
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.72) !important;
+    color: rgba(255, 255, 255, 0.75) !important;
+    text-decoration: none;
+    position: relative;
     transition: color 0.25s ease, transform 0.25s ease;
 }
 
+.news-footer.kro-footer .news-footer-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 0;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.5);
+    transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .news-footer.kro-footer .news-footer-link:hover {
-    color: rgba(255, 255, 255, 0.95) !important;
-    transform: translateY(-1px);
+    color: rgba(255, 255, 255, 0.98) !important;
+    transform: translateY(-2px);
+}
+
+.news-footer.kro-footer .news-footer-link:hover::after {
+    width: 100%;
 }
 
 .news-footer.kro-footer .news-footer-cta {
@@ -243,26 +260,33 @@ body {
     font-size: clamp(14px, 1.7vw, 16px);
     font-weight: 600;
     letter-spacing: 0.04em;
-    color: rgba(255, 230, 200, 0.92);
-    background-color: rgba(245, 158, 11, 0.12);
-    border: 1px solid rgba(245, 158, 11, 0.35);
-    padding: 12px 22px;
+    color: rgba(255, 230, 200, 0.95);
+    background-color: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.38);
+    padding: 14px 26px;
     border-radius: 999px;
     text-decoration: none;
-    transition: border-color 0.25s ease, background-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+    transition: border-color 0.25s ease, background-color 0.25s ease, color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+    box-shadow: 0 0 0 rgba(245, 158, 11, 0);
 }
 
 .news-footer.kro-footer .news-footer-cta:hover {
-    border-color: rgba(245, 158, 11, 0.45);
-    background-color: rgba(245, 158, 11, 0.18);
-    color: rgba(255, 240, 220, 0.98);
-    transform: translateY(-2px);
+    border-color: rgba(245, 158, 11, 0.55);
+    background-color: rgba(245, 158, 11, 0.24);
+    color: rgba(255, 248, 235, 1);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.3), 0 0 32px rgba(245, 158, 11, 0.22);
+}
+
+.news-footer.kro-footer .news-footer-cta:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
 }
 
 .news-footer.kro-footer .kro-footer-bottom {
-    margin-top: 40px;
+    margin-top: 48px;
     padding-top: 24px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     text-align: center;
 }
 
@@ -270,17 +294,16 @@ body {
     font-family: ui-monospace, 'SF Mono', 'Fira Code', monospace;
     font-size: 12px;
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.42);
-    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.48);
+    letter-spacing: 0.12em;
     margin: 0;
     line-height: 1.5;
 }
 
-/* Scroll-in и каскад появления футера (как на главной) */
 .news-footer.kro-scroll-in {
     opacity: 0;
-    transform: translateY(40px) scale(0.98);
-    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateY(52px) scale(0.98);
+    transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1), transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .news-footer.kro-scroll-in-visible {
@@ -290,14 +313,14 @@ body {
 
 .news-footer.kro-scroll-in .kro-footer-reveal {
     opacity: 0;
-    transform: translateY(18px);
-    transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateY(28px);
+    transition: opacity 0.58s cubic-bezier(0.22, 1, 0.36, 1), transform 0.58s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0s; }
-.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
-.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
-.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 0.3s; }
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.15s; }
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.3s; }
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 0.45s; }
 
 @media (prefers-reduced-motion: reduce) {
     .news-footer.kro-scroll-in,
