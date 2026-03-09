@@ -562,9 +562,9 @@ body.kro-hero-scrolled .kro-floating-nav {
    margin: 0;
 }
 
-/* Фишка 1: Живой счётчик — карточки метрик, фон с глубиной (отдельный шрифт как на sitelove) */
+/* Фишка 1: тот же фон и типографика, что на главной (Hero) */
 .kro-feature1 {
-   font-family: 'Plus Jakarta Sans', sans-serif;
+   font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    padding: 100px 24px 120px;
    text-align: center;
    position: relative;
@@ -575,22 +575,19 @@ body.kro-hero-scrolled .kro-floating-nav {
    position: absolute;
    inset: 0;
    z-index: -1;
-   /* Другой тон относительно hero: мягкий красный «денежный» градиент сзади карточек, без точек */
-   background: radial-gradient(ellipse 80% 70% at 50% 45%, rgba(100, 45, 45, 0.22) 0%, transparent 55%),
-               radial-gradient(ellipse 70% 50% at 50% 35%, rgba(72, 48, 42, 0.18) 0%, transparent 55%),
-               radial-gradient(ellipse 100% 80% at 50% 50%, rgba(50, 30, 32, 0.15) 0%, transparent 65%),
-               linear-gradient(180deg, #140e0f 0%, #110d0e 35%, #0e0b0c 100%);
+   background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+               linear-gradient(180deg, var(--kro-bg) 0%, rgba(18, 20, 28, 0.98) 45%, var(--kro-bg-soft) 100%);
 }
 
-/* Дашборд: LIVE + большая цифра + 3 карточки (тёплый контрастный фон, без сияния) */
+/* Дашборд: LIVE + большая цифра + 3 карточки (нейтральный тёмный, как на главной) */
 .kro-feature1-dashboard {
    max-width: calc(680px + 4cm);
    margin: 0 auto 48px;
    padding: 36px 28px 40px;
    border-radius: 24px;
-   background: linear-gradient(165deg, rgba(32, 26, 28, 0.95) 0%, rgba(24, 20, 22, 0.98) 100%);
-   border: 1px solid rgba(184, 74, 74, 0.2);
-   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+   background: linear-gradient(165deg, rgba(20, 22, 28, 0.95) 0%, rgba(15, 18, 24, 0.98) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.06);
+   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .kro-feature1.kro-reveal .kro-feature1-dashboard {
@@ -639,18 +636,18 @@ body.kro-hero-scrolled .kro-floating-nav {
    letter-spacing: 0.1em;
    text-transform: uppercase;
    display: inline-block;
-   border: 1px solid rgba(184, 74, 74, 0.35);
+   border: 1px solid rgba(245, 158, 11, 0.3);
    border-radius: 999px;
    padding: 8px 18px;
    margin-bottom: 28px;
-   background: rgba(184, 74, 74, 0.08);
+   background: rgba(245, 158, 11, 0.06);
    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.25s ease;
 }
 .kro-feature1-date:hover {
    transform: scale(1.02);
    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-   border-color: rgba(184, 74, 74, 0.5);
+   border-color: rgba(245, 158, 11, 0.45);
 }
 
 .kro-feature1-hero-number {
@@ -716,8 +713,8 @@ body.kro-hero-scrolled .kro-floating-nav {
    right: 12px;
    padding: 4px 10px;
    font-size: 10px;
-   background: rgba(184, 74, 74, 0.2);
-   border-color: rgba(184, 74, 74, 0.4);
+   background: rgba(245, 158, 11, 0.15);
+   border-color: rgba(245, 158, 11, 0.35);
 }
 
 .kro-f1-loh-card {
@@ -863,17 +860,17 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-feature1 .kro-card {
-   border-color: var(--kro-card-border);
-   background: var(--kro-card-bg);
-   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   border-color: rgba(255, 255, 255, 0.06);
+   background: rgba(18, 20, 28, 0.9);
+   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.04);
    transition: border-color 0.35s ease, background 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease;
 }
 
 .kro-feature1-stat.kro-card:hover,
 .kro-feature1-top3 .kro-card:hover {
-   border-color: var(--kro-card-border-accent);
-   background: rgba(34, 30, 30, 0.94);
-   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+   border-color: rgba(255, 255, 255, 0.12);
+   background: rgba(22, 24, 30, 0.94);
+   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.06);
    transform: translateY(-4px);
    transition-duration: 0.35s;
 }
@@ -927,20 +924,20 @@ body.kro-hero-scrolled .kro-floating-nav {
    border-color: rgba(255, 255, 255, 0.14);
 }
 
-/* Блок 1: Шок-цифры — тёплый акцент, без сияния */
+/* Блок 1: Шок-цифры — нейтральный тёмный, как на главной */
 .kro-f1-block.kro-f1-shock {
-   background: linear-gradient(180deg, rgba(32, 26, 28, 0.95) 0%, rgba(26, 22, 24, 0.98) 100%);
-   border: 1px solid var(--kro-card-border-accent);
+   background: linear-gradient(180deg, rgba(20, 22, 28, 0.95) 0%, rgba(15, 18, 24, 0.98) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.06);
    border-radius: 16px;
    padding: 28px;
    margin-bottom: 32px;
-   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
    transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.25s ease;
 }
 .kro-f1-block.kro-f1-shock:hover {
    transform: translateY(-2px);
    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.07);
-   border-color: rgba(184, 74, 74, 0.28);
+   border-color: rgba(255, 255, 255, 0.12);
 }
 
 .kro-f1-shock-heading {
@@ -961,7 +958,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-f1-shock-total {
    font-size: clamp(36px, 5.5vw, 52px);
    font-weight: 800;
-   color: var(--kro-accent-muted);
+   color: rgba(255, 255, 255, 0.92);
    line-height: 1.1;
    margin: 0;
    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
@@ -988,18 +985,18 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-f1-loh-card {
-   background: linear-gradient(180deg, rgba(30, 26, 28, 0.95) 0%, rgba(24, 22, 24, 0.98) 100%);
-   border: 1px solid var(--kro-card-border-accent);
+   background: linear-gradient(180deg, rgba(20, 22, 28, 0.95) 0%, rgba(15, 18, 24, 0.98) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.06);
    border-radius: 16px;
    padding: 24px;
    text-align: left;
-   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.04);
    transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.35s ease, border-color 0.25s ease;
 }
 .kro-f1-loh-card:hover {
    transform: translateY(-5px) scale(1.02);
-   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.07);
-   border-color: rgba(184, 74, 74, 0.35);
+   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   border-color: rgba(255, 255, 255, 0.12);
    transition-duration: 0.35s;
 }
 
@@ -1014,7 +1011,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-f1-loh-name {
    font-size: clamp(14px, 1.6vw, 16px);
    font-weight: 700;
-   color: var(--kro-accent-muted);
+   color: rgba(255, 255, 255, 0.9);
    text-transform: uppercase;
    letter-spacing: 0.03em;
    margin: 0 0 8px;
@@ -1170,14 +1167,14 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-f1-choice-red {
-   background: linear-gradient(180deg, rgba(184, 74, 74, 0.22) 0%, rgba(184, 74, 74, 0.12) 100%);
-   border: 1px solid rgba(184, 74, 74, 0.5);
-   color: rgba(255, 255, 255, 0.96);
+   background: rgba(255, 255, 255, 0.05);
+   border: 1px solid rgba(255, 255, 255, 0.12);
+   color: rgba(255, 255, 255, 0.9);
 }
 .kro-f1-choice-red:hover {
-   background: linear-gradient(180deg, rgba(184, 74, 74, 0.3) 0%, rgba(184, 74, 74, 0.18) 100%);
-   border-color: rgba(184, 74, 74, 0.65);
-   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+   background: rgba(255, 255, 255, 0.08);
+   border-color: rgba(255, 255, 255, 0.2);
+   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .kro-f1-choice-green {
