@@ -6,7 +6,7 @@
 
 **Title*** (Required):
 ```
-Crypto Academy Pro API
+Check your crypto API
 ```
 (Or: "Bot Subscription API" or "Payment Integration API")
 
@@ -60,7 +60,7 @@ Crypto Academy Pro API
 ## 📋 Complete Form Summary:
 
 ```
-Title: Crypto Academy Pro API
+Title: Check your crypto API
 Whitelisted IP: 127.0.0.1 (leave as is)
 Display header: OFF (or ON if you want)
 Underpaid cover: (leave empty)
@@ -73,7 +73,7 @@ Callback format: JSON ✅ (select JSON!)
 ## ✅ Step-by-Step:
 
 1. **Title:**
-   - Enter: `Crypto Academy Pro API`
+   - Enter: `Check your crypto API`
 
 2. **Whitelisted IP:**
    - Leave `127.0.0.1` as is (for testing)
@@ -119,7 +119,7 @@ You'll get:
 
 ## 📝 Quick Checklist:
 
-- [ ] Title: `Crypto Academy Pro API`
+- [ ] Title: `Check your crypto API`
 - [ ] Whitelisted IP: `127.0.0.1` (leave as is)
 - [ ] Paid notifications: **ON** ✅
 - [ ] Callback format: **JSON** ✅ (IMPORTANT!)

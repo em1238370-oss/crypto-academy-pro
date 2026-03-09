@@ -62,7 +62,7 @@ Online cryptocurrency school with interactive learning tools. Platform helps use
 5. Check character counter - should be 248-250
 
 ### Step 2: Create and Upload Logo (10 minutes)
-1. Create logo with text "CRYPTO" or "Crypto Academy Pro"
+1. Create logo with text "CRYPTO" or "Check your crypto"
 2. Dimensions: 600x200px or 900x300px (3:1 ratio)
 3. Format: PNG or JPEG
 4. File size: up to 2 MB

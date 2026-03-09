@@ -1,4 +1,4 @@
-# 📝 Заметки по проекту Crypto Academy Pro
+# 📝 Заметки по проекту Check your crypto
 
 ## 🗓️ История изменений
 

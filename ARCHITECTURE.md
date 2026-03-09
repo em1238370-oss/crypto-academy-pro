@@ -2,7 +2,7 @@
 
 ## 🏗️ Architecture Overview
 
-Crypto Academy Pro is a full-stack web application with the following architecture:
+Check your crypto is a full-stack web application with the following architecture:
 
 ```
 ┌─────────────────────────────────────────┐

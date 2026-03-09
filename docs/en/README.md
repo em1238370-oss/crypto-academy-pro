@@ -2,7 +2,7 @@
 
 ## 📚 Documentation Structure
 
-This folder contains complete project documentation for Crypto Academy Pro in English.
+This folder contains documentation for **Check your crypto** («Крипта без розовых очков») in English.
 
 ### Document List:
 

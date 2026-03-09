@@ -1,38 +1,14 @@
-# Главный сайт - Crypto Academy Pro
+# Главная страница — Check your crypto
 
-Это главный сайт проекта. Здесь находится основной функционал с ChatGPT интеграцией и оплатой.
+Главная сайта **Check your crypto** («Крипта без розовых очков»): лендинг, Hero, блок с LIVE-цифрами, проверка канала, топ скам-каналов, форма «Сообщить о разводе».
 
-## Структура проекта
+## Структура
 
 ```
-crypto-website/
-├── backend/              # Backend сервер (Node.js)
-│   ├── server.js         # Главный файл сервера
-│   ├── .env              # Конфигурация (API ключи)
-│   └── package.json      # Зависимости
-├── scripts/
-│   └── chatbot.js        # Логика чата
-├── styles.css            # Стили главного сайта
-├── index.html            # Главная страница
-└── assets/               # Изображения и ресурсы
+├── index.html            # Главная
+├── styles.css            # Стили
+├── scripts/              # Чат, скролл
+└── backend/              # API (KRO, live-counter)
 ```
 
-## Запуск
-
-### Backend:
-```bash
-cd backend
-npm run dev
-```
-
-### Frontend:
-```bash
-python3 -m http.server 5500
-```
-
-Сайт доступен на: `http://localhost:5500`
-
-## Примечание
-
-Это главный сайт. Новые сайты будут создаваться в отдельных папках и прикрепляться к этому главному сайту.
-
+Подсайты (News, Risk, Basics, Coach) — в `sub-sites/`.

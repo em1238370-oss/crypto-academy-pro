@@ -6,7 +6,7 @@
 
 **Company name***:
 ```
-Crypto Academy Pro
+Check your crypto
 ```
 (Already filled - leave as is)
 
@@ -71,7 +71,7 @@ Select: Any date from 2020-2024
 ## 📋 Complete Form Data Summary:
 
 ```
-Company name: Crypto Academy Pro
+Company name: Check your crypto
 Phone: +48 123 456 789
 Legal type: Limited Liability Company (or LLC)
 Company code: 1234567890

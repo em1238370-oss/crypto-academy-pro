@@ -1,7 +1,7 @@
 # Payment System Documentation
 
 ## Overview
-Crypto Academy Pro supports two payment methods:
+Check your crypto supports two payment methods:
 1. **Cryptocurrency payments** (USDT) via CryptoCloud
 2. **Card payments** (Visa/Mastercard) via CloudPayments
 

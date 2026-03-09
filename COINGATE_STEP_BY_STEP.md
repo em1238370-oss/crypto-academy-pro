@@ -18,7 +18,7 @@ After clicking "Business Account", you'll see a form. Fill it:
 1. **Email:** Your email address
 2. **Password:** Strong password (8+ characters)
 3. **Company Name:** 
-   - Use: "Crypto Academy Pro" or "CRYPTO" or your business name
+   - Use: "Check your crypto" or "CRYPTO" or your business name
    - If you don't have a company, use your name + "Education Platform"
 4. **Website:** 
    - Your website URL (e.g., your domain or localhost for testing)

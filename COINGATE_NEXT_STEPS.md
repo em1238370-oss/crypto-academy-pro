@@ -25,8 +25,8 @@ After clicking "Create new business", you'll see a form. Fill it:
 
 ### Required Information:
 1. **Business Name:**
-   - Use: "Crypto Academy Pro" or "CRYPTO" or your business name
-   - Example: "Crypto Academy Pro"
+   - Use: "Check your crypto" or "CRYPTO" or your business name
+   - Example: "Check your crypto"
 
 2. **Website:**
    - Your website URL

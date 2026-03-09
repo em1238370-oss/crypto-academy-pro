@@ -1869,9 +1869,12 @@ def main():
     # 5b) Обновить документ «Источники и данные» — текст собираем здесь (всё, что нашла сеть)
     now_msk_dt = _msk_now()
     date_str = now_msk_dt.strftime('%d.%m.%Y')
-    # Один период на день по ТЗ: 00:00–23:55 (MSK)
-    period_start = date_str + ' 00:00'
-    period_end = date_str + ' 23:55'
+    if now_msk_dt.hour < 12:
+        period_start = date_str + ' 00:00'
+        period_end = date_str + ' 11:55'
+    else:
+        period_start = date_str + ' 12:00'
+        period_end = date_str + ' 23:55'
     sources_doc_id = os.environ.get('KRO_SOURCES_DOC_ID', '').strip()
     if sources_doc_id:
         print('Обновляю Google Doc «Источники и данные»...', flush=True)
