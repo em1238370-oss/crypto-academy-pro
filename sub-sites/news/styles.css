@@ -230,7 +230,7 @@ body::after {
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(245, 158, 11, 0.04) 0%, transparent 55%),
+    background: radial-gradient(ellipse 45% 28% at 50% 50%, rgba(245, 158, 11, 0.02) 0%, transparent 60%),
                 radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
                 linear-gradient(180deg, var(--kro-bg) 0%, rgba(18, 20, 28, 0.98) 30%, var(--kro-bg-soft) 100%);
 }
