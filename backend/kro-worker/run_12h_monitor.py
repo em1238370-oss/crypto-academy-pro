@@ -91,27 +91,38 @@ def _append_live_log_events(events):
     _save_live_log(lines)
 
 
-# --- Критерии релевантности: только каналы про крипто и/или сигналы (исключаем VPN, gossip, книги и т.п.) ---
+# --- Критерии релевантности: только каналы с торговыми сигналами (покупать вверх/вниз, лонг/шорт) ---
 STRONG_CRYPTO_SIGNAL = (
     'сигнал', 'сигналы', 'крипто', 'crypto', 'bitcoin', 'btc', 'eth',
     'трейдинг', 'trading', 'криптовалюта', 'фьючерс', 'биржа', 'trade', 'pump', 'скам'
+)
+# Каналы, где именно говорят покупать/продавать, вверх/вниз, лонг/шорт — приоритет для отбора
+SIGNAL_DIRECTION = (
+    'лонг', 'шорт', 'long', 'short', 'покупка', 'продажа', 'buy', 'sell',
+    'вход', 'вверх', 'вниз', 'лонги', 'шорты', 'сигнал', 'сигналы'
 )
 # Если в названии/username есть это и нет ни одного STRONG — канал отсекаем (не про крипто/сигналы)
 NOT_CRYPTO_SIGNAL = (
     'vpn', 'gossip', 'gossipclub', 'bookss', 'books hub', 'nairobigossip',
     'ashesvpn', 'redblacknews', 'memes_news', 'express', 'pharonic', 'fusion', 'money_networks'
 )
+
+
 def _is_crypto_signal_channel(title, username):
-    """Проверка: канал явно про крипту или сигналы; отсекаем VPN, gossip, книги, общие новости без крипто."""
+    """Проверка: канал явно про крипту и/или торговые сигналы (покупать вверх/вниз, лонг/шорт).
+    Отсекаем VPN, gossip, книги, общие новости без крипто и без формулировок про сигналы."""
     text = ((title or '') + ' ' + (username or '')).lower()
     has_strong = any(kw in text for kw in STRONG_CRYPTO_SIGNAL)
     if not has_strong:
         return False
-    # Если в названии есть типично не-крипто темы — оставляем только при явном крипто/сигнале в названии
-    explicit_crypto = ('крипто', 'crypto', 'bitcoin', 'btc', 'eth', 'сигнал', 'криптовалюта')
-    has_explicit = any(e in text for e in explicit_crypto)
-    if any(n in text for n in NOT_CRYPTO_SIGNAL) and not has_explicit:
+    # Только каналы, где именно сигналы: лонг/шорт, покупка/продажа, вверх/вниз или слово «сигнал/сигналы»
+    has_signal_direction = any(kw in text for kw in SIGNAL_DIRECTION)
+    if not has_signal_direction:
         return False
+    if any(n in text for n in NOT_CRYPTO_SIGNAL):
+        explicit_crypto = ('крипто', 'crypto', 'bitcoin', 'btc', 'eth', 'сигнал', 'криптовалюта')
+        if not any(e in text for e in explicit_crypto):
+            return False
     return True
 
 # --- TGStat search: именно каналы с крипто-сигналами ---
@@ -785,6 +796,8 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
 
     for row in (telega_channels or [])[:50]:
         ch = row.get('channel', '—')
+        if not _is_crypto_signal_channel((row.get('title') or '').strip(), ch):
+            continue
         telega_ch_set.add(ch)
         if ch in tgstat_channels:
             continue
@@ -1144,6 +1157,34 @@ def _get_table_cell_ranges(body, table_el):
     return nrows, ncols, out
 
 
+def _doc_text_preview(doc, max_chars=4000):
+    """Собрать начало текста документа из параграфов (для проверки формата)."""
+    parts = []
+    n = 0
+    for el in doc.get('body', {}).get('content', []):
+        if n >= max_chars:
+            break
+        if 'paragraph' not in el:
+            continue
+        for pe in el.get('paragraph', {}).get('elements', []):
+            text = (pe.get('textRun') or {}).get('content', '')
+            parts.append(text)
+            n += len(text)
+            if n >= max_chars:
+                break
+    return ''.join(parts)[:max_chars]
+
+
+def _doc_looks_like_spec(doc):
+    """True, если документ в формате спецификации (Sources and Data из TXT), а не от Python."""
+    preview = _doc_text_preview(doc)
+    return (
+        'Sources and Data' in preview
+        or '0.4 Итоги для сайта' in preview
+        or '3.1. Столбцы (8 штук)' in preview
+    )
+
+
 def _discover_tables_in_doc(doc):
     """Найти в документе все таблицы. Возвращает список dict: startIndex, rows, cols, cells [(ri,ci,start,end)]."""
     result = []
@@ -1199,13 +1240,40 @@ def _fill_existing_tables(service, doc_id, data):
     replacements.sort(key=lambda x: -x[0])
     batch = []
     for si, ei, text in replacements:
-        if ei > si:
-            batch.append({'deleteContentRange': {'range': {'startIndex': si, 'endIndex': ei}}})
+        # В пустых ячейках таблицы deleteContentRange может давать 400; вставляем текст без удаления
         batch.append({'insertText': {'location': {'index': si}, 'text': text}})
     try:
         service.documents().batchUpdate(documentId=doc_id, body={'requests': batch}).execute()
-    except Exception:
+    except Exception as e:
+        print('Sources doc: ошибка заполнения ячеек: %s' % e, file=sys.stderr)
         return False
+
+    # Сделать кликабельными ссылки в первом столбце (Объект/ссылка): по клику переход в канал Telegram
+    try:
+        doc = service.documents().get(documentId=doc_id).execute()
+        tables = _discover_tables_in_doc(doc)
+        t8 = next((t for t in tables if t['cols'] == 8), None)
+        if t8 and t8['cells'] and risk_rows:
+            link_requests = []
+            for (ri, ci, si, ei) in t8['cells']:
+                if ci != 0 or ri < 1 or ri > len(risk_rows):
+                    continue
+                link = (risk_rows[ri - 1].get('link') or '').strip()
+                if not link or 't.me/' not in link:
+                    continue
+                if not link.startswith('http'):
+                    link = 'https://t.me/' + link.replace('https://t.me/', '').replace('t.me/', '').lstrip('/')
+                link_requests.append({'updateTextStyle': {
+                    'range': {'startIndex': si, 'endIndex': ei},
+                    'textStyle': {'link': {'url': link}},
+                    'fields': 'link',
+                }})
+            if link_requests:
+                service.documents().batchUpdate(documentId=doc_id, body={'requests': link_requests}).execute()
+                print('Sources doc: в столбце «Объект/ссылка» добавлены кликабельные ссылки на каналы.', file=sys.stderr)
+    except Exception as e:
+        print('Sources doc: кликабельные ссылки (не критично): %s' % e, file=sys.stderr)
+
     return True
 
 
@@ -1537,8 +1605,15 @@ def update_sources_google_doc(doc_id, doc_text, structured_data=None):
             if filled:
                 print('Sources doc: заполнена основная таблица (8 столбцов).', file=sys.stderr)
             else:
-                print('Sources doc: таблица 8 колонок не найдена — пересборка документа с нуля.', file=sys.stderr)
-                _build_sources_doc_with_tables(service, doc_id, structured_data)
+                doc = service.documents().get(documentId=doc_id).execute()
+                if _doc_looks_like_spec(doc):
+                    print('Sources doc: документ в формате спецификации; таблица 8 колонок не найдена.', file=sys.stderr)
+                    print('  Добавьте в раздел 3 таблицу «Объекты и риск»: 8 столбцов, 1 строка заголовков + 20 строк.', file=sys.stderr)
+                    print('  Заголовки: Объект / ссылка, Тип, Источник, Краткое описание, VIP / деньги, Жалобы / отзывы, Признаки риска (флаги), Итоговый статус', file=sys.stderr)
+                    print('  Затем снова запустите: python3 update_sources_doc_once.py', file=sys.stderr)
+                else:
+                    print('Sources doc: таблица 8 колонок не найдена — пересборка документа с нуля.', file=sys.stderr)
+                    _build_sources_doc_with_tables(service, doc_id, structured_data)
             _update_sources_doc_intro(service, doc_id, structured_data)
             _apply_italic_to_times_in_doc(service, doc_id)
             url = 'https://docs.google.com/document/d/' + doc_id + '/edit'
