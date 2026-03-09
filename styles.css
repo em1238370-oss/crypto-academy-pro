@@ -631,20 +631,38 @@ body.kro-hero-scrolled .kro-floating-nav {
    transform: translateY(0);
 }
 
-/* Scroll-in: появление при входе во вьюпорт (0.5–0.8 s на блок) */
+/* Scroll-in: появление при входе во вьюпорт (0.5–0.8 s, medvedevart-style fade-up + лёгкий scale) */
 .kro-scroll-in {
    opacity: 0;
-   transform: translateY(32px);
-   transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+   transform: translateY(40px) scale(0.98);
+   transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .kro-scroll-in.kro-scroll-in-visible {
    opacity: 1;
-   transform: translateY(0);
+   transform: translateY(0) scale(1);
 }
+
+/* Футер: каскадное появление дочерних элементов при scroll-in (stagger 0.1 s) */
+.news-footer.kro-scroll-in .kro-footer-reveal {
+   opacity: 0;
+   transform: translateY(18px);
+   transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0s; }
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.3s; }
 
 @media (prefers-reduced-motion: reduce) {
    .kro-scroll-in {
+       opacity: 1;
+       transform: none;
+       transition: none;
+   }
+   .news-footer.kro-scroll-in .kro-footer-reveal,
+   .news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(n) {
        opacity: 1;
        transform: none;
        transition: none;
@@ -817,6 +835,22 @@ body.kro-hero-scrolled .kro-floating-nav {
    background: rgba(255, 255, 255, 0.08);
    border: 1px solid rgba(255, 255, 255, 0.15);
    border-radius: 999px;
+}
+
+/* Мягкая пульсация LIVE-бейджа (оживляет блок без отвлечения) */
+.kro-f1-badges-row .kro-f1-badge:first-child {
+   animation: kro-live-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes kro-live-pulse {
+   0%, 100% { opacity: 1; }
+   50% { opacity: 0.88; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .kro-f1-badges-row .kro-f1-badge:first-child {
+      animation: none;
+   }
 }
 
 .kro-f1-badge-sep {
@@ -2237,11 +2271,12 @@ body.kro-hero-scrolled .kro-floating-nav {
    color: rgba(255, 255, 255, 0.7);
    text-decoration: none;
    letter-spacing: 0.02em;
-   transition: color 0.2s ease;
+   transition: color 0.25s ease, transform 0.25s ease;
 }
 
 .kro-main .news-footer.kro-footer .news-footer-link:hover {
    color: rgba(255, 255, 255, 0.95);
+   transform: translateY(-1px);
 }
 
 .kro-main .news-footer.kro-footer .news-footer-cta {
@@ -2255,13 +2290,14 @@ body.kro-hero-scrolled .kro-floating-nav {
    padding: 12px 22px;
    border-radius: 999px;
    text-decoration: none;
-   transition: border-color 0.25s ease, background-color 0.25s ease, color 0.25s ease;
+   transition: border-color 0.25s ease, background-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
 }
 
 .kro-main .news-footer.kro-footer .news-footer-cta:hover {
    border-color: rgba(245, 158, 11, 0.45);
    background-color: rgba(245, 158, 11, 0.18);
    color: rgba(255, 240, 220, 0.98);
+   transform: translateY(-2px);
 }
 
 /* На главной скрыт чат-бот (Crypto AI Assistant) */

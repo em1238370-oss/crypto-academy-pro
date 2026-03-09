@@ -243,14 +243,14 @@
        <!-- Якорь для кнопки «Проверь своего гуру» (блок чекеров будет ниже) -->
        <section class="kro-checkers-anchor" id="checkers" aria-hidden="true"></section>
        
-       <footer class="news-footer kro-footer kro-scroll-in">
-           <p class="news-footer-text">Крипта без розовых очков</p>
-           <p class="news-footer-crafted">С уважением к твоему времени.</p>
-           <div class="news-footer-links">
+       <footer class="news-footer kro-footer kro-scroll-in" id="kro-footer">
+           <p class="news-footer-text kro-footer-reveal">Крипта без розовых очков</p>
+           <p class="news-footer-crafted kro-footer-reveal">С уважением к твоему времени.</p>
+           <div class="news-footer-links kro-footer-reveal">
                <a href="#top" class="news-footer-link">Наверх</a>
                <a href="#checkers" class="news-footer-link">Проверь гуру</a>
            </div>
-           <a href="#checkers" class="news-footer-cta">Проверь своего гуру</a>
+           <a href="#checkers" class="news-footer-cta kro-footer-reveal">Проверь своего гуру</a>
        </footer>
        </div>
    </div>
@@ -519,12 +519,56 @@
                if (/блок/i.test(s)) return 'kro-status-block';
                return 'kro-status-active';
            }
+           function countUp(el, target, durationMs, formatter) {
+               if (!el || typeof target !== 'number' || isNaN(target)) return;
+               var start = 0;
+               var startTime = null;
+               function formatterNum(n) { return formatter ? formatter(Math.round(n)) : String(Math.round(n)); }
+               function step(timestamp) {
+                   if (!startTime) startTime = timestamp;
+                   var elapsed = timestamp - startTime;
+                   var progress = Math.min(elapsed / durationMs, 1);
+                   var easeOut = 1 - Math.pow(1 - progress, 2);
+                   var current = start + (target - start) * easeOut;
+                   el.textContent = formatterNum(current);
+                   if (progress < 1) requestAnimationFrame(step);
+                   else el.textContent = formatterNum(target);
+               }
+               requestAnimationFrame(step);
+           }
+           function tryRunCountUps() {
+               var section = document.getElementById('feature1');
+               if (!section || !section.classList.contains('kro-reveal-visible')) return;
+               var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+               if (prefersReduced) return;
+               var el;
+               if ((el = document.getElementById('kro-stat-channels-today')) && !el.dataset.countupDone) {
+                   el.dataset.countupDone = '1';
+                   var t = parseInt(el.dataset.target, 10);
+                   if (!isNaN(t)) { el.textContent = '0'; countUp(el, t, 1200, function(n) { return String(n); }); }
+               }
+               if ((el = document.getElementById('kro-stat-lost')) && !el.dataset.countupDone) {
+                   el.dataset.countupDone = '1';
+                   var t = parseInt(el.dataset.target, 10);
+                   if (!isNaN(t)) { el.textContent = formatFull(0); countUp(el, t, 1400, formatFull); }
+               }
+               if ((el = document.getElementById('kro-stat-channels')) && !el.dataset.countupDone) {
+                   el.dataset.countupDone = '1';
+                   var t = parseInt(el.dataset.target, 10);
+                   if (!isNaN(t)) { el.textContent = '0'; countUp(el, t, 1000, function(n) { return String(n); }); }
+               }
+               if ((el = document.getElementById('kro-stat-courses')) && !el.dataset.countupDone) {
+                   el.dataset.countupDone = '1';
+                   var t = parseInt(el.dataset.target, 10);
+                   if (!isNaN(t)) { el.textContent = '0'; countUp(el, t, 1000, function(n) { return String(n); }); }
+               }
+           }
            function applyData(data) {
                var el;
-               if ((el = document.getElementById('kro-stat-channels-today'))) el.textContent = data.channelsToday;
-               if ((el = document.getElementById('kro-stat-lost'))) el.textContent = formatFull(data.totalLost);
-               if ((el = document.getElementById('kro-stat-channels'))) el.textContent = data.telegramCount;
-               if ((el = document.getElementById('kro-stat-courses'))) el.textContent = data.coursesCount;
+               if ((el = document.getElementById('kro-stat-channels-today'))) { el.dataset.target = data.channelsToday; el.textContent = data.channelsToday; }
+               if ((el = document.getElementById('kro-stat-lost'))) { el.dataset.target = data.totalLost; el.textContent = formatFull(data.totalLost); }
+               if ((el = document.getElementById('kro-stat-channels'))) { el.dataset.target = data.telegramCount; el.textContent = data.telegramCount; }
+               if ((el = document.getElementById('kro-stat-courses'))) { el.dataset.target = data.coursesCount; el.textContent = data.coursesCount; }
                if ((el = document.getElementById('kro-f1-shock-text'))) el.textContent = data.shockText || '73 человека купили «гарантию прибыли»';
                if ((el = document.getElementById('kro-f1-shock-total'))) el.textContent = 'ИТОГО: -' + formatFull(data.totalLost) + '₽';
                var top3 = data.top3 || [];
@@ -548,15 +592,30 @@
                        docWrap.style.display = 'none';
                    }
                }
+               tryRunCountUps();
            }
            function fetchLiveCounter() {
                if (!document.querySelector('.kro-feature1')) return;
                fetch(base + '/api/kro/live-counter').then(function(r) { return r.json(); }).then(applyData).catch(function() {});
            }
+           function observeFeature1Reveal() {
+               var section = document.getElementById('feature1');
+               if (!section) return;
+               var run = function() { tryRunCountUps(); };
+               if (section.classList.contains('kro-reveal-visible')) run();
+               var obs = new MutationObserver(function(mutations) {
+                   if (section.classList.contains('kro-reveal-visible')) run();
+               });
+               obs.observe(section, { attributes: true, attributeFilter: ['class'] });
+           }
            if (document.readyState === 'loading') {
-               document.addEventListener('DOMContentLoaded', fetchLiveCounter);
+               document.addEventListener('DOMContentLoaded', function() {
+                   fetchLiveCounter();
+                   observeFeature1Reveal();
+               });
            } else {
                fetchLiveCounter();
+               observeFeature1Reveal();
            }
            var form = document.getElementById('kro-report-form');
            var msgEl = document.getElementById('kro-report-message');
