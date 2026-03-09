@@ -856,7 +856,7 @@
                function updateParallax() {
                    var y = window.scrollY || window.pageYOffset;
                    var heroHeight = heroEl ? heroEl.offsetHeight : 400;
-                   var maxY = Math.min(y * 0.06, heroHeight * 0.4);
+                   var maxY = Math.min(y * 0.12, heroHeight * 0.5);
                    bg.style.setProperty('--kro-parallax-y', maxY + 'px');
                    ticking = false;
                }
