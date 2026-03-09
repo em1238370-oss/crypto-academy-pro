@@ -348,7 +348,6 @@ body::after {
 .news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
 .news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
 .news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 0.3s; }
-.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(6) { opacity: 1; transform: translateY(0); transition-delay: 0.4s; }
 
 @media (prefers-reduced-motion: reduce) {
     .news-footer.kro-scroll-in,
