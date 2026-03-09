@@ -20,6 +20,9 @@ STATE_FILE = os.path.join(DATA_DIR, 'live_log_state.json')
 PLACEHOLDER = 'События за период — ниже'
 MAX_LINES = 50
 EMPTY_INTERVAL_MINUTES = 30  # не чаще чем раз в 30 мин писать «новых каналов не найдено»
+# Сутки с 00:00 (12 ночи); данные показываем с этой даты (5 марта 2026)
+START_DATE_DDMMYYYY = '05.03.2026'
+GRID_MINUTES = 5  # время округляем до сетки 5 мин (00:00, 00:05, … 23:55)
 
 
 def _parse_line(line, today_ddmm, has_date_only_format=False):
@@ -50,7 +53,7 @@ def _parse_line(line, today_ddmm, has_date_only_format=False):
 
 
 def format_live_log_grouped(lines):
-    """Сортировка по дате и времени, объединение подряд одинаковых сообщений, разделитель «Новый день» при смене даты."""
+    """Сортировка по дате и времени (строго по возрастанию), данные с 5 марта; в сутках каждое HH:MM не повторяется; объединение подряд одинаковых сообщений."""
     if not lines:
         return []
     now = _msk_now()
@@ -64,6 +67,8 @@ def format_live_log_grouped(lines):
         if time_str is None and parsed and parsed[-1][2] == msg:
             time_str = parsed[-1][1]
         parsed.append((date_str, time_str, msg, idx))
+    # Только данные с 5 марта 2026
+    parsed = [(d, t, msg, idx) for (d, t, msg, idx) in parsed if _date_str_ge(START_DATE_DDMMYYYY, d)]
     if not parsed:
         return []
     def sort_key(x):
@@ -85,6 +90,15 @@ def format_live_log_grouped(lines):
             date_ord = (9999, 99, 99)
         return (date_ord[0], date_ord[1], date_ord[2], h, m, idx)
     parsed.sort(key=sort_key)
+    # В одних сутках каждое время (слот 5 мин) не более одного раза — оставляем последнюю запись в слоте
+    seen = {}
+    for x in reversed(parsed):
+        slot = _round_time_str_to_grid(x[1]) if x[1] else x[1]
+        key = (x[0], slot)
+        if key not in seen:
+            seen[key] = x
+    parsed = list(seen.values())
+    parsed.sort(key=sort_key)
     out = []
     prev_date = None
     prev_last_time = None
@@ -98,7 +112,7 @@ def format_live_log_grouped(lines):
         first_time = t
         last_time = t
         j = i + 1
-        while j < len(parsed) and parsed[j][2] == msg:
+        while j < len(parsed) and parsed[j][2] == msg and parsed[j][0] == first_date:
             if parsed[j][1]:
                 last_time = parsed[j][1]
             j += 1
@@ -158,6 +172,41 @@ def _msk_now():
         return datetime.now(ZoneInfo('Europe/Moscow'))
     except ImportError:
         return datetime.now(timezone.utc) + timedelta(hours=3)
+
+
+def _round_time_to_grid(dt, grid_minutes=GRID_MINUTES):
+    """Округлить время до сетки 5 мин (00:00, 00:05, … 23:55). Сутки с 00:00."""
+    m = (dt.minute // grid_minutes) * grid_minutes
+    return dt.replace(minute=m, second=0, microsecond=0)
+
+
+def _date_str_ge(start_ddmm, date_str):
+    """True если date_str >= start_ddmm (формат DD.MM.YYYY)."""
+    if not date_str or not re.search(r'\d{1,2}\.\d{1,2}\.\d{4}', date_str):
+        return False
+    try:
+        parts = date_str.split('.')
+        start_parts = start_ddmm.split('.')
+        if len(parts) != 3 or len(start_parts) != 3:
+            return True
+        d = (int(parts[2]), int(parts[1]), int(parts[0]))
+        s = (int(start_parts[2]), int(start_parts[1]), int(start_parts[0]))
+        return d >= s
+    except (ValueError, TypeError):
+        return True
+
+
+def _round_time_str_to_grid(time_str, grid_minutes=GRID_MINUTES):
+    """Округлить HH:MM до сетки 5 мин (17:33 -> 17:30, 17:38 -> 17:35)."""
+    if not time_str or ':' not in time_str:
+        return time_str
+    try:
+        parts = time_str.strip()[:5].split(':')
+        h, m = int(parts[0]), int(parts[1])
+        m = (m // grid_minutes) * grid_minutes
+        return '%02d:%02d' % (h, m)
+    except (ValueError, TypeError, IndexError):
+        return time_str
 
 def fetch_tgstat_count():
     """Количество каналов по запросу «крипто сигналы» (лёгкий запрос)."""
@@ -348,9 +397,11 @@ def save_state(state):
 
 def main():
     now = _msk_now()
-    date_str = now.strftime('%d.%m.%Y')
-    time_str = now.strftime('%H:%M')
-    datetime_prefix = '%s %s' % (date_str, time_str)
+    now_rounded = _round_time_to_grid(now)  # сутки по сетке 00:00, 00:05, … 23:55
+    date_str = now_rounded.strftime('%d.%m.%Y')
+    time_str = now.strftime('%H:%M')  # для вывода в лог (фактическое время)
+    time_str_grid = now_rounded.strftime('%H:%M')
+    datetime_prefix = '%s %s' % (date_str, time_str_grid)  # при записи — время по сетке, без повторов в слоте
 
     tg = fetch_tgstat_count()
     telega = fetch_telega_count()
@@ -378,7 +429,10 @@ def main():
                 new_line = '%s — Обновление счётчиков: TGStat %s, Telega %s, потери %s ₽.' % (datetime_prefix, tg, telega, losses)
             if new_line:
                 lines = load_log_lines()
-                lines.append(new_line)
+                if lines and lines[-1].strip().startswith(datetime_prefix):
+                    lines[-1] = new_line  # тот же слот (день + 5 мин) — заменяем, цифры не дублируем
+                else:
+                    lines.append(new_line)
                 save_log_lines(lines[-MAX_LINES:] if len(lines) > MAX_LINES else lines)
             save_state({
                 'last_tgstat': tg, 'last_telega': telega, 'last_victims': victims, 'last_losses': losses,
@@ -400,7 +454,10 @@ def main():
             if delta_min >= EMPTY_INTERVAL_MINUTES:
                 new_line = '%s — За последние 30 минут новых объектов по фильтрам не найдено, источники доступны.' % datetime_prefix
                 lines = load_log_lines()
-                lines.append(new_line)
+                if lines and lines[-1].strip().startswith(datetime_prefix):
+                    lines[-1] = new_line
+                else:
+                    lines.append(new_line)
                 save_log_lines(lines[-MAX_LINES:] if len(lines) > MAX_LINES else lines)
                 save_state({
                     'last_tgstat': tg, 'last_telega': telega, 'last_victims': victims, 'last_losses': losses,
