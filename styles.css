@@ -22,26 +22,34 @@ button:focus-visible {
    outline-offset: 3px;
 }
 
-/* ===== Крипта без розовых очков — палитра: тёмный фон, янтарный акцент (крипто, без копирования) ===== */
+/* ===== Крипта без розовых очков — стилистика medvedevart: премиум, сдержанно, акцент на тексте ===== */
 .kro-main,
 .kro-step1,
 .kro-feature1 {
-   --kro-bg: #0c0f14;
-   --kro-bg-mid: #11141c;
-   --kro-bg-soft: #151922;
+   /* Палитра: тёмный фон с лёгким тёплым подтоном (премиум, не холодный) */
+   --kro-bg: #0a0c10;
+   --kro-bg-mid: #0e1116;
+   --kro-bg-soft: #13161c;
    --kro-accent: #f59e0b;
    --kro-accent-hover: #fbbf24;
    --kro-glow: rgba(245, 158, 11, 0.08);
    --kro-glow-soft: rgba(245, 158, 11, 0.04);
-   /* DuoView: фиолетовый для премиум, золотой для важного */
+   /* Текст: иерархия как на medvedevart — основной и приглушённый */
+   --kro-text: rgba(255, 255, 255, 0.92);
+   --kro-text-muted: rgba(255, 255, 255, 0.52);
+   /* Ритм отступов (8px база) */
+   --kro-space-1: 8px;
+   --kro-space-2: 16px;
+   --kro-space-3: 24px;
+   --kro-space-4: 32px;
+   --kro-space-5: 48px;
+   /* DuoView: фиолетовый для премиум */
    --kro-violet: #8b5cf6;
    --kro-violet-soft: rgba(139, 92, 246, 0.25);
    --kro-violet-border: rgba(139, 92, 246, 0.45);
-   /* Третий акцент — данные/потери (холодный) */
    --kro-cyan: #06b6d4;
    --kro-cyan-soft: rgba(6, 182, 212, 0.2);
    --kro-cyan-border: rgba(6, 182, 212, 0.4);
-   /* Градации серого как на DuoView */
    --kro-gray-mid: #888888;
    --kro-gray-soft: #cccccc;
 }
@@ -150,6 +158,10 @@ body.kro-hero-scrolled .kro-step1 {
        transform: none;
        transition: none;
    }
+   .kro-step1-bg::before {
+       animation: none;
+       opacity: 1;
+   }
    /* Hero: убираем каскадные задержки, всё появляется сразу */
    .kro-step1.kro-reveal .kro-step1-role,
    .kro-step1.kro-reveal .kro-step1-title,
@@ -199,6 +211,7 @@ body.kro-hero-scrolled .kro-step1 {
 }
 
 /* Плавающая навигация: плавное появление и исчезновение (0.5–0.8 s, в стилистике sitelove) */
+/* Плавающий навбар: премиум, сдержанно (medvedevart) — фон из палитры, типографика из переменных */
 .kro-floating-nav {
    position: fixed;
    top: 16px;
@@ -212,11 +225,11 @@ body.kro-hero-scrolled .kro-step1 {
    justify-content: space-between;
    padding: 12px 24px 12px 24px;
    border-radius: 999px;
-   background: rgba(22, 20, 24, 0.96);
-   backdrop-filter: blur(20px);
-   -webkit-backdrop-filter: blur(20px);
-   border: 1px solid rgba(255, 255, 255, 0.08);
-   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+   background: rgba(10, 12, 16, 0.92);
+   backdrop-filter: blur(24px);
+   -webkit-backdrop-filter: blur(24px);
+   border: 1px solid rgba(255, 255, 255, 0.06);
+   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
    opacity: 0;
    visibility: hidden;
    pointer-events: none;
@@ -228,7 +241,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    visibility: visible;
    pointer-events: auto;
    transform: translateX(-50%) translateY(0) scale(1);
-   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
    transition: opacity 0.6s cubic-bezier(0.34, 1.2, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.2, 0.64, 1), box-shadow 0.6s ease, visibility 0s;
 }
 
@@ -243,21 +256,20 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-floating-nav-brand {
-   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+   font-family: var(--kro-font-heading);
    font-size: 15px;
    font-weight: 700;
-   color: #fff;
+   color: var(--kro-text);
    text-decoration: none;
    display: inline-flex;
    align-items: center;
    gap: 10px;
-   letter-spacing: 0.02em;
-   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-   transition: color 0.2s ease;
+   letter-spacing: -0.01em;
+   transition: color var(--kro-duration-hover) ease;
 }
 
 .kro-floating-nav-brand:hover {
-   color: rgba(255, 255, 255, 0.95);
+   color: rgba(255, 255, 255, 0.98);
 }
 
 .kro-floating-nav-icon {
@@ -279,19 +291,20 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-floating-nav-links a {
+   font-family: var(--kro-font-body);
    font-size: 13px;
    font-weight: 600;
-   color: rgba(255, 255, 255, 0.85);
+   color: rgba(255, 255, 255, 0.78);
    text-decoration: none;
    padding: 6px 12px;
    border-radius: 999px;
    letter-spacing: 0.02em;
-   transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+   transition: color var(--kro-duration-hover) ease, background var(--kro-duration-hover) ease, transform var(--kro-duration-hover) ease;
 }
 
 .kro-floating-nav-links a:hover {
-   color: #fff;
-   background: rgba(255, 255, 255, 0.08);
+   color: var(--kro-text);
+   background: rgba(255, 255, 255, 0.07);
    transform: translateY(-1px);
 }
 
@@ -304,20 +317,21 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-floating-nav-cta {
+   font-family: var(--kro-font-body);
    padding: 10px 20px;
    border-radius: 999px;
-   background: rgba(255, 255, 255, 0.12);
-   border: 1px solid rgba(255, 255, 255, 0.18);
-   color: #fff;
+   background: rgba(245, 158, 11, 0.12);
+   border: 1px solid rgba(245, 158, 11, 0.28);
+   color: rgba(255, 230, 200, 0.95);
    font-weight: 700;
    font-size: 13px;
    letter-spacing: 0.03em;
-   transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+   transition: background var(--kro-duration-hover) ease, border-color var(--kro-duration-hover) ease, transform var(--kro-duration-hover) ease, color var(--kro-duration-hover) ease;
 }
 
 .kro-floating-nav-cta:hover {
-   background: rgba(255, 255, 255, 0.18);
-   border-color: rgba(255, 255, 255, 0.25);
+   background: rgba(245, 158, 11, 0.2);
+   border-color: rgba(245, 158, 11, 0.4);
    color: #fff;
    transform: translateY(-2px);
 }
@@ -587,14 +601,28 @@ body.kro-hero-scrolled .kro-floating-nav {
    position: absolute;
    inset: 0;
    z-index: -1;
-   background: radial-gradient(ellipse 70% 50% at 50% 40%, rgba(245, 158, 11, 0.04) 0%, transparent 55%),
-               radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
-               linear-gradient(180deg, var(--kro-bg) 0%, rgba(18, 20, 28, 0.98) 45%, var(--kro-bg-soft) 100%);
+   background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+               linear-gradient(180deg, var(--kro-bg) 0%, rgba(14, 17, 22, 0.98) 45%, var(--kro-bg-soft) 100%);
    transform: translateY(var(--kro-parallax-y, 0));
    transition: transform 0.12s ease-out;
 }
 
+/* Янтарный блик с «дыханием» (медленная пульсация атмосферы) */
 .kro-step1-bg::before {
+   content: '';
+   position: absolute;
+   inset: 0;
+   background: radial-gradient(ellipse 75% 55% at 50% 42%, rgba(245, 158, 11, 0.06) 0%, transparent 55%);
+   pointer-events: none;
+   animation: kro-hero-breathe 20s ease-in-out infinite;
+}
+
+@keyframes kro-hero-breathe {
+   0%, 100% { opacity: 0.8; }
+   50% { opacity: 1; }
+}
+
+.kro-step1-bg::after {
    content: '';
    position: absolute;
    inset: 0;
@@ -602,13 +630,16 @@ body.kro-hero-scrolled .kro-floating-nav {
    pointer-events: none;
 }
 
+/* Виньетка + сетка точек Hero */
 .kro-step1-bg::after {
    content: '';
    position: absolute;
    inset: 0;
-   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.018) 1px, transparent 0),
-                     radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.012) 1px, transparent 0);
-   background-size: 32px 32px, 24px 24px;
+   background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.2) 100%),
+               radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.018) 1px, transparent 0),
+               radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.012) 1px, transparent 0);
+   background-size: 100% 100%, 32px 32px, 24px 24px;
+   background-position: 0 0, 0 0, 0 0;
    pointer-events: none;
 }
 
@@ -2315,8 +2346,36 @@ body.kro-hero-scrolled .kro-floating-nav {
    display: none !important;
 }
 .kro-main {
-   background: linear-gradient(180deg, var(--kro-bg) 0%, var(--kro-bg-mid) 30%, var(--kro-bg-soft) 100%);
+   background: linear-gradient(180deg, var(--kro-bg) 0%, var(--kro-bg-mid) 28%, var(--kro-bg-soft) 100%);
    min-height: 100vh;
+   position: relative;
+}
+
+/* Виньетка: затемнение по краям (глубина, премиум) */
+.kro-main::before {
+   content: '';
+   position: fixed;
+   inset: 0;
+   z-index: 0;
+   pointer-events: none;
+   background: radial-gradient(ellipse 100% 80% at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.25) 100%);
+}
+
+/* Зерно: лёгкая текстура (атмосфера, не копируя medvedevart 1:1) */
+.kro-main::after {
+   content: '';
+   position: fixed;
+   inset: 0;
+   z-index: 0;
+   pointer-events: none;
+   opacity: 0.035;
+   background-image:
+      radial-gradient(circle at 10% 20%, rgba(255,255,255,0.4) 0.5px, transparent 0.5px),
+      radial-gradient(circle at 90% 80%, rgba(255,255,255,0.35) 0.5px, transparent 0.5px),
+      radial-gradient(circle at 40% 60%, rgba(255,255,255,0.3) 0.5px, transparent 0.5px),
+      radial-gradient(circle at 70% 30%, rgba(255,255,255,0.35) 0.5px, transparent 0.5px);
+   background-size: 3px 3px, 4px 4px, 5px 5px, 3px 4px;
+   background-position: 0 0, 1px 1px, 2px 0, 0 2px;
 }
 
 .kro-main a:focus-visible,
@@ -2337,7 +2396,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-main .news-footer.kro-footer {
    display: block;
    width: 100%;
-   padding: 56px 24px 64px;
+   padding: var(--kro-space-5) var(--kro-space-3) 64px;
    margin: 0;
    text-align: center;
    font-family: var(--kro-font-body);
