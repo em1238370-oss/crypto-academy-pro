@@ -37,6 +37,45 @@ button:focus-visible {
    --kro-gray-soft: #cccccc;
 }
 
+/* Hero + Footer: утилиты анимации (transition, keyframes) — только главная часть, без Фишки 1 */
+.kro-main {
+   --kro-ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
+   --kro-ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+   --kro-duration-reveal: 0.6s;
+   --kro-duration-reveal-slow: 0.7s;
+   --kro-duration-hover: 0.25s;
+   --kro-stagger: 0.08s;
+   --kro-reveal-y: 28px;
+   --kro-scroll-in-y: 40px;
+}
+
+/* Счётчики: @property для возможной CSS-анимации чисел (0→N) */
+@property --kro-count {
+   syntax: '<integer>';
+   initial-value: 0;
+   inherits: false;
+}
+
+@keyframes kro-fade-up {
+   from { opacity: 0; transform: translateY(var(--kro-reveal-y, 28px)); }
+   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes kro-fade-up-scale {
+   from { opacity: 0; transform: translateY(var(--kro-scroll-in-y, 40px)) scale(0.98); }
+   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Hero: карточка — лёгкое появление (keyframes один раз при загрузке) */
+.kro-step1.kro-reveal-visible .kro-step1-inner {
+   animation: kro-hero-card-in 0.8s var(--kro-ease-reveal) forwards;
+}
+
+@keyframes kro-hero-card-in {
+   from { transform: scale(0.98); }
+   to { transform: scale(1); }
+}
+
 /* Фишка 1: по референсу — один сдержанный акцент (приглушённый красный), глубина, без шаблонной яркости */
 .kro-feature1 {
    --kro-danger: #ff4444;
@@ -81,7 +120,7 @@ button:focus-visible {
                radial-gradient(ellipse 50% 40% at 15% 25%, rgba(245, 158, 11, 0.03) 0%, transparent 55%),
                radial-gradient(ellipse 70% 50% at 50% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
                linear-gradient(180deg, var(--kro-bg) 0%, rgba(15, 18, 24, 0.98) 100%);
-   transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+   transition: opacity var(--kro-duration-reveal) var(--kro-ease-out), transform var(--kro-duration-reveal) var(--kro-ease-out);
 }
 
 body.kro-hero-scrolled .kro-step1 {
@@ -123,6 +162,9 @@ body.kro-hero-scrolled .kro-step1 {
    }
    .kro-step1-cta:hover::before {
       transform: none;
+   }
+   .kro-step1.kro-reveal-visible .kro-step1-inner {
+      animation: none;
    }
 }
 
@@ -385,8 +427,8 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-step1.kro-reveal .kro-step1-cta-secondary,
 .kro-step1.kro-reveal .kro-tag {
    opacity: 0;
-   transform: translateY(28px);
-   transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+   transform: translateY(var(--kro-reveal-y));
+   transition: opacity var(--kro-duration-reveal) var(--kro-ease-reveal), transform var(--kro-duration-reveal) var(--kro-ease-reveal);
 }
 
 .kro-step1.kro-reveal .kro-tag {
@@ -601,7 +643,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f5c88c' stroke-width='2'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") no-repeat center;
    background-size: contain;
    flex-shrink: 0;
-   transition: transform 0.25s ease;
+   transition: transform var(--kro-duration-hover) ease;
 }
 
 .kro-step1-cta:hover {
@@ -619,11 +661,11 @@ body.kro-hero-scrolled .kro-floating-nav {
    outline-offset: 3px;
 }
 
-/* Scroll reveal (референс sitelove: fade-in + translateY вверх, 0.5–0.8 s на блок) */
+/* Scroll reveal: переменные из набора утилит Hero/Footer */
 .kro-reveal {
    opacity: 0;
-   transform: translateY(28px);
-   transition: opacity 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+   transform: translateY(var(--kro-reveal-y));
+   transition: opacity var(--kro-duration-reveal) var(--kro-ease-out), transform var(--kro-duration-reveal) var(--kro-ease-out);
 }
 
 .kro-reveal.kro-reveal-visible {
@@ -631,11 +673,11 @@ body.kro-hero-scrolled .kro-floating-nav {
    transform: translateY(0);
 }
 
-/* Scroll-in: появление при входе во вьюпорт (0.5–0.8 s, medvedevart-style fade-up + лёгкий scale) */
+/* Scroll-in: появление при входе во вьюпорт (keyframes-темп 0.5–0.8 s, fade-up + scale) */
 .kro-scroll-in {
    opacity: 0;
-   transform: translateY(40px) scale(0.98);
-   transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+   transform: translateY(var(--kro-scroll-in-y)) scale(0.98);
+   transition: opacity var(--kro-duration-reveal-slow) var(--kro-ease-reveal), transform var(--kro-duration-reveal-slow) var(--kro-ease-reveal);
 }
 
 .kro-scroll-in.kro-scroll-in-visible {
@@ -643,11 +685,11 @@ body.kro-hero-scrolled .kro-floating-nav {
    transform: translateY(0) scale(1);
 }
 
-/* Футер: каскадное появление дочерних элементов при scroll-in (stagger 0.1 s) */
+/* Футер: каскадное появление (stagger 0.1 s, те же easing/duration) */
 .news-footer.kro-scroll-in .kro-footer-reveal {
    opacity: 0;
    transform: translateY(18px);
-   transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+   transition: opacity var(--kro-duration-reveal) var(--kro-ease-reveal), transform var(--kro-duration-reveal) var(--kro-ease-reveal);
 }
 
 .news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0s; }
@@ -2300,7 +2342,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    color: rgba(255, 255, 255, 0.7);
    text-decoration: none;
    letter-spacing: 0.02em;
-   transition: color 0.25s ease, transform 0.25s ease;
+   transition: color var(--kro-duration-hover) ease, transform var(--kro-duration-hover) ease;
 }
 
 .kro-main .news-footer.kro-footer .news-footer-link:hover {
@@ -2319,7 +2361,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    padding: 12px 22px;
    border-radius: 999px;
    text-decoration: none;
-   transition: border-color 0.25s ease, background-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+   transition: border-color var(--kro-duration-hover) ease, background-color var(--kro-duration-hover) ease, color var(--kro-duration-hover) ease, transform var(--kro-duration-hover) ease;
 }
 
 .kro-main .news-footer.kro-footer .news-footer-cta:hover {
