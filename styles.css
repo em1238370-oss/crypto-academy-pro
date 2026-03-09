@@ -2081,17 +2081,15 @@ body.kro-hero-scrolled .kro-floating-nav {
    padding-top: 0;
 }
 
-/* Футер главной: тот же фон, шрифты и цветовая схема, что на главной (Hero) */
+/* Футер главной: на всю ширину, тот же тёмный фон что посередине (без фиолетового по бокам) */
 .kro-main .news-footer.kro-footer {
    display: block;
+   width: 100%;
    padding: 56px 24px 64px;
-   max-width: 900px;
-   margin: 0 auto;
+   margin: 0;
    text-align: center;
    font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-   background: radial-gradient(ellipse 60% 50% at 80% 85%, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
-               radial-gradient(ellipse 50% 40% at 15% 25%, rgba(245, 158, 11, 0.03) 0%, transparent 55%),
-               linear-gradient(180deg, var(--kro-bg) 0%, rgba(15, 18, 24, 0.98) 100%);
+   background: var(--kro-bg);
    border-top: none;
 }
 
