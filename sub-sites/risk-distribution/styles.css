@@ -178,7 +178,7 @@ body {
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: radial-gradient(ellipse 50% 35% at 50% 30%, rgba(245, 158, 11, 0.04) 0%, transparent 55%),
+    background: radial-gradient(ellipse 32% 22% at 50% 30%, rgba(245, 158, 11, 0.05) 0%, transparent 55%),
                 radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.025) 0%, transparent 50%),
                 linear-gradient(180deg, #0a0c10 0%, #0e1116 25%, #13161c 100%);
 }
