@@ -156,19 +156,49 @@ body {
     color: #FFFFFF !important;
 }
 
-/* Футер в стиле главной (Крипта без розовых очков): текст, эффекты, кнопка */
+/* Футер в стиле главной: тот же фон с точками, градиент, цвет #0c0f14, шрифт Manrope, эффекты */
 .news-footer.kro-footer {
     --kro-bg: #0c0f14;
+    --kro-bg-soft: #151922;
     padding: 56px 24px 64px !important;
     margin-top: 180px !important;
     text-align: center;
     font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--kro-bg) !important;
+    position: relative;
+    overflow: hidden;
     border-top: none !important;
 }
 
 .news-footer.kro-footer::before {
     display: none !important;
+}
+
+/* Фон футера: как на главной — градиент + блик + сетка точек */
+.news-footer.kro-footer .kro-footer-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(245, 158, 11, 0.04) 0%, transparent 55%),
+                radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+                linear-gradient(180deg, var(--kro-bg) 0%, rgba(18, 20, 28, 0.98) 30%, var(--kro-bg-soft) 100%);
+}
+
+.news-footer.kro-footer .kro-footer-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.15) 100%);
+    pointer-events: none;
+}
+
+.news-footer.kro-footer .kro-footer-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.018) 1px, transparent 0),
+                      radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.012) 1px, transparent 0);
+    background-size: 32px 32px, 24px 24px;
+    pointer-events: none;
 }
 
 .news-footer.kro-footer .news-footer-text {
@@ -245,10 +275,10 @@ body {
     transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0s; }
-.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
-.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
-.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.3s; }
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0s; }
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 0.3s; }
 
 @media (prefers-reduced-motion: reduce) {
     .news-footer.kro-scroll-in,
