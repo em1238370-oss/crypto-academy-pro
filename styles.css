@@ -311,14 +311,14 @@ body.kro-hero-scrolled .kro-floating-nav {
    display: none;
 }
 
-/* Hero: каскадное появление при .kro-reveal-visible (stagger 0.12s) */
+/* Hero: каскадное появление при .kro-reveal-visible (stagger 0.12s, medvedevart-style fade-up 24–30px) */
 .kro-step1.kro-reveal .kro-step1-title,
 .kro-step1.kro-reveal .kro-step1-subtitle,
 .kro-step1.kro-reveal .kro-step1-tags,
 .kro-step1.kro-reveal .kro-step1-cta,
 .kro-step1.kro-reveal .kro-step1-cta-note {
    opacity: 0;
-   transform: translateY(20px);
+   transform: translateY(28px);
    transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -405,22 +405,21 @@ body.kro-hero-scrolled .kro-floating-nav {
    content: '';
    position: absolute;
    inset: 0;
-   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0),
-                     radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.025) 1px, transparent 0);
+   background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.018) 1px, transparent 0),
+                     radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.012) 1px, transparent 0);
    background-size: 32px 32px, 24px 24px;
    pointer-events: none;
 }
 
 .kro-step1-title {
-   font-family: 'Oswald', 'Syne', sans-serif;
+   font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    font-size: clamp(42px, 10vw, 76px);
    font-weight: 700;
    line-height: 1.05;
    letter-spacing: 0.02em;
-   margin-bottom: 20px;
+   margin-bottom: 26px;
    color: rgba(255, 255, 255, 0.96);
    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-   text-transform: uppercase;
 }
 
 .kro-step1-subtitle {
@@ -431,7 +430,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    line-height: 1.5;
    letter-spacing: 0.02em;
    max-width: 480px;
-   margin: 0 auto 28px;
+   margin: 0 auto 34px;
 }
 
 .kro-step1-tags {
@@ -444,25 +443,23 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-tag {
-   font-family: 'Oswald', 'Manrope', sans-serif;
-   font-size: 12px;
+   font-family: 'Manrope', 'Inter', sans-serif;
+   font-size: 11px;
    font-weight: 600;
-   letter-spacing: 0.12em;
+   letter-spacing: 0.08em;
    text-transform: uppercase;
-   color: rgba(255, 255, 255, 0.7);
-   padding: 8px 16px;
-   border: 1px solid rgba(255, 255, 255, 0.12);
+   color: rgba(255, 255, 255, 0.65);
+   padding: 8px 14px;
+   border: 1px solid rgba(255, 255, 255, 0.08);
    border-radius: 999px;
    background: transparent;
-   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
+   transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
 }
 
 .kro-tag:hover {
-   transform: translateY(-2px);
-   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-   border-color: rgba(255, 255, 255, 0.22);
-   background: rgba(255, 255, 255, 0.04);
-   color: rgba(255, 255, 255, 0.9);
+   border-color: rgba(255, 255, 255, 0.15);
+   background: rgba(255, 255, 255, 0.03);
+   color: rgba(255, 255, 255, 0.82);
 }
 
 .kro-step1-cta {
@@ -477,12 +474,12 @@ body.kro-hero-scrolled .kro-floating-nav {
    letter-spacing: 0.04em;
    text-transform: uppercase;
    color: rgba(255, 230, 200, 0.92);
-   background-color: rgba(245, 158, 11, 0.05);
+   background-color: rgba(245, 158, 11, 0.12);
    padding: 12px 22px;
-   border: 1px solid rgba(245, 158, 11, 0.25);
+   border: 1px solid rgba(245, 158, 11, 0.35);
    border-radius: 999px;
    text-decoration: none;
-   transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+   transition: border-color 0.25s ease, background-color 0.25s ease, color 0.25s ease;
    text-align: center;
    line-height: 1.35;
 }
@@ -497,8 +494,8 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-step1-cta:hover {
-   border-color: rgba(245, 158, 11, 0.38);
-   background-color: rgba(245, 158, 11, 0.09);
+   border-color: rgba(245, 158, 11, 0.45);
+   background-color: rgba(245, 158, 11, 0.18);
    color: rgba(255, 240, 220, 0.98);
 }
 
