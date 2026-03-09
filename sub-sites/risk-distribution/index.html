@@ -9,6 +9,7 @@
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
+   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../news/styles.css">
    <link rel="stylesheet" href="styles.css?v=12">
 </head>
@@ -145,13 +146,14 @@
            </section>
            
            <!-- Футер как у News — по смыслу Risk -->
-           <footer class="news-footer">
-               <p class="news-footer-text">Prover Kriptu — tools for those who think for themselves.</p>
-               <p class="news-footer-crafted">Control the storm. Protect your capital.</p>
-               <div class="news-footer-links">
-                   <a href="#top" class="news-footer-link">Back to top</a>
-                   <a href="../../index.html" class="news-footer-link">← Back to main</a>
+           <footer class="news-footer kro-footer kro-scroll-in" id="kro-footer">
+               <p class="news-footer-text kro-footer-reveal">Крипта без розовых очков</p>
+               <p class="news-footer-crafted kro-footer-reveal">С уважением к твоему времени.</p>
+               <div class="news-footer-links kro-footer-reveal">
+                   <a href="#top" class="news-footer-link">Наверх</a>
+                   <a href="../../index.html#checkers" class="news-footer-link">Проверь гуру</a>
                </div>
+               <a href="../../index.html#checkers" class="news-footer-cta kro-footer-reveal">Проверь своего гуру</a>
            </footer>
        </div>
    </div>
@@ -531,6 +533,18 @@
            cards.forEach(function(c, i) {
                c.style.transitionDelay = (i * 0.1) + 's';
                obs.observe(c);
+           });
+       })();
+
+       // Футер главной: scroll-in появление (Крипта без розовых очков)
+       (function() {
+           if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+           var obs = new IntersectionObserver(function(entries) {
+               entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('kro-scroll-in-visible'); });
+           }, { rootMargin: '0px 0px -6% 0px', threshold: 0.08 });
+           document.querySelectorAll('.kro-scroll-in').forEach(function(el) {
+               obs.observe(el);
+               if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add('kro-scroll-in-visible');
            });
        })();
    </script>
