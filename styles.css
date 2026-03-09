@@ -542,10 +542,125 @@ body.kro-hero-scrolled .kro-floating-nav {
    margin: 0;
 }
 
+/* Оффер (medvedevart: один слоган + три столпа, чёткие границы секции) */
+.kro-offer {
+   padding: 100px 24px 100px;
+   max-width: 1000px;
+   margin: 0 auto;
+   text-align: center;
+   font-family: 'Manrope', 'Inter', sans-serif;
+}
+
+.kro-offer.kro-scroll-in {
+   transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.kro-offer-heading {
+   font-size: clamp(22px, 4vw, 28px);
+   font-weight: 700;
+   color: rgba(255, 255, 255, 0.95);
+   letter-spacing: 0.02em;
+   margin-bottom: 12px;
+   line-height: 1.3;
+}
+
+.kro-offer-sub {
+   font-size: clamp(14px, 1.8vw, 16px);
+   color: rgba(255, 255, 255, 0.6);
+   margin-bottom: 48px;
+   max-width: 480px;
+   margin-left: auto;
+   margin-right: auto;
+}
+
+.kro-offer-pillars {
+   display: grid;
+   grid-template-columns: repeat(3, 1fr);
+   gap: 24px;
+   text-align: center;
+}
+
+.kro-offer-pillar {
+   padding: 28px 20px;
+   border-radius: 16px;
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   background: rgba(255, 255, 255, 0.02);
+   transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.kro-offer-pillar:hover {
+   border-color: rgba(255, 255, 255, 0.12);
+   background: rgba(255, 255, 255, 0.04);
+   transform: translateY(-2px);
+   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.kro-offer-pillar-icon {
+   display: block;
+   font-size: 24px;
+   margin-bottom: 16px;
+   color: rgba(245, 158, 11, 0.9);
+}
+
+.kro-offer-pillar-title {
+   font-size: 16px;
+   font-weight: 600;
+   color: rgba(255, 255, 255, 0.9);
+   margin-bottom: 8px;
+}
+
+.kro-offer-pillar-text {
+   font-size: 13px;
+   color: rgba(255, 255, 255, 0.6);
+   line-height: 1.5;
+   margin: 0;
+}
+
+/* Каскад появления столпов при скролле (medvedevart: stagger 0.1–0.15 s) */
+.kro-offer.kro-scroll-in .kro-offer-pillar {
+   opacity: 0;
+   transform: translateY(20px);
+   transition: opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.kro-offer.kro-scroll-in-visible .kro-offer-pillar:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0s; }
+.kro-offer.kro-scroll-in-visible .kro-offer-pillar:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
+.kro-offer.kro-scroll-in-visible .kro-offer-pillar:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
+
+@media (max-width: 768px) {
+   .kro-offer {
+      padding: 64px 20px 64px;
+   }
+   .kro-offer-pillars {
+      grid-template-columns: 1fr;
+      gap: 16px;
+   }
+}
+
+/* Заголовок секции «Результаты в цифрах» (medvedevart: иерархия заголовок → подзаголовок) */
+.kro-f1-metrics-head {
+   margin-bottom: 32px;
+}
+
+.kro-f1-metrics-title {
+   font-family: 'Manrope', 'Inter', sans-serif;
+   font-size: clamp(20px, 3vw, 24px);
+   font-weight: 700;
+   color: rgba(255, 255, 255, 0.95);
+   margin-bottom: 8px;
+   letter-spacing: 0.02em;
+}
+
+.kro-f1-metrics-sub {
+   font-size: clamp(14px, 1.6vw, 15px);
+   color: rgba(255, 255, 255, 0.6);
+   margin: 0;
+}
+
 /* Фишка 1: Живой счётчик — карточки метрик, фон с глубиной (отдельный шрифт как на sitelove) */
 .kro-feature1 {
    font-family: 'Plus Jakarta Sans', sans-serif;
-   padding: 80px 24px 80px;
+   padding: 100px 24px 120px;
    text-align: center;
    position: relative;
    overflow: hidden;
@@ -711,7 +826,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 
 .kro-f1-top3-wrap {
    max-width: calc(640px + 4cm);
-   margin: 0 auto 28px;
+   margin: 56px auto 28px;
    text-align: center;
 }
 
@@ -888,7 +1003,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 /* Фишка 1: четыре блока (шок, типы лоха, математика, выбор) в одной контент-карточке */
 .kro-f1-blocks {
    max-width: 1000px;
-   margin: 0 auto 48px;
+   margin: 0 auto 64px;
    padding: 0 24px;
    text-align: left;
 }
@@ -2061,9 +2176,66 @@ body.kro-hero-scrolled .kro-floating-nav {
    padding-top: 0;
 }
 
-/* На главной футер скрыт — только hero и чекеры */
-.kro-main .kro-footer {
-   display: none !important;
+/* На главной футер в стиле medvedevart: структурированный, с границей и CTA */
+.kro-main .news-footer.kro-footer {
+   display: block;
+   padding: 64px 24px 80px;
+   max-width: 900px;
+   margin: 0 auto;
+   text-align: center;
+   font-family: 'Manrope', 'Inter', sans-serif;
+   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kro-main .news-footer.kro-footer .news-footer-text {
+   font-size: 15px;
+   font-weight: 600;
+   color: rgba(255, 255, 255, 0.9);
+   margin-bottom: 8px;
+}
+
+.kro-main .news-footer.kro-footer .news-footer-crafted {
+   font-size: 13px;
+   color: rgba(255, 255, 255, 0.5);
+   margin-bottom: 24px;
+}
+
+.kro-main .news-footer.kro-footer .news-footer-links {
+   display: flex;
+   flex-wrap: wrap;
+   justify-content: center;
+   gap: 24px;
+   margin-bottom: 24px;
+}
+
+.kro-main .news-footer.kro-footer .news-footer-link {
+   font-size: 14px;
+   color: rgba(255, 255, 255, 0.7);
+   text-decoration: none;
+   transition: color 0.2s ease;
+}
+
+.kro-main .news-footer.kro-footer .news-footer-link:hover {
+   color: rgba(255, 255, 255, 0.95);
+}
+
+.kro-main .news-footer.kro-footer .news-footer-cta {
+   display: inline-block;
+   font-size: 14px;
+   font-weight: 600;
+   color: rgba(255, 230, 200, 0.92);
+   background: rgba(245, 158, 11, 0.12);
+   border: 1px solid rgba(245, 158, 11, 0.35);
+   padding: 10px 20px;
+   border-radius: 999px;
+   text-decoration: none;
+   transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+
+.kro-main .news-footer.kro-footer .news-footer-cta:hover {
+   background: rgba(245, 158, 11, 0.18);
+   border-color: rgba(245, 158, 11, 0.45);
+   color: rgba(255, 240, 220, 0.98);
 }
 
 /* На главной скрыт чат-бот (Crypto AI Assistant) */
