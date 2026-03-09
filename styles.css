@@ -6,10 +6,19 @@
    box-sizing: border-box;
 }
 
+html {
+   scroll-behavior: smooth;
+}
+
 /* Доступность: видимый фокус для клавиатурной навигации */
 a:focus-visible,
 button:focus-visible {
    outline: 2px solid rgba(212, 175, 55, 0.6);
+   outline-offset: 3px;
+}
+
+.kro-tag:focus-visible {
+   outline: 2px solid rgba(245, 158, 11, 0.6);
    outline-offset: 3px;
 }
 
@@ -41,11 +50,11 @@ button:focus-visible {
 .kro-main {
    --kro-ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
    --kro-ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-   --kro-duration-reveal: 0.6s;
+   --kro-duration-reveal: 0.58s;
    --kro-duration-reveal-slow: 0.7s;
    --kro-duration-hover: 0.25s;
-   --kro-stagger: 0.08s;
-   --kro-reveal-y: 28px;
+   --kro-stagger: 0.1s;
+   --kro-reveal-y: 32px;
    --kro-scroll-in-y: 40px;
    /* Типографика (medvedevart): акцент — заголовки, основной текст — тело */
    --kro-font-heading: 'Syne', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -136,6 +145,10 @@ body.kro-hero-scrolled .kro-step1 {
    body.kro-hero-scrolled .kro-step1 {
        opacity: 1;
        transform: none;
+   }
+   .kro-step1-bg {
+       transform: none;
+       transition: none;
    }
    /* Hero: убираем каскадные задержки, всё появляется сразу */
    .kro-step1.kro-reveal .kro-step1-role,
@@ -373,12 +386,13 @@ body.kro-hero-scrolled .kro-floating-nav {
    border-radius: 20px;
    border: 1px solid rgba(220, 225, 235, 0.08);
    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-   transition: box-shadow var(--kro-duration-hover) ease, border-color var(--kro-duration-hover) ease;
+   transition: box-shadow var(--kro-duration-hover) ease, border-color var(--kro-duration-hover) ease, transform var(--kro-duration-hover) ease;
 }
 
 .kro-step1-inner:hover {
    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.05);
    border-color: rgba(220, 225, 235, 0.12);
+   transform: translateY(-2px);
 }
 
 .kro-step1-left {
@@ -479,61 +493,61 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-step1.kro-reveal-visible .kro-step1-title {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.08s;
+   transition-delay: 0.1s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-subtitle {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.16s;
+   transition-delay: 0.22s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-tags {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.24s;
+   transition-delay: 0.34s;
 }
 
 .kro-step1.kro-reveal-visible .kro-tag:nth-child(1) {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.24s;
+   transition-delay: 0.34s;
 }
 
 .kro-step1.kro-reveal-visible .kro-tag:nth-child(2) {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.30s;
+   transition-delay: 0.44s;
 }
 
 .kro-step1.kro-reveal-visible .kro-tag:nth-child(3) {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.36s;
+   transition-delay: 0.54s;
 }
 
 .kro-step1.kro-reveal-visible .kro-tag:nth-child(4) {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.42s;
+   transition-delay: 0.64s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-cta {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.52s;
+   transition-delay: 0.76s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-cta-note {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.64s;
+   transition-delay: 0.88s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-cta-secondary {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.72s;
+   transition-delay: 1s;
 }
 
 @media (min-width: 900px) {
@@ -576,6 +590,8 @@ body.kro-hero-scrolled .kro-floating-nav {
    background: radial-gradient(ellipse 70% 50% at 50% 40%, rgba(245, 158, 11, 0.04) 0%, transparent 55%),
                radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
                linear-gradient(180deg, var(--kro-bg) 0%, rgba(18, 20, 28, 0.98) 45%, var(--kro-bg-soft) 100%);
+   transform: translateY(var(--kro-parallax-y, 0));
+   transition: transform 0.12s ease-out;
 }
 
 .kro-step1-bg::before {
@@ -738,9 +754,9 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0s; }
-.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
-.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
-.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 0.3s; }
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.12s; }
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.24s; }
+.news-footer.kro-scroll-in-visible .kro-footer-reveal:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 0.36s; }
 
 @media (prefers-reduced-motion: reduce) {
    .kro-scroll-in {
@@ -2372,7 +2388,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    font-size: clamp(16px, 2vw, 19px);
    font-weight: 500;
    color: rgba(255, 255, 255, 0.82);
-   margin-bottom: 28px;
+   margin-bottom: 32px;
    letter-spacing: 0.02em;
    line-height: 1.55;
 }
@@ -2382,7 +2398,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    flex-wrap: wrap;
    justify-content: center;
    gap: 24px;
-   margin-bottom: 24px;
+   margin-bottom: 28px;
 }
 
 .kro-main .news-footer.kro-footer .news-footer-link {

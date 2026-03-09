@@ -847,14 +847,37 @@
                }, { root: null, rootMargin: '0px', threshold: 0.1 });
                observer.observe(heroEl);
            }
+           function initHeroParallax() {
+               if (prefersReducedMotion) return;
+               var heroEl = document.getElementById('hero');
+               var bg = heroEl && heroEl.querySelector('.kro-step1-bg');
+               if (!bg) return;
+               var ticking = false;
+               function updateParallax() {
+                   var y = window.scrollY || window.pageYOffset;
+                   var heroHeight = heroEl ? heroEl.offsetHeight : 400;
+                   var maxY = Math.min(y * 0.06, heroHeight * 0.4);
+                   bg.style.setProperty('--kro-parallax-y', maxY + 'px');
+                   ticking = false;
+               }
+               window.addEventListener('scroll', function() {
+                   if (!ticking) {
+                       requestAnimationFrame(updateParallax);
+                       ticking = true;
+                   }
+               }, { passive: true });
+               updateParallax();
+           }
            if (document.readyState === 'loading') {
                document.addEventListener('DOMContentLoaded', function() {
                    initReveal();
                    initHeroScrolled();
+                   initHeroParallax();
                });
            } else {
                initReveal();
                initHeroScrolled();
+               initHeroParallax();
            }
        })();
    </script>
