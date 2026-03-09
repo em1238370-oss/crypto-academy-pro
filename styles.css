@@ -406,16 +406,16 @@ body.kro-hero-scrolled .kro-floating-nav {
    display: none;
 }
 
-/* Hero: строка-роль (medvedevart-style иерархия) */
+/* Hero: строка-роль — нежнее */
 .kro-step1-role {
    font-family: var(--kro-font-body);
    font-size: 13px;
-   font-weight: 600;
-   letter-spacing: 0.15em;
+   font-weight: 500;
+   letter-spacing: 0.12em;
    text-transform: uppercase;
-   color: rgba(255, 255, 255, 0.6);
+   color: rgba(255, 255, 255, 0.55);
    margin: 0 0 16px;
-   line-height: 1.4;
+   line-height: 1.45;
 }
 
 .kro-step1-cta-secondary {
@@ -596,24 +596,24 @@ body.kro-hero-scrolled .kro-floating-nav {
    pointer-events: none;
 }
 
-/* Hero-заголовок: акцентный Syne — крупнее и контрастнее */
+/* Hero-заголовок: Syne — нежнее */
 .kro-step1-title {
    font-family: var(--kro-font-heading);
    font-size: clamp(48px, 11vw, 88px);
-   font-weight: 800;
-   line-height: 1.02;
-   letter-spacing: -0.03em;
+   font-weight: 700;
+   line-height: 1.06;
+   letter-spacing: -0.02em;
    margin-bottom: 26px;
-   color: #ffffff;
-   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+   color: rgba(255, 255, 255, 0.94);
+   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .kro-step1-subtitle {
    font-family: var(--kro-font-body);
    font-size: clamp(16px, 2.2vw, 19px);
-   font-weight: 600;
-   color: rgba(255, 255, 255, 0.75);
-   line-height: 1.5;
+   font-weight: 500;
+   color: rgba(255, 255, 255, 0.7);
+   line-height: 1.55;
    letter-spacing: 0.02em;
    max-width: 480px;
    margin: 0 auto 34px;
@@ -2361,8 +2361,8 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-main .news-footer.kro-footer .news-footer-text {
    font-family: var(--kro-font-heading);
    font-size: clamp(18px, 2.5vw, 22px);
-   font-weight: 800;
-   color: #ffffff;
+   font-weight: 700;
+   color: rgba(255, 255, 255, 0.94);
    margin-bottom: 10px;
    letter-spacing: -0.01em;
 }
@@ -2370,11 +2370,11 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-main .news-footer.kro-footer .news-footer-crafted {
    font-family: var(--kro-font-body);
    font-size: clamp(16px, 2vw, 19px);
-   font-weight: 600;
-   color: rgba(255, 255, 255, 0.88);
+   font-weight: 500;
+   color: rgba(255, 255, 255, 0.82);
    margin-bottom: 28px;
    letter-spacing: 0.02em;
-   line-height: 1.5;
+   line-height: 1.55;
 }
 
 .kro-main .news-footer.kro-footer .news-footer-links {
@@ -2388,8 +2388,8 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-main .news-footer.kro-footer .news-footer-link {
    font-family: var(--kro-font-body);
    font-size: clamp(14px, 1.6vw, 16px);
-   font-weight: 600;
-   color: rgba(255, 255, 255, 0.8);
+   font-weight: 500;
+   color: rgba(255, 255, 255, 0.72);
    text-decoration: none;
    letter-spacing: 0.02em;
    position: relative;
@@ -2420,8 +2420,8 @@ body.kro-hero-scrolled .kro-floating-nav {
    display: inline-block;
    font-family: var(--kro-font-body);
    font-size: clamp(14px, 1.7vw, 16px);
-   font-weight: 700;
-   letter-spacing: 0.05em;
+   font-weight: 600;
+   letter-spacing: 0.04em;
    color: rgba(255, 230, 200, 0.92);
    background-color: rgba(245, 158, 11, 0.12);
    border: 1px solid rgba(245, 158, 11, 0.35);
@@ -2459,13 +2459,13 @@ body.kro-hero-scrolled .kro-floating-nav {
    text-align: center;
 }
 
-/* Копирайт: моноширинный — крупнее и заметнее */
+/* Копирайт: моно — нежнее */
 .kro-main .news-footer.kro-footer .kro-footer-legal {
    font-family: var(--kro-font-mono);
-   font-size: 13px;
-   font-weight: 500;
-   color: rgba(255, 255, 255, 0.5);
-   letter-spacing: 0.15em;
+   font-size: 12px;
+   font-weight: 400;
+   color: rgba(255, 255, 255, 0.42);
+   letter-spacing: 0.1em;
    margin: 0;
    line-height: 1.5;
 }

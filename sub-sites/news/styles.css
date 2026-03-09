@@ -255,18 +255,19 @@ body::after {
 
 .news-footer.kro-footer .news-footer-text {
     font-size: clamp(18px, 2.5vw, 22px);
-    font-weight: 800;
-    color: #ffffff;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.94);
     margin-bottom: 10px;
     letter-spacing: -0.01em;
 }
 
 .news-footer.kro-footer .news-footer-crafted {
     font-size: clamp(16px, 2vw, 19px);
-    color: rgba(255, 255, 255, 0.88);
+    color: rgba(255, 255, 255, 0.82);
     margin-bottom: 28px;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0.02em;
+    line-height: 1.55;
 }
 
 .news-footer.kro-footer .news-footer-links {
@@ -279,8 +280,8 @@ body::after {
 
 .news-footer.kro-footer .news-footer-link {
     font-size: clamp(14px, 1.6vw, 16px);
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.72);
     transition: color 0.25s ease, transform 0.25s ease;
 }
 
@@ -292,8 +293,8 @@ body::after {
 .news-footer.kro-footer .news-footer-cta {
     display: inline-block;
     font-size: clamp(14px, 1.7vw, 16px);
-    font-weight: 700;
-    letter-spacing: 0.05em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
     color: rgba(255, 230, 200, 0.92);
     background-color: rgba(245, 158, 11, 0.12);
     border: 1px solid rgba(245, 158, 11, 0.35);
@@ -319,10 +320,10 @@ body::after {
 
 .news-footer.kro-footer .kro-footer-legal {
     font-family: ui-monospace, 'SF Mono', 'Fira Code', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.5);
-    letter-spacing: 0.15em;
+    font-size: 12px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.42);
+    letter-spacing: 0.1em;
     margin: 0;
     line-height: 1.5;
 }
