@@ -94,6 +94,36 @@ body.kro-hero-scrolled .kro-step1 {
        opacity: 1;
        transform: none;
    }
+   /* Hero: убираем каскадные задержки, всё появляется сразу */
+   .kro-step1.kro-reveal .kro-step1-role,
+   .kro-step1.kro-reveal .kro-step1-title,
+   .kro-step1.kro-reveal .kro-step1-subtitle,
+   .kro-step1.kro-reveal .kro-step1-tags,
+   .kro-step1.kro-reveal .kro-step1-cta,
+   .kro-step1.kro-reveal .kro-step1-cta-note,
+   .kro-step1.kro-reveal .kro-step1-cta-secondary,
+   .kro-step1.kro-reveal .kro-tag {
+      transition-duration: 0.2s;
+   }
+   .kro-step1.kro-reveal-visible .kro-step1-role,
+   .kro-step1.kro-reveal-visible .kro-step1-title,
+   .kro-step1.kro-reveal-visible .kro-step1-subtitle,
+   .kro-step1.kro-reveal-visible .kro-step1-tags,
+   .kro-step1.kro-reveal-visible .kro-tag:nth-child(1),
+   .kro-step1.kro-reveal-visible .kro-tag:nth-child(2),
+   .kro-step1.kro-reveal-visible .kro-tag:nth-child(3),
+   .kro-step1.kro-reveal-visible .kro-tag:nth-child(4),
+   .kro-step1.kro-reveal-visible .kro-step1-cta,
+   .kro-step1.kro-reveal-visible .kro-step1-cta-note,
+   .kro-step1.kro-reveal-visible .kro-step1-cta-secondary {
+      transition-delay: 0s;
+   }
+   .kro-tag:hover {
+      transform: none;
+   }
+   .kro-step1-cta:hover::before {
+      transform: none;
+   }
 }
 
 /* Плавающая навигация: плавное появление и исчезновение (0.5–0.8 s, в стилистике sitelove) */
@@ -277,13 +307,13 @@ body.kro-hero-scrolled .kro-floating-nav {
    max-width: 1000px;
    margin: 0 auto;
    position: relative;
-   padding: 48px 32px 56px;
-   background: rgba(255, 255, 255, 0.02);
-   backdrop-filter: blur(12px);
-   -webkit-backdrop-filter: blur(12px);
-   border-radius: 16px;
-   border: 1px solid rgba(220, 225, 235, 0.06);
-   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+   padding: 52px 32px 60px;
+   background: rgba(255, 255, 255, 0.025);
+   backdrop-filter: blur(16px);
+   -webkit-backdrop-filter: blur(16px);
+   border-radius: 20px;
+   border: 1px solid rgba(220, 225, 235, 0.08);
+   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .kro-step1-left {
@@ -311,27 +341,74 @@ body.kro-hero-scrolled .kro-floating-nav {
    display: none;
 }
 
-/* Hero: каскадное появление при .kro-reveal-visible (stagger 0.12s, medvedevart-style fade-up 24–30px) */
+/* Hero: строка-роль (medvedevart-style иерархия) */
+.kro-step1-role {
+   font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   font-size: 12px;
+   font-weight: 500;
+   letter-spacing: 0.12em;
+   text-transform: uppercase;
+   color: rgba(255, 255, 255, 0.5);
+   margin: 0 0 14px;
+   line-height: 1.4;
+}
+
+.kro-step1-cta-secondary {
+   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   font-size: 13px;
+   color: rgba(255, 255, 255, 0.5);
+   text-decoration: none;
+   margin-top: 4px;
+   transition: color 0.2s ease, box-shadow 0.2s ease;
+   border-bottom: 1px solid transparent;
+   box-shadow: 0 1px 0 transparent;
+}
+
+.kro-step1-cta-secondary:hover {
+   color: rgba(255, 255, 255, 0.85);
+   border-bottom-color: rgba(255, 255, 255, 0.25);
+   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.kro-step1-cta-secondary:focus-visible {
+   outline: 2px solid rgba(255, 255, 255, 0.5);
+   outline-offset: 3px;
+}
+
+/* Hero: каскадное появление при .kro-reveal-visible (stagger medvedevart-style) */
+.kro-step1.kro-reveal .kro-step1-role,
 .kro-step1.kro-reveal .kro-step1-title,
 .kro-step1.kro-reveal .kro-step1-subtitle,
 .kro-step1.kro-reveal .kro-step1-tags,
 .kro-step1.kro-reveal .kro-step1-cta,
-.kro-step1.kro-reveal .kro-step1-cta-note {
+.kro-step1.kro-reveal .kro-step1-cta-note,
+.kro-step1.kro-reveal .kro-step1-cta-secondary,
+.kro-step1.kro-reveal .kro-tag {
    opacity: 0;
    transform: translateY(28px);
    transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.kro-step1.kro-reveal-visible .kro-step1-title {
+.kro-step1.kro-reveal .kro-tag {
+   transform: translateY(12px);
+}
+
+.kro-step1.kro-reveal-visible .kro-step1-role {
    opacity: 1;
    transform: translateY(0);
    transition-delay: 0s;
 }
 
+.kro-step1.kro-reveal-visible .kro-step1-title {
+   opacity: 1;
+   transform: translateY(0);
+   transition-delay: 0.08s;
+}
+
 .kro-step1.kro-reveal-visible .kro-step1-subtitle {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.12s;
+   transition-delay: 0.16s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-tags {
@@ -340,16 +417,46 @@ body.kro-hero-scrolled .kro-floating-nav {
    transition-delay: 0.24s;
 }
 
-.kro-step1.kro-reveal-visible .kro-step1-cta {
+.kro-step1.kro-reveal-visible .kro-tag:nth-child(1) {
+   opacity: 1;
+   transform: translateY(0);
+   transition-delay: 0.24s;
+}
+
+.kro-step1.kro-reveal-visible .kro-tag:nth-child(2) {
+   opacity: 1;
+   transform: translateY(0);
+   transition-delay: 0.30s;
+}
+
+.kro-step1.kro-reveal-visible .kro-tag:nth-child(3) {
    opacity: 1;
    transform: translateY(0);
    transition-delay: 0.36s;
 }
 
+.kro-step1.kro-reveal-visible .kro-tag:nth-child(4) {
+   opacity: 1;
+   transform: translateY(0);
+   transition-delay: 0.42s;
+}
+
+.kro-step1.kro-reveal-visible .kro-step1-cta {
+   opacity: 1;
+   transform: translateY(0);
+   transition-delay: 0.52s;
+}
+
 .kro-step1.kro-reveal-visible .kro-step1-cta-note {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.48s;
+   transition-delay: 0.64s;
+}
+
+.kro-step1.kro-reveal-visible .kro-step1-cta-secondary {
+   opacity: 1;
+   transform: translateY(0);
+   transition-delay: 0.72s;
 }
 
 @media (min-width: 900px) {
@@ -389,7 +496,8 @@ body.kro-hero-scrolled .kro-floating-nav {
    position: absolute;
    inset: 0;
    z-index: -1;
-   background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+   background: radial-gradient(ellipse 70% 50% at 50% 40%, rgba(245, 158, 11, 0.04) 0%, transparent 55%),
+               radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
                linear-gradient(180deg, var(--kro-bg) 0%, rgba(18, 20, 28, 0.98) 45%, var(--kro-bg-soft) 100%);
 }
 
@@ -453,13 +561,15 @@ body.kro-hero-scrolled .kro-floating-nav {
    border: 1px solid rgba(255, 255, 255, 0.08);
    border-radius: 999px;
    background: transparent;
-   transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
+   transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .kro-tag:hover {
    border-color: rgba(255, 255, 255, 0.15);
    background: rgba(255, 255, 255, 0.03);
    color: rgba(255, 255, 255, 0.82);
+   transform: translateY(-1px);
+   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .kro-step1-cta {
@@ -491,12 +601,17 @@ body.kro-hero-scrolled .kro-floating-nav {
    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f5c88c' stroke-width='2'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") no-repeat center;
    background-size: contain;
    flex-shrink: 0;
+   transition: transform 0.25s ease;
 }
 
 .kro-step1-cta:hover {
    border-color: rgba(245, 158, 11, 0.45);
    background-color: rgba(245, 158, 11, 0.18);
    color: rgba(255, 240, 220, 0.98);
+}
+
+.kro-step1-cta:hover::before {
+   transform: translateX(2px);
 }
 
 .kro-step1-cta:focus-visible {
