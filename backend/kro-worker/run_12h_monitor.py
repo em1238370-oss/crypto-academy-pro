@@ -1708,8 +1708,8 @@ def update_sources_google_doc(doc_id, doc_text, structured_data=None):
                     print('  Заголовки: Объект / ссылка, Тип, Источник, Краткое описание, VIP / деньги, Жалобы / отзывы, Признаки риска (флаги), Итоговый статус', file=sys.stderr)
                     print('  Затем снова запустите: python3 update_sources_doc_once.py', file=sys.stderr)
                 else:
-                    print('Sources doc: таблица 8 колонок не найдена — пересборка документа с нуля.', file=sys.stderr)
-                    _build_sources_doc_with_tables(service, doc_id, structured_data)
+                    print('Sources doc: таблица 8 колонок не найдена — пересборку с нуля не делаем, чтобы не затереть блок «События за период» (update_live_log_5min).', file=sys.stderr)
+                # Не вызываем _build_sources_doc_with_tables — он удаляет весь документ и затирает блок лога каждые 5 мин; обновляем только заголовок
             _update_sources_doc_intro(service, doc_id, structured_data)
             _apply_italic_to_times_in_doc(service, doc_id)
             url = 'https://docs.google.com/document/d/' + doc_id + '/edit'
