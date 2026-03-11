@@ -380,21 +380,33 @@ def _find_text_start_index(service, doc_id, search_text):
         return None
 
 
+def _collect_text_segments(content_elems):
+    """Собрать (startIndex, text) из параграфов и из таблиц (вложенные параграфы)."""
+    segments = []
+    for elem in content_elems or []:
+        if 'paragraph' in elem:
+            for pe in elem.get('paragraph', {}).get('elements', []):
+                tr = pe.get('textRun', {})
+                if tr:
+                    run_content = tr.get('content', '')
+                    start = pe.get('startIndex', elem.get('startIndex', 1))
+                    segments.append((start, run_content))
+        if 'table' in elem:
+            for row in elem.get('table', {}).get('tableRows', []):
+                for cell in row.get('tableCells', []):
+                    for sub in cell.get('content', []):
+                        segments.extend(_collect_text_segments([sub]))
+    return segments
+
+
 def _find_all_placeholder_ranges(service, doc_id, search_text):
-    """Найти все вхождения search_text; вернуть список (startIndex, endIndex)."""
+    """Найти все вхождения search_text (в т.ч. внутри таблиц); вернуть список (startIndex, endIndex)."""
     try:
         doc = service.documents().get(documentId=doc_id).execute()
         body = doc.get('body', {})
         content = body.get('content', [])
-        segments = []
-        for elem in content:
-            if 'paragraph' in elem:
-                for pe in elem.get('paragraph', {}).get('elements', []):
-                    tr = pe.get('textRun', {})
-                    if tr:
-                        run_content = tr.get('content', '')
-                        start = pe.get('startIndex', elem.get('startIndex', 1))
-                        segments.append((start, run_content))
+        segments = _collect_text_segments(content)
+        segments.sort(key=lambda x: x[0])
         full_text = ''.join(s[1] for s in segments)
         L = len(search_text)
         out = []
@@ -431,19 +443,21 @@ def update_doc_placeholder(doc_id, new_content, last_line):
             print('update_live_log_5min: в документе не найден плейсхолдер «%s».' % PLACEHOLDER, file=sys.stderr)
             print('  Откройте документ Sources and Data, вставьте в блок «Обновления каждые 5 мин» строку «%s» (или весь текст из файла Sources-and-Data-ВСТАВИТЬ-В-GOOGLE-DOC.txt), сохраните и запустите скрипт снова.' % PLACEHOLDER, file=sys.stderr)
             return False
+        # Берём ПЕРВОЕ вхождение: удаляем от неё до конца документа (весь старый лог на 130+ страниц)
         P = ranges[0][0]
-        # Удаляем весь накопленный блок: от первого плейсхолдера до конца последнего (или до конца документа), чтобы убрать все старые страницы
-        if len(ranges) >= 2:
-            delete_end = ranges[-1][1]
-        else:
-            # Один плейсхолдер: удаляем от него до конца документа (не включая последний символ абзаца — иначе API 400)
-            doc = service.documents().get(documentId=doc_id).execute()
-            content = doc.get('body', {}).get('content', [])
-            delete_end = content[-1].get('endIndex', P + len(PLACEHOLDER)) if content else (P + len(PLACEHOLDER))
-            if delete_end > P + 1:
-                delete_end -= 1  # не включать newline в конце сегмента — Google Docs API не разрешает
+        doc = service.documents().get(documentId=doc_id).execute()
+        content = doc.get('body', {}).get('content', [])
+        delete_end = content[-1].get('endIndex', P + len(PLACEHOLDER)) if content else (P + len(PLACEHOLDER))
+        if delete_end > P + 1:
+            delete_end -= 1  # не включать newline в конце — иначе API 400
         if delete_end <= P:
             delete_end = P + len(PLACEHOLDER)
+        # Удаление по частям (по ~30k символов), иначе один огромный delete может не сработать
+        CHUNK = 30000
+        while delete_end - P > CHUNK:
+            req = [{'deleteContentRange': {'range': {'startIndex': P, 'endIndex': P + CHUNK}}}]
+            service.documents().batchUpdate(documentId=doc_id, body={'requests': req}).execute()
+            delete_end -= CHUNK
         requests = [
             {'deleteContentRange': {'range': {'startIndex': P, 'endIndex': delete_end}}},
             {'insertText': {'location': {'index': P}, 'text': new_content}}
