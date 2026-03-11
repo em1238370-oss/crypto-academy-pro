@@ -9,7 +9,13 @@ import os
 import sys
 import json
 import re
+import warnings
 from datetime import datetime, timezone, timedelta
+
+# Убрать из вывода предупреждения библиотек (Python 3.9 EOL, OpenSSL, google-auth и т.д.)
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings('ignore', message='.*OpenSSL.*')
+warnings.filterwarnings('ignore', message='.*urllib3.*')
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
