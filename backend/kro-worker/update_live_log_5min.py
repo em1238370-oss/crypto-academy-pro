@@ -350,8 +350,46 @@ def _find_text_start_index(service, doc_id, search_text):
     except Exception:
         return None
 
+
+def _find_all_placeholder_ranges(service, doc_id, search_text):
+    """Найти все вхождения search_text; вернуть список (startIndex, endIndex)."""
+    try:
+        doc = service.documents().get(documentId=doc_id).execute()
+        body = doc.get('body', {})
+        content = body.get('content', [])
+        segments = []
+        for elem in content:
+            if 'paragraph' in elem:
+                for pe in elem.get('paragraph', {}).get('elements', []):
+                    tr = pe.get('textRun', {})
+                    if tr:
+                        run_content = tr.get('content', '')
+                        start = pe.get('startIndex', elem.get('startIndex', 1))
+                        segments.append((start, run_content))
+        full_text = ''.join(s[1] for s in segments)
+        L = len(search_text)
+        out = []
+        idx = 0
+        while True:
+            pos = full_text.find(search_text, idx)
+            if pos == -1:
+                break
+            offset = 0
+            for seg_start, seg_text in segments:
+                if offset + len(seg_text) > pos:
+                    start_i = seg_start + (pos - offset)
+                    out.append((start_i, start_i + L))
+                    break
+                offset += len(seg_text)
+            idx = pos + 1
+        return out
+    except Exception:
+        return []
+
+
 def update_doc_placeholder(doc_id, new_content, last_line):
-    """Заменить только первое вхождение плейсхолдера на new_content; в последней строке выделить жирным только время (HH:MM)."""
+    """Заменить блок лога на new_content: удалить ВЕСЬ старый блок (от первого плейсхолдера до второго включительно),
+    чтобы документ не разрастался на сотни страниц. В последней строке выделить жирным только время (HH:MM)."""
     creds = _get_creds()
     if not creds:
         print('update_live_log_5min: нет учётных данных Google', file=sys.stderr)
@@ -359,12 +397,17 @@ def update_doc_placeholder(doc_id, new_content, last_line):
     try:
         from googleapiclient.discovery import build
         service = build('docs', 'v1', credentials=creds)
-        P = _find_text_start_index(service, doc_id, PLACEHOLDER)
-        if P is None:
+        ranges = _find_all_placeholder_ranges(service, doc_id, PLACEHOLDER)
+        if not ranges:
             return False
-        # Заменяем только первое вхождение, чтобы не дублировать блок при нескольких плейсхолдерах
+        P = ranges[0][0]
+        # Удаляем ВЕСЬ блок: от первого плейсхолдера до начала второго (если есть), иначе только плейсхолдер
+        if len(ranges) >= 2:
+            delete_end = ranges[1][0]  # до второго плейсхолдера — удаляем первый плейсхолдер + весь накопленный лог
+        else:
+            delete_end = P + len(PLACEHOLDER)
         requests = [
-            {'deleteContentRange': {'range': {'startIndex': P, 'endIndex': P + len(PLACEHOLDER)}}},
+            {'deleteContentRange': {'range': {'startIndex': P, 'endIndex': delete_end}}},
             {'insertText': {'location': {'index': P}, 'text': new_content}}
         ]
         service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
