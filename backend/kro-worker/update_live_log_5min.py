@@ -521,10 +521,19 @@ def update_doc_placeholder(doc_id, new_content, last_line):
                     break
         if end_marker_start is not None:
             new_content = new_content + '\n\n' + end_marker
-            # Удаляем до конца строки с маркером, чтобы после вставки шла только таблица (без дубля маркера)
             delete_end = end_marker_start + len(end_marker)
             if delete_end > P + 1:
                 delete_end -= 1  # не включать возможный newline в конце сегмента
+            # Удалять весь блок от начала (маркер начала), иначе старый заголовок и строки останутся и будет дубль
+            start_marker = (os.environ.get(LOG_BLOCK_START_MARKER_ENV) or '').strip()
+            if start_marker:
+                segs = _collect_text_segments(content)
+                segs.sort(key=lambda x: x[0])
+                for seg_start, seg_text in segs:
+                    if start_marker in seg_text and seg_start < end_marker_start:
+                        P = seg_start
+                        print('update_live_log_5min: удаляю весь блок от маркера «%s» (поз. %s) до конца блока.' % (start_marker[:30], P), file=sys.stderr)
+                        break
             print('update_live_log_5min: найден конец блока «%s», сохраняю содержимое после него (таблицу и т.д.).' % end_marker[:30], file=sys.stderr)
         else:
             # Если плейсхолдер только в конце — удаляем от начала блока лога
