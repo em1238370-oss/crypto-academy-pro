@@ -26,6 +26,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
 DATA_DIR = os.path.join(BACKEND_DIR, 'data')
 OUTPUT_JSON = os.path.join(DATA_DIR, 'kro-12h-stats.json')
+CHANNEL_OBJECTS_JSON = os.path.join(DATA_DIR, 'channel_objects.json')
 LIVE_LOG_FILE = os.path.join(DATA_DIR, 'live_log_5min.json')
 LIVE_LOG_MAX_LINES = 50
 REPORT_COUNTER_KEY = 'lastReportNumber'
@@ -875,6 +876,101 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
     telegram_count = sum(1 for r in rows if r['type'] in ('сигнал‑канал', 'сигналы'))
     courses_count = sum(1 for r in rows if r['type'] in ('курс/сайт', 'курс / сайт'))
     return rows, telegram_count, courses_count
+
+
+def _channel_id_for_storage(obj, link):
+    """Нормализованный идентификатор канала для channel_objects.json: @username или t.me/username (единый формат @)."""
+    o = (obj or '').strip()
+    if o.startswith('@'):
+        return o.split('?')[0].strip() or ''
+    if o.startswith('t.me/'):
+        part = o.split('t.me/')[-1].split('/')[0].split('?')[0].strip()
+        return '@' + part if part else ''
+    l = (link or '').strip()
+    if 't.me/' in l:
+        part = l.split('t.me/')[-1].split('/')[0].split('?')[0].strip()
+        return '@' + part if part else ''
+    if o:
+        return '@' + o.lstrip('@').split('?')[0].strip()
+    return ''
+
+
+def _snapshot_from_risk_row(row):
+    """Собрать снимок из строки risk_rows для истории (поля по плану + зарезервированные)."""
+    snapshot = {
+        'obj': row.get('obj'),
+        'link': row.get('link'),
+        'type': row.get('type'),
+        'source': row.get('source'),
+        'age': row.get('age'),
+        'vip': row.get('vip'),
+        'growth': row.get('growth'),
+        'complaints': row.get('complaints'),
+        'risk_analysis': row.get('risk_analysis'),
+        'title': row.get('title'),
+        'has_complaints': row.get('has_complaints'),
+        'content_indices': None,
+        'connections': None,
+        'dynamics': None,
+    }
+    return snapshot
+
+
+def _report_date_to_iso(report_date_str):
+    """Конвертировать report_date_str (dd.mm.YYYY или dd.mm.YYYY HH:MM) в YYYY-MM-DD."""
+    if not report_date_str:
+        return ''
+    parts = report_date_str.strip().split()
+    try:
+        d, m, y = parts[0].split('.')
+        return '%s-%s-%s' % (y, m, d)
+    except (ValueError, IndexError):
+        return ''
+
+
+def merge_channel_snapshots(risk_rows, report_date_str):
+    """Обновить channel_objects.json: для каждой строки risk_rows добавить снимок на report_date_str, история до 14 дней.
+    report_date_str в формате dd.mm.YYYY (как в мониторе)."""
+    iso_date = _report_date_to_iso(report_date_str)
+    if not iso_date:
+        return
+    if not os.path.isdir(DATA_DIR):
+        os.makedirs(DATA_DIR, exist_ok=True)
+    data = {'channels': {}}
+    if os.path.isfile(CHANNEL_OBJECTS_JSON):
+        try:
+            with open(CHANNEL_OBJECTS_JSON, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except Exception:
+            data = {'channels': {}}
+    if 'channels' not in data:
+        data['channels'] = {}
+
+    for row in risk_rows or []:
+        ch_id = _channel_id_for_storage(row.get('obj'), row.get('link'))
+        if not ch_id:
+            continue
+        snapshot = _snapshot_from_risk_row(row)
+        entry = data['channels'].get(ch_id)
+        if not entry:
+            entry = {'first_seen': iso_date, 'last_updated': iso_date, 'history': []}
+            data['channels'][ch_id] = entry
+        entry['last_updated'] = iso_date
+        # Уже есть снимок на эту дату — заменить
+        history = entry.get('history') or []
+        history = [h for h in history if h.get('date') != iso_date]
+        history.append({'date': iso_date, 'snapshot': snapshot})
+        history.sort(key=lambda x: x.get('date', ''))
+        # Оставить только последние 14 дней
+        if len(history) > DAYS_14:
+            history = history[-DAYS_14:]
+        entry['history'] = history
+
+    try:
+        with open(CHANNEL_OBJECTS_JSON, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print('merge_channel_snapshots: не удалось сохранить %s: %s' % (CHANNEL_OBJECTS_JSON, e), file=sys.stderr)
 
 
 def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, complaints_rows,
@@ -1899,6 +1995,7 @@ def main():
     risk_rows, telegram_count_from_risk, courses_count_from_risk = _build_risk_table_rows(
         new_tgstat, telega_channels, complaints_rows, report_date_str
     )
+    merge_channel_snapshots(risk_rows, report_date_str)
 
     # Top3 and totals
     top3 = build_top3(sheet_reports, channel_sum_pairs)
