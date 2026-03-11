@@ -46,7 +46,11 @@ def main():
     lines = load_log_lines()
     lines = trim_log_to_start_date(lines, START_DATE_DDMMYYYY)
     formatted = format_live_log_grouped(lines)
-    content = '\n'.join(formatted) + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
+    start_line = '%s 00:00 — Отчёт с этого дня (с 00:00).' % START_DATE_DDMMYYYY
+    if formatted:
+        content = start_line + '\n' + '\n'.join(formatted) + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
+    else:
+        content = start_line + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
     last_line = formatted[-1] if formatted else None
 
     print('Обновляю документ %s...' % doc_id[:20] + '...', file=sys.stderr)
