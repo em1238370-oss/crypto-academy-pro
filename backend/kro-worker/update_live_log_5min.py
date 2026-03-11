@@ -114,7 +114,7 @@ def format_live_log_grouped(lines):
             date_ord = (9999, 99, 99)
         return (date_ord[0], date_ord[1], date_ord[2], h, m, idx)
     parsed.sort(key=sort_key)
-    # В одних сутках каждое время (слот 5 мин) не более одного раза — оставляем последнюю запись в слоте
+    # Жёстко: в одних сутках каждое время (слот 5 мин) только один раз — последняя запись в слоте, без дублей дат/времени
     seen = {}
     for x in reversed(parsed):
         slot = _round_time_str_to_grid(x[1]) if x[1] else x[1]
@@ -123,9 +123,13 @@ def format_live_log_grouped(lines):
             seen[key] = x
     parsed = list(seen.values())
     parsed.sort(key=sort_key)
+    # Один день — разделитель «Новый день» не выводим
+    dates_in_parsed = set(p[0] for p in parsed if p[0])
+    single_day = len(dates_in_parsed) <= 1
     out = []
     prev_date = None
     prev_last_time = None
+    used_slots = set()  # (date, rounded_time) уже выведены — никаких дублей
     i = 0
     while i < len(parsed):
         date_str, t, msg, _ = parsed[i]
@@ -140,10 +144,14 @@ def format_live_log_grouped(lines):
             if parsed[j][1]:
                 last_time = parsed[j][1]
             j += 1
-        if prev_date is not None and first_date is not None and first_date != prev_date:
-            out.append('')  # пустая строка перед разделителем дня
+        slot_start = _round_time_str_to_grid(first_time) if first_time else None
+        if slot_start and first_date and (first_date, slot_start) in used_slots:
+            i = j
+            continue
+        if not single_day and prev_date is not None and first_date is not None and first_date != prev_date:
+            out.append('')
             out.append(NEW_DAY_SEPARATOR)
-        elif prev_last_time and first_time:
+        elif not single_day and prev_last_time and first_time:
             try:
                 ph = int(prev_last_time[:2])
                 fh = int(first_time[:2])
@@ -165,6 +173,8 @@ def format_live_log_grouped(lines):
             line = msg
         if line:
             out.append(LOG_LINE_PREFIX + line)
+            if first_date and slot_start:
+                used_slots.add((first_date, slot_start))
             prev_last_time = last_time or first_time
         i = j
     return out
@@ -684,8 +694,9 @@ def main():
                 new_line = '%s — Обновление счётчиков: TGStat %s, Telega %s, потери %s ₽.' % (datetime_prefix, tg, telega, losses)
             if new_line:
                 lines = load_log_lines()
+                # Один слот (дата + время по сетке 5 мин) — одна строка: заменяем последнюю, если тот же слот, иначе добавляем
                 if lines and lines[-1].strip().startswith(datetime_prefix):
-                    lines[-1] = new_line  # тот же слот (день + 5 мин) — заменяем, цифры не дублируем
+                    lines[-1] = new_line
                 else:
                     lines.append(new_line)
                 save_log_lines(lines[-MAX_LINES:] if len(lines) > MAX_LINES else lines)
@@ -710,7 +721,7 @@ def main():
                 new_line = '%s — За последние 30 минут новых объектов по фильтрам не найдено, источники доступны.' % datetime_prefix
                 lines = load_log_lines()
                 if lines and lines[-1].strip().startswith(datetime_prefix):
-                    lines[-1] = new_line
+                    lines[-1] = new_line  # тот же слот — не дублируем время
                 else:
                     lines.append(new_line)
                 save_log_lines(lines[-MAX_LINES:] if len(lines) > MAX_LINES else lines)
@@ -725,7 +736,8 @@ def main():
         print('KRO_SOURCES_DOC_ID не задан, только запись в %s' % LIVE_LOG_FILE, file=sys.stderr)
         return
     formatted = format_live_log_grouped(lines)
-    start_line = 'Отчёт с 00:00 (%s)' % start_ddmm
+    # Одна дата в заголовке, ниже — только время по сетке 5 мин (00:00, 00:05, … 23:55), без повторения даты
+    start_line = '%s — события по 5 мин (00:00 … 23:55)' % start_ddmm
     if formatted:
         content = start_line + '\n' + '\n'.join(formatted) + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
     else:

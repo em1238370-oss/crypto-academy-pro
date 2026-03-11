@@ -54,7 +54,7 @@ def main():
     lines = load_log_lines()
     lines = trim_log_to_start_date(lines, start_ddmm)
     formatted = format_live_log_grouped(lines)
-    start_line = 'Отчёт с 00:00 (%s)' % start_ddmm
+    start_line = '%s — события по 5 мин (00:00 … 23:55)' % start_ddmm
     if formatted:
         content = start_line + '\n' + '\n'.join(formatted) + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
     else:
