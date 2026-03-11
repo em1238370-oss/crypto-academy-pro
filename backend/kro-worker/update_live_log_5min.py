@@ -22,8 +22,8 @@ PLACEHOLDER = 'События за период — ниже'
 DEFAULT_SOURCES_DOC_ID = '1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58'
 MAX_LINES = 50
 EMPTY_INTERVAL_MINUTES = 30  # не чаще чем раз в 30 мин писать «новых каналов не найдено»
-# Сутки с 00:00 (12 ночи); данные показываем с этой даты (5 марта 2026)
-START_DATE_DDMMYYYY = '05.03.2026'
+# Сутки с 00:00 (12 ночи); данные показываем с этой даты (11 марта 2026 — старт с этого дня)
+START_DATE_DDMMYYYY = '11.03.2026'
 # В документе показывать только последние N дней лога (1 = только сегодня), чтобы блок не разрастался на 100+ страниц
 MAX_DAYS_SHOWN_IN_DOC = 1
 GRID_MINUTES = 5  # время округляем до сетки 5 мин (00:00, 00:05, … 23:55)
@@ -57,7 +57,7 @@ def _parse_line(line, today_ddmm, has_date_only_format=False):
 
 
 def format_live_log_grouped(lines):
-    """Сортировка по дате и времени (строго по возрастанию), данные с 5 марта; в сутках каждое HH:MM не повторяется; объединение подряд одинаковых сообщений."""
+    """Сортировка по дате и времени (строго по возрастанию), данные с START_DATE_DDMMYYYY; в сутках каждое HH:MM не повторяется; объединение подряд одинаковых сообщений."""
     if not lines:
         return []
     now = _msk_now()
@@ -71,7 +71,7 @@ def format_live_log_grouped(lines):
         if time_str is None and parsed and parsed[-1][2] == msg:
             time_str = parsed[-1][1]
         parsed.append((date_str, time_str, msg, idx))
-    # Только данные с 5 марта 2026
+    # Только данные с START_DATE_DDMMYYYY (11.03.2026)
     parsed = [(d, t, msg, idx) for (d, t, msg, idx) in parsed if _date_str_ge(START_DATE_DDMMYYYY, d)]
     # В документе показывать только последние MAX_DAYS_SHOWN_IN_DOC дней (1 = только сегодня), чтобы не раздувать блок
     parsed = [(d, t, msg, idx) for (d, t, msg, idx) in parsed if _date_str_within_last_n_days(d, MAX_DAYS_SHOWN_IN_DOC - 1, today_ddmm)]
@@ -291,6 +291,27 @@ def load_log_lines():
     except Exception:
         return []
 
+
+def _keep_line_on_or_after_date(line, from_ddmm):
+    """True если в строке дата >= from_ddmm (DD.MM.YYYY). Строки без даты отбрасываем (старый формат)."""
+    s = (line or '').strip()
+    if not s or ' — ' not in s:
+        return False
+    left = s.split(' — ', 1)[0].strip()
+    if not re.search(r'\d{1,2}\.\d{1,2}\.\d{4}', left):
+        return False
+    parts = left.split(None, 1)
+    date_str = parts[0] if parts else None
+    if not date_str:
+        return False
+    return _date_str_ge(from_ddmm, date_str)
+
+
+def trim_log_to_start_date(lines, start_ddmm):
+    """Оставить в списке только строки с датой >= start_ddmm. Возвращает новый список."""
+    return [ln for ln in lines if _keep_line_on_or_after_date(ln, start_ddmm)]
+
+
 def save_log_lines(lines):
     os.makedirs(DATA_DIR, exist_ok=True)
     with open(LIVE_LOG_FILE, 'w', encoding='utf-8') as f:
@@ -463,6 +484,13 @@ def save_state(state):
 
 
 def main():
+    # Обрезать лог до записей с START_DATE_DDMMYYYY (11.03.2026), чтобы убрать старые страницы
+    lines = load_log_lines()
+    trimmed = trim_log_to_start_date(lines, START_DATE_DDMMYYYY)
+    if len(trimmed) < len(lines):
+        save_log_lines(trimmed)
+        print('update_live_log_5min: лог обрезан до записей с %s (%s строк удалено)' % (START_DATE_DDMMYYYY, len(lines) - len(trimmed)), file=sys.stderr)
+
     now = _msk_now()
     now_rounded = _round_time_to_grid(now)  # сутки по сетке 00:00, 00:05, … 23:55
     date_str = now_rounded.strftime('%d.%m.%Y')
