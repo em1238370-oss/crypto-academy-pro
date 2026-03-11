@@ -2,6 +2,11 @@
 # Установка: grep -v '^#' backend/kro-worker/CRONTAB_12h.txt | grep -v '^$' | crontab -
 # Проверка: crontab -l
 
+# Каждые 5 минут — обновление блока «События за период» в документе Sources and Data.
+# В документе должна быть строка «События за период — ниже» (см. Sources-and-Data-ВСТАВИТЬ-В-GOOGLE-DOC.txt).
+# Нужны учётные данные Google (KRO_GOOGLE_CREDENTIALS_JSON или credentials.json в kro-worker).
+*/5 * * * * cd /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker && python3 update_live_log_5min.py >> /Users/elizavetamedvedeva/Documents/GitHub/crypto-academy-pro/backend/kro-worker/log_5min.txt 2>&1
+
 # Расписание по Москве (TZ=Europe/Moscow):
 # 11:00 MSK — сбор (TGStat, Telega, Telegram → Doc + kro-12h-stats.json). На сайт не отправляем.
 # 12:00 MSK — публикация на сайт (POST из kro-12h-stats.json)

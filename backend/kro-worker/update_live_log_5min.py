@@ -18,6 +18,8 @@ LIVE_LOG_FILE = os.path.join(DATA_DIR, 'live_log_5min.json')
 STATE_FILE = os.path.join(DATA_DIR, 'live_log_state.json')
 # Строка в документе, которую скрипт заменяет на актуальные строки лога (и снова вставляет в конец для следующего запуска)
 PLACEHOLDER = 'События за период — ниже'
+# Документ по умолчанию (ваш Sources and Data), если KRO_SOURCES_DOC_ID не задан в .env
+DEFAULT_SOURCES_DOC_ID = '1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58'
 MAX_LINES = 50
 EMPTY_INTERVAL_MINUTES = 30  # не чаще чем раз в 30 мин писать «новых каналов не найдено»
 # Сутки с 00:00 (12 ночи); данные показываем с этой даты (5 марта 2026)
@@ -399,6 +401,8 @@ def update_doc_placeholder(doc_id, new_content, last_line):
         service = build('docs', 'v1', credentials=creds)
         ranges = _find_all_placeholder_ranges(service, doc_id, PLACEHOLDER)
         if not ranges:
+            print('update_live_log_5min: в документе не найден плейсхолдер «%s».' % PLACEHOLDER, file=sys.stderr)
+            print('  Откройте документ Sources and Data, вставьте в блок «Обновления каждые 5 мин» строку «%s» (или весь текст из файла Sources-and-Data-ВСТАВИТЬ-В-GOOGLE-DOC.txt), сохраните и запустите скрипт снова.' % PLACEHOLDER, file=sys.stderr)
             return False
         P = ranges[0][0]
         # Удаляем ВЕСЬ блок: от первого плейсхолдера до начала второго (если есть), иначе только плейсхолдер
@@ -528,7 +532,7 @@ def main():
                 })
 
     lines = load_log_lines()
-    doc_id = os.environ.get('KRO_SOURCES_DOC_ID', '').strip()
+    doc_id = (os.environ.get('KRO_SOURCES_DOC_ID') or '').strip() or DEFAULT_SOURCES_DOC_ID
     if not doc_id:
         print('KRO_SOURCES_DOC_ID не задан, только запись в %s' % LIVE_LOG_FILE, file=sys.stderr)
         return
