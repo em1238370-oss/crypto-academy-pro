@@ -432,40 +432,14 @@ def update_doc_placeholder(doc_id, new_content, last_line):
             print('  Откройте документ Sources and Data, вставьте в блок «Обновления каждые 5 мин» строку «%s» (или весь текст из файла Sources-and-Data-ВСТАВИТЬ-В-GOOGLE-DOC.txt), сохраните и запустите скрипт снова.' % PLACEHOLDER, file=sys.stderr)
             return False
         P = ranges[0][0]
-        # Удаляем весь накопленный блок лога, чтобы старые страницы не оставались
+        # Удаляем весь накопленный блок: от первого плейсхолдера до конца последнего (или до конца документа), чтобы убрать все старые страницы
         if len(ranges) >= 2:
             delete_end = ranges[-1][1]
         else:
-            # Один плейсхолдер: удаляем от него до строки «Канонический источник», чтобы убрать весь старый лог и не трогать остальной документ
+            # Один плейсхолдер: удаляем от него до конца документа — так гарантированно убираются все 100+ страниц старого лога
             doc = service.documents().get(documentId=doc_id).execute()
-            body = doc.get('body', {})
-            segments = []
-            for elem in body.get('content', []):
-                if 'paragraph' in elem:
-                    for pe in elem.get('paragraph', {}).get('elements', []):
-                        tr = pe.get('textRun', {})
-                        if tr:
-                            segments.append((pe.get('startIndex', elem.get('startIndex', 1)), tr.get('content', '')))
-            full_text = ''.join(s[1] for s in segments)
-            marker = 'Канонический источник'
-            pos_ph = full_text.find(PLACEHOLDER)
-            if pos_ph != -1:
-                rest = full_text[pos_ph + len(PLACEHOLDER):]
-                idx_rest = rest.find(marker)
-                idx_in_full = pos_ph + len(PLACEHOLDER) + idx_rest if idx_rest != -1 else -1
-            else:
-                idx_in_full = full_text.find(marker)
-            if idx_in_full != -1:
-                offset = 0
-                delete_end = P + len(PLACEHOLDER)
-                for seg_start, seg_text in segments:
-                    if offset + len(seg_text) > idx_in_full:
-                        delete_end = seg_start + (idx_in_full - offset)
-                        break
-                    offset += len(seg_text)
-            else:
-                content = body.get('content', [])
-                delete_end = content[-1].get('endIndex', P + len(PLACEHOLDER)) if content else (P + len(PLACEHOLDER))
+            content = doc.get('body', {}).get('content', [])
+            delete_end = content[-1].get('endIndex', P + len(PLACEHOLDER)) if content else (P + len(PLACEHOLDER))
         if delete_end <= P:
             delete_end = P + len(PLACEHOLDER)
         requests = [
@@ -602,7 +576,7 @@ def main():
         print('KRO_SOURCES_DOC_ID не задан, только запись в %s' % LIVE_LOG_FILE, file=sys.stderr)
         return
     formatted = format_live_log_grouped(lines)
-    content = '\n'.join(formatted) + '\n' + PLACEHOLDER
+    content = '\n'.join(formatted) + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
     last_line = formatted[-1] if formatted else (new_line if new_line else None)
     if update_doc_placeholder(doc_id, content, last_line=last_line):
         if last_line:
