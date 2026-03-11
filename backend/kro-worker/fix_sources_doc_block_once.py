@@ -34,9 +34,10 @@ from update_live_log_5min import (
     trim_log_to_start_date,
     format_live_log_grouped,
     update_doc_placeholder,
+    get_start_date_ddmm,
     PLACEHOLDER,
-    START_DATE_DDMMYYYY,
     DEFAULT_SOURCES_DOC_ID,
+    LOG_BLOCK_START_MARKER_ENV,
 )
 DATA_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), 'data')
 PASTE_FILE = os.path.join(DATA_DIR, 'sources_doc_block_to_paste.txt')
@@ -49,14 +50,18 @@ def main():
         print('KRO_SOURCES_DOC_ID не задан. Задайте в .env или он возьмётся по умолчанию.', file=sys.stderr)
         doc_id = DEFAULT_SOURCES_DOC_ID
 
+    start_ddmm = get_start_date_ddmm()
     lines = load_log_lines()
-    lines = trim_log_to_start_date(lines, START_DATE_DDMMYYYY)
+    lines = trim_log_to_start_date(lines, start_ddmm)
     formatted = format_live_log_grouped(lines)
-    start_line = '%s 00:00 — Отчёт с этого дня (с 00:00).' % START_DATE_DDMMYYYY
+    start_line = 'Отчёт с 00:00 (%s)' % start_ddmm
     if formatted:
         content = start_line + '\n' + '\n'.join(formatted) + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
     else:
         content = start_line + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
+    marker = (os.environ.get(LOG_BLOCK_START_MARKER_ENV) or '').strip()
+    if marker:
+        content = marker + '\n\n' + content  # пустая строка после маркера
     last_line = formatted[-1] if formatted else None
 
     os.makedirs(DATA_DIR, exist_ok=True)
@@ -66,8 +71,11 @@ def main():
 
     url = 'https://docs.google.com/document/d/' + doc_id + '/edit'
     print('', file=sys.stderr)
-    print('Документ (откройте именно эту ссылку):', file=sys.stderr)
-    print(url, file=sys.stderr)
+    print('=== В какой документ пишем ===', file=sys.stderr)
+    print('ID документа (должен совпадать с ID в твоей ссылке в браузере):', file=sys.stderr)
+    print(doc_id, file=sys.stderr)
+    print('URL:', url, file=sys.stderr)
+    print('Твоя ссылка должна быть такая же: .../d/' + doc_id + '/edit', file=sys.stderr)
     print('', file=sys.stderr)
 
     if file_only:
@@ -84,17 +92,26 @@ def main():
     print('Обновляю документ через API...', file=sys.stderr)
     ok = update_doc_placeholder(doc_id, content, last_line=last_line)
     if ok:
+        try:
+            from update_live_log_5min import _get_creds
+            from googleapiclient.discovery import build
+            creds = _get_creds()
+            if creds:
+                service = build('docs', 'v1', credentials=creds)
+                doc = service.documents().get(documentId=doc_id).execute()
+                content_elems = doc.get('body', {}).get('content', [])
+                length = content_elems[-1].get('endIndex', 0) if content_elems else 0
+                print('', file=sys.stderr)
+                print('Документ на сервере обновлён. Длина после обновления: %s символов (если видишь сотни тысяч — старый лог ещё там).' % length, file=sys.stderr)
+        except Exception:
+            pass
         print('', file=sys.stderr)
-        print('Готово. Документ обновлён по API.', file=sys.stderr)
-        print('Обновите страницу документа (Cmd+R). Если открыт другой документ — откройте ссылку выше.', file=sys.stderr)
+        print('Готово. Обнови страницу документа (Cmd+Shift+R) или закрой вкладку и открой ссылку снова.', file=sys.stderr)
     else:
         print('', file=sys.stderr)
-        print('Обновление по API не удалось. Используйте ручную вставку:', file=sys.stderr)
-        print('1. Откройте документ по ссылке выше.', file=sys.stderr)
-        print('2. Найдите строку «События за период — ниже».', file=sys.stderr)
-        print('3. Удалите от неё всё до раздела «Канонический источник» (или до конца документа).', file=sys.stderr)
-        print('4. Откройте файл %s' % PASTE_FILE, file=sys.stderr)
-        print('5. Скопируйте весь текст из файла (Cmd+A, Cmd+C) и вставьте в документ (Cmd+V) на место удалённого.', file=sys.stderr)
+        print('Обновление по API не удалось или документ остался длинным. Варианты:', file=sys.stderr)
+        print('1. Ручная вставка: открой документ, удали от «События за период — ниже» до конца, вставь текст из файла %s' % PASTE_FILE, file=sys.stderr)
+        print('2. Маркер: в документе в самое начало блока лога (перед первой записью) добавь строку, напр. ===НАЧАЛО_БЛОКА_СОБЫТИЯ===. В .env задай KRO_LOG_BLOCK_START_MARKER===НАЧАЛО_БЛОКА_СОБЫТИЯ=== и запусти скрипт снова.', file=sys.stderr)
         sys.exit(1)
 
 if __name__ == '__main__':

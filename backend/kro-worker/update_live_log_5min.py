@@ -28,10 +28,21 @@ PLACEHOLDER = 'События за период — ниже'
 DEFAULT_SOURCES_DOC_ID = '1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58'
 MAX_LINES = 50
 EMPTY_INTERVAL_MINUTES = 30  # не чаще чем раз в 30 мин писать «новых каналов не найдено»
-# Сутки с 00:00 (12 ночи); данные показываем с этой даты (11 марта 2026 — старт с этого дня)
-START_DATE_DDMMYYYY = '11.03.2026'
-# В документе показывать только последние N дней лога (1 = только сегодня), чтобы блок не разрастался на 100+ страниц
+# В документе показывать только последние N дней лога (1 = только сегодня), чтобы блок не разрастался
 MAX_DAYS_SHOWN_IN_DOC = 1
+# Разделитель между днями и оформление
+NEW_DAY_SEPARATOR = '───── Новый день ─────'
+LOG_LINE_PREFIX = '• '  # буллет перед каждой строкой лога
+
+
+def get_start_date_ddmm():
+    """Дата старта лога: «с этого дня с нуля». По умолчанию — сегодня (MSK); можно задать KRO_LOG_START_DATE в .env (DD.MM.YYYY)."""
+    try:
+        from zoneinfo import ZoneInfo
+        now = datetime.now(ZoneInfo('Europe/Moscow'))
+    except ImportError:
+        now = datetime.now(timezone.utc) + timedelta(hours=3)
+    return (os.environ.get('KRO_LOG_START_DATE') or '').strip() or now.strftime('%d.%m.%Y')
 GRID_MINUTES = 5  # время округляем до сетки 5 мин (00:00, 00:05, … 23:55)
 
 
@@ -63,7 +74,7 @@ def _parse_line(line, today_ddmm, has_date_only_format=False):
 
 
 def format_live_log_grouped(lines):
-    """Сортировка по дате и времени (строго по возрастанию), данные с START_DATE_DDMMYYYY; в сутках каждое HH:MM не повторяется; объединение подряд одинаковых сообщений."""
+    """Сортировка по дате и времени; только данные с даты старта (get_start_date_ddmm()); в сутках каждое HH:MM не повторяется; объединение подряд одинаковых сообщений."""
     if not lines:
         return []
     now = _msk_now()
@@ -77,8 +88,9 @@ def format_live_log_grouped(lines):
         if time_str is None and parsed and parsed[-1][2] == msg:
             time_str = parsed[-1][1]
         parsed.append((date_str, time_str, msg, idx))
-    # Только данные с START_DATE_DDMMYYYY (11.03.2026)
-    parsed = [(d, t, msg, idx) for (d, t, msg, idx) in parsed if _date_str_ge(START_DATE_DDMMYYYY, d)]
+    # Только данные с даты старта («с этого дня с нуля»)
+    start_ddmm = get_start_date_ddmm()
+    parsed = [(d, t, msg, idx) for (d, t, msg, idx) in parsed if _date_str_ge(start_ddmm, d)]
     # В документе показывать только последние MAX_DAYS_SHOWN_IN_DOC дней (1 = только сегодня), чтобы не раздувать блок
     parsed = [(d, t, msg, idx) for (d, t, msg, idx) in parsed if _date_str_within_last_n_days(d, MAX_DAYS_SHOWN_IN_DOC - 1, today_ddmm)]
     if not parsed:
@@ -129,13 +141,15 @@ def format_live_log_grouped(lines):
                 last_time = parsed[j][1]
             j += 1
         if prev_date is not None and first_date is not None and first_date != prev_date:
-            out.append('——— Новый день ———')
+            out.append('')  # пустая строка перед разделителем дня
+            out.append(NEW_DAY_SEPARATOR)
         elif prev_last_time and first_time:
             try:
                 ph = int(prev_last_time[:2])
                 fh = int(first_time[:2])
                 if ph >= 23 and fh <= 1:
-                    out.append('——— Новый день ———')
+                    out.append('')
+                    out.append(NEW_DAY_SEPARATOR)
             except (ValueError, TypeError):
                 pass
         prev_date = first_date
@@ -150,7 +164,7 @@ def format_live_log_grouped(lines):
         else:
             line = msg
         if line:
-            out.append(line)
+            out.append(LOG_LINE_PREFIX + line)
             prev_last_time = last_time or first_time
         i = j
     return out
@@ -428,6 +442,44 @@ def _find_all_placeholder_ranges(service, doc_id, search_text):
         return []
 
 
+# Текст в документе, после которого начинается блок лога (инструкция «Обновления каждые 5 мин»)
+ANCHOR_BEFORE_LOG = 'Обновления каждые 5 мин'
+# Если в .env задан KRO_LOG_BLOCK_START_MARKER — ищем эту строку в документе и удаляем от неё до конца (так можно обнулить 140 страниц вручную)
+LOG_BLOCK_START_MARKER_ENV = 'KRO_LOG_BLOCK_START_MARKER'
+# Если задан KRO_LOG_END_BLOCK_MARKER — удаляем только до этой строки; всё после неё (таблица и т.д.) сохраняется
+LOG_BLOCK_END_MARKER_ENV = 'KRO_LOG_END_BLOCK_MARKER'
+
+
+def _find_first_log_line_index(service, doc_id):
+    """Найти startIndex начала блока лога: первый сегмент (абзац/ячейка) после ANCHOR_BEFORE_LOG, в котором есть «DD.MM.YYYY HH:MM».
+    Возвращаем начало этого сегмента, чтобы удалить весь блок от него до конца документа."""
+    try:
+        doc = service.documents().get(documentId=doc_id).execute()
+        body = doc.get('body', {})
+        content = body.get('content', [])
+        segments = _collect_text_segments(content)
+        segments.sort(key=lambda x: x[0])
+        full_text = ''.join(s[1] for s in segments)
+        anchor_pos = full_text.find(ANCHOR_BEFORE_LOG)
+        if anchor_pos == -1:
+            search_from = 0
+        else:
+            search_from = anchor_pos + len(ANCHOR_BEFORE_LOG)
+        # Сегмент лога: есть дата и разделитель " — " (как в "11.03.2026 00:00 — текст")
+        has_date = re.compile(r'\d{1,2}\.\d{1,2}\.\d{4}')
+        offset = 0
+        for seg_start, seg_text in segments:
+            if offset < search_from:
+                offset += len(seg_text)
+                continue
+            if has_date.search(seg_text) and ' — ' in seg_text:
+                return seg_start
+            offset += len(seg_text)
+        return None
+    except Exception:
+        return None
+
+
 def update_doc_placeholder(doc_id, new_content, last_line):
     """Заменить блок лога на new_content: удалить ВЕСЬ старый блок (от первого плейсхолдера до второго включительно),
     чтобы документ не разрастался на сотни страниц. В последней строке выделить жирным только время (HH:MM)."""
@@ -443,15 +495,51 @@ def update_doc_placeholder(doc_id, new_content, last_line):
             print('update_live_log_5min: в документе не найден плейсхолдер «%s».' % PLACEHOLDER, file=sys.stderr)
             print('  Откройте документ Sources and Data, вставьте в блок «Обновления каждые 5 мин» строку «%s» (или весь текст из файла Sources-and-Data-ВСТАВИТЬ-В-GOOGLE-DOC.txt), сохраните и запустите скрипт снова.' % PLACEHOLDER, file=sys.stderr)
             return False
-        # Берём ПЕРВОЕ вхождение: удаляем от неё до конца документа (весь старый лог на 130+ страниц)
-        P = ranges[0][0]
         doc = service.documents().get(documentId=doc_id).execute()
         content = doc.get('body', {}).get('content', [])
-        delete_end = content[-1].get('endIndex', P + len(PLACEHOLDER)) if content else (P + len(PLACEHOLDER))
-        if delete_end > P + 1:
-            delete_end -= 1  # не включать newline в конце — иначе API 400
-        if delete_end <= P:
-            delete_end = P + len(PLACEHOLDER)
+        doc_len = content[-1].get('endIndex', 0) if content else 0
+        P = ranges[0][0]
+        end_marker = (os.environ.get(LOG_BLOCK_END_MARKER_ENV) or '').strip()
+        end_marker_start = None
+        if end_marker:
+            segs = _collect_text_segments(content)
+            segs.sort(key=lambda x: x[0])
+            for seg_start, seg_text in segs:
+                if end_marker in seg_text and seg_start > P:
+                    pos = seg_text.find(end_marker)
+                    end_marker_start = seg_start + pos
+                    break
+        if end_marker_start is not None:
+            new_content = new_content + '\n\n' + end_marker
+            # Удаляем до конца строки с маркером, чтобы после вставки шла только таблица (без дубля маркера)
+            delete_end = end_marker_start + len(end_marker)
+            if delete_end > P + 1:
+                delete_end -= 1  # не включать возможный newline в конце сегмента
+            print('update_live_log_5min: найден конец блока «%s», сохраняю содержимое после него (таблицу и т.д.).' % end_marker[:30], file=sys.stderr)
+        else:
+            # Если плейсхолдер только в конце — удаляем от начала блока лога
+            if len(ranges) == 1 and doc_len > 10000 and P > doc_len - 10000:
+                marker = (os.environ.get(LOG_BLOCK_START_MARKER_ENV) or '').strip()
+                if marker:
+                    doc2 = service.documents().get(documentId=doc_id).execute()
+                    body = doc2.get('body', {}).get('content', [])
+                    segs = _collect_text_segments(body)
+                    segs.sort(key=lambda x: x[0])
+                    for seg_start, seg_text in segs:
+                        if marker in seg_text:
+                            P = seg_start
+                            print('update_live_log_5min: найден маркер «%s», удаляю от поз. %s до конца.' % (marker[:30], P), file=sys.stderr)
+                            break
+                if P == ranges[0][0]:
+                    first_log = _find_first_log_line_index(service, doc_id)
+                    if first_log is not None and first_log < P:
+                        P = first_log
+                        print('update_live_log_5min: плейсхолдер в конце документа, удаляю от первой строки лога (поз. %s) до конца.' % P, file=sys.stderr)
+            delete_end = content[-1].get('endIndex', P + len(PLACEHOLDER)) if content else (P + len(PLACEHOLDER))
+            if delete_end > P + 1:
+                delete_end -= 1  # не включать newline в конце — иначе API 400
+            if delete_end <= P:
+                delete_end = P + len(PLACEHOLDER)
         # Удаление по частям (по ~30k символов), иначе один огромный delete может не сработать
         CHUNK = 30000
         while delete_end - P > CHUNK:
@@ -473,6 +561,38 @@ def update_doc_placeholder(doc_id, new_content, last_line):
                     requests[0]['deleteContentRange']['range']['endIndex'] = delete_end
                     continue
                 raise
+        # Стиль блока: по умолчанию 11pt; заголовок (первая строка до \n) — жирный 12pt
+        font_size_str = (os.environ.get('KRO_LOG_FONT_SIZE') or '').strip()
+        magnitude = 11
+        if font_size_str and font_size_str.isdigit():
+            m = int(font_size_str)
+            if 8 <= m <= 24:
+                magnitude = m
+        try:
+            end_idx = P + len(new_content)
+            marker = (os.environ.get(LOG_BLOCK_START_MARKER_ENV) or '').strip()
+            # Заголовок «Отчёт с 00:00» — после маркера и \n\n
+            off = (len(marker) + 2) if marker else 0
+            nl = new_content.find('\n', off)
+            header_len = (nl - off) if nl >= 0 else (len(new_content) - off)
+            header_start = P + off
+            header_end = min(header_start + header_len, end_idx)
+            reqs = [
+                {'updateTextStyle': {
+                    'range': {'startIndex': P, 'endIndex': end_idx},
+                    'textStyle': {'fontSize': {'magnitude': magnitude, 'unit': 'PT'}},
+                    'fields': 'fontSize'
+                }}
+            ]
+            if header_end > header_start and header_len > 0:
+                reqs.append({'updateTextStyle': {
+                    'range': {'startIndex': header_start, 'endIndex': header_end},
+                    'textStyle': {'bold': True, 'fontSize': {'magnitude': min(12, magnitude + 1), 'unit': 'PT'}},
+                    'fields': 'bold,fontSize'
+                }})
+            service.documents().batchUpdate(documentId=doc_id, body={'requests': reqs}).execute()
+        except Exception:
+            pass
         if not last_line:
             return True
         P = _find_text_start_index(service, doc_id, PLACEHOLDER)
@@ -482,16 +602,18 @@ def update_doc_placeholder(doc_id, new_content, last_line):
         len_placeholder = len(PLACEHOLDER)
         block_start = P - len_content + len_placeholder
         last_line_start = block_start + len_content - len_placeholder - 1 - len(last_line)
-        # Жирным только время в начале строки (HH:MM или до " — ")
-        time_part = last_line.split(' — ', 1)[0] if ' — ' in last_line else last_line[:5]
+        # Жирным только время в начале строки (после буллета «• »)
+        line_without_prefix = last_line.replace(LOG_LINE_PREFIX, '', 1) if last_line.startswith(LOG_LINE_PREFIX) else last_line
+        time_part = line_without_prefix.split(' — ', 1)[0].strip() if ' — ' in line_without_prefix else line_without_prefix[:5]
         time_len = len(time_part)
-        bold_end = last_line_start + time_len
-        if last_line_start < 1 or bold_end <= last_line_start or last_line_start >= P:
+        bold_start = last_line_start + (len(last_line) - len(line_without_prefix))  # после «• »
+        bold_end = bold_start + time_len
+        if bold_start < 1 or bold_end <= bold_start or bold_start >= P:
             return True
         requests2 = [
             {
                 'updateTextStyle': {
-                    'range': {'startIndex': last_line_start, 'endIndex': bold_end},
+                    'range': {'startIndex': bold_start, 'endIndex': bold_end},
                     'textStyle': {'bold': True},
                     'fields': 'bold'
                 }
@@ -521,12 +643,13 @@ def save_state(state):
 
 
 def main():
-    # Обрезать лог до записей с START_DATE_DDMMYYYY (11.03.2026), чтобы убрать старые страницы
+    start_ddmm = get_start_date_ddmm()
+    # Обрезать лог до записей с даты старта — без огромной истории, «с нуля»
     lines = load_log_lines()
-    trimmed = trim_log_to_start_date(lines, START_DATE_DDMMYYYY)
+    trimmed = trim_log_to_start_date(lines, start_ddmm)
     if len(trimmed) < len(lines):
         save_log_lines(trimmed)
-        print('update_live_log_5min: лог обрезан до записей с %s (%s строк удалено)' % (START_DATE_DDMMYYYY, len(lines) - len(trimmed)), file=sys.stderr)
+        print('update_live_log_5min: лог обрезан до записей с %s (%s строк удалено)' % (start_ddmm, len(lines) - len(trimmed)), file=sys.stderr)
 
     now = _msk_now()
     now_rounded = _round_time_to_grid(now)  # сутки по сетке 00:00, 00:05, … 23:55
@@ -602,12 +725,14 @@ def main():
         print('KRO_SOURCES_DOC_ID не задан, только запись в %s' % LIVE_LOG_FILE, file=sys.stderr)
         return
     formatted = format_live_log_grouped(lines)
-    # Первая строка блока: явно «обнулились, отчёт с полуночи этого дня»
-    start_line = '%s 00:00 — Отчёт с этого дня (с 00:00).' % START_DATE_DDMMYYYY
+    start_line = 'Отчёт с 00:00 (%s)' % start_ddmm
     if formatted:
         content = start_line + '\n' + '\n'.join(formatted) + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
     else:
         content = start_line + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
+    marker = (os.environ.get(LOG_BLOCK_START_MARKER_ENV) or '').strip()
+    if marker:
+        content = marker + '\n\n' + content  # пустая строка после маркера
     last_line = formatted[-1] if formatted else (new_line if new_line else None)
     if update_doc_placeholder(doc_id, content, last_line=last_line):
         if last_line:
