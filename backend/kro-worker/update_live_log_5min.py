@@ -27,7 +27,8 @@ PLACEHOLDER = 'События за период — ниже'
 # Документ по умолчанию (ваш Sources and Data), если KRO_SOURCES_DOC_ID не задан в .env
 DEFAULT_SOURCES_DOC_ID = '1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58'
 MAX_LINES = 50
-EMPTY_INTERVAL_MINUTES = 30  # не чаще чем раз в 30 мин писать «новых каналов не найдено»
+# Текст для слотов, где не было отдельного события — описание действий за 5 мин
+DEFAULT_SLOT_MSG = 'Проверка за 5 мин: запрос к TGStat, Telega, расчёт потерь и жалоб; данные получены.'
 # В документе показывать только последние N дней лога (1 = только сегодня), чтобы блок не разрастался
 MAX_DAYS_SHOWN_IN_DOC = 1
 # Разделитель между днями и оформление
@@ -177,6 +178,50 @@ def format_live_log_grouped(lines):
                 used_slots.add((first_date, slot_start))
             prev_last_time = last_time or first_time
         i = j
+    return out
+
+
+def _all_slots_up_to(end_h, end_m, grid_minutes=GRID_MINUTES):
+    """Список слотов (HH:MM) от 00:00 до end_h:end_m включительно по сетке 5 мин."""
+    out = []
+    h, m = 0, 0
+    while (h, m) <= (end_h, end_m):
+        out.append('%02d:%02d' % (h, m))
+        m += grid_minutes
+        if m >= 60:
+            m = 0
+            h += 1
+        if h > 23:
+            break
+    return out
+
+
+def format_live_log_full_grid(lines):
+    """Полная сетка по 5 мин от 00:00 до текущего времени (MSK): для каждого слота — запись из лога или описание действий."""
+    now = _msk_now()
+    today_ddmm = now.strftime('%d.%m.%Y')
+    start_ddmm = get_start_date_ddmm()
+    # Собираем из лога сообщения по слотам (дата, HH:MM) только за сегодня и с даты старта
+    slot_msg = {}
+    for raw in (lines or []):
+        s = (raw or '').strip()
+        if not s or ' — ' not in s:
+            continue
+        date_str, time_str, msg = _parse_line(s, today_ddmm, has_date_only_format=False)
+        if not _date_str_ge(start_ddmm, date_str) or not _date_str_within_last_n_days(date_str, MAX_DAYS_SHOWN_IN_DOC - 1, today_ddmm):
+            continue
+        slot = _round_time_str_to_grid(time_str) if time_str else None
+        if not slot or not date_str:
+            continue
+        slot_msg[(date_str, slot)] = msg
+    # Только один день — слоты от 00:00 до текущего времени
+    end_h = now.hour
+    end_m = (now.minute // GRID_MINUTES) * GRID_MINUTES
+    slots = _all_slots_up_to(end_h, end_m)
+    out = []
+    for t in slots:
+        msg = slot_msg.get((today_ddmm, t), DEFAULT_SLOT_MSG)
+        out.append(LOG_LINE_PREFIX + '%s — %s' % (t, msg))
     return out
 
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
@@ -682,71 +727,41 @@ def main():
     victims, losses = get_stats_cached()
 
     state = load_state()
-    new_line = None
-
+    # Каждый запуск (каждые 5 мин по Москве) — одна строка с описанием действий за эти 5 мин
     if state is None:
-        save_state({
-            'last_tgstat': tg, 'last_telega': telega, 'last_victims': victims, 'last_losses': losses,
-            'last_empty_at': None
-        })
-    else:
-        changed = (
-            state.get('last_tgstat') != tg or state.get('last_telega') != telega
-            or state.get('last_victims') != victims or state.get('last_losses') != losses
-        )
-        if changed:
-            if (state.get('last_losses') != losses or state.get('last_victims') != victims) and (losses or victims):
-                new_line = '%s — Обновлён расчёт: потери %s ₽, жалоб %s.' % (datetime_prefix, losses, victims)
-            elif state.get('last_tgstat') != tg or state.get('last_telega') != telega:
-                new_line = '%s — TGStat/Telega: найдено каналов по фильтрам — TGStat %s, Telega %s.' % (datetime_prefix, tg, telega)
-            else:
-                new_line = '%s — Обновление счётчиков: TGStat %s, Telega %s, потери %s ₽.' % (datetime_prefix, tg, telega, losses)
-            if new_line:
-                lines = load_log_lines()
-                # Один слот (дата + время по сетке 5 мин) — одна строка: заменяем последнюю, если тот же слот, иначе добавляем
-                if lines and lines[-1].strip().startswith(datetime_prefix):
-                    lines[-1] = new_line
-                else:
-                    lines.append(new_line)
-                save_log_lines(lines[-MAX_LINES:] if len(lines) > MAX_LINES else lines)
-            save_state({
-                'last_tgstat': tg, 'last_telega': telega, 'last_victims': victims, 'last_losses': losses,
-                'last_empty_at': state.get('last_empty_at')
-            })
+        state = {'last_tgstat': tg, 'last_telega': telega, 'last_victims': victims, 'last_losses': losses}
+    changed = (
+        state.get('last_tgstat') != tg or state.get('last_telega') != telega
+        or state.get('last_victims') != victims or state.get('last_losses') != losses
+    )
+    if changed:
+        if (state.get('last_losses') != losses or state.get('last_victims') != victims) and (losses or victims):
+            action = 'Обновлён расчёт: потери %s ₽, жалоб %s.' % (losses, victims)
+        elif state.get('last_tgstat') != tg or state.get('last_telega') != telega:
+            action = 'Найдено каналов по фильтрам: TGStat %s, Telega %s.' % (tg, telega)
         else:
-            last_empty = state.get('last_empty_at')
-            try:
-                last_empty_dt = datetime.fromisoformat(last_empty.replace('Z', '+00:00')) if last_empty else None
-            except Exception:
-                last_empty_dt = None
-            if last_empty_dt:
-                try:
-                    from zoneinfo import ZoneInfo
-                    last_empty_dt = last_empty_dt.astimezone(ZoneInfo('Europe/Moscow'))
-                except ImportError:
-                    last_empty_dt = last_empty_dt + timedelta(hours=3)
-            delta_min = (now - last_empty_dt).total_seconds() / 60.0 if last_empty_dt else EMPTY_INTERVAL_MINUTES + 1
-            if delta_min >= EMPTY_INTERVAL_MINUTES:
-                new_line = '%s — За последние 30 минут новых объектов по фильтрам не найдено, источники доступны.' % datetime_prefix
-                lines = load_log_lines()
-                if lines and lines[-1].strip().startswith(datetime_prefix):
-                    lines[-1] = new_line  # тот же слот — не дублируем время
-                else:
-                    lines.append(new_line)
-                save_log_lines(lines[-MAX_LINES:] if len(lines) > MAX_LINES else lines)
-                save_state({
-                    'last_tgstat': tg, 'last_telega': telega, 'last_victims': victims, 'last_losses': losses,
-                    'last_empty_at': now.isoformat()
-                })
+            action = 'Обновление счётчиков: TGStat %s, Telega %s, потери %s ₽.' % (tg, telega, losses)
+    else:
+        action = 'Запрос TGStat (%s), Telega (%s), потери %s ₽, жалоб %s. Изменений нет.' % (tg, telega, losses, victims)
+    new_line = '%s — За 5 мин: %s' % (datetime_prefix, action)
+    save_state({
+        'last_tgstat': tg, 'last_telega': telega, 'last_victims': victims, 'last_losses': losses,
+    })
+    lines = load_log_lines()
+    if lines and lines[-1].strip().startswith(datetime_prefix):
+        lines[-1] = new_line
+    else:
+        lines.append(new_line)
+    save_log_lines(lines[-MAX_LINES:] if len(lines) > MAX_LINES else lines)
 
     lines = load_log_lines()
     doc_id = (os.environ.get('KRO_SOURCES_DOC_ID') or '').strip() or DEFAULT_SOURCES_DOC_ID
     if not doc_id:
         print('KRO_SOURCES_DOC_ID не задан, только запись в %s' % LIVE_LOG_FILE, file=sys.stderr)
         return
-    formatted = format_live_log_grouped(lines)
-    # Одна дата в заголовке, ниже — только время по сетке 5 мин (00:00, 00:05, … 23:55), без повторения даты
-    start_line = '%s — события по 5 мин (00:00 … 23:55)' % start_ddmm
+    formatted = format_live_log_full_grid(lines)
+    # Одна дата в заголовке, ниже — полная сетка по 5 мин (00:00 … текущее время MSK), в каждом слоте — действия за 5 мин
+    start_line = '%s — события по 5 мин (00:00 … текущее время MSK)' % start_ddmm
     if formatted:
         content = start_line + '\n' + '\n'.join(formatted) + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
     else:

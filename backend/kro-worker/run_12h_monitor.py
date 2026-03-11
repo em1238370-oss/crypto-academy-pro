@@ -501,13 +501,15 @@ BLOCK2_SOURCES = '''
 - Условия: упоминание канала/сайта (ник или ссылка); указана сумма потерь; по объекту ≥ 2 разных человека.
 '''
 
-# Блок 3: Параметры скама для сигнал‑каналов (фиксированный текст)
+# Блок 3: Параметры скама для сигнал‑каналов (фиксированный текст).
+# Критерии токсичности и приоритет риск‑менеджмента см. в Sources and Data:
+# раздел «Главная цель системы и умный анализ (психология и риск-менеджмент)».
 BLOCK3_SCAM_PARAMS = '''
 3. Параметры скама для сигнал‑каналов (на примере @daytrader_signals)
 
 3.1. Базовые параметры канала: тип "сигнал‑канал / трейдинг‑сигналы"; позиционирование (обещания "гарантированной прибыли", "постоянного профита"); наличие платных подписок / VIP от 10 000₽ и выше; акции "только сегодня скидка".
 
-3.2. Поведенческие признаки риска: агрессивные обещания ("100% прибыль", "без рисков"); давление на срочность ("успей сейчас", "осталось 5 мест в VIP"); отсутствие верифицируемой истории; навязывание перехода в личку; яркие картинки/скриншоты вместо реального анализа.
+3.2. Поведенческие признаки риска: агрессивные обещания ("100% прибыль", "без рисков"); давление на срочность ("успей сейчас", "осталось 5 мест в VIP"); психологическое давление и FOMO ("не упусти", "все уже зарабатывают"); нарушение риск-менеджмента ("без стопа", "зайти крупнее", "усредняемся"); отсутствие верифицируемой истории; навязывание перехода в личку; яркие картинки/скриншоты вместо реального анализа.
 
 3.3. Связка с жалобами: канал в зоне повышенного риска, если (1) новый &lt;14 дней и/или резкий рост подписчиков, (2) платный VIP от 10 000₽, (3) в чатах жалоб ≥2 сообщений от разных людей с указанием суммы потерь по этому каналу.
 '''
@@ -557,14 +559,30 @@ def _behavior_as_numbered_list(reasons):
 
 
 CHECKMARK = '\u2705'
+AGGRESSIVE_PROMISE_PATTERNS = (
+    'без риск', 'х2', '100%', 'профит', 'гарант', 'x2', 'удво', 'гаранти',
+    'не упусти', 'такого больше не будет', 'шанс изменить жизнь',
+    'все уже в рынке', 'нормальные люди уже зарабатывают', 'кто не с нами',
+)
+VIP_PRESSURE_PATTERNS = (
+    'пиши в лс', 'успей в vip', 'vip по акции', 'в vip даю', 'личка', 'в личку',
+    'только сегодня', 'осталось 5 мест', 'успей сейчас', 'последний шанс',
+)
+RISK_MANAGEMENT_BREAK_PATTERNS = (
+    'без стоп', 'без стопа', 'без стоп-лосса', 'без стоплосса',
+    'всем депозитом', 'весь депозит', 'на весь депозит', 'зайти крупнее',
+    'крупнее обычного', 'усредня', 'отбить убыток', 'плечо побольше',
+    'по максимуму', 'зальёмся по максимуму',
+)
 
 
 def _compute_behavioral_from_title(title_desc):
-    """Фаза 1: по названию/описанию только [1] агрессивные обещания и [5] VIP навязывание."""
+    """Фаза 1: по названию/описанию искать обещания, давление VIP и нарушения риск‑менеджмента."""
     text = (title_desc or '').lower()
-    agg = '%s "x2 за день"' % CHECKMARK if any(p in text for p in ('без риск', 'х2', '100%', 'профит', 'гарант', 'x2', 'удво', 'гаранти')) else '—'
-    vip_navyaz = '%s "пиши в ЛС"' % CHECKMARK if any(p in text for p in ('пиши в лс', 'успей в vip', 'vip по акции', 'в vip даю', 'личка', 'в личку')) else '—'
-    return agg, vip_navyaz
+    agg = '%s FOMO / обещания лёгкой прибыли' % CHECKMARK if any(p in text for p in AGGRESSIVE_PROMISE_PATTERNS) else '—'
+    vip_navyaz = '%s давление VIP / срочность' % CHECKMARK if any(p in text for p in VIP_PRESSURE_PATTERNS) else '—'
+    rm_break = '%s нарушение риск-менеджмента' % CHECKMARK if any(p in text for p in RISK_MANAGEMENT_BREAK_PATTERNS) else '—'
+    return agg, vip_navyaz, rm_break
 
 
 def _build_reasons_sentence(r):
@@ -573,6 +591,7 @@ def _build_reasons_sentence(r):
     ra = r.get('risk_analysis') or {}
     agg = ra.get('agg', '—')
     vip_navyaz = ra.get('vip_navyaz', '—')
+    rm_break = ra.get('rm_break', '—')
     tolko = ra.get('tolko_profit', '—')
     kartinki = ra.get('kartinki', '—')
     psevdo = ra.get('psevdo', '—')
@@ -584,6 +603,8 @@ def _build_reasons_sentence(r):
         behavior.append('агрессивные обещания (уверенные прогнозы без описания рисков)')
     if vip_navyaz != '—':
         behavior.append('навязывание VIP / «пиши в ЛС»')
+    if rm_break != '—':
+        behavior.append('призывы нарушать риск-менеджмент (без стопов, крупный вход, усреднение)')
     if tolko != '—':
         behavior.append('жалобы на потери')
     if kartinki != '—':
@@ -638,7 +659,7 @@ def _build_complaints_summary(row):
 
 
 def _build_risk_flags(row):
-    """Список признаков риска через запятую: новый канал, дорогой VIP, обещания x2, навязывание VIP и т.д."""
+    """Список признаков риска через запятую: новый канал, обещания лёгкой прибыли, давление VIP, нарушения РМ и т.д."""
     ra = row.get('risk_analysis') or {}
     flags = []
     age = (row.get('age') or '')
@@ -656,6 +677,8 @@ def _build_risk_flags(row):
         flags.append('обещания x2/x5 без упоминания рисков')
     if ra.get('vip_navyaz') and ra.get('vip_navyaz') != '—':
         flags.append('навязывание VIP / «пиши в ЛС»')
+    if ra.get('rm_break') and ra.get('rm_break') != '—':
+        flags.append('призывы нарушать риск-менеджмент')
     if ra.get('tolko_profit') and ra.get('tolko_profit') != '—':
         flags.append('жалобы на потери')
     if ra.get('kartinki') and ra.get('kartinki') != '—':
@@ -776,8 +799,8 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         basic_2 = 1 if vip_str != 'н/д' or (isinstance(vip_val, (int, float)) and (vip_val or 0) >= VIP_MIN) else 0
         basic_3 = 1 if (g is not None and g != '' and isinstance(g, (int, float)) and int(g) >= GROWTH_MIN) or (g is not None and g != '') else (1 if _is_crypto_signal_channel(title, ch) else 0)
         basic_ok = basic_1 + basic_2 + basic_3
-        agg_cell, vip_cell = _compute_behavioral_from_title(title)
-        behavioral_ok = (1 if agg_cell != '—' else 0) + (1 if vip_cell != '—' else 0)
+        agg_cell, vip_cell, rm_cell = _compute_behavioral_from_title(title)
+        behavioral_ok = (1 if agg_cell != '—' else 0) + (1 if vip_cell != '—' else 0) + (1 if rm_cell != '—' else 0)
         if basic_ok < 2 or behavioral_ok < 2:
             continue
         basic_3_3 = '%s/3' % basic_ok
@@ -790,7 +813,7 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         rows.append({
             'obj': ch, 'link': link, 'type': ch_type, 'source': 'TGStat', 'age': age_str, 'vip': vip_str,
             'growth': growth_str, 'status': 'в риске', 'complaints': comp_str,
-            'risk_analysis': {'basic_3_3': basic_3_3, 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': '—', 'vip_navyaz': vip_cell, 'itog': itog},
+            'risk_analysis': {'basic_3_3': basic_3_3, 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': '—', 'vip_navyaz': vip_cell, 'rm_break': rm_cell, 'itog': itog},
             'has_complaints': has_complaints,
             'title': title,
         })
@@ -806,8 +829,8 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         comp_str = '%s / %s ₽' % (comp[0], comp[1])
         title = (row.get('title') or '').strip()
         basic_ok = 3
-        agg_cell, vip_cell = _compute_behavioral_from_title(title)
-        behavioral_ok = (1 if agg_cell != '—' else 0) + (1 if vip_cell != '—' else 0)
+        agg_cell, vip_cell, rm_cell = _compute_behavioral_from_title(title)
+        behavioral_ok = (1 if agg_cell != '—' else 0) + (1 if vip_cell != '—' else 0) + (1 if rm_cell != '—' else 0)
         if behavioral_ok < 2:
             behavioral_ok = 2
             agg_cell = agg_cell if agg_cell != '—' else '%s контент сигналы' % CHECKMARK
@@ -822,7 +845,7 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         rows.append({
             'obj': ch, 'link': link, 'type': ch_type, 'source': 'Telega', 'age': 'н/д', 'vip': 'н/д',
             'growth': 'н/д', 'status': 'в риске', 'complaints': comp_str,
-            'risk_analysis': {'basic_3_3': '3/3', 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': '—', 'vip_navyaz': vip_cell, 'itog': itog},
+            'risk_analysis': {'basic_3_3': '3/3', 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': '—', 'vip_navyaz': vip_cell, 'rm_break': rm_cell, 'itog': itog},
             'has_complaints': has_complaints,
             'title': title,
         })
@@ -839,10 +862,11 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             behavioral_ok = 3
             agg_cell = '%s обещание 100%%' % CHECKMARK
             vip_cell = '—'
+            rm_cell = '—'
             tolko = '%s жалобы на потери' % CHECKMARK
         else:
-            agg_cell, vip_cell = _compute_behavioral_from_title('')
-            behavioral_ok = (1 if agg_cell != '—' else 0) + (1 if vip_cell != '—' else 0)
+            agg_cell, vip_cell, rm_cell = _compute_behavioral_from_title('')
+            behavioral_ok = (1 if agg_cell != '—' else 0) + (1 if vip_cell != '—' else 0) + (1 if rm_cell != '—' else 0)
             if behavioral_ok < 2:
                 behavioral_ok = 2
                 agg_cell = '%s по жалобам' % CHECKMARK
@@ -856,7 +880,7 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
         rows.append({
             'obj': ch, 'link': link, 'type': obj_type, 'source': 'Чаты', 'age': 'н/д', 'vip': 'н/д',
             'growth': 'н/д', 'status': 'в риске', 'complaints': comp_str,
-            'risk_analysis': {'basic_3_3': '3/3', 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': tolko, 'vip_navyaz': vip_cell, 'itog': itog},
+            'risk_analysis': {'basic_3_3': '3/3', 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': tolko, 'vip_navyaz': vip_cell, 'rm_break': rm_cell, 'itog': itog},
             'has_complaints': has_complaints,
             'title': '',
         })

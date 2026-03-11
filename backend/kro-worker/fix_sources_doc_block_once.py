@@ -32,7 +32,7 @@ for base in (SCRIPT_DIR, os.path.normpath(os.path.join(SCRIPT_DIR, '..', '..')))
 from update_live_log_5min import (
     load_log_lines,
     trim_log_to_start_date,
-    format_live_log_grouped,
+    format_live_log_full_grid,
     update_doc_placeholder,
     get_start_date_ddmm,
     PLACEHOLDER,
@@ -53,8 +53,8 @@ def main():
     start_ddmm = get_start_date_ddmm()
     lines = load_log_lines()
     lines = trim_log_to_start_date(lines, start_ddmm)
-    formatted = format_live_log_grouped(lines)
-    start_line = '%s — события по 5 мин (00:00 … 23:55)' % start_ddmm
+    formatted = format_live_log_full_grid(lines)
+    start_line = '%s — события по 5 мин (00:00 … текущее время MSK)' % start_ddmm
     if formatted:
         content = start_line + '\n' + '\n'.join(formatted) + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
     else:
