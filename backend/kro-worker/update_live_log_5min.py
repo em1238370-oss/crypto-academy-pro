@@ -448,7 +448,17 @@ def update_doc_placeholder(doc_id, new_content, last_line):
             {'deleteContentRange': {'range': {'startIndex': P, 'endIndex': delete_end}}},
             {'insertText': {'location': {'index': P}, 'text': new_content}}
         ]
-        service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+        for attempt in range(25):
+            try:
+                service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+                break
+            except Exception as err:
+                err_str = str(err)
+                if '400' in err_str and ('newline' in err_str.lower() or 'segment' in err_str.lower()) and delete_end > P + 1:
+                    delete_end -= 1
+                    requests[0]['deleteContentRange']['range']['endIndex'] = delete_end
+                    continue
+                raise
         if not last_line:
             return True
         P = _find_text_start_index(service, doc_id, PLACEHOLDER)
