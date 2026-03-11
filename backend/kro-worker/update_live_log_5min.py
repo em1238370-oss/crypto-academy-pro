@@ -22,6 +22,8 @@ MAX_LINES = 50
 EMPTY_INTERVAL_MINUTES = 30  # не чаще чем раз в 30 мин писать «новых каналов не найдено»
 # Сутки с 00:00 (12 ночи); данные показываем с этой даты (5 марта 2026)
 START_DATE_DDMMYYYY = '05.03.2026'
+# В документе показывать только последние N дней лога (1 = только сегодня), чтобы блок не разрастался на 100+ страниц
+MAX_DAYS_SHOWN_IN_DOC = 1
 GRID_MINUTES = 5  # время округляем до сетки 5 мин (00:00, 00:05, … 23:55)
 
 
@@ -69,6 +71,8 @@ def format_live_log_grouped(lines):
         parsed.append((date_str, time_str, msg, idx))
     # Только данные с 5 марта 2026
     parsed = [(d, t, msg, idx) for (d, t, msg, idx) in parsed if _date_str_ge(START_DATE_DDMMYYYY, d)]
+    # В документе показывать только последние MAX_DAYS_SHOWN_IN_DOC дней (1 = только сегодня), чтобы не раздувать блок
+    parsed = [(d, t, msg, idx) for (d, t, msg, idx) in parsed if _date_str_within_last_n_days(d, MAX_DAYS_SHOWN_IN_DOC - 1, today_ddmm)]
     if not parsed:
         return []
     def sort_key(x):
@@ -192,6 +196,22 @@ def _date_str_ge(start_ddmm, date_str):
         d = (int(parts[2]), int(parts[1]), int(parts[0]))
         s = (int(start_parts[2]), int(start_parts[1]), int(start_parts[0]))
         return d >= s
+    except (ValueError, TypeError):
+        return True
+
+
+def _date_str_within_last_n_days(date_str, n_days, today_ddmm):
+    """True если date_str в пределах последних n_days включительно (формат DD.MM.YYYY). today_ddmm = сегодня."""
+    if not date_str or not re.search(r'\d{1,2}\.\d{1,2}\.\d{4}', date_str):
+        return False
+    try:
+        parts = date_str.split('.')
+        today_parts = today_ddmm.split('.')
+        if len(parts) != 3 or len(today_parts) != 3:
+            return True
+        d = datetime(int(parts[2]), int(parts[1]), int(parts[0]))
+        t = datetime(int(today_parts[2]), int(today_parts[1]), int(today_parts[0]))
+        return 0 <= (t - d).days <= n_days
     except (ValueError, TypeError):
         return True
 
