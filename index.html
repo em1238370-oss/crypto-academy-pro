@@ -127,6 +127,9 @@
                </div>
                </div>
                <p class="kro-feature1-dashboard-sub kro-scroll-in">Цифры обновляются автоматически</p>
+               <p class="kro-f1-source-doc-wrap kro-scroll-in" id="kro-f1-source-doc-wrap">
+                   <a href="https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit" id="kro-f1-source-doc-link" target="_blank" rel="noopener" class="kro-f1-source-doc-link">Источники и данные (Sources and Data) — откуда цифры и таблица</a>
+               </p>
            </div>
            <div class="kro-f1-blocks kro-f1-content-card">
                <!-- Блок 1: Шок-цифры -->
@@ -587,13 +590,8 @@
                }
                var docWrap = document.getElementById('kro-f1-source-doc-wrap');
                var docLink = document.getElementById('kro-f1-source-doc-link');
-               if (docWrap && docLink) {
-                   if (data.report_doc_url) {
-                       docLink.href = data.report_doc_url;
-                       docWrap.style.display = 'block';
-                   } else {
-                       docWrap.style.display = 'none';
-                   }
+               if (docWrap && docLink && data.report_doc_url) {
+                   docLink.href = data.report_doc_url;
                }
                tryRunCountUps();
            }

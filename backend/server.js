@@ -1242,6 +1242,8 @@ async function getKroSheetsClient() {
   }
 }
 
+const KRO_SOURCES_DOC_URL = 'https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit';
+
 const KRO_FALLBACK = {
   channelsToday: 47,
   totalLost: 12847300,
@@ -1249,6 +1251,7 @@ const KRO_FALLBACK = {
   coursesCount: 10,
   victims_12h: 73,
   shockText: '73 человека купили «гарантию прибыли»',
+  report_doc_url: KRO_SOURCES_DOC_URL,
   top3: [
     { channel: '@TONPumpElite', sum: 2100000, status: 'Удалён' },
     { channel: 'BTC Курс миллионера', sum: 847000, status: 'Активен' },
@@ -1661,7 +1664,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
           }));
         }
         const response = { channelsToday, totalLost, telegramCount, coursesCount, victims_12h: victims12h, shockText, top3 };
-        if (data.report_doc_url) response.report_doc_url = data.report_doc_url;
+        response.report_doc_url = data.report_doc_url || KRO_SOURCES_DOC_URL;
         return res.json(response);
       }
     }
@@ -1693,7 +1696,8 @@ app.get('/api/kro/live-counter', async (req, res) => {
       coursesCount,
       victims_12h: 0,
       shockText: KRO_FALLBACK.shockText || '73 человека купили «гарантию прибыли»',
-      top3: top3.length ? top3 : KRO_FALLBACK.top3
+      top3: top3.length ? top3 : KRO_FALLBACK.top3,
+      report_doc_url: KRO_SOURCES_DOC_URL
     });
   } catch (e) {
     console.error('KRO live-counter error:', e);
