@@ -436,10 +436,12 @@ def update_doc_placeholder(doc_id, new_content, last_line):
         if len(ranges) >= 2:
             delete_end = ranges[-1][1]
         else:
-            # Один плейсхолдер: удаляем от него до конца документа — так гарантированно убираются все 100+ страниц старого лога
+            # Один плейсхолдер: удаляем от него до конца документа (не включая последний символ абзаца — иначе API 400)
             doc = service.documents().get(documentId=doc_id).execute()
             content = doc.get('body', {}).get('content', [])
             delete_end = content[-1].get('endIndex', P + len(PLACEHOLDER)) if content else (P + len(PLACEHOLDER))
+            if delete_end > P + 1:
+                delete_end -= 1  # не включать newline в конце сегмента — Google Docs API не разрешает
         if delete_end <= P:
             delete_end = P + len(PLACEHOLDER)
         requests = [
