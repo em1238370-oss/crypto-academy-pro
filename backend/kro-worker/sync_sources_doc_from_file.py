@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
 """
-Однократная синхронизация: записать весь текст из Sources-and-Data-ВСТАВИТЬ-В-GOOGLE-DOC.txt
-в документ Google «Sources and Data». Все изменения — именно в этот документ.
-Запуск: cd backend/kro-worker && python3 sync_sources_doc_from_file.py
+Опасная служебная синхронизация: полностью перезаписать Google Doc текстом из
+Sources-and-Data-ВСТАВИТЬ-В-GOOGLE-DOC.txt.
+
+ВНИМАНИЕ:
+- этот режим удаляет нативные таблицы Google Docs;
+- этот режим может сломать живой блок «События за период — ниже»;
+- для рабочего документа Sources and Data его нельзя запускать без явного override.
+
+Запуск только при осознанном восстановлении с нуля:
+  ALLOW_DESTRUCTIVE_DOC_SYNC=1 python3 sync_sources_doc_from_file.py
 """
 import os
 import sys
@@ -28,6 +35,7 @@ for base in (SCRIPT_DIR, PROJECT_ROOT):
 
 TXT_FILE = os.path.join(PROJECT_ROOT, 'Sources-and-Data-ВСТАВИТЬ-В-GOOGLE-DOC.txt')
 DEFAULT_DOC_ID = '1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58'
+DESTRUCTIVE_SYNC_FLAG = 'ALLOW_DESTRUCTIVE_DOC_SYNC'
 
 
 def _get_creds():
@@ -37,16 +45,25 @@ def _get_creds():
 
 def main():
     doc_id = (os.environ.get('KRO_SOURCES_DOC_ID') or '').strip() or DEFAULT_DOC_ID
+    if (os.environ.get(DESTRUCTIVE_SYNC_FLAG) or '').strip() != '1':
+        print('Остановлено: полная текстовая перезапись документа запрещена по умолчанию.', file=sys.stderr)
+        print('Причина: она удаляет нативные таблицы и может сломать живой блок «События за период — ниже».', file=sys.stderr)
+        print('Для рабочего документа используйте точечные скрипты:', file=sys.stderr)
+        print('- python3 insert_risk_table_into_sources_doc.py', file=sys.stderr)
+        print('- python3 update_sources_doc_once.py', file=sys.stderr)
+        print('- python3 fix_sources_doc_block_once.py', file=sys.stderr)
+        print('Если действительно нужно восстановление с нуля, запустите с %s=1' % DESTRUCTIVE_SYNC_FLAG, file=sys.stderr)
+        sys.exit(1)
     if not os.path.isfile(TXT_FILE):
         print('Файл не найден: %s' % TXT_FILE, file=sys.stderr)
         sys.exit(1)
     with open(TXT_FILE, 'r', encoding='utf-8') as f:
         full = f.read()
     # Текст от «Sources and Data» до конца (без инструкции ▼▼▼)
-    start_marker = 'Sources and Data — источники и данные'
+    start_marker = '\nSources and Data'
     idx = full.find(start_marker)
     if idx >= 0:
-        text_to_insert = full[idx:].strip() + '\n'
+        text_to_insert = full[idx + 1:].strip() + '\n'
     else:
         text_to_insert = full.strip() + '\n'
 

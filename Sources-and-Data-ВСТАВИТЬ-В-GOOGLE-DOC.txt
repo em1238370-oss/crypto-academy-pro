@@ -1,4 +1,10 @@
 ▼▼▼ ИНСТРУКЦИЯ ▼▼▼
+ВНИМАНИЕ: этот файл нельзя целиком вставлять в уже рабочий Google Doc `Sources and Data`, если там есть нативные таблицы и живой блок `События за период — ниже`. Полная текстовая вставка удаляет таблицы Google Docs и ломает рабочую структуру.
+Для рабочего документа используйте точечные скрипты:
+- `python3 backend/kro-worker/insert_risk_table_into_sources_doc.py`
+- `python3 backend/kro-worker/update_sources_doc_once.py`
+- `python3 backend/kro-worker/fix_sources_doc_block_once.py`
+Этот файл годится только для восстановления документа с нуля на пустом черновике.
 1. Откройте: https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit?tab=t.0
 2. В документе выделите всё (Cmd+A), удалите.
 3. Скопируйте ВЕСЬ текст ниже (от «Sources and Data» до конца) и вставьте в документ (Cmd+V).
