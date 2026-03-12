@@ -1271,6 +1271,22 @@ function buildKroShockText(victims12h, publishStatus) {
   return n + ' человек купили «гарантию прибыли»';
 }
 
+function isKroZeroSnapshot(data) {
+  if (!data || typeof data !== 'object') return false;
+  const newScamChannels = pickFirstNumber(data.new_scam_channels, data.new_scams, data.channelsToday);
+  const losses12h = pickFirstNumber(data.losses_12h, data.totalLost);
+  const telegramChannels = pickFirstNumber(data.telegram_channels, data.telegramCount);
+  const coursesProducts = pickFirstNumber(data.courses_products, data.courses, data.coursesCount);
+  const primaryTop3 = Array.isArray(data.display_top3) && data.display_top3.length ? data.display_top3 : data.top3;
+  return (
+    Number(newScamChannels || 0) === 0 &&
+    Number(losses12h || 0) === 0 &&
+    Number(telegramChannels || 0) === 0 &&
+    Number(coursesProducts || 0) === 0 &&
+    (!Array.isArray(primaryTop3) || primaryTop3.length === 0)
+  );
+}
+
 function pickFirstNumber(...values) {
   for (const value of values) {
     if (typeof value === 'number' && Number.isFinite(value)) {
@@ -1657,7 +1673,11 @@ app.get('/api/kro/live-counter', async (req, res) => {
       }
       const hasCount = typeof data.new_scams === 'number' || typeof data.channelsToday === 'number' || typeof data.new_scam_channels === 'number';
       if (data && hasCount) {
-        const publishStatus = data.publishStatus || 'valid';
+        const explicitPublishStatus = typeof data.publishStatus === 'string' ? data.publishStatus : null;
+        if (isKroZeroSnapshot(data) && explicitPublishStatus !== 'honest_zero') {
+          console.warn('KRO live-counter: ignoring unsafe zero snapshot and falling back to safe data');
+        } else {
+          const publishStatus = explicitPublishStatus || 'valid';
         const channelsToday = pickFirstNumber(data.new_scam_channels, data.new_scams, data.channelsToday);
         const totalLost = pickFirstNumber(data.losses_12h, data.totalLost);
         const telegramCount = pickFirstNumber(data.telegram_channels, data.telegramCount);
@@ -1692,6 +1712,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
         response.siteNotice = data.siteNotice || null;
         response.lastValidUpdatedAt = data.lastValidUpdatedAt || data.updatedAt || null;
         return res.json(response);
+        }
       }
     }
     const client = await getKroSheetsClient();
@@ -1749,6 +1770,7 @@ function handleKroUpdate(req, res) {
     }
   }
   const body = req.body || {};
+  const incomingPublishStatus = body.publishStatus != null ? String(body.publishStatus) : null;
   const newScamChannels = Number(body.new_scam_channels);
   const losses12h = Number(body.losses_12h);
   const telegramChannels = Number(body.telegram_channels);
@@ -1760,6 +1782,21 @@ function handleKroUpdate(req, res) {
   const displayTop3 = Array.isArray(body.display_top3) ? body.display_top3.slice(0, 3) : [];
   if (!Number.isFinite(newScamChannels) || !Number.isFinite(losses12h)) {
     return res.status(400).json({ error: 'new_scam_channels and losses_12h required as numbers' });
+  }
+  const zeroSnapshot = (
+    newScamChannels === 0 &&
+    losses12h === 0 &&
+    Number(telegramChannels || 0) === 0 &&
+    Number(coursesProducts || 0) === 0 &&
+    top3Today.length === 0 &&
+    (!Array.isArray(body.top3) || body.top3.length === 0) &&
+    displayTop3.length === 0
+  );
+  if (zeroSnapshot && incomingPublishStatus !== 'honest_zero') {
+    return res.status(409).json({
+      error: 'unsafe_zero_snapshot_blocked',
+      message: 'Refusing to overwrite site data with a zero snapshot without honest_zero status.'
+    });
   }
   let top3 = top3Today.slice(0, 3).map((ch) => ({ channel: ch, sum: 0, status: 'Активен' }));
   if (Array.isArray(body.top3) && body.top3.length && typeof body.top3[0] === 'object') {
@@ -1788,7 +1825,7 @@ function handleKroUpdate(req, res) {
   if (body.report_doc_url != null) payload.report_doc_url = String(body.report_doc_url);
   if (Number.isFinite(Number(body.victims_12h))) payload.victims_12h = Number(body.victims_12h);
   if (body.sourceCaption != null) payload.sourceCaption = String(body.sourceCaption);
-  if (body.publishStatus != null) payload.publishStatus = String(body.publishStatus);
+  if (incomingPublishStatus != null) payload.publishStatus = incomingPublishStatus;
   if (body.siteNotice != null) payload.siteNotice = String(body.siteNotice);
   if (body.lastValidUpdatedAt != null) payload.lastValidUpdatedAt = String(body.lastValidUpdatedAt);
   if (body.isHonestZero != null) payload.isHonestZero = Boolean(body.isHonestZero);

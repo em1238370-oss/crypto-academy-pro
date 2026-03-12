@@ -42,6 +42,7 @@ from run_12h_monitor import (
     build_sources_doc_text,
     update_sources_google_doc,
     _send_to_site,
+    _is_zero_publication_candidate,
 )
 
 HOURS_12 = 12
@@ -109,6 +110,14 @@ def main():
         print('Документ обновлён до структуры 7 блоков: %s' % url)
         print('Обнови страницу (F5) в браузере.')
         # Отправить те же данные на сайт, чтобы ячейки (LIVE, Топ-3, потери и т.д.) обновились
+        publish_status = (stats.get('publishStatus') or '').strip()
+        is_zero_snapshot = _is_zero_publication_candidate({
+            'new_scam_channels': new_scams,
+            'telegram_channels': telegram_channels,
+            'courses_products': courses_products,
+            'losses_12h': losses_12h,
+            'top3': stats.get('display_top3') or stats.get('top3') or stats.get('top3_today') or [],
+        })
         top3_raw = stats.get('top3') or stats.get('top3_today') or []
         top3_today = []
         for t in top3_raw[:3]:
@@ -123,12 +132,33 @@ def main():
             'telegram_channels': telegram_channels,
             'courses_products': courses_products,
             'top3_today': top3_today,
+            'top3': top3_raw[:3] if isinstance(top3_raw, list) else [],
+            'display_top3': (stats.get('display_top3') or [])[:3] if isinstance(stats.get('display_top3'), list) else [],
             'report_doc_url': url,
             'victims_12h': victims_12h,
+            'risk_rows': (stats.get('risk_rows') or [])[:50] if isinstance(stats.get('risk_rows'), list) else [],
+            'complaints_rows': (stats.get('complaints_rows') or [])[:50] if isinstance(stats.get('complaints_rows'), list) else [],
+            'evidence_summary': stats.get('evidence_summary') or {},
+            'sourceCaption': stats.get('sourceCaption') or 'Широкий поиск: TGStat, Telega, Telegram search, complaint chats, web reviews',
         }
         if top3_raw and isinstance(top3_raw[0], dict):
             site_payload['top3'] = [{'channel': (t.get('channel') or t.get('name') or '—'), 'sum': t.get('sum', 0), 'status': t.get('status') or 'Активен'} for t in top3_raw[:3]]
-        if _send_to_site(site_payload):
+        if publish_status:
+            site_payload['publishStatus'] = publish_status
+        if stats.get('siteNotice') is not None:
+            site_payload['siteNotice'] = stats.get('siteNotice')
+        if stats.get('lastValidUpdatedAt') is not None:
+            site_payload['lastValidUpdatedAt'] = stats.get('lastValidUpdatedAt')
+        if stats.get('isHonestZero') is not None:
+            site_payload['isHonestZero'] = bool(stats.get('isHonestZero'))
+
+        if is_zero_snapshot and publish_status != 'honest_zero':
+            print(
+                'Сайт не обновлён: локальный снимок нулевой и не помечен как honest_zero. '
+                'Это защищает прод от повторной публикации пустого цикла.',
+                file=sys.stderr
+            )
+        elif _send_to_site(site_payload):
             print('Данные отправлены на сайт — ячейки на crypto-academy-pro обновятся.', file=sys.stderr)
     else:
         print('Не удалось обновить документ. См. stderr.', file=sys.stderr)
