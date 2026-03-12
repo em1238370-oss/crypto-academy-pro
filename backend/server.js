@@ -1271,6 +1271,15 @@ function buildKroShockText(victims12h, publishStatus) {
   return n + ' человек купили «гарантию прибыли»';
 }
 
+function pickFirstNumber(...values) {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return 0;
+}
+
 function parseSheetRow(row, headerIndex) {
   const dateVal = (row[0] || '').toString().trim();
   const channel = (row[1] || '').toString().trim();
@@ -1649,11 +1658,11 @@ app.get('/api/kro/live-counter', async (req, res) => {
       const hasCount = typeof data.new_scams === 'number' || typeof data.channelsToday === 'number' || typeof data.new_scam_channels === 'number';
       if (data && hasCount) {
         const publishStatus = data.publishStatus || 'valid';
-        const channelsToday = data.new_scam_channels ?? data.new_scams ?? data.channelsToday ?? 0;
-        const totalLost = data.losses_12h ?? data.totalLost ?? 0;
-        const telegramCount = data.telegram_channels ?? data.telegramCount ?? KRO_FALLBACK.telegramCount;
-        const coursesCount = data.courses_products ?? data.courses ?? data.coursesCount ?? KRO_FALLBACK.coursesCount;
-        const victims12h = data.victims_12h ?? 0;
+        const channelsToday = pickFirstNumber(data.new_scam_channels, data.new_scams, data.channelsToday);
+        const totalLost = pickFirstNumber(data.losses_12h, data.totalLost);
+        const telegramCount = pickFirstNumber(data.telegram_channels, data.telegramCount);
+        const coursesCount = pickFirstNumber(data.courses_products, data.courses, data.coursesCount);
+        const victims12h = pickFirstNumber(data.victims_12h);
         const shockText = typeof data.shockText === 'string' && data.shockText.trim()
           ? data.shockText
           : buildKroShockText(victims12h, publishStatus);
@@ -1783,6 +1792,8 @@ function handleKroUpdate(req, res) {
   if (body.siteNotice != null) payload.siteNotice = String(body.siteNotice);
   if (body.lastValidUpdatedAt != null) payload.lastValidUpdatedAt = String(body.lastValidUpdatedAt);
   if (body.isHonestZero != null) payload.isHonestZero = Boolean(body.isHonestZero);
+  if (body.historyContext && typeof body.historyContext === 'object') payload.historyContext = body.historyContext;
+  if (body.selfCheck && typeof body.selfCheck === 'object') payload.selfCheck = body.selfCheck;
   try {
     const dataDir = join(__dirname, 'data');
     if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });

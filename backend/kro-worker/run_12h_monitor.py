@@ -205,6 +205,93 @@ def _update_publish_history(publish_status, timestamp):
     return suspicious_zero_streak
 
 
+def _build_history_context(previous_primary, limit=5):
+    history_context = {
+        'carryoverTop3': [],
+        'carryoverRiskRows': [],
+        'repeatedObjects': [],
+        'repeatedCategories': [],
+    }
+    if isinstance(previous_primary, dict):
+        top3 = previous_primary.get('display_top3') or previous_primary.get('top3') or []
+        if isinstance(top3, list):
+            history_context['carryoverTop3'] = top3[:3]
+        risk_rows = previous_primary.get('risk_rows') or []
+        if isinstance(risk_rows, list):
+            history_context['carryoverRiskRows'] = risk_rows[:limit]
+
+    channel_data = _read_json_file(CHANNEL_OBJECTS_JSON, default={'channels': {}}) or {'channels': {}}
+    channels = channel_data.get('channels')
+    if not isinstance(channels, dict):
+        return history_context
+
+    repeated_objects = []
+    repeated_categories = defaultdict(int)
+    for channel_id, entry in channels.items():
+        history = entry.get('history') or []
+        if len(history) < 2:
+            continue
+        latest = history[-1].get('snapshot') or {}
+        latest_type = (latest.get('type') or 'unknown').strip() or 'unknown'
+        repeated_categories[latest_type] += 1
+        repeated_objects.append({
+            'channel': channel_id,
+            'firstSeen': entry.get('first_seen'),
+            'lastUpdated': entry.get('last_updated'),
+            'seenCycles': len(history),
+            'latestType': latest_type,
+            'latestSource': latest.get('source'),
+            'latestComplaints': latest.get('complaints'),
+        })
+
+    repeated_objects.sort(
+        key=lambda item: (item.get('lastUpdated') or '', item.get('seenCycles') or 0),
+        reverse=True
+    )
+    history_context['repeatedObjects'] = repeated_objects[:limit]
+    history_context['repeatedCategories'] = [
+        {'category': category, 'objects': count}
+        for category, count in sorted(repeated_categories.items(), key=lambda item: (-item[1], item[0]))
+    ][:limit]
+    return history_context
+
+
+def _run_suspicious_zero_self_check(stats, suspicious_zero_streak, previous_primary):
+    evidence_summary = stats.get('evidence_summary') or {}
+    history_context = stats.get('historyContext') or _build_history_context(previous_primary)
+    diagnostics = {
+        'checkedAt': _msk_now().strftime('%Y-%m-%dT%H:%M:%S%z'),
+        'suspiciousZeroStreak': suspicious_zero_streak,
+        'publishStatus': stats.get('publishStatus'),
+        'lastValidUpdatedAt': (
+            (previous_primary or {}).get('lastValidUpdatedAt')
+            or (previous_primary or {}).get('updatedAt')
+            or None
+        ),
+        'unavailableSources': _non_empty_list(stats.get('unavailable_sources')),
+        'evidenceCategories': _count_evidence_categories(evidence_summary),
+        'evidenceCounts': {
+            'tgstat_queries': len(_non_empty_list(evidence_summary.get('tgstat_queries'))),
+            'telega_sources': len(_non_empty_list(evidence_summary.get('telega_sources'))),
+            'complaint_sources': len(_non_empty_list(evidence_summary.get('complaint_sources'))),
+            'web_search_urls': len(_non_empty_list(evidence_summary.get('web_search_urls'))),
+            'risk_row_links': len(_non_empty_list(evidence_summary.get('risk_row_links'))),
+        },
+        'historyContext': history_context,
+        'checks': {
+            'sources': 'ok' if not _non_empty_list(stats.get('unavailable_sources')) else 'needs_attention',
+            'parsing': 'ok' if stats.get('risk_rows') or stats.get('complaints_rows') else 'needs_attention',
+            'analysis': 'ok' if _count_evidence_categories(evidence_summary) >= 3 else 'needs_attention',
+        },
+        'actions': [
+            'Проверить доступность TGStat, Telega и чатов с жалобами.',
+            'Проверить, что парсинг дал evidence по нескольким категориям, а не только локальный проход.',
+            'Сверить повторяющиеся объекты и категории с historyContext, чтобы не потерять историю расследования.',
+        ],
+    }
+    return diagnostics
+
+
 # --- Критерии релевантности: только каналы с торговыми сигналами (покупать вверх/вниз, лонг/шорт) ---
 STRONG_CRYPTO_SIGNAL = (
     'сигнал', 'сигналы', 'крипто', 'crypto', 'bitcoin', 'btc', 'eth',
@@ -2363,6 +2450,7 @@ def main():
     top3_today = [(t.get('channel') or t.get('name') or '—') for t in (top3 or [])[:3]]
     previous_primary = _read_json_file(OUTPUT_JSON, default={}) or {}
     previous_top3 = previous_primary.get('display_top3') or previous_primary.get('top3') or []
+    history_context = _build_history_context(previous_primary)
     out = {
         'new_scams': new_scams_count,
         'new_scam_channels': new_scams_count,
@@ -2390,6 +2478,7 @@ def main():
         },
         'sourceCaption': 'Широкий поиск: TGStat, Telega, Telegram search, complaint chats, web reviews',
         'nothing_found': bool((structured_data or {}).get('nothing_found')),
+        'historyContext': history_context,
     }
     publish_status = _classify_publish_result(out)
     is_honest_zero = publish_status == 'honest_zero'
@@ -2424,15 +2513,30 @@ def main():
         )
         print(warning, file=sys.stderr)
         if suspicious_zero_streak >= SUSPICIOUS_ZERO_STREAK_ALERT:
+            diagnostics = _run_suspicious_zero_self_check(out, suspicious_zero_streak, previous_primary)
+            out['selfCheck'] = diagnostics
+            _write_json_file(LAST_CYCLE_JSON, out)
             print(
                 'Аномалия: %s подозрительных пустых цикла(ов) подряд. Нужна проверка источников, парсинга и полноты поиска.'
                 % suspicious_zero_streak,
                 file=sys.stderr
             )
+            print(
+                'Self-check suspicious_zero: %s' % json.dumps(diagnostics, ensure_ascii=False),
+                file=sys.stderr
+            )
         now_msk_dt = _msk_now()
-        _append_live_log_events([
-            '%s — %s' % (now_msk_dt.strftime('%d.%m.%Y %H:%M'), warning)
-        ])
+        events = ['%s — %s' % (now_msk_dt.strftime('%d.%m.%Y %H:%M'), warning)]
+        if suspicious_zero_streak >= SUSPICIOUS_ZERO_STREAK_ALERT:
+            repeated_objects = (out.get('selfCheck') or {}).get('historyContext', {}).get('repeatedObjects') or []
+            repeated_categories = (out.get('selfCheck') or {}).get('historyContext', {}).get('repeatedCategories') or []
+            repeated_channels = ', '.join(item.get('channel') or '—' for item in repeated_objects[:3]) or 'нет'
+            repeated_types = ', '.join(item.get('category') or 'unknown' for item in repeated_categories[:3]) or 'нет'
+            events.append(
+                '%s — Самопроверка suspicious_zero: streak=%s, повторяющиеся объекты=%s, повторяющиеся категории=%s.'
+                % (now_msk_dt.strftime('%d.%m.%Y %H:%M'), suspicious_zero_streak, repeated_channels, repeated_types)
+            )
+        _append_live_log_events(events)
         return
 
     _write_json_file(OUTPUT_JSON, out)
@@ -2460,6 +2564,8 @@ def main():
         'isHonestZero': out.get('isHonestZero'),
         'siteNotice': out.get('siteNotice'),
         'lastValidUpdatedAt': out.get('lastValidUpdatedAt'),
+        'historyContext': out.get('historyContext'),
+        'selfCheck': out.get('selfCheck'),
     }
     _send_to_site(site_payload)
 
