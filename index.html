@@ -130,6 +130,7 @@
                <p class="kro-f1-source-doc-wrap kro-scroll-in" id="kro-f1-source-doc-wrap">
                    <a href="https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit" id="kro-f1-source-doc-link" target="_blank" rel="noopener" class="kro-f1-source-doc-link">Источники и данные (Sources and Data) — откуда цифры и таблица</a>
                </p>
+               <p class="kro-f1-metrics-sub kro-scroll-in" id="kro-f1-source-caption"></p>
            </div>
            <div class="kro-f1-blocks kro-f1-content-card">
                <!-- Блок 1: Шок-цифры -->
@@ -590,9 +591,17 @@
                }
                var docWrap = document.getElementById('kro-f1-source-doc-wrap');
                var docLink = document.getElementById('kro-f1-source-doc-link');
+               var sourceCaption = document.getElementById('kro-f1-source-caption');
                if (docWrap && docLink && data.report_doc_url) {
                    docLink.href = data.report_doc_url;
                }
+               if (docLink && data.sourceCaption) docLink.title = data.sourceCaption;
+               if (sourceCaption) sourceCaption.textContent = data.sourceCaption || '';
+               window.__kroLiveEvidence = {
+                   evidence_summary: data.evidence_summary || {},
+                   risk_rows: data.risk_rows || [],
+                   complaints_rows: data.complaints_rows || []
+               };
                tryRunCountUps();
            }
            function fetchLiveCounter() {

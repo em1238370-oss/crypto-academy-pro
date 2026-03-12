@@ -1665,6 +1665,10 @@ app.get('/api/kro/live-counter', async (req, res) => {
         }
         const response = { channelsToday, totalLost, telegramCount, coursesCount, victims_12h: victims12h, shockText, top3 };
         response.report_doc_url = data.report_doc_url || KRO_SOURCES_DOC_URL;
+        response.sourceCaption = data.sourceCaption || (Array.isArray(data.sources) ? data.sources.join(', ') : null);
+        response.evidence_summary = data.evidence_summary || {};
+        response.risk_rows = Array.isArray(data.risk_rows) ? data.risk_rows.slice(0, 10) : [];
+        response.complaints_rows = Array.isArray(data.complaints_rows) ? data.complaints_rows.slice(0, 10) : [];
         return res.json(response);
       }
     }
@@ -1724,6 +1728,9 @@ function handleKroUpdate(req, res) {
   const telegramChannels = Number(body.telegram_channels);
   const coursesProducts = Number(body.courses_products);
   const top3Today = Array.isArray(body.top3_today) ? body.top3_today.map((s) => String(s == null ? '' : s)) : [];
+  const evidenceSummary = body.evidence_summary && typeof body.evidence_summary === 'object' ? body.evidence_summary : {};
+  const riskRows = Array.isArray(body.risk_rows) ? body.risk_rows.slice(0, 50) : [];
+  const complaintsRows = Array.isArray(body.complaints_rows) ? body.complaints_rows.slice(0, 50) : [];
   if (!Number.isFinite(newScamChannels) || !Number.isFinite(losses12h)) {
     return res.status(400).json({ error: 'new_scam_channels and losses_12h required as numbers' });
   }
@@ -1745,10 +1752,14 @@ function handleKroUpdate(req, res) {
     courses: Number.isFinite(coursesProducts) ? coursesProducts : 0,
     top3_today: top3Today.slice(0, 3),
     top3,
-    updatedAt: body.timestamp || new Date().toISOString()
+    updatedAt: body.timestamp || new Date().toISOString(),
+    evidence_summary: evidenceSummary,
+    risk_rows: riskRows,
+    complaints_rows: complaintsRows
   };
   if (body.report_doc_url != null) payload.report_doc_url = String(body.report_doc_url);
   if (Number.isFinite(Number(body.victims_12h))) payload.victims_12h = Number(body.victims_12h);
+  if (body.sourceCaption != null) payload.sourceCaption = String(body.sourceCaption);
   try {
     const dataDir = join(__dirname, 'data');
     if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -1812,6 +1823,9 @@ app.get('/api/kro/daily-stats', (req, res) => {
         top3: [],
         report_doc_url: null,
         sourceCaption: null,
+        evidence_summary: {},
+        risk_rows: [],
+        complaints_rows: [],
         updatedAt: null
       });
     }
@@ -1827,7 +1841,10 @@ app.get('/api/kro/daily-stats', (req, res) => {
       timestamp: data.timestamp || null,
       top3: Array.isArray(data.top3) ? data.top3 : [],
       report_doc_url: data.report_doc_url || null,
-      sourceCaption: data.sources ? data.sources.join(', ') : null,
+      sourceCaption: data.sourceCaption || (data.sources ? data.sources.join(', ') : null),
+      evidence_summary: data.evidence_summary || {},
+      risk_rows: Array.isArray(data.risk_rows) ? data.risk_rows : [],
+      complaints_rows: Array.isArray(data.complaints_rows) ? data.complaints_rows : [],
       updatedAt: data.updatedAt || data.timestamp || null
     });
   } catch (e) {
@@ -1842,6 +1859,9 @@ app.get('/api/kro/daily-stats', (req, res) => {
       top3: [],
       report_doc_url: null,
       sourceCaption: null,
+      evidence_summary: {},
+      risk_rows: [],
+      complaints_rows: [],
       updatedAt: null
     });
   }

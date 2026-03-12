@@ -19,8 +19,10 @@ import sys
 import json
 import asyncio
 import time
+import html
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
+from urllib.parse import quote
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
@@ -37,6 +39,18 @@ HOURS_12 = 12
 DAYS_14 = 14   # критерий: канал младше 14 дней
 VIP_MIN = 10000   # порог VIP/рекламы, ₽
 GROWTH_MIN = 500  # порог роста подписчиков/сутки
+SEARCH_QUERY_VARIANTS = {
+    'сигналы/сделки': ['crypto signals', 'сигналы криптовалюта', 'long short crypto'],
+    'доход/чудеса': ['profit crypto vip', 'заработок крипта', 'без риска крипта'],
+    'VIP/приват': ['VIP crypto signals', 'закрытый канал крипта', 'private crypto signals'],
+    'азарт/риск': ['плечо крипта сигнал', 'отбить убыток крипта', 'high risk crypto signal'],
+}
+TGSTAT_SEARCH_URL = 'https://tgstat.ru/search?query=%s&sort=date'
+TELEGA_CATALOG_URL = 'https://telega.io/catalog/cryptocurrencies'
+WEB_SEARCH_URLS = [
+    'https://duckduckgo.com/html/?q=telegram+crypto+signals+vip',
+    'https://duckduckgo.com/html/?q=best+telegram+crypto+signals',
+]
 
 # Итоговые правила для документа Source & Data (ТЗ раздел 8):
 # - Только реальные Telegram-каналы: ссылка t.me/... проверяется (get_entity); несуществующие не попадают в документ.
@@ -128,7 +142,7 @@ def _is_crypto_signal_channel(title, username):
 
 # --- TGStat search: именно каналы с крипто-сигналами ---
 def fetch_tgstat_new_channels():
-    """Поиск каналов по запросу «крипто сигналы» (и «сигналы криптовалюта»), фильтр по теме, возраст <14 дней."""
+    """Широкий поиск TGStat по группам запросов с evidence-полями."""
     try:
         from tgstat_client import search_channels
     except ImportError:
@@ -137,34 +151,41 @@ def fetch_tgstat_new_channels():
     out = []
     now = datetime.now(timezone.utc)
     cutoff_14d = now - timedelta(days=DAYS_14)
-    for query in ('крипто сигналы', 'сигналы криптовалюта'):
-        items = search_channels(query, country='ru', limit=80)
-        for x in items:
-            created_at = x.get('created_at')
-            if created_at is None:
-                continue
-            try:
-                created_dt = datetime.fromtimestamp(created_at, tz=timezone.utc)
-                if created_dt < cutoff_14d:
+    for group, queries in SEARCH_QUERY_VARIANTS.items():
+        for query in queries:
+            items = search_channels(query, country='ru', limit=50)
+            source_url = TGSTAT_SEARCH_URL % quote(query)
+            for x in items:
+                created_at = x.get('created_at')
+                if created_at is None:
                     continue
-            except (TypeError, OSError):
-                continue
-            ch = (x.get('username') or x.get('link') or '').strip() or ('@' + (x.get('link') or '').replace('https://t.me/', ''))
-            key = ch.lower().replace('@', '')
-            if key in seen:
-                continue
-            title = (x.get('title') or '').strip()
-            if not _is_crypto_signal_channel(title, ch):
-                continue
-            seen.add(key)
-            out.append({
-                'channel': ch or '—',
-                'title': title or '—',
-                'date': datetime.fromtimestamp(created_at, tz=timezone.utc).strftime('%d.%m.%Y'),
-                'growth': x.get('participants_count'),
-                'vip': '—',
-                'link': x.get('link') or ('https://t.me/' + (ch or '').lstrip('@')),
-            })
+                try:
+                    created_dt = datetime.fromtimestamp(created_at, tz=timezone.utc)
+                    if created_dt < cutoff_14d:
+                        continue
+                except (TypeError, OSError):
+                    continue
+                ch = (x.get('username') or x.get('link') or '').strip() or ('@' + (x.get('link') or '').replace('https://t.me/', ''))
+                key = ch.lower().replace('@', '')
+                if key in seen:
+                    continue
+                title = (x.get('title') or '').strip()
+                if not _is_crypto_signal_channel(title, ch):
+                    continue
+                seen.add(key)
+                out.append({
+                    'channel': ch or '—',
+                    'title': title or '—',
+                    'date': datetime.fromtimestamp(created_at, tz=timezone.utc).strftime('%d.%m.%Y'),
+                    'growth': x.get('participants_count'),
+                    'vip': '—',
+                    'link': x.get('link') or ('https://t.me/' + (ch or '').lstrip('@')),
+                    'source_url': source_url,
+                    'query': query,
+                    'query_group': group,
+                    'source_links': [source_url],
+                    'evidence_links': [source_url, x.get('link') or ('https://t.me/' + (ch or '').lstrip('@'))],
+                })
     out.sort(key=lambda r: r.get('date', ''), reverse=True)
     return out[:50]
 
@@ -176,7 +197,7 @@ def fetch_telega_catalog():
         import requests
     except ImportError:
         return []
-    url = 'https://telega.io/catalog/cryptocurrencies'
+    url = TELEGA_CATALOG_URL
     time.sleep(REQUEST_DELAY)
     try:
         r = requests.get(url, headers={'User-Agent': USER_AGENT}, timeout=25)
@@ -202,7 +223,15 @@ def fetch_telega_catalog():
         else:
             channel = '@' + g if not g.startswith('@') else g
             link = 'https://t.me/' + g.lstrip('@')
-        channels.append({'channel': channel, 'link': link})
+        channels.append({
+            'channel': channel,
+            'link': link,
+            'source_url': url,
+            'query': 'catalog cryptocurrencies',
+            'query_group': 'catalog',
+            'source_links': [url],
+            'evidence_links': [url, link],
+        })
     return channels[:80]
 
 
@@ -322,11 +351,26 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
             return await client.get_entity('https://t.me/' + cid.split('/', 1)[-1])
         return await client.get_entity(cid)
 
+    def message_link(entity, msg):
+        username = (getattr(entity, 'username', None) or '').strip()
+        if username:
+            return 'https://t.me/%s/%s' % (username, getattr(msg, 'id', ''))
+        return ''
+
     try:
         if KRO_SOURCE_CHANNELS:
             now = datetime.now(timezone.utc)
             since = now - timedelta(hours=HOURS_12)
-            by_channel = defaultdict(lambda: {'complaints': 0, 'sums': [], 'messages': 0})
+            by_channel = defaultdict(lambda: {
+                'complaints': 0,
+                'sums': [],
+                'messages': 0,
+                'message_links': [],
+                'source_urls': [],
+                'query_group': 'жалобы/обсуждения',
+                'query': 'скам, обман, слил депозит',
+                'internal_links': [],
+            })
             victims_12h = 0
             channel_sum_pairs = []
         for ch in KRO_SOURCE_CHANNELS:
@@ -344,9 +388,16 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
                     text = (msg.text or '') + (getattr(msg, 'message', '') or '')
                     sums = _extract_sums(text)
                     channels_mentioned = _extract_channels_from_text(text)
+                    msg_link = message_link(entity, msg)
+                    chat_link = _object_link('@' + entity.username) if getattr(entity, 'username', None) else ''
                     for c in channels_mentioned:
                         by_channel[c]['complaints'] += 1
                         by_channel[c]['messages'] += 1
+                        if msg_link:
+                            by_channel[c]['message_links'].append(msg_link)
+                        if chat_link:
+                            by_channel[c]['source_urls'].append(chat_link)
+                        by_channel[c]['internal_links'].append(_object_link(c))
                         if sums:
                             by_channel[c]['sums'].extend(sums)
                             channel_sum_pairs.append((c, max(sums)))
@@ -491,6 +542,7 @@ BLOCK2_SOURCES = '''
 - Ссылка: https://tgstat.ru/search?query=криптовалюта&sort=date
 - Документация API: https://tgstat.ru/docs/ru/api
 - Условия отбора: канал создан менее 14 дней назад; есть VIP/платные услуги от 10 000₽; рост подписчиков за сутки более 500.
+- Query groups: сигналы/сделки, доход/чудеса, VIP/приват, азарт/риск.
 
 2.2. Telega (каталог крипто‑каналов)
 - Ссылка: https://telega.in/catalog?category=cryptocurrencies
@@ -499,6 +551,10 @@ BLOCK2_SOURCES = '''
 2.3. Telegram‑чаты с жалобами
 - Чаты задаются в настройках (KRO_SOURCE_CHANNELS). Сообщения за последние 12 часов.
 - Условия: упоминание канала/сайта (ник или ссылка); указана сумма потерь; по объекту ≥ 2 разных человека.
+
+2.4. Внешний веб‑поиск / обзоры
+- Ссылки: https://duckduckgo.com/html/?q=telegram+crypto+signals+vip ; https://duckduckgo.com/html/?q=best+telegram+crypto+signals
+- Используются как внешний слой доказательств: обзоры, подборки и рейтинги, из которых можно вынуть названия каналов и ссылки.
 '''
 
 # Блок 3: Параметры скама для сигнал‑каналов (фиксированный текст).
@@ -549,6 +605,35 @@ def _object_link(ch, link=None):
     if '.' in ch and '@' not in ch:
         return 'https://' + ch if not ch.startswith('http') else ch
     return 'https://t.me/' + ch.lstrip('@')
+
+
+def _unique_list(items, limit=None):
+    out = []
+    seen = set()
+    for item in items or []:
+        val = (item or '').strip()
+        if not val or val in seen:
+            continue
+        seen.add(val)
+        out.append(val)
+        if limit and len(out) >= limit:
+            break
+    return out
+
+
+def _merge_text_values(*parts):
+    values = []
+    for part in parts:
+        if isinstance(part, list):
+            values.extend(part)
+        elif isinstance(part, str):
+            values.extend([p.strip() for p in part.split('\n') if p.strip()])
+    return _unique_list(values)
+
+
+def _format_evidence_text(*parts):
+    values = _merge_text_values(*parts)
+    return '\n'.join(values[:5]) if values else '—'
 
 
 def _behavior_as_numbered_list(reasons):
@@ -655,6 +740,8 @@ def _build_complaints_summary(row):
         n = 0
     if n <= 0:
         return 'Жалоб за период не найдено.'
+    if row.get('message_links') or row.get('source_url'):
+        return '%s человек в чатах пишут о потерях; есть ссылки на сообщения и источники.' % n
     return '%s человек в чатах пишут о потерях.' % n
 
 
@@ -816,6 +903,12 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             'risk_analysis': {'basic_3_3': basic_3_3, 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': '—', 'vip_navyaz': vip_cell, 'rm_break': rm_cell, 'itog': itog},
             'has_complaints': has_complaints,
             'title': title,
+            'source_url': row.get('source_url') or '',
+            'query': row.get('query') or '',
+            'query_group': row.get('query_group') or '',
+            'message_links': '',
+            'internal_links': _format_evidence_text(row.get('link')),
+            'evidence_links': _merge_text_values(row.get('evidence_links'), row.get('source_links'), row.get('link')),
         })
 
     for row in (telega_channels or [])[:50]:
@@ -848,6 +941,12 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             'risk_analysis': {'basic_3_3': '3/3', 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': '—', 'vip_navyaz': vip_cell, 'rm_break': rm_cell, 'itog': itog},
             'has_complaints': has_complaints,
             'title': title,
+            'source_url': row.get('source_url') or '',
+            'query': row.get('query') or '',
+            'query_group': row.get('query_group') or 'catalog',
+            'message_links': '',
+            'internal_links': _format_evidence_text(row.get('link')),
+            'evidence_links': _merge_text_values(row.get('evidence_links'), row.get('source_links'), row.get('link')),
         })
 
     for row in (complaints_rows or []):
@@ -883,6 +982,12 @@ def _build_risk_table_rows(new_tgstat, telega_channels, complaints_rows, report_
             'risk_analysis': {'basic_3_3': '3/3', 'agg': agg_cell, 'kartinki': '—', 'psevdo': '—', 'tolko_profit': tolko, 'vip_navyaz': vip_cell, 'rm_break': rm_cell, 'itog': itog},
             'has_complaints': has_complaints,
             'title': '',
+            'source_url': row.get('source_url') or '',
+            'query': row.get('query') or 'скам, обман, слил депозит',
+            'query_group': row.get('query_group') or 'жалобы/обсуждения',
+            'message_links': row.get('message_links') or '',
+            'internal_links': row.get('internal_links') or '',
+            'evidence_links': _merge_text_values(row.get('evidence_links'), row.get('source_urls'), row.get('message_links'), row.get('internal_links')),
         })
 
     for r in rows:
@@ -926,10 +1031,16 @@ def _snapshot_from_risk_row(row):
         'link': row.get('link'),
         'type': row.get('type'),
         'source': row.get('source'),
+        'source_url': row.get('source_url'),
+        'query': row.get('query'),
+        'query_group': row.get('query_group'),
         'age': row.get('age'),
         'vip': row.get('vip'),
         'growth': row.get('growth'),
         'complaints': row.get('complaints'),
+        'message_links': row.get('message_links'),
+        'internal_links': row.get('internal_links'),
+        'evidence_links': row.get('evidence_links'),
         'risk_analysis': row.get('risk_analysis'),
         'title': row.get('title'),
         'has_complaints': row.get('has_complaints'),
@@ -1190,6 +1301,13 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         lines.append('')
     if report_url:
         lines.append(report_url)
+    evidence_summary = {
+        'tgstat_queries': _unique_list([(r.get('query') or '') for r in (new_tgstat or [])], limit=6),
+        'telega_sources': _unique_list([(r.get('source_url') or '') for r in (telega_channels or [])], limit=3),
+        'complaint_sources': _unique_list(sum([r.get('source_urls') or [] for r in (complaints_rows or [])], []), limit=5),
+        'web_search_urls': WEB_SEARCH_URLS[:],
+        'risk_row_links': _unique_list(sum([r.get('evidence_links') or [] for r in (risk_rows or [])], []), limit=10),
+    }
     structured_data = {
         'risk_rows': risk_rows,
         'complaints_rows': (complaints_rows or [])[:30],
@@ -1206,6 +1324,7 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
         'time_formatted': time_formatted,
         'report_url': report_url,
         'unavailable_sources': unavailable_sources or [],
+        'evidence_summary': evidence_summary,
     }
     return '\n'.join(lines), structured_data
 
@@ -1925,6 +2044,13 @@ def _run_publish_only():
         'telegram_channels': out.get('telegram_channels', 0),
         'courses_products': out.get('courses_products', out.get('courses', 0)),
         'top3_today': top3_today,
+        'top3': out.get('top3', []),
+        'victims_12h': out.get('victims_12h', 0),
+        'risk_rows': out.get('risk_rows', []),
+        'complaints_rows': out.get('complaints_rows', []),
+        'evidence_summary': out.get('evidence_summary', {}),
+        'report_doc_url': out.get('report_doc_url'),
+        'sourceCaption': out.get('sourceCaption'),
     }
     _send_to_site(payload)
 
@@ -1985,7 +2111,16 @@ def main():
     sheet_reports = read_reports_last_12h(client, sheet_id) if client and sheet_id else []
 
     # Complaints table for report: aggregate by channel
-    agg_complaints = defaultdict(lambda: {'complaints': 0, 'sum': 0, 'status': 'Активен'})
+    agg_complaints = defaultdict(lambda: {
+        'complaints': 0,
+        'sum': 0,
+        'status': 'Активен',
+        'message_links': [],
+        'source_urls': [],
+        'query_group': '',
+        'query': '',
+        'internal_links': [],
+    })
     for r in sheet_reports:
         ch = (r.get('channel') or '').strip()
         if ch:
@@ -1995,13 +2130,39 @@ def main():
                 agg_complaints[ch]['status'] = 'Скам'
     for ch, data in complaints_by_channel.items():
         if ch not in agg_complaints:
-            agg_complaints[ch] = {'complaints': 0, 'sum': 0, 'status': 'Активен'}
+            agg_complaints[ch] = {
+                'complaints': 0,
+                'sum': 0,
+                'status': 'Активен',
+                'message_links': [],
+                'source_urls': [],
+                'query_group': '',
+                'query': '',
+                'internal_links': [],
+            }
         agg_complaints[ch]['complaints'] += data.get('complaints', 0)
         agg_complaints[ch]['sum'] += sum(data.get('sums', []))
+        agg_complaints[ch]['message_links'] = _merge_text_values(agg_complaints[ch].get('message_links'), data.get('message_links'))
+        agg_complaints[ch]['source_urls'] = _merge_text_values(agg_complaints[ch].get('source_urls'), data.get('source_urls'))
+        agg_complaints[ch]['internal_links'] = _merge_text_values(agg_complaints[ch].get('internal_links'), data.get('internal_links'))
+        agg_complaints[ch]['query_group'] = data.get('query_group') or agg_complaints[ch].get('query_group') or 'жалобы/обсуждения'
+        agg_complaints[ch]['query'] = data.get('query') or agg_complaints[ch].get('query') or 'скам, обман, слил депозит'
         if agg_complaints[ch]['complaints'] >= 2:
             agg_complaints[ch]['status'] = 'Скам'
     complaints_rows = [
-        {'channel': ch, 'complaints': d['complaints'], 'losses': d['sum'], 'status': d['status']}
+        {
+            'channel': ch,
+            'complaints': d['complaints'],
+            'losses': d['sum'],
+            'status': d['status'],
+            'message_links': _format_evidence_text(d.get('message_links')),
+            'source_url': _format_evidence_text(d.get('source_urls')),
+            'source_urls': _merge_text_values(d.get('source_urls')),
+            'query_group': d.get('query_group') or 'жалобы/обсуждения',
+            'query': d.get('query') or 'скам, обман, слил депозит',
+            'internal_links': _format_evidence_text(d.get('internal_links')),
+            'evidence_links': _merge_text_values(d.get('message_links'), d.get('source_urls'), d.get('internal_links')),
+        }
         for ch, d in agg_complaints.items()
     ]
     complaints_rows.sort(key=lambda x: -(x.get('losses') or 0))
@@ -2072,6 +2233,7 @@ def main():
         period_start = date_str + ' 12:00'
         period_end = date_str + ' 23:55'
     sources_doc_id = os.environ.get('KRO_SOURCES_DOC_ID', '').strip()
+    structured_data = None
     if sources_doc_id:
         print('Обновляю Google Doc «Источники и данные»...', flush=True)
         collect_time_msk = now_msk_dt.strftime('%d %B %H:%M MSK').replace('February', 'февраля').replace('March', 'марта').replace('January', 'января')
@@ -2118,6 +2280,14 @@ def main():
         'risk_rows': risk_rows,
         'complaints_rows': complaints_rows,
         'unavailable_sources': unavailable_sources or [],
+        'evidence_summary': (structured_data or {}).get('evidence_summary') or {
+            'tgstat_queries': _unique_list([(r.get('query') or '') for r in (new_tgstat or [])], limit=6),
+            'telega_sources': _unique_list([(r.get('source_url') or '') for r in (telega_channels or [])], limit=3),
+            'complaint_sources': _unique_list(sum([r.get('source_urls') or [] for r in (complaints_rows or [])], []), limit=5),
+            'web_search_urls': WEB_SEARCH_URLS[:],
+            'risk_row_links': _unique_list(sum([r.get('evidence_links') or [] for r in (risk_rows or [])], []), limit=10),
+        },
+        'sourceCaption': 'Широкий поиск: TGStat, Telega, Telegram search, complaint chats, web reviews',
     }
     os.makedirs(DATA_DIR, exist_ok=True)
     with open(OUTPUT_JSON, 'w', encoding='utf-8') as f:
@@ -2134,6 +2304,13 @@ def main():
         'telegram_channels': out.get('telegram_channels', 0),
         'courses_products': out.get('courses_products', 0),
         'top3_today': out.get('top3_today', []),
+        'top3': out.get('top3', []),
+        'victims_12h': out.get('victims_12h', 0),
+        'risk_rows': out.get('risk_rows', []),
+        'complaints_rows': out.get('complaints_rows', []),
+        'evidence_summary': out.get('evidence_summary', {}),
+        'report_doc_url': out.get('report_doc_url'),
+        'sourceCaption': out.get('sourceCaption'),
     }
     _send_to_site(site_payload)
 

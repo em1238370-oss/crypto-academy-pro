@@ -9,8 +9,10 @@ import os
 import sys
 import json
 import re
+import html
 import warnings
 from datetime import datetime, timezone, timedelta
+from urllib.parse import quote
 
 # Убрать из вывода предупреждения библиотек (Python 3.9 EOL, OpenSSL, google-auth и т.д.)
 warnings.filterwarnings('ignore', category=FutureWarning)
@@ -28,12 +30,32 @@ PLACEHOLDER = 'События за период — ниже'
 DEFAULT_SOURCES_DOC_ID = '1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58'
 MAX_LINES = 50
 # Текст для слотов, где не было отдельного события — описание действий за 5 мин
-DEFAULT_SLOT_MSG = 'Проверка за 5 мин: запрос к TGStat, Telega, расчёт потерь и жалоб; данные получены.'
+DEFAULT_SLOT_MSG = 'Промежуточный поиск по крипто‑сигналам продолжается.'
 # В документе показывать только последние N дней лога (1 = только сегодня), чтобы блок не разрастался
 MAX_DAYS_SHOWN_IN_DOC = 1
 # Разделитель между днями и оформление
 NEW_DAY_SEPARATOR = '───── Новый день ─────'
 LOG_LINE_PREFIX = '• '  # буллет перед каждой строкой лога
+SEARCH_QUERY_GROUPS = {
+    'сигналы/сделки': 'signal signals сигналы trade trading entry long short take profit stop loss TP SL',
+    'доход/чудеса': 'доход заработок profit passive income x2 x5 100% гарантия без риска risk free',
+    'VIP/приват': 'VIP закрытый канал private inner circle подписка плати курс обучение приватный чат',
+    'азарт/риск': 'отбить убыток отыграться слил слив залить плечо левередж high risk всё плечом',
+}
+SEARCH_GROUPS_HUMAN = ', '.join(SEARCH_QUERY_GROUPS.keys())
+SEARCH_QUERY_VARIANTS = {
+    'сигналы/сделки': ['crypto signals', 'сигналы криптовалюта', 'long short crypto'],
+    'доход/чудеса': ['profit crypto vip', 'заработок крипта', 'без риска крипта'],
+    'VIP/приват': ['VIP crypto signals', 'закрытый канал крипта', 'private crypto signals'],
+    'азарт/риск': ['плечо крипта сигнал', 'отбить убыток крипта', 'high risk crypto signal'],
+}
+TELEGA_SOURCE_URL = 'https://telega.io/catalog/cryptocurrencies'
+TGSTAT_SEARCH_URL = 'https://tgstat.ru/search?query=%s&sort=date'
+WEB_SEARCH_URLS = [
+    'https://duckduckgo.com/html/?q=telegram+crypto+signals+vip',
+    'https://duckduckgo.com/html/?q=best+telegram+crypto+signals',
+]
+KRO_SOURCE_CHANNELS = [x.strip() for x in (os.environ.get('KRO_SOURCE_CHANNELS') or '').split(',') if x.strip()]
 
 
 def get_start_date_ddmm():
@@ -74,6 +96,157 @@ def _parse_line(line, today_ddmm, has_date_only_format=False):
     return (date_str, time_str, msg)
 
 
+def _normalize_log_message(msg, time_str=None):
+    """Скрыть старые сухие строки вида 'TGStat 0, Telega 0' и привести их к новому формату."""
+    text = (msg or '').strip()
+    if not text:
+        return text
+    if text.startswith('За 5 мин: '):
+        text = text[len('За 5 мин: '):].strip()
+    if 'TGStat/Telega: найдено каналов по фильтрам' in text:
+        return _phrase('basic', time_str)
+    if text.startswith('За последние 30 минут новых объектов по фильтрам не найдено'):
+        return _phrase('repeat_pass', time_str)
+    if text.startswith('Запрос TGStat (') or text.startswith('Обновление счётчиков: TGStat '):
+        return _phrase('refresh', time_str)
+    if text.startswith('Найдено каналов по фильтрам:'):
+        return _phrase('found_candidates', time_str)
+    if text.startswith('Выполнен только базовый проход'):
+        return _phrase('basic', time_str)
+    if text.startswith('Выполнен широкий тематический поиск'):
+        return _phrase('wide', time_str)
+    if text.startswith('Выполнен промежуточный тематический поиск'):
+        return _phrase('intermediate', time_str)
+    return text
+
+
+def _slot_variant_index(time_str):
+    """Индекс варианта по 5-минутному слоту: соседние строки получают разную формулировку."""
+    if not time_str or ':' not in time_str:
+        return 0
+    try:
+        h, m = [int(x) for x in time_str[:5].split(':')]
+        return ((h * 60 + m) // GRID_MINUTES) % 3
+    except (ValueError, TypeError):
+        return 0
+
+
+def _phrase(kind, time_str):
+    i = _slot_variant_index(time_str)
+    variants = {
+        'intermediate': [
+            'Промежуточный поиск: проверены каталоги и группы запросов по сигналам, VIP, доходу и риску. Просмотрены доступные описания и структура найденных каналов. Новых подтверждений за слот нет.',
+            'Продолжается рабочий проход по крипто‑сигналам: перепроверены тематические запросы, VIP‑связки и риск‑формулировки. По доступным источникам новых подтверждённых объектов пока нет.',
+            'Идёт очередной этап отбора: просмотрены каталоги, сигнальные формулировки и базовые признаки заработка/VIP. За этот слот новых релевантных подтверждений не получено.',
+        ],
+        'repeat_pass': [
+            'За интервал выполнен повторный проход по доступным источникам и группам запросов. Новых подтверждённых объектов пока нет, поиск продолжается.',
+            'За этот промежуток сделана повторная проверка источников, ключевых запросов и найденных кандидатов. Новых подтверждений не появилось, работа продолжается.',
+            'Интервал закрыт повторной перепроверкой каталогов и тематических запросов. Свежих подтверждённых объектов за этот шаг не добавилось.',
+        ],
+        'refresh': [
+            'Промежуточный поиск: перепроверены каталоги, сигнальные запросы, VIP и риск‑паттерны. Изменений по доступным источникам за этот слот не зафиксировано.',
+            'Сделана повторная сверка каталогов, ключей по сигналам и типовых VIP/риск‑паттернов. По доступным источникам заметных изменений за слот нет.',
+            'Выполнена дополнительная перепроверка сигнальных запросов, VIP‑связок и риск‑формулировок. За этот слот доступные источники новых изменений не дали.',
+        ],
+        'basic': [
+            'Базовый поиск: проверены каталоги и тематические запросы по крипто‑сигналам. Сделан только первичный проход без полного Telegram‑поиска, чатов жалоб и веб‑обзоров. Для полного вывода нужен расширенный поиск.',
+            'Пока выполнен только базовый проход: просмотрены каталоги и ключевые сигнальные запросы. Без Telegram‑поиска, жалобных чатов и веб‑обзоров полный отрицательный вывод делать нельзя.',
+            'На этом шаге завершён лишь стартовый поиск по каталогам и тематическим ключам. Чтобы уверенно писать об отсутствии находок, нужен более широкий проход по Telegram, жалобам и веб‑источникам.',
+        ],
+        'found_candidates': [
+            'Проверены каталоги и тематические запросы, найдены кандидаты для отбора. Следующий шаг — проверить описания, закрепы и последние посты на релевантность.',
+            'По каталожному и ключевому поиску появились каналы-кандидаты. Дальше нужно открыть описания, закреплённые сообщения и последние посты, чтобы отсеять нерелевантные.',
+            'Текущий проход дал набор кандидатов по сигналам и VIP‑темам. Следом идёт ручная фильтрация по описанию канала, закрепам и свежим публикациям.',
+        ],
+        'wide': [
+            'Широкий поиск: проверены каталоги, Telegram‑поиск, жалобы и веб‑источники. Новых релевантных каналов с нужными признаками за этот интервал не подтверждено.',
+            'Проведён широкий проход по каталогам, Telegram, жалобным обсуждениям и веб‑обзорам. За этот интервал новых релевантных каналов с нужными признаками не подтвердилось.',
+            'Завершён широкий поиск по Telegram, жалобам и веб‑источникам с фокусом на сигналы и VIP. Новых подтверждённых релевантных каналов за этот шаг не найдено.',
+        ],
+        'losses': [
+            'Обновлены жалобы и потери. Параллельно перепроверены доступные источники и тематические группы запросов по сигналам, VIP, доходу и риску.',
+            'Пересчитаны жалобы и потери за период. Одновременно выполнена повторная проверка источников и поисковых групп по сигналам, VIP и риску.',
+            'Актуализированы данные по жалобам и потерям. В этот же проход заново сверены каталоги, тематические запросы и признаки заработка/VIP.',
+        ],
+    }
+    return variants.get(kind, [DEFAULT_SLOT_MSG])[i]
+
+
+def _unique_list(items, limit=None):
+    out = []
+    seen = set()
+    for item in items or []:
+        val = (item or '').strip()
+        if not val or val in seen:
+            continue
+        seen.add(val)
+        out.append(val)
+        if limit and len(out) >= limit:
+            break
+    return out
+
+
+def _normalize_channel_link(ch_or_link):
+    value = (ch_or_link or '').strip()
+    if not value:
+        return ''
+    if value.startswith('http://') or value.startswith('https://'):
+        return value
+    if value.startswith('t.me/'):
+        return 'https://' + value
+    if value.startswith('@'):
+        return 'https://t.me/' + value.lstrip('@')
+    return 'https://t.me/' + value.lstrip('@')
+
+
+def _extract_channels_from_text(text):
+    channels = set()
+    for m in re.findall(r'@([a-zA-Z0-9_]{5,32})\b', text or ''):
+        channels.add('@' + m)
+    for m in re.findall(r't\.me/([a-zA-Z0-9_+]+)', text or '', re.I):
+        if m.startswith('+'):
+            channels.add('t.me/' + m)
+        else:
+            channels.add('@' + m)
+    return sorted(channels)
+
+
+def _source_snapshot(name):
+    return {
+        'source': name,
+        'checked': False,
+        'source_urls': [],
+        'query_groups': [],
+        'queries': [],
+        'candidates': [],
+        'evidence_links': [],
+        'notes': [],
+        'limited': False,
+    }
+
+
+def _snapshot_summary(snapshot, link_limit=2):
+    urls = _unique_list((snapshot or {}).get('source_urls') or [], limit=link_limit)
+    links = _unique_list((snapshot or {}).get('evidence_links') or [], limit=link_limit)
+    candidates = []
+    for c in (snapshot or {}).get('candidates') or []:
+        link = (c or {}).get('link') or ''
+        if link:
+            candidates.append(link)
+    candidates = _unique_list(candidates, limit=link_limit)
+    return {
+        'source': (snapshot or {}).get('source') or '—',
+        'checked': bool((snapshot or {}).get('checked')),
+        'limited': bool((snapshot or {}).get('limited')),
+        'source_urls': urls,
+        'links': _unique_list(links + candidates, limit=link_limit),
+        'queries': _unique_list((snapshot or {}).get('queries') or [], limit=4),
+        'query_groups': _unique_list((snapshot or {}).get('query_groups') or [], limit=4),
+        'candidate_count': len((snapshot or {}).get('candidates') or []),
+    }
+
+
 def format_live_log_grouped(lines):
     """Сортировка по дате и времени; только данные с даты старта (get_start_date_ddmm()); в сутках каждое HH:MM не повторяется; объединение подряд одинаковых сообщений."""
     if not lines:
@@ -88,7 +261,7 @@ def format_live_log_grouped(lines):
         date_str, time_str, msg = _parse_line(s, today_ddmm, has_date_only_format=False)
         if time_str is None and parsed and parsed[-1][2] == msg:
             time_str = parsed[-1][1]
-        parsed.append((date_str, time_str, msg, idx))
+        parsed.append((date_str, time_str, _normalize_log_message(msg, time_str=time_str), idx))
     # Только данные с даты старта («с этого дня с нуля»)
     start_ddmm = get_start_date_ddmm()
     parsed = [(d, t, msg, idx) for (d, t, msg, idx) in parsed if _date_str_ge(start_ddmm, d)]
@@ -213,14 +386,14 @@ def format_live_log_full_grid(lines):
         slot = _round_time_str_to_grid(time_str) if time_str else None
         if not slot or not date_str:
             continue
-        slot_msg[(date_str, slot)] = msg
+        slot_msg[(date_str, slot)] = _normalize_log_message(msg, time_str=slot)
     # Только один день — слоты от 00:00 до текущего времени
     end_h = now.hour
     end_m = (now.minute // GRID_MINUTES) * GRID_MINUTES
     slots = _all_slots_up_to(end_h, end_m)
     out = []
     for t in slots:
-        msg = slot_msg.get((today_ddmm, t), DEFAULT_SLOT_MSG)
+        msg = slot_msg.get((today_ddmm, t), _phrase('intermediate', t))
         out.append(LOG_LINE_PREFIX + '%s — %s' % (t, msg))
     return out
 
@@ -246,6 +419,7 @@ def _load_env():
             break
 
 _load_env()
+KRO_SOURCE_CHANNELS = [x.strip() for x in (os.environ.get('KRO_SOURCE_CHANNELS') or '').split(',') if x.strip()]
 
 def _msk_now():
     try:
@@ -305,37 +479,229 @@ def _round_time_str_to_grid(time_str, grid_minutes=GRID_MINUTES):
     except (ValueError, TypeError, IndexError):
         return time_str
 
-def fetch_tgstat_count():
-    """Количество каналов по запросу «крипто сигналы» (лёгкий запрос)."""
+def fetch_tgstat_snapshot():
+    """Структурированный snapshot поиска TGStat: query groups, источники, кандидаты, ссылки."""
+    snapshot = _source_snapshot('TGStat')
+    snapshot['checked'] = True
     try:
         from tgstat_client import search_channels
     except ImportError:
-        return 0
+        snapshot['limited'] = True
+        snapshot['notes'].append('tgstat_client не импортирован')
+        return snapshot
     try:
-        items = search_channels('крипто сигналы', country='ru', limit=50)
-        return len(items) if items else 0
-    except Exception:
-        return 0
+        seen = set()
+        for group, queries in SEARCH_QUERY_VARIANTS.items():
+            for query in queries:
+                snapshot['query_groups'].append(group)
+                snapshot['queries'].append(query)
+                snapshot['source_urls'].append(TGSTAT_SEARCH_URL % quote(query))
+                items = search_channels(query, country='ru', limit=15)
+                for item in (items or []):
+                    username = ((item or {}).get('username') or '').strip()
+                    link = _normalize_channel_link((item or {}).get('link') or username)
+                    key = (username or link).lower()
+                    if not key or key in seen:
+                        continue
+                    seen.add(key)
+                    snapshot['candidates'].append({
+                        'title': ((item or {}).get('title') or '').strip(),
+                        'username': username,
+                        'link': link,
+                        'query': query,
+                        'query_group': group,
+                        'source_url': TGSTAT_SEARCH_URL % quote(query),
+                    })
+        return snapshot
+    except Exception as e:
+        snapshot['limited'] = True
+        snapshot['notes'].append('ошибка TGStat: %s' % e)
+        return snapshot
 
-def fetch_telega_count():
-    """Примерное количество каналов на странице каталога криптовалют."""
+
+def fetch_telega_snapshot():
+    """Структурированный snapshot каталога Telega."""
+    snapshot = _source_snapshot('Telega')
+    snapshot['checked'] = True
+    snapshot['source_urls'].append(TELEGA_SOURCE_URL)
     try:
         import requests
     except ImportError:
-        return 0
-    url = 'https://telega.io/catalog/cryptocurrencies'
+        snapshot['limited'] = True
+        snapshot['notes'].append('requests не импортирован')
+        return snapshot
     try:
-        r = requests.get(url, headers={'User-Agent': USER_AGENT}, timeout=15)
+        r = requests.get(TELEGA_SOURCE_URL, headers={'User-Agent': USER_AGENT}, timeout=15)
         r.raise_for_status()
         html = r.text or ''
-    except Exception:
-        return 0
-    channels = set()
+    except Exception as e:
+        snapshot['limited'] = True
+        snapshot['notes'].append('ошибка Telega: %s' % e)
+        return snapshot
+    channels = []
+    seen = set()
     for m in re.finditer(r'(?:href=["\']?(?:https?://)?(?:t\.me/|telegram\.me/)([a-zA-Z0-9_+]+)|@([a-zA-Z0-9_]{5,32})\b)', html, re.I):
         g = m.group(1) or m.group(2)
         if g and len(g) >= 4:
-            channels.add(g.lower())
-    return len(channels)
+            key = g.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            link = _normalize_channel_link('@' + g if not g.startswith('+') else 't.me/' + g)
+            channels.append({'username': '@' + g if not g.startswith('+') else 't.me/' + g, 'link': link})
+    snapshot['query_groups'].extend(['сигналы/сделки', 'VIP/приват'])
+    snapshot['queries'].extend(['catalog cryptocurrencies', 'catalog trading signals'])
+    snapshot['candidates'] = channels[:20]
+    return snapshot
+
+
+def fetch_telegram_search_snapshot():
+    """Структурированный snapshot глобального поиска Telegram по нескольким группам запросов."""
+    snapshot = _source_snapshot('Telegram search')
+    snapshot['checked'] = True
+    try:
+        from telethon import TelegramClient
+        from telethon.tl.functions.contacts import SearchRequest
+    except Exception:
+        snapshot['limited'] = True
+        snapshot['notes'].append('Telethon недоступен')
+        return snapshot
+    api_id = int(os.environ.get('TELEGRAM_API_ID') or 0)
+    api_hash = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
+    session_name = os.environ.get('TELEGRAM_SESSION_NAME', 'kro_worker')
+    if not api_id or not api_hash:
+        snapshot['limited'] = True
+        snapshot['notes'].append('нет TELEGRAM_API_ID/TELEGRAM_API_HASH')
+        return snapshot
+    try:
+        async def _run():
+            client = TelegramClient(session_name, api_id, api_hash)
+            await client.start()
+            try:
+                seen = set()
+                for group, queries in SEARCH_QUERY_VARIANTS.items():
+                    query = queries[0]
+                    snapshot['query_groups'].append(group)
+                    snapshot['queries'].append(query)
+                    result = await client(SearchRequest(q=query, limit=10))
+                    for chat in list(getattr(result, 'chats', []) or []) + list(getattr(result, 'users', []) or []):
+                        username = (getattr(chat, 'username', None) or '').strip()
+                        title = (getattr(chat, 'title', None) or getattr(chat, 'first_name', None) or '').strip()
+                        if not username:
+                            continue
+                        link = _normalize_channel_link('@' + username)
+                        key = link.lower()
+                        if key in seen:
+                            continue
+                        seen.add(key)
+                        snapshot['candidates'].append({
+                            'title': title,
+                            'username': '@' + username,
+                            'link': link,
+                            'query': query,
+                            'query_group': group,
+                            'source_url': '',
+                        })
+            finally:
+                await client.disconnect()
+        import asyncio
+        asyncio.run(_run())
+        return snapshot
+    except Exception as e:
+        snapshot['limited'] = True
+        snapshot['notes'].append('ошибка Telegram search: %s' % e)
+        return snapshot
+
+
+def fetch_complaints_snapshot():
+    """Структурированный snapshot по чатам жалоб: ссылки на чаты, ключи и упоминания каналов."""
+    snapshot = _source_snapshot('Complaint chats')
+    snapshot['checked'] = True
+    complaint_terms = ['скам', 'обман', 'слил депозит', 'развод', 'мошенники']
+    snapshot['queries'].extend(complaint_terms)
+    snapshot['query_groups'].append('жалобы/обсуждения')
+    source_urls = [_normalize_channel_link(ch) for ch in KRO_SOURCE_CHANNELS]
+    snapshot['source_urls'].extend([u for u in source_urls if u])
+    if not KRO_SOURCE_CHANNELS:
+        snapshot['limited'] = True
+        snapshot['notes'].append('KRO_SOURCE_CHANNELS не задан')
+    try:
+        from telethon import TelegramClient
+    except Exception:
+        return snapshot
+    api_id = int(os.environ.get('TELEGRAM_API_ID') or 0)
+    api_hash = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
+    session_name = os.environ.get('TELEGRAM_SESSION_NAME', 'kro_worker')
+    if not api_id or not api_hash or not KRO_SOURCE_CHANNELS:
+        return snapshot
+    try:
+        async def _run():
+            client = TelegramClient(session_name, api_id, api_hash)
+            await client.start()
+            try:
+                seen = set()
+                for ch in KRO_SOURCE_CHANNELS[:5]:
+                    entity = await client.get_entity(ch if ch.startswith('@') or ch.startswith('https://') else _normalize_channel_link(ch))
+                    async for msg in client.iter_messages(entity, limit=25):
+                        text = ((msg.text or '') + ' ' + (getattr(msg, 'message', '') or '')).strip()
+                        lower = text.lower()
+                        if not any(term in lower for term in complaint_terms):
+                            continue
+                        for found in _extract_channels_from_text(text):
+                            link = _normalize_channel_link(found)
+                            if not link or link in seen:
+                                continue
+                            seen.add(link)
+                            snapshot['candidates'].append({
+                                'title': found,
+                                'username': found,
+                                'link': link,
+                                'query': 'жалобы/обсуждения',
+                                'query_group': 'жалобы/обсуждения',
+                                'source_url': _normalize_channel_link(ch),
+                            })
+                            snapshot['evidence_links'].append(_normalize_channel_link(ch))
+            finally:
+                await client.disconnect()
+        import asyncio
+        asyncio.run(_run())
+        return snapshot
+    except Exception as e:
+        snapshot['limited'] = True
+        snapshot['notes'].append('ошибка чатов жалоб: %s' % e)
+        return snapshot
+
+
+def fetch_web_sources_snapshot():
+    """Лёгкий внешний веб-поиск по обзорам/подборкам с конкретными URL."""
+    snapshot = _source_snapshot('Web reviews')
+    snapshot['checked'] = True
+    snapshot['query_groups'].append('веб-обзоры')
+    snapshot['queries'].extend(['telegram crypto signals vip', 'best telegram crypto signals'])
+    snapshot['source_urls'].extend(WEB_SEARCH_URLS)
+    try:
+        import requests
+    except ImportError:
+        snapshot['limited'] = True
+        snapshot['notes'].append('requests не импортирован')
+        return snapshot
+    try:
+        seen = set()
+        for url in WEB_SEARCH_URLS:
+            r = requests.get(url, headers={'User-Agent': USER_AGENT}, timeout=15)
+            r.raise_for_status()
+            body = r.text or ''
+            for href in re.findall(r'class="result__a"[^>]+href="([^"]+)"', body)[:5]:
+                href = html.unescape(href)
+                if not href.startswith('http') or href in seen:
+                    continue
+                seen.add(href)
+                snapshot['evidence_links'].append(href)
+        return snapshot
+    except Exception as e:
+        snapshot['limited'] = True
+        snapshot['notes'].append('ошибка веб-обзоров: %s' % e)
+        return snapshot
 
 def get_stats_cached():
     """Вернуть (victims_12h, losses_12h) из kro-12h-stats.json или (0, 0)."""
@@ -356,6 +722,57 @@ def get_complaints_cached():
     """Жалобы из последнего kro-12h-stats.json или 0."""
     v, _ = get_stats_cached()
     return v
+
+
+def _has_fresh_stats_cache(max_age_hours=12):
+    path = os.path.join(DATA_DIR, 'kro-12h-stats.json')
+    if not os.path.isfile(path):
+        return False
+    try:
+        age_sec = max(0.0, (datetime.now().timestamp() - os.path.getmtime(path)))
+        return age_sec <= (max_age_hours * 3600)
+    except Exception:
+        return False
+
+
+def _build_search_action(search_data, victims, losses, time_str_grid):
+    """Сформировать 5‑минутный отчёт с реальными источниками, query groups и ссылками."""
+    snapshots = [_snapshot_summary(s) for s in (search_data or {}).get('snapshots', [])]
+    checked_sources = [s['source'] for s in snapshots if s.get('checked')]
+    all_groups = _unique_list(sum([s.get('query_groups', []) for s in snapshots], []), limit=4)
+    all_links = _unique_list(sum([s.get('source_urls', []) + s.get('links', []) for s in snapshots], []), limit=3)
+    sources_text = ', '.join(checked_sources) if checked_sources else 'источники пока не подтверждены'
+    groups_text = ', '.join(all_groups) if all_groups else SEARCH_GROUPS_HUMAN
+    links_text = ', '.join(all_links) if all_links else 'ссылки пока не зафиксированы'
+    total_candidates = sum((s.get('candidate_count') or 0) for s in snapshots)
+    wide_done = {'TGStat', 'Telega', 'Telegram search', 'Complaint chats'}.issubset(set(checked_sources))
+    web_checked = any(s.get('source') == 'Web reviews' and s.get('checked') for s in snapshots)
+    limited = not (wide_done and web_checked)
+
+    if total_candidates > 0:
+        return (
+            '%s Источники: %s. '
+            'Группы: %s. '
+            'Найдены кандидаты: %s. '
+            'Ссылки: %s.'
+        ) % (_phrase('found_candidates', time_str_grid), sources_text, groups_text, total_candidates, links_text)
+    if victims or losses:
+        return (
+            '%s Жалоб: %s, потери: %s ₽. '
+            'Проверены %s. '
+            'Ссылки: %s.'
+        ) % (_phrase('losses', time_str_grid), victims, losses, sources_text, links_text)
+    if limited:
+        return (
+            '%s Источники: %s. '
+            'Группы: %s. '
+            'Ссылки: %s.'
+        ) % (_phrase('basic', time_str_grid), sources_text, groups_text, links_text)
+    return (
+        '%s Источники: %s. '
+        'Группы: %s. '
+        'Ссылки: %s.'
+    ) % (_phrase('wide', time_str_grid), sources_text, groups_text, links_text)
 
 def load_log_lines():
     if not os.path.isfile(LIVE_LOG_FILE):
@@ -495,6 +912,13 @@ def _find_all_placeholder_ranges(service, doc_id, search_text):
         return out
     except Exception:
         return []
+
+
+def _find_url_ranges(text):
+    ranges = []
+    for m in re.finditer(r'https?://[^\s)>,]+', text or ''):
+        ranges.append((m.start(), m.end(), m.group(0)))
+    return ranges
 
 
 # Текст в документе, после которого начинается блок лога (инструкция «Обновления каждые 5 мин»)
@@ -654,6 +1078,12 @@ def update_doc_placeholder(doc_id, new_content, last_line):
                     'textStyle': {'bold': True, 'fontSize': {'magnitude': min(12, magnitude + 1), 'unit': 'PT'}},
                     'fields': 'bold,fontSize'
                 }})
+            for url_start, url_end, url in _find_url_ranges(new_content):
+                reqs.append({'updateTextStyle': {
+                    'range': {'startIndex': P + url_start, 'endIndex': P + url_end},
+                    'textStyle': {'link': {'url': url}},
+                    'fields': 'link'
+                }})
             service.documents().batchUpdate(documentId=doc_id, body={'requests': reqs}).execute()
         except Exception:
             pass
@@ -722,30 +1152,39 @@ def main():
     time_str_grid = now_rounded.strftime('%H:%M')
     datetime_prefix = '%s %s' % (date_str, time_str_grid)  # при записи — время по сетке, без повторов в слоте
 
-    tg = fetch_tgstat_count()
-    telega = fetch_telega_count()
+    tg_snapshot = fetch_tgstat_snapshot()
+    telega_snapshot = fetch_telega_snapshot()
+    telegram_search_snapshot = fetch_telegram_search_snapshot()
+    complaints_snapshot = fetch_complaints_snapshot()
+    web_snapshot = fetch_web_sources_snapshot()
+    search_data = {
+        'snapshots': [
+            tg_snapshot,
+            telega_snapshot,
+            telegram_search_snapshot,
+            complaints_snapshot,
+            web_snapshot,
+        ]
+    }
     victims, losses = get_stats_cached()
 
     state = load_state()
     # Каждый запуск (каждые 5 мин по Москве) — одна строка с описанием действий за эти 5 мин
     if state is None:
-        state = {'last_tgstat': tg, 'last_telega': telega, 'last_victims': victims, 'last_losses': losses}
+        state = {'last_search_signature': '', 'last_victims': victims, 'last_losses': losses}
+    current_signature = json.dumps({
+        'sources': [s.get('source') for s in search_data['snapshots']],
+        'candidates': [len(s.get('candidates') or []) for s in search_data['snapshots']],
+        'links': [len(_unique_list((s.get('source_urls') or []) + (s.get('evidence_links') or []))) for s in search_data['snapshots']],
+    }, ensure_ascii=False, sort_keys=True)
     changed = (
-        state.get('last_tgstat') != tg or state.get('last_telega') != telega
+        state.get('last_search_signature') != current_signature
         or state.get('last_victims') != victims or state.get('last_losses') != losses
     )
-    if changed:
-        if (state.get('last_losses') != losses or state.get('last_victims') != victims) and (losses or victims):
-            action = 'Обновлён расчёт: потери %s ₽, жалоб %s.' % (losses, victims)
-        elif state.get('last_tgstat') != tg or state.get('last_telega') != telega:
-            action = 'Найдено каналов по фильтрам: TGStat %s, Telega %s.' % (tg, telega)
-        else:
-            action = 'Обновление счётчиков: TGStat %s, Telega %s, потери %s ₽.' % (tg, telega, losses)
-    else:
-        action = 'Запрос TGStat (%s), Telega (%s), потери %s ₽, жалоб %s. Изменений нет.' % (tg, telega, losses, victims)
+    action = _normalize_log_message(_build_search_action(search_data, victims, losses, time_str_grid), time_str=time_str_grid)
     new_line = '%s — За 5 мин: %s' % (datetime_prefix, action)
     save_state({
-        'last_tgstat': tg, 'last_telega': telega, 'last_victims': victims, 'last_losses': losses,
+        'last_search_signature': current_signature, 'last_victims': victims, 'last_losses': losses,
     })
     lines = load_log_lines()
     if lines and lines[-1].strip().startswith(datetime_prefix):
