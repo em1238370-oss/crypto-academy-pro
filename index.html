@@ -130,7 +130,8 @@
                <p class="kro-f1-source-doc-wrap kro-scroll-in" id="kro-f1-source-doc-wrap">
                    <a href="https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit" id="kro-f1-source-doc-link" target="_blank" rel="noopener" class="kro-f1-source-doc-link">Источники и данные (Sources and Data) — откуда цифры и таблица</a>
                </p>
-               <p class="kro-f1-metrics-sub kro-scroll-in" id="kro-f1-source-caption"></p>
+               <p class="kro-f1-metrics-sub kro-scroll-in kro-feature1-source-caption" id="kro-f1-source-caption"></p>
+               <p class="kro-f1-system-note kro-scroll-in" id="kro-f1-system-note" hidden></p>
            </div>
            <div class="kro-f1-blocks kro-f1-content-card">
                <!-- Блок 1: Шок-цифры -->
@@ -522,6 +523,7 @@
                return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
            }
            function statusClass(s) {
+               if (!s || s === '—') return '';
                if (/удалён/i.test(s)) return 'kro-status-removed';
                if (/блок/i.test(s)) return 'kro-status-block';
                return 'kro-status-active';
@@ -581,26 +583,37 @@
                var top3 = data.top3 || [];
                for (var i = 0; i < 3; i++) {
                    var r = top3[i];
-                   if (!r) continue;
-                   if ((el = document.getElementById('kro-top3-' + (i + 1) + '-channel'))) el.textContent = r.channel;
-                   if ((el = document.getElementById('kro-top3-' + (i + 1) + '-sum'))) el.textContent = formatSum(r.sum);
+                   if ((el = document.getElementById('kro-top3-' + (i + 1) + '-channel'))) el.textContent = r ? r.channel : '—';
+                   if ((el = document.getElementById('kro-top3-' + (i + 1) + '-sum'))) el.textContent = r ? formatSum(r.sum) : '—';
                    if ((el = document.getElementById('kro-top3-' + (i + 1) + '-status'))) {
-                       el.textContent = r.status;
-                       el.className = 'kro-top3-status ' + statusClass(r.status);
+                       el.textContent = r ? r.status : '—';
+                       el.className = 'kro-top3-status' + (statusClass(r ? r.status : '') ? ' ' + statusClass(r ? r.status : '') : '');
                    }
                }
                var docWrap = document.getElementById('kro-f1-source-doc-wrap');
                var docLink = document.getElementById('kro-f1-source-doc-link');
                var sourceCaption = document.getElementById('kro-f1-source-caption');
+               var systemNote = document.getElementById('kro-f1-system-note');
                if (docWrap && docLink && data.report_doc_url) {
                    docLink.href = data.report_doc_url;
                }
                if (docLink && data.sourceCaption) docLink.title = data.sourceCaption;
                if (sourceCaption) sourceCaption.textContent = data.sourceCaption || '';
+               if (systemNote) {
+                   if (data.siteNotice) {
+                       systemNote.hidden = false;
+                       systemNote.textContent = data.siteNotice;
+                   } else {
+                       systemNote.hidden = true;
+                       systemNote.textContent = '';
+                   }
+               }
                window.__kroLiveEvidence = {
                    evidence_summary: data.evidence_summary || {},
                    risk_rows: data.risk_rows || [],
-                   complaints_rows: data.complaints_rows || []
+                   complaints_rows: data.complaints_rows || [],
+                   publish_status: data.publishStatus || null,
+                   site_notice: data.siteNotice || null
                };
                tryRunCountUps();
            }

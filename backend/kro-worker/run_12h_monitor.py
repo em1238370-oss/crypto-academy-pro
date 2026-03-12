@@ -28,10 +28,14 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
 DATA_DIR = os.path.join(BACKEND_DIR, 'data')
 OUTPUT_JSON = os.path.join(DATA_DIR, 'kro-12h-stats.json')
+LAST_CYCLE_JSON = os.path.join(DATA_DIR, 'kro-12h-stats.last-cycle.json')
+PUBLISH_HISTORY_JSON = os.path.join(DATA_DIR, 'kro-publish-history.json')
 CHANNEL_OBJECTS_JSON = os.path.join(DATA_DIR, 'channel_objects.json')
 LIVE_LOG_FILE = os.path.join(DATA_DIR, 'live_log_5min.json')
 LIVE_LOG_MAX_LINES = 50
 REPORT_COUNTER_KEY = 'lastReportNumber'
+PUBLISH_HISTORY_LIMIT = 10
+SUSPICIOUS_ZERO_STREAK_ALERT = 2
 
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
 REQUEST_DELAY = 3
@@ -104,6 +108,101 @@ def _append_live_log_events(events):
     lines = _load_live_log()
     lines.extend(events)
     _save_live_log(lines)
+
+
+def _read_json_file(path, default=None):
+    if not os.path.isfile(path):
+        return default
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def _write_json_file(path, data):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def _non_empty_list(value):
+    out = []
+    for item in value or []:
+        if item is None:
+            continue
+        text = str(item).strip()
+        if text:
+            out.append(text)
+    return out
+
+
+def _count_evidence_categories(evidence_summary):
+    if not isinstance(evidence_summary, dict):
+        return 0
+    keys = ('tgstat_queries', 'telega_sources', 'complaint_sources', 'web_search_urls', 'risk_row_links')
+    return sum(1 for key in keys if _non_empty_list(evidence_summary.get(key)))
+
+
+def _is_zero_publication_candidate(stats):
+    return (
+        int(stats.get('new_scam_channels') or 0) == 0 and
+        int(stats.get('telegram_channels') or 0) == 0 and
+        int(stats.get('courses_products') or 0) == 0 and
+        int(stats.get('losses_12h') or 0) == 0 and
+        not (stats.get('top3') or [])
+    )
+
+
+def _is_full_cycle_for_zero(stats):
+    evidence_summary = stats.get('evidence_summary') or {}
+    unavailable_sources = _non_empty_list(stats.get('unavailable_sources'))
+    tgstat_queries = _non_empty_list(evidence_summary.get('tgstat_queries'))
+    telega_sources = _non_empty_list(evidence_summary.get('telega_sources'))
+    complaint_sources = _non_empty_list(evidence_summary.get('complaint_sources'))
+    web_search_urls = _non_empty_list(evidence_summary.get('web_search_urls'))
+    risk_row_links = _non_empty_list(evidence_summary.get('risk_row_links'))
+    evidence_categories = _count_evidence_categories(evidence_summary)
+    nothing_found = bool(stats.get('nothing_found'))
+    has_catalog_pass = bool(tgstat_queries or telega_sources)
+    has_wide_pass = bool(web_search_urls)
+    has_secondary_validation = bool(complaint_sources or risk_row_links)
+    return (
+        nothing_found and
+        not unavailable_sources and
+        evidence_categories >= 3 and
+        has_catalog_pass and
+        has_wide_pass and
+        has_secondary_validation
+    )
+
+
+def _classify_publish_result(stats):
+    if not _is_zero_publication_candidate(stats):
+        return 'valid'
+    if _is_full_cycle_for_zero(stats):
+        return 'honest_zero'
+    return 'suspicious_zero'
+
+
+def _update_publish_history(publish_status, timestamp):
+    history = _read_json_file(PUBLISH_HISTORY_JSON, default={'cycles': []}) or {'cycles': []}
+    cycles = history.get('cycles')
+    if not isinstance(cycles, list):
+        cycles = []
+    cycles.append({
+        'timestamp': timestamp,
+        'publishStatus': publish_status,
+    })
+    cycles = cycles[-PUBLISH_HISTORY_LIMIT:]
+    history['cycles'] = cycles
+    _write_json_file(PUBLISH_HISTORY_JSON, history)
+    suspicious_zero_streak = 0
+    for item in reversed(cycles):
+        if item.get('publishStatus') != 'suspicious_zero':
+            break
+        suspicious_zero_streak += 1
+    return suspicious_zero_streak
 
 
 # --- Критерии релевантности: только каналы с торговыми сигналами (покупать вверх/вниз, лонг/шорт) ---
@@ -2262,6 +2361,8 @@ def main():
 
     # 6) Write JSON for site (поля спецификации + обратная совместимость)
     top3_today = [(t.get('channel') or t.get('name') or '—') for t in (top3 or [])[:3]]
+    previous_primary = _read_json_file(OUTPUT_JSON, default={}) or {}
+    previous_top3 = previous_primary.get('display_top3') or previous_primary.get('top3') or []
     out = {
         'new_scams': new_scams_count,
         'new_scam_channels': new_scams_count,
@@ -2288,12 +2389,55 @@ def main():
             'risk_row_links': _unique_list(sum([r.get('evidence_links') or [] for r in (risk_rows or [])], []), limit=10),
         },
         'sourceCaption': 'Широкий поиск: TGStat, Telega, Telegram search, complaint chats, web reviews',
+        'nothing_found': bool((structured_data or {}).get('nothing_found')),
     }
-    os.makedirs(DATA_DIR, exist_ok=True)
-    with open(OUTPUT_JSON, 'w', encoding='utf-8') as f:
-        json.dump(out, f, ensure_ascii=False, indent=2)
-    print('Written %s: new_scams=%s, losses_12h=%s, victims_12h=%s, report #%s' % (
-        OUTPUT_JSON, out['new_scams'], out['losses_12h'], out['victims_12h'], report_number), file=sys.stderr)
+    publish_status = _classify_publish_result(out)
+    is_honest_zero = publish_status == 'honest_zero'
+    last_valid_updated_at = previous_primary.get('lastValidUpdatedAt') or previous_primary.get('updatedAt')
+    display_top3 = out.get('top3') or []
+    site_notice = None
+    if publish_status == 'honest_zero':
+        last_valid_updated_at = out.get('updatedAt')
+        if not display_top3 and previous_top3:
+            display_top3 = previous_top3[:3]
+            site_notice = 'За этот период новых подтверждённых мошеннических объектов не обнаружено. Для контекста показаны данные предыдущего валидного цикла.'
+        else:
+            site_notice = 'За этот период новых подтверждённых мошеннических объектов не обнаружено. Мониторинг продолжается.'
+    elif publish_status == 'valid':
+        last_valid_updated_at = out.get('updatedAt')
+    else:
+        site_notice = 'Цикл завершился нулевыми данными и признан подозрительно пустым. Публикация на сайт отменена до проверки полноты поиска.'
+
+    out['publishStatus'] = publish_status
+    out['isHonestZero'] = is_honest_zero
+    out['siteNotice'] = site_notice
+    out['lastValidUpdatedAt'] = last_valid_updated_at
+    out['display_top3'] = display_top3[:3] if isinstance(display_top3, list) else []
+
+    _write_json_file(LAST_CYCLE_JSON, out)
+    suspicious_zero_streak = _update_publish_history(publish_status, out.get('timestamp', ''))
+
+    if publish_status == 'suspicious_zero':
+        warning = (
+            'Подозрительно пустой цикл: new_scam_channels=0, telegram_channels=0, '
+            'courses_products=0, losses_12h=0, top3 пустой. Боевой JSON и сайт не обновлены.'
+        )
+        print(warning, file=sys.stderr)
+        if suspicious_zero_streak >= SUSPICIOUS_ZERO_STREAK_ALERT:
+            print(
+                'Аномалия: %s подозрительных пустых цикла(ов) подряд. Нужна проверка источников, парсинга и полноты поиска.'
+                % suspicious_zero_streak,
+                file=sys.stderr
+            )
+        now_msk_dt = _msk_now()
+        _append_live_log_events([
+            '%s — %s' % (now_msk_dt.strftime('%d.%m.%Y %H:%M'), warning)
+        ])
+        return
+
+    _write_json_file(OUTPUT_JSON, out)
+    print('Written %s: new_scams=%s, losses_12h=%s, victims_12h=%s, report #%s, publish_status=%s' % (
+        OUTPUT_JSON, out['new_scams'], out['losses_12h'], out['victims_12h'], report_number, publish_status), file=sys.stderr)
     if report_doc_url:
         print('Report doc: %s' % report_doc_url, file=sys.stderr)
     # Сразу отправить данные на сайт, чтобы цифры отображались после каждого сбора
@@ -2305,12 +2449,17 @@ def main():
         'courses_products': out.get('courses_products', 0),
         'top3_today': out.get('top3_today', []),
         'top3': out.get('top3', []),
+        'display_top3': out.get('display_top3', []),
         'victims_12h': out.get('victims_12h', 0),
         'risk_rows': out.get('risk_rows', []),
         'complaints_rows': out.get('complaints_rows', []),
         'evidence_summary': out.get('evidence_summary', {}),
         'report_doc_url': out.get('report_doc_url'),
         'sourceCaption': out.get('sourceCaption'),
+        'publishStatus': out.get('publishStatus'),
+        'isHonestZero': out.get('isHonestZero'),
+        'siteNotice': out.get('siteNotice'),
+        'lastValidUpdatedAt': out.get('lastValidUpdatedAt'),
     }
     _send_to_site(site_payload)
 

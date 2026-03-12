@@ -1259,6 +1259,18 @@ const KRO_FALLBACK = {
   ]
 };
 
+function buildKroShockText(victims12h, publishStatus) {
+  const n = Number(victims12h) || 0;
+  if (n <= 0) {
+    return publishStatus === 'honest_zero'
+      ? 'Новых подтверждённых жалоб за этот период не зафиксировано'
+      : 'Нет новых жалоб за 12 ч';
+  }
+  if (n === 1) return '1 человек купил «гарантию прибыли»';
+  if (n >= 2 && n <= 4) return n + ' человека купили «гарантию прибыли»';
+  return n + ' человек купили «гарантию прибыли»';
+}
+
 function parseSheetRow(row, headerIndex) {
   const dateVal = (row[0] || '').toString().trim();
   const channel = (row[1] || '').toString().trim();
@@ -1636,22 +1648,19 @@ app.get('/api/kro/live-counter', async (req, res) => {
       }
       const hasCount = typeof data.new_scams === 'number' || typeof data.channelsToday === 'number' || typeof data.new_scam_channels === 'number';
       if (data && hasCount) {
+        const publishStatus = data.publishStatus || 'valid';
         const channelsToday = data.new_scam_channels ?? data.new_scams ?? data.channelsToday ?? 0;
         const totalLost = data.losses_12h ?? data.totalLost ?? 0;
         const telegramCount = data.telegram_channels ?? data.telegramCount ?? KRO_FALLBACK.telegramCount;
         const coursesCount = data.courses_products ?? data.courses ?? data.coursesCount ?? KRO_FALLBACK.coursesCount;
-        const victims12h = data.victims_12h ?? KRO_FALLBACK.victims_12h ?? 0;
-        const n = victims12h;
-        const shockText = n <= 0
-          ? (KRO_FALLBACK.shockText || 'Нет новых жалоб за 12 ч')
-          : n === 1
-            ? '1 человек купил «гарантию прибыли»'
-            : n >= 2 && n <= 4
-              ? n + ' человека купили «гарантию прибыли»'
-              : n + ' человек купили «гарантию прибыли»';
-        let top3 = KRO_FALLBACK.top3;
-        if (Array.isArray(data.top3) && data.top3.length && typeof data.top3[0] === 'object' && (data.top3[0].sum !== undefined || data.top3[0].channel)) {
-          top3 = data.top3.slice(0, 3).map((r) => ({
+        const victims12h = data.victims_12h ?? 0;
+        const shockText = typeof data.shockText === 'string' && data.shockText.trim()
+          ? data.shockText
+          : buildKroShockText(victims12h, publishStatus);
+        let top3 = [];
+        const primaryTop3 = Array.isArray(data.display_top3) && data.display_top3.length ? data.display_top3 : data.top3;
+        if (Array.isArray(primaryTop3) && primaryTop3.length && typeof primaryTop3[0] === 'object' && (primaryTop3[0].sum !== undefined || primaryTop3[0].channel)) {
+          top3 = primaryTop3.slice(0, 3).map((r) => ({
             channel: r.channel || r.name || '—',
             sum: typeof r.sum === 'number' ? r.sum : (r.losses || 0),
             status: r.status || 'Активен'
@@ -1669,6 +1678,10 @@ app.get('/api/kro/live-counter', async (req, res) => {
         response.evidence_summary = data.evidence_summary || {};
         response.risk_rows = Array.isArray(data.risk_rows) ? data.risk_rows.slice(0, 10) : [];
         response.complaints_rows = Array.isArray(data.complaints_rows) ? data.complaints_rows.slice(0, 10) : [];
+        response.publishStatus = publishStatus;
+        response.isHonestZero = Boolean(data.isHonestZero);
+        response.siteNotice = data.siteNotice || null;
+        response.lastValidUpdatedAt = data.lastValidUpdatedAt || data.updatedAt || null;
         return res.json(response);
       }
     }
@@ -1701,7 +1714,11 @@ app.get('/api/kro/live-counter', async (req, res) => {
       victims_12h: 0,
       shockText: KRO_FALLBACK.shockText || '73 человека купили «гарантию прибыли»',
       top3: top3.length ? top3 : KRO_FALLBACK.top3,
-      report_doc_url: KRO_SOURCES_DOC_URL
+      report_doc_url: KRO_SOURCES_DOC_URL,
+      publishStatus: 'fallback',
+      isHonestZero: false,
+      siteNotice: null,
+      lastValidUpdatedAt: null
     });
   } catch (e) {
     console.error('KRO live-counter error:', e);
@@ -1731,6 +1748,7 @@ function handleKroUpdate(req, res) {
   const evidenceSummary = body.evidence_summary && typeof body.evidence_summary === 'object' ? body.evidence_summary : {};
   const riskRows = Array.isArray(body.risk_rows) ? body.risk_rows.slice(0, 50) : [];
   const complaintsRows = Array.isArray(body.complaints_rows) ? body.complaints_rows.slice(0, 50) : [];
+  const displayTop3 = Array.isArray(body.display_top3) ? body.display_top3.slice(0, 3) : [];
   if (!Number.isFinite(newScamChannels) || !Number.isFinite(losses12h)) {
     return res.status(400).json({ error: 'new_scam_channels and losses_12h required as numbers' });
   }
@@ -1752,6 +1770,7 @@ function handleKroUpdate(req, res) {
     courses: Number.isFinite(coursesProducts) ? coursesProducts : 0,
     top3_today: top3Today.slice(0, 3),
     top3,
+    display_top3: displayTop3,
     updatedAt: body.timestamp || new Date().toISOString(),
     evidence_summary: evidenceSummary,
     risk_rows: riskRows,
@@ -1760,6 +1779,10 @@ function handleKroUpdate(req, res) {
   if (body.report_doc_url != null) payload.report_doc_url = String(body.report_doc_url);
   if (Number.isFinite(Number(body.victims_12h))) payload.victims_12h = Number(body.victims_12h);
   if (body.sourceCaption != null) payload.sourceCaption = String(body.sourceCaption);
+  if (body.publishStatus != null) payload.publishStatus = String(body.publishStatus);
+  if (body.siteNotice != null) payload.siteNotice = String(body.siteNotice);
+  if (body.lastValidUpdatedAt != null) payload.lastValidUpdatedAt = String(body.lastValidUpdatedAt);
+  if (body.isHonestZero != null) payload.isHonestZero = Boolean(body.isHonestZero);
   try {
     const dataDir = join(__dirname, 'data');
     if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });

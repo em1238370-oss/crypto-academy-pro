@@ -1195,6 +1195,14 @@ body.kro-hero-scrolled .kro-floating-nav {
    line-height: 1.4;
 }
 
+.kro-f1-system-note {
+   font-size: 12px;
+   color: rgba(255, 230, 190, 0.88);
+   margin: 10px auto 0;
+   max-width: 560px;
+   line-height: 1.45;
+}
+
 .kro-feature1-stat.kro-card {
    padding: 14px 18px;
 }
