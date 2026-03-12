@@ -28,13 +28,12 @@ STATE_FILE = os.path.join(DATA_DIR, 'live_log_state.json')
 PLACEHOLDER = 'События за период — ниже'
 # Документ по умолчанию (ваш Sources and Data), если KRO_SOURCES_DOC_ID не задан в .env
 DEFAULT_SOURCES_DOC_ID = '1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58'
-MAX_LINES = 50
 # Текст для слотов, где не было отдельного события — описание действий за 5 мин
 DEFAULT_SLOT_MSG = 'Промежуточный поиск по крипто‑сигналам продолжается.'
-# В документе показывать только последние N дней лога (1 = только сегодня), чтобы блок не разрастался
-MAX_DAYS_SHOWN_IN_DOC = 1
-# Разделитель между днями и оформление
-NEW_DAY_SEPARATOR = '───── Новый день ─────'
+# Окно памяти для документа и JSON-источника
+LOG_RETENTION_DAYS = 14
+# Оформление блоков памяти
+MEMORY_BLOCK_TITLE = 'Память за последние 14 дней:'
 LOG_LINE_PREFIX = '• '  # буллет перед каждой строкой лога
 SEARCH_QUERY_GROUPS = {
     'сигналы/сделки': 'signal signals сигналы trade trading entry long short take profit stop loss TP SL',
@@ -59,13 +58,20 @@ KRO_SOURCE_CHANNELS = [x.strip() for x in (os.environ.get('KRO_SOURCE_CHANNELS')
 
 
 def get_start_date_ddmm():
-    """Дата старта лога: «с этого дня с нуля». По умолчанию — сегодня (MSK); можно задать KRO_LOG_START_DATE в .env (DD.MM.YYYY)."""
-    try:
-        from zoneinfo import ZoneInfo
-        now = datetime.now(ZoneInfo('Europe/Moscow'))
-    except ImportError:
-        now = datetime.now(timezone.utc) + timedelta(hours=3)
-    return (os.environ.get('KRO_LOG_START_DATE') or '').strip() or now.strftime('%d.%m.%Y')
+    """Нижняя граница памяти лога: максимум из KRO_LOG_START_DATE и окна последних 14 дней."""
+    now = _msk_now()
+    retention_start = (now - timedelta(days=LOG_RETENTION_DAYS - 1)).strftime('%d.%m.%Y')
+    configured = (os.environ.get('KRO_LOG_START_DATE') or '').strip()
+    if configured and re.search(r'\d{1,2}\.\d{1,2}\.\d{4}', configured):
+        try:
+            c_parts = configured.split('.')
+            r_parts = retention_start.split('.')
+            configured_date = datetime(int(c_parts[2]), int(c_parts[1]), int(c_parts[0]))
+            retention_date = datetime(int(r_parts[2]), int(r_parts[1]), int(r_parts[0]))
+            return configured if configured_date >= retention_date else retention_start
+        except (ValueError, TypeError):
+            return retention_start
+    return retention_start
 GRID_MINUTES = 5  # время округляем до сетки 5 мин (00:00, 00:05, … 23:55)
 
 
@@ -247,113 +253,6 @@ def _snapshot_summary(snapshot, link_limit=2):
     }
 
 
-def format_live_log_grouped(lines):
-    """Сортировка по дате и времени; только данные с даты старта (get_start_date_ddmm()); в сутках каждое HH:MM не повторяется; объединение подряд одинаковых сообщений."""
-    if not lines:
-        return []
-    now = _msk_now()
-    today_ddmm = now.strftime('%d.%m.%Y')
-    parsed = []
-    for idx, raw in enumerate(lines):
-        s = (raw or '').strip()
-        if not s:
-            continue
-        date_str, time_str, msg = _parse_line(s, today_ddmm, has_date_only_format=False)
-        if time_str is None and parsed and parsed[-1][2] == msg:
-            time_str = parsed[-1][1]
-        parsed.append((date_str, time_str, _normalize_log_message(msg, time_str=time_str), idx))
-    # Только данные с даты старта («с этого дня с нуля»)
-    start_ddmm = get_start_date_ddmm()
-    parsed = [(d, t, msg, idx) for (d, t, msg, idx) in parsed if _date_str_ge(start_ddmm, d)]
-    # В документе показывать только последние MAX_DAYS_SHOWN_IN_DOC дней (1 = только сегодня), чтобы не раздувать блок
-    parsed = [(d, t, msg, idx) for (d, t, msg, idx) in parsed if _date_str_within_last_n_days(d, MAX_DAYS_SHOWN_IN_DOC - 1, today_ddmm)]
-    if not parsed:
-        return []
-    def sort_key(x):
-        d, t, _, idx = x
-        try:
-            h, m = (int(t[:2]), int(t[3:5]) if t and len(t) >= 5 else 0) if t and ':' in t else (99, 99)
-        except (ValueError, TypeError):
-            h, m = 99, 99
-        if d is None:
-            return (0, 0, 0, h, m, idx)
-        try:
-            parts = d.split('.')
-            if len(parts) == 3:
-                day, month, year = int(parts[0]), int(parts[1]), int(parts[2])
-                date_ord = (year, month, day)
-            else:
-                date_ord = (9999, 99, 99)
-        except (ValueError, TypeError):
-            date_ord = (9999, 99, 99)
-        return (date_ord[0], date_ord[1], date_ord[2], h, m, idx)
-    parsed.sort(key=sort_key)
-    # Жёстко: в одних сутках каждое время (слот 5 мин) только один раз — последняя запись в слоте, без дублей дат/времени
-    seen = {}
-    for x in reversed(parsed):
-        slot = _round_time_str_to_grid(x[1]) if x[1] else x[1]
-        key = (x[0], slot)
-        if key not in seen:
-            seen[key] = x
-    parsed = list(seen.values())
-    parsed.sort(key=sort_key)
-    # Один день — разделитель «Новый день» не выводим
-    dates_in_parsed = set(p[0] for p in parsed if p[0])
-    single_day = len(dates_in_parsed) <= 1
-    out = []
-    prev_date = None
-    prev_last_time = None
-    used_slots = set()  # (date, rounded_time) уже выведены — никаких дублей
-    i = 0
-    while i < len(parsed):
-        date_str, t, msg, _ = parsed[i]
-        if msg == '':
-            i += 1
-            continue
-        first_date = date_str
-        first_time = t
-        last_time = t
-        j = i + 1
-        while j < len(parsed) and parsed[j][2] == msg and parsed[j][0] == first_date:
-            if parsed[j][1]:
-                last_time = parsed[j][1]
-            j += 1
-        slot_start = _round_time_str_to_grid(first_time) if first_time else None
-        if slot_start and first_date and (first_date, slot_start) in used_slots:
-            i = j
-            continue
-        if not single_day and prev_date is not None and first_date is not None and first_date != prev_date:
-            out.append('')
-            out.append(NEW_DAY_SEPARATOR)
-        elif not single_day and prev_last_time and first_time:
-            try:
-                ph = int(prev_last_time[:2])
-                fh = int(first_time[:2])
-                if ph >= 23 and fh <= 1:
-                    out.append('')
-                    out.append(NEW_DAY_SEPARATOR)
-            except (ValueError, TypeError):
-                pass
-        prev_date = first_date
-        line = ''
-        if first_time and last_time:
-            if first_time == last_time:
-                line = '%s — %s' % (first_time, msg)
-            else:
-                line = '%s–%s — %s' % (first_time, last_time, msg)
-        elif first_time:
-            line = '%s — %s' % (first_time, msg)
-        else:
-            line = msg
-        if line:
-            out.append(LOG_LINE_PREFIX + line)
-            if first_date and slot_start:
-                used_slots.add((first_date, slot_start))
-            prev_last_time = last_time or first_time
-        i = j
-    return out
-
-
 def _all_slots_up_to(end_h, end_m, grid_minutes=GRID_MINUTES):
     """Список слотов (HH:MM) от 00:00 до end_h:end_m включительно по сетке 5 мин."""
     out = []
@@ -369,33 +268,99 @@ def _all_slots_up_to(end_h, end_m, grid_minutes=GRID_MINUTES):
     return out
 
 
-def format_live_log_full_grid(lines):
-    """Полная сетка по 5 мин от 00:00 до текущего времени (MSK): для каждого слота — запись из лога или описание действий."""
+def _date_str_to_date(date_str):
+    if not date_str or not re.search(r'\d{1,2}\.\d{1,2}\.\d{4}', date_str):
+        return None
+    try:
+        day, month, year = [int(x) for x in date_str.split('.')]
+        return datetime(year, month, day).date()
+    except (ValueError, TypeError):
+        return None
+
+
+def _time_sort_key(time_str):
+    try:
+        if not time_str or ':' not in time_str:
+            return (99, 99)
+        h, m = [int(x) for x in time_str[:5].split(':')]
+        return (h, m)
+    except (ValueError, TypeError):
+        return (99, 99)
+
+
+def _collect_slot_messages(lines):
     now = _msk_now()
     today_ddmm = now.strftime('%d.%m.%Y')
     start_ddmm = get_start_date_ddmm()
-    # Собираем из лога сообщения по слотам (дата, HH:MM) только за сегодня и с даты старта
     slot_msg = {}
     for raw in (lines or []):
         s = (raw or '').strip()
         if not s or ' — ' not in s:
             continue
         date_str, time_str, msg = _parse_line(s, today_ddmm, has_date_only_format=False)
-        if not _date_str_ge(start_ddmm, date_str) or not _date_str_within_last_n_days(date_str, MAX_DAYS_SHOWN_IN_DOC - 1, today_ddmm):
+        if not _date_str_ge(start_ddmm, date_str):
             continue
         slot = _round_time_str_to_grid(time_str) if time_str else None
         if not slot or not date_str:
             continue
         slot_msg[(date_str, slot)] = _normalize_log_message(msg, time_str=slot)
-    # Только один день — слоты от 00:00 до текущего времени
-    end_h = now.hour
-    end_m = (now.minute // GRID_MINUTES) * GRID_MINUTES
-    slots = _all_slots_up_to(end_h, end_m)
-    out = []
-    for t in slots:
-        msg = slot_msg.get((today_ddmm, t), _phrase('intermediate', t))
-        out.append(LOG_LINE_PREFIX + '%s — %s' % (t, msg))
-    return out
+    return slot_msg
+
+
+def _retained_dates_from_slots(slot_msg):
+    dates = []
+    seen = set()
+    for date_str, _ in slot_msg.keys():
+        date_obj = _date_str_to_date(date_str)
+        if not date_obj or date_str in seen:
+            continue
+        seen.add(date_str)
+        dates.append((date_obj, date_str))
+    dates.sort(key=lambda item: item[0])
+    return [date_str for _, date_str in dates]
+
+
+def _build_day_lines(date_str, slot_msg, today_ddmm):
+    if date_str == today_ddmm:
+        now = _msk_now()
+        end_h = now.hour
+        end_m = (now.minute // GRID_MINUTES) * GRID_MINUTES
+        slots = _all_slots_up_to(end_h, end_m)
+        return [LOG_LINE_PREFIX + '%s — %s' % (t, slot_msg.get((date_str, t), _phrase('intermediate', t))) for t in slots]
+    day_slots = [slot for (stored_date, slot) in slot_msg.keys() if stored_date == date_str]
+    day_slots = sorted(set(day_slots), key=_time_sort_key)
+    return [LOG_LINE_PREFIX + '%s — %s' % (slot, slot_msg[(date_str, slot)]) for slot in day_slots]
+
+
+def build_live_log_doc_block(lines):
+    """Собрать блок памяти за последние 14 дней для Google Doc."""
+    now = _msk_now()
+    today_ddmm = now.strftime('%d.%m.%Y')
+    slot_msg = _collect_slot_messages(lines)
+    retained_dates = _retained_dates_from_slots(slot_msg)
+    content_lines = [MEMORY_BLOCK_TITLE, '']
+    last_line = None
+    if not retained_dates:
+        content_lines.extend([PLACEHOLDER, '', 'Канонический источник методологии', 'Отчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'])
+        return '\n'.join(content_lines), last_line
+    for idx, date_str in enumerate(retained_dates):
+        day_lines = _build_day_lines(date_str, slot_msg, today_ddmm)
+        if date_str == today_ddmm:
+            header = '%s — события по 5 мин (00:00 … текущее время MSK)' % date_str
+        else:
+            header = '%s — события по 5 мин' % date_str
+        content_lines.append(header)
+        if day_lines:
+            content_lines.extend(day_lines)
+            if idx == len(retained_dates) - 1:
+                last_line = day_lines[-1]
+        else:
+            content_lines.append(LOG_LINE_PREFIX + 'Нет зафиксированных записей за этот день.')
+            if idx == len(retained_dates) - 1:
+                last_line = content_lines[-1]
+        content_lines.append('')
+    content_lines.extend([PLACEHOLDER, '', 'Канонический источник методологии', 'Отчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'])
+    return '\n'.join(content_lines), last_line
 
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
 
@@ -1138,7 +1103,7 @@ def save_state(state):
 
 def main():
     start_ddmm = get_start_date_ddmm()
-    # Обрезать лог до записей с даты старта — без огромной истории, «с нуля»
+    # Обрезать лог до окна памяти: максимум последние 14 дней или более поздняя стартовая дата.
     lines = load_log_lines()
     trimmed = trim_log_to_start_date(lines, start_ddmm)
     if len(trimmed) < len(lines):
@@ -1191,24 +1156,17 @@ def main():
         lines[-1] = new_line
     else:
         lines.append(new_line)
-    save_log_lines(lines[-MAX_LINES:] if len(lines) > MAX_LINES else lines)
+    save_log_lines(trim_log_to_start_date(lines, start_ddmm))
 
     lines = load_log_lines()
     doc_id = (os.environ.get('KRO_SOURCES_DOC_ID') or '').strip() or DEFAULT_SOURCES_DOC_ID
     if not doc_id:
         print('KRO_SOURCES_DOC_ID не задан, только запись в %s' % LIVE_LOG_FILE, file=sys.stderr)
         return
-    formatted = format_live_log_full_grid(lines)
-    # Одна дата в заголовке, ниже — полная сетка по 5 мин (00:00 … текущее время MSK), в каждом слоте — действия за 5 мин
-    start_line = '%s — события по 5 мин (00:00 … текущее время MSK)' % start_ddmm
-    if formatted:
-        content = start_line + '\n' + '\n'.join(formatted) + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
-    else:
-        content = start_line + '\n' + PLACEHOLDER + '\n\nКанонический источник методологии\nОтчёт «СКАМ‑МОНИТОРИНГ | Source & Data» (PDF / Google Doc).'
+    content, last_line = build_live_log_doc_block(lines)
     marker = (os.environ.get(LOG_BLOCK_START_MARKER_ENV) or '').strip()
     if marker:
         content = marker + '\n\n' + content  # пустая строка после маркера
-    last_line = formatted[-1] if formatted else (new_line if new_line else None)
     if update_doc_placeholder(doc_id, content, last_line=last_line):
         if last_line:
             print('%s ok (жирным: новая строка): %s' % (time_str, last_line), file=sys.stderr)
