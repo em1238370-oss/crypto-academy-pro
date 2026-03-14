@@ -1245,14 +1245,15 @@ async function getKroSheetsClient() {
 const KRO_SOURCES_DOC_URL = 'https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit';
 const KRO_REFERENCE_STATS_PATH = join(__dirname, 'data', 'kro-reference-stats.json');
 const KRO_12H_STATS_PATH = join(__dirname, 'data', 'kro-12h-stats.json');
+const KRO_PENDING_REPORT_TEXT = 'Данные появятся после первого подтверждённого отчёта мониторинга. Цифры берутся только из реальных источников — TGStat, Telega.io, чаты жалоб.';
 
 const KRO_FALLBACK = {
   channelsToday: 47,
   totalLost: 12847300,
   telegramCount: 37,
   coursesCount: 10,
-  victims_12h: 73,
-  shockText: '73 человека купили «гарантию прибыли»',
+  victims_12h: 0,
+  shockText: KRO_PENDING_REPORT_TEXT,
   report_doc_url: KRO_SOURCES_DOC_URL,
   top3: [
     { channel: '@TONPumpElite', sum: 2100000, status: 'Удалён' },
@@ -1269,6 +1270,11 @@ function readJsonFileSafe(path, label) {
     console.warn(`KRO ${label}: invalid JSON`, e?.message);
     return null;
   }
+}
+
+function normalizeKroShockText(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  return /73\s+человек.*гаранти[яи]\s+прибыли/i.test(value) ? KRO_PENDING_REPORT_TEXT : value;
 }
 
 function hasKroVisibleData(data) {
@@ -1304,9 +1310,7 @@ function buildKroLiveResponse(data, options = {}) {
   const telegramCount = pickFirstNumber(data.telegram_channels, data.telegramCount);
   const coursesCount = pickFirstNumber(data.courses_products, data.courses, data.coursesCount);
   const victims12h = pickFirstNumber(data.victims_12h, data.victims24h);
-  const shockText = typeof data.shockText === 'string' && data.shockText.trim()
-    ? data.shockText
-    : buildKroShockText(victims12h, publishStatus);
+  const shockText = normalizeKroShockText(data.shockText) || buildKroShockText(victims12h, publishStatus);
 
   let top3 = [];
   const primaryTop3 = Array.isArray(data.display_top3) && data.display_top3.length ? data.display_top3 : data.top3;
@@ -1355,9 +1359,7 @@ function buildKroReferenceSnapshot(data) {
     telegramCount: pickFirstNumber(data.telegram_channels, data.telegramCount),
     coursesCount: pickFirstNumber(data.courses_products, data.courses, data.coursesCount),
     victims_12h: victims12h,
-    shockText: typeof data.shockText === 'string' && data.shockText.trim()
-      ? data.shockText
-      : buildKroShockText(victims12h, data.publishStatus || 'valid'),
+    shockText: normalizeKroShockText(data.shockText) || buildKroShockText(victims12h, data.publishStatus || 'valid'),
     top3: Array.isArray(data.display_top3) && data.display_top3.length ? data.display_top3.slice(0, 3) : (Array.isArray(data.top3) ? data.top3.slice(0, 3) : []),
     report_doc_url: data.report_doc_url || KRO_SOURCES_DOC_URL,
     publishStatus: data.publishStatus || 'valid',
@@ -1371,7 +1373,7 @@ function buildKroShockText(victims12h, publishStatus) {
   if (n <= 0) {
     return publishStatus === 'honest_zero'
       ? 'Новых подтверждённых жалоб за этот период не зафиксировано'
-      : 'Нет новых жалоб за 12 ч';
+      : KRO_PENDING_REPORT_TEXT;
   }
   if (n === 1) return '1 человек купил «гарантию прибыли»';
   if (n >= 2 && n <= 4) return n + ' человека купили «гарантию прибыли»';
