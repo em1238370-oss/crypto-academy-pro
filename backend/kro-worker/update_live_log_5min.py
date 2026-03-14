@@ -952,7 +952,8 @@ def update_doc_placeholder(doc_id, new_content, last_line):
                 if end_marker in seg_text and seg_start > P:
                     pos = seg_text.find(end_marker)
                     end_marker_start = seg_start + pos
-                    break
+                    # Берём последнее вхождение маркера конца блока, чтобы вычистить
+                    # все старые дубли лога, если документ уже успел разрастись.
         if end_marker_start is not None:
             new_content = new_content + '\n\n' + end_marker
             delete_end = end_marker_start + len(end_marker)
