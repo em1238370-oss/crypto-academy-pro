@@ -345,11 +345,11 @@ def build_live_log_doc_block(lines):
         return '\n'.join(content_lines), last_line
     for idx, date_str in enumerate(retained_dates):
         day_lines = _build_day_lines(date_str, slot_msg, today_ddmm)
+        content_lines.append(date_str)
         if date_str == today_ddmm:
-            header = '%s — события по 5 мин (00:00 … текущее время MSK)' % date_str
+            content_lines.append('Новый сбор данных (00:00 … текущее время MSK)')
         else:
-            header = '%s — события по 5 мин' % date_str
-        content_lines.append(header)
+            content_lines.append('Новый сбор данных')
         if day_lines:
             content_lines.extend(day_lines)
             if idx == len(retained_dates) - 1:
