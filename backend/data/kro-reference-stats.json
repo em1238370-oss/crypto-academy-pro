@@ -1,10 +1,31 @@
 {
-  "source": "parsed",
-  "sourceCaption": "Данные из интернета: vklader, tgrev. Обновлено 23.02.2026 11:25 UTC.",
-  "channelsToday": 25,
-  "totalLost": 350000000,
-  "telegramCount": 257,
-  "coursesCount": 5,
-  "top3": [],
-  "updatedAt": "2026-02-23T11:24:40Z"
+  "source": "site_snapshot",
+  "sourceCaption": "Последний подтверждённый снимок из Sources and Data.",
+  "channelsToday": 20,
+  "totalLost": 3620000,
+  "telegramCount": 20,
+  "coursesCount": 0,
+  "victims_12h": 0,
+  "shockText": "Данные взяты из последнего подтверждённого цикла Sources and Data",
+  "top3": [
+    {
+      "channel": "@TONPumpElite",
+      "sum": 2100000,
+      "status": "Удалён"
+    },
+    {
+      "channel": "BTC Курс миллионера",
+      "sum": 847000,
+      "status": "Активен"
+    },
+    {
+      "channel": "crypto-fast.pro",
+      "sum": 673000,
+      "status": "Блок"
+    }
+  ],
+  "report_doc_url": "https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit",
+  "publishStatus": "fallback",
+  "updatedAt": "2026-03-14T09:43:56Z",
+  "lastValidUpdatedAt": "2026-03-14T09:43:56Z"
 }

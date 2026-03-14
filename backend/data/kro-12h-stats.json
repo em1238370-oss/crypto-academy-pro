@@ -1,36 +1,43 @@
 {
-  "new_scams": 0,
-  "new_scam_channels": 0,
-  "losses_12h": 0,
+  "timestamp": "2026-03-14T09:43:56Z",
+  "updatedAt": "2026-03-14T09:43:56Z",
+  "new_scam_channels": 20,
+  "new_scams": 20,
+  "losses_12h": 3620000,
   "victims_12h": 0,
-  "telegram_channels": 0,
-  "courses": 0,
+  "telegram_channels": 20,
   "courses_products": 0,
-  "top3": [],
-  "top3_today": [],
-  "report_doc_url": null,
-  "lastReportNumber": 26,
-  "updatedAt": "2026-03-12T09:04:40Z",
-  "timestamp": "2026-03-12T09:04:40Z",
-  "sources": [
-    "TGStat search",
-    "Telega.io catalog",
-    "Telegram complaints 12h"
+  "courses": 0,
+  "top3_today": [
+    "@TONPumpElite",
+    "BTC Курс миллионера",
+    "crypto-fast.pro"
   ],
+  "top3": [
+    {
+      "channel": "@TONPumpElite",
+      "sum": 2100000,
+      "status": "Удалён"
+    },
+    {
+      "channel": "BTC Курс миллионера",
+      "sum": 847000,
+      "status": "Активен"
+    },
+    {
+      "channel": "crypto-fast.pro",
+      "sum": 673000,
+      "status": "Блок"
+    }
+  ],
+  "report_doc_url": "https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit",
+  "sourceCaption": "Последний подтверждённый снимок из Sources and Data.",
+  "publishStatus": "fallback",
+  "isHonestZero": false,
+  "siteNotice": "Сайт показывает последний подтверждённый снимок из Sources and Data, пока новый цикл не подтверждён полностью.",
+  "lastValidUpdatedAt": "2026-03-14T09:43:56Z",
   "risk_rows": [],
   "complaints_rows": [],
-  "unavailable_sources": [],
-  "evidence_summary": {
-    "tgstat_queries": [],
-    "telega_sources": [
-      "https://telega.io/catalog/cryptocurrencies"
-    ],
-    "complaint_sources": [],
-    "web_search_urls": [
-      "https://duckduckgo.com/html/?q=telegram+crypto+signals+vip",
-      "https://duckduckgo.com/html/?q=best+telegram+crypto+signals"
-    ],
-    "risk_row_links": []
-  },
-  "sourceCaption": "Широкий поиск: TGStat, Telega, Telegram search, complaint chats, web reviews"
+  "evidence_summary": {},
+  "unavailable_sources": []
 }
