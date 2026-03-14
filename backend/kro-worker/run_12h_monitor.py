@@ -1331,7 +1331,12 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     if courses is None and courses_count >= 0:
         courses = courses_count
 
-    top3_today = [(t.get('channel') or t.get('name') or '—') for t in (top3 or [])[:3]]
+    top3_today = []
+    for t in (top3 or [])[:3]:
+        if isinstance(t, dict):
+            top3_today.append(t.get('channel') or t.get('name') or '—')
+        else:
+            top3_today.append(str(t or '—'))
     complaints_by_ch = { (r.get('channel') or '').strip(): r.get('complaints', 0) for r in (complaints_rows or []) if (r.get('channel') or '').strip() }
     live_lines = _load_live_log()
     nothing_found = not risk_rows and not (complaints_rows or [])
@@ -1420,8 +1425,12 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     # Раздел 6 — Итоги для сайта
     top3_with_people = []
     for i, t in enumerate((top3 or [])[:3]):
-        ch = t.get('channel') or t.get('name') or '—'
-        s = t.get('sum', 0)
+        if isinstance(t, dict):
+            ch = t.get('channel') or t.get('name') or '—'
+            s = t.get('sum', 0)
+        else:
+            ch = str(t or '—')
+            s = 0
         n = complaints_by_ch.get((ch or '').strip(), 0) or 0
         top3_with_people.append((ch, s, n))
     lines.extend([
@@ -1951,6 +1960,108 @@ def _apply_italic_to_times_in_doc(service, doc_id):
     except Exception as e:
         print('Sources doc: курсив для времени: %s' % e, file=sys.stderr)
 
+def _apply_sources_doc_visual_style(service, doc_id):
+    """Сделать документ визуально чище: заголовки, интервалы, акценты на итогах."""
+    def _text_req(start_i, end_i, style, fields):
+        return {
+            'updateTextStyle': {
+                'range': {'startIndex': start_i, 'endIndex': end_i},
+                'textStyle': style,
+                'fields': fields
+            }
+        }
+
+    def _para_req(start_i, end_i, style, fields):
+        return {
+            'updateParagraphStyle': {
+                'range': {'startIndex': start_i, 'endIndex': end_i},
+                'paragraphStyle': style,
+                'fields': fields
+            }
+        }
+
+    requests = []
+
+    title_ranges = _find_text_ranges_in_doc(service, doc_id, r'(?m)^СКАМ‑МОНИТОРИНГ \| Source & Data$')
+    for start_i, end_i in title_ranges[:1]:
+        requests.append(_text_req(start_i, end_i, {
+            'bold': True,
+            'fontSize': {'magnitude': 16, 'unit': 'PT'}
+        }, 'bold,fontSize'))
+        requests.append(_para_req(start_i, end_i, {
+            'spaceBelow': {'magnitude': 10, 'unit': 'PT'}
+        }, 'spaceBelow'))
+
+    header_line_patterns = [
+        r'(?m)^Период: .+$',
+        r'(?m)^Время формирования: .+$',
+        r'(?m)^Память за последние 14 дней:$',
+    ]
+    for pattern in header_line_patterns:
+        for start_i, end_i in _find_text_ranges_in_doc(service, doc_id, pattern)[:5]:
+            requests.append(_text_req(start_i, end_i, {
+                'bold': True,
+                'fontSize': {'magnitude': 11, 'unit': 'PT'}
+            }, 'bold,fontSize'))
+
+    section_patterns = [
+        r'(?m)^2\. Откуда берутся данные: факты и ссылки$',
+        r'(?m)^3\. Объекты и риск$',
+        r'(?m)^4\. Жалобы и потери за период$',
+        r'(?m)^5\. Причины отнесения к риску$',
+        r'(?m)^6\. Итоги для сайта(?: \(поля интерфейса\))?$',
+        r'(?m)^7\. Чек.?лист(?: и ограничения)?$',
+        r'(?m)^2\.1\. .+$',
+        r'(?m)^2\.2\. .+$',
+    ]
+    for pattern in section_patterns:
+        for start_i, end_i in _find_text_ranges_in_doc(service, doc_id, pattern)[:10]:
+            requests.append(_text_req(start_i, end_i, {
+                'bold': True,
+                'fontSize': {'magnitude': 12, 'unit': 'PT'}
+            }, 'bold,fontSize'))
+            requests.append(_para_req(start_i, end_i, {
+                'spaceAbove': {'magnitude': 10, 'unit': 'PT'},
+                'spaceBelow': {'magnitude': 4, 'unit': 'PT'}
+            }, 'spaceAbove,spaceBelow'))
+
+    emphasis_patterns = [
+        r'(?m)^Источник цифр — всё из таблиц этого документа:$',
+        r'(?m)^Итоговые значения для сайта:$',
+        r'(?m)^Топ‑3 за период:$',
+        r'(?m)^JSON для отправки:$',
+        r'(?m)^Эти поля отправляются в интерфейс сайта и соответствуют блокам:$',
+        r'(?m)^Топ‑3:$',
+    ]
+    for pattern in emphasis_patterns:
+        for start_i, end_i in _find_text_ranges_in_doc(service, doc_id, pattern)[:10]:
+            requests.append(_text_req(start_i, end_i, {'bold': True}, 'bold'))
+
+    metrics_patterns = [
+        r'(?m)^new_scam_channels = .+$',
+        r'(?m)^losses_12h = .+$',
+        r'(?m)^telegram_channels = .+$',
+        r'(?m)^courses_products = .+$',
+    ]
+    for pattern in metrics_patterns:
+        for start_i, end_i in _find_text_ranges_in_doc(service, doc_id, pattern)[:10]:
+            requests.append(_text_req(start_i, end_i, {
+                'bold': True,
+                'fontSize': {'magnitude': 11, 'unit': 'PT'}
+            }, 'bold,fontSize'))
+
+    top3_ranges = _find_text_ranges_in_doc(service, doc_id, r'(?m)^\d+\. .+ — .+$')
+    for start_i, end_i in top3_ranges[:10]:
+        requests.append(_text_req(start_i, end_i, {'bold': True}, 'bold'))
+
+    if not requests:
+        return
+    try:
+        service.documents().batchUpdate(documentId=doc_id, body={'requests': requests}).execute()
+        print('Sources doc: применено визуальное оформление заголовков и итогов.', file=sys.stderr)
+    except Exception as e:
+        print('Sources doc: визуальное оформление: %s' % e, file=sys.stderr)
+
 def _update_sources_doc_intro(service, doc_id, data):
     """Обновить в начале документа блок заголовка (Период, Время формирования), чтобы изменения всегда попадали в документ даже при заполнении таблиц."""
     period_start = data.get('period_start', '')
@@ -2041,6 +2152,7 @@ def update_sources_google_doc(doc_id, doc_text, structured_data=None):
                 # Не вызываем _build_sources_doc_with_tables — он удаляет весь документ и затирает блок лога каждые 5 мин; обновляем только заголовок
             _update_sources_doc_intro(service, doc_id, structured_data)
             _apply_italic_to_times_in_doc(service, doc_id)
+            _apply_sources_doc_visual_style(service, doc_id)
             url = 'https://docs.google.com/document/d/' + doc_id + '/edit'
             print('Updated sources doc (таблицы): %s' % url, file=sys.stderr)
             return url
@@ -2086,6 +2198,7 @@ def update_sources_google_doc(doc_id, doc_text, structured_data=None):
         except Exception:
             pass
         _apply_italic_to_times_in_doc(service, doc_id)
+        _apply_sources_doc_visual_style(service, doc_id)
         url = 'https://docs.google.com/document/d/' + doc_id + '/edit'
         print('Updated sources doc: %s' % url, file=sys.stderr)
         return url
