@@ -1243,6 +1243,8 @@ async function getKroSheetsClient() {
 }
 
 const KRO_SOURCES_DOC_URL = 'https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit';
+const KRO_REFERENCE_STATS_PATH = join(__dirname, 'data', 'kro-reference-stats.json');
+const KRO_12H_STATS_PATH = join(__dirname, 'data', 'kro-12h-stats.json');
 
 const KRO_FALLBACK = {
   channelsToday: 47,
@@ -1258,6 +1260,111 @@ const KRO_FALLBACK = {
     { channel: 'crypto-fast.pro', sum: 673000, status: 'Блок' }
   ]
 };
+
+function readJsonFileSafe(path, label) {
+  try {
+    if (!fs.existsSync(path)) return null;
+    return JSON.parse(fs.readFileSync(path, 'utf8'));
+  } catch (e) {
+    console.warn(`KRO ${label}: invalid JSON`, e?.message);
+    return null;
+  }
+}
+
+function hasKroVisibleData(data) {
+  if (!data || typeof data !== 'object') return false;
+  const channelsToday = pickFirstNumber(data.new_scam_channels, data.new_scams, data.channelsToday);
+  const totalLost = pickFirstNumber(data.losses_12h, data.totalLost);
+  const telegramCount = pickFirstNumber(data.telegram_channels, data.telegramCount);
+  const coursesCount = pickFirstNumber(data.courses_products, data.courses, data.coursesCount);
+  const top3 = Array.isArray(data.display_top3) && data.display_top3.length ? data.display_top3 : data.top3;
+  return (
+    Number(channelsToday || 0) > 0 ||
+    Number(totalLost || 0) > 0 ||
+    Number(telegramCount || 0) > 0 ||
+    Number(coursesCount || 0) > 0 ||
+    (Array.isArray(top3) && top3.length > 0)
+  );
+}
+
+function buildKroLiveResponse(data, options = {}) {
+  if (!data || typeof data !== 'object') return null;
+  const defaultPublishStatus = options.defaultPublishStatus || 'valid';
+  const explicitPublishStatus = typeof data.publishStatus === 'string' ? data.publishStatus : null;
+  const publishStatus = explicitPublishStatus || defaultPublishStatus;
+  if (isKroZeroSnapshot(data) && publishStatus !== 'honest_zero') {
+    return null;
+  }
+  if (!hasKroVisibleData(data) && publishStatus !== 'honest_zero') {
+    return null;
+  }
+
+  const channelsToday = pickFirstNumber(data.new_scam_channels, data.new_scams, data.channelsToday);
+  const totalLost = pickFirstNumber(data.losses_12h, data.totalLost);
+  const telegramCount = pickFirstNumber(data.telegram_channels, data.telegramCount);
+  const coursesCount = pickFirstNumber(data.courses_products, data.courses, data.coursesCount);
+  const victims12h = pickFirstNumber(data.victims_12h, data.victims24h);
+  const shockText = typeof data.shockText === 'string' && data.shockText.trim()
+    ? data.shockText
+    : buildKroShockText(victims12h, publishStatus);
+
+  let top3 = [];
+  const primaryTop3 = Array.isArray(data.display_top3) && data.display_top3.length ? data.display_top3 : data.top3;
+  if (Array.isArray(primaryTop3) && primaryTop3.length && typeof primaryTop3[0] === 'object' && (primaryTop3[0].sum !== undefined || primaryTop3[0].channel)) {
+    top3 = primaryTop3.slice(0, 3).map((r) => ({
+      channel: r.channel || r.name || '—',
+      sum: typeof r.sum === 'number' ? r.sum : (r.losses || 0),
+      status: r.status || 'Активен'
+    }));
+  } else if (Array.isArray(data.top3_today) && data.top3_today.length) {
+    top3 = data.top3_today.slice(0, 3).map((s) => ({
+      channel: typeof s === 'string' ? s : (s && s.channel) || '—',
+      sum: 0,
+      status: 'Активен'
+    }));
+  }
+
+  return {
+    channelsToday,
+    totalLost,
+    telegramCount,
+    coursesCount,
+    victims_12h: victims12h,
+    shockText,
+    top3,
+    report_doc_url: data.report_doc_url || KRO_SOURCES_DOC_URL,
+    sourceCaption: data.sourceCaption || (Array.isArray(data.sources) ? data.sources.join(', ') : null),
+    evidence_summary: data.evidence_summary || {},
+    risk_rows: Array.isArray(data.risk_rows) ? data.risk_rows.slice(0, 10) : [],
+    complaints_rows: Array.isArray(data.complaints_rows) ? data.complaints_rows.slice(0, 10) : [],
+    publishStatus,
+    isHonestZero: Boolean(data.isHonestZero),
+    siteNotice: options.siteNotice !== undefined ? options.siteNotice : (data.siteNotice || null),
+    lastValidUpdatedAt: data.lastValidUpdatedAt || data.updatedAt || data.timestamp || null,
+    updatedAt: data.updatedAt || data.timestamp || data.lastValidUpdatedAt || null
+  };
+}
+
+function buildKroReferenceSnapshot(data) {
+  const victims12h = pickFirstNumber(data.victims_12h, data.victims24h);
+  return {
+    source: 'site_snapshot',
+    sourceCaption: data.sourceCaption || 'Последний подтверждённый снимок для сайта.',
+    channelsToday: pickFirstNumber(data.new_scam_channels, data.new_scams, data.channelsToday),
+    totalLost: pickFirstNumber(data.losses_12h, data.totalLost),
+    telegramCount: pickFirstNumber(data.telegram_channels, data.telegramCount),
+    coursesCount: pickFirstNumber(data.courses_products, data.courses, data.coursesCount),
+    victims_12h: victims12h,
+    shockText: typeof data.shockText === 'string' && data.shockText.trim()
+      ? data.shockText
+      : buildKroShockText(victims12h, data.publishStatus || 'valid'),
+    top3: Array.isArray(data.display_top3) && data.display_top3.length ? data.display_top3.slice(0, 3) : (Array.isArray(data.top3) ? data.top3.slice(0, 3) : []),
+    report_doc_url: data.report_doc_url || KRO_SOURCES_DOC_URL,
+    publishStatus: data.publishStatus || 'valid',
+    updatedAt: data.updatedAt || data.timestamp || new Date().toISOString(),
+    lastValidUpdatedAt: data.lastValidUpdatedAt || data.updatedAt || data.timestamp || new Date().toISOString()
+  };
+}
 
 function buildKroShockText(victims12h, publishStatus) {
   const n = Number(victims12h) || 0;
@@ -1662,97 +1769,47 @@ app.post('/api/kro/check-screenshot', express.json({ limit: '10mb' }), async (re
 app.get('/api/kro/live-counter', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   try {
-    const kro12hPath = join(__dirname, 'data', 'kro-12h-stats.json');
-    if (fs.existsSync(kro12hPath)) {
-      const raw = fs.readFileSync(kro12hPath, 'utf8');
-      let data;
-      try {
-        data = JSON.parse(raw);
-      } catch (parseErr) {
-        console.warn('KRO live-counter: invalid kro-12h-stats.json', parseErr?.message);
-      }
-      const hasCount = typeof data.new_scams === 'number' || typeof data.channelsToday === 'number' || typeof data.new_scam_channels === 'number';
-      if (data && hasCount) {
-        const explicitPublishStatus = typeof data.publishStatus === 'string' ? data.publishStatus : null;
-        if (isKroZeroSnapshot(data) && explicitPublishStatus !== 'honest_zero') {
-          console.warn('KRO live-counter: ignoring unsafe zero snapshot and falling back to safe data');
-        } else {
-          const publishStatus = explicitPublishStatus || 'valid';
-        const channelsToday = pickFirstNumber(data.new_scam_channels, data.new_scams, data.channelsToday);
-        const totalLost = pickFirstNumber(data.losses_12h, data.totalLost);
-        const telegramCount = pickFirstNumber(data.telegram_channels, data.telegramCount);
-        const coursesCount = pickFirstNumber(data.courses_products, data.courses, data.coursesCount);
-        const victims12h = pickFirstNumber(data.victims_12h);
-        const shockText = typeof data.shockText === 'string' && data.shockText.trim()
-          ? data.shockText
-          : buildKroShockText(victims12h, publishStatus);
-        let top3 = [];
-        const primaryTop3 = Array.isArray(data.display_top3) && data.display_top3.length ? data.display_top3 : data.top3;
-        if (Array.isArray(primaryTop3) && primaryTop3.length && typeof primaryTop3[0] === 'object' && (primaryTop3[0].sum !== undefined || primaryTop3[0].channel)) {
-          top3 = primaryTop3.slice(0, 3).map((r) => ({
-            channel: r.channel || r.name || '—',
-            sum: typeof r.sum === 'number' ? r.sum : (r.losses || 0),
-            status: r.status || 'Активен'
-          }));
-        } else if (Array.isArray(data.top3_today) && data.top3_today.length) {
-          top3 = data.top3_today.slice(0, 3).map((s) => ({
-            channel: typeof s === 'string' ? s : (s && s.channel) || '—',
-            sum: 0,
-            status: 'Активен'
-          }));
-        }
-        const response = { channelsToday, totalLost, telegramCount, coursesCount, victims_12h: victims12h, shockText, top3 };
-        response.report_doc_url = data.report_doc_url || KRO_SOURCES_DOC_URL;
-        response.sourceCaption = data.sourceCaption || (Array.isArray(data.sources) ? data.sources.join(', ') : null);
-        response.evidence_summary = data.evidence_summary || {};
-        response.risk_rows = Array.isArray(data.risk_rows) ? data.risk_rows.slice(0, 10) : [];
-        response.complaints_rows = Array.isArray(data.complaints_rows) ? data.complaints_rows.slice(0, 10) : [];
-        response.publishStatus = publishStatus;
-        response.isHonestZero = Boolean(data.isHonestZero);
-        response.siteNotice = data.siteNotice || null;
-        response.lastValidUpdatedAt = data.lastValidUpdatedAt || data.updatedAt || null;
-        return res.json(response);
-        }
-      }
+    const liveSnapshot = readJsonFileSafe(KRO_12H_STATS_PATH, 'live-counter primary snapshot');
+    const liveResponse = buildKroLiveResponse(liveSnapshot, { defaultPublishStatus: 'valid' });
+    if (liveResponse) {
+      return res.json(liveResponse);
     }
-    const client = await getKroSheetsClient();
-    if (!client) {
-      return res.json(KRO_FALLBACK);
+
+    if (liveSnapshot && isKroZeroSnapshot(liveSnapshot) && liveSnapshot.publishStatus !== 'honest_zero') {
+      console.warn('KRO live-counter: ignoring unsafe zero snapshot and using last safe reference snapshot');
     }
-    const today = getTodayMSK();
-    const range = 'A2:F';
-    const response = await client.sheets.spreadsheets.values.get({
-      spreadsheetId: kroSheetId,
-      range
+
+    const referenceSnapshot = readJsonFileSafe(KRO_REFERENCE_STATS_PATH, 'reference snapshot');
+    const referenceResponse = buildKroLiveResponse(referenceSnapshot, {
+      defaultPublishStatus: 'reference_fallback',
+      siteNotice: 'Сайт показывает последний безопасный подтверждённый снимок, пока текущий цикл не дал надёжный итог.'
     });
-    const rows = response.data.values || [];
-    const sheetData = rows.map((r) => parseSheetRow(r));
-    const todayRows = sheetData.filter((r) => isRowToday(r.dateVal, today));
-    const channelsToday = todayRows.length;
-    const totalLost = sheetData.reduce((acc, r) => acc + r.sum, 0);
-    const telegramCount = sheetData.filter((r) => /^TG$/i.test(r.type)).length;
-    const coursesCount = sheetData.filter((r) => /курс|фейк|course/i.test(r.type)).length;
-    const top3 = todayRows
-      .sort((a, b) => b.sum - a.sum)
-      .slice(0, 3)
-      .map((r) => ({ channel: r.channel, sum: r.sum, status: r.status || 'Активен' }));
-    res.json({
-      channelsToday,
-      totalLost,
-      telegramCount,
-      coursesCount,
-      victims_12h: 0,
-      shockText: KRO_FALLBACK.shockText || '73 человека купили «гарантию прибыли»',
-      top3: top3.length ? top3 : KRO_FALLBACK.top3,
+    if (referenceResponse) {
+      return res.json(referenceResponse);
+    }
+
+    return res.json({
+      ...KRO_FALLBACK,
       report_doc_url: KRO_SOURCES_DOC_URL,
+      sourceCaption: 'Резервный статический снимок сайта.',
       publishStatus: 'fallback',
       isHonestZero: false,
-      siteNotice: null,
-      lastValidUpdatedAt: null
+      siteNotice: 'Временный резервный снимок: рабочий источник данных сейчас недоступен.',
+      lastValidUpdatedAt: null,
+      updatedAt: null
     });
   } catch (e) {
     console.error('KRO live-counter error:', e);
-    res.json(KRO_FALLBACK);
+    res.json({
+      ...KRO_FALLBACK,
+      report_doc_url: KRO_SOURCES_DOC_URL,
+      sourceCaption: 'Резервный статический снимок сайта.',
+      publishStatus: 'fallback',
+      isHonestZero: false,
+      siteNotice: 'Временный резервный снимок: рабочий источник данных сейчас недоступен.',
+      lastValidUpdatedAt: null,
+      updatedAt: null
+    });
   }
 });
 
@@ -1834,8 +1891,9 @@ function handleKroUpdate(req, res) {
   try {
     const dataDir = join(__dirname, 'data');
     if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-    const path = join(dataDir, 'kro-12h-stats.json');
-    fs.writeFileSync(path, JSON.stringify(payload, null, 2), 'utf8');
+    fs.writeFileSync(KRO_12H_STATS_PATH, JSON.stringify(payload, null, 2), 'utf8');
+    const referenceSnapshot = buildKroReferenceSnapshot(payload);
+    fs.writeFileSync(KRO_REFERENCE_STATS_PATH, JSON.stringify(referenceSnapshot, null, 2), 'utf8');
     res.status(200).json({ ok: true });
   } catch (e) {
     console.error('KRO update write error:', e);
