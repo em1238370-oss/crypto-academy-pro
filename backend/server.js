@@ -1245,14 +1245,14 @@ async function getKroSheetsClient() {
 const KRO_SOURCES_DOC_URL = 'https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit';
 const KRO_REFERENCE_STATS_PATH = join(__dirname, 'data', 'kro-reference-stats.json');
 const KRO_12H_STATS_PATH = join(__dirname, 'data', 'kro-12h-stats.json');
-const KRO_PENDING_REPORT_TEXT = 'Данные появятся после первого подтверждённого отчёта мониторинга. Цифры берутся только из реальных источников — TGStat, Telega.io, чаты жалоб.';
+const KRO_PENDING_REPORT_TEXT = 'Данные появятся после первого верифицированного отчёта.';
 
 const KRO_FALLBACK = {
   channelsToday: 47,
   totalLost: 12847300,
   telegramCount: 37,
   coursesCount: 10,
-  victims_12h: 0,
+  victims_12h: 73,
   shockText: KRO_PENDING_REPORT_TEXT,
   report_doc_url: KRO_SOURCES_DOC_URL,
   top3: [
@@ -1373,7 +1373,7 @@ function buildKroShockText(victims12h, publishStatus) {
   if (n <= 0) {
     return publishStatus === 'honest_zero'
       ? 'Новых подтверждённых жалоб за этот период не зафиксировано'
-      : KRO_PENDING_REPORT_TEXT;
+      : 'Нет новых жалоб за 12 ч';
   }
   if (n === 1) return '1 человек купил «гарантию прибыли»';
   if (n >= 2 && n <= 4) return n + ' человека купили «гарантию прибыли»';
