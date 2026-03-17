@@ -112,6 +112,13 @@
 
 Если хотите видеть всё, что было проверено, но не прошло строгую верификацию, создайте отдельный лист и задайте переменную **`KRO_UNCONFIRMED_RANGE`**, например `unconfirmed_results!A2:K`.
 
+Автосоздание листа и заголовков:
+
+```bash
+cd backend/kro-worker
+KRO_UNCONFIRMED_RANGE="unconfirmed_results!A2:K" python3 ensure_unconfirmed_sheet.py
+```
+
 Рекомендуемые колонки:
 
 | A: username | B: confirmation_status | C: channel_age_days | D: vip_price | E: complaints | F: has_signal_offer | G: age_ok | H: offer_ok | I: complaints_ok | J: missing_criteria | K: checked_at |
