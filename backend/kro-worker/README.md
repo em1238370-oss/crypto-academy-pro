@@ -1,6 +1,6 @@
 # KRO live-check worker
 
-Воркер раз в 1–2 минуты читает очередь проверки каналов (лист **check_queue** в Google Sheets), запускает **check_once.py** (Telethon) для проверки канала и дописывает результат в **scam_base**. Так пользователь может ввести любую ссылку (в т.ч. `t.me/+invite`) и через 1–2 минуты получить оценку.
+Воркер раз в 1–2 минуты читает очередь проверки каналов (лист **check_queue** в Google Sheets), запускает **check_once.py** (Telethon) для проверки канала и дописывает в **scam_base** только подтверждённые каналы. Так пользователь может ввести любую ссылку (в т.ч. `t.me/+invite`) и через 1–2 минуты получить честный ответ: канал подтверждён или подтверждений пока недостаточно.
 
 **Полная настройка (вариант Б — Telethon на твоей машине/VPS):** см. [KRO_TELETHON_ВАРИАНТ_B.md](KRO_TELETHON_ВАРИАНТ_B.md).
 
@@ -11,6 +11,8 @@
 | `KRO_SHEET_ID` | ID Google-таблицы (как в бэкенде). |
 | `KRO_CHECK_QUEUE_RANGE` | Диапазон очереди, например `check_queue!A2:B`. |
 | `KRO_SCAM_BASE_RANGE` | Диапазон базы, например `scam_base!A2:H`. |
+| `KRO_REPORTS_RANGE` | Диапазон листа с жалобами, по умолчанию `A2:F`. |
+| `KRO_UNCONFIRMED_RANGE` | Опциональный лист для неподтверждённых результатов, например `unconfirmed_results!A2:K`. |
 | `KRO_GOOGLE_CREDENTIALS_JSON` или `GOOGLE_APPLICATION_CREDENTIALS` | Доступ к Google Sheets (как в KRO_SETUP.md). |
 | `TELEGRAM_API_ID` | API ID приложения (my.telegram.org). |
 | `TELEGRAM_API_HASH` | API Hash приложения. |
@@ -29,6 +31,7 @@ pip install -r requirements.txt
 export KRO_SHEET_ID="..."
 export KRO_CHECK_QUEUE_RANGE="check_queue!A2:B"
 export KRO_SCAM_BASE_RANGE="scam_base!A2:H"
+export KRO_REPORTS_RANGE="A2:F"
 export TELEGRAM_API_ID="..."
 export TELEGRAM_API_HASH="..."
 # и при необходимости GOOGLE_APPLICATION_CREDENTIALS или KRO_GOOGLE_CREDENTIALS_JSON
@@ -55,7 +58,8 @@ python worker.py
 ## Формат данных
 
 - **Очередь** (check_queue): колонки A = channel (@username или t.me/+hash), B = added_at.
-- **scam_base**: одна строка добавляется с полями username, risk_score, ads_per_week, bot_pct, vip_price, complaints, total_loss, verdict. Для живой проверки complaints и total_loss заполняются «—»; risk и verdict считаются по ключевым словам в сообщениях канала.
+- **scam_base**: одна строка добавляется только для подтверждённого канала. Критерии: возраст до 14 дней, есть VIP от 10000₽ или long/short сигналы, и минимум 2 жалобы.
+- **unconfirmed_results**: опциональный лист для каналов, которые были проверены, но не прошли 3 критерия. Это убирает мусор `unknown` из основной базы.
 
 ## Документ «Источники и данные» (7 блоков)
 

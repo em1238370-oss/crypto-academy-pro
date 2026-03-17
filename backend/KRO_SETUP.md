@@ -11,8 +11,10 @@
 | `KRO_SHEET_ID` | ID Google-таблицы (из URL: `https://docs.google.com/spreadsheets/d/<KRO_SHEET_ID>/edit`). Обязателен для live-counter и report-scam. |
 | `KRO_GOOGLE_CREDENTIALS_JSON` | JSON сервисного аккаунта Google (строка). Альтернатива: использовать файл и указать путь в `GOOGLE_APPLICATION_CREDENTIALS`. |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Путь к файлу `credentials.json` сервисного аккаунта. Используется, если `KRO_GOOGLE_CREDENTIALS_JSON` не задан. |
-| `KRO_SCAM_BASE_RANGE` | Диапазон листа «база каналов» для API проверки. Например: `scam_base!A2:H` или `Sheet2!A2:H`. Если не задан, `GET /api/kro/check` всегда возвращает `found: false`. |
+| `KRO_SCAM_BASE_RANGE` | Диапазон листа «база каналов» для API проверки. Например: `scam_base!A2:H` или `Sheet2!A2:H`. Если не задан, `GET /api/kro/check` всегда возвращает `found: false`. В этот лист теперь попадают только подтверждённые каналы. |
 | `KRO_CHECK_QUEUE_RANGE` | Диапазон листа «очередь проверки» для живой проверки. Например: `check_queue!A2:B`. Если задан, при отсутствии канала в базе он добавляется в очередь; воркер (Python + Telethon) раз в 1–2 мин проверяет канал и дописывает результат в scam_base. |
+| `KRO_REPORTS_RANGE` | Диапазон листа с жалобами и суммами потерь, по умолчанию `A2:F`. Используется для подсчёта жалоб по каналу. |
+| `KRO_UNCONFIRMED_RANGE` | Необязательный лист для неподтверждённых результатов. Например: `unconfirmed_results!A2:K`. Сюда можно складывать каналы, которые проверены, но не прошли 3 критерия. |
 | `KRO_EXCHANGER_BASE_RANGE` | Диапазон листа «база обменников» для проверки по ссылке. Например: `exchanger_base!A2:E`. Колонки: A — URL/домен, B — название, C — risk_score, D — total_loss, E — verdict. Если не задан, `GET /api/kro/check-exchanger` возвращает «не найден». |
 | `KRO_SOURCES_DOC_ID` | ID Google Doc для единого документа «Источники и данные». При каждом запуске `run_12h_monitor.py` документ обновляется: все источники, ссылки и ссылка на последний автоотчёт. Из URL: `.../document/d/<KRO_SOURCES_DOC_ID>/edit`. |
 
@@ -37,8 +39,10 @@
 Если включена очередь (`KRO_CHECK_QUEUE_RANGE`) и синхронный вызов не сработал (таймаут, канал недоступен, Python/Telethon не настроены):
 
 1. Канал добавляется в лист **check_queue**, пользователю показывается: *«Проверяем канал по Telegram. Подождите 1–2 минуты и нажмите «Проверить» снова.»*
-2. Воркер (см. `kro-worker/worker.py`) периодически читает очередь, подключается к Telegram, анализирует канал и дописывает строку в **scam_base**.
-3. При повторном нажатии «Проверить» канал уже будет в базе.
+2. Воркер (см. `kro-worker/worker.py`) периодически читает очередь, подключается к Telegram и анализирует канал.
+3. В **scam_base** дописывается только подтверждённый канал: возраст до 14 дней, есть VIP от 10000₽ или сигналы long/short, и есть минимум 2 жалобы реальных людей.
+4. Если канал проверен, но не прошёл эти 3 критерия, API честно отвечает, что подтверждения недостаточно. Опционально такая запись может попасть в `KRO_UNCONFIRMED_RANGE`.
+5. При повторном нажатии «Проверить» подтверждённый канал уже будет в базе.
 
 Ссылки вида `t.me/username` и `t.me/+inviteHash` парсятся автоматически (не показывается «@https://t.me/...»).
 
@@ -70,9 +74,9 @@
 
 | A: username | B: risk_score | C: ads_per_week | D: bot_pct | E: vip_price | F: complaints | G: total_loss | H: verdict |
 |-------------|---------------|-----------------|------------|--------------|---------------|---------------|------------|
-| @TONPumpKing | 87 | 14 | 78% | 7000₽ | 23 | 2.1млн₽ | scam |
-| @CryptoElite | 45 | 7 | 32% | 4900₽ | 4 | 847к₽ | grey |
-| @RealTraderPro | 12 | 1 | 8% | нет | 0 | 0₽ | safe |
+| @TONPumpKing | 87 | 14 | 78% | 12000₽ | 23 | 2.1млн₽ | scam |
+| @SignalTrapRu | 81 | 11 | 64% | 15000₽ | 5 | 847к₽ | scam |
+| @ShortLongFraud | 76 | 9 | 41% | — | 3 | 320к₽ | scam |
 
 **Формула риска (опционально, в колонке I):**
 
@@ -81,6 +85,7 @@
 ```
 
 - `risk_score` можно считать вручную или по формуле в Sheets.
+- Этот лист больше не должен хранить `unknown` как автоматическую заглушку. Если подтверждения недостаточно, запись сюда не добавляется.
 - Для API проверки задайте диапазон, например: **`scam_base!A2:H`** (если лист называется «scam_base») или **`Sheet2!A2:H`** (второй лист по умолчанию).
 
 ---
@@ -100,6 +105,17 @@
 - **added_at** — время добавления в очередь (ISO).
 
 Задайте диапазон, например: **`check_queue!A2:B`**.
+
+---
+
+## Лист 3b: unconfirmed_results (необязательно)
+
+Если хотите видеть всё, что было проверено, но не прошло строгую верификацию, создайте отдельный лист и задайте переменную **`KRO_UNCONFIRMED_RANGE`**, например `unconfirmed_results!A2:K`.
+
+Рекомендуемые колонки:
+
+| A: username | B: confirmation_status | C: channel_age_days | D: vip_price | E: complaints | F: has_signal_offer | G: age_ok | H: offer_ok | I: complaints_ok | J: missing_criteria | K: checked_at |
+|-------------|-------------------------|---------------------|--------------|---------------|---------------------|-----------|-------------|------------------|---------------------|---------------|
 
 ---
 
@@ -128,7 +144,7 @@
 
 - **GET /api/kro/live-counter** — агрегаты для Фишки 1 (количество каналов за день, потери, Топ-3). Читает лист отчётов A2:F.
 - **POST /api/kro/report-scam** — принять жалобу (channel, sumRub, from). Добавляет строку в лист отчётов.
-- **GET /api/kro/check?channel=@username** (или `channel=https://t.me/...`, `channel=t.me/+invite`) — проверка канала по базе scam_base; при отсутствии в базе — синхронный вызов `check_once.py` (живая проверка через Telethon). Ссылки t.me парсятся автоматически. Ответ: `{ found, username?, risk_score?, ads_per_week?, bot_pct?, vip_price?, complaints?, total_loss?, verdict? }`. Поля «жалобы» и «потери» при пустых значениях в базе подставляются из листа отчётов (A2:F) по совпадению канала. При недоступности живой проверки и заданном `KRO_CHECK_QUEUE_RANGE`: `{ found: false, pending: true, channel, message }` — канал ставится в очередь, пользователю нужно нажать «Проверить» снова через 1–2 минуты.
+- **GET /api/kro/check?channel=@username** (или `channel=https://t.me/...`, `channel=t.me/+invite`) — проверка канала по базе scam_base; при отсутствии в базе — синхронный вызов `check_once.py` (живая проверка через Telethon). Ссылки t.me парсятся автоматически. Ответ для подтверждённого канала: `{ found, username, risk_score, ads_per_week, bot_pct, vip_price, complaints, total_loss, verdict }`. Если канал проверен, но не прошёл 3 критерия, API возвращает честный ответ `{ found: false, pending: false, message, confirmation_status, missing_criteria }`. Поля «жалобы» и «потери» при пустых значениях в базе подставляются из листа отчётов (A2:F) по совпадению канала. При недоступности живой проверки и заданном `KRO_CHECK_QUEUE_RANGE`: `{ found: false, pending: true, channel, message }` — канал ставится в очередь, пользователю нужно нажать «Проверить» снова через 1–2 минуты.
 - **GET /api/kro/check-exchanger?url=...** — проверка обменника по ссылке (база задаётся через `KRO_EXCHANGER_BASE_RANGE`). Ответ: `{ found, url?, name?, risk_score?, total_loss?, verdict? }` или `{ found: false, message }`.
 - **POST /api/kro/check-screenshot** — тело JSON `{ image: "data:image/...;base64,..." }`. Распознавание скрина через Mistral Vision: извлечение @ников, t.me и URL обменников. Ответ: `{ extracted: ["@channel", "https://..."] }`. На сайте по первому извлечённому выполняется проверка канала или обменника.
 - **GET /api/kro/daily-stats** — статистика за 12 ч (из `backend/data/kro-12h-stats.json`): `new_scams`, `losses_12h`, `victims_12h`, `top3`, `report_doc_url`. Файл обновляется скриптом `run_12h_monitor.py`.

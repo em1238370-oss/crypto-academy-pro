@@ -4,6 +4,7 @@ KRO live-check worker: читает очередь check_queue в Google Sheets,
 запускает check_once.py (Telethon) для проверки канала,
 дописывает результат в scam_base и удаляет задачу из очереди.
 Используется одна логика с check_once (реклам/неделя, % ботов).
+В scam_base попадают только подтверждённые каналы; неподтверждённые не пишутся как unknown.
 Запуск: раз в 1–2 минуты (cron или run_worker_loop.sh).
 """
 import os
@@ -68,10 +69,6 @@ def get_sheets_client():
 def queue_range_data_only():
     part = KRO_QUEUE_RANGE.split('!')[-1]
     return f'{QUEUE_SHEET_NAME}!{part}'
-
-
-def scam_base_append_range():
-    return f'{SCAM_BASE_SHEET_NAME}!A:H'
 
 
 def run_check_once(channel_id):
@@ -154,32 +151,11 @@ def run_worker_once():
 
     parsed = run_check_once(channel_id)
 
-    if parsed and parsed.get('found') and (parsed.get('risk_score') is not None or parsed.get('verdict')):
-        # check_once.py уже дописал в scam_base
-        row_data = None
-    else:
-        # Канал не найден или ошибка — пишем заглушку, чтобы при повторном «Проверить» пользователь увидел запись
-        row_data = [
-            channel_id,
-            0,
-            0,
-            '—',
-            '—',
-            '—',
-            '—',
-            'unknown'
-        ]
-        try:
-            sheets.spreadsheets().values().append(
-                spreadsheetId=KRO_SHEET_ID,
-                range=scam_base_append_range(),
-                valueInputOption='USER_ENTERED',
-                insertDataOption='INSERT_ROWS',
-                body={'values': [row_data]}
-            ).execute()
-        except Exception as e:
-            print('Scam base append error:', e, file=sys.stderr)
-            return
+    processed_status = 'check_failed'
+    if parsed and parsed.get('found'):
+        processed_status = parsed.get('confirmation_status') or parsed.get('verdict') or 'checked'
+    elif parsed and parsed.get('error'):
+        processed_status = parsed.get('error')
 
     remaining = rows[1:]
     try:
@@ -199,8 +175,7 @@ def run_worker_once():
     except Exception as e:
         print('Queue update error:', e, file=sys.stderr)
 
-    verdict = (parsed.get('verdict') if parsed else None) or 'unknown'
-    print('Processed:', channel_id, '->', verdict)
+    print('Processed:', channel_id, '->', processed_status)
 
 
 if __name__ == '__main__':

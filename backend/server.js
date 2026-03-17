@@ -1468,6 +1468,21 @@ function parseScamBaseRow(row) {
   return { username, risk_score: Number.isFinite(risk_score) ? risk_score : null, ads_per_week: Number.isFinite(ads_per_week) ? ads_per_week : null, bot_pct, vip_price, complaints: Number.isFinite(complaints) ? complaints : null, total_loss, verdict };
 }
 
+function normalizeCheckOnceError(error) {
+  const text = (error || '').toString().trim();
+  if (!text) return null;
+  if (/No module named ['"]telethon['"]|ModuleNotFoundError:.*telethon/i.test(text)) {
+    return 'На web-сервисе не установлен Telethon, поэтому быстрая проверка недоступна. Канал будет проверен воркером через очередь.';
+  }
+  if (/telegram not configured/i.test(text)) {
+    return 'На web-сервисе ещё не настроены Telegram API ключи для мгновенной проверки.';
+  }
+  if (/channel not found or inaccessible/i.test(text)) {
+    return 'Канал не найден или к нему нет доступа.';
+  }
+  return text.split('\n').slice(-1)[0].trim() || text;
+}
+
 function normalizeChannel(channel) {
   const s = (channel || '').toString().trim().replace(/\s/g, '');
   if (!s) return '';
@@ -1590,7 +1605,15 @@ app.get('/api/kro/check', async (req, res) => {
         if (line) {
           try {
             const parsed = JSON.parse(line);
-            if (parsed && parsed.found === true && (parsed.risk_score != null || parsed.verdict)) {
+            if (parsed && parsed.not_crypto) {
+              return res.json({
+                found: false,
+                pending: false,
+                channel,
+                message: parsed.error || 'Канал не связан с криптой, поэтому в мониторинг не попадает.'
+              });
+            }
+            if (parsed && parsed.found === true && parsed.is_confirmed === true) {
               let complaints = parsed.complaints;
               let total_loss = parsed.total_loss;
               const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
@@ -1612,6 +1635,7 @@ app.get('/api/kro/check', async (req, res) => {
                 complaints,
                 total_loss,
                 verdict: parsed.verdict,
+                is_confirmed: true,
                 fomo_pct: parsed.fomo_pct,
                 shame_phrases_detected: parsed.shame_phrases_detected,
                 ads_ratio: parsed.ads_ratio,
@@ -1624,20 +1648,31 @@ app.get('/api/kro/check', async (req, res) => {
                 channel_age_days: parsed.channel_age_days
               });
             }
+            if (parsed && parsed.found === true && parsed.is_confirmed === false) {
+              return res.json({
+                found: false,
+                pending: false,
+                channel,
+                message: parsed.message || 'Канал проверен, но пока не проходит 3 критерия подтверждённого скам-канала.',
+                confirmation_status: parsed.confirmation_status || 'not_confirmed',
+                confirmation_checks: parsed.confirmation_checks || undefined,
+                missing_criteria: parsed.missing_criteria || undefined
+              });
+            }
             if (parsed && parsed.found === false && parsed.error) {
-              checkOnceError = parsed.error;
+              checkOnceError = normalizeCheckOnceError(parsed.error);
             }
           } catch (parseErr) {
             console.error('KRO check_once parse error:', parseErr.message);
-            checkOnceError = stderr || 'Ошибка ответа скрипта';
+            checkOnceError = normalizeCheckOnceError(stderr) || 'Ошибка ответа скрипта';
           }
         } else {
-          checkOnceError = stderr || (child.status !== 0 ? 'Скрипт завершился с ошибкой' : null);
+          checkOnceError = normalizeCheckOnceError(stderr) || (child.status !== 0 ? 'Скрипт завершился с ошибкой' : null);
         }
         if (stderr) console.error('KRO check_once stderr:', stderr);
       } catch (e) {
         console.error('KRO check_once error:', e.message);
-        checkOnceError = e.message || 'Запуск проверки не удался';
+        checkOnceError = normalizeCheckOnceError(e.message) || 'Запуск проверки не удался';
       }
     } else {
       checkOnceError = 'На сервере не настроены TELEGRAM_API_ID/Telethon — живая проверка недоступна.';

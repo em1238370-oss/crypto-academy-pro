@@ -9,12 +9,14 @@ KRO check once: проверка одного канала по Telegram (Teleth
 8 цена VIP, 9 только профиты (only_profits_flag), 10 связи каналов (promoted_channels),
 11 скорость ответа на жалобы (complaint_ignore_hours), 12 IP/прокси — не реализован.
 При ошибке — found: false, error. Код выхода 0 всегда (для парсинга в Node).
+В scam_base записываются только каналы, которые прошли 3 критерия подтверждения.
 """
 import os
 import re
 import sys
 import json
 import asyncio
+import os.path
 from datetime import datetime, timezone, timedelta
 from urllib.request import urlopen, Request
 from urllib.parse import urlencode
@@ -23,6 +25,8 @@ from urllib.error import URLError, HTTPError
 from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest
 from telethon.errors import ChannelPrivateError, InviteHashExpiredError, UsernameNotOccupiedError
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
 
 _raw_id = (os.environ.get('TELEGRAM_API_ID') or '').strip()
 TELEGRAM_API_ID = int(_raw_id) if _raw_id.isdigit() else 0
@@ -32,6 +36,9 @@ TELEGRAM_SESSION_NAME = os.environ.get('TELEGRAM_SESSION_NAME', 'kro_worker')
 KRO_SHEET_ID = os.environ.get('KRO_SHEET_ID', '')
 KRO_SCAM_BASE_RANGE = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:H')
 SCAM_BASE_SHEET_NAME = KRO_SCAM_BASE_RANGE.split('!')[0] if '!' in KRO_SCAM_BASE_RANGE else 'scam_base'
+KRO_REPORTS_RANGE = os.environ.get('KRO_REPORTS_RANGE', 'A2:F')
+KRO_UNCONFIRMED_RANGE = os.environ.get('KRO_UNCONFIRMED_RANGE', '')
+UNCONFIRMED_SHEET_NAME = KRO_UNCONFIRMED_RANGE.split('!')[0] if '!' in KRO_UNCONFIRMED_RANGE else ''
 
 RISK_KEYWORDS = [
     'vip', 'вип', 'сигнал', 'гарантия', 'гарантир', 'срочно', 'бесплатно',
@@ -59,6 +66,133 @@ LOSS_KEYWORDS = ['убыток', 'слив', 'потеря', 'минус', 'пр
 
 def out(obj):
     print(json.dumps(obj, ensure_ascii=False))
+
+
+def _parse_int(value):
+    digits = re.sub(r'[^\d]', '', str(value or ''))
+    return int(digits) if digits else None
+
+
+def _parse_vip_price_number(vip_price):
+    n = _parse_int(vip_price)
+    return n if n is not None else 0
+
+
+def _normalize_channel_key(channel):
+    s = (channel or '').strip().lower().replace(' ', '')
+    if not s:
+        return ''
+    if s.startswith('https://t.me/'):
+        s = s.replace('https://t.me/', 't.me/', 1)
+    elif s.startswith('http://t.me/'):
+        s = s.replace('http://t.me/', 't.me/', 1)
+    if s.startswith('t.me/+'):
+        return s
+    if s.startswith('t.me/'):
+        s = s[5:]
+    if s.startswith('@'):
+        s = s[1:]
+    return s
+
+
+def _format_total_loss(total_sum):
+    if total_sum >= 1000000:
+        return (f'{total_sum / 1000000:.1f}'.rstrip('0').rstrip('.')) + 'млн₽'
+    if total_sum >= 1000:
+        return f'{round(total_sum / 1000)}к₽'
+    return f'{total_sum}₽'
+
+
+def _get_sheets_client():
+    if not KRO_SHEET_ID:
+        return None
+    creds = None
+    json_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
+    json_str = os.environ.get('KRO_GOOGLE_CREDENTIALS_JSON')
+    if json_str:
+        creds = service_account.Credentials.from_service_account_info(json.loads(json_str))
+    elif json_path and os.path.isfile(json_path):
+        creds = service_account.Credentials.from_service_account_file(json_path)
+    if not creds:
+        return None
+    return build('sheets', 'v4', credentials=creds)
+
+
+def get_complaints_and_loss_for_channel(channel_id):
+    client = _get_sheets_client()
+    if not client:
+        return None, None
+    key = _normalize_channel_key(channel_id)
+    if not key:
+        return None, None
+    try:
+        response = client.spreadsheets().values().get(
+            spreadsheetId=KRO_SHEET_ID,
+            range=KRO_REPORTS_RANGE
+        ).execute()
+        rows = response.get('values', [])
+    except Exception:
+        return None, None
+
+    complaints = 0
+    total_sum = 0
+    for row in rows:
+        row_channel = str(row[1] if len(row) > 1 else '').strip()
+        if _normalize_channel_key(row_channel) != key:
+            continue
+        complaints += 1
+        total_sum += _parse_int(row[2] if len(row) > 2 else '') or 0
+
+    if complaints == 0:
+        return None, None
+    return complaints, _format_total_loss(total_sum)
+
+
+def _has_signal_offer(texts):
+    if not texts:
+        return False
+    combined = ' '.join((t or '').lower() for t in texts)
+    markers = [
+        'лонг', 'шорт', 'long', 'short', 'signal', 'signals', 'сигнал',
+        'сигналы', 'take profit', 'stop loss', 'tp', 'sl'
+    ]
+    return any(marker in combined for marker in markers)
+
+
+def _build_confirmation(result):
+    age_days = result.get('channel_age_days')
+    vip_number = _parse_vip_price_number(result.get('vip_price'))
+    complaints = result.get('complaints')
+    age_ok = age_days is not None and age_days <= 14
+    offer_ok = vip_number >= 10000 or bool(result.get('has_signal_offer'))
+    complaints_ok = complaints is not None and complaints >= 2
+
+    checks = {
+        'channel_age_under_14_days': age_ok,
+        'vip_10000_or_signals': offer_ok,
+        'two_or_more_real_complaints': complaints_ok,
+    }
+    missing = []
+    if not age_ok:
+        missing.append('канал старше 14 дней или дата создания не подтверждена')
+    if not offer_ok:
+        missing.append('не найден VIP от 10000₽ и нет явных long/short сигналов')
+    if not complaints_ok:
+        missing.append('жалоб от минимум 2 реальных людей пока нет')
+
+    is_confirmed = all(checks.values())
+    result['confirmation_checks'] = checks
+    result['missing_criteria'] = missing
+    result['is_confirmed'] = is_confirmed
+    result['confirmation_status'] = 'confirmed' if is_confirmed else 'not_confirmed'
+    result['risk_verdict'] = result.get('verdict')
+    result['verdict'] = 'scam' if is_confirmed else 'not_confirmed'
+    result['message'] = (
+        'Канал подтверждён по трём критериям и может быть записан в scam_base.'
+        if is_confirmed else
+        'Канал проверен, но пока не проходит 3 критерия подтверждённого скам-канала: ' + '; '.join(missing) + '.'
+    )
+    return result
 
 
 async def get_entity(client, channel_id):
@@ -336,7 +470,7 @@ def _fetch_tgstat(channel_id_for_api):
     return out_result
 
 
-async def run_check(channel_id):
+async def run_check(channel_id, period_days=30):
     client = TelegramClient(
         TELEGRAM_SESSION_NAME,
         TELEGRAM_API_ID,
@@ -436,6 +570,10 @@ async def run_check(channel_id):
             except Exception:
                 pass
 
+        canonical_channel_id = ('@' + entity.username) if getattr(entity, 'username', None) else channel_id
+        complaints, total_loss = get_complaints_and_loss_for_channel(canonical_channel_id)
+        has_signal_offer = _has_signal_offer(texts)
+
         # Новая формула риска (все компоненты 0–100); dead_ratio добавляем к growth_anomaly по весу
         risk_score = round(
             fomo_pct * 0.15 +
@@ -458,13 +596,13 @@ async def run_check(channel_id):
 
         return {
             'found': True,
-            'username': channel_id,
+            'username': canonical_channel_id,
             'risk_score': risk_score,
             'ads_per_week': ads_week,
             'bot_pct': bot_pct,
             'vip_price': vip,
-            'complaints': None,
-            'total_loss': None,
+            'complaints': complaints,
+            'total_loss': total_loss,
             'verdict': verdict,
             'fomo_pct': fomo_pct,
             'shame_phrases_detected': shame_phrases_detected,
@@ -476,12 +614,13 @@ async def run_check(channel_id):
             'growth_anomaly': growth_anomaly,
             'reach_ratio': reach_ratio,
             'channel_age_days': channel_age_days,
+            'has_signal_offer': has_signal_offer,
         }
     finally:
         await client.disconnect()
 
 
-def append_to_scam_base(channel_id, risk, ads_week, bot_pct, vip, verdict):
+def append_to_scam_base(channel_id, risk, ads_week, bot_pct, vip, complaints, total_loss, verdict):
     if not KRO_SHEET_ID or not KRO_SCAM_BASE_RANGE:
         return
     try:
@@ -497,10 +636,51 @@ def append_to_scam_base(channel_id, risk, ads_week, bot_pct, vip, verdict):
         if not creds:
             return
         sheets = build('sheets', 'v4', credentials=creds)
-        row = [channel_id, risk, ads_week, bot_pct or '—', vip, '—', '—', verdict]
+        row = [
+            channel_id,
+            risk,
+            ads_week,
+            bot_pct or '—',
+            vip,
+            complaints if complaints is not None else '—',
+            total_loss or '—',
+            verdict,
+        ]
         sheets.spreadsheets().values().append(
             spreadsheetId=KRO_SHEET_ID,
             range=f'{SCAM_BASE_SHEET_NAME}!A:H',
+            valueInputOption='USER_ENTERED',
+            insertDataOption='INSERT_ROWS',
+            body={'values': [row]}
+        ).execute()
+    except Exception:
+        pass
+
+
+def append_to_unconfirmed_base(result):
+    if not KRO_SHEET_ID or not KRO_UNCONFIRMED_RANGE or not UNCONFIRMED_SHEET_NAME:
+        return
+    try:
+        client = _get_sheets_client()
+        if not client:
+            return
+        checks = result.get('confirmation_checks') or {}
+        row = [
+            result.get('username') or '',
+            result.get('confirmation_status') or 'not_confirmed',
+            result.get('channel_age_days') if result.get('channel_age_days') is not None else '—',
+            result.get('vip_price') or '—',
+            result.get('complaints') if result.get('complaints') is not None else '—',
+            'yes' if result.get('has_signal_offer') else 'no',
+            'yes' if checks.get('channel_age_under_14_days') else 'no',
+            'yes' if checks.get('vip_10000_or_signals') else 'no',
+            'yes' if checks.get('two_or_more_real_complaints') else 'no',
+            '; '.join(result.get('missing_criteria') or []),
+            datetime.now(timezone.utc).isoformat(),
+        ]
+        client.spreadsheets().values().append(
+            spreadsheetId=KRO_SHEET_ID,
+            range=KRO_UNCONFIRMED_RANGE,
             valueInputOption='USER_ENTERED',
             insertDataOption='INSERT_ROWS',
             body={'values': [row]}
@@ -537,14 +717,20 @@ def main():
         if result.get('not_crypto'):
             out(result)
             return
-        append_to_scam_base(
-            channel_id,
-            result['risk_score'],
-            result['ads_per_week'],
-            result['bot_pct'],
-            result['vip_price'],
-            result['verdict']
-        )
+        result = _build_confirmation(result)
+        if result.get('is_confirmed'):
+            append_to_scam_base(
+                result['username'],
+                result['risk_score'],
+                result['ads_per_week'],
+                result['bot_pct'],
+                result['vip_price'],
+                result['complaints'],
+                result['total_loss'],
+                result['verdict']
+            )
+        else:
+            append_to_unconfirmed_base(result)
         out(result)
     except Exception as e:
         out({'found': False, 'error': str(e)[:200]})
