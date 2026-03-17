@@ -1468,6 +1468,13 @@ function parseScamBaseRow(row) {
   return { username, risk_score: Number.isFinite(risk_score) ? risk_score : null, ads_per_week: Number.isFinite(ads_per_week) ? ads_per_week : null, bot_pct, vip_price, complaints: Number.isFinite(complaints) ? complaints : null, total_loss, verdict };
 }
 
+function isUsableScamBaseRow(row) {
+  const verdict = (row?.verdict || '').toString().trim().toLowerCase();
+  if (!verdict) return false;
+  if (verdict === 'unknown' || verdict === 'not_confirmed') return false;
+  return true;
+}
+
 function normalizeCheckOnceError(error) {
   const text = (error || '').toString().trim();
   if (!text) return null;
@@ -1566,6 +1573,9 @@ app.get('/api/kro/check', async (req, res) => {
     for (let i = 0; i < rows.length; i++) {
       const row = parseScamBaseRow(rows[i]);
       if (requestKey && channelMatchKey(row.username) === requestKey) {
+        if (!isUsableScamBaseRow(row)) {
+          continue;
+        }
         let complaints = row.complaints;
         let total_loss = row.total_loss;
         const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
