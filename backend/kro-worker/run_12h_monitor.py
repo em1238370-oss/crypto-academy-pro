@@ -505,6 +505,91 @@ async def _get_channel_created_at(client, username_or_link):
         return None
 
 
+_TELEGRAM_SEARCH_QUERIES = [
+    'крипто сигналы VIP',
+    'crypto signals long short',
+    'сигналы лонг шорт крипта',
+    'VIP крипто канал закрытый',
+    'private crypto signals vip',
+    'криптовалюта сигналы заработок',
+    'crypto vip сигналы торговля',
+]
+
+# Каналы-исключения: известные анти-скам проекты, биржи, агрегаторы — не скам
+_KNOWN_NON_SCAM_CHANNELS = {
+    'crypt0scamm', 'cryptoscamm', 'cryptoscammsup', 'publicryptoscamm',
+    'scamrsalert', 'crypto_police_list', 'scamalyst',
+    'binance', 'bybit', 'okx', 'kucoin', 'huobi', 'coinbase',
+    'tgstat', 'telemetr', 'telega', 'telegaio',
+}
+
+
+async def _search_new_channels_via_telegram(client, days_max=30):
+    """
+    Ищет новые крипто-сигнальные каналы напрямую через Telegram SearchRequest.
+    Не требует TGStat API — работает на той же Telethon-сессии.
+    Возвращает (list_of_channel_dicts, dict {norm_key -> datetime}).
+    """
+    try:
+        from telethon.tl.functions.contacts import SearchRequest
+    except ImportError:
+        return [], {}
+
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=days_max)
+    found = []
+    ages = {}
+    seen = set()
+
+    for query in _TELEGRAM_SEARCH_QUERIES:
+        try:
+            result = await client(SearchRequest(q=query, limit=50))
+            for chat in (getattr(result, 'chats', None) or []):
+                username = (getattr(chat, 'username', None) or '').strip().lower()
+                if not username:
+                    continue
+                if username in _KNOWN_NON_SCAM_CHANNELS:
+                    continue
+                if username in seen:
+                    continue
+                created = getattr(chat, 'date', None)
+                if created is None:
+                    continue
+                if getattr(created, 'tzinfo', None) is None:
+                    created = created.replace(tzinfo=timezone.utc)
+                if created < cutoff:
+                    continue
+                title = (getattr(chat, 'title', None) or '').strip()
+                if not _has_signal_keywords(title) and not _has_signal_keywords('@' + username):
+                    continue
+                seen.add(username)
+                ages[username] = created
+                age_days = (now - created).days
+                link = 'https://t.me/' + username
+                found.append({
+                    'channel': '@' + username,
+                    'title': title,
+                    'date': created.strftime('%d.%m.%Y'),
+                    'link': link,
+                    'growth': getattr(chat, 'participants_count', None),
+                    'vip': '—',
+                    'source_url': 'https://t.me/' + username,
+                    'query': query,
+                    'query_group': 'telegram_search',
+                    'source_links': [link],
+                    'evidence_links': [link],
+                })
+                print('telegram_search: найден @%s | создан %s | возраст %d дн. | title=%r' % (
+                    username, created.strftime('%d.%m.%Y'), age_days, title), file=sys.stderr)
+            await asyncio.sleep(1.5)
+        except Exception as e:
+            print('Telegram SearchRequest %r: %s' % (query, e), file=sys.stderr)
+            await asyncio.sleep(2)
+
+    print('telegram_search: всего найдено новых сигнальных каналов: %d' % len(found), file=sys.stderr)
+    return found, ages
+
+
 async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_channels, complaints_by_channel):
     """Сообщения из KRO_SOURCE_CHANNELS за 12 ч + проверка существования каналов из TGStat/Telega/жалоб.
     Возвращает (tg_data, set_of_existing_canonical_links, channel_ages_from_tg).
@@ -549,6 +634,15 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
 
     client = TelegramClient(TELEGRAM_SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
     await client.start()
+
+    # Прямой поиск новых каналов в Telegram (основной источник, не требует TGStat API)
+    direct_channels, direct_ages = await _search_new_channels_via_telegram(client, days_max=30)
+    for k, v in direct_ages.items():
+        channel_ages_from_tg[k] = v
+    # Сохраняем для main() и добавляем в new_tgstat
+    tg_data['_direct_search_channels'] = direct_channels
+    if direct_channels:
+        new_tgstat = list(new_tgstat or []) + direct_channels
 
     async def get_entity(cid):
         cid = (cid or '').strip()
@@ -810,6 +904,11 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
         ch = (ch_raw or '').strip()
         key = _norm_ch_key(ch)
         if not key or key in seen_keys:
+            continue
+
+        # Пропускаем известные анти-скам каналы, биржи и агрегаторы
+        if key in _KNOWN_NON_SCAM_CHANNELS:
+            print('confirmed-filter: %s — в списке исключений (известный не-скам)' % ch, file=sys.stderr)
             continue
 
         # Критерий 3: минимум 2 жалобы
@@ -2757,10 +2856,17 @@ def main():
         telega_channels = []
         unavailable_sources.append('Telega')
 
-    # 3) Telegram complaints last 12h + проверка существования каналов (Правило №1: только реальные)
+    # 3) Telegram: прямой поиск новых каналов + чаты жалоб + верификация
     tg_data, existing_channel_links, channel_ages_from_tg = asyncio.run(
         fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_channels, None)
     )
+    # Обновляем new_tgstat: добавляем каналы найденные через Telegram SearchRequest
+    tg_direct = tg_data.pop('_direct_search_channels', [])
+    if tg_direct:
+        seen_ch = {_norm_ch_key(r.get('channel', '')) for r in new_tgstat}
+        for r in tg_direct:
+            if _norm_ch_key(r.get('channel', '')) not in seen_ch:
+                new_tgstat.append(r)
     if tg_data.pop('_telegram_unavailable', False):
         unavailable_sources.append('Чаты')
     complaints_by_channel = tg_data.get('by_channel', {})
