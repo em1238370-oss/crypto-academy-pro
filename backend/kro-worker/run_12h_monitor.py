@@ -843,9 +843,14 @@ def build_top3(complaints_list, channel_sum_pairs):
 # ---------------------------------------------------------------------------
 
 _SIGNAL_KEYWORDS = [
-    'сигнал', 'signal', 'signals', 'лонг', 'шорт', 'long', 'short',
-    'buy', 'sell', 'покупка', 'продажа', 'tp', 'sl', 'take profit',
-    'stop loss', 'сделки', 'trade', 'trades', 'entry', 'вход',
+    'сигнал', 'signal', 'signals',
+    'лонг', 'шорт', 'long', 'short',
+    'vip', 'вип',
+    'трейдинг', 'trading', 'trader',
+    'крипто', 'crypto',
+    'памп', 'pump',
+    'заработок', 'профит', 'profit',
+    'инвест', 'invest',
 ]
 
 
@@ -879,14 +884,14 @@ def _parse_date_ddmmyyyy(date_str):
 
 def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel_ages_from_tg=None):
     """
-    Строгий 3-критерийный отбор подтверждённых скам-каналов для записи в scam_base.
+    Отбор подтверждённых скам-каналов для записи в scam_base.
 
-    Критерии (все три обязательны):
-    1. Канал создан менее 14 дней назад.
-       — Источник 1: TGStat (если API ключ задан и канал найден в поиске)
-       — Источник 2: Telethon напрямую через channel.date (бесплатно, уже работает)
-    2. Есть признаки VIP >= 10 000₽ ИЛИ сигналы long/short в названии/username.
-    3. Минимум 2 жалобы из чатов жалоб + листа отчётов (agg_complaints).
+    Обязательные критерии (два):
+    1. Минимум 2 жалобы от разных людей на один канал (из чатов жалоб + листа отчётов).
+    2. Сигнальные слова в названии или username канала (long/short/сигнал/VIP и т.д.).
+
+    Возраст канала — информационный: записывается в scam_base если известен,
+    но НЕ блокирует подтверждение.
     """
     now = _msk_now()
     tgstat_by_key = {}
@@ -916,18 +921,17 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
         if complaint_count < 2:
             continue
 
-        # Критерий 1 (ИНФОРМАЦИОННЫЙ): возраст канала — записываем если известен, не блокируем
-        created_dt = None
+        # Получаем данные о канале из TGStat (если есть) для обогащения записи
         tg_row = tgstat_by_key.get(key)
+        created_dt = None
         if tg_row is not None:
             date_str = (tg_row.get('date') or '').strip()
             created_dt = _parse_date_ddmmyyyy(date_str)
         if created_dt is None and key in tg_ages:
             created_dt = tg_ages[key]
         age_days = (now - created_dt).days if created_dt is not None else None
-        age_confirmed = created_dt is not None
 
-        # Критерий 2 (ОБЯЗАТЕЛЬНЫЙ): сигнальные слова в названии / username / сообщениях жалоб
+        # Строим поля канала
         ch_username = ch
         link = 'https://t.me/' + ch.lstrip('@')
         vip_str = '—'
@@ -935,45 +939,34 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
         source_primary = 'Telegram (жалобы)'
         if tg_row is not None:
             ch_username = (tg_row.get('channel') or ch).strip()
-            link = tg_row.get('link') or ('https://t.me/' + ch.lstrip('@'))
+            link = tg_row.get('link') or link
             vip_str = (tg_row.get('vip') or '—').strip()
             title = (tg_row.get('title') or '').strip()
             source_primary = tg_row.get('source_url') or tg_row.get('link') or 'TGStat'
 
-        # Проверяем сигнальные слова в: названии, username, и тексте сообщений жалоб
-        complaint_messages_text = ' '.join(complaint_data.get('message_links') or [])
-        has_signals = (
-            _has_signal_keywords(title)
-            or _has_signal_keywords(ch_username)
-            or _has_signal_keywords(complaint_messages_text)
-        )
+        # КРИТЕРИЙ 2: сигнальные слова в названии или username
+        has_signals = _has_signal_keywords(title) or _has_signal_keywords(ch_username)
         vip_num = 0
         if vip_str != '—':
             digits = re.sub(r'[^\d]', '', str(vip_str))
             vip_num = int(digits) if digits else 0
 
         if vip_num < VIP_MIN and not has_signals:
-            print('confirmed-filter: %s — нет сигнальных слов и нет VIP. username=%r title=%r' % (
+            print('confirmed-filter: %s — нет сигнальных слов. username=%r title=%r' % (
                 ch, ch_username, title), file=sys.stderr)
             continue
 
         seen_keys.add(key)
-        if '+' in ch_username or (link and 't.me/+' in link):
-            obj_type = 'сигнал-канал (закрытый)'
-        else:
-            obj_type = 'сигнал-канал'
-
+        obj_type = 'сигнал-канал (закрытый)' if ('+' in ch_username or 't.me/+' in link) else 'сигнал-канал'
         total_loss_rub = complaint_data.get('sum') or 0
 
-        # Статус честно отражает уверенность
+        # Статус честно отражает что знаем
         if age_days is not None and age_days < DAYS_14:
             status = 'в риске (новый канал)'
         elif age_days is not None:
-            status = 'под наблюдением'
+            status = 'под наблюдением (%d дн.)' % age_days
         else:
-            status = 'возраст не подтверждён'
-
-        age_source_label = 'TGStat' if tg_row is not None and created_dt is not None else ('Telethon' if created_dt is not None else 'неизвестен')
+            status = 'под наблюдением'
 
         evidence_parts = []
         if tg_row and tg_row.get('source_url'):
@@ -982,10 +975,9 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
         evidence_parts.extend(complaint_data.get('message_links') or [])
         source_evidence = '; '.join(filter(None, evidence_parts[:5]))
 
-        print('confirmed: %s | возраст %s (из %s) | жалоб %d | потери %d ₽ | статус: %s' % (
+        print('confirmed: %s | возраст %s | жалоб %d | потери %d ₽ | статус: %s' % (
             ch_username,
             ('%d дн.' % age_days) if age_days is not None else 'неизвестен',
-            age_source_label,
             complaint_count,
             total_loss_rub,
             status,
