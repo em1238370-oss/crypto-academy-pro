@@ -817,8 +817,7 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
         if complaint_count < 2:
             continue
 
-        # Критерий 1: возраст канала < 14 дней
-        # Пробуем TGStat, затем Telethon
+        # Критерий 1 (ИНФОРМАЦИОННЫЙ): возраст канала — записываем если известен, не блокируем
         created_dt = None
         tg_row = tgstat_by_key.get(key)
         if tg_row is not None:
@@ -826,19 +825,15 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             created_dt = _parse_date_ddmmyyyy(date_str)
         if created_dt is None and key in tg_ages:
             created_dt = tg_ages[key]
-        if created_dt is None:
-            print('confirmed-filter: возраст канала %s не определён (нет TGStat и нет данных Telethon)' % ch, file=sys.stderr)
-            continue
-        age_days = (now - created_dt).days
-        if age_days >= DAYS_14:
-            continue
+        age_days = (now - created_dt).days if created_dt is not None else None
+        age_confirmed = created_dt is not None
 
-        # Критерий 2: VIP >= 10 000₽ или сигнальные слова в названии / username
+        # Критерий 2 (ОБЯЗАТЕЛЬНЫЙ): сигнальные слова в названии / username / сообщениях жалоб
         ch_username = ch
         link = 'https://t.me/' + ch.lstrip('@')
         vip_str = '—'
         title = ''
-        source_primary = 'Telegram'
+        source_primary = 'Telegram (жалобы)'
         if tg_row is not None:
             ch_username = (tg_row.get('channel') or ch).strip()
             link = tg_row.get('link') or ('https://t.me/' + ch.lstrip('@'))
@@ -846,13 +841,21 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             title = (tg_row.get('title') or '').strip()
             source_primary = tg_row.get('source_url') or tg_row.get('link') or 'TGStat'
 
+        # Проверяем сигнальные слова в: названии, username, и тексте сообщений жалоб
+        complaint_messages_text = ' '.join(complaint_data.get('message_links') or [])
+        has_signals = (
+            _has_signal_keywords(title)
+            or _has_signal_keywords(ch_username)
+            or _has_signal_keywords(complaint_messages_text)
+        )
         vip_num = 0
         if vip_str != '—':
             digits = re.sub(r'[^\d]', '', str(vip_str))
             vip_num = int(digits) if digits else 0
-        has_signals = _has_signal_keywords(title) or _has_signal_keywords(ch_username)
+
         if vip_num < VIP_MIN and not has_signals:
-            print('confirmed-filter: %s не прошёл критерий 2 (нет VIP/сигналов). title=%r username=%r' % (ch, title, ch_username), file=sys.stderr)
+            print('confirmed-filter: %s — нет сигнальных слов и нет VIP. username=%r title=%r' % (
+                ch, ch_username, title), file=sys.stderr)
             continue
 
         seen_keys.add(key)
@@ -862,7 +865,16 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             obj_type = 'сигнал-канал'
 
         total_loss_rub = complaint_data.get('sum') or 0
-        age_source = 'TGStat' if tg_row is not None else 'Telethon'
+
+        # Статус честно отражает уверенность
+        if age_days is not None and age_days < DAYS_14:
+            status = 'в риске (новый канал)'
+        elif age_days is not None:
+            status = 'под наблюдением'
+        else:
+            status = 'возраст не подтверждён'
+
+        age_source_label = 'TGStat' if tg_row is not None and created_dt is not None else ('Telethon' if created_dt is not None else 'неизвестен')
 
         evidence_parts = []
         if tg_row and tg_row.get('source_url'):
@@ -871,16 +883,21 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
         evidence_parts.extend(complaint_data.get('message_links') or [])
         source_evidence = '; '.join(filter(None, evidence_parts[:5]))
 
-        print('confirmed: %s | возраст %d дн. (из %s) | жалоб %d | потери %d ₽' % (
-            ch_username, age_days, age_source, complaint_count, total_loss_rub
+        print('confirmed: %s | возраст %s (из %s) | жалоб %d | потери %d ₽ | статус: %s' % (
+            ch_username,
+            ('%d дн.' % age_days) if age_days is not None else 'неизвестен',
+            age_source_label,
+            complaint_count,
+            total_loss_rub,
+            status,
         ), file=sys.stderr)
 
         confirmed.append({
             'username': ch_username,
             'link': link,
             'detected_at': now.strftime('%Y-%m-%dT%H:%M:%SZ'),
-            'created_at': created_dt.strftime('%Y-%m-%dT%H:%M:%SZ'),
-            'channel_age_days': age_days,
+            'created_at': created_dt.strftime('%Y-%m-%dT%H:%M:%SZ') if created_dt else '',
+            'channel_age_days': age_days if age_days is not None else '',
             'object_type': obj_type,
             'vip_price': vip_str if vip_str != '—' else '',
             'complaints': complaint_count,
@@ -888,7 +905,7 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             'source_primary': source_primary,
             'source_evidence': source_evidence,
             'cycle_window': cycle_window,
-            'status': 'в риске',
+            'status': status,
         })
 
     return confirmed
