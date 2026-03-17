@@ -483,16 +483,39 @@ async def _verify_telegram_channel_exists(client, username_or_link):
         return False
 
 
+async def _get_channel_created_at(client, username_or_link):
+    """
+    Вернуть дату создания канала через Telethon или None.
+    Это бесплатная альтернатива TGStat API для проверки критерия «возраст < 14 дней».
+    Telethon возвращает channel.date — это UTC datetime создания канала.
+    """
+    try:
+        uname = _normalize_channel_link(username_or_link)
+        if not uname or uname.startswith('joinchat/'):
+            return None
+        ref = 'https://t.me/' + uname if not uname.startswith('@') else uname
+        entity = await client.get_entity(ref)
+        created = getattr(entity, 'date', None)
+        if created is None:
+            return None
+        if getattr(created, 'tzinfo', None) is None:
+            created = created.replace(tzinfo=timezone.utc)
+        return created
+    except Exception:
+        return None
+
+
 async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_channels, complaints_by_channel):
     """Сообщения из KRO_SOURCE_CHANNELS за 12 ч + проверка существования каналов из TGStat/Telega/жалоб.
-    Возвращает (tg_data, set_of_existing_canonical_links).
+    Возвращает (tg_data, set_of_existing_canonical_links, channel_ages_from_tg).
+    channel_ages_from_tg: dict {norm_key -> datetime(UTC)} — дата создания каналов, полученная через Telethon.
     Каналы, которых нет в Telegram, не попадают в документ (Правило №1)."""
     tg_data = {'by_channel': {}, 'victims_12h': 0, 'channel_sum_pairs': []}
     existing = set()
+    channel_ages_from_tg = {}  # norm_key -> datetime UTC creation date
 
     if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
         print('Проверка каналов отключена: TELEGRAM_API_ID/HASH не заданы. В документ могут попасть несуществующие каналы.', file=sys.stderr)
-        # Собираем ссылки как "существующие", чтобы не отфильтровать всё
         for row in (new_tgstat or []):
             link = row.get('link') or _object_link(row.get('channel', ''))
             if link and 't.me/' in link:
@@ -504,7 +527,7 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
         for ch in (complaints_by_channel or {}):
             if ch and ('@' in ch or 't.me/' in ch):
                 existing.add(_object_link(ch))
-        return tg_data, existing
+        return tg_data, existing, channel_ages_from_tg
 
     try:
         from telethon import TelegramClient
@@ -522,7 +545,7 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
         for ch in (complaints_by_channel or {}):
             if ch and ('@' in ch or 't.me/' in ch):
                 existing.add(_object_link(ch))
-        return tg_data, existing
+        return tg_data, existing, channel_ages_from_tg
 
     client = TelegramClient(TELEGRAM_SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
     await client.start()
@@ -612,15 +635,19 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
             if link in seen_links:
                 continue
             seen_links.add(link)
-            if await _verify_telegram_channel_exists(client, link or orig):
+            created_dt = await _get_channel_created_at(client, link or orig)
+            if created_dt is not None:
                 existing.add(link)
+                key = _norm_ch_key(orig or link)
+                if key:
+                    channel_ages_from_tg[key] = created_dt
             else:
                 print('Канал не найден (не пишем в документ): %s' % (orig or link), file=sys.stderr)
             await asyncio.sleep(0.5)
     finally:
         await client.disconnect()
 
-    return tg_data, existing
+    return tg_data, existing, channel_ages_from_tg
 
 
 # --- Scam criteria (упрощённо: по жалобам и возрасту) ---
@@ -756,17 +783,16 @@ def _parse_date_ddmmyyyy(date_str):
         return None
 
 
-def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window):
+def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel_ages_from_tg=None):
     """
     Строгий 3-критерийный отбор подтверждённых скам-каналов для записи в scam_base.
 
     Критерии (все три обязательны):
-    1. Канал создан менее 14 дней назад — подтверждено через TGStat (поле date).
+    1. Канал создан менее 14 дней назад.
+       — Источник 1: TGStat (если API ключ задан и канал найден в поиске)
+       — Источник 2: Telethon напрямую через channel.date (бесплатно, уже работает)
     2. Есть признаки VIP >= 10 000₽ ИЛИ сигналы long/short в названии/username.
     3. Минимум 2 жалобы из чатов жалоб + листа отчётов (agg_complaints).
-
-    Каналы, которые есть только в жалобах (без TGStat), не пишутся в scam_base —
-    их возраст не подтверждён объективным источником.
     """
     now = _msk_now()
     tgstat_by_key = {}
@@ -775,6 +801,8 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window):
         key = _norm_ch_key(ch)
         if key:
             tgstat_by_key[key] = row
+
+    tg_ages = channel_ages_from_tg or {}
 
     confirmed = []
     seen_keys = set()
@@ -789,46 +817,63 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window):
         if complaint_count < 2:
             continue
 
-        # Критерий 1: возраст < 14 дней (только TGStat — объективный источник)
+        # Критерий 1: возраст канала < 14 дней
+        # Пробуем TGStat, затем Telethon
+        created_dt = None
         tg_row = tgstat_by_key.get(key)
-        if tg_row is None:
-            continue
-        date_str = (tg_row.get('date') or '').strip()
-        created_dt = _parse_date_ddmmyyyy(date_str)
+        if tg_row is not None:
+            date_str = (tg_row.get('date') or '').strip()
+            created_dt = _parse_date_ddmmyyyy(date_str)
+        if created_dt is None and key in tg_ages:
+            created_dt = tg_ages[key]
         if created_dt is None:
+            print('confirmed-filter: возраст канала %s не определён (нет TGStat и нет данных Telethon)' % ch, file=sys.stderr)
             continue
         age_days = (now - created_dt).days
         if age_days >= DAYS_14:
             continue
 
         # Критерий 2: VIP >= 10 000₽ или сигнальные слова в названии / username
-        title = (tg_row.get('title') or '').strip()
-        ch_username = (tg_row.get('channel') or ch).strip()
-        vip_str = (tg_row.get('vip') or '—').strip()
+        ch_username = ch
+        link = 'https://t.me/' + ch.lstrip('@')
+        vip_str = '—'
+        title = ''
+        source_primary = 'Telegram'
+        if tg_row is not None:
+            ch_username = (tg_row.get('channel') or ch).strip()
+            link = tg_row.get('link') or ('https://t.me/' + ch.lstrip('@'))
+            vip_str = (tg_row.get('vip') or '—').strip()
+            title = (tg_row.get('title') or '').strip()
+            source_primary = tg_row.get('source_url') or tg_row.get('link') or 'TGStat'
+
         vip_num = 0
         if vip_str != '—':
             digits = re.sub(r'[^\d]', '', str(vip_str))
             vip_num = int(digits) if digits else 0
         has_signals = _has_signal_keywords(title) or _has_signal_keywords(ch_username)
         if vip_num < VIP_MIN and not has_signals:
+            print('confirmed-filter: %s не прошёл критерий 2 (нет VIP/сигналов). title=%r username=%r' % (ch, title, ch_username), file=sys.stderr)
             continue
 
         seen_keys.add(key)
-        link = tg_row.get('link') or ('https://t.me/' + ch.lstrip('@'))
-        if '+' in ch or (link and 't.me/+' in link):
+        if '+' in ch_username or (link and 't.me/+' in link):
             obj_type = 'сигнал-канал (закрытый)'
         else:
             obj_type = 'сигнал-канал'
 
         total_loss_rub = complaint_data.get('sum') or 0
-        status = 'в риске'
+        age_source = 'TGStat' if tg_row is not None else 'Telethon'
 
         evidence_parts = []
-        if tg_row.get('source_url'):
+        if tg_row and tg_row.get('source_url'):
             evidence_parts.append(tg_row['source_url'])
         evidence_parts.extend(complaint_data.get('source_urls') or [])
         evidence_parts.extend(complaint_data.get('message_links') or [])
         source_evidence = '; '.join(filter(None, evidence_parts[:5]))
+
+        print('confirmed: %s | возраст %d дн. (из %s) | жалоб %d | потери %d ₽' % (
+            ch_username, age_days, age_source, complaint_count, total_loss_rub
+        ), file=sys.stderr)
 
         confirmed.append({
             'username': ch_username,
@@ -840,10 +885,10 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window):
             'vip_price': vip_str if vip_str != '—' else '',
             'complaints': complaint_count,
             'total_loss_rub': total_loss_rub,
-            'source_primary': tg_row.get('source_url') or tg_row.get('link') or 'TGStat',
+            'source_primary': source_primary,
             'source_evidence': source_evidence,
             'cycle_window': cycle_window,
-            'status': status,
+            'status': 'в риске',
         })
 
     return confirmed
@@ -2696,7 +2741,7 @@ def main():
         unavailable_sources.append('Telega')
 
     # 3) Telegram complaints last 12h + проверка существования каналов (Правило №1: только реальные)
-    tg_data, existing_channel_links = asyncio.run(
+    tg_data, existing_channel_links, channel_ages_from_tg = asyncio.run(
         fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_channels, None)
     )
     if tg_data.pop('_telegram_unavailable', False):
@@ -2789,7 +2834,7 @@ def main():
 
     # --- CONFIRMED PIPELINE: строгий 3-критерийный отбор для сайта и scam_base ---
     cycle_window = '%s_%s' % (report_date_str, 'am' if now_msk_dt.hour < 12 else 'pm')
-    confirmed_objects = _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window)
+    confirmed_objects = _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel_ages_from_tg)
     if client and sheet_id:
         _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id)
     confirmed_stats = _build_stats_from_confirmed(confirmed_objects)
