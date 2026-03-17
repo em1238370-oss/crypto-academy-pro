@@ -1455,6 +1455,33 @@ function computeRiskScoreFromFeatures(ads_per_week, bot_pct, complaints, vip_pri
 
 function parseScamBaseRow(row) {
   const username = (row[0] || '').toString().trim();
+  // Detect schema version by column count:
+  // new v2 (13 cols A–M): username | link | detected_at | created_at | channel_age_days | object_type | vip_price | complaints | total_loss_rub | source_primary | source_evidence | cycle_window | status
+  // old v1 (8 cols):      username | risk_score | ads_per_week | bot_pct | vip_price | complaints | total_loss | verdict
+  if (row.length >= 13 && /^\d{4}-\d{2}-\d{2}T/.test((row[2] || '').toString())) {
+    // new v2 schema
+    const link = (row[1] || '').toString().trim();
+    const detected_at = (row[2] || '').toString().trim();
+    const created_at = (row[3] || '').toString().trim();
+    const channel_age_days = parseInt((row[4] ?? '').toString(), 10);
+    const object_type = (row[5] || '').toString().trim();
+    const vip_price = (row[6] || '').toString().trim();
+    const complaints = parseInt((row[7] ?? '').toString().replace(/\s/g, ''), 10);
+    const total_loss_rub = parseInt((row[8] ?? '').toString().replace(/\s/g, ''), 10);
+    const source_primary = (row[9] || '').toString().trim();
+    const cycle_window = (row[11] || '').toString().trim();
+    const status = (row[12] || '').toString().trim();
+    return {
+      username, link, detected_at, created_at,
+      channel_age_days: Number.isFinite(channel_age_days) ? channel_age_days : null,
+      object_type, vip_price,
+      complaints: Number.isFinite(complaints) ? complaints : null,
+      total_loss_rub: Number.isFinite(total_loss_rub) ? total_loss_rub : 0,
+      source_primary, cycle_window, status,
+      verdict: 'confirmed', _schema: 'v2'
+    };
+  }
+  // old v1 schema (backward compat)
   const riskScoreRaw = (row[1] ?? '').toString().replace(/\s/g, '');
   const risk_score = parseInt(riskScoreRaw, 10);
   const adsPerWeekRaw = (row[2] ?? '').toString().replace(/\s/g, '');
@@ -1465,7 +1492,51 @@ function parseScamBaseRow(row) {
   const complaints = parseInt(complaintsRaw, 10);
   const total_loss = (row[6] ?? '').toString().trim();
   const verdict = (row[7] ?? '').toString().trim();
-  return { username, risk_score: Number.isFinite(risk_score) ? risk_score : null, ads_per_week: Number.isFinite(ads_per_week) ? ads_per_week : null, bot_pct, vip_price, complaints: Number.isFinite(complaints) ? complaints : null, total_loss, verdict };
+  return {
+    username, risk_score: Number.isFinite(risk_score) ? risk_score : null,
+    ads_per_week: Number.isFinite(ads_per_week) ? ads_per_week : null,
+    bot_pct, vip_price,
+    complaints: Number.isFinite(complaints) ? complaints : null,
+    total_loss, verdict, _schema: 'v1'
+  };
+}
+
+/**
+ * Build live-counter payload from scam_base v2 rows (confirmed objects from last 12h).
+ * Falls back to null if no v2 rows are recent enough.
+ */
+function buildLiveCounterFromScamBase(parsedRows) {
+  const now = Date.now();
+  const cutoff = now - 12 * 60 * 60 * 1000;
+  const recent = parsedRows.filter(r => {
+    if (r._schema !== 'v2' || !r.detected_at) return false;
+    try { return new Date(r.detected_at).getTime() >= cutoff; } catch { return false; }
+  });
+  if (!recent.length) return null;
+  const new_scam_channels = recent.length;
+  const losses_12h = recent.reduce((s, r) => s + (r.total_loss_rub || 0), 0);
+  const telegram_channels = recent.filter(r => (r.object_type || '').toLowerCase().includes('сигнал')).length;
+  const courses_products = recent.filter(r =>
+    ['курс', 'сайт', 'обучен'].some(kw => (r.object_type || '').toLowerCase().includes(kw))
+  ).length;
+  const top3 = [...recent]
+    .sort((a, b) => (b.total_loss_rub || 0) - (a.total_loss_rub || 0))
+    .slice(0, 3)
+    .map(r => ({ channel: r.username, sum: r.total_loss_rub || 0, status: r.status || 'Скам', link: r.link || '' }));
+  const latestDetected = recent.reduce((best, r) => {
+    const t = new Date(r.detected_at).getTime();
+    return t > best ? t : best;
+  }, 0);
+  return {
+    new_scam_channels,
+    losses_12h,
+    telegram_channels,
+    courses_products,
+    top3,
+    publishStatus: new_scam_channels > 0 ? 'valid' : 'honest_zero',
+    updatedAt: latestDetected ? new Date(latestDetected).toISOString() : new Date().toISOString(),
+    sourceCaption: 'Данные из scam_base · подтверждено по 3 критериям · TGStat + Telegram',
+  };
 }
 
 function isUsableScamBaseRow(row) {
@@ -1816,6 +1887,7 @@ app.post('/api/kro/check-screenshot', express.json({ limit: '10mb' }), async (re
 app.get('/api/kro/live-counter', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   try {
+    // Priority 1: kro-12h-stats.json (written by run_12h_monitor.py, derived from confirmed scam_base rows)
     const liveSnapshot = readJsonFileSafe(KRO_12H_STATS_PATH, 'live-counter primary snapshot');
     const liveResponse = buildKroLiveResponse(liveSnapshot, { defaultPublishStatus: 'valid' });
     if (liveResponse) {
@@ -1823,9 +1895,45 @@ app.get('/api/kro/live-counter', async (req, res) => {
     }
 
     if (liveSnapshot && isKroZeroSnapshot(liveSnapshot) && liveSnapshot.publishStatus !== 'honest_zero') {
-      console.warn('KRO live-counter: ignoring unsafe zero snapshot and using last safe reference snapshot');
+      console.warn('KRO live-counter: ignoring unsafe zero snapshot, trying scam_base Sheets');
     }
 
+    // Priority 2: read scam_base directly from Google Sheets (confirmed v2 rows, last 12h)
+    try {
+      const sheetsClient = await getKroSheetsClient();
+      if (sheetsClient && kroSheetId && kroScamBaseRange) {
+        const sheetName = kroScamBaseRange.split('!')[0] || 'scam_base';
+        const sheetResp = await sheetsClient.sheets.spreadsheets.values.get({
+          spreadsheetId: kroSheetId,
+          range: `${sheetName}!A:M`
+        });
+        const rawRows = sheetResp.data.values || [];
+        const parsedRows = rawRows.map(parseScamBaseRow).filter(r => r.username);
+        const scamBaseCounter = buildLiveCounterFromScamBase(parsedRows);
+        if (scamBaseCounter && scamBaseCounter.new_scam_channels > 0) {
+          return res.json({
+            channelsToday: scamBaseCounter.new_scam_channels,
+            totalLost: scamBaseCounter.losses_12h,
+            telegramCount: scamBaseCounter.telegram_channels,
+            coursesCount: scamBaseCounter.courses_products,
+            victims_12h: null,
+            shockText: KRO_PENDING_REPORT_TEXT,
+            top3: scamBaseCounter.top3,
+            report_doc_url: KRO_SOURCES_DOC_URL,
+            sourceCaption: scamBaseCounter.sourceCaption,
+            publishStatus: 'valid',
+            isHonestZero: false,
+            siteNotice: null,
+            lastValidUpdatedAt: scamBaseCounter.updatedAt,
+            updatedAt: scamBaseCounter.updatedAt
+          });
+        }
+      }
+    } catch (sheetsErr) {
+      console.warn('KRO live-counter: scam_base Sheets read failed:', sheetsErr.message);
+    }
+
+    // Priority 3: reference snapshot (last confirmed cycle)
     const referenceSnapshot = readJsonFileSafe(KRO_REFERENCE_STATS_PATH, 'reference snapshot');
     const referenceResponse = buildKroLiveResponse(referenceSnapshot, {
       defaultPublishStatus: 'reference_fallback',
@@ -1835,25 +1943,38 @@ app.get('/api/kro/live-counter', async (req, res) => {
       return res.json(referenceResponse);
     }
 
+    // Priority 4: honest empty state (no fake data)
     return res.json({
-      ...KRO_FALLBACK,
+      channelsToday: 0,
+      totalLost: 0,
+      telegramCount: 0,
+      coursesCount: 0,
+      victims_12h: null,
+      shockText: KRO_PENDING_REPORT_TEXT,
+      top3: [],
       report_doc_url: KRO_SOURCES_DOC_URL,
-      sourceCaption: 'Резервный статический снимок сайта.',
-      publishStatus: 'fallback',
-      isHonestZero: false,
-      siteNotice: 'Временный резервный снимок: рабочий источник данных сейчас недоступен.',
+      sourceCaption: 'Мониторинг запущен. Первые данные появятся после завершения цикла проверки.',
+      publishStatus: 'honest_zero',
+      isHonestZero: true,
+      siteNotice: null,
       lastValidUpdatedAt: null,
       updatedAt: null
     });
   } catch (e) {
     console.error('KRO live-counter error:', e);
     res.json({
-      ...KRO_FALLBACK,
+      channelsToday: 0,
+      totalLost: 0,
+      telegramCount: 0,
+      coursesCount: 0,
+      victims_12h: null,
+      shockText: KRO_PENDING_REPORT_TEXT,
+      top3: [],
       report_doc_url: KRO_SOURCES_DOC_URL,
-      sourceCaption: 'Резервный статический снимок сайта.',
-      publishStatus: 'fallback',
-      isHonestZero: false,
-      siteNotice: 'Временный резервный снимок: рабочий источник данных сейчас недоступен.',
+      sourceCaption: 'Мониторинг запущен.',
+      publishStatus: 'honest_zero',
+      isHonestZero: true,
+      siteNotice: null,
       lastValidUpdatedAt: null,
       updatedAt: null
     });

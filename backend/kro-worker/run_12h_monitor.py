@@ -703,6 +703,307 @@ def build_top3(complaints_list, channel_sum_pairs):
     return [{'channel': ch, 'sum': total, 'status': 'Скам' if total > 0 else '—'} for ch, total in items[:3]]
 
 
+# ---------------------------------------------------------------------------
+# CONFIRMED-PIPELINE: строгий 3-критерийный отбор → scam_base (расширенная схема)
+# Схема scam_base v2 (колонки A–M):
+#   A  username          @username или t.me/+hash
+#   B  link              https://t.me/username
+#   C  detected_at       ISO 8601 UTC (когда зафиксирован в этом цикле)
+#   D  created_at        ISO 8601 UTC (дата создания канала)
+#   E  channel_age_days  целое число
+#   F  object_type       сигнал-канал | курс/сайт | сигнал-канал (закрытый)
+#   G  vip_price         строка или пустая
+#   H  complaints        целое число
+#   I  total_loss_rub    целое число (₽)
+#   J  source_primary    URL источника (TGStat / Telega)
+#   K  source_evidence   доп. доказательства через "; "
+#   L  cycle_window      YYYY-MM-DD_am | YYYY-MM-DD_pm
+#   M  status            в риске | под наблюдением | без риска
+# ---------------------------------------------------------------------------
+
+_SIGNAL_KEYWORDS = [
+    'сигнал', 'signal', 'signals', 'лонг', 'шорт', 'long', 'short',
+    'buy', 'sell', 'покупка', 'продажа', 'tp', 'sl', 'take profit',
+    'stop loss', 'сделки', 'trade', 'trades', 'entry', 'вход',
+]
+
+
+def _norm_ch_key(ch):
+    """Нормализовать ключ канала для сравнения: @name → name (нижний), t.me/+hash → t.me/+hash."""
+    s = (ch or '').strip().lower()
+    if s.startswith('@'):
+        return s[1:]
+    if 't.me/+' in s:
+        idx = s.find('t.me/+')
+        return s[idx:]
+    if s.startswith('t.me/'):
+        return s[5:]
+    return s
+
+
+def _has_signal_keywords(text):
+    if not text:
+        return False
+    lower = text.lower()
+    return any(kw in lower for kw in _SIGNAL_KEYWORDS)
+
+
+def _parse_date_ddmmyyyy(date_str):
+    """Разобрать 'DD.MM.YYYY' в datetime (UTC) или None."""
+    try:
+        return datetime.strptime(date_str.strip(), '%d.%m.%Y').replace(tzinfo=timezone.utc)
+    except (ValueError, AttributeError):
+        return None
+
+
+def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window):
+    """
+    Строгий 3-критерийный отбор подтверждённых скам-каналов для записи в scam_base.
+
+    Критерии (все три обязательны):
+    1. Канал создан менее 14 дней назад — подтверждено через TGStat (поле date).
+    2. Есть признаки VIP >= 10 000₽ ИЛИ сигналы long/short в названии/username.
+    3. Минимум 2 жалобы из чатов жалоб + листа отчётов (agg_complaints).
+
+    Каналы, которые есть только в жалобах (без TGStat), не пишутся в scam_base —
+    их возраст не подтверждён объективным источником.
+    """
+    now = _msk_now()
+    tgstat_by_key = {}
+    for row in (new_tgstat or []):
+        ch = (row.get('channel') or '').strip()
+        key = _norm_ch_key(ch)
+        if key:
+            tgstat_by_key[key] = row
+
+    confirmed = []
+    seen_keys = set()
+    for ch_raw, complaint_data in (agg_complaints or {}).items():
+        ch = (ch_raw or '').strip()
+        key = _norm_ch_key(ch)
+        if not key or key in seen_keys:
+            continue
+
+        # Критерий 3: минимум 2 жалобы
+        complaint_count = complaint_data.get('complaints') or 0
+        if complaint_count < 2:
+            continue
+
+        # Критерий 1: возраст < 14 дней (только TGStat — объективный источник)
+        tg_row = tgstat_by_key.get(key)
+        if tg_row is None:
+            continue
+        date_str = (tg_row.get('date') or '').strip()
+        created_dt = _parse_date_ddmmyyyy(date_str)
+        if created_dt is None:
+            continue
+        age_days = (now - created_dt).days
+        if age_days >= DAYS_14:
+            continue
+
+        # Критерий 2: VIP >= 10 000₽ или сигнальные слова в названии / username
+        title = (tg_row.get('title') or '').strip()
+        ch_username = (tg_row.get('channel') or ch).strip()
+        vip_str = (tg_row.get('vip') or '—').strip()
+        vip_num = 0
+        if vip_str != '—':
+            digits = re.sub(r'[^\d]', '', str(vip_str))
+            vip_num = int(digits) if digits else 0
+        has_signals = _has_signal_keywords(title) or _has_signal_keywords(ch_username)
+        if vip_num < VIP_MIN and not has_signals:
+            continue
+
+        seen_keys.add(key)
+        link = tg_row.get('link') or ('https://t.me/' + ch.lstrip('@'))
+        if '+' in ch or (link and 't.me/+' in link):
+            obj_type = 'сигнал-канал (закрытый)'
+        else:
+            obj_type = 'сигнал-канал'
+
+        total_loss_rub = complaint_data.get('sum') or 0
+        status = 'в риске'
+
+        evidence_parts = []
+        if tg_row.get('source_url'):
+            evidence_parts.append(tg_row['source_url'])
+        evidence_parts.extend(complaint_data.get('source_urls') or [])
+        evidence_parts.extend(complaint_data.get('message_links') or [])
+        source_evidence = '; '.join(filter(None, evidence_parts[:5]))
+
+        confirmed.append({
+            'username': ch_username,
+            'link': link,
+            'detected_at': now.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'created_at': created_dt.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'channel_age_days': age_days,
+            'object_type': obj_type,
+            'vip_price': vip_str if vip_str != '—' else '',
+            'complaints': complaint_count,
+            'total_loss_rub': total_loss_rub,
+            'source_primary': tg_row.get('source_url') or tg_row.get('link') or 'TGStat',
+            'source_evidence': source_evidence,
+            'cycle_window': cycle_window,
+            'status': status,
+        })
+
+    return confirmed
+
+
+def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
+    """
+    Записать подтверждённые объекты в расширенную scam_base (13 колонок A–M).
+    Дедупликация по username: если канал уже есть в листе — строку не дублируем.
+    """
+    if not confirmed_objects or not client or not sheet_id:
+        return
+    scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:M')
+    sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
+    try:
+        resp = client.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range='%s!A:A' % sheet_name
+        ).execute()
+        existing_keys = set()
+        for row in (resp.get('values') or []):
+            u = (row[0] if row else '').strip()
+            if u:
+                existing_keys.add(_norm_ch_key(u))
+    except Exception as e:
+        print('scam_base read for dedup error: %s' % e, file=sys.stderr)
+        existing_keys = set()
+
+    new_rows = []
+    for obj in confirmed_objects:
+        key = _norm_ch_key(obj.get('username') or '')
+        if not key or key in existing_keys:
+            continue
+        new_rows.append([
+            obj.get('username', ''),
+            obj.get('link', ''),
+            obj.get('detected_at', ''),
+            obj.get('created_at', ''),
+            obj.get('channel_age_days', ''),
+            obj.get('object_type', ''),
+            obj.get('vip_price', ''),
+            obj.get('complaints', ''),
+            obj.get('total_loss_rub', ''),
+            obj.get('source_primary', ''),
+            obj.get('source_evidence', ''),
+            obj.get('cycle_window', ''),
+            obj.get('status', ''),
+        ])
+        existing_keys.add(key)
+
+    if not new_rows:
+        print('scam_base: нет новых подтверждённых каналов для записи.', file=sys.stderr)
+        return
+    try:
+        client.spreadsheets().values().append(
+            spreadsheetId=sheet_id,
+            range='%s!A:M' % sheet_name,
+            valueInputOption='USER_ENTERED',
+            insertDataOption='INSERT_ROWS',
+            body={'values': new_rows}
+        ).execute()
+        print('scam_base: записано %d новых подтверждённых каналов.' % len(new_rows), file=sys.stderr)
+    except Exception as e:
+        print('scam_base write error: %s' % e, file=sys.stderr)
+
+
+def _build_stats_from_confirmed(confirmed_objects):
+    """
+    Собрать итоговые 4 цифры для сайта строго из подтверждённых объектов.
+    Возвращает dict: new_scam_channels, telegram_channels, courses_products, losses_12h, top3.
+    """
+    new_scam_channels = len(confirmed_objects)
+    telegram_channels = sum(
+        1 for o in confirmed_objects
+        if 'сигнал' in (o.get('object_type') or '').lower()
+    )
+    courses_products = sum(
+        1 for o in confirmed_objects
+        if any(kw in (o.get('object_type') or '').lower() for kw in ('курс', 'сайт', 'обучен'))
+    )
+    losses_12h = sum((o.get('total_loss_rub') or 0) for o in confirmed_objects)
+    top3_sorted = sorted(confirmed_objects, key=lambda o: -(o.get('total_loss_rub') or 0))[:3]
+    top3 = [
+        {
+            'channel': o['username'],
+            'sum': o.get('total_loss_rub') or 0,
+            'status': o.get('status', 'Скам'),
+            'link': o.get('link', ''),
+        }
+        for o in top3_sorted
+    ]
+    return {
+        'new_scam_channels': new_scam_channels,
+        'telegram_channels': telegram_channels,
+        'courses_products': courses_products,
+        'losses_12h': losses_12h,
+        'top3': top3,
+    }
+
+
+def _read_confirmed_from_scam_base(client, sheet_id, hours=12):
+    """
+    Прочитать из scam_base подтверждённые строки нового формата за последние `hours` часов.
+    Используется для восстановления статистики при перезапуске без повторного мониторинга.
+    """
+    if not client or not sheet_id:
+        return []
+    scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:M')
+    sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
+    try:
+        resp = client.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range='%s!A:M' % sheet_name
+        ).execute()
+        rows = resp.get('values') or []
+    except Exception as e:
+        print('scam_base read error: %s' % e, file=sys.stderr)
+        return []
+    cutoff = _msk_now() - timedelta(hours=hours)
+    result = []
+    for row in rows:
+        if len(row) < 13:
+            continue
+        detected_raw = (row[2] or '').strip()
+        try:
+            detected_dt = datetime.strptime(detected_raw, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+        except (ValueError, TypeError):
+            continue
+        if detected_dt < cutoff:
+            continue
+        try:
+            age_days = int(row[4]) if row[4] else None
+        except (ValueError, TypeError):
+            age_days = None
+        try:
+            complaints = int(row[7]) if row[7] else 0
+        except (ValueError, TypeError):
+            complaints = 0
+        try:
+            total_loss_rub = int(row[8]) if row[8] else 0
+        except (ValueError, TypeError):
+            total_loss_rub = 0
+        result.append({
+            'username': (row[0] or '').strip(),
+            'link': (row[1] or '').strip(),
+            'detected_at': detected_raw,
+            'created_at': (row[3] or '').strip(),
+            'channel_age_days': age_days,
+            'object_type': (row[5] or '').strip(),
+            'vip_price': (row[6] or '').strip(),
+            'complaints': complaints,
+            'total_loss_rub': total_loss_rub,
+            'source_primary': (row[9] or '').strip(),
+            'source_evidence': (row[10] or '').strip(),
+            'cycle_window': (row[11] or '').strip(),
+            'status': (row[12] or '').strip(),
+        })
+    return result
+
+
 # --- Единый Google Doc «Источники и данные» (вся информация для вас) ---
 SOURCES_DOC_TITLE = 'KRO: источники данных и ссылки'
 
@@ -2481,19 +2782,39 @@ def main():
     )
     merge_channel_snapshots(risk_rows, report_date_str)
 
-    # Top3 and totals
+    # Top3 and totals (diagnostic/doc layer — risk_rows based)
     top3 = build_top3(sheet_reports, channel_sum_pairs)
     total_losses_12h = sum(r.get('sum', 0) for r in sheet_reports) + sum(s for _, s in channel_sum_pairs)
     new_scams_count = len(risk_rows)
+
+    # --- CONFIRMED PIPELINE: строгий 3-критерийный отбор для сайта и scam_base ---
+    cycle_window = '%s_%s' % (report_date_str, 'am' if now_msk_dt.hour < 12 else 'pm')
+    confirmed_objects = _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window)
+    if client and sheet_id:
+        _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id)
+    confirmed_stats = _build_stats_from_confirmed(confirmed_objects)
+    # Цифры для сайта — только из подтверждённых объектов
+    site_new_scams = confirmed_stats['new_scam_channels']
+    site_telegram = confirmed_stats['telegram_channels']
+    site_courses = confirmed_stats['courses_products']
+    site_losses = confirmed_stats['losses_12h'] if confirmed_stats['losses_12h'] > 0 else total_losses_12h
+    site_top3 = confirmed_stats['top3'] if confirmed_stats['top3'] else top3
+    # ---------
 
     # 4b) Живой лог: только сводные строки (никаких списков @каналов — каналы только в таблице).
     now_msk_dt = _msk_now()
     datetime_prefix = now_msk_dt.strftime('%d.%m.%Y %H:%M')
     events = []
-    if not risk_rows and not any((r.get('complaints') or r.get('losses')) for r in (complaints_rows or [])):
+    if confirmed_objects:
+        events.append('%s — Подтверждено по 3 критериям: %d каналов, потери %s ₽.' % (
+            datetime_prefix, len(confirmed_objects), site_losses or 0
+        ))
+    elif not risk_rows and not any((r.get('complaints') or r.get('losses')) for r in (complaints_rows or [])):
         events.append('%s — В этом цикле новых сигнал‑каналов по фильтрам не найдено; жалоб нет. Источники доступны.' % datetime_prefix)
     else:
-        events.append('%s — Обновлён расчёт: %s ₽, %s объектов в зоне риска.' % (datetime_prefix, total_losses_12h or 0, new_scams_count or 0))
+        events.append('%s — Обновлён расчёт: %s ₽ зафиксированных потерь; по строгим критериям скам-каналов: %d.' % (
+            datetime_prefix, total_losses_12h or 0, site_new_scams or 0
+        ))
     if events:
         _append_live_log_events(events)
 
@@ -2508,10 +2829,10 @@ def main():
         except Exception:
             pass
     report_number = last_report_num + 1
-    summary_text = 'Новых: %s | Потери: %s ₽ | Топ-3: %s' % (
-        new_scams_count,
-        total_losses_12h,
-        ', '.join(t.get('channel', '—') for t in top3[:3])
+    summary_text = 'Подтверждено: %s | Потери: %s ₽ | Топ-3: %s' % (
+        site_new_scams,
+        site_losses,
+        ', '.join(t.get('channel', '—') for t in site_top3[:3])
     )
     title = '%s — АВТООТЧЁТ №%s' % (now_msk_str, report_number)
     doc_id, report_doc_url = create_google_doc_report(
@@ -2539,7 +2860,7 @@ def main():
         complaints_count_val = sum((r.get('complaints') or 0) for r in complaints_rows)
         doc_text, structured_data = build_sources_doc_text(
             collect_time_msk, new_tgstat, telega_channels, complaints_rows,
-            new_scams_count, total_losses_12h, telegram_count_from_risk, courses_count_from_risk, top3,
+            site_new_scams, site_losses, site_telegram, site_courses, site_top3,
             report_doc_url,
             period_start=period_start, period_end=period_end,
             victims_12h=victims_12h, complaints_count=complaints_count_val,
@@ -2560,20 +2881,22 @@ def main():
     _append_live_log_events(['%s — Завершён сбор данных за день, таблицы обновлены.' % now_msk_dt.strftime('%d.%m.%Y %H:%M')])
 
     # 6) Write JSON for site (поля спецификации + обратная совместимость)
-    top3_today = [(t.get('channel') or t.get('name') or '—') for t in (top3 or [])[:3]]
+    # Сайтовые цифры берутся из confirmed_stats (строгие 3 критерия)
+    top3_today = [(t.get('channel') or t.get('name') or '—') for t in (site_top3 or [])[:3]]
     previous_primary = _read_json_file(OUTPUT_JSON, default={}) or {}
     previous_top3 = previous_primary.get('display_top3') or previous_primary.get('top3') or []
     history_context = _build_history_context(previous_primary)
     out = {
-        'new_scams': new_scams_count,
-        'new_scam_channels': new_scams_count,
-        'losses_12h': total_losses_12h,
+        'new_scams': site_new_scams,
+        'new_scam_channels': site_new_scams,
+        'losses_12h': site_losses,
         'victims_12h': victims_12h,
-        'telegram_channels': telegram_count_from_risk,
-        'courses': courses_count_from_risk,
-        'courses_products': courses_count_from_risk,
-        'top3': top3,
+        'telegram_channels': site_telegram,
+        'courses': site_courses,
+        'courses_products': site_courses,
+        'top3': site_top3,
         'top3_today': top3_today,
+        'confirmed_objects': confirmed_objects,
         'report_doc_url': report_doc_url,
         REPORT_COUNTER_KEY: report_number,
         'updatedAt': now_msk.strftime('%Y-%m-%dT%H:%M:%SZ'),

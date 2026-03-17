@@ -620,12 +620,15 @@ async def run_check(channel_id, period_days=30):
         await client.disconnect()
 
 
-def append_to_scam_base(channel_id, risk, ads_week, bot_pct, vip, complaints, total_loss, verdict):
+def append_to_scam_base(channel_id, risk, ads_week, bot_pct, vip, complaints, total_loss, verdict,
+                        result_obj=None):
+    """Write confirmed channel to scam_base using v2 schema (13 cols A:M)."""
     if not KRO_SHEET_ID or not KRO_SCAM_BASE_RANGE:
         return
     try:
         from google.oauth2 import service_account
         from googleapiclient.discovery import build
+        from datetime import datetime, timezone
         creds = None
         json_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
         json_str = os.environ.get('KRO_GOOGLE_CREDENTIALS_JSON')
@@ -636,19 +639,41 @@ def append_to_scam_base(channel_id, risk, ads_week, bot_pct, vip, complaints, to
         if not creds:
             return
         sheets = build('sheets', 'v4', credentials=creds)
+        now_iso = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        r = result_obj or {}
+        # v2 schema: A username | B link | C detected_at | D created_at | E age_days |
+        #            F object_type | G vip_price | H complaints | I total_loss_rub |
+        #            J source_primary | K source_evidence | L cycle_window | M status
+        link = r.get('link') or ('https://t.me/' + str(channel_id).lstrip('@'))
+        created_at = r.get('created_at') or ''
+        age_days = r.get('channel_age_days') or ''
+        obj_type = 'сигнал-канал'
+        vip_price_str = str(vip) if vip and vip != '—' else ''
+        complaints_val = complaints if complaints is not None else ''
+        try:
+            total_loss_rub = int(str(total_loss).replace('млн₽', '000000').replace('к₽', '000').replace('₽', '').replace(' ', '')) if total_loss and total_loss != '—' else ''
+        except (ValueError, TypeError):
+            total_loss_rub = ''
+        cycle_window = ''
+        status = 'в риске'
         row = [
-            channel_id,
-            risk,
-            ads_week,
-            bot_pct or '—',
-            vip,
-            complaints if complaints is not None else '—',
-            total_loss or '—',
-            verdict,
+            str(channel_id),
+            link,
+            now_iso,
+            created_at,
+            age_days,
+            obj_type,
+            vip_price_str,
+            complaints_val,
+            total_loss_rub,
+            '',  # source_primary
+            '',  # source_evidence
+            cycle_window,
+            status,
         ]
         sheets.spreadsheets().values().append(
             spreadsheetId=KRO_SHEET_ID,
-            range=f'{SCAM_BASE_SHEET_NAME}!A:H',
+            range=f'{SCAM_BASE_SHEET_NAME}!A:M',
             valueInputOption='USER_ENTERED',
             insertDataOption='INSERT_ROWS',
             body={'values': [row]}
@@ -727,7 +752,8 @@ def main():
                 result['vip_price'],
                 result['complaints'],
                 result['total_loss'],
-                result['verdict']
+                result['verdict'],
+                result_obj=result
             )
         else:
             append_to_unconfirmed_base(result)
