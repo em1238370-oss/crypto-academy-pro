@@ -63,6 +63,30 @@ SHAME_PHRASES = [
 # Критерий 9: слова убытков (если постов много и нет таких — only_profits_flag)
 LOSS_KEYWORDS = ['убыток', 'слив', 'потеря', 'минус', 'просадка', 'loss', 'drawdown']
 
+# -----------------------------------------------------------------------
+# 3-уровневая система риска
+# -----------------------------------------------------------------------
+# Уровень 1 — 'в риске': ≥2 жалоб + любой из признаков Level1
+LEVEL1_SIGNAL_MARKERS = [
+    'лонг', 'шорт', 'long', 'short', 'сигнал', 'signal', 'signals',
+    'купить', 'продать', 'buy', 'sell', 'покупай', 'продавай',
+    'vip', 'вип', 'закрытый', 'private', 'закрытый канал',
+    'гарантия', 'гарантир', 'без риска', 'no risk', '100%',
+    'только профиты', 'только прибыль', 'не показываем убытки',
+]
+# Уровень 2 — 'поведенческий риск': давление, FOMO, манипуляции (жалобы не обязательны)
+LEVEL2_BEHAVIOR_MARKERS = [
+    'осталось 2 места', 'осталось мест', 'только сегодня', 'только до',
+    'не упусти', 'успей', 'срочно', 'последний шанс', 'last chance',
+    'всем депозитом', 'весь депозит', 'взять плечо', 'максимальное плечо',
+    'плечо побольше', 'плечо x', 'без объяснения рисков',
+    'все уже зарабатывают', 'все уже в деле', 'только ты',
+    'x2', 'x5', 'x10', 'иксы', 'сделали иксы', 'стыдно не знать',
+    'пока ты сидишь', 'пока все зарабатывают',
+    '10 из 10', '9 из 10', 'процент точности',
+    'гарантированн', '100 процент', 'без потерь',
+]
+
 
 def out(obj):
     print(json.dumps(obj, ensure_ascii=False))
@@ -159,6 +183,64 @@ def _has_signal_offer(texts):
     return any(marker in combined for marker in markers)
 
 
+def _classify_risk_level(result):
+    """
+    Определяет уровень риска канала по 3-уровневой системе.
+
+    Уровень 1 — 'в риске': ≥2 жалоб от разных людей + сигналы/VIP/гарантия/скрытые убытки.
+    Уровень 2 — 'поведенческий риск': манипулятивные паттерны без обязательных жалоб.
+    Уровень 3 — 'под наблюдением': одиночные сигналы или мало данных.
+    Нет риска — новостные, образовательные, показывают убытки.
+    """
+    complaints = result.get('complaints') or 0
+    texts = result.get('_sample_texts') or []
+    combined = ' '.join((t or '').lower() for t in texts)
+    title_and_username = (
+        (result.get('username') or '') + ' ' + (result.get('title') or '')
+    ).lower()
+
+    # Доказательства уровня 1
+    level1_evidence = []
+    for marker in LEVEL1_SIGNAL_MARKERS:
+        if marker in combined or marker in title_and_username:
+            level1_evidence.append(marker)
+    has_level1_signals = bool(level1_evidence)
+    has_level1_signals = has_level1_signals or bool(result.get('has_signal_offer'))
+    has_level1_signals = has_level1_signals or bool(result.get('only_profits_flag'))
+    has_level1_signals = has_level1_signals or (_parse_vip_price_number(result.get('vip_price')) >= 10000)
+
+    # Доказательства уровня 2
+    level2_evidence = []
+    for marker in LEVEL2_BEHAVIOR_MARKERS:
+        if marker in combined:
+            level2_evidence.append(marker)
+    fomo_pct = result.get('fomo_pct') or 0
+    shame_phrases = result.get('shame_phrases_detected') or []
+    ads_ratio = result.get('ads_ratio') or 0
+    if fomo_pct >= 30:
+        level2_evidence.append('fomo_слова в %d%% постов' % fomo_pct)
+    if shame_phrases:
+        level2_evidence.extend(shame_phrases[:3])
+    if ads_ratio >= 80 and result.get('only_profits_flag'):
+        level2_evidence.append('реклама %d%% постов + только профиты' % ads_ratio)
+
+    # Определяем уровень
+    if complaints >= 2 and has_level1_signals:
+        risk_level = 'в риске'
+        evidence = level1_evidence[:5]
+    elif level2_evidence:
+        risk_level = 'поведенческий риск'
+        evidence = level2_evidence[:5]
+    elif has_level1_signals or complaints == 1:
+        risk_level = 'под наблюдением'
+        evidence = level1_evidence[:3]
+    else:
+        risk_level = 'нет риска'
+        evidence = []
+
+    return risk_level, evidence
+
+
 def _build_confirmation(result):
     age_days = result.get('channel_age_days')
     vip_number = _parse_vip_price_number(result.get('vip_price'))
@@ -185,6 +267,12 @@ def _build_confirmation(result):
     result['missing_criteria'] = missing
     result['is_confirmed'] = is_confirmed
     result['confirmation_status'] = 'confirmed' if is_confirmed else 'not_confirmed'
+
+    # Определяем уровень риска по новой 3-уровневой системе
+    risk_level, risk_evidence = _classify_risk_level(result)
+    result['risk_level'] = risk_level
+    result['risk_evidence'] = risk_evidence
+
     result['risk_verdict'] = result.get('verdict')
     result['verdict'] = 'scam' if is_confirmed else 'not_confirmed'
     result['message'] = (
@@ -594,9 +682,17 @@ async def run_check(channel_id, period_days=30):
         else:
             verdict = 'safe'
 
-        return {
+        # Первые 5 постов для доказательной базы
+        sample_posts = []
+        for t in texts[:5]:
+            snippet = (t or '').strip().replace('\n', ' ')[:200]
+            if snippet:
+                sample_posts.append(snippet)
+
+        result_obj = {
             'found': True,
             'username': canonical_channel_id,
+            'title': getattr(entity, 'title', None) or '',
             'risk_score': risk_score,
             'ads_per_week': ads_week,
             'bot_pct': bot_pct,
@@ -615,7 +711,10 @@ async def run_check(channel_id, period_days=30):
             'reach_ratio': reach_ratio,
             'channel_age_days': channel_age_days,
             'has_signal_offer': has_signal_offer,
+            '_sample_texts': texts[:20],
+            'sample_posts': sample_posts,
         }
+        return result_obj
     finally:
         await client.disconnect()
 
@@ -757,6 +856,8 @@ def main():
             )
         else:
             append_to_unconfirmed_base(result)
+        # Убираем внутреннее поле перед выводом
+        result.pop('_sample_texts', None)
         out(result)
     except Exception as e:
         out({'found': False, 'error': str(e)[:200]})
