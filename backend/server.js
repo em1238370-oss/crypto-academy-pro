@@ -1197,10 +1197,10 @@ if (newsApiKey || theNewsApiKey) {
 }
 
 // --- KRO Live Counter (Google Sheets) ---
-const kroSheetId = process.env.KRO_SHEET_ID;
+const kroSheetId = process.env.KRO_SHEET_ID || '1C1NQwqmLRg59xgplnz5PeghRxaR_YY2lfSWZAJae6qM';
 const kroCredentialsJson = process.env.KRO_GOOGLE_CREDENTIALS_JSON;
 const kroCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-const kroScamBaseRange = process.env.KRO_SCAM_BASE_RANGE || '';
+const kroScamBaseRange = process.env.KRO_SCAM_BASE_RANGE || 'scam_base!A2:M';
 const kroCheckQueueRange = process.env.KRO_CHECK_QUEUE_RANGE || '';
 
 function getTodayMSK() {
@@ -1900,62 +1900,43 @@ app.post('/api/kro/check-screenshot', express.json({ limit: '10mb' }), async (re
 app.get('/api/kro/live-counter', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   try {
-    // Priority 1: scam_base directly from Google Sheets — primary source of truth,
-    // survives Render restarts unlike local JSON files.
-    try {
-      const sheetsClient = await getKroSheetsClient();
-      if (sheetsClient && kroSheetId && kroScamBaseRange) {
-        const sheetName = kroScamBaseRange.split('!')[0] || 'scam_base';
-        const sheetResp = await sheetsClient.sheets.spreadsheets.values.get({
-          spreadsheetId: kroSheetId,
-          range: `${sheetName}!A:M`
+    // Единственный источник данных: Google Sheets scam_base.
+    // Никакого кеша, никаких файлов, никаких fallback — только реальные данные из таблицы.
+    const sheetsClient = await getKroSheetsClient();
+    if (sheetsClient) {
+      const sheetName = kroScamBaseRange.split('!')[0] || 'scam_base';
+      console.log(`[KRO live-counter] reading from Sheets: ${kroSheetId} / ${sheetName}`);
+      const sheetResp = await sheetsClient.sheets.spreadsheets.values.get({
+        spreadsheetId: kroSheetId,
+        range: `${sheetName}!A:M`
+      });
+      const rawRows = sheetResp.data.values || [];
+      const parsedRows = rawRows.map(parseScamBaseRow).filter(r => r.username && r.username !== 'username');
+      console.log(`[KRO live-counter] parsed ${parsedRows.length} rows from scam_base`);
+      const scamBaseCounter = buildLiveCounterFromScamBase(parsedRows);
+      if (scamBaseCounter) {
+        return res.json({
+          channelsToday: scamBaseCounter.new_scam_channels,
+          totalLost: scamBaseCounter.losses_12h,
+          telegramCount: scamBaseCounter.telegram_channels,
+          coursesCount: scamBaseCounter.courses_products,
+          victims_12h: null,
+          shockText: KRO_PENDING_REPORT_TEXT,
+          top3: scamBaseCounter.top3,
+          report_doc_url: KRO_SOURCES_DOC_URL,
+          sourceCaption: scamBaseCounter.sourceCaption,
+          publishStatus: scamBaseCounter.publishStatus,
+          isHonestZero: scamBaseCounter.isHonestZero,
+          siteNotice: null,
+          lastValidUpdatedAt: scamBaseCounter.updatedAt,
+          updatedAt: scamBaseCounter.updatedAt
         });
-        const rawRows = sheetResp.data.values || [];
-        const parsedRows = rawRows.map(parseScamBaseRow).filter(r => r.username && r.username !== 'username');
-        const scamBaseCounter = buildLiveCounterFromScamBase(parsedRows);
-        if (scamBaseCounter) {
-          return res.json({
-            channelsToday: scamBaseCounter.new_scam_channels,
-            totalLost: scamBaseCounter.losses_12h,
-            telegramCount: scamBaseCounter.telegram_channels,
-            coursesCount: scamBaseCounter.courses_products,
-            victims_12h: null,
-            shockText: KRO_PENDING_REPORT_TEXT,
-            top3: scamBaseCounter.top3,
-            report_doc_url: KRO_SOURCES_DOC_URL,
-            sourceCaption: scamBaseCounter.sourceCaption,
-            publishStatus: scamBaseCounter.publishStatus,
-            isHonestZero: scamBaseCounter.isHonestZero,
-            siteNotice: scamBaseCounter.isHonestZero
-              ? 'Данные появятся после первого верифицированного отчёта. Мониторинг работает — ждём первых подтверждённых случаев.'
-              : null,
-            lastValidUpdatedAt: scamBaseCounter.updatedAt,
-            updatedAt: scamBaseCounter.updatedAt
-          });
-        }
       }
-    } catch (sheetsErr) {
-      console.warn('KRO live-counter: scam_base Sheets read failed:', sheetsErr.message);
+    } else {
+      console.warn('[KRO live-counter] no Sheets client — KRO_GOOGLE_CREDENTIALS_JSON not set on Render?');
     }
 
-    // Priority 2: kro-12h-stats.json (written by run_12h_monitor.py) — used when Sheets is unavailable
-    const liveSnapshot = readJsonFileSafe(KRO_12H_STATS_PATH, 'live-counter primary snapshot');
-    const liveResponse = buildKroLiveResponse(liveSnapshot, { defaultPublishStatus: 'valid' });
-    if (liveResponse && !liveResponse.isHonestZero) {
-      return res.json(liveResponse);
-    }
-
-    // Priority 3: reference snapshot (last confirmed cycle)
-    const referenceSnapshot = readJsonFileSafe(KRO_REFERENCE_STATS_PATH, 'reference snapshot');
-    const referenceResponse = buildKroLiveResponse(referenceSnapshot, {
-      defaultPublishStatus: 'reference_fallback',
-      siteNotice: 'Сайт показывает последний безопасный подтверждённый снимок, пока текущий цикл не дал надёжный итог.'
-    });
-    if (referenceResponse) {
-      return res.json(referenceResponse);
-    }
-
-    // Priority 4: honest empty state (no fake data)
+    // Sheets недоступен — честный ноль с пояснением
     return res.json({
       channelsToday: 0,
       totalLost: 0,
