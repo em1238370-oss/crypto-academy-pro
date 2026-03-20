@@ -2071,12 +2071,112 @@ function handleKroUpdate(req, res) {
 app.post('/api/kro/update', express.json(), handleKroUpdate);
 app.post('/api/update', express.json(), handleKroUpdate);
 
+/**
+ * Reads all reports for a given channel from the reports sheet (A2:H).
+ * Returns array of { date, channel, sum, source, reporter, description, proof_url }.
+ */
+async function getAllReportsForChannel(client, channel) {
+  if (!client || !kroSheetId) return [];
+  try {
+    const response = await client.sheets.spreadsheets.values.get({
+      spreadsheetId: kroSheetId,
+      range: 'A2:H'
+    });
+    const rows = response.data.values || [];
+    const key = channelMatchKey(channel);
+    if (!key) return [];
+    return rows.filter(r => channelMatchKey((r[1] || '').toString()) === key).map(r => ({
+      date: (r[0] || '').toString().trim(),
+      channel: (r[1] || '').toString().trim(),
+      sum: parseInt((r[2] || '0').toString().replace(/\s/g, ''), 10) || 0,
+      source: (r[3] || '').toString().trim(),
+      reporter: (r[5] || '').toString().trim(),
+      description: (r[6] || '').toString().trim(),
+      proof_url: (r[7] || '').toString().trim(),
+    }));
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
+ * Checks if a channel is already in scam_base.
+ * Returns true if found with any confirmed/risk status.
+ */
+async function isChannelInScamBase(client, channel) {
+  if (!client || !kroSheetId || !kroScamBaseRange) return false;
+  try {
+    const sheetName = kroScamBaseRange.split('!')[0] || 'scam_base';
+    const response = await client.sheets.spreadsheets.values.get({
+      spreadsheetId: kroSheetId,
+      range: `${sheetName}!A2:M`
+    });
+    const rows = response.data.values || [];
+    const key = channelMatchKey(channel);
+    return rows.some(r => channelMatchKey((r[0] || '').toString()) === key);
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Promotes a channel to scam_base when it reaches ≥2 unique reports.
+ * Unique = distinct reporter names; if all anonymous, each row counts separately.
+ * Writes a v2 schema row with status 'в риске'.
+ */
+async function checkAndPromoteToScamBase(client, channel) {
+  if (!client || !kroSheetId || !kroScamBaseRange) return;
+  try {
+    const reports = await getAllReportsForChannel(client, channel);
+    if (reports.length < 2) return;
+
+    // Count unique reporters: by name if non-empty, otherwise each row is unique
+    const namedReporters = reports.map(r => r.reporter).filter(Boolean);
+    const uniqueCount = namedReporters.length > 0
+      ? new Set(namedReporters).size + (reports.length - namedReporters.length)
+      : reports.length;
+
+    if (uniqueCount < 2) return;
+    if (await isChannelInScamBase(client, channel)) return;
+
+    const now = new Date();
+    const detectedAt = now.toISOString().replace('.000', '');
+    const totalLoss = reports.reduce((s, r) => s + (r.sum || 0), 0);
+    const complaints = reports.length;
+    const normalizedCh = channel.startsWith('@') ? channel : '@' + channel.replace(/^t\.me\//, '');
+    const link = 'https://t.me/' + normalizedCh.replace(/^@/, '');
+    const sourceEvidence = reports.slice(0, 3).map(r => r.description || r.proof_url).filter(Boolean).join('; ');
+    const cycleWindow = now.toISOString().slice(0, 10) + (now.getUTCHours() < 12 ? '_am' : '_pm');
+
+    const sheetName = kroScamBaseRange.split('!')[0] || 'scam_base';
+    const v2Row = [[
+      normalizedCh, link, detectedAt, '', '', 'сигнал-канал', '',
+      complaints, totalLoss, 'form', sourceEvidence, cycleWindow, 'в риске'
+    ]];
+    await client.sheets.spreadsheets.values.append({
+      spreadsheetId: kroSheetId,
+      range: `${sheetName}!A:M`,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: { values: v2Row }
+    });
+    console.log(`[KRO] Promoted ${normalizedCh} to scam_base (${uniqueCount} reports, loss ${totalLoss}₽)`);
+  } catch (e) {
+    console.error('[KRO] checkAndPromoteToScamBase error:', e);
+  }
+}
+
 app.post('/api/kro/report-scam', express.json(), async (req, res) => {
   const channel = (req.body?.channel ?? '').toString().trim();
   const sumRub = Number(req.body?.sumRub);
+  const description = (req.body?.description ?? '').toString().trim();
+  const proofUrl = (req.body?.proofUrl ?? '').toString().trim();
   const from = (req.body?.from ?? '').toString().trim();
   if (!channel || !Number.isFinite(sumRub) || sumRub < 0) {
     return res.status(400).json({ error: 'channel and sumRub (non-negative number) are required' });
+  }
+  if (!description) {
+    return res.status(400).json({ error: 'description is required' });
   }
   try {
     const client = await getKroSheetsClient();
@@ -2084,14 +2184,17 @@ app.post('/api/kro/report-scam', express.json(), async (req, res) => {
       return res.status(503).json({ error: 'live_counter_not_configured' });
     }
     const today = getTodayMSK();
-    const row = [[today.dateKey, channel, sumRub, 'TG', 'Активен', from || '']];
+    // Schema A:H — columns D=source, E=status, F=reporter, G=description, H=proof_url
+    const row = [[today.dateKey, channel, sumRub, 'form', 'Активен', from || '', description, proofUrl || '']];
     await client.sheets.spreadsheets.values.append({
       spreadsheetId: kroSheetId,
-      range: 'A:F',
+      range: 'A:H',
       valueInputOption: 'USER_ENTERED',
       insertDataOption: 'INSERT_ROWS',
       requestBody: { values: row }
     });
+    // Auto-promote to scam_base if ≥2 unique reporters
+    await checkAndPromoteToScamBase(client, channel);
     const report = await getComplaintsAndLossForChannel(client, channel);
     res.status(200).json({
       ok: true,

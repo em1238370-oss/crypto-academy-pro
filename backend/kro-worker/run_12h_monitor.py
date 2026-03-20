@@ -24,6 +24,13 @@ from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 from urllib.parse import quote
 
+# Web scraper for stop-scam1.com / fin-obzor.net (imported lazily to avoid breaking if missing)
+try:
+    import web_scraper as _web_scraper
+    _WEB_SCRAPER_AVAILABLE = True
+except ImportError:
+    _WEB_SCRAPER_AVAILABLE = False
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
 DATA_DIR = os.path.join(BACKEND_DIR, 'data')
@@ -780,13 +787,17 @@ def get_sheets_client():
 
 
 def read_reports_last_12h(client, sheet_id):
-    """Читает лист Отчёты A2:F, фильтрует строки за последние 12 ч по дате в колонке A."""
+    """
+    Читает лист reports A2:H, фильтрует строки за последние 12 ч по дате в колонке A.
+    Schema v2: A=date, B=channel, C=sum_rub, D=source, E=status, F=reporter, G=description, H=proof_url
+    Backward-compatible with old 6-column rows (A:F).
+    """
     if not client or not sheet_id:
         return []
     try:
         resp = client.spreadsheets().values().get(
             spreadsheetId=sheet_id,
-            range='A2:F'
+            range='A2:H'
         ).execute()
         rows = resp.get('values') or []
     except Exception:
@@ -803,11 +814,23 @@ def read_reports_last_12h(client, sheet_id):
             s = int(sum_raw) if sum_raw else 0
         except ValueError:
             s = 0
+        source = (r[3] if len(r) > 3 else '').strip()
         status = (r[4] if len(r) > 4 else '').strip()
+        reporter = (r[5] if len(r) > 5 else '').strip()
+        description = (r[6] if len(r) > 6 else '').strip()
+        proof_url = (r[7] if len(r) > 7 else '').strip()
         if not date_val:
             continue
         if date_val == today_str or date_val == yesterday or date_val.startswith(today_str[:6]):
-            out.append({'channel': channel, 'sum': s, 'status': status or 'Активен'})
+            out.append({
+                'channel': channel,
+                'sum': s,
+                'status': status or 'Активен',
+                'source': source or 'form',
+                'reporter': reporter,
+                'description': description,
+                'proof_url': proof_url,
+            })
     return out
 
 
@@ -2808,6 +2831,84 @@ def _run_publish_only():
     _send_to_site(payload)
 
 
+def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, all_reports):
+    """
+    После сбора всех жалоб (форма + веб) — проверяем каждый канал.
+    Если канал набрал ≥2 уникальных жалобщиков и ещё не в scam_base —
+    автоматически записываем его туда со статусом 'в риске'.
+    """
+    if not sheets_client or not sheet_id or not all_reports:
+        return
+
+    # Группируем по каналу
+    by_channel = defaultdict(list)
+    for r in all_reports:
+        ch = (r.get('channel') or '').strip()
+        if ch:
+            by_channel[ch].append(r)
+
+    # Читаем уже существующие каналы в scam_base
+    existing_in_scam = set()
+    try:
+        sheet_name = (scam_base_range or 'scam_base!A2:M').split('!')[0]
+        resp = sheets_client.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range=f'{sheet_name}!A2:A'
+        ).execute()
+        for row in resp.get('values') or []:
+            if row:
+                existing_in_scam.add(_norm_ch_key((row[0] or '').strip()))
+    except Exception as e:
+        print(f'[promote] could not read scam_base: {e}', file=sys.stderr)
+
+    promoted = 0
+    now = datetime.now(timezone.utc)
+    for ch, reports in by_channel.items():
+        key = _norm_ch_key(ch)
+        if key in existing_in_scam:
+            continue
+
+        # Уникальность: по reporter-полю, если заполнено; иначе каждая строка = 1 человек
+        named = [r.get('reporter') or '' for r in reports]
+        named_non_empty = [n for n in named if n and n.lower() != 'web_parser']
+        unique_count = (
+            len(set(named_non_empty)) + (len(reports) - len(named_non_empty))
+            if named_non_empty else len(reports)
+        )
+        if unique_count < 2:
+            continue
+
+        total_loss = sum(r.get('sum') or 0 for r in reports)
+        descriptions = [r.get('description') or r.get('proof_url') or '' for r in reports if r.get('description') or r.get('proof_url')]
+        evidence = '; '.join(descriptions[:3])
+        norm_ch = ('@' + key) if not key.startswith('t.me/+') else key
+        link = 'https://t.me/' + key if not key.startswith('t.me/') else 'https://' + key
+        detected_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
+        cycle_window = now.strftime('%Y-%m-%d') + ('_am' if now.hour < 12 else '_pm')
+        sheet_name = (scam_base_range or 'scam_base!A2:M').split('!')[0]
+
+        v2_row = [[
+            norm_ch, link, detected_at, '', '', 'сигнал-канал', '',
+            unique_count, total_loss, 'form+web', evidence[:300], cycle_window, 'в риске'
+        ]]
+        try:
+            sheets_client.spreadsheets().values().append(
+                spreadsheetId=sheet_id,
+                range=f'{sheet_name}!A:M',
+                valueInputOption='USER_ENTERED',
+                insertDataOption='INSERT_ROWS',
+                body={'values': v2_row}
+            ).execute()
+            existing_in_scam.add(key)
+            promoted += 1
+            print(f'[promote] {norm_ch} → scam_base (reports={unique_count}, loss={total_loss}₽)', file=sys.stderr)
+        except Exception as e:
+            print(f'[promote] error writing {norm_ch}: {e}', file=sys.stderr)
+
+    if promoted:
+        print(f'[promote] total promoted to scam_base: {promoted}', file=sys.stderr)
+
+
 def main():
     # Режим publish: только отправить уже собранные данные на сайт (12:00 и 00:00 MSK). Сбор не делаем.
     mode = os.environ.get('MODE', 'collect').strip().lower()
@@ -2865,9 +2966,19 @@ def main():
     victims_12h = tg_data.get('victims_12h', 0)
     channel_sum_pairs = tg_data.get('channel_sum_pairs', [])
 
-    # 4) Read sheet reports last 12h
+    # 4) Web scraper: собираем данные с сайтов-разоблачителей раз в 12 ч
     sheet_id = os.environ.get('KRO_SHEET_ID', '').strip()
     client = get_sheets_client()
+    if _WEB_SCRAPER_AVAILABLE and client and sheet_id:
+        try:
+            web_findings = _web_scraper.scrape_all()
+            if web_findings:
+                written = _web_scraper.write_web_reports_to_sheet(client, sheet_id, web_findings, reports_range='A:H')
+                print(f'[web_scraper] wrote {written} rows from {len(web_findings)} findings', file=sys.stderr)
+        except Exception as _ws_err:
+            print(f'[web_scraper] error: {_ws_err}', file=sys.stderr)
+
+    # 5) Read sheet reports last 12h (form submissions + web scraper results)
     sheet_reports = read_reports_last_12h(client, sheet_id) if client and sheet_id else []
 
     # Complaints table for report: aggregate by channel
@@ -2946,6 +3057,10 @@ def main():
     top3 = build_top3(sheet_reports, channel_sum_pairs)
     total_losses_12h = sum(r.get('sum', 0) for r in sheet_reports) + sum(s for _, s in channel_sum_pairs)
     new_scams_count = len(risk_rows)
+
+    # --- AUTO-PROMOTE: каналы из формы/веб-парсера с ≥2 жалобами → scam_base ---
+    scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:M')
+    _check_and_promote_from_reports(client, sheet_id, scam_base_range, sheet_reports)
 
     # --- CONFIRMED PIPELINE: строгий 3-критерийный отбор для сайта и scam_base ---
     cycle_window = '%s_%s' % (report_date_str, 'am' if now_msk_dt.hour < 12 else 'pm')

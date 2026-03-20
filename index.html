@@ -237,7 +237,9 @@
                <p class="kro-feature1-report-intro">Сообщить о разводе → добавим за 30 мин</p>
                <form class="kro-report-form" id="kro-report-form" novalidate>
                    <label class="kro-report-label">Канал / ссылка <input type="text" name="channel" id="kro-report-channel" required placeholder="@channel или ссылка"></label>
-                   <label class="kro-report-label">Сумма ₽ <input type="number" name="sumRub" id="kro-report-sum" required min="0" placeholder="0"></label>
+                   <label class="kro-report-label">Сумма потерь ₽ <input type="number" name="sumRub" id="kro-report-sum" required min="0" placeholder="0"></label>
+                   <label class="kro-report-label">Что произошло — своими словами <textarea name="description" id="kro-report-description" required rows="3" placeholder="Купил VIP-сигналы, слил депозит, после оплаты перестали отвечать..."></textarea></label>
+                   <label class="kro-report-label">Ссылка на доказательство (необязательно) <input type="url" name="proofUrl" id="kro-report-proof" placeholder="https://t.me/... или ссылка на скрин"></label>
                    <label class="kro-report-label">От кого (необязательно) <input type="text" name="from" id="kro-report-from" placeholder="Имя или аноним"></label>
                    <button type="submit" class="kro-report-submit">Отправить</button>
                </form>
@@ -646,8 +648,15 @@
                    e.preventDefault();
                    var channel = (document.getElementById('kro-report-channel') || {}).value.trim();
                    var sumRub = parseInt((document.getElementById('kro-report-sum') || {}).value, 10);
+                   var description = (document.getElementById('kro-report-description') || {}).value.trim();
+                   var proofUrl = (document.getElementById('kro-report-proof') || {}).value.trim();
                    if (!channel || isNaN(sumRub) || sumRub < 0) {
                        msgEl.textContent = 'Укажите канал и сумму (число ≥ 0).';
+                       msgEl.classList.remove('hidden');
+                       return;
+                   }
+                   if (!description) {
+                       msgEl.textContent = 'Опишите что произошло — хотя бы одно предложение.';
                        msgEl.classList.remove('hidden');
                        return;
                    }
@@ -657,7 +666,7 @@
                    fetch(base + '/api/kro/report-scam', {
                        method: 'POST',
                        headers: { 'Content-Type': 'application/json' },
-                       body: JSON.stringify({ channel: channel, sumRub: sumRub, from: from || undefined })
+                       body: JSON.stringify({ channel: channel, sumRub: sumRub, description: description, proofUrl: proofUrl || undefined, from: from || undefined })
                    }).then(function(r) {
                        if (r.ok) {
                            msgEl.textContent = 'Спасибо. Мы проверим и добавим.';
