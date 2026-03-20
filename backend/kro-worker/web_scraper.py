@@ -14,8 +14,6 @@ import re
 import json
 import logging
 from datetime import datetime, timezone
-from urllib.request import urlopen, Request
-from urllib.error import URLError, HTTPError
 from urllib.parse import urljoin
 
 logger = logging.getLogger(__name__)
@@ -30,46 +28,88 @@ _HEADERS = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 }
 
-_TIMEOUT = 15
+_TIMEOUT = 25
 _CRYPTO_HINTS = (
     'telegram', 'телеграм', 't.me', '@',
     'crypto', 'крипт', 'сигнал', 'signal',
     'vip', 'вип', 'трейд', 'trading', 'инвест', 'бирж',
 )
+
+
 def _fetch(url):
-    """Fetch URL, return decoded text or None on error."""
+    """
+    Fetch URL. Uses requests library (handles Cloudflare better than urllib).
+    Falls back to urllib if requests is unavailable.
+    Returns decoded text or None on error.
+    """
+    # --- requests (preferred: bypasses Cloudflare bot checks better) ---
     try:
-        req = Request(url, headers=_HEADERS)
+        import requests
+        sess = requests.Session()
+        sess.headers.update(_HEADERS)
+        resp = sess.get(url, timeout=_TIMEOUT, allow_redirects=True)
+        resp.raise_for_status()
+        return resp.text
+    except Exception as e:
+        logger.debug('requests fetch failed for %s: %s', url, e)
+    # --- urllib fallback ---
+    try:
+        from urllib.request import urlopen, Request as URequest
+        from urllib.error import URLError, HTTPError
+        req = URequest(url, headers=_HEADERS)
         with urlopen(req, timeout=_TIMEOUT) as resp:
-            charset = 'utf-8'
-            ct = resp.headers.get_content_charset()
-            if ct:
-                charset = ct
+            charset = resp.headers.get_content_charset() or 'utf-8'
             return resp.read().decode(charset, errors='replace')
-    except (URLError, HTTPError, Exception) as e:
+    except Exception as e:
         logger.warning('web_scraper fetch error %s: %s', url, e)
         return None
 
 
+_JSON_LD_NOISE = frozenset({
+    'context', 'graph', 'type', 'id', 'name', 'url', 'image',
+    'datePublished', 'dateModified', 'author', 'publisher',
+    'description', 'breadcrumb', 'itemListElement', 'item',
+    'potentialAction', 'target', 'query',
+})
+
+
 def _extract_channel_mentions(text):
     """
-    Extract @username and t.me/ channel references from raw text.
+    Extract @username and t.me/ channel references from plain text.
+    Filters out JSON-LD schema fields (@context, @graph, @type, etc.)
+    and generic words that are not Telegram usernames.
     Returns list of normalised usernames (without @).
     """
     found = set()
-    # @username pattern
     for m in re.finditer(r'@([A-Za-z][A-Za-z0-9_]{3,})', text):
-        found.add(m.group(1).lower())
-    # t.me/username pattern (skip invite links with +)
+        uname = m.group(1)
+        if uname.lower() in _JSON_LD_NOISE:
+            continue
+        if len(uname) < 5:
+            continue
+        found.add(uname.lower())
+    # t.me/username (skip invite links with +, skip known service paths)
+    _skip_paths = frozenset({'joinchat', 'addstickers', 'share', 'proxy', 'm', 's'})
     for m in re.finditer(r't\.me/([A-Za-z][A-Za-z0-9_]{3,})', text):
-        found.add(m.group(1).lower())
+        uname = m.group(1)
+        if uname.lower() in _skip_paths or uname.lower() in _JSON_LD_NOISE:
+            continue
+        found.add(uname.lower())
     return list(found)
 
 
-def _clean_html_text(html):
-    """Collapse HTML into plain text for regex extraction."""
-    clean = re.sub(r'<[^>]+>', ' ', html or '')
-    return re.sub(r'\s+', ' ', clean).strip()
+def _clean_html_text(raw_html):
+    """
+    Strip <script>, <style>, and all other HTML tags, then collapse whitespace.
+    Removing scripts prevents JSON-LD schema (@context, @graph) from polluting text.
+    """
+    h = raw_html or ''
+    # Remove script and style blocks entirely (including their content)
+    h = re.sub(r'<script[^>]*>.*?</script>', ' ', h, flags=re.DOTALL | re.IGNORECASE)
+    h = re.sub(r'<style[^>]*>.*?</style>', ' ', h, flags=re.DOTALL | re.IGNORECASE)
+    # Remove remaining HTML tags
+    h = re.sub(r'<[^>]+>', ' ', h)
+    return re.sub(r'\s+', ' ', h).strip()
 
 
 def _has_crypto_context(text, url=''):
@@ -77,32 +117,58 @@ def _has_crypto_context(text, url=''):
     return any(hint in haystack for hint in _CRYPTO_HINTS)
 
 
+_SITE_PROMO_PHRASES = (
+    'прошел проверку и принес',
+    'ручаемся',
+    'метод заработка',
+    'надежный метод',
+    'проверенный заработок',
+)
+
+
 def _extract_loss_amount(text):
     """
-    Try to find a loss amount in roubles from text.
-    Patterns: '15 000 рублей', '15000₽', '15к₽', '15 тыс руб'
+    Try to find a victim loss amount in roubles from text.
+    Ignores site's own promo texts (e.g. "250 тысяч рублей принес метод").
     Returns integer roubles or 0.
     """
-    # Normalise whitespace
     t = text.replace('\xa0', ' ')
-    # e.g. "150 000 рублей" or "150000₽"
-    m = re.search(r'(\d[\d\s]{0,9}\d|\d+)\s*(?:000)?\s*(?:₽|руб|рублей|rub)', t, re.IGNORECASE)
+
+    # Remove site promo sentences so "250 тыс" from the promo isn't picked up
+    for phrase in _SITE_PROMO_PHRASES:
+        # Remove the sentence containing the promo phrase
+        t = re.sub(r'[^.!?]*' + re.escape(phrase) + r'[^.!?]*[.!?]?', ' ', t, flags=re.IGNORECASE)
+
+    # Loss context words: we look for amounts near victim language
+    # e.g. "передала 400 долларов", "потеряла 15 000 рублей", "слил 30к₽"
+    loss_context = re.search(
+        r'(?:передал[аи]?|потерял[аи]?|слил[аи]?|вложил[аи]?|заплатил[аи]?|отдал[аи]?)\s+'
+        r'([\d\s]{1,15}(?:тыс|к|млн)?\s*(?:₽|руб|рублей|долларов|долл|usd|\$|€)?)',
+        t, re.IGNORECASE
+    )
+    if loss_context:
+        raw = loss_context.group(1).strip()
+        # Convert to rubles (rough: 1 USD ≈ 90 RUB)
+        if re.search(r'долл|usd|\$', raw, re.IGNORECASE):
+            digits = int(re.sub(r'[^\d]', '', raw) or '0')
+            return digits * 90
+        if re.search(r'€|евро', raw, re.IGNORECASE):
+            digits = int(re.sub(r'[^\d]', '', raw) or '0')
+            return digits * 100
+        if re.search(r'млн', raw, re.IGNORECASE):
+            return int(float(re.sub(r'[^\d.]', '', raw) or '0') * 1_000_000)
+        if re.search(r'тыс|к', raw, re.IGNORECASE):
+            return int(re.sub(r'[^\d]', '', raw) or '0') * 1000
+        digits = int(re.sub(r'[^\d]', '', raw) or '0')
+        if 100 <= digits <= 100_000_000:
+            return digits
+
+    # Fallback: any ruble amount in text
+    m = re.search(r'(\d[\d\s]{1,8}\d|\d+)\s*(?:₽|руб|рублей)', t, re.IGNORECASE)
     if m:
-        raw = re.sub(r'\s', '', m.group(0))
-        digits = re.sub(r'[^\d]', '', raw)
-        if digits:
-            val = int(digits)
-            # sanity: 100 ₽ .. 100 000 000 ₽
-            if 100 <= val <= 100_000_000:
-                return val
-    # e.g. "15к₽" / "15 тыс"
-    m = re.search(r'(\d+)\s*(?:к|тыс)\s*(?:₽|руб)?', t, re.IGNORECASE)
-    if m:
-        return int(m.group(1)) * 1000
-    # e.g. "1.5 млн"
-    m = re.search(r'(\d+(?:[.,]\d+)?)\s*млн\s*(?:₽|руб)?', t, re.IGNORECASE)
-    if m:
-        return int(float(m.group(1).replace(',', '.')) * 1_000_000)
+        digits = int(re.sub(r'[^\d]', '', m.group(0)) or '0')
+        if 100 <= digits <= 10_000_000:
+            return digits
     return 0
 
 
@@ -190,21 +256,27 @@ def _build_findings_from_page(page, url, source_name, max_channels=3):
 # ---------------------------------------------------------------------------
 
 _STOP_SCAM1_BASE = 'https://stop-scam1.com'
+# Main page lists all recent articles — category pages return 404.
+# We scrape the homepage and filter for Telegram channel articles by URL pattern.
 _STOP_SCAM1_LISTINGS = [
-    'https://stop-scam1.com/category/telegram/',
-    'https://stop-scam1.com/category/kriptovalyuta/',
-    'https://stop-scam1.com/category/%d1%82%d0%b5%d0%bb%d0%b5%d0%b3%d1%80%d0%b0%d0%bc/',
     'https://stop-scam1.com/',
 ]
+_STOP_SCAM1_ARTICLE_HINTS = ('telegramm-kanal', 'crypto', 'krip', 'signal', 'trading')
 
 
 def scrape_stop_scam1():
     """
-    Scrape stop-scam1.com Telegram category for scam channel mentions.
+    Scrape stop-scam1.com homepage for Telegram scam channel articles.
+    Filters article links by keyword hints (telegramm-kanal, crypto, signal...).
     Returns list of {channel, sum_rub, description, source_url, source}.
     """
     results = []
-    article_links = _collect_article_links(_STOP_SCAM1_LISTINGS, _STOP_SCAM1_BASE, max_links=20)
+    all_links = _collect_article_links(_STOP_SCAM1_LISTINGS, _STOP_SCAM1_BASE, max_links=60)
+    # Keep only articles that look like Telegram channel reviews
+    article_links = [
+        l for l in all_links
+        if any(h in l.lower() for h in _STOP_SCAM1_ARTICLE_HINTS)
+    ][:20]
     if not article_links:
         logger.info('stop-scam1.com: no listing pages available')
         return results
