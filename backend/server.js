@@ -1505,35 +1505,50 @@ function parseScamBaseRow(row) {
  */
 function buildLiveCounterFromScamBase(parsedRows) {
   const now = Date.now();
-  const cutoff = now - 12 * 60 * 60 * 1000;
-  const recent = parsedRows.filter(r => {
-    if (r._schema !== 'v2' || !r.detected_at) return false;
-    try { return new Date(r.detected_at).getTime() >= cutoff; } catch { return false; }
+  const cutoff24h = now - 24 * 60 * 60 * 1000;
+
+  // All confirmed rows (v2 schema) — survive restarts, not limited by time window
+  const allRows = parsedRows.filter(r => r._schema === 'v2' && r.username);
+  if (!allRows.length) return null;
+
+  // "Today" = added in the last 24h — for channelsToday counter
+  const recentRows = allRows.filter(r => {
+    if (!r.detected_at) return false;
+    try { return new Date(r.detected_at).getTime() >= cutoff24h; } catch { return false; }
   });
-  if (!recent.length) return null;
-  const new_scam_channels = recent.length;
-  const losses_12h = recent.reduce((s, r) => s + (r.total_loss_rub || 0), 0);
-  const telegram_channels = recent.filter(r => (r.object_type || '').toLowerCase().includes('сигнал')).length;
-  const courses_products = recent.filter(r =>
+
+  const new_scam_channels = recentRows.length;
+  const losses_12h = recentRows.reduce((s, r) => s + (r.total_loss_rub || 0), 0);
+
+  // telegramCount = ALL confirmed telegram signal channels in scam_base
+  const telegram_channels = allRows.filter(r =>
+    (r.object_type || '').toLowerCase().includes('сигнал') || !(r.object_type || '').trim()
+  ).length;
+  const courses_products = allRows.filter(r =>
     ['курс', 'сайт', 'обучен'].some(kw => (r.object_type || '').toLowerCase().includes(kw))
   ).length;
-  const top3 = [...recent]
+
+  // Top-3 from all rows by total loss
+  const top3 = [...allRows]
     .sort((a, b) => (b.total_loss_rub || 0) - (a.total_loss_rub || 0))
     .slice(0, 3)
-    .map(r => ({ channel: r.username, sum: r.total_loss_rub || 0, status: r.status || 'Скам', link: r.link || '' }));
-  const latestDetected = recent.reduce((best, r) => {
-    const t = new Date(r.detected_at).getTime();
-    return t > best ? t : best;
+    .map(r => ({ channel: r.username, sum: r.total_loss_rub || 0, status: r.status || 'в риске', link: r.link || '' }));
+
+  const latestDetected = allRows.reduce((best, r) => {
+    try { const t = new Date(r.detected_at || 0).getTime(); return t > best ? t : best; } catch { return best; }
   }, 0);
+
+  const isHonestZero = new_scam_channels === 0;
   return {
     new_scam_channels,
     losses_12h,
     telegram_channels,
     courses_products,
     top3,
-    publishStatus: new_scam_channels > 0 ? 'valid' : 'honest_zero',
+    publishStatus: isHonestZero ? 'honest_zero' : 'valid',
+    isHonestZero,
     updatedAt: latestDetected ? new Date(latestDetected).toISOString() : new Date().toISOString(),
-    sourceCaption: 'Данные из scam_base · подтверждено по 3 критериям · TGStat + Telegram',
+    sourceCaption: `Данные из Google Sheets scam_base · ${allRows.length} каналов подтверждено · источник: stop-scam1.com`,
   };
 }
 
@@ -1885,18 +1900,8 @@ app.post('/api/kro/check-screenshot', express.json({ limit: '10mb' }), async (re
 app.get('/api/kro/live-counter', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   try {
-    // Priority 1: kro-12h-stats.json (written by run_12h_monitor.py, derived from confirmed scam_base rows)
-    const liveSnapshot = readJsonFileSafe(KRO_12H_STATS_PATH, 'live-counter primary snapshot');
-    const liveResponse = buildKroLiveResponse(liveSnapshot, { defaultPublishStatus: 'valid' });
-    if (liveResponse) {
-      return res.json(liveResponse);
-    }
-
-    if (liveSnapshot && isKroZeroSnapshot(liveSnapshot) && liveSnapshot.publishStatus !== 'honest_zero') {
-      console.warn('KRO live-counter: ignoring unsafe zero snapshot, trying scam_base Sheets');
-    }
-
-    // Priority 2: read scam_base directly from Google Sheets (confirmed v2 rows, last 12h)
+    // Priority 1: scam_base directly from Google Sheets — primary source of truth,
+    // survives Render restarts unlike local JSON files.
     try {
       const sheetsClient = await getKroSheetsClient();
       if (sheetsClient && kroSheetId && kroScamBaseRange) {
@@ -1906,9 +1911,9 @@ app.get('/api/kro/live-counter', async (req, res) => {
           range: `${sheetName}!A:M`
         });
         const rawRows = sheetResp.data.values || [];
-        const parsedRows = rawRows.map(parseScamBaseRow).filter(r => r.username);
+        const parsedRows = rawRows.map(parseScamBaseRow).filter(r => r.username && r.username !== 'username');
         const scamBaseCounter = buildLiveCounterFromScamBase(parsedRows);
-        if (scamBaseCounter && scamBaseCounter.new_scam_channels > 0) {
+        if (scamBaseCounter) {
           return res.json({
             channelsToday: scamBaseCounter.new_scam_channels,
             totalLost: scamBaseCounter.losses_12h,
@@ -1919,9 +1924,11 @@ app.get('/api/kro/live-counter', async (req, res) => {
             top3: scamBaseCounter.top3,
             report_doc_url: KRO_SOURCES_DOC_URL,
             sourceCaption: scamBaseCounter.sourceCaption,
-            publishStatus: 'valid',
-            isHonestZero: false,
-            siteNotice: null,
+            publishStatus: scamBaseCounter.publishStatus,
+            isHonestZero: scamBaseCounter.isHonestZero,
+            siteNotice: scamBaseCounter.isHonestZero
+              ? 'Данные появятся после первого верифицированного отчёта. Мониторинг работает — ждём первых подтверждённых случаев.'
+              : null,
             lastValidUpdatedAt: scamBaseCounter.updatedAt,
             updatedAt: scamBaseCounter.updatedAt
           });
@@ -1929,6 +1936,13 @@ app.get('/api/kro/live-counter', async (req, res) => {
       }
     } catch (sheetsErr) {
       console.warn('KRO live-counter: scam_base Sheets read failed:', sheetsErr.message);
+    }
+
+    // Priority 2: kro-12h-stats.json (written by run_12h_monitor.py) — used when Sheets is unavailable
+    const liveSnapshot = readJsonFileSafe(KRO_12H_STATS_PATH, 'live-counter primary snapshot');
+    const liveResponse = buildKroLiveResponse(liveSnapshot, { defaultPublishStatus: 'valid' });
+    if (liveResponse && !liveResponse.isHonestZero) {
+      return res.json(liveResponse);
     }
 
     // Priority 3: reference snapshot (last confirmed cycle)
