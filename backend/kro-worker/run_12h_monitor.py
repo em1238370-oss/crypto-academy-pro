@@ -2867,6 +2867,10 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
         key = _norm_ch_key(ch)
         if key in existing_in_scam:
             continue
+        # Никогда не добавлять антискам-проекты, биржи и сервисы аналитики
+        if key in _KNOWN_NON_SCAM_CHANNELS:
+            print(f'[promote] skip {ch}: в списке исключений (anti-scam/exchange)', file=sys.stderr)
+            continue
 
         # Уникальность: по reporter-полю, если заполнено; иначе каждая строка = 1 человек
         named = [r.get('reporter') or '' for r in reports]

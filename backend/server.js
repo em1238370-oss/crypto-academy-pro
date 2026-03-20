@@ -2122,8 +2122,28 @@ async function isChannelInScamBase(client, channel) {
  * Unique = distinct reporter names; if all anonymous, each row counts separately.
  * Writes a v2 schema row with status 'в риске'.
  */
+/**
+ * Channels that must NEVER be added to scam_base.
+ * Anti-scam projects, major exchanges, analytics services.
+ * Use the normalised key (lowercase, no leading @).
+ */
+const KRO_CHANNEL_EXCLUSION = new Set([
+  // Anti-scam / watchdog projects
+  'cryptoscammsup', 'crypt0scamm', 'publicryptoscamm',
+  'scamrsalert', 'crypto_police_list', 'scamalyst',
+  // Major legitimate exchanges
+  'binance', 'bybit', 'okx', 'kucoin', 'huobi', 'coinbase', 'gate_io',
+  // Analytics / directory services
+  'tgstat', 'telemetr', 'telega', 'telegaio',
+]);
+
 async function checkAndPromoteToScamBase(client, channel) {
   if (!client || !kroSheetId || !kroScamBaseRange) return;
+  // Never promote excluded channels (anti-scam projects, major exchanges, etc.)
+  if (KRO_CHANNEL_EXCLUSION.has(channelMatchKey(channel))) {
+    console.log(`[KRO] ${channel} is in exclusion list — skipping scam_base promotion`);
+    return;
+  }
   try {
     const reports = await getAllReportsForChannel(client, channel);
     if (reports.length < 2) return;
