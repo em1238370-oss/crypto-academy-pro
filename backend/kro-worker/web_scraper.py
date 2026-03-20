@@ -248,47 +248,98 @@ def _extract_article_body(page):
     return re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', h)).strip()
 
 
+_FOOTER_NOISE = [
+    'по всем вопросам', 'feel340', 'написать нам', 'свяжитесь с нами',
+    'все права защищены', 'copyright', 'политика конфиденциальности',
+    'подписывайтесь на нас', 'наш email', 'наша почта', 'согласие на обработку',
+]
+_NAV_NOISE = [
+    'перейти к содержимому', 'меню навигации', 'поиск по сайту',
+    'написать в whatsapp', 'оставить отзыв о мошеннике', 'задать вопрос',
+]
+
+
+def _extract_article_paragraphs(html):
+    """
+    Use BeautifulSoup to extract meaningful paragraphs from article body.
+    Filters out footer, navigation, and contact noise.
+    Returns list of clean paragraph strings.
+    """
+    try:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html, 'html.parser')
+        # Remove noise elements
+        for tag in soup.find_all(['script', 'style', 'nav', 'footer', 'header',
+                                   'aside', 'form', 'button', 'noscript', 'iframe']):
+            tag.decompose()
+        # Find article container
+        article = (
+            soup.find('article') or
+            soup.find('div', class_=re.compile(r'post[-_]?(content|body|entry|text)', re.I)) or
+            soup.find('div', class_=re.compile(r'entry[-_]?(content|body)', re.I)) or
+            soup.find('div', {'itemprop': 'articleBody'}) or
+            soup.find('main')
+        )
+        if not article:
+            all_divs = [d for d in soup.find_all('div') if len(d.get_text()) > 200]
+            article = max(all_divs, key=lambda d: len(d.get_text()), default=soup)
+        paragraphs = []
+        for p in article.find_all(['p', 'li']):
+            t = p.get_text(' ', strip=True)
+            if len(t) < 50:
+                continue
+            tl = t.lower()
+            if any(m in tl for m in _FOOTER_NOISE + _NAV_NOISE):
+                continue
+            if t.count('http') > 2:
+                continue
+            paragraphs.append(t)
+            if len(paragraphs) >= 4:
+                break
+        return paragraphs
+    except ImportError:
+        # BeautifulSoup not available — fallback to regex extraction
+        return []
+
+
 def _build_findings_from_page(page, url, source_name, max_channels=3):
     """
     Turn a fetched article page into complaint findings.
-    Uses article body (strips footer/navigation) for cleaner descriptions.
+    Uses BeautifulSoup for clean description extraction (no footer noise).
     """
-    # Use article body to avoid footer noise
-    clean = _extract_article_body(page)
-    if not clean:
-        clean = _clean_html_text(page)
-    if not clean:
+    # Try BS4-based paragraph extraction first
+    paragraphs = _extract_article_paragraphs(page)
+    if paragraphs:
+        clean_for_channels = ' '.join(paragraphs)
+        desc_snippet = ' | '.join(paragraphs[:3])
+    else:
+        # Fallback to regex article body extraction
+        clean_for_channels = _extract_article_body(page) or _clean_html_text(page)
+        desc_snippet = clean_for_channels[:400].strip()
+
+    if not clean_for_channels:
         return []
-    channels = _extract_channel_mentions(clean)
+    channels = _extract_channel_mentions(clean_for_channels)
+    if not channels:
+        # Also scan full page for channel mentions (in case BS4 missed them)
+        full_clean = _clean_html_text(page)
+        channels = _extract_channel_mentions(full_clean)
     if not channels:
         return []
-    if not _has_crypto_context(clean, url):
+    if not _has_crypto_context(clean_for_channels, url):
         return []
 
-    sum_rub = _extract_loss_amount(clean)
+    sum_rub = _extract_loss_amount(clean_for_channels)
 
-    # Find the best description: text around a "Контакты" or "Отзыв" section
-    desc_snippet = ''
-    for marker in ['Контакты', 'Отзыв', 'Выводы', 'Разоблачение']:
-        idx = clean.find(marker)
-        if idx >= 0:
-            desc_snippet = clean[idx:idx + 500].strip()
-            break
-    if not desc_snippet:
-        # fallback: text around first channel mention
-        first_ch = channels[0]
-        idx = clean.lower().find(first_ch.lower())
-        snippet_start = max(0, idx - 100) if idx >= 0 else 0
-        desc_snippet = clean[snippet_start:snippet_start + 400].strip()
-    if not desc_snippet:
-        desc_snippet = clean[:300].strip()
+    # Build source_evidence: source URL + clean description
+    evidence = f"Источник: {url} | {desc_snippet[:400]}"
 
     findings = []
     for ch in channels[:max_channels]:
         findings.append({
             'channel': '@' + ch,
             'sum_rub': sum_rub,
-            'description': desc_snippet[:300],
+            'description': evidence[:500],
             'source_url': url,
             'source': source_name,
         })
