@@ -217,12 +217,46 @@ def _collect_article_links(listing_urls, base_url, max_links=20):
     return links
 
 
+def _extract_article_body(page):
+    """
+    Try to isolate the main article body before the footer/navigation.
+    Looks for common article markers and cuts at footer.
+    """
+    # Remove script/style first
+    h = re.sub(r'<script[^>]*>.*?</script>', ' ', page or '', flags=re.DOTALL | re.IGNORECASE)
+    h = re.sub(r'<style[^>]*>.*?</style>', ' ', h, flags=re.DOTALL | re.IGNORECASE)
+
+    # Try to find the article body between common content markers
+    # Cut at footer markers to avoid picking up navigation/contact info
+    footer_markers = [
+        r'<footer', r'class=["\'][^"\']*footer',
+        r'id=["\']footer', r'По всем вопросам пишите',
+        r'Все права защищены', r'Copyright',
+        r'class=["\'][^"\']*widget', r'class=["\'][^"\']*sidebar',
+    ]
+    for marker in footer_markers:
+        m = re.search(marker, h, re.IGNORECASE)
+        if m:
+            h = h[:m.start()]
+            break
+
+    # Also try to start from article content (after nav/header)
+    article_start = re.search(r'<article|<main|class=["\'][^"\']*entry-content|class=["\'][^"\']*post-content', h, re.IGNORECASE)
+    if article_start:
+        h = h[article_start.start():]
+
+    return re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', h)).strip()
+
+
 def _build_findings_from_page(page, url, source_name, max_channels=3):
     """
     Turn a fetched article page into complaint findings.
-    Each finding keeps the direct article URL as source_url.
+    Uses article body (strips footer/navigation) for cleaner descriptions.
     """
-    clean = _clean_html_text(page)
+    # Use article body to avoid footer noise
+    clean = _extract_article_body(page)
+    if not clean:
+        clean = _clean_html_text(page)
     if not clean:
         return []
     channels = _extract_channel_mentions(clean)
@@ -232,19 +266,29 @@ def _build_findings_from_page(page, url, source_name, max_channels=3):
         return []
 
     sum_rub = _extract_loss_amount(clean)
-    first_ch = channels[0]
-    idx = clean.lower().find(first_ch.lower())
-    snippet_start = max(0, idx - 80) if idx >= 0 else 0
-    description = clean[snippet_start:snippet_start + 400].strip()
-    if not description:
-        description = clean[:300].strip()
+
+    # Find the best description: text around a "Контакты" or "Отзыв" section
+    desc_snippet = ''
+    for marker in ['Контакты', 'Отзыв', 'Выводы', 'Разоблачение']:
+        idx = clean.find(marker)
+        if idx >= 0:
+            desc_snippet = clean[idx:idx + 500].strip()
+            break
+    if not desc_snippet:
+        # fallback: text around first channel mention
+        first_ch = channels[0]
+        idx = clean.lower().find(first_ch.lower())
+        snippet_start = max(0, idx - 100) if idx >= 0 else 0
+        desc_snippet = clean[snippet_start:snippet_start + 400].strip()
+    if not desc_snippet:
+        desc_snippet = clean[:300].strip()
 
     findings = []
     for ch in channels[:max_channels]:
         findings.append({
             'channel': '@' + ch,
             'sum_rub': sum_rub,
-            'description': description[:300],
+            'description': desc_snippet[:300],
             'source_url': url,
             'source': source_name,
         })
