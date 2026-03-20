@@ -1,0 +1,45 @@
+name: KRO 12h Monitor
+
+# Запуск в 12:00 и 00:00 МСК каждый день
+# МСК = UTC+3, поэтому:  12:00 МСК = 09:00 UTC | 00:00 МСК = 21:00 UTC (предыдущего дня)
+on:
+  schedule:
+    - cron: '0 9 * * *'   # 12:00 MSK
+    - cron: '0 21 * * *'  # 00:00 MSK
+  workflow_dispatch:       # ручной запуск из вкладки Actions для теста
+
+jobs:
+  run-monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install -r backend/kro-worker/requirements.txt
+
+      - name: Write Google credentials file
+        run: |
+          echo '${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}' > backend/kro-worker/credentials.json
+
+      - name: Run 12h monitor
+        working-directory: backend/kro-worker
+        env:
+          # Google API — передаём JSON двумя способами: переменная + файл
+          KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
+          GOOGLE_APPLICATION_CREDENTIALS: credentials.json
+          # Google Sheets / Docs IDs
+          KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
+          KRO_SOURCES_DOC_ID: ${{ secrets.KRO_SOURCES_DOC_ID }}
+          # Render сайт — куда постить итоговую статистику
+          KRO_SITE_UPDATE_URL: https://crypto-academy-pro.onrender.com/api/kro/update
+          # Режим: collect = полный цикл (TGStat + веб-парсер + Google Sheets + отправка на сайт)
+          MODE: collect
+        run: python3 run_12h_monitor.py
