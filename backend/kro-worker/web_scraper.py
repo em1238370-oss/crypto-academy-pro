@@ -3,8 +3,9 @@
 KRO Web Scraper: собирает упоминания скам-каналов с сайтов-разоблачителей.
 
 Источники:
-  - stop-scam1.com — разоблачение телеграм-каналов сигналов и курсов
-  - fin-obzor.net  — обзоры финансовых и крипто-мошенников
+  - stop-scam1.com   — разоблачение телеграм-каналов сигналов и курсов
+  - fin-obzor.net    — обзоры финансовых и крипто-мошенников
+  - brokers-check.ru — доп. источник жалоб, если сайт доступен и содержит крипто-каналы
 
 Каждая найденная запись: {channel, sum_rub, description, source_url, source}
 Возвращаемые данные пишутся в лист reports Google Sheets с пометкой source='web'.
@@ -15,6 +16,7 @@ import logging
 from datetime import datetime, timezone
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
+from urllib.parse import urljoin
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +31,11 @@ _HEADERS = {
 }
 
 _TIMEOUT = 15
-
-
+_CRYPTO_HINTS = (
+    'telegram', 'телеграм', 't.me', '@',
+    'crypto', 'крипт', 'сигнал', 'signal',
+    'vip', 'вип', 'трейд', 'trading', 'инвест', 'бирж',
+)
 def _fetch(url):
     """Fetch URL, return decoded text or None on error."""
     try:
@@ -59,6 +64,17 @@ def _extract_channel_mentions(text):
     for m in re.finditer(r't\.me/([A-Za-z][A-Za-z0-9_]{3,})', text):
         found.add(m.group(1).lower())
     return list(found)
+
+
+def _clean_html_text(html):
+    """Collapse HTML into plain text for regex extraction."""
+    clean = re.sub(r'<[^>]+>', ' ', html or '')
+    return re.sub(r'\s+', ' ', clean).strip()
+
+
+def _has_crypto_context(text, url=''):
+    haystack = f'{text} {url}'.lower()
+    return any(hint in haystack for hint in _CRYPTO_HINTS)
 
 
 def _extract_loss_amount(text):
@@ -101,10 +117,8 @@ def _parse_article_links(html, base_url, pattern_hint=''):
         href = m.group(1).strip()
         if not href or href.startswith('#') or href.startswith('javascript'):
             continue
-        if href.startswith('/'):
-            href = base_url.rstrip('/') + href
-        elif not href.startswith('http'):
-            continue
+        if not href.startswith('http'):
+            href = urljoin(base_url.rstrip('/') + '/', href)
         # Keep only same-domain links that look like articles
         if base_url.split('/')[2] in href:
             links.append(href)
@@ -118,12 +132,70 @@ def _parse_article_links(html, base_url, pattern_hint=''):
     return result
 
 
+def _collect_article_links(listing_urls, base_url, max_links=20):
+    """Fetch listing pages and collect unique same-domain article links."""
+    links = []
+    seen = set()
+    for listing_url in listing_urls:
+        html = _fetch(listing_url)
+        if not html:
+            continue
+        for link in _parse_article_links(html, base_url):
+            if '/category/' in link or '/tag/' in link or '/page/' in link:
+                continue
+            if link not in seen:
+                seen.add(link)
+                links.append(link)
+            if len(links) >= max_links:
+                return links
+    return links
+
+
+def _build_findings_from_page(page, url, source_name, max_channels=3):
+    """
+    Turn a fetched article page into complaint findings.
+    Each finding keeps the direct article URL as source_url.
+    """
+    clean = _clean_html_text(page)
+    if not clean:
+        return []
+    channels = _extract_channel_mentions(clean)
+    if not channels:
+        return []
+    if not _has_crypto_context(clean, url):
+        return []
+
+    sum_rub = _extract_loss_amount(clean)
+    first_ch = channels[0]
+    idx = clean.lower().find(first_ch.lower())
+    snippet_start = max(0, idx - 80) if idx >= 0 else 0
+    description = clean[snippet_start:snippet_start + 400].strip()
+    if not description:
+        description = clean[:300].strip()
+
+    findings = []
+    for ch in channels[:max_channels]:
+        findings.append({
+            'channel': '@' + ch,
+            'sum_rub': sum_rub,
+            'description': description[:300],
+            'source_url': url,
+            'source': source_name,
+        })
+    return findings
+
+
 # ---------------------------------------------------------------------------
 # Source 1: stop-scam1.com
 # ---------------------------------------------------------------------------
 
 _STOP_SCAM1_BASE = 'https://stop-scam1.com'
-_STOP_SCAM1_CATEGORY = 'https://stop-scam1.com/category/%d1%82%d0%b5%d0%bb%d0%b5%d0%b3%d1%80%d0%b0%d0%bc/'
+_STOP_SCAM1_LISTINGS = [
+    'https://stop-scam1.com/category/telegram/',
+    'https://stop-scam1.com/category/kriptovalyuta/',
+    'https://stop-scam1.com/category/%d1%82%d0%b5%d0%bb%d0%b5%d0%b3%d1%80%d0%b0%d0%bc/',
+    'https://stop-scam1.com/',
+]
 
 
 def scrape_stop_scam1():
@@ -132,42 +204,16 @@ def scrape_stop_scam1():
     Returns list of {channel, sum_rub, description, source_url, source}.
     """
     results = []
-    html = _fetch(_STOP_SCAM1_CATEGORY)
-    if not html:
-        logger.info('stop-scam1.com: no response from category page')
+    article_links = _collect_article_links(_STOP_SCAM1_LISTINGS, _STOP_SCAM1_BASE, max_links=20)
+    if not article_links:
+        logger.info('stop-scam1.com: no listing pages available')
         return results
-
-    article_links = _parse_article_links(html, _STOP_SCAM1_BASE)
-    # Limit to 20 most recent articles per cycle
-    article_links = [l for l in article_links if '/category/' not in l][:20]
 
     for url in article_links:
         page = _fetch(url)
         if not page:
             continue
-        # Strip HTML tags for text extraction
-        clean = re.sub(r'<[^>]+>', ' ', page)
-        clean = re.sub(r'\s+', ' ', clean)
-
-        channels = _extract_channel_mentions(clean)
-        if not channels:
-            continue
-
-        sum_rub = _extract_loss_amount(clean)
-        # Take first 400 chars after first channel mention as description
-        first_ch = channels[0]
-        idx = clean.lower().find(first_ch.lower())
-        snippet_start = max(0, idx - 80)
-        description = clean[snippet_start:snippet_start + 400].strip()
-
-        for ch in channels[:3]:
-            results.append({
-                'channel': '@' + ch,
-                'sum_rub': sum_rub,
-                'description': description[:300],
-                'source_url': url,
-                'source': 'web',
-            })
+        results.extend(_build_findings_from_page(page, url, 'stop-scam1'))
 
     logger.info('stop-scam1.com: found %d channel mentions', len(results))
     return results
@@ -207,29 +253,46 @@ def scrape_fin_obzor():
         page = _fetch(url)
         if not page:
             continue
-        clean = re.sub(r'<[^>]+>', ' ', page)
-        clean = re.sub(r'\s+', ' ', clean)
-
-        channels = _extract_channel_mentions(clean)
-        if not channels:
-            continue
-
-        sum_rub = _extract_loss_amount(clean)
-        first_ch = channels[0]
-        idx = clean.lower().find(first_ch.lower())
-        snippet_start = max(0, idx - 80)
-        description = clean[snippet_start:snippet_start + 400].strip()
-
-        for ch in channels[:3]:
-            results.append({
-                'channel': '@' + ch,
-                'sum_rub': sum_rub,
-                'description': description[:300],
-                'source_url': url,
-                'source': 'web',
-            })
+        results.extend(_build_findings_from_page(page, url, 'fin-obzor'))
 
     logger.info('fin-obzor.net: found %d channel mentions', len(results))
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Source 3: brokers-check.ru
+# ---------------------------------------------------------------------------
+
+_BROKERS_CHECK_BASE = 'https://brokers-check.ru'
+_BROKERS_CHECK_LISTINGS = [
+    'https://brokers-check.ru/category/telegram/',
+    'https://brokers-check.ru/category/crypto/',
+    'https://brokers-check.ru/tag/telegram/',
+    'https://brokers-check.ru/tag/crypto/',
+    'https://brokers-check.ru/',
+]
+
+
+def scrape_brokers_check():
+    """
+    Scrape brokers-check.ru for crypto Telegram complaint pages if the site is reachable.
+    Returns list of {channel, sum_rub, description, source_url, source}.
+    """
+    results = []
+    article_links = _collect_article_links(_BROKERS_CHECK_LISTINGS, _BROKERS_CHECK_BASE, max_links=20)
+    if not article_links:
+        logger.info('brokers-check.ru: no listing pages available or site unreachable')
+        return results
+
+    for url in article_links:
+        page = _fetch(url)
+        if not page:
+            continue
+        findings = _build_findings_from_page(page, url, 'brokers-check')
+        if findings:
+            results.extend(findings)
+
+    logger.info('brokers-check.ru: found %d channel mentions', len(results))
     return results
 
 
@@ -245,10 +308,13 @@ def scrape_all():
     results = []
     results.extend(scrape_stop_scam1())
     results.extend(scrape_fin_obzor())
+    results.extend(scrape_brokers_check())
 
     # Deduplicate: keep highest sum_rub per channel per source_url
     seen = {}
     for r in results:
+        if not r.get('source_url'):
+            continue
         key = (r['channel'].lower(), r['source_url'])
         if key not in seen or r['sum_rub'] > seen[key]['sum_rub']:
             seen[key] = r
@@ -269,6 +335,9 @@ def write_web_reports_to_sheet(sheets_client, sheet_id, reports, reports_range='
     date_str = now.strftime('%d.%m.%Y')
     rows = []
     for r in reports:
+        source_url = (r.get('source_url') or '').strip()
+        if not source_url:
+            continue
         rows.append([
             date_str,
             r.get('channel', ''),
@@ -277,7 +346,7 @@ def write_web_reports_to_sheet(sheets_client, sheet_id, reports, reports_range='
             'Активен',
             'web_parser',
             r.get('description', '')[:300],
-            r.get('source_url', ''),
+            source_url,
         ])
     if not rows:
         return 0
