@@ -1248,18 +1248,16 @@ const KRO_12H_STATS_PATH = join(__dirname, 'data', 'kro-12h-stats.json');
 const KRO_PENDING_REPORT_TEXT = 'Данные появятся после первого верифицированного отчёта.';
 
 const KRO_FALLBACK = {
-  channelsToday: 47,
-  totalLost: 12847300,
-  telegramCount: 37,
-  coursesCount: 10,
-  victims_12h: 73,
+  channelsToday: 0,
+  totalLost: 0,
+  telegramCount: 0,
+  coursesCount: 0,
+  victims_12h: 0,
   shockText: KRO_PENDING_REPORT_TEXT,
   report_doc_url: KRO_SOURCES_DOC_URL,
-  top3: [
-    { channel: '@TONPumpElite', sum: 2100000, status: 'Удалён' },
-    { channel: 'BTC Курс миллионера', sum: 847000, status: 'Активен' },
-    { channel: 'crypto-fast.pro', sum: 673000, status: 'Блок' }
-  ]
+  publishStatus: 'honest_zero',
+  isHonestZero: true,
+  top3: []
 };
 
 function readJsonFileSafe(path, label) {

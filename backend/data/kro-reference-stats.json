@@ -1,31 +1,16 @@
 {
-  "source": "site_snapshot",
-  "sourceCaption": "Последний подтверждённый снимок из Sources and Data.",
-  "channelsToday": 20,
-  "totalLost": 3620000,
-  "telegramCount": 20,
+  "source": "honest_zero",
+  "sourceCaption": "Данные появятся после первого верифицированного цикла мониторинга.",
+  "channelsToday": 0,
+  "totalLost": 0,
+  "telegramCount": 0,
   "coursesCount": 0,
   "victims_12h": 0,
-  "shockText": "Данные взяты из последнего подтверждённого цикла Sources and Data",
-  "top3": [
-    {
-      "channel": "@TONPumpElite",
-      "sum": 2100000,
-      "status": "Удалён"
-    },
-    {
-      "channel": "BTC Курс миллионера",
-      "sum": 847000,
-      "status": "Активен"
-    },
-    {
-      "channel": "crypto-fast.pro",
-      "sum": 673000,
-      "status": "Блок"
-    }
-  ],
+  "shockText": "данные появятся после первого верифицированного отчёта",
+  "top3": [],
   "report_doc_url": "https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit",
-  "publishStatus": "fallback",
-  "updatedAt": "2026-03-14T09:43:56Z",
-  "lastValidUpdatedAt": "2026-03-14T09:43:56Z"
+  "publishStatus": "honest_zero",
+  "isHonestZero": true,
+  "updatedAt": "2026-03-20T00:00:00Z",
+  "lastValidUpdatedAt": null
 }

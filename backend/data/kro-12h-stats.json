@@ -1,41 +1,23 @@
 {
-  "timestamp": "2026-03-14T09:43:56Z",
-  "updatedAt": "2026-03-14T09:43:56Z",
-  "new_scam_channels": 20,
-  "new_scams": 20,
-  "losses_12h": 3620000,
+  "timestamp": "2026-03-20T00:00:00Z",
+  "updatedAt": "2026-03-20T00:00:00Z",
+  "new_scam_channels": 0,
+  "new_scams": 0,
+  "losses_12h": 0,
   "victims_12h": 0,
-  "telegram_channels": 20,
+  "telegram_channels": 0,
   "courses_products": 0,
   "courses": 0,
-  "top3_today": [
-    "@TONPumpElite",
-    "BTC Курс миллионера",
-    "crypto-fast.pro"
-  ],
-  "top3": [
-    {
-      "channel": "@TONPumpElite",
-      "sum": 2100000,
-      "status": "Удалён"
-    },
-    {
-      "channel": "BTC Курс миллионера",
-      "sum": 847000,
-      "status": "Активен"
-    },
-    {
-      "channel": "crypto-fast.pro",
-      "sum": 673000,
-      "status": "Блок"
-    }
-  ],
+  "top3_today": [],
+  "top3": [],
   "report_doc_url": "https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit",
-  "sourceCaption": "Последний подтверждённый снимок из Sources and Data.",
-  "publishStatus": "fallback",
-  "isHonestZero": false,
-  "siteNotice": "Сайт показывает последний подтверждённый снимок из Sources and Data, пока новый цикл не подтверждён полностью.",
-  "lastValidUpdatedAt": "2026-03-14T09:43:56Z",
+  "sourceCaption": "Данные появятся после первого верифицированного цикла мониторинга.",
+  "publishStatus": "honest_zero",
+  "isHonestZero": true,
+  "nothing_found": true,
+  "siteNotice": "Данные появятся после первого верифицированного отчёта. Мониторинг работает — ждём первых подтверждённых случаев.",
+  "lastValidUpdatedAt": null,
+  "message": "Данные появятся после первого верифицированного цикла мониторинга.",
   "risk_rows": [],
   "complaints_rows": [],
   "evidence_summary": {},
