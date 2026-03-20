@@ -3078,6 +3078,19 @@ def main():
     site_courses = confirmed_stats['courses_products']
     site_losses = confirmed_stats['losses_12h'] if confirmed_stats['losses_12h'] > 0 else total_losses_12h
     site_top3 = confirmed_stats['top3'] if confirmed_stats['top3'] else top3
+
+    # Fallback: если текущий цикл нашёл 0 новых — берём накопленную базу scam_base (все записи за всё время)
+    if site_new_scams == 0 and client and sheet_id:
+        accumulated = _read_confirmed_from_scam_base(client, sheet_id, hours=24 * 365)
+        if accumulated:
+            acc_stats = _build_stats_from_confirmed(accumulated)
+            site_new_scams = acc_stats['new_scam_channels']
+            site_telegram = max(site_telegram, acc_stats['telegram_channels'])
+            if acc_stats['losses_12h'] > 0:
+                site_losses = acc_stats['losses_12h']
+            if acc_stats['top3']:
+                site_top3 = acc_stats['top3']
+            print('[fallback] Нет новых каналов в цикле — используем %d накопленных из scam_base.' % site_new_scams, file=sys.stderr)
     # ---------
 
     # 4b) Живой лог: только сводные строки (никаких списков @каналов — каналы только в таблице).
