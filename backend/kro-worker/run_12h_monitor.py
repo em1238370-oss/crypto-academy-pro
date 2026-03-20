@@ -3283,7 +3283,15 @@ def main():
         'historyContext': out.get('historyContext'),
         'selfCheck': out.get('selfCheck'),
     }
-    _send_to_site(site_payload)
+    # Отправляем на сайт только если нашли реальные данные.
+    # Если новых каналов нет — не постим ничего: сайт сам читает scam_base из Google Sheets
+    # и покажет накопленные данные без риска затереть их нулями.
+    if site_new_scams > 0:
+        _send_to_site(site_payload)
+        print('Данные отправлены на сайт: %d каналов.' % site_new_scams, flush=True)
+    else:
+        print('Новых каналов в этом цикле не найдено — пост на сайт пропущен. '
+              'Сайт читает scam_base из Google Sheets напрямую.', flush=True)
 
 
 if __name__ == '__main__':
