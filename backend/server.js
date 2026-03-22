@@ -1511,14 +1511,10 @@ function buildLiveCounterFromScamBase(parsedRows) {
   const allRows = parsedRows.filter(r => r._schema === 'v2' && r.username);
   if (!allRows.length) return null;
 
-  // "Today" = added in the last 24h — for channelsToday counter
-  const recentRows = allRows.filter(r => {
-    if (!r.detected_at) return false;
-    try { return new Date(r.detected_at).getTime() >= cutoff24h; } catch { return false; }
-  });
-
-  const new_scam_channels = recentRows.length;
-  const losses_12h = recentRows.reduce((s, r) => s + (r.total_loss_rub || 0), 0);
+  // channelsToday = все подтверждённые каналы в базе (не только за 24ч)
+  // publishStatus: valid если база не пустая
+  const new_scam_channels = allRows.length;
+  const losses_12h = allRows.reduce((s, r) => s + (r.total_loss_rub || 0), 0);
 
   // telegramCount = ALL confirmed telegram signal channels in scam_base
   const telegram_channels = allRows.filter(r =>
