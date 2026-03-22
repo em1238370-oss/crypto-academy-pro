@@ -36,6 +36,13 @@ _CRYPTO_HINTS = (
     'vip', 'вип', 'трейд', 'trading', 'инвест', 'бирж',
 )
 
+_SCAM_FACT_HINTS = (
+    'обман', 'мошенн', 'скам', 'развод', 'не отвечает', 'перестал отвечать',
+    'заблокир', 'не возвращ', 'не вернул', 'слил депозит', 'слив депозита',
+    'гарантир', 'обещал', 'обещают', 'платн', 'vip', 'вип', 'подписк',
+    'после оплаты', 'выман', 'потерял', 'потеряла', 'жалоб', 'отзыв',
+)
+
 
 def _set_source_status(name, status, count=0):
     global _LAST_SOURCE_STATUS
@@ -130,6 +137,11 @@ def _clean_html_text(raw_html):
 def _has_crypto_context(text, url=''):
     haystack = f'{text} {url}'.lower()
     return any(hint in haystack for hint in _CRYPTO_HINTS)
+
+
+def _has_concrete_scam_facts(text):
+    haystack = (text or '').lower()
+    return any(hint in haystack for hint in _SCAM_FACT_HINTS)
 
 
 _SITE_PROMO_PHRASES = (
@@ -379,6 +391,16 @@ def _extract_article_paragraphs(html):
         return []
 
 
+def _select_evidence_paragraphs(paragraphs):
+    """
+    Prefer paragraphs with concrete scam facts over generic intro text.
+    """
+    if not paragraphs:
+        return []
+    fact_paragraphs = [p for p in paragraphs if _has_concrete_scam_facts(p)]
+    return fact_paragraphs[:3] if fact_paragraphs else paragraphs[:3]
+
+
 def _build_findings_from_page(page, url, source_name, max_channels=3):
     """
     Turn a fetched article page into complaint findings.
@@ -387,8 +409,9 @@ def _build_findings_from_page(page, url, source_name, max_channels=3):
     # Try BS4-based paragraph extraction first
     paragraphs = _extract_article_paragraphs(page)
     if paragraphs:
+        evidence_paragraphs = _select_evidence_paragraphs(paragraphs)
         clean_for_channels = ' '.join(paragraphs)
-        desc_snippet = ' | '.join(paragraphs[:3])
+        desc_snippet = ' | '.join(evidence_paragraphs)
     else:
         # Fallback to regex article body extraction
         clean_for_channels = _extract_article_body(page) or _clean_html_text(page)
@@ -404,6 +427,8 @@ def _build_findings_from_page(page, url, source_name, max_channels=3):
     if not channels:
         return []
     if not _has_crypto_context(clean_for_channels, url):
+        return []
+    if not _has_concrete_scam_facts(desc_snippet or clean_for_channels):
         return []
 
     sum_rub = _extract_loss_amount(clean_for_channels)

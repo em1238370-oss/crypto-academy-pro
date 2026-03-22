@@ -657,7 +657,10 @@
            }
            function fetchLiveCounter() {
                if (!document.querySelector('.kro-feature1')) return;
-               fetch(base + '/api/kro/live-counter').then(function(r) { return r.json(); }).then(applyData).catch(function() {});
+               fetch(base + '/api/kro/live-counter?t=' + Date.now(), {
+                   cache: 'no-store',
+                   headers: { 'Cache-Control': 'no-store' }
+               }).then(function(r) { return r.json(); }).then(applyData).catch(function() {});
            }
            function observeFeature1Reveal() {
                var section = document.getElementById('feature1');

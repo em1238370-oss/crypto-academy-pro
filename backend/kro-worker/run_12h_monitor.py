@@ -1323,6 +1323,17 @@ def _build_source_evidence_from_reports(reports, limit=3):
     return '; '.join(pieces)[:500]
 
 
+def _has_concrete_scam_facts(text):
+    haystack = (text or '').lower()
+    fact_hints = (
+        'обман', 'мошенн', 'скам', 'развод', 'не отвечает', 'перестал отвечать',
+        'не вернул', 'не возвращ', 'заблокир', 'слил депозит', 'потерял',
+        'потеряла', 'жалоб', 'после оплаты', 'обещал', 'обещают', 'гарантир',
+        'vip', 'вип', 'платн', 'подписк'
+    )
+    return any(hint in haystack for hint in fact_hints)
+
+
 def _behavior_as_numbered_list(reasons):
     """Оформить причины как нумерованный список в одной ячейке: 1. ... 2. ... 3. ..."""
     if not reasons:
@@ -1798,7 +1809,8 @@ def merge_channel_snapshots(risk_rows, report_date_str):
 def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, complaints_rows,
                            new_scams_count, total_losses_12h, telegram_channels_count,
                            courses, top3, report_url=None, period_start=None, period_end=None,
-                           victims_12h=0, complaints_count=None, risk_rows=None, unavailable_sources=None):
+                           victims_12h=0, complaints_count=None, risk_rows=None, unavailable_sources=None,
+                           sources_checked=None, last_cycle_at=None, new_in_cycle=None, next_cycle_at=None):
     """Формирует текст документа SOURCE & DATA по спецификации: разделы 0–7, таблицы 3–5, итоги, чек‑лист.
     Если передан risk_rows — используется он, иначе строится через _build_risk_table_rows.
     unavailable_sources: список имён недоступных источников (TGStat, Telega, Чаты) для блока ограничений."""
@@ -1867,6 +1879,37 @@ def build_sources_doc_text(collect_time_msk, new_tgstat, telega_channels, compla
     if unavailable_sources:
         block2_text += '\n\nОграничения: Источник(и) %s недоступен(ы), данные по нему могут быть неполными в этом цикле.' % (', '.join(unavailable_sources))
     lines.append(block2_text)
+    lines.extend(['', '***', ''])
+    # Блок цикла мониторинга — чтобы любой человек сразу понял, что произошло в последнем запуске
+    lines.extend([
+        '2A. ЦИКЛ МОНИТОРИНГА',
+        '',
+        'Цикл мониторинга — %s' % (last_cycle_at or time_formatted or '—'),
+        'Источники проверены: %s' % (
+            ', '.join('%s (%s%s)' % (
+                s.get('name', '—'),
+                s.get('status', '—'),
+                (', %s' % s.get('count', 0)) if s.get('count') is not None else ''
+            ) for s in (sources_checked or [])) or '—'
+        ),
+        'Найдено новых каналов: %s' % (new_in_cycle if new_in_cycle is not None else new_scams_count),
+        'Потери: %s' % ((str(total_losses_12h) + ' ₽') if (total_losses_12h or 0) > 0 else 'суммы в источниках не указаны'),
+        'Следующий цикл: %s' % (next_cycle_at or '—'),
+        '',
+        '| Канал | Ссылка | Источник | Признаки риска | Статус |',
+        '|-------|--------|----------|----------------|--------|'
+    ])
+    for r in (risk_rows or [])[:20]:
+        risk_flags = r.get('behavior') or r.get('reasons_sentence') or 'есть жалобы / признаки риска'
+        lines.append('| %s | %s | %s | %s | %s |' % (
+            r.get('obj', '—'),
+            r.get('link', '—'),
+            r.get('source', '—'),
+            str(risk_flags)[:140],
+            r.get('status', '—')
+        ))
+    if not (risk_rows or []):
+        lines.append('| (каналы за цикл не найдены) | — | — | — | — |')
     lines.extend(['', '***', ''])
     # Раздел 3 — Объекты и риск (8 колонок по ТЗ)
     table_8_headers = ['Объект / ссылка', 'Тип', 'Источник', 'Краткое описание', 'VIP / деньги', 'Жалобы / отзывы', 'Признаки риска (флаги)', 'Итоговый статус']
@@ -2908,6 +2951,8 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
 
         total_loss = sum(r.get('sum') or 0 for r in reports)
         evidence = _build_source_evidence_from_reports(reports)
+        has_facts = _has_concrete_scam_facts(evidence)
+        status = 'в риске' if has_facts else 'под наблюдением'
         norm_ch = ('@' + key) if not key.startswith('t.me/+') else key
         link = 'https://t.me/' + key if not key.startswith('t.me/') else 'https://' + key
         detected_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -2916,7 +2961,7 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
 
         v2_row = [[
             norm_ch, link, detected_at, '', '', 'сигнал-канал', '',
-            unique_count, total_loss, 'form+web', evidence[:300], cycle_window, 'в риске'
+            unique_count, total_loss, 'form+web', evidence[:300], cycle_window, status
         ]]
         try:
             sheets_client.spreadsheets().values().append(
@@ -3124,6 +3169,36 @@ def main():
     if events:
         _append_live_log_events(events)
 
+    web_status_map = {item.get('name'): item for item in (web_source_statuses or []) if item.get('name')}
+    form_cycle_channels = sorted({
+        (r.get('channel') or '').strip()
+        for r in (sheet_reports or [])
+        if (r.get('source') or '').strip().lower() == 'form' and (r.get('channel') or '').strip()
+    })
+    cycle_channels = {
+        (r.get('channel') or '').strip()
+        for r in (web_findings or [])
+        if (r.get('channel') or '').strip()
+    }
+    cycle_channels.update(form_cycle_channels)
+    sources_checked = [
+        {
+            'name': 'stop-scam1.com',
+            'status': (web_status_map.get('stop-scam1.com') or {}).get('status', 'unavailable'),
+            'count': int((web_status_map.get('stop-scam1.com') or {}).get('count', 0) or 0),
+        },
+        {
+            'name': 'fin-obzor.net',
+            'status': (web_status_map.get('fin-obzor.net') or {}).get('status', 'unavailable'),
+            'count': int((web_status_map.get('fin-obzor.net') or {}).get('count', 0) or 0),
+        },
+        {
+            'name': 'форма жалоб',
+            'status': 'found' if form_cycle_channels else 'not_found',
+            'count': len(form_cycle_channels),
+        },
+    ]
+
     # 5) Report number and Google Doc
     last_report_num = 0
     report_doc_url = None
@@ -3164,6 +3239,7 @@ def main():
         print('Обновляю Google Doc «Источники и данные»...', flush=True)
         collect_time_msk = now_msk_dt.strftime('%d %B %H:%M MSK').replace('February', 'февраля').replace('March', 'марта').replace('January', 'января')
         complaints_count_val = sum((r.get('complaints') or 0) for r in complaints_rows)
+        next_cycle_at = (now_msk_dt + timedelta(hours=12)).strftime('%d.%m.%Y %H:%M')
         doc_text, structured_data = build_sources_doc_text(
             collect_time_msk, new_tgstat, telega_channels, complaints_rows,
             site_new_scams, site_losses, site_telegram, site_courses, site_top3,
@@ -3171,7 +3247,11 @@ def main():
             period_start=period_start, period_end=period_end,
             victims_12h=victims_12h, complaints_count=complaints_count_val,
             risk_rows=risk_rows,
-            unavailable_sources=unavailable_sources
+            unavailable_sources=unavailable_sources,
+            sources_checked=sources_checked,
+            last_cycle_at=now_msk_dt.strftime('%d.%m.%Y %H:%M MSK'),
+            new_in_cycle=len(cycle_channels),
+            next_cycle_at=next_cycle_at + ' MSK'
         )
         url = update_sources_google_doc(sources_doc_id, doc_text, structured_data)
         if url:
@@ -3192,35 +3272,6 @@ def main():
     previous_primary = _read_json_file(OUTPUT_JSON, default={}) or {}
     previous_top3 = previous_primary.get('display_top3') or previous_primary.get('top3') or []
     history_context = _build_history_context(previous_primary)
-    web_status_map = {item.get('name'): item for item in (web_source_statuses or []) if item.get('name')}
-    form_cycle_channels = sorted({
-        (r.get('channel') or '').strip()
-        for r in (sheet_reports or [])
-        if (r.get('source') or '').strip().lower() == 'form' and (r.get('channel') or '').strip()
-    })
-    cycle_channels = {
-        (r.get('channel') or '').strip()
-        for r in (web_findings or [])
-        if (r.get('channel') or '').strip()
-    }
-    cycle_channels.update(form_cycle_channels)
-    sources_checked = [
-        {
-            'name': 'stop-scam1.com',
-            'status': (web_status_map.get('stop-scam1.com') or {}).get('status', 'unavailable'),
-            'count': int((web_status_map.get('stop-scam1.com') or {}).get('count', 0) or 0),
-        },
-        {
-            'name': 'fin-obzor.net',
-            'status': (web_status_map.get('fin-obzor.net') or {}).get('status', 'unavailable'),
-            'count': int((web_status_map.get('fin-obzor.net') or {}).get('count', 0) or 0),
-        },
-        {
-            'name': 'форма жалоб',
-            'status': 'found' if form_cycle_channels else 'not_found',
-            'count': len(form_cycle_channels),
-        },
-    ]
     out = {
         'new_scams': site_new_scams,
         'new_scam_channels': site_new_scams,
