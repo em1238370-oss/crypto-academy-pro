@@ -14,7 +14,7 @@ import re
 import json
 import logging
 from datetime import datetime, timezone
-from urllib.parse import urljoin
+from urllib.parse import urljoin, quote_plus
 
 logger = logging.getLogger(__name__)
 
@@ -196,6 +196,68 @@ def _parse_article_links(html, base_url, pattern_hint=''):
             seen.add(l)
             result.append(l)
     return result
+
+
+def _parse_search_result_links(html):
+    """
+    Extract outbound result links from simple search-engine HTML pages.
+    Best-effort only: if layout changes or engine blocks requests, returns [].
+    """
+    links = []
+    for m in re.finditer(r'href=["\'](https?://[^"\']+)["\']', html or '', re.IGNORECASE):
+        href = m.group(1).strip()
+        if not href:
+            continue
+        bad = (
+            'duckduckgo.com' in href or
+            'google.com/search' in href or
+            'bing.com/search' in href or
+            'yandex.' in href and '/search/' in href
+        )
+        if bad:
+            continue
+        links.append(href)
+    seen = set()
+    out = []
+    for link in links:
+        if link not in seen:
+            seen.add(link)
+            out.append(link)
+    return out
+
+
+def _search_review_urls_for_username(username, max_links=3):
+    """
+    Search public web pages for '@username скам' / '@username развод'.
+    Used as an additional enrichment source, not as the primary source of truth.
+    """
+    uname = (username or '').strip().lstrip('@').lower()
+    if not uname or len(uname) < 4:
+        return []
+    queries = [
+        f'@{uname} скам',
+        f'@{uname} развод',
+    ]
+    results = []
+    seen = set()
+    for query in queries:
+        search_url = 'https://duckduckgo.com/html/?q=' + quote_plus(query)
+        html = _fetch(search_url)
+        if not html:
+            continue
+        for link in _parse_search_result_links(html):
+            low = link.lower()
+            if any(skip in low for skip in (
+                'stop-scam1.com', 'fin-obzor.net', 'brokers-check.ru',
+                'duckduckgo.com', 'google.com', 'bing.com', 'yandex.'
+            )):
+                continue
+            if link not in seen:
+                seen.add(link)
+                results.append(link)
+            if len(results) >= max_links:
+                return results
+    return results
 
 
 def _collect_article_links(listing_urls, base_url, max_links=20):
@@ -476,6 +538,17 @@ def scrape_all():
     results.extend(scrape_stop_scam1())
     results.extend(scrape_fin_obzor())
     results.extend(scrape_brokers_check())
+
+    # Additional enrichment: search internet reviews for usernames already found
+    # in primary sources. This makes it easy to expand evidence without changing
+    # the rest of the pipeline.
+    seed_usernames = sorted({(r.get('channel') or '').strip() for r in results if r.get('channel')})[:20]
+    for channel in seed_usernames:
+        for url in _search_review_urls_for_username(channel, max_links=2):
+            page = _fetch(url)
+            if not page:
+                continue
+            results.extend(_build_findings_from_page(page, url, 'web-search'))
 
     # Deduplicate: keep highest sum_rub per channel per source_url
     seen = {}
