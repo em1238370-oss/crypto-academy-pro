@@ -1949,7 +1949,9 @@ app.get('/api/kro/live-counter', async (req, res) => {
     if (sheetsClient) {
       const cycleMeta = await readKroCycleMetaFromSheets(sheetsClient);
       const sheetName = kroScamBaseRange.split('!')[0] || 'scam_base';
+      const metaSheetName = kroMetaRange.split('!')[0] || 'kro_meta';
       console.log(`[KRO live-counter] reading from Sheets: ${kroSheetId} / ${sheetName}`);
+      console.log('KRO META SOURCE: reading from', `Google Sheets ${metaSheetName}`, cycleMeta.last_cycle_at);
       const sheetResp = await sheetsClient.sheets.spreadsheets.values.get({
         spreadsheetId: kroSheetId,
         range: `${sheetName}!A:M`
@@ -1985,6 +1987,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
 
     // Sheets недоступен — честный ноль с пояснением
     const cycleMeta = { last_cycle_at: null, new_in_cycle: 0, sources_checked: [] };
+    console.log('KRO META SOURCE: reading from', 'unavailable (no Sheets client)');
     return res.json({
       channelsToday: 0,
       totalLost: 0,
@@ -2007,6 +2010,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
   } catch (e) {
     console.error('KRO live-counter error:', e);
     const cycleMeta = { last_cycle_at: null, new_in_cycle: 0, sources_checked: [] };
+    console.log('KRO META SOURCE: reading from', 'unavailable (exception path)');
     res.json({
       channelsToday: 0,
       totalLost: 0,
