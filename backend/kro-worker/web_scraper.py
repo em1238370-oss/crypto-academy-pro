@@ -424,37 +424,13 @@ def _extract_title_from_html(page):
 
 def _extract_cryptorussia_channels(page, url):
     """
-    cryptorussia.ru не всегда пишет прямой @username в тексте.
-    Сначала ищем явные @username / t.me, затем очень осторожно
-    выводим candidate только для bot-страниц по title/slug.
+    Для честной классификации берём только явные @username / t.me
+    из текста статьи или заголовка. Ничего не додумываем из slug/title.
     """
-    clean = _clean_html_text(page)
-    channels = [c for c in _extract_channel_mentions(clean) if c != 'cryptorussia']
-    if channels:
-        return channels
-
     title = _extract_title_from_html(page)
-    title_candidates = re.findall(r'\b([A-Za-z][A-Za-z0-9_]{3,})\b', title or '')
-    lowered_title = (title or '').lower()
-    slug = urlparse(url).path.strip('/').split('/')[-1].lower()
-
-    candidates = []
-    if 'bot' in slug or 'бот' in lowered_title:
-        for token in title_candidates:
-            low = token.lower()
-            if low in _JSON_LD_NOISE or low in ('cryptorussia', 'trader'):
-                continue
-            if 'bot' in low:
-                candidates.append(low)
-        if not candidates and 'bot' in slug:
-            slug_parts = [
-                p for p in re.split(r'[-_]+', slug)
-                if p and p not in ('otzyv', 'otzyvy', 'trejder', 'trader', 'telegram', 'scam', 'moshennichestvo')
-            ]
-            joined = '_'.join(slug_parts)
-            if joined and len(joined) >= 4:
-                candidates.append(joined)
-    return _unique_list(candidates)
+    clean = _clean_html_text(page)
+    channels = [c for c in _extract_channel_mentions(f'{title} {clean}') if c != 'cryptorussia']
+    return _unique_list(channels)
 
 
 def _build_findings_from_page(page, url, source_name, max_channels=3):
@@ -676,6 +652,30 @@ _CRYPTORUSSIA_SKIP_PATHS = (
     '/blog', '/trading/', '/knowledge/', '/zametki/', '/trejdery/',
     '/wp-json', '/wp-content', '/category/', '/tag/'
 )
+_CRYPTORUSSIA_STRONG_FACT_HINTS = (
+    'является мошенничеством',
+    'мошеннических ресурсов',
+    'фальшивыми результатами',
+    'отзывы были приобретены',
+    'перевод денежных средств на карту',
+    'не переводить свои средства',
+    'высокая вероятность потери денежных средств',
+    'свидетельствуют о возможном обмане',
+    'не обладает достаточной надежностью',
+)
+_CRYPTORUSSIA_EXCLUDE_HINTS = (
+    'мы не может сказать, что проект является мошенническим',
+    'мы не можем сказать, что проект является мошенническим',
+    'действительно работает как сервис для автоторговли',
+    'действительно работает как сервис',
+)
+
+
+def _has_cryptorussia_scam_evidence(text):
+    lowered = (text or '').lower()
+    if any(hint in lowered for hint in _CRYPTORUSSIA_EXCLUDE_HINTS):
+        return False
+    return any(hint in lowered for hint in _CRYPTORUSSIA_STRONG_FACT_HINTS)
 
 
 def scrape_cryptorussia():
@@ -724,7 +724,7 @@ def scrape_cryptorussia():
             continue
         if not has_telegram_context:
             continue
-        if not _has_concrete_scam_facts(clean):
+        if not _has_cryptorussia_scam_evidence(clean):
             continue
 
         channels = _extract_cryptorussia_channels(page, url)
