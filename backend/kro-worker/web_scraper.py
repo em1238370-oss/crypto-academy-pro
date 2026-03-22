@@ -652,30 +652,48 @@ _CRYPTORUSSIA_SKIP_PATHS = (
     '/blog', '/trading/', '/knowledge/', '/zametki/', '/trejdery/',
     '/wp-json', '/wp-content', '/category/', '/tag/'
 )
-_CRYPTORUSSIA_STRONG_FACT_HINTS = (
-    'является мошенничеством',
-    'мошеннических ресурсов',
-    'фальшивыми результатами',
-    'отзывы были приобретены',
-    'перевод денежных средств на карту',
-    'не переводить свои средства',
-    'высокая вероятность потери денежных средств',
-    'свидетельствуют о возможном обмане',
-    'не обладает достаточной надежностью',
+_CRYPTORUSSIA_FRAUD_WORDS = (
+    'мошенничество',
+    'мошенничеств',
+    'скам',
+    'обманули',
+    'обманул',
+    'не выводят',
+    'не выводит',
+    'пропали',
+    'пропал',
+    'взяли деньги',
+    'взял деньги',
 )
-_CRYPTORUSSIA_EXCLUDE_HINTS = (
-    'мы не может сказать, что проект является мошенническим',
-    'мы не можем сказать, что проект является мошенническим',
-    'действительно работает как сервис для автоторговли',
-    'действительно работает как сервис',
-)
+
+
+def _extract_cryptorussia_rating(text):
+    m = re.search(r'средняя\s+оценка\s+([0-9]+(?:[.,][0-9]+)?)\s*/\s*5', text or '', re.IGNORECASE)
+    if not m:
+        return None
+    try:
+        return float(m.group(1).replace(',', '.'))
+    except Exception:
+        return None
+
+
+def _extract_cryptorussia_reviews_count(text):
+    m = re.search(r'отзывы\s*\((\d+)\)', text or '', re.IGNORECASE)
+    if not m:
+        return 0
+    try:
+        return int(m.group(1))
+    except Exception:
+        return 0
 
 
 def _has_cryptorussia_scam_evidence(text):
     lowered = (text or '').lower()
-    if any(hint in lowered for hint in _CRYPTORUSSIA_EXCLUDE_HINTS):
-        return False
-    return any(hint in lowered for hint in _CRYPTORUSSIA_STRONG_FACT_HINTS)
+    has_fraud_words = any(hint in lowered for hint in _CRYPTORUSSIA_FRAUD_WORDS)
+    rating = _extract_cryptorussia_rating(lowered)
+    reviews_count = _extract_cryptorussia_reviews_count(lowered)
+    has_user_complaints = ('жалоб' in lowered or 'отзывы' in lowered) and reviews_count > 0
+    return has_fraud_words or ((rating is not None and rating < 3.0) and has_user_complaints)
 
 
 def scrape_cryptorussia():
@@ -714,21 +732,20 @@ def scrape_cryptorussia():
         title = _extract_title_from_html(page).lower()
         clean = _clean_html_text(page)
         clean_lower = clean.lower()
+        channels = _extract_cryptorussia_channels(page, url)
         has_badge = 'скам' in clean_lower or 'не рекомендуем сотрудничать' in clean_lower
         has_review_context = 'отзывы' in clean_lower or 'разоблачение' in title or 'скам' in title
         has_telegram_context = (
             'телеграм' in clean_lower or 'telegram' in url.lower() or
             'bot' in url.lower() or 'бот' in clean_lower
         )
+        if not channels:
+            continue
         if not (has_badge or has_review_context):
             continue
         if not has_telegram_context:
             continue
         if not _has_cryptorussia_scam_evidence(clean):
-            continue
-
-        channels = _extract_cryptorussia_channels(page, url)
-        if not channels:
             continue
         paragraphs = _extract_article_paragraphs(page)
         evidence_paragraphs = _select_evidence_paragraphs(paragraphs)
