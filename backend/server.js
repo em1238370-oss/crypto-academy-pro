@@ -1201,6 +1201,7 @@ const kroSheetId = process.env.KRO_SHEET_ID || '1C1NQwqmLRg59xgplnz5PeghRxaR_YY2
 const kroCredentialsJson = process.env.KRO_GOOGLE_CREDENTIALS_JSON;
 const kroCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 const kroScamBaseRange = process.env.KRO_SCAM_BASE_RANGE || 'scam_base!A2:M';
+const kroMetaRange = process.env.KRO_META_RANGE || 'kro_meta!A:B';
 const kroCheckQueueRange = process.env.KRO_CHECK_QUEUE_RANGE || '';
 
 function getTodayMSK() {
@@ -1270,19 +1271,50 @@ function readJsonFileSafe(path, label) {
   }
 }
 
-function readKroCycleMeta() {
-  const data = readJsonFileSafe(KRO_12H_STATS_PATH, 'live-cycle meta') || {};
-  const rawSources = Array.isArray(data.sources_checked) ? data.sources_checked : [];
-  const sources_checked = rawSources.map((item) => ({
-    name: String(item?.name || '').trim(),
-    status: String(item?.status || 'not_found').trim(),
-    count: Number(item?.count || 0) || 0,
-  })).filter((item) => item.name);
+function parseKroCycleMetaRows(rows) {
+  const values = {};
+  for (const row of rows || []) {
+    const key = String(row?.[0] || '').trim();
+    const value = row?.[1];
+    if (key) values[key] = value;
+  }
+  let sources_checked = [];
+  if (typeof values.sources_checked === 'string' && values.sources_checked.trim()) {
+    try {
+      const parsed = JSON.parse(values.sources_checked);
+      if (Array.isArray(parsed)) {
+        sources_checked = parsed.map((item) => ({
+          name: String(item?.name || '').trim(),
+          status: String(item?.status || 'not_found').trim(),
+          count: Number(item?.count || 0) || 0,
+        })).filter((item) => item.name);
+      }
+    } catch (e) {
+      console.warn('KRO cycle meta parse failed:', e?.message);
+    }
+  }
   return {
-    last_cycle_at: data.last_cycle_at || data.updatedAt || data.timestamp || null,
-    new_in_cycle: Number(data.new_in_cycle || 0) || 0,
+    last_cycle_at: values.last_cycle_at ? String(values.last_cycle_at) : null,
+    new_in_cycle: Number(values.new_in_cycle || 0) || 0,
     sources_checked,
   };
+}
+
+async function readKroCycleMetaFromSheets(sheetsClient) {
+  if (!sheetsClient || !kroSheetId) {
+    return { last_cycle_at: null, new_in_cycle: 0, sources_checked: [] };
+  }
+  try {
+    const sheetName = kroMetaRange.split('!')[0] || 'kro_meta';
+    const resp = await sheetsClient.sheets.spreadsheets.values.get({
+      spreadsheetId: kroSheetId,
+      range: `${sheetName}!A:B`
+    });
+    return parseKroCycleMetaRows(resp.data.values || []);
+  } catch (e) {
+    console.warn('KRO cycle meta read failed:', e?.message);
+    return { last_cycle_at: null, new_in_cycle: 0, sources_checked: [] };
+  }
 }
 
 function normalizeKroShockText(value) {
@@ -1911,11 +1943,11 @@ app.post('/api/kro/check-screenshot', express.json({ limit: '10mb' }), async (re
 app.get('/api/kro/live-counter', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   try {
-    const cycleMeta = readKroCycleMeta();
     // Единственный источник данных: Google Sheets scam_base.
     // Никакого кеша, никаких файлов, никаких fallback — только реальные данные из таблицы.
     const sheetsClient = await getKroSheetsClient();
     if (sheetsClient) {
+      const cycleMeta = await readKroCycleMetaFromSheets(sheetsClient);
       const sheetName = kroScamBaseRange.split('!')[0] || 'scam_base';
       console.log(`[KRO live-counter] reading from Sheets: ${kroSheetId} / ${sheetName}`);
       const sheetResp = await sheetsClient.sheets.spreadsheets.values.get({
@@ -1952,6 +1984,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
     }
 
     // Sheets недоступен — честный ноль с пояснением
+    const cycleMeta = { last_cycle_at: null, new_in_cycle: 0, sources_checked: [] };
     return res.json({
       channelsToday: 0,
       totalLost: 0,
@@ -1973,7 +2006,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
     });
   } catch (e) {
     console.error('KRO live-counter error:', e);
-    const cycleMeta = readKroCycleMeta();
+    const cycleMeta = { last_cycle_at: null, new_in_cycle: 0, sources_checked: [] };
     res.json({
       channelsToday: 0,
       totalLost: 0,

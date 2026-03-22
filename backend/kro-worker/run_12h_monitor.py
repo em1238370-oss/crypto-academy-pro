@@ -786,6 +786,72 @@ def get_sheets_client():
     return build('sheets', 'v4', credentials=creds)
 
 
+def ensure_sheet_exists(sheets_client, sheet_id, title, row_count=50, column_count=2):
+    if not sheets_client or not sheet_id or not title:
+        return None
+    meta = sheets_client.spreadsheets().get(spreadsheetId=sheet_id).execute()
+    for item in meta.get('sheets', []):
+        props = item.get('properties', {})
+        if props.get('title') == title:
+            return props.get('sheetId')
+
+    response = sheets_client.spreadsheets().batchUpdate(
+        spreadsheetId=sheet_id,
+        body={
+            'requests': [
+                {
+                    'addSheet': {
+                        'properties': {
+                            'title': title,
+                            'gridProperties': {
+                                'rowCount': row_count,
+                                'columnCount': column_count,
+                            },
+                        }
+                    }
+                }
+            ]
+        }
+    ).execute()
+    replies = response.get('replies', [])
+    added = replies[0].get('addSheet', {}).get('properties', {}) if replies else {}
+    return added.get('sheetId')
+
+
+def write_kro_meta_to_sheet(sheets_client, sheet_id, last_cycle_at, new_in_cycle, sources_checked, meta_range='kro_meta!A:B'):
+    """
+    Persist cycle metadata in Google Sheets so Render restarts do not lose it.
+    Sheet schema:
+      A=key, B=value
+      last_cycle_at / new_in_cycle / sources_checked(JSON)
+    """
+    if not sheets_client or not sheet_id:
+        return False
+    sheet_name = (meta_range or 'kro_meta!A:B').split('!')[0].strip() or 'kro_meta'
+    try:
+        ensure_sheet_exists(sheets_client, sheet_id, sheet_name, row_count=20, column_count=2)
+        rows = [[
+            'key', 'value'
+        ], [
+            'last_cycle_at', str(last_cycle_at or '')
+        ], [
+            'new_in_cycle', str(int(new_in_cycle or 0))
+        ], [
+            'sources_checked', json.dumps(sources_checked or [], ensure_ascii=False)
+        ]]
+        sheets_client.spreadsheets().values().update(
+            spreadsheetId=sheet_id,
+            range=f'{sheet_name}!A1:B4',
+            valueInputOption='RAW',
+            body={'values': rows}
+        ).execute()
+        print('kro_meta updated in Google Sheets: %s' % sheet_name, file=sys.stderr)
+        return True
+    except Exception as e:
+        print('kro_meta write failed: %s' % e, file=sys.stderr)
+        return False
+
+
 def read_reports_last_12h(client, sheet_id):
     """
     Читает лист reports A2:H, фильтрует строки за последние 12 ч по дате в колонке A.
@@ -2906,6 +2972,16 @@ def _run_publish_only():
         'historyContext': out.get('historyContext'),
         'selfCheck': out.get('selfCheck'),
     }
+    sheet_id = os.environ.get('KRO_SHEET_ID', '').strip()
+    sheets_client = get_sheets_client()
+    write_kro_meta_to_sheet(
+        sheets_client,
+        sheet_id,
+        payload.get('last_cycle_at'),
+        payload.get('new_in_cycle', 0),
+        payload.get('sources_checked', []),
+        meta_range=os.environ.get('KRO_META_RANGE', 'kro_meta!A:B').strip() or 'kro_meta!A:B'
+    )
     sent = _send_to_site(payload)
     if not sent:
         raise RuntimeError('MODE=publish: не удалось отправить данные цикла на сайт.')
@@ -3350,6 +3426,15 @@ def main():
     out['siteNotice'] = site_notice
     out['lastValidUpdatedAt'] = last_valid_updated_at
     out['display_top3'] = display_top3[:3] if isinstance(display_top3, list) else []
+
+    write_kro_meta_to_sheet(
+        client,
+        sheet_id,
+        out.get('last_cycle_at'),
+        out.get('new_in_cycle', 0),
+        out.get('sources_checked', []),
+        meta_range=os.environ.get('KRO_META_RANGE', 'kro_meta!A:B').strip() or 'kro_meta!A:B'
+    )
 
     _write_json_file(LAST_CYCLE_JSON, out)
     suspicious_zero_streak = _update_publish_history(publish_status, out.get('timestamp', ''))
