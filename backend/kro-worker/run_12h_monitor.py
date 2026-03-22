@@ -2906,7 +2906,9 @@ def _run_publish_only():
         'historyContext': out.get('historyContext'),
         'selfCheck': out.get('selfCheck'),
     }
-    _send_to_site(payload)
+    sent = _send_to_site(payload)
+    if not sent:
+        raise RuntimeError('MODE=publish: не удалось отправить данные цикла на сайт.')
 
 
 def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, all_reports):
@@ -3416,7 +3418,9 @@ def main():
         'historyContext': out.get('historyContext'),
         'selfCheck': out.get('selfCheck'),
     }
-    _send_to_site(site_payload)
+    sent = _send_to_site(site_payload)
+    if not sent:
+        raise RuntimeError('Не удалось отправить данные цикла на сайт через KRO_SITE_UPDATE_URL.')
     print('На сайт отправлены данные цикла: new_in_cycle=%d, site_new_scams=%d.' % (
         out.get('new_in_cycle', 0), site_new_scams
     ), flush=True)
