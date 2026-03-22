@@ -1299,6 +1299,30 @@ def _format_evidence_text(*parts):
     return '\n'.join(values[:5]) if values else '—'
 
 
+def _build_source_evidence_from_reports(reports, limit=3):
+    """
+    Собрать source_evidence из reports так, чтобы в scam_base попадали
+    реальные proof_url + описания из тела статьи, а не сырой футер.
+    """
+    pieces = []
+    seen = set()
+    for report in reports or []:
+        proof_url = (report.get('proof_url') or '').strip()
+        description = re.sub(r'\s+', ' ', (report.get('description') or '').strip())
+        if proof_url and description:
+            text = f'Источник: {proof_url} | {description}'
+        else:
+            text = proof_url or description
+        text = text.strip(' ;|')
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        pieces.append(text[:500])
+        if len(pieces) >= limit:
+            break
+    return '; '.join(pieces)[:500]
+
+
 def _behavior_as_numbered_list(reasons):
     """Оформить причины как нумерованный список в одной ячейке: 1. ... 2. ... 3. ..."""
     if not reasons:
@@ -2883,8 +2907,7 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
             continue
 
         total_loss = sum(r.get('sum') or 0 for r in reports)
-        descriptions = [r.get('description') or r.get('proof_url') or '' for r in reports if r.get('description') or r.get('proof_url')]
-        evidence = '; '.join(descriptions[:3])
+        evidence = _build_source_evidence_from_reports(reports)
         norm_ch = ('@' + key) if not key.startswith('t.me/+') else key
         link = 'https://t.me/' + key if not key.startswith('t.me/') else 'https://' + key
         detected_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
