@@ -3,9 +3,10 @@
 KRO Web Scraper: собирает упоминания скам-каналов с сайтов-разоблачителей.
 
 Источники:
-  - stop-scam1.com   — разоблачение телеграм-каналов сигналов и курсов
-  - fin-obzor.net    — обзоры финансовых и крипто-мошенников
-  - brokers-check.ru — доп. источник жалоб, если сайт доступен и содержит крипто-каналы
+  - stop-scam1.com    — разоблачение телеграм-каналов сигналов и курсов
+  - fin-obzor.net     — обзоры финансовых и крипто-мошенников
+  - brokers-check.ru  — доп. источник жалоб, если сайт доступен и содержит крипто-каналы
+  - cryptorussia.ru   — разборы крипто-каналов и трейдеров с отзывами и схемами обмана
 
 Каждая найденная запись: {channel, sum_rub, description, source_url, source}
 Возвращаемые данные пишутся в лист reports Google Sheets с пометкой source='web'.
@@ -14,7 +15,7 @@ import re
 import json
 import logging
 from datetime import datetime, timezone
-from urllib.parse import urljoin, quote_plus
+from urllib.parse import urljoin, quote_plus, urlparse
 
 logger = logging.getLogger(__name__)
 _LAST_SOURCE_STATUS = []
@@ -306,6 +307,16 @@ def _collect_article_links(listing_urls, base_url, max_links=20):
     return links
 
 
+def _unique_list(items):
+    seen = set()
+    out = []
+    for item in items:
+        if item not in seen:
+            seen.add(item)
+            out.append(item)
+    return out
+
+
 def _extract_article_body(page):
     """
     Try to isolate the main article body before the footer/navigation.
@@ -399,6 +410,51 @@ def _select_evidence_paragraphs(paragraphs):
         return []
     fact_paragraphs = [p for p in paragraphs if _has_concrete_scam_facts(p)]
     return fact_paragraphs[:3] if fact_paragraphs else paragraphs[:3]
+
+
+def _extract_title_from_html(page):
+    title_match = re.search(r'<h1[^>]*>(.*?)</h1>', page or '', re.IGNORECASE | re.DOTALL)
+    if title_match:
+        return _clean_html_text(title_match.group(1))
+    title_match = re.search(r'<title[^>]*>(.*?)</title>', page or '', re.IGNORECASE | re.DOTALL)
+    if title_match:
+        return _clean_html_text(title_match.group(1))
+    return ''
+
+
+def _extract_cryptorussia_channels(page, url):
+    """
+    cryptorussia.ru не всегда пишет прямой @username в тексте.
+    Сначала ищем явные @username / t.me, затем очень осторожно
+    выводим candidate только для bot-страниц по title/slug.
+    """
+    clean = _clean_html_text(page)
+    channels = [c for c in _extract_channel_mentions(clean) if c != 'cryptorussia']
+    if channels:
+        return channels
+
+    title = _extract_title_from_html(page)
+    title_candidates = re.findall(r'\b([A-Za-z][A-Za-z0-9_]{3,})\b', title or '')
+    lowered_title = (title or '').lower()
+    slug = urlparse(url).path.strip('/').split('/')[-1].lower()
+
+    candidates = []
+    if 'bot' in slug or 'бот' in lowered_title:
+        for token in title_candidates:
+            low = token.lower()
+            if low in _JSON_LD_NOISE or low in ('cryptorussia', 'trader'):
+                continue
+            if 'bot' in low:
+                candidates.append(low)
+        if not candidates and 'bot' in slug:
+            slug_parts = [
+                p for p in re.split(r'[-_]+', slug)
+                if p and p not in ('otzyv', 'otzyvy', 'trejder', 'trader', 'telegram', 'scam', 'moshennichestvo')
+            ]
+            joined = '_'.join(slug_parts)
+            if joined and len(joined) >= 4:
+                candidates.append(joined)
+    return _unique_list(candidates)
 
 
 def _build_findings_from_page(page, url, source_name, max_channels=3):
@@ -605,6 +661,95 @@ def scrape_brokers_check():
 
 
 # ---------------------------------------------------------------------------
+# Source 4: cryptorussia.ru
+# ---------------------------------------------------------------------------
+
+_CRYPTORUSSIA_BASE = 'https://cryptorussia.ru'
+_CRYPTORUSSIA_LISTINGS = [
+    'https://cryptorussia.ru/',
+]
+_CRYPTORUSSIA_ARTICLE_HINTS = (
+    'otzyv', 'otzyvy', 'telegram', 'bot', 'trejder', 'trader',
+    'scam', 'moshennichestvo',
+)
+_CRYPTORUSSIA_SKIP_PATHS = (
+    '/blog', '/trading/', '/knowledge/', '/zametki/', '/trejdery/',
+    '/wp-json', '/wp-content', '/category/', '/tag/'
+)
+
+
+def scrape_cryptorussia():
+    """
+    Scrape cryptorussia.ru for Telegram/crypto review pages with scam evidence.
+    Returns list of {channel, sum_rub, description, source_url, source}.
+    """
+    results = []
+    html = _fetch(_CRYPTORUSSIA_LISTINGS[0])
+    if not html:
+        _set_source_status('cryptorussia.ru', 'unavailable', 0)
+        logger.info('cryptorussia.ru: homepage unavailable')
+        return results
+
+    article_links = []
+    for link in _parse_article_links(html, _CRYPTORUSSIA_BASE):
+        low = link.lower()
+        if any(skip in low for skip in _CRYPTORUSSIA_SKIP_PATHS):
+            continue
+        path = urlparse(link).path.strip('/')
+        if '/' in path:
+            continue
+        if any(h in low for h in _CRYPTORUSSIA_ARTICLE_HINTS):
+            article_links.append(link)
+
+    article_links = _unique_list(article_links)[:25]
+    if not article_links:
+        _set_source_status('cryptorussia.ru', 'not_found', 0)
+        logger.info('cryptorussia.ru: no suitable review links found')
+        return results
+
+    for url in article_links:
+        page = _fetch(url)
+        if not page:
+            continue
+        title = _extract_title_from_html(page).lower()
+        clean = _clean_html_text(page)
+        clean_lower = clean.lower()
+        has_badge = 'скам' in clean_lower or 'не рекомендуем сотрудничать' in clean_lower
+        has_review_context = 'отзывы' in clean_lower or 'разоблачение' in title or 'скам' in title
+        has_telegram_context = (
+            'телеграм' in clean_lower or 'telegram' in url.lower() or
+            'bot' in url.lower() or 'бот' in clean_lower
+        )
+        if not (has_badge or has_review_context):
+            continue
+        if not has_telegram_context:
+            continue
+        if not _has_concrete_scam_facts(clean):
+            continue
+
+        channels = _extract_cryptorussia_channels(page, url)
+        if not channels:
+            continue
+        paragraphs = _extract_article_paragraphs(page)
+        evidence_paragraphs = _select_evidence_paragraphs(paragraphs)
+        desc_snippet = ' | '.join(evidence_paragraphs)[:400] if evidence_paragraphs else clean[:400]
+        sum_rub = _extract_loss_amount(clean)
+        for ch in channels[:2]:
+            results.append({
+                'channel': '@' + ch,
+                'sum_rub': sum_rub,
+                'description': f'Источник: {url} | {desc_snippet[:400]}'[:500],
+                'source_url': url,
+                'source': 'cryptorussia',
+            })
+
+    unique_channels = len({r.get('channel') for r in results if r.get('channel')})
+    _set_source_status('cryptorussia.ru', 'found' if unique_channels else 'not_found', unique_channels)
+    logger.info('cryptorussia.ru: found %d channel mentions', len(results))
+    return results
+
+
+# ---------------------------------------------------------------------------
 # Combined entry point
 # ---------------------------------------------------------------------------
 
@@ -617,6 +762,7 @@ def scrape_all():
     _LAST_SOURCE_STATUS = []
     results = []
     results.extend(scrape_stop_scam1())
+    results.extend(scrape_cryptorussia())
     results.extend(scrape_fin_obzor())
     results.extend(scrape_brokers_check())
 

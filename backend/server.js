@@ -1559,7 +1559,7 @@ function buildLiveCounterFromScamBase(parsedRows) {
     publishStatus: isHonestZero ? 'honest_zero' : 'valid',
     isHonestZero,
     updatedAt: latestDetected ? new Date(latestDetected).toISOString() : new Date().toISOString(),
-    sourceCaption: `Данные из Google Sheets scam_base · ${allRows.length} каналов подтверждено · источник: stop-scam1.com`,
+    sourceCaption: `Данные из Google Sheets scam_base · ${allRows.length} каналов подтверждено · источники: web-мониторинг и форма жалоб`,
   };
 }
 

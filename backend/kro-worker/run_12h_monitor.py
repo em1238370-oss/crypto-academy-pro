@@ -24,7 +24,7 @@ from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 from urllib.parse import quote
 
-# Web scraper for stop-scam1.com / fin-obzor.net (imported lazily to avoid breaking if missing)
+# Web scraper for monitored complaint/review sources (imported lazily to avoid breaking if missing)
 try:
     import web_scraper as _web_scraper
     _WEB_SCRAPER_AVAILABLE = True
@@ -3191,6 +3191,16 @@ def main():
             'name': 'fin-obzor.net',
             'status': (web_status_map.get('fin-obzor.net') or {}).get('status', 'unavailable'),
             'count': int((web_status_map.get('fin-obzor.net') or {}).get('count', 0) or 0),
+        },
+        {
+            'name': 'brokers-check.ru',
+            'status': (web_status_map.get('brokers-check.ru') or {}).get('status', 'unavailable'),
+            'count': int((web_status_map.get('brokers-check.ru') or {}).get('count', 0) or 0),
+        },
+        {
+            'name': 'cryptorussia.ru',
+            'status': (web_status_map.get('cryptorussia.ru') or {}).get('status', 'unavailable'),
+            'count': int((web_status_map.get('cryptorussia.ru') or {}).get('count', 0) or 0),
         },
         {
             'name': 'форма жалоб',
