@@ -133,6 +133,13 @@
                <p class="kro-f1-metrics-sub kro-scroll-in kro-feature1-source-caption" id="kro-f1-source-caption"></p>
                <p class="kro-f1-system-note kro-scroll-in" id="kro-f1-system-note" hidden></p>
            </div>
+           <div class="kro-f1-last-check kro-card kro-scroll-in" id="kro-f1-last-check">
+               <p class="kro-f1-last-check-kicker">Системный статус</p>
+               <h3 class="kro-f1-last-check-title">Последняя проверка системы</h3>
+               <p class="kro-f1-last-check-time">Цикл завершён: <span id="kro-last-cycle-at">—</span></p>
+               <p class="kro-f1-last-check-found">Новых каналов найдено: <span id="kro-new-in-cycle">0</span></p>
+               <div class="kro-f1-last-check-sources" id="kro-sources-checked"></div>
+           </div>
            <div class="kro-f1-blocks kro-f1-content-card">
                <!-- Блок 1: Шок-цифры -->
                <div class="kro-f1-block kro-f1-shock">
@@ -525,6 +532,29 @@
                if (/блок/i.test(s)) return 'kro-status-block';
                return 'kro-status-active';
            }
+           function cycleSourceStatusLabel(status) {
+               if (status === 'found') return 'нашёл';
+               if (status === 'unavailable') return 'недоступен';
+               return 'не нашёл';
+           }
+           function renderSourcesChecked(items) {
+               var wrap = document.getElementById('kro-sources-checked');
+               if (!wrap) return;
+               var list = Array.isArray(items) ? items : [];
+               if (!list.length) {
+                   wrap.innerHTML = '<p class="kro-f1-source-row"><span class="kro-f1-source-name">Источники</span><span class="kro-f1-source-status">—</span></p>';
+                   return;
+               }
+               wrap.innerHTML = list.map(function(item) {
+                   var status = cycleSourceStatusLabel(item.status);
+                   var count = Number(item.count || 0);
+                   return '<p class="kro-f1-source-row">' +
+                       '<span class="kro-f1-source-name">' + item.name + '</span>' +
+                       '<span class="kro-f1-source-status kro-f1-source-status-' + (item.status || 'not_found') + '">' + status + '</span>' +
+                       '<span class="kro-f1-source-count">' + count + '</span>' +
+                       '</p>';
+               }).join('');
+           }
            function countUp(el, target, durationMs, formatter) {
                if (!el || typeof target !== 'number' || isNaN(target)) return;
                var start = 0;
@@ -579,6 +609,13 @@
                    var updatedAt = data.lastValidUpdatedAt || data.updatedAt || null;
                    el.textContent = window.__formatKroMskTimestamp ? window.__formatKroMskTimestamp(updatedAt) : '—';
                }
+               if ((el = document.getElementById('kro-last-cycle-at'))) {
+                   el.textContent = window.__formatKroMskTimestamp ? window.__formatKroMskTimestamp(data.last_cycle_at) : '—';
+               }
+               if ((el = document.getElementById('kro-new-in-cycle'))) {
+                   el.textContent = Number(data.new_in_cycle || 0);
+               }
+               renderSourcesChecked(data.sources_checked || []);
                if ((el = document.getElementById('kro-f1-shock-text'))) el.textContent = data.shockText || 'Данные появятся после первого верифицированного отчёта.';
                if ((el = document.getElementById('kro-f1-shock-total'))) el.textContent = 'ИТОГО: -' + formatFull(data.totalLost) + '₽';
                var top3 = data.top3 || [];

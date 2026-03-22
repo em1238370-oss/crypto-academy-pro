@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from urllib.parse import urljoin, quote_plus
 
 logger = logging.getLogger(__name__)
+_LAST_SOURCE_STATUS = []
 
 _HEADERS = {
     'User-Agent': (
@@ -34,6 +35,20 @@ _CRYPTO_HINTS = (
     'crypto', 'крипт', 'сигнал', 'signal',
     'vip', 'вип', 'трейд', 'trading', 'инвест', 'бирж',
 )
+
+
+def _set_source_status(name, status, count=0):
+    global _LAST_SOURCE_STATUS
+    _LAST_SOURCE_STATUS = [s for s in _LAST_SOURCE_STATUS if s.get('name') != name]
+    _LAST_SOURCE_STATUS.append({
+        'name': name,
+        'status': status,
+        'count': int(count or 0),
+    })
+
+
+def get_last_source_statuses():
+    return list(_LAST_SOURCE_STATUS)
 
 
 def _fetch(url):
@@ -428,13 +443,19 @@ def scrape_stop_scam1():
     Returns list of {channel, sum_rub, description, source_url, source}.
     """
     results = []
-    all_links = _collect_article_links(_STOP_SCAM1_LISTINGS, _STOP_SCAM1_BASE, max_links=60)
+    html = _fetch(_STOP_SCAM1_LISTINGS[0])
+    if not html:
+        _set_source_status('stop-scam1.com', 'unavailable', 0)
+        logger.info('stop-scam1.com: homepage unavailable')
+        return results
+    all_links = _parse_article_links(html, _STOP_SCAM1_BASE)
     # Keep only articles that look like Telegram channel reviews
     article_links = [
         l for l in all_links
         if any(h in l.lower() for h in _STOP_SCAM1_ARTICLE_HINTS)
     ][:20]
     if not article_links:
+        _set_source_status('stop-scam1.com', 'not_found', 0)
         logger.info('stop-scam1.com: no listing pages available')
         return results
 
@@ -444,6 +465,8 @@ def scrape_stop_scam1():
             continue
         results.extend(_build_findings_from_page(page, url, 'stop-scam1'))
 
+    unique_channels = len({r.get('channel') for r in results if r.get('channel')})
+    _set_source_status('stop-scam1.com', 'found' if unique_channels else 'not_found', unique_channels)
     logger.info('stop-scam1.com: found %d channel mentions', len(results))
     return results
 
@@ -464,6 +487,7 @@ def scrape_fin_obzor():
     results = []
     html = _fetch(_FIN_OBZOR_LISTING)
     if not html:
+        _set_source_status('fin-obzor.net', 'unavailable', 0)
         logger.info('fin-obzor.net: no response from listing page')
         return results
 
@@ -477,6 +501,10 @@ def scrape_fin_obzor():
     if not filtered:
         filtered = [l for l in article_links if '/category/' not in l]
     filtered = filtered[:20]
+    if not filtered:
+        _set_source_status('fin-obzor.net', 'not_found', 0)
+        logger.info('fin-obzor.net: no suitable article links found')
+        return results
 
     for url in filtered:
         page = _fetch(url)
@@ -484,6 +512,8 @@ def scrape_fin_obzor():
             continue
         results.extend(_build_findings_from_page(page, url, 'fin-obzor'))
 
+    unique_channels = len({r.get('channel') for r in results if r.get('channel')})
+    _set_source_status('fin-obzor.net', 'found' if unique_channels else 'not_found', unique_channels)
     logger.info('fin-obzor.net: found %d channel mentions', len(results))
     return results
 
@@ -508,9 +538,31 @@ def scrape_brokers_check():
     Returns list of {channel, sum_rub, description, source_url, source}.
     """
     results = []
-    article_links = _collect_article_links(_BROKERS_CHECK_LISTINGS, _BROKERS_CHECK_BASE, max_links=20)
+    article_links = []
+    seen = set()
+    available = False
+    for listing_url in _BROKERS_CHECK_LISTINGS:
+        html = _fetch(listing_url)
+        if not html:
+            continue
+        available = True
+        for link in _parse_article_links(html, _BROKERS_CHECK_BASE):
+            if '/category/' in link or '/tag/' in link or '/page/' in link:
+                continue
+            if link not in seen:
+                seen.add(link)
+                article_links.append(link)
+            if len(article_links) >= 20:
+                break
+        if len(article_links) >= 20:
+            break
+    if not available:
+        _set_source_status('brokers-check.ru', 'unavailable', 0)
+        logger.info('brokers-check.ru: site unreachable')
+        return results
     if not article_links:
-        logger.info('brokers-check.ru: no listing pages available or site unreachable')
+        _set_source_status('brokers-check.ru', 'not_found', 0)
+        logger.info('brokers-check.ru: no listing pages available')
         return results
 
     for url in article_links:
@@ -521,6 +573,8 @@ def scrape_brokers_check():
         if findings:
             results.extend(findings)
 
+    unique_channels = len({r.get('channel') for r in results if r.get('channel')})
+    _set_source_status('brokers-check.ru', 'found' if unique_channels else 'not_found', unique_channels)
     logger.info('brokers-check.ru: found %d channel mentions', len(results))
     return results
 
@@ -534,6 +588,8 @@ def scrape_all():
     Run all scrapers and return deduplicated list of findings.
     Each item: {channel, sum_rub, description, source_url, source}.
     """
+    global _LAST_SOURCE_STATUS
+    _LAST_SOURCE_STATUS = []
     results = []
     results.extend(scrape_stop_scam1())
     results.extend(scrape_fin_obzor())

@@ -2996,9 +2996,12 @@ def main():
     # 4) Web scraper: собираем данные с сайтов-разоблачителей раз в 12 ч
     sheet_id = os.environ.get('KRO_SHEET_ID', '').strip()
     client = get_sheets_client()
+    web_findings = []
+    web_source_statuses = []
     if _WEB_SCRAPER_AVAILABLE and client and sheet_id:
         try:
             web_findings = _web_scraper.scrape_all()
+            web_source_statuses = getattr(_web_scraper, 'get_last_source_statuses', lambda: [])()
             if web_findings:
                 written = _web_scraper.write_web_reports_to_sheet(client, sheet_id, web_findings, reports_range='A:H')
                 print(f'[web_scraper] wrote {written} rows from {len(web_findings)} findings', file=sys.stderr)
@@ -3189,9 +3192,41 @@ def main():
     previous_primary = _read_json_file(OUTPUT_JSON, default={}) or {}
     previous_top3 = previous_primary.get('display_top3') or previous_primary.get('top3') or []
     history_context = _build_history_context(previous_primary)
+    web_status_map = {item.get('name'): item for item in (web_source_statuses or []) if item.get('name')}
+    form_cycle_channels = sorted({
+        (r.get('channel') or '').strip()
+        for r in (sheet_reports or [])
+        if (r.get('source') or '').strip().lower() == 'form' and (r.get('channel') or '').strip()
+    })
+    cycle_channels = {
+        (r.get('channel') or '').strip()
+        for r in (web_findings or [])
+        if (r.get('channel') or '').strip()
+    }
+    cycle_channels.update(form_cycle_channels)
+    sources_checked = [
+        {
+            'name': 'stop-scam1.com',
+            'status': (web_status_map.get('stop-scam1.com') or {}).get('status', 'unavailable'),
+            'count': int((web_status_map.get('stop-scam1.com') or {}).get('count', 0) or 0),
+        },
+        {
+            'name': 'fin-obzor.net',
+            'status': (web_status_map.get('fin-obzor.net') or {}).get('status', 'unavailable'),
+            'count': int((web_status_map.get('fin-obzor.net') or {}).get('count', 0) or 0),
+        },
+        {
+            'name': 'форма жалоб',
+            'status': 'found' if form_cycle_channels else 'not_found',
+            'count': len(form_cycle_channels),
+        },
+    ]
     out = {
         'new_scams': site_new_scams,
         'new_scam_channels': site_new_scams,
+        'new_in_cycle': len(cycle_channels),
+        'last_cycle_at': now_msk.strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'sources_checked': sources_checked,
         'losses_12h': site_losses,
         'victims_12h': victims_12h,
         'telegram_channels': site_telegram,
@@ -3287,6 +3322,9 @@ def main():
     site_payload = {
         'timestamp': out.get('timestamp', ''),
         'new_scam_channels': out.get('new_scams', 0),
+        'new_in_cycle': out.get('new_in_cycle', 0),
+        'last_cycle_at': out.get('last_cycle_at'),
+        'sources_checked': out.get('sources_checked', []),
         'losses_12h': out.get('losses_12h', 0),
         'telegram_channels': out.get('telegram_channels', 0),
         'courses_products': out.get('courses_products', 0),
@@ -3306,15 +3344,10 @@ def main():
         'historyContext': out.get('historyContext'),
         'selfCheck': out.get('selfCheck'),
     }
-    # Отправляем на сайт только если нашли реальные данные.
-    # Если новых каналов нет — не постим ничего: сайт сам читает scam_base из Google Sheets
-    # и покажет накопленные данные без риска затереть их нулями.
-    if site_new_scams > 0:
-        _send_to_site(site_payload)
-        print('Данные отправлены на сайт: %d каналов.' % site_new_scams, flush=True)
-    else:
-        print('Новых каналов в этом цикле не найдено — пост на сайт пропущен. '
-              'Сайт читает scam_base из Google Sheets напрямую.', flush=True)
+    _send_to_site(site_payload)
+    print('На сайт отправлены данные цикла: new_in_cycle=%d, site_new_scams=%d.' % (
+        out.get('new_in_cycle', 0), site_new_scams
+    ), flush=True)
 
 
 if __name__ == '__main__':

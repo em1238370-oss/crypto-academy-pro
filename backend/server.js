@@ -1270,6 +1270,21 @@ function readJsonFileSafe(path, label) {
   }
 }
 
+function readKroCycleMeta() {
+  const data = readJsonFileSafe(KRO_12H_STATS_PATH, 'live-cycle meta') || {};
+  const rawSources = Array.isArray(data.sources_checked) ? data.sources_checked : [];
+  const sources_checked = rawSources.map((item) => ({
+    name: String(item?.name || '').trim(),
+    status: String(item?.status || 'not_found').trim(),
+    count: Number(item?.count || 0) || 0,
+  })).filter((item) => item.name);
+  return {
+    last_cycle_at: data.last_cycle_at || data.updatedAt || data.timestamp || null,
+    new_in_cycle: Number(data.new_in_cycle || 0) || 0,
+    sources_checked,
+  };
+}
+
 function normalizeKroShockText(value) {
   if (typeof value !== 'string' || !value.trim()) return null;
   return /73\s+человек.*гаранти[яи]\s+прибыли/i.test(value) ? KRO_PENDING_REPORT_TEXT : value;
@@ -1896,6 +1911,7 @@ app.post('/api/kro/check-screenshot', express.json({ limit: '10mb' }), async (re
 app.get('/api/kro/live-counter', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   try {
+    const cycleMeta = readKroCycleMeta();
     // Единственный источник данных: Google Sheets scam_base.
     // Никакого кеша, никаких файлов, никаких fallback — только реальные данные из таблицы.
     const sheetsClient = await getKroSheetsClient();
@@ -1925,7 +1941,10 @@ app.get('/api/kro/live-counter', async (req, res) => {
           isHonestZero: scamBaseCounter.isHonestZero,
           siteNotice: null,
           lastValidUpdatedAt: scamBaseCounter.updatedAt,
-          updatedAt: scamBaseCounter.updatedAt
+          updatedAt: scamBaseCounter.updatedAt,
+          last_cycle_at: cycleMeta.last_cycle_at,
+          new_in_cycle: cycleMeta.new_in_cycle,
+          sources_checked: cycleMeta.sources_checked
         });
       }
     } else {
@@ -1947,10 +1966,14 @@ app.get('/api/kro/live-counter', async (req, res) => {
       isHonestZero: true,
       siteNotice: null,
       lastValidUpdatedAt: null,
-      updatedAt: null
+      updatedAt: null,
+      last_cycle_at: cycleMeta.last_cycle_at,
+      new_in_cycle: cycleMeta.new_in_cycle,
+      sources_checked: cycleMeta.sources_checked
     });
   } catch (e) {
     console.error('KRO live-counter error:', e);
+    const cycleMeta = readKroCycleMeta();
     res.json({
       channelsToday: 0,
       totalLost: 0,
@@ -1965,7 +1988,10 @@ app.get('/api/kro/live-counter', async (req, res) => {
       isHonestZero: true,
       siteNotice: null,
       lastValidUpdatedAt: null,
-      updatedAt: null
+      updatedAt: null,
+      last_cycle_at: cycleMeta.last_cycle_at,
+      new_in_cycle: cycleMeta.new_in_cycle,
+      sources_checked: cycleMeta.sources_checked
     });
   }
 });
@@ -1994,6 +2020,13 @@ function handleKroUpdate(req, res) {
   const riskRows = Array.isArray(body.risk_rows) ? body.risk_rows.slice(0, 50) : [];
   const complaintsRows = Array.isArray(body.complaints_rows) ? body.complaints_rows.slice(0, 50) : [];
   const displayTop3 = Array.isArray(body.display_top3) ? body.display_top3.slice(0, 3) : [];
+  const sourcesChecked = Array.isArray(body.sources_checked) ? body.sources_checked.slice(0, 10).map((item) => ({
+    name: String(item?.name || '').trim(),
+    status: String(item?.status || 'not_found').trim(),
+    count: Number(item?.count || 0) || 0,
+  })).filter((item) => item.name) : [];
+  const lastCycleAt = body.last_cycle_at != null ? String(body.last_cycle_at) : null;
+  const newInCycle = Number(body.new_in_cycle || 0) || 0;
   if (!Number.isFinite(newScamChannels) || !Number.isFinite(losses12h)) {
     return res.status(400).json({ error: 'new_scam_channels and losses_12h required as numbers' });
   }
@@ -2036,6 +2069,9 @@ function handleKroUpdate(req, res) {
     risk_rows: riskRows,
     complaints_rows: complaintsRows
   };
+  if (lastCycleAt != null) payload.last_cycle_at = lastCycleAt;
+  payload.new_in_cycle = newInCycle;
+  payload.sources_checked = sourcesChecked;
   if (body.report_doc_url != null) payload.report_doc_url = String(body.report_doc_url);
   if (Number.isFinite(Number(body.victims_12h))) payload.victims_12h = Number(body.victims_12h);
   if (body.sourceCaption != null) payload.sourceCaption = String(body.sourceCaption);
