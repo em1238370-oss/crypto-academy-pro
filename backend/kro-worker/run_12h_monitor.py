@@ -2879,9 +2879,10 @@ def _run_publish_only():
     except Exception as e:
         print('MODE=publish: не удалось прочитать %s: %s' % (OUTPUT_JSON, e), file=sys.stderr)
         return
+    now_utc = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     top3_today = [(t.get('channel') or t.get('name') or '—') for t in (out.get('top3') or out.get('top3_today') or [])[:3]]
     payload = {
-        'timestamp': out.get('timestamp', ''),
+        'timestamp': out.get('timestamp') or now_utc,
         'new_scam_channels': out.get('new_scam_channels', out.get('new_scams', 0)),
         'losses_12h': out.get('losses_12h', 0),
         'telegram_channels': out.get('telegram_channels', 0),
@@ -2894,6 +2895,16 @@ def _run_publish_only():
         'evidence_summary': out.get('evidence_summary', {}),
         'report_doc_url': out.get('report_doc_url'),
         'sourceCaption': out.get('sourceCaption'),
+        'last_cycle_at': out.get('last_cycle_at') or out.get('timestamp') or now_utc,
+        'new_in_cycle': out.get('new_in_cycle', 0),
+        'sources_checked': out.get('sources_checked', []),
+        'publishStatus': out.get('publishStatus'),
+        'isHonestZero': out.get('isHonestZero'),
+        'siteNotice': out.get('siteNotice'),
+        'lastValidUpdatedAt': out.get('lastValidUpdatedAt'),
+        'display_top3': out.get('display_top3', []),
+        'historyContext': out.get('historyContext'),
+        'selfCheck': out.get('selfCheck'),
     }
     _send_to_site(payload)
 
