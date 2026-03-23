@@ -7,12 +7,25 @@
   <meta name="description" content="Живой монитор системы антискам-мониторинга. Актуальные данные о скам-каналах, история циклов, источники.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/monitor.css">
 </head>
 <body class="mon-page">
+
+<!-- ── BOOT TERMINAL OVERLAY ── -->
+<div id="mon-boot-overlay" aria-hidden="true">
+  <div class="mon-boot-terminal" id="mon-boot-lines" aria-live="off">
+    <span class="mon-boot-line info">KRO ANTI-SCAM MONITOR v2.1</span>
+    <span class="mon-boot-line dim">Connecting to Google Sheets API…</span>
+    <span class="mon-boot-line dim">Loading scam_base…</span>
+    <span class="mon-boot-line dim">Loading kro_meta…</span>
+    <span class="mon-boot-line dim">Loading kro_history…</span>
+    <span class="mon-boot-line ok">System ready. Rendering dashboard…</span>
+  </div>
+</div>
 
 <header class="mon-topbar">
   <nav class="mon-main-nav" aria-label="Monitor navigation">
@@ -115,9 +128,116 @@
       <span class="mon-section-title">ИСТОЧНИКИ ДАННЫХ</span>
     </div>
     <div class="mon-section-body">
+
+      <!-- 4.1 Live status from kro_meta -->
+      <p style="font-size:12px;color:var(--mon-text-dim);margin-bottom:14px">Статус источников из последнего цикла (из kro_meta Google Sheets):</p>
       <div class="mon-sources-grid" id="s4-sources">
         <div class="mon-loading mon-spinner">Загружаю</div>
       </div>
+
+      <!-- 4.2 Static source descriptions -->
+      <div class="mon-subsection-title">Каталог источников — технические детали</div>
+
+      <div class="mon-source-detail-grid">
+        <div class="mon-source-detail-card">
+          <div class="mon-source-detail-name">TGStat — каталог Telegram-каналов</div>
+          <a class="mon-source-detail-link" href="https://tgstat.ru/search?query=криптовалюта&sort=date" target="_blank" rel="noopener">
+            tgstat.ru/search?query=криптовалюта&sort=date
+          </a>
+          <a class="mon-source-detail-link" href="https://tgstat.ru/docs/ru/api" target="_blank" rel="noopener" style="margin-top:-6px">
+            API: tgstat.ru/docs/ru/api
+          </a>
+          <ul class="mon-source-detail-conditions">
+            <li>Канал создан менее 14 дней назад</li>
+            <li>Есть VIP/платные услуги от 10 000 ₽</li>
+            <li>Рост подписчиков за сутки более 500</li>
+          </ul>
+        </div>
+
+        <div class="mon-source-detail-card">
+          <div class="mon-source-detail-name">Telega.in — каталог крипто-каналов</div>
+          <a class="mon-source-detail-link" href="https://telega.in/catalog?category=cryptocurrencies" target="_blank" rel="noopener">
+            telega.in/catalog?category=cryptocurrencies
+          </a>
+          <ul class="mon-source-detail-conditions">
+            <li>Категория «cryptocurrencies» / «trading signals»</li>
+            <li>В каталоге менее 14 дней</li>
+            <li>Реклама или VIP от 10 000 ₽</li>
+          </ul>
+        </div>
+
+        <div class="mon-source-detail-card">
+          <div class="mon-source-detail-name">Telegram-чаты с жалобами</div>
+          <span class="mon-source-detail-link" style="cursor:default">
+            переменная KRO_SOURCE_CHANNELS
+          </span>
+          <ul class="mon-source-detail-conditions">
+            <li>Сообщения за последние 12 часов</li>
+            <li>Упоминание канала или сайта (ник/ссылка)</li>
+            <li>Указана сумма потерь</li>
+            <li>≥2 разных человека по одному объекту</li>
+          </ul>
+        </div>
+
+        <div class="mon-source-detail-card">
+          <div class="mon-source-detail-name">Форма жалоб сайта</div>
+          <a class="mon-source-detail-link" href="/#checkers" target="_blank" rel="noopener">
+            crypto-academy-pro.onrender.com/#checkers
+          </a>
+          <ul class="mon-source-detail-conditions">
+            <li>Прямые жалобы через форму «Сообщить о разводе»</li>
+            <li>≥2 жалобы от разных людей → автодобавление в scam_base</li>
+            <li>Хранятся в Google Sheets (первый лист A:H)</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 4.3 Variables for site metrics -->
+      <div class="mon-subsection-title">Переменные раздела «Результаты в цифрах» (обновление каждые 12 ч)</div>
+
+      <div class="mon-table-wrap">
+        <table class="mon-vars-table">
+          <thead>
+            <tr>
+              <th>Переменная</th>
+              <th>Описание</th>
+              <th>Пример на сайте</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>new_scam_channels</td>
+              <td>Новых скам-каналов за 12 ч</td>
+              <td>«47 новых скам-каналов за последние 12 ч»</td>
+            </tr>
+            <tr>
+              <td>losses_12h</td>
+              <td>Потери ₽ за 12 ч</td>
+              <td>«12 847 300 Потеряно ₽»</td>
+            </tr>
+            <tr>
+              <td>telegram_channels</td>
+              <td>Всего Telegram-каналов в зоне риска</td>
+              <td>«37 Telegram каналов»</td>
+            </tr>
+            <tr>
+              <td>courses_products</td>
+              <td>Курсы / фейк-продукты</td>
+              <td>«10 Курсы фейк-продуктов»</td>
+            </tr>
+            <tr>
+              <td>top3</td>
+              <td>Топ-3 по потерям за период</td>
+              <td>Блок «Топ-3 сегодня»</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:11px;color:var(--mon-text-fade);margin-top:8px">
+        Все цифры только из таблиц scam_base и kro_meta. Никаких чисел «из воздуха».
+        Чек-лист: ссылки рабочие, жалобы за период, признаки риска и статус заполнены, Топ-3 из основной таблицы.
+      </p>
+
     </div>
   </section>
 
@@ -227,6 +347,102 @@
           </ul>
         </div>
 
+        <!-- FULL REPORT FORMAT SPEC -->
+        <div class="mon-rule-block">
+          <h3>Структура лог-блока по дню</h3>
+          <ul class="mon-rule-list">
+            <li>Для каждого дня — один лог-блок: <code style="font-family:var(--mon-font-mono);font-size:11px;color:var(--mon-cyan)">Период: DD.MM.YYYY 00:00 – 23:55 (MSK)</code></li>
+            <li>Ниже — «Временная линия дня:» и строки событий по времени в возрастающем порядке от 00:00 до 23:55</li>
+            <li>Каждая отметка времени (HH:MM) используется не больше одного раза</li>
+            <li>Запрещено копировать один и тот же блок событий (03:00 с теми же каналами) многократно</li>
+            <li>Списки каналов <strong>не пишутся</strong> в лог по времени — только в таблице</li>
+          </ul>
+
+          <div class="mon-subsection-title" style="margin-top:14px">Формат временной линии</div>
+          <div class="mon-spec-block">
+            <pre>HH:MM — краткое описание события (ОДНА строка)
+
+Пример:
+Период: 07.03.2026 00:00 – 07.03.2026 23:55 (MSK)
+Время формирования: 7 марта, 23:55 MSK
+
+Временная линия дня:
+00:00 — Начат сбор данных за период 00:00–23:55.
+00:05 — TGStat/Telega: найдено каналов по фильтрам — TGStat 0, Telega 0.
+00:10 — За последние 30 минут новых объектов не найдено, источники доступны.
+00:20 — TGStat/Telega: найдено каналов по фильтрам — TGStat 0, Telega 53.
+...
+23:55 — Завершён сбор данных за день, таблицы обновлены.</pre>
+          </div>
+        </div>
+
+        <div class="mon-rule-block">
+          <h3>Главная таблица «Объекты и риск» — 8 столбцов</h3>
+          <div class="mon-col-spec-grid">
+            <div class="mon-col-spec-card">
+              <div class="mon-col-num">№1</div>
+              <div class="mon-col-name">Объект / ссылка</div>
+              <div class="mon-col-desc">@username + гиперссылка t.me/username. Нет ссылки или не крипта → строку не создавать.</div>
+            </div>
+            <div class="mon-col-spec-card">
+              <div class="mon-col-num">№2</div>
+              <div class="mon-col-name">Тип</div>
+              <div class="mon-col-desc">сигнал-канал / крипто-канал / бот / сайт-курс / обучение. Одно значение без описаний.</div>
+            </div>
+            <div class="mon-col-spec-card">
+              <div class="mon-col-num">№3</div>
+              <div class="mon-col-name">Источник</div>
+              <div class="mon-col-desc">каталог Telegram / поиск в Telegram / чат с жалобами / поиск в интернете. До двух через «+».</div>
+            </div>
+            <div class="mon-col-spec-card">
+              <div class="mon-col-num">№4</div>
+              <div class="mon-col-name">Краткое описание</div>
+              <div class="mon-col-desc">1–2 предложения по факту. Только то, что видно в описании и постах. Без оценок.</div>
+            </div>
+            <div class="mon-col-spec-card">
+              <div class="mon-col-num">№5</div>
+              <div class="mon-col-name">VIP / деньги</div>
+              <div class="mon-col-desc">Как объект зарабатывает. Только реальные данные. «Платных услуг не обнаружено» если нет.</div>
+            </div>
+            <div class="mon-col-spec-card">
+              <div class="mon-col-num">№6</div>
+              <div class="mon-col-name">Жалобы / отзывы</div>
+              <div class="mon-col-desc">Итог по жалобам. Если сумм нет — не придумывать. «Жалоб за период не найдено» если нет.</div>
+            </div>
+            <div class="mon-col-spec-card">
+              <div class="mon-col-num">№7</div>
+              <div class="mon-col-name">Признаки риска (флаги)</div>
+              <div class="mon-col-desc">Конкретные флаги по факту: новый канал (&lt;14 дней), дорогой VIP (≥10 000₽), обещания x2/x5, только прибыльные сделки. Нельзя придумывать.</div>
+            </div>
+            <div class="mon-col-spec-card">
+              <div class="mon-col-num">№8</div>
+              <div class="mon-col-name">Итоговый статус</div>
+              <div class="mon-col-desc">в риске / поведенческий риск / без риска / под наблюдением. Только из столбцов 4–7.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mon-rule-block">
+          <h3>Связь документа с сайтом</h3>
+          <ul class="mon-rule-list">
+            <li>Все цифры и объекты, выводимые на сайт, должны быть прослеживаемы до таблицы «Объекты и риск»</li>
+            <li>В конце блока за день — раздел: сколько строк со статусом «в риске»; суммарные зафиксированные потери; какие объекты в топ-3</li>
+            <li>Никаких чисел «из воздуха» — всё только из таблиц</li>
+            <li>Приоритет поиска — <strong>сигнал-каналы</strong> по крипте; новости/аналитика без продаж не считаются рисковыми</li>
+          </ul>
+        </div>
+
+        <div class="mon-rule-block">
+          <h3>Жёсткие запреты (для системы и Cursor)</h3>
+          <div class="mon-forbidden-list">
+            <div class="mon-forbidden-item">Запрещено дублировать один и тот же блок логов (одно время и те же каналы) внутри дня</div>
+            <div class="mon-forbidden-item">Запрещено выводить длинные списки @каналов в логах по времени — все каналы только в таблице</div>
+            <div class="mon-forbidden-item">Запрещено придумывать каналы, суммы, жалобы и признаки риска</div>
+            <div class="mon-forbidden-item">Разрешено «жалоб нет», «мало данных» — нельзя рисовать картинку «для красоты»</div>
+            <div class="mon-forbidden-item">Если ссылка не открывается — объект не попадает в таблицу вообще</div>
+          </div>
+        </div>
+
       </div><!-- .mon-rules -->
     </div>
   </section>
@@ -235,7 +451,7 @@
 
 <footer class="mon-footer">
   <p>KRO Monitor · Данные из Google Sheets · Обновляется каждые 12 часов автоматически</p>
-  <p style="margin-top:6px"><a href="/">← Вернуться на сайт</a> · <a href="https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit" target="_blank">Google Doc (архив)</a></p>
+  <p style="margin-top:6px"><a href="/">← Вернуться на сайт</a></p>
 </footer>
 
 <script>
@@ -245,6 +461,70 @@
   var REFRESH_INTERVAL = 5 * 60; // seconds
   var countdown = REFRESH_INTERVAL;
   var refreshTimer, countdownTimer;
+
+  // ── BOOT SEQUENCE ─────────────────────────────────────────
+
+  function runBootSequence(onComplete) {
+    var overlay = document.getElementById('mon-boot-overlay');
+    var lines = document.querySelectorAll('#mon-boot-lines .mon-boot-line');
+    if (!overlay || !lines.length) { onComplete(); return; }
+
+    var delays = [0, 220, 400, 560, 700, 920];
+    lines.forEach(function(line, i) {
+      setTimeout(function() { line.classList.add('visible'); }, delays[i] || i * 180);
+    });
+
+    setTimeout(function() {
+      overlay.classList.add('fade-out');
+      setTimeout(function() {
+        overlay.style.display = 'none';
+        onComplete();
+      }, 620);
+    }, 1400);
+  }
+
+  // ── TYPING ANIMATION ──────────────────────────────────────
+
+  function typeText(el, text, speed, onDone) {
+    speed = speed || 28;
+    el.textContent = '';
+    var cursor = document.createElement('span');
+    cursor.className = 'mon-cursor';
+    el.appendChild(cursor);
+    var i = 0;
+    function tick() {
+      if (i < text.length) {
+        cursor.before(document.createTextNode(text[i]));
+        i++;
+        setTimeout(tick, speed + Math.random() * 10);
+      } else {
+        cursor.className = 'mon-cursor done';
+        if (onDone) onDone();
+      }
+    }
+    tick();
+  }
+
+  function typeSectionTitles() {
+    var titles = document.querySelectorAll('.mon-section-title');
+    titles.forEach(function(el, idx) {
+      var orig = el.textContent.trim();
+      setTimeout(function() { typeText(el, orig, 22); }, idx * 320);
+    });
+  }
+
+  // ── STAT VALUE REVEAL ─────────────────────────────────────
+
+  function revealStatValues() {
+    var vals = document.querySelectorAll('.mon-stat-value[id]');
+    vals.forEach(function(el, i) {
+      setTimeout(function() {
+        el.classList.remove('revealed');
+        void el.offsetWidth;
+        el.classList.add('revealed');
+      }, 800 + i * 80);
+    });
+  }
 
   // ── HELPERS ───────────────────────────────────────────────
 
@@ -326,6 +606,9 @@
     setText('s1-new-in-cycle', (meta.new_in_cycle || 0) + ' каналов');
     setText('s1-total', (scamBase || []).length + ' каналов');
     setText('s1-sources-active', active + ' из ' + (meta.sources_checked || []).length);
+
+    // Animate stat values
+    revealStatValues();
   }
 
   // ── SECTION 2: LAST CYCLE LOG ─────────────────────────────
@@ -413,7 +696,15 @@
     });
 
     html += '</tbody></table>';
-    if (wrap) wrap.innerHTML = html;
+    if (wrap) {
+      wrap.innerHTML = html;
+      // Stagger row appearance
+      var trs = wrap.querySelectorAll('tbody tr');
+      trs.forEach(function(tr, i) {
+        tr.classList.add('mon-row-appear');
+        tr.style.animationDelay = Math.min(i * 40, 1200) + 'ms';
+      });
+    }
   }
 
   // ── SECTION 4: SOURCES ────────────────────────────────────
@@ -470,7 +761,14 @@
         '</tr>';
     });
     html += '</tbody></table>';
-    if (wrap) wrap.innerHTML = html;
+    if (wrap) {
+      wrap.innerHTML = html;
+      var htrs = wrap.querySelectorAll('tbody tr');
+      htrs.forEach(function(tr, i) {
+        tr.classList.add('mon-row-appear');
+        tr.style.animationDelay = Math.min(i * 50, 800) + 'ms';
+      });
+    }
   }
 
   // ── MAIN LOAD ─────────────────────────────────────────────
@@ -532,8 +830,11 @@
   // ── INIT ──────────────────────────────────────────────────
 
   document.addEventListener('DOMContentLoaded', function() {
-    loadData();
-    startCountdown();
+    runBootSequence(function() {
+      typeSectionTitles();
+      loadData();
+      startCountdown();
+    });
   });
 
 })();
