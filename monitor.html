@@ -107,7 +107,36 @@
     </div>
   </section>
 
-  <!-- ── SECTION 3: БАЗА СКАМ-КАНАЛОВ ── -->
+  <!-- ── SECTION 3: КАК МЫ ПРОВЕРЯЕМ ── -->
+  <section class="mon-section">
+    <div class="mon-section-header">
+      <span class="mon-dot" style="background:#06b6d4"></span>
+      <span class="mon-section-title">КАК МЫ ПРОВЕРЯЕМ</span>
+    </div>
+    <div class="mon-section-body">
+      <p class="mon-section-intro">Эта страница сделана так, чтобы любой человек мог проверить выводы сам: открыть канал, открыть первоисточник и сравнить факты.</p>
+      <div class="mon-proof-grid">
+        <div class="mon-proof-card">
+          <h3>1. Берём проверяемый источник</h3>
+          <p>В карточку попадает ссылка на статью, отзыв или жалобу, где канал упомянут по имени. Если есть публичная статья, мы даём её прямо в строке таблицы.</p>
+        </div>
+        <div class="mon-proof-card">
+          <h3>2. Привязываем факт к каналу</h3>
+          <p>В строке показываем прямую ссылку на <code>t.me</code> и отдельную ссылку на материал-источник. Человек может открыть оба окна и сравнить сам.</p>
+        </div>
+        <div class="mon-proof-card">
+          <h3>3. Показываем только факты</h3>
+          <p>В колонке «Признаки риска» выводятся короткие фрагменты из <code>source_evidence</code>: цитаты, формулировки и описания схемы из источника, без пересказа «от себя».</p>
+        </div>
+        <div class="mon-proof-card">
+          <h3>4. Статус ставим по правилам</h3>
+          <p><strong>В риске</strong> — когда есть сильные признаки обмана или повторяющиеся жалобы. <strong>Под наблюдением</strong> — когда сигналов риска уже достаточно для внимания, но данных меньше, чем для жёсткого вывода.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 4: БАЗА СКАМ-КАНАЛОВ ── -->
   <section class="mon-section">
     <div class="mon-section-header">
       <span class="mon-dot red"></span>
@@ -115,129 +144,49 @@
       <span class="mon-section-label" style="margin-left:auto" id="s3-count"></span>
     </div>
     <div class="mon-section-body" style="padding:0">
+      <div class="mon-proof-note">
+        Каждая строка проверяема: откройте канал, откройте статью-источник и сверьте факты из колонки «Признаки риска».
+      </div>
       <div class="mon-table-wrap" id="s3-table-wrap">
         <div class="mon-loading mon-spinner" style="padding:32px">Загружаю базу</div>
       </div>
     </div>
   </section>
 
-  <!-- ── SECTION 4: ИСТОЧНИКИ ── -->
+  <!-- ── SECTION 5: ИСТОЧНИКИ ── -->
   <section class="mon-section">
     <div class="mon-section-header">
       <span class="mon-dot green"></span>
       <span class="mon-section-title">ИСТОЧНИКИ ДАННЫХ</span>
     </div>
     <div class="mon-section-body">
-
-      <!-- 4.1 Live status from kro_meta -->
-      <p style="font-size:12px;color:var(--mon-text-dim);margin-bottom:14px">Статус источников из последнего цикла (из kro_meta Google Sheets):</p>
+      <p class="mon-section-intro">Ниже видно, какие источники участвовали в последнем цикле и что именно означает каждый из них.</p>
       <div class="mon-sources-grid" id="s4-sources">
         <div class="mon-loading mon-spinner">Загружаю</div>
       </div>
-
-      <!-- 4.2 Static source descriptions -->
-      <div class="mon-subsection-title">Каталог источников — технические детали</div>
-
-      <div class="mon-source-detail-grid">
-        <div class="mon-source-detail-card">
-          <div class="mon-source-detail-name">TGStat — каталог Telegram-каналов</div>
-          <a class="mon-source-detail-link" href="https://tgstat.ru/search?query=криптовалюта&sort=date" target="_blank" rel="noopener">
-            tgstat.ru/search?query=криптовалюта&sort=date
-          </a>
-          <a class="mon-source-detail-link" href="https://tgstat.ru/docs/ru/api" target="_blank" rel="noopener" style="margin-top:-6px">
-            API: tgstat.ru/docs/ru/api
-          </a>
-          <ul class="mon-source-detail-conditions">
-            <li>Канал создан менее 14 дней назад</li>
-            <li>Есть VIP/платные услуги от 10 000 ₽</li>
-            <li>Рост подписчиков за сутки более 500</li>
-          </ul>
+      <div class="mon-subsection-title">Что это за источники</div>
+      <div class="mon-source-guide-grid">
+        <div class="mon-source-guide-card">
+          <h3>stop-scam1.com</h3>
+          <p>Сайт разоблачений крипто-каналов, статьи с детальным анализом.</p>
+          <a class="mon-external-link" href="https://stop-scam1.com/" target="_blank" rel="noopener">Открыть сайт</a>
         </div>
-
-        <div class="mon-source-detail-card">
-          <div class="mon-source-detail-name">Telega.in — каталог крипто-каналов</div>
-          <a class="mon-source-detail-link" href="https://telega.in/catalog?category=cryptocurrencies" target="_blank" rel="noopener">
-            telega.in/catalog?category=cryptocurrencies
-          </a>
-          <ul class="mon-source-detail-conditions">
-            <li>Категория «cryptocurrencies» / «trading signals»</li>
-            <li>В каталоге менее 14 дней</li>
-            <li>Реклама или VIP от 10 000 ₽</li>
-          </ul>
+        <div class="mon-source-guide-card">
+          <h3>fin-obzor.net</h3>
+          <p>Финансовые отзывы пользователей.</p>
+          <a class="mon-external-link" href="https://fin-obzor.net/" target="_blank" rel="noopener">Открыть сайт</a>
         </div>
-
-        <div class="mon-source-detail-card">
-          <div class="mon-source-detail-name">Telegram-чаты с жалобами</div>
-          <span class="mon-source-detail-link" style="cursor:default">
-            переменная KRO_SOURCE_CHANNELS
-          </span>
-          <ul class="mon-source-detail-conditions">
-            <li>Сообщения за последние 12 часов</li>
-            <li>Упоминание канала или сайта (ник/ссылка)</li>
-            <li>Указана сумма потерь</li>
-            <li>≥2 разных человека по одному объекту</li>
-          </ul>
+        <div class="mon-source-guide-card">
+          <h3>cryptorussia.ru</h3>
+          <p>Обзоры и отзывы на крипто-проекты.</p>
+          <a class="mon-external-link" href="https://cryptorussia.ru/" target="_blank" rel="noopener">Открыть сайт</a>
         </div>
-
-        <div class="mon-source-detail-card">
-          <div class="mon-source-detail-name">Форма жалоб сайта</div>
-          <a class="mon-source-detail-link" href="/#checkers" target="_blank" rel="noopener">
-            crypto-academy-pro.onrender.com/#checkers
-          </a>
-          <ul class="mon-source-detail-conditions">
-            <li>Прямые жалобы через форму «Сообщить о разводе»</li>
-            <li>≥2 жалобы от разных людей → автодобавление в scam_base</li>
-            <li>Хранятся в Google Sheets (первый лист A:H)</li>
-          </ul>
+        <div class="mon-source-guide-card">
+          <h3>форма жалоб</h3>
+          <p>Прямые сообщения от пострадавших пользователей.</p>
+          <a class="mon-external-link" href="/#checkers" target="_blank" rel="noopener">Открыть форму</a>
         </div>
       </div>
-
-      <!-- 4.3 Variables for site metrics -->
-      <div class="mon-subsection-title">Переменные раздела «Результаты в цифрах» (обновление каждые 12 ч)</div>
-
-      <div class="mon-table-wrap">
-        <table class="mon-vars-table">
-          <thead>
-            <tr>
-              <th>Переменная</th>
-              <th>Описание</th>
-              <th>Пример на сайте</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>new_scam_channels</td>
-              <td>Новых скам-каналов за 12 ч</td>
-              <td>«47 новых скам-каналов за последние 12 ч»</td>
-            </tr>
-            <tr>
-              <td>losses_12h</td>
-              <td>Потери ₽ за 12 ч</td>
-              <td>«12 847 300 Потеряно ₽»</td>
-            </tr>
-            <tr>
-              <td>telegram_channels</td>
-              <td>Всего Telegram-каналов в зоне риска</td>
-              <td>«37 Telegram каналов»</td>
-            </tr>
-            <tr>
-              <td>courses_products</td>
-              <td>Курсы / фейк-продукты</td>
-              <td>«10 Курсы фейк-продуктов»</td>
-            </tr>
-            <tr>
-              <td>top3</td>
-              <td>Топ-3 по потерям за период</td>
-              <td>Блок «Топ-3 сегодня»</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p style="font-size:11px;color:var(--mon-text-fade);margin-top:8px">
-        Все цифры только из таблиц scam_base и kro_meta. Никаких чисел «из воздуха».
-        Чек-лист: ссылки рабочие, жалобы за период, признаки риска и статус заполнены, Топ-3 из основной таблицы.
-      </p>
-
     </div>
   </section>
 
@@ -564,10 +513,78 @@
     return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  function uniq(list) {
+    var seen = {};
+    return (list || []).filter(function(item) {
+      var key = (item || '').trim();
+      if (!key || seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  }
+
+  function extractUrls(text) {
+    return uniq(((text || '').match(/https?:\/\/[^\s|;]+/g) || []).map(function(url) {
+      return url.replace(/[),.]+$/,'');
+    }));
+  }
+
+  function extractSourceUrl(row) {
+    if (row && /^https?:\/\//i.test(row.source_primary || '')) return row.source_primary;
+    var urls = extractUrls(row && row.source_evidence);
+    for (var i = 0; i < urls.length; i++) {
+      if (!/t\.me\//i.test(urls[i])) return urls[i];
+    }
+    return urls[0] || '';
+  }
+
+  function hostLabel(url) {
+    if (!url) return 'источник';
+    try {
+      return new URL(url).hostname.replace(/^www\./,'');
+    } catch(e) {
+      return 'источник';
+    }
+  }
+
+  function externalIcon() {
+    return '<span class="mon-link-arrow" aria-hidden="true">↗</span>';
+  }
+
+  function renderExternalLink(url, label, cls) {
+    if (!url) return '<span class="mon-text-fallback">нет публичной ссылки</span>';
+    return '<a class="' + (cls || 'mon-external-link') + '" href="' + esc(url) + '" target="_blank" rel="noopener">' +
+      esc(label) + externalIcon() + '</a>';
+  }
+
+  function sourceFacts(evidence) {
+    var parts = (evidence || '')
+      .replace(/Источник:\s*https?:\/\/[^\s|;]+/gi, '')
+      .replace(/https?:\/\/[^\s|;]+/gi, '')
+      .split(/\s*\|\s*|\s*;\s*/);
+
+    var facts = uniq(parts.map(function(part) {
+      return (part || '').replace(/\s+/g, ' ').trim();
+    }).filter(function(part) {
+      return part && part.length > 35;
+    }));
+
+    return facts.slice(0, 3);
+  }
+
+  function renderFacts(evidence) {
+    var facts = sourceFacts(evidence);
+    if (!facts.length) {
+      return '<div class="mon-evidence-empty">Нет короткой цитаты. Откройте источник и проверьте вручную.</div>';
+    }
+    return '<ul class="mon-evidence-list">' + facts.map(function(fact) {
+      return '<li title="' + esc(fact) + '">"' + esc(fact) + '"</li>';
+    }).join('') + '</ul>';
+  }
+
   function statusClass(s) {
     var v = (s || '').toLowerCase();
-    if (v.includes('риск') && !v.includes('поведен')) return 'risk';
-    if (v.includes('поведен')) return 'behavioral';
+    if (v.includes('в риске') || (v.includes('риск') && !v.includes('наблю'))) return 'risk';
     return 'watch';
   }
 
@@ -672,25 +689,24 @@
 
     var html = '<table class="mon-table">' +
       '<thead><tr>' +
-      '<th>Канал</th><th>Ссылка</th><th>Тип</th><th>Источник</th>' +
-      '<th>Признаки риска</th><th>Статус</th><th>Дата</th>' +
+      '<th>Канал</th><th>Тип</th><th>Источник</th>' +
+      '<th>Признаки риска</th><th>Статус</th><th>Жалобы</th><th>Дата</th>' +
       '</tr></thead><tbody>';
 
     rows.forEach(function(r) {
-      var link = r.link
-        ? '<a href="' + esc(r.link) + '" target="_blank" rel="noopener">' + esc(r.username) + ' ↗</a>'
-        : esc(r.username);
-      var evidenceText = r.source_evidence || '';
-      // Strip "Источник: URL | " prefix for cleaner display
-      evidenceText = evidenceText.replace(/^Источник:\s*https?:\/\/[^\s|]+\s*\|\s*/i, '');
+      var channelUrl = r.link || '';
+      var sourceUrl = extractSourceUrl(r);
+      var sourceName = sourceUrl ? ('статья: ' + hostLabel(sourceUrl)) : 'источник';
+      var channelLabel = (r.username || r.link || 'канал').replace(/^https?:\/\/t\.me\//i, '@');
+      if (channelLabel.charAt(0) !== '@' && !/^t\.me\//i.test(channelLabel)) channelLabel = '@' + channelLabel.replace(/^@+/,'');
 
       html += '<tr>' +
-        '<td class="mon-cell-channel">' + link + '</td>' +
-        '<td class="mon-cell-link"><a href="' + esc(r.link || '') + '" target="_blank" rel="noopener">' + esc(r.link || '—') + '</a></td>' +
+        '<td class="mon-cell-channel">' + renderExternalLink(channelUrl, channelLabel, 'mon-external-link mon-channel-link') + '</td>' +
         '<td class="mon-cell-muted">' + esc(r.object_type || '—') + '</td>' +
-        '<td class="mon-cell-muted">' + esc(r.source_primary || '—') + '</td>' +
-        '<td><div class="mon-evidence" title="' + esc(r.source_evidence || '') + '">' + esc(evidenceText || '—') + '</div></td>' +
+        '<td class="mon-cell-source">' + renderExternalLink(sourceUrl, sourceName, 'mon-external-link mon-source-link') + '</td>' +
+        '<td><div class="mon-evidence" title="' + esc(r.source_evidence || '') + '">' + renderFacts(r.source_evidence || '') + '</div></td>' +
         '<td><span class="mon-status ' + statusClass(r.status) + '">' + esc(r.status || '—') + '</span></td>' +
+        '<td class="mon-cell-muted mon-cell-date">' + esc(String(r.complaints || 0)) + '</td>' +
         '<td class="mon-cell-muted mon-cell-date">' + esc(fmtDateShort(r.detected_at)) + '</td>' +
         '</tr>';
     });
@@ -710,11 +726,11 @@
   // ── SECTION 4: SOURCES ────────────────────────────────────
 
   var SOURCE_DESCRIPTIONS = {
-    'stop-scam1.com':   'Сайт-разоблачитель скам-каналов. Содержит обзоры и жалобы на Telegram-каналы с криптосигналами.',
-    'fin-obzor.net':    'Финансовые обзоры и жалобы. Разоблачения брокеров, курсов, Telegram-каналов.',
-    'cryptorussia.ru':  'Российский крипто-портал. Новости и предупреждения о мошенниках.',
+    'stop-scam1.com':   'Сайт разоблачений крипто-каналов, статьи с детальным анализом.',
+    'fin-obzor.net':    'Финансовые отзывы пользователей.',
+    'cryptorussia.ru':  'Обзоры и отзывы на крипто-проекты.',
     'brokers-check.ru': 'Проверка брокеров и инвестиционных компаний. Жалобы пользователей.',
-    'форма жалоб':      'Прямые жалобы от пользователей через форму на сайте crypto-academy-pro.onrender.com'
+    'форма жалоб':      'Прямые сообщения от пострадавших пользователей.'
   };
 
   function renderSources(sources) {
@@ -729,7 +745,7 @@
       var desc = SOURCE_DESCRIPTIONS[src.name] || '';
       return '<div class="mon-source-card">' +
         '<div class="mon-source-name">' + esc(src.name) + '</div>' +
-        (desc ? '<div style="font-size:10px;color:var(--mon-text-fade);margin-bottom:4px">' + esc(desc) + '</div>' : '') +
+        (desc ? '<p class="mon-source-desc">' + esc(desc) + '</p>' : '') +
         '<div class="mon-source-status ' + cls + '">' + label + '</div>' +
         '<div class="mon-source-count">' + (src.count || 0) + '</div>' +
         '</div>';
