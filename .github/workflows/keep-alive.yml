@@ -1,0 +1,26 @@
+name: Keep-alive ping
+
+# Пинг каждые 10 минут — не даём Render засыпать (Free/Starter план засыпает через 15 мин бездействия)
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # ручной запуск для теста
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping site
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://crypto-academy-pro.onrender.com/)
+          echo "Site status: $STATUS"
+          if [ "$STATUS" = "000" ]; then
+            echo "::warning::Site did not respond (timeout or unreachable)"
+          fi
+
+      - name: Ping API
+        run: |
+          RESULT=$(curl -s --max-time 30 https://crypto-academy-pro.onrender.com/api/kro/live-counter)
+          LAST_CYCLE=$(echo "$RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('last_cycle_at','n/a'))" 2>/dev/null || echo "parse error")
+          echo "last_cycle_at: $LAST_CYCLE"
