@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KRO Monitor — Крипта без розовых очков</title>
+  <meta name="description" content="Живой монитор системы антискам-мониторинга. Актуальные данные о скам-каналах, история циклов, источники.">
+  <link rel="stylesheet" href="/monitor.css">
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="mon-topbar">
+  <a href="/" class="mon-topbar-brand">
+    KRO<span>// монитор системы</span>
+  </a>
+  <div class="mon-topbar-right">
+    <span id="mon-refresh-countdown">обновление через 5:00</span>
+    <button class="mon-refresh-btn" onclick="loadData()">↻ обновить</button>
+    <a href="/" class="mon-refresh-btn" style="text-decoration:none">← на сайт</a>
+  </div>
+</header>
+
+<main class="mon-container">
+
+  <!-- ── SECTION 1: СТАТУС СИСТЕМЫ ── -->
+  <section class="mon-section">
+    <div class="mon-section-header">
+      <span class="mon-dot green mon-blink" id="s1-dot"></span>
+      <span class="mon-section-title">СТАТУС СИСТЕМЫ</span>
+    </div>
+    <div class="mon-section-body">
+      <div class="mon-status-grid">
+        <div class="mon-stat-card">
+          <div class="mon-stat-label">статус</div>
+          <div class="mon-stat-value" id="s1-status">
+            <span class="mon-badge active"><span class="mon-blink">●</span> СИСТЕМА АКТИВНА</span>
+          </div>
+        </div>
+        <div class="mon-stat-card">
+          <div class="mon-stat-label">последний цикл</div>
+          <div class="mon-stat-value cyan" id="s1-last-cycle">загрузка…</div>
+        </div>
+        <div class="mon-stat-card">
+          <div class="mon-stat-label">следующий цикл</div>
+          <div class="mon-stat-value" id="s1-next-cycle">загрузка…</div>
+        </div>
+        <div class="mon-stat-card">
+          <div class="mon-stat-label">найдено в последнем цикле</div>
+          <div class="mon-stat-value green" id="s1-new-in-cycle">—</div>
+        </div>
+        <div class="mon-stat-card">
+          <div class="mon-stat-label">всего в базе</div>
+          <div class="mon-stat-value yellow" id="s1-total">—</div>
+        </div>
+        <div class="mon-stat-card">
+          <div class="mon-stat-label">активных источников</div>
+          <div class="mon-stat-value cyan" id="s1-sources-active">—</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 2: ПОСЛЕДНИЙ ЦИКЛ ── -->
+  <section class="mon-section">
+    <div class="mon-section-header">
+      <span class="mon-dot yellow"></span>
+      <span class="mon-section-title">ПОСЛЕДНИЙ ЦИКЛ</span>
+      <span class="mon-section-label" style="margin-left:auto" id="s2-cycle-label"></span>
+    </div>
+    <div class="mon-section-body">
+      <div class="mon-log" id="s2-log">
+        <div class="mon-loading mon-spinner">Загружаю данные цикла</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 3: БАЗА СКАМ-КАНАЛОВ ── -->
+  <section class="mon-section">
+    <div class="mon-section-header">
+      <span class="mon-dot red"></span>
+      <span class="mon-section-title">БАЗА СКАМ-КАНАЛОВ</span>
+      <span class="mon-section-label" style="margin-left:auto" id="s3-count"></span>
+    </div>
+    <div class="mon-section-body" style="padding:0">
+      <div class="mon-table-wrap" id="s3-table-wrap">
+        <div class="mon-loading mon-spinner" style="padding:32px">Загружаю базу</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 4: ИСТОЧНИКИ ── -->
+  <section class="mon-section">
+    <div class="mon-section-header">
+      <span class="mon-dot green"></span>
+      <span class="mon-section-title">ИСТОЧНИКИ ДАННЫХ</span>
+    </div>
+    <div class="mon-section-body">
+      <div class="mon-sources-grid" id="s4-sources">
+        <div class="mon-loading mon-spinner">Загружаю</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 5: ИСТОРИЯ ЦИКЛОВ ── -->
+  <section class="mon-section">
+    <div class="mon-section-header">
+      <span class="mon-dot" style="background:#8b5cf6"></span>
+      <span class="mon-section-title">ИСТОРИЯ ЦИКЛОВ</span>
+    </div>
+    <div class="mon-section-body" style="padding:0">
+      <div class="mon-table-wrap" id="s5-history-wrap">
+        <div class="mon-loading">Загружаю историю…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 6: ПРАВИЛА И КРИТЕРИИ ── -->
+  <section class="mon-section">
+    <div class="mon-section-header">
+      <span class="mon-dot" style="background:#6b7280"></span>
+      <span class="mon-section-title">ПРАВИЛА И КРИТЕРИИ</span>
+    </div>
+    <div class="mon-section-body">
+      <div class="mon-rules">
+
+        <div class="mon-rule-block">
+          <h3>Описание системы</h3>
+          <ul class="mon-rule-list">
+            <li>Автоматический мониторинг крипто-сигнальных Telegram-каналов каждые 12 часов</li>
+            <li>Источники: stop-scam1.com, fin-obzor.net, cryptorussia.ru, форма жалоб с сайта</li>
+            <li>GitHub Actions запускает run_12h_monitor.py в 09:00 и 21:00 UTC (12:00 и 00:00 MSK)</li>
+            <li>Данные хранятся в Google Sheets (scam_base, kro_meta, kro_history)</li>
+            <li>Сайт читает данные напрямую из Google Sheets — переживает рестарты сервера</li>
+          </ul>
+        </div>
+
+        <div class="mon-rule-block">
+          <h3>Уровни риска</h3>
+          <div class="mon-level-grid">
+            <div class="mon-level-card">
+              <div class="mon-level-title red">● В РИСКЕ</div>
+              <p>≥2 жалобы от разных людей + любой из признаков: сигналы long/short, продаёт VIP, гарантирует доход, скрывает убытки, блокирует после оплаты</p>
+            </div>
+            <div class="mon-level-card">
+              <div class="mon-level-title yellow">● ПОВЕДЕНЧЕСКИЙ РИСК</div>
+              <p>Жалоб может не быть, но канал: давит на срочность, обещает x2-x10, призывает «зайти всем депозитом», использует страх и стыд</p>
+            </div>
+            <div class="mon-level-card">
+              <div class="mon-level-title grey">● ПОД НАБЛЮДЕНИЕМ</div>
+              <p>Мало данных: одна жалоба, платный VIP без жалоб, новый канал без истории</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mon-rule-block">
+          <h3>Критерии попадания в базу</h3>
+          <ul class="mon-rule-list">
+            <li>Канал упоминается на сайте-разоблачителе (stop-scam1.com, fin-obzor.net) — 1 источник</li>
+            <li>≥2 жалобы от разных людей через форму жалоб на сайте → автопромоция в scam_base</li>
+            <li>Канал продаёт сигналы или VIP-доступ с ценой ≥10 000 ₽</li>
+            <li>Наличие реальных признаков мошенничества в тексте источника</li>
+          </ul>
+        </div>
+
+        <div class="mon-rule-block">
+          <h3>Что НЕ попадает в базу</h3>
+          <ul class="mon-rule-list">
+            <li>Новостные каналы без сигналов и продаж</li>
+            <li>Каналы которые честно показывают убытки и говорят о рисках</li>
+            <li>Каналы где одна жалоба и нет других признаков</li>
+            <li>Все каналы из списка исключений</li>
+          </ul>
+        </div>
+
+        <div class="mon-rule-block">
+          <h3>Список исключений (никогда не попадут в базу)</h3>
+          <div class="mon-exclusion-list">
+            <span class="mon-exclusion-tag">@cryptoscammsup</span>
+            <span class="mon-exclusion-tag">@crypt0scamm</span>
+            <span class="mon-exclusion-tag">@publicryptoscamm</span>
+            <span class="mon-exclusion-tag">@scamrsalert</span>
+            <span class="mon-exclusion-tag">@crypto_police_list</span>
+            <span class="mon-exclusion-tag">@scamalyst</span>
+            <span class="mon-exclusion-tag">@binance</span>
+            <span class="mon-exclusion-tag">@bybit</span>
+            <span class="mon-exclusion-tag">@okx</span>
+            <span class="mon-exclusion-tag">@kucoin</span>
+            <span class="mon-exclusion-tag">@huobi</span>
+            <span class="mon-exclusion-tag">@coinbase</span>
+            <span class="mon-exclusion-tag">@tgstat</span>
+            <span class="mon-exclusion-tag">@telemetr</span>
+            <span class="mon-exclusion-tag">@telega</span>
+            <span class="mon-exclusion-tag">@gmail</span>
+            <span class="mon-exclusion-tag">@feel340</span>
+            <span class="mon-exclusion-tag">@support</span>
+            <span class="mon-exclusion-tag">@admin</span>
+          </div>
+        </div>
+
+        <div class="mon-rule-block">
+          <h3>Спецификация формата отчёта</h3>
+          <ul class="mon-rule-list">
+            <li>Каждая запись в scam_base: username, ссылка t.me/username, дата обнаружения, тип объекта, цена VIP, число жалоб, сумма потерь ₽, источник, текст признаков риска, статус</li>
+            <li>source_evidence — конкретные факты: цитаты из статей, описания схемы. Никогда не выдуманные</li>
+            <li>totalLost: 0 если суммы в источнике не указаны — не скрыто, реально нет данных</li>
+            <li>publishStatus: valid — только когда данные реальные. honest_zero — если ничего не найдено</li>
+          </ul>
+        </div>
+
+      </div><!-- .mon-rules -->
+    </div>
+  </section>
+
+</main>
+
+<footer class="mon-footer">
+  <p>KRO Monitor · Данные из Google Sheets · Обновляется каждые 12 часов автоматически</p>
+  <p style="margin-top:6px"><a href="/">← Вернуться на сайт</a> · <a href="https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit" target="_blank">Google Doc (архив)</a></p>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  var REFRESH_INTERVAL = 5 * 60; // seconds
+  var countdown = REFRESH_INTERVAL;
+  var refreshTimer, countdownTimer;
+
+  // ── HELPERS ───────────────────────────────────────────────
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    try {
+      var d = new Date(iso);
+      return d.toLocaleString('ru-RU', {
+        timeZone: 'Europe/Moscow',
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      }) + ' MSK';
+    } catch(e) { return iso; }
+  }
+
+  function fmtDateShort(iso) {
+    if (!iso) return '—';
+    try {
+      var d = new Date(iso);
+      return d.toLocaleString('ru-RU', {
+        timeZone: 'Europe/Moscow',
+        day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    } catch(e) { return iso; }
+  }
+
+  function addHours(iso, hours) {
+    if (!iso) return null;
+    try {
+      var d = new Date(iso);
+      d.setHours(d.getHours() + hours);
+      return d.toISOString();
+    } catch(e) { return null; }
+  }
+
+  function esc(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function statusClass(s) {
+    var v = (s || '').toLowerCase();
+    if (v.includes('риск') && !v.includes('поведен')) return 'risk';
+    if (v.includes('поведен')) return 'behavioral';
+    return 'watch';
+  }
+
+  function sourceStatusClass(s) {
+    var v = (s || '').toLowerCase();
+    if (v === 'found') return 'found';
+    if (v === 'unavailable') return 'unavailable';
+    return 'not-found';
+  }
+
+  function sourceStatusLabel(s) {
+    var map = { found: 'нашёл', not_found: 'не нашёл', unavailable: 'недоступен' };
+    return map[s] || s || '—';
+  }
+
+  function setText(id, val) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  function setHTML(id, html) {
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  }
+
+  // ── SECTION 1: STATUS ─────────────────────────────────────
+
+  function renderStatus(meta, scamBase) {
+    var cycleDt = fmtDate(meta.last_cycle_at);
+    var nextIso = addHours(meta.last_cycle_at, 12);
+    var nextDt  = fmtDate(nextIso);
+    var active  = (meta.sources_checked || []).filter(function(s) { return s.status === 'found'; }).length;
+
+    setText('s1-last-cycle', cycleDt);
+    setText('s1-next-cycle', nextDt);
+    setText('s1-new-in-cycle', (meta.new_in_cycle || 0) + ' каналов');
+    setText('s1-total', (scamBase || []).length + ' каналов');
+    setText('s1-sources-active', active + ' из ' + (meta.sources_checked || []).length);
+  }
+
+  // ── SECTION 2: LAST CYCLE LOG ─────────────────────────────
+
+  function renderCycleLog(meta, scamBase) {
+    var cycleAt = meta.last_cycle_at;
+    var el = document.getElementById('s2-log');
+    var label = document.getElementById('s2-cycle-label');
+    if (label) label.textContent = cycleAt ? fmtDate(cycleAt) : '';
+
+    var lines = [];
+    lines.push({ time: cycleAt, msg: 'Цикл запущен', cls: 'info' });
+
+    var sources = meta.sources_checked || [];
+    sources.forEach(function(src) {
+      var cls = src.status === 'found' ? 'ok'
+              : src.status === 'unavailable' ? 'err' : 'warn';
+      var text = src.name + ': ' + sourceStatusLabel(src.status);
+      if (src.count > 0) text += ' (' + src.count + ' упоминаний)';
+      lines.push({ time: cycleAt, msg: text, cls: cls });
+    });
+
+    var newCount = meta.new_in_cycle || 0;
+    if (newCount > 0) {
+      lines.push({ time: cycleAt, msg: 'Добавлено в базу: ' + newCount + ' каналов', cls: 'ok' });
+      // Show which channels were added in this cycle
+      var today = new Date(cycleAt || Date.now());
+      var oneDayAgo = new Date(today.getTime() - 24 * 3600 * 1000);
+      var recent = (scamBase || []).filter(function(r) {
+        try { return new Date(r.detected_at) >= oneDayAgo; } catch(e) { return false; }
+      });
+      recent.forEach(function(r) {
+        lines.push({ time: r.detected_at, msg: '  → ' + r.username + ' [' + esc(r.status) + ']', cls: 'ok' });
+      });
+    } else {
+      lines.push({ time: cycleAt, msg: 'Новых каналов не найдено в этом цикле (honest_zero)', cls: 'warn' });
+    }
+    lines.push({ time: cycleAt, msg: 'Цикл завершён. kro_meta обновлена.', cls: 'info' });
+
+    var html = lines.map(function(l) {
+      return '<div class="mon-log-line">' +
+        '<span class="mon-log-time">' + esc(fmtDate(l.time)) + '</span>' +
+        '<span class="mon-log-msg ' + l.cls + '">' + esc(l.msg) + '</span>' +
+        '</div>';
+    }).join('');
+
+    if (el) el.innerHTML = html || '<div class="mon-loading">Нет данных о цикле</div>';
+  }
+
+  // ── SECTION 3: SCAM BASE TABLE ────────────────────────────
+
+  function renderScamBase(rows) {
+    var wrap = document.getElementById('s3-table-wrap');
+    var countEl = document.getElementById('s3-count');
+    if (countEl) countEl.textContent = rows.length + ' записей';
+
+    if (!rows.length) {
+      if (wrap) wrap.innerHTML = '<div class="mon-loading">База пуста</div>';
+      return;
+    }
+
+    var html = '<table class="mon-table">' +
+      '<thead><tr>' +
+      '<th>Канал</th><th>Ссылка</th><th>Тип</th><th>Источник</th>' +
+      '<th>Признаки риска</th><th>Статус</th><th>Дата</th>' +
+      '</tr></thead><tbody>';
+
+    rows.forEach(function(r) {
+      var link = r.link
+        ? '<a href="' + esc(r.link) + '" target="_blank" rel="noopener">' + esc(r.username) + ' ↗</a>'
+        : esc(r.username);
+      var evidenceText = r.source_evidence || '';
+      // Strip "Источник: URL | " prefix for cleaner display
+      evidenceText = evidenceText.replace(/^Источник:\s*https?:\/\/[^\s|]+\s*\|\s*/i, '');
+
+      html += '<tr>' +
+        '<td style="white-space:nowrap;font-weight:700">' + link + '</td>' +
+        '<td><a href="' + esc(r.link || '') + '" target="_blank" rel="noopener" style="font-size:11px;color:var(--mon-cyan)">' + esc(r.link || '—') + '</a></td>' +
+        '<td style="white-space:nowrap;color:var(--mon-text-dim)">' + esc(r.object_type || '—') + '</td>' +
+        '<td style="white-space:nowrap;color:var(--mon-text-dim)">' + esc(r.source_primary || '—') + '</td>' +
+        '<td><div class="mon-evidence" title="' + esc(r.source_evidence || '') + '">' + esc(evidenceText || '—') + '</div></td>' +
+        '<td><span class="mon-status ' + statusClass(r.status) + '">' + esc(r.status || '—') + '</span></td>' +
+        '<td style="white-space:nowrap;color:var(--mon-text-dim)">' + esc(fmtDateShort(r.detected_at)) + '</td>' +
+        '</tr>';
+    });
+
+    html += '</tbody></table>';
+    if (wrap) wrap.innerHTML = html;
+  }
+
+  // ── SECTION 4: SOURCES ────────────────────────────────────
+
+  var SOURCE_DESCRIPTIONS = {
+    'stop-scam1.com':   'Сайт-разоблачитель скам-каналов. Содержит обзоры и жалобы на Telegram-каналы с криптосигналами.',
+    'fin-obzor.net':    'Финансовые обзоры и жалобы. Разоблачения брокеров, курсов, Telegram-каналов.',
+    'cryptorussia.ru':  'Российский крипто-портал. Новости и предупреждения о мошенниках.',
+    'brokers-check.ru': 'Проверка брокеров и инвестиционных компаний. Жалобы пользователей.',
+    'форма жалоб':      'Прямые жалобы от пользователей через форму на сайте crypto-academy-pro.onrender.com'
+  };
+
+  function renderSources(sources) {
+    var el = document.getElementById('s4-sources');
+    if (!sources || !sources.length) {
+      if (el) el.innerHTML = '<div class="mon-loading">Нет данных об источниках</div>';
+      return;
+    }
+    var html = sources.map(function(src) {
+      var cls = sourceStatusClass(src.status);
+      var label = sourceStatusLabel(src.status);
+      var desc = SOURCE_DESCRIPTIONS[src.name] || '';
+      return '<div class="mon-source-card">' +
+        '<div class="mon-source-name">' + esc(src.name) + '</div>' +
+        (desc ? '<div style="font-size:10px;color:var(--mon-text-fade);margin-bottom:4px">' + esc(desc) + '</div>' : '') +
+        '<div class="mon-source-status ' + cls + '">' + label + '</div>' +
+        '<div class="mon-source-count">' + (src.count || 0) + '</div>' +
+        '</div>';
+    }).join('');
+    if (el) el.innerHTML = html;
+  }
+
+  // ── SECTION 5: HISTORY ────────────────────────────────────
+
+  function renderHistory(history) {
+    var wrap = document.getElementById('s5-history-wrap');
+    if (!history || !history.length) {
+      if (wrap) wrap.innerHTML = '<div class="mon-loading" style="padding:24px">История циклов появится после первого автоматического запуска через GitHub Actions</div>';
+      return;
+    }
+    var html = '<table class="mon-table"><thead><tr>' +
+      '<th>Дата цикла</th><th>Найдено</th><th>Источники</th><th>Добавленные каналы</th><th>Статус</th><th>Заметки</th>' +
+      '</tr></thead><tbody>';
+    history.forEach(function(h) {
+      var statusCls = h.status === 'valid' ? 'risk' : 'watch';
+      var statusLabel = h.status === 'valid' ? 'найдено' : h.status === 'honest_zero' ? 'пусто' : esc(h.status);
+      html += '<tr>' +
+        '<td style="white-space:nowrap">' + esc(fmtDate(h.cycle_at)) + '</td>' +
+        '<td style="color:var(--mon-green);font-weight:700">' + (h.new_in_cycle || 0) + '</td>' +
+        '<td style="font-size:11px;color:var(--mon-text-dim)">' + esc(h.sources_summary || '—') + '</td>' +
+        '<td style="font-size:11px">' + esc(h.channels_added || '—') + '</td>' +
+        '<td><span class="mon-status ' + statusCls + '">' + statusLabel + '</span></td>' +
+        '<td style="font-size:11px;color:var(--mon-text-dim)">' + esc(h.notes || '') + '</td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+    if (wrap) wrap.innerHTML = html;
+  }
+
+  // ── MAIN LOAD ─────────────────────────────────────────────
+
+  function loadData() {
+    countdown = REFRESH_INTERVAL;
+
+    // Reset loading states
+    setHTML('s2-log', '<div class="mon-loading mon-spinner">Загружаю данные цикла</div>');
+    setHTML('s3-table-wrap', '<div class="mon-loading mon-spinner" style="padding:32px">Загружаю базу</div>');
+    setHTML('s4-sources', '<div class="mon-loading mon-spinner">Загружаю</div>');
+    setHTML('s5-history-wrap', '<div class="mon-loading">Загружаю историю…</div>');
+
+    fetch('/api/kro/monitor-data?t=' + Date.now(), {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-store' }
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      var meta      = data.meta || {};
+      var scamBase  = data.scam_base || [];
+      var history   = data.history || [];
+
+      renderStatus(meta, scamBase);
+      renderCycleLog(meta, scamBase);
+      renderScamBase(scamBase);
+      renderSources(meta.sources_checked || []);
+      renderHistory(history);
+    })
+    .catch(function(err) {
+      var msg = '<div class="mon-error">Ошибка загрузки данных: ' + esc(err.message) + '</div>';
+      setHTML('s2-log', msg);
+      setHTML('s3-table-wrap', msg);
+      setHTML('s4-sources', msg);
+      setHTML('s5-history-wrap', msg);
+    });
+  }
+
+  // ── COUNTDOWN TIMER ───────────────────────────────────────
+
+  function startCountdown() {
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(function() {
+      countdown--;
+      if (countdown <= 0) {
+        countdown = REFRESH_INTERVAL;
+        loadData();
+      }
+      var m = Math.floor(countdown / 60);
+      var s = countdown % 60;
+      var el = document.getElementById('mon-refresh-countdown');
+      if (el) el.textContent = 'обновление через ' + m + ':' + (s < 10 ? '0' : '') + s;
+    }, 1000);
+  }
+
+  // ── INIT ──────────────────────────────────────────────────
+
+  document.addEventListener('DOMContentLoaded', function() {
+    loadData();
+    startCountdown();
+  });
+
+})();
+</script>
+</body>
+</html>

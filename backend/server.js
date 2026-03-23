@@ -1516,13 +1516,14 @@ function parseScamBaseRow(row) {
     const source_primary = (row[9] || '').toString().trim();
     const cycle_window = (row[11] || '').toString().trim();
     const status = (row[12] || '').toString().trim();
+    const source_evidence = (row[10] || '').toString().trim();
     return {
       username, link, detected_at, created_at,
       channel_age_days: Number.isFinite(channel_age_days) ? channel_age_days : null,
       object_type, vip_price,
       complaints: Number.isFinite(complaints) ? complaints : null,
       total_loss_rub: Number.isFinite(total_loss_rub) ? total_loss_rub : 0,
-      source_primary, cycle_window, status,
+      source_primary, source_evidence, cycle_window, status,
       verdict: 'confirmed', _schema: 'v2'
     };
   }
@@ -2034,6 +2035,67 @@ app.get('/api/kro/live-counter', async (req, res) => {
       new_in_cycle: cycleMeta.new_in_cycle,
       sources_checked: cycleMeta.sources_checked
     });
+  }
+});
+
+// Serve /monitor page
+app.get('/monitor', (req, res) =>
+  res.sendFile('monitor.html', { root: join(__dirname, '..') }));
+
+// GET /api/kro/monitor-data — full data for the /monitor dashboard
+// Returns: scam_base (all rows with source_evidence), kro_meta, kro_history
+app.get('/api/kro/monitor-data', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  try {
+    const sheetsClient = await getKroSheetsClient();
+    if (!sheetsClient || !kroSheetId) {
+      return res.status(503).json({ error: 'Google Sheets not configured' });
+    }
+
+    const [scamResp, metaResp, historyResp] = await Promise.allSettled([
+      sheetsClient.sheets.spreadsheets.values.get({
+        spreadsheetId: kroSheetId,
+        range: 'scam_base!A:N'
+      }),
+      sheetsClient.sheets.spreadsheets.values.get({
+        spreadsheetId: kroSheetId,
+        range: 'kro_meta!A:B'
+      }),
+      sheetsClient.sheets.spreadsheets.values.get({
+        spreadsheetId: kroSheetId,
+        range: 'kro_history!A:F'
+      })
+    ]);
+
+    // scam_base rows (skip header)
+    const scamRawRows = scamResp.status === 'fulfilled' ? (scamResp.value.data.values || []) : [];
+    const scamRows = scamRawRows
+      .slice(1)
+      .map(parseScamBaseRow)
+      .filter(r => r.username && r.username !== 'username');
+
+    // kro_meta
+    const metaRows = metaResp.status === 'fulfilled' ? (metaResp.value.data.values || []) : [];
+    const meta = parseKroCycleMetaRows(metaRows);
+
+    // kro_history rows (skip header row if present)
+    const histRawRows = historyResp.status === 'fulfilled' ? (historyResp.value.data.values || []) : [];
+    const history = histRawRows
+      .filter(r => r[0] && r[0] !== 'cycle_at')
+      .map(r => ({
+        cycle_at: (r[0] || '').toString().trim(),
+        new_in_cycle: Number(r[1] || 0),
+        sources_summary: (r[2] || '').toString().trim(),
+        channels_added: (r[3] || '').toString().trim(),
+        status: (r[4] || '').toString().trim(),
+        notes: (r[5] || '').toString().trim()
+      }))
+      .reverse(); // newest first
+
+    return res.json({ scam_base: scamRows, meta, history });
+  } catch (e) {
+    console.error('KRO monitor-data error:', e);
+    return res.status(500).json({ error: 'internal error', detail: e.message });
   }
 });
 

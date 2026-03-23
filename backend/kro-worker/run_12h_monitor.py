@@ -818,6 +818,74 @@ def ensure_sheet_exists(sheets_client, sheet_id, title, row_count=50, column_cou
     return added.get('sheetId')
 
 
+def append_kro_history_row(sheets_client, sheet_id, last_cycle_at, new_in_cycle, sources_checked, channels_added=None, status='honest_zero', notes=''):
+    """
+    Append one row to kro_history sheet after each monitoring cycle.
+    Columns: A=cycle_at, B=new_in_cycle, C=sources_summary, D=channels_added, E=status, F=notes
+    """
+    if not sheets_client or not sheet_id:
+        return False
+    sheet_name = 'kro_history'
+    try:
+        ensure_sheet_exists(sheets_client, sheet_id, sheet_name, row_count=500, column_count=6)
+        # Write header if sheet is empty
+        try:
+            existing = sheets_client.spreadsheets().values().get(
+                spreadsheetId=sheet_id, range=f'{sheet_name}!A1'
+            ).execute().get('values', [])
+            if not existing:
+                sheets_client.spreadsheets().values().append(
+                    spreadsheetId=sheet_id,
+                    range=f'{sheet_name}!A:F',
+                    valueInputOption='RAW',
+                    insertDataOption='INSERT_ROWS',
+                    body={'values': [['cycle_at', 'new_in_cycle', 'sources_summary', 'channels_added', 'status', 'notes']]}
+                ).execute()
+        except Exception:
+            pass
+
+        sources_summary = ''
+        if sources_checked:
+            parts = []
+            for s in sources_checked:
+                name = s.get('name', '')
+                cnt = s.get('count', 0)
+                st = s.get('status', '')
+                if st == 'found' and cnt:
+                    parts.append(f'{name}:{cnt}')
+                elif st == 'found':
+                    parts.append(name)
+            sources_summary = ', '.join(parts) if parts else 'не нашёл'
+
+        channels_str = ''
+        if channels_added:
+            if isinstance(channels_added, list):
+                channels_str = ', '.join([str(c) for c in channels_added if c])
+            else:
+                channels_str = str(channels_added)
+
+        row = [
+            str(last_cycle_at or ''),
+            str(int(new_in_cycle or 0)),
+            sources_summary,
+            channels_str,
+            str(status or 'honest_zero'),
+            str(notes or '')
+        ]
+        sheets_client.spreadsheets().values().append(
+            spreadsheetId=sheet_id,
+            range=f'{sheet_name}!A:F',
+            valueInputOption='RAW',
+            insertDataOption='INSERT_ROWS',
+            body={'values': [row]}
+        ).execute()
+        print(f'kro_history row appended: {last_cycle_at}, new={new_in_cycle}, status={status}', file=sys.stderr)
+        return True
+    except Exception as e:
+        print(f'append_kro_history_row error: {e}', file=sys.stderr)
+        return False
+
+
 def write_kro_meta_to_sheet(sheets_client, sheet_id, last_cycle_at, new_in_cycle, sources_checked, meta_range='kro_meta!A:B'):
     """
     Persist cycle metadata in Google Sheets so Render restarts do not lose it.
@@ -2982,6 +3050,17 @@ def _run_publish_only():
         payload.get('sources_checked', []),
         meta_range=os.environ.get('KRO_META_RANGE', 'kro_meta!A:B').strip() or 'kro_meta!A:B'
     )
+    _pub_channels = [t.get('channel') or t.get('name') or '' for t in (payload.get('top3') or [])[:10]]
+    append_kro_history_row(
+        sheets_client,
+        sheet_id,
+        payload.get('last_cycle_at'),
+        payload.get('new_in_cycle', 0),
+        payload.get('sources_checked', []),
+        channels_added=_pub_channels,
+        status=payload.get('publishStatus') or 'honest_zero',
+        notes='publish mode'
+    )
     sent = _send_to_site(payload)
     if not sent:
         raise RuntimeError('MODE=publish: не удалось отправить данные цикла на сайт.')
@@ -3434,6 +3513,17 @@ def main():
         out.get('new_in_cycle', 0),
         out.get('sources_checked', []),
         meta_range=os.environ.get('KRO_META_RANGE', 'kro_meta!A:B').strip() or 'kro_meta!A:B'
+    )
+    _hist_channels = [t.get('channel') or t.get('name') or '' for t in (out.get('top3') or out.get('display_top3') or [])[:10]]
+    append_kro_history_row(
+        client,
+        sheet_id,
+        out.get('last_cycle_at'),
+        out.get('new_in_cycle', 0),
+        out.get('sources_checked', []),
+        channels_added=_hist_channels,
+        status=out.get('publishStatus') or 'honest_zero',
+        notes=out.get('siteNotice') or ''
     )
 
     _write_json_file(LAST_CYCLE_JSON, out)
