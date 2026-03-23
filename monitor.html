@@ -5,23 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KRO Monitor — Крипта без розовых очков</title>
   <meta name="description" content="Живой монитор системы антискам-мониторинга. Актуальные данные о скам-каналах, история циклов, источники.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/monitor.css">
 </head>
-<body>
+<body class="mon-page">
 
-<!-- TOP BAR -->
 <header class="mon-topbar">
-  <a href="/" class="mon-topbar-brand">
-    KRO<span>// монитор системы</span>
-  </a>
-  <div class="mon-topbar-right">
-    <span id="mon-refresh-countdown">обновление через 5:00</span>
-    <button class="mon-refresh-btn" onclick="loadData()">↻ обновить</button>
-    <a href="/" class="mon-refresh-btn" style="text-decoration:none">← на сайт</a>
-  </div>
+  <nav class="mon-main-nav" aria-label="Monitor navigation">
+    <a href="/" class="mon-main-nav-brand">
+      <span class="mon-main-nav-brand-icon" aria-hidden="true"></span>
+      Крипта без розовых очков
+    </a>
+    <div class="mon-main-nav-links">
+      <span class="mon-refresh-countdown" id="mon-refresh-countdown">обновление через 5:00</span>
+      <button class="mon-refresh-btn" onclick="loadData()">Обновить</button>
+      <a href="/" class="mon-nav-link">На сайт</a>
+    </div>
+  </nav>
 </header>
 
 <main class="mon-container">
+  <section class="mon-hero">
+    <div class="mon-hero-copy">
+      <p class="mon-hero-kicker">Антискам · Live monitor</p>
+      <h1 class="mon-hero-title">Монитор системы KRO</h1>
+      <p class="mon-hero-text">Живая панель антискам-мониторинга в визуальном стиле основного сайта: статус системы, новые находки, источники и история циклов в одном месте.</p>
+    </div>
+    <div class="mon-hero-badges" aria-label="Monitor highlights">
+      <span class="mon-hero-badge">Тёмная тема</span>
+      <span class="mon-hero-badge">Акцент #ff4444</span>
+      <span class="mon-hero-badge">Обновление каждые 5 минут</span>
+    </div>
+  </section>
 
   <!-- ── SECTION 1: СТАТУС СИСТЕМЫ ── -->
   <section class="mon-section">
@@ -383,13 +402,13 @@
       evidenceText = evidenceText.replace(/^Источник:\s*https?:\/\/[^\s|]+\s*\|\s*/i, '');
 
       html += '<tr>' +
-        '<td style="white-space:nowrap;font-weight:700">' + link + '</td>' +
-        '<td><a href="' + esc(r.link || '') + '" target="_blank" rel="noopener" style="font-size:11px;color:var(--mon-cyan)">' + esc(r.link || '—') + '</a></td>' +
-        '<td style="white-space:nowrap;color:var(--mon-text-dim)">' + esc(r.object_type || '—') + '</td>' +
-        '<td style="white-space:nowrap;color:var(--mon-text-dim)">' + esc(r.source_primary || '—') + '</td>' +
+        '<td class="mon-cell-channel">' + link + '</td>' +
+        '<td class="mon-cell-link"><a href="' + esc(r.link || '') + '" target="_blank" rel="noopener">' + esc(r.link || '—') + '</a></td>' +
+        '<td class="mon-cell-muted">' + esc(r.object_type || '—') + '</td>' +
+        '<td class="mon-cell-muted">' + esc(r.source_primary || '—') + '</td>' +
         '<td><div class="mon-evidence" title="' + esc(r.source_evidence || '') + '">' + esc(evidenceText || '—') + '</div></td>' +
         '<td><span class="mon-status ' + statusClass(r.status) + '">' + esc(r.status || '—') + '</span></td>' +
-        '<td style="white-space:nowrap;color:var(--mon-text-dim)">' + esc(fmtDateShort(r.detected_at)) + '</td>' +
+        '<td class="mon-cell-muted mon-cell-date">' + esc(fmtDateShort(r.detected_at)) + '</td>' +
         '</tr>';
     });
 
@@ -442,12 +461,12 @@
       var statusCls = h.status === 'valid' ? 'risk' : 'watch';
       var statusLabel = h.status === 'valid' ? 'найдено' : h.status === 'honest_zero' ? 'пусто' : esc(h.status);
       html += '<tr>' +
-        '<td style="white-space:nowrap">' + esc(fmtDate(h.cycle_at)) + '</td>' +
-        '<td style="color:var(--mon-green);font-weight:700">' + (h.new_in_cycle || 0) + '</td>' +
-        '<td style="font-size:11px;color:var(--mon-text-dim)">' + esc(h.sources_summary || '—') + '</td>' +
-        '<td style="font-size:11px">' + esc(h.channels_added || '—') + '</td>' +
+        '<td class="mon-cell-date">' + esc(fmtDate(h.cycle_at)) + '</td>' +
+        '<td class="mon-cell-positive">' + (h.new_in_cycle || 0) + '</td>' +
+        '<td class="mon-cell-muted mon-cell-compact">' + esc(h.sources_summary || '—') + '</td>' +
+        '<td class="mon-cell-compact">' + esc(h.channels_added || '—') + '</td>' +
         '<td><span class="mon-status ' + statusCls + '">' + statusLabel + '</span></td>' +
-        '<td style="font-size:11px;color:var(--mon-text-dim)">' + esc(h.notes || '') + '</td>' +
+        '<td class="mon-cell-muted mon-cell-compact">' + esc(h.notes || '') + '</td>' +
         '</tr>';
     });
     html += '</tbody></table>';
