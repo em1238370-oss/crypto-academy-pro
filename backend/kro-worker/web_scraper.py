@@ -96,28 +96,49 @@ _JSON_LD_NOISE = frozenset({
 })
 
 
+_CHANNEL_NOISE = frozenset({
+    # Generic internet/email services — not Telegram channels
+    'gmail', 'yahoo', 'mail', 'yandex', 'outlook', 'hotmail', 'protonmail',
+    # Stop-scam1.com site admin contact
+    'feel340',
+    # Common social media handles mistaken for TG channels
+    'instagram', 'facebook', 'twitter', 'youtube', 'tiktok', 'vkontakte',
+    # Anti-scam watchdog channels — should never be classified as scam
+    'cryptoscammsup', 'crypt0scamm', 'publicryptoscamm', 'scamrsalert',
+    # Generic words sometimes parsed as @mentions
+    'support', 'admin', 'help', 'info', 'news', 'official', 'channel',
+    'contact', 'manager', 'operator', 'bot', 'feedback',
+})
+
+
 def _extract_channel_mentions(text):
     """
     Extract @username and t.me/ channel references from plain text.
-    Filters out JSON-LD schema fields (@context, @graph, @type, etc.)
-    and generic words that are not Telegram usernames.
+    Filters out JSON-LD schema noise, known non-channel handles (email services,
+    site admins, generic words), and very short strings.
     Returns list of normalised usernames (without @).
     """
     found = set()
     for m in re.finditer(r'@([A-Za-z][A-Za-z0-9_]{3,})', text):
         uname = m.group(1)
-        if uname.lower() in _JSON_LD_NOISE:
+        uname_lower = uname.lower()
+        if uname_lower in _JSON_LD_NOISE:
+            continue
+        if uname_lower in _CHANNEL_NOISE:
             continue
         if len(uname) < 5:
             continue
-        found.add(uname.lower())
+        found.add(uname_lower)
     # t.me/username (skip invite links with +, skip known service paths)
     _skip_paths = frozenset({'joinchat', 'addstickers', 'share', 'proxy', 'm', 's'})
     for m in re.finditer(r't\.me/([A-Za-z][A-Za-z0-9_]{3,})', text):
         uname = m.group(1)
-        if uname.lower() in _skip_paths or uname.lower() in _JSON_LD_NOISE:
+        uname_lower = uname.lower()
+        if uname_lower in _skip_paths or uname_lower in _JSON_LD_NOISE:
             continue
-        found.add(uname.lower())
+        if uname_lower in _CHANNEL_NOISE:
+            continue
+        found.add(uname_lower)
     return list(found)
 
 

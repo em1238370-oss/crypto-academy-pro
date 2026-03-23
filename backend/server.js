@@ -1961,6 +1961,10 @@ app.get('/api/kro/live-counter', async (req, res) => {
       console.log(`[KRO live-counter] parsed ${parsedRows.length} rows from scam_base`);
       const scamBaseCounter = buildLiveCounterFromScamBase(parsedRows);
       if (scamBaseCounter) {
+        // Use last_cycle_at from kro_meta when it's newer than latest scam_base row
+        const cycleTs = cycleMeta.last_cycle_at ? new Date(cycleMeta.last_cycle_at).getTime() : 0;
+        const rowTs = scamBaseCounter.updatedAt ? new Date(scamBaseCounter.updatedAt).getTime() : 0;
+        const bestUpdatedAt = cycleTs > rowTs ? cycleMeta.last_cycle_at : scamBaseCounter.updatedAt;
         return res.json({
           channelsToday: scamBaseCounter.new_scam_channels,
           totalLost: scamBaseCounter.losses_12h,
@@ -1974,8 +1978,8 @@ app.get('/api/kro/live-counter', async (req, res) => {
           publishStatus: scamBaseCounter.publishStatus,
           isHonestZero: scamBaseCounter.isHonestZero,
           siteNotice: null,
-          lastValidUpdatedAt: scamBaseCounter.updatedAt,
-          updatedAt: scamBaseCounter.updatedAt,
+          lastValidUpdatedAt: bestUpdatedAt,
+          updatedAt: bestUpdatedAt,
           last_cycle_at: cycleMeta.last_cycle_at,
           new_in_cycle: cycleMeta.new_in_cycle,
           sources_checked: cycleMeta.sources_checked
