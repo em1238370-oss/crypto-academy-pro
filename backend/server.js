@@ -1200,7 +1200,9 @@ if (newsApiKey || theNewsApiKey) {
 const kroSheetId = process.env.KRO_SHEET_ID || '1C1NQwqmLRg59xgplnz5PeghRxaR_YY2lfSWZAJae6qM';
 const kroCredentialsJson = process.env.KRO_GOOGLE_CREDENTIALS_JSON;
 const kroCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-const kroScamBaseRange = process.env.KRO_SCAM_BASE_RANGE || 'scam_base!A2:N';
+const kroScamBaseRangeRaw = process.env.KRO_SCAM_BASE_RANGE || 'scam_base!A2:N';
+const kroScamBaseSheet = kroScamBaseRangeRaw.includes('!') ? kroScamBaseRangeRaw.split('!')[0] : 'scam_base';
+const kroScamBaseRange = `${kroScamBaseSheet}!A:N`;
 const kroChannelsWatchRange = process.env.KRO_CHANNELS_WATCH_RANGE || 'channels_watch!A2:M';
 const kroChannelsNetworkRange = process.env.KRO_CHANNELS_NETWORK_RANGE || 'channels_network!A2:G';
 const kroMetaRange = process.env.KRO_META_RANGE || 'kro_meta!A:B';
