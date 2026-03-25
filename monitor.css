@@ -568,6 +568,12 @@ code {
   color: #1a1200;
 }
 .mon-status.behavioral::before { content: '●'; font-size: 8px; opacity: 0.9; }
+.mon-status.clean {
+  background: rgba(34, 197, 94, 0.18);
+  color: #d8ffe4;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.18);
+}
+.mon-status.clean::before { content: '●'; font-size: 8px; opacity: 0.9; }
 
 /* ── SECTION 4: SOURCES ──────────────────────────────────── */
 .mon-sources-grid {
@@ -853,6 +859,7 @@ code {
 .mon-section:nth-child(5) { animation-delay: 0.30s; }
 .mon-section:nth-child(6) { animation-delay: 0.36s; }
 .mon-section:nth-child(7) { animation-delay: 0.42s; }
+.mon-section:nth-child(8) { animation-delay: 0.48s; }
 
 /* ── BOOT TERMINAL OVERLAY ───────────────────────────────── */
 #mon-boot-overlay {

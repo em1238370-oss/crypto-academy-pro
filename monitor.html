@@ -21,6 +21,7 @@
     <span class="mon-boot-line info">KRO ANTI-SCAM MONITOR v2.1</span>
     <span class="mon-boot-line dim">Connecting to Google Sheets API…</span>
     <span class="mon-boot-line dim">Loading scam_base…</span>
+    <span class="mon-boot-line dim">Loading channels_watch…</span>
     <span class="mon-boot-line dim">Loading kro_meta…</span>
     <span class="mon-boot-line dim">Loading kro_history…</span>
     <span class="mon-boot-line ok">System ready. Rendering dashboard…</span>
@@ -187,7 +188,22 @@
     </div>
   </section>
 
-  <!-- ── SECTION 5: ИСТОЧНИКИ ── -->
+  <!-- ── SECTION 5: ВСЕ НАЙДЕННЫЕ КАНАЛЫ ── -->
+  <section class="mon-section">
+    <div class="mon-section-header">
+      <span class="mon-dot" style="background:#22c55e"></span>
+      <span class="mon-section-title">ВСЕ НАЙДЕННЫЕ КАНАЛЫ</span>
+      <span class="mon-section-label" style="margin-left:auto" id="s4-watch-count"></span>
+    </div>
+    <div class="mon-section-body" style="padding:0">
+      <div class="mon-proof-note">Это отдельный широкий мониторинг. Здесь показываются все найденные крипто-сигнальные каналы старше месяца с честной оценкой. <strong><code>scam_base</code> выше остаётся только для подтверждённых скамов.</strong></div>
+      <div class="mon-table-wrap" id="s4-watch-wrap">
+        <div class="mon-loading mon-spinner" style="padding:32px">Загружаю широкий мониторинг</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 6: ИСТОЧНИКИ ── -->
   <section class="mon-section">
     <div class="mon-section-header">
       <span class="mon-dot green"></span>
@@ -195,7 +211,7 @@
     </div>
     <div class="mon-section-body">
       <p class="mon-section-intro">Ниже видно, какие источники участвовали в последнем цикле и что именно означает каждый из них.</p>
-      <div class="mon-sources-grid" id="s4-sources">
+      <div class="mon-sources-grid" id="s5-sources">
         <div class="mon-loading mon-spinner">Загружаю</div>
       </div>
       <div class="mon-subsection-title">Что это за источники</div>
@@ -224,14 +240,14 @@
     </div>
   </section>
 
-  <!-- ── SECTION 5: ИСТОРИЯ ЦИКЛОВ ── -->
+  <!-- ── SECTION 7: ИСТОРИЯ ЦИКЛОВ ── -->
   <section class="mon-section">
     <div class="mon-section-header">
       <span class="mon-dot" style="background:#8b5cf6"></span>
       <span class="mon-section-title">ИСТОРИЯ ЦИКЛОВ</span>
     </div>
     <div class="mon-section-body" style="padding:0">
-      <div class="mon-table-wrap" id="s5-history-wrap">
+      <div class="mon-table-wrap" id="s6-history-wrap">
         <div class="mon-loading">Загружаю историю…</div>
       </div>
     </div>
@@ -618,6 +634,7 @@
 
   function statusClass(s) {
     var v = (s || '').toLowerCase();
+    if (v.includes('без нарушений')) return 'clean';
     if (v.includes('в риске') || (v.includes('риск') && !v.includes('наблю'))) return 'risk';
     return 'watch';
   }
@@ -757,7 +774,46 @@
     }
   }
 
-  // ── SECTION 4: SOURCES ────────────────────────────────────
+  // ── SECTION 4: WIDE WATCH TABLE ───────────────────────────
+
+  function renderChannelsWatch(rows) {
+    var wrap = document.getElementById('s4-watch-wrap');
+    var countEl = document.getElementById('s4-watch-count');
+    if (countEl) countEl.textContent = rows.length + ' каналов';
+
+    if (!rows.length) {
+      if (wrap) wrap.innerHTML = '<div class="mon-loading">Пока нет каналов старше месяца для широкого мониторинга</div>';
+      return;
+    }
+
+    var html = '<table class="mon-table">' +
+      '<thead><tr>' +
+      '<th>Канал</th><th>Возраст</th><th>Источник</th><th>Активность</th>' +
+      '<th>VIP / сигналы</th><th>Отзывы</th><th>Оценка</th><th>Статус</th><th>Дата</th>' +
+      '</tr></thead><tbody>';
+
+    rows.forEach(function(r) {
+      var channelUrl = r.link || '';
+      var channelLabel = (r.username || r.link || 'канал').replace(/^https?:\/\/t\.me\//i, '@');
+      if (channelLabel.charAt(0) !== '@' && !/^t\.me\//i.test(channelLabel)) channelLabel = '@' + channelLabel.replace(/^@+/,'');
+      html += '<tr>' +
+        '<td class="mon-cell-channel">' + renderExternalLink(channelUrl, channelLabel, 'mon-external-link mon-channel-link') + '</td>' +
+        '<td class="mon-cell-muted mon-cell-date">' + esc(String(r.channel_age_days || '—')) + (r.channel_age_days ? ' дн.' : '') + '</td>' +
+        '<td class="mon-cell-muted mon-cell-compact">' + esc(r.source_primary || '—') + '</td>' +
+        '<td class="mon-cell-muted mon-cell-compact">' + esc(r.activity_summary || '—') + '</td>' +
+        '<td class="mon-cell-compact">' + esc(r.vip_price || '—') + '</td>' +
+        '<td class="mon-cell-compact">' + esc(r.reviews_summary || '—') + '</td>' +
+        '<td><div class="mon-evidence" title="' + esc(r.source_evidence || '') + '">' + renderFacts(r.source_evidence || '') + '</div></td>' +
+        '<td><span class="mon-status ' + statusClass(r.status) + '">' + esc(r.status || '—') + '</span></td>' +
+        '<td class="mon-cell-muted mon-cell-date">' + esc(fmtDateShort(r.detected_at)) + '</td>' +
+        '</tr>';
+    });
+
+    html += '</tbody></table>';
+    if (wrap) wrap.innerHTML = html;
+  }
+
+  // ── SECTION 5: SOURCES ────────────────────────────────────
 
   var SOURCE_DESCRIPTIONS = {
     'stop-scam1.com':   'Сайт разоблачений крипто-каналов, статьи с детальным анализом.',
@@ -768,7 +824,7 @@
   };
 
   function renderSources(sources) {
-    var el = document.getElementById('s4-sources');
+    var el = document.getElementById('s5-sources');
     if (!sources || !sources.length) {
       if (el) el.innerHTML = '<div class="mon-loading">Нет данных об источниках</div>';
       return;
@@ -787,10 +843,10 @@
     if (el) el.innerHTML = html;
   }
 
-  // ── SECTION 5: HISTORY ────────────────────────────────────
+  // ── SECTION 6: HISTORY ────────────────────────────────────
 
   function renderHistory(history) {
-    var wrap = document.getElementById('s5-history-wrap');
+    var wrap = document.getElementById('s6-history-wrap');
     if (!history || !history.length) {
       if (wrap) wrap.innerHTML = '<div class="mon-loading" style="padding:24px">История циклов появится после первого автоматического запуска через GitHub Actions</div>';
       return;
@@ -829,8 +885,9 @@
     // Reset loading states
     setHTML('s2-log', '<div class="mon-loading mon-spinner">Загружаю данные цикла</div>');
     setHTML('s3-table-wrap', '<div class="mon-loading mon-spinner" style="padding:32px">Загружаю базу</div>');
-    setHTML('s4-sources', '<div class="mon-loading mon-spinner">Загружаю</div>');
-    setHTML('s5-history-wrap', '<div class="mon-loading">Загружаю историю…</div>');
+    setHTML('s4-watch-wrap', '<div class="mon-loading mon-spinner" style="padding:32px">Загружаю широкий мониторинг</div>');
+    setHTML('s5-sources', '<div class="mon-loading mon-spinner">Загружаю</div>');
+    setHTML('s6-history-wrap', '<div class="mon-loading">Загружаю историю…</div>');
 
     fetch('/api/kro/monitor-data?t=' + Date.now(), {
       cache: 'no-store',
@@ -843,11 +900,13 @@
     .then(function(data) {
       var meta      = data.meta || {};
       var scamBase  = data.scam_base || [];
+      var watchRows = data.channels_watch || [];
       var history   = data.history || [];
 
       renderStatus(meta, scamBase);
       renderCycleLog(meta, scamBase);
       renderScamBase(scamBase);
+      renderChannelsWatch(watchRows);
       renderSources(meta.sources_checked || []);
       renderHistory(history);
     })
@@ -855,8 +914,9 @@
       var msg = '<div class="mon-error">Ошибка загрузки данных: ' + esc(err.message) + '</div>';
       setHTML('s2-log', msg);
       setHTML('s3-table-wrap', msg);
-      setHTML('s4-sources', msg);
-      setHTML('s5-history-wrap', msg);
+      setHTML('s4-watch-wrap', msg);
+      setHTML('s5-sources', msg);
+      setHTML('s6-history-wrap', msg);
     });
   }
 

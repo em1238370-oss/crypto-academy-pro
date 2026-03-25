@@ -1201,6 +1201,7 @@ const kroSheetId = process.env.KRO_SHEET_ID || '1C1NQwqmLRg59xgplnz5PeghRxaR_YY2
 const kroCredentialsJson = process.env.KRO_GOOGLE_CREDENTIALS_JSON;
 const kroCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 const kroScamBaseRange = process.env.KRO_SCAM_BASE_RANGE || 'scam_base!A2:M';
+const kroChannelsWatchRange = process.env.KRO_CHANNELS_WATCH_RANGE || 'channels_watch!A2:M';
 const kroMetaRange = process.env.KRO_META_RANGE || 'kro_meta!A:B';
 const kroCheckQueueRange = process.env.KRO_CHECK_QUEUE_RANGE || '';
 
@@ -1544,6 +1545,40 @@ function parseScamBaseRow(row) {
     bot_pct, vip_price,
     complaints: Number.isFinite(complaints) ? complaints : null,
     total_loss, verdict, _schema: 'v1'
+  };
+}
+
+function parseChannelsWatchRow(row) {
+  const username = (row[0] || '').toString().trim();
+  if (!username) return null;
+  const link = (row[1] || '').toString().trim();
+  const detected_at = (row[2] || '').toString().trim();
+  const created_at = (row[3] || '').toString().trim();
+  const channel_age_days = parseInt((row[4] ?? '').toString(), 10);
+  const source_primary = (row[5] || '').toString().trim();
+  const vip_price = (row[6] || '').toString().trim();
+  const complaints = parseInt((row[7] ?? '').toString().replace(/\s/g, ''), 10);
+  const activity_summary = (row[8] || '').toString().trim();
+  const reviews_summary = (row[9] || '').toString().trim();
+  const source_evidence = (row[10] || '').toString().trim();
+  const cycle_window = (row[11] || '').toString().trim();
+  const status = (row[12] || '').toString().trim();
+  return {
+    username,
+    link,
+    detected_at,
+    created_at,
+    channel_age_days: Number.isFinite(channel_age_days) ? channel_age_days : null,
+    source_primary,
+    vip_price,
+    complaints: Number.isFinite(complaints) ? complaints : 0,
+    activity_summary,
+    reviews_summary,
+    source_evidence,
+    cycle_window,
+    status,
+    verdict: 'watch',
+    _schema: 'watch_v1',
   };
 }
 
@@ -2043,7 +2078,7 @@ app.get('/monitor', (req, res) =>
   res.sendFile('monitor.html', { root: join(__dirname, '..') }));
 
 // GET /api/kro/monitor-data — full data for the /monitor dashboard
-// Returns: scam_base (all rows with source_evidence), kro_meta, kro_history
+// Returns: scam_base, channels_watch, kro_meta, kro_history
 app.get('/api/kro/monitor-data', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   try {
@@ -2052,10 +2087,14 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       return res.status(503).json({ error: 'Google Sheets not configured' });
     }
 
-    const [scamResp, metaResp, historyResp] = await Promise.allSettled([
+    const [scamResp, watchResp, metaResp, historyResp] = await Promise.allSettled([
       sheetsClient.sheets.spreadsheets.values.get({
         spreadsheetId: kroSheetId,
         range: 'scam_base!A:N'
+      }),
+      sheetsClient.sheets.spreadsheets.values.get({
+        spreadsheetId: kroSheetId,
+        range: kroChannelsWatchRange
       }),
       sheetsClient.sheets.spreadsheets.values.get({
         spreadsheetId: kroSheetId,
@@ -2073,6 +2112,11 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       .slice(1)
       .map(parseScamBaseRow)
       .filter(r => r.username && r.username !== 'username');
+
+    const watchRawRows = watchResp.status === 'fulfilled' ? (watchResp.value.data.values || []) : [];
+    const channelsWatch = watchRawRows
+      .map(parseChannelsWatchRow)
+      .filter((r) => r && r.username && r.username !== 'username');
 
     // kro_meta
     const metaRows = metaResp.status === 'fulfilled' ? (metaResp.value.data.values || []) : [];
@@ -2092,7 +2136,7 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       }))
       .reverse(); // newest first
 
-    return res.json({ scam_base: scamRows, meta, history });
+    return res.json({ scam_base: scamRows, channels_watch: channelsWatch, meta, history });
   } catch (e) {
     console.error('KRO monitor-data error:', e);
     return res.status(500).json({ error: 'internal error', detail: e.message });

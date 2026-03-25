@@ -383,6 +383,55 @@ def fetch_tgstat_new_channels():
     return out[:50]
 
 
+def fetch_tgstat_watch_channels():
+    """Широкий поиск TGStat: каналы старше месяца для channels_watch."""
+    try:
+        from tgstat_client import search_channels
+    except ImportError:
+        return []
+    seen = set()
+    out = []
+    now = datetime.now(timezone.utc)
+    cutoff_watch = now - timedelta(days=WATCH_MIN_AGE_DAYS)
+    for group, queries in SEARCH_QUERY_VARIANTS.items():
+        for query in queries:
+            items = search_channels(query, country='ru', limit=50)
+            source_url = TGSTAT_SEARCH_URL % quote(query)
+            for x in items:
+                created_at = x.get('created_at')
+                if created_at is None:
+                    continue
+                try:
+                    created_dt = datetime.fromtimestamp(created_at, tz=timezone.utc)
+                except (TypeError, OSError):
+                    continue
+                if created_dt > cutoff_watch:
+                    continue
+                ch = (x.get('username') or x.get('link') or '').strip() or ('@' + (x.get('link') or '').replace('https://t.me/', ''))
+                key = ch.lower().replace('@', '')
+                if key in seen or key in _KNOWN_NON_SCAM_CHANNELS:
+                    continue
+                title = (x.get('title') or '').strip()
+                if not _is_crypto_signal_channel(title, ch):
+                    continue
+                seen.add(key)
+                out.append({
+                    'channel': ch or '—',
+                    'title': title or '—',
+                    'date': created_dt.strftime('%d.%m.%Y'),
+                    'growth': x.get('participants_count'),
+                    'vip': '—',
+                    'link': x.get('link') or ('https://t.me/' + (ch or '').lstrip('@')),
+                    'source_url': source_url,
+                    'query': query,
+                    'query_group': 'tgstat_watch',
+                    'source_links': [source_url],
+                    'evidence_links': [source_url, x.get('link') or ('https://t.me/' + (ch or '').lstrip('@'))],
+                })
+    out.sort(key=lambda r: r.get('date', ''), reverse=True)
+    return out[:80]
+
+
 # --- Telega.io catalog ---
 def fetch_telega_catalog():
     """Парсинг каталога крипто-каналов (telega.io). Возвращает список dict с channel, link."""
@@ -522,13 +571,33 @@ _TELEGRAM_SEARCH_QUERIES = [
     'crypto vip сигналы торговля',
 ]
 
-# Каналы-исключения: известные анти-скам проекты, биржи, агрегаторы — не скам
+# Каналы-исключения: известные анти-скам проекты, биржи, агрегаторы
+# и служебные username. Они никогда не должны попадать в scam_base,
+# независимо от числа жалоб или источника находки.
 _KNOWN_NON_SCAM_CHANNELS = {
     'crypt0scamm', 'cryptoscamm', 'cryptoscammsup', 'publicryptoscamm',
     'scamrsalert', 'crypto_police_list', 'scamalyst',
-    'binance', 'bybit', 'okx', 'kucoin', 'huobi', 'coinbase',
+    'binance', 'bybit', 'okx', 'kucoin', 'huobi', 'coinbase', 'gate_io',
     'tgstat', 'telemetr', 'telega', 'telegaio',
+    'gmail', 'feel340', 'support', 'admin',
 }
+
+WATCH_MIN_AGE_DAYS = 30
+WATCH_ACTIVE_POSTS_30D = 4
+WATCH_FRESH_POST_DAYS = 14
+
+PROFIT_PATTERNS = (
+    'профит', 'в плюс', 'закрыли в плюс', 'take profit', 'тейк', 'tp ', 'x2', 'х2',
+    'забрали прибыль', 'забрали профит',
+)
+LOSS_PATTERNS = (
+    'убыт', 'стоп', 'стоп-лосс', 'stop-loss', 'stop loss', 'минус', 'просадк',
+    'ликвидац', 'выбило по стопу',
+)
+WATCH_VIP_PATTERNS = (
+    'vip', 'вип', 'закрытый канал', 'закрытый клуб', 'платный доступ',
+    'подписка', 'личка', 'пиши в лс', 'пиши в личку',
+)
 
 
 async def _search_new_channels_via_telegram(client, days_max=30):
@@ -597,6 +666,134 @@ async def _search_new_channels_via_telegram(client, days_max=30):
     return found, ages
 
 
+async def _search_watch_channels_via_telegram(client, days_min=30):
+    """
+    Ищет крипто-сигнальные каналы старше days_min дней для широкого мониторинга.
+    Это отдельный поток для channels_watch и он не влияет на scam_base.
+    """
+    try:
+        from telethon.tl.functions.contacts import SearchRequest
+    except ImportError:
+        return [], {}
+
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=days_min)
+    found = []
+    ages = {}
+    seen = set()
+
+    for query in _TELEGRAM_SEARCH_QUERIES:
+        try:
+            result = await client(SearchRequest(q=query, limit=50))
+            for chat in (getattr(result, 'chats', None) or []):
+                username = (getattr(chat, 'username', None) or '').strip().lower()
+                if not username:
+                    continue
+                if username in _KNOWN_NON_SCAM_CHANNELS or username in seen:
+                    continue
+                created = getattr(chat, 'date', None)
+                if created is None:
+                    continue
+                if getattr(created, 'tzinfo', None) is None:
+                    created = created.replace(tzinfo=timezone.utc)
+                if created > cutoff:
+                    continue
+                title = (getattr(chat, 'title', None) or '').strip()
+                if not _has_signal_keywords(title) and not _has_signal_keywords('@' + username):
+                    continue
+                seen.add(username)
+                ages[username] = created
+                link = 'https://t.me/' + username
+                found.append({
+                    'channel': '@' + username,
+                    'title': title,
+                    'date': created.strftime('%d.%m.%Y'),
+                    'link': link,
+                    'growth': getattr(chat, 'participants_count', None),
+                    'vip': '—',
+                    'source_url': 'https://t.me/' + username,
+                    'query': query,
+                    'query_group': 'telegram_watch',
+                    'source_links': [link],
+                    'evidence_links': [link],
+                })
+            await asyncio.sleep(1.5)
+        except Exception as e:
+            print('Telegram watch SearchRequest %r: %s' % (query, e), file=sys.stderr)
+            await asyncio.sleep(2)
+
+    print('telegram_watch: всего найдено каналов старше %d дней: %d' % (days_min, len(found)), file=sys.stderr)
+    return found, ages
+
+
+async def _collect_watch_channel_metrics(client, username_or_link):
+    """Собрать честные метрики активности и контента для channels_watch."""
+    empty = {
+        'recent_posts_30d': 0,
+        'last_post_at': '',
+        'activity_label': 'данных об активности мало',
+        'profit_mode': 'данных о прибыли/убытках мало',
+        'vip_detected': False,
+    }
+    try:
+        uname = _normalize_channel_link(username_or_link)
+        if not uname or uname.startswith('joinchat/'):
+            return empty
+        ref = 'https://t.me/' + uname if not uname.startswith('@') else uname
+        entity = await client.get_entity(ref)
+        now = datetime.now(timezone.utc)
+        cutoff_30d = now - timedelta(days=30)
+        fresh_cutoff = now - timedelta(days=WATCH_FRESH_POST_DAYS)
+
+        recent_posts_30d = 0
+        last_post_at = None
+        positive_hits = 0
+        negative_hits = 0
+        vip_hits = 0
+
+        async for msg in client.iter_messages(entity, limit=40):
+            msg_date = getattr(msg, 'date', None)
+            if not msg_date:
+                continue
+            if getattr(msg_date, 'tzinfo', None) is None:
+                msg_date = msg_date.replace(tzinfo=timezone.utc)
+            if last_post_at is None:
+                last_post_at = msg_date
+            if msg_date < cutoff_30d:
+                continue
+            recent_posts_30d += 1
+            text = ((getattr(msg, 'message', None) or '') + ' ' + (getattr(msg, 'text', None) or '')).lower()
+            if any(p in text for p in PROFIT_PATTERNS):
+                positive_hits += 1
+            if any(p in text for p in LOSS_PATTERNS):
+                negative_hits += 1
+            if any(p in text for p in WATCH_VIP_PATTERNS):
+                vip_hits += 1
+
+        if negative_hits > 0 and positive_hits > 0:
+            profit_mode = 'показывает и прибыль, и убытки'
+        elif positive_hits > 0 and negative_hits == 0:
+            profit_mode = 'похоже, показывает только прибыль'
+        elif negative_hits > 0:
+            profit_mode = 'есть упоминания стопов и убытков'
+        else:
+            profit_mode = 'данных о прибыли/убытках мало'
+
+        is_active = recent_posts_30d >= WATCH_ACTIVE_POSTS_30D or (last_post_at is not None and last_post_at >= fresh_cutoff)
+        activity_label = 'активный' if is_active else ('мало свежих постов' if recent_posts_30d > 0 else 'неактивный')
+
+        return {
+            'recent_posts_30d': recent_posts_30d,
+            'last_post_at': last_post_at.strftime('%Y-%m-%dT%H:%M:%SZ') if last_post_at else '',
+            'activity_label': activity_label,
+            'profit_mode': profit_mode,
+            'vip_detected': vip_hits > 0,
+        }
+    except Exception as e:
+        print('watch metrics failed for %s: %s' % (username_or_link, e), file=sys.stderr)
+        return empty
+
+
 async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_channels, complaints_by_channel):
     """Сообщения из KRO_SOURCE_CHANNELS за 12 ч + проверка существования каналов из TGStat/Telega/жалоб.
     Возвращает (tg_data, set_of_existing_canonical_links, channel_ages_from_tg).
@@ -644,10 +841,14 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
 
     # Прямой поиск новых каналов в Telegram (основной источник, не требует TGStat API)
     direct_channels, direct_ages = await _search_new_channels_via_telegram(client, days_max=30)
+    watch_channels, watch_ages = await _search_watch_channels_via_telegram(client, days_min=WATCH_MIN_AGE_DAYS)
     for k, v in direct_ages.items():
+        channel_ages_from_tg[k] = v
+    for k, v in watch_ages.items():
         channel_ages_from_tg[k] = v
     # Сохраняем для main() и добавляем в new_tgstat
     tg_data['_direct_search_channels'] = direct_channels
+    tg_data['_watch_search_channels'] = watch_channels
     if direct_channels:
         new_tgstat = list(new_tgstat or []) + direct_channels
 
@@ -717,6 +918,7 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
             tg_data = {'by_channel': dict(by_channel), 'victims_12h': victims_12h, 'channel_sum_pairs': channel_sum_pairs}
 
         to_verify = []
+        watch_metric_targets = set()
         for row in (new_tgstat or []):
             link = row.get('link') or _object_link(row.get('channel', ''))
             if link and 't.me/' in link:
@@ -725,13 +927,21 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
             link = row.get('link') or _object_link(row.get('channel', ''))
             if link and 't.me/' in link:
                 to_verify.append((link, link))
+                watch_metric_targets.add(_norm_ch_key(row.get('channel') or link))
+        for row in (watch_channels or []):
+            link = row.get('link') or _object_link(row.get('channel', ''))
+            if link and 't.me/' in link:
+                to_verify.append((link, link))
+                watch_metric_targets.add(_norm_ch_key(row.get('channel') or link))
         for ch in tg_data.get('by_channel', {}):
             if ch and ('@' in ch or 't.me/' in ch):
                 link = _object_link(ch)
                 if link and 't.me/' in link:
                     to_verify.append((link, ch))
+                    watch_metric_targets.add(_norm_ch_key(ch))
 
         seen_links = set()
+        watch_metrics = {}
         for link, orig in to_verify:
             if link in seen_links:
                 continue
@@ -742,9 +952,12 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
                 key = _norm_ch_key(orig or link)
                 if key:
                     channel_ages_from_tg[key] = created_dt
+                    if key in watch_metric_targets and key not in watch_metrics:
+                        watch_metrics[key] = await _collect_watch_channel_metrics(client, link or orig)
             else:
                 print('Канал не найден (не пишем в документ): %s' % (orig or link), file=sys.stderr)
             await asyncio.sleep(0.5)
+        tg_data['watch_metrics'] = watch_metrics
     finally:
         await client.disconnect()
 
@@ -1165,7 +1378,7 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
     Дедупликация по username: если канал уже есть в листе — строку не дублируем.
     """
     if not confirmed_objects or not client or not sheet_id:
-        return
+        return []
     scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:M')
     sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
     try:
@@ -1183,9 +1396,13 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
         existing_keys = set()
 
     new_rows = []
+    inserted_channels = []
     for obj in confirmed_objects:
         key = _norm_ch_key(obj.get('username') or '')
         if not key or key in existing_keys:
+            continue
+        if key in _KNOWN_NON_SCAM_CHANNELS:
+            print('scam_base write skip: %s — в списке исключений' % (obj.get('username') or key), file=sys.stderr)
             continue
         new_rows.append([
             obj.get('username', ''),
@@ -1202,11 +1419,12 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             obj.get('cycle_window', ''),
             obj.get('status', ''),
         ])
+        inserted_channels.append(obj.get('username', ''))
         existing_keys.add(key)
 
     if not new_rows:
         print('scam_base: нет новых подтверждённых каналов для записи.', file=sys.stderr)
-        return
+        return []
     try:
         client.spreadsheets().values().append(
             spreadsheetId=sheet_id,
@@ -1216,8 +1434,260 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             body={'values': new_rows}
         ).execute()
         print('scam_base: записано %d новых подтверждённых каналов.' % len(new_rows), file=sys.stderr)
+        return inserted_channels
     except Exception as e:
         print('scam_base write error: %s' % e, file=sys.stderr)
+        return []
+
+
+def _watch_source_label(row):
+    qg = (row.get('query_group') or '').strip().lower()
+    if qg == 'telegram_watch':
+        return 'поиск в Telegram'
+    if qg == 'catalog':
+        return 'каталог Telegram'
+    if 'жалоб' in qg:
+        return 'форма жалоб / чаты'
+    if qg:
+        return qg
+    return 'поиск в Telegram'
+
+
+def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_channels, complaints_rows, channel_ages_from_tg, watch_metrics, report_date_str, cycle_window):
+    """
+    Собрать широкий список channels_watch:
+    любые найденные крипто-сигнальные каналы старше месяца с честной оценкой.
+    """
+    now = _msk_now()
+    complaints_map = {}
+    candidates = {}
+
+    for row in (complaints_rows or []):
+        key = _norm_ch_key(row.get('channel') or '')
+        if not key:
+            continue
+        complaints_map[key] = {
+            'count': int(row.get('complaints') or 0),
+            'losses': int(row.get('losses') or 0),
+            'source_url': (row.get('source_url') or '').strip(),
+        }
+
+    def add_candidate(row, fallback_source):
+        key = _norm_ch_key(row.get('channel') or row.get('link') or '')
+        if not key or key in _KNOWN_NON_SCAM_CHANNELS:
+            return
+        link = row.get('link') or _object_link(row.get('channel', ''))
+        if not link or 't.me/' not in link:
+            return
+        created_dt = channel_ages_from_tg.get(key)
+        if created_dt is None and row.get('date'):
+            parsed = _parse_date_ddmmyyyy((row.get('date') or '').strip())
+            if parsed is not None:
+                created_dt = parsed.replace(tzinfo=timezone.utc) if getattr(parsed, 'tzinfo', None) is None else parsed
+        if created_dt is None:
+            return
+        age_days = (now - created_dt).days
+        if age_days < WATCH_MIN_AGE_DAYS:
+            return
+        existing = candidates.get(key)
+        source_label = _watch_source_label(row) if row.get('query_group') else fallback_source
+        if not existing:
+            candidates[key] = {
+                'username': row.get('channel') or ('@' + key),
+                'link': link,
+                'detected_at': now.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                'created_at': created_dt.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                'channel_age_days': age_days,
+                'source_primary': source_label,
+                'vip_price': (row.get('vip') or '').strip(),
+                'title': (row.get('title') or '').strip(),
+            }
+            return
+        existing_sources = set([s.strip() for s in (existing.get('source_primary') or '').split('+') if s.strip()])
+        existing_sources.add(source_label)
+        existing['source_primary'] = ' + '.join(sorted(existing_sources))
+        if not existing.get('title') and row.get('title'):
+            existing['title'] = (row.get('title') or '').strip()
+        vip_val = (row.get('vip') or '').strip()
+        if vip_val and vip_val != '—' and not existing.get('vip_price'):
+            existing['vip_price'] = vip_val
+
+    for row in (tgstat_watch_channels or []):
+        add_candidate(row, 'широкий поиск TGStat')
+    for row in (telega_channels or []):
+        add_candidate(row, 'каталог Telegram')
+    for row in (watch_channels or []):
+        add_candidate(row, 'поиск в Telegram')
+    for row in (complaints_rows or []):
+        add_candidate({
+            'channel': row.get('channel'),
+            'link': _object_link(row.get('channel', '')),
+            'query_group': 'жалобы/обсуждения',
+            'vip': '',
+            'title': '',
+        }, 'форма жалоб / чаты')
+
+    watch_rows = []
+    for key, row in sorted(candidates.items(), key=lambda item: (-item[1].get('channel_age_days', 0), item[1].get('username', ''))):
+        metrics = watch_metrics.get(key) or {}
+        complaints = complaints_map.get(key, {})
+        complaints_count = int(complaints.get('count') or 0)
+        losses = int(complaints.get('losses') or 0)
+        title = row.get('title') or row.get('username') or ''
+        agg_cell, vip_cell, rm_cell = _compute_behavioral_from_title(title)
+        suspicious = []
+        if agg_cell != '—':
+            suspicious.append('обещания лёгкой прибыли')
+        if vip_cell != '—':
+            suspicious.append('давление на VIP / срочность')
+        if rm_cell != '—':
+            suspicious.append('призывы нарушать риск-менеджмент')
+        if metrics.get('profit_mode') == 'похоже, показывает только прибыль':
+            suspicious.append('похоже, показывает только прибыль')
+
+        vip_summary = (row.get('vip_price') or '').strip()
+        if not vip_summary or vip_summary == '—':
+            vip_summary = 'Есть упоминания VIP/закрытого доступа' if metrics.get('vip_detected') else 'Платных услуг не обнаружено'
+
+        posts_30d = int(metrics.get('recent_posts_30d') or 0)
+        if metrics.get('activity_label'):
+            activity_summary = '%s, %d постов за 30 дней' % (
+                metrics.get('activity_label') or 'данных об активности мало',
+                posts_30d
+            )
+        elif 'TGStat' in (row.get('source_primary') or '') or 'поиск' in (row.get('source_primary') or ''):
+            activity_summary = 'найден в текущем поиске; свежие посты не проверены'
+        else:
+            activity_summary = 'данных об активности мало'
+
+        if complaints_count > 0:
+            reviews_summary = '%d жалоб%s. Положительных отзывов в текущих источниках не найдено.' % (
+                complaints_count,
+                (' на %d ₽' % losses) if losses > 0 else ''
+            )
+        else:
+            reviews_summary = 'Жалоб не найдено. Положительных отзывов в текущих источниках не найдено.'
+
+        if complaints_count >= 2 and suspicious:
+            status = 'в риске'
+        elif suspicious:
+            status = 'под наблюдением'
+        elif complaints_count == 0 and not suspicious:
+            status = 'без нарушений'
+        else:
+            status = 'под наблюдением'
+
+        evidence_parts = [
+            'Возраст канала: %d дней.' % int(row.get('channel_age_days') or 0),
+            'Активность: %s.' % activity_summary,
+            'VIP/сигналы: %s.' % vip_summary,
+            'Контент: %s.' % (metrics.get('profit_mode') or 'данных о прибыли/убытках мало'),
+            reviews_summary,
+        ]
+        if suspicious:
+            evidence_parts.append('Подозрительные признаки: %s.' % ', '.join(suspicious))
+
+        watch_rows.append([
+            row.get('username', ''),
+            row.get('link', ''),
+            row.get('detected_at', ''),
+            row.get('created_at', ''),
+            row.get('channel_age_days', ''),
+            row.get('source_primary', ''),
+            vip_summary,
+            complaints_count,
+            activity_summary,
+            reviews_summary,
+            ' | '.join(evidence_parts),
+            cycle_window,
+            status,
+        ])
+
+    return watch_rows
+
+
+def _write_channels_watch_to_sheet(watch_rows, client, sheet_id):
+    """Upsert wide monitoring rows into channels_watch sheet."""
+    if not client or not sheet_id:
+        return []
+
+    watch_range = os.environ.get('KRO_CHANNELS_WATCH_RANGE', 'channels_watch!A2:M')
+    sheet_name = watch_range.split('!')[0] if '!' in watch_range else 'channels_watch'
+    header = [[
+        'username', 'link', 'detected_at', 'created_at', 'channel_age_days',
+        'source_primary', 'vip_price', 'complaints', 'activity_summary',
+        'reviews_summary', 'source_evidence', 'cycle_window', 'status'
+    ]]
+
+    try:
+        ensure_sheet_exists(client, sheet_id, sheet_name, row_count=500, column_count=13)
+        existing_header = client.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range='%s!A1' % sheet_name
+        ).execute().get('values', [])
+        if not existing_header:
+            client.spreadsheets().values().update(
+                spreadsheetId=sheet_id,
+                range='%s!A1:M1' % sheet_name,
+                valueInputOption='USER_ENTERED',
+                body={'values': header}
+            ).execute()
+    except Exception as e:
+        print('channels_watch ensure header error: %s' % e, file=sys.stderr)
+        return []
+
+    try:
+        existing_resp = client.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range='%s!A2:M' % sheet_name
+        ).execute()
+        existing_rows = existing_resp.get('values', []) or []
+    except Exception as e:
+        print('channels_watch read error: %s' % e, file=sys.stderr)
+        existing_rows = []
+
+    row_map = {}
+    for idx, row in enumerate(existing_rows, start=2):
+        key = _norm_ch_key((row[0] if row else '').strip())
+        if key:
+            row_map[key] = idx
+
+    updated = []
+    append_rows = []
+    for row in (watch_rows or []):
+        key = _norm_ch_key(row[0] if row else '')
+        if not key or key in _KNOWN_NON_SCAM_CHANNELS:
+            continue
+        if key in row_map:
+            try:
+                client.spreadsheets().values().update(
+                    spreadsheetId=sheet_id,
+                    range='%s!A%d:M%d' % (sheet_name, row_map[key], row_map[key]),
+                    valueInputOption='USER_ENTERED',
+                    body={'values': [row]}
+                ).execute()
+                updated.append(row[0])
+            except Exception as e:
+                print('channels_watch update error for %s: %s' % (row[0], e), file=sys.stderr)
+        else:
+            append_rows.append(row)
+            updated.append(row[0])
+
+    if append_rows:
+        try:
+            client.spreadsheets().values().append(
+                spreadsheetId=sheet_id,
+                range='%s!A:M' % sheet_name,
+                valueInputOption='USER_ENTERED',
+                insertDataOption='INSERT_ROWS',
+                body={'values': append_rows}
+            ).execute()
+        except Exception as e:
+            print('channels_watch append error: %s' % e, file=sys.stderr)
+
+    if updated:
+        print('channels_watch: upsert %d каналов.' % len(updated), file=sys.stderr)
+    return updated
 
 
 def _build_stats_from_confirmed(confirmed_objects):
@@ -3179,6 +3649,11 @@ def main():
         print('TGStat fetch failed: %s' % e, file=sys.stderr)
         new_tgstat = []
         unavailable_sources.append('TGStat')
+    try:
+        tgstat_watch_channels = fetch_tgstat_watch_channels()
+    except Exception as e:
+        print('TGStat watch fetch failed: %s' % e, file=sys.stderr)
+        tgstat_watch_channels = []
     time.sleep(REQUEST_DELAY)
 
     # 2) Telega catalog
@@ -3195,6 +3670,8 @@ def main():
     )
     # Обновляем new_tgstat: добавляем каналы найденные через Telegram SearchRequest
     tg_direct = tg_data.pop('_direct_search_channels', [])
+    tg_watch = tg_data.pop('_watch_search_channels', [])
+    watch_metrics = tg_data.pop('watch_metrics', {})
     if tg_direct:
         seen_ch = {_norm_ch_key(r.get('channel', '')) for r in new_tgstat}
         for r in tg_direct:
@@ -3308,8 +3785,21 @@ def main():
     # --- CONFIRMED PIPELINE: строгий 3-критерийный отбор для сайта и scam_base ---
     cycle_window = '%s_%s' % (report_date_str, 'am' if now_msk_dt.hour < 12 else 'pm')
     confirmed_objects = _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel_ages_from_tg)
+    inserted_confirmed_channels = []
     if client and sheet_id:
-        _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id)
+        inserted_confirmed_channels = _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id)
+    channels_watch_rows = _build_channels_watch_rows(
+        tgstat_watch_channels,
+        telega_channels,
+        tg_watch,
+        complaints_rows,
+        channel_ages_from_tg,
+        watch_metrics,
+        report_date_str,
+        cycle_window
+    )
+    if client and sheet_id:
+        _write_channels_watch_to_sheet(channels_watch_rows, client, sheet_id)
     confirmed_stats = _build_stats_from_confirmed(confirmed_objects)
     # Цифры для сайта — только из подтверждённых объектов
     site_new_scams = confirmed_stats['new_scam_channels']
@@ -3428,7 +3918,7 @@ def main():
             unavailable_sources=unavailable_sources,
             sources_checked=sources_checked,
             last_cycle_at=now_msk_dt.strftime('%d.%m.%Y %H:%M MSK'),
-            new_in_cycle=len(cycle_channels),
+            new_in_cycle=len(inserted_confirmed_channels),
             next_cycle_at=next_cycle_at + ' MSK'
         )
         url = update_sources_google_doc(sources_doc_id, doc_text, structured_data)
@@ -3453,7 +3943,7 @@ def main():
     out = {
         'new_scams': site_new_scams,
         'new_scam_channels': site_new_scams,
-        'new_in_cycle': len(cycle_channels),
+        'new_in_cycle': len(inserted_confirmed_channels),
         'last_cycle_at': now_msk.strftime('%Y-%m-%dT%H:%M:%SZ'),
         'sources_checked': sources_checked,
         'losses_12h': site_losses,
@@ -3514,14 +4004,13 @@ def main():
         out.get('sources_checked', []),
         meta_range=os.environ.get('KRO_META_RANGE', 'kro_meta!A:B').strip() or 'kro_meta!A:B'
     )
-    _hist_channels = [t.get('channel') or t.get('name') or '' for t in (out.get('top3') or out.get('display_top3') or [])[:10]]
     append_kro_history_row(
         client,
         sheet_id,
         out.get('last_cycle_at'),
         out.get('new_in_cycle', 0),
         out.get('sources_checked', []),
-        channels_added=_hist_channels,
+        channels_added=inserted_confirmed_channels,
         status=out.get('publishStatus') or 'honest_zero',
         notes=out.get('siteNotice') or ''
     )
