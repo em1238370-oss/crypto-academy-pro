@@ -7,6 +7,7 @@ KRO Web Scraper: собирает упоминания скам-каналов �
   - fin-obzor.net     — обзоры финансовых и крипто-мошенников
   - brokers-check.ru  — доп. источник жалоб, если сайт доступен и содержит крипто-каналы
   - cryptorussia.ru   — разборы крипто-каналов и трейдеров с отзывами и схемами обмана
+  - vklader.com       — чёрный список Telegram-каналов и пользовательские проверки
 
 Каждая найденная запись: {channel, sum_rub, description, source_url, source}
 Возвращаемые данные пишутся в лист reports Google Sheets с пометкой source='web'.
@@ -105,6 +106,7 @@ _CHANNEL_NOISE = frozenset({
     'instagram', 'facebook', 'twitter', 'youtube', 'tiktok', 'vkontakte',
     # Anti-scam watchdog channels — should never be classified as scam
     'cryptoscammsup', 'crypt0scamm', 'publicryptoscamm', 'scamrsalert',
+    'vklader',
     # Generic words sometimes parsed as @mentions
     'support', 'admin', 'help', 'info', 'news', 'official', 'channel',
     'contact', 'manager', 'operator', 'bot', 'feedback',
@@ -501,6 +503,85 @@ def _build_findings_from_page(page, url, source_name, max_channels=3):
     return findings
 
 
+def _extract_vklader_article_links(html, base_url, limit=25):
+    """Extract relevant article links from Vklader pages."""
+    links = []
+    seen = set()
+    skip_paths = (
+        '/blacklist-telegram', '/proverka-telegram', '/vash-post/', '/pamyatka/',
+        '/rubrika/', '/tag/', '/page/', '/wp-content/', '/wp-json/', '/comment',
+    )
+    for link in _parse_article_links(html, base_url):
+        low = link.lower()
+        if any(skip in low for skip in skip_paths):
+            continue
+        path = urlparse(link).path.strip('/')
+        if not path or '/' in path:
+            continue
+        if link not in seen:
+            seen.add(link)
+            links.append(link)
+        if len(links) >= limit:
+            break
+    return links
+
+
+def _build_vklader_blacklist_findings(page, url):
+    """
+    Parse inline blacklist entries from Vklader blacklist page itself.
+    Keeps source_url on the blacklist page for direct verification.
+    """
+    try:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(page or '', 'html.parser')
+    except ImportError:
+        soup = None
+
+    results = []
+    seen = set()
+    blocks = []
+
+    if soup is not None:
+        article = soup.find('article') or soup.find('main') or soup
+        for node in article.find_all(['p', 'li']):
+            text = node.get_text(' ', strip=True)
+            if '@' not in text:
+                continue
+            blocks.append(text)
+    else:
+        blocks = re.findall(r'>([^<>]*@[^<>]{10,500})<', page or '', re.IGNORECASE)
+
+    for text in blocks:
+        clean = re.sub(r'\s+', ' ', text).strip()
+        clean_lower = clean.lower()
+        if len(clean) < 20:
+            continue
+        if '@vklader' in clean_lower:
+            continue
+        if 'подписывайтесь' in clean_lower or 'финсайд' in clean_lower:
+            continue
+        channels = _extract_channel_mentions(clean)
+        if not channels:
+            continue
+        if not (_has_concrete_scam_facts(clean) or 'черн' in clean_lower or 'лохотрон' in clean_lower or 'мошенн' in clean_lower):
+            continue
+        evidence = f'Источник: {url} | {clean[:400]}'
+        sum_rub = _extract_loss_amount(clean)
+        for ch in channels[:3]:
+            key = ('@' + ch, url, clean[:120])
+            if key in seen:
+                continue
+            seen.add(key)
+            results.append({
+                'channel': '@' + ch,
+                'sum_rub': sum_rub,
+                'description': evidence[:500],
+                'source_url': url,
+                'source': 'vklader',
+            })
+    return results
+
+
 # ---------------------------------------------------------------------------
 # Source 1: stop-scam1.com
 # ---------------------------------------------------------------------------
@@ -788,6 +869,61 @@ def scrape_cryptorussia():
 
 
 # ---------------------------------------------------------------------------
+# Source 5: vklader.com
+# ---------------------------------------------------------------------------
+
+_VKLADER_BASE = 'https://vklader.com'
+_VKLADER_BLACKLIST_URL = 'https://vklader.com/blacklist-telegram/'
+_VKLADER_PROVERKA_URL = 'https://vklader.com/proverka-telegram/'
+
+
+def scrape_vklader():
+    """
+    Scrape vklader.com blacklist and user verification pages.
+    Returns list of {channel, sum_rub, description, source_url, source}.
+    """
+    results = []
+
+    blacklist_html = _fetch(_VKLADER_BLACKLIST_URL)
+    proverka_html = _fetch(_VKLADER_PROVERKA_URL)
+    if not blacklist_html and not proverka_html:
+        _set_source_status('vklader.com', 'unavailable', 0)
+        logger.info('vklader.com: both pages unavailable')
+        return results
+
+    if blacklist_html:
+        results.extend(_build_vklader_blacklist_findings(blacklist_html, _VKLADER_BLACKLIST_URL))
+        for url in _extract_vklader_article_links(blacklist_html, _VKLADER_BASE, limit=20):
+            page = _fetch(url)
+            if not page:
+                continue
+            results.extend(_build_findings_from_page(page, url, 'vklader', max_channels=3))
+
+    if proverka_html:
+        for url in _extract_vklader_article_links(proverka_html, _VKLADER_BASE, limit=12):
+            page = _fetch(url)
+            if not page:
+                continue
+            results.extend(_build_findings_from_page(page, url, 'vklader', max_channels=3))
+
+    dedup = {}
+    for r in results:
+        source_url = (r.get('source_url') or '').strip()
+        channel = (r.get('channel') or '').strip().lower()
+        if not source_url or not channel:
+            continue
+        key = (channel, source_url)
+        if key not in dedup:
+            dedup[key] = r
+
+    deduped = list(dedup.values())
+    unique_channels = len({r.get('channel') for r in deduped if r.get('channel')})
+    _set_source_status('vklader.com', 'found' if unique_channels else 'not_found', unique_channels)
+    logger.info('vklader.com: found %d channel mentions', len(deduped))
+    return deduped
+
+
+# ---------------------------------------------------------------------------
 # Combined entry point
 # ---------------------------------------------------------------------------
 
@@ -803,6 +939,7 @@ def scrape_all():
     results.extend(scrape_cryptorussia())
     results.extend(scrape_fin_obzor())
     results.extend(scrape_brokers_check())
+    results.extend(scrape_vklader())
 
     # Additional enrichment: search internet reviews for usernames already found
     # in primary sources. This makes it easy to expand evidence without changing

@@ -3861,6 +3861,11 @@ def main():
             'count': int((web_status_map.get('cryptorussia.ru') or {}).get('count', 0) or 0),
         },
         {
+            'name': 'vklader.com',
+            'status': (web_status_map.get('vklader.com') or {}).get('status', 'unavailable'),
+            'count': int((web_status_map.get('vklader.com') or {}).get('count', 0) or 0),
+        },
+        {
             'name': 'форма жалоб',
             'status': 'found' if form_cycle_channels else 'not_found',
             'count': len(form_cycle_channels),
