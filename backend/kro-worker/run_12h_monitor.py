@@ -598,6 +598,33 @@ WATCH_VIP_PATTERNS = (
     'vip', 'вип', 'закрытый канал', 'закрытый клуб', 'платный доступ',
     'подписка', 'личка', 'пиши в лс', 'пиши в личку',
 )
+CONTENT_RISK_KEYWORDS = {
+    'garantiya': ('гарант', 'guarantee'),
+    'bez_riska': ('без риска', 'no risk'),
+    'p100': ('100%',),
+    'x2': ('x2', 'х2'),
+    'x5': ('x5', 'х5'),
+    'srochno': ('срочно', 'urgent'),
+    'vip': ('vip', 'вип'),
+    'spots_left': ('осталось мест', 'мест осталось', 'spots left'),
+    'leverage': ('плечо', 'leverage'),
+    'deposit': ('депозит', 'deposit'),
+}
+CONTENT_SIGNAL_PATTERNS = (
+    'signal', 'signals', 'сигнал', 'сигналы', 'long', 'short',
+    'entry', 'вход', 'тейк', 'take profit', 'tp', 'sl', 'stop loss',
+    'стоп', 'стоп-лосс', 'плечо',
+)
+CONTENT_AD_PATTERNS = (
+    'реклама', 'advert', 'advertising', 'партнер', 'partner', 'переходите',
+    'подписывайтесь', 'регистрация', 'register', 'реф', 'ref', 'referral',
+    'промокод', 'bonus', 'bonus code', 'биржа', 'exchange', 'broker',
+)
+CONTENT_NETWORK_PATTERNS = (
+    'подписывайтесь', 'переходите', 'наш второй канал', 'наш новый канал',
+    'партнер', 'партнёр', 'реклама', 'promocode', 'промокод', 'bonus',
+    'регистрация', 'register', 'ref', 'реф'
+)
 
 
 async def _search_new_channels_via_telegram(client, days_max=30):
@@ -1244,6 +1271,286 @@ def _has_signal_keywords(text):
     return any(kw in lower for kw in _SIGNAL_KEYWORDS)
 
 
+def _channel_display_name(ch):
+    key = _norm_ch_key(ch)
+    if not key:
+        return ''
+    if key.startswith('t.me/+'):
+        return key
+    return '@' + key
+
+
+def _channel_public_slug(ch):
+    key = _norm_ch_key(ch)
+    if not key or key.startswith('t.me/+'):
+        return ''
+    return key
+
+
+def _safe_ratio(numerator, denominator):
+    if not denominator:
+        return None
+    try:
+        return round(float(numerator) / float(denominator), 2)
+    except Exception:
+        return None
+
+
+def _normalize_message_text(text):
+    return re.sub(r'\s+', ' ', (text or '').strip())
+
+
+def _extract_message_mentions(text, self_key=''):
+    mentions = []
+    seen = set()
+    for match in re.finditer(r'(?<!\w)@([a-zA-Z0-9_]{4,32})', text or ''):
+        username = match.group(1)
+        key = _norm_ch_key(username)
+        if not key or key == self_key or key in _KNOWN_NON_SCAM_CHANNELS or key in seen:
+            continue
+        seen.add(key)
+        mentions.append('@' + username)
+    return mentions
+
+
+def _summarize_content_messages(messages, channel_ref=''):
+    now = datetime.now(timezone.utc)
+    self_key = _norm_ch_key(channel_ref)
+    keyword_counts = {key: 0 for key in CONTENT_RISK_KEYWORDS}
+    profit_posts = 0
+    loss_posts = 0
+    signal_posts = 0
+    ad_posts = 0
+    last_post_dt = None
+    network_mentions = []
+    seen_edges = set()
+
+    for item in messages[:50]:
+        text = _normalize_message_text(item.get('text') or '')
+        lower = text.lower()
+        dt = item.get('date')
+        if dt and (last_post_dt is None or dt > last_post_dt):
+            last_post_dt = dt
+        if not text:
+            continue
+
+        for key, variants in CONTENT_RISK_KEYWORDS.items():
+            keyword_counts[key] += sum(lower.count(variant) for variant in variants)
+
+        if any(p in lower for p in PROFIT_PATTERNS):
+            profit_posts += 1
+        if any(p in lower for p in LOSS_PATTERNS):
+            loss_posts += 1
+        if any(p in lower for p in CONTENT_SIGNAL_PATTERNS):
+            signal_posts += 1
+        if any(p in lower for p in CONTENT_AD_PATTERNS):
+            ad_posts += 1
+
+        mentions = _extract_message_mentions(text, self_key=self_key)
+        if not mentions:
+            continue
+        if not any(p in lower for p in CONTENT_NETWORK_PATTERNS + CONTENT_AD_PATTERNS + WATCH_VIP_PATTERNS):
+            continue
+        sample_text = text[:220]
+        for mention in mentions:
+            edge_key = (self_key, _norm_ch_key(mention))
+            if edge_key in seen_edges:
+                continue
+            seen_edges.add(edge_key)
+            network_mentions.append({
+                'source_channel': _channel_display_name(channel_ref) or _channel_display_name(self_key),
+                'target_channel': mention,
+                'evidence': sample_text,
+                'post_url': item.get('url') or '',
+            })
+
+    activity = 'нет данных'
+    if last_post_dt is not None:
+        age_days = max(0, (now - last_post_dt).days)
+        activity = 'активен' if age_days <= WATCH_FRESH_POST_DAYS else 'тихий'
+
+    analyzed = {
+        'status': 'ok' if messages else 'недоступен',
+        'posts_analyzed': len(messages[:50]),
+        'keywords': keyword_counts,
+        'profit_posts': profit_posts,
+        'loss_posts': loss_posts,
+        'only_profit_posts': bool(profit_posts and loss_posts == 0),
+        'last_post_at': last_post_dt.strftime('%Y-%m-%dT%H:%M:%SZ') if last_post_dt else '',
+        'activity': activity,
+        'signal_posts': signal_posts,
+        'ad_posts': ad_posts,
+        'signal_to_ad_ratio': _safe_ratio(signal_posts, ad_posts) if ad_posts else None,
+        'mentioned_channels': [m['target_channel'] for m in network_mentions],
+        'network_mentions': network_mentions,
+    }
+    return analyzed
+
+
+def _fetch_public_channel_messages(channel_ref, limit=50):
+    slug = _channel_public_slug(channel_ref)
+    if not slug:
+        return []
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+    except ImportError:
+        return []
+    url = 'https://t.me/s/%s' % slug
+    try:
+        resp = requests.get(url, headers={'User-Agent': USER_AGENT}, timeout=20)
+        resp.raise_for_status()
+    except Exception as e:
+        print('public telegram fetch failed for %s: %s' % (channel_ref, e), file=sys.stderr)
+        return []
+
+    soup = BeautifulSoup(resp.text or '', 'html.parser')
+    messages = []
+    for msg in soup.select('.tgme_widget_message')[:limit]:
+        text_node = msg.select_one('.tgme_widget_message_text')
+        time_node = msg.select_one('time')
+        text = _normalize_message_text(text_node.get_text(' ', strip=True) if text_node else '')
+        dt = None
+        if time_node and time_node.get('datetime'):
+            try:
+                dt = datetime.fromisoformat(time_node['datetime'].replace('Z', '+00:00')).astimezone(timezone.utc)
+            except ValueError:
+                dt = None
+        link_node = msg.select_one('a.tgme_widget_message_date')
+        post_url = link_node.get('href', '').strip() if link_node else ''
+        messages.append({
+            'text': text,
+            'date': dt,
+            'url': post_url,
+        })
+    return messages
+
+
+async def analyze_channel_content(username, client=None):
+    """
+    Анализировать контент канала:
+    - последние 50 постов;
+    - частоты риск-слов;
+    - прибыль/убытки;
+    - активность;
+    - соотношение сигналов к рекламе;
+    - связи с другими каналами.
+    """
+    channel_ref = (username or '').strip()
+    if not channel_ref:
+        return 'недоступен'
+
+    messages = []
+    source = ''
+
+    if client is not None:
+        try:
+            entity_ref = channel_ref
+            if not entity_ref.startswith('@') and not entity_ref.startswith('t.me/'):
+                entity_ref = '@' + entity_ref
+            if entity_ref.startswith('t.me/'):
+                entity_ref = 'https://t.me/' + entity_ref.split('/', 1)[-1]
+            entity = await client.get_entity(entity_ref)
+            async for msg in client.iter_messages(entity, limit=50):
+                text = _normalize_message_text((msg.text or '') + ' ' + (getattr(msg, 'message', '') or ''))
+                msg_dt = getattr(msg, 'date', None)
+                if msg_dt and getattr(msg_dt, 'tzinfo', None) is None:
+                    msg_dt = msg_dt.replace(tzinfo=timezone.utc)
+                post_url = ''
+                username_slug = (getattr(entity, 'username', None) or '').strip()
+                if username_slug and getattr(msg, 'id', None):
+                    post_url = 'https://t.me/%s/%s' % (username_slug, msg.id)
+                messages.append({'text': text, 'date': msg_dt, 'url': post_url})
+            source = 'telethon'
+        except Exception as e:
+            print('telethon content analysis fallback for %s: %s' % (channel_ref, e), file=sys.stderr)
+
+    if not messages:
+        messages = _fetch_public_channel_messages(channel_ref, limit=50)
+        source = 'public_html' if messages else source
+
+    if not messages:
+        return 'недоступен'
+
+    analysis = _summarize_content_messages(messages, channel_ref=channel_ref)
+    if isinstance(analysis, dict):
+        analysis['source'] = source or 'public_html'
+    return analysis
+
+
+async def _analyze_confirmed_channels_content(confirmed_objects):
+    """Обогатить confirmed_objects content_analysis и собрать граф связей каналов."""
+    if not confirmed_objects:
+        return [], []
+
+    client = None
+    if TELEGRAM_API_ID and TELEGRAM_API_HASH:
+        try:
+            from telethon import TelegramClient
+            client = TelegramClient(TELEGRAM_SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+            await client.connect()
+            if not await client.is_user_authorized():
+                await client.disconnect()
+                client = None
+                print('Telethon session not authorized; using public Telegram HTML fallback.', file=sys.stderr)
+        except Exception as e:
+            print('Telethon client unavailable for content analysis: %s' % e, file=sys.stderr)
+            try:
+                if client is not None:
+                    await client.disconnect()
+            except Exception:
+                pass
+            client = None
+
+    enriched = []
+    network_rows = []
+    seen_network = set()
+    try:
+        for obj in confirmed_objects:
+            analysis = await analyze_channel_content(obj.get('username') or obj.get('link') or '', client=client)
+            obj = dict(obj)
+            if isinstance(analysis, dict):
+                risk_hits = sum(int(v or 0) for v in (analysis.get('keywords') or {}).values())
+                complaints = int(obj.get('complaints') or 0)
+                only_profit = bool(analysis.get('only_profit_posts'))
+                ad_posts = int(analysis.get('ad_posts') or 0)
+                signal_posts = int(analysis.get('signal_posts') or 0)
+                obj['content_analysis'] = json.dumps(analysis, ensure_ascii=False)
+                if complaints >= 2 and (only_profit or risk_hits >= 3 or ad_posts > signal_posts):
+                    obj['status'] = 'в риске'
+                elif complaints >= 2:
+                    obj['status'] = 'под наблюдением'
+                for mention in (analysis.get('network_mentions') or []):
+                    source_channel = mention.get('source_channel') or _channel_display_name(obj.get('username'))
+                    target_channel = mention.get('target_channel') or ''
+                    key = (_norm_ch_key(source_channel), _norm_ch_key(target_channel))
+                    if not key[0] or not key[1] or key in seen_network:
+                        continue
+                    seen_network.add(key)
+                    network_rows.append([
+                        source_channel,
+                        target_channel,
+                        'advertises',
+                        obj.get('detected_at', ''),
+                        analysis.get('last_post_at', ''),
+                        mention.get('evidence', ''),
+                        mention.get('post_url', ''),
+                    ])
+            else:
+                obj['content_analysis'] = 'недоступен'
+                if (obj.get('complaints') or 0) >= 2:
+                    obj['status'] = 'под наблюдением'
+            enriched.append(obj)
+    finally:
+        if client is not None:
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
+
+    return enriched, network_rows
+
+
 def _parse_date_ddmmyyyy(date_str):
     """Разобрать 'DD.MM.YYYY' в datetime (UTC) или None."""
     try:
@@ -1374,7 +1681,7 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
 
 def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
     """
-    Записать подтверждённые объекты в расширенную scam_base (13 колонок A–M).
+    Записать подтверждённые объекты в расширенную scam_base (14 колонок A–N).
     Дедупликация по username: если канал уже есть в листе — строку не дублируем.
     """
     if not confirmed_objects or not client or not sheet_id:
@@ -1418,6 +1725,7 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             obj.get('source_evidence', ''),
             obj.get('cycle_window', ''),
             obj.get('status', ''),
+            obj.get('content_analysis', ''),
         ])
         inserted_channels.append(obj.get('username', ''))
         existing_keys.add(key)
@@ -1428,7 +1736,7 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
     try:
         client.spreadsheets().values().append(
             spreadsheetId=sheet_id,
-            range='%s!A:M' % sheet_name,
+            range='%s!A:N' % sheet_name,
             valueInputOption='USER_ENTERED',
             insertDataOption='INSERT_ROWS',
             body={'values': new_rows}
@@ -1690,6 +1998,269 @@ def _write_channels_watch_to_sheet(watch_rows, client, sheet_id):
     return updated
 
 
+def _write_channels_network_to_sheet(network_rows, client, sheet_id):
+    """Upsert network links into channels_network sheet."""
+    if not client or not sheet_id:
+        return []
+
+    network_range = os.environ.get('KRO_CHANNELS_NETWORK_RANGE', 'channels_network!A2:G')
+    sheet_name = network_range.split('!')[0] if '!' in network_range else 'channels_network'
+    header = [[
+        'source_channel', 'target_channel', 'relation', 'detected_at',
+        'last_post_at', 'evidence', 'post_url'
+    ]]
+    try:
+        ensure_sheet_exists(client, sheet_id, sheet_name, row_count=500, column_count=7)
+        client.spreadsheets().values().update(
+            spreadsheetId=sheet_id,
+            range='%s!A1:G1' % sheet_name,
+            valueInputOption='USER_ENTERED',
+            body={'values': header}
+        ).execute()
+    except Exception as e:
+        print('channels_network ensure header error: %s' % e, file=sys.stderr)
+        return []
+
+    try:
+        existing_resp = client.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range='%s!A2:G' % sheet_name
+        ).execute()
+        existing_rows = existing_resp.get('values', []) or []
+    except Exception as e:
+        print('channels_network read error: %s' % e, file=sys.stderr)
+        existing_rows = []
+
+    row_map = {}
+    for idx, row in enumerate(existing_rows, start=2):
+        src = _norm_ch_key(row[0] if len(row) > 0 else '')
+        tgt = _norm_ch_key(row[1] if len(row) > 1 else '')
+        if src and tgt:
+            row_map[(src, tgt)] = idx
+
+    written = []
+    append_rows = []
+    for row in (network_rows or []):
+        src = _norm_ch_key(row[0] if len(row) > 0 else '')
+        tgt = _norm_ch_key(row[1] if len(row) > 1 else '')
+        if not src or not tgt or src == tgt or tgt in _KNOWN_NON_SCAM_CHANNELS:
+            continue
+        key = (src, tgt)
+        if key in row_map:
+            try:
+                client.spreadsheets().values().update(
+                    spreadsheetId=sheet_id,
+                    range='%s!A%d:G%d' % (sheet_name, row_map[key], row_map[key]),
+                    valueInputOption='USER_ENTERED',
+                    body={'values': [row]}
+                ).execute()
+                written.append(row[1])
+            except Exception as e:
+                print('channels_network update error for %s -> %s: %s' % (row[0], row[1], e), file=sys.stderr)
+        else:
+            append_rows.append(row)
+            written.append(row[1])
+
+    if append_rows:
+        try:
+            client.spreadsheets().values().append(
+                spreadsheetId=sheet_id,
+                range='%s!A:G' % sheet_name,
+                valueInputOption='USER_ENTERED',
+                insertDataOption='INSERT_ROWS',
+                body={'values': append_rows}
+            ).execute()
+        except Exception as e:
+            print('channels_network append error: %s' % e, file=sys.stderr)
+
+    if written:
+        print('channels_network: upsert %d связей.' % len(written), file=sys.stderr)
+    return written
+
+
+def _enqueue_channels_for_check(channels, client, sheet_id):
+    """Добавить новые каналы в check_queue для последующей проверки worker.py."""
+    if not client or not sheet_id:
+        return []
+    queue_range = os.environ.get('KRO_CHECK_QUEUE_RANGE', 'check_queue!A2:B')
+    sheet_name = queue_range.split('!')[0] if '!' in queue_range else 'check_queue'
+    header = [['channel', 'added_at']]
+    try:
+        ensure_sheet_exists(client, sheet_id, sheet_name, row_count=500, column_count=2)
+        client.spreadsheets().values().update(
+            spreadsheetId=sheet_id,
+            range='%s!A1:B1' % sheet_name,
+            valueInputOption='USER_ENTERED',
+            body={'values': header}
+        ).execute()
+        existing_resp = client.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range='%s!A2:A' % sheet_name
+        ).execute()
+        existing = {
+            _norm_ch_key((row[0] if row else '').strip())
+            for row in (existing_resp.get('values') or [])
+            if row and (row[0] or '').strip()
+        }
+    except Exception as e:
+        print('check_queue read error: %s' % e, file=sys.stderr)
+        return []
+
+    now_iso = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    append_rows = []
+    queued = []
+    for ch in channels or []:
+        key = _norm_ch_key(ch)
+        if not key or key in existing or key in _KNOWN_NON_SCAM_CHANNELS:
+            continue
+        display = _channel_display_name(ch)
+        if not display:
+            continue
+        append_rows.append([display, now_iso])
+        existing.add(key)
+        queued.append(display)
+
+    if append_rows:
+        try:
+            client.spreadsheets().values().append(
+                spreadsheetId=sheet_id,
+                range='%s!A:B' % sheet_name,
+                valueInputOption='USER_ENTERED',
+                insertDataOption='INSERT_ROWS',
+                body={'values': append_rows}
+            ).execute()
+        except Exception as e:
+            print('check_queue append error: %s' % e, file=sys.stderr)
+            return []
+    if queued:
+        print('check_queue: добавлено %d каналов из network анализа.' % len(queued), file=sys.stderr)
+    return queued
+
+
+async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=72):
+    """Дописать content_analysis в новые строки scam_base, где оно ещё пустое."""
+    if not client or not sheet_id:
+        return {'updated': 0, 'network_rows': 0}
+
+    scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
+    sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
+    try:
+        resp = client.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range='%s!A2:N' % sheet_name
+        ).execute()
+        rows = resp.get('values', []) or []
+    except Exception as e:
+        print('scam_base enrich read error: %s' % e, file=sys.stderr)
+        return {'updated': 0, 'network_rows': 0}
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    targets = []
+    for idx, row in enumerate(rows, start=2):
+        username = (row[0] if len(row) > 0 else '').strip()
+        content = (row[13] if len(row) > 13 else '').strip()
+        detected_raw = (row[2] if len(row) > 2 else '').strip()
+        if not username or content:
+            continue
+        if detected_raw:
+            try:
+                detected_dt = datetime.strptime(detected_raw, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+                if detected_dt < cutoff:
+                    continue
+            except (ValueError, TypeError):
+                pass
+        targets.append((idx, row))
+
+    if not targets:
+        return {'updated': 0, 'network_rows': 0}
+
+    client_tg = None
+    if TELEGRAM_API_ID and TELEGRAM_API_HASH:
+        try:
+            from telethon import TelegramClient
+            client_tg = TelegramClient(TELEGRAM_SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+            await client_tg.connect()
+            if not await client_tg.is_user_authorized():
+                await client_tg.disconnect()
+                client_tg = None
+        except Exception as e:
+            print('scam_base enrich Telethon unavailable: %s' % e, file=sys.stderr)
+            try:
+                if client_tg is not None:
+                    await client_tg.disconnect()
+            except Exception:
+                pass
+            client_tg = None
+
+    updated = 0
+    network_rows = []
+    seen_network = set()
+    try:
+        for idx, row in targets:
+            username = (row[0] if len(row) > 0 else '').strip()
+            analysis = await analyze_channel_content(username, client=client_tg)
+            status = (row[12] if len(row) > 12 else '').strip()
+            complaints = 0
+            try:
+                complaints = int((row[7] if len(row) > 7 else '0') or 0)
+            except (ValueError, TypeError):
+                complaints = 0
+
+            new_content = 'недоступен'
+            new_status = status
+            if isinstance(analysis, dict):
+                new_content = json.dumps(analysis, ensure_ascii=False)
+                risk_hits = sum(int(v or 0) for v in (analysis.get('keywords') or {}).values())
+                only_profit = bool(analysis.get('only_profit_posts'))
+                ad_posts = int(analysis.get('ad_posts') or 0)
+                signal_posts = int(analysis.get('signal_posts') or 0)
+                if complaints >= 2 and (only_profit or risk_hits >= 3 or ad_posts > signal_posts):
+                    new_status = 'в риске'
+                elif complaints >= 2:
+                    new_status = 'под наблюдением'
+                for mention in (analysis.get('network_mentions') or []):
+                    key = (_norm_ch_key(username), _norm_ch_key(mention.get('target_channel')))
+                    if not key[0] or not key[1] or key in seen_network:
+                        continue
+                    seen_network.add(key)
+                    network_rows.append([
+                        mention.get('source_channel') or _channel_display_name(username),
+                        mention.get('target_channel') or '',
+                        'advertises',
+                        (row[2] if len(row) > 2 else '').strip(),
+                        analysis.get('last_post_at', ''),
+                        mention.get('evidence', ''),
+                        mention.get('post_url', ''),
+                    ])
+
+            padded = list(row[:14]) + [''] * max(0, 14 - len(row))
+            padded[12] = new_status
+            padded[13] = new_content
+            try:
+                client.spreadsheets().values().update(
+                    spreadsheetId=sheet_id,
+                    range='%s!A%d:N%d' % (sheet_name, idx, idx),
+                    valueInputOption='USER_ENTERED',
+                    body={'values': [padded[:14]]}
+                ).execute()
+                updated += 1
+            except Exception as e:
+                print('scam_base enrich update error for %s: %s' % (username, e), file=sys.stderr)
+    finally:
+        if client_tg is not None:
+            try:
+                await client_tg.disconnect()
+            except Exception:
+                pass
+
+    if network_rows:
+        _write_channels_network_to_sheet(network_rows, client, sheet_id)
+        _enqueue_channels_for_check([row[1] for row in network_rows], client, sheet_id)
+    if updated:
+        print('scam_base enrich: обновлено %d строк content_analysis.' % updated, file=sys.stderr)
+    return {'updated': updated, 'network_rows': len(network_rows)}
+
+
 def _build_stats_from_confirmed(confirmed_objects):
     """
     Собрать итоговые 4 цифры для сайта строго из подтверждённых объектов.
@@ -1731,12 +2302,12 @@ def _read_confirmed_from_scam_base(client, sheet_id, hours=12):
     """
     if not client or not sheet_id:
         return []
-    scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:M')
+    scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
     sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
     try:
         resp = client.spreadsheets().values().get(
             spreadsheetId=sheet_id,
-            range='%s!A:M' % sheet_name
+            range='%s!A:N' % sheet_name
         ).execute()
         rows = resp.get('values') or []
     except Exception as e:
@@ -1780,6 +2351,7 @@ def _read_confirmed_from_scam_base(client, sheet_id, hours=12):
             'source_evidence': (row[10] or '').strip(),
             'cycle_window': (row[11] or '').strip(),
             'status': (row[12] or '').strip(),
+            'content_analysis': (row[13] or '').strip() if len(row) > 13 else '',
         })
     return result
 
@@ -3555,7 +4127,7 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
     # Читаем уже существующие каналы в scam_base
     existing_in_scam = set()
     try:
-        sheet_name = (scam_base_range or 'scam_base!A2:M').split('!')[0]
+        sheet_name = (scam_base_range or 'scam_base!A2:N').split('!')[0]
         resp = sheets_client.spreadsheets().values().get(
             spreadsheetId=sheet_id,
             range=f'{sheet_name}!A2:A'
@@ -3595,16 +4167,16 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
         link = 'https://t.me/' + key if not key.startswith('t.me/') else 'https://' + key
         detected_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
         cycle_window = now.strftime('%Y-%m-%d') + ('_am' if now.hour < 12 else '_pm')
-        sheet_name = (scam_base_range or 'scam_base!A2:M').split('!')[0]
+        sheet_name = (scam_base_range or 'scam_base!A2:N').split('!')[0]
 
         v2_row = [[
             norm_ch, link, detected_at, '', '', 'сигнал-канал', '',
-            unique_count, total_loss, 'form+web', evidence[:300], cycle_window, status
+            unique_count, total_loss, 'form+web', evidence[:300], cycle_window, status, ''
         ]]
         try:
             sheets_client.spreadsheets().values().append(
                 spreadsheetId=sheet_id,
-                range=f'{sheet_name}!A:M',
+                range=f'{sheet_name}!A:N',
                 valueInputOption='USER_ENTERED',
                 insertDataOption='INSERT_ROWS',
                 body={'values': v2_row}
@@ -3779,12 +4351,13 @@ def main():
     new_scams_count = len(risk_rows)
 
     # --- AUTO-PROMOTE: каналы из формы/веб-парсера с ≥2 жалобами → scam_base ---
-    scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:M')
+    scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
     _check_and_promote_from_reports(client, sheet_id, scam_base_range, sheet_reports)
 
     # --- CONFIRMED PIPELINE: строгий 3-критерийный отбор для сайта и scam_base ---
     cycle_window = '%s_%s' % (report_date_str, 'am' if now_msk_dt.hour < 12 else 'pm')
     confirmed_objects = _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel_ages_from_tg)
+    confirmed_objects, channels_network_rows = asyncio.run(_analyze_confirmed_channels_content(confirmed_objects))
     inserted_confirmed_channels = []
     if client and sheet_id:
         inserted_confirmed_channels = _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id)
@@ -3800,6 +4373,9 @@ def main():
     )
     if client and sheet_id:
         _write_channels_watch_to_sheet(channels_watch_rows, client, sheet_id)
+        _write_channels_network_to_sheet(channels_network_rows, client, sheet_id)
+        _enqueue_channels_for_check([row[1] for row in channels_network_rows], client, sheet_id)
+        asyncio.run(_fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=72))
     confirmed_stats = _build_stats_from_confirmed(confirmed_objects)
     # Цифры для сайта — только из подтверждённых объектов
     site_new_scams = confirmed_stats['new_scam_channels']

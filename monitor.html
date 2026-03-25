@@ -203,7 +203,22 @@
     </div>
   </section>
 
-  <!-- ── SECTION 6: ИСТОЧНИКИ ── -->
+  <!-- ── SECTION 6: СЕТИ КАНАЛОВ ── -->
+  <section class="mon-section">
+    <div class="mon-section-header">
+      <span class="mon-dot" style="background:#8b5cf6"></span>
+      <span class="mon-section-title">СЕТИ КАНАЛОВ</span>
+      <span class="mon-section-label" style="margin-left:auto" id="s4-network-count"></span>
+    </div>
+    <div class="mon-section-body" style="padding:0">
+      <div class="mon-proof-note">Здесь видны связи между каналами: какой канал в своих постах рекламирует или продвигает другой.</div>
+      <div class="mon-table-wrap" id="s4-network-wrap">
+        <div class="mon-loading mon-spinner" style="padding:32px">Загружаю связи каналов</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 7: ИСТОЧНИКИ ── -->
   <section class="mon-section">
     <div class="mon-section-header">
       <span class="mon-dot green"></span>
@@ -245,7 +260,7 @@
     </div>
   </section>
 
-  <!-- ── SECTION 7: ИСТОРИЯ ЦИКЛОВ ── -->
+  <!-- ── SECTION 8: ИСТОРИЯ ЦИКЛОВ ── -->
   <section class="mon-section">
     <div class="mon-section-header">
       <span class="mon-dot" style="background:#8b5cf6"></span>
@@ -818,7 +833,41 @@
     if (wrap) wrap.innerHTML = html;
   }
 
-  // ── SECTION 5: SOURCES ────────────────────────────────────
+  // ── SECTION 5: CHANNEL NETWORKS ───────────────────────────
+
+  function renderChannelNetworks(rows) {
+    var wrap = document.getElementById('s4-network-wrap');
+    var countEl = document.getElementById('s4-network-count');
+    if (countEl) countEl.textContent = (rows && rows.length ? rows.length : 0) + ' связей';
+
+    if (!rows || !rows.length) {
+      if (wrap) wrap.innerHTML = '<div class="mon-loading">Связи между каналами пока не найдены</div>';
+      return;
+    }
+
+    var html = '<table class="mon-table">' +
+      '<thead><tr>' +
+      '<th>Канал A</th><th>Канал B</th><th>Связь</th><th>Доказательство</th><th>Пост</th><th>Дата</th>' +
+      '</tr></thead><tbody>';
+
+    rows.forEach(function(r) {
+      var sourceUrl = 'https://t.me/' + String(r.source_channel || '').replace(/^@+/, '');
+      var targetUrl = 'https://t.me/' + String(r.target_channel || '').replace(/^@+/, '');
+      html += '<tr>' +
+        '<td class="mon-cell-channel">' + renderExternalLink(sourceUrl, r.source_channel || '—', 'mon-external-link mon-channel-link') + '</td>' +
+        '<td class="mon-cell-channel">' + renderExternalLink(targetUrl, r.target_channel || '—', 'mon-external-link mon-channel-link') + '</td>' +
+        '<td class="mon-cell-muted mon-cell-compact">' + esc(r.relation || 'advertises') + '</td>' +
+        '<td><div class="mon-evidence" title="' + esc(r.evidence || '') + '">' + renderFacts(r.evidence || '') + '</div></td>' +
+        '<td class="mon-cell-compact">' + renderExternalLink(r.post_url || '', r.post_url ? 'открыть пост' : 'нет ссылки', 'mon-external-link mon-source-link') + '</td>' +
+        '<td class="mon-cell-muted mon-cell-date">' + esc(fmtDateShort(r.detected_at || r.last_post_at)) + '</td>' +
+        '</tr>';
+    });
+
+    html += '</tbody></table>';
+    if (wrap) wrap.innerHTML = html;
+  }
+
+  // ── SECTION 6: SOURCES ────────────────────────────────────
 
   var SOURCE_DESCRIPTIONS = {
     'stop-scam1.com':   'Сайт разоблачений крипто-каналов, статьи с детальным анализом.',
@@ -892,6 +941,7 @@
     setHTML('s2-log', '<div class="mon-loading mon-spinner">Загружаю данные цикла</div>');
     setHTML('s3-table-wrap', '<div class="mon-loading mon-spinner" style="padding:32px">Загружаю базу</div>');
     setHTML('s4-watch-wrap', '<div class="mon-loading mon-spinner" style="padding:32px">Загружаю широкий мониторинг</div>');
+    setHTML('s4-network-wrap', '<div class="mon-loading mon-spinner" style="padding:32px">Загружаю связи каналов</div>');
     setHTML('s5-sources', '<div class="mon-loading mon-spinner">Загружаю</div>');
     setHTML('s6-history-wrap', '<div class="mon-loading">Загружаю историю…</div>');
 
@@ -907,12 +957,14 @@
       var meta      = data.meta || {};
       var scamBase  = data.scam_base || [];
       var watchRows = data.channels_watch || [];
+      var networkRows = data.channels_network || [];
       var history   = data.history || [];
 
       renderStatus(meta, scamBase);
       renderCycleLog(meta, scamBase);
       renderScamBase(scamBase);
       renderChannelsWatch(watchRows);
+      renderChannelNetworks(networkRows);
       renderSources(meta.sources_checked || []);
       renderHistory(history);
     })
@@ -921,6 +973,7 @@
       setHTML('s2-log', msg);
       setHTML('s3-table-wrap', msg);
       setHTML('s4-watch-wrap', msg);
+      setHTML('s4-network-wrap', msg);
       setHTML('s5-sources', msg);
       setHTML('s6-history-wrap', msg);
     });

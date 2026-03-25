@@ -1200,8 +1200,9 @@ if (newsApiKey || theNewsApiKey) {
 const kroSheetId = process.env.KRO_SHEET_ID || '1C1NQwqmLRg59xgplnz5PeghRxaR_YY2lfSWZAJae6qM';
 const kroCredentialsJson = process.env.KRO_GOOGLE_CREDENTIALS_JSON;
 const kroCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-const kroScamBaseRange = process.env.KRO_SCAM_BASE_RANGE || 'scam_base!A2:M';
+const kroScamBaseRange = process.env.KRO_SCAM_BASE_RANGE || 'scam_base!A2:N';
 const kroChannelsWatchRange = process.env.KRO_CHANNELS_WATCH_RANGE || 'channels_watch!A2:M';
+const kroChannelsNetworkRange = process.env.KRO_CHANNELS_NETWORK_RANGE || 'channels_network!A2:G';
 const kroMetaRange = process.env.KRO_META_RANGE || 'kro_meta!A:B';
 const kroCheckQueueRange = process.env.KRO_CHECK_QUEUE_RANGE || '';
 
@@ -1502,7 +1503,7 @@ function computeRiskScoreFromFeatures(ads_per_week, bot_pct, complaints, vip_pri
 function parseScamBaseRow(row) {
   const username = (row[0] || '').toString().trim();
   // Detect schema version by column count:
-  // new v2 (13 cols A–M): username | link | detected_at | created_at | channel_age_days | object_type | vip_price | complaints | total_loss_rub | source_primary | source_evidence | cycle_window | status
+  // new v2 (13-14 cols A–N): username | link | detected_at | created_at | channel_age_days | object_type | vip_price | complaints | total_loss_rub | source_primary | source_evidence | cycle_window | status | content_analysis
   // old v1 (8 cols):      username | risk_score | ads_per_week | bot_pct | vip_price | complaints | total_loss | verdict
   if (row.length >= 13 && /^\d{4}-\d{2}-\d{2}T/.test((row[2] || '').toString())) {
     // new v2 schema
@@ -1518,13 +1519,14 @@ function parseScamBaseRow(row) {
     const cycle_window = (row[11] || '').toString().trim();
     const status = (row[12] || '').toString().trim();
     const source_evidence = (row[10] || '').toString().trim();
+    const content_analysis = (row[13] || '').toString().trim();
     return {
       username, link, detected_at, created_at,
       channel_age_days: Number.isFinite(channel_age_days) ? channel_age_days : null,
       object_type, vip_price,
       complaints: Number.isFinite(complaints) ? complaints : null,
       total_loss_rub: Number.isFinite(total_loss_rub) ? total_loss_rub : 0,
-      source_primary, source_evidence, cycle_window, status,
+      source_primary, source_evidence, cycle_window, status, content_analysis,
       verdict: 'confirmed', _schema: 'v2'
     };
   }
@@ -1579,6 +1581,21 @@ function parseChannelsWatchRow(row) {
     status,
     verdict: 'watch',
     _schema: 'watch_v1',
+  };
+}
+
+function parseChannelsNetworkRow(row) {
+  const source_channel = (row[0] || '').toString().trim();
+  const target_channel = (row[1] || '').toString().trim();
+  if (!source_channel || !target_channel) return null;
+  return {
+    source_channel,
+    target_channel,
+    relation: (row[2] || '').toString().trim(),
+    detected_at: (row[3] || '').toString().trim(),
+    last_post_at: (row[4] || '').toString().trim(),
+    evidence: (row[5] || '').toString().trim(),
+    post_url: (row[6] || '').toString().trim(),
   };
 }
 
@@ -2078,7 +2095,7 @@ app.get('/monitor', (req, res) =>
   res.sendFile('monitor.html', { root: join(__dirname, '..') }));
 
 // GET /api/kro/monitor-data — full data for the /monitor dashboard
-// Returns: scam_base, channels_watch, kro_meta, kro_history
+// Returns: scam_base, channels_watch, channels_network, kro_meta, kro_history
 app.get('/api/kro/monitor-data', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   try {
@@ -2087,14 +2104,18 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       return res.status(503).json({ error: 'Google Sheets not configured' });
     }
 
-    const [scamResp, watchResp, metaResp, historyResp] = await Promise.allSettled([
+    const [scamResp, watchResp, networkResp, metaResp, historyResp] = await Promise.allSettled([
       sheetsClient.sheets.spreadsheets.values.get({
         spreadsheetId: kroSheetId,
-        range: 'scam_base!A:N'
+        range: kroScamBaseRange
       }),
       sheetsClient.sheets.spreadsheets.values.get({
         spreadsheetId: kroSheetId,
         range: kroChannelsWatchRange
+      }),
+      sheetsClient.sheets.spreadsheets.values.get({
+        spreadsheetId: kroSheetId,
+        range: kroChannelsNetworkRange
       }),
       sheetsClient.sheets.spreadsheets.values.get({
         spreadsheetId: kroSheetId,
@@ -2118,6 +2139,11 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       .map(parseChannelsWatchRow)
       .filter((r) => r && r.username && r.username !== 'username');
 
+    const networkRawRows = networkResp.status === 'fulfilled' ? (networkResp.value.data.values || []) : [];
+    const channelsNetwork = networkRawRows
+      .map(parseChannelsNetworkRow)
+      .filter((r) => r && r.source_channel && r.target_channel);
+
     // kro_meta
     const metaRows = metaResp.status === 'fulfilled' ? (metaResp.value.data.values || []) : [];
     const meta = parseKroCycleMetaRows(metaRows);
@@ -2136,7 +2162,7 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       }))
       .reverse(); // newest first
 
-    return res.json({ scam_base: scamRows, channels_watch: channelsWatch, meta, history });
+    return res.json({ scam_base: scamRows, channels_watch: channelsWatch, channels_network: channelsNetwork, meta, history });
   } catch (e) {
     console.error('KRO monitor-data error:', e);
     return res.status(500).json({ error: 'internal error', detail: e.message });
