@@ -713,6 +713,11 @@
     }).join(' ');
   }
 
+  function isFormSource(sp) {
+    var v = (sp || '').toLowerCase();
+    return v === 'form' || v.startsWith('form+') || v.endsWith('+form');
+  }
+
   function statusClass(s) {
     var v = (s || '').toLowerCase();
     if (v.includes('без нарушений')) return 'clean';
@@ -836,7 +841,10 @@
         '<td class="mon-cell-source">' + renderAllSourceLinks(r) + '</td>' +
         '<td><div class="mon-evidence" title="' + esc(r.source_evidence || '') + '">' + renderFacts(r.source_evidence || '') + '</div></td>' +
         '<td class="mon-cell-ca">' + renderContentAnalysis(r.content_analysis || '') + '</td>' +
-        '<td><span class="mon-status ' + statusClass(r.status) + '">' + esc(r.status || '—') + '</span></td>' +
+        '<td>' +
+          '<span class="mon-status ' + statusClass(r.status) + '">' + esc(r.status || '—') + '</span>' +
+          (isFormSource(r.source_primary) ? '<br><span class="mon-source-tag">жалобы пользователей</span>' : '') +
+        '</td>' +
         '<td class="mon-cell-muted mon-cell-date">' + esc(String(r.complaints || 0)) + '</td>' +
         '<td class="mon-cell-muted mon-cell-date">' + esc(fmtDateShort(r.detected_at)) + '</td>' +
         '</tr>';
