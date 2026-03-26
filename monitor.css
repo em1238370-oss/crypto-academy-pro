@@ -1216,3 +1216,49 @@ code {
   line-height: 1.55;
   margin: 0;
 }
+
+/* ── HERO TAGLINE ────────────────────────────────────────── */
+.mon-hero-tagline {
+  font-size: clamp(17px, 2.2vw, 22px);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.45;
+  margin-top: 6px;
+  max-width: 680px;
+  letter-spacing: -0.01em;
+}
+
+/* ── COLLAPSIBLE SECTIONS ────────────────────────────────── */
+.mon-section--collapsible .mon-section-header {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease;
+}
+
+.mon-section--collapsible .mon-section-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.mon-collapse-chevron {
+  margin-left: auto;
+  font-size: 20px;
+  font-weight: 300;
+  color: var(--mon-text-dim);
+  transition: transform 0.28s ease;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.mon-section--collapsible:not(.mon-section--collapsed) .mon-collapse-chevron {
+  transform: rotate(90deg);
+}
+
+.mon-section--collapsed .mon-section-body {
+  display: none;
+}
+
+.mon-section--collapsible .mon-section-header:focus-visible {
+  outline: 2px solid var(--mon-cyan);
+  outline-offset: -2px;
+  border-radius: var(--mon-radius) var(--mon-radius) 0 0;
+}

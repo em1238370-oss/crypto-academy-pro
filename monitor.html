@@ -55,7 +55,7 @@
     <div class="mon-hero-copy">
       <p class="mon-hero-kicker">Антискам · Живая база</p>
       <h1 class="mon-hero-title">Монитор скам-каналов</h1>
-      <p class="mon-hero-text">Система проверяет Telegram-каналы каждые 12 часов. Если канал попал в базу — у нас есть конкретная статья или жалоба от реального человека. Никакого «нам кажется». Только факты с источниками.</p>
+      <p class="mon-hero-tagline">Здесь система показывает все крипто-каналы которые она нашла и проверила. Каждый факт — со ссылкой.</p>
     </div>
     <div class="mon-hero-badges" aria-label="Monitor highlights">
       <span class="mon-hero-badge">✓ Проверено вручную</span>
@@ -102,50 +102,7 @@
     </div>
   </section>
 
-  <!-- ── SECTION 2: ПОСЛЕДНИЙ ЦИКЛ ── -->
-  <section class="mon-section">
-    <div class="mon-section-header">
-      <span class="mon-dot yellow"></span>
-      <span class="mon-section-title">ПОСЛЕДНИЙ ЦИКЛ</span>
-      <span class="mon-section-label" style="margin-left:auto" id="s2-cycle-label"></span>
-    </div>
-    <div class="mon-section-body">
-      <div class="mon-log" id="s2-log">
-        <div class="mon-loading mon-spinner">Загружаю данные цикла</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── SECTION 3: КАК МЫ ПРОВЕРЯЕМ ── -->
-  <section class="mon-section">
-    <div class="mon-section-header">
-      <span class="mon-dot" style="background:#06b6d4"></span>
-      <span class="mon-section-title">КАК МЫ ПРОВЕРЯЕМ</span>
-    </div>
-    <div class="mon-section-body">
-      <p class="mon-section-intro">Эта страница сделана так, чтобы любой человек мог проверить выводы сам: открыть канал, открыть первоисточник и сравнить факты.</p>
-      <div class="mon-proof-grid">
-        <div class="mon-proof-card">
-          <h3>1. Берём проверяемый источник</h3>
-          <p>В карточку попадает ссылка на статью, отзыв или жалобу, где канал упомянут по имени. Если есть публичная статья, мы даём её прямо в строке таблицы.</p>
-        </div>
-        <div class="mon-proof-card">
-          <h3>2. Привязываем факт к каналу</h3>
-          <p>В строке показываем прямую ссылку на <code>t.me</code> и отдельную ссылку на материал-источник. Человек может открыть оба окна и сравнить сам.</p>
-        </div>
-        <div class="mon-proof-card">
-          <h3>3. Показываем только факты</h3>
-          <p>В колонке «Признаки риска» выводятся короткие фрагменты из <code>source_evidence</code>: цитаты, формулировки и описания схемы из источника, без пересказа «от себя».</p>
-        </div>
-        <div class="mon-proof-card">
-          <h3>4. Статус ставим по правилам</h3>
-          <p><strong>В риске</strong> — когда есть сильные признаки обмана или повторяющиеся жалобы. <strong>Под наблюдением</strong> — когда сигналов риска уже достаточно для внимания, но данных меньше, чем для жёсткого вывода.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── SECTION 4: БАЗА СКАМ-КАНАЛОВ ── -->
+  <!-- ── БАЗА СКАМ-КАНАЛОВ ── -->
   <section class="mon-section">
     <div class="mon-section-header">
       <span class="mon-dot red"></span>
@@ -218,7 +175,21 @@
     </div>
   </section>
 
-  <!-- ── SECTION 7: ИСТОЧНИКИ ── -->
+  <!-- ── ПОСЛЕДНИЙ ЦИКЛ ── -->
+  <section class="mon-section">
+    <div class="mon-section-header">
+      <span class="mon-dot yellow"></span>
+      <span class="mon-section-title">ПОСЛЕДНИЙ ЦИКЛ</span>
+      <span class="mon-section-label" style="margin-left:auto" id="s2-cycle-label"></span>
+    </div>
+    <div class="mon-section-body">
+      <div class="mon-log" id="s2-log">
+        <div class="mon-loading mon-spinner">Загружаю данные цикла</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ИСТОЧНИКИ ДАННЫХ ── -->
   <section class="mon-section">
     <div class="mon-section-header">
       <span class="mon-dot green"></span>
@@ -273,11 +244,42 @@
     </div>
   </section>
 
-  <!-- ── SECTION 6: ПРАВИЛА И КРИТЕРИИ ── -->
-  <section class="mon-section">
-    <div class="mon-section-header">
+  <!-- ── КАК МЫ ПРОВЕРЯЕМ ── -->
+  <section class="mon-section mon-section--collapsible mon-section--collapsed">
+    <div class="mon-section-header" role="button" tabindex="0" aria-expanded="false">
+      <span class="mon-dot" style="background:#06b6d4"></span>
+      <span class="mon-section-title">КАК МЫ ПРОВЕРЯЕМ</span>
+      <span class="mon-collapse-chevron" aria-hidden="true">›</span>
+    </div>
+    <div class="mon-section-body">
+      <p class="mon-section-intro">Эта страница сделана так, чтобы любой человек мог проверить выводы сам: открыть канал, открыть первоисточник и сравнить факты.</p>
+      <div class="mon-proof-grid">
+        <div class="mon-proof-card">
+          <h3>1. Берём проверяемый источник</h3>
+          <p>В карточку попадает ссылка на статью, отзыв или жалобу, где канал упомянут по имени. Если есть публичная статья, мы даём её прямо в строке таблицы.</p>
+        </div>
+        <div class="mon-proof-card">
+          <h3>2. Привязываем факт к каналу</h3>
+          <p>В строке показываем прямую ссылку на <code>t.me</code> и отдельную ссылку на материал-источник. Человек может открыть оба окна и сравнить сам.</p>
+        </div>
+        <div class="mon-proof-card">
+          <h3>3. Показываем только факты</h3>
+          <p>В колонке «Признаки риска» выводятся короткие фрагменты из <code>source_evidence</code>: цитаты, формулировки и описания схемы из источника, без пересказа «от себя».</p>
+        </div>
+        <div class="mon-proof-card">
+          <h3>4. Статус ставим по правилам</h3>
+          <p><strong>В риске</strong> — когда есть сильные признаки обмана или повторяющиеся жалобы. <strong>Под наблюдением</strong> — когда сигналов риска уже достаточно для внимания, но данных меньше, чем для жёсткого вывода.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ПРАВИЛА И КРИТЕРИИ ── -->
+  <section class="mon-section mon-section--collapsible mon-section--collapsed">
+    <div class="mon-section-header" role="button" tabindex="0" aria-expanded="false">
       <span class="mon-dot" style="background:#6b7280"></span>
       <span class="mon-section-title">ПРАВИЛА И КРИТЕРИИ</span>
+      <span class="mon-collapse-chevron" aria-hidden="true">›</span>
     </div>
     <div class="mon-section-body">
       <div class="mon-rules">
@@ -1064,11 +1066,32 @@
     }, 1000);
   }
 
+  // ── COLLAPSIBLE SECTIONS ──────────────────────────────────
+
+  function initCollapsibles() {
+    var headers = document.querySelectorAll('.mon-section--collapsible .mon-section-header');
+    headers.forEach(function(header) {
+      header.addEventListener('click', function() {
+        var section = header.closest('.mon-section--collapsible');
+        if (!section) return;
+        var collapsed = section.classList.toggle('mon-section--collapsed');
+        header.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      });
+      header.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          header.click();
+        }
+      });
+    });
+  }
+
   // ── INIT ──────────────────────────────────────────────────
 
   document.addEventListener('DOMContentLoaded', function() {
     runBootSequence(function() {
       typeSectionTitles();
+      initCollapsibles();
       loadData();
       startCountdown();
     });
