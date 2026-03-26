@@ -652,6 +652,67 @@
     }).join('') + '</ul>';
   }
 
+  var KEYWORD_LABELS = {
+    garantiya: 'гарантия', bez_riska: 'без риска', p100: '100%',
+    x2: 'x2', x5: 'x5', srochno: 'срочно', vip: 'VIP',
+    spots_left: 'осталось мест', leverage: 'плечо', deposit: 'депозит'
+  };
+
+  function renderContentAnalysis(jsonStr) {
+    if (!jsonStr || jsonStr === '' || jsonStr === '—') {
+      return '<span class="mon-ca-empty">нет анализа</span>';
+    }
+    if (jsonStr === 'недоступен') {
+      return '<span class="mon-ca-unavail">недоступен</span>';
+    }
+    var d;
+    try { d = JSON.parse(jsonStr); } catch(e) {
+      return '<span class="mon-ca-empty">нет анализа</span>';
+    }
+    var parts = [];
+    // Activity
+    var actLabel = (d.activity === 'активен') ? '<span class="mon-ca-ok">активен</span>'
+                 : (d.activity === 'неактивен') ? '<span class="mon-ca-warn">неактивен</span>'
+                 : d.activity ? '<span class="mon-ca-muted">' + esc(d.activity) + '</span>' : '';
+    if (d.posts_analyzed) {
+      parts.push((actLabel || '') + '<span class="mon-ca-muted"> ' + d.posts_analyzed + ' постов</span>');
+    }
+    // Top keywords
+    var kws = d.keywords || {};
+    var hits = Object.keys(kws).filter(function(k) { return kws[k] > 0; })
+      .sort(function(a,b) { return kws[b] - kws[a]; }).slice(0, 4);
+    if (hits.length) {
+      var kwHtml = hits.map(function(k) {
+        return '<span class="mon-ca-kw">' + esc(KEYWORD_LABELS[k] || k) + ' ×' + kws[k] + '</span>';
+      }).join('');
+      parts.push(kwHtml);
+    }
+    // Profit only warning
+    if (d.only_profit_posts) {
+      parts.push('<span class="mon-ca-warn">только прибыль</span>');
+    }
+    // Last post
+    if (d.last_post_at) {
+      parts.push('<span class="mon-ca-muted">пост: ' + esc(fmtDateShort(d.last_post_at)) + '</span>');
+    }
+    if (!parts.length) return '<span class="mon-ca-muted">данных мало</span>';
+    return '<div class="mon-ca">' + parts.join('<br>') + '</div>';
+  }
+
+  function renderAllSourceLinks(row) {
+    var urls = extractUrls(row && row.source_evidence);
+    var nonTg = urls.filter(function(u) { return !/t\.me\//i.test(u); });
+    if (!nonTg.length) {
+      var sp = row && row.source_primary;
+      if (sp && /^https?:\/\//i.test(sp)) nonTg = [sp];
+    }
+    if (!nonTg.length) return '<span class="mon-text-fallback">нет публичной ссылки</span>';
+    return nonTg.slice(0, 2).map(function(u) {
+      return '<a class="mon-external-link mon-source-link" href="' + esc(u) + '" target="_blank" rel="noopener">' +
+        esc(hostLabel(u)) + externalIcon() + '</a>';
+    }).join(' ');
+  }
+
   function statusClass(s) {
     var v = (s || '').toLowerCase();
     if (v.includes('без нарушений')) return 'clean';
@@ -761,21 +822,20 @@
     var html = '<table class="mon-table">' +
       '<thead><tr>' +
       '<th>Канал</th><th>Тип</th><th>Источник</th>' +
-      '<th>Признаки риска</th><th>Статус</th><th>Жалобы</th><th>Дата</th>' +
+      '<th>Признаки риска</th><th>Контент-анализ</th><th>Статус</th><th>Жалобы</th><th>Дата</th>' +
       '</tr></thead><tbody>';
 
     rows.forEach(function(r) {
       var channelUrl = r.link || '';
-      var sourceUrl = extractSourceUrl(r);
-      var sourceName = sourceUrl ? ('статья: ' + hostLabel(sourceUrl)) : 'источник';
       var channelLabel = (r.username || r.link || 'канал').replace(/^https?:\/\/t\.me\//i, '@');
       if (channelLabel.charAt(0) !== '@' && !/^t\.me\//i.test(channelLabel)) channelLabel = '@' + channelLabel.replace(/^@+/,'');
 
       html += '<tr>' +
         '<td class="mon-cell-channel">' + renderExternalLink(channelUrl, channelLabel, 'mon-external-link mon-channel-link') + '</td>' +
         '<td class="mon-cell-muted">' + esc(r.object_type || '—') + '</td>' +
-        '<td class="mon-cell-source">' + renderExternalLink(sourceUrl, sourceName, 'mon-external-link mon-source-link') + '</td>' +
+        '<td class="mon-cell-source">' + renderAllSourceLinks(r) + '</td>' +
         '<td><div class="mon-evidence" title="' + esc(r.source_evidence || '') + '">' + renderFacts(r.source_evidence || '') + '</div></td>' +
+        '<td class="mon-cell-ca">' + renderContentAnalysis(r.content_analysis || '') + '</td>' +
         '<td><span class="mon-status ' + statusClass(r.status) + '">' + esc(r.status || '—') + '</span></td>' +
         '<td class="mon-cell-muted mon-cell-date">' + esc(String(r.complaints || 0)) + '</td>' +
         '<td class="mon-cell-muted mon-cell-date">' + esc(fmtDateShort(r.detected_at)) + '</td>' +
