@@ -291,7 +291,7 @@
       "content_analysis": "{\"status\": \"ok\", \"posts_analyzed\": 50, \"keywords\": {\"garantiya\": 16, \"bez_riska\": 0, \"p100\": 2, \"x2\": 2, \"x5\": 0, \"srochno\": 2, \"vip\": 4, \"spots_left\": 0, \"leverage\": 0, \"deposit\": 26}, \"profit_posts\": 3, \"loss_posts\": 0, \"only_profit_posts\": true, \"last_post_at\": \"2026-03-25T10:49:04Z\", \"activity\": \"активен\", \"signal_posts\": 29, \"ad_posts\": 16, \"signal_to_ad_ratio\": 1.81, \"mentioned_channels\": [\"@Alexodessa\"], \"network_mentions\": [{\"source_channel\": \"@alexodessa_invest\", \"target_channel\": \"@Alexodessa\", \"evidence\": \"Захожу в новый международный [проект FXTrade](https://panel.fxtrade.group/register?ref=Alexod) ИНВЕСТИРОВАЛ 100+1000$ и **готовлю 5000$ на VIP депозит **💪 получу - 200% за 6 месяцев это топ…. __Теперь предисловие* __ Я ц\", \"post_url\": \"https://t.me/alexodessa_invest/7977\"}], \"source\": \"telethon\"}"
     }
   ],
-  "report_doc_url": null,
+  "report_doc_url": "/monitor",
   "lastReportNumber": 2,
   "updatedAt": "2026-03-25T21:47:56Z",
   "timestamp": "2026-03-25T21:47:56Z",
