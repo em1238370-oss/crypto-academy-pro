@@ -7,14 +7,17 @@
   <meta name="description" content="Живой монитор системы антискам-мониторинга. Актуальные данные о скам-каналах, история циклов, источники.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/monitor.css">
 </head>
 <body class="mon-page">
 
+<!-- ── BACKGROUND BLOBS ── -->
+<div class="mon-bg" aria-hidden="true">
+  <span class="mon-bg-blob mon-bg-blob-1"></span>
+  <span class="mon-bg-blob mon-bg-blob-2"></span>
+  <span class="mon-bg-blob mon-bg-blob-3"></span>
+</div>
 
 <!-- ── BOOT OVERLAY ── -->
 <div id="mon-boot-overlay" aria-hidden="true">
@@ -689,16 +692,32 @@
 
   // ── SECTION 1: STATUS ─────────────────────────────────────
 
+  function countUp(elId, target, suffix, duration) {
+    var el = document.getElementById(elId);
+    if (!el || isNaN(target) || target <= 0) return;
+    duration = duration || 1100;
+    var start = performance.now();
+    function step(now) {
+      var t = Math.min((now - start) / duration, 1);
+      var ease = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(ease * target) + (suffix || '');
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
   function renderStatus(meta, scamBase) {
-    var cycleDt = fmtDate(meta.last_cycle_at);
-    var nextIso = addHours(meta.last_cycle_at, 12);
-    var nextDt  = fmtDate(nextIso);
-    var active  = (meta.sources_checked || []).filter(function(s) { return s.status === 'found'; }).length;
+    var cycleDt  = fmtDate(meta.last_cycle_at);
+    var nextIso  = addHours(meta.last_cycle_at, 12);
+    var nextDt   = fmtDate(nextIso);
+    var active   = (meta.sources_checked || []).filter(function(s) { return s.status === 'found'; }).length;
+    var total    = (scamBase || []).length;
+    var newCount = meta.new_in_cycle || 0;
 
     setText('s1-last-cycle', cycleDt);
     setText('s1-next-cycle', nextDt);
-    setText('s1-new-in-cycle', (meta.new_in_cycle || 0) + ' каналов');
-    setText('s1-total', (scamBase || []).length + ' каналов');
+    countUp('s1-new-in-cycle', newCount, ' каналов', 900);
+    countUp('s1-total', total, ' каналов', 1200);
     setText('s1-sources-active', active + ' из ' + (meta.sources_checked || []).length);
   }
 
