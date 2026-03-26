@@ -15,18 +15,6 @@
 </head>
 <body class="mon-page">
 
-<!-- ── BOOT TERMINAL OVERLAY ── -->
-<div id="mon-boot-overlay" aria-hidden="true">
-  <div class="mon-boot-terminal" id="mon-boot-lines" aria-live="off">
-    <span class="mon-boot-line info">KRO ANTI-SCAM MONITOR v2.1</span>
-    <span class="mon-boot-line dim">Connecting to Google Sheets API…</span>
-    <span class="mon-boot-line dim">Loading scam_base…</span>
-    <span class="mon-boot-line dim">Loading channels_watch…</span>
-    <span class="mon-boot-line dim">Loading kro_meta…</span>
-    <span class="mon-boot-line dim">Loading kro_history…</span>
-    <span class="mon-boot-line ok">System ready. Rendering dashboard…</span>
-  </div>
-</div>
 
 <header class="mon-topbar">
   <nav class="mon-main-nav" aria-label="Monitor navigation">
@@ -67,7 +55,7 @@
   <!-- ── SECTION 1: СТАТУС СИСТЕМЫ ── -->
   <section class="mon-section">
     <div class="mon-section-header">
-      <span class="mon-dot green mon-blink" id="s1-dot"></span>
+      <span class="mon-dot green" id="s1-dot"></span>
       <span class="mon-section-title">СТАТУС СИСТЕМЫ</span>
     </div>
     <div class="mon-section-body">
@@ -75,7 +63,7 @@
         <div class="mon-stat-card">
           <div class="mon-stat-label">статус</div>
           <div class="mon-stat-value" id="s1-status">
-            <span class="mon-badge active"><span class="mon-blink">●</span> СИСТЕМА АКТИВНА</span>
+            <span class="mon-badge active">● СИСТЕМА АКТИВНА</span>
           </div>
         </div>
         <div class="mon-stat-card">
@@ -483,69 +471,6 @@
   var countdown = REFRESH_INTERVAL;
   var refreshTimer, countdownTimer;
 
-  // ── BOOT SEQUENCE ─────────────────────────────────────────
-
-  function runBootSequence(onComplete) {
-    var overlay = document.getElementById('mon-boot-overlay');
-    var lines = document.querySelectorAll('#mon-boot-lines .mon-boot-line');
-    if (!overlay || !lines.length) { onComplete(); return; }
-
-    var delays = [0, 220, 400, 560, 700, 920];
-    lines.forEach(function(line, i) {
-      setTimeout(function() { line.classList.add('visible'); }, delays[i] || i * 180);
-    });
-
-    setTimeout(function() {
-      overlay.classList.add('fade-out');
-      setTimeout(function() {
-        overlay.style.display = 'none';
-        onComplete();
-      }, 620);
-    }, 1400);
-  }
-
-  // ── TYPING ANIMATION ──────────────────────────────────────
-
-  function typeText(el, text, speed, onDone) {
-    speed = speed || 28;
-    el.textContent = '';
-    var cursor = document.createElement('span');
-    cursor.className = 'mon-cursor';
-    el.appendChild(cursor);
-    var i = 0;
-    function tick() {
-      if (i < text.length) {
-        cursor.before(document.createTextNode(text[i]));
-        i++;
-        setTimeout(tick, speed + Math.random() * 10);
-      } else {
-        cursor.className = 'mon-cursor done';
-        if (onDone) onDone();
-      }
-    }
-    tick();
-  }
-
-  function typeSectionTitles() {
-    var titles = document.querySelectorAll('.mon-section-title');
-    titles.forEach(function(el, idx) {
-      var orig = el.textContent.trim();
-      setTimeout(function() { typeText(el, orig, 22); }, idx * 320);
-    });
-  }
-
-  // ── STAT VALUE REVEAL ─────────────────────────────────────
-
-  function revealStatValues() {
-    var vals = document.querySelectorAll('.mon-stat-value[id]');
-    vals.forEach(function(el, i) {
-      setTimeout(function() {
-        el.classList.remove('revealed');
-        void el.offsetWidth;
-        el.classList.add('revealed');
-      }, 800 + i * 80);
-    });
-  }
 
   // ── HELPERS ───────────────────────────────────────────────
 
@@ -762,9 +687,6 @@
     setText('s1-new-in-cycle', (meta.new_in_cycle || 0) + ' каналов');
     setText('s1-total', (scamBase || []).length + ' каналов');
     setText('s1-sources-active', active + ' из ' + (meta.sources_checked || []).length);
-
-    // Animate stat values
-    revealStatValues();
   }
 
   // ── SECTION 2: LAST CYCLE LOG ─────────────────────────────
@@ -1066,6 +988,26 @@
     }, 1000);
   }
 
+  // ── SCROLL REVEAL ─────────────────────────────────────────
+
+  function initScrollReveal() {
+    if (!window.IntersectionObserver) return;
+    var els = document.querySelectorAll('.mon-section, .mon-stat-card, .mon-proof-card, .mon-source-card, .mon-why-trust-card');
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('mon-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.06 });
+    els.forEach(function(el, i) {
+      el.classList.add('mon-reveal');
+      el.style.transitionDelay = Math.min(i * 30, 200) + 'ms';
+      observer.observe(el);
+    });
+  }
+
   // ── COLLAPSIBLE SECTIONS ──────────────────────────────────
 
   function initCollapsibles() {
@@ -1089,12 +1031,10 @@
   // ── INIT ──────────────────────────────────────────────────
 
   document.addEventListener('DOMContentLoaded', function() {
-    runBootSequence(function() {
-      typeSectionTitles();
-      initCollapsibles();
-      loadData();
-      startCountdown();
-    });
+    initScrollReveal();
+    initCollapsibles();
+    loadData();
+    startCountdown();
   });
 
 })();
