@@ -16,6 +16,19 @@
 <body class="mon-page">
 
 
+<!-- ── BOOT OVERLAY ── -->
+<div id="mon-boot-overlay" aria-hidden="true">
+  <div class="mon-boot-terminal" id="mon-boot-lines">
+    <span class="mon-boot-line info">KRO ANTI-SCAM MONITOR v2.1</span>
+    <span class="mon-boot-line dim">Connecting to Google Sheets API…</span>
+    <span class="mon-boot-line dim">Loading scam_base…</span>
+    <span class="mon-boot-line dim">Loading channels_watch…</span>
+    <span class="mon-boot-line dim">Loading kro_meta…</span>
+    <span class="mon-boot-line dim">Loading kro_history…</span>
+    <span class="mon-boot-line ok">System ready. Rendering dashboard…</span>
+  </div>
+</div>
+
 <header class="mon-topbar">
   <nav class="mon-main-nav" aria-label="Monitor navigation">
     <a href="/" class="mon-main-nav-brand">
@@ -988,6 +1001,27 @@
     }, 1000);
   }
 
+  // ── BOOT SEQUENCE ─────────────────────────────────────────
+
+  function runBootSequence(onComplete) {
+    var overlay = document.getElementById('mon-boot-overlay');
+    var lines   = document.querySelectorAll('#mon-boot-lines .mon-boot-line');
+    if (!overlay || !lines.length) { onComplete(); return; }
+
+    var delays = [0, 200, 380, 530, 660, 860, 1060];
+    lines.forEach(function(line, i) {
+      setTimeout(function() { line.classList.add('visible'); }, delays[i] || i * 160);
+    });
+
+    setTimeout(function() {
+      overlay.classList.add('fade-out');
+      setTimeout(function() {
+        overlay.style.display = 'none';
+        onComplete();
+      }, 580);
+    }, 1550);
+  }
+
   // ── SCROLL REVEAL ─────────────────────────────────────────
 
   function initScrollReveal() {
@@ -1031,10 +1065,12 @@
   // ── INIT ──────────────────────────────────────────────────
 
   document.addEventListener('DOMContentLoaded', function() {
-    initScrollReveal();
-    initCollapsibles();
-    loadData();
-    startCountdown();
+    runBootSequence(function() {
+      initScrollReveal();
+      initCollapsibles();
+      loadData();
+      startCountdown();
+    });
   });
 
 })();

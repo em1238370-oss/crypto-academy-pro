@@ -897,6 +897,54 @@ code { font-family: var(--mon-font-mono); font-size: 0.9em; color: rgba(255,255,
 .mon-ca-unavail { font-size: 12px; color: var(--mon-grey); }
 .mon-source-link { font-size: 12px; }
 
+/* ── BOOT OVERLAY ────────────────────────────────────────── */
+
+#mon-boot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #0a0c10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.55s ease;
+}
+
+#mon-boot-overlay.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mon-boot-terminal {
+  font-family: var(--mon-font-mono);
+  font-size: 13px;
+  line-height: 1.8;
+  max-width: 520px;
+  width: 90%;
+  padding: 32px 36px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+
+.mon-boot-line {
+  display: block;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.mon-boot-line.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.mon-boot-line.dim  { color: rgba(255,255,255,0.42); }
+.mon-boot-line.info { color: #ff4444; font-weight: 700; letter-spacing: 0.04em; }
+.mon-boot-line.ok   { color: #22c55e; font-weight: 600; }
+.mon-boot-line.warn { color: #f59e0b; }
+
 /* ── ROW APPEAR — subtle fade only ──────────────────────── */
 
 @keyframes rowAppear {
