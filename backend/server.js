@@ -1247,7 +1247,7 @@ async function getKroSheetsClient() {
   }
 }
 
-const KRO_SOURCES_DOC_URL = 'https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit';
+const KRO_SOURCES_DOC_URL = '/monitor';
 const KRO_REFERENCE_STATS_PATH = join(__dirname, 'data', 'kro-reference-stats.json');
 const KRO_12H_STATS_PATH = join(__dirname, 'data', 'kro-12h-stats.json');
 const KRO_PENDING_REPORT_TEXT = 'Данные появятся после первого верифицированного отчёта.';
