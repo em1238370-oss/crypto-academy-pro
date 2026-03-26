@@ -7,16 +7,18 @@
   <meta name="description" content="Живой монитор системы антискам-мониторинга. Актуальные данные о скам-каналах, история циклов, источники.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/monitor.css">
 </head>
 <body class="mon-page">
 
 <!-- ── BACKGROUND BLOBS ── -->
 <div class="mon-bg" aria-hidden="true">
+  <span class="mon-bg-dot-grid"></span>
   <span class="mon-bg-blob mon-bg-blob-1"></span>
   <span class="mon-bg-blob mon-bg-blob-2"></span>
   <span class="mon-bg-blob mon-bg-blob-3"></span>
+  <span class="mon-bg-blob mon-bg-blob-4"></span>
 </div>
 
 <!-- ── BOOT OVERLAY ── -->
@@ -780,18 +782,20 @@
       return;
     }
 
-    var html = '<table class="mon-table">' +
+    var tableHtml = '<table class="mon-table">' +
       '<thead><tr>' +
+      '<th style="width:36px">#</th>' +
       '<th>Канал</th><th>Тип</th><th>Источник</th>' +
       '<th>Признаки риска</th><th>Контент-анализ</th><th>Статус</th><th>Жалобы</th><th>Дата</th>' +
       '</tr></thead><tbody>';
 
-    rows.forEach(function(r) {
+    rows.forEach(function(r, idx) {
       var channelUrl = r.link || '';
       var channelLabel = (r.username || r.link || 'канал').replace(/^https?:\/\/t\.me\//i, '@');
       if (channelLabel.charAt(0) !== '@' && !/^t\.me\//i.test(channelLabel)) channelLabel = '@' + channelLabel.replace(/^@+/,'');
 
-      html += '<tr>' +
+      tableHtml += '<tr>' +
+        '<td class="mon-cell-num">' + (idx + 1) + '</td>' +
         '<td class="mon-cell-channel">' + renderExternalLink(channelUrl, channelLabel, 'mon-external-link mon-channel-link') + '</td>' +
         '<td class="mon-cell-muted">' + esc(r.object_type || '—') + '</td>' +
         '<td class="mon-cell-source">' + renderAllSourceLinks(r) + '</td>' +
@@ -806,15 +810,36 @@
         '</tr>';
     });
 
-    html += '</tbody></table>';
+    tableHtml += '</tbody></table>';
+
+    var searchBar = '<div class="mon-table-search">' +
+      '<input type="text" id="s3-search" class="mon-search-input" placeholder="🔍  Найти канал, источник, признак…" autocomplete="off" spellcheck="false">' +
+      '<span class="mon-search-count" id="s3-search-count">' + rows.length + ' каналов</span>' +
+      '</div>';
+
     if (wrap) {
-      wrap.innerHTML = html;
-      // Stagger row appearance
+      wrap.innerHTML = searchBar + tableHtml;
+
       var trs = wrap.querySelectorAll('tbody tr');
       trs.forEach(function(tr, i) {
         tr.classList.add('mon-row-appear');
-        tr.style.animationDelay = Math.min(i * 40, 1200) + 'ms';
+        tr.style.animationDelay = Math.min(i * 35, 1000) + 'ms';
       });
+
+      var input = document.getElementById('s3-search');
+      var cnt   = document.getElementById('s3-search-count');
+      if (input) {
+        input.addEventListener('input', function() {
+          var q = input.value.toLowerCase().trim();
+          var visible = 0;
+          trs.forEach(function(tr) {
+            var match = !q || tr.textContent.toLowerCase().indexOf(q) !== -1;
+            tr.style.display = match ? '' : 'none';
+            if (match) visible++;
+          });
+          if (cnt) cnt.textContent = (q ? visible + ' из ' + rows.length : rows.length) + ' каналов';
+        });
+      }
     }
   }
 
