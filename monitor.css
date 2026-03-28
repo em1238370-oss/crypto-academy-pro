@@ -208,13 +208,14 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-hero-copy > * {
   animation: monHeroIn 0.65s var(--mon-ease-out) both;
 }
-.mon-hero-copy .mon-hero-kicker    { animation-delay: 2.25s; }
-.mon-hero-copy .mon-hero-title     { animation-delay: 2.38s; }
-.mon-hero-copy .mon-hero-tagline   { animation-delay: 2.5s; }
-.mon-hero-copy .mon-hero-tags      { animation-delay: 2.62s; }
+.mon-hero-copy .mon-hero-eyebrow   { animation-delay: 2.25s; }
+.mon-hero-copy .mon-hero-role     { animation-delay: 2.32s; }
+.mon-hero-copy .mon-hero-title     { animation-delay: 2.4s; }
+.mon-hero-copy .mon-hero-tagline   { animation-delay: 2.52s; }
+.mon-hero-copy .mon-hero-tags      { animation-delay: 2.64s; }
 
 .mon-hero-aside {
-  animation: monHeroIn 0.65s var(--mon-ease-out) 2.74s both;
+  animation: monHeroIn 0.65s var(--mon-ease-out) 2.76s both;
   padding: 24px;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: var(--mon-radius);
@@ -231,16 +232,24 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   margin-bottom: 16px;
 }
 
-.mon-hero-kicker {
+/* Иерархия как на medvedevart: бренд → роль → h1 */
+.mon-hero-eyebrow {
+  font-family: var(--mon-font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: rgba(255,255,255,0.72);
+  margin-bottom: 6px;
+}
+.mon-hero-role {
   font-family: var(--mon-font);
   font-size: 12px;
   font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0.02em;
-  color: rgba(255,255,255,0.45);
-  margin-bottom: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+  margin-bottom: 18px;
 }
-.mon-hero-kicker::before { display: none; }
 
 .mon-hero-title {
   font-family: var(--mon-font-display);
@@ -283,6 +292,70 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-scheme-row--ma { justify-content: flex-start; flex-wrap: wrap; }
+
+/* ── Оффер (между hero и метриками, как «Стратегия. Эффективность…») ── */
+
+.mon-offer {
+  padding: 40px 0 48px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  max-width: 100%;
+}
+
+.mon-offer-title {
+  font-family: var(--mon-font-display);
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: #fff;
+  margin: 0 0 16px;
+}
+
+.mon-offer-lead {
+  font-size: clamp(15px, 1.4vw, 16px);
+  line-height: 1.65;
+  color: rgba(255,255,255,0.48);
+  max-width: 52em;
+  margin: 0 0 36px;
+}
+
+.mon-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px 32px;
+}
+
+.mon-pillar {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.mon-pillar-title {
+  font-family: var(--mon-font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin: 0 0 10px;
+  line-height: 1.3;
+}
+
+.mon-pillar-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.45);
+  margin: 0;
+}
+
+.mon-offer-focus {
+  margin: 32px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+}
 
 /* ── СХЕМЫ (блок-схемы вместо абзацев) ───────────────────── */
 
@@ -411,26 +484,57 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 18px 24px;
+  padding: 20px 24px 18px;
   border-bottom: 1px solid rgba(255,255,255,0.07);
   background: rgba(255,255,255,0.02);
 }
 
-.mon-section-title {
+.mon-section-header--flow {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding-bottom: 20px;
+}
+
+.mon-section-header--split {
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+
+.mon-section-header--split .mon-section-label {
+  margin-left: auto;
+}
+
+/* Заголовки секций: h2, регистр как в тексте (не ALL CAPS) */
+.mon-section-heading {
   font-family: var(--mon-font-display);
-  font-size: 11px;
+  font-size: clamp(1.28rem, 2.4vw, 1.6rem);
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
+  color: #fff;
+  margin: 0;
+}
+
+.mon-section-lead {
+  font-size: 14px;
+  font-weight: 400;
   color: rgba(255,255,255,0.42);
+  line-height: 1.5;
+  max-width: 42em;
+  margin: 0;
 }
 
 .mon-section-label {
   font-size: 13px;
   font-weight: 500;
   color: var(--mon-text-dim);
+  white-space: nowrap;
 }
 
+/* Точки статуса (если понадобятся в разметке) */
 .mon-dot {
   width: 8px; height: 8px;
   border-radius: 50%;
@@ -443,29 +547,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 .mon-section-body { padding: 24px 28px 28px; }
 
-/* ── МЕТРИКИ (как блок «Результаты в цифрах») ─────────────── */
-
-.mon-metrics-head {
-  margin-bottom: 22px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-}
-
-.mon-metrics-kicker {
-  font-family: var(--mon-font-display);
-  font-size: clamp(1.25rem, 2.2vw, 1.5rem);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: #fff;
-  margin-bottom: 6px;
-}
-
-.mon-metrics-sub {
-  font-size: 14px;
-  font-weight: 400;
-  color: rgba(255,255,255,0.42);
-  line-height: 1.45;
-  max-width: 36em;
+.mon-section-body--metrics {
+  padding-top: 20px;
 }
 
 .mon-section-intro {
@@ -949,6 +1032,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   text-align: center; font-size: 12px; color: var(--mon-text-fade);
   padding: 28px 60px 56px;
 }
+.mon-footer p { margin: 0 0 8px; }
+.mon-footer p:last-child { margin-bottom: 0; }
+.mon-footer-copy { font-size: 11px; color: rgba(255,255,255,0.22); }
 .mon-footer a { color: var(--mon-red); text-decoration: none; font-weight: 600; }
 .mon-footer a:hover { color: #ff7070; }
 
@@ -966,8 +1052,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 /* ── COLLAPSIBLE ─────────────────────────────────────────── */
 
-.mon-section--collapsible .mon-section-header { cursor: pointer; user-select: none; transition: background 0.18s ease; }
+.mon-section--collapsible .mon-section-header { cursor: pointer; user-select: none; transition: background 0.18s ease; width: 100%; }
 .mon-section--collapsible .mon-section-header:hover { background: rgba(255,255,255,0.035); }
+.mon-section--collapsible .mon-section-heading { flex: 1; text-align: left; }
 .mon-collapse-chevron { margin-left: auto; font-size: 18px; font-weight: 300; color: var(--mon-text-dim); transition: transform 0.26s ease; flex-shrink: 0; line-height: 1; }
 .mon-section--collapsible:not(.mon-section--collapsed) .mon-collapse-chevron { transform: rotate(90deg); }
 .mon-section--collapsed .mon-section-body { display: none; }
@@ -1061,6 +1148,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   .mon-hero { grid-template-columns: 1fr; gap: 28px; }
   .mon-hero-aside { order: -1; }
   .mon-scheme-row--hero { justify-content: flex-start; }
+  .mon-pillars { grid-template-columns: 1fr; gap: 24px; }
+  .mon-offer { padding: 28px 0 36px; }
+  .mon-section-header--split .mon-section-label { margin-left: 0; width: 100%; }
   .mon-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mon-proof-grid, .mon-source-guide-grid, .mon-sources-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

@@ -46,10 +46,11 @@
 
 <main class="mon-container">
 
-  <section class="mon-hero">
+  <section class="mon-hero" aria-labelledby="mon-hero-title">
     <div class="mon-hero-copy">
-      <p class="mon-hero-kicker">Живая база · проверка каналов</p>
-      <h1 class="mon-hero-title">Монитор скам-каналов</h1>
+      <p class="mon-hero-eyebrow">Крипта без розовых очков</p>
+      <p class="mon-hero-role">Живая база · проверка каналов</p>
+      <h1 id="mon-hero-title" class="mon-hero-title">Монитор скам-каналов</h1>
       <p class="mon-hero-tagline">Факты и ссылки на первоисточники — без лишнего шума.</p>
       <div class="mon-hero-tags" aria-label="Направления">
         <span class="mon-hero-tag">Антискам</span>
@@ -70,17 +71,34 @@
     </div>
   </section>
 
-  <!-- ── SECTION 1: СТАТУС СИСТЕМЫ ── -->
-  <section class="mon-section">
-    <div class="mon-section-header">
-      <span class="mon-dot green" id="s1-dot"></span>
-      <span class="mon-section-title">СТАТУС СИСТЕМЫ</span>
+  <!-- ── Оффер: три столпа (как «Стратегия. Эффективность…» на medvedevart) ── -->
+  <section class="mon-offer" aria-labelledby="mon-offer-title">
+    <h2 id="mon-offer-title" class="mon-offer-title">Прозрачность. Источники. Циклы.</h2>
+    <p class="mon-offer-lead">Публичный дашборд: что нашли, откуда цитата, куда кликнуть. Данные из Google Sheets, цикл обновления каждые 12 часов — без ручной «магии» в интерфейсе.</p>
+    <div class="mon-pillars">
+      <article class="mon-pillar">
+        <h3 class="mon-pillar-title">Несколько источников</h3>
+        <p class="mon-pillar-text">Сайты-разоблачители, чёрные списки и жалобы с формы попадают в одну модель проверки.</p>
+      </article>
+      <article class="mon-pillar">
+        <h3 class="mon-pillar-title">Строка в таблице</h3>
+        <p class="mon-pillar-text">Канал, цитата из источника, статус и ссылки — всё, что нужно, чтобы перепроверить факт.</p>
+      </article>
+      <article class="mon-pillar">
+        <h3 class="mon-pillar-title">Живой цикл</h3>
+        <p class="mon-pillar-text">Лог последнего прогона, история циклов и метрики в одном месте — как снимок системы «сейчас».</p>
+      </article>
     </div>
-    <div class="mon-section-body">
-      <div class="mon-metrics-head">
-        <p class="mon-metrics-kicker">Результаты в цифрах</p>
-        <p class="mon-metrics-sub">Статус системы и последние циклы мониторинга</p>
-      </div>
+    <p class="mon-offer-focus">Focus: антискам · факты · проверяемость</p>
+  </section>
+
+  <!-- ── Метрики и статус ── -->
+  <section class="mon-section" aria-labelledby="mon-metrics-heading">
+    <header class="mon-section-header mon-section-header--flow">
+      <h2 id="mon-metrics-heading" class="mon-section-heading">Результаты в цифрах</h2>
+      <p class="mon-section-lead">Ключевые метрики системы и последние циклы мониторинга</p>
+    </header>
+    <div class="mon-section-body mon-section-body--metrics">
       <div class="mon-status-grid">
         <div class="mon-stat-card">
           <div class="mon-stat-label">статус</div>
@@ -112,13 +130,12 @@
     </div>
   </section>
 
-  <!-- ── БАЗА СКАМ-КАНАЛОВ ── -->
-  <section class="mon-section">
-    <div class="mon-section-header">
-      <span class="mon-dot red"></span>
-      <span class="mon-section-title">БАЗА СКАМ-КАНАЛОВ</span>
-      <span class="mon-section-label" style="margin-left:auto" id="s3-count"></span>
-    </div>
+  <!-- ── База скам-каналов ── -->
+  <section class="mon-section" aria-labelledby="mon-scam-heading">
+    <header class="mon-section-header mon-section-header--split">
+      <h2 id="mon-scam-heading" class="mon-section-heading">База скам-каналов</h2>
+      <span class="mon-section-label" id="s3-count"></span>
+    </header>
     <div class="mon-section-body" style="padding:0">
 
       <div class="mon-scheme-block">
@@ -140,13 +157,12 @@
     </div>
   </section>
 
-  <!-- ── SECTION 5: ВСЕ НАЙДЕННЫЕ КАНАЛЫ ── -->
-  <section class="mon-section">
-    <div class="mon-section-header">
-      <span class="mon-dot" style="background:#22c55e"></span>
-      <span class="mon-section-title">ВСЕ НАЙДЕННЫЕ КАНАЛЫ</span>
-      <span class="mon-section-label" style="margin-left:auto" id="s4-watch-count"></span>
-    </div>
+  <!-- ── Широкий мониторинг ── -->
+  <section class="mon-section" aria-labelledby="mon-watch-heading">
+    <header class="mon-section-header mon-section-header--split">
+      <h2 id="mon-watch-heading" class="mon-section-heading">Все найденные каналы</h2>
+      <span class="mon-section-label" id="s4-watch-count"></span>
+    </header>
     <div class="mon-section-body" style="padding:0">
       <div class="mon-scheme-inline" role="img" aria-label="Подтверждённый скам в таблице выше; здесь — широкий список">
         <span class="mon-scheme-pill mon-scheme-pill--dim">База скама ↑</span>
@@ -159,13 +175,12 @@
     </div>
   </section>
 
-  <!-- ── SECTION 6: СЕТИ КАНАЛОВ ── -->
-  <section class="mon-section">
-    <div class="mon-section-header">
-      <span class="mon-dot" style="background:#8b5cf6"></span>
-      <span class="mon-section-title">СЕТИ КАНАЛОВ</span>
-      <span class="mon-section-label" style="margin-left:auto" id="s4-network-count"></span>
-    </div>
+  <!-- ── Сети каналов ── -->
+  <section class="mon-section" aria-labelledby="mon-network-heading">
+    <header class="mon-section-header mon-section-header--split">
+      <h2 id="mon-network-heading" class="mon-section-heading">Сети каналов</h2>
+      <span class="mon-section-label" id="s4-network-count"></span>
+    </header>
     <div class="mon-section-body" style="padding:0">
       <div class="mon-scheme-inline mon-scheme-inline--network" role="img" aria-label="Канал А продвигает канал Б">
         <span class="mon-scheme-node mon-scheme-node--sm">канал A</span>
@@ -180,13 +195,12 @@
     </div>
   </section>
 
-  <!-- ── ПОСЛЕДНИЙ ЦИКЛ ── -->
-  <section class="mon-section">
-    <div class="mon-section-header">
-      <span class="mon-dot yellow"></span>
-      <span class="mon-section-title">ПОСЛЕДНИЙ ЦИКЛ</span>
-      <span class="mon-section-label" style="margin-left:auto" id="s2-cycle-label"></span>
-    </div>
+  <!-- ── Последний цикл ── -->
+  <section class="mon-section" aria-labelledby="mon-cycle-heading">
+    <header class="mon-section-header mon-section-header--split">
+      <h2 id="mon-cycle-heading" class="mon-section-heading">Последний цикл</h2>
+      <span class="mon-section-label" id="s2-cycle-label"></span>
+    </header>
     <div class="mon-section-body">
       <div class="mon-log" id="s2-log">
         <div class="mon-loading mon-spinner">Загружаю данные цикла</div>
@@ -194,12 +208,11 @@
     </div>
   </section>
 
-  <!-- ── ИСТОЧНИКИ ДАННЫХ ── -->
-  <section class="mon-section">
-    <div class="mon-section-header">
-      <span class="mon-dot green"></span>
-      <span class="mon-section-title">ИСТОЧНИКИ ДАННЫХ</span>
-    </div>
+  <!-- ── Источники данных ── -->
+  <section class="mon-section" aria-labelledby="mon-sources-heading">
+    <header class="mon-section-header">
+      <h2 id="mon-sources-heading" class="mon-section-heading">Источники данных</h2>
+    </header>
     <div class="mon-section-body">
       <div class="mon-scheme-block mon-scheme-block--compact">
         <div class="mon-scheme-row mon-scheme-row--sources" role="img" aria-label="Сайты и форма → таблицы → эта страница">
@@ -223,12 +236,11 @@
     </div>
   </section>
 
-  <!-- ── SECTION 8: ИСТОРИЯ ЦИКЛОВ ── -->
-  <section class="mon-section">
-    <div class="mon-section-header">
-      <span class="mon-dot" style="background:#8b5cf6"></span>
-      <span class="mon-section-title">ИСТОРИЯ ЦИКЛОВ</span>
-    </div>
+  <!-- ── История циклов ── -->
+  <section class="mon-section" aria-labelledby="mon-history-heading">
+    <header class="mon-section-header">
+      <h2 id="mon-history-heading" class="mon-section-heading">История циклов</h2>
+    </header>
     <div class="mon-section-body" style="padding:0">
       <div class="mon-table-wrap" id="s6-history-wrap">
         <div class="mon-loading">Загружаю историю…</div>
@@ -236,13 +248,12 @@
     </div>
   </section>
 
-  <!-- ── КАК МЫ ПРОВЕРЯЕМ ── -->
-  <section class="mon-section mon-section--collapsible mon-section--collapsed">
-    <div class="mon-section-header" role="button" tabindex="0" aria-expanded="false">
-      <span class="mon-dot" style="background:#06b6d4"></span>
-      <span class="mon-section-title">КАК МЫ ПРОВЕРЯЕМ</span>
+  <!-- ── Как мы проверяем ── -->
+  <section class="mon-section mon-section--collapsible mon-section--collapsed" aria-labelledby="mon-how-heading">
+    <header class="mon-section-header" role="button" tabindex="0" aria-expanded="false">
+      <h2 id="mon-how-heading" class="mon-section-heading">Как мы проверяем</h2>
       <span class="mon-collapse-chevron" aria-hidden="true">›</span>
-    </div>
+    </header>
     <div class="mon-section-body">
       <div class="mon-scheme-block">
         <p class="mon-scheme-caption">Как собирается строка</p>
@@ -259,13 +270,12 @@
     </div>
   </section>
 
-  <!-- ── ПРАВИЛА И КРИТЕРИИ ── -->
-  <section class="mon-section mon-section--collapsible mon-section--collapsed">
-    <div class="mon-section-header" role="button" tabindex="0" aria-expanded="false">
-      <span class="mon-dot" style="background:#6b7280"></span>
-      <span class="mon-section-title">ПРАВИЛА И КРИТЕРИИ</span>
+  <!-- ── Правила и критерии ── -->
+  <section class="mon-section mon-section--collapsible mon-section--collapsed" aria-labelledby="mon-rules-heading">
+    <header class="mon-section-header" role="button" tabindex="0" aria-expanded="false">
+      <h2 id="mon-rules-heading" class="mon-section-heading">Правила и критерии</h2>
       <span class="mon-collapse-chevron" aria-hidden="true">›</span>
-    </div>
+    </header>
     <div class="mon-section-body">
       <div class="mon-rules">
 
@@ -457,6 +467,7 @@
 
 <footer class="mon-footer">
   <p>Sheets · цикл 12 ч · <a href="/">на сайт</a></p>
+  <p class="mon-footer-copy">© 2026 Крипта без розовых очков</p>
 </footer>
 
 <script>
@@ -1048,7 +1059,7 @@
 
   function initScrollReveal() {
     if (!window.IntersectionObserver) return;
-    var els = document.querySelectorAll('.mon-section, .mon-stat-card, .mon-proof-card, .mon-source-card, .mon-scheme-block, .mon-scheme-inline, .mon-hero-aside, .mon-metrics-head');
+    var els = document.querySelectorAll('.mon-offer, .mon-pillar, .mon-section, .mon-stat-card, .mon-proof-card, .mon-source-card, .mon-scheme-block, .mon-scheme-inline, .mon-hero-aside');
     var observer = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
         if (entry.isIntersecting) {
