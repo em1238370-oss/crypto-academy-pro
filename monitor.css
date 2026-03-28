@@ -180,6 +180,24 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-nav-link:hover { color: #fff; border-bottom-color: rgba(255,255,255,0.25); }
 
+.mon-nav-link--home {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.mon-nav-home-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  background: currentColor;
+  opacity: 0.92;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 3L2 12h3v8h6v-6h4v6h6v-8h3L12 3z'/%3E%3C/svg%3E") center / 18px 18px no-repeat;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 3L2 12h3v8h6v-6h4v6h6v-8h3L12 3z'/%3E%3C/svg%3E") center / 18px 18px no-repeat;
+}
+.mon-nav-link--home:hover .mon-nav-home-icon {
+  opacity: 1;
+}
+
 .mon-refresh-btn {
   font-family: var(--mon-font-display);
   font-size: 13px;
@@ -1528,15 +1546,15 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   animation: rowAppear 0.48s var(--mon-ease-soft) both;
 }
 
-/* ── BOOT OVERLAY — dramatic glass ──────────────────────── */
+/* ── BOOT OVERLAY — «окно» с таблицей статусов (как на главной) ── */
 
-#mon-boot-overlay {
+#mon-boot-overlay.mon-boot-overlay {
   position: fixed; inset: 0; z-index: 1000;
   background: #0a0c10;
   display: flex; align-items: center; justify-content: center;
   transition: opacity var(--mon-dur-boot-fade) var(--mon-ease-soft);
 }
-#mon-boot-overlay::before {
+#mon-boot-overlay.mon-boot-overlay::before {
   content: '';
   position: absolute; inset: 0;
   background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
@@ -1551,30 +1569,113 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 .mon-boot-terminal {
   font-family: var(--mon-font-mono);
-  font-size: 13px; line-height: 1.85;
-  max-width: 480px; width: 92%;
-  padding: 32px 36px;
-  border-radius: var(--mon-radius);
-  background: #111318;
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 520px;
+  width: 92%;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #0d0f14;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow:
+    0 24px 80px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(255,255,255,0.04) inset;
   position: relative;
   z-index: 1;
   animation: monBootTerminalIn 0.58s var(--mon-ease-soft) both;
 }
 
+.mon-boot-terminal-cap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.35);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.mon-boot-terminal-lights {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.mon-boot-light {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.35) inset;
+}
+.mon-boot-light--r { background: #ff5f57; }
+.mon-boot-light--y { background: #febc2e; }
+.mon-boot-light--g { background: #28c840; }
+.mon-boot-terminal-title {
+  flex: 1;
+  font-family: var(--mon-font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  text-align: center;
+  padding-right: 52px;
+}
+
+.mon-boot-terminal-frame {
+  padding: 0;
+  background: #111318;
+}
+.mon-boot-terminal-thead {
+  font-family: var(--mon-font);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.02);
+}
+.mon-boot-terminal-rows {
+  padding: 0;
+}
+
 .mon-boot-line {
-  display: block;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  margin: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(8px);
   transition:
     opacity var(--mon-dur-boot-line) var(--mon-ease-soft),
     transform var(--mon-dur-boot-line) var(--mon-ease-soft);
 }
+.mon-boot-terminal-rows .mon-boot-line:last-child {
+  border-bottom: none;
+}
+.mon-boot-line-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.22);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.mon-boot-line-txt {
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+}
 .mon-boot-line.visible { opacity: 1; transform: translateY(0); }
-.mon-boot-line.dim  { color: rgba(255,255,255,0.34); }
-.mon-boot-line.info { color: var(--mon-red); font-weight: 600; }
-.mon-boot-line.ok   { color: var(--mon-green); font-weight: 600; }
+.mon-boot-line.dim .mon-boot-line-txt { color: rgba(255,255,255,0.38); }
+.mon-boot-line.dim .mon-boot-line-num { color: rgba(255,255,255,0.18); }
+.mon-boot-line.info .mon-boot-line-txt { color: var(--mon-red); font-weight: 600; }
+.mon-boot-line.info .mon-boot-line-num { color: rgba(255,68,68,0.45); }
+.mon-boot-line.ok .mon-boot-line-txt { color: var(--mon-green); font-weight: 600; }
+.mon-boot-line.ok .mon-boot-line-num { color: rgba(34,197,94,0.45); }
 
 @media (prefers-reduced-motion: reduce) {
   .mon-topbar {
@@ -1593,6 +1694,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     transform: none !important;
   }
   .mon-boot-terminal { animation: none !important; }
+  .mon-boot-line {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
   .mon-offer.mon-reveal .mon-offer-kicker,
   .mon-offer.mon-reveal .mon-offer-title,
   .mon-offer.mon-reveal .mon-offer-lead,
@@ -1656,6 +1762,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   .mon-log-time { min-width: 0; }
   .mon-main-nav-links { width: 100%; }
   .mon-refresh-countdown, .mon-nav-link, .mon-refresh-btn { width: 100%; justify-content: center; text-align: center; }
+  .mon-nav-link--home { justify-content: center; }
+  .mon-boot-terminal { max-width: none; width: 94%; }
+  .mon-boot-terminal-title { font-size: 10px; padding-right: 0; letter-spacing: 0.04em; }
+  .mon-boot-line { grid-template-columns: 26px minmax(0, 1fr); gap: 8px; padding: 9px 12px; }
+  .mon-boot-line-txt { font-size: 12px; }
   .mon-search-input { width: 100%; }
   .mon-table-search { flex-direction: column; align-items: stretch; }
   .mon-search-count { margin-left: 0; }

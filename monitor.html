@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260329-refresh-5m">
+  <link rel="stylesheet" href="/monitor.css?v=20260329-boot-home">
 </head>
 <body class="mon-page">
 
@@ -17,16 +17,29 @@
   <span class="mon-bg-dot-grid"></span>
 </div>
 
-<!-- ── BOOT OVERLAY ── -->
-<div id="mon-boot-overlay" aria-hidden="true">
-  <div class="mon-boot-terminal" id="mon-boot-lines">
-    <span class="mon-boot-line info">KRO ANTI-SCAM MONITOR v2.1</span>
-    <span class="mon-boot-line dim">Connecting to Google Sheets API…</span>
-    <span class="mon-boot-line dim">Loading scam_base…</span>
-    <span class="mon-boot-line dim">Loading channels_watch…</span>
-    <span class="mon-boot-line dim">Loading kro_meta…</span>
-    <span class="mon-boot-line dim">Loading kro_history…</span>
-    <span class="mon-boot-line ok">System ready. Rendering dashboard…</span>
+<!-- ── BOOT OVERLAY (панель «таблицы» загрузки, как на главной) ── -->
+<div id="mon-boot-overlay" class="mon-boot-overlay" aria-hidden="true">
+  <div class="mon-boot-terminal" role="dialog" aria-labelledby="mon-boot-heading" aria-modal="true">
+    <div class="mon-boot-terminal-cap">
+      <span class="mon-boot-terminal-lights" aria-hidden="true">
+        <span class="mon-boot-light mon-boot-light--r"></span>
+        <span class="mon-boot-light mon-boot-light--y"></span>
+        <span class="mon-boot-light mon-boot-light--g"></span>
+      </span>
+      <span id="mon-boot-heading" class="mon-boot-terminal-title">Мониторинг — загрузка</span>
+    </div>
+    <div class="mon-boot-terminal-frame">
+      <div class="mon-boot-terminal-thead">Статус загрузки дашборда</div>
+      <div id="mon-boot-lines" class="mon-boot-terminal-rows">
+        <div class="mon-boot-line info"><span class="mon-boot-line-num">01</span><span class="mon-boot-line-txt">KRO MONITOR · Крипта без розовых очков</span></div>
+        <div class="mon-boot-line dim"><span class="mon-boot-line-num">02</span><span class="mon-boot-line-txt">Инициализация интерфейса…</span></div>
+        <div class="mon-boot-line dim"><span class="mon-boot-line-num">03</span><span class="mon-boot-line-txt">Подключение к API и таблицам…</span></div>
+        <div class="mon-boot-line dim"><span class="mon-boot-line-num">04</span><span class="mon-boot-line-txt">Загрузка базы скам-каналов…</span></div>
+        <div class="mon-boot-line dim"><span class="mon-boot-line-num">05</span><span class="mon-boot-line-txt">Загрузка широкого мониторинга и связей…</span></div>
+        <div class="mon-boot-line dim"><span class="mon-boot-line-num">06</span><span class="mon-boot-line-txt">Синхронизация метаданных цикла…</span></div>
+        <div class="mon-boot-line ok"><span class="mon-boot-line-num">07</span><span class="mon-boot-line-txt">Готово. Открываем дашборд…</span></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -39,7 +52,10 @@
     <div class="mon-main-nav-links">
       <span class="mon-refresh-countdown" id="mon-refresh-countdown">следующее обновление через 5:00</span>
       <button type="button" class="mon-refresh-btn" id="mon-refresh-btn">Обновить</button>
-      <a href="/" class="mon-nav-link">На сайт</a>
+      <a href="/" class="mon-nav-link mon-nav-link--home">
+        <span class="mon-nav-home-icon" aria-hidden="true"></span>
+        Главная страничка
+      </a>
     </div>
   </nav>
 </header>
@@ -1244,9 +1260,9 @@
     }
     if (!overlay || !lines.length) { finishBoot(); return; }
 
-    var delays = [0, 180, 340, 480, 610, 760, 920];
+    var delays = [0, 120, 230, 340, 450, 560, 670];
     lines.forEach(function(line, i) {
-      setTimeout(function() { line.classList.add('visible'); }, delays[i] || i * 140);
+      setTimeout(function() { line.classList.add('visible'); }, delays[i] != null ? delays[i] : i * 115);
     });
 
     setTimeout(function() {
@@ -1255,7 +1271,7 @@
         overlay.style.display = 'none';
         finishBoot();
       }, 720);
-    }, 1480);
+    }, 1680);
   }
 
   // ── SCROLL REVEAL (fade-up 0.5–0.8s, волна по метрикам — в CSS) ──
