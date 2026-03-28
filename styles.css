@@ -1322,6 +1322,18 @@ body.kro-hero-scrolled .kro-floating-nav {
    margin: 0;
 }
 
+.kro-f1-metrics-footnote {
+   margin: 20px 0 0;
+   font-size: 11px;
+   line-height: 1.45;
+   font-weight: 500;
+   color: rgba(255, 255, 255, 0.48);
+   letter-spacing: 0.02em;
+   max-width: 36em;
+   margin-left: auto;
+   margin-right: auto;
+}
+
 .kro-feature1-stat {
    display: flex;
    flex-direction: column;
