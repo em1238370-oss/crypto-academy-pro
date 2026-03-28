@@ -5,7 +5,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --mon-bg:         #04060d;
+  --mon-bg:         #0a0c10;
   --mon-glass:      rgba(255,255,255,0.055);
   --mon-glass-hi:   rgba(255,255,255,0.09);
   --mon-border:     rgba(255,255,255,0.09);
@@ -23,7 +23,7 @@
   --mon-cyan:       #06b6d4;
   --mon-violet:     #8b5cf6;
 
-  --mon-font:      'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mon-font:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --mon-font-mono: 'SF Mono', ui-monospace, Monaco, 'Cascadia Code', monospace;
 
   --mon-radius:    22px;
@@ -37,10 +37,10 @@
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--mon-bg);
+  background: linear-gradient(180deg, #0a0c10 0%, #0d1015 35%, #10141b 100%);
   color: var(--mon-text);
   font-family: var(--mon-font);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
@@ -65,7 +65,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   inset: 0;
   background-image: radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
   background-size: 28px 28px;
-  opacity: 0.9;
+  opacity: 0.45;
 }
 
 .mon-bg-blob {
@@ -76,27 +76,27 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 .mon-bg-blob-1 {
   width: 860px; height: 860px;
-  background: radial-gradient(circle, rgba(255,68,68,0.18) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(255,68,68,0.14) 0%, transparent 65%);
   top: -280px; right: -120px;
   animation: blobDrift 16s ease-in-out infinite;
 }
 .mon-bg-blob-2 {
   width: 700px; height: 700px;
-  background: radial-gradient(circle, rgba(139,92,246,0.13) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(255,68,68,0.08) 0%, transparent 65%);
   bottom: 0%; left: -180px;
   animation: blobDrift 20s ease-in-out infinite reverse;
   animation-delay: -7s;
 }
 .mon-bg-blob-3 {
   width: 560px; height: 560px;
-  background: radial-gradient(circle, rgba(6,182,212,0.09) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 65%);
   top: 42%; right: 6%;
   animation: blobDrift 13s ease-in-out infinite;
   animation-delay: -10s;
 }
 .mon-bg-blob-4 {
   width: 400px; height: 400px;
-  background: radial-gradient(circle, rgba(255,68,68,0.08) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(255,68,68,0.06) 0%, transparent 65%);
   bottom: 15%; right: 30%;
   animation: blobDrift 17s ease-in-out infinite;
   animation-delay: -4s;
@@ -118,7 +118,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 /* ── TOP BAR ─────────────────────────────────────────────── */
 
 .mon-topbar {
-  padding: 20px 24px 0;
+  padding: 24px 48px 0;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -133,7 +133,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   gap: 20px;
   padding: 12px 20px;
   border-radius: 999px;
-  background: rgba(4,6,13,0.82);
+  background: rgba(10,12,16,0.86);
   backdrop-filter: var(--mon-blur);
   -webkit-backdrop-filter: var(--mon-blur);
   border: 1px solid rgba(255,255,255,0.09);
@@ -228,7 +228,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-container {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 36px 24px 80px;
+  padding: 44px 56px 88px;
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -247,7 +247,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   backdrop-filter: var(--mon-blur);
   -webkit-backdrop-filter: var(--mon-blur);
   border: 1px solid rgba(255,68,68,0.22);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: rgba(255,255,255,0.84);
   text-align: center;
@@ -259,7 +259,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 /* ── HERO ────────────────────────────────────────────────── */
 
 .mon-hero {
-  padding: 10px 4px 6px;
+  padding: 12px 2px 8px;
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr);
   gap: 20px;
@@ -294,7 +294,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-hero-title {
-  font-size: clamp(42px, 6.5vw, 68px);
+  font-size: clamp(46px, 6.8vw, 72px);
   line-height: 0.95;
   font-weight: 800;
   letter-spacing: -0.04em;
@@ -312,10 +312,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-hero-tagline {
-  font-size: clamp(15px, 1.8vw, 20px);
+  font-size: clamp(18px, 2vw, 24px);
   font-weight: 500;
-  color: rgba(255,255,255,0.52);
-  line-height: 1.6;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.55;
   max-width: 600px;
 }
 
@@ -337,7 +337,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: rgba(255,255,255,0.64);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   transition: border-color 0.2s, background 0.2s;
 }
@@ -370,7 +370,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-section-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -378,7 +378,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-section-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--mon-text-dim);
 }
@@ -398,13 +398,13 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   50%     { box-shadow: 0 0 16px rgba(34,197,94,1), 0 0 28px rgba(34,197,94,0.4); }
 }
 
-.mon-section-body { padding: 22px; }
+.mon-section-body { padding: 28px; }
 
 .mon-section-intro {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--mon-text-dim);
-  margin-bottom: 18px;
-  line-height: 1.65;
+  margin-bottom: 16px;
+  line-height: 1.6;
 }
 
 .mon-subsection-title {
@@ -443,7 +443,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255,255,255,0.10);
   border-radius: var(--mon-radius-sm);
-  padding: 22px;
+  padding: 24px;
   min-height: 130px;
   display: flex;
   flex-direction: column;
@@ -474,7 +474,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-stat-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -483,7 +483,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-stat-value {
-  font-size: clamp(22px, 2.6vw, 36px);
+  font-size: clamp(26px, 3vw, 42px);
   font-weight: 800;
   color: #fff;
   word-break: break-word;
@@ -513,8 +513,6 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-color: rgba(34,197,94,0.28);
   box-shadow: 0 0 20px rgba(34,197,94,0.15);
 }
-
-.mon-blink { }
 
 /* ── LOG ─────────────────────────────────────────────────── */
 
@@ -586,10 +584,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-source-guide-card .mon-external-link { margin-top: 12px; }
 
 .mon-proof-note {
-  padding: 14px 22px;
+  padding: 16px 28px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
   background: rgba(255,255,255,0.02);
-  font-size: 13px;
+  font-size: 15px;
   color: var(--mon-text-dim);
 }
 
@@ -624,7 +622,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 16px 22px;
+  padding: 18px 28px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
   background: rgba(255,255,255,0.015);
   flex-wrap: wrap;
@@ -636,7 +634,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-radius: 999px;
   padding: 9px 20px;
   font-family: var(--mon-font);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: #fff;
   outline: none;
@@ -651,7 +649,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-search-count {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--mon-text-dim);
   white-space: nowrap;
@@ -668,12 +666,12 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
   min-width: 900px;
 }
 
 .mon-table th {
-  padding: 11px 16px;
+  padding: 13px 16px;
   text-align: left;
   font-size: 11px;
   font-weight: 800;
@@ -689,7 +687,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-table td {
-  padding: 12px 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.04);
   vertical-align: top;
   color: var(--mon-text);
@@ -802,9 +800,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   transform: translateY(-6px);
   box-shadow: 0 20px 50px rgba(0,0,0,0.40);
 }
-.mon-source-name  { font-size: 13px; font-weight: 800; color: #fff; }
-.mon-source-desc  { font-size: 12px; color: var(--mon-text-fade); }
-.mon-source-status { font-size: 12px; font-weight: 600; }
+.mon-source-name  { font-size: 14px; font-weight: 800; color: #fff; }
+.mon-source-desc  { font-size: 13px; color: var(--mon-text-fade); }
+.mon-source-status { font-size: 13px; font-weight: 600; }
 .mon-source-status.found       { color: var(--mon-green); }
 .mon-source-status.not-found   { color: var(--mon-grey); }
 .mon-source-status.unavailable { color: var(--mon-red); }
@@ -959,7 +957,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 #mon-boot-overlay {
   position: fixed; inset: 0; z-index: 1000;
-  background: #04060d;
+  background: #0a0c10;
   display: flex; align-items: center; justify-content: center;
   transition: opacity 0.60s ease;
 }
@@ -1004,8 +1002,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 @media (max-width: 640px) {
-  .mon-topbar { padding: 12px 14px 0; }
-  .mon-container { padding: 20px 14px 56px; }
+  .mon-topbar { padding: 12px 20px 0; }
+  .mon-container { padding: 24px 20px 56px; }
   .mon-main-nav { padding: 12px 14px; }
   .mon-section-header, .mon-section-body { padding-left: 14px; padding-right: 14px; }
   .mon-status-grid, .mon-proof-grid, .mon-source-guide-grid, .mon-sources-grid, .mon-level-grid { grid-template-columns: 1fr; }

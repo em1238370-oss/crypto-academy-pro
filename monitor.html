@@ -7,7 +7,7 @@
   <meta name="description" content="Живой монитор системы антискам-мониторинга. Актуальные данные о скам-каналах, история циклов, источники.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/monitor.css">
 </head>
 <body class="mon-page">
@@ -53,8 +53,8 @@
   <!-- ── TRUST BANNER ── -->
   <div class="mon-trust-bar">
     <span class="mon-trust-bar-icon" aria-hidden="true">🔍</span>
-    Каждый канал в этой базе проверен вручную.&nbsp;
-    <strong>Нажми на любую ссылку — убедись сам.</strong>
+    Проверено вручную.
+    <strong>Открой ссылку и проверь сам.</strong>
   </div>
 
   <section class="mon-hero">
@@ -64,9 +64,8 @@
       <p class="mon-hero-tagline">Здесь система показывает все крипто-каналы которые она нашла и проверила. Каждый факт — со ссылкой.</p>
     </div>
     <div class="mon-hero-badges" aria-label="Monitor highlights">
-      <span class="mon-hero-badge">✓ Проверено вручную</span>
-      <span class="mon-hero-badge">✓ Минимум 2 источника на канал</span>
-      <span class="mon-hero-badge">✓ Ссылки на оригинальные статьи</span>
+      <span class="mon-hero-badge">✓ Ручная проверка</span>
+      <span class="mon-hero-badge">✓ Ссылки на источники</span>
     </div>
   </section>
 
@@ -125,21 +124,21 @@
             <div class="mon-why-trust-num">1</div>
             <div>
               <strong>Минимум 2 независимых источника</strong>
-              <p>Канал попадает в базу только если о нём написали сразу несколько независимых источников — разные сайты с разоблачениями или разные люди через форму жалоб. Одного «нам кажется» недостаточно.</p>
+              <p>Добавляем канал только когда есть несколько независимых подтверждений, а не одно мнение.</p>
             </div>
           </div>
           <div class="mon-why-trust-card">
             <div class="mon-why-trust-num">2</div>
             <div>
               <strong>Есть реальные доказательства</strong>
-              <p>В колонке «Признаки риска» — конкретные цитаты из источников. В колонке «Источник» — ссылка на оригинальную статью. Кликни и прочитай сам — мы не пересказываем, мы даём первоисточник.</p>
+              <p>В таблице есть цитаты и ссылки на оригиналы, чтобы всё можно было проверить самому.</p>
             </div>
           </div>
           <div class="mon-why-trust-card">
             <div class="mon-why-trust-num">3</div>
             <div>
               <strong>Не мнение — факты</strong>
-              <p>Мы не пишем «этот канал мошеннический». Мы показываем: вот статья, вот цитата из неё, вот ссылка на канал. Ты сам читаешь и делаешь вывод. Никакой субъективщины.</p>
+              <p>Здесь не мнения, а факты: источник, цитата и ссылка на сам канал.</p>
             </div>
           </div>
         </div>
@@ -159,7 +158,7 @@
       <span class="mon-section-label" style="margin-left:auto" id="s4-watch-count"></span>
     </div>
     <div class="mon-section-body" style="padding:0">
-      <div class="mon-proof-note">Это отдельный широкий мониторинг. Здесь показываются все найденные крипто-сигнальные каналы старше месяца с честной оценкой. <strong><code>scam_base</code> выше остаётся только для подтверждённых скамов.</strong></div>
+      <div class="mon-proof-note">Широкий мониторинг всех найденных каналов. Подтверждённые скамы остаются в таблице выше.</div>
       <div class="mon-table-wrap" id="s4-watch-wrap">
         <div class="mon-loading mon-spinner" style="padding:32px">Загружаю широкий мониторинг</div>
       </div>
@@ -174,7 +173,7 @@
       <span class="mon-section-label" style="margin-left:auto" id="s4-network-count"></span>
     </div>
     <div class="mon-section-body" style="padding:0">
-      <div class="mon-proof-note">Здесь видны связи между каналами: какой канал в своих постах рекламирует или продвигает другой.</div>
+      <div class="mon-proof-note">Здесь видно, какие каналы продвигают друг друга.</div>
       <div class="mon-table-wrap" id="s4-network-wrap">
         <div class="mon-loading mon-spinner" style="padding:32px">Загружаю связи каналов</div>
       </div>
@@ -202,7 +201,7 @@
       <span class="mon-section-title">ИСТОЧНИКИ ДАННЫХ</span>
     </div>
     <div class="mon-section-body">
-      <p class="mon-section-intro">Ниже видно, какие источники участвовали в последнем цикле и что именно означает каждый из них.</p>
+      <p class="mon-section-intro">Какие источники участвовали в последнем цикле.</p>
       <div class="mon-sources-grid" id="s5-sources">
         <div class="mon-loading mon-spinner">Загружаю</div>
       </div>
@@ -258,7 +257,7 @@
       <span class="mon-collapse-chevron" aria-hidden="true">›</span>
     </div>
     <div class="mon-section-body">
-      <p class="mon-section-intro">Эта страница сделана так, чтобы любой человек мог проверить выводы сам: открыть канал, открыть первоисточник и сравнить факты.</p>
+      <p class="mon-section-intro">Любой вывод здесь можно проверить по ссылкам и первоисточникам.</p>
       <div class="mon-proof-grid">
         <div class="mon-proof-card">
           <h3>1. Берём проверяемый источник</h3>
