@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260329-boot-vivid">
+  <link rel="stylesheet" href="/monitor.css?v=20260329-boot-3s">
 </head>
 <body class="mon-page">
 
@@ -1296,30 +1296,39 @@
 
     var n = lines.length;
     var prevActive = null;
+    /** ~3+ с на экране: строки тянутся равномерно, потом пауза на «Готово», без резкого среза */
+    var BOOT_LINE_STEP_MS = 420;
+    var HOLD_AFTER_LAST_MS = 720;
+    var FADE_OUT_MS = 780;
+
+    var delays = [];
+    for (var di = 0; di < n; di++) delays.push(di * BOOT_LINE_STEP_MS);
+    var lastLineAt = (n - 1) * BOOT_LINE_STEP_MS;
+    var fadeStartAt = lastLineAt + HOLD_AFTER_LAST_MS;
+
     setBootProgressUi(0, n);
 
-    var delays = [0, 120, 230, 340, 450, 560, 670];
     lines.forEach(function(line, i) {
       setTimeout(function() {
         if (prevActive) prevActive.classList.remove('mon-boot-line--active');
         line.classList.add('visible', 'mon-boot-line--active');
         prevActive = line;
         setBootProgressUi(i + 1, n);
-      }, delays[i] != null ? delays[i] : i * 115);
+      }, delays[i]);
     });
 
     setTimeout(function() {
       if (prevActive) prevActive.classList.remove('mon-boot-line--active');
       setBootProgressUi(n, n);
-    }, 720);
+    }, lastLineAt + 120);
 
     setTimeout(function() {
       overlay.classList.add('fade-out');
       setTimeout(function() {
         overlay.style.display = 'none';
         finishBoot();
-      }, 720);
-    }, 1680);
+      }, FADE_OUT_MS);
+    }, fadeStartAt);
   }
 
   // ── SCROLL REVEAL (fade-up 0.5–0.8s, волна по метрикам — в CSS) ──
