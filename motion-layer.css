@@ -106,3 +106,13 @@
     transform: none;
   }
 }
+
+/* Главная: dock и boot — грузится после styles.css, фикс «не обновилось на телефоне» */
+@media (max-width: 1024px) {
+  body.kro-main nav.kro-mobile-dock {
+    display: flex !important;
+  }
+}
+body.kro-main #kro-boot-overlay.kro-boot-overlay {
+  z-index: 10050;
+}

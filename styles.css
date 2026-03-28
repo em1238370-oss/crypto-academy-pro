@@ -3108,14 +3108,18 @@ body.kro-hero-scrolled .kro-floating-nav {
    }
 }
 
-/* Мобильная главная: без горизонтального скролла, hero — шире блок, приличные отступы; прокрутка вниз не блокируется */
-@media (max-width: 768px) {
+/* Планшеты и телефоны: нижняя панель (до 1024 — в т.ч. iPad, «полный сайт» на телефоне) */
+@media (max-width: 1024px) {
    .kro-mobile-dock {
       display: flex;
    }
    .kro-main .page {
       padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
    }
+}
+
+/* Мобильная главная: без горизонтального скролла, hero — шире блок, приличные отступы; прокрутка вниз не блокируется */
+@media (max-width: 768px) {
    html,
    body.kro-main {
       overflow-x: hidden !important;
@@ -7093,5 +7097,15 @@ button:not(.chat-button):not(.send-button):focus {
 .kro-feature1--simple .kro-f1-source-doc-wrap {
    margin-top: 20px;
    margin-bottom: 0;
+}
+
+/* Конец файла: нижняя панель главной (перебивает устаревший кэш и порядок правил) */
+@media (max-width: 1024px) {
+   body.kro-main nav.kro-mobile-dock {
+      display: flex !important;
+   }
+   body.kro-main .page {
+      padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+   }
 }
 
