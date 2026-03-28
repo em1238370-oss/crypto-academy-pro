@@ -55,16 +55,12 @@
            <a href="/monitor" target="_blank">Монитор</a>
        </div>
    </nav>
-   <nav class="kro-floating-nav" aria-label="Навигация по фишкам" id="kro-floating-nav">
+   <nav class="kro-floating-nav" aria-label="Быстрая навигация" id="kro-floating-nav">
        <a href="#top" class="kro-floating-nav-brand">
            <span class="kro-floating-nav-icon" aria-hidden="true"></span>
            <span class="kro-floating-nav-brand-text">Крипта без розовых очков</span>
        </a>
        <div class="kro-floating-nav-links">
-           <a href="#feature3">Фишка 3</a>
-           <a href="#feature4">Фишка 4</a>
-           <a href="#feature5">Фишка 5</a>
-           <span class="kro-floating-nav-sep" aria-hidden="true"></span>
            <a href="#checkers" class="kro-floating-nav-cta">Проверь гуру</a>
        </div>
    </nav>
@@ -518,6 +514,36 @@
        (function() {
            var base = window.location.origin;
            var KRO_API_FALLBACK = 'https://crypto-academy-pro.onrender.com';
+           function originNoSlash(o) { return (o || '').replace(/\/$/, ''); }
+           function getJsonWithFallback(pathQuery) {
+               function loadFrom(origin) {
+                   return fetch(originNoSlash(origin) + pathQuery, {
+                       cache: 'no-store',
+                       headers: { 'Cache-Control': 'no-store', Accept: 'application/json' }
+                   }).then(function(r) {
+                       if (!r.ok) throw new Error('HTTP ' + r.status);
+                       return r.json();
+                   });
+               }
+               var prim = originNoSlash(base);
+               var fb = originNoSlash(KRO_API_FALLBACK);
+               return loadFrom(prim).catch(function(err) {
+                   if (prim === fb) throw err;
+                   return loadFrom(fb);
+               });
+           }
+           function postJsonWithFallback(path, bodyObj) {
+               function postTo(origin) {
+                   return fetch(originNoSlash(origin) + path, {
+                       method: 'POST',
+                       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                       body: JSON.stringify(bodyObj)
+                   });
+               }
+               var prim = originNoSlash(base);
+               var fb = originNoSlash(KRO_API_FALLBACK);
+               return postTo(prim).catch(function() { return postTo(fb); });
+           }
            function formatSum(n) {
                var x = Number(n);
                if (!isFinite(x)) x = 0;
@@ -704,23 +730,7 @@
            }
            function fetchLiveCounter() {
                if (!document.querySelector('.kro-feature1')) return;
-               function loadFrom(origin) {
-                   var o = (origin || '').replace(/\/$/, '');
-                   return fetch(o + '/api/kro/live-counter?t=' + Date.now(), {
-                       cache: 'no-store',
-                       headers: { 'Cache-Control': 'no-store', Accept: 'application/json' }
-                   }).then(function(r) {
-                       if (!r.ok) throw new Error('live-counter HTTP ' + r.status);
-                       return r.json();
-                   });
-               }
-               loadFrom(base.replace(/\/$/, ''))
-                   .catch(function(err) {
-                       var p = base.replace(/\/$/, '');
-                       var f = KRO_API_FALLBACK.replace(/\/$/, '');
-                       if (p === f) throw err;
-                       return loadFrom(f);
-                   })
+               getJsonWithFallback('/api/kro/live-counter?t=' + Date.now())
                    .then(function(raw) {
                        var norm = normalizeLiveCounterPayload(raw);
                        if (norm) applyData(norm);
@@ -768,11 +778,7 @@
                    var from = (document.getElementById('kro-report-from') || {}).value.trim();
                    msgEl.textContent = '';
                    msgEl.classList.add('hidden');
-                   fetch(base + '/api/kro/report-scam', {
-                       method: 'POST',
-                       headers: { 'Content-Type': 'application/json' },
-                       body: JSON.stringify({ channel: channel, sumRub: sumRub, description: description, proofUrl: proofUrl || undefined, from: from || undefined })
-                   }).then(function(r) {
+                   postJsonWithFallback('/api/kro/report-scam', { channel: channel, sumRub: sumRub, description: description, proofUrl: proofUrl || undefined, from: from || undefined }).then(function(r) {
                        if (r.ok) {
                            msgEl.textContent = 'Спасибо. Мы проверим и добавим.';
                            msgEl.classList.remove('hidden');
@@ -794,6 +800,80 @@
            var checkInput = document.getElementById('kro-check-channel');
            var checkResult = document.getElementById('kro-check-result');
            if (checkBtn && checkInput && checkResult) {
+               var SCAM_CACHE = { at: 0, rows: null };
+               var SCAM_TTL_MS = 5 * 60 * 1000;
+               function channelKeyForScam(s) {
+                   var t = (s || '').toString().trim().toLowerCase().replace(/\s/g, '');
+                   if (!t) return '';
+                   t = t.replace(/^https?:\/\//, '');
+                   if (t.indexOf('t.me/') === 0) t = t.slice(5);
+                   if (t.charAt(0) === '+') return t;
+                   return t.replace(/^@/, '');
+               }
+               function loadScamBaseRows() {
+                   var now = Date.now();
+                   if (SCAM_CACHE.rows && (now - SCAM_CACHE.at) < SCAM_TTL_MS) {
+                       return Promise.resolve(SCAM_CACHE.rows);
+                   }
+                   return getJsonWithFallback('/api/kro/monitor-data?t=' + Date.now()).then(function(data) {
+                       var rows = (data && data.scam_base) || [];
+                       SCAM_CACHE = { at: Date.now(), rows: rows };
+                       return rows;
+                   });
+               }
+               function findInScamBase(rows, channelNorm) {
+                   var k = channelKeyForScam(channelNorm);
+                   if (!k || k.charAt(0) === '+') return null;
+                   for (var i = 0; i < rows.length; i++) {
+                       var r = rows[i];
+                       if (!r) continue;
+                       if (r.username && channelKeyForScam(r.username) === k) return r;
+                       if (r.link) {
+                           var lk = (r.link + '').replace(/^https?:\/\/t\.me\//i, '').replace(/^t\.me\//i, '');
+                           if (channelKeyForScam(lk) === k) return r;
+                       }
+                   }
+                   return null;
+               }
+               function renderScamBaseHit(hit) {
+                   var lossRub = hit.total_loss_rub != null ? hit.total_loss_rub : hit.totalLost;
+                   var lines = [
+                       'Канал есть в базе scam_base (подтверждённые данные).',
+                       'Статус: ' + (hit.status || '—'),
+                       'Тип: ' + (hit.object_type || '—'),
+                       'Источник: ' + (hit.source_primary || '—'),
+                       'Жалоб: ' + (hit.complaints != null ? hit.complaints : '—'),
+                       'Потери ₽ (по базе): ' + formatFull(lossRub != null ? lossRub : 0)
+                   ];
+                   if (hit.link) lines.push('Канал: ' + hit.link);
+                   var ev = (hit.source_evidence || '').trim().replace(/\s+/g, ' ');
+                   if (ev.length > 400) ev = ev.slice(0, 397) + '…';
+                   if (ev) lines.push('Контекст: ' + ev);
+                   lines.push('Полная таблица: /monitor');
+                   checkResult.textContent = lines.join('\n');
+                   checkResult.className = 'kro-check-result kro-check-result--scam-base';
+               }
+               function runDeepChannelCheck(channel) {
+                   checkResult.textContent = 'Анализируем канал… может занять до минуты';
+                   return getJsonWithFallback('/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(data) {
+                       if (!data.found) {
+                           checkResult.textContent = (data.message || 'Анализируем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
+                           if (data.pending && !data.error_detail) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
+                           checkResult.className = 'kro-check-result';
+                           return;
+                       }
+                       var risk = data.risk_score;
+                       var riskStr = risk != null ? risk + '/100' : '—';
+                       var lines = ['Риск ' + riskStr];
+                       if (data.ads_per_week != null) lines.push('⚠️ ' + data.ads_per_week + ' реклам/неделя');
+                       if (data.bot_pct) lines.push('⚠️ ' + data.bot_pct + ' ботов в комментах');
+                       var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : '—');
+                       lines.push('💸 Потери пользователей: ' + lossStr);
+                       lines.push('📊 Вердикт: ' + (data.verdictText || data.verdict || '—'));
+                       checkResult.textContent = lines.join('\n');
+                       checkResult.className = 'kro-check-result';
+                   });
+               }
                function normChannel(s) {
                    var t = (s || '').trim().replace(/\s/g, '');
                    if (!t) return '';
@@ -809,6 +889,25 @@
                    var t = (s || '').trim();
                    return (t.indexOf('http://') === 0 || t.indexOf('https://') === 0) && t.toLowerCase().indexOf('t.me') === -1;
                }
+               var scamLookupTimer;
+               checkInput.addEventListener('input', function() {
+                   clearTimeout(scamLookupTimer);
+                   var raw = checkInput.value;
+                   if (!raw || !String(raw).trim()) return;
+                   if (isExchangerUrl(raw)) return;
+                   var ch = normChannel(raw);
+                   if (!ch || ch.indexOf('t.me/+') === 0) return;
+                   scamLookupTimer = setTimeout(function() {
+                       if (normChannel(checkInput.value.trim()) !== ch) return;
+                       loadScamBaseRows().then(function(rows) {
+                           if (normChannel(checkInput.value.trim()) !== ch) return;
+                           var hit = findInScamBase(rows, ch);
+                           if (!hit) return;
+                           renderScamBaseHit(hit);
+                           checkResult.classList.remove('hidden');
+                       }).catch(function() {});
+                   }, 400);
+               });
                checkBtn.addEventListener('click', function() {
                    var raw = checkInput.value;
                    if (!raw || !raw.trim()) {
@@ -819,7 +918,7 @@
                    checkResult.classList.remove('hidden');
                    if (isExchangerUrl(raw)) {
                        checkResult.textContent = 'Загрузка…';
-                       fetch(base + '/api/kro/check-exchanger?url=' + encodeURIComponent(raw.trim())).then(function(r) { return r.json(); }).then(function(data) {
+                       getJsonWithFallback('/api/kro/check-exchanger?url=' + encodeURIComponent(raw.trim())).then(function(data) {
                            if (!data.found) {
                                checkResult.textContent = (data.message || ('Обменник не найден в базе.'));
                                checkResult.className = 'kro-check-result';
@@ -843,28 +942,23 @@
                        checkResult.className = 'kro-check-result';
                        return;
                    }
-                   checkResult.textContent = 'Анализируем канал… может занять до минуты';
-                   fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(data) {
-                       if (!data.found) {
-                           checkResult.textContent = (data.message || 'Анализируем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
-                           if (data.pending && !data.error_detail) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
+                   checkResult.textContent = 'Проверяем базу…';
+                   loadScamBaseRows()
+                       .then(function(rows) {
+                           var hit = findInScamBase(rows, channel);
+                           if (hit) {
+                               renderScamBaseHit(hit);
+                               return;
+                           }
+                           return runDeepChannelCheck(channel);
+                       }, function() {
+                           checkResult.textContent = 'Не удалось загрузить базу. Запускаем глубокую проверку…';
+                           return runDeepChannelCheck(channel);
+                       })
+                       .catch(function() {
+                           checkResult.textContent = 'Ошибка запроса.';
                            checkResult.className = 'kro-check-result';
-                           return;
-                       }
-                       var risk = data.risk_score;
-                       var riskStr = risk != null ? risk + '/100' : '—';
-                       var lines = ['Риск ' + riskStr];
-                       if (data.ads_per_week != null) lines.push('⚠️ ' + data.ads_per_week + ' реклам/неделя');
-                       if (data.bot_pct) lines.push('⚠️ ' + data.bot_pct + ' ботов в комментах');
-                       var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : '—');
-                       lines.push('💸 Потери пользователей: ' + lossStr);
-                       lines.push('📊 Вердикт: ' + (data.verdictText || data.verdict || '—'));
-                       checkResult.textContent = lines.join('\n');
-                       checkResult.className = 'kro-check-result';
-                   }).catch(function() {
-                       checkResult.textContent = 'Ошибка запроса.';
-                       checkResult.className = 'kro-check-result';
-                   });
+                       });
                });
                var screenshotInput = document.getElementById('kro-check-screenshot');
                var screenshotBtn = document.getElementById('kro-check-screenshot-btn');
@@ -882,11 +976,7 @@
                        var reader = new FileReader();
                        reader.onload = function() {
                            var dataUrl = reader.result;
-                           fetch(base + '/api/kro/check-screenshot', {
-                               method: 'POST',
-                               headers: { 'Content-Type': 'application/json' },
-                               body: JSON.stringify({ image: dataUrl })
-                           }).then(function(r) { return r.json(); }).then(function(data) {
+                           postJsonWithFallback('/api/kro/check-screenshot', { image: dataUrl }).then(function(r) { return r.json(); }).then(function(data) {
                                var extracted = (data.extracted || []).filter(Boolean);
                                if (!extracted.length) {
                                    checkResult.textContent = 'На скрине не найдено ни @ника, ни ссылки на канал/обменник.';
@@ -896,7 +986,7 @@
                                var first = extracted[0];
                                var isExch = (first.indexOf('http://') === 0 || first.indexOf('https://') === 0) && first.toLowerCase().indexOf('t.me') === -1;
                                if (isExch) {
-                                   fetch(base + '/api/kro/check-exchanger?url=' + encodeURIComponent(first)).then(function(r) { return r.json(); }).then(function(exData) {
+                                   getJsonWithFallback('/api/kro/check-exchanger?url=' + encodeURIComponent(first)).then(function(exData) {
                                        if (!exData.found) {
                                            checkResult.textContent = (exData.message || 'Обменник не найден в базе.');
                                            checkResult.className = 'kro-check-result';
@@ -920,19 +1010,40 @@
                                    checkResult.className = 'kro-check-result';
                                    return;
                                }
-                               fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(chData) {
-                                   if (!chData.found) {
-                                       checkResult.textContent = (chData.message || 'Проверяем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
-                                       if (chData.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
+                               loadScamBaseRows()
+                                   .then(function(rows) {
+                                       var hit = findInScamBase(rows, channel);
+                                       if (hit) {
+                                           renderScamBaseHit(hit);
+                                           return null;
+                                       }
+                                       return getJsonWithFallback('/api/kro/check?channel=' + encodeURIComponent(channel));
+                                   }, function() {
+                                       return getJsonWithFallback('/api/kro/check?channel=' + encodeURIComponent(channel));
+                                   })
+                                   .then(function(chData) {
+                                       if (!chData) return;
+                                       if (!chData.found) {
+                                           checkResult.textContent = (chData.message || 'Проверяем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
+                                           if (chData.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
+                                           checkResult.className = 'kro-check-result';
+                                           return;
+                                       }
+                                       var risk2 = chData.risk_score;
+                                       var riskStr2 = risk2 != null ? risk2 + '/100' : '—';
+                                       var lines2 = ['Риск ' + riskStr2];
+                                       if (chData.ads_per_week != null) lines2.push('⚠️ ' + chData.ads_per_week + ' реклам/неделя');
+                                       if (chData.bot_pct) lines2.push('⚠️ ' + chData.bot_pct + ' ботов в комментах');
+                                       var lossStr2 = chData.total_loss ? (chData.total_loss + '') : (chData.complaints != null ? chData.complaints + ' жалоб' : '—');
+                                       lines2.push('💸 Потери пользователей: ' + lossStr2);
+                                       lines2.push('📊 Вердикт: ' + (chData.verdictText || chData.verdict || '—'));
+                                       checkResult.textContent = lines2.join('\n');
                                        checkResult.className = 'kro-check-result';
-                                       return;
-                                   }
-                                   checkResult.innerHTML = buildCheckResultCardHtml(chData);
-                                   checkResult.className = 'kro-check-result';
-                               }).catch(function() {
-                                   checkResult.textContent = 'Ошибка запроса.';
-                                   checkResult.className = 'kro-check-result';
-                               });
+                                   })
+                                   .catch(function() {
+                                       checkResult.textContent = 'Ошибка запроса.';
+                                       checkResult.className = 'kro-check-result';
+                                   });
                            }).catch(function() {
                                checkResult.textContent = 'Ошибка распознавания скрина.';
                                checkResult.className = 'kro-check-result';
