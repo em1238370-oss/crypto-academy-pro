@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260329-cycle-time">
+  <link rel="stylesheet" href="/monitor.css?v=20260329-refresh-5m">
 </head>
 <body class="mon-page">
 
@@ -37,7 +37,7 @@
       Крипта без розовых очков
     </a>
     <div class="mon-main-nav-links">
-      <span class="mon-refresh-countdown" id="mon-refresh-countdown" title="До следующего 12-часового цикла мониторинга; данные с сервера подтягиваются чаще">след. цикл через —</span>
+      <span class="mon-refresh-countdown" id="mon-refresh-countdown">следующее обновление через 5:00</span>
       <button type="button" class="mon-refresh-btn" id="mon-refresh-btn">Обновить</button>
       <a href="/" class="mon-nav-link">На сайт</a>
     </div>
@@ -45,7 +45,7 @@
 </header>
 
 <p class="mon-live-strip" id="mon-live-strip" role="status" aria-live="polite">
-  <span class="mon-live-strip-inner">Система работает. Время последнего <strong>цикла</strong> (по kro_meta): <span id="mon-live-strip-time">—</span></span>
+  <span class="mon-live-strip-inner">Система работает · время после цикла <span id="mon-live-strip-time">—</span></span>
 </p>
 
 <main class="mon-container">
@@ -540,12 +540,9 @@
 (function() {
   'use strict';
 
-  var CYCLE_HOURS = 12;
-  var CYCLE_MS = CYCLE_HOURS * 3600 * 1000;
-  /** Авто-проверка API, чтобы «последнее обновление» подтягивалось без ожидания целого цикла */
-  var DATA_POLL_SEC = 60;
-  var nextCycleEpoch = null;
-  var pollRemaining = DATA_POLL_SEC;
+  var CYCLE_MS = 12 * 3600 * 1000;
+  var REFRESH_INTERVAL = 5 * 60;
+  var countdown = REFRESH_INTERVAL;
   var requestPending = false;
   var countdownTimer;
 
@@ -590,32 +587,42 @@
     return isNaN(d2.getTime()) ? null : d2;
   }
 
-  function syncNextCycleDeadline(lastRaw) {
-    var d = parseLastCycleAt(lastRaw);
-    nextCycleEpoch = d ? d.getTime() + CYCLE_MS : null;
+  /** ДД.ММ.ГГГГ ЧЧ:ММ:СС по Москве, без суффиксов и скобок */
+  function fmtMoscowPlainDate(d) {
+    if (!d || isNaN(d.getTime())) return '—';
+    try {
+      var parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Moscow',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).formatToParts(d);
+      var o = {};
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].type !== 'literal') o[parts[i].type] = parts[i].value;
+      }
+      return o.day + '.' + o.month + '.' + o.year + ' ' + o.hour + ':' + o.minute + ':' + o.second;
+    } catch (e) {
+      return '—';
+    }
+  }
+
+  function fmtMoscowPlainFromRaw(raw) {
+    var d = parseLastCycleAt(raw);
+    return d ? fmtMoscowPlainDate(d) : '—';
   }
 
   function fmtDateMs(ms) {
     if (ms == null || isNaN(ms)) return '—';
-    try {
-      return new Date(ms).toLocaleString('ru-RU', {
-        timeZone: 'Europe/Moscow',
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-      }) + ' MSK';
-    } catch (e) { return '—'; }
+    return fmtMoscowPlainDate(new Date(ms));
   }
 
   function fmtDate(iso) {
-    var d = parseLastCycleAt(iso);
-    if (!d) return iso ? String(iso) : '—';
-    try {
-      return d.toLocaleString('ru-RU', {
-        timeZone: 'Europe/Moscow',
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      }) + ' MSK';
-    } catch (e) { return String(iso); }
+    return fmtMoscowPlainFromRaw(iso);
   }
 
   function fmtDateShort(iso) {
@@ -814,10 +821,9 @@
   }
 
   function renderStatus(meta, scamBase) {
-    syncNextCycleDeadline(meta.last_cycle_at);
-    var cycleDt  = fmtDate(meta.last_cycle_at);
-    var lastMs   = parseLastCycleAt(meta.last_cycle_at);
-    var nextDt   = lastMs ? fmtDateMs(lastMs.getTime() + CYCLE_MS) : '—';
+    var lastMs = parseLastCycleAt(meta.last_cycle_at);
+    var cycleDt = fmtMoscowPlainFromRaw(meta.last_cycle_at);
+    var nextDt = lastMs ? fmtMoscowPlainDate(new Date(lastMs.getTime() + CYCLE_MS)) : '—';
     var active   = (meta.sources_checked || []).filter(function(s) { return s.status === 'found'; }).length;
     var total    = (scamBase || []).length;
     var newCount = meta.new_in_cycle || 0;
@@ -1144,6 +1150,9 @@
   function loadData(force) {
     if (requestPending && !force) return;
     requestPending = true;
+    countdown = REFRESH_INTERVAL;
+
+    setText('mon-live-strip-time', 'загрузка');
 
     // Reset loading states
     setHTML('s2-log', '<div class="mon-loading mon-spinner">Загружаю данные цикла</div>');
@@ -1183,7 +1192,6 @@
       });
       setTimeout(unveilMonRevealInViewport, 80);
       setTimeout(unveilMonRevealInViewport, 400);
-      pollRemaining = DATA_POLL_SEC;
       requestPending = false;
     })
     .catch(function(err) {
@@ -1205,44 +1213,24 @@
 
   // ── COUNTDOWN TIMER ───────────────────────────────────────
 
-  function updateCycleCountdownLabel() {
+  function updateRefreshCountdownLabel() {
     var el = document.getElementById('mon-refresh-countdown');
     if (!el) return;
-    if (!nextCycleEpoch) {
-      el.textContent = 'след. цикл: нет даты в kro_meta';
-      return;
-    }
-    var rem = Math.max(0, Math.floor((nextCycleEpoch - Date.now()) / 1000));
-    if (rem <= 0) {
-      el.textContent = 'цикл ожидается (проверьте GitHub Actions)';
-      return;
-    }
-    var h = Math.floor(rem / 3600);
-    var mi = Math.floor((rem % 3600) / 60);
-    var se = rem % 60;
-    if (h > 0) {
-      el.textContent = 'след. цикл через ' + h + ' ч ' + mi + ' мин';
-    } else {
-      el.textContent = 'след. цикл через ' + mi + ':' + (se < 10 ? '0' : '') + se;
-    }
+    var m = Math.floor(Math.max(0, countdown) / 60);
+    var s = Math.max(0, countdown) % 60;
+    el.textContent = 'следующее обновление через ' + m + ':' + (s < 10 ? '0' : '') + s;
   }
 
   function startCountdown() {
     clearInterval(countdownTimer);
-    pollRemaining = DATA_POLL_SEC;
     countdownTimer = setInterval(function() {
-      updateCycleCountdownLabel();
-      pollRemaining--;
-      if (pollRemaining <= 0) {
-        if (!requestPending) {
-          pollRemaining = DATA_POLL_SEC;
-          loadData();
-        } else {
-          pollRemaining = 1;
-        }
+      if (!requestPending) {
+        countdown--;
+        if (countdown <= 0) loadData();
       }
+      updateRefreshCountdownLabel();
     }, 1000);
-    updateCycleCountdownLabel();
+    updateRefreshCountdownLabel();
   }
 
   // ── BOOT SEQUENCE ─────────────────────────────────────────
