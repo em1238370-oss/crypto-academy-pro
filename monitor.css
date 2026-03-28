@@ -1595,6 +1595,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 /* ── RESPONSIVE ──────────────────────────────────────────── */
 
 @media (max-width: 960px) {
+  /* Шапка не sticky: уезжает при скролле (телефоны, узкие окна, ландшафт) */
+  body.mon-page .mon-topbar {
+    position: relative;
+    top: auto;
+  }
   .mon-live-strip { padding: 10px 28px 12px; }
   .mon-main-nav { flex-direction: column; align-items: flex-start; }
   .mon-hero { grid-template-columns: 1fr; gap: 28px; }
@@ -1609,10 +1614,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 @media (max-width: 640px) {
-  /* Не sticky: шапка с кнопками уезжает вверх при скролле, не «преследует» экран */
   .mon-topbar {
-    position: relative;
-    top: auto;
     padding: 16px 20px 0;
   }
   .mon-live-strip { padding: 10px 20px 12px; font-size: 12px; }
