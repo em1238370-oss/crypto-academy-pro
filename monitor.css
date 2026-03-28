@@ -180,28 +180,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-nav-link:hover { color: #fff; border-bottom-color: rgba(255,255,255,0.25); }
 
-/* «На главную» — не серая «табличка», а лёгкая кнопка-дом */
-.mon-nav-link--home {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  padding: 10px 18px 10px 16px;
-  background: rgba(255, 255, 255, 0.04);
-  gap: 8px;
-}
-.mon-nav-link--home::before {
-  content: '';
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  opacity: 0.85;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M3 10.5L12 3l9 7.5'/%3E%3Cpath d='M5 10v10h14V10'/%3E%3C/svg%3E") center / contain no-repeat;
-}
-.mon-nav-link--home:hover {
-  background: rgba(255, 68, 68, 0.12);
-  border-color: rgba(255, 68, 68, 0.35);
-  color: #fff;
+/* Десктоп: «На главную» = обычная текстовая ссылка в шапке (отдельные стили — только в @media max-width:640px) */
+@media (min-width: 641px) {
+  .mon-nav-link--home::before { content: none; display: none; }
 }
 
 .mon-refresh-btn {
@@ -1559,6 +1540,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   50% { opacity: 0.75; transform: scale(1.04); }
 }
 
+@keyframes monWelcomeBottomIn {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .mon-welcome-card {
   position: relative;
   z-index: 1;
@@ -1647,6 +1633,37 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   background: linear-gradient(90deg, var(--mon-red) 0%, #ff7070 45%, var(--mon-cyan) 100%);
   box-shadow: 0 0 20px rgba(255, 68, 68, 0.45);
   animation: monWelcomeBar 1.05s var(--mon-ease-soft) forwards;
+}
+
+/* Десктоп (≥641px): нейтральный фон заставки, без «мобильного» bottom-sheet */
+@media (min-width: 641px) {
+  #mon-boot-overlay {
+    background: #0a0c10;
+    align-items: center;
+    justify-content: center;
+    padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  }
+  #mon-boot-overlay::before {
+    opacity: 0.45;
+    background-size: 28px 28px;
+  }
+  .mon-welcome-card {
+    width: 100%;
+    max-width: 380px;
+    margin: 0;
+    border-radius: 20px;
+    padding: 38px 36px 34px;
+    animation: monWelcomeCardIn 0.55s var(--mon-ease-soft) both;
+    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 68, 68, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  .mon-welcome-glow {
+    animation: none;
+    opacity: 0.3;
+    transform: none;
+  }
+  .mon-welcome-title {
+    font-size: clamp(1.5rem, 2.2vw, 1.85rem);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1757,7 +1774,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     border-radius: 12px;
     justify-content: center;
   }
-  .mon-nav-link {
+  /* Только «Обновить» как широкая плитка; «На главную» — отдельно, без «таблички» на всю ширину */
+  .mon-main-nav-links > .mon-nav-link:not(.mon-nav-link--home) {
     width: 100%;
     min-height: 48px;
     display: inline-flex;
@@ -1768,6 +1786,79 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .mon-main-nav-links > .mon-nav-link--home {
+    width: auto;
+    max-width: none;
+    min-height: 44px;
+    margin: 6px auto 0;
+    padding: 8px 2px 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 0;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid rgba(255, 68, 68, 0.6) !important;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: rgba(255, 255, 255, 0.95);
+    box-shadow: none;
+  }
+  .mon-main-nav-links > .mon-nav-link--home::before {
+    content: '';
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    opacity: 0.95;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff6b6b' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M3 10.5L12 3l9 7.5'/%3E%3Cpath d='M5 10v10h14V10'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+  .mon-main-nav-links > .mon-nav-link--home:hover,
+  .mon-main-nav-links > .mon-nav-link--home:active {
+    color: #fff;
+    border-bottom-color: rgba(255, 136, 136, 0.95) !important;
+    filter: brightness(1.06);
+  }
+
+  /* Заставка: нижняя карточка (sheet), затемнённый фон — не плавающий «квадрат» по центру */
+  #mon-boot-overlay {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 0 max(10px, env(safe-area-inset-bottom)) 0;
+    background: rgba(4, 5, 7, 0.78);
+  }
+  #mon-boot-overlay::before {
+    opacity: 0.25;
+  }
+  .mon-welcome-card {
+    width: calc(100vw - 20px);
+    max-width: 420px;
+    margin: 0 10px;
+    border-radius: 22px 22px 18px 18px;
+    padding: 24px 20px 28px;
+    animation: monWelcomeBottomIn 0.52s var(--mon-ease-soft) both;
+    box-shadow: 0 -12px 56px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+  .mon-welcome-glow {
+    inset: auto -30% 20% -30%;
+    top: auto;
+    height: 120%;
+    opacity: 0.55;
+  }
+  .mon-welcome-mark {
+    width: 46px;
+    height: 46px;
+    margin-bottom: 12px;
+  }
+  .mon-welcome-sub {
+    max-width: none;
+    font-size: 13px;
+    padding: 0 4px;
+  }
+  .mon-welcome-progress {
+    margin-top: 20px;
   }
   .mon-search-input { width: 100%; min-height: 48px; font-size: 16px; }
   .mon-table-search { flex-direction: column; align-items: stretch; gap: 10px; }
