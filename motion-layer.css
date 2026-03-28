@@ -1,0 +1,102 @@
+/**
+ * Medvedevart-style motion layer — главная «Крипта без розовых очков»
+ * Дополняет styles.css: токены, навигация, метрики. См. Анализ_дизайна_medvedevart.md §4–6.
+ */
+
+/* ── Токены (согласованы с разделом «темп» анализа: 0.25s hover, ease-out) ── */
+.kro-main {
+  --mv-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --mv-ease-hover: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --mv-dur-hover: 0.26s;
+  --mv-dur-link: 0.3s;
+}
+
+/* ── Метрики: стабильная ширина цифр (как в executive-дашбордах) ── */
+.kro-main .kro-feature1-hero-value,
+.kro-main .kro-feature1-stat-value,
+.kro-main .kro-top3-sum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ── Навигация: подчёркивание слева направо, без скачка цвета ── */
+.kro-main .main-nav-links a {
+  position: relative;
+  transition:
+    color var(--mv-dur-hover) var(--mv-ease-hover),
+    opacity var(--mv-dur-hover) var(--mv-ease-hover);
+}
+
+.kro-main .main-nav-links a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.85), rgba(245, 158, 11, 0.2));
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--mv-dur-link) var(--mv-ease-out);
+  pointer-events: none;
+}
+
+.kro-main .main-nav-links a:hover::after,
+.kro-main .main-nav-links a:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.kro-main .kro-floating-nav-links a:not(.kro-floating-nav-cta) {
+  position: relative;
+  transition: color var(--mv-dur-hover) var(--mv-ease-hover);
+}
+
+.kro-main .kro-floating-nav-links a:not(.kro-floating-nav-cta)::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: rgba(245, 158, 11, 0.65);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--mv-dur-link) var(--mv-ease-out);
+  pointer-events: none;
+}
+
+.kro-main .kro-floating-nav-links a:not(.kro-floating-nav-cta):hover::after,
+.kro-main .kro-floating-nav-links a:not(.kro-floating-nav-cta):focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* CTA в плавающей полосе — лёгкий «премиальный» подъём */
+.kro-main .kro-floating-nav-cta {
+  transition:
+    transform var(--mv-dur-hover) var(--mv-ease-out),
+    box-shadow var(--mv-dur-hover) var(--mv-ease-out),
+    background-color var(--mv-dur-hover) var(--mv-ease-hover);
+}
+
+.kro-main .kro-floating-nav-cta:hover {
+  transform: translateY(-1px);
+}
+
+.kro-main .kro-floating-nav-cta:active {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kro-main .main-nav-links a::after,
+  .kro-main .kro-floating-nav-links a:not(.kro-floating-nav-cta)::after {
+    transition: none;
+    transform: none;
+    opacity: 0;
+  }
+
+  .kro-main .kro-floating-nav-cta,
+  .kro-main .kro-floating-nav-cta:hover,
+  .kro-main .kro-floating-nav-cta:active {
+    transform: none;
+  }
+}
