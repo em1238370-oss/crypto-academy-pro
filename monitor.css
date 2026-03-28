@@ -1609,7 +1609,12 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 @media (max-width: 640px) {
-  .mon-topbar { padding: 16px 20px 0; }
+  /* Не sticky: шапка с кнопками уезжает вверх при скролле, не «преследует» экран */
+  .mon-topbar {
+    position: relative;
+    top: auto;
+    padding: 16px 20px 0;
+  }
   .mon-live-strip { padding: 10px 20px 12px; font-size: 12px; }
   .mon-container { padding: 24px 20px 56px; }
   .mon-footer { padding: 24px 20px 40px; }
