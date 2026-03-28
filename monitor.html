@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260329-reveal-mobile">
+  <link rel="stylesheet" href="/monitor.css?v=20260329-cycle-time">
 </head>
 <body class="mon-page">
 
@@ -37,15 +37,15 @@
       Крипта без розовых очков
     </a>
     <div class="mon-main-nav-links">
-      <span class="mon-refresh-countdown" id="mon-refresh-countdown">обновление через 5:00</span>
-      <button class="mon-refresh-btn" onclick="loadData()">Обновить</button>
+      <span class="mon-refresh-countdown" id="mon-refresh-countdown" title="До следующего 12-часового цикла мониторинга; данные с сервера подтягиваются чаще">след. цикл через —</span>
+      <button type="button" class="mon-refresh-btn" id="mon-refresh-btn">Обновить</button>
       <a href="/" class="mon-nav-link">На сайт</a>
     </div>
   </nav>
 </header>
 
 <p class="mon-live-strip" id="mon-live-strip" role="status" aria-live="polite">
-  <span class="mon-live-strip-inner">Система работает. Последнее обновление: <span id="mon-live-strip-time">—</span></span>
+  <span class="mon-live-strip-inner">Система работает. Время последнего <strong>цикла</strong> (по kro_meta): <span id="mon-live-strip-time">—</span></span>
 </p>
 
 <main class="mon-container">
@@ -540,43 +540,93 @@
 (function() {
   'use strict';
 
-  var REFRESH_INTERVAL = 5 * 60; // seconds
-  var countdown = REFRESH_INTERVAL;
-  var refreshTimer, countdownTimer;
+  var CYCLE_HOURS = 12;
+  var CYCLE_MS = CYCLE_HOURS * 3600 * 1000;
+  /** Авто-проверка API, чтобы «последнее обновление» подтягивалось без ожидания целого цикла */
+  var DATA_POLL_SEC = 60;
+  var nextCycleEpoch = null;
+  var pollRemaining = DATA_POLL_SEC;
+  var requestPending = false;
+  var countdownTimer;
 
 
   // ── HELPERS ───────────────────────────────────────────────
 
-  function fmtDate(iso) {
-    if (!iso) return '—';
+  function z2(n) { return (n < 10 ? '0' : '') + n; }
+
+  /**
+   * Дата последнего цикла из Sheets: ISO, dd.mm.yyyy hh:mm (как в kro_meta), US m/d/y, serial.
+   * Без таймзоны в строке считаем московским временем (MSK, UTC+3).
+   */
+  function parseLastCycleAt(raw) {
+    if (raw == null || raw === '') return null;
+    if (typeof raw === 'number' && raw > 20000 && raw < 800000) {
+      return new Date((raw - 25569) * 86400 * 1000);
+    }
+    var s = String(raw).trim();
+    var num = parseFloat(s);
+    if (/^\d+(\.\d+)?$/.test(s) && num > 20000 && num < 800000) {
+      return new Date((num - 25569) * 86400 * 1000);
+    }
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+      var di = new Date(s);
+      return isNaN(di.getTime()) ? null : di;
+    }
+    var ru = s.match(/^(\d{1,2})[.](\d{1,2})[.](\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (ru) {
+      var dd = z2(+ru[1]), mo = z2(+ru[2]), yy = ru[3];
+      var hh = z2(+ru[4]), mi = z2(+ru[5]), ss = z2(+(ru[6] || 0));
+      var t = new Date(yy + '-' + mo + '-' + dd + 'T' + hh + ':' + mi + ':' + ss + '+03:00');
+      return isNaN(t.getTime()) ? null : t;
+    }
+    var us = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (us) {
+      var mo2 = z2(+us[1]), da2 = z2(+us[2]), yy2 = us[3];
+      var hh2 = z2(+us[4]), mi2 = z2(+us[5]), ss2 = z2(+(us[6] || 0));
+      var t2 = new Date(yy2 + '-' + mo2 + '-' + da2 + 'T' + hh2 + ':' + mi2 + ':' + ss2 + '+03:00');
+      return isNaN(t2.getTime()) ? null : t2;
+    }
+    var d2 = new Date(s);
+    return isNaN(d2.getTime()) ? null : d2;
+  }
+
+  function syncNextCycleDeadline(lastRaw) {
+    var d = parseLastCycleAt(lastRaw);
+    nextCycleEpoch = d ? d.getTime() + CYCLE_MS : null;
+  }
+
+  function fmtDateMs(ms) {
+    if (ms == null || isNaN(ms)) return '—';
     try {
-      var d = new Date(iso);
-      return d.toLocaleString('ru-RU', {
+      return new Date(ms).toLocaleString('ru-RU', {
         timeZone: 'Europe/Moscow',
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit'
       }) + ' MSK';
-    } catch(e) { return iso; }
+    } catch (e) { return '—'; }
+  }
+
+  function fmtDate(iso) {
+    var d = parseLastCycleAt(iso);
+    if (!d) return iso ? String(iso) : '—';
+    try {
+      return d.toLocaleString('ru-RU', {
+        timeZone: 'Europe/Moscow',
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      }) + ' MSK';
+    } catch (e) { return String(iso); }
   }
 
   function fmtDateShort(iso) {
-    if (!iso) return '—';
+    var d = parseLastCycleAt(iso);
+    if (!d) return iso ? String(iso) : '—';
     try {
-      var d = new Date(iso);
       return d.toLocaleString('ru-RU', {
         timeZone: 'Europe/Moscow',
         day: '2-digit', month: '2-digit', year: 'numeric'
       });
-    } catch(e) { return iso; }
-  }
-
-  function addHours(iso, hours) {
-    if (!iso) return null;
-    try {
-      var d = new Date(iso);
-      d.setHours(d.getHours() + hours);
-      return d.toISOString();
-    } catch(e) { return null; }
+    } catch (e) { return String(iso); }
   }
 
   function esc(str) {
@@ -764,9 +814,10 @@
   }
 
   function renderStatus(meta, scamBase) {
+    syncNextCycleDeadline(meta.last_cycle_at);
     var cycleDt  = fmtDate(meta.last_cycle_at);
-    var nextIso  = addHours(meta.last_cycle_at, 12);
-    var nextDt   = fmtDate(nextIso);
+    var lastMs   = parseLastCycleAt(meta.last_cycle_at);
+    var nextDt   = lastMs ? fmtDateMs(lastMs.getTime() + CYCLE_MS) : '—';
     var active   = (meta.sources_checked || []).filter(function(s) { return s.status === 'found'; }).length;
     var total    = (scamBase || []).length;
     var newCount = meta.new_in_cycle || 0;
@@ -805,7 +856,7 @@
     if (newCount > 0) {
       lines.push({ time: cycleAt, msg: 'Добавлено в базу: ' + newCount + ' каналов', cls: 'ok' });
       // Show which channels were added in this cycle
-      var today = new Date(cycleAt || Date.now());
+      var today = parseLastCycleAt(cycleAt) || new Date();
       var oneDayAgo = new Date(today.getTime() - 24 * 3600 * 1000);
       var recent = (scamBase || []).filter(function(r) {
         try { return new Date(r.detected_at) >= oneDayAgo; } catch(e) { return false; }
@@ -1090,8 +1141,9 @@
 
   // ── MAIN LOAD ─────────────────────────────────────────────
 
-  function loadData() {
-    countdown = REFRESH_INTERVAL;
+  function loadData(force) {
+    if (requestPending && !force) return;
+    requestPending = true;
 
     // Reset loading states
     setHTML('s2-log', '<div class="mon-loading mon-spinner">Загружаю данные цикла</div>');
@@ -1131,6 +1183,8 @@
       });
       setTimeout(unveilMonRevealInViewport, 80);
       setTimeout(unveilMonRevealInViewport, 400);
+      pollRemaining = DATA_POLL_SEC;
+      requestPending = false;
     })
     .catch(function(err) {
       setText('mon-live-strip-time', 'данные не загружены');
@@ -1145,24 +1199,50 @@
       setHTML('s5-sources', msg);
       setHTML('s6-history-wrap', msg);
       requestAnimationFrame(unveilMonRevealInViewport);
+      requestPending = false;
     });
   }
 
   // ── COUNTDOWN TIMER ───────────────────────────────────────
 
+  function updateCycleCountdownLabel() {
+    var el = document.getElementById('mon-refresh-countdown');
+    if (!el) return;
+    if (!nextCycleEpoch) {
+      el.textContent = 'след. цикл: нет даты в kro_meta';
+      return;
+    }
+    var rem = Math.max(0, Math.floor((nextCycleEpoch - Date.now()) / 1000));
+    if (rem <= 0) {
+      el.textContent = 'цикл ожидается (проверьте GitHub Actions)';
+      return;
+    }
+    var h = Math.floor(rem / 3600);
+    var mi = Math.floor((rem % 3600) / 60);
+    var se = rem % 60;
+    if (h > 0) {
+      el.textContent = 'след. цикл через ' + h + ' ч ' + mi + ' мин';
+    } else {
+      el.textContent = 'след. цикл через ' + mi + ':' + (se < 10 ? '0' : '') + se;
+    }
+  }
+
   function startCountdown() {
     clearInterval(countdownTimer);
+    pollRemaining = DATA_POLL_SEC;
     countdownTimer = setInterval(function() {
-      countdown--;
-      if (countdown <= 0) {
-        countdown = REFRESH_INTERVAL;
-        loadData();
+      updateCycleCountdownLabel();
+      pollRemaining--;
+      if (pollRemaining <= 0) {
+        if (!requestPending) {
+          pollRemaining = DATA_POLL_SEC;
+          loadData();
+        } else {
+          pollRemaining = 1;
+        }
       }
-      var m = Math.floor(countdown / 60);
-      var s = countdown % 60;
-      var el = document.getElementById('mon-refresh-countdown');
-      if (el) el.textContent = 'обновление через ' + m + ':' + (s < 10 ? '0' : '') + s;
     }, 1000);
+    updateCycleCountdownLabel();
   }
 
   // ── BOOT SEQUENCE ─────────────────────────────────────────
@@ -1283,6 +1363,10 @@
   // ── INIT ──────────────────────────────────────────────────
 
   document.addEventListener('DOMContentLoaded', function() {
+    var refreshBtn = document.getElementById('mon-refresh-btn');
+    if (refreshBtn) refreshBtn.addEventListener('click', function() { loadData(true); });
+    window.loadData = loadData;
+
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       document.body.classList.add('mon-page-ready');
       var ov = document.getElementById('mon-boot-overlay');
