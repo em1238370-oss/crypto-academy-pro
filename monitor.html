@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260329-topbar-scroll">
+  <link rel="stylesheet" href="/monitor.css?v=20260329-reveal-mobile">
 </head>
 <body class="mon-page">
 
@@ -1125,6 +1125,12 @@
       renderChannelNetworks(networkRows);
       renderSources(meta.sources_checked || []);
       renderHistory(history);
+      requestAnimationFrame(function() {
+        unveilMonRevealInViewport();
+        requestAnimationFrame(unveilMonRevealInViewport);
+      });
+      setTimeout(unveilMonRevealInViewport, 80);
+      setTimeout(unveilMonRevealInViewport, 400);
     })
     .catch(function(err) {
       setText('mon-live-strip-time', 'данные не загружены');
@@ -1138,6 +1144,7 @@
       setHTML('s2-cases', msg);
       setHTML('s5-sources', msg);
       setHTML('s6-history-wrap', msg);
+      requestAnimationFrame(unveilMonRevealInViewport);
     });
   }
 
@@ -1184,18 +1191,18 @@
   }
 
   // ── SCROLL REVEAL (fade-up 0.5–0.8s, волна по метрикам — в CSS) ──
+  /* На длинных секциях с таблицами доля пересечения < 8% → threshold 0.08 не срабатывает,
+     контент остаётся opacity:0. Принудительно показываем блоки в/у вьюпорта после отрисовки. */
+  function unveilMonRevealInViewport() {
+    var vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    var pad = 120;
+    document.querySelectorAll('.mon-reveal:not(.mon-visible)').forEach(function(el) {
+      var r = el.getBoundingClientRect();
+      if (r.bottom > -pad && r.top < vh + pad) el.classList.add('mon-visible');
+    });
+  }
 
   function initScrollReveal() {
-    if (!window.IntersectionObserver) return;
-    var rootMargin = '0px 0px -10% 0px';
-    var observer = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('mon-visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.08, rootMargin: rootMargin });
     var sel = [
       '.mon-offer',
       '.mon-section',
@@ -1205,6 +1212,24 @@
       '.mon-scheme-inline',
       '.mon-footer'
     ].join(', ');
+    if (!window.IntersectionObserver) {
+      document.querySelectorAll(sel).forEach(function(el) {
+        el.classList.add('mon-reveal', 'mon-visible');
+      });
+      document.querySelectorAll('.mon-status-grid .mon-stat-card').forEach(function(card) {
+        card.classList.add('mon-reveal', 'mon-visible');
+      });
+      return;
+    }
+    var rootMargin = '0px 0px 12% 0px';
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('mon-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0, rootMargin: rootMargin });
     document.querySelectorAll(sel).forEach(function(el) {
       el.classList.add('mon-reveal');
       observer.observe(el);
@@ -1213,6 +1238,7 @@
       card.classList.add('mon-reveal');
       observer.observe(card);
     });
+    unveilMonRevealInViewport();
   }
 
   function initHeroScrollFade() {

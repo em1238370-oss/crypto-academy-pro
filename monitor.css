@@ -1453,6 +1453,34 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   transform: translateY(0);
 }
 
+/*
+ * Узкие экраны: не держим секции невидимыми из‑за IntersectionObserver.
+ * У очень высоких блоков (таблицы) доля пересечения с viewport долго < порога —
+ * на телефоне получалась «пустота» между метриками/таблицей и нижними разделами.
+ */
+@media (max-width: 1024px) {
+  .mon-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .mon-offer.mon-reveal .mon-offer-kicker,
+  .mon-offer.mon-reveal .mon-offer-title,
+  .mon-offer.mon-reveal .mon-offer-lead,
+  .mon-offer.mon-reveal .mon-pillar,
+  .mon-offer.mon-reveal .mon-offer-focus {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+  .mon-row-appear,
+  tr.mon-row-appear,
+  article.mon-row-appear {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+}
+
 /* Волна по карточкам метрик в одной секции */
 .mon-status-grid .mon-stat-card.mon-reveal:nth-child(1) { --mon-reveal-delay: 0ms; }
 .mon-status-grid .mon-stat-card.mon-reveal:nth-child(2) { --mon-reveal-delay: 85ms; }
