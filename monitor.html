@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=motion-medvedevart-2026">
+  <link rel="stylesheet" href="/monitor.css?v=chapter-medvedevart-2026">
 </head>
 <body class="mon-page">
 
@@ -46,11 +46,15 @@
 
 <main class="mon-container">
 
+  <div class="mon-prologue">
   <section class="mon-hero" aria-labelledby="mon-hero-title">
     <div class="mon-hero-copy">
       <p class="mon-hero-eyebrow">Крипта без розовых очков</p>
-      <p class="mon-hero-role">Живая база · проверка каналов</p>
-      <h1 id="mon-hero-title" class="mon-hero-title">Монитор скам-каналов</h1>
+      <p class="mon-hero-role">Живая база · проверка каналов · публичный дашборд</p>
+      <h1 id="mon-hero-title" class="mon-hero-title">
+        <span class="mon-hero-title-main">Монитор</span>
+        <span class="mon-hero-title-sub">скам-каналов</span>
+      </h1>
       <p class="mon-hero-tagline">Факты и ссылки на первоисточники — без лишнего шума.</p>
       <div class="mon-hero-tags" aria-label="Направления">
         <span class="mon-hero-tag">Антискам</span>
@@ -59,7 +63,7 @@
         <span class="mon-hero-tag">Google Sheets</span>
       </div>
     </div>
-    <div class="mon-hero-aside">
+    <aside class="mon-hero-aside">
       <p class="mon-hero-aside-label">Как читать страницу</p>
       <div class="mon-scheme-row mon-scheme-row--hero mon-scheme-row--ma" role="img" aria-label="Источники, таблица, проверка по ссылкам">
         <span class="mon-scheme-node">Источники</span>
@@ -68,11 +72,19 @@
         <span class="mon-scheme-arrow" aria-hidden="true">→</span>
         <span class="mon-scheme-node">Ссылки</span>
       </div>
-    </div>
+      <nav class="mon-hero-jump" aria-label="Разделы страницы">
+        <a class="mon-hero-jump-link" href="#metrics">Метрики</a>
+        <a class="mon-hero-jump-link" href="#data-scam">База</a>
+        <a class="mon-hero-jump-link" href="#cycle-log">Цикл</a>
+        <a class="mon-hero-jump-link" href="#sources">Источники</a>
+        <a class="mon-hero-jump-link" href="#history">История</a>
+      </nav>
+    </aside>
   </section>
 
-  <!-- ── Оффер: три столпа (как «Стратегия. Эффективность…» на medvedevart) ── -->
+  <!-- Оффер: тезис + столпы (как блок «Стратегия. Эффективность…») -->
   <section class="mon-offer" aria-labelledby="mon-offer-title">
+    <p class="mon-offer-kicker">Подход</p>
     <h2 id="mon-offer-title" class="mon-offer-title">Прозрачность. Источники. Циклы.</h2>
     <p class="mon-offer-lead">Публичный дашборд: что нашли, откуда цитата, куда кликнуть. Данные из Google Sheets, цикл обновления каждые 12 часов — без ручной «магии» в интерфейсе.</p>
     <div class="mon-pillars">
@@ -91,14 +103,17 @@
     </div>
     <p class="mon-offer-focus">Focus: антискам · факты · проверяемость</p>
   </section>
+  </div>
 
-  <!-- ── Метрики и статус ── -->
-  <section class="mon-section" aria-labelledby="mon-metrics-heading">
-    <header class="mon-section-header mon-section-header--flow">
-      <h2 id="mon-metrics-heading" class="mon-section-heading">Результаты в цифрах</h2>
-      <p class="mon-section-lead">Ключевые метрики системы и последние циклы мониторинга</p>
+  <!-- Глава: метрики (иерархия как «Результаты в цифрах» на medvedevart) -->
+  <section class="mon-chapter mon-section" id="metrics" aria-labelledby="mon-metrics-heading">
+    <header class="mon-chapter-head">
+      <p class="mon-chapter-kicker">01 · Система</p>
+      <h2 id="mon-metrics-heading" class="mon-chapter-title">Результаты в цифрах</h2>
+      <p class="mon-chapter-lead">Ключевые метрики и последние циклы — всё, что нужно для снимка состояния сейчас.</p>
     </header>
-    <div class="mon-section-body mon-section-body--metrics">
+    <div class="mon-chapter-body">
+      <div class="mon-surface mon-surface--pad">
       <div class="mon-status-grid">
         <div class="mon-stat-card">
           <div class="mon-stat-label">статус</div>
@@ -127,16 +142,22 @@
           <div class="mon-stat-value cyan" id="s1-sources-active">—</div>
         </div>
       </div>
+      </div>
     </div>
   </section>
 
-  <!-- ── База скам-каналов ── -->
-  <section class="mon-section" aria-labelledby="mon-scam-heading">
-    <header class="mon-section-header mon-section-header--split">
-      <h2 id="mon-scam-heading" class="mon-section-heading">База скам-каналов</h2>
-      <span class="mon-section-label" id="s3-count"></span>
+  <!-- Глава: подтверждённая база -->
+  <section class="mon-chapter mon-section" id="data-scam" aria-labelledby="mon-scam-heading">
+    <header class="mon-chapter-head mon-chapter-head--split">
+      <div class="mon-chapter-head-main">
+        <p class="mon-chapter-kicker">02 · Таблица</p>
+        <h2 id="mon-scam-heading" class="mon-chapter-title">База скам-каналов</h2>
+        <p class="mon-chapter-lead mon-chapter-lead--inline">Подтверждённые записи: канал, цитата, статус, ссылки на источники.</p>
+      </div>
+      <span class="mon-chapter-meta" id="s3-count"></span>
     </header>
-    <div class="mon-section-body" style="padding:0">
+    <div class="mon-chapter-body">
+      <div class="mon-surface">
 
       <div class="mon-scheme-block">
         <p class="mon-scheme-caption">Логика записи в базу</p>
@@ -154,16 +175,21 @@
       <div class="mon-table-wrap" id="s3-table-wrap">
         <div class="mon-loading mon-spinner" style="padding:32px">Загружаю базу</div>
       </div>
+      </div>
     </div>
   </section>
 
-  <!-- ── Широкий мониторинг ── -->
-  <section class="mon-section" aria-labelledby="mon-watch-heading">
-    <header class="mon-section-header mon-section-header--split">
-      <h2 id="mon-watch-heading" class="mon-section-heading">Все найденные каналы</h2>
-      <span class="mon-section-label" id="s4-watch-count"></span>
+  <section class="mon-chapter mon-section" id="data-watch" aria-labelledby="mon-watch-heading">
+    <header class="mon-chapter-head mon-chapter-head--split">
+      <div class="mon-chapter-head-main">
+        <p class="mon-chapter-kicker">03 · Мониторинг</p>
+        <h2 id="mon-watch-heading" class="mon-chapter-title">Все найденные каналы</h2>
+        <p class="mon-chapter-lead mon-chapter-lead--inline">Широкий список наблюдения рядом с узкой базой подтверждённого скама.</p>
+      </div>
+      <span class="mon-chapter-meta" id="s4-watch-count"></span>
     </header>
-    <div class="mon-section-body" style="padding:0">
+    <div class="mon-chapter-body">
+      <div class="mon-surface">
       <div class="mon-scheme-inline" role="img" aria-label="Подтверждённый скам в таблице выше; здесь — широкий список">
         <span class="mon-scheme-pill mon-scheme-pill--dim">База скама ↑</span>
         <span class="mon-scheme-arrow" aria-hidden="true">|</span>
@@ -172,16 +198,21 @@
       <div class="mon-table-wrap" id="s4-watch-wrap">
         <div class="mon-loading mon-spinner" style="padding:32px">Загружаю широкий мониторинг</div>
       </div>
+      </div>
     </div>
   </section>
 
-  <!-- ── Сети каналов ── -->
-  <section class="mon-section" aria-labelledby="mon-network-heading">
-    <header class="mon-section-header mon-section-header--split">
-      <h2 id="mon-network-heading" class="mon-section-heading">Сети каналов</h2>
-      <span class="mon-section-label" id="s4-network-count"></span>
+  <section class="mon-chapter mon-section" id="data-network" aria-labelledby="mon-network-heading">
+    <header class="mon-chapter-head mon-chapter-head--split">
+      <div class="mon-chapter-head-main">
+        <p class="mon-chapter-kicker">04 · Связи</p>
+        <h2 id="mon-network-heading" class="mon-chapter-title">Сети каналов</h2>
+        <p class="mon-chapter-lead mon-chapter-lead--inline">Кто кого продвигает — с доказательством в таблице.</p>
+      </div>
+      <span class="mon-chapter-meta" id="s4-network-count"></span>
     </header>
-    <div class="mon-section-body" style="padding:0">
+    <div class="mon-chapter-body">
+      <div class="mon-surface">
       <div class="mon-scheme-inline mon-scheme-inline--network" role="img" aria-label="Канал А продвигает канал Б">
         <span class="mon-scheme-node mon-scheme-node--sm">канал A</span>
         <span class="mon-scheme-arrow" aria-hidden="true">→</span>
@@ -192,28 +223,36 @@
       <div class="mon-table-wrap" id="s4-network-wrap">
         <div class="mon-loading mon-spinner" style="padding:32px">Загружаю связи каналов</div>
       </div>
-    </div>
-  </section>
-
-  <!-- ── Последний цикл ── -->
-  <section class="mon-section" aria-labelledby="mon-cycle-heading">
-    <header class="mon-section-header mon-section-header--split">
-      <h2 id="mon-cycle-heading" class="mon-section-heading">Последний цикл</h2>
-      <span class="mon-section-label" id="s2-cycle-label"></span>
-    </header>
-    <div class="mon-section-body">
-      <div class="mon-log" id="s2-log">
-        <div class="mon-loading mon-spinner">Загружаю данные цикла</div>
       </div>
     </div>
   </section>
 
-  <!-- ── Источники данных ── -->
-  <section class="mon-section" aria-labelledby="mon-sources-heading">
-    <header class="mon-section-header">
-      <h2 id="mon-sources-heading" class="mon-section-heading">Источники данных</h2>
+  <section class="mon-chapter mon-section" id="cycle-log" aria-labelledby="mon-cycle-heading">
+    <header class="mon-chapter-head mon-chapter-head--split">
+      <div class="mon-chapter-head-main">
+        <p class="mon-chapter-kicker">05 · Журнал</p>
+        <h2 id="mon-cycle-heading" class="mon-chapter-title">Последний цикл</h2>
+        <p class="mon-chapter-lead mon-chapter-lead--inline">События последнего прогона — как хронология дня.</p>
+      </div>
+      <span class="mon-chapter-meta" id="s2-cycle-label"></span>
     </header>
-    <div class="mon-section-body">
+    <div class="mon-chapter-body">
+      <div class="mon-surface mon-surface--pad">
+      <div class="mon-log" id="s2-log">
+        <div class="mon-loading mon-spinner">Загружаю данные цикла</div>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mon-chapter mon-section" id="sources" aria-labelledby="mon-sources-heading">
+    <header class="mon-chapter-head">
+      <p class="mon-chapter-kicker">06 · Происхождение данных</p>
+      <h2 id="mon-sources-heading" class="mon-chapter-title">Источники данных</h2>
+      <p class="mon-chapter-lead">Сайты, списки и жалобы → таблицы → эта страница. Ниже — статус опроса на последнем цикле.</p>
+    </header>
+    <div class="mon-chapter-body">
+      <div class="mon-surface mon-surface--pad">
       <div class="mon-scheme-block mon-scheme-block--compact">
         <div class="mon-scheme-row mon-scheme-row--sources" role="img" aria-label="Сайты и форма → таблицы → эта страница">
           <span class="mon-scheme-node mon-scheme-node--sm">сайты</span>
@@ -233,28 +272,34 @@
         <a class="mon-source-chip" href="https://vklader.com/blacklist-telegram/" target="_blank" rel="noopener">vklader</a>
         <a class="mon-source-chip" href="/#checkers" rel="noopener">жалобы</a>
       </div>
-    </div>
-  </section>
-
-  <!-- ── История циклов ── -->
-  <section class="mon-section" aria-labelledby="mon-history-heading">
-    <header class="mon-section-header">
-      <h2 id="mon-history-heading" class="mon-section-heading">История циклов</h2>
-    </header>
-    <div class="mon-section-body" style="padding:0">
-      <div class="mon-table-wrap" id="s6-history-wrap">
-        <div class="mon-loading">Загружаю историю…</div>
       </div>
     </div>
   </section>
 
-  <!-- ── Как мы проверяем ── -->
-  <section class="mon-section mon-section--collapsible mon-section--collapsed" aria-labelledby="mon-how-heading">
-    <header class="mon-section-header" role="button" tabindex="0" aria-expanded="false">
-      <h2 id="mon-how-heading" class="mon-section-heading">Как мы проверяем</h2>
+  <section class="mon-chapter mon-section" id="history" aria-labelledby="mon-history-heading">
+    <header class="mon-chapter-head">
+      <p class="mon-chapter-kicker">07 · Архив циклов</p>
+      <h2 id="mon-history-heading" class="mon-chapter-title">История циклов</h2>
+      <p class="mon-chapter-lead">Сводка прошлых прогонов: что нашли, что добавили, как отработали источники.</p>
+    </header>
+    <div class="mon-chapter-body">
+      <div class="mon-surface">
+      <div class="mon-table-wrap" id="s6-history-wrap">
+        <div class="mon-loading">Загружаю историю…</div>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mon-chapter mon-section mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" aria-labelledby="mon-how-heading">
+    <header class="mon-chapter-head mon-chapter-head--accordion" role="button" tabindex="0" aria-expanded="false">
+      <div class="mon-chapter-head-main">
+        <p class="mon-chapter-kicker">08 · Метод</p>
+        <h2 id="mon-how-heading" class="mon-chapter-title">Как мы проверяем</h2>
+      </div>
       <span class="mon-collapse-chevron" aria-hidden="true">›</span>
     </header>
-    <div class="mon-section-body">
+    <div class="mon-chapter-body mon-chapter-body--accordion">
       <div class="mon-scheme-block">
         <p class="mon-scheme-caption">Как собирается строка</p>
         <div class="mon-scheme-row mon-scheme-row--wrap" role="img" aria-label="Статья или жалоба, ссылка на канал, цитата из источника, статус по правилам">
@@ -270,13 +315,15 @@
     </div>
   </section>
 
-  <!-- ── Правила и критерии ── -->
-  <section class="mon-section mon-section--collapsible mon-section--collapsed" aria-labelledby="mon-rules-heading">
-    <header class="mon-section-header" role="button" tabindex="0" aria-expanded="false">
-      <h2 id="mon-rules-heading" class="mon-section-heading">Правила и критерии</h2>
+  <section class="mon-chapter mon-section mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" aria-labelledby="mon-rules-heading">
+    <header class="mon-chapter-head mon-chapter-head--accordion" role="button" tabindex="0" aria-expanded="false">
+      <div class="mon-chapter-head-main">
+        <p class="mon-chapter-kicker">09 · Критерии</p>
+        <h2 id="mon-rules-heading" class="mon-chapter-title">Правила и критерии</h2>
+      </div>
       <span class="mon-collapse-chevron" aria-hidden="true">›</span>
     </header>
-    <div class="mon-section-body">
+    <div class="mon-chapter-body mon-chapter-body--accordion">
       <div class="mon-rules">
 
         <div class="mon-rule-block">
@@ -1106,12 +1153,13 @@
   // ── COLLAPSIBLE SECTIONS ──────────────────────────────────
 
   function initCollapsibles() {
-    var headers = document.querySelectorAll('.mon-section--collapsible .mon-section-header');
+    var headers = document.querySelectorAll('.mon-chapter--collapsible .mon-chapter-head--accordion');
     headers.forEach(function(header) {
       header.addEventListener('click', function() {
-        var section = header.closest('.mon-section--collapsible');
+        var section = header.closest('.mon-chapter--collapsible');
         if (!section) return;
-        var collapsed = section.classList.toggle('mon-section--collapsed');
+        var collapsed = section.classList.toggle('mon-chapter--collapsed');
+        section.classList.toggle('mon-section--collapsed', collapsed);
         header.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
       });
       header.addEventListener('keydown', function(e) {

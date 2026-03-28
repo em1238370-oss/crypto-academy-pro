@@ -201,12 +201,23 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 /* ── LAYOUT ──────────────────────────────────────────────── */
 
 .mon-container {
-  max-width: 1240px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 48px 60px 88px;
+  padding: clamp(32px, 5vw, 56px) clamp(24px, 5vw, 72px) 96px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 0;
+}
+
+/* Пролог: hero + оффер — единый «лид» страницы как на одностраничном портфолио */
+.mon-prologue {
+  padding-bottom: clamp(40px, 6vw, 72px);
+  margin-bottom: clamp(8px, 2vw, 16px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.mon-prologue + .mon-chapter.mon-section {
+  border-top: none;
 }
 
 /* ── HERO (каскад fade-up как в портфолио) ───────────────── */
@@ -290,12 +301,25 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 .mon-hero-title {
   font-family: var(--mon-font-display);
-  font-size: clamp(2.25rem, 5vw, 3.5rem);
-  line-height: 1.05;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin: 0 0 18px;
+  line-height: 1;
+}
+.mon-hero-title-main {
+  font-size: clamp(2.5rem, 6.2vw, 4rem);
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
   color: #fff;
-  margin-bottom: 16px;
+}
+.mon-hero-title-sub {
+  font-size: clamp(1.05rem, 2.4vw, 1.45rem);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: rgba(255,255,255,0.42);
 }
 
 .mon-hero-tagline {
@@ -330,22 +354,53 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 .mon-scheme-row--ma { justify-content: flex-start; flex-wrap: wrap; }
 
+.mon-hero-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+.mon-hero-jump-link {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.22s var(--mon-ease-out), border-color 0.22s var(--mon-ease-out);
+}
+.mon-hero-jump-link:hover {
+  color: rgba(255,255,255,0.88);
+  border-bottom-color: rgba(255,68,68,0.35);
+}
+
 /* ── Оффер (между hero и метриками, как «Стратегия. Эффективность…») ── */
 
 .mon-offer {
-  padding: 40px 0 48px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  padding: clamp(28px, 4vw, 44px) 0 0;
   max-width: 100%;
+}
+
+.mon-offer-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.32);
+  margin: 0 0 14px;
 }
 
 .mon-offer-title {
   font-family: var(--mon-font-display);
-  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  font-size: clamp(1.45rem, 3.2vw, 2.05rem);
   font-weight: 600;
-  letter-spacing: -0.025em;
-  line-height: 1.2;
+  letter-spacing: -0.03em;
+  line-height: 1.18;
   color: #fff;
-  margin: 0 0 16px;
+  margin: 0 0 20px;
 }
 
 .mon-offer-lead {
@@ -399,6 +454,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   from { opacity: 0; transform: translateY(26px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+.mon-offer.mon-reveal .mon-offer-kicker,
 .mon-offer.mon-reveal .mon-offer-title,
 .mon-offer.mon-reveal .mon-offer-lead,
 .mon-offer.mon-reveal .mon-pillar,
@@ -406,23 +462,26 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   opacity: 0;
   transform: translateY(26px);
 }
+.mon-offer.mon-visible .mon-offer-kicker {
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.04s both;
+}
 .mon-offer.mon-visible .mon-offer-title {
-  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.08s both;
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.12s both;
 }
 .mon-offer.mon-visible .mon-offer-lead {
-  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.18s both;
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.22s both;
 }
 .mon-offer.mon-visible .mon-pillars .mon-pillar:nth-child(1) {
-  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.28s both;
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.32s both;
 }
 .mon-offer.mon-visible .mon-pillars .mon-pillar:nth-child(2) {
-  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.4s both;
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.44s both;
 }
 .mon-offer.mon-visible .mon-pillars .mon-pillar:nth-child(3) {
-  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.52s both;
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.56s both;
 }
 .mon-offer.mon-visible .mon-offer-focus {
-  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.64s both;
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.68s both;
 }
 
 /* ── СХЕМЫ (блок-схемы вместо абзацев) ───────────────────── */
@@ -536,7 +595,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   color: #ff6a6a;
 }
 
-/* ── SECTION (плоские карточки-панели) ───────────────────── */
+/* ── SECTION / CHAPTER (портфельный поток: глава = типографика, surface = данные) ── */
 
 .mon-section {
   background: #111318;
@@ -547,6 +606,134 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   transition: border-color 0.25s var(--mon-ease-out);
 }
 .mon-section:hover { border-color: rgba(255,255,255,0.11); }
+
+/* Главы страницы — как секции medvedevart: разделитель, воздух, без «коробки» вокруг всего */
+.mon-chapter.mon-section {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+  padding: clamp(44px, 7vw, 88px) 0;
+  margin: 0;
+  border-top: 1px solid rgba(255,255,255,0.055);
+}
+.mon-chapter.mon-section:hover {
+  border-color: rgba(255,255,255,0.055);
+  border-top-color: rgba(255,255,255,0.08);
+}
+
+.mon-chapter-head {
+  padding: 0 0 clamp(22px, 3.5vw, 32px);
+  max-width: 44rem;
+}
+.mon-chapter-head--split {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px 28px;
+  max-width: none;
+}
+.mon-chapter-head-main {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+.mon-chapter-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.34);
+  margin: 0 0 12px;
+}
+.mon-chapter-title {
+  font-family: var(--mon-font-display);
+  font-size: clamp(1.55rem, 3.6vw, 2.35rem);
+  font-weight: 600;
+  letter-spacing: -0.032em;
+  line-height: 1.14;
+  color: #fff;
+  margin: 0 0 12px;
+}
+.mon-chapter-lead {
+  font-size: 15px;
+  line-height: 1.62;
+  color: rgba(255,255,255,0.44);
+  margin: 0;
+  max-width: 38em;
+}
+.mon-chapter-lead--inline {
+  margin-top: 6px;
+  font-size: 14px;
+}
+.mon-chapter-meta {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mon-text-dim);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.mon-chapter-body {
+  padding: 0;
+}
+
+.mon-surface {
+  background: #111318;
+  border: 1px solid rgba(255,255,255,0.065);
+  border-radius: var(--mon-radius);
+  overflow: hidden;
+  box-shadow: var(--mon-shadow);
+}
+.mon-surface--pad {
+  padding: clamp(20px, 3vw, 28px);
+}
+.mon-surface .mon-scheme-block:last-of-type + .mon-table-wrap,
+.mon-surface > .mon-table-wrap:first-child {
+  border-top: none;
+}
+
+/* Аккордеон внизу страницы */
+.mon-chapter-head--accordion {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  cursor: pointer;
+  user-select: none;
+  padding: 20px 0 18px;
+  margin: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  transition: background 0.2s var(--mon-ease-out);
+}
+.mon-chapter-head--accordion:hover {
+  background: rgba(255,255,255,0.02);
+}
+.mon-chapter-head--accordion .mon-chapter-head-main {
+  flex: 1;
+}
+.mon-chapter-head--accordion .mon-chapter-kicker {
+  margin-bottom: 8px;
+}
+.mon-chapter-head--accordion .mon-chapter-title {
+  margin-bottom: 0;
+}
+.mon-chapter--collapsible .mon-collapse-chevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: transform 0.3s var(--mon-ease-out);
+}
+.mon-chapter--collapsible:not(.mon-chapter--collapsed) .mon-collapse-chevron {
+  transform: rotate(90deg);
+}
+.mon-chapter--collapsed .mon-chapter-body--accordion {
+  display: none;
+}
+.mon-chapter--collapsible .mon-chapter-head--accordion:focus-visible {
+  outline: 2px solid var(--mon-cyan);
+  outline-offset: 4px;
+}
 
 .mon-section-header {
   display: flex;
@@ -1131,13 +1318,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 /* ── COLLAPSIBLE ─────────────────────────────────────────── */
 
-.mon-section--collapsible .mon-section-header { cursor: pointer; user-select: none; transition: background 0.18s ease; width: 100%; }
-.mon-section--collapsible .mon-section-header:hover { background: rgba(255,255,255,0.035); }
-.mon-section--collapsible .mon-section-heading { flex: 1; text-align: left; }
 .mon-collapse-chevron { margin-left: auto; font-size: 18px; font-weight: 300; color: var(--mon-text-dim); transition: transform 0.26s ease; flex-shrink: 0; line-height: 1; }
-.mon-section--collapsible:not(.mon-section--collapsed) .mon-collapse-chevron { transform: rotate(90deg); }
-.mon-section--collapsed .mon-section-body { display: none; }
-.mon-section--collapsible .mon-section-header:focus-visible { outline: 2px solid var(--mon-cyan); outline-offset: -2px; }
 
 /* ── SPEC BLOCKS ─────────────────────────────────────────── */
 
@@ -1239,6 +1420,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     transform: none !important;
   }
   .mon-boot-terminal { animation: none !important; }
+  .mon-offer.mon-reveal .mon-offer-kicker,
   .mon-offer.mon-reveal .mon-offer-title,
   .mon-offer.mon-reveal .mon-offer-lead,
   .mon-offer.mon-reveal .mon-pillar,
@@ -1273,8 +1455,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   .mon-hero-aside { order: -1; }
   .mon-scheme-row--hero { justify-content: flex-start; }
   .mon-pillars { grid-template-columns: 1fr; gap: 24px; }
-  .mon-offer { padding: 28px 0 36px; }
-  .mon-section-header--split .mon-section-label { margin-left: 0; width: 100%; }
+  .mon-offer { padding-top: 24px; }
+  .mon-chapter-head--split { align-items: flex-start; }
+  .mon-chapter-head--split .mon-chapter-meta { margin-left: 0; }
   .mon-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mon-proof-grid, .mon-source-guide-grid, .mon-sources-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -1284,7 +1467,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   .mon-container { padding: 24px 20px 56px; }
   .mon-footer { padding: 24px 20px 40px; }
   .mon-main-nav { padding: 12px 14px; }
-  .mon-section-header, .mon-section-body { padding-left: 14px; padding-right: 14px; }
+  .mon-chapter-head--split .mon-chapter-meta { width: 100%; white-space: normal; }
   .mon-status-grid, .mon-proof-grid, .mon-source-guide-grid, .mon-sources-grid, .mon-level-grid { grid-template-columns: 1fr; }
   .mon-stat-card { min-height: 100px; }
   .mon-log-line { flex-direction: column; gap: 3px; }
