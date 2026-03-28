@@ -16,8 +16,8 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=home-simple-2026">
-   <link rel="stylesheet" href="motion-layer.css?v=medvedevart-motion-2026">
+   <link rel="stylesheet" href="styles.css?v=home-tech-stack-2026">
+   <link rel="stylesheet" href="motion-layer.css?v=medvedevart-motion-2026b">
    <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
 </head>
 <body class="kro-main kro-main--simple" style="margin: 0; padding: 0; position: relative;">
@@ -78,6 +78,47 @@
                </div>
                <div class="kro-step1-right">
                    <a href="#checkers" class="kro-step1-cta">Проверить канал</a>
+               </div>
+           </div>
+       </section>
+
+       <!-- Видимый «стек» как на medvedevart.ru: три опоры страницы (не маркетинг — фактическая сборка) -->
+       <section class="kro-tech-stack kro-scroll-in" id="kro-tech-stack" aria-labelledby="kro-tech-stack-heading">
+           <div class="kro-tech-stack-inner">
+               <p class="kro-tech-stack-eyebrow">Как устроена эта страница</p>
+               <h2 class="kro-tech-stack-title" id="kro-tech-stack-heading">Верстка · Анимации · Сборка</h2>
+               <p class="kro-tech-stack-lead">Ориентир по подаче — спокойный executive-стиль вроде <a href="https://medvedevart.ru/" target="_blank" rel="noopener noreferrer" class="kro-tech-stack-ref">medvedevart.ru</a>: крупная иерархия, метрики ниже, движение без «цирка».</p>
+               <div class="kro-tech-pillars">
+                   <article class="kro-tech-pillar">
+                       <span class="kro-tech-pillar-num" aria-hidden="true">01</span>
+                       <h3 class="kro-tech-pillar-title">Верстка</h3>
+                       <p class="kro-tech-pillar-text">Статический HTML, семантические секции, один основной CSS-файл + слой токенов motion. Никакого Tailwind/React на главной — меньше зависимостей, предсказуемый рендер.</p>
+                       <ul class="kro-tech-pillar-tags">
+                           <li>HTML5</li>
+                           <li>CSS variables</li>
+                           <li>mobile-first</li>
+                       </ul>
+                   </article>
+                   <article class="kro-tech-pillar">
+                       <span class="kro-tech-pillar-num" aria-hidden="true">02</span>
+                       <h3 class="kro-tech-pillar-title">Анимации</h3>
+                       <p class="kro-tech-pillar-text">Появление блоков — CSS transitions и <code class="kro-tech-code">IntersectionObserver</code> (классы <code class="kro-tech-code">kro-scroll-in</code>). Счётчики цифр — JS + ease-out 1,3–1,8 с. На десктопе — плавный скролл Lenis; при <code class="kro-tech-code">prefers-reduced-motion</code> всё отключается.</p>
+                       <ul class="kro-tech-pillar-tags">
+                           <li>CSS motion</li>
+                           <li>IO + stagger</li>
+                           <li>Lenis</li>
+                       </ul>
+                   </article>
+                   <article class="kro-tech-pillar">
+                       <span class="kro-tech-pillar-num" aria-hidden="true">03</span>
+                       <h3 class="kro-tech-pillar-title">Сборка</h3>
+                       <p class="kro-tech-pillar-text">Без bundler: файлы отдаются как есть (Render/static). При необходимости позже можно добавить только Vite для префиксера/минификации — отдельно от контента.</p>
+                       <ul class="kro-tech-pillar-tags">
+                           <li>static deploy</li>
+                           <li>Express для API</li>
+                           <li>опционально Vite</li>
+                       </ul>
+                   </article>
                </div>
            </div>
        </section>
