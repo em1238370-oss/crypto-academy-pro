@@ -1807,6 +1807,28 @@ body.kro-hero-scrolled .kro-floating-nav {
    min-width: 0;
 }
 
+.kro-feature1-check-row .kro-check-input {
+   width: 100%;
+   min-width: 0;
+   box-sizing: border-box;
+   padding: 14px 20px;
+   border: 1px solid rgba(255, 255, 255, 0.2);
+   border-radius: 999px;
+   background: rgba(255, 255, 255, 0.06);
+   color: #fff;
+   font-family: inherit;
+   font-size: 15px;
+   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.kro-feature1-check-row .kro-check-input::placeholder {
+   color: rgba(255, 255, 255, 0.4);
+}
+.kro-feature1-check-row .kro-check-input:focus {
+   outline: none;
+   border-color: rgba(139, 92, 246, 0.5);
+   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.4);
+}
+
 .kro-feature1-check-row .kro-report-label input {
    width: 100%;
    box-sizing: border-box;
@@ -2424,7 +2446,8 @@ body.kro-hero-scrolled .kro-floating-nav {
       font-size: 0.75rem;
       padding: 10px 12px;
    }
-   .kro-feature1-check-row .kro-report-label input {
+   .kro-feature1-check-row .kro-report-label input,
+   .kro-feature1-check-row .kro-check-input {
       width: 100%;
       box-sizing: border-box;
    }
@@ -6543,5 +6566,90 @@ button:not(.chat-button):not(.send-button):focus {
    margin: 12px 0 0;
    letter-spacing: 0.06em;
    font-weight: 400;
+}
+
+/* ── Главная: упрощённый лендинг (меньше текста, больше воздуха) ── */
+.kro-sr-only {
+   position: absolute;
+   width: 1px;
+   height: 1px;
+   padding: 0;
+   margin: -1px;
+   overflow: hidden;
+   clip: rect(0, 0, 0, 0);
+   white-space: nowrap;
+   border: 0;
+}
+
+.kro-step1-subtitle--short {
+   max-width: 22em;
+   margin-bottom: 0;
+}
+
+.kro-main--simple .kro-step1-inner {
+   padding: 56px 36px 64px;
+}
+
+.kro-main--simple .kro-step1-left {
+   margin-bottom: 28px;
+}
+
+.kro-feature1--simple {
+   padding: 72px 24px 100px;
+}
+
+.kro-feature1--simple .kro-f1-metrics-head {
+   margin-bottom: 28px;
+}
+
+.kro-feature1--simple .kro-f1-metrics-title {
+   margin-bottom: 0;
+}
+
+.kro-feature1-date--quiet {
+   text-transform: none;
+   letter-spacing: 0.04em;
+   font-weight: 600;
+   font-size: 12px;
+   padding: 6px 14px;
+   margin-bottom: 32px;
+   opacity: 0.85;
+}
+
+.kro-feature1--simple .kro-feature1-dashboard {
+   margin-bottom: 64px;
+   padding: 40px 32px 36px;
+}
+
+.kro-feature1-check-heading {
+   font-size: clamp(1.35rem, 3.5vw, 1.85rem);
+   font-weight: 700;
+   color: #fff;
+   margin: 0 0 20px;
+   line-height: 1.2;
+   letter-spacing: -0.02em;
+}
+
+.kro-feature1-check--hero {
+   margin: 0 auto 72px;
+   scroll-margin-top: 100px;
+}
+
+.kro-feature1--simple .kro-f1-top3-wrap {
+   margin-top: 8px;
+   margin-bottom: 20px;
+}
+
+.kro-feature1--simple .kro-feature1-heading {
+   margin-top: 8px;
+}
+
+.kro-feature1--simple .kro-feature1-top3 {
+   margin-bottom: 0;
+}
+
+.kro-feature1--simple .kro-f1-source-doc-wrap {
+   margin-top: 20px;
+   margin-bottom: 0;
 }
 

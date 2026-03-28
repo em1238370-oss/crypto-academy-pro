@@ -16,10 +16,10 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=typography-2026">
+   <link rel="stylesheet" href="styles.css?v=home-simple-2026">
    <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
 </head>
-<body class="kro-main" style="margin: 0; padding: 0; position: relative;">
+<body class="kro-main kro-main--simple" style="margin: 0; padding: 0; position: relative;">
    <div class="main-bg-effects main-bg-effects--hidden-on-hero" aria-hidden="true">
        <span class="bg-dot bg-dot-1"></span>
        <span class="bg-dot bg-dot-2"></span>
@@ -71,186 +71,74 @@
            <div class="kro-step1-bg" aria-hidden="true"></div>
            <div class="kro-step1-inner">
                <div class="kro-step1-left">
-                   <p class="kro-step1-role">Антискам · Проверка каналов</p>
+                   <p class="kro-step1-role">Антискам · проверка каналов</p>
                    <h1 class="kro-step1-title">Крипто: не верь — проверь</h1>
-                   <p class="kro-step1-subtitle">Ваш гуру уже на Lambo. На ваши деньги</p>
-                   <div class="kro-step1-tags">
-                       <span class="kro-tag">Чекер</span>
-                       <span class="kro-tag">Канал</span>
-                       <span class="kro-tag">Скринер</span>
-                       <span class="kro-tag">Скам</span>
-                   </div>
+                   <p class="kro-step1-subtitle kro-step1-subtitle--short">Цифры и проверка — без шума.</p>
                </div>
                <div class="kro-step1-right">
-                   <a href="#checkers" class="kro-step1-cta">Проверь своего гуру</a>
-                   <p class="kro-step1-cta-note"><span class="kro-cta-note-desktop">Сделай сначала ты — прежде чем он твой кошелёк</span><span class="kro-cta-note-mobile">Сделай это ты — прежде чем он с твоим кошельком</span></p>
-                   <a href="#feature1" class="kro-step1-cta-secondary">Как это работает</a>
+                   <a href="#checkers" class="kro-step1-cta">Проверить канал</a>
                </div>
            </div>
        </section>
 
-       <!-- Фишка 1: Живой счётчик обманов -->
-       <section class="kro-feature1 kro-reveal" id="feature1" aria-labelledby="kro-feature1-heading">
+       <!-- Главный блок: цифры → проверка → топ-3 -->
+       <section class="kro-feature1 kro-feature1--simple kro-reveal" id="feature1" aria-labelledby="kro-feature1-heading">
            <div class="kro-feature1-bg" aria-hidden="true"></div>
            <div class="kro-f1-badges-row kro-scroll-in" aria-hidden="true">
                <span class="kro-f1-badge">LIVE</span>
                <span class="kro-f1-badge-sep" aria-hidden="true">·</span>
-               <span class="kro-f1-badge">Обновление каждые 12 ч</span>
+               <span class="kro-f1-badge">12 ч</span>
            </div>
            <div class="kro-f1-metrics-head kro-scroll-in">
-               <h2 class="kro-f1-metrics-title">Результаты в цифрах</h2>
-               <p class="kro-f1-metrics-sub">Актуальные данные по скам-каналам и потерям</p>
+               <h2 class="kro-f1-metrics-title" id="kro-feature1-heading">Результаты в цифрах</h2>
            </div>
-           <div class="kro-feature1-dashboard">
-               <p class="kro-feature1-date" id="kro-feature1-date">Последнее подтверждённое обновление: <span id="kro-live-datetime">—</span></p>
+           <div class="kro-feature1-dashboard kro-scroll-in">
+               <p class="kro-feature1-date kro-feature1-date--quiet" id="kro-feature1-date">Обновлено: <span id="kro-live-datetime">—</span></p>
                <div class="kro-feature1-hero-number">
                    <span class="kro-feature1-hero-value" id="kro-stat-channels-today">—</span>
-                   <span class="kro-feature1-hero-label">новых скам-каналов за последние 12 ч</span>
+                   <span class="kro-feature1-hero-label">новых скам-каналов за 12 ч</span>
                </div>
                <div class="kro-feature1-stats">
                    <div class="kro-feature1-stat kro-card">
-                   <span class="kro-feature1-stat-value" id="kro-stat-lost">—</span>
-                   <span class="kro-feature1-stat-label">Потеряно ₽</span>
+                       <span class="kro-feature1-stat-value" id="kro-stat-lost">—</span>
+                       <span class="kro-feature1-stat-label">Потеряно ₽</span>
+                   </div>
+                   <div class="kro-feature1-stat kro-card">
+                       <span class="kro-feature1-stat-value" id="kro-stat-channels">—</span>
+                       <span class="kro-feature1-stat-label">Telegram каналов</span>
+                   </div>
+                   <div class="kro-feature1-stat kro-card">
+                       <span class="kro-feature1-stat-value" id="kro-stat-courses">—</span>
+                       <span class="kro-feature1-stat-label">Курсы фейк-продуктов</span>
+                   </div>
                </div>
-               <div class="kro-feature1-stat kro-card">
-                   <span class="kro-feature1-stat-value" id="kro-stat-channels">—</span>
-                   <span class="kro-feature1-stat-label">Telegram каналов</span>
-               </div>
-               <div class="kro-feature1-stat kro-card">
-                   <span class="kro-feature1-stat-value" id="kro-stat-courses">—</span>
-                   <span class="kro-feature1-stat-label">Курсы фейк-продуктов</span>
-               </div>
-               </div>
-               <p class="kro-feature1-dashboard-sub kro-scroll-in">Цифры обновляются автоматически</p>
                <p class="kro-f1-source-doc-wrap kro-scroll-in" id="kro-f1-source-doc-wrap">
-                   <a href="/monitor" id="kro-f1-source-doc-link" target="_blank" rel="noopener" class="kro-f1-source-doc-link">Источники и данные (Sources and Data) — откуда цифры и таблица</a>
+                   <a href="/monitor" id="kro-f1-source-doc-link" target="_blank" rel="noopener" class="kro-f1-source-doc-link">Монитор и источники</a>
                </p>
                <p class="kro-f1-metrics-sub kro-scroll-in kro-feature1-source-caption" id="kro-f1-source-caption"></p>
                <p class="kro-f1-system-note kro-scroll-in" id="kro-f1-system-note" hidden></p>
            </div>
-           <div class="kro-f1-last-check kro-card kro-scroll-in" id="kro-f1-last-check">
-               <p class="kro-f1-last-check-kicker">Системный статус</p>
-               <h3 class="kro-f1-last-check-title">Последняя проверка системы</h3>
-               <p class="kro-f1-last-check-time">Цикл завершён: <span id="kro-last-cycle-at">—</span></p>
-               <p class="kro-f1-last-check-found">Новых каналов найдено: <span id="kro-new-in-cycle">0</span></p>
-               <div class="kro-f1-last-check-sources" id="kro-sources-checked"></div>
+
+           <div class="kro-feature1-check kro-feature1-check--hero kro-scroll-in" id="checkers">
+               <h2 class="kro-feature1-check-heading">Проверить канал</h2>
+               <div class="kro-feature1-check-row">
+                   <label class="kro-sr-only" for="kro-check-channel">Канал или ссылка</label>
+                   <input type="text" id="kro-check-channel" class="kro-check-input" placeholder="@channel или t.me/…" autocomplete="off">
+                   <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить</button>
+               </div>
+               <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
            </div>
-           <div class="kro-f1-blocks kro-f1-content-card">
-               <!-- Блок 1: Шок-цифры -->
-               <div class="kro-f1-block kro-f1-shock">
-                   <p class="kro-f1-shock-heading">ЗА ПОСЛЕДНИЕ 12 ЧАСОВ:</p>
-                   <p class="kro-f1-shock-text" id="kro-f1-shock-text">Данные появятся после первого верифицированного отчёта.</p>
-                   <p class="kro-f1-shock-total" id="kro-f1-shock-total">ИТОГО: —</p>
-               </div>
-               <!-- Блок 2: Твой тип лоха -->
-               <div class="kro-f1-block kro-f1-loh">
-                   <h2 class="kro-f1-loh-title">ВОТ КТО ТЫ ПРЯМО СЕЙЧАС:</h2>
-                   <div class="kro-f1-loh-types">
-                       <div class="kro-f1-loh-card">
-                           <span class="kro-f1-loh-avatar" aria-hidden="true">🐑</span>
-                           <h3 class="kro-f1-loh-name">ФОМО‑ОВЦА</h3>
-                           <p class="kro-f1-loh-quote">«Срочно TON x10! Все уже в деле!»</p>
-                           <p class="kro-f1-loh-result">→ сливает 80% депозита за 3 дня</p>
-                       </div>
-                       <div class="kro-f1-loh-card kro-f1-loh-card-popular">
-                           <span class="kro-f1-badge kro-f1-badge-on-card">Чаще всего</span>
-                           <span class="kro-f1-loh-avatar" aria-hidden="true">🎰</span>
-                           <h3 class="kro-f1-loh-name">ЛОТОРЕЙЩИК</h3>
-                           <p class="kro-f1-loh-quote">«Плечо х50, риск 30% банка»</p>
-                           <p class="kro-f1-loh-result">→ слив за 2 ошибки подряд</p>
-                       </div>
-                       <div class="kro-f1-loh-card">
-                           <span class="kro-f1-loh-avatar" aria-hidden="true">📉</span>
-                           <h3 class="kro-f1-loh-name">СЛЕПОЙ ВЕРИЛЬЩИК</h3>
-                           <p class="kro-f1-loh-quote">«У них точность 92%! Беру VIP!»</p>
-                           <p class="kro-f1-loh-result">→ платит 5к₽/мес x 6 месяцев = 30к₽</p>
-                       </div>
-                   </div>
-               </div>
-               <!-- Блок 3: Реальная математика одного скрина -->
-               <div class="kro-f1-block kro-f1-math">
-                   <h2 class="kro-f1-math-title">ВОТ ЧТО ТЫ БЫ УВИДЕЛ НА СВОЁМ ДЕПОЗИТЕ:</h2>
-                   <div class="kro-f1-math-slider-wrap">
-                       <div class="kro-f1-math-slider" id="kro-f1-math-slider">
-                           <div class="kro-f1-math-track" id="kro-f1-math-track">
-                               <div class="kro-f1-math-slide" data-slide="0">
-                                   <p class="kro-f1-math-slide-head">СКРИН 1: $10 → $25 (+150%)</p>
-                                   <p class="kro-f1-math-slide-body">ТВОЙ $1000: +$1500 (но риск 80% → 1 ошибка = -800$)</p>
-                               </div>
-                               <div class="kro-f1-math-slide" data-slide="1">
-                                   <p class="kro-f1-math-slide-head">СКРИН 2: $7 → $17 (+140%)</p>
-                                   <p class="kro-f1-math-slide-body">ТВОЙ $1000: +$1400 (но 5 минусов = -85% банка)</p>
-                               </div>
-                               <div class="kro-f1-math-slide" data-slide="2">
-                                   <p class="kro-f1-math-slide-head">СКРИН 3: «ТОЧНОСТЬ 92%»</p>
-                                   <p class="kro-f1-math-slide-body">ТВОЙ $1000: 92 выигрыша х $20 = +1840$</p>
-                                   <p class="kro-f1-math-slide-body">МИНУС 8 сливов по 20% = -160$ → итог +1680$</p>
-                               </div>
-                           </div>
-                       </div>
-                       <div class="kro-f1-math-dots" aria-label="Переключение слайдов">
-                           <button type="button" class="kro-f1-math-dot is-active" data-slide="0" aria-label="Скрин 1"></button>
-                           <button type="button" class="kro-f1-math-dot" data-slide="1" aria-label="Скрин 2"></button>
-                           <button type="button" class="kro-f1-math-dot" data-slide="2" aria-label="Скрин 3"></button>
-                       </div>
-                   </div>
-               </div>
-               <!-- Блок 4: Твой выбор прямо сейчас -->
-               <div class="kro-f1-block kro-f1-choice-wrap">
-                   <div class="kro-f1-choice">
-                       <a href="#checkers" class="kro-f1-choice-btn kro-f1-choice-red">
-                           <span class="kro-f1-choice-main">ЛАДНО, ПОЙДУ В СИГНАЛЫ</span>
-                           <span class="kro-f1-choice-sub">(95% слив через месяц)</span>
-                       </a>
-                       <a href="#payment" class="kro-f1-choice-btn kro-f1-choice-green">
-                           <span class="kro-f1-choice-main">СНАЧАЛА ЗАЩИТА</span>
-                           <span class="kro-f1-choice-sub">(5 разборов + риск‑план)</span>
-                       </a>
-                   </div>
-                   <p class="kro-f1-choice-disclaimer">*я не продаю сигналы. я показываю, как их не боятся*</p>
-               </div>
-           </div>
+
            <div class="kro-f1-top3-wrap kro-scroll-in">
                <span class="kro-f1-badge kro-f1-badge-top3">По потерям за сегодня</span>
-               <h2 class="kro-feature1-heading" id="kro-feature1-heading">Топ-3 сегодня</h2>
-               <p class="kro-feature1-heading-sub">Каналы с самыми большими потерями за сегодня</p>
+               <h2 class="kro-feature1-heading">Топ-3 сегодня</h2>
            </div>
            <ol class="kro-feature1-top3 kro-scroll-in" id="kro-feature1-top3">
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-1-channel">—</span> → <span class="kro-top3-sum" id="kro-top3-1-sum">—</span> → <span class="kro-top3-status" id="kro-top3-1-status">—</span></li>
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-2-channel">—</span> → <span class="kro-top3-sum" id="kro-top3-2-sum">—</span> → <span class="kro-top3-status" id="kro-top3-2-status">—</span></li>
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-3-channel">—</span> → <span class="kro-top3-sum" id="kro-top3-3-sum">—</span> → <span class="kro-top3-status" id="kro-top3-3-status">—</span></li>
            </ol>
-           <div class="kro-f1-cta-check-wrap kro-scroll-in" id="kro-f1-cta-check-wrap">
-               <div class="kro-f1-cta-block" id="kro-f1-cta-block">
-                   <h2 class="kro-f1-cta-heading">Готов проверить гуру?</h2>
-                   <p class="kro-f1-cta-sub">Один клик — и ты увидишь, что за канал или обменник.</p>
-                   <button type="button" class="kro-f1-cta-btn" id="kro-f1-cta-btn">Проверь своего гуру</button>
-               </div>
-               <div class="kro-feature1-check kro-f1-check-reveal" id="kro-feature1-check">
-                   <p class="kro-feature1-check-intro">Проверить канал</p>
-                   <div class="kro-feature1-check-row">
-                       <label class="kro-report-label" for="kro-check-channel">@username / ссылка на канал или обменник <input type="text" id="kro-check-channel" placeholder="@channel, t.me/..., или ссылка на обменник" autocomplete="off"></label>
-                       <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить</button>
-                   </div>
-                   <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
-               </div>
-           </div>
-           <div class="kro-feature1-report kro-scroll-in" id="kro-feature1-report">
-               <p class="kro-feature1-report-intro">Сообщить о разводе → добавим за 30 мин</p>
-               <form class="kro-report-form" id="kro-report-form" novalidate>
-                   <label class="kro-report-label">Канал / ссылка <input type="text" name="channel" id="kro-report-channel" required placeholder="@channel или ссылка"></label>
-                   <label class="kro-report-label">Сумма потерь ₽ <input type="number" name="sumRub" id="kro-report-sum" required min="0" placeholder="0"></label>
-                   <label class="kro-report-label">Что произошло — своими словами <textarea name="description" id="kro-report-description" required rows="3" placeholder="Купил VIP-сигналы, слил депозит, после оплаты перестали отвечать..."></textarea></label>
-                   <label class="kro-report-label">Ссылка на доказательство (необязательно) <input type="url" name="proofUrl" id="kro-report-proof" placeholder="https://t.me/... или ссылка на скрин"></label>
-                   <label class="kro-report-label">От кого (необязательно) <input type="text" name="from" id="kro-report-from" placeholder="Имя или аноним"></label>
-                   <button type="submit" class="kro-report-submit">Отправить</button>
-               </form>
-               <p class="kro-feature1-report-message hidden" id="kro-report-message"></p>
-           </div>
        </section>
-
-       <!-- Якорь для кнопки «Проверь своего гуру» (блок чекеров будет ниже) -->
-       <section class="kro-checkers-anchor" id="checkers" aria-hidden="true"></section>
        
        <footer class="news-footer kro-footer kro-scroll-in" id="kro-footer">
            <div class="kro-footer-bg" aria-hidden="true"></div>
@@ -1162,108 +1050,6 @@
                initReveal();
                initHeroScrolled();
                initHeroParallax();
-           }
-       })();
-   </script>
-   <script>
-       (function() {
-           function initMathSlider() {
-               var wrap = document.querySelector('.kro-f1-math-slider-wrap');
-               if (!wrap) return;
-               var slider = document.getElementById('kro-f1-math-slider');
-               var track = document.getElementById('kro-f1-math-track');
-               var slides = wrap.querySelectorAll('.kro-f1-math-slide');
-               var dots = wrap.querySelectorAll('.kro-f1-math-dot');
-               var currentIndex = 0;
-               var startX = 0;
-               var startIndex = 0;
-               var slideWidth = 0;
-
-               function goTo(i) {
-                   i = Math.max(0, Math.min(i, slides.length - 1));
-                   currentIndex = i;
-                   if (track) track.style.transform = 'translateX(-' + (i * 33.333) + '%)';
-                   dots.forEach(function(d, j) { d.classList.toggle('is-active', j === i); });
-               }
-
-               function onMove(clientX) {
-                   var deltaX = clientX - startX;
-                   var maxDrag = slideWidth || slider.offsetWidth;
-                   deltaX = Math.max(-maxDrag, Math.min(maxDrag, deltaX));
-                   track.style.transform = 'translateX(' + (-startIndex * maxDrag + deltaX) + 'px)';
-               }
-
-               function endDrag(clientX) {
-                   var deltaX = clientX - startX;
-                   var width = slideWidth || slider.offsetWidth;
-                   var threshold = Math.min(50, width * 0.15);
-                   slider.classList.remove('dragging');
-                   track.style.transition = '';
-                   if (Math.abs(deltaX) > threshold) {
-                       if (deltaX < 0) goTo(startIndex + 1);
-                       else goTo(startIndex - 1);
-                   } else {
-                       goTo(startIndex);
-                   }
-               }
-
-               function startDrag(clientX) {
-                   startX = clientX;
-                   startIndex = currentIndex;
-                   slideWidth = slider.offsetWidth;
-                   slider.classList.add('dragging');
-                   track.style.transition = 'none';
-               }
-
-               if (slider && track) {
-                   slider.addEventListener('mousedown', function(e) {
-                       e.preventDefault();
-                       startDrag(e.clientX);
-                       function move(e) { onMove(e.clientX); }
-                       function up(e) {
-                           endDrag(e.clientX);
-                           document.removeEventListener('mousemove', move);
-                           document.removeEventListener('mouseup', up);
-                       }
-                       document.addEventListener('mousemove', move);
-                       document.addEventListener('mouseup', up);
-                   });
-
-                   var touchStartX = 0;
-                   slider.addEventListener('touchstart', function(e) {
-                       touchStartX = e.touches[0].clientX;
-                       startDrag(e.touches[0].clientX);
-                   }, { passive: true });
-                   slider.addEventListener('touchmove', function(e) {
-                       var dx = e.touches[0].clientX - touchStartX;
-                       if (Math.abs(dx) > 10) e.preventDefault();
-                       onMove(e.touches[0].clientX);
-                   }, { passive: false });
-                   slider.addEventListener('touchend', function(e) {
-                       if (e.changedTouches && e.changedTouches[0])
-                           endDrag(e.changedTouches[0].clientX);
-                   }, { passive: true });
-               }
-
-               dots.forEach(function(dot, i) {
-                   dot.addEventListener('click', function() { goTo(i); });
-               });
-
-               goTo(0);
-           }
-           if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initMathSlider);
-           else initMathSlider();
-       })();
-   </script>
-   <script>
-       (function() {
-           var btn = document.getElementById('kro-f1-cta-btn');
-           var wrap = document.getElementById('kro-f1-cta-check-wrap');
-           if (btn && wrap) {
-               btn.addEventListener('click', function() {
-                   wrap.classList.add('kro-f1-show-check');
-                   wrap.querySelector('#kro-feature1-check').scrollIntoView({ behavior: 'smooth', block: 'center' });
-               });
            }
        })();
    </script>
