@@ -180,11 +180,6 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-nav-link:hover { color: #fff; border-bottom-color: rgba(255,255,255,0.25); }
 
-/* Десктоп: «На главную» = обычная текстовая ссылка в шапке (отдельные стили — только в @media max-width:640px) */
-@media (min-width: 641px) {
-  .mon-nav-link--home::before { content: none; display: none; }
-}
-
 .mon-refresh-btn {
   font-family: var(--mon-font-display);
   font-size: 13px;
@@ -1505,166 +1500,53 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   animation: rowAppear 0.48s var(--mon-ease-soft) both;
 }
 
-/* ── BOOT OVERLAY — приветственная карточка (не «консоль») ─ */
+/* ── BOOT OVERLAY — dramatic glass ──────────────────────── */
 
 #mon-boot-overlay {
   position: fixed; inset: 0; z-index: 1000;
-  background: radial-gradient(ellipse 120% 80% at 50% 20%, rgba(255, 68, 68, 0.09) 0%, transparent 55%),
-    #0a0c10;
+  background: #0a0c10;
   display: flex; align-items: center; justify-content: center;
-  padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
   transition: opacity var(--mon-dur-boot-fade) var(--mon-ease-soft);
 }
 #mon-boot-overlay::before {
   content: '';
   position: absolute; inset: 0;
-  background-image: radial-gradient(circle, rgba(255,255,255,0.035) 1px, transparent 1px);
-  background-size: 32px 32px;
-  opacity: 0.6;
-  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 #mon-boot-overlay.fade-out { opacity: 0; pointer-events: none; }
 
-@keyframes monWelcomeCardIn {
-  from { opacity: 0; transform: translateY(28px) scale(0.96); filter: blur(8px); }
-  to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+@keyframes monBootTerminalIn {
+  from { opacity: 0; transform: translateY(22px) scale(0.988); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes monWelcomeBar {
-  from { width: 0%; opacity: 0.85; }
-  to   { width: 100%; opacity: 1; }
-}
-
-@keyframes monWelcomePulse {
-  0%, 100% { opacity: 0.45; transform: scale(1); }
-  50% { opacity: 0.75; transform: scale(1.04); }
-}
-
-@keyframes monWelcomeBottomIn {
-  from { opacity: 0; transform: translateY(100%); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.mon-welcome-card {
+.mon-boot-terminal {
+  font-family: var(--mon-font-mono);
+  font-size: 13px; line-height: 1.85;
+  max-width: 480px; width: 92%;
+  padding: 32px 36px;
+  border-radius: var(--mon-radius);
+  background: #111318;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
   position: relative;
   z-index: 1;
-  width: 100%;
-  max-width: 360px;
-  text-align: center;
-  padding: 40px 32px 36px;
-  border-radius: 22px;
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.02) 45%, rgba(0, 0, 0, 0.2) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow:
-    0 32px 80px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 68, 68, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  animation: monWelcomeCardIn 0.62s var(--mon-ease-soft) both;
+  animation: monBootTerminalIn 0.58s var(--mon-ease-soft) both;
 }
 
-.mon-welcome-glow {
-  position: absolute;
-  inset: -40%;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 68, 68, 0.22) 0%, transparent 55%);
-  pointer-events: none;
-  animation: monWelcomePulse 2.4s ease-in-out infinite;
-  z-index: -1;
-}
-
-.mon-welcome-mark {
+.mon-boot-line {
   display: block;
-  width: 52px;
-  height: 52px;
-  margin: 0 auto 18px;
-  border-radius: 14px;
-  background: var(--mon-red);
-  box-shadow: 0 12px 40px rgba(255, 68, 68, 0.35);
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cline x1='5' y1='5' x2='19' y2='19' stroke='black' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
-  mask-size: 28px 28px;
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cline x1='5' y1='5' x2='19' y2='19' stroke='black' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
-  -webkit-mask-size: 28px 28px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity var(--mon-dur-boot-line) var(--mon-ease-soft),
+    transform var(--mon-dur-boot-line) var(--mon-ease-soft);
 }
-
-.mon-welcome-brand {
-  font-family: var(--mon-font);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.42);
-  margin: 0 0 10px;
-}
-
-.mon-welcome-title {
-  font-family: var(--mon-font-display);
-  font-size: clamp(1.65rem, 6vw, 2rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  color: #fff;
-  margin: 0 0 12px;
-  line-height: 1.1;
-}
-
-.mon-welcome-sub {
-  font-family: var(--mon-font);
-  font-size: 14px;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.52);
-  margin: 0;
-  max-width: 280px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.mon-welcome-progress {
-  margin-top: 28px;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-}
-
-.mon-welcome-progress-fill {
-  height: 100%;
-  width: 0;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--mon-red) 0%, #ff7070 45%, var(--mon-cyan) 100%);
-  box-shadow: 0 0 20px rgba(255, 68, 68, 0.45);
-  animation: monWelcomeBar 1.05s var(--mon-ease-soft) forwards;
-}
-
-/* Десктоп (≥641px): нейтральный фон заставки, без «мобильного» bottom-sheet */
-@media (min-width: 641px) {
-  #mon-boot-overlay {
-    background: #0a0c10;
-    align-items: center;
-    justify-content: center;
-    padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
-  }
-  #mon-boot-overlay::before {
-    opacity: 0.45;
-    background-size: 28px 28px;
-  }
-  .mon-welcome-card {
-    width: 100%;
-    max-width: 380px;
-    margin: 0;
-    border-radius: 20px;
-    padding: 38px 36px 34px;
-    animation: monWelcomeCardIn 0.55s var(--mon-ease-soft) both;
-    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 68, 68, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  }
-  .mon-welcome-glow {
-    animation: none;
-    opacity: 0.3;
-    transform: none;
-  }
-  .mon-welcome-title {
-    font-size: clamp(1.5rem, 2.2vw, 1.85rem);
-  }
-}
+.mon-boot-line.visible { opacity: 1; transform: translateY(0); }
+.mon-boot-line.dim  { color: rgba(255,255,255,0.34); }
+.mon-boot-line.info { color: var(--mon-red); font-weight: 600; }
+.mon-boot-line.ok   { color: var(--mon-green); font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) {
   .mon-topbar {
@@ -1682,9 +1564,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     opacity: 1 !important;
     transform: none !important;
   }
-  .mon-welcome-card { animation: none !important; filter: none !important; opacity: 1 !important; transform: none !important; }
-  .mon-welcome-progress-fill { animation: none !important; width: 100% !important; }
-  .mon-welcome-glow { animation: none !important; opacity: 0.35 !important; }
+  .mon-boot-terminal { animation: none !important; }
   .mon-offer.mon-reveal .mon-offer-kicker,
   .mon-offer.mon-reveal .mon-offer-title,
   .mon-offer.mon-reveal .mon-offer-lead,
@@ -1729,265 +1609,19 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 @media (max-width: 640px) {
-  /* safe area (iPhone и др.) */
-  .mon-topbar { padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left)); }
-  .mon-live-strip {
-    padding: 10px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
-    font-size: 12px;
-    line-height: 1.5;
-  }
-  .mon-container {
-    padding: 20px max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-  }
-  .mon-footer { padding: 24px max(20px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); }
-
-  .mon-main-nav { padding: 10px 0 14px; gap: 14px; }
+  .mon-topbar { padding: 16px 20px 0; }
+  .mon-live-strip { padding: 10px 20px 12px; font-size: 12px; }
+  .mon-container { padding: 24px 20px 56px; }
+  .mon-footer { padding: 24px 20px 40px; }
+  .mon-main-nav { padding: 12px 14px; }
   .mon-chapter-head--split .mon-chapter-meta { width: 100%; white-space: normal; }
   .mon-status-grid, .mon-proof-grid, .mon-source-guide-grid, .mon-sources-grid, .mon-level-grid { grid-template-columns: 1fr; }
-  .mon-stat-card {
-    min-height: 96px;
-    padding: 16px 18px;
-    border-radius: 14px;
-  }
-  .mon-stat-card:hover {
-    transform: none;
-    box-shadow: none;
-    border-color: rgba(255, 255, 255, 0.08);
-  }
+  .mon-stat-card { min-height: 100px; }
   .mon-log-line { flex-direction: column; gap: 3px; }
   .mon-log-time { min-width: 0; }
-  .mon-main-nav-links { width: 100%; gap: 12px; }
-  .mon-refresh-countdown {
-    width: 100%;
-    justify-content: center;
-    text-align: center;
-    order: 3;
-    padding: 6px 0;
-    font-size: 11px;
-    opacity: 0.9;
-  }
-  .mon-refresh-btn {
-    width: 100%;
-    min-height: 48px;
-    padding: 14px 20px;
-    font-size: 14px;
-    border-radius: 12px;
-    justify-content: center;
-  }
-  /* Только «Обновить» как широкая плитка; «На главную» — отдельно, без «таблички» на всю ширину */
-  .mon-main-nav-links > .mon-nav-link:not(.mon-nav-link--home) {
-    width: 100%;
-    min-height: 48px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  .mon-main-nav-links > .mon-nav-link--home {
-    width: auto;
-    max-width: none;
-    min-height: 44px;
-    margin: 6px auto 0;
-    padding: 8px 2px 10px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    border-radius: 0;
-    background: transparent !important;
-    border: none !important;
-    border-bottom: 2px solid rgba(255, 68, 68, 0.6) !important;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    color: rgba(255, 255, 255, 0.95);
-    box-shadow: none;
-  }
-  .mon-main-nav-links > .mon-nav-link--home::before {
-    content: '';
-    width: 22px;
-    height: 22px;
-    flex-shrink: 0;
-    opacity: 0.95;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff6b6b' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M3 10.5L12 3l9 7.5'/%3E%3Cpath d='M5 10v10h14V10'/%3E%3C/svg%3E") center / contain no-repeat;
-  }
-  .mon-main-nav-links > .mon-nav-link--home:hover,
-  .mon-main-nav-links > .mon-nav-link--home:active {
-    color: #fff;
-    border-bottom-color: rgba(255, 136, 136, 0.95) !important;
-    filter: brightness(1.06);
-  }
-
-  /* Заставка: нижняя карточка (sheet), затемнённый фон — не плавающий «квадрат» по центру */
-  #mon-boot-overlay {
-    align-items: flex-end;
-    justify-content: center;
-    padding: 0 0 max(10px, env(safe-area-inset-bottom)) 0;
-    background: rgba(4, 5, 7, 0.78);
-  }
-  #mon-boot-overlay::before {
-    opacity: 0.25;
-  }
-  .mon-welcome-card {
-    width: calc(100vw - 20px);
-    max-width: 420px;
-    margin: 0 10px;
-    border-radius: 22px 22px 18px 18px;
-    padding: 24px 20px 28px;
-    animation: monWelcomeBottomIn 0.52s var(--mon-ease-soft) both;
-    box-shadow: 0 -12px 56px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  }
-  .mon-welcome-glow {
-    inset: auto -30% 20% -30%;
-    top: auto;
-    height: 120%;
-    opacity: 0.55;
-  }
-  .mon-welcome-mark {
-    width: 46px;
-    height: 46px;
-    margin-bottom: 12px;
-  }
-  .mon-welcome-sub {
-    max-width: none;
-    font-size: 13px;
-    padding: 0 4px;
-  }
-  .mon-welcome-progress {
-    margin-top: 20px;
-  }
-  .mon-search-input { width: 100%; min-height: 48px; font-size: 16px; }
-  .mon-table-search { flex-direction: column; align-items: stretch; gap: 10px; }
+  .mon-main-nav-links { width: 100%; }
+  .mon-refresh-countdown, .mon-nav-link, .mon-refresh-btn { width: 100%; justify-content: center; text-align: center; }
+  .mon-search-input { width: 100%; }
+  .mon-table-search { flex-direction: column; align-items: stretch; }
   .mon-search-count { margin-left: 0; }
-
-  /* Пролог и hero: плотнее, читабельнее одной колонкой */
-  .mon-prologue { padding-bottom: 28px; margin-bottom: 8px; }
-  .mon-hero { padding: 4px 0 16px; gap: 22px; }
-  .mon-hero-aside {
-    padding: 18px 16px;
-    border-radius: 16px;
-  }
-  .mon-hero-title-main { font-size: clamp(2rem, 11vw, 2.65rem); letter-spacing: -0.035em; }
-  .mon-hero-title-sub { font-size: clamp(0.95rem, 4.2vw, 1.15rem); }
-  .mon-hero-tagline { font-size: 15px; margin-bottom: 16px; }
-  .mon-hero-jump {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    gap: 8px;
-    margin-top: 16px;
-    padding: 14px 2px 10px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    scrollbar-width: none;
-  }
-  .mon-hero-jump::-webkit-scrollbar { display: none; }
-  .mon-hero-jump-link {
-    flex: 0 0 auto;
-    padding: 10px 14px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 11px;
-    white-space: nowrap;
-  }
-
-  .mon-offer-title { font-size: clamp(1.25rem, 6vw, 1.5rem); }
-  .mon-offer-lead { font-size: 15px; margin-bottom: 28px; }
-
-  /* Секции: воздух и скругления «приложение» */
-  .mon-chapter.mon-section {
-    padding: 28px 0 32px;
-    margin: 0 -4px;
-  }
-  .mon-chapter-head { padding-right: 4px; padding-left: 4px; }
-  .mon-chapter-kicker { font-size: 10px; letter-spacing: 0.18em; }
-  .mon-chapter-title { font-size: clamp(1.35rem, 5.5vw, 1.6rem); line-height: 1.2; }
-  .mon-chapter-lead { font-size: 14px; line-height: 1.58; margin-top: 8px; }
-  .mon-chapter-body { margin-top: 4px; }
-  .mon-surface {
-    border-radius: 16px;
-    overflow: hidden;
-  }
-  .mon-surface--pad { padding: 18px 16px 20px; }
-
-  .mon-chapter-head--accordion {
-    padding: 18px 8px 16px;
-    min-height: 56px;
-  }
-  .mon-chapter--collapsible .mon-collapse-chevron {
-    font-size: 1.35rem;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* Таблица: подсказка горизонтального скролла */
-  .mon-table-wrap {
-    margin: 0 -4px;
-    padding: 12px 4px 16px;
-    border-radius: 0 0 14px 14px;
-    background: linear-gradient(to right, var(--mon-bg) 0%, transparent 14px, transparent calc(100% - 14px), var(--mon-bg) 100%);
-  }
-  .mon-table-wrap::after {
-    content: '← листайте таблицу →';
-    display: block;
-    text-align: center;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.28);
-    padding: 10px 8px 0;
-    pointer-events: none;
-  }
-  .mon-table th { padding: 11px 12px; font-size: 10px; }
-  .mon-table td { padding: 12px 12px; font-size: 13px; }
-
-  /* Карточки источников и кейсов: без «прыжка» при тапе (coarse pointer) */
-  .mon-source-card:hover,
-  .mon-case-card:hover {
-    transform: none;
-    box-shadow: none;
-  }
-  .mon-source-card:active,
-  .mon-case-card:active {
-    transform: scale(0.99);
-    transition: transform 0.1s ease;
-  }
-  .mon-source-card, .mon-case-card {
-    border-radius: 14px;
-    padding: 18px 16px;
-  }
-  .mon-source-count { font-size: 26px; padding-top: 8px; }
-  .mon-cases-grid { gap: 12px; }
-
-  .mon-stat-label { font-size: 10px; letter-spacing: 0.14em; }
-  .mon-stat-value { font-size: clamp(15px, 4vw, 18px); word-break: break-word; }
-
-  .mon-source-strip {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 4px 4px;
-  }
-  .mon-source-chip {
-    min-height: 40px;
-    padding: 10px 14px;
-    display: inline-flex;
-    align-items: center;
-  }
-}
-
-/* Очень узкие телефоны */
-@media (max-width: 380px) {
-  .mon-hero-title-main { font-size: 1.85rem; }
-  .mon-chapter-title { font-size: 1.28rem; }
-  .mon-stat-card { padding: 14px 14px; }
 }

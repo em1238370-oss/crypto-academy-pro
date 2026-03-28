@@ -2,13 +2,13 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KRO Monitor — Крипта без розовых очков</title>
   <meta name="description" content="Живой монитор системы антискам-мониторинга. Актуальные данные о скам-каналах, история циклов, источники.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=monitor-mobile-only-ui-2026">
+  <link rel="stylesheet" href="/monitor.css?v=monitor-layout-2026">
 </head>
 <body class="mon-page">
 
@@ -17,17 +17,16 @@
   <span class="mon-bg-dot-grid"></span>
 </div>
 
-<!-- ── Приветствие при входе (не «терминал», а спокойная карточка) ── -->
-<div id="mon-boot-overlay" aria-hidden="true" aria-busy="true">
-  <div class="mon-welcome-card" id="mon-welcome-card">
-    <div class="mon-welcome-glow" aria-hidden="true"></div>
-    <span class="mon-welcome-mark" aria-hidden="true"></span>
-    <p class="mon-welcome-brand">Крипта без розовых очков</p>
-    <p class="mon-welcome-title">Монитор</p>
-    <p class="mon-welcome-sub">Синхронизируемся с таблицей и подгружаем дашборд…</p>
-    <div class="mon-welcome-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Загрузка">
-      <div class="mon-welcome-progress-fill" id="mon-welcome-progress-fill"></div>
-    </div>
+<!-- ── BOOT OVERLAY ── -->
+<div id="mon-boot-overlay" aria-hidden="true">
+  <div class="mon-boot-terminal" id="mon-boot-lines">
+    <span class="mon-boot-line info">KRO ANTI-SCAM MONITOR v2.1</span>
+    <span class="mon-boot-line dim">Connecting to Google Sheets API…</span>
+    <span class="mon-boot-line dim">Loading scam_base…</span>
+    <span class="mon-boot-line dim">Loading channels_watch…</span>
+    <span class="mon-boot-line dim">Loading kro_meta…</span>
+    <span class="mon-boot-line dim">Loading kro_history…</span>
+    <span class="mon-boot-line ok">System ready. Rendering dashboard…</span>
   </div>
 </div>
 
@@ -40,7 +39,7 @@
     <div class="mon-main-nav-links">
       <span class="mon-refresh-countdown" id="mon-refresh-countdown">обновление через 5:00</span>
       <button class="mon-refresh-btn" onclick="loadData()">Обновить</button>
-      <a href="/" class="mon-nav-link mon-nav-link--home">На главную</a>
+      <a href="/" class="mon-nav-link">На сайт</a>
     </div>
   </nav>
 </header>
@@ -533,7 +532,7 @@
 </main>
 
 <footer class="mon-footer">
-  <p>Sheets · цикл 12 ч · <a href="/">на главную</a></p>
+  <p>Sheets · цикл 12 ч · <a href="/">на сайт</a></p>
   <p class="mon-footer-copy">© 2026 Крипта без розовых очков</p>
 </footer>
 
@@ -1031,8 +1030,6 @@
     'fin-obzor.net':    'Финансовые отзывы пользователей.',
     'cryptorussia.ru':  'Обзоры и отзывы на крипто-проекты.',
     'vklader.com':      'Чёрный список Telegram-каналов и пользовательские проверки на русском языке.',
-    'telltrue.net':     'Чёрный список Telegram-каналов (страница blacklist-telegram, формат как у vklader).',
-    'forteck.net':      'Чёрный список Telegram-каналов (страница blacklist-telegram, формат как у vklader).',
     'brokers-check.ru': 'Проверка брокеров и инвестиционных компаний. Жалобы пользователей.',
     'форма жалоб':      'Прямые сообщения от пострадавших пользователей.'
   };
@@ -1165,27 +1162,25 @@
 
   function runBootSequence(onComplete) {
     var overlay = document.getElementById('mon-boot-overlay');
-    var progressBar = document.querySelector('#mon-boot-overlay [role="progressbar"]');
+    var lines   = document.querySelectorAll('#mon-boot-lines .mon-boot-line');
     function finishBoot() {
       document.body.classList.add('mon-page-ready');
-      if (overlay) {
-        overlay.setAttribute('aria-busy', 'false');
-        overlay.setAttribute('aria-hidden', 'true');
-      }
-      if (progressBar) progressBar.setAttribute('aria-valuenow', '100');
       onComplete();
     }
-    if (!overlay) { finishBoot(); return; }
-    overlay.setAttribute('aria-busy', 'true');
-    overlay.setAttribute('aria-hidden', 'false');
+    if (!overlay || !lines.length) { finishBoot(); return; }
+
+    var delays = [0, 180, 340, 480, 610, 760, 920];
+    lines.forEach(function(line, i) {
+      setTimeout(function() { line.classList.add('visible'); }, delays[i] || i * 140);
+    });
 
     setTimeout(function() {
       overlay.classList.add('fade-out');
       setTimeout(function() {
         overlay.style.display = 'none';
         finishBoot();
-      }, 680);
-    }, 1180);
+      }, 720);
+    }, 1480);
   }
 
   // ── SCROLL REVEAL (fade-up 0.5–0.8s, волна по метрикам — в CSS) ──
