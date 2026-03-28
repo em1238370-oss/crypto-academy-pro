@@ -729,13 +729,51 @@
                tryRunCountUps();
            }
            function fetchLiveCounter() {
-               if (!document.querySelector('.kro-feature1')) return;
-               getJsonWithFallback('/api/kro/live-counter?t=' + Date.now())
+               if (!document.getElementById('kro-stat-channels-today')) return;
+               function liveCounterOrigins() {
+                   var list = [];
+                   var seen = {};
+                   function add(o) {
+                       var x = originNoSlash(o);
+                       if (!/^https?:/i.test(x) || seen[x]) return;
+                       seen[x] = 1;
+                       list.push(x);
+                   }
+                   add(base);
+                   add(KRO_API_FALLBACK);
+                   return list;
+               }
+               function loadLiveCounterFrom(origin) {
+                   return fetch(origin + '/api/kro/live-counter?t=' + Date.now(), {
+                       cache: 'no-store',
+                       headers: { 'Cache-Control': 'no-store', Accept: 'application/json' }
+                   }).then(function(r) {
+                       if (!r.ok) throw new Error('HTTP ' + r.status);
+                       return r.text();
+                   }).then(function(text) {
+                       var raw;
+                       try {
+                           raw = JSON.parse(text);
+                       } catch (e) {
+                           throw new Error('live-counter: not JSON (got HTML or empty?)');
+                       }
+                       if (raw == null || typeof raw !== 'object' || Array.isArray(raw)) {
+                           throw new Error('live-counter: invalid payload shape');
+                       }
+                       return raw;
+                   });
+               }
+               var origins = liveCounterOrigins();
+               function attempt(i) {
+                   if (i >= origins.length) return Promise.reject(new Error('live-counter: all origins failed'));
+                   return loadLiveCounterFrom(origins[i]).catch(function() { return attempt(i + 1); });
+               }
+               attempt(0)
                    .then(function(raw) {
                        var norm = normalizeLiveCounterPayload(raw);
                        if (norm) applyData(norm);
                    })
-                   .catch(function(e) { console.warn('[KRO] live-counter:', e); });
+                   .catch(function(e) { console.warn('[KRO]', e); });
            }
            function observeFeature1Reveal() {
                var section = document.getElementById('feature1');
@@ -747,14 +785,16 @@
                });
                obs.observe(section, { attributes: true, attributeFilter: ['class'] });
            }
-           if (document.readyState === 'loading') {
-               document.addEventListener('DOMContentLoaded', function() {
-                   fetchLiveCounter();
-                   observeFeature1Reveal();
-               });
-           } else {
+           function initLiveCounter() {
                fetchLiveCounter();
                observeFeature1Reveal();
+               setTimeout(fetchLiveCounter, 2500);
+               setInterval(fetchLiveCounter, 5 * 60 * 1000);
+           }
+           if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', initLiveCounter);
+           } else {
+               initLiveCounter();
            }
            var form = document.getElementById('kro-report-form');
            var msgEl = document.getElementById('kro-report-message');
