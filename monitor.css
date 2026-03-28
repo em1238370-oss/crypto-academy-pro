@@ -1609,19 +1609,191 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 @media (max-width: 640px) {
-  .mon-topbar { padding: 16px 20px 0; }
-  .mon-live-strip { padding: 10px 20px 12px; font-size: 12px; }
-  .mon-container { padding: 24px 20px 56px; }
-  .mon-footer { padding: 24px 20px 40px; }
-  .mon-main-nav { padding: 12px 14px; }
+  /* safe area (iPhone и др.) */
+  .mon-topbar { padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left)); }
+  .mon-live-strip {
+    padding: 10px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .mon-container {
+    padding: 20px max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+  .mon-footer { padding: 24px max(20px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); }
+
+  .mon-main-nav { padding: 10px 0 14px; gap: 14px; }
   .mon-chapter-head--split .mon-chapter-meta { width: 100%; white-space: normal; }
   .mon-status-grid, .mon-proof-grid, .mon-source-guide-grid, .mon-sources-grid, .mon-level-grid { grid-template-columns: 1fr; }
-  .mon-stat-card { min-height: 100px; }
+  .mon-stat-card {
+    min-height: 96px;
+    padding: 16px 18px;
+    border-radius: 14px;
+  }
+  .mon-stat-card:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
   .mon-log-line { flex-direction: column; gap: 3px; }
   .mon-log-time { min-width: 0; }
-  .mon-main-nav-links { width: 100%; }
-  .mon-refresh-countdown, .mon-nav-link, .mon-refresh-btn { width: 100%; justify-content: center; text-align: center; }
-  .mon-search-input { width: 100%; }
-  .mon-table-search { flex-direction: column; align-items: stretch; }
+  .mon-main-nav-links { width: 100%; gap: 12px; }
+  .mon-refresh-countdown {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    order: 3;
+    padding: 6px 0;
+    font-size: 11px;
+    opacity: 0.9;
+  }
+  .mon-refresh-btn {
+    width: 100%;
+    min-height: 48px;
+    padding: 14px 20px;
+    font-size: 14px;
+    border-radius: 12px;
+    justify-content: center;
+  }
+  .mon-nav-link {
+    width: 100%;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .mon-search-input { width: 100%; min-height: 48px; font-size: 16px; }
+  .mon-table-search { flex-direction: column; align-items: stretch; gap: 10px; }
   .mon-search-count { margin-left: 0; }
+
+  /* Пролог и hero: плотнее, читабельнее одной колонкой */
+  .mon-prologue { padding-bottom: 28px; margin-bottom: 8px; }
+  .mon-hero { padding: 4px 0 16px; gap: 22px; }
+  .mon-hero-aside {
+    padding: 18px 16px;
+    border-radius: 16px;
+  }
+  .mon-hero-title-main { font-size: clamp(2rem, 11vw, 2.65rem); letter-spacing: -0.035em; }
+  .mon-hero-title-sub { font-size: clamp(0.95rem, 4.2vw, 1.15rem); }
+  .mon-hero-tagline { font-size: 15px; margin-bottom: 16px; }
+  .mon-hero-jump {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 14px 2px 10px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    scrollbar-width: none;
+  }
+  .mon-hero-jump::-webkit-scrollbar { display: none; }
+  .mon-hero-jump-link {
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .mon-offer-title { font-size: clamp(1.25rem, 6vw, 1.5rem); }
+  .mon-offer-lead { font-size: 15px; margin-bottom: 28px; }
+
+  /* Секции: воздух и скругления «приложение» */
+  .mon-chapter.mon-section {
+    padding: 28px 0 32px;
+    margin: 0 -4px;
+  }
+  .mon-chapter-head { padding-right: 4px; padding-left: 4px; }
+  .mon-chapter-kicker { font-size: 10px; letter-spacing: 0.18em; }
+  .mon-chapter-title { font-size: clamp(1.35rem, 5.5vw, 1.6rem); line-height: 1.2; }
+  .mon-chapter-lead { font-size: 14px; line-height: 1.58; margin-top: 8px; }
+  .mon-chapter-body { margin-top: 4px; }
+  .mon-surface {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .mon-surface--pad { padding: 18px 16px 20px; }
+
+  .mon-chapter-head--accordion {
+    padding: 18px 8px 16px;
+    min-height: 56px;
+  }
+  .mon-chapter--collapsible .mon-collapse-chevron {
+    font-size: 1.35rem;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Таблица: подсказка горизонтального скролла */
+  .mon-table-wrap {
+    margin: 0 -4px;
+    padding: 12px 4px 16px;
+    border-radius: 0 0 14px 14px;
+    background: linear-gradient(to right, var(--mon-bg) 0%, transparent 14px, transparent calc(100% - 14px), var(--mon-bg) 100%);
+  }
+  .mon-table-wrap::after {
+    content: '← листайте таблицу →';
+    display: block;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.28);
+    padding: 10px 8px 0;
+    pointer-events: none;
+  }
+  .mon-table th { padding: 11px 12px; font-size: 10px; }
+  .mon-table td { padding: 12px 12px; font-size: 13px; }
+
+  /* Карточки источников и кейсов: без «прыжка» при тапе (coarse pointer) */
+  .mon-source-card:hover,
+  .mon-case-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .mon-source-card:active,
+  .mon-case-card:active {
+    transform: scale(0.99);
+    transition: transform 0.1s ease;
+  }
+  .mon-source-card, .mon-case-card {
+    border-radius: 14px;
+    padding: 18px 16px;
+  }
+  .mon-source-count { font-size: 26px; padding-top: 8px; }
+  .mon-cases-grid { gap: 12px; }
+
+  .mon-stat-label { font-size: 10px; letter-spacing: 0.14em; }
+  .mon-stat-value { font-size: clamp(15px, 4vw, 18px); word-break: break-word; }
+
+  .mon-source-strip {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 4px 4px;
+  }
+  .mon-source-chip {
+    min-height: 40px;
+    padding: 10px 14px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* Очень узкие телефоны */
+@media (max-width: 380px) {
+  .mon-hero-title-main { font-size: 1.85rem; }
+  .mon-chapter-title { font-size: 1.28rem; }
+  .mon-stat-card { padding: 14px 14px; }
 }
