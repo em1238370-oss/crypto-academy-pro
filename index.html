@@ -61,8 +61,6 @@
            <span class="kro-floating-nav-brand-text">Крипта без розовых очков</span>
        </a>
        <div class="kro-floating-nav-links">
-           <a href="#feature1">Фишка 1</a>
-           <a href="#feature2">Фишка 2</a>
            <a href="#feature3">Фишка 3</a>
            <a href="#feature4">Фишка 4</a>
            <a href="#feature5">Фишка 5</a>
@@ -519,13 +517,44 @@
    <script>
        (function() {
            var base = window.location.origin;
+           var KRO_API_FALLBACK = 'https://crypto-academy-pro.onrender.com';
            function formatSum(n) {
-               if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'млн₽';
-               if (n >= 1000) return (n / 1000).toFixed(0) + 'к₽';
-               return n + ' ₽';
+               var x = Number(n);
+               if (!isFinite(x)) x = 0;
+               if (x >= 1000000) return (x / 1000000).toFixed(1).replace(/\.0$/, '') + 'млн₽';
+               if (x >= 1000) return (x / 1000).toFixed(0) + 'к₽';
+               return x + ' ₽';
            }
            function formatFull(n) {
-               return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+               var x = Number(n);
+               if (!isFinite(x)) x = 0;
+               return Math.round(x).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+           }
+           function normalizeLiveCounterPayload(raw) {
+               if (!raw || typeof raw !== 'object') return null;
+               var r = raw;
+               return {
+                   channelsToday: Number(r.channelsToday != null ? r.channelsToday : r.channels_today) || 0,
+                   totalLost: Number(r.totalLost != null ? r.totalLost : r.total_lost) || 0,
+                   telegramCount: Number(r.telegramCount != null ? r.telegramCount : r.telegram_count) || 0,
+                   coursesCount: Number(r.coursesCount != null ? r.coursesCount : r.courses_count) || 0,
+                   victims_12h: r.victims_12h,
+                   shockText: r.shockText || r.shock_text,
+                   top3: Array.isArray(r.top3) ? r.top3 : [],
+                   report_doc_url: r.report_doc_url,
+                   sourceCaption: r.sourceCaption || r.source_caption || '',
+                   publishStatus: r.publishStatus || r.publish_status,
+                   isHonestZero: r.isHonestZero,
+                   siteNotice: r.siteNotice || r.site_notice,
+                   lastValidUpdatedAt: r.lastValidUpdatedAt || r.last_valid_updated_at,
+                   updatedAt: r.updatedAt || r.updated_at,
+                   last_cycle_at: r.last_cycle_at,
+                   new_in_cycle: Number(r.new_in_cycle != null ? r.new_in_cycle : r.newInCycle) || 0,
+                   sources_checked: Array.isArray(r.sources_checked) ? r.sources_checked : (Array.isArray(r.sourcesChecked) ? r.sourcesChecked : []),
+                   evidence_summary: r.evidence_summary || {},
+                   risk_rows: r.risk_rows || [],
+                   complaints_rows: r.complaints_rows || []
+               };
            }
            function statusClass(s) {
                if (!s || s === '—') return '';
@@ -580,32 +609,49 @@
                if (prefersReduced) return;
                var el;
                if ((el = document.getElementById('kro-stat-channels-today')) && !el.dataset.countupDone) {
-                   el.dataset.countupDone = '1';
-                   var t = parseInt(el.dataset.target, 10);
-                   if (!isNaN(t)) { el.textContent = '0'; countUp(el, t, 1200, function(n) { return String(n); }); }
+                   var t1 = parseInt(el.dataset.target, 10);
+                   if (!isNaN(t1)) {
+                       el.dataset.countupDone = '1';
+                       el.textContent = '0';
+                       countUp(el, t1, 1200, function(n) { return String(n); });
+                   }
                }
                if ((el = document.getElementById('kro-stat-lost')) && !el.dataset.countupDone) {
-                   el.dataset.countupDone = '1';
-                   var t = parseInt(el.dataset.target, 10);
-                   if (!isNaN(t)) { el.textContent = formatFull(0); countUp(el, t, 1400, formatFull); }
+                   var t2 = parseInt(el.dataset.target, 10);
+                   if (!isNaN(t2)) {
+                       el.dataset.countupDone = '1';
+                       el.textContent = formatFull(0);
+                       countUp(el, t2, 1400, formatFull);
+                   }
                }
                if ((el = document.getElementById('kro-stat-channels')) && !el.dataset.countupDone) {
-                   el.dataset.countupDone = '1';
-                   var t = parseInt(el.dataset.target, 10);
-                   if (!isNaN(t)) { el.textContent = '0'; countUp(el, t, 1000, function(n) { return String(n); }); }
+                   var t3 = parseInt(el.dataset.target, 10);
+                   if (!isNaN(t3)) {
+                       el.dataset.countupDone = '1';
+                       el.textContent = '0';
+                       countUp(el, t3, 1000, function(n) { return String(n); });
+                   }
                }
                if ((el = document.getElementById('kro-stat-courses')) && !el.dataset.countupDone) {
-                   el.dataset.countupDone = '1';
-                   var t = parseInt(el.dataset.target, 10);
-                   if (!isNaN(t)) { el.textContent = '0'; countUp(el, t, 1000, function(n) { return String(n); }); }
+                   var t4 = parseInt(el.dataset.target, 10);
+                   if (!isNaN(t4)) {
+                       el.dataset.countupDone = '1';
+                       el.textContent = '0';
+                       countUp(el, t4, 1000, function(n) { return String(n); });
+                   }
                }
            }
            function applyData(data) {
+               if (!data) return;
                var el;
-               if ((el = document.getElementById('kro-stat-channels-today'))) { el.dataset.target = data.channelsToday; el.textContent = data.channelsToday; }
-               if ((el = document.getElementById('kro-stat-lost'))) { el.dataset.target = data.totalLost; el.textContent = formatFull(data.totalLost); }
-               if ((el = document.getElementById('kro-stat-channels'))) { el.dataset.target = data.telegramCount; el.textContent = data.telegramCount; }
-               if ((el = document.getElementById('kro-stat-courses'))) { el.dataset.target = data.coursesCount; el.textContent = data.coursesCount; }
+               var chToday = Number(data.channelsToday) || 0;
+               var lost = Number(data.totalLost) || 0;
+               var tg = Number(data.telegramCount) || 0;
+               var courses = Number(data.coursesCount) || 0;
+               if ((el = document.getElementById('kro-stat-channels-today'))) { el.dataset.target = String(chToday); el.textContent = String(chToday); }
+               if ((el = document.getElementById('kro-stat-lost'))) { el.dataset.target = String(lost); el.textContent = formatFull(lost); }
+               if ((el = document.getElementById('kro-stat-channels'))) { el.dataset.target = String(tg); el.textContent = String(tg); }
+               if ((el = document.getElementById('kro-stat-courses'))) { el.dataset.target = String(courses); el.textContent = String(courses); }
                if ((el = document.getElementById('kro-live-datetime'))) {
                    var updatedAt = data.lastValidUpdatedAt || data.updatedAt || null;
                    el.textContent = window.__formatKroMskTimestamp ? window.__formatKroMskTimestamp(updatedAt) : '—';
@@ -618,7 +664,7 @@
                }
                renderSourcesChecked(data.sources_checked || []);
                if ((el = document.getElementById('kro-f1-shock-text'))) el.textContent = data.shockText || 'Данные появятся после первого верифицированного отчёта.';
-               if ((el = document.getElementById('kro-f1-shock-total'))) el.textContent = 'ИТОГО: -' + formatFull(data.totalLost) + '₽';
+               if ((el = document.getElementById('kro-f1-shock-total'))) el.textContent = 'ИТОГО: -' + formatFull(lost) + '₽';
                var top3 = data.top3 || [];
                for (var i = 0; i < 3; i++) {
                    var r = top3[i];
@@ -651,17 +697,35 @@
                    evidence_summary: data.evidence_summary || {},
                    risk_rows: data.risk_rows || [],
                    complaints_rows: data.complaints_rows || [],
-                   publish_status: data.publishStatus || null,
-                   site_notice: data.siteNotice || null
+                   publish_status: data.publishStatus != null ? data.publishStatus : null,
+                   site_notice: data.siteNotice != null ? data.siteNotice : null
                };
                tryRunCountUps();
            }
            function fetchLiveCounter() {
                if (!document.querySelector('.kro-feature1')) return;
-               fetch(base + '/api/kro/live-counter?t=' + Date.now(), {
-                   cache: 'no-store',
-                   headers: { 'Cache-Control': 'no-store' }
-               }).then(function(r) { return r.json(); }).then(applyData).catch(function() {});
+               function loadFrom(origin) {
+                   var o = (origin || '').replace(/\/$/, '');
+                   return fetch(o + '/api/kro/live-counter?t=' + Date.now(), {
+                       cache: 'no-store',
+                       headers: { 'Cache-Control': 'no-store', Accept: 'application/json' }
+                   }).then(function(r) {
+                       if (!r.ok) throw new Error('live-counter HTTP ' + r.status);
+                       return r.json();
+                   });
+               }
+               loadFrom(base.replace(/\/$/, ''))
+                   .catch(function(err) {
+                       var p = base.replace(/\/$/, '');
+                       var f = KRO_API_FALLBACK.replace(/\/$/, '');
+                       if (p === f) throw err;
+                       return loadFrom(f);
+                   })
+                   .then(function(raw) {
+                       var norm = normalizeLiveCounterPayload(raw);
+                       if (norm) applyData(norm);
+                   })
+                   .catch(function(e) { console.warn('[KRO] live-counter:', e); });
            }
            function observeFeature1Reveal() {
                var section = document.getElementById('feature1');
