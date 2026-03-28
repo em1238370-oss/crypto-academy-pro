@@ -7,15 +7,14 @@
   <meta name="description" content="Живой монитор системы антискам-мониторинга. Актуальные данные о скам-каналах, история циклов, источники.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/monitor.css">
 </head>
 <body class="mon-page">
 
-<!-- ── BACKGROUND (минимум шума) ── -->
+<!-- ── BACKGROUND (портфолио: почти плоский фон) ── -->
 <div class="mon-bg" aria-hidden="true">
   <span class="mon-bg-dot-grid"></span>
-  <span class="mon-bg-blob mon-bg-blob-1"></span>
 </div>
 
 <!-- ── BOOT OVERLAY ── -->
@@ -49,17 +48,24 @@
 
   <section class="mon-hero">
     <div class="mon-hero-copy">
-      <p class="mon-hero-kicker">Монитор</p>
-      <h1 class="mon-hero-title">Скам-каналы</h1>
-      <p class="mon-hero-tagline">Каналы и факты — со ссылками на источники.</p>
+      <p class="mon-hero-kicker">Живая база · проверка каналов</p>
+      <h1 class="mon-hero-title">Монитор скам-каналов</h1>
+      <p class="mon-hero-tagline">Факты и ссылки на первоисточники — без лишнего шума.</p>
+      <div class="mon-hero-tags" aria-label="Направления">
+        <span class="mon-hero-tag">Антискам</span>
+        <span class="mon-hero-tag">Live</span>
+        <span class="mon-hero-tag">Цикл 12 ч</span>
+        <span class="mon-hero-tag">Google Sheets</span>
+      </div>
     </div>
-    <div class="mon-hero-scheme" role="img" aria-label="Схема: источники ведут в таблицу, каждая строка со ссылками">
-      <div class="mon-scheme-row mon-scheme-row--hero">
+    <div class="mon-hero-aside">
+      <p class="mon-hero-aside-label">Как читать страницу</p>
+      <div class="mon-scheme-row mon-scheme-row--hero mon-scheme-row--ma" role="img" aria-label="Источники, таблица, проверка по ссылкам">
         <span class="mon-scheme-node">Источники</span>
         <span class="mon-scheme-arrow" aria-hidden="true">→</span>
         <span class="mon-scheme-node mon-scheme-node--accent">Таблица</span>
         <span class="mon-scheme-arrow" aria-hidden="true">→</span>
-        <span class="mon-scheme-node">Проверка</span>
+        <span class="mon-scheme-node">Ссылки</span>
       </div>
     </div>
   </section>
@@ -71,6 +77,10 @@
       <span class="mon-section-title">СТАТУС СИСТЕМЫ</span>
     </div>
     <div class="mon-section-body">
+      <div class="mon-metrics-head">
+        <p class="mon-metrics-kicker">Результаты в цифрах</p>
+        <p class="mon-metrics-sub">Статус системы и последние циклы мониторинга</p>
+      </div>
       <div class="mon-status-grid">
         <div class="mon-stat-card">
           <div class="mon-stat-label">статус</div>
@@ -1038,7 +1048,7 @@
 
   function initScrollReveal() {
     if (!window.IntersectionObserver) return;
-    var els = document.querySelectorAll('.mon-section, .mon-stat-card, .mon-proof-card, .mon-source-card, .mon-scheme-block, .mon-scheme-inline, .mon-hero-scheme');
+    var els = document.querySelectorAll('.mon-section, .mon-stat-card, .mon-proof-card, .mon-source-card, .mon-scheme-block, .mon-scheme-inline, .mon-hero-aside, .mon-metrics-head');
     var observer = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
         if (entry.isIntersecting) {
