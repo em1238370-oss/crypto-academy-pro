@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css">
+  <link rel="stylesheet" href="/monitor.css?v=motion-medvedevart-2026">
 </head>
 <body class="mon-page">
 
@@ -707,8 +707,8 @@
 
     setText('s1-last-cycle', cycleDt);
     setText('s1-next-cycle', nextDt);
-    countUp('s1-new-in-cycle', newCount, ' каналов', 900);
-    countUp('s1-total', total, ' каналов', 1200);
+    countUp('s1-new-in-cycle', newCount, ' каналов', 1300);
+    countUp('s1-total', total, ' каналов', 1650);
     setText('s1-sources-active', active + ' из ' + (meta.sources_checked || []).length);
   }
 
@@ -812,7 +812,7 @@
       var trs = wrap.querySelectorAll('tbody tr');
       trs.forEach(function(tr, i) {
         tr.classList.add('mon-row-appear');
-        tr.style.animationDelay = Math.min(i * 35, 1000) + 'ms';
+        tr.style.animationDelay = Math.min(i * 55, 1200) + 'ms';
       });
 
       var input = document.getElementById('s3-search');
@@ -965,7 +965,7 @@
       var htrs = wrap.querySelectorAll('tbody tr');
       htrs.forEach(function(tr, i) {
         tr.classList.add('mon-row-appear');
-        tr.style.animationDelay = Math.min(i * 50, 800) + 'ms';
+        tr.style.animationDelay = Math.min(i * 60, 1000) + 'ms';
       });
     }
   }
@@ -1039,27 +1039,31 @@
   function runBootSequence(onComplete) {
     var overlay = document.getElementById('mon-boot-overlay');
     var lines   = document.querySelectorAll('#mon-boot-lines .mon-boot-line');
-    if (!overlay || !lines.length) { onComplete(); return; }
+    function finishBoot() {
+      document.body.classList.add('mon-page-ready');
+      onComplete();
+    }
+    if (!overlay || !lines.length) { finishBoot(); return; }
 
-    var delays = [0, 200, 380, 530, 660, 860, 1060];
+    var delays = [0, 180, 340, 480, 610, 760, 920];
     lines.forEach(function(line, i) {
-      setTimeout(function() { line.classList.add('visible'); }, delays[i] || i * 160);
+      setTimeout(function() { line.classList.add('visible'); }, delays[i] || i * 140);
     });
 
     setTimeout(function() {
       overlay.classList.add('fade-out');
       setTimeout(function() {
         overlay.style.display = 'none';
-        onComplete();
-      }, 580);
-    }, 1550);
+        finishBoot();
+      }, 720);
+    }, 1480);
   }
 
-  // ── SCROLL REVEAL ─────────────────────────────────────────
+  // ── SCROLL REVEAL (fade-up 0.5–0.8s, волна по метрикам — в CSS) ──
 
   function initScrollReveal() {
     if (!window.IntersectionObserver) return;
-    var els = document.querySelectorAll('.mon-offer, .mon-pillar, .mon-section, .mon-stat-card, .mon-proof-card, .mon-source-card, .mon-scheme-block, .mon-scheme-inline, .mon-hero-aside');
+    var rootMargin = '0px 0px -10% 0px';
     var observer = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
         if (entry.isIntersecting) {
@@ -1067,12 +1071,36 @@
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.06 });
-    els.forEach(function(el, i) {
+    }, { threshold: 0.08, rootMargin: rootMargin });
+    var sel = [
+      '.mon-offer',
+      '.mon-section',
+      '.mon-proof-card',
+      '.mon-source-card',
+      '.mon-scheme-block',
+      '.mon-scheme-inline',
+      '.mon-footer'
+    ].join(', ');
+    document.querySelectorAll(sel).forEach(function(el) {
       el.classList.add('mon-reveal');
-      el.style.transitionDelay = Math.min(i * 30, 200) + 'ms';
       observer.observe(el);
     });
+    document.querySelectorAll('.mon-status-grid .mon-stat-card').forEach(function(card) {
+      card.classList.add('mon-reveal');
+      observer.observe(card);
+    });
+  }
+
+  function initHeroScrollFade() {
+    var hero = document.querySelector('.mon-hero');
+    if (!hero || !window.IntersectionObserver) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        document.body.classList.toggle('mon-hero-offscreen', !e.isIntersecting);
+      });
+    }, { threshold: 0, rootMargin: '-40px 0px 0px 0px' });
+    io.observe(hero);
   }
 
   // ── COLLAPSIBLE SECTIONS ──────────────────────────────────
@@ -1098,9 +1126,21 @@
   // ── INIT ──────────────────────────────────────────────────
 
   document.addEventListener('DOMContentLoaded', function() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.body.classList.add('mon-page-ready');
+      var ov = document.getElementById('mon-boot-overlay');
+      if (ov) ov.style.display = 'none';
+      initScrollReveal();
+      initCollapsibles();
+      initHeroScrollFade();
+      loadData();
+      startCountdown();
+      return;
+    }
     runBootSequence(function() {
       initScrollReveal();
       initCollapsibles();
+      initHeroScrollFade();
       loadData();
       startCountdown();
     });

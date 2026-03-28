@@ -33,6 +33,14 @@
   --mon-blur:      blur(12px);
 
   --mon-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* medvedevart-style motion: спокойный ease-out, длительности 0.5–0.8s, fade-up 20–40px */
+  --mon-ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --mon-dur-hero: 0.72s;
+  --mon-dur-reveal: 0.68s;
+  --mon-dur-boot-line: 0.5s;
+  --mon-dur-boot-fade: 0.75s;
+  --mon-stagger-hero: 0.13s;
+  --mon-reveal-y: 36px;
   --mon-shadow:       0 1px 0 rgba(255,255,255,0.06);
   --mon-shadow-hover: 0 12px 40px rgba(0,0,0,0.45);
 }
@@ -69,6 +77,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
   background-size: 32px 32px;
   opacity: 0.35;
+  transition: opacity 0.7s var(--mon-ease-soft);
+}
+.mon-page.mon-hero-offscreen .mon-bg-dot-grid {
+  opacity: 0.2;
 }
 
 /* ── Z-INDEX LAYERS ──────────────────────────────────────── */
@@ -88,6 +100,14 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   background: rgba(10,12,16,0.92);
   backdrop-filter: var(--mon-blur);
   -webkit-backdrop-filter: var(--mon-blur);
+  opacity: 0;
+  transform: translateY(-12px);
+  transition: opacity 0.58s var(--mon-ease-soft), transform 0.58s var(--mon-ease-soft);
+  transition-delay: 0.06s;
+}
+.mon-page-ready .mon-topbar {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .mon-main-nav {
@@ -192,7 +212,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 /* ── HERO (каскад fade-up как в портфолио) ───────────────── */
 
 @keyframes monHeroIn {
-  from { opacity: 0; transform: translateY(28px); }
+  from { opacity: 0; transform: translateY(var(--mon-reveal-y)); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
@@ -202,24 +222,41 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
   gap: 40px;
   align-items: end;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.65s var(--mon-ease-soft), transform 0.65s var(--mon-ease-soft);
 }
 
-/* Старт после boot-оверлея (~2.1s), каскад 0.1–0.15s как в портфолио */
-.mon-hero-copy > * {
-  animation: monHeroIn 0.65s var(--mon-ease-out) both;
+/* После boot: каскад 0.1–0.2s между строками (синхрон с body.mon-page-ready) */
+.mon-hero-copy > *,
+.mon-hero-aside {
+  opacity: 0;
+  transform: translateY(var(--mon-reveal-y));
 }
-.mon-hero-copy .mon-hero-eyebrow   { animation-delay: 2.25s; }
-.mon-hero-copy .mon-hero-role     { animation-delay: 2.32s; }
-.mon-hero-copy .mon-hero-title     { animation-delay: 2.4s; }
-.mon-hero-copy .mon-hero-tagline   { animation-delay: 2.52s; }
-.mon-hero-copy .mon-hero-tags      { animation-delay: 2.64s; }
+.mon-page-ready .mon-hero-copy > * {
+  animation: monHeroIn var(--mon-dur-hero) var(--mon-ease-soft) both;
+}
+.mon-page-ready .mon-hero-copy .mon-hero-eyebrow { animation-delay: calc(var(--mon-stagger-hero) * 0.5); }
+.mon-page-ready .mon-hero-copy .mon-hero-role   { animation-delay: calc(var(--mon-stagger-hero) * 1.5); }
+.mon-page-ready .mon-hero-copy .mon-hero-title  { animation-delay: calc(var(--mon-stagger-hero) * 2.5); }
+.mon-page-ready .mon-hero-copy .mon-hero-tagline { animation-delay: calc(var(--mon-stagger-hero) * 3.5); }
+.mon-page-ready .mon-hero-copy .mon-hero-tags   { animation-delay: calc(var(--mon-stagger-hero) * 4.5); }
 
 .mon-hero-aside {
-  animation: monHeroIn 0.65s var(--mon-ease-out) 2.76s both;
   padding: 24px;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: var(--mon-radius);
   background: rgba(255,255,255,0.02);
+}
+.mon-page-ready .mon-hero-aside {
+  animation: monHeroIn var(--mon-dur-hero) var(--mon-ease-soft) both;
+  animation-delay: calc(var(--mon-stagger-hero) * 5.5);
+}
+
+/* Лёгкое приглушение hero при уходе из вьюпорта (как в портфолио) */
+.mon-page.mon-hero-offscreen .mon-hero {
+  opacity: 0.86;
+  transform: translateY(-6px);
 }
 
 .mon-hero-aside-label {
@@ -355,6 +392,37 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.28);
+}
+
+/* Каскад внутри оффера: заголовок → лид → столпы → focus (волна 0.1–0.15s) */
+@keyframes monRevealChild {
+  from { opacity: 0; transform: translateY(26px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.mon-offer.mon-reveal .mon-offer-title,
+.mon-offer.mon-reveal .mon-offer-lead,
+.mon-offer.mon-reveal .mon-pillar,
+.mon-offer.mon-reveal .mon-offer-focus {
+  opacity: 0;
+  transform: translateY(26px);
+}
+.mon-offer.mon-visible .mon-offer-title {
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.08s both;
+}
+.mon-offer.mon-visible .mon-offer-lead {
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.18s both;
+}
+.mon-offer.mon-visible .mon-pillars .mon-pillar:nth-child(1) {
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.28s both;
+}
+.mon-offer.mon-visible .mon-pillars .mon-pillar:nth-child(2) {
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.4s both;
+}
+.mon-offer.mon-visible .mon-pillars .mon-pillar:nth-child(3) {
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.52s both;
+}
+.mon-offer.mon-visible .mon-offer-focus {
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.64s both;
 }
 
 /* ── СХЕМЫ (блок-схемы вместо абзацев) ───────────────────── */
@@ -1042,13 +1110,24 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 .mon-reveal {
   opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 0.65s var(--mon-ease-out), transform 0.65s var(--mon-ease-out);
+  transform: translateY(var(--mon-reveal-y));
+  transition:
+    opacity var(--mon-dur-reveal) var(--mon-ease-soft),
+    transform var(--mon-dur-reveal) var(--mon-ease-soft);
+  transition-delay: var(--mon-reveal-delay, 0ms);
 }
 .mon-reveal.mon-visible {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Волна по карточкам метрик в одной секции */
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(1) { --mon-reveal-delay: 0ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(2) { --mon-reveal-delay: 85ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(3) { --mon-reveal-delay: 170ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(4) { --mon-reveal-delay: 255ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(5) { --mon-reveal-delay: 340ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(6) { --mon-reveal-delay: 425ms; }
 
 /* ── COLLAPSIBLE ─────────────────────────────────────────── */
 
@@ -1087,10 +1166,13 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 /* ── ROW APPEAR ──────────────────────────────────────────── */
 
 @keyframes rowAppear {
-  from { opacity: 0; transform: translateY(5px); }
+  from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.mon-row-appear { opacity: 0; animation: rowAppear 0.28s ease both; }
+.mon-row-appear {
+  opacity: 0;
+  animation: rowAppear 0.48s var(--mon-ease-soft) both;
+}
 
 /* ── BOOT OVERLAY — dramatic glass ──────────────────────── */
 
@@ -1098,7 +1180,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   position: fixed; inset: 0; z-index: 1000;
   background: #0a0c10;
   display: flex; align-items: center; justify-content: center;
-  transition: opacity 0.60s ease;
+  transition: opacity var(--mon-dur-boot-fade) var(--mon-ease-soft);
 }
 #mon-boot-overlay::before {
   content: '';
@@ -1107,6 +1189,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   background-size: 28px 28px;
 }
 #mon-boot-overlay.fade-out { opacity: 0; pointer-events: none; }
+
+@keyframes monBootTerminalIn {
+  from { opacity: 0; transform: translateY(22px) scale(0.988); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 .mon-boot-terminal {
   font-family: var(--mon-font-mono);
@@ -1119,25 +1206,62 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   box-shadow: 0 24px 64px rgba(0,0,0,0.5);
   position: relative;
   z-index: 1;
+  animation: monBootTerminalIn 0.58s var(--mon-ease-soft) both;
 }
 
-.mon-boot-line { display: block; opacity: 0; transform: translateY(8px); transition: opacity 0.45s var(--mon-ease-out), transform 0.45s var(--mon-ease-out); }
+.mon-boot-line {
+  display: block;
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity var(--mon-dur-boot-line) var(--mon-ease-soft),
+    transform var(--mon-dur-boot-line) var(--mon-ease-soft);
+}
 .mon-boot-line.visible { opacity: 1; transform: translateY(0); }
 .mon-boot-line.dim  { color: rgba(255,255,255,0.34); }
 .mon-boot-line.info { color: var(--mon-red); font-weight: 600; }
 .mon-boot-line.ok   { color: var(--mon-green); font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) {
+  .mon-topbar {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
   .mon-hero-copy > *,
   .mon-hero-aside {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
   }
+  .mon-page.mon-hero-offscreen .mon-hero {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .mon-boot-terminal { animation: none !important; }
+  .mon-offer.mon-reveal .mon-offer-title,
+  .mon-offer.mon-reveal .mon-offer-lead,
+  .mon-offer.mon-reveal .mon-pillar,
+  .mon-offer.mon-reveal .mon-offer-focus {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
   .mon-reveal {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+    --mon-reveal-delay: 0ms !important;
+  }
+  .mon-row-appear {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  .mon-bg-dot-grid {
+    transition: none !important;
+  }
+  .mon-page.mon-hero-offscreen .mon-bg-dot-grid {
+    opacity: 0.35 !important;
   }
 }
 
