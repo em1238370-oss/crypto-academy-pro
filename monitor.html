@@ -12,13 +12,10 @@
 </head>
 <body class="mon-page">
 
-<!-- ── BACKGROUND BLOBS ── -->
+<!-- ── BACKGROUND (минимум шума) ── -->
 <div class="mon-bg" aria-hidden="true">
   <span class="mon-bg-dot-grid"></span>
   <span class="mon-bg-blob mon-bg-blob-1"></span>
-  <span class="mon-bg-blob mon-bg-blob-2"></span>
-  <span class="mon-bg-blob mon-bg-blob-3"></span>
-  <span class="mon-bg-blob mon-bg-blob-4"></span>
 </div>
 
 <!-- ── BOOT OVERLAY ── -->
@@ -50,22 +47,20 @@
 
 <main class="mon-container">
 
-  <!-- ── TRUST BANNER ── -->
-  <div class="mon-trust-bar">
-    <span class="mon-trust-bar-icon" aria-hidden="true">🔍</span>
-    Проверено вручную.
-    <strong>Открой ссылку и проверь сам.</strong>
-  </div>
-
   <section class="mon-hero">
     <div class="mon-hero-copy">
-      <p class="mon-hero-kicker">Антискам · Живая база</p>
-      <h1 class="mon-hero-title">Монитор скам-каналов</h1>
-      <p class="mon-hero-tagline">Здесь система показывает все крипто-каналы которые она нашла и проверила. Каждый факт — со ссылкой.</p>
+      <p class="mon-hero-kicker">Монитор</p>
+      <h1 class="mon-hero-title">Скам-каналы</h1>
+      <p class="mon-hero-tagline">Каналы и факты — со ссылками на источники.</p>
     </div>
-    <div class="mon-hero-badges" aria-label="Monitor highlights">
-      <span class="mon-hero-badge">✓ Ручная проверка</span>
-      <span class="mon-hero-badge">✓ Ссылки на источники</span>
+    <div class="mon-hero-scheme" role="img" aria-label="Схема: источники ведут в таблицу, каждая строка со ссылками">
+      <div class="mon-scheme-row mon-scheme-row--hero">
+        <span class="mon-scheme-node">Источники</span>
+        <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+        <span class="mon-scheme-node mon-scheme-node--accent">Таблица</span>
+        <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+        <span class="mon-scheme-node">Проверка</span>
+      </div>
     </div>
   </section>
 
@@ -116,31 +111,16 @@
     </div>
     <div class="mon-section-body" style="padding:0">
 
-      <!-- ПОЧЕМУ МЫ ИМ ДОВЕРЯЕМ -->
-      <div class="mon-why-trust">
-        <h3 class="mon-why-trust-title">Почему мы им доверяем</h3>
-        <div class="mon-why-trust-grid">
-          <div class="mon-why-trust-card">
-            <div class="mon-why-trust-num">1</div>
-            <div>
-              <strong>Минимум 2 независимых источника</strong>
-              <p>Добавляем канал только когда есть несколько независимых подтверждений, а не одно мнение.</p>
-            </div>
-          </div>
-          <div class="mon-why-trust-card">
-            <div class="mon-why-trust-num">2</div>
-            <div>
-              <strong>Есть реальные доказательства</strong>
-              <p>В таблице есть цитаты и ссылки на оригиналы, чтобы всё можно было проверить самому.</p>
-            </div>
-          </div>
-          <div class="mon-why-trust-card">
-            <div class="mon-why-trust-num">3</div>
-            <div>
-              <strong>Не мнение — факты</strong>
-              <p>Здесь не мнения, а факты: источник, цитата и ссылка на сам канал.</p>
-            </div>
-          </div>
+      <div class="mon-scheme-block">
+        <p class="mon-scheme-caption">Логика записи в базу</p>
+        <div class="mon-scheme-row" role="img" aria-label="Несколько независимых источников, затем строка в таблице с цитатой и ссылками">
+          <span class="mon-scheme-node">2+ источника</span>
+          <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+          <span class="mon-scheme-node mon-scheme-node--accent">канал</span>
+          <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+          <span class="mon-scheme-node">цитата</span>
+          <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+          <span class="mon-scheme-node">ссылки</span>
         </div>
       </div>
 
@@ -158,7 +138,11 @@
       <span class="mon-section-label" style="margin-left:auto" id="s4-watch-count"></span>
     </div>
     <div class="mon-section-body" style="padding:0">
-      <div class="mon-proof-note">Широкий мониторинг всех найденных каналов. Подтверждённые скамы остаются в таблице выше.</div>
+      <div class="mon-scheme-inline" role="img" aria-label="Подтверждённый скам в таблице выше; здесь — широкий список">
+        <span class="mon-scheme-pill mon-scheme-pill--dim">База скама ↑</span>
+        <span class="mon-scheme-arrow" aria-hidden="true">|</span>
+        <span class="mon-scheme-pill mon-scheme-pill--accent">Широкий мониторинг</span>
+      </div>
       <div class="mon-table-wrap" id="s4-watch-wrap">
         <div class="mon-loading mon-spinner" style="padding:32px">Загружаю широкий мониторинг</div>
       </div>
@@ -173,7 +157,13 @@
       <span class="mon-section-label" style="margin-left:auto" id="s4-network-count"></span>
     </div>
     <div class="mon-section-body" style="padding:0">
-      <div class="mon-proof-note">Здесь видно, какие каналы продвигают друг друга.</div>
+      <div class="mon-scheme-inline mon-scheme-inline--network" role="img" aria-label="Канал А продвигает канал Б">
+        <span class="mon-scheme-node mon-scheme-node--sm">канал A</span>
+        <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+        <span class="mon-scheme-node mon-scheme-node--sm mon-scheme-node--accent">реклама</span>
+        <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+        <span class="mon-scheme-node mon-scheme-node--sm">канал B</span>
+      </div>
       <div class="mon-table-wrap" id="s4-network-wrap">
         <div class="mon-loading mon-spinner" style="padding:32px">Загружаю связи каналов</div>
       </div>
@@ -201,37 +191,24 @@
       <span class="mon-section-title">ИСТОЧНИКИ ДАННЫХ</span>
     </div>
     <div class="mon-section-body">
-      <p class="mon-section-intro">Какие источники участвовали в последнем цикле.</p>
+      <div class="mon-scheme-block mon-scheme-block--compact">
+        <div class="mon-scheme-row mon-scheme-row--sources" role="img" aria-label="Сайты и форма → таблицы → эта страница">
+          <span class="mon-scheme-node mon-scheme-node--sm">сайты</span>
+          <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+          <span class="mon-scheme-node mon-scheme-node--sm">Sheets</span>
+          <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+          <span class="mon-scheme-node mon-scheme-node--sm mon-scheme-node--accent">монитор</span>
+        </div>
+      </div>
       <div class="mon-sources-grid" id="s5-sources">
         <div class="mon-loading mon-spinner">Загружаю</div>
       </div>
-      <div class="mon-subsection-title">Что это за источники</div>
-      <div class="mon-source-guide-grid">
-        <div class="mon-source-guide-card">
-          <h3>stop-scam1.com</h3>
-          <p>Сайт разоблачений крипто-каналов, статьи с детальным анализом.</p>
-          <a class="mon-external-link" href="https://stop-scam1.com/" target="_blank" rel="noopener">Открыть сайт</a>
-        </div>
-        <div class="mon-source-guide-card">
-          <h3>fin-obzor.net</h3>
-          <p>Финансовые отзывы пользователей.</p>
-          <a class="mon-external-link" href="https://fin-obzor.net/" target="_blank" rel="noopener">Открыть сайт</a>
-        </div>
-        <div class="mon-source-guide-card">
-          <h3>cryptorussia.ru</h3>
-          <p>Обзоры и отзывы на крипто-проекты.</p>
-          <a class="mon-external-link" href="https://cryptorussia.ru/" target="_blank" rel="noopener">Открыть сайт</a>
-        </div>
-        <div class="mon-source-guide-card">
-          <h3>vklader.com</h3>
-          <p>Русскоязычный чёрный список Telegram-каналов и пользовательские проверки с описанием схем.</p>
-          <a class="mon-external-link" href="https://vklader.com/blacklist-telegram/" target="_blank" rel="noopener">Открыть blacklist</a>
-        </div>
-        <div class="mon-source-guide-card">
-          <h3>форма жалоб</h3>
-          <p>Прямые сообщения от пострадавших пользователей.</p>
-          <a class="mon-external-link" href="/#checkers" target="_blank" rel="noopener">Открыть форму</a>
-        </div>
+      <div class="mon-source-strip">
+        <a class="mon-source-chip" href="https://stop-scam1.com/" target="_blank" rel="noopener">stop-scam1</a>
+        <a class="mon-source-chip" href="https://fin-obzor.net/" target="_blank" rel="noopener">fin-obzor</a>
+        <a class="mon-source-chip" href="https://cryptorussia.ru/" target="_blank" rel="noopener">cryptorussia</a>
+        <a class="mon-source-chip" href="https://vklader.com/blacklist-telegram/" target="_blank" rel="noopener">vklader</a>
+        <a class="mon-source-chip" href="/#checkers" rel="noopener">жалобы</a>
       </div>
     </div>
   </section>
@@ -257,23 +234,16 @@
       <span class="mon-collapse-chevron" aria-hidden="true">›</span>
     </div>
     <div class="mon-section-body">
-      <p class="mon-section-intro">Любой вывод здесь можно проверить по ссылкам и первоисточникам.</p>
-      <div class="mon-proof-grid">
-        <div class="mon-proof-card">
-          <h3>1. Берём проверяемый источник</h3>
-          <p>В карточку попадает ссылка на статью, отзыв или жалобу, где канал упомянут по имени. Если есть публичная статья, мы даём её прямо в строке таблицы.</p>
-        </div>
-        <div class="mon-proof-card">
-          <h3>2. Привязываем факт к каналу</h3>
-          <p>В строке показываем прямую ссылку на <code>t.me</code> и отдельную ссылку на материал-источник. Человек может открыть оба окна и сравнить сам.</p>
-        </div>
-        <div class="mon-proof-card">
-          <h3>3. Показываем только факты</h3>
-          <p>В колонке «Признаки риска» выводятся короткие фрагменты из <code>source_evidence</code>: цитаты, формулировки и описания схемы из источника, без пересказа «от себя».</p>
-        </div>
-        <div class="mon-proof-card">
-          <h3>4. Статус ставим по правилам</h3>
-          <p><strong>В риске</strong> — когда есть сильные признаки обмана или повторяющиеся жалобы. <strong>Под наблюдением</strong> — когда сигналов риска уже достаточно для внимания, но данных меньше, чем для жёсткого вывода.</p>
+      <div class="mon-scheme-block">
+        <p class="mon-scheme-caption">Как собирается строка</p>
+        <div class="mon-scheme-row mon-scheme-row--wrap" role="img" aria-label="Статья или жалоба, ссылка на канал, цитата из источника, статус по правилам">
+          <span class="mon-scheme-node mon-scheme-node--sm">источник</span>
+          <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+          <span class="mon-scheme-node mon-scheme-node--sm">t.me</span>
+          <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+          <span class="mon-scheme-node mon-scheme-node--sm">цитата</span>
+          <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+          <span class="mon-scheme-node mon-scheme-node--sm mon-scheme-node--accent">статус</span>
         </div>
       </div>
     </div>
@@ -476,8 +446,7 @@
 </main>
 
 <footer class="mon-footer">
-  <p>KRO Monitor · Данные из Google Sheets · Обновляется каждые 12 часов автоматически</p>
-  <p style="margin-top:6px"><a href="/">← Вернуться на сайт</a></p>
+  <p>Sheets · цикл 12 ч · <a href="/">на сайт</a></p>
 </footer>
 
 <script>
@@ -1069,7 +1038,7 @@
 
   function initScrollReveal() {
     if (!window.IntersectionObserver) return;
-    var els = document.querySelectorAll('.mon-section, .mon-stat-card, .mon-proof-card, .mon-source-card, .mon-why-trust-card');
+    var els = document.querySelectorAll('.mon-section, .mon-stat-card, .mon-proof-card, .mon-source-card, .mon-scheme-block, .mon-scheme-inline, .mon-hero-scheme');
     var observer = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
         if (entry.isIntersecting) {
