@@ -557,6 +557,7 @@
            }
            function applyData(data) {
                if (!data) return;
+               console.log('el channels:', document.getElementById('kro-stat-channels-today'));
                var el;
                var chToday = Number(data.channelsToday) || 0;
                var lost = Number(data.totalLost) || 0;
