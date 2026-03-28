@@ -1252,6 +1252,116 @@ const KRO_REFERENCE_STATS_PATH = join(__dirname, 'data', 'kro-reference-stats.js
 const KRO_12H_STATS_PATH = join(__dirname, 'data', 'kro-12h-stats.json');
 const KRO_PENDING_REPORT_TEXT = 'Данные появятся после первого верифицированного отчёта.';
 
+/** URLs embedded in complaints_row fields (Python worker / kro-12h-stats.json). */
+function collectComplaintRowUrls(row) {
+  const out = [];
+  const addStr = (v) => {
+    if (!v || typeof v !== 'string') return;
+    const matches = v.match(/https?:\/\/[^\s\])'"<>|]+/g) || [];
+    matches.forEach((m) => out.push(m.replace(/[),.;]+$/g, '')));
+  };
+  const walk = (v) => {
+    if (v == null) return;
+    if (typeof v === 'string') addStr(v);
+    else if (Array.isArray(v)) v.forEach(walk);
+  };
+  if (!row || typeof row !== 'object') return out;
+  walk(row.source_urls);
+  walk(row.evidence_links);
+  walk(row.source_url);
+  walk(row.message_links);
+  return out;
+}
+
+function pickMonitorCaseSource(row, reportDocUrl) {
+  const urls = [...new Set(collectComplaintRowUrls(row))];
+  const external = urls.find((u) => !/t\.me\//i.test(u));
+  if (external) return { url: external, kind: 'external' };
+  if (urls.length) return { url: urls[0], kind: 'telegram' };
+  const doc = String(reportDocUrl || '').trim();
+  if (/^https?:\/\//i.test(doc)) return { url: doc, kind: 'report' };
+  return { url: '/monitor#data-scam', kind: 'monitor' };
+}
+
+function ruComplaintsWord(n) {
+  const abs = Math.abs(Math.floor(n)) % 100;
+  const mod10 = abs % 10;
+  if (abs >= 11 && abs <= 14) return 'жалоб';
+  if (mod10 === 1) return 'жалоба';
+  if (mod10 >= 2 && mod10 <= 4) return 'жалобы';
+  return 'жалоб';
+}
+
+function fmtRubSpaces(n) {
+  const x = Math.round(Number(n) || 0);
+  if (!Number.isFinite(x) || x < 0) return '0';
+  return x.toLocaleString('ru-RU');
+}
+
+function buildMonitorCaseSummary(row) {
+  const complaints = Math.max(0, Math.floor(Number(row.complaints) || 0));
+  const losses = Math.max(0, Math.round(Number(row.losses) || 0));
+  const qg = String(row.query_group || '').trim();
+  let s;
+  if (complaints > 0 && losses > 0) {
+    s = `По каналу — ${complaints} ${ruComplaintsWord(complaints)}, в суммах фигурирует порядка ${fmtRubSpaces(losses)} ₽`;
+    if (qg && qg !== 'жалобы/обсуждения') s += ` (${qg})`;
+    s += '.';
+  } else if (complaints > 0) {
+    s = `В открытых источниках и форме по каналу зафиксировано ${complaints} ${ruComplaintsWord(complaints)}.`;
+  } else if (losses > 0) {
+    s = `В сводке мониторинга указаны потери порядка ${fmtRubSpaces(losses)} ₽.`;
+  } else {
+    s = 'Канал попал в сводку мониторинга по сигналам из открытых площадок и пользовательских обращений.';
+  }
+  if (s.length > 240) return `${s.slice(0, 237)}…`;
+  return s;
+}
+
+function channelLabelForMonitorCase(ch) {
+  const raw = String(ch || '').trim();
+  if (!raw) return '—';
+  if (raw.startsWith('@')) return raw;
+  if (/^https?:\/\/t\.me\//i.test(raw)) {
+    return `@${raw.replace(/^https?:\/\/t\.me\//i, '').replace(/\/$/, '')}`;
+  }
+  return `@${raw.replace(/^@+/, '')}`;
+}
+
+function channelUrlForMonitorCase(ch) {
+  const raw = String(ch || '').trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const name = raw.replace(/^@+/, '');
+  return name ? `https://t.me/${name}` : '';
+}
+
+/** Top N complaint aggregates from kro-12h-stats.json for /monitor story cards. */
+function buildMonitorRecentCases(statsData, limit = 3) {
+  const rows = Array.isArray(statsData?.complaints_rows) ? statsData.complaints_rows : [];
+  const reportDoc = statsData?.report_doc_url || '';
+  const sorted = [...rows]
+    .filter((r) => r && String(r.channel || '').trim())
+    .sort((a, b) => (Number(b.losses) || 0) - (Number(a.losses) || 0));
+  const out = [];
+  for (const r of sorted) {
+    if (out.length >= limit) break;
+    const channel = String(r.channel || '').trim();
+    const losses = Math.max(0, Math.round(Number(r.losses) || 0));
+    const src = pickMonitorCaseSource(r, reportDoc);
+    out.push({
+      channel,
+      channel_label: channelLabelForMonitorCase(channel),
+      channel_url: channelUrlForMonitorCase(channel),
+      loss_rub: losses,
+      summary: buildMonitorCaseSummary(r),
+      source_url: src.url,
+      source_kind: src.kind
+    });
+  }
+  return out;
+}
+
 const KRO_FALLBACK = {
   channelsToday: 0,
   totalLost: 0,
@@ -2164,7 +2274,17 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       }))
       .reverse(); // newest first
 
-    return res.json({ scam_base: scamRows, channels_watch: channelsWatch, channels_network: channelsNetwork, meta, history });
+    const statsSnapshot = readJsonFileSafe(KRO_12H_STATS_PATH, '12h-stats') || {};
+    const recent_cases = buildMonitorRecentCases(statsSnapshot, 3);
+
+    return res.json({
+      scam_base: scamRows,
+      channels_watch: channelsWatch,
+      channels_network: channelsNetwork,
+      meta,
+      history,
+      recent_cases
+    });
   } catch (e) {
     console.error('KRO monitor-data error:', e);
     return res.status(500).json({ error: 'internal error', detail: e.message });
