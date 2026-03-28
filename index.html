@@ -658,6 +658,7 @@
                }
                attempt(0)
                    .then(function(raw) {
+                       console.log('KRO DATA:', raw);
                        var norm = normalizeLiveCounterPayload(raw);
                        if (norm) applyData(norm);
                    })
