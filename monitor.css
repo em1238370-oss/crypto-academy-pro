@@ -36,11 +36,14 @@
   /* medvedevart-style motion: спокойный ease-out, длительности 0.5–0.8s, fade-up 20–40px */
   --mon-ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
   --mon-dur-hero: 0.72s;
-  --mon-dur-reveal: 0.68s;
+  /* Скролл-reveal и каскады: 0.5–0.8s как в анализе medvedevart */
+  --mon-dur-reveal: 0.74s;
   --mon-dur-boot-line: 0.5s;
   --mon-dur-boot-fade: 0.78s;
   --mon-stagger-hero: 0.13s;
-  --mon-reveal-y: 36px;
+  --mon-reveal-y: 32px;
+  --mon-reveal-blur: 11px;
+  --mon-link-dur: 0.28s;
   --mon-shadow:       0 1px 0 rgba(255,255,255,0.06);
   --mon-shadow-hover: 0 12px 40px rgba(0,0,0,0.45);
 }
@@ -168,6 +171,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-nav-link {
+  position: relative;
   font-family: var(--mon-font);
   font-size: 13px;
   font-weight: 500;
@@ -175,10 +179,30 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   text-decoration: none;
   padding: 8px 0;
   border-radius: 0;
-  border-bottom: 1px solid transparent;
-  transition: color 0.25s var(--mon-ease-out), border-color 0.25s var(--mon-ease-out);
+  border-bottom: none;
+  transition: color var(--mon-link-dur) var(--mon-ease-out);
 }
-.mon-nav-link:hover { color: #fff; border-bottom-color: rgba(255,255,255,0.25); }
+.mon-nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 4px;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 68, 68, 0.82), rgba(255, 68, 68, 0.18));
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--mon-link-dur) var(--mon-ease-out);
+  pointer-events: none;
+}
+.mon-nav-link:hover,
+.mon-nav-link:focus-visible {
+  color: #fff;
+}
+.mon-nav-link:hover::after,
+.mon-nav-link:focus-visible::after {
+  transform: scaleX(1);
+}
 
 .mon-nav-link--home {
   display: inline-flex;
@@ -363,6 +387,19 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   letter-spacing: -0.04em;
   color: #fff;
 }
+@media (min-width: 641px) {
+  .mon-hero-title-main {
+    background: linear-gradient(
+      102deg,
+      #fff 0%,
+      rgba(255, 255, 255, 0.9) 38%,
+      rgba(255, 200, 200, 0.92) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
 .mon-hero-title-sub {
   font-size: clamp(1.05rem, 2.4vw, 1.45rem);
   font-weight: 500;
@@ -498,8 +535,16 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 /* Каскад внутри оффера: заголовок → лид → столпы → focus (волна 0.1–0.15s) */
 @keyframes monRevealChild {
-  from { opacity: 0; transform: translateY(26px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+    filter: blur(var(--mon-reveal-blur));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
 }
 .mon-offer.mon-reveal .mon-offer-kicker,
 .mon-offer.mon-reveal .mon-offer-title,
@@ -687,12 +732,25 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   min-width: 0;
 }
 .mon-chapter-kicker {
+  position: relative;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.34);
   margin: 0 0 12px;
+  padding-left: 14px;
+}
+.mon-chapter-kicker::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.12em;
+  bottom: 0.12em;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgba(255, 68, 68, 0.88), rgba(255, 68, 68, 0.08));
+  opacity: 0.92;
 }
 .mon-chapter-title {
   font-family: var(--mon-font-display);
@@ -731,6 +789,20 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-radius: var(--mon-radius);
   overflow: hidden;
   box-shadow: var(--mon-shadow);
+  transition:
+    transform 0.36s var(--mon-ease-soft),
+    box-shadow 0.36s var(--mon-ease-soft),
+    border-color 0.32s var(--mon-ease-out);
+}
+@media (min-width: 641px) and (hover: hover) {
+  .mon-surface:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.06),
+      0 22px 56px rgba(0, 0, 0, 0.42),
+      0 0 0 1px rgba(255, 68, 68, 0.06);
+  }
 }
 .mon-surface--pad {
   padding: clamp(20px, 3vw, 28px);
@@ -911,8 +983,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   cursor: default;
 }
 .mon-stat-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(255,255,255,0.14);
+  transform: translateY(-5px);
+  border-color: rgba(255,255,255,0.16);
   box-shadow: var(--mon-shadow-hover);
 }
 
@@ -1044,6 +1116,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 /* ── LINKS ───────────────────────────────────────────────── */
 
 .mon-external-link {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1051,12 +1124,34 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   text-decoration: none;
   font-weight: 600;
   font-size: 13px;
-  border-bottom: 1px solid transparent;
-  transition: color 0.25s var(--mon-ease-out), border-color 0.25s var(--mon-ease-out);
+  border-bottom: none;
+  padding-bottom: 1px;
+  transition: color var(--mon-link-dur) var(--mon-ease-out);
 }
-.mon-external-link:hover {
+.mon-external-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 68, 68, 0.75), rgba(255, 68, 68, 0.2));
+  transform: scaleX(0.35);
+  transform-origin: left center;
+  opacity: 0.55;
+  transition:
+    transform var(--mon-link-dur) var(--mon-ease-out),
+    opacity var(--mon-link-dur) var(--mon-ease-out);
+  pointer-events: none;
+}
+.mon-external-link:hover,
+.mon-external-link:focus-visible {
   color: #ff7070;
-  border-bottom-color: rgba(255,68,68,0.5);
+}
+.mon-external-link:hover::after,
+.mon-external-link:focus-visible::after {
+  transform: scaleX(1);
+  opacity: 1;
 }
 .mon-link-arrow { font-size: 11px; line-height: 1; }
 .mon-text-fallback { color: var(--mon-text-fade); font-size: 12px; }
@@ -1106,6 +1201,12 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  transition: box-shadow 0.35s var(--mon-ease-soft);
+}
+@media (min-width: 641px) and (hover: hover) {
+  .mon-surface:hover .mon-table-wrap {
+    box-shadow: inset 0 1px 0 rgba(255, 68, 68, 0.04);
+  }
 }
 
 .mon-table {
@@ -1471,6 +1572,21 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   transform: translateY(0);
 }
 
+/* Десктоп: blur → focus при входе во вьюпорт (как kro-scroll-in на главной) */
+@media (min-width: 1025px) {
+  .mon-reveal:not(.mon-offer) {
+    filter: blur(var(--mon-reveal-blur));
+    transition:
+      opacity var(--mon-dur-reveal) var(--mon-ease-soft),
+      transform var(--mon-dur-reveal) var(--mon-ease-soft),
+      filter var(--mon-dur-reveal) var(--mon-ease-soft);
+    transition-delay: var(--mon-reveal-delay, 0ms);
+  }
+  .mon-reveal.mon-visible:not(.mon-offer) {
+    filter: blur(0);
+  }
+}
+
 /*
  * Узкие экраны: не держим секции невидимыми из‑за IntersectionObserver.
  * У очень высоких блоков (таблицы) доля пересечения с viewport долго < порога —
@@ -1481,6 +1597,16 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+    filter: none !important;
+  }
+  /* Тактильная обратная связь без scroll-reveal (эффекты из §5 анализа) */
+  .mon-stat-card:active,
+  .mon-proof-card:active,
+  .mon-source-card:active,
+  .mon-case-card:active,
+  .mon-source-guide-card:active {
+    transform: scale(0.985) !important;
+    transition: transform 0.12s ease;
   }
   .mon-offer.mon-reveal .mon-offer-kicker,
   .mon-offer.mon-reveal .mon-offer-title,
@@ -1499,13 +1625,13 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   }
 }
 
-/* Волна по карточкам метрик в одной секции */
+/* Волна карточек метрик: stagger ~0.1s (анализ §4) */
 .mon-status-grid .mon-stat-card.mon-reveal:nth-child(1) { --mon-reveal-delay: 0ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(2) { --mon-reveal-delay: 85ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(3) { --mon-reveal-delay: 170ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(4) { --mon-reveal-delay: 255ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(5) { --mon-reveal-delay: 340ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(6) { --mon-reveal-delay: 425ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(2) { --mon-reveal-delay: 100ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(3) { --mon-reveal-delay: 200ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(4) { --mon-reveal-delay: 300ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(5) { --mon-reveal-delay: 400ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(6) { --mon-reveal-delay: 500ms; }
 
 /* ── COLLAPSIBLE ─────────────────────────────────────────── */
 
@@ -1844,6 +1970,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
   .mon-topbar {
     opacity: 1 !important;
     transform: none !important;
@@ -1896,12 +2025,29 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     opacity: 1 !important;
     transform: none !important;
     animation: none !important;
+    filter: none !important;
   }
   .mon-reveal {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+    filter: none !important;
     --mon-reveal-delay: 0ms !important;
+  }
+  .mon-nav-link::after {
+    transition: none !important;
+    transform: none !important;
+    opacity: 0 !important;
+  }
+  .mon-external-link::after {
+    transition: none !important;
+    transform: scaleX(1) !important;
+    opacity: 0.42 !important;
+  }
+  .mon-surface:hover {
+    transform: none !important;
+    box-shadow: var(--mon-shadow) !important;
+    border-color: rgba(255, 255, 255, 0.065) !important;
   }
   .mon-row-appear {
     animation: none !important;
