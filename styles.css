@@ -2943,8 +2943,179 @@ body.kro-hero-scrolled .kro-floating-nav {
    pointer-events: none !important;
 }
 
+/* Boot-экран при входе и нижняя панель — в духе страницы монитора */
+.kro-boot-overlay {
+   position: fixed;
+   inset: 0;
+   z-index: 10000;
+   background: var(--kro-bg);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   transition: opacity 0.75s var(--kro-ease-reveal);
+}
+.kro-boot-overlay::before {
+   content: '';
+   position: absolute;
+   inset: 0;
+   background-image: radial-gradient(circle, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+   background-size: 28px 28px;
+   pointer-events: none;
+}
+.kro-boot-overlay.kro-boot-overlay--out {
+   opacity: 0;
+   pointer-events: none;
+}
+
+@keyframes kroBootTerminalIn {
+   from {
+      opacity: 0;
+      transform: translateY(22px) scale(0.988);
+   }
+   to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+   }
+}
+
+.kro-boot-terminal {
+   font-family: var(--kro-font-mono);
+   font-size: 13px;
+   line-height: 1.85;
+   max-width: 480px;
+   width: 92%;
+   padding: 32px 36px;
+   border-radius: 12px;
+   background: #111318;
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+   position: relative;
+   z-index: 1;
+   animation: kroBootTerminalIn 0.58s var(--kro-ease-reveal) both;
+}
+
+.kro-boot-line {
+   display: block;
+   opacity: 0;
+   transform: translateY(10px);
+   transition:
+      opacity var(--kro-duration-reveal-slow) var(--kro-ease-reveal),
+      transform var(--kro-duration-reveal-slow) var(--kro-ease-reveal);
+}
+.kro-boot-line.kro-boot-line--visible {
+   opacity: 1;
+   transform: translateY(0);
+}
+.kro-boot-line--dim {
+   color: rgba(255, 255, 255, 0.34);
+}
+.kro-boot-line--info {
+   color: var(--kro-accent);
+   font-weight: 600;
+}
+.kro-boot-line--ok {
+   color: #22c55e;
+   font-weight: 600;
+}
+
+.kro-mobile-dock {
+   display: none;
+   position: fixed;
+   left: 0;
+   right: 0;
+   bottom: 0;
+   z-index: 160;
+   padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+   background: rgba(10, 12, 16, 0.94);
+   backdrop-filter: blur(16px);
+   -webkit-backdrop-filter: blur(16px);
+   border-top: 1px solid rgba(255, 255, 255, 0.08);
+   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.35);
+   justify-content: space-around;
+   align-items: stretch;
+   gap: 4px;
+}
+
+.kro-mobile-dock__item {
+   flex: 1;
+   min-width: 0;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+   gap: 6px;
+   padding: 8px 6px;
+   border-radius: 12px;
+   text-decoration: none;
+   color: rgba(255, 255, 255, 0.52);
+   font-family: var(--kro-font-body);
+   font-size: 11px;
+   font-weight: 600;
+   letter-spacing: 0.04em;
+   transition:
+      color var(--kro-duration-hover) ease,
+      background var(--kro-duration-hover) ease;
+}
+
+.kro-mobile-dock__item:hover,
+.kro-mobile-dock__item:focus-visible {
+   color: rgba(255, 255, 255, 0.92);
+   background: rgba(255, 255, 255, 0.06);
+}
+
+.kro-mobile-dock__item[aria-current='page'] {
+   color: var(--kro-accent);
+}
+
+.kro-mobile-dock__icon {
+   width: 26px;
+   height: 26px;
+   flex-shrink: 0;
+   background: currentColor;
+   opacity: 0.88;
+}
+
+.kro-mobile-dock__item[aria-current='page'] .kro-mobile-dock__icon {
+   opacity: 1;
+}
+
+.kro-mobile-dock__icon--home {
+   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 3L2 12h3v8h6v-6h4v6h6v-8h3L12 3z'/%3E%3C/svg%3E") center / 22px 22px no-repeat;
+   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 3L2 12h3v8h6v-6h4v6h6v-8h3L12 3z'/%3E%3C/svg%3E") center / 22px 22px no-repeat;
+}
+
+.kro-mobile-dock__icon--monitor {
+   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z'/%3E%3C/svg%3E") center / 20px 20px no-repeat;
+   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z'/%3E%3C/svg%3E") center / 20px 20px no-repeat;
+}
+
+.kro-mobile-dock__icon--check {
+   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E") center / 21px 21px no-repeat;
+   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E") center / 21px 21px no-repeat;
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .kro-boot-overlay {
+      display: none !important;
+   }
+   .kro-boot-terminal {
+      animation: none !important;
+   }
+   .kro-boot-line {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+   }
+}
+
 /* Мобильная главная: без горизонтального скролла, hero — шире блок, приличные отступы; прокрутка вниз не блокируется */
 @media (max-width: 768px) {
+   .kro-mobile-dock {
+      display: flex;
+   }
+   .kro-main .page {
+      padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+   }
    html,
    body.kro-main {
       overflow-x: hidden !important;

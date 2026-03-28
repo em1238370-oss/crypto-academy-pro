@@ -16,11 +16,21 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=metrics-footnote-2026">
+   <link rel="stylesheet" href="styles.css?v=kro-boot-dock-2026">
    <link rel="stylesheet" href="motion-layer.css?v=medvedevart-motion-2026b">
    <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
 </head>
 <body class="kro-main kro-main--simple" style="margin: 0; padding: 0; position: relative;">
+   <div id="kro-boot-overlay" class="kro-boot-overlay" aria-hidden="true">
+       <div class="kro-boot-terminal" id="kro-boot-lines">
+           <span class="kro-boot-line kro-boot-line--info">KRO PORTAL · Крипта без розовых очков</span>
+           <span class="kro-boot-line kro-boot-line--dim">Инициализация интерфейса…</span>
+           <span class="kro-boot-line kro-boot-line--dim">Подключение разделов и навигации…</span>
+           <span class="kro-boot-line kro-boot-line--dim">Загрузка главного экрана…</span>
+           <span class="kro-boot-line kro-boot-line--dim">Синхронизация контента…</span>
+           <span class="kro-boot-line kro-boot-line--ok">Готово. Добро пожаловать.</span>
+       </div>
+   </div>
    <div class="main-bg-effects main-bg-effects--hidden-on-hero" aria-hidden="true">
        <span class="bg-dot bg-dot-1"></span>
        <span class="bg-dot bg-dot-2"></span>
@@ -55,6 +65,20 @@
            <a href="sub-sites/crypto-coach/index.html" target="_blank">Coach</a>
            <a href="/monitor" target="_blank">Монитор</a>
        </div>
+   </nav>
+   <nav class="kro-mobile-dock" aria-label="Нижняя навигация">
+       <a href="#top" class="kro-mobile-dock__item" aria-current="page">
+           <span class="kro-mobile-dock__icon kro-mobile-dock__icon--home" aria-hidden="true"></span>
+           <span class="kro-mobile-dock__label">Главная</span>
+       </a>
+       <a href="/monitor" class="kro-mobile-dock__item" target="_blank" rel="noopener noreferrer">
+           <span class="kro-mobile-dock__icon kro-mobile-dock__icon--monitor" aria-hidden="true"></span>
+           <span class="kro-mobile-dock__label">Монитор</span>
+       </a>
+       <a href="#checkers" class="kro-mobile-dock__item">
+           <span class="kro-mobile-dock__icon kro-mobile-dock__icon--check" aria-hidden="true"></span>
+           <span class="kro-mobile-dock__label">Проверка</span>
+       </a>
    </nav>
    <nav class="kro-floating-nav" aria-label="Быстрая навигация" id="kro-floating-nav">
        <a href="#top" class="kro-floating-nav-brand">
@@ -1089,16 +1113,52 @@
                }, { passive: true });
                updateParallax();
            }
-           if (document.readyState === 'loading') {
-               document.addEventListener('DOMContentLoaded', function() {
-                   initReveal();
-                   initHeroScrolled();
-                   initHeroParallax();
+           function runKroBootSequence(onComplete) {
+               var overlay = document.getElementById('kro-boot-overlay');
+               var lines = document.querySelectorAll('#kro-boot-lines .kro-boot-line');
+               function finish() {
+                   document.body.classList.add('kro-main-ready');
+                   onComplete();
+               }
+               if (!overlay || !lines.length) {
+                   finish();
+                   return;
+               }
+               var delays = [0, 160, 300, 440, 580, 740];
+               lines.forEach(function(line, i) {
+                   setTimeout(function() {
+                       line.classList.add('kro-boot-line--visible');
+                   }, delays[i] || i * 130);
                });
-           } else {
+               setTimeout(function() {
+                   overlay.classList.add('kro-boot-overlay--out');
+                   setTimeout(function() {
+                       overlay.style.display = 'none';
+                       overlay.setAttribute('aria-hidden', 'true');
+                       finish();
+                   }, 720);
+               }, 1380);
+           }
+           function startMainExperience() {
                initReveal();
                initHeroScrolled();
                initHeroParallax();
+           }
+           if (prefersReducedMotion) {
+               document.body.classList.add('kro-main-ready');
+               var ov = document.getElementById('kro-boot-overlay');
+               if (ov) ov.style.display = 'none';
+               if (document.readyState === 'loading') {
+                   document.addEventListener('DOMContentLoaded', startMainExperience);
+               } else {
+                   startMainExperience();
+               }
+           } else if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', function() {
+                   runKroBootSequence(startMainExperience);
+               });
+           } else {
+               runKroBootSequence(startMainExperience);
            }
        })();
    </script>
