@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260329-boot-home">
+  <link rel="stylesheet" href="/monitor.css?v=20260329-boot-vivid">
 </head>
 <body class="mon-page">
 
@@ -30,6 +30,15 @@
     </div>
     <div class="mon-boot-terminal-frame">
       <div class="mon-boot-terminal-thead">Статус загрузки дашборда</div>
+      <div class="mon-boot-progress-block">
+        <div class="mon-boot-progress-meta">
+          <span class="mon-boot-progress-hint" id="mon-boot-hint">Подготовка…</span>
+          <span class="mon-boot-progress-pct" id="mon-boot-pct" aria-live="polite">0%</span>
+        </div>
+        <div class="mon-boot-progress-track" id="mon-boot-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Прогресс загрузки монитора">
+          <div class="mon-boot-progress-fill" id="mon-boot-progress-fill"></div>
+        </div>
+      </div>
       <div id="mon-boot-lines" class="mon-boot-terminal-rows">
         <div class="mon-boot-line info"><span class="mon-boot-line-num">01</span><span class="mon-boot-line-txt">KRO MONITOR · Крипта без розовых очков</span></div>
         <div class="mon-boot-line dim"><span class="mon-boot-line-num">02</span><span class="mon-boot-line-txt">Инициализация интерфейса…</span></div>
@@ -1251,19 +1260,58 @@
 
   // ── BOOT SEQUENCE ─────────────────────────────────────────
 
+  var BOOT_HINTS = [
+    'Старт…',
+    'Инициализация…',
+    'Соединение…',
+    'Таблицы…',
+    'Мониторинг…',
+    'Метаданные…',
+    'Готово'
+  ];
+
+  function setBootProgressUi(step, total) {
+    var pct = total ? Math.min(100, Math.round((step / total) * 100)) : 0;
+    var fill = document.getElementById('mon-boot-progress-fill');
+    var lab = document.getElementById('mon-boot-pct');
+    var bar = document.getElementById('mon-boot-progress-bar');
+    var hint = document.getElementById('mon-boot-hint');
+    if (fill) fill.style.width = pct + '%';
+    if (lab) lab.textContent = pct + '%';
+    if (bar) bar.setAttribute('aria-valuenow', String(pct));
+    if (hint) {
+      var hi = Math.max(0, Math.min(step, BOOT_HINTS.length - 1));
+      hint.textContent = BOOT_HINTS[hi];
+    }
+  }
+
   function runBootSequence(onComplete) {
     var overlay = document.getElementById('mon-boot-overlay');
-    var lines   = document.querySelectorAll('#mon-boot-lines .mon-boot-line');
+    var lines = document.querySelectorAll('#mon-boot-lines .mon-boot-line');
     function finishBoot() {
       document.body.classList.add('mon-page-ready');
       onComplete();
     }
     if (!overlay || !lines.length) { finishBoot(); return; }
 
+    var n = lines.length;
+    var prevActive = null;
+    setBootProgressUi(0, n);
+
     var delays = [0, 120, 230, 340, 450, 560, 670];
     lines.forEach(function(line, i) {
-      setTimeout(function() { line.classList.add('visible'); }, delays[i] != null ? delays[i] : i * 115);
+      setTimeout(function() {
+        if (prevActive) prevActive.classList.remove('mon-boot-line--active');
+        line.classList.add('visible', 'mon-boot-line--active');
+        prevActive = line;
+        setBootProgressUi(i + 1, n);
+      }, delays[i] != null ? delays[i] : i * 115);
     });
+
+    setTimeout(function() {
+      if (prevActive) prevActive.classList.remove('mon-boot-line--active');
+      setBootProgressUi(n, n);
+    }, 720);
 
     setTimeout(function() {
       overlay.classList.add('fade-out');

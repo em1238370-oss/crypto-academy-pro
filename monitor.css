@@ -1560,6 +1560,25 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
   background-size: 28px 28px;
 }
+#mon-boot-overlay.mon-boot-overlay::after {
+  content: '';
+  position: absolute;
+  inset: -15%;
+  background: radial-gradient(ellipse 55% 48% at 50% 42%, rgba(255, 68, 68, 0.12), transparent 72%);
+  animation: monBootAmbient 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes monBootAmbient {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 0.92;
+    transform: scale(1.07) translate3d(0, 0.5%, 0);
+  }
+}
 #mon-boot-overlay.fade-out { opacity: 0; pointer-events: none; }
 
 @keyframes monBootTerminalIn {
@@ -1580,10 +1599,32 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border: 1px solid rgba(255,255,255,0.1);
   box-shadow:
     0 24px 80px rgba(0,0,0,0.55),
-    0 0 0 1px rgba(255,255,255,0.04) inset;
+    0 0 0 1px rgba(255,255,255,0.04) inset,
+    0 0 48px rgba(255, 68, 68, 0.06);
   position: relative;
   z-index: 1;
   animation: monBootTerminalIn 0.58s var(--mon-ease-soft) both;
+}
+.mon-boot-terminal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 3px,
+    rgba(0, 0, 0, 0.06) 3px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+  pointer-events: none;
+  opacity: 0.4;
+  animation: monBootScanDrift 5.2s linear infinite;
+}
+@keyframes monBootScanDrift {
+  from { transform: translateY(-8%); }
+  to { transform: translateY(8%); }
 }
 
 .mon-boot-terminal-cap {
@@ -1593,6 +1634,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   padding: 12px 16px;
   background: rgba(0,0,0,0.35);
   border-bottom: 1px solid rgba(255,255,255,0.08);
+  position: relative;
+  z-index: 1;
 }
 .mon-boot-terminal-lights {
   display: inline-flex;
@@ -1606,9 +1649,29 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-radius: 50%;
   box-shadow: 0 0 0 1px rgba(0,0,0,0.35) inset;
 }
-.mon-boot-light--r { background: #ff5f57; }
-.mon-boot-light--y { background: #febc2e; }
-.mon-boot-light--g { background: #28c840; }
+.mon-boot-light--r {
+  background: #ff5f57;
+  animation: monBootLed 2.3s ease-in-out infinite;
+}
+.mon-boot-light--y {
+  background: #febc2e;
+  animation: monBootLed 2.3s ease-in-out 0.22s infinite;
+}
+.mon-boot-light--g {
+  background: #28c840;
+  animation: monBootLed 2.3s ease-in-out 0.44s infinite;
+}
+@keyframes monBootLed {
+  0%,
+  100% {
+    filter: brightness(1);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35) inset;
+  }
+  50% {
+    filter: brightness(1.22);
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.28);
+  }
+}
 .mon-boot-terminal-title {
   flex: 1;
   font-family: var(--mon-font-display);
@@ -1624,6 +1687,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-boot-terminal-frame {
   padding: 0;
   background: #111318;
+  position: relative;
+  z-index: 1;
 }
 .mon-boot-terminal-thead {
   font-family: var(--mon-font);
@@ -1634,10 +1699,64 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   color: rgba(255,255,255,0.35);
   padding: 12px 16px 10px;
   border-bottom: 1px solid rgba(255,255,255,0.07);
-  background: rgba(255,255,255,0.02);
+  background: linear-gradient(105deg, rgba(255, 68, 68, 0.07), rgba(255, 255, 255, 0.02) 42%);
+  background-size: 200% 100%;
+  animation: monBootTheadShimmer 2.8s ease-in-out infinite;
+}
+@keyframes monBootTheadShimmer {
+  0%,
+  100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.mon-boot-progress-block {
+  padding: 10px 16px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.22);
+}
+.mon-boot-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.mon-boot-progress-hint {
+  font-family: var(--mon-font);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+.mon-boot-progress-pct {
+  font-family: var(--mon-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mon-red);
+  font-variant-numeric: tabular-nums;
+  min-width: 2.75em;
+  text-align: right;
+  text-shadow: 0 0 20px rgba(255, 68, 68, 0.35);
+}
+.mon-boot-progress-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.mon-boot-progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7a1f1f, var(--mon-red) 38%, #ff7a7a);
+  box-shadow: 0 0 18px rgba(255, 68, 68, 0.5);
+  transition: width 0.34s var(--mon-ease-soft);
 }
 .mon-boot-terminal-rows {
   padding: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .mon-boot-line {
@@ -1677,6 +1796,53 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-boot-line.ok .mon-boot-line-txt { color: var(--mon-green); font-weight: 600; }
 .mon-boot-line.ok .mon-boot-line-num { color: rgba(34,197,94,0.45); }
 
+.mon-boot-line--active {
+  background: linear-gradient(90deg, rgba(255, 68, 68, 0.16), transparent 58%);
+  box-shadow: inset 3px 0 0 var(--mon-red);
+}
+.mon-boot-line.visible.mon-boot-line--active {
+  animation: monBootRowPulse 0.52s var(--mon-ease-soft) both;
+}
+@keyframes monBootRowPulse {
+  from {
+    background: linear-gradient(90deg, rgba(255, 68, 68, 0.3), transparent 62%);
+    box-shadow: inset 4px 0 0 var(--mon-red), 0 0 24px rgba(255, 68, 68, 0.12);
+  }
+  to {
+    background: linear-gradient(90deg, rgba(255, 68, 68, 0.14), transparent 58%);
+    box-shadow: inset 3px 0 0 var(--mon-red);
+  }
+}
+.mon-boot-line--active .mon-boot-line-txt {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.mon-boot-line--active .mon-boot-line-txt::after {
+  content: '▋';
+  display: inline-block;
+  margin-left: 1px;
+  color: var(--mon-red);
+  font-weight: 400;
+  animation: monBootCaret 0.76s steps(1, end) infinite;
+}
+.mon-boot-line.ok.mon-boot-line--active .mon-boot-line-txt::after {
+  color: var(--mon-green);
+}
+@keyframes monBootCaret {
+  0%,
+  49% { opacity: 1; }
+  50%,
+  100% { opacity: 0; }
+}
+
+@media (min-width: 641px) {
+  .mon-boot-terminal:hover .mon-boot-progress-fill {
+    filter: saturate(1.12) brightness(1.03);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mon-topbar {
     opacity: 1 !important;
@@ -1694,10 +1860,33 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     transform: none !important;
   }
   .mon-boot-terminal { animation: none !important; }
+  .mon-boot-terminal::after,
+  #mon-boot-overlay.mon-boot-overlay::after,
+  .mon-boot-terminal-thead {
+    animation: none !important;
+  }
+  .mon-boot-light--r,
+  .mon-boot-light--y,
+  .mon-boot-light--g {
+    animation: none !important;
+    filter: none !important;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35) inset !important;
+  }
   .mon-boot-line {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+  }
+  .mon-boot-line.visible.mon-boot-line--active {
+    animation: none !important;
+  }
+  .mon-boot-line--active .mon-boot-line-txt::after {
+    content: none !important;
+    animation: none !important;
+  }
+  .mon-boot-progress-fill {
+    transition: none !important;
+    width: 100% !important;
   }
   .mon-offer.mon-reveal .mon-offer-kicker,
   .mon-offer.mon-reveal .mon-offer-title,
@@ -1763,9 +1952,36 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   .mon-main-nav-links { width: 100%; }
   .mon-refresh-countdown, .mon-nav-link, .mon-refresh-btn { width: 100%; justify-content: center; text-align: center; }
   .mon-nav-link--home { justify-content: center; }
-  .mon-boot-terminal { max-width: none; width: 94%; }
-  .mon-boot-terminal-title { font-size: 10px; padding-right: 0; letter-spacing: 0.04em; }
-  .mon-boot-line { grid-template-columns: 26px minmax(0, 1fr); gap: 8px; padding: 9px 12px; }
+  #mon-boot-overlay.mon-boot-overlay {
+    align-items: flex-end;
+    justify-content: center;
+    padding: max(20px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
+      max(32px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  }
+  #mon-boot-overlay.mon-boot-overlay::after {
+    animation-duration: 2.6s;
+    opacity: 0.65;
+  }
+  .mon-boot-terminal {
+    max-width: none;
+    width: 100%;
+    border-radius: 18px 18px 14px 14px;
+    box-shadow:
+      0 -12px 40px rgba(255, 68, 68, 0.1),
+      0 32px 64px rgba(0, 0, 0, 0.58),
+      0 0 0 1px rgba(255, 255, 255, 0.07) inset;
+  }
+  .mon-boot-terminal-cap { padding: 14px 14px 12px; }
+  .mon-boot-terminal-title {
+    font-size: 10px;
+    padding-right: 0;
+    letter-spacing: 0.05em;
+  }
+  .mon-boot-progress-block { padding: 12px 14px 14px; }
+  .mon-boot-progress-track { height: 6px; }
+  .mon-boot-progress-hint { font-size: 10px; letter-spacing: 0.06em; }
+  .mon-boot-progress-pct { font-size: 13px; }
+  .mon-boot-line { grid-template-columns: 26px minmax(0, 1fr); gap: 8px; padding: 11px 14px; }
   .mon-boot-line-txt { font-size: 12px; }
   .mon-search-input { width: 100%; }
   .mon-table-search { flex-direction: column; align-items: stretch; }
