@@ -4442,6 +4442,16 @@ def main():
             'count': int((web_status_map.get('vklader.com') or {}).get('count', 0) or 0),
         },
         {
+            'name': 'telltrue.net',
+            'status': (web_status_map.get('telltrue.net') or {}).get('status', 'unavailable'),
+            'count': int((web_status_map.get('telltrue.net') or {}).get('count', 0) or 0),
+        },
+        {
+            'name': 'forteck.net',
+            'status': (web_status_map.get('forteck.net') or {}).get('status', 'unavailable'),
+            'count': int((web_status_map.get('forteck.net') or {}).get('count', 0) or 0),
+        },
+        {
             'name': 'форма жалоб',
             'status': 'found' if form_cycle_channels else 'not_found',
             'count': len(form_cycle_channels),

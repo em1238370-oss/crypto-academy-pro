@@ -8,6 +8,8 @@ KRO Web Scraper: собирает упоминания скам-каналов �
   - brokers-check.ru  — доп. источник жалоб, если сайт доступен и содержит крипто-каналы
   - cryptorussia.ru   — разборы крипто-каналов и трейдеров с отзывами и схемами обмана
   - vklader.com       — чёрный список Telegram-каналов и пользовательские проверки
+  - telltrue.net      — blacklist-telegram (формат как у vklader)
+  - forteck.net       — blacklist-telegram (формат как у vklader)
 
 Каждая найденная запись: {channel, sum_rub, description, source_url, source}
 Возвращаемые данные пишутся в лист reports Google Sheets с пометкой source='web'.
@@ -106,7 +108,7 @@ _CHANNEL_NOISE = frozenset({
     'instagram', 'facebook', 'twitter', 'youtube', 'tiktok', 'vkontakte',
     # Anti-scam watchdog channels — should never be classified as scam
     'cryptoscammsup', 'crypt0scamm', 'publicryptoscamm', 'scamrsalert',
-    'vklader',
+    'vklader', 'telltrue', 'forteck',
     # Generic words sometimes parsed as @mentions
     'support', 'admin', 'help', 'info', 'news', 'official', 'channel',
     'contact', 'manager', 'operator', 'bot', 'feedback',
@@ -503,8 +505,8 @@ def _build_findings_from_page(page, url, source_name, max_channels=3):
     return findings
 
 
-def _extract_vklader_article_links(html, base_url, limit=25):
-    """Extract relevant article links from Vklader pages."""
+def _extract_blacklist_site_article_links(html, base_url, limit=25):
+    """Extract relevant article links from blacklist-style sites (same layout as vklader)."""
     links = []
     seen = set()
     skip_paths = (
@@ -526,10 +528,11 @@ def _extract_vklader_article_links(html, base_url, limit=25):
     return links
 
 
-def _build_vklader_blacklist_findings(page, url):
+def _build_blacklist_page_findings(page, url, source_field, noise_handles=()):
     """
-    Parse inline blacklist entries from Vklader blacklist page itself.
+    Parse inline blacklist entries from a blacklist-telegram style page (vklader / telltrue / forteck).
     Keeps source_url on the blacklist page for direct verification.
+    noise_handles: site @handles to skip in promo lines (e.g. 'vklader', 'telltrue').
     """
     try:
         from bs4 import BeautifulSoup
@@ -556,7 +559,12 @@ def _build_vklader_blacklist_findings(page, url):
         clean_lower = clean.lower()
         if len(clean) < 20:
             continue
-        if '@vklader' in clean_lower:
+        skip_noise = False
+        for h in noise_handles or ():
+            if h and ('@' + str(h).lower()) in clean_lower:
+                skip_noise = True
+                break
+        if skip_noise:
             continue
         if 'подписывайтесь' in clean_lower or 'финсайд' in clean_lower:
             continue
@@ -577,9 +585,23 @@ def _build_vklader_blacklist_findings(page, url):
                 'sum_rub': sum_rub,
                 'description': evidence[:500],
                 'source_url': url,
-                'source': 'vklader',
+                'source': source_field,
             })
     return results
+
+
+def _dedupe_findings_channel_per_url(results):
+    """Deduplicate findings by (channel_lower, source_url)."""
+    dedup = {}
+    for r in results:
+        source_url = (r.get('source_url') or '').strip()
+        channel = (r.get('channel') or '').strip().lower()
+        if not source_url or not channel:
+            continue
+        key = (channel, source_url)
+        if key not in dedup:
+            dedup[key] = r
+    return list(dedup.values())
 
 
 # ---------------------------------------------------------------------------
@@ -892,35 +914,72 @@ def scrape_vklader():
         return results
 
     if blacklist_html:
-        results.extend(_build_vklader_blacklist_findings(blacklist_html, _VKLADER_BLACKLIST_URL))
-        for url in _extract_vklader_article_links(blacklist_html, _VKLADER_BASE, limit=20):
+        results.extend(_build_blacklist_page_findings(
+            blacklist_html, _VKLADER_BLACKLIST_URL, 'vklader', noise_handles=('vklader',)
+        ))
+        for url in _extract_blacklist_site_article_links(blacklist_html, _VKLADER_BASE, limit=20):
             page = _fetch(url)
             if not page:
                 continue
             results.extend(_build_findings_from_page(page, url, 'vklader', max_channels=3))
 
     if proverka_html:
-        for url in _extract_vklader_article_links(proverka_html, _VKLADER_BASE, limit=12):
+        for url in _extract_blacklist_site_article_links(proverka_html, _VKLADER_BASE, limit=12):
             page = _fetch(url)
             if not page:
                 continue
             results.extend(_build_findings_from_page(page, url, 'vklader', max_channels=3))
 
-    dedup = {}
-    for r in results:
-        source_url = (r.get('source_url') or '').strip()
-        channel = (r.get('channel') or '').strip().lower()
-        if not source_url or not channel:
-            continue
-        key = (channel, source_url)
-        if key not in dedup:
-            dedup[key] = r
-
-    deduped = list(dedup.values())
+    deduped = _dedupe_findings_channel_per_url(results)
     unique_channels = len({r.get('channel') for r in deduped if r.get('channel')})
     _set_source_status('vklader.com', 'found' if unique_channels else 'not_found', unique_channels)
     logger.info('vklader.com: found %d channel mentions', len(deduped))
     return deduped
+
+
+# ---------------------------------------------------------------------------
+# Source 6–7: telltrue.net / forteck.net (blacklist-telegram, same layout as vklader)
+# ---------------------------------------------------------------------------
+
+_TELLTRUE_BASE = 'https://telltrue.net'
+_TELLTRUE_BLACKLIST_URL = 'https://telltrue.net/blacklist-telegram/'
+_FORTECK_BASE = 'https://forteck.net'
+_FORTECK_BLACKLIST_URL = 'https://forteck.net/blacklist-telegram/'
+
+
+def _scrape_blacklist_telegram_portal(base_url, blacklist_url, status_name, source_tag, noise_handles, article_limit=20):
+    """Single blacklist-telegram hub + linked articles (vklader-style)."""
+    results = []
+    html = _fetch(blacklist_url)
+    if not html:
+        _set_source_status(status_name, 'unavailable', 0)
+        logger.info('%s: blacklist page unavailable', status_name)
+        return results
+    results.extend(_build_blacklist_page_findings(html, blacklist_url, source_tag, noise_handles=noise_handles))
+    for url in _extract_blacklist_site_article_links(html, base_url, limit=article_limit):
+        page = _fetch(url)
+        if not page:
+            continue
+        results.extend(_build_findings_from_page(page, url, source_tag, max_channels=3))
+    deduped = _dedupe_findings_channel_per_url(results)
+    unique_channels = len({r.get('channel') for r in deduped if r.get('channel')})
+    _set_source_status(status_name, 'found' if unique_channels else 'not_found', unique_channels)
+    logger.info('%s: found %d channel mentions', status_name, len(deduped))
+    return deduped
+
+
+def scrape_telltrue():
+    """telltrue.net/blacklist-telegram — тот же формат, что у vklader."""
+    return _scrape_blacklist_telegram_portal(
+        _TELLTRUE_BASE, _TELLTRUE_BLACKLIST_URL, 'telltrue.net', 'telltrue', ('telltrue',), article_limit=20
+    )
+
+
+def scrape_forteck():
+    """forteck.net/blacklist-telegram — тот же формат, что у vklader."""
+    return _scrape_blacklist_telegram_portal(
+        _FORTECK_BASE, _FORTECK_BLACKLIST_URL, 'forteck.net', 'forteck', ('forteck',), article_limit=20
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -940,6 +999,8 @@ def scrape_all():
     results.extend(scrape_fin_obzor())
     results.extend(scrape_brokers_check())
     results.extend(scrape_vklader())
+    results.extend(scrape_telltrue())
+    results.extend(scrape_forteck())
 
     # Additional enrichment: search internet reviews for usernames already found
     # in primary sources. This makes it easy to expand evidence without changing
