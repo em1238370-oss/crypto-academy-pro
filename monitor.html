@@ -883,6 +883,22 @@
         'В выборке постов встречается: ' + joined
       ]));
     }
+    if (d.source === 'sheet_only') return out;
+    var dp = d.deep_profile;
+    if (dp && typeof dp === 'object') {
+      var fomo = dp.fomo_style_posts || 0;
+      if (fomo > 0) {
+        out.push('В выборке постов: ' + fomo + ' с маркерами давления / FOMO (см. «Контент-анализ»).');
+      }
+      var pl = dp.posts_with_links || 0;
+      if (pl > 2) {
+        out.push('Постов со ссылками в выборке: ' + pl + ' — проверьте домены в колонке контент-анализа.');
+      }
+    }
+    var llm = d.narrative_llm;
+    if (llm && llm.risk_tags && llm.risk_tags.length) {
+      out.push('Теги по LLM-резюме постов: ' + llm.risk_tags.slice(0, 8).join(', ') + '.');
+    }
     return out;
   }
 
@@ -1024,6 +1040,72 @@
     if (d.last_post_at) {
       parts.push('<span class="mon-ca-muted">пост: ' + esc(fmtDateShort(d.last_post_at)) + '</span>');
     }
+
+    var dp = d.deep_profile;
+    if (dp && typeof dp === 'object') {
+      var dlines = [];
+      if (dp.text_posts != null) dlines.push('Постов с текстом: ' + dp.text_posts);
+      if (dp.avg_chars) dlines.push('Средняя длина текста: ~' + dp.avg_chars + ' симв.');
+      if (dp.median_chars) dlines.push('Медиана длины: ~' + dp.median_chars);
+      if (dp.posts_with_links != null && dp.posts_with_links > 0) {
+        dlines.push('Постов со ссылками: ' + dp.posts_with_links);
+      }
+      if (dp.fomo_style_posts != null && dp.fomo_style_posts > 0) {
+        dlines.push('<span class="mon-ca-warn">Постов с маркерами давления / FOMO: ' + dp.fomo_style_posts + '</span>');
+      }
+      if (dp.crypto_infra_posts != null && dp.crypto_infra_posts > 0) {
+        dlines.push('Постов с биржами / USDT и т.п.: ' + dp.crypto_infra_posts);
+      }
+      if (dp.date_span_days != null && dp.posts_per_day_estimate != null) {
+        dlines.push('За ~' + dp.date_span_days + ' дн. выборки: ~' + dp.posts_per_day_estimate + ' постов/день');
+      }
+      var hosts = dp.top_link_hosts || [];
+      if (hosts.length) {
+        var hstr = hosts.slice(0, 6).map(function(h) {
+          return esc(String(h.host || '')) + ' ×' + (h.count || 0);
+        }).join(', ');
+        dlines.push('Домены в ссылках: ' + hstr);
+      }
+      var reps = dp.repeated_snippets || [];
+      for (var ri = 0; ri < Math.min(2, reps.length); ri++) {
+        var rep = reps[ri];
+        if (rep && rep.snippet && rep.count > 1) {
+          var sn = String(rep.snippet);
+          dlines.push('<span class="mon-ca-muted">Повтор ×' + rep.count + ': «' + esc(sn.slice(0, 88)) + (sn.length > 88 ? '…' : '') + '»</span>');
+        }
+      }
+      if (dlines.length) {
+        parts.push('<div class="mon-ca-deep">' + dlines.join('<br>') + '</div>');
+      }
+    }
+
+    var samples = d.content_samples || [];
+    if (samples.length) {
+      parts.push('<div class="mon-ca-samples-h mon-ca-muted">Выдержки из ленты (оригинальный текст)</div>');
+      for (var si = 0; si < samples.length; si++) {
+        var s = samples[si];
+        var link = s.post_url
+          ? '<a class="mon-ca-sample-link" href="' + esc(s.post_url) + '" target="_blank" rel="noopener">пост</a> '
+          : '';
+        parts.push('<div class="mon-ca-sample">' + link + '«' + esc(s.excerpt || '') + '»</div>');
+      }
+    }
+
+    var llm = d.narrative_llm;
+    if (llm && typeof llm === 'object') {
+      if (llm.note) parts.push('<div class="mon-ca-llm-note mon-ca-muted">' + esc(llm.note) + '</div>');
+      var lb = llm.bullets || [];
+      if (lb.length) {
+        parts.push('<ul class="mon-ca-llm-list">' + lb.map(function(b) {
+          return '<li>' + esc(b) + '</li>';
+        }).join('') + '</ul>');
+      }
+      if (llm.tone) parts.push('<span class="mon-ca-muted">Тон (LLM): ' + esc(llm.tone) + '</span>');
+      var rt = llm.risk_tags || [];
+      if (rt.length) parts.push('<span class="mon-ca-muted">Теги (LLM): ' + esc(rt.join(', ')) + '</span>');
+      if (llm.model) parts.push('<span class="mon-ca-muted mon-ca-llm-model">модель: ' + esc(llm.model) + '</span>');
+    }
+
     if (!parts.length) return '<span class="mon-ca-muted">данных мало</span>';
     return '<div class="mon-ca">' + parts.join('<br>') + '</div>';
   }

@@ -487,7 +487,9 @@ TELEGRAM_API_ID = int(os.environ.get('TELEGRAM_API_ID') or 0)
 TELEGRAM_API_HASH = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
 TELEGRAM_SESSION_NAME = os.environ.get('TELEGRAM_SESSION_NAME', 'kro_worker')
 KRO_SOURCE_CHANNELS = [x.strip() for x in (os.environ.get('KRO_SOURCE_CHANNELS') or '').split(',') if x.strip()]
-# Контент-анализ каналов: KRO_CONTENT_POSTS_LIMIT (25–200, по умолчанию 90); дозаполнение scam_base — KRO_SCAM_BASE_ENRICH_*.
+# Контент-анализ: KRO_CONTENT_POSTS_LIMIT (25–200, по умолчанию 90); дозаполнение scam_base — KRO_SCAM_BASE_ENRICH_*.
+# Углублённое резюме (LLM, опционально): KRO_CONTENT_LLM_ENABLE=1, KRO_CONTENT_LLM_KEY или OPENAI_API_KEY,
+# KRO_CONTENT_LLM_URL / KRO_CONTENT_LLM_MODEL / KRO_CONTENT_LLM_MAX_INPUT_CHARS; отключить JSON mode: KRO_CONTENT_LLM_JSON_OBJECT=0.
 
 RE_SUM = re.compile(r'(?:потерял|украли|сумм|₽|руб)\s*[:\s]*(\d[\d\s]{2,12})', re.I)
 RE_SUM_K = re.compile(r'\b(\d+)\s*[кk]\s*[₽р]', re.I)
@@ -630,6 +632,16 @@ CONTENT_NETWORK_PATTERNS = (
     'подписывайтесь', 'переходите', 'наш второй канал', 'наш новый канал',
     'партнер', 'партнёр', 'реклама', 'promocode', 'промокод', 'bonus',
     'регистрация', 'register', 'ref', 'реф'
+)
+# Доп. паттерны для «глубокого» профиля контента (не дублируют CONTENT_RISK_KEYWORDS в подсчёте keywords)
+FOMO_URGENCY_PATTERNS = (
+    'последний шанс', 'успей', 'ограничен', 'только сегодня', 'не упусти',
+    'гарантированн', 'без вложений', 'пассивн', 'доход без', 'x100', '1000%',
+    'скидк', 'бесплатн доступ', 'закрыт набор',
+)
+CRYPTO_INFRA_PATTERNS = (
+    'usdt', 'usdc', 'btc', 'eth', 'bnb', 'binance', 'bybit', 'okx', 'kucoin',
+    'фьючерс', 'маржа', 'маржин', 'спот', 'депозит на', 'вывод на кошел',
 )
 
 
@@ -1456,6 +1468,233 @@ def _summarize_content_messages(messages, channel_ref='', max_posts=None):
     return analyzed
 
 
+def _median_int(vals):
+    if not vals:
+        return 0
+    s = sorted(vals)
+    n = len(s)
+    mid = n // 2
+    if n % 2:
+        return s[mid]
+    return (s[mid - 1] + s[mid]) // 2
+
+
+def _extract_url_hosts(text):
+    hosts = []
+    for m in re.finditer(r'https?://([^/\s?#"\'<>]+)', text or '', re.I):
+        h = m.group(1).lower().strip('.')
+        if h and len(h) < 200:
+            hosts.append(h)
+    return hosts
+
+
+def _heuristic_risk_score(lower):
+    s = 0
+    for _key, variants in CONTENT_RISK_KEYWORDS.items():
+        s += sum(lower.count(v) for v in variants)
+    if any(p in lower for p in FOMO_URGENCY_PATTERNS):
+        s += 3
+    if any(p in lower for p in CRYPTO_INFRA_PATTERNS):
+        s += 1
+    return s
+
+
+def _compute_deep_content_profile(messages, cap):
+    slice_msgs = messages[:cap] if cap else messages
+    lengths = []
+    host_counts = defaultdict(int)
+    text_post_count = 0
+    posts_with_links = 0
+    fomo_posts = 0
+    infra_posts = 0
+    prefix_counts = defaultdict(int)
+    dates = []
+
+    for item in slice_msgs:
+        text = _normalize_message_text(item.get('text') or '')
+        dt = item.get('date')
+        if dt is not None:
+            dates.append(dt)
+        if not text:
+            continue
+        text_post_count += 1
+        lengths.append(len(text))
+        lower = text.lower()
+        if 'http://' in lower or 'https://' in lower or 't.me/' in lower:
+            posts_with_links += 1
+        for h in _extract_url_hosts(text):
+            host_counts[h] += 1
+        if any(p in lower for p in FOMO_URGENCY_PATTERNS):
+            fomo_posts += 1
+        if any(p in lower for p in CRYPTO_INFRA_PATTERNS):
+            infra_posts += 1
+        if len(lower) >= 40:
+            key = lower[: min(120, len(lower))]
+            prefix_counts[key] += 1
+
+    span_days = None
+    posts_per_day = None
+    if len(dates) >= 2:
+        delta = max(dates) - min(dates)
+        span_days = max(1, delta.days)
+        posts_per_day = round(len(slice_msgs) / float(span_days), 2)
+
+    repeats = sorted(
+        [{'count': c, 'snippet': k[:140]} for k, c in prefix_counts.items() if c >= 2],
+        key=lambda x: -x['count'],
+    )[:5]
+
+    top_hosts = sorted(host_counts.items(), key=lambda x: -x[1])[:12]
+
+    return {
+        'text_posts': text_post_count,
+        'avg_chars': int(round(sum(lengths) / len(lengths))) if lengths else 0,
+        'median_chars': _median_int(lengths),
+        'posts_with_links': posts_with_links,
+        'top_link_hosts': [{'host': h, 'count': c} for h, c in top_hosts],
+        'fomo_style_posts': fomo_posts,
+        'crypto_infra_posts': infra_posts,
+        'date_span_days': span_days,
+        'posts_per_day_estimate': posts_per_day,
+        'repeated_snippets': repeats,
+    }
+
+
+def _pick_content_samples(slice_msgs, max_samples=5, excerpt_len=220):
+    scored = []
+    for item in slice_msgs:
+        text = _normalize_message_text(item.get('text') or '')
+        if len(text) < 35:
+            continue
+        lower = text.lower()
+        scored.append((_heuristic_risk_score(lower), len(text), text, item.get('url') or ''))
+    scored.sort(key=lambda x: (-x[0], -x[1]))
+    out = []
+    seen_prefix = set()
+    for _s, _ln, text, url in scored:
+        pref = text[:60].lower()
+        if pref in seen_prefix:
+            continue
+        seen_prefix.add(pref)
+        ex = text[:excerpt_len] + ('…' if len(text) > excerpt_len else '')
+        out.append({'excerpt': ex, 'post_url': url})
+        if len(out) >= max_samples:
+            break
+    return out
+
+
+def _sanitize_llm_narrative(obj):
+    if not isinstance(obj, dict):
+        return None
+    bullets = obj.get('bullets') or obj.get('summary') or []
+    if isinstance(bullets, str):
+        bullets = [bullets]
+    bullets = [str(b).strip()[:400] for b in bullets if str(b).strip()][:5]
+    tags = obj.get('risk_tags') or []
+    if not isinstance(tags, list):
+        tags = []
+    tags = [str(t).strip()[:80] for t in tags if str(t).strip()][:12]
+    tone = str(obj.get('tone') or '').strip()[:120]
+    return {'bullets': bullets, 'risk_tags': tags, 'tone': tone}
+
+
+def _llm_content_narrative_sync(channel_ref, messages, cap):
+    """Опционально: резюме по постам через OpenAI-совместимый chat completions API."""
+    if (os.environ.get('KRO_CONTENT_LLM_DISABLE') or '').strip().lower() in ('1', 'true', 'yes'):
+        return None
+    if (os.environ.get('KRO_CONTENT_LLM_ENABLE') or '').strip().lower() not in ('1', 'true', 'yes'):
+        return None
+    key = (os.environ.get('KRO_CONTENT_LLM_KEY') or os.environ.get('OPENAI_API_KEY') or '').strip()
+    if not key:
+        return None
+    try:
+        import requests
+    except ImportError:
+        print('LLM narrative: requests not installed', file=sys.stderr)
+        return None
+
+    try:
+        max_in = int(os.environ.get('KRO_CONTENT_LLM_MAX_INPUT_CHARS', '12000') or '12000')
+    except ValueError:
+        max_in = 12000
+    max_in = max(1500, min(max_in, 48000))
+
+    chunks = []
+    total = 0
+    for item in messages[:cap]:
+        t = _normalize_message_text(item.get('text') or '')
+        if len(t) < 15:
+            continue
+        piece = t[:650]
+        if total + len(piece) > max_in:
+            break
+        chunks.append(piece)
+        total += len(piece) + 8
+    corpus = '\n---\n'.join(chunks)
+    if len(corpus) < 100:
+        return None
+
+    model = (os.environ.get('KRO_CONTENT_LLM_MODEL') or 'gpt-4o-mini').strip()
+    url = (os.environ.get('KRO_CONTENT_LLM_URL') or 'https://api.openai.com/v1/chat/completions').strip()
+
+    system = (
+        'Ты аналитик мониторинга Telegram-каналов (мошенничество, агрессивный маркетинг, крипто-сигналы). '
+        'Ответь ТОЛЬКО JSON объекта без markdown. Поля: '
+        'bullets — массив 2–5 коротких строк на русском (только следствия из текста постов); '
+        'risk_tags — массив кратких тегов; '
+        'tone — одна строка (например: нейтральный / давление_на_аудиторию / сигналы_и_плечо). '
+        'Не выдумывай каналы, суммы и факты, которых нет в тексте.'
+    )
+    user_body = 'Канал (идентификатор): %s\n\nФрагменты постов:\n%s' % ((channel_ref or '')[:160], corpus)
+
+    body = {
+        'model': model,
+        'temperature': 0.15,
+        'max_tokens': 700,
+        'messages': [
+            {'role': 'system', 'content': system},
+            {'role': 'user', 'content': user_body},
+        ],
+    }
+    if (os.environ.get('KRO_CONTENT_LLM_JSON_OBJECT') or '1').strip().lower() not in ('0', 'false', 'no'):
+        body['response_format'] = {'type': 'json_object'}
+
+    headers = {'Authorization': 'Bearer %s' % key, 'Content-Type': 'application/json'}
+    try:
+        resp = requests.post(url, headers=headers, json=body, timeout=90)
+        resp.raise_for_status()
+        payload = resp.json()
+        content = (payload.get('choices') or [{}])[0].get('message', {}).get('content') or ''
+        content = content.strip()
+        if content.startswith('```'):
+            content = re.sub(r'^```(?:json)?\s*', '', content, flags=re.I)
+            content = re.sub(r'\s*```\s*$', '', content)
+        parsed = json.loads(content)
+    except Exception as e:
+        print('LLM content narrative failed for %s: %s' % (channel_ref, e), file=sys.stderr)
+        return None
+
+    clean = _sanitize_llm_narrative(parsed)
+    if not clean or (not clean['bullets'] and not clean['risk_tags'] and not clean['tone']):
+        return None
+    clean['model'] = model
+    clean['note'] = 'Краткое резюме по фрагментам постов (LLM); не заменяет проверку человеком.'
+    return clean
+
+
+def _attach_deep_content_layer(analyzed, messages, channel_ref, cap):
+    """Расширить результат _summarize_content_messages для мониторинга и таблицы."""
+    if not isinstance(analyzed, dict) or not messages:
+        return analyzed
+    try:
+        cap_i = int(cap)
+    except (TypeError, ValueError):
+        cap_i = _content_posts_limit()
+    analyzed['deep_profile'] = _compute_deep_content_profile(messages, cap_i)
+    analyzed['content_samples'] = _pick_content_samples(messages[:cap_i], max_samples=5, excerpt_len=200)
+    return analyzed
+
+
 def _parse_scam_base_detected_utc(detected_raw):
     if not detected_raw:
         return None
@@ -1666,6 +1905,18 @@ async def analyze_channel_content(username, client=None, link=None):
     analysis = _summarize_content_messages(messages, channel_ref=primary_ref, max_posts=lim)
     if isinstance(analysis, dict):
         analysis['source'] = source or 'public_html'
+        analysis = _attach_deep_content_layer(analysis, messages, primary_ref, lim)
+        try:
+            loop = asyncio.get_event_loop()
+            llm = await loop.run_in_executor(
+                None,
+                lambda pr=primary_ref, ms=messages, lm=lim: _llm_content_narrative_sync(pr, ms, lm),
+            )
+        except Exception as e:
+            print('LLM narrative thread error for %s: %s' % (primary_ref, e), file=sys.stderr)
+            llm = None
+        if llm:
+            analysis['narrative_llm'] = llm
     return analysis
 
 
