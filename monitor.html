@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260329-bg-atmosphere">
+  <link rel="stylesheet" href="/monitor.css?v=20260329-risk-column">
 </head>
 <body class="mon-page">
 
@@ -726,6 +726,108 @@
     return facts.slice(0, 3);
   }
 
+  var KEYWORD_LABELS = {
+    garantiya: 'гарантия', bez_riska: 'без риска', p100: '100%',
+    x2: 'x2', x5: 'x5', srochno: 'срочно', vip: 'VIP',
+    spots_left: 'осталось мест', leverage: 'плечо', deposit: 'депозит'
+  };
+
+  /** Цитаты из source_evidence: только похожее на человеческий текст, без кода/скриптов (ничего не выдумываем). */
+  function cleanHumanEvidenceSegments(evidence) {
+    var parts = (evidence || '')
+      .replace(/Источник:\s*/gi, '')
+      .split(/\s*\|\s*|\s*;\s*|\n+/);
+    var codeLike = /function\s*\(|=>|<\/?script|javascript:|}\s*\{|\bconst\s+\w|\blet\s+\w|\bvar\s+\w|eval\s*\(|__proto__|document\.|window\.|addEventListener|querySelector|\[object\s|undefined|null\s*===/i;
+    var out = [];
+    for (var i = 0; i < parts.length; i++) {
+      var p = (parts[i] || '').replace(/https?:\/\/[^\s|;]+/gi, '').replace(/\s+/g, ' ').trim();
+      if (p.length < 22 || p.length > 420) continue;
+      if (codeLike.test(p)) continue;
+      var cyr = /[а-яёА-ЯЁ]/.test(p);
+      if (!cyr && p.length < 100) continue;
+      var weird = (p.match(/[^\s\wа-яёА-ЯЁ.,;:!?\-—«»'"()№%₽0-9]/g) || []).length;
+      if (weird / Math.max(p.length, 1) > 0.38) continue;
+      out.push(p);
+      if (out.length >= 2) break;
+    }
+    return out;
+  }
+
+  function riskSignalsFromRow(r) {
+    var out = [];
+    if (!r) return out;
+    if (r.status && String(r.status).trim()) {
+      out.push('Статус в строке: ' + String(r.status).trim());
+    } else if (r.verdict && String(r.verdict).trim()) {
+      out.push('Вердикт в строке: ' + String(r.verdict).trim());
+    }
+    if (r.object_type && String(r.object_type).trim() && String(r.object_type).trim() !== '—') {
+      out.push('Тип объекта: ' + String(r.object_type).trim());
+    }
+    if (r.risk_score != null && r.risk_score !== '' && !isNaN(Number(r.risk_score))) {
+      out.push('Оценка риска в строке: ' + Number(r.risk_score) + '/100');
+    }
+    var c = r.complaints;
+    if (c != null && c !== '' && !isNaN(Number(c)) && Number(c) > 0) {
+      out.push('Жалоб в данных: ' + Number(c));
+    }
+    var vip = (r.vip_price != null && r.vip_price !== '') ? String(r.vip_price).trim() : '';
+    if (vip && vip !== '—') {
+      out.push('VIP / подписка в данных: ' + vip);
+    }
+    var loss = Number(r.total_loss_rub);
+    if (loss > 0) {
+      out.push('Сумма потерь в строке: ' + loss.toLocaleString('ru-RU') + ' ₽');
+    } else if (r.total_loss != null && String(r.total_loss).trim()) {
+      var raw = String(r.total_loss).trim();
+      var digits = raw.replace(/[^\d]/g, '');
+      if (digits && !isNaN(Number(digits)) && Number(digits) > 0) {
+        out.push('Сумма в строке (legacy): ' + Number(digits).toLocaleString('ru-RU') + ' ₽');
+      } else if (raw.length <= 80) {
+        out.push('Потери в строке (как в таблице): ' + raw);
+      }
+    }
+    return out;
+  }
+
+  function riskSignalsFromContentAnalysis(jsonStr) {
+    if (!jsonStr || jsonStr === '—' || jsonStr === 'недоступен') return [];
+    var d;
+    try { d = JSON.parse(jsonStr); } catch (e) { return []; }
+    var out = [];
+    var kws = d.keywords || {};
+    var hits = Object.keys(kws).filter(function(k) { return kws[k] > 0; })
+      .sort(function(a, b) { return kws[b] - kws[a]; });
+    if (hits.length) {
+      var labels = hits.slice(0, 8).map(function(k) { return KEYWORD_LABELS[k] || k; });
+      out.push('По разбору постов (счётчики в «Контент-анализ»): ' + labels.join(', '));
+    }
+    return out;
+  }
+
+  function renderRiskSignals(row) {
+    var bullets = [];
+    bullets.push.apply(bullets, riskSignalsFromRow(row));
+    bullets.push.apply(bullets, riskSignalsFromContentAnalysis(row.content_analysis || ''));
+    var quotes = cleanHumanEvidenceSegments(row.source_evidence || '');
+    for (var q = 0; q < quotes.length; q++) {
+      bullets.push('Текст из поля доказательств: «' + quotes[q] + '»');
+    }
+    var seen = {};
+    var uniqBullets = bullets.filter(function(b) {
+      var k = b.toLowerCase().replace(/\s+/g, ' ').slice(0, 140);
+      if (seen[k]) return false;
+      seen[k] = true;
+      return true;
+    });
+    if (!uniqBullets.length) {
+      return '<div class="mon-evidence-empty">В этой строке нет разобранного текста признаков (часто в ячейке только ссылки). Откройте «Источник» и блок «Контент-анализ» — там факты из тех же данных.</div>';
+    }
+    return '<ul class="mon-evidence-list">' + uniqBullets.map(function(b) {
+      return '<li>' + esc(b) + '</li>';
+    }).join('') + '</ul>';
+  }
+
   function renderFacts(evidence) {
     var facts = sourceFacts(evidence);
     if (!facts.length) {
@@ -736,13 +838,8 @@
     }).join('') + '</ul>';
   }
 
-  var KEYWORD_LABELS = {
-    garantiya: 'гарантия', bez_riska: 'без риска', p100: '100%',
-    x2: 'x2', x5: 'x5', srochno: 'срочно', vip: 'VIP',
-    spots_left: 'осталось мест', leverage: 'плечо', deposit: 'депозит'
-  };
-
-  function renderContentAnalysis(jsonStr) {
+  function renderContentAnalysis(jsonStr, opts) {
+    opts = opts || {};
     if (!jsonStr || jsonStr === '' || jsonStr === '—') {
       return '<span class="mon-ca-empty">нет анализа</span>';
     }
@@ -761,15 +858,23 @@
     if (d.posts_analyzed) {
       parts.push((actLabel || '') + '<span class="mon-ca-muted"> ' + d.posts_analyzed + ' постов</span>');
     }
-    // Top keywords
-    var kws = d.keywords || {};
-    var hits = Object.keys(kws).filter(function(k) { return kws[k] > 0; })
-      .sort(function(a,b) { return kws[b] - kws[a]; }).slice(0, 4);
-    if (hits.length) {
-      var kwHtml = hits.map(function(k) {
-        return '<span class="mon-ca-kw">' + esc(KEYWORD_LABELS[k] || k) + ' ×' + kws[k] + '</span>';
-      }).join('');
-      parts.push(kwHtml);
+    // Top keywords (в базе скам-каналов перечень дублируется в «Признаки риска» — здесь только счётчики)
+    if (!opts.omitKeywords) {
+      var kws = d.keywords || {};
+      var hits = Object.keys(kws).filter(function(k) { return kws[k] > 0; })
+        .sort(function(a,b) { return kws[b] - kws[a]; }).slice(0, 4);
+      if (hits.length) {
+        var kwHtml = hits.map(function(k) {
+          return '<span class="mon-ca-kw">' + esc(KEYWORD_LABELS[k] || k) + ' ×' + kws[k] + '</span>';
+        }).join('');
+        parts.push(kwHtml);
+      }
+    } else {
+      var kws2 = d.keywords || {};
+      var hits2 = Object.keys(kws2).filter(function(k) { return kws2[k] > 0; });
+      if (hits2.length) {
+        parts.push('<span class="mon-ca-muted">ключевые слова перечислены в «Признаки риска»</span>');
+      }
     }
     // Profit only warning
     if (d.only_profit_posts) {
@@ -977,7 +1082,7 @@
       '<thead><tr>' +
       '<th style="width:36px">#</th>' +
       '<th>Канал</th><th>Тип</th><th>Источник</th>' +
-      '<th>Признаки риска</th><th>Контент-анализ</th><th>Статус</th><th>Жалобы</th><th>Дата</th>' +
+      '<th title="Факты из полей строки, ключевые слова из контент-анализа и отфильтрованный текст доказательств — без выдумок">Признаки риска</th><th>Контент-анализ</th><th>Статус</th><th>Жалобы</th><th>Дата</th>' +
       '</tr></thead><tbody>';
 
     rows.forEach(function(r, idx) {
@@ -990,8 +1095,8 @@
         '<td class="mon-cell-channel">' + renderExternalLink(channelUrl, channelLabel, 'mon-external-link mon-channel-link') + '</td>' +
         '<td class="mon-cell-muted">' + esc(r.object_type || '—') + '</td>' +
         '<td class="mon-cell-source">' + renderAllSourceLinks(r) + '</td>' +
-        '<td><div class="mon-evidence" title="' + esc(r.source_evidence || '') + '">' + renderFacts(r.source_evidence || '') + '</div></td>' +
-        '<td class="mon-cell-ca">' + renderContentAnalysis(r.content_analysis || '') + '</td>' +
+        '<td><div class="mon-evidence" title="' + esc(r.source_evidence || '') + '">' + renderRiskSignals(r) + '</div></td>' +
+        '<td class="mon-cell-ca">' + renderContentAnalysis(r.content_analysis || '', { omitKeywords: true }) + '</td>' +
         '<td>' +
           '<span class="mon-status ' + statusClass(r.status) + '">' + esc(r.status || '—') + '</span>' +
           (isFormSource(r.source_primary) ? '<br><span class="mon-source-tag">жалобы пользователей</span>' : '') +
