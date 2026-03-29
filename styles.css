@@ -1203,85 +1203,6 @@ body.kro-hero-scrolled .kro-floating-nav {
    line-height: 1.45;
 }
 
-.kro-f1-last-check {
-   max-width: 1000px;
-   margin: 22px auto 28px;
-   padding: 24px 26px;
-   border-radius: 20px;
-   background: linear-gradient(180deg, rgba(31, 24, 28, 0.96) 0%, rgba(21, 18, 24, 0.98) 100%);
-   border: 1px solid rgba(184, 74, 74, 0.22);
-   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
-   text-align: left;
-}
-
-.kro-f1-last-check-kicker {
-   margin: 0 0 8px;
-   font-size: 12px;
-   text-transform: uppercase;
-   letter-spacing: 0.1em;
-   color: rgba(255, 255, 255, 0.48);
-}
-
-.kro-f1-last-check-title {
-   margin: 0 0 12px;
-   font-size: clamp(20px, 2.4vw, 28px);
-   color: rgba(255, 255, 255, 0.96);
-}
-
-.kro-f1-last-check-time,
-.kro-f1-last-check-found {
-   margin: 0 0 8px;
-   font-size: 15px;
-   color: rgba(255, 255, 255, 0.78);
-}
-
-.kro-f1-last-check-found span,
-.kro-f1-last-check-time span {
-   color: #fff;
-   font-weight: 700;
-}
-
-.kro-f1-last-check-sources {
-   margin-top: 16px;
-   display: grid;
-   gap: 10px;
-}
-
-.kro-f1-source-row {
-   margin: 0;
-   display: grid;
-   grid-template-columns: minmax(0, 1fr) auto auto;
-   gap: 12px;
-   align-items: center;
-   padding: 12px 14px;
-   border-radius: 14px;
-   background: rgba(255, 255, 255, 0.03);
-   border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.kro-f1-source-name {
-   color: rgba(255, 255, 255, 0.88);
-   font-weight: 600;
-}
-
-.kro-f1-source-status {
-   font-size: 13px;
-   font-weight: 700;
-   text-transform: uppercase;
-   letter-spacing: 0.05em;
-}
-
-.kro-f1-source-status-found { color: #ff8f8f; }
-.kro-f1-source-status-not_found { color: rgba(255, 255, 255, 0.72); }
-.kro-f1-source-status-unavailable { color: #ffb86b; }
-
-.kro-f1-source-count {
-   min-width: 28px;
-   text-align: right;
-   color: rgba(255, 255, 255, 0.58);
-   font-variant-numeric: tabular-nums;
-}
-
 .kro-feature1-stat.kro-card {
    padding: 14px 18px;
 }
@@ -1805,28 +1726,6 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-feature1-check-row .kro-report-label {
    width: 100%;
    min-width: 0;
-}
-
-.kro-feature1-check-row .kro-check-input {
-   width: 100%;
-   min-width: 0;
-   box-sizing: border-box;
-   padding: 14px 20px;
-   border: 1px solid rgba(255, 255, 255, 0.2);
-   border-radius: 999px;
-   background: rgba(255, 255, 255, 0.06);
-   color: #fff;
-   font-family: inherit;
-   font-size: 15px;
-   transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.kro-feature1-check-row .kro-check-input::placeholder {
-   color: rgba(255, 255, 255, 0.4);
-}
-.kro-feature1-check-row .kro-check-input:focus {
-   outline: none;
-   border-color: rgba(139, 92, 246, 0.5);
-   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.4);
 }
 
 .kro-feature1-check-row .kro-report-label input {
@@ -2446,8 +2345,7 @@ body.kro-hero-scrolled .kro-floating-nav {
       font-size: 0.75rem;
       padding: 10px 12px;
    }
-   .kro-feature1-check-row .kro-report-label input,
-   .kro-feature1-check-row .kro-check-input {
+   .kro-feature1-check-row .kro-report-label input {
       width: 100%;
       box-sizing: border-box;
    }
@@ -6566,90 +6464,5 @@ button:not(.chat-button):not(.send-button):focus {
    margin: 12px 0 0;
    letter-spacing: 0.06em;
    font-weight: 400;
-}
-
-/* ── Главная: упрощённый лендинг (меньше текста, больше воздуха) ── */
-.kro-sr-only {
-   position: absolute;
-   width: 1px;
-   height: 1px;
-   padding: 0;
-   margin: -1px;
-   overflow: hidden;
-   clip: rect(0, 0, 0, 0);
-   white-space: nowrap;
-   border: 0;
-}
-
-.kro-step1-subtitle--short {
-   max-width: 22em;
-   margin-bottom: 0;
-}
-
-.kro-main--simple .kro-step1-inner {
-   padding: 56px 36px 64px;
-}
-
-.kro-main--simple .kro-step1-left {
-   margin-bottom: 28px;
-}
-
-.kro-feature1--simple {
-   padding: 72px 24px 100px;
-}
-
-.kro-feature1--simple .kro-f1-metrics-head {
-   margin-bottom: 28px;
-}
-
-.kro-feature1--simple .kro-f1-metrics-title {
-   margin-bottom: 0;
-}
-
-.kro-feature1-date--quiet {
-   text-transform: none;
-   letter-spacing: 0.04em;
-   font-weight: 600;
-   font-size: 12px;
-   padding: 6px 14px;
-   margin-bottom: 32px;
-   opacity: 0.85;
-}
-
-.kro-feature1--simple .kro-feature1-dashboard {
-   margin-bottom: 64px;
-   padding: 40px 32px 36px;
-}
-
-.kro-feature1-check-heading {
-   font-size: clamp(1.35rem, 3.5vw, 1.85rem);
-   font-weight: 700;
-   color: #fff;
-   margin: 0 0 20px;
-   line-height: 1.2;
-   letter-spacing: -0.02em;
-}
-
-.kro-feature1-check--hero {
-   margin: 0 auto 72px;
-   scroll-margin-top: 100px;
-}
-
-.kro-feature1--simple .kro-f1-top3-wrap {
-   margin-top: 8px;
-   margin-bottom: 20px;
-}
-
-.kro-feature1--simple .kro-feature1-heading {
-   margin-top: 8px;
-}
-
-.kro-feature1--simple .kro-feature1-top3 {
-   margin-bottom: 0;
-}
-
-.kro-feature1--simple .kro-f1-source-doc-wrap {
-   margin-top: 20px;
-   margin-bottom: 0;
 }
 

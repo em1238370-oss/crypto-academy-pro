@@ -19,10 +19,10 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=home-revert-20260330">
+   <link rel="stylesheet" href="styles.css?v=home-rich-6cb5e65-20260330">
    <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
 </head>
-<body class="kro-main kro-main--simple" style="margin: 0; padding: 0; position: relative;">
+<body class="kro-main" style="margin: 0; padding: 0; position: relative;">
    <div class="main-bg-effects main-bg-effects--hidden-on-hero" aria-hidden="true">
        <span class="bg-dot bg-dot-1"></span>
        <span class="bg-dot bg-dot-2"></span>
@@ -55,15 +55,20 @@
            <a href="sub-sites/risk-distribution/index.html" target="_blank">Risk</a>
            <a href="sub-sites/crypto-basics/index.html" target="_blank">Basics</a>
            <a href="sub-sites/crypto-coach/index.html" target="_blank">Coach</a>
-           <a href="/monitor" target="_blank">Монитор</a>
        </div>
    </nav>
-   <nav class="kro-floating-nav" aria-label="Быстрая навигация" id="kro-floating-nav">
+   <nav class="kro-floating-nav" aria-label="Навигация по фишкам" id="kro-floating-nav">
        <a href="#top" class="kro-floating-nav-brand">
            <span class="kro-floating-nav-icon" aria-hidden="true"></span>
            <span class="kro-floating-nav-brand-text">Крипта без розовых очков</span>
        </a>
        <div class="kro-floating-nav-links">
+           <a href="#feature1">Фишка 1</a>
+           <a href="#feature2">Фишка 2</a>
+           <a href="#feature3">Фишка 3</a>
+           <a href="#feature4">Фишка 4</a>
+           <a href="#feature5">Фишка 5</a>
+           <span class="kro-floating-nav-sep" aria-hidden="true"></span>
            <a href="#checkers" class="kro-floating-nav-cta">Проверь гуру</a>
        </div>
    </nav>
@@ -74,74 +79,177 @@
            <div class="kro-step1-bg" aria-hidden="true"></div>
            <div class="kro-step1-inner">
                <div class="kro-step1-left">
-                   <p class="kro-step1-role">Антискам · проверка каналов</p>
+                   <p class="kro-step1-role">Антискам · Проверка каналов</p>
                    <h1 class="kro-step1-title">Крипто: не верь — проверь</h1>
-                   <p class="kro-step1-subtitle kro-step1-subtitle--short">Цифры и проверка — без шума.</p>
+                   <p class="kro-step1-subtitle">Ваш гуру уже на Lambo. На ваши деньги</p>
+                   <div class="kro-step1-tags">
+                       <span class="kro-tag">Чекер</span>
+                       <span class="kro-tag">Канал</span>
+                       <span class="kro-tag">Скринер</span>
+                       <span class="kro-tag">Скам</span>
+                   </div>
                </div>
                <div class="kro-step1-right">
-                   <a href="#checkers" class="kro-step1-cta">Проверить канал</a>
+                   <a href="#checkers" class="kro-step1-cta">Проверь своего гуру</a>
+                   <p class="kro-step1-cta-note"><span class="kro-cta-note-desktop">Сделай сначала ты — прежде чем он твой кошелёк</span><span class="kro-cta-note-mobile">Сделай это ты — прежде чем он с твоим кошельком</span></p>
+                   <a href="#feature1" class="kro-step1-cta-secondary">Как это работает</a>
                </div>
            </div>
        </section>
 
-       <!-- Главный блок: цифры → проверка → топ-3 -->
-       <section class="kro-feature1 kro-feature1--simple kro-reveal" id="feature1" aria-labelledby="kro-feature1-heading">
+       <!-- Фишка 1: Живой счётчик обманов -->
+       <section class="kro-feature1 kro-reveal" id="feature1" aria-labelledby="kro-feature1-heading">
            <div class="kro-feature1-bg" aria-hidden="true"></div>
            <div class="kro-f1-badges-row kro-scroll-in" aria-hidden="true">
                <span class="kro-f1-badge">LIVE</span>
                <span class="kro-f1-badge-sep" aria-hidden="true">·</span>
-               <span class="kro-f1-badge">12 ч</span>
+               <span class="kro-f1-badge">Обновление каждые 12 ч</span>
            </div>
            <div class="kro-f1-metrics-head kro-scroll-in">
-               <h2 class="kro-f1-metrics-title" id="kro-feature1-heading">Результаты в цифрах</h2>
+               <h2 class="kro-f1-metrics-title">Результаты в цифрах</h2>
+               <p class="kro-f1-metrics-sub">Актуальные данные по скам-каналам и потерям</p>
            </div>
-           <div class="kro-feature1-dashboard kro-scroll-in">
-               <p class="kro-feature1-date kro-feature1-date--quiet" id="kro-feature1-date">Обновлено: <span id="kro-live-datetime">—</span></p>
+           <div class="kro-feature1-dashboard">
+               <p class="kro-feature1-date" id="kro-feature1-date">Последнее подтверждённое обновление: <span id="kro-live-datetime">—</span></p>
                <div class="kro-feature1-hero-number">
                    <span class="kro-feature1-hero-value" id="kro-stat-channels-today">—</span>
-                   <span class="kro-feature1-hero-label">новых скам-каналов за 12 ч</span>
+                   <span class="kro-feature1-hero-label">новых скам-каналов за последние 12 ч</span>
                </div>
                <div class="kro-feature1-stats">
                    <div class="kro-feature1-stat kro-card">
-                       <span class="kro-feature1-stat-value" id="kro-stat-lost">—</span>
-                       <span class="kro-feature1-stat-label">Потеряно ₽</span>
-                   </div>
-                   <div class="kro-feature1-stat kro-card">
-                       <span class="kro-feature1-stat-value" id="kro-stat-channels">—</span>
-                       <span class="kro-feature1-stat-label">Telegram каналов</span>
-                   </div>
-                   <div class="kro-feature1-stat kro-card">
-                       <span class="kro-feature1-stat-value" id="kro-stat-courses">—</span>
-                       <span class="kro-feature1-stat-label">Курсы фейк-продуктов</span>
-                   </div>
+                   <span class="kro-feature1-stat-value" id="kro-stat-lost">—</span>
+                   <span class="kro-feature1-stat-label">Потеряно ₽</span>
                </div>
+               <div class="kro-feature1-stat kro-card">
+                   <span class="kro-feature1-stat-value" id="kro-stat-channels">—</span>
+                   <span class="kro-feature1-stat-label">Telegram каналов</span>
+               </div>
+               <div class="kro-feature1-stat kro-card">
+                   <span class="kro-feature1-stat-value" id="kro-stat-courses">—</span>
+                   <span class="kro-feature1-stat-label">Курсы фейк-продуктов</span>
+               </div>
+               </div>
+               <p class="kro-feature1-dashboard-sub kro-scroll-in">Цифры обновляются автоматически</p>
                <p class="kro-f1-source-doc-wrap kro-scroll-in" id="kro-f1-source-doc-wrap">
-                   <a href="/monitor" id="kro-f1-source-doc-link" target="_blank" rel="noopener" class="kro-f1-source-doc-link">Монитор и источники</a>
+                   <a href="https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit" id="kro-f1-source-doc-link" target="_blank" rel="noopener" class="kro-f1-source-doc-link">Источники и данные (Sources and Data) — откуда цифры и таблица</a>
                </p>
                <p class="kro-f1-metrics-sub kro-scroll-in kro-feature1-source-caption" id="kro-f1-source-caption"></p>
                <p class="kro-f1-system-note kro-scroll-in" id="kro-f1-system-note" hidden></p>
            </div>
-
-           <div class="kro-feature1-check kro-feature1-check--hero kro-scroll-in" id="checkers">
-               <h2 class="kro-feature1-check-heading">Проверить канал</h2>
-               <div class="kro-feature1-check-row">
-                   <label class="kro-sr-only" for="kro-check-channel">Канал или ссылка</label>
-                   <input type="text" id="kro-check-channel" class="kro-check-input" placeholder="@channel или t.me/…" autocomplete="off">
-                   <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить</button>
+           <div class="kro-f1-blocks kro-f1-content-card">
+               <!-- Блок 1: Шок-цифры -->
+               <div class="kro-f1-block kro-f1-shock">
+                   <p class="kro-f1-shock-heading">ЗА ПОСЛЕДНИЕ 12 ЧАСОВ:</p>
+                   <p class="kro-f1-shock-text" id="kro-f1-shock-text">Данные появятся после первого верифицированного отчёта.</p>
+                   <p class="kro-f1-shock-total" id="kro-f1-shock-total">ИТОГО: —</p>
                </div>
-               <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
+               <!-- Блок 2: Твой тип лоха -->
+               <div class="kro-f1-block kro-f1-loh">
+                   <h2 class="kro-f1-loh-title">ВОТ КТО ТЫ ПРЯМО СЕЙЧАС:</h2>
+                   <div class="kro-f1-loh-types">
+                       <div class="kro-f1-loh-card">
+                           <span class="kro-f1-loh-avatar" aria-hidden="true">🐑</span>
+                           <h3 class="kro-f1-loh-name">ФОМО‑ОВЦА</h3>
+                           <p class="kro-f1-loh-quote">«Срочно TON x10! Все уже в деле!»</p>
+                           <p class="kro-f1-loh-result">→ сливает 80% депозита за 3 дня</p>
+                       </div>
+                       <div class="kro-f1-loh-card kro-f1-loh-card-popular">
+                           <span class="kro-f1-badge kro-f1-badge-on-card">Чаще всего</span>
+                           <span class="kro-f1-loh-avatar" aria-hidden="true">🎰</span>
+                           <h3 class="kro-f1-loh-name">ЛОТОРЕЙЩИК</h3>
+                           <p class="kro-f1-loh-quote">«Плечо х50, риск 30% банка»</p>
+                           <p class="kro-f1-loh-result">→ слив за 2 ошибки подряд</p>
+                       </div>
+                       <div class="kro-f1-loh-card">
+                           <span class="kro-f1-loh-avatar" aria-hidden="true">📉</span>
+                           <h3 class="kro-f1-loh-name">СЛЕПОЙ ВЕРИЛЬЩИК</h3>
+                           <p class="kro-f1-loh-quote">«У них точность 92%! Беру VIP!»</p>
+                           <p class="kro-f1-loh-result">→ платит 5к₽/мес x 6 месяцев = 30к₽</p>
+                       </div>
+                   </div>
+               </div>
+               <!-- Блок 3: Реальная математика одного скрина -->
+               <div class="kro-f1-block kro-f1-math">
+                   <h2 class="kro-f1-math-title">ВОТ ЧТО ТЫ БЫ УВИДЕЛ НА СВОЁМ ДЕПОЗИТЕ:</h2>
+                   <div class="kro-f1-math-slider-wrap">
+                       <div class="kro-f1-math-slider" id="kro-f1-math-slider">
+                           <div class="kro-f1-math-track" id="kro-f1-math-track">
+                               <div class="kro-f1-math-slide" data-slide="0">
+                                   <p class="kro-f1-math-slide-head">СКРИН 1: $10 → $25 (+150%)</p>
+                                   <p class="kro-f1-math-slide-body">ТВОЙ $1000: +$1500 (но риск 80% → 1 ошибка = -800$)</p>
+                               </div>
+                               <div class="kro-f1-math-slide" data-slide="1">
+                                   <p class="kro-f1-math-slide-head">СКРИН 2: $7 → $17 (+140%)</p>
+                                   <p class="kro-f1-math-slide-body">ТВОЙ $1000: +$1400 (но 5 минусов = -85% банка)</p>
+                               </div>
+                               <div class="kro-f1-math-slide" data-slide="2">
+                                   <p class="kro-f1-math-slide-head">СКРИН 3: «ТОЧНОСТЬ 92%»</p>
+                                   <p class="kro-f1-math-slide-body">ТВОЙ $1000: 92 выигрыша х $20 = +1840$</p>
+                                   <p class="kro-f1-math-slide-body">МИНУС 8 сливов по 20% = -160$ → итог +1680$</p>
+                               </div>
+                           </div>
+                       </div>
+                       <div class="kro-f1-math-dots" aria-label="Переключение слайдов">
+                           <button type="button" class="kro-f1-math-dot is-active" data-slide="0" aria-label="Скрин 1"></button>
+                           <button type="button" class="kro-f1-math-dot" data-slide="1" aria-label="Скрин 2"></button>
+                           <button type="button" class="kro-f1-math-dot" data-slide="2" aria-label="Скрин 3"></button>
+                       </div>
+                   </div>
+               </div>
+               <!-- Блок 4: Твой выбор прямо сейчас -->
+               <div class="kro-f1-block kro-f1-choice-wrap">
+                   <div class="kro-f1-choice">
+                       <a href="#checkers" class="kro-f1-choice-btn kro-f1-choice-red">
+                           <span class="kro-f1-choice-main">ЛАДНО, ПОЙДУ В СИГНАЛЫ</span>
+                           <span class="kro-f1-choice-sub">(95% слив через месяц)</span>
+                       </a>
+                       <a href="#payment" class="kro-f1-choice-btn kro-f1-choice-green">
+                           <span class="kro-f1-choice-main">СНАЧАЛА ЗАЩИТА</span>
+                           <span class="kro-f1-choice-sub">(5 разборов + риск‑план)</span>
+                       </a>
+                   </div>
+                   <p class="kro-f1-choice-disclaimer">*я не продаю сигналы. я показываю, как их не боятся*</p>
+               </div>
            </div>
-
            <div class="kro-f1-top3-wrap kro-scroll-in">
                <span class="kro-f1-badge kro-f1-badge-top3">По потерям за сегодня</span>
-               <h2 class="kro-feature1-heading">Топ-3 сегодня</h2>
+               <h2 class="kro-feature1-heading" id="kro-feature1-heading">Топ-3 сегодня</h2>
+               <p class="kro-feature1-heading-sub">Каналы с самыми большими потерями за сегодня</p>
            </div>
            <ol class="kro-feature1-top3 kro-scroll-in" id="kro-feature1-top3">
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-1-channel">—</span> → <span class="kro-top3-sum" id="kro-top3-1-sum">—</span> → <span class="kro-top3-status" id="kro-top3-1-status">—</span></li>
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-2-channel">—</span> → <span class="kro-top3-sum" id="kro-top3-2-sum">—</span> → <span class="kro-top3-status" id="kro-top3-2-status">—</span></li>
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-3-channel">—</span> → <span class="kro-top3-sum" id="kro-top3-3-sum">—</span> → <span class="kro-top3-status" id="kro-top3-3-status">—</span></li>
            </ol>
+           <div class="kro-f1-cta-check-wrap kro-scroll-in" id="kro-f1-cta-check-wrap">
+               <div class="kro-f1-cta-block" id="kro-f1-cta-block">
+                   <h2 class="kro-f1-cta-heading">Готов проверить гуру?</h2>
+                   <p class="kro-f1-cta-sub">Один клик — и ты увидишь, что за канал или обменник.</p>
+                   <button type="button" class="kro-f1-cta-btn" id="kro-f1-cta-btn">Проверь своего гуру</button>
+               </div>
+               <div class="kro-feature1-check kro-f1-check-reveal" id="kro-feature1-check">
+                   <p class="kro-feature1-check-intro">Проверить канал</p>
+                   <div class="kro-feature1-check-row">
+                       <label class="kro-report-label" for="kro-check-channel">@username / ссылка на канал или обменник <input type="text" id="kro-check-channel" placeholder="@channel, t.me/..., или ссылка на обменник" autocomplete="off"></label>
+                       <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить</button>
+                   </div>
+                   <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
+               </div>
+           </div>
+           <div class="kro-feature1-report kro-scroll-in" id="kro-feature1-report">
+               <p class="kro-feature1-report-intro">Сообщить о разводе → добавим за 30 мин</p>
+               <form class="kro-report-form" id="kro-report-form" novalidate>
+                   <label class="kro-report-label">Канал / ссылка <input type="text" name="channel" id="kro-report-channel" required placeholder="@channel или ссылка"></label>
+                   <label class="kro-report-label">Сумма ₽ <input type="number" name="sumRub" id="kro-report-sum" required min="0" placeholder="0"></label>
+                   <label class="kro-report-label">От кого (необязательно) <input type="text" name="from" id="kro-report-from" placeholder="Имя или аноним"></label>
+                   <button type="submit" class="kro-report-submit">Отправить</button>
+               </form>
+               <p class="kro-feature1-report-message hidden" id="kro-report-message"></p>
+           </div>
        </section>
+
+       <!-- Якорь для кнопки «Проверь своего гуру» (блок чекеров будет ниже) -->
+       <section class="kro-checkers-anchor" id="checkers" aria-hidden="true"></section>
        
        <footer class="news-footer kro-footer kro-scroll-in" id="kro-footer">
            <div class="kro-footer-bg" aria-hidden="true"></div>
@@ -260,8 +368,8 @@
    </div>
    
    <script src="https://unpkg.com/lenis@1.3.17/dist/lenis.min.js"></script>
-   <script src="scripts/smooth-scroll.js?v=home-revert-20260330"></script>
-   <script src="scripts/scroll-optimizer.js?v=home-revert-20260330"></script>
+   <script src="scripts/smooth-scroll.js?v=home-rich-6cb5e65-20260330"></script>
+   <script src="scripts/scroll-optimizer.js?v=home-rich-6cb5e65-20260330"></script>
    <script>
        (function() {
            var els = document.querySelectorAll('.scroll-reveal');
@@ -404,103 +512,19 @@
    <script>
        (function() {
            var base = window.location.origin;
-           var KRO_API_FALLBACK = 'https://crypto-academy-pro.onrender.com';
-           function originNoSlash(o) { return (o || '').replace(/\/$/, ''); }
-           function getJsonWithFallback(pathQuery) {
-               function loadFrom(origin) {
-                   return fetch(originNoSlash(origin) + pathQuery, {
-                       cache: 'no-store',
-                       headers: { 'Cache-Control': 'no-store', Accept: 'application/json' }
-                   }).then(function(r) {
-                       if (!r.ok) throw new Error('HTTP ' + r.status);
-                       return r.json();
-                   });
-               }
-               var prim = originNoSlash(base);
-               var fb = originNoSlash(KRO_API_FALLBACK);
-               return loadFrom(prim).catch(function(err) {
-                   if (prim === fb) throw err;
-                   return loadFrom(fb);
-               });
-           }
-           function postJsonWithFallback(path, bodyObj) {
-               function postTo(origin) {
-                   return fetch(originNoSlash(origin) + path, {
-                       method: 'POST',
-                       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                       body: JSON.stringify(bodyObj)
-                   });
-               }
-               var prim = originNoSlash(base);
-               var fb = originNoSlash(KRO_API_FALLBACK);
-               return postTo(prim).catch(function() { return postTo(fb); });
-           }
            function formatSum(n) {
-               var x = Number(n);
-               if (!isFinite(x)) x = 0;
-               if (x >= 1000000) return (x / 1000000).toFixed(1).replace(/\.0$/, '') + 'млн₽';
-               if (x >= 1000) return (x / 1000).toFixed(0) + 'к₽';
-               return x + ' ₽';
+               if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'млн₽';
+               if (n >= 1000) return (n / 1000).toFixed(0) + 'к₽';
+               return n + ' ₽';
            }
            function formatFull(n) {
-               var x = Number(n);
-               if (!isFinite(x)) x = 0;
-               return Math.round(x).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-           }
-           function normalizeLiveCounterPayload(raw) {
-               if (!raw || typeof raw !== 'object') return null;
-               var r = raw;
-               return {
-                   channelsToday: Number(r.channelsToday != null ? r.channelsToday : r.channels_today) || 0,
-                   totalLost: Number(r.totalLost != null ? r.totalLost : r.total_lost) || 0,
-                   telegramCount: Number(r.telegramCount != null ? r.telegramCount : r.telegram_count) || 0,
-                   coursesCount: Number(r.coursesCount != null ? r.coursesCount : r.courses_count) || 0,
-                   victims_12h: r.victims_12h,
-                   shockText: r.shockText || r.shock_text,
-                   top3: Array.isArray(r.top3) ? r.top3 : [],
-                   report_doc_url: r.report_doc_url,
-                   sourceCaption: r.sourceCaption || r.source_caption || '',
-                   publishStatus: r.publishStatus || r.publish_status,
-                   isHonestZero: r.isHonestZero,
-                   siteNotice: r.siteNotice || r.site_notice,
-                   lastValidUpdatedAt: r.lastValidUpdatedAt || r.last_valid_updated_at,
-                   updatedAt: r.updatedAt || r.updated_at,
-                   last_cycle_at: r.last_cycle_at,
-                   new_in_cycle: Number(r.new_in_cycle != null ? r.new_in_cycle : r.newInCycle) || 0,
-                   sources_checked: Array.isArray(r.sources_checked) ? r.sources_checked : (Array.isArray(r.sourcesChecked) ? r.sourcesChecked : []),
-                   evidence_summary: r.evidence_summary || {},
-                   risk_rows: r.risk_rows || [],
-                   complaints_rows: r.complaints_rows || []
-               };
+               return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
            }
            function statusClass(s) {
                if (!s || s === '—') return '';
                if (/удалён/i.test(s)) return 'kro-status-removed';
                if (/блок/i.test(s)) return 'kro-status-block';
                return 'kro-status-active';
-           }
-           function cycleSourceStatusLabel(status) {
-               if (status === 'found') return 'нашёл';
-               if (status === 'unavailable') return 'недоступен';
-               return 'не нашёл';
-           }
-           function renderSourcesChecked(items) {
-               var wrap = document.getElementById('kro-sources-checked');
-               if (!wrap) return;
-               var list = Array.isArray(items) ? items : [];
-               if (!list.length) {
-                   wrap.innerHTML = '<p class="kro-f1-source-row"><span class="kro-f1-source-name">Источники</span><span class="kro-f1-source-status">—</span></p>';
-                   return;
-               }
-               wrap.innerHTML = list.map(function(item) {
-                   var status = cycleSourceStatusLabel(item.status);
-                   var count = Number(item.count || 0);
-                   return '<p class="kro-f1-source-row">' +
-                       '<span class="kro-f1-source-name">' + item.name + '</span>' +
-                       '<span class="kro-f1-source-status kro-f1-source-status-' + (item.status || 'not_found') + '">' + status + '</span>' +
-                       '<span class="kro-f1-source-count">' + count + '</span>' +
-                       '</p>';
-               }).join('');
            }
            function countUp(el, target, durationMs, formatter) {
                if (!el || typeof target !== 'number' || isNaN(target)) return;
@@ -526,63 +550,38 @@
                if (prefersReduced) return;
                var el;
                if ((el = document.getElementById('kro-stat-channels-today')) && !el.dataset.countupDone) {
-                   var t1 = parseInt(el.dataset.target, 10);
-                   if (!isNaN(t1)) {
-                       el.dataset.countupDone = '1';
-                       el.textContent = '0';
-                       countUp(el, t1, 1200, function(n) { return String(n); });
-                   }
+                   el.dataset.countupDone = '1';
+                   var t = parseInt(el.dataset.target, 10);
+                   if (!isNaN(t)) { el.textContent = '0'; countUp(el, t, 1200, function(n) { return String(n); }); }
                }
                if ((el = document.getElementById('kro-stat-lost')) && !el.dataset.countupDone) {
-                   var t2 = parseInt(el.dataset.target, 10);
-                   if (!isNaN(t2)) {
-                       el.dataset.countupDone = '1';
-                       el.textContent = formatFull(0);
-                       countUp(el, t2, 1400, formatFull);
-                   }
+                   el.dataset.countupDone = '1';
+                   var t = parseInt(el.dataset.target, 10);
+                   if (!isNaN(t)) { el.textContent = formatFull(0); countUp(el, t, 1400, formatFull); }
                }
                if ((el = document.getElementById('kro-stat-channels')) && !el.dataset.countupDone) {
-                   var t3 = parseInt(el.dataset.target, 10);
-                   if (!isNaN(t3)) {
-                       el.dataset.countupDone = '1';
-                       el.textContent = '0';
-                       countUp(el, t3, 1000, function(n) { return String(n); });
-                   }
+                   el.dataset.countupDone = '1';
+                   var t = parseInt(el.dataset.target, 10);
+                   if (!isNaN(t)) { el.textContent = '0'; countUp(el, t, 1000, function(n) { return String(n); }); }
                }
                if ((el = document.getElementById('kro-stat-courses')) && !el.dataset.countupDone) {
-                   var t4 = parseInt(el.dataset.target, 10);
-                   if (!isNaN(t4)) {
-                       el.dataset.countupDone = '1';
-                       el.textContent = '0';
-                       countUp(el, t4, 1000, function(n) { return String(n); });
-                   }
+                   el.dataset.countupDone = '1';
+                   var t = parseInt(el.dataset.target, 10);
+                   if (!isNaN(t)) { el.textContent = '0'; countUp(el, t, 1000, function(n) { return String(n); }); }
                }
            }
            function applyData(data) {
-               if (!data) return;
-               console.log('el channels:', document.getElementById('kro-stat-channels-today'));
                var el;
-               var chToday = Number(data.channelsToday) || 0;
-               var lost = Number(data.totalLost) || 0;
-               var tg = Number(data.telegramCount) || 0;
-               var courses = Number(data.coursesCount) || 0;
-               if ((el = document.getElementById('kro-stat-channels-today'))) { el.dataset.target = String(chToday); el.textContent = String(chToday); }
-               if ((el = document.getElementById('kro-stat-lost'))) { el.dataset.target = String(lost); el.textContent = formatFull(lost); }
-               if ((el = document.getElementById('kro-stat-channels'))) { el.dataset.target = String(tg); el.textContent = String(tg); }
-               if ((el = document.getElementById('kro-stat-courses'))) { el.dataset.target = String(courses); el.textContent = String(courses); }
+               if ((el = document.getElementById('kro-stat-channels-today'))) { el.dataset.target = data.channelsToday; el.textContent = data.channelsToday; }
+               if ((el = document.getElementById('kro-stat-lost'))) { el.dataset.target = data.totalLost; el.textContent = formatFull(data.totalLost); }
+               if ((el = document.getElementById('kro-stat-channels'))) { el.dataset.target = data.telegramCount; el.textContent = data.telegramCount; }
+               if ((el = document.getElementById('kro-stat-courses'))) { el.dataset.target = data.coursesCount; el.textContent = data.coursesCount; }
                if ((el = document.getElementById('kro-live-datetime'))) {
                    var updatedAt = data.lastValidUpdatedAt || data.updatedAt || null;
                    el.textContent = window.__formatKroMskTimestamp ? window.__formatKroMskTimestamp(updatedAt) : '—';
                }
-               if ((el = document.getElementById('kro-last-cycle-at'))) {
-                   el.textContent = window.__formatKroMskTimestamp ? window.__formatKroMskTimestamp(data.last_cycle_at) : '—';
-               }
-               if ((el = document.getElementById('kro-new-in-cycle'))) {
-                   el.textContent = Number(data.new_in_cycle || 0);
-               }
-               renderSourcesChecked(data.sources_checked || []);
                if ((el = document.getElementById('kro-f1-shock-text'))) el.textContent = data.shockText || 'Данные появятся после первого верифицированного отчёта.';
-               if ((el = document.getElementById('kro-f1-shock-total'))) el.textContent = 'ИТОГО: -' + formatFull(lost) + '₽';
+               if ((el = document.getElementById('kro-f1-shock-total'))) el.textContent = 'ИТОГО: -' + formatFull(data.totalLost) + '₽';
                var top3 = data.top3 || [];
                for (var i = 0; i < 3; i++) {
                    var r = top3[i];
@@ -615,58 +614,14 @@
                    evidence_summary: data.evidence_summary || {},
                    risk_rows: data.risk_rows || [],
                    complaints_rows: data.complaints_rows || [],
-                   publish_status: data.publishStatus != null ? data.publishStatus : null,
-                   site_notice: data.siteNotice != null ? data.siteNotice : null
+                   publish_status: data.publishStatus || null,
+                   site_notice: data.siteNotice || null
                };
                tryRunCountUps();
            }
            function fetchLiveCounter() {
-               if (!document.getElementById('kro-stat-channels-today')) return;
-               function liveCounterOrigins() {
-                   var list = [];
-                   var seen = {};
-                   function add(o) {
-                       var x = originNoSlash(o);
-                       if (!/^https?:/i.test(x) || seen[x]) return;
-                       seen[x] = 1;
-                       list.push(x);
-                   }
-                   add(base);
-                   add(KRO_API_FALLBACK);
-                   return list;
-               }
-               function loadLiveCounterFrom(origin) {
-                   return fetch(origin + '/api/kro/live-counter?t=' + Date.now(), {
-                       cache: 'no-store',
-                       headers: { 'Cache-Control': 'no-store', Accept: 'application/json' }
-                   }).then(function(r) {
-                       if (!r.ok) throw new Error('HTTP ' + r.status);
-                       return r.text();
-                   }).then(function(text) {
-                       var raw;
-                       try {
-                           raw = JSON.parse(text);
-                       } catch (e) {
-                           throw new Error('live-counter: not JSON (got HTML or empty?)');
-                       }
-                       if (raw == null || typeof raw !== 'object' || Array.isArray(raw)) {
-                           throw new Error('live-counter: invalid payload shape');
-                       }
-                       return raw;
-                   });
-               }
-               var origins = liveCounterOrigins();
-               function attempt(i) {
-                   if (i >= origins.length) return Promise.reject(new Error('live-counter: all origins failed'));
-                   return loadLiveCounterFrom(origins[i]).catch(function() { return attempt(i + 1); });
-               }
-               attempt(0)
-                   .then(function(raw) {
-                       console.log('KRO DATA:', raw);
-                       var norm = normalizeLiveCounterPayload(raw);
-                       if (norm) applyData(norm);
-                   })
-                   .catch(function(e) { console.warn('[KRO]', e); });
+               if (!document.querySelector('.kro-feature1')) return;
+               fetch(base + '/api/kro/live-counter').then(function(r) { return r.json(); }).then(applyData).catch(function() {});
            }
            function observeFeature1Reveal() {
                var section = document.getElementById('feature1');
@@ -678,16 +633,14 @@
                });
                obs.observe(section, { attributes: true, attributeFilter: ['class'] });
            }
-           function initLiveCounter() {
+           if (document.readyState === 'loading') {
+               document.addEventListener('DOMContentLoaded', function() {
+                   fetchLiveCounter();
+                   observeFeature1Reveal();
+               });
+           } else {
                fetchLiveCounter();
                observeFeature1Reveal();
-               setTimeout(fetchLiveCounter, 2500);
-               setInterval(fetchLiveCounter, 5 * 60 * 1000);
-           }
-           if (document.readyState === 'loading') {
-               document.addEventListener('DOMContentLoaded', initLiveCounter);
-           } else {
-               initLiveCounter();
            }
            var form = document.getElementById('kro-report-form');
            var msgEl = document.getElementById('kro-report-message');
@@ -696,22 +649,19 @@
                    e.preventDefault();
                    var channel = (document.getElementById('kro-report-channel') || {}).value.trim();
                    var sumRub = parseInt((document.getElementById('kro-report-sum') || {}).value, 10);
-                   var description = (document.getElementById('kro-report-description') || {}).value.trim();
-                   var proofUrl = (document.getElementById('kro-report-proof') || {}).value.trim();
                    if (!channel || isNaN(sumRub) || sumRub < 0) {
                        msgEl.textContent = 'Укажите канал и сумму (число ≥ 0).';
-                       msgEl.classList.remove('hidden');
-                       return;
-                   }
-                   if (!description) {
-                       msgEl.textContent = 'Опишите что произошло — хотя бы одно предложение.';
                        msgEl.classList.remove('hidden');
                        return;
                    }
                    var from = (document.getElementById('kro-report-from') || {}).value.trim();
                    msgEl.textContent = '';
                    msgEl.classList.add('hidden');
-                   postJsonWithFallback('/api/kro/report-scam', { channel: channel, sumRub: sumRub, description: description, proofUrl: proofUrl || undefined, from: from || undefined }).then(function(r) {
+                   fetch(base + '/api/kro/report-scam', {
+                       method: 'POST',
+                       headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify({ channel: channel, sumRub: sumRub, from: from || undefined })
+                   }).then(function(r) {
                        if (r.ok) {
                            msgEl.textContent = 'Спасибо. Мы проверим и добавим.';
                            msgEl.classList.remove('hidden');
@@ -733,80 +683,6 @@
            var checkInput = document.getElementById('kro-check-channel');
            var checkResult = document.getElementById('kro-check-result');
            if (checkBtn && checkInput && checkResult) {
-               var SCAM_CACHE = { at: 0, rows: null };
-               var SCAM_TTL_MS = 5 * 60 * 1000;
-               function channelKeyForScam(s) {
-                   var t = (s || '').toString().trim().toLowerCase().replace(/\s/g, '');
-                   if (!t) return '';
-                   t = t.replace(/^https?:\/\//, '');
-                   if (t.indexOf('t.me/') === 0) t = t.slice(5);
-                   if (t.charAt(0) === '+') return t;
-                   return t.replace(/^@/, '');
-               }
-               function loadScamBaseRows() {
-                   var now = Date.now();
-                   if (SCAM_CACHE.rows && (now - SCAM_CACHE.at) < SCAM_TTL_MS) {
-                       return Promise.resolve(SCAM_CACHE.rows);
-                   }
-                   return getJsonWithFallback('/api/kro/monitor-data?t=' + Date.now()).then(function(data) {
-                       var rows = (data && data.scam_base) || [];
-                       SCAM_CACHE = { at: Date.now(), rows: rows };
-                       return rows;
-                   });
-               }
-               function findInScamBase(rows, channelNorm) {
-                   var k = channelKeyForScam(channelNorm);
-                   if (!k || k.charAt(0) === '+') return null;
-                   for (var i = 0; i < rows.length; i++) {
-                       var r = rows[i];
-                       if (!r) continue;
-                       if (r.username && channelKeyForScam(r.username) === k) return r;
-                       if (r.link) {
-                           var lk = (r.link + '').replace(/^https?:\/\/t\.me\//i, '').replace(/^t\.me\//i, '');
-                           if (channelKeyForScam(lk) === k) return r;
-                       }
-                   }
-                   return null;
-               }
-               function renderScamBaseHit(hit) {
-                   var lossRub = hit.total_loss_rub != null ? hit.total_loss_rub : hit.totalLost;
-                   var lines = [
-                       'Канал есть в базе scam_base (подтверждённые данные).',
-                       'Статус: ' + (hit.status || '—'),
-                       'Тип: ' + (hit.object_type || '—'),
-                       'Источник: ' + (hit.source_primary || '—'),
-                       'Жалоб: ' + (hit.complaints != null ? hit.complaints : '—'),
-                       'Потери ₽ (по базе): ' + formatFull(lossRub != null ? lossRub : 0)
-                   ];
-                   if (hit.link) lines.push('Канал: ' + hit.link);
-                   var ev = (hit.source_evidence || '').trim().replace(/\s+/g, ' ');
-                   if (ev.length > 400) ev = ev.slice(0, 397) + '…';
-                   if (ev) lines.push('Контекст: ' + ev);
-                   lines.push('Полная таблица: /monitor');
-                   checkResult.textContent = lines.join('\n');
-                   checkResult.className = 'kro-check-result kro-check-result--scam-base';
-               }
-               function runDeepChannelCheck(channel) {
-                   checkResult.textContent = 'Анализируем канал… может занять до минуты';
-                   return getJsonWithFallback('/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(data) {
-                       if (!data.found) {
-                           checkResult.textContent = (data.message || 'Анализируем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
-                           if (data.pending && !data.error_detail) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
-                           checkResult.className = 'kro-check-result';
-                           return;
-                       }
-                       var risk = data.risk_score;
-                       var riskStr = risk != null ? risk + '/100' : '—';
-                       var lines = ['Риск ' + riskStr];
-                       if (data.ads_per_week != null) lines.push('⚠️ ' + data.ads_per_week + ' реклам/неделя');
-                       if (data.bot_pct) lines.push('⚠️ ' + data.bot_pct + ' ботов в комментах');
-                       var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : '—');
-                       lines.push('💸 Потери пользователей: ' + lossStr);
-                       lines.push('📊 Вердикт: ' + (data.verdictText || data.verdict || '—'));
-                       checkResult.textContent = lines.join('\n');
-                       checkResult.className = 'kro-check-result';
-                   });
-               }
                function normChannel(s) {
                    var t = (s || '').trim().replace(/\s/g, '');
                    if (!t) return '';
@@ -822,25 +698,6 @@
                    var t = (s || '').trim();
                    return (t.indexOf('http://') === 0 || t.indexOf('https://') === 0) && t.toLowerCase().indexOf('t.me') === -1;
                }
-               var scamLookupTimer;
-               checkInput.addEventListener('input', function() {
-                   clearTimeout(scamLookupTimer);
-                   var raw = checkInput.value;
-                   if (!raw || !String(raw).trim()) return;
-                   if (isExchangerUrl(raw)) return;
-                   var ch = normChannel(raw);
-                   if (!ch || ch.indexOf('t.me/+') === 0) return;
-                   scamLookupTimer = setTimeout(function() {
-                       if (normChannel(checkInput.value.trim()) !== ch) return;
-                       loadScamBaseRows().then(function(rows) {
-                           if (normChannel(checkInput.value.trim()) !== ch) return;
-                           var hit = findInScamBase(rows, ch);
-                           if (!hit) return;
-                           renderScamBaseHit(hit);
-                           checkResult.classList.remove('hidden');
-                       }).catch(function() {});
-                   }, 400);
-               });
                checkBtn.addEventListener('click', function() {
                    var raw = checkInput.value;
                    if (!raw || !raw.trim()) {
@@ -851,7 +708,7 @@
                    checkResult.classList.remove('hidden');
                    if (isExchangerUrl(raw)) {
                        checkResult.textContent = 'Загрузка…';
-                       getJsonWithFallback('/api/kro/check-exchanger?url=' + encodeURIComponent(raw.trim())).then(function(data) {
+                       fetch(base + '/api/kro/check-exchanger?url=' + encodeURIComponent(raw.trim())).then(function(r) { return r.json(); }).then(function(data) {
                            if (!data.found) {
                                checkResult.textContent = (data.message || ('Обменник не найден в базе.'));
                                checkResult.className = 'kro-check-result';
@@ -875,23 +732,28 @@
                        checkResult.className = 'kro-check-result';
                        return;
                    }
-                   checkResult.textContent = 'Проверяем базу…';
-                   loadScamBaseRows()
-                       .then(function(rows) {
-                           var hit = findInScamBase(rows, channel);
-                           if (hit) {
-                               renderScamBaseHit(hit);
-                               return;
-                           }
-                           return runDeepChannelCheck(channel);
-                       }, function() {
-                           checkResult.textContent = 'Не удалось загрузить базу. Запускаем глубокую проверку…';
-                           return runDeepChannelCheck(channel);
-                       })
-                       .catch(function() {
-                           checkResult.textContent = 'Ошибка запроса.';
+                   checkResult.textContent = 'Анализируем канал… может занять до минуты';
+                   fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(data) {
+                       if (!data.found) {
+                           checkResult.textContent = (data.message || 'Анализируем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
+                           if (data.pending && !data.error_detail) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
                            checkResult.className = 'kro-check-result';
-                       });
+                           return;
+                       }
+                       var risk = data.risk_score;
+                       var riskStr = risk != null ? risk + '/100' : '—';
+                       var lines = ['Риск ' + riskStr];
+                       if (data.ads_per_week != null) lines.push('⚠️ ' + data.ads_per_week + ' реклам/неделя');
+                       if (data.bot_pct) lines.push('⚠️ ' + data.bot_pct + ' ботов в комментах');
+                       var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : '—');
+                       lines.push('💸 Потери пользователей: ' + lossStr);
+                       lines.push('📊 Вердикт: ' + (data.verdictText || data.verdict || '—'));
+                       checkResult.textContent = lines.join('\n');
+                       checkResult.className = 'kro-check-result';
+                   }).catch(function() {
+                       checkResult.textContent = 'Ошибка запроса.';
+                       checkResult.className = 'kro-check-result';
+                   });
                });
                var screenshotInput = document.getElementById('kro-check-screenshot');
                var screenshotBtn = document.getElementById('kro-check-screenshot-btn');
@@ -909,7 +771,11 @@
                        var reader = new FileReader();
                        reader.onload = function() {
                            var dataUrl = reader.result;
-                           postJsonWithFallback('/api/kro/check-screenshot', { image: dataUrl }).then(function(r) { return r.json(); }).then(function(data) {
+                           fetch(base + '/api/kro/check-screenshot', {
+                               method: 'POST',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({ image: dataUrl })
+                           }).then(function(r) { return r.json(); }).then(function(data) {
                                var extracted = (data.extracted || []).filter(Boolean);
                                if (!extracted.length) {
                                    checkResult.textContent = 'На скрине не найдено ни @ника, ни ссылки на канал/обменник.';
@@ -919,7 +785,7 @@
                                var first = extracted[0];
                                var isExch = (first.indexOf('http://') === 0 || first.indexOf('https://') === 0) && first.toLowerCase().indexOf('t.me') === -1;
                                if (isExch) {
-                                   getJsonWithFallback('/api/kro/check-exchanger?url=' + encodeURIComponent(first)).then(function(exData) {
+                                   fetch(base + '/api/kro/check-exchanger?url=' + encodeURIComponent(first)).then(function(r) { return r.json(); }).then(function(exData) {
                                        if (!exData.found) {
                                            checkResult.textContent = (exData.message || 'Обменник не найден в базе.');
                                            checkResult.className = 'kro-check-result';
@@ -943,40 +809,19 @@
                                    checkResult.className = 'kro-check-result';
                                    return;
                                }
-                               loadScamBaseRows()
-                                   .then(function(rows) {
-                                       var hit = findInScamBase(rows, channel);
-                                       if (hit) {
-                                           renderScamBaseHit(hit);
-                                           return null;
-                                       }
-                                       return getJsonWithFallback('/api/kro/check?channel=' + encodeURIComponent(channel));
-                                   }, function() {
-                                       return getJsonWithFallback('/api/kro/check?channel=' + encodeURIComponent(channel));
-                                   })
-                                   .then(function(chData) {
-                                       if (!chData) return;
-                                       if (!chData.found) {
-                                           checkResult.textContent = (chData.message || 'Проверяем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
-                                           if (chData.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
-                                           checkResult.className = 'kro-check-result';
-                                           return;
-                                       }
-                                       var risk2 = chData.risk_score;
-                                       var riskStr2 = risk2 != null ? risk2 + '/100' : '—';
-                                       var lines2 = ['Риск ' + riskStr2];
-                                       if (chData.ads_per_week != null) lines2.push('⚠️ ' + chData.ads_per_week + ' реклам/неделя');
-                                       if (chData.bot_pct) lines2.push('⚠️ ' + chData.bot_pct + ' ботов в комментах');
-                                       var lossStr2 = chData.total_loss ? (chData.total_loss + '') : (chData.complaints != null ? chData.complaints + ' жалоб' : '—');
-                                       lines2.push('💸 Потери пользователей: ' + lossStr2);
-                                       lines2.push('📊 Вердикт: ' + (chData.verdictText || chData.verdict || '—'));
-                                       checkResult.textContent = lines2.join('\n');
+                               fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(chData) {
+                                   if (!chData.found) {
+                                       checkResult.textContent = (chData.message || 'Проверяем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
+                                       if (chData.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
                                        checkResult.className = 'kro-check-result';
-                                   })
-                                   .catch(function() {
-                                       checkResult.textContent = 'Ошибка запроса.';
-                                       checkResult.className = 'kro-check-result';
-                                   });
+                                       return;
+                                   }
+                                   checkResult.innerHTML = buildCheckResultCardHtml(chData);
+                                   checkResult.className = 'kro-check-result';
+                               }).catch(function() {
+                                   checkResult.textContent = 'Ошибка запроса.';
+                                   checkResult.className = 'kro-check-result';
+                               });
                            }).catch(function() {
                                checkResult.textContent = 'Ошибка распознавания скрина.';
                                checkResult.className = 'kro-check-result';
@@ -1055,6 +900,108 @@
                initReveal();
                initHeroScrolled();
                initHeroParallax();
+           }
+       })();
+   </script>
+   <script>
+       (function() {
+           function initMathSlider() {
+               var wrap = document.querySelector('.kro-f1-math-slider-wrap');
+               if (!wrap) return;
+               var slider = document.getElementById('kro-f1-math-slider');
+               var track = document.getElementById('kro-f1-math-track');
+               var slides = wrap.querySelectorAll('.kro-f1-math-slide');
+               var dots = wrap.querySelectorAll('.kro-f1-math-dot');
+               var currentIndex = 0;
+               var startX = 0;
+               var startIndex = 0;
+               var slideWidth = 0;
+
+               function goTo(i) {
+                   i = Math.max(0, Math.min(i, slides.length - 1));
+                   currentIndex = i;
+                   if (track) track.style.transform = 'translateX(-' + (i * 33.333) + '%)';
+                   dots.forEach(function(d, j) { d.classList.toggle('is-active', j === i); });
+               }
+
+               function onMove(clientX) {
+                   var deltaX = clientX - startX;
+                   var maxDrag = slideWidth || slider.offsetWidth;
+                   deltaX = Math.max(-maxDrag, Math.min(maxDrag, deltaX));
+                   track.style.transform = 'translateX(' + (-startIndex * maxDrag + deltaX) + 'px)';
+               }
+
+               function endDrag(clientX) {
+                   var deltaX = clientX - startX;
+                   var width = slideWidth || slider.offsetWidth;
+                   var threshold = Math.min(50, width * 0.15);
+                   slider.classList.remove('dragging');
+                   track.style.transition = '';
+                   if (Math.abs(deltaX) > threshold) {
+                       if (deltaX < 0) goTo(startIndex + 1);
+                       else goTo(startIndex - 1);
+                   } else {
+                       goTo(startIndex);
+                   }
+               }
+
+               function startDrag(clientX) {
+                   startX = clientX;
+                   startIndex = currentIndex;
+                   slideWidth = slider.offsetWidth;
+                   slider.classList.add('dragging');
+                   track.style.transition = 'none';
+               }
+
+               if (slider && track) {
+                   slider.addEventListener('mousedown', function(e) {
+                       e.preventDefault();
+                       startDrag(e.clientX);
+                       function move(e) { onMove(e.clientX); }
+                       function up(e) {
+                           endDrag(e.clientX);
+                           document.removeEventListener('mousemove', move);
+                           document.removeEventListener('mouseup', up);
+                       }
+                       document.addEventListener('mousemove', move);
+                       document.addEventListener('mouseup', up);
+                   });
+
+                   var touchStartX = 0;
+                   slider.addEventListener('touchstart', function(e) {
+                       touchStartX = e.touches[0].clientX;
+                       startDrag(e.touches[0].clientX);
+                   }, { passive: true });
+                   slider.addEventListener('touchmove', function(e) {
+                       var dx = e.touches[0].clientX - touchStartX;
+                       if (Math.abs(dx) > 10) e.preventDefault();
+                       onMove(e.touches[0].clientX);
+                   }, { passive: false });
+                   slider.addEventListener('touchend', function(e) {
+                       if (e.changedTouches && e.changedTouches[0])
+                           endDrag(e.changedTouches[0].clientX);
+                   }, { passive: true });
+               }
+
+               dots.forEach(function(dot, i) {
+                   dot.addEventListener('click', function() { goTo(i); });
+               });
+
+               goTo(0);
+           }
+           if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initMathSlider);
+           else initMathSlider();
+       })();
+   </script>
+   <script>
+       (function() {
+           var btn = document.getElementById('kro-f1-cta-btn');
+           var wrap = document.getElementById('kro-f1-cta-check-wrap');
+           if (btn && wrap) {
+               btn.addEventListener('click', function() {
+                   wrap.classList.add('kro-f1-show-check');
+                   wrap.querySelector('#kro-feature1-check').scrollIntoView({ behavior: 'smooth', block: 'center' });
+               });
            }
        })();
    </script>
