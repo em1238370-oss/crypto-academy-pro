@@ -1357,30 +1357,144 @@ function channelUrlForMonitorCase(ch) {
   return name ? `https://t.me/${name}` : '';
 }
 
-/** Top N complaint aggregates from kro-12h-stats.json for /monitor story cards. */
-function buildMonitorRecentCases(statsData, limit = 3) {
-  const rows = Array.isArray(statsData?.complaints_rows) ? statsData.complaints_rows : [];
-  const reportDoc = statsData?.report_doc_url || '';
-  const sorted = [...rows]
-    .filter((r) => r && String(r.channel || '').trim())
-    .sort((a, b) => (Number(b.losses) || 0) - (Number(a.losses) || 0));
-  const out = [];
-  for (const r of sorted) {
-    if (out.length >= limit) break;
-    const channel = String(r.channel || '').trim();
-    const losses = Math.max(0, Math.round(Number(r.losses) || 0));
-    const src = pickMonitorCaseSource(r, reportDoc);
-    out.push({
-      channel,
-      channel_label: channelLabelForMonitorCase(channel),
-      channel_url: channelUrlForMonitorCase(channel),
-      loss_rub: losses,
-      summary: buildMonitorCaseSummary(r),
-      source_url: src.url,
-      source_kind: src.kind
-    });
+/** Extract http(s) URLs from a string (evidence, primary source cell). */
+function collectUrlsFromString(s) {
+  if (!s || typeof s !== 'string') return [];
+  const matches = s.match(/https?:\/\/[^\s\])'"<>|]+/g) || [];
+  return matches.map((m) => m.replace(/[),.;]+$/g, ''));
+}
+
+function parseScamBaseTotalLossRub(row) {
+  if (!row) return 0;
+  if (row._schema === 'v2') {
+    return Math.max(0, Math.round(Number(row.total_loss_rub) || 0));
   }
-  return out;
+  const raw = String(row.total_loss ?? '')
+    .replace(/\s/g, '')
+    .replace(/,/g, '.');
+  const n = parseFloat(raw);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
+}
+
+function scamBaseRowHasEvidenceOrLoss(row) {
+  const loss = parseScamBaseTotalLossRub(row);
+  const ev = String(row.source_evidence || '').trim();
+  return loss > 0 || ev.length > 0;
+}
+
+function pickScamBaseCaseSource(row) {
+  const urls = [
+    ...new Set([
+      ...collectUrlsFromString(row.source_evidence || ''),
+      ...collectUrlsFromString(row.source_primary || ''),
+    ]),
+  ];
+  const external = urls.find((u) => !/t\.me\//i.test(u));
+  if (external) return { url: external, kind: 'external' };
+  const link = String(row.link || '').trim();
+  if (/^https?:\/\//i.test(link)) return { url: link, kind: 'telegram' };
+  if (urls.length) return { url: urls[0], kind: 'telegram' };
+  const slug = encodeURIComponent(String(row.username || '').trim().replace(/^@+/, ''));
+  if (slug) return { url: `/channel/${slug}`, kind: 'monitor' };
+  return { url: '/monitor#data-scam', kind: 'monitor' };
+}
+
+function buildMonitorCaseSummaryFromScamRow(row) {
+  const complaints = Math.max(0, Math.floor(Number(row.complaints) || 0));
+  const losses = parseScamBaseTotalLossRub(row);
+  const ot = String(row.object_type || '').trim();
+  const st = String(row.status || '').trim();
+  let s;
+  if (row._schema === 'v2') {
+    if (complaints > 0 && losses > 0) {
+      s = `По каналу — ${complaints} ${ruComplaintsWord(complaints)}, в суммах фигурирует порядка ${fmtRubSpaces(losses)} ₽.`;
+    } else if (complaints > 0) {
+      s = `В открытых источниках и форме по каналу зафиксировано ${complaints} ${ruComplaintsWord(complaints)}.`;
+    } else if (losses > 0) {
+      s = `В базе зафиксированы потери порядка ${fmtRubSpaces(losses)} ₽.`;
+    } else if (String(row.source_evidence || '').trim()) {
+      const ev = String(row.source_evidence || '')
+        .trim()
+        .replace(/\s+/g, ' ');
+      s = ev.length > 220 ? `${ev.slice(0, 217)}…` : ev;
+    } else if (ot || st) {
+      s = [ot && `Тип: ${ot}`, st && `Статус: ${st}`].filter(Boolean).join('. ');
+      if (s) s += '.';
+      else s = 'Запись в базе подтверждённых объектов — детали в таблице и карточке канала.';
+    } else {
+      s = 'Запись в базе подтверждённых объектов — детали в таблице и карточке канала.';
+    }
+  } else {
+    if (complaints > 0 && losses > 0) {
+      s = `По каналу — ${complaints} ${ruComplaintsWord(complaints)}, сумма потерь около ${fmtRubSpaces(losses)} ₽.`;
+    } else if (losses > 0) {
+      s = `В базе указаны потери порядка ${fmtRubSpaces(losses)} ₽.`;
+    } else if (complaints > 0) {
+      s = `Зафиксировано ${complaints} ${ruComplaintsWord(complaints)}.`;
+    } else {
+      s = 'Канал в базе скам-объектов (запись в устаревшем формате).';
+    }
+  }
+  if (s.length > 280) return `${s.slice(0, 277)}…`;
+  return s;
+}
+
+function scamRowToMonitorCase(row) {
+  const channel = String(row.username || '').trim();
+  const lossRub = parseScamBaseTotalLossRub(row);
+  const link = String(row.link || '').trim();
+  const channel_url = /^https?:\/\//i.test(link) ? link : channelUrlForMonitorCase(channel);
+  const src = pickScamBaseCaseSource(row);
+  return {
+    channel,
+    channel_label: channelLabelForMonitorCase(channel),
+    channel_url,
+    loss_rub: lossRub,
+    summary: buildMonitorCaseSummaryFromScamRow(row),
+    source_url: src.url,
+    source_kind: src.kind,
+  };
+}
+
+/** Время строки scam_base для сортировки «сначала новее»: detected_at, иначе created_at. */
+function scamBaseRowSortMs(row) {
+  if (!row) return 0;
+  const d = parseScamDetectedAtMs(row);
+  if (d) return d;
+  const c = (row.created_at || '').toString().trim();
+  if (c) {
+    const p = Date.parse(c);
+    if (Number.isFinite(p)) return p;
+  }
+  return 0;
+}
+
+/**
+ * Карточки «Последние случаи» на /monitor: только scam_base.
+ * Сначала до N самых свежих по дате с total_loss > 0 или непустым source_evidence;
+ * если таких меньше N — добираем самыми свежими по дате из остальных.
+ */
+function buildMonitorRecentCasesFromScamBase(scamRows, limit = 3) {
+  const rows = (scamRows || []).filter(
+    (r) => r && String(r.username || '').trim() && r.username !== 'username'
+  );
+  if (!rows.length) return [];
+
+  const sortedAll = [...rows].sort((a, b) => scamBaseRowSortMs(b) - scamBaseRowSortMs(a));
+  const preferred = sortedAll.filter(scamBaseRowHasEvidenceOrLoss);
+  const picked = [];
+  for (const r of preferred) {
+    if (picked.length >= limit) break;
+    picked.push(r);
+  }
+  if (picked.length < limit) {
+    for (const r of sortedAll) {
+      if (picked.length >= limit) break;
+      if (picked.indexOf(r) !== -1) continue;
+      picked.push(r);
+    }
+  }
+  return picked.slice(0, limit).map(scamRowToMonitorCase);
 }
 
 const KRO_FALLBACK = {
@@ -2465,8 +2579,7 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       }))
       .reverse(); // newest first
 
-    const statsSnapshot = readJsonFileSafe(KRO_12H_STATS_PATH, '12h-stats') || {};
-    const recent_cases = buildMonitorRecentCases(statsSnapshot, 3);
+    const recent_cases = buildMonitorRecentCasesFromScamBase(scamRows, 3);
 
     return res.json({
       scam_base: scamRows,

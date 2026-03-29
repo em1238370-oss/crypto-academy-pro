@@ -1150,12 +1150,20 @@
   function renderAllSourceLinks(row) {
     var urls = extractUrls(row && row.source_evidence);
     var nonTg = urls.filter(function(u) { return !/t\.me\//i.test(u); });
+    var tgOnly = urls.filter(function(u) { return /t\.me\//i.test(u); });
     if (!nonTg.length) {
       var sp = row && row.source_primary;
       if (sp && /^https?:\/\//i.test(sp)) nonTg = [sp];
     }
-    if (!nonTg.length) return '<span class="mon-text-fallback">нет публичной ссылки</span>';
-    return nonTg.slice(0, 2).map(function(u) {
+    var picks = [];
+    var i;
+    for (i = 0; i < nonTg.length && picks.length < 2; i++) picks.push(nonTg[i]);
+    for (i = 0; i < tgOnly.length && picks.length < 2; i++) picks.push(tgOnly[i]);
+    if (!picks.length && row && row.link && /^https?:\/\//i.test(row.link)) {
+      picks.push(row.link.trim());
+    }
+    if (!picks.length) return '<span class="mon-text-fallback">нет извлечённой ссылки — см. полный текст в «Признаки риска»</span>';
+    return picks.map(function(u) {
       return '<a class="mon-external-link mon-source-link" href="' + esc(u) + '" target="_blank" rel="noopener">' +
         esc(hostLabel(u)) + externalIcon() + '</a>';
     }).join(' ');
@@ -1334,7 +1342,7 @@
       var hint = 'В типе объекта указано только число — обычно это ошибка колонки (число жалоб попало не в тот столбец). Смотрите столбец «Жалоб» и канал по ссылке.';
       return '<span class="mon-type-bad" title="' + esc(hint) + '">не классифицировано <span class="mon-type-bad-num">(' + esc(raw) + ')</span></span>';
     }
-    return '<span class="mon-cell-muted">' + esc(raw) + '</span>';
+    return '<span class="mon-object-type-pill" title="' + esc(raw) + '">' + esc(raw) + '</span>';
   }
 
   function formatScamComplaintsCell(r) {
@@ -1364,7 +1372,7 @@
     var tableHtml = '<table class="mon-table">' +
       '<thead><tr>' +
       '<th style="width:36px">#</th>' +
-      '<th>Канал</th><th title="Тип объекта: сигнал‑канал, сайт/курс, крипто‑обменник, инвест‑бот и т.д. (не число жалоб)">Тип объекта</th><th>Источник</th>' +
+      '<th title="Канал Telegram, сайт обменника или бот — единая колонка объекта">Объект</th><th title="Тип объекта: сигнал‑канал, крипто‑обменник, инвест‑бот и т.д. (не число жалоб)">Тип объекта</th><th title="Ссылки из доказательств, иначе ссылка на объект">Источник</th>' +
       '<th title="Факты из карточки записи, ключевые слова из контент-анализа и отфильтрованный текст доказательств">Признаки риска</th><th title="По текстам постов из ленты (если доступна) или по сохранённым полям записи">Контент-анализ</th><th>Статус</th><th title="Строк жалоб на листе (форма + сайты-источники) за всё время по каналу, плюс сообщения из чатов за последний цикл мониторинга. Часто ≥2 из‑за порога отбора.">Жалоб (учтено)</th><th>Дата</th>' +
       '</tr></thead><tbody>';
 
@@ -1408,7 +1416,7 @@
 
     var searchBar = '<div class="mon-table-search">' +
       '<input type="text" id="s3-search" class="mon-search-input" placeholder="🔍  Найти канал, источник, признак…" autocomplete="off" spellcheck="false">' +
-      '<span class="mon-search-count" id="s3-search-count">' + rows.length + ' каналов</span>' +
+      '<span class="mon-search-count" id="s3-search-count">' + rows.length + ' записей</span>' +
       '</div>';
 
     if (wrap) {
