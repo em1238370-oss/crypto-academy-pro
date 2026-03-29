@@ -25,6 +25,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, '..', '..');
 dotenv.config({ path: join(projectRoot, '.env') });
+dotenv.config({ path: join(projectRoot, 'backend', 'kro-worker', '.env') });
 
 const NOTE =
   'источник: чёрный список — конкретных фактов обмана не найдено';
@@ -95,23 +96,43 @@ function mergeNote(evidence) {
 async function getSheetsClient() {
   const kroSheetId = process.env.KRO_SHEET_ID;
   const kroCredentialsJson = process.env.KRO_GOOGLE_CREDENTIALS_JSON;
-  const kroCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  let kroCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
   if (!kroSheetId) {
     throw new Error('KRO_SHEET_ID не задан');
   }
   let credentials;
-  if (kroCredentialsJson) {
-    credentials = JSON.parse(kroCredentialsJson);
-  } else if (kroCredentialsPath) {
+  if (kroCredentialsJson && kroCredentialsJson.trim()) {
+    try {
+      credentials = JSON.parse(kroCredentialsJson);
+    } catch (e) {
+      console.warn(
+        'KRO_GOOGLE_CREDENTIALS_JSON не парсится, пробуем файл:',
+        e.message
+      );
+    }
+  }
+  if (!credentials) {
+    const defaultFile = join(
+      projectRoot,
+      'backend',
+      'kro-worker',
+      'kro-google-credentials.json'
+    );
+    if (!kroCredentialsPath && fs.existsSync(defaultFile)) {
+      kroCredentialsPath = defaultFile;
+    }
+  }
+  if (!credentials && kroCredentialsPath) {
     const absPath = join(process.cwd(), kroCredentialsPath);
     const path = fs.existsSync(absPath) ? absPath : kroCredentialsPath;
     if (!fs.existsSync(path)) {
       throw new Error(`Файл credentials не найден: ${kroCredentialsPath}`);
     }
     credentials = JSON.parse(fs.readFileSync(path, 'utf8'));
-  } else {
+  }
+  if (!credentials) {
     throw new Error(
-      'Задай KRO_GOOGLE_CREDENTIALS_JSON или GOOGLE_APPLICATION_CREDENTIALS'
+      'Задай валидный KRO_GOOGLE_CREDENTIALS_JSON, GOOGLE_APPLICATION_CREDENTIALS или положите backend/kro-worker/kro-google-credentials.json'
     );
   }
   const { google } = await import('googleapis');
@@ -127,9 +148,23 @@ function rangeSheetName(rangeRaw) {
   return r.includes('!') ? r.split('!')[0] : 'scam_base';
 }
 
+function effectiveScamBaseRange(raw) {
+  const r = String(raw || 'scam_base!A2:N');
+  // В .env воркера часто A2:H — для v2 (J–M) патчу нужен полный диапазон
+  if (/:H$/i.test(r) && /^scam_base!/i.test(r)) {
+    console.warn(
+      'KRO_SCAM_BASE_RANGE заканчивается на :H — для scam_base v2 подставляем :N (колонки J–M).'
+    );
+    return r.replace(/:H$/i, ':N');
+  }
+  return r;
+}
+
 async function main() {
   const { dryRun, includeKursSearch } = parseArgs(process.argv.slice(2));
-  const rangeRaw = process.env.KRO_SCAM_BASE_RANGE || 'scam_base!A2:N';
+  const rangeRaw = effectiveScamBaseRange(
+    process.env.KRO_SCAM_BASE_RANGE || 'scam_base!A2:N'
+  );
   const sheetName = rangeSheetName(rangeRaw);
 
   const { sheets, kroSheetId } = await getSheetsClient();
