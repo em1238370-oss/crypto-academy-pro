@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260329-channel">
+  <link rel="stylesheet" href="/monitor.css?v=20260329-objects">
 </head>
 <body class="mon-page">
 
@@ -182,8 +182,8 @@
     <header class="mon-chapter-head mon-chapter-head--split">
       <div class="mon-chapter-head-main">
         <p class="mon-chapter-kicker">02 · Таблица</p>
-        <h2 id="mon-scam-heading" class="mon-chapter-title">База скам-каналов</h2>
-        <p class="mon-chapter-lead mon-chapter-lead--inline">Подтверждённые записи: канал, цитата, статус, ссылки на источники.</p>
+        <h2 id="mon-scam-heading" class="mon-chapter-title">База объектов</h2>
+        <p class="mon-chapter-lead mon-chapter-lead--inline">Сигнал‑каналы, крипто‑обменники, инвест‑боты: тип, статус, число жалоб, признаки риска с цитатой, ссылки (объект и первоисточники).</p>
       </div>
       <span class="mon-chapter-meta" id="s3-count"></span>
     </header>
@@ -195,7 +195,7 @@
         <div class="mon-scheme-row" role="img" aria-label="Несколько независимых источников, затем строка в таблице с цитатой и ссылками">
           <span class="mon-scheme-node">2+ источника</span>
           <span class="mon-scheme-arrow" aria-hidden="true">→</span>
-          <span class="mon-scheme-node mon-scheme-node--accent">канал</span>
+          <span class="mon-scheme-node mon-scheme-node--accent">объект</span>
           <span class="mon-scheme-arrow" aria-hidden="true">→</span>
           <span class="mon-scheme-node">цитата</span>
           <span class="mon-scheme-arrow" aria-hidden="true">→</span>
@@ -677,6 +677,16 @@
     });
   }
 
+  /** Приводит ссылку из таблицы к абсолютному http(s) (t.me/…, //host → https). */
+  function normalizeHttpHref(raw) {
+    var u = (raw == null ? '' : String(raw)).trim();
+    if (!u) return '';
+    if (/^https?:\/\//i.test(u)) return u;
+    if (/^\/\//.test(u)) return 'https:' + u;
+    if (/^t\.me\//i.test(u)) return 'https://' + u;
+    return '';
+  }
+
   function extractUrls(text) {
     return uniq(((text || '').match(/https?:\/\/[^\s|;]+/g) || []).map(function(url) {
       return url.replace(/[),.]+$/,'');
@@ -1148,24 +1158,34 @@
   }
 
   function renderAllSourceLinks(row) {
-    var urls = extractUrls(row && row.source_evidence);
-    var nonTg = urls.filter(function(u) { return !/t\.me\//i.test(u); });
-    var tgOnly = urls.filter(function(u) { return /t\.me\//i.test(u); });
-    if (!nonTg.length) {
-      var sp = row && row.source_primary;
-      if (sp && /^https?:\/\//i.test(sp)) nonTg = [sp];
+    var seen = {};
+    var ordered = [];
+    function pushUrl(raw) {
+      var u = normalizeHttpHref(raw);
+      if (!u) return;
+      if (seen[u]) return;
+      seen[u] = true;
+      ordered.push(u);
     }
-    var picks = [];
-    var i;
-    for (i = 0; i < nonTg.length && picks.length < 2; i++) picks.push(nonTg[i]);
-    for (i = 0; i < tgOnly.length && picks.length < 2; i++) picks.push(tgOnly[i]);
-    if (!picks.length && row && row.link && /^https?:\/\//i.test(row.link)) {
-      picks.push(row.link.trim());
-    }
-    if (!picks.length) return '<span class="mon-text-fallback">нет извлечённой ссылки — см. полный текст в «Признаки риска»</span>';
-    return picks.map(function(u) {
+    // 1) Ссылка на сам объект (t.me, сайт обменника и т.д.)
+    pushUrl(row && row.link);
+    // 2) Все URL из доказательств (kurs, статьи, t.me из цитат)
+    var fromEv = extractUrls(row && row.source_evidence);
+    for (var i = 0; i < fromEv.length; i++) pushUrl(fromEv[i]);
+    // 3) Если primary — прямой URL (редко)
+    var sp = row && row.source_primary;
+    if (sp) pushUrl(String(sp).trim());
+
+    if (!ordered.length) return '<span class="mon-text-fallback">нет публичной ссылки</span>';
+
+    var mainLink = normalizeHttpHref(row && row.link) || '';
+    return ordered.slice(0, 4).map(function(u) {
+      var lab = hostLabel(u);
+      if (mainLink && u === mainLink) {
+        lab = /t\.me\//i.test(u) ? (lab + ' · объект') : (lab + ' · сайт');
+      }
       return '<a class="mon-external-link mon-source-link" href="' + esc(u) + '" target="_blank" rel="noopener">' +
-        esc(hostLabel(u)) + externalIcon() + '</a>';
+        esc(lab) + externalIcon() + '</a>';
     }).join(' ');
   }
 
@@ -1342,7 +1362,7 @@
       var hint = 'В типе объекта указано только число — обычно это ошибка колонки (число жалоб попало не в тот столбец). Смотрите столбец «Жалоб» и канал по ссылке.';
       return '<span class="mon-type-bad" title="' + esc(hint) + '">не классифицировано <span class="mon-type-bad-num">(' + esc(raw) + ')</span></span>';
     }
-    return '<span class="mon-object-type-pill" title="' + esc(raw) + '">' + esc(raw) + '</span>';
+    return '<span class="mon-cell-muted">' + esc(raw) + '</span>';
   }
 
   function formatScamComplaintsCell(r) {
@@ -1351,7 +1371,9 @@
     var n = Number(c);
     if (!isFinite(n)) return '<span class="mon-cell-muted">' + esc(String(c)) + '</span>';
     var out = '<span class="mon-comp-main">' + esc(String(n)) + '</span>';
-    if (n === 2) {
+    if (n === 1) {
+      out += ' <abbr class="mon-comp-hint" title="Одна учтённая отметка в строке (например первый цикл органического отбора или одна строка жалоб). При накоплении строк на листе reports число вырастет.">?</abbr>';
+    } else if (n === 2) {
       out += ' <abbr class="mon-comp-hint" title="Два — часто минимальный порог отбора; в новых записях число считается по всем строкам жалоб на листе (и чатам за цикл). Если жалоб больше — после обновления воркером здесь будет больше.">?</abbr>';
     } else if (n > 2) {
       out += ' <abbr class="mon-comp-hint" title="Сумма строк на листе жалоб по этому каналу (форма, сайты) и сообщений из чатов за последний проход мониторинга.">?</abbr>';
@@ -1362,7 +1384,7 @@
   function renderScamBase(rows) {
     var wrap = document.getElementById('s3-table-wrap');
     var countEl = document.getElementById('s3-count');
-    if (countEl) countEl.textContent = rows.length + ' записей';
+    if (countEl) countEl.textContent = rows.length + ' объектов';
 
     if (!rows.length) {
       if (wrap) wrap.innerHTML = '<div class="mon-loading">База пуста</div>';
@@ -1372,12 +1394,12 @@
     var tableHtml = '<table class="mon-table">' +
       '<thead><tr>' +
       '<th style="width:36px">#</th>' +
-      '<th title="Канал Telegram, сайт обменника или бот — единая колонка объекта">Объект</th><th title="Тип объекта: сигнал‑канал, крипто‑обменник, инвест‑бот и т.д. (не число жалоб)">Тип объекта</th><th title="Ссылки из доказательств, иначе ссылка на объект">Источник</th>' +
-      '<th title="Факты из карточки записи, ключевые слова из контент-анализа и отфильтрованный текст доказательств">Признаки риска</th><th title="По текстам постов из ленты (если доступна) или по сохранённым полям записи">Контент-анализ</th><th>Статус</th><th title="Строк жалоб на листе (форма + сайты-источники) за всё время по каналу, плюс сообщения из чатов за последний цикл мониторинга. Часто ≥2 из‑за порога отбора.">Жалоб (учтено)</th><th>Дата</th>' +
+      '<th title="Имя в базе: @канал, сайт или приглашение">Объект</th><th title="Тип: сигнал‑канал, крипто‑обменник, инвест‑бот, сайт/курс и т.д. (не число жалоб)">Тип объекта</th><th title="Ссылка на объект и внешние первоисточники из поля доказательств">Источник</th>' +
+      '<th title="Факты из карточки, контент‑анализ и цитаты из текста доказательств (в т.ч. kurs.expert и поиск)">Признаки риска</th><th title="По постам канала (если есть) или сохранённым полям записи">Контент-анализ</th><th title="Цветной бейдж: без нарушений / под наблюдением / в риске — для всех типов одинаково">Статус</th><th title="Число жалоб из строки базы и накопление по листу reports / чатам (для любого типа объекта)">Жалоб (учтено)</th><th>Дата</th>' +
       '</tr></thead><tbody>';
 
     rows.forEach(function(r, idx) {
-      var channelUrl = r.link || '';
+      var channelUrl = normalizeHttpHref(r.link) || '';
       var rawU = (r.username || '').trim();
       var looksLikeHost = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$/i.test(rawU.replace(/\.$/, ''));
       var channelLabel;
@@ -1415,8 +1437,8 @@
     tableHtml += '</tbody></table>';
 
     var searchBar = '<div class="mon-table-search">' +
-      '<input type="text" id="s3-search" class="mon-search-input" placeholder="🔍  Найти канал, источник, признак…" autocomplete="off" spellcheck="false">' +
-      '<span class="mon-search-count" id="s3-search-count">' + rows.length + ' записей</span>' +
+      '<input type="text" id="s3-search" class="mon-search-input" placeholder="🔍  Найти объект, тип, источник, признак…" autocomplete="off" spellcheck="false">' +
+      '<span class="mon-search-count" id="s3-search-count">' + rows.length + ' объектов</span>' +
       '</div>';
 
     if (wrap) {
@@ -1439,7 +1461,7 @@
             tr.style.display = match ? '' : 'none';
             if (match) visible++;
           });
-          if (cnt) cnt.textContent = (q ? visible + ' из ' + rows.length : rows.length) + ' каналов';
+          if (cnt) cnt.textContent = (q ? visible + ' из ' + rows.length : rows.length) + ' объектов';
         });
       }
     }
