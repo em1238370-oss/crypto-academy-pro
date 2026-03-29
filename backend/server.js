@@ -1628,7 +1628,7 @@ function scamBaseRowLooksV2(row) {
   if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(detected)) return true;
   if (/^\d{4}-\d{2}-\d{2}[ ]\d{2}:\d{2}/.test(detected)) return true;
   const link = (row[1] || '').toString().trim();
-  if (/^https?:\/\/t\.me\//i.test(link)) return true;
+  if (/^https?:\/\//i.test(link)) return true;
   return false;
 }
 
@@ -1792,7 +1792,7 @@ function buildLiveCounterFromScamBase(parsedRows) {
     (r.object_type || '').toLowerCase().includes('сигнал') || !(r.object_type || '').trim()
   ).length;
   const courses_products = allRows.filter(r =>
-    ['курс', 'сайт', 'обучен'].some(kw => (r.object_type || '').toLowerCase().includes(kw))
+    ['курс', 'сайт', 'обучен', 'обменник', 'инвест'].some(kw => (r.object_type || '').toLowerCase().includes(kw))
   ).length;
 
   // Top-3 from all rows by total loss
@@ -1844,10 +1844,115 @@ function normalizeCheckOnceError(error) {
   return text.split('\n').slice(-1)[0].trim() || text;
 }
 
+function looksLikeSiteHostname(s) {
+  const t = (s || '').toString().trim().toLowerCase().replace(/\.$/, '');
+  if (!t || /\s|\/|@/.test(t)) return false;
+  return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i.test(t);
+}
+
+const KRO_OBJECT_TYPE_RISK_PREFIX = {
+  'крипто-обменник': 'Признаки риска (крипто-обменник): обещает завышенный спред (часто 9–15% и выше), требует дополнительную оплату для вывода, ссылается на AML-блокировку средств.',
+  'инвест-бот': 'Признаки риска (инвест-бот): обещает процент в день, требует пополнить депозит, блокирует вывод.',
+};
+
+function riskPrefixForObjectType(ot) {
+  const t = (ot || '').toString().trim().toLowerCase();
+  for (const [k, v] of Object.entries(KRO_OBJECT_TYPE_RISK_PREFIX)) {
+    if (k.toLowerCase() === t) return v;
+  }
+  return '';
+}
+
+function inferObjectTypeForPromote(channelValue, explicit) {
+  const ex = (explicit || '').toString().trim();
+  if (ex) return ex;
+  const s = (channelValue || '').toString().trim().toLowerCase();
+  if (!s) return 'сигнал-канал';
+  if (s.startsWith('http://') || s.startsWith('https://')) {
+    if (s.includes('t.me/')) return 'сигнал-канал';
+    return 'крипто-обменник';
+  }
+  if (looksLikeSiteHostname(s)) {
+    if (/(?:^|[._-])bot(?:[._-]|$)|\.bot\.|bot\.(io|com|net|org|ru|app)\b/i.test(s)) return 'инвест-бот';
+    return 'крипто-обменник';
+  }
+  return 'сигнал-канал';
+}
+
+function scamBaseDisplayLinkForPromote(channelValue, explicitOt) {
+  let raw = (channelValue || '').toString().trim();
+  const ot = (explicitOt || '').toString().trim();
+  if (!raw) return { display: '', link: '', objectType: 'сигнал-канал' };
+  let low = raw.toLowerCase();
+  if (low.startsWith('http://') || low.startsWith('https://')) {
+    if (low.includes('t.me/')) {
+      const idx = low.indexOf('t.me/');
+      raw = raw.slice(idx);
+      low = raw.toLowerCase();
+    } else {
+      try {
+        const u = new URL(low);
+        const host = u.hostname.toLowerCase();
+        if (host) {
+          return {
+            display: host,
+            link: `https://${host}`,
+            objectType: inferObjectTypeForPromote(host, ot),
+          };
+        }
+      } catch {
+        /* fallthrough */
+      }
+      return { display: raw, link: raw, objectType: inferObjectTypeForPromote(raw, ot) };
+    }
+  }
+  if (looksLikeSiteHostname(raw)) {
+    const host = low.replace(/\.$/, '');
+    return {
+      display: host,
+      link: `https://${host}`,
+      objectType: inferObjectTypeForPromote(host, ot),
+    };
+  }
+  if (low.startsWith('t.me/+')) {
+    const link = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    return { display: raw, link, objectType: inferObjectTypeForPromote(raw, ot) };
+  }
+  if (low.startsWith('t.me/')) {
+    const parts = low.split('/').filter(Boolean);
+    let slug = parts[1] || '';
+    if (slug === 's' && parts[2]) slug = parts[2];
+    slug = (slug || '').split('?')[0];
+    return {
+      display: `@${slug}`,
+      link: `https://t.me/${slug}`,
+      objectType: inferObjectTypeForPromote(slug, ot),
+    };
+  }
+  let key = low.startsWith('@') ? low.slice(1) : low;
+  key = key.split('/')[0].split('?')[0];
+  return {
+    display: `@${key}`,
+    link: `https://t.me/${key}`,
+    objectType: inferObjectTypeForPromote(key, ot),
+  };
+}
+
 function normalizeChannel(channel) {
   const s = (channel || '').toString().trim().replace(/\s/g, '');
   if (!s) return '';
   const lower = s.toLowerCase();
+  if (lower.startsWith('http://') || lower.startsWith('https://')) {
+    try {
+      const u = new URL(lower);
+      if (u.hostname) return u.hostname.toLowerCase();
+    } catch {
+      /* fallthrough */
+    }
+  }
+  if (looksLikeSiteHostname(s)) {
+    return lower.replace(/\.$/, '');
+  }
   if (lower.startsWith('https://t.me/') || lower.startsWith('http://t.me/')) {
     const path = s.replace(/^https?:\/\/t\.me\//i, '').trim();
     if (path.startsWith('+')) return 't.me/' + path;
@@ -1861,10 +1966,19 @@ function normalizeChannel(channel) {
   return s.startsWith('@') ? s : '@' + s;
 }
 
-/** Canonical form for matching report row channel to requested channel (@name vs t.me/name). */
+/** Canonical form for matching report row channel to requested channel (@name vs t.me/name / сайт). */
 function channelMatchKey(channel) {
   const s = (channel || '').toString().trim().toLowerCase().replace(/\s/g, '');
   if (!s) return '';
+  if (s.startsWith('http://') || s.startsWith('https://')) {
+    try {
+      const u = new URL(s);
+      if (u.hostname) return u.hostname.toLowerCase();
+    } catch {
+      /* fallthrough */
+    }
+  }
+  if (looksLikeSiteHostname(s)) return s.replace(/\.$/, '');
   if (s.startsWith('t.me/+')) return s;
   if (s.startsWith('t.me/')) return s.slice(6);
   return s.startsWith('@') ? s.slice(1) : s;
@@ -2466,7 +2580,7 @@ async function getAllReportsForChannel(client, channel) {
   try {
     const response = await client.sheets.spreadsheets.values.get({
       spreadsheetId: kroSheetId,
-      range: 'A2:H'
+      range: 'A2:I'
     });
     const rows = response.data.values || [];
     const key = channelMatchKey(channel);
@@ -2479,6 +2593,7 @@ async function getAllReportsForChannel(client, channel) {
       reporter: (r[5] || '').toString().trim(),
       description: (r[6] || '').toString().trim(),
       proof_url: (r[7] || '').toString().trim(),
+      object_type: (r[8] || '').toString().trim(),
     }));
   } catch (e) {
     return [];
@@ -2550,15 +2665,17 @@ async function checkAndPromoteToScamBase(client, channel) {
     const now = new Date();
     const detectedAt = now.toISOString().replace('.000', '');
     const totalLoss = reports.reduce((s, r) => s + (r.sum || 0), 0);
-    const normalizedCh = channel.startsWith('@') ? channel : '@' + channel.replace(/^t\.me\//, '');
-    const link = 'https://t.me/' + normalizedCh.replace(/^@/, '');
-    const sourceEvidence = reports.slice(0, 3).map(r => r.description || r.proof_url).filter(Boolean).join('; ');
+    const explicitOt = reports.map(r => r.object_type).find(Boolean) || '';
+    const { display, link, objectType } = scamBaseDisplayLinkForPromote(channel, explicitOt);
+    let sourceEvidence = reports.slice(0, 3).map(r => r.description || r.proof_url).filter(Boolean).join('; ');
+    const rp = riskPrefixForObjectType(objectType);
+    if (rp) sourceEvidence = `${rp} | ${sourceEvidence}`.slice(0, 500);
     const cycleWindow = now.toISOString().slice(0, 10) + (now.getUTCHours() < 12 ? '_am' : '_pm');
 
     const sheetName = kroScamBaseRange.split('!')[0] || 'scam_base';
     const complaintsForSheet = uniqueCount;
     const v2Row = [[
-      normalizedCh, link, detectedAt, '', '', 'сигнал-канал', '',
+      display, link, detectedAt, '', '', objectType, '',
       complaintsForSheet, totalLoss, 'form', sourceEvidence, cycleWindow, 'в риске', ''
     ]];
     await client.sheets.spreadsheets.values.append({
@@ -2568,18 +2685,20 @@ async function checkAndPromoteToScamBase(client, channel) {
       insertDataOption: 'INSERT_ROWS',
       requestBody: { values: v2Row }
     });
-    console.log(`[KRO] Promoted ${normalizedCh} to scam_base (${uniqueCount} unique reporters, ${reports.length} rows, loss ${totalLoss}₽)`);
+    console.log(`[KRO] Promoted ${display} to scam_base type=${objectType} (${uniqueCount} unique reporters, ${reports.length} rows, loss ${totalLoss}₽)`);
   } catch (e) {
     console.error('[KRO] checkAndPromoteToScamBase error:', e);
   }
 }
 
 app.post('/api/kro/report-scam', express.json(), async (req, res) => {
-  const channel = (req.body?.channel ?? '').toString().trim();
+  const channelRaw = (req.body?.channel ?? '').toString().trim();
+  const channel = normalizeChannel(channelRaw) || channelRaw.toLowerCase().replace(/\s/g, '');
   const sumRub = Number(req.body?.sumRub);
   const description = (req.body?.description ?? '').toString().trim();
   const proofUrl = (req.body?.proofUrl ?? '').toString().trim();
   const from = (req.body?.from ?? '').toString().trim();
+  const objectType = (req.body?.objectType ?? '').toString().trim().slice(0, 80);
   if (!channel || !Number.isFinite(sumRub) || sumRub < 0) {
     return res.status(400).json({ error: 'channel and sumRub (non-negative number) are required' });
   }
@@ -2592,11 +2711,11 @@ app.post('/api/kro/report-scam', express.json(), async (req, res) => {
       return res.status(503).json({ error: 'live_counter_not_configured' });
     }
     const today = getTodayMSK();
-    // Schema A:H — columns D=source, E=status, F=reporter, G=description, H=proof_url
-    const row = [[today.dateKey, channel, sumRub, 'form', 'Активен', from || '', description, proofUrl || '']];
+    // Schema A:I — D=source, E=status, F=reporter, G=description, H=proof_url, I=object_type (опц.)
+    const row = [[today.dateKey, channel, sumRub, 'form', 'Активен', from || '', description, proofUrl || '', objectType]];
     await client.sheets.spreadsheets.values.append({
       spreadsheetId: kroSheetId,
-      range: 'A:H',
+      range: 'A:I',
       valueInputOption: 'USER_ENTERED',
       insertDataOption: 'INSERT_ROWS',
       requestBody: { values: row }

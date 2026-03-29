@@ -22,7 +22,7 @@ import time
 import html
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 # Web scraper for monitored complaint/review sources (imported lazily to avoid breaking if missing)
 try:
@@ -1184,7 +1184,7 @@ def _fetch_reports_sheet_rows_raw(client, sheet_id):
     try:
         resp = client.spreadsheets().values().get(
             spreadsheetId=sheet_id,
-            range='A2:H'
+            range='A2:I'
         ).execute()
         return resp.get('values') or []
     except Exception:
@@ -1194,7 +1194,7 @@ def _fetch_reports_sheet_rows_raw(client, sheet_id):
 def _parse_reports_sheet_row(r):
     """
     Одна строка листа reports.
-    Schema v2: A=date, B=channel, C=sum_rub, D=source, E=status, F=reporter, G=description, H=proof_url
+    Schema: A=date, B=channel, C=sum_rub, D=source, E=status, F=reporter, G=description, H=proof_url, I=object_type (опц.)
     """
     if not r:
         return None
@@ -1212,6 +1212,7 @@ def _parse_reports_sheet_row(r):
     reporter = (r[5] if len(r) > 5 else '').strip()
     description = (r[6] if len(r) > 6 else '').strip()
     proof_url = (r[7] if len(r) > 7 else '').strip()
+    object_type = (r[8] if len(r) > 8 else '').strip()
     return {
         'date': date_val,
         'channel': channel,
@@ -1221,6 +1222,7 @@ def _parse_reports_sheet_row(r):
         'reporter': reporter,
         'description': description,
         'proof_url': proof_url,
+        'object_type': object_type,
     }
 
 
@@ -1335,8 +1337,98 @@ _SIGNAL_KEYWORDS = [
 ]
 
 
+# Тип объекта в scam_base / reports (колонка I): фиксированные подписи риска для промо.
+_OBJECT_TYPE_RISK_PREFIX = {
+    'крипто-обменник': (
+        'Признаки риска (крипто-обменник): обещает завышенный спред (часто 9–15% и выше), '
+        'требует дополнительную оплату для вывода, ссылается на AML-блокировку средств.'
+    ),
+    'инвест-бот': (
+        'Признаки риска (инвест-бот): обещает процент в день, требует пополнить депозит, блокирует вывод.'
+    ),
+}
+
+
+def _risk_prefix_for_object_type(ot):
+    t = (ot or '').strip().lower()
+    for label, text in _OBJECT_TYPE_RISK_PREFIX.items():
+        if label.lower() == t:
+            return text
+    return ''
+
+
+def _infer_object_type_for_promote(channel_value, explicit_from_sheet):
+    """Для промо в scam_base: явный тип из листа или эвристика по виду объекта."""
+    ex = (explicit_from_sheet or '').strip()
+    if ex:
+        return ex
+    s = (channel_value or '').strip().lower()
+    if not s:
+        return 'сигнал-канал'
+    if s.startswith('http://') or s.startswith('https://'):
+        if 't.me/' in s:
+            return 'сигнал-канал'
+        return 'крипто-обменник'
+    if _looks_like_site_hostname(s):
+        if re.search(r'(?:^|[._-])bot(?:[._-]|$)|\.bot\.|bot\.(?:io|com|net|org|ru|app)\b', s):
+            return 'инвест-бот'
+        return 'крипто-обменник'
+    return 'сигнал-канал'
+
+
+def _looks_like_site_hostname(text):
+    t = (text or '').strip().lower().rstrip('.')
+    if not t or ' ' in t or '/' in t or '@' in t:
+        return False
+    return bool(re.match(
+        r'^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$',
+        t,
+    ))
+
+
+def _scam_base_display_and_link_for_promote(channel_value, object_type):
+    """
+    Строка A (отображение) и B (ссылка) для scam_base при автопромо из reports.
+    Сайты: A = hostname, B = https://hostname ; Telegram: @user и t.me/...
+    """
+    raw = (channel_value or '').strip()
+    ot = (object_type or '').strip()
+    if not raw:
+        return '', '', 'сигнал-канал'
+    low = raw.lower()
+    if low.startswith('http://') or low.startswith('https://'):
+        if 't.me/' in low:
+            idx = low.find('t.me/')
+            raw = raw[idx:]
+            low = raw.lower()
+        else:
+            try:
+                p = urlparse(low)
+                host = (p.hostname or '').lower()
+                if host:
+                    return host, 'https://%s' % host, _infer_object_type_for_promote(host, ot)
+            except Exception:
+                pass
+            return raw, raw, _infer_object_type_for_promote(raw, ot)
+    if _looks_like_site_hostname(raw):
+        host = low.rstrip('.')
+        return host, 'https://%s' % host, _infer_object_type_for_promote(host, ot)
+    if low.startswith('t.me/+'):
+        link = 'https://' + raw if not raw.lower().startswith('http') else raw
+        return raw, link, _infer_object_type_for_promote(raw, ot)
+    if low.startswith('t.me/'):
+        part = low.split('/')[1].split('?')[0]
+        if part == 's' and '/' in low:
+            part = low.split('/')[2].split('?')[0]
+        slug = part or ''
+        return '@' + slug, 'https://t.me/' + slug, _infer_object_type_for_promote(slug, ot)
+    key = low[1:] if low.startswith('@') else low
+    key = key.split('/')[0].split('?')[0]
+    return '@' + key, 'https://t.me/' + key, _infer_object_type_for_promote(key, ot)
+
+
 def _norm_ch_key(ch):
-    """Нормализовать ключ канала: @name → name, https://t.me/foo → foo, t.me/s/foo → foo, t.me/+hash → t.me/+hash."""
+    """Нормализовать ключ канала: @name → name, https://t.me/foo → foo, сайт → hostname, t.me/+hash → t.me/+hash."""
     s = (ch or '').strip().lower()
     if not s:
         return ''
@@ -1344,6 +1436,12 @@ def _norm_ch_key(ch):
         if 't.me/' in s:
             s = s[s.find('t.me/'):]
         else:
+            try:
+                host = (urlparse(s).hostname or '').lower()
+                if host:
+                    return host
+            except Exception:
+                pass
             return s
     if s.startswith('@'):
         return s[1:].split('/')[0].split('?')[0]
@@ -2887,7 +2985,10 @@ def _build_stats_from_confirmed(confirmed_objects):
     )
     courses_products = sum(
         1 for o in confirmed_objects
-        if any(kw in (o.get('object_type') or '').lower() for kw in ('курс', 'сайт', 'обучен'))
+        if any(
+            kw in (o.get('object_type') or '').lower()
+            for kw in ('курс', 'сайт', 'обучен', 'обменник', 'инвест')
+        )
     )
     losses_12h = sum((o.get('total_loss_rub') or 0) for o in confirmed_objects)
     top3_sorted = sorted(confirmed_objects, key=lambda o: -(o.get('total_loss_rub') or 0))[:3]
@@ -3270,6 +3371,10 @@ def _normalize_type_for_table(t):
     if not t:
         return '—'
     t = (t or '').strip().lower()
+    if 'обменник' in t:
+        return 'крипто-обменник'
+    if 'инвест' in t and 'бот' in t:
+        return 'инвест-бот'
     if 'курс' in t or 'сайт' in t:
         return 'сайт/курс'
     if 'бот' in t:
@@ -4774,17 +4879,23 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
             continue
 
         total_loss = sum(r.get('sum') or 0 for r in reports)
+        ot_sheet = next(
+            ((r.get('object_type') or '').strip() for r in reports if (r.get('object_type') or '').strip()),
+            '',
+        )
+        display, link, obj_type = _scam_base_display_and_link_for_promote(ch, ot_sheet)
         evidence = _build_source_evidence_from_reports(reports)
+        risk_pre = _risk_prefix_for_object_type(obj_type)
+        if risk_pre:
+            evidence = (risk_pre + ' | ' + evidence)[:500]
         has_facts = _has_concrete_scam_facts(evidence)
         status = 'в риске' if has_facts else 'под наблюдением'
-        norm_ch = ('@' + key) if not key.startswith('t.me/+') else key
-        link = 'https://t.me/' + key if not key.startswith('t.me/') else 'https://' + key
         detected_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
         cycle_window = now.strftime('%Y-%m-%d') + ('_am' if now.hour < 12 else '_pm')
         sheet_name = (scam_base_range or 'scam_base!A2:N').split('!')[0]
 
         v2_row = [[
-            norm_ch, link, detected_at, '', '', 'сигнал-канал', '',
+            display, link, detected_at, '', '', obj_type, '',
             unique_count, total_loss, 'form+web', evidence[:300], cycle_window, status, ''
         ]]
         try:
@@ -4797,9 +4908,9 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
             ).execute()
             existing_in_scam.add(key)
             promoted += 1
-            print(f'[promote] {norm_ch} → scam_base (reports={unique_count}, loss={total_loss}₽)', file=sys.stderr)
+            print(f'[promote] {display} → scam_base type={obj_type} (reports={unique_count}, loss={total_loss}₽)', file=sys.stderr)
         except Exception as e:
-            print(f'[promote] error writing {norm_ch}: {e}', file=sys.stderr)
+            print(f'[promote] error writing {display}: {e}', file=sys.stderr)
 
     if promoted:
         print(f'[promote] total promoted to scam_base: {promoted}', file=sys.stderr)
@@ -4879,7 +4990,7 @@ def main():
             web_findings = _web_scraper.scrape_all()
             web_source_statuses = getattr(_web_scraper, 'get_last_source_statuses', lambda: [])()
             if web_findings:
-                written = _web_scraper.write_web_reports_to_sheet(client, sheet_id, web_findings, reports_range='A:H')
+                written = _web_scraper.write_web_reports_to_sheet(client, sheet_id, web_findings, reports_range='A:I')
                 print(f'[web_scraper] wrote {written} rows from {len(web_findings)} findings', file=sys.stderr)
         except Exception as _ws_err:
             print(f'[web_scraper] error: {_ws_err}', file=sys.stderr)
@@ -5047,6 +5158,11 @@ def main():
             'name': 'forteck.net',
             'status': (web_status_map.get('forteck.net') or {}).get('status', 'unavailable'),
             'count': int((web_status_map.get('forteck.net') or {}).get('count', 0) or 0),
+        },
+        {
+            'name': 'kurs.expert',
+            'status': (web_status_map.get('kurs.expert') or {}).get('status', 'unavailable'),
+            'count': int((web_status_map.get('kurs.expert') or {}).get('count', 0) or 0),
         },
         {
             'name': 'форма жалоб',

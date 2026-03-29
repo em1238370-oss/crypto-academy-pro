@@ -10,10 +10,12 @@ KRO Web Scraper: собирает упоминания скам-каналов �
   - vklader.com       — чёрный список Telegram-каналов и пользовательские проверки
   - telltrue.net      — blacklist-telegram (формат как у vklader)
   - forteck.net       — blacklist-telegram (формат как у vklader)
+  - kurs.expert       — черный список фейковых крипто-обменников (домены из таблицы)
 
-Каждая найденная запись: {channel, sum_rub, description, source_url, source}
+Каждая найденная запись: {channel, sum_rub, description, source_url, source[, object_type]}
 Возвращаемые данные пишутся в лист reports Google Sheets с пометкой source='web'.
 """
+import os
 import re
 import json
 import logging
@@ -302,6 +304,7 @@ def _search_review_urls_for_username(username, max_links=3):
             low = link.lower()
             if any(skip in low for skip in (
                 'stop-scam1.com', 'fin-obzor.net', 'brokers-check.ru',
+                'kurs.expert',
                 'duckduckgo.com', 'google.com', 'bing.com', 'yandex.'
             )):
                 continue
@@ -602,6 +605,157 @@ def _dedupe_findings_channel_per_url(results):
         if key not in dedup:
             dedup[key] = r
     return list(dedup.values())
+
+
+_DOMAIN_HOST_RE = re.compile(
+    r'^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$',
+    re.IGNORECASE,
+)
+
+
+def _looks_like_domain_host(text):
+    t = (text or '').strip().lower().rstrip('.')
+    if not t or len(t) < 4 or ' ' in t or '/' in t or '<' in t:
+        return False
+    return bool(_DOMAIN_HOST_RE.match(t))
+
+
+def _classify_kurs_domain_object_type(hostname):
+    """
+    Чёрный список kurs.expert — в основном фейковые обменники.
+    Эвристика «инвест-бот» для доменов с явным bot в имени (не все подряд).
+    """
+    h = (hostname or '').strip().lower()
+    if re.search(r'(?:^|[._-])bot(?:[._-]|$)|\.bot\.|bot\.(?:io|com|net|org|ru|app)\b', h):
+        return 'инвест-бот'
+    return 'крипто-обменник'
+
+
+def _parse_kurs_expert_blacklist_domains(html, max_entries=400):
+    """
+    Таблица class ~exchangers_blacklist: ячейки с доменами, столбцы с номерами пропускаем.
+    """
+    domains = []
+    seen = set()
+    if not html:
+        return domains
+    try:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html, 'html.parser')
+        table = soup.find('table', class_=re.compile(r'exchangers_blacklist'))
+        if not table:
+            return domains
+        for td in table.find_all('td'):
+            cls = ' '.join(td.get('class') or [])
+            if 'numbs' in cls:
+                continue
+            text = td.get_text(strip=True)
+            if not text:
+                continue
+            if re.match(r'^\d+\.$', text):
+                continue
+            if not _looks_like_domain_host(text):
+                continue
+            host = text.strip().lower().rstrip('.')
+            if host in ('kurs.expert', 'www.kurs.expert'):
+                continue
+            if host not in seen:
+                seen.add(host)
+                domains.append(host)
+            if len(domains) >= max_entries:
+                break
+        return domains
+    except ImportError:
+        pass
+    # Regex fallback (без BeautifulSoup)
+    m = re.search(
+        r'<table[^>]+class="[^"]*exchangers_blacklist[^"]*"[^>]*>(.*?)</table>',
+        html,
+        re.IGNORECASE | re.DOTALL,
+    )
+    if not m:
+        return domains
+    block = m.group(1)
+    for mm in re.finditer(r'<td(?:\s[^>]*)?>([^<]*)</td>', block, re.IGNORECASE):
+        text = re.sub(r'\s+', ' ', mm.group(1)).strip()
+        if not text or re.match(r'^\d+\.$', text):
+            continue
+        if not _looks_like_domain_host(text):
+            continue
+        host = text.lower().rstrip('.')
+        if host in ('kurs.expert', 'www.kurs.expert'):
+            continue
+        if host not in seen:
+            seen.add(host)
+            domains.append(host)
+        if len(domains) >= max_entries:
+            break
+    return domains
+
+
+_KURS_EXPERT_PAGE_URLS = (
+    'https://kurs.expert/ru/cherniy-spisok-obmennikov.html',
+    'https://kurs.expert/ru/cherniy-spisok-obmennikov/',
+)
+
+
+def scrape_kurs_expert():
+    """
+    Чёрный список фейковых обменников kurs.expert: домен + краткое описание.
+    Лимит строк за проход: KRO_KURS_BLACKLIST_MAX (по умолчанию 400).
+    """
+    results = []
+    max_entries = 400
+    try:
+        max_entries = max(50, min(5000, int(os.environ.get('KRO_KURS_BLACKLIST_MAX', '400') or '400')))
+    except ValueError:
+        max_entries = 400
+
+    html = None
+    page_url = None
+    for url in _KURS_EXPERT_PAGE_URLS:
+        html = _fetch(url)
+        if html:
+            page_url = url
+            break
+    if not html or not page_url:
+        _set_source_status('kurs.expert', 'unavailable', 0)
+        logger.info('kurs.expert: blacklist page unavailable')
+        return results
+
+    domains = _parse_kurs_expert_blacklist_domains(html, max_entries=max_entries)
+    if not domains:
+        _set_source_status('kurs.expert', 'not_found', 0)
+        logger.info('kurs.expert: no domains parsed from blacklist table')
+        return results
+
+    intro = _extract_title_from_html(html) or 'Чёрный список обменников'
+    for host in domains:
+        obj_type = _classify_kurs_domain_object_type(host)
+        if obj_type == 'инвест-бот':
+            risk_hint = (
+                'Типовые признаки инвест-бота: обещание процента в день, требование пополнить депозит, блокировка вывода.'
+            )
+        else:
+            risk_hint = (
+                'Типовые признаки фейкового обменника: завышенный спред (часто 9–15% и выше), '
+                'доплата за вывод, ссылка на AML-блокировку средств.'
+            )
+        desc = (
+            f'Источник: {page_url} | {intro}. Домен: {host}. {risk_hint}'
+        )
+        results.append({
+            'channel': host,
+            'sum_rub': 0,
+            'description': desc[:500],
+            'source_url': page_url,
+            'source': 'kurs.expert',
+            'object_type': obj_type,
+        })
+
+    _set_source_status('kurs.expert', 'found', len(domains))
+    logger.info('kurs.expert: parsed %d blacklist domains', len(domains))
+    return results
 
 
 # ---------------------------------------------------------------------------
@@ -989,7 +1143,7 @@ def scrape_forteck():
 def scrape_all():
     """
     Run all scrapers and return deduplicated list of findings.
-    Each item: {channel, sum_rub, description, source_url, source}.
+    Each item: {channel, sum_rub, description, source_url, source[, object_type]}.
     """
     global _LAST_SOURCE_STATUS
     _LAST_SOURCE_STATUS = []
@@ -998,6 +1152,7 @@ def scrape_all():
     results.extend(scrape_cryptorussia())
     results.extend(scrape_fin_obzor())
     results.extend(scrape_brokers_check())
+    results.extend(scrape_kurs_expert())
     results.extend(scrape_vklader())
     results.extend(scrape_telltrue())
     results.extend(scrape_forteck())
@@ -1005,7 +1160,15 @@ def scrape_all():
     # Additional enrichment: search internet reviews for usernames already found
     # in primary sources. This makes it easy to expand evidence without changing
     # the rest of the pipeline.
-    seed_usernames = sorted({(r.get('channel') or '').strip() for r in results if r.get('channel')})[:20]
+    def _is_seed_telegram_ref(ch):
+        c = (ch or '').strip().lower()
+        return bool(c) and (c.startswith('@') or 't.me/' in c)
+
+    seed_usernames = sorted({
+        (r.get('channel') or '').strip()
+        for r in results
+        if _is_seed_telegram_ref(r.get('channel'))
+    })[:20]
     for channel in seed_usernames:
         for url in _search_review_urls_for_username(channel, max_links=2):
             page = _fetch(url)
@@ -1026,11 +1189,11 @@ def scrape_all():
     return deduped
 
 
-def write_web_reports_to_sheet(sheets_client, sheet_id, reports, reports_range='A:H'):
+def write_web_reports_to_sheet(sheets_client, sheet_id, reports, reports_range='A:I'):
     """
     Append web-sourced reports to the reports sheet.
-    Schema A:H: date, channel, sum_rub, source='web', status='Активен',
-                reporter='web_parser', description, proof_url=source_url
+    Schema A:I: date, channel, sum_rub, source='web', status='Активен',
+                reporter='web_parser', description, proof_url=source_url, object_type (опц.)
     """
     if not sheets_client or not sheet_id or not reports:
         return 0
@@ -1050,6 +1213,7 @@ def write_web_reports_to_sheet(sheets_client, sheet_id, reports, reports_range='
             'web_parser',
             r.get('description', '')[:300],
             source_url,
+            (r.get('object_type') or '').strip(),
         ])
     if not rows:
         return 0
