@@ -13,13 +13,12 @@
         if (window.matchMedia('(max-width: 768px)').matches) return null;
 
         const lenis = new Lenis({
-            // Чуть короче и плавнее «хвост» — ближе к спокойному темпу executive-лендингов (medvedevart-style)
-            duration: 1.12,
-            easing: (t) => 1 - Math.pow(1 - t, 3),
+            duration: 1.4,        // Длительность «догоняния» — чем больше, тем медленнее
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             orientation: 'vertical',
             gestureOrientation: 'vertical',
             smoothWheel: true,
-            wheelMultiplier: 0.82,
+            wheelMultiplier: 0.8,  // Чуть приглушаем скорость колёсика
             touchMultiplier: 1.2,
             autoRaf: true,
         });
