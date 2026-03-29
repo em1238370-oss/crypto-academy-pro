@@ -1963,7 +1963,37 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   100% { opacity: 0; }
 }
 
+/* Десктоп: крупнее «окно» загрузки (ширина + воздух в строках), шрифты те же */
 @media (min-width: 641px) {
+  .mon-boot-terminal {
+    max-width: min(820px, 92vw);
+    width: min(92vw, 820px);
+    border-radius: 14px;
+  }
+  .mon-boot-terminal-cap {
+    padding: 18px 26px;
+    gap: 14px;
+  }
+  .mon-boot-terminal-title {
+    padding-right: 60px;
+  }
+  .mon-boot-terminal-thead {
+    padding: 17px 26px 14px;
+  }
+  .mon-boot-progress-block {
+    padding: 16px 26px 18px;
+  }
+  .mon-boot-progress-meta {
+    margin-bottom: 10px;
+  }
+  .mon-boot-progress-track {
+    height: 7px;
+  }
+  .mon-boot-line {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px 26px;
+  }
   .mon-boot-terminal:hover .mon-boot-progress-fill {
     filter: saturate(1.12) brightness(1.03);
   }
