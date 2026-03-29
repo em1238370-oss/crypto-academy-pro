@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260329-risk-column">
+  <link rel="stylesheet" href="/monitor.css?v=20260329-risk-wording">
 </head>
 <body class="mon-page">
 
@@ -732,6 +732,24 @@
     spots_left: 'осталось мест', leverage: 'плечо', deposit: 'депозит'
   };
 
+  /** Устойчивый «сид» по каналу — одна и та же строка всегда получает те же формулировки. */
+  function wordingSeed(row) {
+    var s = String((row && (row.username || row.link)) || '') + '';
+    var h = 0;
+    for (var i = 0; i < s.length; i++) {
+      h = ((h << 5) - h) + s.charCodeAt(i);
+      h |= 0;
+    }
+    return Math.abs(h);
+  }
+
+  /** Чередование синонимичных вводных (одни и те же факты — разные слова). */
+  function pickPhrase(seed, salt, variants) {
+    if (!variants || !variants.length) return '';
+    var idx = Math.abs(seed + salt * 1009) % variants.length;
+    return variants[idx];
+  }
+
   /** Цитаты из source_evidence: только похожее на человеческий текст, без кода/скриптов (ничего не выдумываем). */
   function cleanHumanEvidenceSegments(evidence) {
     var parts = (evidence || '')
@@ -753,44 +771,99 @@
     return out;
   }
 
-  function riskSignalsFromRow(r) {
+  function riskSignalsFromRow(r, seed) {
     var out = [];
     if (!r) return out;
+    seed = seed != null ? seed : wordingSeed(r);
+    var salt = 1;
+    var v;
     if (r.status && String(r.status).trim()) {
-      out.push('Статус в строке: ' + String(r.status).trim());
+      v = String(r.status).trim();
+      out.push(pickPhrase(seed, salt++, [
+        'Статус в строке: ' + v,
+        'В таблице указан статус: ' + v,
+        'По данным записи — статус: ' + v,
+        'В строке базы отмечено: ' + v
+      ]));
     } else if (r.verdict && String(r.verdict).trim()) {
-      out.push('Вердикт в строке: ' + String(r.verdict).trim());
+      v = String(r.verdict).trim();
+      out.push(pickPhrase(seed, salt++, [
+        'Вердикт в строке: ' + v,
+        'Итог в записи: ' + v,
+        'Зафиксировано как: ' + v,
+        'Поле вердикта: ' + v
+      ]));
     }
     if (r.object_type && String(r.object_type).trim() && String(r.object_type).trim() !== '—') {
-      out.push('Тип объекта: ' + String(r.object_type).trim());
+      v = String(r.object_type).trim();
+      out.push(pickPhrase(seed, salt++, [
+        'Тип объекта: ' + v,
+        'Категория в данных: ' + v,
+        'Тип в базе: ' + v,
+        'Класс объекта: ' + v
+      ]));
     }
     if (r.risk_score != null && r.risk_score !== '' && !isNaN(Number(r.risk_score))) {
-      out.push('Оценка риска в строке: ' + Number(r.risk_score) + '/100');
+      var rs = Number(r.risk_score);
+      out.push(pickPhrase(seed, salt++, [
+        'Оценка риска в строке: ' + rs + '/100',
+        'Балл риска по записи: ' + rs + '/100',
+        'Риск-скор в данных: ' + rs + '/100',
+        'Числовая оценка риска: ' + rs + '/100'
+      ]));
     }
     var c = r.complaints;
     if (c != null && c !== '' && !isNaN(Number(c)) && Number(c) > 0) {
-      out.push('Жалоб в данных: ' + Number(c));
+      var cn = Number(c);
+      out.push(pickPhrase(seed, salt++, [
+        'Жалоб в данных: ' + cn,
+        'Число жалоб в записи: ' + cn,
+        'Зафиксировано жалоб: ' + cn,
+        'По строке — жалоб: ' + cn
+      ]));
     }
     var vip = (r.vip_price != null && r.vip_price !== '') ? String(r.vip_price).trim() : '';
     if (vip && vip !== '—') {
-      out.push('VIP / подписка в данных: ' + vip);
+      out.push(pickPhrase(seed, salt++, [
+        'VIP / подписка в данных: ' + vip,
+        'Указана подписка или VIP: ' + vip,
+        'Платный доступ в записи: ' + vip,
+        'Стоимость VIP/подписки: ' + vip
+      ]));
     }
     var loss = Number(r.total_loss_rub);
     if (loss > 0) {
-      out.push('Сумма потерь в строке: ' + loss.toLocaleString('ru-RU') + ' ₽');
+      var lossStr = loss.toLocaleString('ru-RU') + ' ₽';
+      out.push(pickPhrase(seed, salt++, [
+        'Сумма потерь в строке: ' + lossStr,
+        'Потери по записи: ' + lossStr,
+        'Указанные потери: ' + lossStr,
+        'Сумма в поле потерь: ' + lossStr
+      ]));
     } else if (r.total_loss != null && String(r.total_loss).trim()) {
       var raw = String(r.total_loss).trim();
       var digits = raw.replace(/[^\d]/g, '');
       if (digits && !isNaN(Number(digits)) && Number(digits) > 0) {
-        out.push('Сумма в строке (legacy): ' + Number(digits).toLocaleString('ru-RU') + ' ₽');
+        var ds = Number(digits).toLocaleString('ru-RU') + ' ₽';
+        out.push(pickPhrase(seed, salt++, [
+          'Сумма в строке (legacy): ' + ds,
+          'По legacy-полю суммы: ' + ds,
+          'Старый формат суммы: ' + ds,
+          'Сумма (устаревшая схема): ' + ds
+        ]));
       } else if (raw.length <= 80) {
-        out.push('Потери в строке (как в таблице): ' + raw);
+        out.push(pickPhrase(seed, salt++, [
+          'Потери в строке (как в таблице): ' + raw,
+          'Текст потерь из ячейки: ' + raw,
+          'Как указано в таблице: ' + raw,
+          'Формулировка потерь в данных: ' + raw
+        ]));
       }
     }
     return out;
   }
 
-  function riskSignalsFromContentAnalysis(jsonStr) {
+  function riskSignalsFromContentAnalysis(jsonStr, seed) {
     if (!jsonStr || jsonStr === '—' || jsonStr === 'недоступен') return [];
     var d;
     try { d = JSON.parse(jsonStr); } catch (e) { return []; }
@@ -800,18 +873,33 @@
       .sort(function(a, b) { return kws[b] - kws[a]; });
     if (hits.length) {
       var labels = hits.slice(0, 8).map(function(k) { return KEYWORD_LABELS[k] || k; });
-      out.push('По разбору постов (счётчики в «Контент-анализ»): ' + labels.join(', '));
+      var joined = labels.join(', ');
+      seed = seed != null ? seed : 0;
+      out.push(pickPhrase(seed, 40, [
+        'По разбору постов (детали в «Контент-анализ»): ' + joined,
+        'Ключевые маркеры в постах: ' + joined,
+        'В контенте отмечены темы: ' + joined,
+        'Анализ постов выделяет: ' + joined,
+        'В выборке постов встречается: ' + joined
+      ]));
     }
     return out;
   }
 
   function renderRiskSignals(row) {
     var bullets = [];
-    bullets.push.apply(bullets, riskSignalsFromRow(row));
-    bullets.push.apply(bullets, riskSignalsFromContentAnalysis(row.content_analysis || ''));
+    var seed = wordingSeed(row);
+    bullets.push.apply(bullets, riskSignalsFromRow(row, seed));
+    bullets.push.apply(bullets, riskSignalsFromContentAnalysis(row.content_analysis || '', seed));
     var quotes = cleanHumanEvidenceSegments(row.source_evidence || '');
     for (var q = 0; q < quotes.length; q++) {
-      bullets.push('Текст из поля доказательств: «' + quotes[q] + '»');
+      var intro = pickPhrase(seed, 60 + q, [
+        'Текст из поля доказательств: «',
+        'Фрагмент из доказательств: «',
+        'Цитата из источника: «',
+        'Выдержка из ячейки доказательств: «'
+      ]);
+      bullets.push(intro + quotes[q] + '»');
     }
     var seen = {};
     var uniqBullets = bullets.filter(function(b) {
