@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import https from 'https';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { basename, dirname, join } from 'path';
 import { spawnSync } from 'child_process';
 import Stripe from 'stripe';
 
@@ -32,7 +32,17 @@ app.use((req, res, next) => {
 });
 
 // Serve static files from parent directory (HTML, CSS, JS)
-app.use(express.static(join(__dirname, '..')));
+app.use(
+  express.static(join(__dirname, '..'), {
+    setHeaders(res, filePath) {
+      const name = basename(filePath);
+      if (name === 'index.html' || name === 'monitor.html') {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        res.setHeader('Pragma', 'no-cache');
+      }
+    },
+  })
+);
 
 const mistralKey = process.env.MISTRAL_API_KEY;
 const cryptocloudApiKey = process.env.CRYPTOCLOUD_API_KEY;
