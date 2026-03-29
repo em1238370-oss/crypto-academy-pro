@@ -2098,23 +2098,25 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   .mon-main-nav-links { width: 100%; }
   .mon-refresh-countdown, .mon-nav-link, .mon-refresh-btn { width: 100%; justify-content: center; text-align: center; }
   .mon-nav-link--home { justify-content: center; }
+  /* Терминал загрузки — по центру экрана (не bottom-sheet) */
   #mon-boot-overlay.mon-boot-overlay {
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
-    padding: max(20px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
-      max(32px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    padding: max(16px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
   }
   #mon-boot-overlay.mon-boot-overlay::after {
     animation-duration: 2.6s;
     opacity: 0.65;
   }
   .mon-boot-terminal {
-    max-width: none;
+    max-width: min(100%, 420px);
     width: 100%;
-    border-radius: 18px 18px 14px 14px;
+    margin: 0 auto;
+    border-radius: 16px;
     box-shadow:
-      0 -12px 40px rgba(255, 68, 68, 0.1),
-      0 32px 64px rgba(0, 0, 0, 0.58),
+      0 8px 40px rgba(255, 68, 68, 0.12),
+      0 28px 64px rgba(0, 0, 0, 0.55),
       0 0 0 1px rgba(255, 255, 255, 0.07) inset;
   }
   .mon-boot-terminal-cap { padding: 14px 14px 12px; }
