@@ -1747,6 +1747,8 @@ function buildLiveCounterFromScamBase(parsedRows) {
   ).length;
 
   // Top-3 from all rows by total loss
+  const complaints_received = allRows.reduce((s, r) => s + (Number(r.complaints) || 0), 0);
+
   const top3 = [...allRows]
     .sort((a, b) => (b.total_loss_rub || 0) - (a.total_loss_rub || 0))
     .slice(0, 3)
@@ -1762,6 +1764,7 @@ function buildLiveCounterFromScamBase(parsedRows) {
     losses_12h,
     telegram_channels,
     courses_products,
+    complaints_received,
     top3,
     publishStatus: isHonestZero ? 'honest_zero' : 'valid',
     isHonestZero,
@@ -2145,6 +2148,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
           totalLost: scamBaseCounter.losses_12h,
           telegramCount: scamBaseCounter.telegram_channels,
           coursesCount: scamBaseCounter.courses_products,
+          complaints_received: scamBaseCounter.complaints_received,
           victims_12h: null,
           shockText: KRO_PENDING_REPORT_TEXT,
           top3: scamBaseCounter.top3,
@@ -2172,6 +2176,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
       totalLost: 0,
       telegramCount: 0,
       coursesCount: 0,
+      complaints_received: 0,
       victims_12h: null,
       shockText: KRO_PENDING_REPORT_TEXT,
       top3: [],
@@ -2195,6 +2200,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
       totalLost: 0,
       telegramCount: 0,
       coursesCount: 0,
+      complaints_received: 0,
       victims_12h: null,
       shockText: KRO_PENDING_REPORT_TEXT,
       top3: [],
