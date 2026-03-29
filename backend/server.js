@@ -31,12 +31,23 @@ app.use((req, res, next) => {
   next();
 });
 
+// Карточка объекта из scam_base (до static — путь /channel/… не является файлом)
+app.get(/^\/channel\/(.+)$/, (req, res, next) => {
+  const tail = req.path.replace(/^\/channel\//i, '');
+  if (!tail || tail.includes('..') || /%2e%2e/i.test(tail)) {
+    return next();
+  }
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.sendFile('channel.html', { root: join(__dirname, '..') });
+});
+
 // Serve static files from parent directory (HTML, CSS, JS)
 app.use(
   express.static(join(__dirname, '..'), {
     setHeaders(res, filePath) {
       const name = basename(filePath);
-      if (name === 'index.html' || name === 'monitor.html') {
+      if (name === 'index.html' || name === 'monitor.html' || name === 'channel.html') {
         res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         res.setHeader('Pragma', 'no-cache');
       }
@@ -2468,6 +2479,72 @@ app.get('/api/kro/monitor-data', async (req, res) => {
   } catch (e) {
     console.error('KRO monitor-data error:', e);
     return res.status(500).json({ error: 'internal error', detail: e.message });
+  }
+});
+
+/** Для выбора самой свежей строки при дубликатах в scam_base. */
+function parseScamDetectedAtMs(row) {
+  if (!row) return 0;
+  const s = (row.detected_at || '').toString().trim();
+  if (!s) return 0;
+  const iso = Date.parse(s);
+  if (Number.isFinite(iso)) return iso;
+  const m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if (m) {
+    const d = Date.parse(
+      `${m[3]}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}T12:00:00.000Z`
+    );
+    return Number.isFinite(d) ? d : 0;
+  }
+  return 0;
+}
+
+// GET /api/kro/channel-profile?u=… — одна запись scam_base (последняя по дате обнаружения при нескольких строках)
+app.get('/api/kro/channel-profile', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  const rawQ = (req.query.u ?? '').toString().trim();
+  if (!rawQ || rawQ.length > 220) {
+    return res.status(400).json({ error: 'bad_request', message: 'query parameter u is required' });
+  }
+  let decoded = rawQ;
+  try {
+    decoded = decodeURIComponent(rawQ.replace(/\+/g, ' '));
+  } catch {
+    decoded = rawQ;
+  }
+  const key = channelMatchKey(decoded);
+  if (!key) {
+    return res.status(400).json({ error: 'bad_request', message: 'invalid channel key' });
+  }
+  try {
+    const sheetsClient = await getKroSheetsClient();
+    if (!sheetsClient || !kroSheetId) {
+      return res.status(503).json({ error: 'not_configured' });
+    }
+    const scamResp = await sheetsClient.sheets.spreadsheets.values.get({
+      spreadsheetId: kroSheetId,
+      range: kroScamBaseRange
+    });
+    const scamRawRows = scamResp.data.values || [];
+    const scamRows = scamRawRows
+      .slice(1)
+      .map(parseScamBaseRow)
+      .filter((r) => r.username && r.username !== 'username')
+      .map(enrichScamBaseContentAnalysisForMonitor);
+    const matches = scamRows.filter((r) => channelMatchKey(r.username) === key);
+    if (!matches.length) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+    const profile = matches.reduce((best, cur) =>
+      parseScamDetectedAtMs(cur) >= parseScamDetectedAtMs(best) ? cur : best
+    );
+    return res.json({
+      profile,
+      merged_rows: matches.length > 1 ? matches.length : undefined
+    });
+  } catch (e) {
+    console.error('KRO channel-profile error:', e);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 

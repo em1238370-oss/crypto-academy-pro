@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260329-risk-wording">
+  <link rel="stylesheet" href="/monitor.css?v=20260329-channel">
 </head>
 <body class="mon-page">
 
@@ -1370,12 +1370,27 @@
 
     rows.forEach(function(r, idx) {
       var channelUrl = r.link || '';
-      var channelLabel = (r.username || r.link || 'канал').replace(/^https?:\/\/t\.me\//i, '@');
-      if (channelLabel.charAt(0) !== '@' && !/^t\.me\//i.test(channelLabel)) channelLabel = '@' + channelLabel.replace(/^@+/,'');
+      var rawU = (r.username || '').trim();
+      var looksLikeHost = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$/i.test(rawU.replace(/\.$/, ''));
+      var channelLabel;
+      if (looksLikeHost) {
+        channelLabel = rawU.replace(/\.$/, '') || 'сайт';
+      } else {
+        channelLabel = (rawU || r.link || 'канал').replace(/^https?:\/\/t\.me\//i, '@');
+        if (channelLabel.charAt(0) !== '@' && !/^t\.me\//i.test(channelLabel)) channelLabel = '@' + channelLabel.replace(/^@+/,'');
+      }
+
+      var profileSlug = encodeURIComponent(rawU || channelLabel.replace(/^@+/, ''));
+      var profileHref = '/channel/' + profileSlug;
+      var profileLink = '<a class="mon-channel-profile-link" href="' + esc(profileHref) + '">' + esc(channelLabel) + '</a>';
+      var extOpen = channelUrl
+        ? '<a class="mon-channel-external" href="' + esc(channelUrl) + '" target="_blank" rel="noopener" title="Открыть канал или сайт">' +
+            '<span class="mon-link-arrow" aria-hidden="true">↗</span></a>'
+        : '';
 
       tableHtml += '<tr>' +
         '<td class="mon-cell-num">' + (idx + 1) + '</td>' +
-        '<td class="mon-cell-channel">' + renderExternalLink(channelUrl, channelLabel, 'mon-external-link mon-channel-link') + '</td>' +
+        '<td class="mon-cell-channel"><span class="mon-channel-cell">' + profileLink + extOpen + '</span></td>' +
         '<td class="mon-cell-type">' + formatScamObjectTypeCell(r) + '</td>' +
         '<td class="mon-cell-source">' + renderAllSourceLinks(r) + '</td>' +
         '<td><div class="mon-evidence" title="' + esc(r.source_evidence || '') + '">' + renderRiskSignals(r) + '</div></td>' +

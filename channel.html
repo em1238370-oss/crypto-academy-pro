@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Карточка из базы — KRO</title>
+  <meta name="description" content="Статус, признаки риска и источники по записи из публичной базы scam_base.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/monitor.css?v=20260329-channel">
+</head>
+<body class="mon-page ch-page">
+
+<div class="mon-bg" aria-hidden="true">
+  <span class="mon-bg-atmosphere"></span>
+  <span class="mon-bg-vignette"></span>
+  <span class="mon-bg-dot-grid"></span>
+</div>
+
+<header class="mon-topbar">
+  <nav class="mon-main-nav" aria-label="Навигация">
+    <a href="/monitor" class="mon-main-nav-brand">
+      <span class="mon-main-nav-brand-icon" aria-hidden="true"></span>
+      Монитор
+    </a>
+    <div class="mon-main-nav-links">
+      <a href="/monitor#data-scam" class="mon-nav-link mon-nav-link--home">← К базе</a>
+      <a href="/" class="mon-nav-link mon-nav-link--home">Главная</a>
+    </div>
+  </nav>
+</header>
+
+<main class="mon-container ch-main">
+  <div id="ch-loading" class="ch-state ch-state--loading">
+    <p class="ch-lead">Загрузка карточки из scam_base…</p>
+  </div>
+  <div id="ch-error" class="ch-state ch-state--error" hidden>
+    <h1 class="ch-title">Запись не найдена</h1>
+    <p class="ch-lead" id="ch-error-msg">Нет данных для этого идентификатора в базе.</p>
+    <p><a class="mon-nav-link" href="/monitor#data-scam">Вернуться к монитору</a></p>
+  </div>
+  <article id="ch-content" class="ch-card" hidden>
+    <p class="ch-eyebrow">Запись из scam_base</p>
+    <h1 class="ch-title" id="ch-heading">—</h1>
+    <p class="ch-merged" id="ch-merged-note" hidden></p>
+
+    <section class="ch-block" aria-labelledby="ch-status-h">
+      <h2 id="ch-status-h" class="ch-h2">Статус</h2>
+      <p class="ch-status-wrap"><span id="ch-status" class="mon-status watch">—</span></p>
+    </section>
+
+    <section class="ch-block" aria-labelledby="ch-risk-h">
+      <h2 id="ch-risk-h" class="ch-h2">Признаки риска</h2>
+      <div id="ch-risk" class="ch-body"></div>
+    </section>
+
+    <section class="ch-block" aria-labelledby="ch-source-h">
+      <h2 id="ch-source-h" class="ch-h2">Источник</h2>
+      <p class="ch-meta" id="ch-source-primary">—</p>
+      <div id="ch-source-links" class="ch-links"></div>
+    </section>
+
+    <section class="ch-block" aria-labelledby="ch-date-h">
+      <h2 id="ch-date-h" class="ch-h2">Дата добавления</h2>
+      <p class="ch-body" id="ch-detected">—</p>
+    </section>
+  </article>
+</main>
+
+<script>
+(function () {
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function z2(n) { return (n < 10 ? '0' : '') + n; }
+
+  function parseLastCycleAt(raw) {
+    if (raw == null || raw === '') return null;
+    if (typeof raw === 'number' && raw > 20000 && raw < 800000) {
+      return new Date((raw - 25569) * 86400 * 1000);
+    }
+    var s = String(raw).trim();
+    var num = parseFloat(s);
+    if (/^\d+(\.\d+)?$/.test(s) && num > 20000 && num < 800000) {
+      return new Date((num - 25569) * 86400 * 1000);
+    }
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+      var di = new Date(s);
+      return isNaN(di.getTime()) ? null : di;
+    }
+    var ru = s.match(/^(\d{1,2})[.](\d{1,2})[.](\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (ru) {
+      var dd = z2(+ru[1]), mo = z2(+ru[2]), yy = ru[3];
+      var hh = z2(+ru[4]), mi = z2(+ru[5]), ss = z2(+(ru[6] || 0));
+      var t = new Date(yy + '-' + mo + '-' + dd + 'T' + hh + ':' + mi + ':' + ss + '+03:00');
+      return isNaN(t.getTime()) ? null : t;
+    }
+    var d2 = new Date(s);
+    return isNaN(d2.getTime()) ? null : d2;
+  }
+
+  function fmtDateShort(iso) {
+    var d = parseLastCycleAt(iso);
+    if (!d) return iso ? String(iso) : '—';
+    try {
+      return d.toLocaleString('ru-RU', {
+        timeZone: 'Europe/Moscow',
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch (e) { return String(iso); }
+  }
+
+  function uniq(list) {
+    var seen = {};
+    return (list || []).filter(function (item) {
+      var k = (item || '').trim();
+      if (!k || seen[k]) return false;
+      seen[k] = true;
+      return true;
+    });
+  }
+
+  function extractUrls(text) {
+    return uniq(((text || '').match(/https?:\/\/[^\s|;]+/g) || []).map(function (url) {
+      return url.replace(/[),.]+$/,'');
+    }));
+  }
+
+  function hostLabel(url) {
+    if (!url) return 'источник';
+    try {
+      return new URL(url).hostname.replace(/^www\./,'');
+    } catch (e) {
+      return 'источник';
+    }
+  }
+
+  function externalIcon() {
+    return '<span class="mon-link-arrow" aria-hidden="true">↗</span>';
+  }
+
+  function statusClass(s) {
+    var v = (s || '').toLowerCase();
+    if (v.includes('без нарушений')) return 'clean';
+    if (v.includes('в риске') || (v.includes('риск') && !v.includes('наблю'))) return 'risk';
+    return 'watch';
+  }
+
+  function cleanEvidenceQuotes(evidence) {
+    var parts = (evidence || '')
+      .replace(/Источник:\s*/gi, '')
+      .split(/\s*\|\s*|\s*;\s*|\n+/);
+    var codeLike = /function\s*\(|=>|<\/?script|javascript:/i;
+    var out = [];
+    for (var i = 0; i < parts.length; i++) {
+      var p = (parts[i] || '').replace(/https?:\/\/[^\s|;]+/gi, '').replace(/\s+/g, ' ').trim();
+      if (p.length < 22 || p.length > 520) continue;
+      if (codeLike.test(p)) continue;
+      if (!/[а-яёА-ЯЁ]/.test(p) && p.length < 100) continue;
+      out.push(p);
+      if (out.length >= 4) break;
+    }
+    return out;
+  }
+
+  function riskBulletsFromRow(r) {
+    var bullets = [];
+    if (!r) return bullets;
+    if (r.object_type && String(r.object_type).trim() && String(r.object_type).trim() !== '—') {
+      var ot = String(r.object_type).trim();
+      if (!/^\d+$/.test(ot)) bullets.push('Тип объекта в базе: ' + ot);
+    }
+    if (r.complaints != null && r.complaints !== '' && !isNaN(Number(r.complaints)) && Number(r.complaints) > 0) {
+      bullets.push('Жалоб по записи: ' + Number(r.complaints));
+    }
+    var loss = Number(r.total_loss_rub);
+    if (loss > 0) bullets.push('Сумма потерь в строке: ' + loss.toLocaleString('ru-RU') + ' ₽');
+    var qs = cleanEvidenceQuotes(r.source_evidence || '');
+    for (var q = 0; q < qs.length; q++) {
+      bullets.push('Из поля доказательств: «' + qs[q] + '»');
+    }
+    try {
+      var ca = r.content_analysis && JSON.parse(r.content_analysis);
+      var kws = ca && ca.keywords;
+      if (kws && typeof kws === 'object') {
+        var hits = Object.keys(kws).filter(function (k) { return kws[k] > 0; });
+        if (hits.length) bullets.push('Маркеры в контент-анализе: ' + hits.slice(0, 10).join(', ') + '.');
+      }
+    } catch (e) { /* ignore */ }
+    return bullets;
+  }
+
+  function renderRisk(r) {
+    var bullets = riskBulletsFromRow(r);
+    if (!bullets.length) {
+      return '<div class="mon-evidence-empty">В ячейке нет развёрнутого текста признаков — откройте ссылки источника ниже.</div>';
+    }
+    return '<ul class="mon-evidence-list">' + bullets.map(function (b) {
+      return '<li>' + esc(b) + '</li>';
+    }).join('') + '</ul>';
+  }
+
+  function renderSourceLinks(r) {
+    var urls = extractUrls(r && r.source_evidence);
+    var nonTg = urls.filter(function (u) { return !/t\.me\//i.test(u); });
+    var parts = [];
+    if (r && r.link && /^https?:\/\//i.test(r.link)) {
+      parts.push('<a class="mon-external-link" href="' + esc(r.link) + '" target="_blank" rel="noopener">' +
+        esc(hostLabel(r.link)) + ' (объект)' + externalIcon() + '</a>');
+    }
+    if (!nonTg.length && r && r.source_primary && /^https?:\/\//i.test(r.source_primary)) {
+      nonTg = [r.source_primary];
+    }
+    for (var i = 0; i < Math.min(nonTg.length, 4); i++) {
+      var u = nonTg[i];
+      parts.push('<a class="mon-external-link mon-source-link" href="' + esc(u) + '" target="_blank" rel="noopener">' +
+        esc(hostLabel(u)) + externalIcon() + '</a>');
+    }
+    var tg = urls.filter(function (u) { return /t\.me\//i.test(u); }).slice(0, 2);
+    for (var j = 0; j < tg.length; j++) {
+      var t = tg[j];
+      parts.push('<a class="mon-external-link mon-source-link" href="' + esc(t) + '" target="_blank" rel="noopener">' +
+        esc(hostLabel(t)) + externalIcon() + '</a>');
+    }
+    if (!parts.length) return '<span class="mon-text-fallback">Ссылки не извлечены из строки — смотрите таблицу в мониторе.</span>';
+    return parts.join(' ');
+  }
+
+  var slug = window.location.pathname.replace(/^\/channel\//, '');
+  if (!slug) {
+    document.getElementById('ch-loading').hidden = true;
+    document.getElementById('ch-error').hidden = false;
+    document.getElementById('ch-error-msg').textContent = 'Не указан канал в адресе.';
+    return;
+  }
+
+  var queryU = slug;
+  try { queryU = decodeURIComponent(slug.replace(/\+/g, ' ')); } catch (e) { queryU = slug; }
+
+  fetch('/api/kro/channel-profile?u=' + encodeURIComponent(queryU), { cache: 'no-store' })
+    .then(function (res) {
+      if (res.status === 404) throw new Error('not_found');
+      if (!res.ok) throw new Error('http_' + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      var r = data.profile;
+      if (!r || !r.username) throw new Error('not_found');
+
+      document.getElementById('ch-loading').hidden = true;
+      document.getElementById('ch-content').hidden = false;
+
+      var label = (r.username || '').trim();
+      document.title = label + ' — база KRO';
+      document.getElementById('ch-heading').textContent = label;
+
+      if (data.merged_rows && data.merged_rows > 1) {
+        var mn = document.getElementById('ch-merged-note');
+        mn.hidden = false;
+        mn.textContent = 'В базе несколько строк с этим объектом — показана запись с самой поздней датой обнаружения (' +
+          data.merged_rows + ' совпадений).';
+      }
+
+      var st = document.getElementById('ch-status');
+      st.textContent = r.status || '—';
+      st.className = 'mon-status ' + statusClass(r.status);
+
+      document.getElementById('ch-risk').innerHTML = renderRisk(r);
+
+      var sp = (r.source_primary || '').trim() || '—';
+      document.getElementById('ch-source-primary').textContent = 'Поле источника в таблице: ' + sp;
+      document.getElementById('ch-source-links').innerHTML = renderSourceLinks(r);
+
+      document.getElementById('ch-detected').textContent = fmtDateShort(r.detected_at);
+    })
+    .catch(function () {
+      document.getElementById('ch-loading').hidden = true;
+      document.getElementById('ch-error').hidden = false;
+    });
+})();
+</script>
+</body>
+</html>

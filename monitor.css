@@ -2270,6 +2270,144 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   }
 }
 
+/* ── Карточка канала /channel/… + ссылка из таблицы базы ───────── */
+
+.mon-channel-cell {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35em 0.5em;
+}
+
+a.mon-channel-profile-link {
+  color: var(--mon-amber-hot);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(251, 191, 36, 0.35);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+a.mon-channel-profile-link:hover {
+  color: #fcd34d;
+  border-bottom-color: rgba(252, 211, 77, 0.55);
+}
+
+a.mon-channel-external {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 8px;
+  color: var(--mon-text-dim);
+  background: var(--mon-glass);
+  border: 1px solid var(--mon-border);
+  text-decoration: none;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+a.mon-channel-external:hover {
+  color: var(--mon-text);
+  background: var(--mon-glass-hi);
+  border-color: var(--mon-border-hi);
+}
+
+.ch-page .ch-main {
+  padding-top: 28px;
+}
+
+.ch-state {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 0;
+}
+
+.ch-state--error .ch-title {
+  color: var(--mon-red);
+}
+
+.ch-card {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 36px 32px 48px;
+  background: var(--mon-surface);
+  border: 1px solid var(--mon-border-quiet);
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+}
+
+.ch-eyebrow {
+  font-family: var(--mon-font);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mon-text-fade);
+  margin-bottom: 10px;
+}
+
+.ch-title {
+  font-family: var(--mon-font-display);
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  color: var(--mon-text);
+  line-height: 1.2;
+  margin-bottom: 12px;
+  word-break: break-word;
+}
+
+.ch-merged {
+  font-size: 13px;
+  color: var(--mon-text-dim);
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+.ch-block {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--mon-border-quiet);
+}
+
+.ch-h2 {
+  font-family: var(--mon-font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mon-text-dim);
+  margin-bottom: 12px;
+}
+
+.ch-body,
+.ch-meta,
+.ch-links {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--mon-text);
+}
+
+.ch-meta {
+  color: var(--mon-text-dim);
+  margin-bottom: 12px;
+}
+
+.ch-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+}
+
+.ch-status-wrap .mon-status {
+  font-size: 15px;
+}
+
+.ch-lead {
+  color: var(--mon-text-dim);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
 /* ── RESPONSIVE ──────────────────────────────────────────── */
 
 @media (max-width: 1024px) {
