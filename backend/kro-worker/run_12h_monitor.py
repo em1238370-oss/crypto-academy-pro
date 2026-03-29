@@ -14,6 +14,7 @@ Cron (11:00 и 23:00 MSK = 08:00 и 20:00 UTC при MSK=UTC+3):
   0 8,20 * * * cd /path/to/backend/kro-worker && python3 run_12h_monitor.py
 """
 import os
+import random
 import re
 import sys
 import json
@@ -30,6 +31,12 @@ try:
     _WEB_SCRAPER_AVAILABLE = True
 except ImportError:
     _WEB_SCRAPER_AVAILABLE = False
+
+try:
+    import organic_growth_helpers as _organic_helpers
+    _ORGANIC_HELPERS_AVAILABLE = True
+except ImportError:
+    _ORGANIC_HELPERS_AVAILABLE = False
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
@@ -2782,6 +2789,171 @@ def _enqueue_channels_for_check(channels, client, sheet_id):
     return queued
 
 
+ORGANIC_STATE_JSON = os.path.join(DATA_DIR, 'kro-organic-state.json')
+
+
+def _read_scam_base_keys_norm(client, sheet_id):
+    """Нормализованные ключи колонки A (username / домен) для дедупа."""
+    if not client or not sheet_id:
+        return set()
+    scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
+    sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
+    try:
+        resp = client.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range='%s!A2:A' % sheet_name
+        ).execute()
+        out = set()
+        for row in resp.get('values') or []:
+            if row and (row[0] or '').strip():
+                out.add(_norm_ch_key((row[0] or '').strip()))
+        return out
+    except Exception as e:
+        print('organic: scam_base read keys error: %s' % e, file=sys.stderr)
+        return set()
+
+
+def _append_organic_scam_base_row(client, sheet_id, display, link, obj_type, status, evidence, cycle_window, source_primary):
+    """Одна строка v2 в scam_base (органический цикл)."""
+    scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
+    sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
+    now = datetime.now(timezone.utc)
+    detected_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
+    ev = (evidence or '')[:500]
+    sp = (source_primary or 'organic+kurs+search')[:120]
+    v2_row = [[
+        display, link, detected_at, '', '', obj_type, '',
+        1, 0, sp, ev, cycle_window, status, ''
+    ]]
+    try:
+        client.spreadsheets().values().append(
+            spreadsheetId=sheet_id,
+            range='%s!A:N' % sheet_name,
+            valueInputOption='USER_ENTERED',
+            insertDataOption='INSERT_ROWS',
+            body={'values': v2_row}
+        ).execute()
+        return True
+    except Exception as e:
+        print('organic: scam_base append error for %s: %s' % (display, e), file=sys.stderr)
+        return False
+
+
+def _run_organic_growth_cycle(client, sheet_id, cycle_window_label):
+    """
+    Медленный органический цикл (≤ KRO_ORGANIC_MAX_PER_CYCLE новых действий):
+    5–10 новых доменов из kurs.expert → поиск → запись в scam_base со статусом;
+    оставшиеся слоты — кандидаты инвест-ботов из текстов скам-каналов → check_queue.
+    """
+    if not _ORGANIC_HELPERS_AVAILABLE or not _WEB_SCRAPER_AVAILABLE:
+        return {'exchangers': 0, 'bots_queued': 0}
+    if (os.environ.get('KRO_ORGANIC_GROWTH') or '1').strip().lower() in ('0', 'false', 'no', 'off'):
+        return {'exchangers': 0, 'bots_queued': 0}
+    if not client or not sheet_id:
+        return {'exchangers': 0, 'bots_queued': 0}
+
+    try:
+        max_total = int(os.environ.get('KRO_ORGANIC_MAX_PER_CYCLE', '10') or '10')
+    except ValueError:
+        max_total = 10
+    max_total = max(1, min(25, max_total))
+    try:
+        kmin = int(os.environ.get('KRO_ORGANIC_KURS_MIN', '5') or '5')
+        kmax = int(os.environ.get('KRO_ORGANIC_KURS_MAX', '10') or '10')
+    except ValueError:
+        kmin, kmax = 5, 10
+    kmin = max(1, min(kmin, max_total))
+    kmax = max(kmin, min(kmax, max_total))
+    kurs_target = random.randint(kmin, kmax)
+    kurs_target = min(kurs_target, max_total)
+
+    state_path = (os.environ.get('KRO_ORGANIC_STATE_PATH') or ORGANIC_STATE_JSON).strip() or ORGANIC_STATE_JSON
+    state = _organic_helpers.load_organic_state(state_path)
+    processed = set(state.get('kurs_processed_hosts') or [])
+    scam_keys = _read_scam_base_keys_norm(client, sheet_id)
+
+    try:
+        parse_cap = int(os.environ.get('KRO_ORGANIC_KURS_PARSE_CAP', '8000') or '8000')
+    except ValueError:
+        parse_cap = 8000
+    all_hosts, page_url = _web_scraper.get_kurs_expert_blacklist_hosts(max_hosts=parse_cap)
+    candidates = _organic_helpers.pick_new_kurs_hosts(all_hosts, processed, scam_keys, kurs_target)
+
+    exch_done = 0
+    pause = float(os.environ.get('KRO_ORGANIC_SEARCH_PAUSE', str(REQUEST_DELAY)) or REQUEST_DELAY)
+
+    for host in candidates:
+        if exch_done >= max_total:
+            break
+        vr = _organic_helpers.verify_exchanger_domain_via_search(host, page_url, pause_sec=max(1.0, pause))
+        obj_type = _web_scraper._classify_kurs_domain_object_type(host)
+        display = host
+        link = 'https://%s' % host
+        evidence = ' | '.join(vr.get('evidence_lines') or [])
+        st = (vr.get('status') or 'под наблюдением').strip()
+        if _append_organic_scam_base_row(
+            client, sheet_id, display, link, obj_type, st, evidence, cycle_window_label, 'kurs.expert+search'
+        ):
+            exch_done += 1
+            processed.add(host)
+            scam_keys.add(_norm_ch_key(host))
+            print(
+                'organic: %s → scam_base (%s) search_ok=%s neg=%s pos=%s' % (
+                    host, st, vr.get('search_ok'), vr.get('neg'), vr.get('pos'),
+                ),
+                file=sys.stderr,
+            )
+        time.sleep(max(0.5, pause))
+
+    state['kurs_processed_hosts'] = sorted(processed)
+    _organic_helpers.save_organic_state(state_path, state)
+
+    slots_left = max(0, max_total - exch_done)
+    bots_q = 0
+    if slots_left > 0:
+        scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
+        sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
+        try:
+            resp = client.spreadsheets().values().get(
+                spreadsheetId=sheet_id,
+                range='%s!A2:N' % sheet_name
+            ).execute()
+            bot_candidates = []
+            seen_b = set()
+            for row in resp.get('values') or []:
+                if len(row) < 6:
+                    continue
+                ot = (row[5] or '').strip().lower()
+                if 'сигнал' not in ot:
+                    continue
+                parts = (
+                    (row[0] if len(row) > 0 else ''),
+                    (row[9] if len(row) > 9 else ''),
+                    (row[10] if len(row) > 10 else ''),
+                    (row[13] if len(row) > 13 else ''),
+                )
+                for h in _organic_helpers.extract_invest_bot_handles_from_text(*parts):
+                    key = _norm_ch_key(h)
+                    if not key or key in scam_keys or key in seen_b or key in _KNOWN_NON_SCAM_CHANNELS:
+                        continue
+                    seen_b.add(key)
+                    bot_candidates.append('@' + h)
+                    if len(bot_candidates) >= slots_left * 3:
+                        break
+                if len(bot_candidates) >= slots_left * 3:
+                    break
+            to_queue = bot_candidates[:slots_left]
+            if to_queue:
+                q = _enqueue_channels_for_check(to_queue, client, sheet_id)
+                bots_q = len(q)
+                if bots_q:
+                    print('organic: в очередь проверки (инвест-боты из скам-каналов): %d' % bots_q, file=sys.stderr)
+        except Exception as e:
+            print('organic: bot mining error: %s' % e, file=sys.stderr)
+
+    return {'exchangers': exch_done, 'bots_queued': bots_q}
+
+
 async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=None):
     """
     Дописать content_analysis в scam_base: пустые ячейки, бэклог и повторная попытка для «недоступен».
@@ -4994,6 +5166,23 @@ def main():
                 print(f'[web_scraper] wrote {written} rows from {len(web_findings)} findings', file=sys.stderr)
         except Exception as _ws_err:
             print(f'[web_scraper] error: {_ws_err}', file=sys.stderr)
+
+    # 4b) Органический рост (годовой темп): 5–10 новых доменов kurs.expert → поиск → scam_base;
+    #     оставшиеся слоты (всего ≤10) — кандидаты @*bot* из текстов скам-каналов → check_queue.
+    organic_cw = '%s_%s' % (date_str_0, 'am' if now_msk_dt.hour < 12 else 'pm')
+    if client and sheet_id:
+        try:
+            og = _run_organic_growth_cycle(client, sheet_id, organic_cw)
+            if og.get('exchangers') or og.get('bots_queued'):
+                _append_live_log_events([
+                    '%s — Органический цикл: в базу обменников %d, в очередь ботов %d (лимит на цикл соблюдён).' % (
+                        datetime_prefix,
+                        og.get('exchangers', 0),
+                        og.get('bots_queued', 0),
+                    )
+                ])
+        except Exception as _og_err:
+            print('organic cycle error: %s' % _og_err, file=sys.stderr)
 
     # 5) Read sheet reports: окно цикла (~сутки) для сводки; все строки — для scam_base / промо (см. KRO_REPORTS_FULL_AGGREGATION)
     sheet_reports = read_reports_last_12h(client, sheet_id) if client and sheet_id else []

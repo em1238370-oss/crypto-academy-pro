@@ -758,6 +758,25 @@ def scrape_kurs_expert():
     return results
 
 
+def get_kurs_expert_blacklist_hosts(max_hosts=8000):
+    """
+    Только список доменов с страницы чёрного списка (для органического цикла).
+    Возвращает (hosts: list[str], page_url: str или '').
+    """
+    max_hosts = max(100, min(12000, int(max_hosts or 8000)))
+    html = None
+    page_url = None
+    for url in _KURS_EXPERT_PAGE_URLS:
+        html = _fetch(url)
+        if html:
+            page_url = url
+            break
+    if not html:
+        return [], ''
+    hosts = _parse_kurs_expert_blacklist_domains(html, max_entries=max_hosts)
+    return hosts, (page_url or '')
+
+
 # ---------------------------------------------------------------------------
 # Source 1: stop-scam1.com
 # ---------------------------------------------------------------------------
@@ -1152,7 +1171,9 @@ def scrape_all():
     results.extend(scrape_cryptorussia())
     results.extend(scrape_fin_obzor())
     results.extend(scrape_brokers_check())
-    results.extend(scrape_kurs_expert())
+    # Массовая заливка kurs в reports отключена по умолчанию — см. органический цикл в run_12h_monitor
+    if (os.environ.get('KRO_KURS_BULK_WEB_REPORTS') or '').strip().lower() in ('1', 'true', 'yes', 'on'):
+        results.extend(scrape_kurs_expert())
     results.extend(scrape_vklader())
     results.extend(scrape_telltrue())
     results.extend(scrape_forteck())
