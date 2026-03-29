@@ -86,7 +86,9 @@ body {
 a   { color: inherit; }
 code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255,255,0.80); }
 
-/* ── BACKGROUND ──────────────────────────────────────────── */
+/* ── BACKGROUND ────────────────────────────────────────────
+   Атмосфера в духе medvedevart: тёмное полотно + мягкие акценты + виньетка.
+   Анализ: «лёгкий parallax / смена opacity» — здесь медленное «дыхание» слоёв. */
 
 .mon-bg {
   position: fixed;
@@ -96,7 +98,46 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   overflow: hidden;
 }
 
-/* едва заметная сетка — как на сдержанных лендингах */
+/* Световые пятна: янтарь (бренд) + холодный контраст — всё на пределе видимости */
+.mon-bg-atmosphere {
+  position: absolute;
+  inset: -8%;
+  background:
+    radial-gradient(ellipse 55% 42% at 50% -5%, rgba(245, 158, 11, 0.09) 0%, transparent 52%),
+    radial-gradient(ellipse 50% 40% at 92% 88%, rgba(245, 158, 11, 0.055) 0%, transparent 48%),
+    radial-gradient(ellipse 45% 38% at 6% 72%, rgba(96, 125, 200, 0.04) 0%, transparent 45%),
+    linear-gradient(165deg, rgba(255, 255, 255, 0.02) 0%, transparent 38%, transparent 62%, rgba(0, 0, 0, 0.12) 100%);
+  opacity: 0.92;
+  animation: monBgAtmosphere 24s var(--mon-ease-soft) infinite alternate;
+  will-change: opacity;
+}
+
+@keyframes monBgAtmosphere {
+  0% {
+    opacity: 0.78;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0.8%, -0.5%, 0) scale(1.015);
+  }
+}
+
+/* Фокус на центр страницы — буквы и метрики читаются спокойнее */
+.mon-bg-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 92% 88% at 50% 42%,
+    transparent 0%,
+    transparent 42%,
+    rgba(5, 7, 11, 0.38) 100%
+  );
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Едва заметная сетка — текстура «премиального» лендинга */
 .mon-bg-dot-grid {
   position: absolute;
   inset: 0;
@@ -105,17 +146,14 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   opacity: 0.22;
   transition: opacity 0.7s var(--mon-ease-soft);
 }
-/* Едва уловимый тёплый тон сверху — не конкурирует с контентом */
-.mon-bg::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse 52% 38% at 50% 0%, rgba(245, 158, 11, 0.028) 0%, transparent 48%);
-  pointer-events: none;
-  opacity: 1;
-}
+
 .mon-page.mon-hero-offscreen .mon-bg-dot-grid {
-  opacity: 0.14;
+  opacity: 0.12;
+}
+
+.mon-page.mon-hero-offscreen .mon-bg-atmosphere {
+  opacity: 0.62;
+  animation-duration: 32s;
 }
 
 /* ── Z-INDEX LAYERS ──────────────────────────────────────── */
@@ -2184,8 +2222,16 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   .mon-bg-dot-grid {
     transition: none !important;
   }
+  .mon-bg-atmosphere {
+    animation: none !important;
+    transform: none !important;
+    opacity: 0.88 !important;
+  }
+  .mon-page.mon-hero-offscreen .mon-bg-atmosphere {
+    opacity: 0.68 !important;
+  }
   .mon-page.mon-hero-offscreen .mon-bg-dot-grid {
-    opacity: 0.22 !important;
+    opacity: 0.14 !important;
   }
 }
 
