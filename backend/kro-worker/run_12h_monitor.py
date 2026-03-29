@@ -45,6 +45,11 @@ PUBLISH_HISTORY_LIMIT = 10
 SUSPICIOUS_ZERO_STREAK_ALERT = 2
 
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
+# Запасной UA: часть CDN Telegram лучше отдаёт HTML под «браузером Chromium».
+USER_AGENT_CHROME = (
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+    'Chrome/122.0.0.0 Safari/537.36'
+)
 REQUEST_DELAY = 3
 HOURS_12 = 12
 DAYS_14 = 14   # критерий: канал младше 14 дней
@@ -482,6 +487,7 @@ TELEGRAM_API_ID = int(os.environ.get('TELEGRAM_API_ID') or 0)
 TELEGRAM_API_HASH = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
 TELEGRAM_SESSION_NAME = os.environ.get('TELEGRAM_SESSION_NAME', 'kro_worker')
 KRO_SOURCE_CHANNELS = [x.strip() for x in (os.environ.get('KRO_SOURCE_CHANNELS') or '').split(',') if x.strip()]
+# Контент-анализ каналов: KRO_CONTENT_POSTS_LIMIT (25–200, по умолчанию 90); дозаполнение scam_base — KRO_SCAM_BASE_ENRICH_*.
 
 RE_SUM = re.compile(r'(?:потерял|украли|сумм|₽|руб)\s*[:\s]*(\d[\d\s]{2,12})', re.I)
 RE_SUM_K = re.compile(r'\b(\d+)\s*[кk]\s*[₽р]', re.I)
@@ -1252,16 +1258,29 @@ _SIGNAL_KEYWORDS = [
 
 
 def _norm_ch_key(ch):
-    """Нормализовать ключ канала для сравнения: @name → name (нижний), t.me/+hash → t.me/+hash."""
+    """Нормализовать ключ канала: @name → name, https://t.me/foo → foo, t.me/s/foo → foo, t.me/+hash → t.me/+hash."""
     s = (ch or '').strip().lower()
+    if not s:
+        return ''
+    if s.startswith('http://') or s.startswith('https://'):
+        if 't.me/' in s:
+            s = s[s.find('t.me/'):]
+        else:
+            return s
     if s.startswith('@'):
-        return s[1:]
+        return s[1:].split('/')[0].split('?')[0]
     if 't.me/+' in s:
         idx = s.find('t.me/+')
-        return s[idx:]
+        return s[idx:].split('?')[0]
     if s.startswith('t.me/'):
-        return s[5:]
-    return s
+        rest = s[5:]
+        parts = [p for p in rest.split('/') if p]
+        if not parts:
+            return ''
+        if parts[0] == 's' and len(parts) >= 2:
+            return parts[1].split('?')[0]
+        return parts[0].split('?')[0]
+    return s.split('/')[0].split('?')[0]
 
 
 def _has_signal_keywords(text):
@@ -1285,6 +1304,54 @@ def _channel_public_slug(ch):
     if not key or key.startswith('t.me/+'):
         return ''
     return key
+
+
+def _content_posts_limit():
+    """Сколько последних постов тянуть (Telethon + публичная страница) и учитывать в сводке."""
+    try:
+        v = int(os.environ.get('KRO_CONTENT_POSTS_LIMIT', '90') or '90')
+    except ValueError:
+        v = 90
+    return max(25, min(v, 200))
+
+
+def _unique_channel_refs(primary, link=None):
+    """Список строк для попыток fetch (username и отдельно link из таблицы)."""
+    out = []
+    for r in ((primary or '').strip(), (link or '').strip()):
+        if r and r not in out:
+            out.append(r)
+    return out
+
+
+def _extract_post_text_from_widget(msg):
+    """Текст поста с превью-страницы t.me/s/… (несколько вариантов вёрстки Telegram)."""
+    if not msg:
+        return ''
+    text_node = msg.select_one('.tgme_widget_message_text')
+    text = _normalize_message_text(text_node.get_text(' ', strip=True) if text_node else '')
+    if text:
+        return text
+    alt = msg.select_one('.tgme_widget_message_text.js-message_text')
+    text = _normalize_message_text(alt.get_text(' ', strip=True) if alt else '')
+    if text:
+        return text
+    for sel in (
+        '.tgme_widget_message_photo_caption',
+        '.message_media_not_supported_text',
+        '.tgme_widget_message_document_wrap + .tgme_widget_message_text',
+    ):
+        cap = msg.select_one(sel)
+        if cap:
+            text = _normalize_message_text(cap.get_text(' ', strip=True))
+            if text:
+                return text
+    inner = msg.select_one('.tgme_widget_message_bubble')
+    if inner:
+        text = _normalize_message_text(inner.get_text(' ', strip=True))
+        if len(text) > 15:
+            return text
+    return ''
 
 
 def _safe_ratio(numerator, denominator):
@@ -1313,7 +1380,8 @@ def _extract_message_mentions(text, self_key=''):
     return mentions
 
 
-def _summarize_content_messages(messages, channel_ref=''):
+def _summarize_content_messages(messages, channel_ref='', max_posts=None):
+    cap = _content_posts_limit() if max_posts is None else max(1, min(int(max_posts), 200))
     now = datetime.now(timezone.utc)
     self_key = _norm_ch_key(channel_ref)
     keyword_counts = {key: 0 for key in CONTENT_RISK_KEYWORDS}
@@ -1325,7 +1393,8 @@ def _summarize_content_messages(messages, channel_ref=''):
     network_mentions = []
     seen_edges = set()
 
-    for item in messages[:50]:
+    slice_msgs = messages[:cap]
+    for item in slice_msgs:
         text = _normalize_message_text(item.get('text') or '')
         lower = text.lower()
         dt = item.get('date')
@@ -1371,7 +1440,7 @@ def _summarize_content_messages(messages, channel_ref=''):
 
     analyzed = {
         'status': 'ok' if messages else 'недоступен',
-        'posts_analyzed': len(messages[:50]),
+        'posts_analyzed': len(slice_msgs),
         'keywords': keyword_counts,
         'profit_posts': profit_posts,
         'loss_posts': loss_posts,
@@ -1469,7 +1538,7 @@ def _sheet_only_content_analysis_from_confirmed(obj, fetch_failed=False):
     }
 
 
-def _fetch_public_channel_messages(channel_ref, limit=50):
+def _fetch_public_channel_messages(channel_ref, limit=None):
     slug = _channel_public_slug(channel_ref)
     if not slug:
         return []
@@ -1478,83 +1547,123 @@ def _fetch_public_channel_messages(channel_ref, limit=50):
         from bs4 import BeautifulSoup
     except ImportError:
         return []
+    lim = limit if limit is not None else _content_posts_limit()
     url = 'https://t.me/s/%s' % slug
-    try:
-        resp = requests.get(url, headers={'User-Agent': USER_AGENT}, timeout=20)
-        resp.raise_for_status()
-    except Exception as e:
-        print('public telegram fetch failed for %s: %s' % (channel_ref, e), file=sys.stderr)
-        return []
-
-    soup = BeautifulSoup(resp.text or '', 'html.parser')
     messages = []
-    for msg in soup.select('.tgme_widget_message')[:limit]:
-        text_node = msg.select_one('.tgme_widget_message_text')
-        time_node = msg.select_one('time')
-        text = _normalize_message_text(text_node.get_text(' ', strip=True) if text_node else '')
-        dt = None
-        if time_node and time_node.get('datetime'):
-            try:
-                dt = datetime.fromisoformat(time_node['datetime'].replace('Z', '+00:00')).astimezone(timezone.utc)
-            except ValueError:
-                dt = None
-        link_node = msg.select_one('a.tgme_widget_message_date')
-        post_url = link_node.get('href', '').strip() if link_node else ''
-        messages.append({
-            'text': text,
-            'date': dt,
-            'url': post_url,
-        })
-    return messages
+    for attempt, ua in enumerate((USER_AGENT, USER_AGENT_CHROME)):
+        if attempt:
+            time.sleep(min(2.0, float(REQUEST_DELAY)))
+        try:
+            resp = requests.get(
+                url,
+                headers={
+                    'User-Agent': ua,
+                    'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
+                },
+                timeout=28,
+            )
+            resp.raise_for_status()
+        except Exception as e:
+            print('public telegram fetch failed for %s (attempt %s): %s' % (channel_ref, attempt + 1, e), file=sys.stderr)
+            continue
+
+        soup = BeautifulSoup(resp.text or '', 'html.parser')
+        raw_widgets = soup.select('.tgme_widget_message')[:lim]
+        if not raw_widgets:
+            continue
+
+        messages = []
+        for msg in raw_widgets:
+            text = _extract_post_text_from_widget(msg)
+            time_node = msg.select_one('time')
+            dt = None
+            if time_node and time_node.get('datetime'):
+                try:
+                    dt = datetime.fromisoformat(time_node['datetime'].replace('Z', '+00:00')).astimezone(timezone.utc)
+                except ValueError:
+                    dt = None
+            link_node = msg.select_one('a.tgme_widget_message_date')
+            post_url = link_node.get('href', '').strip() if link_node else ''
+            messages.append({
+                'text': text,
+                'date': dt,
+                'url': post_url,
+            })
+        if messages:
+            return messages
+    return []
 
 
-async def analyze_channel_content(username, client=None):
+async def analyze_channel_content(username, client=None, link=None):
     """
     Анализировать контент канала:
-    - последние 50 постов;
+    - последние N постов (KRO_CONTENT_POSTS_LIMIT, по умолчанию 90);
     - частоты риск-слов;
     - прибыль/убытки;
     - активность;
     - соотношение сигналов к рекламе;
     - связи с другими каналами.
+
+    Сначала username, при неудаче — link из таблицы (часто полный https://t.me/…).
     """
-    channel_ref = (username or '').strip()
-    if not channel_ref:
+    refs = _unique_channel_refs(username, link)
+    if not refs:
         return 'недоступен'
 
+    lim = _content_posts_limit()
     messages = []
     source = ''
+    primary_ref = refs[0]
 
     if client is not None:
-        try:
-            entity_ref = channel_ref
-            if not entity_ref.startswith('@') and not entity_ref.startswith('t.me/'):
-                entity_ref = '@' + entity_ref
-            if entity_ref.startswith('t.me/'):
-                entity_ref = 'https://t.me/' + entity_ref.split('/', 1)[-1]
-            entity = await client.get_entity(entity_ref)
-            async for msg in client.iter_messages(entity, limit=50):
-                text = _normalize_message_text((msg.text or '') + ' ' + (getattr(msg, 'message', '') or ''))
-                msg_dt = getattr(msg, 'date', None)
-                if msg_dt and getattr(msg_dt, 'tzinfo', None) is None:
-                    msg_dt = msg_dt.replace(tzinfo=timezone.utc)
-                post_url = ''
-                username_slug = (getattr(entity, 'username', None) or '').strip()
-                if username_slug and getattr(msg, 'id', None):
-                    post_url = 'https://t.me/%s/%s' % (username_slug, msg.id)
-                messages.append({'text': text, 'date': msg_dt, 'url': post_url})
-            source = 'telethon'
-        except Exception as e:
-            print('telethon content analysis fallback for %s: %s' % (channel_ref, e), file=sys.stderr)
+        for i, channel_ref in enumerate(refs):
+            try:
+                if i:
+                    await asyncio.sleep(0.35)
+                er = (channel_ref or '').strip()
+                if er.startswith('http://') or er.startswith('https://'):
+                    entity_ref = er
+                elif er.startswith('t.me/'):
+                    entity_ref = 'https://' + er
+                elif er.startswith('@'):
+                    entity_ref = er
+                else:
+                    entity_ref = '@' + _norm_ch_key(er)
+                entity = await client.get_entity(entity_ref)
+                batch = []
+                async for msg in client.iter_messages(entity, limit=lim):
+                    text = _normalize_message_text((msg.text or '') + ' ' + (getattr(msg, 'message', '') or ''))
+                    msg_dt = getattr(msg, 'date', None)
+                    if msg_dt and getattr(msg_dt, 'tzinfo', None) is None:
+                        msg_dt = msg_dt.replace(tzinfo=timezone.utc)
+                    post_url = ''
+                    username_slug = (getattr(entity, 'username', None) or '').strip()
+                    if username_slug and getattr(msg, 'id', None):
+                        post_url = 'https://t.me/%s/%s' % (username_slug, msg.id)
+                    batch.append({'text': text, 'date': msg_dt, 'url': post_url})
+                if batch:
+                    messages = batch
+                    source = 'telethon'
+                    primary_ref = channel_ref
+                    break
+            except Exception as e:
+                print('telethon content analysis for %s: %s' % (channel_ref, e), file=sys.stderr)
 
     if not messages:
-        messages = _fetch_public_channel_messages(channel_ref, limit=50)
-        source = 'public_html' if messages else source
+        for i, channel_ref in enumerate(refs):
+            if i:
+                await asyncio.sleep(0.65)
+            batch = _fetch_public_channel_messages(channel_ref, limit=lim)
+            if batch:
+                messages = batch
+                source = 'public_html'
+                primary_ref = channel_ref
+                break
 
     if not messages:
         return 'недоступен'
 
-    analysis = _summarize_content_messages(messages, channel_ref=channel_ref)
+    analysis = _summarize_content_messages(messages, channel_ref=primary_ref, max_posts=lim)
     if isinstance(analysis, dict):
         analysis['source'] = source or 'public_html'
     return analysis
@@ -1589,7 +1698,11 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
     seen_network = set()
     try:
         for obj in confirmed_objects:
-            analysis = await analyze_channel_content(obj.get('username') or obj.get('link') or '', client=client)
+            analysis = await analyze_channel_content(
+                obj.get('username') or '',
+                client=client,
+                link=obj.get('link') or '',
+            )
             obj = dict(obj)
             if isinstance(analysis, dict):
                 risk_hits = sum(int(v or 0) for v in (analysis.get('keywords') or {}).values())
@@ -2233,21 +2346,21 @@ async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=No
 
     if hours is None:
         try:
-            hours = int(os.environ.get('KRO_SCAM_BASE_ENRICH_HOURS', '168') or '168')
+            hours = int(os.environ.get('KRO_SCAM_BASE_ENRICH_HOURS', '336') or '336')
         except ValueError:
-            hours = 168
+            hours = 336
     try:
-        backlog_max = int(os.environ.get('KRO_SCAM_BASE_ENRICH_BACKLOG_MAX', '25') or '25')
+        backlog_max = int(os.environ.get('KRO_SCAM_BASE_ENRICH_BACKLOG_MAX', '45') or '45')
     except ValueError:
-        backlog_max = 25
+        backlog_max = 45
     try:
-        retry_unavail_max = int(os.environ.get('KRO_SCAM_BASE_ENRICH_RETRY_UNAVAILABLE_MAX', '8') or '8')
+        retry_unavail_max = int(os.environ.get('KRO_SCAM_BASE_ENRICH_RETRY_UNAVAILABLE_MAX', '15') or '15')
     except ValueError:
-        retry_unavail_max = 8
+        retry_unavail_max = 15
     try:
-        max_updates = int(os.environ.get('KRO_SCAM_BASE_ENRICH_MAX_UPDATES_PER_RUN', '45') or '45')
+        max_updates = int(os.environ.get('KRO_SCAM_BASE_ENRICH_MAX_UPDATES_PER_RUN', '70') or '70')
     except ValueError:
-        max_updates = 45
+        max_updates = 70
 
     scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
     sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
@@ -2345,7 +2458,8 @@ async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=No
     try:
         for idx, row in targets:
             username = (row[0] if len(row) > 0 else '').strip()
-            analysis = await analyze_channel_content(username, client=client_tg)
+            link = (row[1] if len(row) > 1 else '').strip()
+            analysis = await analyze_channel_content(username, client=client_tg, link=link)
             status = (row[12] if len(row) > 12 else '').strip()
             complaints = 0
             try:
