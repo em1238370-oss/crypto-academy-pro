@@ -796,12 +796,21 @@
     }
     if (r.object_type && String(r.object_type).trim() && String(r.object_type).trim() !== '—') {
       v = String(r.object_type).trim();
-      out.push(pickPhrase(seed, salt++, [
-        'Тип объекта: ' + v,
-        'Категория в данных: ' + v,
-        'Тип в базе: ' + v,
-        'Класс объекта: ' + v
-      ]));
+      if (/^\d+$/.test(v)) {
+        out.push(pickPhrase(seed, salt++, [
+          'Поле «тип объекта» содержит только число ' + v + ' — это не категория канала; число жалоб см. в отдельном столбце.',
+          'В типе объекта ошибочно число (' + v + '); класс канала по этому полю не определить — ориентируйтесь на ссылку и блок жалоб.',
+          'Тип объекта не заполнен текстом (стоит число ' + v + '); вероятна путаница колонок при записи данных.',
+          'Число ' + v + ' в поле типа — не рубрика жалобы; это артефакт данных, не классификация.'
+        ]));
+      } else {
+        out.push(pickPhrase(seed, salt++, [
+          'Тип объекта: ' + v,
+          'Категория объекта в записи: ' + v,
+          'Тип в базе: ' + v,
+          'Класс объекта: ' + v
+        ]));
+      }
     }
     if (r.risk_score != null && r.risk_score !== '' && !isNaN(Number(r.risk_score))) {
       var rs = Number(r.risk_score);
@@ -1318,6 +1327,28 @@
 
   // ── SECTION 3: SCAM BASE TABLE ────────────────────────────
 
+  function formatScamObjectTypeCell(r) {
+    var raw = (r.object_type != null && r.object_type !== '') ? String(r.object_type).trim() : '';
+    if (!raw || raw === '—') return '<span class="mon-cell-muted">—</span>';
+    if (/^\d+$/.test(raw)) {
+      var hint = 'В типе объекта указано только число — обычно это ошибка колонки (число жалоб попало не в тот столбец). Смотрите столбец «Жалоб» и канал по ссылке.';
+      return '<span class="mon-type-bad" title="' + esc(hint) + '">не классифицировано <span class="mon-type-bad-num">(' + esc(raw) + ')</span></span>';
+    }
+    return '<span class="mon-cell-muted">' + esc(raw) + '</span>';
+  }
+
+  function formatScamComplaintsCell(r) {
+    var c = r.complaints;
+    if (c == null || c === '') return '<span class="mon-cell-muted">—</span>';
+    var n = Number(c);
+    if (!isFinite(n)) return '<span class="mon-cell-muted">' + esc(String(c)) + '</span>';
+    var out = '<span class="mon-comp-main">' + esc(String(n)) + '</span>';
+    if (n === 2) {
+      out += ' <abbr class="mon-comp-hint" title="Часто ровно 2: по правилам отбора в эту базу обычно нужны как минимум два независимых сигнала (жалобы/заявители) — это не копипаста. Если обращений больше, число здесь будет выше.">?</abbr>';
+    }
+    return out;
+  }
+
   function renderScamBase(rows) {
     var wrap = document.getElementById('s3-table-wrap');
     var countEl = document.getElementById('s3-count');
@@ -1331,8 +1362,8 @@
     var tableHtml = '<table class="mon-table">' +
       '<thead><tr>' +
       '<th style="width:36px">#</th>' +
-      '<th>Канал</th><th>Тип</th><th>Источник</th>' +
-      '<th title="Факты из карточки записи, ключевые слова из контент-анализа и отфильтрованный текст доказательств">Признаки риска</th><th title="По текстам постов из ленты (если доступна) или по сохранённым полям записи">Контент-анализ</th><th>Статус</th><th>Жалобы</th><th>Дата</th>' +
+      '<th>Канал</th><th title="Тип объекта (сигналы, курс и т.д.), не число жалоб">Тип объекта</th><th>Источник</th>' +
+      '<th title="Факты из карточки записи, ключевые слова из контент-анализа и отфильтрованный текст доказательств">Признаки риска</th><th title="По текстам постов из ленты (если доступна) или по сохранённым полям записи">Контент-анализ</th><th>Статус</th><th title="Сколько разных заявителей/строк учтено; порог попадания в базу по форме — не менее двух, поэтому часто видно 2">Жалоб (учтено)</th><th>Дата</th>' +
       '</tr></thead><tbody>';
 
     rows.forEach(function(r, idx) {
@@ -1343,7 +1374,7 @@
       tableHtml += '<tr>' +
         '<td class="mon-cell-num">' + (idx + 1) + '</td>' +
         '<td class="mon-cell-channel">' + renderExternalLink(channelUrl, channelLabel, 'mon-external-link mon-channel-link') + '</td>' +
-        '<td class="mon-cell-muted">' + esc(r.object_type || '—') + '</td>' +
+        '<td class="mon-cell-type">' + formatScamObjectTypeCell(r) + '</td>' +
         '<td class="mon-cell-source">' + renderAllSourceLinks(r) + '</td>' +
         '<td><div class="mon-evidence" title="' + esc(r.source_evidence || '') + '">' + renderRiskSignals(r) + '</div></td>' +
         '<td class="mon-cell-ca">' + renderContentAnalysis(r.content_analysis || '', { omitKeywords: true, row: r }) + '</td>' +
@@ -1351,7 +1382,7 @@
           '<span class="mon-status ' + statusClass(r.status) + '">' + esc(r.status || '—') + '</span>' +
           (isFormSource(r.source_primary) ? '<br><span class="mon-source-tag">жалобы пользователей</span>' : '') +
         '</td>' +
-        '<td class="mon-cell-muted mon-cell-date">' + esc(String(r.complaints || 0)) + '</td>' +
+        '<td class="mon-cell-muted mon-cell-date">' + formatScamComplaintsCell(r) + '</td>' +
         '<td class="mon-cell-muted mon-cell-date">' + esc(fmtDateShort(r.detected_at)) + '</td>' +
         '</tr>';
     });

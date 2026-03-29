@@ -1622,12 +1622,22 @@ function computeRiskScoreFromFeatures(ads_per_week, bot_pct, complaints, vip_pri
   return Math.min(100, Math.max(0, risk));
 }
 
+function scamBaseRowLooksV2(row) {
+  if (!row || row.length < 13) return false;
+  const detected = (row[2] || '').toString().trim();
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(detected)) return true;
+  if (/^\d{4}-\d{2}-\d{2}[ ]\d{2}:\d{2}/.test(detected)) return true;
+  const link = (row[1] || '').toString().trim();
+  if (/^https?:\/\/t\.me\//i.test(link)) return true;
+  return false;
+}
+
 function parseScamBaseRow(row) {
   const username = (row[0] || '').toString().trim();
   // Detect schema version by column count:
   // new v2 (13-14 cols A–N): username | link | detected_at | created_at | channel_age_days | object_type | vip_price | complaints | total_loss_rub | source_primary | source_evidence | cycle_window | status | content_analysis
   // old v1 (8 cols):      username | risk_score | ads_per_week | bot_pct | vip_price | complaints | total_loss | verdict
-  if (row.length >= 13 && /^\d{4}-\d{2}-\d{2}T/.test((row[2] || '').toString())) {
+  if (scamBaseRowLooksV2(row)) {
     // new v2 schema
     const link = (row[1] || '').toString().trim();
     const detected_at = (row[2] || '').toString().trim();
@@ -2540,25 +2550,25 @@ async function checkAndPromoteToScamBase(client, channel) {
     const now = new Date();
     const detectedAt = now.toISOString().replace('.000', '');
     const totalLoss = reports.reduce((s, r) => s + (r.sum || 0), 0);
-    const complaints = reports.length;
     const normalizedCh = channel.startsWith('@') ? channel : '@' + channel.replace(/^t\.me\//, '');
     const link = 'https://t.me/' + normalizedCh.replace(/^@/, '');
     const sourceEvidence = reports.slice(0, 3).map(r => r.description || r.proof_url).filter(Boolean).join('; ');
     const cycleWindow = now.toISOString().slice(0, 10) + (now.getUTCHours() < 12 ? '_am' : '_pm');
 
     const sheetName = kroScamBaseRange.split('!')[0] || 'scam_base';
+    const complaintsForSheet = uniqueCount;
     const v2Row = [[
       normalizedCh, link, detectedAt, '', '', 'сигнал-канал', '',
-      complaints, totalLoss, 'form', sourceEvidence, cycleWindow, 'в риске'
+      complaintsForSheet, totalLoss, 'form', sourceEvidence, cycleWindow, 'в риске', ''
     ]];
     await client.sheets.spreadsheets.values.append({
       spreadsheetId: kroSheetId,
-      range: `${sheetName}!A:M`,
+      range: `${sheetName}!A:N`,
       valueInputOption: 'USER_ENTERED',
       insertDataOption: 'INSERT_ROWS',
       requestBody: { values: v2Row }
     });
-    console.log(`[KRO] Promoted ${normalizedCh} to scam_base (${uniqueCount} reports, loss ${totalLoss}₽)`);
+    console.log(`[KRO] Promoted ${normalizedCh} to scam_base (${uniqueCount} unique reporters, ${reports.length} rows, loss ${totalLoss}₽)`);
   } catch (e) {
     console.error('[KRO] checkAndPromoteToScamBase error:', e);
   }
