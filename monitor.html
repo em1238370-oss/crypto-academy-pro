@@ -959,11 +959,45 @@
         total_loss_rub: row.total_loss_rub != null ? row.total_loss_rub : 0,
         source_primary: row.source_primary || '',
         status: row.status || ''
+      },
+      verification: {
+        data_origin_ru: 'Только поля строки (fallback на клиенте); посты канала здесь не подставлялись.',
+        how_to_verify_ru: 'Сверьте с Google Sheets и колонкой доказательств.',
       }
     };
   }
 
+  function renderContentVerification(d) {
+    if (!d || typeof d !== 'object') return '';
+    var v = d.verification;
+    if (!v || typeof v !== 'object') return '';
+    if (d.source === 'sheet_only') {
+      var sh = ['<div class="mon-verify mon-verify--sheet">'];
+      sh.push('<span class="mon-verify-label">Источник</span> ');
+      sh.push('<span class="mon-verify-body">' + esc(v.data_origin_ru || '') + '</span>');
+      if (v.how_to_verify_ru) sh.push('<div class="mon-verify-step">' + esc(v.how_to_verify_ru) + '</div>');
+      sh.push('</div>');
+      return sh.join('');
+    }
+    var o = ['<div class="mon-verify mon-verify--posts">'];
+    o.push('<span class="mon-verify-label">Проверка</span> ');
+    o.push('<span class="mon-verify-body">' + esc(v.claims_from_ru || '') + '</span>');
+    if (v.fetch_source_ru) {
+      o.push('<div class="mon-verify-meta">Лента: <strong>' + esc(v.fetch_source_ru) + '</strong>');
+      if (v.posts_fetched != null) o.push(' · в выборке постов: ' + esc(String(v.posts_fetched)));
+      if (v.posts_used_in_counters != null) o.push(' · в сводке: ' + esc(String(v.posts_used_in_counters)));
+      o.push('</div>');
+    }
+    if (v.excerpts_literal_ru) o.push('<div class="mon-verify-step">' + esc(v.excerpts_literal_ru) + '</div>');
+    if (v.not_invented_ru) o.push('<div class="mon-verify-step mon-verify-step--muted">' + esc(v.not_invented_ru) + '</div>');
+    if (v.verify_steps_ru) o.push('<div class="mon-verify-step">' + esc(v.verify_steps_ru) + '</div>');
+    if (v.llm_basis_ru) o.push('<div class="mon-verify-llm">' + esc(v.llm_basis_ru) + '</div>');
+    o.push('</div>');
+    return o.join('');
+  }
+
   function renderSheetOnlyContentAnalysis(d) {
+    var verify = renderContentVerification(d);
     var note = d.note ? '<div class="mon-ca-note">' + esc(d.note) + '</div>' : '';
     var f = d.sheet_facts || {};
     var lines = [];
@@ -977,7 +1011,7 @@
     var factsHtml = lines.length
       ? '<div class="mon-ca-muted mon-ca-sheet-facts">' + lines.join('<br>') + '</div>'
       : '';
-    return '<div class="mon-ca mon-ca-sheet-only">' + note + factsHtml + '</div>';
+    return '<div class="mon-ca mon-ca-sheet-only">' + verify + note + factsHtml + '</div>';
   }
 
   function renderContentAnalysis(jsonStr, opts) {
@@ -1007,6 +1041,8 @@
       return renderSheetOnlyContentAnalysis(d);
     }
     var parts = [];
+    var vBlock = renderContentVerification(d);
+    if (vBlock) parts.push(vBlock);
     // Activity
     var actLabel = (d.activity === 'активен') ? '<span class="mon-ca-ok">активен</span>'
                  : (d.activity === 'неактивен') ? '<span class="mon-ca-warn">неактивен</span>'
@@ -1081,18 +1117,20 @@
 
     var samples = d.content_samples || [];
     if (samples.length) {
-      parts.push('<div class="mon-ca-samples-h mon-ca-muted">Выдержки из ленты (оригинальный текст)</div>');
+      parts.push('<div class="mon-ca-samples-h mon-ca-muted">Выдержки из ленты — дословно; откройте «пост» и сравните с каналом</div>');
       for (var si = 0; si < samples.length; si++) {
         var s = samples[si];
         var link = s.post_url
           ? '<a class="mon-ca-sample-link" href="' + esc(s.post_url) + '" target="_blank" rel="noopener">пост</a> '
           : '';
-        parts.push('<div class="mon-ca-sample">' + link + '«' + esc(s.excerpt || '') + '»</div>');
+        var lit = s.verbatim_from_post ? '<span class="mon-ca-sample-lit">дословно из поста</span> · ' : '';
+        parts.push('<div class="mon-ca-sample">' + link + lit + '«' + esc(s.excerpt || '') + '»</div>');
       }
     }
 
     var llm = d.narrative_llm;
     if (llm && typeof llm === 'object') {
+      parts.push('<div class="mon-ca-llm-heading">Интерпретация (LLM) — не новые факты; только пересказ фрагментов выше</div>');
       if (llm.note) parts.push('<div class="mon-ca-llm-note mon-ca-muted">' + esc(llm.note) + '</div>');
       var lb = llm.bullets || [];
       if (lb.length) {
@@ -1300,11 +1338,12 @@
       return;
     }
 
-    var tableHtml = '<table class="mon-table">' +
+    var tableHtml = '<p class="mon-scam-method">Контент-анализ привязан к данным: либо к текстам постов из ленты (со ссылками для сверки), либо к ячейкам строки в Google Sheets, если посты не удалось загрузить. Блок «Проверка» в ячейке указывает, что именно использовано.</p>' +
+      '<table class="mon-table">' +
       '<thead><tr>' +
       '<th style="width:36px">#</th>' +
       '<th>Канал</th><th>Тип</th><th>Источник</th>' +
-      '<th title="Факты из полей строки, ключевые слова из контент-анализа и отфильтрованный текст доказательств — без выдумок">Признаки риска</th><th>Контент-анализ</th><th>Статус</th><th>Жалобы</th><th>Дата</th>' +
+      '<th title="Факты из полей строки, ключевые слова из контент-анализа и отфильтрованный текст доказательств — без выдумок">Признаки риска</th><th title="Цифры и цитаты из текста постов (или из ячеек таблицы, если лента недоступна); блок проверки объясняет источник">Контент-анализ</th><th>Статус</th><th>Жалобы</th><th>Дата</th>' +
       '</tr></thead><tbody>';
 
     rows.forEach(function(r, idx) {

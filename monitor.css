@@ -1804,6 +1804,17 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-ca-llm-list { margin: 6px 0 8px 1.1em; padding: 0; font-size: 12px; line-height: 1.45; color: rgba(255,255,255,0.88); }
 .mon-ca-llm-list li { margin: 4px 0; }
 .mon-ca-llm-model { font-size: 10px; opacity: 0.75; display: inline-block; margin-top: 4px; }
+.mon-ca-llm-heading { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.88); margin-top: 10px; margin-bottom: 4px; }
+.mon-ca-sample-lit { font-size: 10px; color: var(--mon-green, #4ade80); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.mon-verify { font-size: 11px; line-height: 1.45; margin-bottom: 10px; padding: 8px 10px; border-radius: 8px; background: rgba(34,211,238,0.06); border: 1px solid rgba(34,211,238,0.2); }
+.mon-verify--sheet { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.12); }
+.mon-verify-label { font-weight: 800; color: rgba(255,255,255,0.95); margin-right: 4px; }
+.mon-verify-body { color: rgba(255,255,255,0.82); }
+.mon-verify-meta { margin-top: 6px; font-size: 11px; color: var(--mon-text-dim); }
+.mon-verify-step { margin-top: 5px; font-size: 11px; color: rgba(255,255,255,0.78); }
+.mon-verify-step--muted { color: var(--mon-text-dim); }
+.mon-verify-llm { margin-top: 6px; font-size: 10px; line-height: 1.4; color: var(--mon-yellow, #facc15); opacity: 0.95; }
+.mon-scam-method { font-size: 12px; line-height: 1.5; color: var(--mon-text-dim); margin: 0 0 12px 0; max-width: 72em; }
 .mon-source-link { font-size: 12px; }
 
 /* ── ROW APPEAR ──────────────────────────────────────────── */

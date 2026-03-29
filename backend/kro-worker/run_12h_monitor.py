@@ -1577,7 +1577,11 @@ def _pick_content_samples(slice_msgs, max_samples=5, excerpt_len=220):
             continue
         seen_prefix.add(pref)
         ex = text[:excerpt_len] + ('…' if len(text) > excerpt_len else '')
-        out.append({'excerpt': ex, 'post_url': url})
+        out.append({
+            'excerpt': ex,
+            'post_url': url,
+            'verbatim_from_post': True,
+        })
         if len(out) >= max_samples:
             break
     return out
@@ -1678,7 +1682,12 @@ def _llm_content_narrative_sync(channel_ref, messages, cap):
     if not clean or (not clean['bullets'] and not clean['risk_tags'] and not clean['tone']):
         return None
     clean['model'] = model
-    clean['note'] = 'Краткое резюме по фрагментам постов (LLM); не заменяет проверку человеком.'
+    clean['fragments_used'] = len(chunks)
+    clean['approx_input_chars'] = len(corpus)
+    clean['note'] = (
+        'Сжатое пересказивание тех же фрагментов постов, что ниже (или в выборке); '
+        'не новый источник фактов — сверяйте с цитатами и ссылками «пост».'
+    )
     return clean
 
 
@@ -1733,6 +1742,10 @@ def _sheet_only_content_analysis_from_row(row, fetch_failed=False, note=None):
         'keywords': {},
         'fetch_failed': bool(fetch_failed),
         'note': note or default_note,
+        'verification': {
+            'data_origin_ru': 'Только ячейки этой строки в Google Sheets (scam_base); текст постов канала сюда не подставлялся.',
+            'how_to_verify_ru': 'Откройте таблицу scam_base и сравните колонки; для контекста — ссылку на канал и «Доказательства».',
+        },
         'sheet_facts': {
             'object_type': cell(5),
             'vip_price': cell(6),
@@ -1766,6 +1779,10 @@ def _sheet_only_content_analysis_from_confirmed(obj, fetch_failed=False):
         'keywords': {},
         'fetch_failed': bool(fetch_failed),
         'note': default_note,
+        'verification': {
+            'data_origin_ru': 'Только поля объекта отбора / строки scam_base; лента постов не подгружалась.',
+            'how_to_verify_ru': 'Сверьте с записью в таблице и колонками источника и доказательств.',
+        },
         'sheet_facts': {
             'object_type': (obj.get('object_type') or '').strip(),
             'vip_price': (obj.get('vip_price') or '').strip(),
@@ -1906,6 +1923,22 @@ async def analyze_channel_content(username, client=None, link=None):
     if isinstance(analysis, dict):
         analysis['source'] = source or 'public_html'
         analysis = _attach_deep_content_layer(analysis, messages, primary_ref, lim)
+        src = analysis.get('source') or 'public_html'
+        fetch_ru = {
+            'telethon': 'Telegram API (сессия воркера)',
+            'public_html': 'публичная страница ленты t.me/s/…',
+        }.get(src, src)
+        analysis['verification'] = {
+            'claims_from_ru': 'Подсчёты и цитаты — из текста постов, полученного из ленты канала.',
+            'fetch_source': src,
+            'fetch_source_ru': fetch_ru,
+            'posts_fetched': len(messages),
+            'posts_used_in_counters': analysis.get('posts_analyzed'),
+            'excerpts_literal_ru': 'Выдержки ниже — обрезки из тех же постов; ссылка «пост» ведёт на сообщение для сверки.',
+            'not_invented_ru': 'Числа в блоке статистики (ссылки, FOMO, домены) — прямой подсчёт по этим текстам, не выдумка модели.',
+            'verify_steps_ru': 'Откройте канал → перейдите по «пост» → сравните формулировку с выдержкой.',
+        }
+        llm = None
         try:
             loop = asyncio.get_event_loop()
             llm = await loop.run_in_executor(
@@ -1917,6 +1950,13 @@ async def analyze_channel_content(username, client=None, link=None):
             llm = None
         if llm:
             analysis['narrative_llm'] = llm
+            fu = int(llm.get('fragments_used') or 0)
+            ac = int(llm.get('approx_input_chars') or 0)
+            analysis['verification']['llm_basis_ru'] = (
+                'Текст блока LLM — пересказ тех же фрагментов постов (%d фрагм., ~%d симв. в запросе); '
+                'проверяйте по выдержкам и ссылкам, это не независимый источник фактов.'
+                % (fu, ac)
+            )
     return analysis
 
 
