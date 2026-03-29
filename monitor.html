@@ -950,8 +950,8 @@
       keywords: {},
       fetch_failed: fetchFailed,
       note: fetchFailed
-        ? 'Не удалось получить ленту публичных постов; ниже только поля из строки таблицы.'
-        : 'В таблице ещё нет разбора постов; ниже те же поля, что в строке.',
+        ? 'Ленту постов сейчас не удалось подключить; ниже сохранённые данные по этой записи.'
+        : 'Разбор постов для этой записи ещё не загружен; ниже сохранённые поля.',
       sheet_facts: {
         object_type: row.object_type || '',
         vip_price: row.vip_price || '',
@@ -960,25 +960,15 @@
         source_primary: row.source_primary || '',
         status: row.status || ''
       },
-      verification: {
-        data_origin_ru: 'Только поля строки (fallback на клиенте); посты канала здесь не подставлялись.',
-        how_to_verify_ru: 'Сверьте с Google Sheets и колонкой доказательств.',
-      }
     };
   }
 
   function renderContentVerification(d) {
     if (!d || typeof d !== 'object') return '';
+    /* Режим только сохранённых полей: без лишних пояснений для посетителей дашборда */
+    if (d.source === 'sheet_only') return '';
     var v = d.verification;
     if (!v || typeof v !== 'object') return '';
-    if (d.source === 'sheet_only') {
-      var sh = ['<div class="mon-verify mon-verify--sheet">'];
-      sh.push('<span class="mon-verify-label">Источник</span> ');
-      sh.push('<span class="mon-verify-body">' + esc(v.data_origin_ru || '') + '</span>');
-      if (v.how_to_verify_ru) sh.push('<div class="mon-verify-step">' + esc(v.how_to_verify_ru) + '</div>');
-      sh.push('</div>');
-      return sh.join('');
-    }
     var o = ['<div class="mon-verify mon-verify--posts">'];
     o.push('<span class="mon-verify-label">Проверка</span> ');
     o.push('<span class="mon-verify-body">' + esc(v.claims_from_ru || '') + '</span>');
@@ -1338,12 +1328,11 @@
       return;
     }
 
-    var tableHtml = '<p class="mon-scam-method">Контент-анализ привязан к данным: либо к текстам постов из ленты (со ссылками для сверки), либо к ячейкам строки в Google Sheets, если посты не удалось загрузить. Блок «Проверка» в ячейке указывает, что именно использовано.</p>' +
-      '<table class="mon-table">' +
+    var tableHtml = '<table class="mon-table">' +
       '<thead><tr>' +
       '<th style="width:36px">#</th>' +
       '<th>Канал</th><th>Тип</th><th>Источник</th>' +
-      '<th title="Факты из полей строки, ключевые слова из контент-анализа и отфильтрованный текст доказательств — без выдумок">Признаки риска</th><th title="Цифры и цитаты из текста постов (или из ячеек таблицы, если лента недоступна); блок проверки объясняет источник">Контент-анализ</th><th>Статус</th><th>Жалобы</th><th>Дата</th>' +
+      '<th title="Факты из карточки записи, ключевые слова из контент-анализа и отфильтрованный текст доказательств">Признаки риска</th><th title="По текстам постов из ленты (если доступна) или по сохранённым полям записи">Контент-анализ</th><th>Статус</th><th>Жалобы</th><th>Дата</th>' +
       '</tr></thead><tbody>';
 
     rows.forEach(function(r, idx) {

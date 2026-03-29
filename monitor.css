@@ -1814,7 +1814,6 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-verify-step { margin-top: 5px; font-size: 11px; color: rgba(255,255,255,0.78); }
 .mon-verify-step--muted { color: var(--mon-text-dim); }
 .mon-verify-llm { margin-top: 6px; font-size: 10px; line-height: 1.4; color: var(--mon-yellow, #facc15); opacity: 0.95; }
-.mon-scam-method { font-size: 12px; line-height: 1.5; color: var(--mon-text-dim); margin: 0 0 12px 0; max-width: 72em; }
 .mon-source-link { font-size: 12px; }
 
 /* ── ROW APPEAR ──────────────────────────────────────────── */

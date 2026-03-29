@@ -1731,9 +1731,9 @@ def _sheet_only_content_analysis_from_row(row, fetch_failed=False, note=None):
     except ValueError:
         loss_n = 0
     default_note = (
-        'Не удалось получить ленту публичных постов (канал приватный, нет публичной страницы t.me/s/…, блокировка или лимит).'
+        'Ленту постов сейчас не удалось подключить (канал приватный, нет публичной страницы t.me/s/…, блокировка или лимит).'
         if fetch_failed
-        else 'Разбор постов ещё не записан в таблицу; ниже — факты из той же строки.'
+        else 'Разбор постов для этой записи ещё не сохранён; ниже — уже сохранённые поля.'
     )
     return {
         'source': 'sheet_only',
@@ -1742,10 +1742,6 @@ def _sheet_only_content_analysis_from_row(row, fetch_failed=False, note=None):
         'keywords': {},
         'fetch_failed': bool(fetch_failed),
         'note': note or default_note,
-        'verification': {
-            'data_origin_ru': 'Только ячейки этой строки в Google Sheets (scam_base); текст постов канала сюда не подставлялся.',
-            'how_to_verify_ru': 'Откройте таблицу scam_base и сравните колонки; для контекста — ссылку на канал и «Доказательства».',
-        },
         'sheet_facts': {
             'object_type': cell(5),
             'vip_price': cell(6),
@@ -1768,9 +1764,9 @@ def _sheet_only_content_analysis_from_confirmed(obj, fetch_failed=False):
     except (ValueError, TypeError):
         loss_n = 0
     default_note = (
-        'Не удалось получить ленту публичных постов (канал приватный, нет публичной страницы t.me/s/…, блокировка или лимит).'
+        'Ленту постов сейчас не удалось подключить (канал приватный, нет публичной страницы t.me/s/…, блокировка или лимит).'
         if fetch_failed
-        else 'Разбор постов ещё не записан; ниже — факты из объекта отбора.'
+        else 'Разбор постов ещё не сохранён; ниже — поля из отбора.'
     )
     return {
         'source': 'sheet_only',
@@ -1779,10 +1775,6 @@ def _sheet_only_content_analysis_from_confirmed(obj, fetch_failed=False):
         'keywords': {},
         'fetch_failed': bool(fetch_failed),
         'note': default_note,
-        'verification': {
-            'data_origin_ru': 'Только поля объекта отбора / строки scam_base; лента постов не подгружалась.',
-            'how_to_verify_ru': 'Сверьте с записью в таблице и колонками источника и доказательств.',
-        },
         'sheet_facts': {
             'object_type': (obj.get('object_type') or '').strip(),
             'vip_price': (obj.get('vip_price') or '').strip(),
