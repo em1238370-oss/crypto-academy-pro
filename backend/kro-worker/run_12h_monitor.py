@@ -2515,7 +2515,11 @@ def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_cha
                 metrics.get('activity_label') or 'данных об активности мало',
                 posts_30d
             )
-        elif 'TGStat' in (row.get('source_primary') or '') or 'поиск' in (row.get('source_primary') or ''):
+        elif (
+            'TGStat' in (row.get('source_primary') or '')
+            or 'поиск' in (row.get('source_primary') or '')
+            or 'kurs.expert' in (row.get('source_primary') or '')
+        ):
             activity_summary = 'найден в текущем поиске; свежие посты не проверены'
         else:
             activity_summary = 'данных об активности мало'
@@ -2890,9 +2894,16 @@ def _run_organic_growth_cycle(client, sheet_id, cycle_window_label):
         display = host
         link = 'https://%s' % host
         evidence = ' | '.join(vr.get('evidence_lines') or [])
-        st = (vr.get('status') or 'под наблюдением').strip()
+        note_bs = 'источник: чёрный список — конкретных фактов обмана не найдено'
+        if evidence:
+            if note_bs not in evidence:
+                evidence = '%s | %s' % (note_bs, evidence)
+        else:
+            evidence = note_bs
+        # Только чёрный список kurs.expert без статей/жалоб — консервативный статус
+        st = 'под наблюдением'
         if _append_organic_scam_base_row(
-            client, sheet_id, display, link, obj_type, st, evidence, cycle_window_label, 'kurs.expert+search'
+            client, sheet_id, display, link, obj_type, st, evidence, cycle_window_label, 'kurs.expert'
         ):
             exch_done += 1
             processed.add(host)
