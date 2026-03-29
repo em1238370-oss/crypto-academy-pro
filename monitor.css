@@ -1,6 +1,6 @@
 /* ============================================================
-   KRO Monitor — executive / portfolio (medvedevart.ru patterns)
-   Премиум-минимализм: типографика, метрики, спокойный motion
+   KRO Monitor — фирменный слой «Крипта без розовых очков» × medvedevart
+   Syne (заголовки/метрики) + Manrope (тело), янтарь = хром UI, красный = данные/риск
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,13 +19,19 @@
   --mon-red-dim:    rgba(255,68,68,0.13);
   --mon-red-border: rgba(255,68,68,0.32);
   --mon-yellow:     #f59e0b;
+  --mon-amber:      #f59e0b;
+  --mon-amber-hot:  #fbbf24;
+  --mon-amber-dim:  rgba(245, 158, 11, 0.12);
+  --mon-amber-border: rgba(245, 158, 11, 0.42);
+  --mon-amber-glow: rgba(245, 158, 11, 0.22);
   --mon-green:      #22c55e;
   --mon-grey:       #6b7280;
   --mon-cyan:       #06b6d4;
   --mon-violet:     #8b5cf6;
 
-  --mon-font:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --mon-font-display: 'Outfit', 'Inter', -apple-system, sans-serif;
+  /* Как на главной: Syne + Manrope (см. styles.css --kro-font-*) */
+  --mon-font:         'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mon-font-display: 'Syne', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
   --mon-font-mono:    'SF Mono', ui-monospace, Monaco, 'Cascadia Code', monospace;
 
   --mon-radius:    12px;
@@ -95,6 +101,15 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   opacity: 0.35;
   transition: opacity 0.7s var(--mon-ease-soft);
 }
+/* Тёплый «дыхание» как на главной / medvedevart — без смены базового фона */
+.mon-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 58% 42% at 50% 12%, rgba(245, 158, 11, 0.06) 0%, transparent 52%);
+  pointer-events: none;
+  opacity: 0.85;
+}
 .mon-page.mon-hero-offscreen .mon-bg-dot-grid {
   opacity: 0.2;
 }
@@ -114,7 +129,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   top: 0;
   z-index: 100;
   border-bottom: 1px solid rgba(255,255,255,0.08);
-  background: rgba(10,12,16,0.92);
+  background: linear-gradient(180deg, rgba(14, 16, 20, 0.97) 0%, rgba(10, 12, 16, 0.93) 100%);
+  box-shadow: inset 0 -1px 0 rgba(245, 158, 11, 0.09);
   backdrop-filter: var(--mon-blur);
   -webkit-backdrop-filter: var(--mon-blur);
   opacity: 0;
@@ -202,7 +218,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   bottom: 4px;
   width: 100%;
   height: 1px;
-  background: linear-gradient(90deg, rgba(255, 68, 68, 0.82), rgba(255, 68, 68, 0.18));
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.9), rgba(245, 158, 11, 0.15));
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform var(--mon-link-dur) var(--mon-ease-out);
@@ -236,21 +252,25 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-refresh-btn {
-  font-family: var(--mon-font-display);
-  font-size: 13px;
+  font-family: var(--mon-font);
+  font-size: 12px;
   font-weight: 600;
-  border-radius: 6px;
-  background: var(--mon-red);
-  border: 1px solid rgba(255,68,68,0.5);
-  color: #fff;
-  padding: 10px 18px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.08) 100%);
+  border: 1px solid var(--mon-amber-border);
+  color: rgba(255, 242, 220, 0.96);
+  padding: 10px 20px;
   cursor: pointer;
-  box-shadow: none;
-  transition: background 0.25s var(--mon-ease-out), filter 0.25s var(--mon-ease-out), transform 0.25s var(--mon-ease-out);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: border-color 0.25s var(--mon-ease-out), background 0.25s var(--mon-ease-out), transform 0.25s var(--mon-ease-out), box-shadow 0.25s var(--mon-ease-out);
 }
 .mon-refresh-btn:hover {
-  filter: brightness(1.08);
+  border-color: rgba(245, 158, 11, 0.58);
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.28) 0%, rgba(245, 158, 11, 0.12) 100%);
   transform: translateY(-1px);
+  box-shadow: 0 0 28px rgba(245, 158, 11, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .mon-refresh-btn:active { transform: translateY(0); }
 
@@ -259,7 +279,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   margin: 0;
   padding: 11px 60px 13px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(7, 9, 12, 0.97);
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.07) 0%, rgba(7, 9, 12, 0.98) min(28%, 320px));
   font-family: var(--mon-font);
   font-size: 13px;
   font-weight: 500;
@@ -273,9 +293,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   max-width: 1240px;
 }
 #mon-live-strip-time {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 224, 180, 0.95);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  font-family: var(--mon-font-display);
+  letter-spacing: -0.02em;
 }
 .mon-live-strip--error {
   border-bottom-color: rgba(255, 68, 68, 0.4);
@@ -340,10 +362,12 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-page-ready .mon-hero-copy .mon-hero-tags   { animation-delay: calc(var(--mon-stagger-hero) * 4.5); }
 
 .mon-hero-aside {
-  padding: 24px;
+  padding: 24px 24px 24px 22px;
   border: 1px solid rgba(255,255,255,0.08);
+  border-left: 3px solid rgba(245, 158, 11, 0.45);
   border-radius: var(--mon-radius);
-  background: rgba(255,255,255,0.02);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(255, 255, 255, 0.02) 48%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 .mon-page-ready .mon-hero-aside {
   animation: monHeroIn var(--mon-dur-hero) var(--mon-ease-soft) both;
@@ -393,6 +417,25 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   gap: 2px;
   margin: 0 0 18px;
   line-height: 1;
+  position: relative;
+}
+/* Линия-акцент под H1 — тот же приём, что на главной (kro-step1-title::after) */
+.mon-hero-title::after {
+  content: '';
+  display: block;
+  width: 100%;
+  max-width: min(420px, 88vw);
+  height: 4px;
+  margin-top: 18px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--mon-amber) 0%, rgba(245, 158, 11, 0.38) 46%, rgba(255, 255, 255, 0.1) 100%);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 1.05s var(--mon-ease-soft);
+}
+.mon-page-ready .mon-hero-title::after {
+  transform: scaleX(1);
+  transition-delay: 0.52s;
 }
 .mon-hero-title-main {
   font-size: clamp(2.5rem, 6.2vw, 4rem);
@@ -405,8 +448,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     background: linear-gradient(
       102deg,
       #fff 0%,
-      rgba(255, 255, 255, 0.9) 38%,
-      rgba(255, 200, 200, 0.92) 100%
+      rgba(255, 248, 235, 0.95) 40%,
+      rgba(253, 224, 171, 0.9) 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
@@ -415,10 +458,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-hero-title-sub {
   font-size: clamp(1.05rem, 2.4vw, 1.45rem);
-  font-weight: 500;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: lowercase;
-  color: rgba(255,255,255,0.42);
+  color: rgba(253, 214, 160, 0.48);
 }
 
 .mon-hero-tagline {
@@ -447,8 +490,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   transition: border-color 0.25s var(--mon-ease-out), color 0.25s var(--mon-ease-out);
 }
 .mon-hero-tag:hover {
-  border-color: rgba(255,68,68,0.35);
-  color: rgba(255,255,255,0.85);
+  border-color: var(--mon-amber-border);
+  color: rgba(255, 248, 235, 0.9);
+  background: rgba(245, 158, 11, 0.06);
 }
 
 .mon-scheme-row--ma { justify-content: flex-start; flex-wrap: wrap; }
@@ -472,8 +516,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   transition: color 0.22s var(--mon-ease-out), border-color 0.22s var(--mon-ease-out);
 }
 .mon-hero-jump-link:hover {
-  color: rgba(255,255,255,0.88);
-  border-bottom-color: rgba(255,68,68,0.35);
+  color: rgba(255, 248, 235, 0.95);
+  border-bottom-color: rgba(245, 158, 11, 0.55);
 }
 
 /* ── Оффер (между hero и метриками, как «Стратегия. Эффективность…») ── */
@@ -500,6 +544,15 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   line-height: var(--mon-leading-snug);
   color: #fff;
   margin: 0 0 20px;
+}
+.mon-offer-title::after {
+  content: '';
+  display: block;
+  width: 72px;
+  height: 3px;
+  margin-top: 14px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--mon-amber), transparent);
 }
 
 .mon-offer-lead {
@@ -639,9 +692,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-radius: 8px;
 }
 .mon-scheme-node--accent {
-  border-color: rgba(255,68,68,0.4);
-  background: rgba(255,68,68,0.08);
-  color: #fff;
+  border-color: var(--mon-amber-border);
+  background: linear-gradient(165deg, rgba(245, 158, 11, 0.14) 0%, rgba(245, 158, 11, 0.05) 100%);
+  color: rgba(255, 250, 240, 0.96);
+  font-family: var(--mon-font-display);
+  letter-spacing: -0.02em;
 }
 
 .mon-scheme-arrow {
@@ -672,9 +727,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   color: rgba(255,255,255,0.55);
 }
 .mon-scheme-pill--accent {
-  border-color: rgba(255,68,68,0.35);
-  color: rgba(255,255,255,0.88);
-  background: rgba(255,68,68,0.08);
+  border-color: var(--mon-amber-border);
+  color: rgba(255, 248, 230, 0.92);
+  background: rgba(245, 158, 11, 0.1);
 }
 .mon-scheme-pill--dim { opacity: 0.85; }
 
@@ -764,8 +819,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   bottom: 0.12em;
   width: 3px;
   border-radius: 2px;
-  background: linear-gradient(180deg, rgba(255, 68, 68, 0.88), rgba(255, 68, 68, 0.08));
-  opacity: 0.92;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.95), rgba(245, 158, 11, 0.06));
+  opacity: 0.95;
 }
 .mon-chapter-title {
   font-family: var(--mon-font-display);
@@ -814,11 +869,12 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 @media (min-width: 641px) and (hover: hover) {
   .mon-surface:hover {
     transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.11);
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.06),
       0 22px 56px rgba(0, 0, 0, 0.42),
-      0 0 0 1px rgba(255, 68, 68, 0.06);
+      0 0 0 1px rgba(245, 158, 11, 0.1),
+      0 0 40px rgba(245, 158, 11, 0.04);
   }
 }
 .mon-surface--pad {
@@ -976,8 +1032,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   content: '';
   width: 4px; height: 4px;
   border-radius: 50%;
-  background: var(--mon-red);
-  box-shadow: 0 0 8px rgba(255,68,68,0.9);
+  background: var(--mon-amber);
+  box-shadow: 0 0 10px var(--mon-amber-glow);
   flex-shrink: 0;
 }
 
@@ -1012,8 +1068,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   right: 0;
   top: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 68, 68, 0.5) 35%, rgba(245, 158, 11, 0.35) 65%, transparent 100%);
-  opacity: 0.9;
+  background: linear-gradient(90deg, transparent 0%, rgba(245, 158, 11, 0.65) 32%, rgba(255, 68, 68, 0.4) 62%, transparent 100%);
+  opacity: 0.95;
   pointer-events: none;
 }
 .mon-stat-card:hover {
@@ -1940,8 +1996,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   height: 100%;
   width: 0%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #7a1f1f, var(--mon-red) 38%, #ff7a7a);
-  box-shadow: 0 0 18px rgba(255, 68, 68, 0.5);
+  background: linear-gradient(90deg, #5c2a18, var(--mon-red) 36%, var(--mon-amber) 88%, var(--mon-amber-hot));
+  box-shadow: 0 0 20px rgba(255, 68, 68, 0.35), 0 0 24px rgba(245, 158, 11, 0.2);
   transition: width 0.34s var(--mon-ease-soft);
 }
 .mon-boot-terminal-rows {
@@ -2082,6 +2138,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   .mon-page.mon-hero-offscreen .mon-hero {
     opacity: 1 !important;
     transform: none !important;
+  }
+  .mon-hero-title::after {
+    transform: scaleX(1) !important;
+    transition: none !important;
   }
   .mon-boot-terminal { animation: none !important; }
   .mon-boot-terminal::after,
