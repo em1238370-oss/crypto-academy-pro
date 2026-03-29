@@ -926,17 +926,69 @@
     }).join('') + '</ul>';
   }
 
+  function buildSheetOnlyAnalysisFromRow(row, fetchFailed) {
+    return {
+      source: 'sheet_only',
+      activity: 'неизвестен',
+      posts_analyzed: 0,
+      keywords: {},
+      fetch_failed: fetchFailed,
+      note: fetchFailed
+        ? 'Не удалось получить ленту публичных постов; ниже только поля из строки таблицы.'
+        : 'В таблице ещё нет разбора постов; ниже те же поля, что в строке.',
+      sheet_facts: {
+        object_type: row.object_type || '',
+        vip_price: row.vip_price || '',
+        complaints: row.complaints != null ? row.complaints : '',
+        total_loss_rub: row.total_loss_rub != null ? row.total_loss_rub : 0,
+        source_primary: row.source_primary || '',
+        status: row.status || ''
+      }
+    };
+  }
+
+  function renderSheetOnlyContentAnalysis(d) {
+    var note = d.note ? '<div class="mon-ca-note">' + esc(d.note) + '</div>' : '';
+    var f = d.sheet_facts || {};
+    var lines = [];
+    if (f.status) lines.push('Статус: ' + esc(String(f.status)));
+    if (f.object_type) lines.push('Тип объекта: ' + esc(String(f.object_type)));
+    if (f.complaints !== '' && f.complaints != null) lines.push('Жалоб: ' + esc(String(f.complaints)));
+    var loss = Number(f.total_loss_rub);
+    if (loss > 0) lines.push('Потери (поле): ' + esc(loss.toLocaleString('ru-RU')) + ' ₽');
+    if (f.vip_price) lines.push('VIP: ' + esc(String(f.vip_price)));
+    if (f.source_primary) lines.push('Источник: ' + esc(String(f.source_primary)));
+    var factsHtml = lines.length
+      ? '<div class="mon-ca-muted mon-ca-sheet-facts">' + lines.join('<br>') + '</div>'
+      : '';
+    return '<div class="mon-ca mon-ca-sheet-only">' + note + factsHtml + '</div>';
+  }
+
   function renderContentAnalysis(jsonStr, opts) {
     opts = opts || {};
-    if (!jsonStr || jsonStr === '' || jsonStr === '—') {
+    var row = opts.row;
+    var raw = (jsonStr || '').trim();
+    if (!raw || raw === '—') {
+      if (row && row.username) {
+        return renderSheetOnlyContentAnalysis(buildSheetOnlyAnalysisFromRow(row, false));
+      }
       return '<span class="mon-ca-empty">нет анализа</span>';
     }
-    if (jsonStr === 'недоступен') {
+    if (raw === 'недоступен') {
+      if (row && row.username) {
+        return renderSheetOnlyContentAnalysis(buildSheetOnlyAnalysisFromRow(row, true));
+      }
       return '<span class="mon-ca-unavail">недоступен</span>';
     }
     var d;
-    try { d = JSON.parse(jsonStr); } catch(e) {
+    try { d = JSON.parse(raw); } catch(e) {
+      if (row && row.username) {
+        return renderSheetOnlyContentAnalysis(buildSheetOnlyAnalysisFromRow(row, false));
+      }
       return '<span class="mon-ca-empty">нет анализа</span>';
+    }
+    if (d && d.source === 'sheet_only') {
+      return renderSheetOnlyContentAnalysis(d);
     }
     var parts = [];
     // Activity
@@ -1184,7 +1236,7 @@
         '<td class="mon-cell-muted">' + esc(r.object_type || '—') + '</td>' +
         '<td class="mon-cell-source">' + renderAllSourceLinks(r) + '</td>' +
         '<td><div class="mon-evidence" title="' + esc(r.source_evidence || '') + '">' + renderRiskSignals(r) + '</div></td>' +
-        '<td class="mon-cell-ca">' + renderContentAnalysis(r.content_analysis || '', { omitKeywords: true }) + '</td>' +
+        '<td class="mon-cell-ca">' + renderContentAnalysis(r.content_analysis || '', { omitKeywords: true, row: r }) + '</td>' +
         '<td>' +
           '<span class="mon-status ' + statusClass(r.status) + '">' + esc(r.status || '—') + '</span>' +
           (isFormSource(r.source_primary) ? '<br><span class="mon-source-tag">жалобы пользователей</span>' : '') +

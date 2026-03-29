@@ -1672,6 +1672,45 @@ function parseScamBaseRow(row) {
   };
 }
 
+/** Честный fallback для монитора: без разбора постов, только поля строки scam_base. */
+function buildSheetOnlyContentAnalysisV2(row, fetchFailed) {
+  const facts = {
+    object_type: row.object_type || '',
+    vip_price: row.vip_price || '',
+    complaints: row.complaints != null ? row.complaints : '',
+    total_loss_rub: row.total_loss_rub ?? 0,
+    source_primary: row.source_primary || '',
+    status: row.status || '',
+  };
+  return {
+    source: 'sheet_only',
+    activity: 'неизвестен',
+    posts_analyzed: 0,
+    keywords: {},
+    fetch_failed: fetchFailed,
+    note: fetchFailed
+      ? 'Не удалось получить ленту публичных постов; ниже только поля из строки таблицы.'
+      : 'В таблице ещё нет разбора постов; ниже те же поля, что в строке.',
+    sheet_facts: facts,
+  };
+}
+
+function enrichScamBaseContentAnalysisForMonitor(row) {
+  if (row._schema !== 'v2') return row;
+  const ca = (row.content_analysis || '').trim();
+  if (ca && ca !== 'недоступен') {
+    try {
+      const j = JSON.parse(ca);
+      if (j && typeof j === 'object' && !Array.isArray(j)) return row;
+    } catch (_) {
+      /* подменим на структурированный fallback */
+    }
+  }
+  const fetchFailed = ca === 'недоступен';
+  const payload = buildSheetOnlyContentAnalysisV2(row, fetchFailed);
+  return { ...row, content_analysis: JSON.stringify(payload) };
+}
+
 function parseChannelsWatchRow(row) {
   const username = (row[0] || '').toString().trim();
   if (!username) return null;
@@ -2260,7 +2299,8 @@ app.get('/api/kro/monitor-data', async (req, res) => {
     const scamRows = scamRawRows
       .slice(1)
       .map(parseScamBaseRow)
-      .filter(r => r.username && r.username !== 'username');
+      .filter(r => r.username && r.username !== 'username')
+      .map(enrichScamBaseContentAnalysisForMonitor);
 
     const watchRawRows = watchResp.status === 'fulfilled' ? (watchResp.value.data.values || []) : [];
     const channelsWatch = watchRawRows

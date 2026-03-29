@@ -1387,6 +1387,88 @@ def _summarize_content_messages(messages, channel_ref=''):
     return analyzed
 
 
+def _parse_scam_base_detected_utc(detected_raw):
+    if not detected_raw:
+        return None
+    try:
+        return datetime.strptime(detected_raw.strip(), '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return None
+
+
+def _sheet_only_content_analysis_from_row(row, fetch_failed=False, note=None):
+    """Честный мини-анализ без ленты постов: только поля строки scam_base (колонки A–M)."""
+    def cell(i):
+        if len(row) <= i or row[i] is None:
+            return ''
+        return str(row[i]).strip()
+
+    complaints_raw = cell(7).replace(' ', '')
+    try:
+        complaints_n = int(complaints_raw) if complaints_raw else None
+    except ValueError:
+        complaints_n = None
+    loss_raw = cell(8).replace(' ', '')
+    try:
+        loss_n = int(loss_raw) if loss_raw else 0
+    except ValueError:
+        loss_n = 0
+    default_note = (
+        'Не удалось получить ленту публичных постов (канал приватный, нет публичной страницы t.me/s/…, блокировка или лимит).'
+        if fetch_failed
+        else 'Разбор постов ещё не записан в таблицу; ниже — факты из той же строки.'
+    )
+    return {
+        'source': 'sheet_only',
+        'activity': 'неизвестен',
+        'posts_analyzed': 0,
+        'keywords': {},
+        'fetch_failed': bool(fetch_failed),
+        'note': note or default_note,
+        'sheet_facts': {
+            'object_type': cell(5),
+            'vip_price': cell(6),
+            'complaints': complaints_n if complaints_n is not None else cell(7),
+            'total_loss_rub': loss_n,
+            'source_primary': cell(9),
+            'status': cell(12),
+        },
+    }
+
+
+def _sheet_only_content_analysis_from_confirmed(obj, fetch_failed=False):
+    """То же для объекта confirmed pipeline (до записи в scam_base)."""
+    try:
+        complaints_n = int(obj.get('complaints') or 0)
+    except (ValueError, TypeError):
+        complaints_n = None
+    try:
+        loss_n = int(obj.get('total_loss_rub') or 0)
+    except (ValueError, TypeError):
+        loss_n = 0
+    default_note = (
+        'Не удалось получить ленту публичных постов (канал приватный, нет публичной страницы t.me/s/…, блокировка или лимит).'
+        if fetch_failed
+        else 'Разбор постов ещё не записан; ниже — факты из объекта отбора.'
+    )
+    return {
+        'source': 'sheet_only',
+        'activity': 'неизвестен',
+        'posts_analyzed': 0,
+        'keywords': {},
+        'fetch_failed': bool(fetch_failed),
+        'note': default_note,
+        'sheet_facts': {
+            'object_type': (obj.get('object_type') or '').strip(),
+            'vip_price': (obj.get('vip_price') or '').strip(),
+            'complaints': complaints_n,
+            'total_loss_rub': loss_n,
+            'source_primary': (obj.get('source_primary') or '').strip(),
+            'status': (obj.get('status') or '').strip(),
+        },
+    }
+
+
 def _fetch_public_channel_messages(channel_ref, limit=50):
     slug = _channel_public_slug(channel_ref)
     if not slug:
@@ -1537,7 +1619,10 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
                         mention.get('post_url', ''),
                     ])
             else:
-                obj['content_analysis'] = 'недоступен'
+                obj['content_analysis'] = json.dumps(
+                    _sheet_only_content_analysis_from_confirmed(obj, fetch_failed=True),
+                    ensure_ascii=False,
+                )
                 if (obj.get('complaints') or 0) >= 2:
                     obj['status'] = 'под наблюдением'
             enriched.append(obj)
@@ -2137,10 +2222,32 @@ def _enqueue_channels_for_check(channels, client, sheet_id):
     return queued
 
 
-async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=72):
-    """Дописать content_analysis в новые строки scam_base, где оно ещё пустое."""
+async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=None):
+    """
+    Дописать content_analysis в scam_base: пустые ячейки, бэклог и повторная попытка для «недоступен».
+    Окно по дате обнаружения: KRO_SCAM_BASE_ENRICH_HOURS (по умолчанию 168).
+    Старые пустые строки — до KRO_SCAM_BASE_ENRICH_BACKLOG_MAX за прогон.
+    """
     if not client or not sheet_id:
         return {'updated': 0, 'network_rows': 0}
+
+    if hours is None:
+        try:
+            hours = int(os.environ.get('KRO_SCAM_BASE_ENRICH_HOURS', '168') or '168')
+        except ValueError:
+            hours = 168
+    try:
+        backlog_max = int(os.environ.get('KRO_SCAM_BASE_ENRICH_BACKLOG_MAX', '25') or '25')
+    except ValueError:
+        backlog_max = 25
+    try:
+        retry_unavail_max = int(os.environ.get('KRO_SCAM_BASE_ENRICH_RETRY_UNAVAILABLE_MAX', '8') or '8')
+    except ValueError:
+        retry_unavail_max = 8
+    try:
+        max_updates = int(os.environ.get('KRO_SCAM_BASE_ENRICH_MAX_UPDATES_PER_RUN', '45') or '45')
+    except ValueError:
+        max_updates = 45
 
     scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
     sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
@@ -2155,21 +2262,61 @@ async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=72
         return {'updated': 0, 'network_rows': 0}
 
     cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
-    targets = []
+
+    def within_date_window(row):
+        detected_raw = (row[2] if len(row) > 2 else '').strip()
+        detected_dt = _parse_scam_base_detected_utc(detected_raw)
+        if detected_dt is None:
+            return True
+        return detected_dt >= cutoff
+
+    recent_empty = []
+    backlog_empty = []
+    retry_unavail = []
     for idx, row in enumerate(rows, start=2):
         username = (row[0] if len(row) > 0 else '').strip()
-        content = (row[13] if len(row) > 13 else '').strip()
-        detected_raw = (row[2] if len(row) > 2 else '').strip()
-        if not username or content:
+        if not username:
             continue
-        if detected_raw:
-            try:
-                detected_dt = datetime.strptime(detected_raw, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
-                if detected_dt < cutoff:
-                    continue
-            except (ValueError, TypeError):
-                pass
-        targets.append((idx, row))
+        content = (row[13] if len(row) > 13 else '').strip()
+        if not content:
+            item = (idx, row)
+            if within_date_window(row):
+                recent_empty.append(item)
+            else:
+                backlog_empty.append(item)
+        elif content == 'недоступен' and within_date_window(row):
+            retry_unavail.append((idx, row))
+
+    def sort_by_detected(items):
+        def key(item):
+            dt = _parse_scam_base_detected_utc((item[1][2] if len(item[1]) > 2 else '').strip())
+            return dt or datetime.min.replace(tzinfo=timezone.utc)
+        return sorted(items, key=key, reverse=True)
+
+    backlog_empty = sort_by_detected(backlog_empty)[:backlog_max]
+    retry_unavail = sort_by_detected(retry_unavail)[:retry_unavail_max]
+
+    targets = []
+    seen = set()
+    for item in recent_empty:
+        if item[0] not in seen:
+            seen.add(item[0])
+            targets.append(item)
+    for item in retry_unavail:
+        if item[0] not in seen:
+            seen.add(item[0])
+            targets.append(item)
+    for item in backlog_empty:
+        if item[0] not in seen:
+            seen.add(item[0])
+            targets.append(item)
+
+    targets.sort(
+        key=lambda item: _parse_scam_base_detected_utc((item[1][2] if len(item[1]) > 2 else '').strip())
+        or datetime.min.replace(tzinfo=timezone.utc),
+        reverse=True,
+    )
+    targets = targets[:max_updates]
 
     if not targets:
         return {'updated': 0, 'network_rows': 0}
@@ -2206,7 +2353,6 @@ async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=72
             except (ValueError, TypeError):
                 complaints = 0
 
-            new_content = 'недоступен'
             new_status = status
             if isinstance(analysis, dict):
                 new_content = json.dumps(analysis, ensure_ascii=False)
@@ -2232,6 +2378,11 @@ async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=72
                         mention.get('evidence', ''),
                         mention.get('post_url', ''),
                     ])
+            else:
+                new_content = json.dumps(
+                    _sheet_only_content_analysis_from_row(row, fetch_failed=True),
+                    ensure_ascii=False,
+                )
 
             padded = list(row[:14]) + [''] * max(0, 14 - len(row))
             padded[12] = new_status
@@ -4375,7 +4526,7 @@ def main():
         _write_channels_watch_to_sheet(channels_watch_rows, client, sheet_id)
         _write_channels_network_to_sheet(channels_network_rows, client, sheet_id)
         _enqueue_channels_for_check([row[1] for row in channels_network_rows], client, sheet_id)
-        asyncio.run(_fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=72))
+        asyncio.run(_fill_missing_content_analysis_in_scam_base(client, sheet_id))
     confirmed_stats = _build_stats_from_confirmed(confirmed_objects)
     # Цифры для сайта — только из подтверждённых объектов
     site_new_scams = confirmed_stats['new_scam_channels']
