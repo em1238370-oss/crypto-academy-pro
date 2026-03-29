@@ -1178,12 +1178,7 @@ def write_kro_meta_to_sheet(sheets_client, sheet_id, last_cycle_at, new_in_cycle
         return False
 
 
-def read_reports_last_12h(client, sheet_id):
-    """
-    Читает лист reports A2:H, фильтрует строки за последние 12 ч по дате в колонке A.
-    Schema v2: A=date, B=channel, C=sum_rub, D=source, E=status, F=reporter, G=description, H=proof_url
-    Backward-compatible with old 6-column rows (A:F).
-    """
+def _fetch_reports_sheet_rows_raw(client, sheet_id):
     if not client or not sheet_id:
         return []
     try:
@@ -1191,39 +1186,110 @@ def read_reports_last_12h(client, sheet_id):
             spreadsheetId=sheet_id,
             range='A2:H'
         ).execute()
-        rows = resp.get('values') or []
+        return resp.get('values') or []
     except Exception:
         return []
+
+
+def _parse_reports_sheet_row(r):
+    """
+    Одна строка листа reports.
+    Schema v2: A=date, B=channel, C=sum_rub, D=source, E=status, F=reporter, G=description, H=proof_url
+    """
+    if not r:
+        return None
+    date_val = (r[0] if len(r) > 0 else '').strip()
+    channel = (r[1] if len(r) > 1 else '').strip()
+    if not channel:
+        return None
+    sum_raw = (r[2] if len(r) > 2 else '').replace(' ', '')
+    try:
+        s = int(sum_raw) if sum_raw else 0
+    except ValueError:
+        s = 0
+    source = (r[3] if len(r) > 3 else '').strip()
+    status = (r[4] if len(r) > 4 else '').strip()
+    reporter = (r[5] if len(r) > 5 else '').strip()
+    description = (r[6] if len(r) > 6 else '').strip()
+    proof_url = (r[7] if len(r) > 7 else '').strip()
+    return {
+        'date': date_val,
+        'channel': channel,
+        'sum': s,
+        'status': status or 'Активен',
+        'source': source or 'form',
+        'reporter': reporter,
+        'description': description,
+        'proof_url': proof_url,
+    }
+
+
+def read_reports_last_12h(client, sheet_id):
+    """
+    Строки reports за текущие сутки / вчера (как раньше) — для сводки цикла и top3.
+    """
     now = datetime.now(timezone.utc)
     today_str = now.strftime('%d.%m.%Y')
     yesterday = (now - timedelta(days=1)).strftime('%d.%m.%Y')
     out = []
-    for r in rows:
-        date_val = (r[0] if len(r) > 0 else '').strip()
-        channel = (r[1] if len(r) > 1 else '').strip()
-        sum_raw = (r[2] if len(r) > 2 else '').replace(' ', '')
-        try:
-            s = int(sum_raw) if sum_raw else 0
-        except ValueError:
-            s = 0
-        source = (r[3] if len(r) > 3 else '').strip()
-        status = (r[4] if len(r) > 4 else '').strip()
-        reporter = (r[5] if len(r) > 5 else '').strip()
-        description = (r[6] if len(r) > 6 else '').strip()
-        proof_url = (r[7] if len(r) > 7 else '').strip()
-        if not date_val:
+    for r in _fetch_reports_sheet_rows_raw(client, sheet_id):
+        rec = _parse_reports_sheet_row(r)
+        if not rec:
             continue
-        if date_val == today_str or date_val == yesterday or date_val.startswith(today_str[:6]):
-            out.append({
-                'channel': channel,
-                'sum': s,
-                'status': status or 'Активен',
-                'source': source or 'form',
-                'reporter': reporter,
-                'description': description,
-                'proof_url': proof_url,
-            })
+        dv = rec.get('date') or ''
+        if not dv:
+            continue
+        if dv == today_str or dv == yesterday or dv.startswith(today_str[:6]):
+            out.append(rec)
     return out
+
+
+def read_reports_all_for_scam_counts(client, sheet_id):
+    """
+    Все валидные строки листа reports (форма + веб-парсер сайтов и т.д.).
+    Для scam_base и промо: иначе в агрегат попадали только жалобы за ~12 ч, и в колонке
+    почти везде оказывалось минимальное «2».
+    Отключить: KRO_REPORTS_FULL_AGGREGATION=0 — тогда используется то же окно, что и для цикла.
+    """
+    if (os.environ.get('KRO_REPORTS_FULL_AGGREGATION') or '1').strip().lower() in ('0', 'false', 'no'):
+        return read_reports_last_12h(client, sheet_id)
+    out = []
+    for r in _fetch_reports_sheet_rows_raw(client, sheet_id):
+        rec = _parse_reports_sheet_row(r)
+        if not rec:
+            continue
+        out.append(rec)
+    return out
+
+
+def _empty_agg_complaint_bucket():
+    return {
+        'complaints': 0,
+        'sum': 0,
+        'status': 'Активен',
+        'message_links': [],
+        'source_urls': [],
+        'query_group': '',
+        'query': '',
+        'internal_links': [],
+    }
+
+
+def _merge_telegram_complaints_into_agg(agg, complaints_by_channel):
+    """Добавить счётчики из чатов Telegram (окно последнего прохода) к агрегату по каналам."""
+    for ch, data in (complaints_by_channel or {}).items():
+        if ch not in agg:
+            agg[ch] = _empty_agg_complaint_bucket()
+        agg[ch]['complaints'] += int(data.get('complaints') or 0)
+        sums = data.get('sums') or []
+        agg[ch]['sum'] += sum(sums) if isinstance(sums, (list, tuple)) else 0
+        agg[ch]['message_links'] = _merge_text_values(agg[ch].get('message_links'), data.get('message_links'))
+        agg[ch]['source_urls'] = _merge_text_values(agg[ch].get('source_urls'), data.get('source_urls'))
+        agg[ch]['internal_links'] = _merge_text_values(agg[ch].get('internal_links'), data.get('internal_links'))
+        agg[ch]['query_group'] = data.get('query_group') or agg[ch].get('query_group') or 'жалобы/обсуждения'
+        agg[ch]['query'] = data.get('query') or agg[ch].get('query') or 'скам, обман, слил депозит'
+        if agg[ch]['complaints'] >= 2:
+            agg[ch]['status'] = 'Скам'
 
 
 # --- JSON 12h stats ---
@@ -4818,48 +4884,31 @@ def main():
         except Exception as _ws_err:
             print(f'[web_scraper] error: {_ws_err}', file=sys.stderr)
 
-    # 5) Read sheet reports last 12h (form submissions + web scraper results)
+    # 5) Read sheet reports: окно цикла (~сутки) для сводки; все строки — для scam_base / промо (см. KRO_REPORTS_FULL_AGGREGATION)
     sheet_reports = read_reports_last_12h(client, sheet_id) if client and sheet_id else []
+    sheet_reports_all = read_reports_all_for_scam_counts(client, sheet_id) if client and sheet_id else []
 
-    # Complaints table for report: aggregate by channel
-    agg_complaints = defaultdict(lambda: {
-        'complaints': 0,
-        'sum': 0,
-        'status': 'Активен',
-        'message_links': [],
-        'source_urls': [],
-        'query_group': '',
-        'query': '',
-        'internal_links': [],
-    })
+    # Таблица жалоб в JSON отчёта: по-прежнему «цикл» + Telegram за проход
+    agg_complaints = defaultdict(_empty_agg_complaint_bucket)
     for r in sheet_reports:
         ch = (r.get('channel') or '').strip()
         if ch:
             agg_complaints[ch]['complaints'] += 1
             agg_complaints[ch]['sum'] += r.get('sum') or 0
-            if (agg_complaints[ch]['complaints'] or 0) >= 2:
+            if agg_complaints[ch]['complaints'] >= 2:
                 agg_complaints[ch]['status'] = 'Скам'
-    for ch, data in complaints_by_channel.items():
-        if ch not in agg_complaints:
-            agg_complaints[ch] = {
-                'complaints': 0,
-                'sum': 0,
-                'status': 'Активен',
-                'message_links': [],
-                'source_urls': [],
-                'query_group': '',
-                'query': '',
-                'internal_links': [],
-            }
-        agg_complaints[ch]['complaints'] += data.get('complaints', 0)
-        agg_complaints[ch]['sum'] += sum(data.get('sums', []))
-        agg_complaints[ch]['message_links'] = _merge_text_values(agg_complaints[ch].get('message_links'), data.get('message_links'))
-        agg_complaints[ch]['source_urls'] = _merge_text_values(agg_complaints[ch].get('source_urls'), data.get('source_urls'))
-        agg_complaints[ch]['internal_links'] = _merge_text_values(agg_complaints[ch].get('internal_links'), data.get('internal_links'))
-        agg_complaints[ch]['query_group'] = data.get('query_group') or agg_complaints[ch].get('query_group') or 'жалобы/обсуждения'
-        agg_complaints[ch]['query'] = data.get('query') or agg_complaints[ch].get('query') or 'скам, обман, слил депозит'
-        if agg_complaints[ch]['complaints'] >= 2:
-            agg_complaints[ch]['status'] = 'Скам'
+    _merge_telegram_complaints_into_agg(agg_complaints, complaints_by_channel)
+
+    # Полный учёт строк листа reports (форма + сайты из web_scraper) + Telegram — для подтверждённых объектов и промо
+    agg_complaints_total = defaultdict(_empty_agg_complaint_bucket)
+    for r in sheet_reports_all:
+        ch = (r.get('channel') or '').strip()
+        if ch:
+            agg_complaints_total[ch]['complaints'] += 1
+            agg_complaints_total[ch]['sum'] += r.get('sum') or 0
+            if agg_complaints_total[ch]['complaints'] >= 2:
+                agg_complaints_total[ch]['status'] = 'Скам'
+    _merge_telegram_complaints_into_agg(agg_complaints_total, complaints_by_channel)
     complaints_rows = [
         {
             'channel': ch,
@@ -4900,11 +4949,11 @@ def main():
 
     # --- AUTO-PROMOTE: каналы из формы/веб-парсера с ≥2 жалобами → scam_base ---
     scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
-    _check_and_promote_from_reports(client, sheet_id, scam_base_range, sheet_reports)
+    _check_and_promote_from_reports(client, sheet_id, scam_base_range, sheet_reports_all)
 
     # --- CONFIRMED PIPELINE: строгий 3-критерийный отбор для сайта и scam_base ---
     cycle_window = '%s_%s' % (report_date_str, 'am' if now_msk_dt.hour < 12 else 'pm')
-    confirmed_objects = _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel_ages_from_tg)
+    confirmed_objects = _collect_confirmed_objects(new_tgstat, agg_complaints_total, cycle_window, channel_ages_from_tg)
     confirmed_objects, channels_network_rows = asyncio.run(_analyze_confirmed_channels_content(confirmed_objects))
     inserted_confirmed_channels = []
     if client and sheet_id:
