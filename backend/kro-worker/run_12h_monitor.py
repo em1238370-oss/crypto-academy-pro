@@ -38,6 +38,8 @@ try:
 except ImportError:
     _ORGANIC_HELPERS_AVAILABLE = False
 
+import kro_red_flags as _kro_red_flags
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
 DATA_DIR = os.path.join(BACKEND_DIR, 'data')
@@ -786,6 +788,8 @@ async def _collect_watch_channel_metrics(client, username_or_link):
         'activity_label': 'данных об активности мало',
         'profit_mode': 'данных о прибыли/убытках мало',
         'vip_detected': False,
+        'red_flags_signal': [],
+        'red_flags_signal_count': 0,
     }
     try:
         uname = _normalize_channel_link(username_or_link)
@@ -802,6 +806,7 @@ async def _collect_watch_channel_metrics(client, username_or_link):
         positive_hits = 0
         negative_hits = 0
         vip_hits = 0
+        corpus_chunks = []
 
         async for msg in client.iter_messages(entity, limit=40):
             msg_date = getattr(msg, 'date', None)
@@ -815,6 +820,8 @@ async def _collect_watch_channel_metrics(client, username_or_link):
                 continue
             recent_posts_30d += 1
             text = ((getattr(msg, 'message', None) or '') + ' ' + (getattr(msg, 'text', None) or '')).lower()
+            if text.strip():
+                corpus_chunks.append(text)
             if any(p in text for p in PROFIT_PATTERNS):
                 positive_hits += 1
             if any(p in text for p in LOSS_PATTERNS):
@@ -834,12 +841,20 @@ async def _collect_watch_channel_metrics(client, username_or_link):
         is_active = recent_posts_30d >= WATCH_ACTIVE_POSTS_30D or (last_post_at is not None and last_post_at >= fresh_cutoff)
         activity_label = 'активный' if is_active else ('мало свежих постов' if recent_posts_30d > 0 else 'неактивный')
 
+        corpus_lower = ' '.join(corpus_chunks)
+        only_pf = positive_hits > 0 and negative_hits == 0
+        red_sig = _kro_red_flags.signal_channel_red_flag_labels(
+            corpus_lower, only_profit_posts=only_pf
+        )
+
         return {
             'recent_posts_30d': recent_posts_30d,
             'last_post_at': last_post_at.strftime('%Y-%m-%dT%H:%M:%SZ') if last_post_at else '',
             'activity_label': activity_label,
             'profit_mode': profit_mode,
             'vip_detected': vip_hits > 0,
+            'red_flags_signal': red_sig,
+            'red_flags_signal_count': len(red_sig),
         }
     except Exception as e:
         print('watch metrics failed for %s: %s' % (username_or_link, e), file=sys.stderr)
@@ -1347,11 +1362,12 @@ _SIGNAL_KEYWORDS = [
 # Тип объекта в scam_base / reports (колонка I): фиксированные подписи риска для промо.
 _OBJECT_TYPE_RISK_PREFIX = {
     'крипто-обменник': (
-        'Признаки риска (крипто-обменник): обещает завышенный спред (часто 9–15% и выше), '
-        'требует дополнительную оплату для вывода, ссылается на AML-блокировку средств.'
+        'Признаки риска (крипто-обменник): спред заметно выше рынка (>5%), доплата за вывод, '
+        'AML как предлог, свежий домен (по данным), отсутствие контактов/юрлица в открытых текстах.'
     ),
     'инвест-бот': (
-        'Признаки риска (инвест-бот): обещает процент в день, требует пополнить депозит, блокирует вывод.'
+        'Признаки риска (инвест-бот): % в день «автоматом», пополнение для активации, '
+        'блок вывода «до верификации», анонимный создатель, реклама из скам-каналов (по текстам).'
     ),
 }
 
@@ -1577,6 +1593,7 @@ def _summarize_content_messages(messages, channel_ref='', max_posts=None):
     seen_edges = set()
 
     slice_msgs = messages[:cap]
+    corpus_chunks = []
     for item in slice_msgs:
         text = _normalize_message_text(item.get('text') or '')
         lower = text.lower()
@@ -1585,6 +1602,7 @@ def _summarize_content_messages(messages, channel_ref='', max_posts=None):
             last_post_dt = dt
         if not text:
             continue
+        corpus_chunks.append(lower)
 
         for key, variants in CONTENT_RISK_KEYWORDS.items():
             keyword_counts[key] += sum(lower.count(variant) for variant in variants)
@@ -1621,13 +1639,19 @@ def _summarize_content_messages(messages, channel_ref='', max_posts=None):
         age_days = max(0, (now - last_post_dt).days)
         activity = 'активен' if age_days <= WATCH_FRESH_POST_DAYS else 'тихий'
 
+    corpus_lower = ' '.join(corpus_chunks)
+    only_profit_flag = bool(profit_posts and loss_posts == 0)
+    red_flags_typed = _kro_red_flags.all_red_flags_by_type(
+        corpus_lower, only_profit_posts=only_profit_flag
+    )
+
     analyzed = {
         'status': 'ok' if messages else 'недоступен',
         'posts_analyzed': len(slice_msgs),
         'keywords': keyword_counts,
         'profit_posts': profit_posts,
         'loss_posts': loss_posts,
-        'only_profit_posts': bool(profit_posts and loss_posts == 0),
+        'only_profit_posts': only_profit_flag,
         'last_post_at': last_post_dt.strftime('%Y-%m-%dT%H:%M:%SZ') if last_post_dt else '',
         'activity': activity,
         'signal_posts': signal_posts,
@@ -1635,6 +1659,9 @@ def _summarize_content_messages(messages, channel_ref='', max_posts=None):
         'signal_to_ad_ratio': _safe_ratio(signal_posts, ad_posts) if ad_posts else None,
         'mentioned_channels': [m['target_channel'] for m in network_mentions],
         'network_mentions': network_mentions,
+        'red_flags_typed': red_flags_typed,
+        'red_flags_signal': red_flags_typed.get('сигнал-канал') or [],
+        'red_flags_signal_count': len(red_flags_typed.get('сигнал-канал') or []),
     }
     return analyzed
 
@@ -2164,11 +2191,25 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
                 only_profit = bool(analysis.get('only_profit_posts'))
                 ad_posts = int(analysis.get('ad_posts') or 0)
                 signal_posts = int(analysis.get('signal_posts') or 0)
+                ot_key = _kro_red_flags.object_type_red_flag_key(obj.get('object_type') or '')
+                rf_map = analysis.get('red_flags_typed') or {}
+                typed_flags = list(rf_map.get(ot_key) or [])
+                analysis['red_flags_applied_object_type'] = ot_key
+                analysis['red_flags_applied'] = typed_flags
+                analysis['red_flags_applied_count'] = len(typed_flags)
                 obj['content_analysis'] = json.dumps(analysis, ensure_ascii=False)
-                if complaints >= 2 and (only_profit or risk_hits >= 3 or ad_posts > signal_posts):
+                n_type = len(typed_flags)
+                if complaints >= 2 and (
+                    only_profit
+                    or risk_hits >= 3
+                    or ad_posts > signal_posts
+                    or n_type >= 2
+                ):
                     obj['status'] = 'в риске'
                 elif complaints >= 2:
                     obj['status'] = 'под наблюдением'
+                if n_type >= 5:
+                    obj['status'] = 'в риске'
                 for mention in (analysis.get('network_mentions') or []):
                     source_channel = mention.get('source_channel') or _channel_display_name(obj.get('username'))
                     target_channel = mention.get('target_channel') or ''
@@ -2338,7 +2379,7 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
     """
     if not confirmed_objects or not client or not sheet_id:
         return []
-    scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:M')
+    scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
     sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
     try:
         resp = client.spreadsheets().values().get(
@@ -2505,6 +2546,9 @@ def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_cha
         if metrics.get('profit_mode') == 'похоже, показывает только прибыль':
             suspicious.append('похоже, показывает только прибыль')
 
+        red_sig = list(metrics.get('red_flags_signal') or [])
+        n_rf = len(red_sig)
+
         vip_summary = (row.get('vip_price') or '').strip()
         if not vip_summary or vip_summary == '—':
             vip_summary = 'Есть упоминания VIP/закрытого доступа' if metrics.get('vip_detected') else 'Платных услуг не обнаружено'
@@ -2532,11 +2576,16 @@ def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_cha
         else:
             reviews_summary = 'Жалоб не найдено. Положительных отзывов в текущих источниках не найдено.'
 
-        if complaints_count >= 2 and suspicious:
+        combined_risk = len(suspicious) + n_rf
+        if complaints_count >= 2 and (suspicious or n_rf >= 2):
             status = 'в риске'
-        elif suspicious:
+        elif complaints_count >= 2:
             status = 'под наблюдением'
-        elif complaints_count == 0 and not suspicious:
+        elif combined_risk >= 4 or n_rf >= 4:
+            status = 'в риске'
+        elif suspicious or n_rf >= 1:
+            status = 'под наблюдением'
+        elif complaints_count == 0 and combined_risk == 0:
             status = 'без нарушений'
         else:
             status = 'под наблюдением'
@@ -2550,6 +2599,10 @@ def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_cha
         ]
         if suspicious:
             evidence_parts.append('Подозрительные признаки: %s.' % ', '.join(suspicious))
+        if red_sig:
+            evidence_parts.append(
+                'Red flags (сигнал-канал): %s.' % ', '.join(red_sig)
+            )
 
         watch_rows.append([
             row.get('username', ''),
@@ -2900,8 +2953,11 @@ def _run_organic_growth_cycle(client, sheet_id, cycle_window_label):
                 evidence = '%s | %s' % (note_bs, evidence)
         else:
             evidence = note_bs
-        # Только чёрный список kurs.expert без статей/жалоб — консервативный статус
-        st = 'под наблюдением'
+        st_raw = (vr.get('status') or 'под наблюдением').strip()
+        if st_raw == 'без нарушений':
+            st = 'под наблюдением'
+        else:
+            st = st_raw
         if _append_organic_scam_base_row(
             client, sheet_id, display, link, obj_type, st, evidence, cycle_window_label, 'kurs.expert'
         ):

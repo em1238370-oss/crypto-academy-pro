@@ -10,7 +10,17 @@ import re
 import time
 from urllib.parse import quote_plus
 
+import kro_red_flags
+
 logger = logging.getLogger(__name__)
+
+
+def _status_rank(st):
+    return {'без нарушений': 0, 'под наблюдением': 1, 'в риске': 2}.get((st or '').strip(), 1)
+
+
+def _max_status(a, b):
+    return a if _status_rank(a) >= _status_rank(b) else b
 
 _ORGANIC_NEG_HINTS = (
     'скам', 'мошен', 'обман', 'кидал', 'развод', 'жалоб', 'жалоба', 'не вывод',
@@ -145,6 +155,8 @@ def verify_exchanger_domain_via_search(hostname, kurs_page_url, pause_sec=2.5):
             'neg': neg,
             'pos': pos,
             'sample_urls': all_urls[:4],
+            'exchanger_red_flags': [],
+            'combined_blob': '',
         }
 
     lines.append(
@@ -174,6 +186,16 @@ def verify_exchanger_domain_via_search(hostname, kurs_page_url, pause_sec=2.5):
             'Явных «жалобных» или «хвалебных» маркеров в выборке мало — данных мало для уверенного вывода.'
         )
 
+    ex_flags = kro_red_flags.exchanger_red_flag_labels(combined)
+    if ex_flags:
+        lines.append('Флаги риска (обменник, по текстам поиска): %s' % '; '.join(ex_flags))
+    if len(ex_flags) >= 5:
+        status = _max_status(status, 'в риске')
+    elif len(ex_flags) >= 3:
+        status = _max_status(status, 'под наблюдением')
+    elif len(ex_flags) >= 1 and neg == 0:
+        status = _max_status(status, 'под наблюдением')
+
     return {
         'status': status,
         'evidence_lines': lines,
@@ -182,6 +204,8 @@ def verify_exchanger_domain_via_search(hostname, kurs_page_url, pause_sec=2.5):
         'neg': neg,
         'pos': pos,
         'sample_urls': all_urls[:4],
+        'exchanger_red_flags': ex_flags,
+        'combined_blob': combined[:12000],
     }
 
 
