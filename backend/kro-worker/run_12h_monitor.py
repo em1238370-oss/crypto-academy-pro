@@ -690,7 +690,10 @@ async def _search_new_channels_via_telegram(client, days_max=30):
                 if created < cutoff:
                     continue
                 title = (getattr(chat, 'title', None) or '').strip()
-                if not _has_signal_keywords(title) and not _has_signal_keywords('@' + username):
+                if (
+                    (not _has_signal_keywords(title) and not _has_signal_keywords('@' + username))
+                    or (not _has_crypto_context(title) and not _has_crypto_context('@' + username))
+                ):
                     continue
                 seen.add(username)
                 ages[username] = created
@@ -753,7 +756,10 @@ async def _search_watch_channels_via_telegram(client, days_min=30):
                 if created > cutoff:
                     continue
                 title = (getattr(chat, 'title', None) or '').strip()
-                if not _has_signal_keywords(title) and not _has_signal_keywords('@' + username):
+                if (
+                    (not _has_signal_keywords(title) and not _has_signal_keywords('@' + username))
+                    or (not _has_crypto_context(title) and not _has_crypto_context('@' + username))
+                ):
                     continue
                 seen.add(username)
                 ages[username] = created
@@ -1354,9 +1360,19 @@ _SIGNAL_KEYWORDS = [
     'трейдинг', 'trading', 'trader',
     'крипто', 'crypto',
     'памп', 'pump',
-    'заработок', 'профит', 'profit',
-    'инвест', 'invest',
+    'профит', 'profit',
 ]
+
+_CRYPTO_CONTEXT_KEYWORDS = (
+    'крипт', 'crypto', 'btc', 'eth', 'usdt', 'usdc', 'ton', 'sol', 'bnb',
+    'binance', 'bybit', 'okx', 'kucoin', 'futures', 'фьючерс', 'маржин',
+    'спот', 'бирж', 'кошел', 'wallet', 'обменник', 'dex', 'cex', 'blockchain',
+)
+
+_NON_CRYPTO_EXCLUDE_PATTERNS = (
+    'недвижим', 'квартир', 'новострой', 'ипотек', 'риелт', 'аренд',
+    'автомоб', 'авто', 'машин', 'дилер', 'car ', 'cars ', 'real estate',
+)
 
 
 # Тип объекта в scam_base / reports (колонка I): фиксированные подписи риска для промо.
@@ -1487,6 +1503,15 @@ def _has_signal_keywords(text):
         return False
     lower = text.lower()
     return any(kw in lower for kw in _SIGNAL_KEYWORDS)
+
+
+def _has_crypto_context(text):
+    if not text:
+        return False
+    lower = text.lower()
+    if any(p in lower for p in _NON_CRYPTO_EXCLUDE_PATTERNS):
+        return False
+    return any(kw in lower for kw in _CRYPTO_CONTEXT_KEYWORDS)
 
 
 def _channel_display_name(ch):
@@ -2314,8 +2339,9 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             title = (tg_row.get('title') or '').strip()
             source_primary = tg_row.get('source_url') or tg_row.get('link') or 'TGStat'
 
-        # КРИТЕРИЙ 2: сигнальные слова в названии или username
+        # КРИТЕРИЙ 2: сигнальные слова + явный крипто-контекст в названии или username
         has_signals = _has_signal_keywords(title) or _has_signal_keywords(ch_username)
+        has_crypto_ctx = _has_crypto_context(title) or _has_crypto_context(ch_username)
         vip_num = 0
         if vip_str != '—':
             digits = re.sub(r'[^\d]', '', str(vip_str))
@@ -2323,6 +2349,10 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
 
         if vip_num < VIP_MIN and not has_signals:
             print('confirmed-filter: %s — нет сигнальных слов. username=%r title=%r' % (
+                ch, ch_username, title), file=sys.stderr)
+            continue
+        if not has_crypto_ctx:
+            print('confirmed-filter: %s — нет явного crypto-контекста. username=%r title=%r' % (
                 ch, ch_username, title), file=sys.stderr)
             continue
 

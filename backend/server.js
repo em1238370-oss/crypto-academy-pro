@@ -1807,6 +1807,29 @@ function parseScamBaseRow(row) {
   };
 }
 
+function isCryptoRelevantScamRow(row) {
+  const blob = [
+    row?.username,
+    row?.object_type,
+    row?.source_primary,
+    row?.source_evidence,
+    row?.content_analysis,
+  ].map((x) => (x == null ? '' : String(x))).join(' ').toLowerCase();
+
+  const cryptoHints = [
+    'крипт', 'crypto', 'btc', 'eth', 'usdt', 'usdc', 'ton', 'sol', 'bnb',
+    'binance', 'bybit', 'okx', 'kucoin', 'фьючерс', 'маржин', 'спот',
+    'обменник', 'blockchain', 'wallet', 'кошел', 'dex', 'cex',
+  ];
+  const nonCryptoHints = [
+    'недвижим', 'квартир', 'новострой', 'ипотек', 'риелт', 'аренд',
+    'автомоб', 'машин', 'дилер', 'real estate', 'car ',
+  ];
+
+  if (nonCryptoHints.some((h) => blob.includes(h))) return false;
+  return cryptoHints.some((h) => blob.includes(h));
+}
+
 /** Честный fallback для монитора: без разбора постов, только поля строки scam_base. */
 function buildSheetOnlyContentAnalysisV2(row, fetchFailed) {
   const facts = {
@@ -2545,11 +2568,12 @@ app.get('/api/kro/monitor-data', async (req, res) => {
 
     // scam_base rows (skip header)
     const scamRawRows = scamResp.status === 'fulfilled' ? (scamResp.value.data.values || []) : [];
-    const scamRows = scamRawRows
+    const scamRowsAll = scamRawRows
       .slice(1)
       .map(parseScamBaseRow)
       .filter(r => r.username && r.username !== 'username')
       .map(enrichScamBaseContentAnalysisForMonitor);
+    const scamRows = scamRowsAll.filter(isCryptoRelevantScamRow);
 
     const watchRawRows = watchResp.status === 'fulfilled' ? (watchResp.value.data.values || []) : [];
     const channelsWatch = watchRawRows
