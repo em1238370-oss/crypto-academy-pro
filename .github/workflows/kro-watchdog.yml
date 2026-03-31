@@ -1,0 +1,96 @@
+name: KRO Monitor Watchdog
+
+on:
+  schedule:
+    - cron: '15 * * * *' # every hour
+  workflow_dispatch:
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check age of latest KRO monitor run
+        id: check
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.request
+          from datetime import datetime, timezone
+
+          repo = os.environ.get('REPO', '').strip()
+          if not repo:
+              print('Missing github.repository', file=sys.stderr)
+              sys.exit(1)
+
+          url = f'https://api.github.com/repos/{repo}/actions/workflows/kro-monitor.yml/runs?per_page=1'
+          req = urllib.request.Request(
+              url,
+              headers={
+                  'Accept': 'application/vnd.github+json',
+                  'User-Agent': 'kro-watchdog'
+              }
+          )
+          with urllib.request.urlopen(req, timeout=20) as r:
+              payload = json.loads(r.read().decode('utf-8'))
+
+          runs = payload.get('workflow_runs') or []
+          if not runs:
+              print('No runs found for kro-monitor.yml', file=sys.stderr)
+              with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+                  f.write('stale=true\n')
+                  f.write('message=No runs found for kro-monitor.yml\n')
+              sys.exit(1)
+
+          latest = runs[0]
+          created_at = latest.get('created_at') or ''
+          run_url = latest.get('html_url') or ''
+          status = latest.get('status') or ''
+          conclusion = latest.get('conclusion') or ''
+          try:
+              ts = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+          except Exception:
+              print(f'Invalid created_at: {created_at}', file=sys.stderr)
+              with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+                  f.write('stale=true\n')
+                  f.write(f'message=Invalid created_at for latest run: {created_at}\n')
+              sys.exit(1)
+
+          age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600.0
+          stale = age_h > 13.0
+          msg = (
+              f'KRO monitor latest run age={age_h:.2f}h; status={status}; '
+              f'conclusion={conclusion}; created_at={created_at}; url={run_url}'
+          )
+          print(msg)
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+              f.write(f"stale={'true' if stale else 'false'}\n")
+              f.write(f'message={msg}\n')
+              f.write(f'run_url={run_url}\n')
+
+          if stale:
+              print('Latest KRO monitor run is older than 13 hours', file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: Send Telegram alert on missed cycle
+        if: failure() && steps.check.outputs.stale == 'true'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.KRO_ALERT_TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.KRO_ALERT_TELEGRAM_CHAT_ID }}
+          ALERT_MESSAGE: ${{ steps.check.outputs.message }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram alert secrets are not set (KRO_ALERT_TELEGRAM_BOT_TOKEN / KRO_ALERT_TELEGRAM_CHAT_ID)"
+            exit 0
+          fi
+          text="🚨 KRO watchdog: cycle missed (>13h). ${ALERT_MESSAGE}"
+          curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${text}" \
+            -d "disable_web_page_preview=true" >/dev/null
+          echo "Telegram alert sent"
