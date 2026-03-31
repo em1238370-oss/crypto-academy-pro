@@ -33,6 +33,14 @@ def _load_verify_main():
 def run_data_quality(root: Path) -> None:
     node_script = root / "backend" / "scripts" / "kro-data-quality.mjs"
     env = os.environ.copy()
+    # Файл credentials.json записан Python-скриптом; env JSON иногда битый в раннере —
+    # заставляем Node читать только файл (как в локальной разработке).
+    gac = (env.get("GOOGLE_APPLICATION_CREDENTIALS") or "").strip()
+    if gac:
+        gac_path = Path(gac) if Path(gac).is_absolute() else root / gac
+        if gac_path.is_file():
+            env.pop("KRO_GOOGLE_CREDENTIALS_JSON", None)
+
     r = subprocess.run(
         ["node", str(node_script), "--json"],
         cwd=str(root),

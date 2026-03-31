@@ -21,11 +21,11 @@ jobs:
         run: pip install -r backend/kro-worker/requirements.txt
 
       - name: Write Google credentials file
-        run: |
-          echo '${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}' > backend/kro-worker/credentials.json
+        env:
+          KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
+        run: python3 "${GITHUB_WORKSPACE}/.github/scripts/write-google-credentials.py"
 
       - name: Run strict channel filters on scam_base
-        continue-on-error: true
         env:
           KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
           GOOGLE_APPLICATION_CREDENTIALS: backend/kro-worker/credentials.json
@@ -34,4 +34,11 @@ jobs:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION_NAME: kro_session
-        run: python3 backend/scripts/kro-enforce-channel-filters.py
+        run: |
+          set +e
+          python3 backend/scripts/kro-enforce-channel-filters.py
+          code=$?
+          if [ "$code" -ne 0 ]; then
+            echo "::warning::enforce-channel-filters exited with $code (Telethon/фильтры — см. лог)"
+          fi
+          exit 0

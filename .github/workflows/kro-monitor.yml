@@ -29,8 +29,9 @@ jobs:
         run: pip install -r backend/kro-worker/requirements.txt
 
       - name: Write Google credentials file
-        run: |
-          echo '${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}' > backend/kro-worker/credentials.json
+        env:
+          KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
+        run: python3 "${GITHUB_WORKSPACE}/.github/scripts/write-google-credentials.py"
 
       - name: Read previous last_cycle_at snapshot
         id: pre_cycle

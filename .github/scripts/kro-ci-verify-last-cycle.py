@@ -11,9 +11,27 @@ import os
 import re
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+
+
+def _load_service_account_dict():
+    """JSON из env или из файла GOOGLE_APPLICATION_CREDENTIALS (обходит битый env в CI)."""
+    raw = os.environ.get("KRO_GOOGLE_CREDENTIALS_JSON", "").strip()
+    if raw:
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            pass
+    rel = (os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or "").strip()
+    if rel:
+        base = Path(os.environ.get("GITHUB_WORKSPACE", os.getcwd()))
+        p = Path(rel) if Path(rel).is_absolute() else base / rel
+        if p.is_file():
+            return json.loads(p.read_text(encoding="utf-8"))
+    raise ValueError("cannot load Google credentials (fix KRO_GOOGLE_CREDENTIALS_JSON or credentials file)")
 
 
 def parse_cycle_ts(raw: str):
@@ -74,17 +92,19 @@ def parse_cycle_ts(raw: str):
 def main() -> int:
     ok = True
     sheet_id = os.environ.get("KRO_SHEET_ID", "").strip()
-    raw = os.environ.get("KRO_GOOGLE_CREDENTIALS_JSON", "").strip()
-    if not sheet_id or not raw:
-        print(
-            "missing KRO_SHEET_ID or KRO_GOOGLE_CREDENTIALS_JSON",
-            file=sys.stderr,
-        )
-        print("::warning::last_cycle_at verify skipped — missing env")
+    if not sheet_id:
+        print("missing KRO_SHEET_ID", file=sys.stderr)
+        print("::warning::last_cycle_at verify skipped — missing KRO_SHEET_ID")
         return 0
 
     try:
-        creds_info = json.loads(raw)
+        creds_info = _load_service_account_dict()
+    except (ValueError, json.JSONDecodeError, OSError) as e:
+        print(f"credentials load error: {e}", file=sys.stderr)
+        print(f"::warning::last_cycle_at verify — cannot load credentials: {e}")
+        return 0
+
+    try:
         creds = Credentials.from_service_account_info(
             creds_info,
             scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"],
@@ -104,7 +124,7 @@ def main() -> int:
         last_cycle = str(kv.get("last_cycle_at", "")).strip()
     except Exception as e:
         print(f"kro_meta read error: {e}", file=sys.stderr)
-        print(f"::warning::last_cycle_at verify failed to read sheet: {e}")
+        print(f"::warning::last_cycle_at verify — Sheets API error: {e}")
         return 0
 
     if not last_cycle:
