@@ -281,6 +281,119 @@ def _parse_search_result_links(html):
     return out
 
 
+_SEARCH_ENGINE_URLS = (
+    'https://duckduckgo.com/html/?q={q}',
+    'https://www.bing.com/search?q={q}',
+)
+
+_VICTIM_QUERY_LIMIT_PER_QUERY = 5
+
+# Запросы, которыми реально пользуются пострадавшие и люди перед входом в канал/сервис.
+_VICTIM_SCAM_CHANNEL_QUERIES = [
+    'крипто сигналы телеграм заработок отзывы',
+    'VIP сигналы крипта развод обман',
+    'быстрый заработок криптовалюта телеграм',
+    'трейдинг сигналы гарантия прибыль телеграм',
+    'крипто гуру телеграм развод',
+    'сигналы long short телеграм мошенники',
+    'инвестиции крипта телеграм бот отзывы',
+    'доверительное управление крипта телеграм',
+    'крипто наставник телеграм скам',
+    'заработок на бирже телеграм сигналы обман',
+]
+
+_VICTIM_EXCHANGER_QUERIES = [
+    'крипто обменник не выводит деньги',
+    'телеграм обменник криптовалюта развод',
+    'P2P обменник крипта мошенники',
+    'обменник USDT заблокировал вывод',
+]
+
+_VICTIM_INVEST_BOT_QUERIES = [
+    'инвест бот телеграм процент в день',
+    'торговый бот крипта автоматический заработок развод',
+    'бот трейдинг телеграм депозит не выводит',
+]
+
+
+def _search_urls_for_query(query, max_links=20):
+    links = []
+    seen = set()
+    for engine_tpl in _SEARCH_ENGINE_URLS:
+        search_url = engine_tpl.format(q=quote_plus(query))
+        html = _fetch(search_url)
+        if not html:
+            continue
+        for link in _parse_search_result_links(html):
+            low = link.lower()
+            if any(skip in low for skip in (
+                'duckduckgo.com', 'google.com', 'bing.com', 'yandex.', 'yahoo.com/search',
+            )):
+                continue
+            if link in seen:
+                continue
+            seen.add(link)
+            links.append(link)
+            if len(links) >= max_links:
+                return links
+    return links
+
+
+def _scrape_victim_queries():
+    """
+    Поисковый контур по «живым» victim-запросам:
+    - скам-каналы;
+    - крипто-обменники;
+    - инвест-боты.
+    Для каждого query берём максимум 5 новых объектов, чтобы не засорять базу.
+    """
+    query_groups = [
+        ('сигнал-канал', _VICTIM_SCAM_CHANNEL_QUERIES),
+        ('крипто-обменник', _VICTIM_EXCHANGER_QUERIES),
+        ('инвест-бот', _VICTIM_INVEST_BOT_QUERIES),
+    ]
+    out = []
+    all_unique = set()
+    total_queries = 0
+
+    for object_type, queries in query_groups:
+        for query in queries:
+            total_queries += 1
+            per_query_count = 0
+            per_query_seen = set()
+            urls = _search_urls_for_query(query, max_links=18)
+            for url in urls:
+                page = _fetch(url)
+                if not page:
+                    continue
+                findings = _build_findings_from_page(page, url, 'web-search')
+                for f in findings:
+                    ch = (f.get('channel') or '').strip().lower()
+                    if not ch:
+                        continue
+                    if ch in per_query_seen or ch in all_unique:
+                        continue
+                    # Обогащаем запись классификацией по группе запроса.
+                    f = dict(f)
+                    f['object_type'] = object_type
+                    # Чётко фиксируем источник и поисковый интент.
+                    desc = (f.get('description') or '')
+                    f['description'] = ('Поиск: "%s" | %s' % (query, desc))[:500]
+                    out.append(f)
+                    per_query_seen.add(ch)
+                    all_unique.add(ch)
+                    per_query_count += 1
+                    if per_query_count >= _VICTIM_QUERY_LIMIT_PER_QUERY:
+                        break
+                if per_query_count >= _VICTIM_QUERY_LIMIT_PER_QUERY:
+                    break
+
+    unique_channels = len({r.get('channel') for r in out if r.get('channel')})
+    _set_source_status('web-victim-search', 'found' if unique_channels else 'not_found', unique_channels)
+    logger.info('web-victim-search: queries=%d, findings=%d', total_queries, len(out))
+    return out
+
+
 def _search_review_urls_for_username(username, max_links=3):
     """
     Search public web pages for '@username скам' / '@username развод'.
@@ -1177,6 +1290,7 @@ def scrape_all():
     results.extend(scrape_vklader())
     results.extend(scrape_telltrue())
     results.extend(scrape_forteck())
+    results.extend(_scrape_victim_queries())
 
     # Additional enrichment: search internet reviews for usernames already found
     # in primary sources. This makes it easy to expand evidence without changing
