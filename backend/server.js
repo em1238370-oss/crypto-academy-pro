@@ -1807,6 +1807,32 @@ function parseScamBaseRow(row) {
   };
 }
 
+const REQUIRED_CRYPTO_HINTS = [
+  'крипта', 'крипто', 'crypto', 'bitcoin', 'btc', 'usdt', 'трейдинг', 'trading',
+  'обменник', 'exchange', 'инвестиции', 'инвест', 'сигнал', 'signal',
+];
+const NON_CRYPTO_HINTS = [
+  'недвижим', 'квартир', 'новострой', 'ипотек', 'риелт', 'аренд',
+  'автомоб', 'машин', 'дилер', 'real estate', 'car ', 'mortgage',
+];
+
+function isCryptoContextAllowed(...parts) {
+  const blob = parts.map((x) => (x == null ? '' : String(x))).join(' ').toLowerCase();
+  if (!blob.trim()) return false;
+  if (NON_CRYPTO_HINTS.some((h) => blob.includes(h))) return false;
+  return REQUIRED_CRYPTO_HINTS.some((h) => blob.includes(h));
+}
+
+function statusWithLossFloor(status, totalLossRub) {
+  const base = (status || '').toString().trim();
+  const loss = Number(totalLossRub) || 0;
+  if (loss > 0) {
+    if (!base || base === 'без нарушений' || base === 'под наблюдением') return 'в риске';
+    return base.includes('в риске') ? base : 'в риске';
+  }
+  return base || 'под наблюдением';
+}
+
 function isCryptoRelevantScamRow(row) {
   const blob = [
     row?.username,
@@ -1816,18 +1842,7 @@ function isCryptoRelevantScamRow(row) {
     row?.content_analysis,
   ].map((x) => (x == null ? '' : String(x))).join(' ').toLowerCase();
 
-  const cryptoHints = [
-    'крипт', 'crypto', 'btc', 'eth', 'usdt', 'usdc', 'ton', 'sol', 'bnb',
-    'binance', 'bybit', 'okx', 'kucoin', 'фьючерс', 'маржин', 'спот',
-    'обменник', 'blockchain', 'wallet', 'кошел', 'dex', 'cex',
-  ];
-  const nonCryptoHints = [
-    'недвижим', 'квартир', 'новострой', 'ипотек', 'риелт', 'аренд',
-    'автомоб', 'машин', 'дилер', 'real estate', 'car ',
-  ];
-
-  if (nonCryptoHints.some((h) => blob.includes(h))) return false;
-  return cryptoHints.some((h) => blob.includes(h));
+  return isCryptoContextAllowed(blob);
 }
 
 /** Честный fallback для монитора: без разбора постов, только поля строки scam_base. */
@@ -1927,7 +1942,11 @@ function buildLiveCounterFromScamBase(parsedRows) {
   const cutoff24h = now - 24 * 60 * 60 * 1000;
 
   // All confirmed rows (v2 schema) — survive restarts, not limited by time window
-  const allRows = parsedRows.filter(r => r._schema === 'v2' && r.username);
+  const allRows = parsedRows.filter(r =>
+    r._schema === 'v2' &&
+    r.username &&
+    isCryptoContextAllowed(r.username, r.object_type, r.source_primary, r.source_evidence, r.content_analysis)
+  );
   if (!allRows.length) return null;
 
   // channelsToday = все подтверждённые каналы в базе (не только за 24ч)
@@ -2587,7 +2606,9 @@ app.get('/api/kro/monitor-data', async (req, res) => {
 
     // kro_meta
     const metaRows = metaResp.status === 'fulfilled' ? (metaResp.value.data.values || []) : [];
-    const meta = parseKroCycleMetaRows(metaRows);
+    const metaBase = parseKroCycleMetaRows(metaRows);
+    const freshness = parseCycleFreshnessMeta(metaBase.last_cycle_at);
+    const meta = { ...metaBase, ...freshness };
 
     // kro_history rows (skip header row if present)
     const histRawRows = historyResp.status === 'fulfilled' ? (historyResp.value.data.values || []) : [];
@@ -2634,6 +2655,26 @@ function parseScamDetectedAtMs(row) {
     return Number.isFinite(d) ? d : 0;
   }
   return 0;
+}
+
+function parseCycleFreshnessMeta(lastCycleAtRaw) {
+  const raw = (lastCycleAtRaw || '').toString().trim();
+  const parsed = Date.parse(raw);
+  if (!raw || !Number.isFinite(parsed)) {
+    return {
+      cycle_age_hours: null,
+      cycle_stale: true,
+      cycle_warning: 'данные могут быть устаревшими',
+    };
+  }
+  const ageMs = Math.max(0, Date.now() - parsed);
+  const ageHours = Math.round((ageMs / (60 * 60 * 1000)) * 10) / 10;
+  const stale = ageMs > 13 * 60 * 60 * 1000;
+  return {
+    cycle_age_hours: ageHours,
+    cycle_stale: stale,
+    cycle_warning: stale ? 'данные могут быть устаревшими' : '',
+  };
 }
 
 // GET /api/kro/channel-profile?u=… — одна запись scam_base (последняя по дате обнаружения при нескольких строках)
@@ -2881,6 +2922,10 @@ async function checkAndPromoteToScamBase(client, channel) {
     const totalLoss = reports.reduce((s, r) => s + (r.sum || 0), 0);
     const explicitOt = reports.map(r => r.object_type).find(Boolean) || '';
     const { display, link, objectType } = scamBaseDisplayLinkForPromote(channel, explicitOt);
+    if (!isCryptoContextAllowed(display, objectType, reports.map(r => `${r.description || ''} ${r.proof_url || ''}`).join(' '))) {
+      console.log(`[KRO] ${display} skipped: no crypto context for scam_base promotion`);
+      return;
+    }
     let sourceEvidence = reports.slice(0, 3).map(r => r.description || r.proof_url).filter(Boolean).join('; ');
     const rp = riskPrefixForObjectType(objectType);
     if (rp) sourceEvidence = `${rp} | ${sourceEvidence}`.slice(0, 500);
@@ -2888,9 +2933,10 @@ async function checkAndPromoteToScamBase(client, channel) {
 
     const sheetName = kroScamBaseRange.split('!')[0] || 'scam_base';
     const complaintsForSheet = uniqueCount;
+    const effectiveStatus = statusWithLossFloor('в риске', totalLoss);
     const v2Row = [[
       display, link, detectedAt, '', '', objectType, '',
-      complaintsForSheet, totalLoss, 'form', sourceEvidence, cycleWindow, 'в риске', ''
+      complaintsForSheet, totalLoss, 'form', sourceEvidence, cycleWindow, effectiveStatus, ''
     ]];
     await client.sheets.spreadsheets.values.append({
       spreadsheetId: kroSheetId,

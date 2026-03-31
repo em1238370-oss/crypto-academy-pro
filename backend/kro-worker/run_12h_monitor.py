@@ -1364,9 +1364,12 @@ _SIGNAL_KEYWORDS = [
 ]
 
 _CRYPTO_CONTEXT_KEYWORDS = (
-    'крипт', 'crypto', 'btc', 'eth', 'usdt', 'usdc', 'ton', 'sol', 'bnb',
-    'binance', 'bybit', 'okx', 'kucoin', 'futures', 'фьючерс', 'маржин',
-    'спот', 'бирж', 'кошел', 'wallet', 'обменник', 'dex', 'cex', 'blockchain',
+    # Базовые обязательные термины из политики
+    'крипта', 'крипто', 'crypto', 'bitcoin', 'btc', 'usdt', 'трейдинг',
+    'trading', 'обменник', 'exchange', 'инвестиции', 'инвест', 'сигнал', 'signal',
+    # Допустимые устойчивые контексты
+    'eth', 'usdc', 'ton', 'sol', 'bnb', 'binance', 'bybit', 'okx', 'kucoin',
+    'futures', 'фьючерс', 'маржин', 'спот', 'бирж', 'кошел', 'wallet', 'dex', 'cex', 'blockchain',
 )
 
 _NON_CRYPTO_EXCLUDE_PATTERNS = (
@@ -1512,6 +1515,33 @@ def _has_crypto_context(text):
     if any(p in lower for p in _NON_CRYPTO_EXCLUDE_PATTERNS):
         return False
     return any(kw in lower for kw in _CRYPTO_CONTEXT_KEYWORDS)
+
+
+def _is_crypto_context_allowed_parts(*parts):
+    blob = ' '.join((p or '') if isinstance(p, str) else str(p or '') for p in parts)
+    return _has_crypto_context(blob)
+
+
+def _status_rank(value):
+    v = (value or '').strip().lower()
+    if 'в риске' in v:
+        return 2
+    if 'под наблюдением' in v:
+        return 1
+    if 'без нарушений' in v or 'без риска' in v:
+        return 0
+    return 1
+
+
+def _apply_loss_status_floor(status, total_loss_rub):
+    try:
+        loss = int(total_loss_rub or 0)
+    except (ValueError, TypeError):
+        loss = 0
+    st = (status or '').strip() or 'под наблюдением'
+    if loss > 0 and _status_rank(st) < _status_rank('в риске'):
+        return 'в риске'
+    return st
 
 
 def _channel_display_name(ch):
@@ -2258,6 +2288,7 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
                 )
                 if (obj.get('complaints') or 0) >= 2:
                     obj['status'] = 'под наблюдением'
+            obj['status'] = _apply_loss_status_floor(obj.get('status', ''), obj.get('total_loss_rub') or 0)
             enriched.append(obj)
     finally:
         if client is not None:
@@ -2367,6 +2398,7 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             status = 'под наблюдением (%d дн.)' % age_days
         else:
             status = 'под наблюдением'
+        status = _apply_loss_status_floor(status, total_loss_rub)
 
         evidence_parts = []
         if tg_row and tg_row.get('source_url'):
@@ -2434,6 +2466,15 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
         if key in _KNOWN_NON_SCAM_CHANNELS:
             print('scam_base write skip: %s — в списке исключений' % (obj.get('username') or key), file=sys.stderr)
             continue
+        if not _is_crypto_context_allowed_parts(
+            obj.get('username', ''),
+            obj.get('object_type', ''),
+            obj.get('source_primary', ''),
+            obj.get('source_evidence', ''),
+        ):
+            print('scam_base write skip: %s — no crypto context' % (obj.get('username') or key), file=sys.stderr)
+            continue
+        eff_status = _apply_loss_status_floor(obj.get('status', ''), obj.get('total_loss_rub', 0))
         new_rows.append([
             obj.get('username', ''),
             obj.get('link', ''),
@@ -2447,7 +2488,7 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             obj.get('source_primary', ''),
             obj.get('source_evidence', ''),
             obj.get('cycle_window', ''),
-            obj.get('status', ''),
+            eff_status,
             obj.get('content_analysis', ''),
         ])
         inserted_channels.append(obj.get('username', ''))
@@ -2902,15 +2943,19 @@ def _read_scam_base_keys_norm(client, sheet_id):
 
 def _append_organic_scam_base_row(client, sheet_id, display, link, obj_type, status, evidence, cycle_window, source_primary):
     """Одна строка v2 в scam_base (органический цикл)."""
+    if not _is_crypto_context_allowed_parts(display, link, obj_type, evidence, source_primary):
+        print('organic: skip %s — no crypto context' % (display or link), file=sys.stderr)
+        return False
     scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
     sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
     now = datetime.now(timezone.utc)
     detected_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
     ev = (evidence or '')[:500]
     sp = (source_primary or 'organic+kurs+search')[:120]
+    eff_status = _apply_loss_status_floor(status, 0)
     v2_row = [[
         display, link, detected_at, '', '', obj_type, '',
-        1, 0, sp, ev, cycle_window, status, ''
+        1, 0, sp, ev, cycle_window, eff_status, ''
     ]]
     try:
         client.spreadsheets().values().append(
@@ -3175,6 +3220,12 @@ async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=No
         for idx, row in targets:
             username = (row[0] if len(row) > 0 else '').strip()
             link = (row[1] if len(row) > 1 else '').strip()
+            object_type = (row[5] if len(row) > 5 else '').strip()
+            source_primary = (row[9] if len(row) > 9 else '').strip()
+            source_evidence = (row[10] if len(row) > 10 else '').strip()
+            if not _is_crypto_context_allowed_parts(username, link, object_type, source_primary, source_evidence):
+                print('scam_base enrich skip %s: no crypto context' % (username or link), file=sys.stderr)
+                continue
             analysis = await analyze_channel_content(username, client=client_tg, link=link)
             status = (row[12] if len(row) > 12 else '').strip()
             complaints = 0
@@ -3182,6 +3233,10 @@ async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=No
                 complaints = int((row[7] if len(row) > 7 else '0') or 0)
             except (ValueError, TypeError):
                 complaints = 0
+            try:
+                total_loss_rub = int((row[8] if len(row) > 8 else '0') or 0)
+            except (ValueError, TypeError):
+                total_loss_rub = 0
 
             new_status = status
             if isinstance(analysis, dict):
@@ -3213,6 +3268,7 @@ async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=No
                     _sheet_only_content_analysis_from_row(row, fetch_failed=True),
                     ensure_ascii=False,
                 )
+            new_status = _apply_loss_status_floor(new_status, total_loss_rub)
 
             padded = list(row[:14]) + [''] * max(0, 14 - len(row))
             padded[12] = new_status
@@ -5157,8 +5213,12 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
         risk_pre = _risk_prefix_for_object_type(obj_type)
         if risk_pre:
             evidence = (risk_pre + ' | ' + evidence)[:500]
+        if not _is_crypto_context_allowed_parts(display, obj_type, evidence, 'form+web'):
+            print(f'[promote] skip {display}: no crypto context', file=sys.stderr)
+            continue
         has_facts = _has_concrete_scam_facts(evidence)
         status = 'в риске' if has_facts else 'под наблюдением'
+        status = _apply_loss_status_floor(status, total_loss)
         detected_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
         cycle_window = now.strftime('%Y-%m-%d') + ('_am' if now.hour < 12 else '_pm')
         sheet_name = (scam_base_range or 'scam_base!A2:N').split('!')[0]

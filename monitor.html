@@ -72,7 +72,7 @@
 </header>
 
 <p class="mon-live-strip" id="mon-live-strip" role="status" aria-live="polite">
-  <span class="mon-live-strip-inner">Система работает · время после цикла <span id="mon-live-strip-time">—</span></span>
+  <span class="mon-live-strip-inner">Система работает · время после цикла <span id="mon-live-strip-time">—</span><span id="mon-cycle-warning"></span></span>
 </p>
 
 <main class="mon-container">
@@ -1250,8 +1250,14 @@
     setText('s1-last-cycle', cycleDt);
     setText('s1-next-cycle', nextDt);
     setText('mon-live-strip-time', cycleDt);
+    setText('mon-cycle-warning', '');
     var strip = document.getElementById('mon-live-strip');
     if (strip) strip.classList.remove('mon-live-strip--error');
+    var stale = Boolean(meta && meta.cycle_stale);
+    if (stale) {
+      if (strip) strip.classList.add('mon-live-strip--error');
+      setText('mon-cycle-warning', ' · данные могут быть устаревшими');
+    }
     countUp('s1-new-in-cycle', newCount, ' каналов', 1300);
     countUp('s1-total', total, ' каналов', 1650);
     setText('s1-sources-active', active + ' из ' + (meta.sources_checked || []).length);

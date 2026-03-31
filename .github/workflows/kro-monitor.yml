@@ -43,3 +43,54 @@ jobs:
           # Режим: collect = полный цикл (TGStat + веб-парсер + Google Sheets + отправка на сайт)
           MODE: collect
         run: python3 run_12h_monitor.py
+
+      - name: Verify last_cycle_at freshness in kro_meta
+        working-directory: backend/kro-worker
+        env:
+          KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
+          KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
+        run: |
+          python3 - <<'PY'
+          import os, json, sys
+          from datetime import datetime, timezone
+          from google.oauth2.service_account import Credentials
+          from googleapiclient.discovery import build
+
+          sheet_id = os.environ.get('KRO_SHEET_ID', '').strip()
+          raw = os.environ.get('KRO_GOOGLE_CREDENTIALS_JSON', '').strip()
+          if not sheet_id or not raw:
+              print('missing KRO_SHEET_ID or KRO_GOOGLE_CREDENTIALS_JSON', file=sys.stderr)
+              sys.exit(1)
+          creds_info = json.loads(raw)
+          creds = Credentials.from_service_account_info(creds_info, scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
+          svc = build('sheets', 'v4', credentials=creds, cache_discovery=False)
+          rows = svc.spreadsheets().values().get(spreadsheetId=sheet_id, range='kro_meta!A:B').execute().get('values', [])
+          kv = { (r[0] if len(r)>0 else ''): (r[1] if len(r)>1 else '') for r in rows }
+          last_cycle = str(kv.get('last_cycle_at', '')).strip()
+          if not last_cycle:
+              print('kro_meta.last_cycle_at is empty', file=sys.stderr)
+              sys.exit(1)
+          try:
+              ts = datetime.fromisoformat(last_cycle.replace('Z', '+00:00'))
+          except Exception:
+              print(f'invalid last_cycle_at: {last_cycle}', file=sys.stderr)
+              sys.exit(1)
+          age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600.0
+          print(f'kro_meta.last_cycle_at={last_cycle} age_hours={age_h:.2f}')
+          if age_h > 13.0:
+              print('last_cycle_at is stale (>13h)', file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: Install backend node deps (for data-quality check)
+        run: npm --prefix backend ci
+
+      - name: Run KRO data-quality post-check
+        env:
+          KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
+          KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
+          KRO_SCAM_BASE_RANGE: scam_base!A2:N
+        run: |
+          node backend/scripts/kro-data-quality.mjs --json > /tmp/kro_quality.json
+          cat /tmp/kro_quality.json
+          node -e "const fs=require('fs'); const q=JSON.parse(fs.readFileSync('/tmp/kro_quality.json','utf8')); if((q.nonCryptoCount||0)>0 || (q.lossStatusMismatchCount||0)>0){ console.error('KRO quality violations:', q.nonCryptoCount, q.lossStatusMismatchCount); process.exit(1);} console.log('KRO quality check OK');"
