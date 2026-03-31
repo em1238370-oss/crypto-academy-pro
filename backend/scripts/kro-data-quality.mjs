@@ -45,6 +45,16 @@ function getCredentials() {
   if (raw && raw.trim()) {
     try { return JSON.parse(raw); } catch {}
   }
+  const envFile = (process.env.GOOGLE_APPLICATION_CREDENTIALS || '').trim();
+  if (envFile && fs.existsSync(envFile)) {
+    return JSON.parse(fs.readFileSync(envFile, 'utf8'));
+  }
+  const envFileFromRoot = envFile ? join(projectRoot, envFile) : '';
+  if (envFileFromRoot && fs.existsSync(envFileFromRoot)) {
+    return JSON.parse(fs.readFileSync(envFileFromRoot, 'utf8'));
+  }
+  const f0 = join(projectRoot, 'backend', 'kro-worker', 'credentials.json');
+  if (fs.existsSync(f0)) return JSON.parse(fs.readFileSync(f0, 'utf8'));
   const f = join(projectRoot, 'backend', 'kro-worker', 'kro-google-credentials.json');
   if (fs.existsSync(f)) return JSON.parse(fs.readFileSync(f, 'utf8'));
   throw new Error('No valid Google credentials');

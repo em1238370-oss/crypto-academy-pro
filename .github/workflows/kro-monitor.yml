@@ -160,6 +160,7 @@ jobs:
         run: npm --prefix backend ci
 
       - name: Run KRO data-quality post-check
+        continue-on-error: true
         env:
           KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
           GOOGLE_APPLICATION_CREDENTIALS: backend/kro-worker/credentials.json

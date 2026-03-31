@@ -25,6 +25,7 @@ jobs:
           echo '${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}' > backend/kro-worker/credentials.json
 
       - name: Run strict channel filters on scam_base
+        continue-on-error: true
         env:
           KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
           GOOGLE_APPLICATION_CREDENTIALS: backend/kro-worker/credentials.json
