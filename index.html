@@ -536,6 +536,12 @@
                if (/блок/i.test(s)) return 'kro-status-block';
                return 'kro-status-active';
            }
+           function top3StatusWithLossFloor(row) {
+               if (!row) return '—';
+               var sum = Number(row.sum || 0);
+               if (sum > 0) return 'в риске';
+               return row.status || '—';
+           }
            function channelTelegramUrl(r) {
                if (!r) return '';
                var L = (r.link || '').toString().trim();
@@ -623,15 +629,17 @@
                var top3 = data.top3 || [];
                for (var i = 0; i < 3; i++) {
                    var r = top3[i];
+                   var forcedStatus = top3StatusWithLossFloor(r);
                    if ((el = document.getElementById('kro-top3-' + (i + 1) + '-channel'))) el.textContent = r ? r.channel : '—';
                    if ((el = document.getElementById('kro-top3-' + (i + 1) + '-sum'))) el.textContent = r ? formatSum(r.sum) : '—';
                    if ((el = document.getElementById('kro-top3-' + (i + 1) + '-status'))) {
-                       el.textContent = r ? r.status : '—';
-                       el.className = 'kro-top3-status' + (statusClass(r ? r.status : '') ? ' ' + statusClass(r ? r.status : '') : '');
+                       el.textContent = forcedStatus;
+                       el.className = 'kro-top3-status' + (statusClass(forcedStatus) ? ' ' + statusClass(forcedStatus) : '');
                    }
                }
                for (var hi = 0; hi < 3; hi++) {
                    var rr = top3[hi];
+                   var forcedStatusHero = top3StatusWithLossFloor(rr);
                    var linkEl = document.getElementById('kro-hero-case-' + (hi + 1) + '-link');
                    var stEl = document.getElementById('kro-hero-case-' + (hi + 1) + '-status');
                    var sumEl = document.getElementById('kro-hero-case-' + (hi + 1) + '-sum');
@@ -656,8 +664,8 @@
                        linkEl.textContent = '—';
                        linkEl.classList.add('kro-hero-case-channel--empty');
                    }
-                   stEl.textContent = rr && rr.status ? rr.status : '—';
-                   stEl.className = 'kro-hero-case-status' + (statusClass(rr ? rr.status : '') ? ' ' + statusClass(rr ? rr.status : '') : '');
+                   stEl.textContent = forcedStatusHero;
+                   stEl.className = 'kro-hero-case-status' + (statusClass(forcedStatusHero) ? ' ' + statusClass(forcedStatusHero) : '');
                    sumEl.textContent = rr && typeof rr.sum === 'number' ? formatSum(rr.sum) : '—';
                }
                var statsHero = document.getElementById('kro-hero-live-stats');
