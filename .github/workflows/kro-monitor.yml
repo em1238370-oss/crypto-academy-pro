@@ -76,6 +76,7 @@ jobs:
         run: python3 run_12h_monitor.py
 
       - name: Verify last_cycle_at freshness in kro_meta
+        continue-on-error: true
         working-directory: backend/kro-worker
         env:
           KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}

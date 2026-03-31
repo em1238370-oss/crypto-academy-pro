@@ -20,9 +20,14 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r backend/kro-worker/requirements.txt
 
+      - name: Write Google credentials file
+        run: |
+          echo '${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}' > backend/kro-worker/credentials.json
+
       - name: Run strict channel filters on scam_base
         env:
           KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
+          GOOGLE_APPLICATION_CREDENTIALS: backend/kro-worker/credentials.json
           KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
           KRO_SCAM_BASE_RANGE: scam_base!A2:N
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
