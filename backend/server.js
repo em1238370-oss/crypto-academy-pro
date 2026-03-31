@@ -1272,6 +1272,8 @@ const KRO_SOURCES_DOC_URL = '/monitor';
 const KRO_REFERENCE_STATS_PATH = join(__dirname, 'data', 'kro-reference-stats.json');
 const KRO_12H_STATS_PATH = join(__dirname, 'data', 'kro-12h-stats.json');
 const KRO_PENDING_REPORT_TEXT = 'Данные появятся после первого верифицированного отчёта.';
+const LIVE_COUNTER_CACHE_TTL_MS = 60 * 1000; // 1 minute
+let kroLiveCounterCache = { payload: null, ts: 0 };
 
 /** URLs embedded in complaints_row fields (Python worker / kro-12h-stats.json). */
 function collectComplaintRowUrls(row) {
@@ -1946,11 +1948,21 @@ function buildLiveCounterFromScamBase(parsedRows) {
   const cutoff24h = now - 24 * 60 * 60 * 1000;
 
   // All confirmed rows (v2 schema) — survive restarts, not limited by time window
-  const allRows = parsedRows.filter(r =>
+  const filteredRows = parsedRows.filter(r =>
     r._schema === 'v2' &&
     r.username &&
     isCryptoContextAllowed(r.username, r.object_type, r.source_primary, r.source_evidence, r.content_analysis)
   );
+  const byChannel = new Map();
+  for (const row of filteredRows) {
+    const key = channelMatchKey(row.username);
+    if (!key) continue;
+    const prev = byChannel.get(key);
+    if (!prev || parseScamDetectedAtMs(row) >= parseScamDetectedAtMs(prev)) {
+      byChannel.set(key, row);
+    }
+  }
+  const allRows = Array.from(byChannel.values());
   if (!allRows.length) return null;
 
   // channelsToday = все подтверждённые каналы в базе (не только за 24ч)
@@ -1972,7 +1984,12 @@ function buildLiveCounterFromScamBase(parsedRows) {
   const top3 = [...allRows]
     .sort((a, b) => (b.total_loss_rub || 0) - (a.total_loss_rub || 0))
     .slice(0, 3)
-    .map(r => ({ channel: r.username, sum: r.total_loss_rub || 0, status: r.status || 'в риске', link: r.link || '' }));
+    .map(r => ({
+      channel: r.username,
+      sum: r.total_loss_rub || 0,
+      status: statusWithLossFloor(r.status, r.total_loss_rub || 0),
+      link: r.link || ''
+    }));
 
   const latestDetected = allRows.reduce((best, r) => {
     try { const t = new Date(r.detected_at || 0).getTime(); return t > best ? t : best; } catch { return best; }
@@ -2454,7 +2471,15 @@ app.post('/api/kro/check-screenshot', express.json({ limit: '10mb' }), async (re
 
 app.get('/api/kro/live-counter', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
   try {
+    const fresh = String(req.query.fresh || '').toLowerCase();
+    const forceFresh = fresh === '1' || fresh === 'true' || fresh === 'yes';
+    if (!forceFresh && kroLiveCounterCache.payload && (Date.now() - kroLiveCounterCache.ts) < LIVE_COUNTER_CACHE_TTL_MS) {
+      return res.json(kroLiveCounterCache.payload);
+    }
     // Единственный источник данных: Google Sheets scam_base.
     // Никакого кеша, никаких файлов, никаких fallback — только реальные данные из таблицы.
     const sheetsClient = await getKroSheetsClient();
@@ -2473,11 +2498,13 @@ app.get('/api/kro/live-counter', async (req, res) => {
       console.log(`[KRO live-counter] parsed ${parsedRows.length} rows from scam_base`);
       const scamBaseCounter = buildLiveCounterFromScamBase(parsedRows);
       if (scamBaseCounter) {
+        const top3rows = Array.isArray(scamBaseCounter.top3) ? scamBaseCounter.top3 : [];
+        console.log('TOP3 RAW:', JSON.stringify(top3rows.slice(0,3)));
         // Use last_cycle_at from kro_meta when it's newer than latest scam_base row
         const cycleTs = cycleMeta.last_cycle_at ? new Date(cycleMeta.last_cycle_at).getTime() : 0;
         const rowTs = scamBaseCounter.updatedAt ? new Date(scamBaseCounter.updatedAt).getTime() : 0;
         const bestUpdatedAt = cycleTs > rowTs ? cycleMeta.last_cycle_at : scamBaseCounter.updatedAt;
-        return res.json({
+        const payload = {
           channelsToday: scamBaseCounter.new_scam_channels,
           totalLost: scamBaseCounter.losses_12h,
           telegramCount: scamBaseCounter.telegram_channels,
@@ -2496,7 +2523,9 @@ app.get('/api/kro/live-counter', async (req, res) => {
           last_cycle_at: cycleMeta.last_cycle_at,
           new_in_cycle: cycleMeta.new_in_cycle,
           sources_checked: cycleMeta.sources_checked
-        });
+        };
+        kroLiveCounterCache = { payload, ts: Date.now() };
+        return res.json(payload);
       }
     } else {
       console.warn('[KRO live-counter] no Sheets client — KRO_GOOGLE_CREDENTIALS_JSON not set on Render?');
@@ -2821,6 +2850,7 @@ function handleKroUpdate(req, res) {
     fs.writeFileSync(KRO_12H_STATS_PATH, JSON.stringify(payload, null, 2), 'utf8');
     const referenceSnapshot = buildKroReferenceSnapshot(payload);
     fs.writeFileSync(KRO_REFERENCE_STATS_PATH, JSON.stringify(referenceSnapshot, null, 2), 'utf8');
+    kroLiveCounterCache = { payload: null, ts: 0 };
     res.status(200).json({ ok: true });
   } catch (e) {
     console.error('KRO update write error:', e);
