@@ -83,10 +83,47 @@ jobs:
           PREVIOUS_LAST_CYCLE_AT: ${{ steps.pre_cycle.outputs.previous }}
         run: |
           python3 - <<'PY'
-          import os, json, sys
+          import os, json, sys, re
           from datetime import datetime, timezone
           from google.oauth2.service_account import Credentials
           from googleapiclient.discovery import build
+
+          def parse_cycle_ts(raw):
+              s = str(raw or '').strip()
+              if not s:
+                  return None
+              # ISO (with or without Z)
+              try:
+                  return datetime.fromisoformat(s.replace('Z', '+00:00'))
+              except Exception:
+                  pass
+              # dd.mm.yyyy hh:mm[:ss] (assume MSK if tz missing)
+              m = re.match(r'^(\d{1,2})\.(\d{1,2})\.(\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?$', s)
+              if m:
+                  dd, mo, yy, hh, mi, ss = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6) or '0'
+                  iso = f"{yy}-{int(mo):02d}-{int(dd):02d}T{int(hh):02d}:{int(mi):02d}:{int(ss):02d}+03:00"
+                  try:
+                      return datetime.fromisoformat(iso)
+                  except Exception:
+                      return None
+              # m/d/yyyy hh:mm[:ss] (assume MSK if tz missing)
+              m = re.match(r'^(\d{1,2})/(\d{1,2})/(\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?$', s)
+              if m:
+                  mo, dd, yy, hh, mi, ss = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6) or '0'
+                  iso = f"{yy}-{int(mo):02d}-{int(dd):02d}T{int(hh):02d}:{int(mi):02d}:{int(ss):02d}+03:00"
+                  try:
+                      return datetime.fromisoformat(iso)
+                  except Exception:
+                      return None
+              # Excel serial date
+              try:
+                  num = float(s)
+                  if 20000 < num < 800000:
+                      ts = (num - 25569) * 86400.0
+                      return datetime.fromtimestamp(ts, tz=timezone.utc)
+              except Exception:
+                  pass
+              return None
 
           sheet_id = os.environ.get('KRO_SHEET_ID', '').strip()
           raw = os.environ.get('KRO_GOOGLE_CREDENTIALS_JSON', '').strip()
@@ -102,11 +139,12 @@ jobs:
           if not last_cycle:
               print('kro_meta.last_cycle_at is empty', file=sys.stderr)
               sys.exit(1)
-          try:
-              ts = datetime.fromisoformat(last_cycle.replace('Z', '+00:00'))
-          except Exception:
+          ts = parse_cycle_ts(last_cycle)
+          if ts is None:
               print(f'invalid last_cycle_at: {last_cycle}', file=sys.stderr)
               sys.exit(1)
+          if ts.tzinfo is None:
+              ts = ts.replace(tzinfo=timezone.utc)
           prev = os.environ.get('PREVIOUS_LAST_CYCLE_AT', '').strip()
           if prev and prev == last_cycle:
               print(f'warning: last_cycle_at did not change after run: {last_cycle}', file=sys.stderr)
