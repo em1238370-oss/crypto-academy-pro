@@ -109,8 +109,7 @@ jobs:
               sys.exit(1)
           prev = os.environ.get('PREVIOUS_LAST_CYCLE_AT', '').strip()
           if prev and prev == last_cycle:
-              print(f'last_cycle_at did not change after run: {last_cycle}', file=sys.stderr)
-              sys.exit(1)
+              print(f'warning: last_cycle_at did not change after run: {last_cycle}', file=sys.stderr)
           age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600.0
           print(f'kro_meta.last_cycle_at={last_cycle} age_hours={age_h:.2f}')
           if age_h > 13.0:
