@@ -23,7 +23,7 @@ jobs:
       - name: Write Google credentials file
         env:
           KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
-        run: python3 "${GITHUB_WORKSPACE}/.github/scripts/write-google-credentials.py"
+        run: python3 "${{ github.workspace }}/.github/scripts/write-google-credentials.py"
 
       - name: Run strict channel filters on scam_base
         env:
