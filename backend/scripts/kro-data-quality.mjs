@@ -28,9 +28,9 @@ function hasCryptoContext(...parts) {
   return REQUIRED.some((h) => blob.includes(h));
 }
 
-function statusIsRiskLike(status) {
-  const s = String(status || '').toLowerCase();
-  return s.includes('в риске');
+function statusIsExactRisk(status) {
+  const s = String(status || '').trim().toLowerCase();
+  return s === 'в риске';
 }
 
 function parseArgs(argv) {
@@ -92,7 +92,7 @@ async function main() {
       nonCryptoRows.push({ rowNo, username, objectType, status });
     }
 
-    if (totalLoss > 0 && !statusIsRiskLike(status)) {
+    if (totalLoss > 0 && !statusIsExactRisk(status)) {
       lossStatusRows.push({ rowNo, username, totalLoss, status });
       if (apply) {
         updates.push({

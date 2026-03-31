@@ -1823,7 +1823,7 @@ function isCryptoContextAllowed(...parts) {
   return REQUIRED_CRYPTO_HINTS.some((h) => blob.includes(h));
 }
 
-function statusWithLossFloor(status, totalLossRub) {
+function normalizeRiskStatusByLoss(totalLossRub, status) {
   const base = (status || '').toString().trim();
   const loss = Number(totalLossRub) || 0;
   if (loss > 0) {
@@ -1831,6 +1831,10 @@ function statusWithLossFloor(status, totalLossRub) {
     return base.includes('в риске') ? base : 'в риске';
   }
   return base || 'под наблюдением';
+}
+
+function statusWithLossFloor(status, totalLossRub) {
+  return normalizeRiskStatusByLoss(totalLossRub, status);
 }
 
 function isCryptoRelevantScamRow(row) {

@@ -29,6 +29,34 @@ jobs:
         run: |
           echo '${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}' > backend/kro-worker/credentials.json
 
+      - name: Read previous last_cycle_at snapshot
+        id: pre_cycle
+        working-directory: backend/kro-worker
+        env:
+          KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
+          KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
+        run: |
+          python3 - <<'PY'
+          import os, json
+          from google.oauth2.service_account import Credentials
+          from googleapiclient.discovery import build
+
+          sheet_id = os.environ.get('KRO_SHEET_ID', '').strip()
+          raw = os.environ.get('KRO_GOOGLE_CREDENTIALS_JSON', '').strip()
+          if not sheet_id or not raw:
+              print('previous=')
+              raise SystemExit(0)
+          creds_info = json.loads(raw)
+          creds = Credentials.from_service_account_info(creds_info, scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
+          svc = build('sheets', 'v4', credentials=creds, cache_discovery=False)
+          rows = svc.spreadsheets().values().get(spreadsheetId=sheet_id, range='kro_meta!A:B').execute().get('values', [])
+          kv = {(r[0] if len(r) > 0 else ''): (r[1] if len(r) > 1 else '') for r in rows}
+          prev = str(kv.get('last_cycle_at', '')).strip()
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+              f.write(f'previous={prev}\n')
+          print(f'kro_meta.last_cycle_at(before)={prev or "<empty>"}')
+          PY
+
       - name: Run 12h monitor
         working-directory: backend/kro-worker
         env:
@@ -49,6 +77,7 @@ jobs:
         env:
           KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
           KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
+          PREVIOUS_LAST_CYCLE_AT: ${{ steps.pre_cycle.outputs.previous }}
         run: |
           python3 - <<'PY'
           import os, json, sys
@@ -75,6 +104,10 @@ jobs:
           except Exception:
               print(f'invalid last_cycle_at: {last_cycle}', file=sys.stderr)
               sys.exit(1)
+          prev = os.environ.get('PREVIOUS_LAST_CYCLE_AT', '').strip()
+          if prev and prev == last_cycle:
+              print(f'last_cycle_at did not change after run: {last_cycle}', file=sys.stderr)
+              sys.exit(1)
           age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600.0
           print(f'kro_meta.last_cycle_at={last_cycle} age_hours={age_h:.2f}')
           if age_h > 13.0:
@@ -93,4 +126,4 @@ jobs:
         run: |
           node backend/scripts/kro-data-quality.mjs --json > /tmp/kro_quality.json
           cat /tmp/kro_quality.json
-          node -e "const fs=require('fs'); const q=JSON.parse(fs.readFileSync('/tmp/kro_quality.json','utf8')); if((q.nonCryptoCount||0)>0 || (q.lossStatusMismatchCount||0)>0){ console.error('KRO quality violations:', q.nonCryptoCount, q.lossStatusMismatchCount); process.exit(1);} console.log('KRO quality check OK');"
+          node -e "const fs=require('fs'); const q=JSON.parse(fs.readFileSync('/tmp/kro_quality.json','utf8')); const badLoss=(q.lossStatusRows||[]).map(r=>r.username).filter(Boolean); const badCrypto=(q.nonCryptoRows||[]).map(r=>r.username).filter(Boolean); if((q.nonCryptoCount||0)>0 || (q.lossStatusMismatchCount||0)>0){ console.error('KRO quality violations:', q.nonCryptoCount, q.lossStatusMismatchCount); if(badCrypto.length) console.error('Non-crypto usernames:', badCrypto.join(', ')); if(badLoss.length) console.error('Loss-status usernames:', badLoss.join(', ')); process.exit(1);} console.log('KRO quality check OK');"

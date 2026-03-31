@@ -1533,7 +1533,7 @@ def _status_rank(value):
     return 1
 
 
-def _apply_loss_status_floor(status, total_loss_rub):
+def normalizeRiskStatusByLoss(total_loss_rub, status):
     try:
         loss = int(total_loss_rub or 0)
     except (ValueError, TypeError):
@@ -1542,6 +1542,11 @@ def _apply_loss_status_floor(status, total_loss_rub):
     if loss > 0 and _status_rank(st) < _status_rank('в риске'):
         return 'в риске'
     return st
+
+
+def _apply_loss_status_floor(status, total_loss_rub):
+    # Backward-compatible wrapper for older call sites.
+    return normalizeRiskStatusByLoss(total_loss_rub, status)
 
 
 def _channel_display_name(ch):
