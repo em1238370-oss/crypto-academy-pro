@@ -316,6 +316,17 @@ _VICTIM_INVEST_BOT_QUERIES = [
 ]
 
 
+_VICTIM_CRYPTO_STRICT_HINTS = (
+    'крипт', 'crypto', 'btc', 'eth', 'usdt', 'usdc', 'ton', 'sol', 'bnb',
+    'binance', 'bybit', 'okx', 'kucoin', 'p2p', 'обменник', 'бирж',
+    'фьючерс', 'спот', 'блокчейн', 'blockchain', 'кошел', 'wallet',
+)
+_VICTIM_NON_CRYPTO_HINTS = (
+    'недвижим', 'квартир', 'новострой', 'ипотек', 'риелт', 'аренд',
+    'автомоб', 'машин', 'автосалон', 'дилер', 'real estate', 'mortgage',
+)
+
+
 def _search_urls_for_query(query, max_links=20):
     links = []
     seen = set()
@@ -337,6 +348,22 @@ def _search_urls_for_query(query, max_links=20):
             if len(links) >= max_links:
                 return links
     return links
+
+
+def _victim_query_page_is_crypto_relevant(page, url, query, object_type):
+    """
+    Early anti-noise filter before _build_findings_from_page:
+    keep only pages with explicit crypto context and no obvious non-crypto context.
+    """
+    clean = _clean_html_text(page or '')
+    low = f'{query} {url} {clean[:3500]}'.lower()
+    if any(h in low for h in _VICTIM_NON_CRYPTO_HINTS):
+        return False
+    if object_type == 'крипто-обменник':
+        return any(h in low for h in ('обменник', 'exchange', 'usdt', 'p2p', 'крипт', 'crypto'))
+    if object_type == 'инвест-бот':
+        return any(h in low for h in ('бот', 'bot', 'депозит', 'крипт', 'crypto', 'трейдинг'))
+    return any(h in low for h in _VICTIM_CRYPTO_STRICT_HINTS)
 
 
 def _scrape_victim_queries():
@@ -365,6 +392,8 @@ def _scrape_victim_queries():
             for url in urls:
                 page = _fetch(url)
                 if not page:
+                    continue
+                if not _victim_query_page_is_crypto_relevant(page, url, query, object_type):
                     continue
                 findings = _build_findings_from_page(page, url, 'web-search')
                 for f in findings:
