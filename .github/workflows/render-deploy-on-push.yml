@@ -1,0 +1,24 @@
+name: Render deploy (push main)
+
+# Деплой при пуше в main. Секрет RENDER_DEPLOY_HOOK — тот же, что в kro-monitor.
+# Если в Render уже включён Auto-Deploy с GitHub, отключите его или удалите этот workflow,
+# иначе возможны два деплоя на один push.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "${RENDER_DEPLOY_HOOK:-}" ]; then
+            echo "RENDER_DEPLOY_HOOK is not set; skipping Render deploy."
+            exit 0
+          fi
+          echo "Triggering Render deploy via hook..."
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+          echo "Render deploy hook OK."

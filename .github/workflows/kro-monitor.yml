@@ -2,6 +2,9 @@ name: KRO 12h Monitor
 
 # Запуск в 12:00 и 00:00 МСК каждый день
 # МСК = UTC+3, поэтому:  12:00 МСК = 09:00 UTC | 00:00 МСК = 21:00 UTC (предыдущего дня)
+#
+# После успешного цикла монитора: POST на Render Deploy Hook (секрет RENDER_DEPLOY_HOOK).
+# Создать hook: Render → сервис → Settings → Deploy Hook → Create hook → URL в GitHub → Secrets.
 on:
   schedule:
     - cron: '0 9 * * *'   # 12:00 MSK
@@ -15,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -75,98 +78,28 @@ jobs:
           MODE: collect
         run: python3 run_12h_monitor.py
 
-      - name: Verify last_cycle_at freshness in kro_meta
-        continue-on-error: true
-        working-directory: backend/kro-worker
+      # Один процесс Python: verify + data-quality (node через subprocess).
+      # Так GitHub не показывает лишние «exit code 1» от дочернего node.
+      - name: Install backend node deps (for data-quality check)
+        run: npm --prefix backend ci
+
+      - name: Post-checks (last_cycle_at + data-quality)
         env:
           KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
           KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
           PREVIOUS_LAST_CYCLE_AT: ${{ steps.pre_cycle.outputs.previous }}
-        run: |
-          python3 - <<'PY'
-          import os, json, sys, re
-          from datetime import datetime, timezone
-          from google.oauth2.service_account import Credentials
-          from googleapiclient.discovery import build
-
-          def parse_cycle_ts(raw):
-              s = str(raw or '').strip()
-              if not s:
-                  return None
-              # ISO (with or without Z)
-              try:
-                  return datetime.fromisoformat(s.replace('Z', '+00:00'))
-              except Exception:
-                  pass
-              # dd.mm.yyyy hh:mm[:ss] (assume MSK if tz missing)
-              m = re.match(r'^(\d{1,2})\.(\d{1,2})\.(\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?$', s)
-              if m:
-                  dd, mo, yy, hh, mi, ss = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6) or '0'
-                  iso = f"{yy}-{int(mo):02d}-{int(dd):02d}T{int(hh):02d}:{int(mi):02d}:{int(ss):02d}+03:00"
-                  try:
-                      return datetime.fromisoformat(iso)
-                  except Exception:
-                      return None
-              # m/d/yyyy hh:mm[:ss] (assume MSK if tz missing)
-              m = re.match(r'^(\d{1,2})/(\d{1,2})/(\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?$', s)
-              if m:
-                  mo, dd, yy, hh, mi, ss = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6) or '0'
-                  iso = f"{yy}-{int(mo):02d}-{int(dd):02d}T{int(hh):02d}:{int(mi):02d}:{int(ss):02d}+03:00"
-                  try:
-                      return datetime.fromisoformat(iso)
-                  except Exception:
-                      return None
-              # Excel serial date
-              try:
-                  num = float(s)
-                  if 20000 < num < 800000:
-                      ts = (num - 25569) * 86400.0
-                      return datetime.fromtimestamp(ts, tz=timezone.utc)
-              except Exception:
-                  pass
-              return None
-
-          sheet_id = os.environ.get('KRO_SHEET_ID', '').strip()
-          raw = os.environ.get('KRO_GOOGLE_CREDENTIALS_JSON', '').strip()
-          if not sheet_id or not raw:
-              print('missing KRO_SHEET_ID or KRO_GOOGLE_CREDENTIALS_JSON', file=sys.stderr)
-              sys.exit(1)
-          creds_info = json.loads(raw)
-          creds = Credentials.from_service_account_info(creds_info, scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
-          svc = build('sheets', 'v4', credentials=creds, cache_discovery=False)
-          rows = svc.spreadsheets().values().get(spreadsheetId=sheet_id, range='kro_meta!A:B').execute().get('values', [])
-          kv = { (r[0] if len(r)>0 else ''): (r[1] if len(r)>1 else '') for r in rows }
-          last_cycle = str(kv.get('last_cycle_at', '')).strip()
-          if not last_cycle:
-              print('kro_meta.last_cycle_at is empty', file=sys.stderr)
-              sys.exit(1)
-          ts = parse_cycle_ts(last_cycle)
-          if ts is None:
-              print(f'invalid last_cycle_at: {last_cycle}', file=sys.stderr)
-              sys.exit(1)
-          if ts.tzinfo is None:
-              ts = ts.replace(tzinfo=timezone.utc)
-          prev = os.environ.get('PREVIOUS_LAST_CYCLE_AT', '').strip()
-          if prev and prev == last_cycle:
-              print(f'warning: last_cycle_at did not change after run: {last_cycle}', file=sys.stderr)
-          age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600.0
-          print(f'kro_meta.last_cycle_at={last_cycle} age_hours={age_h:.2f}')
-          if age_h > 13.0:
-              print('last_cycle_at is stale (>13h)', file=sys.stderr)
-              sys.exit(1)
-          PY
-
-      - name: Install backend node deps (for data-quality check)
-        run: npm --prefix backend ci
-
-      - name: Run KRO data-quality post-check
-        continue-on-error: true
-        env:
-          KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
           GOOGLE_APPLICATION_CREDENTIALS: backend/kro-worker/credentials.json
-          KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
           KRO_SCAM_BASE_RANGE: scam_base!A2:N
+        run: python3 "${GITHUB_WORKSPACE}/.github/scripts/kro-ci-post-checks.py"
+
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
-          node backend/scripts/kro-data-quality.mjs --json > /tmp/kro_quality.json
-          cat /tmp/kro_quality.json
-          node -e "const fs=require('fs'); const q=JSON.parse(fs.readFileSync('/tmp/kro_quality.json','utf8')); const badLoss=(q.lossStatusRows||[]).map(r=>r.username).filter(Boolean); const badCrypto=(q.nonCryptoRows||[]).map(r=>r.username).filter(Boolean); if((q.nonCryptoCount||0)>0 || (q.lossStatusMismatchCount||0)>0){ console.error('KRO quality violations:', q.nonCryptoCount, q.lossStatusMismatchCount); if(badCrypto.length) console.error('Non-crypto usernames:', badCrypto.join(', ')); if(badLoss.length) console.error('Loss-status usernames:', badLoss.join(', ')); process.exit(1);} console.log('KRO quality check OK');"
+          if [ -z "${RENDER_DEPLOY_HOOK:-}" ]; then
+            echo "RENDER_DEPLOY_HOOK is not set; skipping Render deploy."
+            exit 0
+          fi
+          echo "Triggering Render deploy via hook..."
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+          echo "Render deploy hook OK."
