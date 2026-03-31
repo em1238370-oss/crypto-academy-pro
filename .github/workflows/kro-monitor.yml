@@ -162,6 +162,7 @@ jobs:
       - name: Run KRO data-quality post-check
         env:
           KRO_GOOGLE_CREDENTIALS_JSON: ${{ secrets.KRO_GOOGLE_CREDENTIALS_JSON }}
+          GOOGLE_APPLICATION_CREDENTIALS: backend/kro-worker/credentials.json
           KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
           KRO_SCAM_BASE_RANGE: scam_base!A2:N
         run: |

@@ -175,7 +175,8 @@ async def _run():
 
     client = await _open_telethon_client()
     if client is None:
-        raise RuntimeError('Telethon unavailable or unauthorized; cannot enforce strict channel filters')
+        print('Telethon unavailable or unauthorized; skipping strict channel filters (no changes applied)')
+        return
 
     updates = []
     failed = 0
