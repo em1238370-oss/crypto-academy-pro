@@ -37,21 +37,24 @@ jobs:
           KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
         run: |
           python3 - <<'PY'
-          import os, json
+          import os, json, sys
           from google.oauth2.service_account import Credentials
           from googleapiclient.discovery import build
 
-          sheet_id = os.environ.get('KRO_SHEET_ID', '').strip()
-          raw = os.environ.get('KRO_GOOGLE_CREDENTIALS_JSON', '').strip()
-          if not sheet_id or not raw:
-              print('previous=')
-              raise SystemExit(0)
-          creds_info = json.loads(raw)
-          creds = Credentials.from_service_account_info(creds_info, scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
-          svc = build('sheets', 'v4', credentials=creds, cache_discovery=False)
-          rows = svc.spreadsheets().values().get(spreadsheetId=sheet_id, range='kro_meta!A:B').execute().get('values', [])
-          kv = {(r[0] if len(r) > 0 else ''): (r[1] if len(r) > 1 else '') for r in rows}
-          prev = str(kv.get('last_cycle_at', '')).strip()
+          prev = ''
+          try:
+              sheet_id = os.environ.get('KRO_SHEET_ID', '').strip()
+              raw = os.environ.get('KRO_GOOGLE_CREDENTIALS_JSON', '').strip()
+              if not sheet_id or not raw:
+                  raise RuntimeError('missing KRO_SHEET_ID or KRO_GOOGLE_CREDENTIALS_JSON')
+              creds_info = json.loads(raw)
+              creds = Credentials.from_service_account_info(creds_info, scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
+              svc = build('sheets', 'v4', credentials=creds, cache_discovery=False)
+              rows = svc.spreadsheets().values().get(spreadsheetId=sheet_id, range='kro_meta!A:B').execute().get('values', [])
+              kv = {(r[0] if len(r) > 0 else ''): (r[1] if len(r) > 1 else '') for r in rows}
+              prev = str(kv.get('last_cycle_at', '')).strip()
+          except Exception as e:
+              print(f'warning: unable to read previous last_cycle_at: {e}', file=sys.stderr)
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
               f.write(f'previous={prev}\n')
           print(f'kro_meta.last_cycle_at(before)={prev or "<empty>"}')
