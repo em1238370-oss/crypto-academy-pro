@@ -1377,6 +1377,21 @@ _NON_CRYPTO_EXCLUDE_PATTERNS = (
     'автомоб', 'авто', 'машин', 'дилер', 'car ', 'cars ', 'real estate',
 )
 
+MIN_TELEGRAM_SUBSCRIBERS = 100
+
+# Обязательные маркеры «сигнального» профиля канала:
+# без хотя бы одного маркера канал не должен попадать в scam_base.
+_REQUIRED_SIGNAL_CHANNEL_TERMS = (
+    'сигнал', 'signal',
+    'long', 'short',
+    'vip',
+    'депозит', 'deposit',
+    'трейдинг', 'trading',
+    'заработок на крипте',
+    'копитрейдинг', 'copytrading',
+    'обменник usdt', 'usdt exchange',
+)
+
 
 # Тип объекта в scam_base / reports (колонка I): фиксированные подписи риска для промо.
 _OBJECT_TYPE_RISK_PREFIX = {
@@ -1520,6 +1535,145 @@ def _has_crypto_context(text):
 def _is_crypto_context_allowed_parts(*parts):
     blob = ' '.join((p or '') if isinstance(p, str) else str(p or '') for p in parts)
     return _has_crypto_context(blob)
+
+
+def _looks_like_telegram_channel_ref(*parts):
+    blob = ' '.join((p or '') if isinstance(p, str) else str(p or '') for p in parts).lower()
+    if 't.me/' in blob:
+        return True
+    return bool(re.search(r'(^|\s)@[a-z0-9_]{4,}\b', blob))
+
+
+def _has_required_signal_channel_terms(*parts):
+    blob = ' '.join((p or '') if isinstance(p, str) else str(p or '') for p in parts).lower()
+    return any(term in blob for term in _REQUIRED_SIGNAL_CHANNEL_TERMS)
+
+
+async def _open_telethon_gate_client():
+    if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
+        return None
+    client = None
+    try:
+        from telethon import TelegramClient
+        client = TelegramClient(TELEGRAM_SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+        await client.connect()
+        if not await client.is_user_authorized():
+            await client.disconnect()
+            return None
+        return client
+    except Exception as e:
+        print('telethon gate client unavailable: %s' % e, file=sys.stderr)
+        try:
+            if client is not None:
+                await client.disconnect()
+        except Exception:
+            pass
+        return None
+
+
+async def _telegram_quality_gate(client, username_or_link, object_type='', source_evidence='', content_analysis=''):
+    uname = _normalize_channel_link(username_or_link)
+    if not uname:
+        return True, 'not_telegram'
+    if uname.startswith('joinchat/'):
+        return False, 'invite_link_not_supported'
+    ref = 'https://t.me/' + uname if not uname.startswith('@') else uname
+    try:
+        entity = await client.get_entity(ref)
+    except Exception:
+        return False, 'channel_unavailable_or_blocked'
+
+    if bool(getattr(entity, 'deleted', False)):
+        return False, 'channel_deleted'
+
+    participants = 0
+    try:
+        from telethon.tl.functions.channels import GetFullChannelRequest
+        full = await client(GetFullChannelRequest(entity))
+        participants = int(getattr(getattr(full, 'full_chat', None), 'participants_count', 0) or 0)
+    except Exception:
+        participants = int(getattr(entity, 'participants_count', 0) or 0)
+    if participants < MIN_TELEGRAM_SUBSCRIBERS:
+        return False, 'subscribers_below_%d' % MIN_TELEGRAM_SUBSCRIBERS
+
+    title = (getattr(entity, 'title', None) or '').strip()
+    about = ''
+    try:
+        about = str(getattr(getattr(full, 'full_chat', None), 'about', '') or '')
+    except Exception:
+        about = ''
+
+    posts = []
+    try:
+        async for msg in client.iter_messages(entity, limit=40):
+            txt = _normalize_message_text((msg.text or '') + ' ' + (getattr(msg, 'message', '') or ''))
+            if txt:
+                posts.append(txt)
+    except Exception:
+        pass
+    posts_blob = ' '.join(posts)
+
+    if not _has_required_signal_channel_terms(
+        '@' + uname, title, about, posts_blob, source_evidence, content_analysis, object_type
+    ):
+        return False, 'missing_required_signal_terms'
+    return True, 'ok'
+
+
+def _apply_telegram_gate_to_rows(rows, context_label):
+    if not rows:
+        return []
+
+    async def _run():
+        tg_rows = []
+        pass_rows = []
+        for row in rows:
+            if _looks_like_telegram_channel_ref(
+                row.get('username', ''),
+                row.get('link', ''),
+                row.get('object_type', ''),
+            ):
+                tg_rows.append(row)
+            else:
+                pass_rows.append(row)
+
+        if not tg_rows:
+            return rows
+
+        client = await _open_telethon_gate_client()
+        if client is None:
+            for row in tg_rows:
+                print('%s: skip %s — telethon unavailable for strict gate' % (
+                    context_label,
+                    row.get('username') or row.get('link') or 'unknown',
+                ), file=sys.stderr)
+            return pass_rows
+
+        try:
+            for row in tg_rows:
+                ok, reason = await _telegram_quality_gate(
+                    client,
+                    row.get('username') or row.get('link') or '',
+                    object_type=row.get('object_type', ''),
+                    source_evidence=row.get('source_evidence', ''),
+                    content_analysis=row.get('content_analysis', ''),
+                )
+                if ok:
+                    pass_rows.append(row)
+                else:
+                    print('%s: skip %s — %s' % (
+                        context_label,
+                        row.get('username') or row.get('link') or 'unknown',
+                        reason,
+                    ), file=sys.stderr)
+        finally:
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
+        return pass_rows
+
+    return asyncio.run(_run())
 
 
 def _status_rank(value):
@@ -2462,9 +2616,10 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
         print('scam_base read for dedup error: %s' % e, file=sys.stderr)
         existing_keys = set()
 
+    gated_objects = _apply_telegram_gate_to_rows(list(confirmed_objects or []), 'scam_base write')
     new_rows = []
     inserted_channels = []
-    for obj in confirmed_objects:
+    for obj in gated_objects:
         key = _norm_ch_key(obj.get('username') or '')
         if not key or key in existing_keys:
             continue
@@ -2950,6 +3105,16 @@ def _append_organic_scam_base_row(client, sheet_id, display, link, obj_type, sta
     """Одна строка v2 в scam_base (органический цикл)."""
     if not _is_crypto_context_allowed_parts(display, link, obj_type, evidence, source_primary):
         print('organic: skip %s — no crypto context' % (display or link), file=sys.stderr)
+        return False
+    gate_rows = _apply_telegram_gate_to_rows([{
+        'username': display or '',
+        'link': link or '',
+        'object_type': obj_type or '',
+        'source_evidence': evidence or '',
+        'content_analysis': '',
+    }], 'organic write')
+    if not gate_rows:
+        print('organic: skip %s — failed telegram quality gate' % (display or link), file=sys.stderr)
         return False
     scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
     sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
@@ -5220,6 +5385,16 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
             evidence = (risk_pre + ' | ' + evidence)[:500]
         if not _is_crypto_context_allowed_parts(display, obj_type, evidence, 'form+web'):
             print(f'[promote] skip {display}: no crypto context', file=sys.stderr)
+            continue
+        gate_rows = _apply_telegram_gate_to_rows([{
+            'username': display or '',
+            'link': link or '',
+            'object_type': obj_type or '',
+            'source_evidence': evidence or '',
+            'content_analysis': '',
+        }], 'promote')
+        if not gate_rows:
+            print(f'[promote] skip {display}: failed telegram quality gate', file=sys.stderr)
             continue
         has_facts = _has_concrete_scam_facts(evidence)
         status = 'в риске' if has_facts else 'под наблюдением'
