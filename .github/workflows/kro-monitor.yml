@@ -83,6 +83,19 @@ jobs:
           MODE: collect
         run: python3 run_12h_monitor.py
 
+      # Тот же .session, что локально в backend/kro-worker/kro_session.session — base64 в секрет (без переносов).
+      - name: Write Telegram session for cleanup (optional)
+        env:
+          KRO_TELEGRAM_SESSION_BASE64: ${{ secrets.KRO_TELEGRAM_SESSION_BASE64 }}
+        run: |
+          if [ -n "${KRO_TELEGRAM_SESSION_BASE64:-}" ]; then
+            mkdir -p backend/kro-worker
+            echo "$KRO_TELEGRAM_SESSION_BASE64" | base64 -d > backend/kro-worker/kro_session.session
+            echo "::notice::Telegram session written for cleanup step."
+          else
+            echo "No KRO_TELEGRAM_SESSION_BASE64 — cleanup удаляет только по спискам/маркеру; строгий Telethon-gate без сессии не работает."
+          fi
+
       - name: Periodic scam_base cleanup (strict gate)
         env:
           GOOGLE_APPLICATION_CREDENTIALS: backend/kro-worker/credentials.json
@@ -90,6 +103,7 @@ jobs:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION_NAME: kro_session
+          KRO_CLEANUP_EXTRA_DELETE: ${{ secrets.KRO_CLEANUP_EXTRA_DELETE }}
         run: python3 backend/scripts/kro-cleanup-scam-base.py
 
       # Один процесс Python: verify + data-quality (node через subprocess).

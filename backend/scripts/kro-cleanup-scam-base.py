@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+"""
+Чистка листа scam_base.
+
+Важно для владельца таблицы:
+- Комментарии в произвольных ячейках скрипт НЕ парсит. Чтобы удалить канал:
+  1) Добавьте @username в лист **kro_remove_queue**, колонка A (с строки 2), один на строку
+     (лист можно создать в той же книге); или
+  2) Задайте секрет GitHub **KRO_CLEANUP_EXTRA_DELETE** (или env): список @ через запятую/перенос; или
+  3) В колонке N (content_analysis) для строки впишите маркер **__KRO_REMOVE__** — строка будет удалена.
+- «Строгая» проверка через Telethon (пометка удалён / отсев) работает только если на раннере есть
+  авторизованный файл сессии (см. секрет KRO_TELEGRAM_SESSION_BASE64 в workflow).
+"""
 import argparse
 import asyncio
 import json
@@ -86,6 +98,68 @@ def _get_sheet_client():
     return build('sheets', 'v4', credentials=creds, cache_discovery=False)
 
 
+def _telegram_session_path() -> str:
+    """Путь к сессии Telethon без суффикса .session (его добавляет клиент)."""
+    name = (os.environ.get('TELEGRAM_SESSION_NAME') or 'kro_session').strip()
+    explicit = (os.environ.get('TELEGRAM_SESSION_PATH') or '').strip()
+    if explicit:
+        return explicit
+    root = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+    worker = os.path.join(root, 'backend', 'kro-worker', name)
+    if os.path.isfile(worker + '.session'):
+        return worker
+    cwd_path = os.path.join(os.getcwd(), name)
+    if os.path.isfile(cwd_path + '.session'):
+        return cwd_path
+    return name
+
+
+def _extra_delete_from_env() -> set:
+    raw = (os.environ.get('KRO_CLEANUP_EXTRA_DELETE') or '').strip()
+    if not raw:
+        return set()
+    out = set()
+    for part in re.split(r'[\s,;|]+', raw):
+        u = _norm_username(part)
+        if u:
+            out.add(u)
+    return out
+
+
+def _fetch_remove_queue_usernames(svc, sheet_id: str) -> set:
+    from googleapiclient.errors import HttpError
+
+    try:
+        resp = (
+            svc.spreadsheets()
+            .values()
+            .get(spreadsheetId=sheet_id, range='kro_remove_queue!A2:A')
+            .execute()
+        )
+    except HttpError as e:
+        code = getattr(getattr(e, 'resp', None), 'status', None)
+        if code in (400, 404):
+            print('INFO: лист kro_remove_queue не найден или пуст — пропуск (создайте лист и колонку A с @)')
+            return set()
+        raise
+    out = set()
+    for row in resp.get('values') or []:
+        if not row:
+            continue
+        u = _norm_username(row[0])
+        if u:
+            out.add(u)
+    if out:
+        print('из листа kro_remove_queue:', len(out), 'username(s)')
+    return out
+
+
+def _row_marked_for_removal(rr: list) -> bool:
+    """Колонка N (content_analysis): маркер __KRO_REMOVE__ — удалить строку при следующем прогоне."""
+    blob = ((rr[13] if len(rr) > 13 else '') or '').strip().lower()
+    return '__kro_remove__' in blob
+
+
 async def _open_tg_client():
     api_id = (os.environ.get('TELEGRAM_API_ID') or '').strip()
     api_hash = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
@@ -93,13 +167,18 @@ async def _open_tg_client():
         return None
     try:
         from telethon import TelegramClient
-        c = TelegramClient((os.environ.get('TELEGRAM_SESSION_NAME') or 'kro_session').strip(), int(api_id), api_hash)
+
+        session_path = _telegram_session_path()
+        c = TelegramClient(session_path, int(api_id), api_hash)
         await c.connect()
         if not await c.is_user_authorized():
             await c.disconnect()
+            print('WARNING: Telethon сессия не авторизована (нет файла .session на раннере?)')
             return None
+        print('INFO: Telethon подключён, строгие проверки строк включены')
         return c
-    except Exception:
+    except Exception as ex:
+        print('WARNING: Telethon connect failed:', ex)
         return None
 
 
@@ -193,9 +272,16 @@ async def main():
     ).execute().get('values', [])
     print('scam_base rows before:', len(rows))
 
+    delete_extra = _extra_delete_from_env()
+    delete_queue = _fetch_remove_queue_usernames(svc, sheet_id)
+    delete_set = set(TARGET_DELETE) | delete_extra | delete_queue
+    if delete_extra:
+        print('из KRO_CLEANUP_EXTRA_DELETE:', len(delete_extra))
+    print('всего username на полное удаление строки (код+env+лист):', len(delete_set))
+
     client = await _open_tg_client()
     if client is None:
-        print('WARNING: Telethon unavailable; strict validation will reject/skip telethon checks.')
+        print('WARNING: Telethon недоступен — строки не помечаются строгим gate; удаляются только списком/маркером.')
 
     kept = []
     deleted_names = []
@@ -205,9 +291,12 @@ async def main():
         rr = list(r) + [''] * (14 - len(r))
         uname = _norm_username(rr[0])
 
-        # Step 1: explicit remove list
-        if uname in TARGET_DELETE:
+        # Step 1: полное удаление строки — жёсткий список, env, лист kro_remove_queue, маркер в колонке N
+        if uname in delete_set:
             deleted_names.append(uname)
+            continue
+        if _row_marked_for_removal(rr):
+            deleted_names.append(uname or _norm_username(rr[1]) or '(row)')
             continue
 
         # Step 2: verify two personal-account suspects via Telethon
