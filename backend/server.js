@@ -1844,6 +1844,34 @@ function statusWithLossFloor(status, totalLossRub) {
   return normalizeRiskStatusByLoss(totalLossRub, status);
 }
 
+function buildStatusSummary(rows) {
+  const summary = {
+    confirmed_scam: 0,
+    at_risk: 0,
+    under_watch: 0,
+    no_violations: 0,
+    off_topic: 0,
+    unknown: 0,
+  };
+  for (const row of rows || []) {
+    const s = (row?.status || '').toString().trim().toLowerCase();
+    if (s.includes('подтвержд') && s.includes('скам')) {
+      summary.confirmed_scam += 1;
+    } else if (s.includes('в риске')) {
+      summary.at_risk += 1;
+    } else if (s.includes('под наблюдением')) {
+      summary.under_watch += 1;
+    } else if (s.includes('без нарушений') || s.includes('без риска')) {
+      summary.no_violations += 1;
+    } else if (s.includes('не по теме')) {
+      summary.off_topic += 1;
+    } else {
+      summary.unknown += 1;
+    }
+  }
+  return summary;
+}
+
 function isCryptoRelevantScamRow(row) {
   const blob = [
     row?.username,
@@ -2001,6 +2029,7 @@ function buildLiveCounterFromScamBase(parsedRows) {
   }, 0);
 
   const isHonestZero = new_scam_channels === 0;
+  const status_summary = buildStatusSummary(allRows);
   return {
     new_scam_channels,
     losses_12h,
@@ -2008,6 +2037,7 @@ function buildLiveCounterFromScamBase(parsedRows) {
     courses_products,
     complaints_received,
     top3,
+    status_summary,
     publishStatus: isHonestZero ? 'honest_zero' : 'valid',
     isHonestZero,
     updatedAt: latestDetected ? new Date(latestDetected).toISOString() : new Date().toISOString(),
@@ -2520,6 +2550,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
           top3: scamBaseCounter.top3,
           report_doc_url: KRO_SOURCES_DOC_URL,
           sourceCaption: scamBaseCounter.sourceCaption,
+          status_summary: scamBaseCounter.status_summary,
           publishStatus: scamBaseCounter.publishStatus,
           isHonestZero: scamBaseCounter.isHonestZero,
           siteNotice: null,
@@ -2550,6 +2581,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
       top3: [],
       report_doc_url: KRO_SOURCES_DOC_URL,
       sourceCaption: 'Мониторинг запущен. Первые данные появятся после завершения цикла проверки.',
+      status_summary: buildStatusSummary([]),
       publishStatus: 'honest_zero',
       isHonestZero: true,
       siteNotice: null,
@@ -2574,6 +2606,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
       top3: [],
       report_doc_url: KRO_SOURCES_DOC_URL,
       sourceCaption: 'Мониторинг запущен.',
+      status_summary: buildStatusSummary([]),
       publishStatus: 'honest_zero',
       isHonestZero: true,
       siteNotice: null,
@@ -2663,12 +2696,14 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       .reverse(); // newest first
 
     const recent_cases = buildMonitorRecentCasesFromScamBase(scamRows, 3);
+    const status_summary = buildStatusSummary(scamRows);
 
     return res.json({
       scam_base: scamRows,
       channels_watch: channelsWatch,
       channels_network: channelsNetwork,
       meta,
+      status_summary,
       history,
       recent_cases
     });

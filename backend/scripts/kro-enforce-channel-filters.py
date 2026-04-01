@@ -18,6 +18,7 @@ except ImportError:
     tw_collect_messages = None
 
 MIN_TELEGRAM_SUBSCRIBERS = 100
+TELETHON_TIMEOUT_SECONDS = 10.0
 REQUIRED_SIGNAL_TERMS = (
     'сигнал', 'signal',
     'long', 'short',
@@ -128,45 +129,54 @@ def _fetch_html_subscribers_and_posts(slug: str, post_limit: int = 40):
     slug = slug.lstrip('@').split('/')[0]
     if not slug or slug.startswith('joinchat'):
         return None, ''
-    url = 'https://t.me/s/%s' % slug
-    try:
-        resp = requests.get(
-            url,
-            headers={'User-Agent': USER_AGENT, 'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8'},
-            timeout=18,
-        )
-        resp.raise_for_status()
-    except Exception:
+    urls = ['https://t.me/s/%s' % slug, 'https://t.me/%s' % slug]
+    last_err = None
+    for url in urls:
+        try:
+            resp = requests.get(
+                url,
+                headers={'User-Agent': USER_AGENT, 'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8'},
+                timeout=18,
+            )
+            resp.raise_for_status()
+        except Exception as exc:
+            last_err = exc
+            continue
+
+        soup = BeautifulSoup(resp.text or '', 'html.parser')
+        extra = soup.select_one('.tgme_page_extra')
+        subs = None
+        if extra:
+            text = extra.get_text(' ', strip=True).lower()
+            m = re.search(
+                r'([\d\s\u00a0.,]+)\s*([km])?\s*(?:subscribers|subscriber|подписчик)',
+                text.replace('\xa0', ' '),
+            )
+            if not m:
+                m = re.search(r'([\d\s\u00a0.,]+)\s*([km])?\b', text.replace('\xa0', ' '))
+            if m:
+                num = m.group(1).replace(' ', '').replace(',', '.')
+                try:
+                    v = float(num)
+                    suf = (m.group(2) or '').lower()
+                    if suf == 'k':
+                        v *= 1000
+                    elif suf == 'm':
+                        v *= 1_000_000
+                    subs = int(round(v))
+                except ValueError:
+                    pass
+        chunks = []
+        for w in soup.select('.tgme_widget_message')[:post_limit]:
+            tn = w.select_one('.tgme_widget_message_text')
+            if tn:
+                chunks.append(tn.get_text(' ', strip=True).lower())
+        if subs is not None or chunks:
+            return subs, ' '.join(chunks)
+
+    if last_err is not None:
         return None, ''
-    soup = BeautifulSoup(resp.text or '', 'html.parser')
-    extra = soup.select_one('.tgme_page_extra')
-    subs = None
-    if extra:
-        text = extra.get_text(' ', strip=True).lower()
-        m = re.search(
-            r'([\d\s\u00a0.,]+)\s*([km])?\s*(?:subscribers|subscriber|подписчик)',
-            text.replace('\xa0', ' '),
-        )
-        if not m:
-            m = re.search(r'([\d\s\u00a0.,]+)\s*([km])?\b', text.replace('\xa0', ' '))
-        if m:
-            num = m.group(1).replace(' ', '').replace(',', '.')
-            try:
-                v = float(num)
-                suf = (m.group(2) or '').lower()
-                if suf == 'k':
-                    v *= 1000
-                elif suf == 'm':
-                    v *= 1_000_000
-                subs = int(round(v))
-            except ValueError:
-                pass
-    chunks = []
-    for w in soup.select('.tgme_widget_message')[:post_limit]:
-        tn = w.select_one('.tgme_widget_message_text')
-        if tn:
-            chunks.append(tn.get_text(' ', strip=True).lower())
-    return subs, ' '.join(chunks)
+    return None, ''
 
 
 async def _open_telethon_client():
@@ -184,27 +194,27 @@ async def _open_telethon_client():
     return client
 
 
-def _validate_row_html(row: List[str]) -> Tuple[bool, str]:
+def _validate_row_html(row: List[str]) -> Tuple[str, str]:
     username = (row[0] if len(row) > 0 else '').strip()
     link = (row[1] if len(row) > 1 else '').strip()
     source_evidence = (row[10] if len(row) > 10 else '').strip()
     content_analysis = (row[13] if len(row) > 13 else '').strip()
     ref_norm = _normalize_channel_link(link or username)
     if not ref_norm or ref_norm.startswith('joinchat/'):
-        return False, 'invalid_or_invite_ref'
+        return 'failed', 'invalid_or_invite_ref'
     subs, blob = _fetch_html_subscribers_and_posts(ref_norm)
     if subs is None:
         print('html_fallback: %s — subscribers_unknown' % (username or link))
-        return False, 'subscribers_unknown_html'
+        return 'skipped', 'subscribers_unknown_html'
     if subs < MIN_TELEGRAM_SUBSCRIBERS:
-        return False, 'subscribers_below_100'
+        return 'failed', 'subscribers_below_100'
     if not _has_required_terms(username, link, source_evidence, content_analysis, blob):
-        return False, 'missing_required_signal_terms'
+        return 'failed', 'missing_required_signal_terms'
     print('html_fallback_ok: %s (subs≈%s)' % ((username or link), subs))
-    return True, 'ok_html'
+    return 'passed', 'ok_html'
 
 
-async def _validate_row_telethon(client, row: List[str]) -> Tuple[bool, str]:
+async def _validate_row_telethon(client, row: List[str]) -> Tuple[str, str]:
     from telethon.tl.functions.channels import GetFullChannelRequest
 
     username = (row[0] if len(row) > 0 else '').strip()
@@ -213,44 +223,50 @@ async def _validate_row_telethon(client, row: List[str]) -> Tuple[bool, str]:
     content_analysis = (row[13] if len(row) > 13 else '').strip()
     ref_norm = _normalize_channel_link(link or username)
     if not ref_norm or ref_norm.startswith('joinchat/'):
-        return False, 'invalid_or_invite_ref'
+        return 'failed', 'invalid_or_invite_ref'
     ref = 'https://t.me/' + ref_norm if not ref_norm.startswith('@') else ref_norm
     if tw_call is None:
         return _validate_row_html(row)
     try:
-        entity = await tw_call(client.get_entity(ref))
+        entity = await asyncio.wait_for(
+            tw_call(client.get_entity(ref)),
+            timeout=TELETHON_TIMEOUT_SECONDS,
+        )
     except asyncio.TimeoutError:
         print('telethon_timeout get_entity: %s' % (username or link))
-        return _validate_row_html(row)
+        return 'skipped', 'telethon_timeout_get_entity'
     except Exception:
-        ok_h, why = _validate_row_html(row)
-        if ok_h:
-            return True, 'ok_html_after_telethon_fail'
-        return False, 'channel_unavailable_or_blocked'
+        return 'skipped', 'telethon_error_get_entity'
     if bool(getattr(entity, 'deleted', False)):
-        return False, 'channel_deleted'
+        return 'failed', 'channel_deleted'
     participants = 0
     about = ''
     try:
-        full = await tw_call(client(GetFullChannelRequest(entity)))
+        full = await asyncio.wait_for(
+            tw_call(client(GetFullChannelRequest(entity))),
+            timeout=TELETHON_TIMEOUT_SECONDS,
+        )
         participants = int(getattr(getattr(full, 'full_chat', None), 'participants_count', 0) or 0)
         about = str(getattr(getattr(full, 'full_chat', None), 'about', '') or '')
     except asyncio.TimeoutError:
-        participants = int(getattr(entity, 'participants_count', 0) or 0)
+        return 'skipped', 'telethon_timeout_get_full_channel'
     except Exception:
-        participants = int(getattr(entity, 'participants_count', 0) or 0)
+        return 'skipped', 'telethon_error_get_full_channel'
     if participants < MIN_TELEGRAM_SUBSCRIBERS:
-        return False, 'subscribers_below_100'
+        return 'failed', 'subscribers_below_100'
     posts = []
     try:
         if tw_collect_messages:
-            msgs = await tw_collect_messages(client, entity, limit=40)
+            msgs = await asyncio.wait_for(
+                tw_collect_messages(client, entity, limit=40),
+                timeout=TELETHON_TIMEOUT_SECONDS,
+            )
         else:
             msgs = []
             agen = client.iter_messages(entity, limit=40).__aiter__()
             while True:
                 try:
-                    msg = await asyncio.wait_for(agen.__anext__(), timeout=10.0)
+                    msg = await asyncio.wait_for(agen.__anext__(), timeout=TELETHON_TIMEOUT_SECONDS)
                 except (StopAsyncIteration, asyncio.TimeoutError):
                     break
                 msgs.append(msg)
@@ -258,12 +274,14 @@ async def _validate_row_telethon(client, row: List[str]) -> Tuple[bool, str]:
             txt = ((getattr(msg, 'text', None) or '') + ' ' + (getattr(msg, 'message', None) or '')).strip().lower()
             if txt:
                 posts.append(txt)
+    except asyncio.TimeoutError:
+        return 'skipped', 'telethon_timeout_iter_messages'
     except Exception:
-        pass
+        return 'skipped', 'telethon_error_iter_messages'
     posts_blob = ' '.join(posts)
     if not _has_required_terms(username, link, about, source_evidence, content_analysis, posts_blob):
-        return False, 'missing_required_signal_terms'
-    return True, 'ok'
+        return 'failed', 'missing_required_signal_terms'
+    return 'passed', 'ok'
 
 
 async def _run_async():
@@ -298,10 +316,13 @@ async def _run_async():
                 continue
             checked += 1
             if client is not None:
-                ok, reason = await _validate_row_telethon(client, row)
+                status, reason = await _validate_row_telethon(client, row)
             else:
-                ok, reason = _validate_row_html(row)
-            if ok:
+                status, reason = _validate_row_html(row)
+            if status == 'passed':
+                continue
+            if status == 'skipped':
+                print('skip_channel: %s — %s' % ((row[0] if len(row) > 0 else row[1] if len(row) > 1 else 'unknown'), reason))
                 continue
             failed += 1
             padded = list(row) + [''] * max(0, 14 - len(row))

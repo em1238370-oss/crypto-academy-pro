@@ -33,4 +33,17 @@ jobs:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION_NAME: kro_session
-        run: python3 backend/scripts/kro-enforce-channel-filters.py
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/kro-enforce-channel-filters.py 2>&1 | tee /tmp/kro-enforce-filters.log
+
+      - name: Validate enforce-filters run output (no silent green)
+        run: |
+          set -euo pipefail
+          if ! rg -q "Checked telegram rows:" /tmp/kro-enforce-filters.log; then
+            echo "Missing completion marker from enforce script. Treating as system failure."
+            exit 1
+          fi
+          if rg -q "skip_channel:" /tmp/kro-enforce-filters.log; then
+            echo "Detected per-channel soft-skip entries (expected for isolated Telethon/channel issues)."
+          fi

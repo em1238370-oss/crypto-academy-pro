@@ -252,8 +252,10 @@ def status_from_flag_counts(red_n: int, yellow_n: int) -> str:
         return 'подтверждённый скам'
     if red_n >= 1:
         return 'в риске'
-    if yellow_n >= 1:
+    if 1 <= yellow_n <= 2:
         return 'под наблюдением'
+    if yellow_n >= 3:
+        return 'в риске'
     return 'без нарушений'
 
 

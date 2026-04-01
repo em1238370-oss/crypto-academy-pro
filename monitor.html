@@ -1240,7 +1240,7 @@
     requestAnimationFrame(step);
   }
 
-  function renderStatus(meta, scamBase) {
+  function renderStatus(meta, scamBase, statusSummary) {
     var lastMs = parseLastCycleAt(meta.last_cycle_at);
     var cycleDt = fmtMoscowPlainFromRaw(meta.last_cycle_at);
     var nextDt = lastMs ? fmtMoscowPlainDate(new Date(lastMs.getTime() + CYCLE_MS)) : '—';
@@ -1262,6 +1262,18 @@
     countUp('s1-new-in-cycle', newCount, ' каналов', 1300);
     countUp('s1-total', total, ' каналов', 1650);
     setText('s1-sources-active', active + ' из ' + (meta.sources_checked || []).length);
+
+    var ss = statusSummary || {};
+    var confirmed = Number(ss.confirmed_scam || 0);
+    var risk = Number(ss.at_risk || 0);
+    var watch = Number(ss.under_watch || 0);
+    var clean = Number(ss.no_violations || 0);
+    setHTML(
+      's1-status',
+      '<span class="mon-badge active">● СИСТЕМА АКТИВНА</span>' +
+      '<div class="mon-cell-muted" style="margin-top:8px;font-size:12px">подтверждённый скам: ' + confirmed +
+      ' · в риске: ' + risk + ' · под наблюдением: ' + watch + ' · без нарушений: ' + clean + '</div>'
+    );
   }
 
   // ── SECTION 2: LAST CYCLE LOG ─────────────────────────────
@@ -1645,7 +1657,7 @@
       var networkRows = data.channels_network || [];
       var history   = data.history || [];
 
-      renderStatus(meta, scamBase);
+      renderStatus(meta, scamBase, data.status_summary || {});
       renderCycleLog(meta, scamBase);
       renderRecentCases(data.recent_cases || []);
       renderScamBase(scamBase);
