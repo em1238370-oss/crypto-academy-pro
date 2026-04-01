@@ -413,6 +413,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-radius: var(--mon-radius-sm);
   background: var(--mon-surface);
   box-shadow: none;
+  min-width: 0;
+  overflow-x: hidden;
 }
 .mon-page-ready .mon-hero-aside {
   animation: monHeroIn var(--mon-dur-hero) var(--mon-ease-soft) both;
@@ -540,21 +542,28 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   background: transparent;
 }
 
-.mon-scheme-row--ma { justify-content: flex-start; flex-wrap: wrap; }
+/* Только общие схемы с несколькими узлами — перенос OK. В hero схема «источники→таблица→ссылки» — отдельно, одна строка */
+.mon-scheme-row--ma:not(.mon-scheme-row--hero) {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
 
 .mon-hero-jump {
   display: flex;
-  flex-wrap: nowrap;
-  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px 10px;
   margin-top: 22px;
   padding-top: 18px;
   border-top: 1px solid rgba(255,255,255,0.07);
-  white-space: nowrap;
+  max-width: 100%;
 }
 .mon-hero-jump-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -873,6 +882,20 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   justify-content: center;
   flex-wrap: wrap;
   gap: 8px 10px;
+}
+/* Ровно три слова в одну линию (по ТЗ); при нехватке места — горизонтальный скролл только у этой строки */
+.mon-scheme-row--hero.mon-scheme-row--ma {
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 6px;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.mon-scheme-row--hero.mon-scheme-row--ma::-webkit-scrollbar {
+  display: none;
 }
 .mon-scheme-row--hero {
   justify-content: flex-end;
@@ -2638,26 +2661,13 @@ a.mon-channel-external:hover {
   .mon-main-nav { flex-direction: column; align-items: flex-start; }
   .mon-hero { grid-template-columns: 1fr; gap: 28px; }
   .mon-hero-aside { order: -1; }
-  .mon-scheme-row--hero {
+  .mon-scheme-row--hero.mon-scheme-row--ma {
     justify-content: flex-start;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding-bottom: 2px;
   }
-  .mon-scheme-row--hero::-webkit-scrollbar { display: none; }
   .mon-pillars { grid-template-columns: 1fr; gap: 24px; }
   .mon-offer { padding-top: 24px; }
   .mon-chapter-head--split { align-items: flex-start; }
   .mon-chapter-head--split .mon-chapter-meta { margin-left: 0; }
-  .mon-hero-jump {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding-bottom: 2px;
-  }
-  .mon-hero-jump::-webkit-scrollbar { display: none; }
   .mon-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mon-proof-grid, .mon-source-guide-grid, .mon-sources-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
