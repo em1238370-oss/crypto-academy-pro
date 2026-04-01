@@ -83,6 +83,15 @@ jobs:
           MODE: collect
         run: python3 run_12h_monitor.py
 
+      - name: Periodic scam_base cleanup (strict gate)
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: backend/kro-worker/credentials.json
+          KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEGRAM_SESSION_NAME: kro_session
+        run: python3 backend/scripts/kro-cleanup-scam-base.py
+
       # Один процесс Python: verify + data-quality (node через subprocess).
       # Так GitHub не показывает лишние «exit code 1» от дочернего node.
       - name: Install backend node deps (for data-quality check)

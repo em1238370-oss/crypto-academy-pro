@@ -1884,6 +1884,14 @@ function isCryptoRelevantScamRow(row) {
   return isCryptoContextAllowed(blob);
 }
 
+function isVisibleScamStatus(status) {
+  const s = (status || '').toString().trim().toLowerCase();
+  if (!s) return true;
+  if (s.includes('удал')) return false;
+  if (s.includes('неактив')) return false;
+  return true;
+}
+
 /** Честный fallback для монитора: без разбора постов, только поля строки scam_base. */
 function buildSheetOnlyContentAnalysisV2(row, fetchFailed) {
   const facts = {
@@ -1984,6 +1992,7 @@ function buildLiveCounterFromScamBase(parsedRows) {
   const filteredRows = parsedRows.filter(r =>
     r._schema === 'v2' &&
     r.username &&
+    isVisibleScamStatus(r.status) &&
     isCryptoContextAllowed(r.username, r.object_type, r.source_primary, r.source_evidence, r.content_analysis)
   );
   const byChannel = new Map();
@@ -2663,7 +2672,7 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       .map(parseScamBaseRow)
       .filter(r => r.username && r.username !== 'username')
       .map(enrichScamBaseContentAnalysisForMonitor);
-    const scamRows = scamRowsAll.filter(isCryptoRelevantScamRow);
+    const scamRows = scamRowsAll.filter((r) => isCryptoRelevantScamRow(r) && isVisibleScamStatus(r.status));
 
     const watchRawRows = watchResp.status === 'fulfilled' ? (watchResp.value.data.values || []) : [];
     const channelsWatch = watchRawRows

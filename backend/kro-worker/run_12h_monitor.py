@@ -1583,6 +1583,7 @@ async def _open_telethon_gate_client():
 async def _telegram_quality_gate(client, username_or_link, object_type='', source_evidence='', content_analysis=''):
     import asyncio
     from telethon.tl.functions.channels import GetFullChannelRequest
+    from telethon.tl.types import Channel, Chat, User
 
     uname = _normalize_channel_link(username_or_link)
     if not uname:
@@ -1597,6 +1598,13 @@ async def _telegram_quality_gate(client, username_or_link, object_type='', sourc
         return False, 'telethon_timeout_get_entity'
     except Exception:
         return False, 'channel_unavailable_or_blocked'
+
+    # Никогда не записываем личные аккаунты (User) в scam_base.
+    # Боты на username в Telegram тоже приходят как User, их не включаем в этот поток.
+    if isinstance(entity, User):
+        return False, 'entity_is_user_not_channel'
+    if not isinstance(entity, (Channel, Chat)):
+        return False, 'entity_is_not_channel_or_chat'
 
     if bool(getattr(entity, 'deleted', False)):
         return False, 'channel_deleted'
@@ -1621,15 +1629,42 @@ async def _telegram_quality_gate(client, username_or_link, object_type='', sourc
         about = ''
 
     posts = []
+    post_dates = []
     try:
         msgs = await _kro_tw.tw_collect_messages(client, entity, limit=40)
         for msg in msgs:
             txt = _normalize_message_text((msg.text or '') + ' ' + (getattr(msg, 'message', '') or ''))
             if txt:
                 posts.append(txt)
+            mdt = getattr(msg, 'date', None)
+            if mdt:
+                if getattr(mdt, 'tzinfo', None) is None:
+                    mdt = mdt.replace(tzinfo=timezone.utc)
+                post_dates.append(mdt)
     except Exception:
         pass
     posts_blob = ' '.join(posts)
+
+    # Должны быть живые посты: минимум 1 пост за последние 60 дней.
+    now_utc = datetime.now(timezone.utc)
+    fresh_cutoff = now_utc - timedelta(days=60)
+    fresh_posts = [d for d in post_dates if d >= fresh_cutoff]
+    if not fresh_posts:
+        return False, 'no_posts_last_60d'
+
+    # Минимум базового содержания: описание канала + контент.
+    if not about.strip():
+        return False, 'empty_channel_description'
+
+    # Крипто-тематика проверяется по последним постам (не только по username/описанию).
+    last_posts_blob = ' '.join((posts or [])[:10])
+    if not _has_crypto_context(last_posts_blob):
+        return False, 'posts_not_crypto_topic'
+
+    # Отсеиваем компрометированные/взломанные каналы.
+    hacked_markers = ('взлом', 'взломан', 'hacked', 'канал взломали', 'аккаунт взломан')
+    if any(hm in posts_blob.lower() for hm in hacked_markers):
+        return False, 'channel_reported_hacked'
 
     if not _has_required_signal_channel_terms(
         '@' + uname, title, about, posts_blob, source_evidence, content_analysis, object_type
@@ -1660,21 +1695,13 @@ def _apply_telegram_gate_to_rows(rows, context_label):
 
         client = await _open_telethon_gate_client()
         if client is None:
+            # Принцип strict-gate: если Telethon недоступен, Telegram-объекты не пишем.
+            # Unknown == reject (а не auto-pass).
             for row in tg_rows:
-                ok, reason = _html_telegram_quality_gate_sync(
-                    row.get('username') or row.get('link') or '',
-                    object_type=row.get('object_type', ''),
-                    source_evidence=row.get('source_evidence', ''),
-                    content_analysis=row.get('content_analysis', ''),
-                )
-                if ok:
-                    pass_rows.append(row)
-                else:
-                    print('%s: skip %s — %s (html gate)' % (
-                        context_label,
-                        row.get('username') or row.get('link') or 'unknown',
-                        reason,
-                    ), file=sys.stderr)
+                print('%s: skip %s — telethon_unavailable_strict_reject' % (
+                    context_label,
+                    row.get('username') or row.get('link') or 'unknown',
+                ), file=sys.stderr)
             return pass_rows
 
         try:
@@ -1689,21 +1716,6 @@ def _apply_telegram_gate_to_rows(rows, context_label):
                 if ok:
                     pass_rows.append(row)
                 else:
-                    if reason == 'telethon_timeout_get_entity' or 'timeout' in (reason or ''):
-                        ok2, reason2 = _html_telegram_quality_gate_sync(
-                            row.get('username') or row.get('link') or '',
-                            object_type=row.get('object_type', ''),
-                            source_evidence=row.get('source_evidence', ''),
-                            content_analysis=row.get('content_analysis', ''),
-                        )
-                        if ok2:
-                            pass_rows.append(row)
-                            print('%s: html fallback pass %s after %s' % (
-                                context_label,
-                                row.get('username') or row.get('link') or 'unknown',
-                                reason,
-                            ), file=sys.stderr)
-                            continue
                     print('%s: skip %s — %s' % (
                         context_label,
                         row.get('username') or row.get('link') or 'unknown',
