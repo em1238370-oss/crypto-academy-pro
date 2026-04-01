@@ -654,6 +654,156 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   color: rgba(255,255,255,0.28);
 }
 
+/* CTA под оффером — ритм как «Скачать CV» на портфолио medvedevart */
+.mon-offer-cta-row {
+  margin-top: clamp(22px, 3.2vw, 32px);
+  padding-top: clamp(20px, 2.8vw, 28px);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.mon-offer-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mon-font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: rgba(255, 248, 235, 0.95);
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 158, 11, 0.42);
+  background: rgba(245, 158, 11, 0.06);
+  transition: border-color 0.24s var(--mon-ease-out), background 0.24s var(--mon-ease-out), color 0.24s var(--mon-ease-out);
+}
+.mon-offer-cta:hover,
+.mon-offer-cta:focus-visible {
+  border-color: rgba(245, 158, 11, 0.62);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fff;
+}
+.mon-offer-cta-hint {
+  font-size: 13px;
+  line-height: var(--mon-leading-body);
+  color: var(--mon-text-prose);
+  max-width: 36rem;
+}
+
+/* Карта страницы — таблица иерархии как в анализе структуры medvedevart */
+.mon-route-map .mon-chapter-lead {
+  max-width: 46rem;
+}
+.mon-route-map-surface {
+  padding: 0;
+  overflow: hidden;
+}
+.mon-route-map-thead {
+  display: grid;
+  grid-template-columns: 52px minmax(120px, 0.95fr) minmax(0, 2fr);
+  gap: 16px;
+  align-items: center;
+  padding: 14px 22px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+}
+.mon-route-map-th {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: var(--mon-tracking-label);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+.mon-route-map-th--num { text-align: center; }
+.mon-route-map-th--wide { grid-column: auto; }
+.mon-route-map-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.mon-route-map-row {
+  display: grid;
+  grid-template-columns: 52px minmax(120px, 0.95fr) minmax(0, 2fr);
+  gap: 16px;
+  align-items: center;
+  padding: 16px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s var(--mon-ease-out);
+}
+.mon-route-map-row:last-child {
+  border-bottom: none;
+}
+@media (min-width: 641px) and (hover: hover) {
+  .mon-route-map-row:hover {
+    background: rgba(245, 158, 11, 0.04);
+  }
+}
+.mon-route-map-row--muted {
+  background: rgba(255, 255, 255, 0.015);
+}
+.mon-route-map-row--muted .mon-route-map-block {
+  color: rgba(255, 255, 255, 0.72);
+}
+.mon-route-map-num {
+  font-family: var(--mon-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(245, 158, 11, 0.85);
+  text-align: center;
+}
+.mon-route-map-block {
+  font-family: var(--mon-font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #fff;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  justify-self: start;
+  transition: color 0.2s var(--mon-ease-out), border-color 0.2s var(--mon-ease-out);
+}
+.mon-route-map-block:hover,
+.mon-route-map-block:focus-visible {
+  color: rgba(253, 224, 171, 0.98);
+  border-bottom-color: rgba(245, 158, 11, 0.45);
+}
+.mon-route-map-block--text {
+  border-bottom: none;
+  cursor: default;
+  color: rgba(255, 255, 255, 0.78);
+}
+.mon-route-map-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--mon-text-prose);
+}
+@media (max-width: 720px) {
+  .mon-route-map-thead {
+    display: none;
+  }
+  .mon-route-map-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    align-items: flex-start;
+    padding: 14px 18px;
+  }
+  .mon-route-map-num {
+    text-align: left;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.35);
+  }
+  .mon-route-map-num::before {
+    content: '№ ';
+    font-weight: 600;
+    color: rgba(245, 158, 11, 0.65);
+  }
+}
+
 /* Каскад внутри оффера: заголовок → лид → столпы → focus (волна 0.1–0.15s) */
 @keyframes monRevealChild {
   from {
@@ -669,7 +819,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-offer.mon-reveal .mon-offer-title,
 .mon-offer.mon-reveal .mon-offer-lead,
 .mon-offer.mon-reveal .mon-pillar,
-.mon-offer.mon-reveal .mon-offer-focus {
+.mon-offer.mon-reveal .mon-offer-focus,
+.mon-offer.mon-reveal .mon-offer-cta-row {
   opacity: 0;
   transform: translateY(18px);
 }
@@ -693,6 +844,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-offer.mon-visible .mon-offer-focus {
   animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.68s both;
+}
+.mon-offer.mon-visible .mon-offer-cta-row {
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.8s both;
 }
 
 /* ── СХЕМЫ (блок-схемы вместо абзацев) ───────────────────── */
@@ -885,7 +1039,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   line-height: var(--mon-leading-tight);
   color: #fff;
   margin: 0 0 14px;
-  max-width: 18ch;
+  max-width: min(22ch, 100%);
 }
 .mon-chapter-lead {
   font-size: 16px;
@@ -1822,7 +1976,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   .mon-offer.mon-reveal .mon-offer-title,
   .mon-offer.mon-reveal .mon-offer-lead,
   .mon-offer.mon-reveal .mon-pillar,
-  .mon-offer.mon-reveal .mon-offer-focus {
+  .mon-offer.mon-reveal .mon-offer-focus,
+  .mon-offer.mon-reveal .mon-offer-cta-row {
     opacity: 1 !important;
     transform: none !important;
     animation: none !important;
@@ -2284,7 +2439,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   .mon-offer.mon-reveal .mon-offer-title,
   .mon-offer.mon-reveal .mon-offer-lead,
   .mon-offer.mon-reveal .mon-pillar,
-  .mon-offer.mon-reveal .mon-offer-focus {
+  .mon-offer.mon-reveal .mon-offer-focus,
+  .mon-offer.mon-reveal .mon-offer-cta-row {
     opacity: 1 !important;
     transform: none !important;
     animation: none !important;

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260329-objects">
+  <link rel="stylesheet" href="/monitor.css?v=20260401-medvedev-map">
 </head>
 <body class="mon-page">
 
@@ -80,8 +80,8 @@
   <div class="mon-prologue">
   <section class="mon-hero" aria-labelledby="mon-hero-title">
     <div class="mon-hero-copy">
-      <p class="mon-hero-eyebrow">Крипта без розовых очков</p>
-      <p class="mon-hero-role">Живая база · проверка каналов · публичный дашборд</p>
+      <p class="mon-hero-eyebrow">Антискам · проверка каналов · монитор</p>
+      <p class="mon-hero-role">Крипта без розовых очков</p>
       <h1 id="mon-hero-title" class="mon-hero-title">
         <span class="mon-hero-title-main">Монитор</span>
         <span class="mon-hero-title-sub">скам-каналов</span>
@@ -104,6 +104,7 @@
         <span class="mon-scheme-node">Ссылки</span>
       </div>
       <nav class="mon-hero-jump" aria-label="Разделы страницы">
+        <a class="mon-hero-jump-link" href="#page-map">Карта</a>
         <a class="mon-hero-jump-link" href="#metrics">Метрики</a>
         <a class="mon-hero-jump-link" href="#recent-cases">Случаи</a>
         <a class="mon-hero-jump-link" href="#data-scam">База</a>
@@ -117,7 +118,7 @@
   </section>
 
   <!-- Оффер: тезис + столпы (как блок «Стратегия. Эффективность…») -->
-  <section class="mon-offer" aria-labelledby="mon-offer-title">
+  <section class="mon-offer" id="mon-offer-section" aria-labelledby="mon-offer-title">
     <p class="mon-offer-kicker">Подход</p>
     <h2 id="mon-offer-title" class="mon-offer-title">Прозрачность. Источники. Циклы.</h2>
     <p class="mon-offer-lead">Публичный дашборд: что нашли, откуда цитата, куда кликнуть. Данные из Google Sheets, цикл обновления каждые 12 часов — без ручной «магии» в интерфейсе.</p>
@@ -136,8 +137,87 @@
       </article>
     </div>
     <p class="mon-offer-focus">Focus: антискам · факты · проверяемость</p>
+    <div class="mon-offer-cta-row" role="navigation" aria-label="Действие на главном сайте">
+      <a class="mon-offer-cta" href="/#checkers">Проверь своего гуру на главной →</a>
+      <span class="mon-offer-cta-hint">Тот же визуальный язык и данные — отдельная страница только для монитора.</span>
+    </div>
   </section>
   </div>
+
+  <!-- Карта страницы: иерархия как у executive-портфолио (см. анализ medvedevart) -->
+  <section class="mon-chapter mon-section mon-route-map" id="page-map" aria-labelledby="mon-map-heading">
+    <header class="mon-chapter-head">
+      <p class="mon-chapter-kicker">00 · Навигация</p>
+      <h2 id="mon-map-heading" class="mon-chapter-title">Структура страницы</h2>
+      <p class="mon-chapter-lead">Один поток сверху вниз: от снимка системы к деталям и архиву — как на одностраничном портфолио: главный акцент → оффер → метрики → кейсы → таблицы → происхождение данных.</p>
+    </header>
+    <div class="mon-chapter-body">
+      <div class="mon-surface mon-route-map-surface">
+        <div class="mon-route-map-thead" aria-hidden="true">
+          <span class="mon-route-map-th mon-route-map-th--num">№</span>
+          <span class="mon-route-map-th">Блок</span>
+          <span class="mon-route-map-th mon-route-map-th--wide">Назначение</span>
+        </div>
+        <ul class="mon-route-map-list">
+          <li class="mon-route-map-row">
+            <span class="mon-route-map-num">—</span>
+            <a class="mon-route-map-block" href="#mon-hero-title">Ввод</a>
+            <span class="mon-route-map-desc">Заголовок, теги, схема «источники → таблица → ссылки», быстрые якоря.</span>
+          </li>
+          <li class="mon-route-map-row">
+            <span class="mon-route-map-num">—</span>
+            <a class="mon-route-map-block" href="#mon-offer-section">Подход</a>
+            <span class="mon-route-map-desc">Три столпа: источники, строка в таблице, живой цикл — аналог блока «Стратегия. Эффективность…».</span>
+          </li>
+          <li class="mon-route-map-row">
+            <span class="mon-route-map-num">01</span>
+            <a class="mon-route-map-block" href="#metrics">Метрики</a>
+            <span class="mon-route-map-desc">«Результаты в цифрах»: статус цикла, база, источники.</span>
+          </li>
+          <li class="mon-route-map-row">
+            <span class="mon-route-map-num">02</span>
+            <a class="mon-route-map-block" href="#recent-cases">Кейсы</a>
+            <span class="mon-route-map-desc">Три последних случая — как карточки кейсов на портфолио, до полной таблицы.</span>
+          </li>
+          <li class="mon-route-map-row">
+            <span class="mon-route-map-num">03</span>
+            <a class="mon-route-map-block" href="#data-scam">База</a>
+            <span class="mon-route-map-desc">Полная таблица объектов, фильтр поиска, доказательства и статусы.</span>
+          </li>
+          <li class="mon-route-map-row">
+            <span class="mon-route-map-num">04</span>
+            <a class="mon-route-map-block" href="#data-watch">Широкий мониторинг</a>
+            <span class="mon-route-map-desc">Все найденные каналы наблюдения рядом с узкой базой.</span>
+          </li>
+          <li class="mon-route-map-row">
+            <span class="mon-route-map-num">05</span>
+            <a class="mon-route-map-block" href="#data-network">Связи</a>
+            <span class="mon-route-map-desc">Кто кого продвигает — сеть и доказательства.</span>
+          </li>
+          <li class="mon-route-map-row">
+            <span class="mon-route-map-num">06</span>
+            <a class="mon-route-map-block" href="#cycle-log">Журнал</a>
+            <span class="mon-route-map-desc">Хронология последнего цикла — как таймлайн «опыта».</span>
+          </li>
+          <li class="mon-route-map-row">
+            <span class="mon-route-map-num">07</span>
+            <a class="mon-route-map-block" href="#sources">Источники</a>
+            <span class="mon-route-map-desc">Происхождение данных и статус опроса сайтов.</span>
+          </li>
+          <li class="mon-route-map-row">
+            <span class="mon-route-map-num">08</span>
+            <a class="mon-route-map-block" href="#history">Архив</a>
+            <span class="mon-route-map-desc">История циклов — сводка прошлых прогонов.</span>
+          </li>
+          <li class="mon-route-map-row mon-route-map-row--muted">
+            <span class="mon-route-map-num">09–10</span>
+            <span class="mon-route-map-block mon-route-map-block--text">Метод и критерии</span>
+            <span class="mon-route-map-desc">Раскрывающиеся блоки: как собирается строка и правила отбора.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
 
   <!-- Глава: метрики (иерархия как «Результаты в цифрах» на medvedevart) -->
   <section class="mon-chapter mon-section" id="metrics" aria-labelledby="mon-metrics-heading">
@@ -180,11 +260,27 @@
     </div>
   </section>
 
-  <!-- Глава: подтверждённая база (сразу после статуса) -->
+  <!-- Кейсы сразу после метрик — как блок «Кейсы» на портфолио: сначала истории, потом полная таблица -->
+  <section class="mon-chapter mon-section" id="recent-cases" aria-labelledby="mon-cases-heading">
+    <header class="mon-chapter-head">
+      <p class="mon-chapter-kicker">02 · Кейсы</p>
+      <h2 id="mon-cases-heading" class="mon-chapter-title">Последние случаи</h2>
+      <p class="mon-chapter-lead">Три карточки из сводки жалоб и открытых источников — те же данные, что попадут в таблицу ниже. Сначала быстрый человеческий вход, затем полный реестр.</p>
+    </header>
+    <div class="mon-chapter-body">
+      <div class="mon-surface mon-surface--pad">
+      <div class="mon-cases-grid" id="s2-cases">
+        <div class="mon-loading mon-spinner">Загружаю случаи…</div>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Глава: подтверждённая база (полная таблица после кейсов) -->
   <section class="mon-chapter mon-section" id="data-scam" aria-labelledby="mon-scam-heading">
     <header class="mon-chapter-head mon-chapter-head--split">
       <div class="mon-chapter-head-main">
-        <p class="mon-chapter-kicker">02 · Таблица</p>
+        <p class="mon-chapter-kicker">03 · Таблица</p>
         <h2 id="mon-scam-heading" class="mon-chapter-title">База объектов</h2>
         <p class="mon-chapter-lead mon-chapter-lead--inline">Сигнал‑каналы, крипто‑обменники, инвест‑боты: тип, статус, число жалоб, признаки риска с цитатой, ссылки (объект и первоисточники).</p>
       </div>
@@ -208,21 +304,6 @@
 
       <div class="mon-table-wrap" id="s3-table-wrap">
         <div class="mon-loading mon-spinner" style="padding:32px">Загружаю базу</div>
-      </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="mon-chapter mon-section" id="recent-cases" aria-labelledby="mon-cases-heading">
-    <header class="mon-chapter-head">
-      <p class="mon-chapter-kicker">03 · Реальные данные</p>
-      <h2 id="mon-cases-heading" class="mon-chapter-title">Последние случаи</h2>
-      <p class="mon-chapter-lead">Три карточки из сводки жалоб и открытых источников — не выдумка, а строки из той же базы, что и таблица выше. Читается как история: канал, сумма, что произошло, ссылка на первоисточник.</p>
-    </header>
-    <div class="mon-chapter-body">
-      <div class="mon-surface mon-surface--pad">
-      <div class="mon-cases-grid" id="s2-cases">
-        <div class="mon-loading mon-spinner">Загружаю случаи…</div>
       </div>
       </div>
     </div>
