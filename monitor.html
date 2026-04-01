@@ -1431,7 +1431,7 @@
 
       var profileSlug = encodeURIComponent(rawU || channelLabel.replace(/^@+/, ''));
       var profileHref = '/channel/' + profileSlug;
-      var profileLink = '<a class="mon-channel-profile-link" href="' + esc(profileHref) + '">' + esc(channelLabel) + '</a>';
+      var profileLink = '<a class="mon-channel-profile-link" href="' + esc(profileHref) + '" target="_blank" rel="noopener" title="Открыть анкету канала в новой вкладке">' + esc(channelLabel) + '</a>';
       var extOpen = channelUrl
         ? '<a class="mon-channel-external" href="' + esc(channelUrl) + '" target="_blank" rel="noopener" title="Открыть канал или сайт">' +
             '<span class="mon-link-arrow" aria-hidden="true">↗</span></a>'
