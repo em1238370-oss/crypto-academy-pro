@@ -49,7 +49,6 @@
   --mon-dur-hero: 0.62s;
   --mon-hero-enter: 0.07s;
   --mon-hero-step: 0.16s;
-  --mon-hero-tag-stagger: 0.11s;
   /* Скролл-reveal: 0.5–0.8s */
   --mon-dur-reveal: 0.66s;
   --mon-dur-boot-line: 0.5s;
@@ -396,17 +395,13 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   box-shadow: 0 20px 56px rgba(0, 0, 0, 0.34);
 }
 
-/* После boot: сначала H1, затем каскад eyebrow → лид → ударная строка → теги по одному → CTA; aside последним */
-.mon-hero-copy > *:not(.mon-hero-tags),
+/* После boot: H1 → eyebrow → лид → CTA → aside */
+.mon-hero-copy > *,
 .mon-hero-aside {
   opacity: 0;
   transform: translateY(var(--mon-reveal-y));
 }
-.mon-hero-copy .mon-hero-tags .mon-hero-tag {
-  opacity: 0;
-  transform: translateY(14px);
-}
-.mon-page-ready .mon-hero-copy > *:not(.mon-hero-tags) {
+.mon-page-ready .mon-hero-copy > * {
   animation: monHeroIn var(--mon-dur-hero) var(--mon-ease-soft) both;
 }
 .mon-page-ready .mon-hero-copy .mon-hero-title { animation-delay: var(--mon-hero-enter); }
@@ -416,34 +411,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-page-ready .mon-hero-copy .mon-hero-tagline {
   animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2);
 }
-/* Теги — волна 0.05–0.15s после лида */
-.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag {
-  animation: monHeroIn var(--mon-dur-hero) var(--mon-ease-soft) both;
-}
-.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(1) {
-  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 1);
-}
-.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(2) {
-  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 2);
-}
-.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(3) {
-  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 3);
-}
-.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(4) {
-  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 4);
-}
-.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(n+5) {
-  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 5);
-}
-.mon-page-ready .mon-hero-copy .mon-hero-punch {
-  animation-delay: calc(
-    var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 5 + 0.06s
-  );
-}
 .mon-page-ready .mon-hero-copy .mon-hero-cta-row {
-  animation-delay: calc(
-    var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 5 + var(--mon-hero-step)
-  );
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 3);
 }
 
 .mon-hero-aside {
@@ -458,9 +427,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-page-ready .mon-hero-aside {
   animation: monHeroIn var(--mon-dur-hero) var(--mon-ease-soft) both;
-  animation-delay: calc(
-    var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 5 + var(--mon-hero-step) * 2.1
-  );
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 4);
 }
 
 /* Лёгкое приглушение hero при уходе из вьюпорта (контент ниже не «исчезает») */
@@ -499,18 +466,19 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   line-height: 1.06;
   letter-spacing: -0.02em;
   margin: 0 0 10px;
-  max-width: 18ch;
+  max-width: 22ch;
   color: rgba(255, 255, 255, 0.94);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   position: relative;
 }
+.mon-hero-title-sep {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.28);
+  margin: 0 0.08em;
+}
 .mon-hero-title-em {
   color: rgba(255, 230, 200, 0.96);
   font-weight: 700;
-  white-space: nowrap;
-}
-@media (max-width: 520px) {
-  .mon-hero-title-em { white-space: normal; }
 }
 /* Линия-акцент под H1 — после окончания входа заголовка */
 .mon-hero-title::after {
@@ -536,31 +504,16 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-weight: 400;
   color: var(--mon-text-prose);
   line-height: var(--mon-leading-body);
-  margin-bottom: 14px;
+  margin-bottom: 20px;
   max-width: var(--mon-prose-max);
 }
 
-/* Строка как kro-step1-subtitle на главной */
-.mon-hero-punch {
-  font-family: var(--mon-font);
-  font-size: clamp(16px, 1.65vw, 19px);
-  font-weight: 500;
-  line-height: 1.35;
-  color: rgba(255, 255, 255, 0.78);
-  margin: 0 0 18px;
-  max-width: var(--mon-prose-max);
-}
-.mon-hero-punch-em {
-  color: rgba(245, 190, 120, 0.98);
-  font-weight: 600;
-}
-
-/* CTA как kro-step1-cta — в конце каскада слева */
+/* CTA — якорь на метрики/дашборд мониторинга */
 .mon-hero-cta-row {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
+  gap: 0;
   margin-top: 4px;
   margin-bottom: 0;
 }
@@ -604,40 +557,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   outline: 2px solid rgba(245, 158, 11, 0.7);
   outline-offset: 3px;
 }
-.mon-hero-cta-note {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.45);
-  line-height: 1.45;
-  max-width: 280px;
-  margin: 0;
-}
-.mon-hero-cta-note-short { display: none; }
 @media (max-width: 640px) {
-  .mon-hero-cta-note-long { display: none; }
-  .mon-hero-cta-note-short { display: inline; }
   .mon-hero-cta { max-width: 100%; }
-}
-
-.mon-hero-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.mon-hero-tag {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.55);
-  background: transparent;
-  transition: border-color 0.25s var(--mon-ease-out), color 0.25s var(--mon-ease-out);
-}
-.mon-hero-tag:hover {
-  border-color: rgba(245, 158, 11, 0.35);
-  color: rgba(255, 248, 235, 0.9);
-  background: transparent;
 }
 
 /* Только общие схемы с несколькими узлами — перенос OK. В hero схема «источники→таблица→ссылки» — отдельно, одна строка */
@@ -2538,11 +2459,6 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   }
   .mon-hero-copy > *,
   .mon-hero-aside {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
-  .mon-hero-copy .mon-hero-tags .mon-hero-tag {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
