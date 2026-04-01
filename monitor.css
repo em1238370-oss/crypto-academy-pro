@@ -6,7 +6,8 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --mon-bg:         #0a0c10;
+  --mon-bg:         #07080c;
+  --mon-bg-deep:    #05060a;
   --mon-glass:      rgba(255,255,255,0.055);
   --mon-glass-hi:   rgba(255,255,255,0.09);
   --mon-border:     rgba(255,255,255,0.09);
@@ -33,10 +34,13 @@
   --mon-cyan:       #06b6d4;
   --mon-violet:     #8b5cf6;
 
-  /* Как на главной: Syne + Manrope (см. styles.css --kro-font-*) */
+  /* Syne + Manrope + Archivo для «стальных» подзаголовков стека (medvedevart §3, §6) */
   --mon-font:         'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --mon-font-display: 'Syne', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mon-font-tech:    'Archivo', 'Syne', var(--mon-font);
   --mon-font-mono:    'SF Mono', ui-monospace, Monaco, 'Cascadia Code', monospace;
+  --mon-steel:        rgba(110, 122, 145, 0.35);
+  --mon-steel-line:   rgba(72, 82, 104, 0.55);
 
   --mon-radius:    12px;
   --mon-radius-sm: 8px;
@@ -74,7 +78,8 @@
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--mon-bg);
+  background: var(--mon-bg-deep);
+  background-image: linear-gradient(180deg, var(--mon-bg-deep) 0%, var(--mon-bg) 38%, var(--mon-bg-deep) 100%);
   color: var(--mon-text);
   font-family: var(--mon-font);
   font-size: 15px;
@@ -174,8 +179,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid var(--mon-border-quiet);
-  background: rgba(10, 12, 16, 0.94);
+  border-bottom: 1px solid var(--mon-steel-line);
+  background: rgba(7, 8, 12, 0.94);
   backdrop-filter: var(--mon-blur);
   -webkit-backdrop-filter: var(--mon-blur);
   opacity: 0;
@@ -205,7 +210,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-main-nav-brand {
   font-family: var(--mon-font-display);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   color: #fff;
   text-decoration: none;
   letter-spacing: -0.02em;
@@ -322,15 +327,17 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-live-strip {
   margin: 0;
   padding: 11px 60px 13px;
-  border-bottom: 1px solid var(--mon-border-quiet);
-  background: rgba(8, 10, 13, 0.98);
-  font-family: var(--mon-font);
-  font-size: 13px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--mon-steel-line);
+  background: linear-gradient(180deg, rgba(6, 8, 12, 0.99) 0%, rgba(8, 10, 14, 0.98) 100%);
+  font-family: var(--mon-font-mono);
+  font-size: 12px;
   font-weight: 500;
-  color: var(--mon-text-dim);
+  color: rgba(255, 255, 255, 0.42);
   text-align: center;
   line-height: 1.45;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .mon-live-strip-inner {
   display: inline-block;
@@ -380,6 +387,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-hero {
+  position: relative;
   padding: 8px 0 24px;
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
@@ -388,11 +396,31 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   opacity: 1;
   transform: translateY(0);
   transition: opacity 0.65s var(--mon-ease-soft), transform 0.65s var(--mon-ease-soft);
-  background: linear-gradient(165deg, rgba(16, 18, 24, 0.92), rgba(12, 14, 20, 0.88));
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(165deg, rgba(18, 20, 28, 0.96), rgba(10, 12, 18, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.085);
   border-radius: 20px;
   padding: clamp(24px, 3.4vw, 42px);
-  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.34);
+  padding-left: clamp(28px, 3.8vw, 46px);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  overflow: hidden;
+}
+.mon-hero::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20px;
+  bottom: 20px;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(
+    180deg,
+    rgba(245, 158, 11, 0.95) 0%,
+    rgba(245, 158, 11, 0.18) 38%,
+    rgba(72, 84, 108, 0.55) 100%
+  );
+  pointer-events: none;
 }
 
 /* После boot: H1 → eyebrow → лид → CTA → aside */
@@ -722,6 +750,131 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   max-width: 36rem;
 }
 
+/* ── TECH DOSSIER (§6 анализа medvedevart: верстка / анимации / сборка) ── */
+
+.mon-tech-dossier {
+  padding-top: clamp(36px, 5.5vw, 64px);
+}
+
+.mon-tech-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(14px, 2vw, 22px);
+}
+
+.mon-tech-card {
+  position: relative;
+  padding: clamp(22px, 2.8vw, 28px) clamp(20px, 2.4vw, 26px) 24px;
+  background: linear-gradient(165deg, rgba(20, 22, 30, 0.98) 0%, rgba(11, 13, 19, 0.96) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+  transition:
+    transform 0.28s var(--mon-ease-out),
+    border-color 0.28s var(--mon-ease-out),
+    box-shadow 0.32s var(--mon-ease-soft);
+  overflow: hidden;
+}
+.mon-tech-card::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.55), transparent 72%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+@media (min-width: 641px) and (hover: hover) {
+  .mon-tech-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 52px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(245, 158, 11, 0.06);
+  }
+}
+
+.mon-tech-card-index {
+  position: absolute;
+  right: 14px;
+  top: 10px;
+  font-family: var(--mon-font-tech);
+  font-size: clamp(2.5rem, 5vw, 3.25rem);
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.04);
+  letter-spacing: -0.04em;
+  user-select: none;
+  pointer-events: none;
+}
+
+.mon-tech-card-title {
+  font-family: var(--mon-font-tech);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 240, 220, 0.92);
+  margin: 0 0 12px;
+  padding-right: 3rem;
+}
+
+.mon-tech-card-lead {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--mon-text-prose);
+  margin: 0 0 18px;
+}
+
+.mon-tech-code {
+  font-family: var(--mon-font-mono);
+  font-size: 0.9em;
+  color: rgba(255, 200, 140, 0.88);
+  font-weight: 500;
+}
+
+.mon-tech-mono {
+  font-family: var(--mon-font-mono);
+  font-size: 0.92em;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.mon-tech-chip-row {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.mon-tech-chip {
+  display: inline-block;
+  font-family: var(--mon-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--mon-steel-line);
+  color: rgba(255, 255, 255, 0.52);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Волна карточек стека при появлении секции */
+.mon-tech-dossier.mon-section.mon-visible .mon-tech-card {
+  opacity: 0;
+  animation: monRouteMapRowIn var(--mon-dur-reveal) var(--mon-ease-soft) forwards;
+}
+.mon-tech-dossier.mon-section.mon-visible .mon-tech-card:nth-child(1) { animation-delay: 0.08s; }
+.mon-tech-dossier.mon-section.mon-visible .mon-tech-card:nth-child(2) { animation-delay: 0.18s; }
+.mon-tech-dossier.mon-section.mon-visible .mon-tech-card:nth-child(3) { animation-delay: 0.28s; }
+
+@media (max-width: 900px) {
+  .mon-tech-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Карта страницы — таблица иерархии как в анализе структуры medvedevart */
 .mon-route-map .mon-chapter-lead {
   max-width: 46rem;
@@ -849,6 +1002,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(10) { animation-delay: 0.59s; }
 .mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(11) { animation-delay: 0.65s; }
 .mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(12) { animation-delay: 0.71s; }
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(13) { animation-delay: 0.77s; }
 
 @keyframes monRouteMapRowIn {
   from { opacity: 0; transform: translateY(14px); }
@@ -1099,12 +1253,20 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-chapter-title {
   font-family: var(--mon-font-display);
   font-size: clamp(1.6rem, 3.5vw, 2.45rem);
-  font-weight: 700;
-  letter-spacing: -0.036em;
+  font-weight: 800;
+  letter-spacing: -0.04em;
   line-height: var(--mon-leading-tight);
   color: #fff;
   margin: 0 0 14px;
   max-width: min(22ch, 100%);
+}
+.mon-chapter-title--dossier {
+  font-family: var(--mon-font-tech);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  font-size: clamp(1.35rem, 3vw, 2.05rem);
+  max-width: none;
 }
 .mon-chapter-lead {
   font-size: 16px;
@@ -1342,9 +1504,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   pointer-events: none;
 }
 .mon-stat-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: var(--mon-shadow-hover);
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(245, 158, 11, 0.08);
 }
 
 .mon-stat-label {
@@ -2003,7 +2165,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 .mon-reveal {
   opacity: 0;
-  transform: translateY(var(--mon-reveal-y));
+  transform: translateY(var(--mon-reveal-y)) scale(0.992);
   transition:
     opacity var(--mon-dur-reveal) var(--mon-ease-soft),
     transform var(--mon-dur-reveal) var(--mon-ease-soft);
@@ -2011,7 +2173,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-reveal.mon-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
 /* Скролл-reveal: только fade-up — без blur (сдержанный executive-темп, medvedevart) */
@@ -2046,6 +2208,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     opacity: 1 !important;
     transform: none !important;
     animation: none !important;
+  }
+  .mon-tech-dossier.mon-section .mon-tech-card {
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
   }
   .mon-row-appear,
   tr.mon-row-appear,
@@ -2464,6 +2631,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     transform: none !important;
   }
   .mon-route-map .mon-route-map-list > .mon-route-map-row {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .mon-tech-dossier.mon-section .mon-tech-card {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
