@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260401-hero-jump-wrap">
+  <link rel="stylesheet" href="/monitor.css?v=20260402-medvedev-motion">
 </head>
 <body class="mon-page">
 
@@ -80,18 +80,20 @@
   <div class="mon-prologue">
   <section class="mon-hero" aria-labelledby="mon-hero-title">
     <div class="mon-hero-copy">
-      <p class="mon-hero-eyebrow">Антискам · проверка каналов · монитор</p>
-      <p class="mon-hero-role">Крипта без розовых очков</p>
-      <h1 id="mon-hero-title" class="mon-hero-title">
-        <span class="mon-hero-title-main">Монитор</span>
-        <span class="mon-hero-title-sub">скам-каналов</span>
-      </h1>
-      <p class="mon-hero-tagline">Факты и ссылки на первоисточники — без лишнего шума.</p>
+      <!-- Порядок анимации: сначала H1 (как «имя» на medvedevart), затем каскад — см. monitor.css -->
+      <h1 id="mon-hero-title" class="mon-hero-title">Крипто: не верь <span class="mon-hero-title-em">— проверь</span></h1>
+      <p class="mon-hero-eyebrow">Антискам · Проверка каналов · монитор</p>
+      <p class="mon-hero-tagline">Живой дашборд базы и циклов. Факты и ссылки на первоисточники — без лишнего шума.</p>
       <div class="mon-hero-tags" aria-label="Направления">
         <span class="mon-hero-tag">Антискам</span>
         <span class="mon-hero-tag">Live</span>
         <span class="mon-hero-tag">Цикл 12 ч</span>
         <span class="mon-hero-tag">Google Sheets</span>
+      </div>
+      <p class="mon-hero-punch">Ваш гуру уже на Lambo. <span class="mon-hero-punch-em">На ваши деньги</span></p>
+      <div class="mon-hero-cta-row">
+        <a class="mon-hero-cta" href="/#checkers">Проверь своего гуру</a>
+        <p class="mon-hero-cta-note"><span class="mon-hero-cta-note-long">Сделай сначала ты — прежде чем он твой кошелёк</span><span class="mon-hero-cta-note-short">Сделай это ты — прежде чем он с твоим кошельком</span></p>
       </div>
     </div>
     <aside class="mon-hero-aside">
@@ -1313,11 +1315,12 @@
   function countUp(elId, target, suffix, duration) {
     var el = document.getElementById(elId);
     if (!el || isNaN(target) || target <= 0) return;
-    duration = duration || 1100;
+    duration = duration || 1600;
     var start = performance.now();
     function step(now) {
       var t = Math.min((now - start) / duration, 1);
-      var ease = 1 - Math.pow(1 - t, 3);
+      /* ease-out (как --mon-ease-soft): 1 - (1-t)^2.6 */
+      var ease = 1 - Math.pow(1 - t, 2.6);
       el.textContent = Math.round(ease * target) + (suffix || '');
       if (t < 1) requestAnimationFrame(step);
     }
@@ -1343,8 +1346,8 @@
       if (strip) strip.classList.add('mon-live-strip--error');
       setText('mon-cycle-warning', ' · данные могут быть устаревшими');
     }
-    countUp('s1-new-in-cycle', newCount, ' каналов', 1300);
-    countUp('s1-total', total, ' каналов', 1650);
+    countUp('s1-new-in-cycle', newCount, ' каналов', 1750);
+    countUp('s1-total', total, ' каналов', 2100);
     setText('s1-sources-active', active + ' из ' + (meta.sources_checked || []).length);
 
     var ss = statusSummary || {};
@@ -1397,8 +1400,9 @@
     }
     lines.push({ time: cycleAt, msg: 'Цикл завершён. kro_meta обновлена.', cls: 'info' });
 
-    var html = lines.map(function(l) {
-      return '<div class="mon-log-line">' +
+    var html = lines.map(function(l, i) {
+      var d = Math.min(i * 65, 950);
+      return '<div class="mon-log-line mon-row-appear" style="animation-delay:' + d + 'ms">' +
         '<span class="mon-log-time">' + esc(fmtDate(l.time)) + '</span>' +
         '<span class="mon-log-msg ' + l.cls + '">' + esc(l.msg) + '</span>' +
         '</div>';
@@ -1943,6 +1947,28 @@
     io.observe(hero);
   }
 
+  /** Лёгкий parallax сетки фона (не трогаем слой с keyframes — mon-bg-atmosphere) */
+  function initBgParallax() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var grid = document.querySelector('.mon-bg-dot-grid');
+    if (!grid) return;
+    var ticking = false;
+    function tick() {
+      ticking = false;
+      var y = window.scrollY || document.documentElement.scrollTop || 0;
+      var ty = Math.round(y * 0.018);
+      grid.style.transform = 'translate3d(0,' + ty + 'px,0)';
+    }
+    function onScroll() {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(tick);
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    tick();
+  }
+
   // ── COLLAPSIBLE SECTIONS ──────────────────────────────────
 
   function initCollapsibles() {
@@ -1984,6 +2010,7 @@
       initScrollReveal();
       initCollapsibles();
       initHeroScrollFade();
+      initBgParallax();
       loadData();
       startCountdown();
       return;
@@ -1992,6 +2019,7 @@
       initScrollReveal();
       initCollapsibles();
       initHeroScrollFade();
+      initBgParallax();
       loadData();
       startCountdown();
     });

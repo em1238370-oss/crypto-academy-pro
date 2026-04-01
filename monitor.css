@@ -45,12 +45,16 @@
   --mon-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   /* medvedevart-style motion: спокойный ease-out, длительности 0.5–0.8s, fade-up 20–40px */
   --mon-ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
-  --mon-dur-hero: 0.72s;
-  /* Скролл-reveal и каскады: 0.5–0.8s как в анализе medvedevart */
-  --mon-dur-reveal: 0.74s;
+  /* Hero: заголовок 0.4–0.8s; каскад 0.1–0.2s между блоками */
+  --mon-dur-hero: 0.62s;
+  --mon-hero-enter: 0.07s;
+  --mon-hero-step: 0.16s;
+  --mon-hero-tag-stagger: 0.11s;
+  /* Скролл-reveal: 0.5–0.8s */
+  --mon-dur-reveal: 0.66s;
   --mon-dur-boot-line: 0.5s;
   --mon-dur-boot-fade: 0.78s;
-  --mon-stagger-hero: 0.13s;
+  --mon-stagger-hero: 0.15s;
   --mon-reveal-y: 20px;
   --mon-reveal-blur: 0px;
   --mon-link-dur: 0.28s;
@@ -145,6 +149,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   background-size: 40px 40px;
   opacity: 0.22;
   transition: opacity 0.7s var(--mon-ease-soft);
+  will-change: transform;
 }
 
 .mon-page.mon-hero-offscreen .mon-bg-dot-grid {
@@ -391,20 +396,55 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   box-shadow: 0 20px 56px rgba(0, 0, 0, 0.34);
 }
 
-/* После boot: каскад 0.1–0.2s между строками (синхрон с body.mon-page-ready) */
-.mon-hero-copy > *,
+/* После boot: сначала H1, затем каскад eyebrow → лид → ударная строка → теги по одному → CTA; aside последним */
+.mon-hero-copy > *:not(.mon-hero-tags),
 .mon-hero-aside {
   opacity: 0;
   transform: translateY(var(--mon-reveal-y));
 }
-.mon-page-ready .mon-hero-copy > * {
+.mon-hero-copy .mon-hero-tags .mon-hero-tag {
+  opacity: 0;
+  transform: translateY(14px);
+}
+.mon-page-ready .mon-hero-copy > *:not(.mon-hero-tags) {
   animation: monHeroIn var(--mon-dur-hero) var(--mon-ease-soft) both;
 }
-.mon-page-ready .mon-hero-copy .mon-hero-eyebrow { animation-delay: calc(var(--mon-stagger-hero) * 0.5); }
-.mon-page-ready .mon-hero-copy .mon-hero-role   { animation-delay: calc(var(--mon-stagger-hero) * 1.5); }
-.mon-page-ready .mon-hero-copy .mon-hero-title  { animation-delay: calc(var(--mon-stagger-hero) * 2.5); }
-.mon-page-ready .mon-hero-copy .mon-hero-tagline { animation-delay: calc(var(--mon-stagger-hero) * 3.5); }
-.mon-page-ready .mon-hero-copy .mon-hero-tags   { animation-delay: calc(var(--mon-stagger-hero) * 4.5); }
+.mon-page-ready .mon-hero-copy .mon-hero-title { animation-delay: var(--mon-hero-enter); }
+.mon-page-ready .mon-hero-copy .mon-hero-eyebrow {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step));
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tagline {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2);
+}
+/* Теги — волна 0.05–0.15s после лида */
+.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag {
+  animation: monHeroIn var(--mon-dur-hero) var(--mon-ease-soft) both;
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(1) {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 1);
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(2) {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 2);
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(3) {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 3);
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(4) {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 4);
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(n+5) {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 5);
+}
+.mon-page-ready .mon-hero-copy .mon-hero-punch {
+  animation-delay: calc(
+    var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 5 + 0.06s
+  );
+}
+.mon-page-ready .mon-hero-copy .mon-hero-cta-row {
+  animation-delay: calc(
+    var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 5 + var(--mon-hero-step)
+  );
+}
 
 .mon-hero-aside {
   padding: 22px 24px;
@@ -418,13 +458,15 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-page-ready .mon-hero-aside {
   animation: monHeroIn var(--mon-dur-hero) var(--mon-ease-soft) both;
-  animation-delay: calc(var(--mon-stagger-hero) * 5.5);
+  animation-delay: calc(
+    var(--mon-hero-enter) + var(--mon-hero-step) * 2 + var(--mon-hero-tag-stagger) * 5 + var(--mon-hero-step) * 2.1
+  );
 }
 
-/* Лёгкое приглушение hero при уходе из вьюпорта */
+/* Лёгкое приглушение hero при уходе из вьюпорта (контент ниже не «исчезает») */
 .mon-page.mon-hero-offscreen .mon-hero {
-  opacity: 0.94;
-  transform: translateY(-2px);
+  opacity: 0.86;
+  transform: translateY(-3px);
 }
 
 .mon-hero-aside-label {
@@ -437,78 +479,56 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   margin-bottom: 16px;
 }
 
-/* Иерархия как на medvedevart: бренд → роль → h1 */
+/* Как на главной (kro-step1-role): верхняя строка после H1 */
 .mon-hero-eyebrow {
-  font-family: var(--mon-font-display);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: rgba(255,255,255,0.72);
-  margin-bottom: 6px;
-}
-.mon-hero-role {
   font-family: var(--mon-font);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.38);
-  margin-bottom: 18px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0 0 16px;
+  line-height: 1.45;
 }
 
+/* Один H1 как на главной — крупная геометрия Syne, янтарный хвост */
 .mon-hero-title {
   font-family: var(--mon-font-display);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  margin: 0 0 18px;
-  line-height: 1;
+  font-size: clamp(40px, 6.5vw, 72px);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+  max-width: 18ch;
+  color: rgba(255, 255, 255, 0.94);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   position: relative;
 }
-/* Линия-акцент под H1 — тот же приём, что на главной (kro-step1-title::after) */
+.mon-hero-title-em {
+  color: rgba(255, 230, 200, 0.96);
+  font-weight: 700;
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .mon-hero-title-em { white-space: normal; }
+}
+/* Линия-акцент под H1 — после окончания входа заголовка */
 .mon-hero-title::after {
   content: '';
   display: block;
   width: 100%;
-  max-width: min(380px, 88vw);
+  max-width: min(420px, 92vw);
   height: 3px;
   margin-top: 18px;
   border-radius: 1px;
   background: linear-gradient(90deg, rgba(245, 158, 11, 0.85) 0%, rgba(245, 158, 11, 0.2) 55%, rgba(255, 255, 255, 0.06) 100%);
   transform: scaleX(0);
   transform-origin: left center;
-  transition: transform 1.05s var(--mon-ease-soft);
+  transition: transform 0.95s var(--mon-ease-soft);
 }
 .mon-page-ready .mon-hero-title::after {
   transform: scaleX(1);
-  transition-delay: 0.52s;
-}
-.mon-hero-title-main {
-  font-size: clamp(2.5rem, 6.2vw, 4rem);
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  color: #fff;
-}
-@media (min-width: 641px) {
-  .mon-hero-title-main {
-    background: linear-gradient(
-      102deg,
-      #fff 0%,
-      rgba(255, 248, 235, 0.95) 40%,
-      rgba(253, 224, 171, 0.9) 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-}
-.mon-hero-title-sub {
-  font-size: clamp(1.05rem, 2.4vw, 1.45rem);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: lowercase;
-  color: rgba(253, 214, 160, 0.48);
+  transition-delay: calc(var(--mon-hero-enter) + var(--mon-dur-hero) * 0.42);
 }
 
 .mon-hero-tagline {
@@ -516,8 +536,86 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-weight: 400;
   color: var(--mon-text-prose);
   line-height: var(--mon-leading-body);
-  margin-bottom: 20px;
+  margin-bottom: 14px;
   max-width: var(--mon-prose-max);
+}
+
+/* Строка как kro-step1-subtitle на главной */
+.mon-hero-punch {
+  font-family: var(--mon-font);
+  font-size: clamp(16px, 1.65vw, 19px);
+  font-weight: 500;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0 0 18px;
+  max-width: var(--mon-prose-max);
+}
+.mon-hero-punch-em {
+  color: rgba(245, 190, 120, 0.98);
+  font-weight: 600;
+}
+
+/* CTA как kro-step1-cta — в конце каскада слева */
+.mon-hero-cta-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+.mon-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--mon-font);
+  font-size: clamp(13px, 1.5vw, 15px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 230, 200, 0.92);
+  background-color: rgba(245, 158, 11, 0.12);
+  padding: 12px 22px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 999px;
+  text-decoration: none;
+  transition: border-color 0.28s ease, background-color 0.28s ease, color 0.28s ease,
+    transform 0.28s ease, box-shadow 0.28s ease;
+  line-height: 1.35;
+  box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+}
+.mon-hero-cta::after {
+  content: '';
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f5c88c' stroke-width='2'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") no-repeat center;
+  background-size: contain;
+}
+.mon-hero-cta:hover {
+  border-color: rgba(245, 158, 11, 0.55);
+  background-color: rgba(245, 158, 11, 0.24);
+  color: rgba(255, 248, 235, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.3), 0 0 28px rgba(245, 158, 11, 0.22);
+}
+.mon-hero-cta:focus-visible {
+  outline: 2px solid rgba(245, 158, 11, 0.7);
+  outline-offset: 3px;
+}
+.mon-hero-cta-note {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.45;
+  max-width: 280px;
+  margin: 0;
+}
+.mon-hero-cta-note-short { display: none; }
+@media (max-width: 640px) {
+  .mon-hero-cta-note-long { display: none; }
+  .mon-hero-cta-note-short { display: inline; }
+  .mon-hero-cta { max-width: 100%; }
 }
 
 .mon-hero-tags {
@@ -813,6 +911,29 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   }
 }
 
+/* «Структура страницы»: волна строк при появлении секции (stagger 0.05–0.15s) */
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row {
+  opacity: 0;
+  animation: monRouteMapRowIn var(--mon-dur-reveal) var(--mon-ease-soft) forwards;
+}
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(1) { animation-delay: 0.05s; }
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(2) { animation-delay: 0.11s; }
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(3) { animation-delay: 0.17s; }
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(4) { animation-delay: 0.23s; }
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(5) { animation-delay: 0.29s; }
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(6) { animation-delay: 0.35s; }
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(7) { animation-delay: 0.41s; }
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(8) { animation-delay: 0.47s; }
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(9) { animation-delay: 0.53s; }
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(10) { animation-delay: 0.59s; }
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(11) { animation-delay: 0.65s; }
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(12) { animation-delay: 0.71s; }
+
+@keyframes monRouteMapRowIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Каскад внутри оффера: заголовок → лид → столпы → focus (волна 0.1–0.15s) */
 @keyframes monRevealChild {
   from {
@@ -834,10 +955,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   transform: translateY(18px);
 }
 .mon-offer.mon-visible .mon-offer-kicker {
-  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.04s both;
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.05s both;
 }
 .mon-offer.mon-visible .mon-offer-title {
-  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.12s both;
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.13s both;
 }
 .mon-offer.mon-visible .mon-offer-lead {
   animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.22s both;
@@ -846,16 +967,16 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.32s both;
 }
 .mon-offer.mon-visible .mon-pillars .mon-pillar:nth-child(2) {
-  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.44s both;
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.42s both;
 }
 .mon-offer.mon-visible .mon-pillars .mon-pillar:nth-child(3) {
-  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.56s both;
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.52s both;
 }
 .mon-offer.mon-visible .mon-offer-focus {
-  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.68s both;
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.62s both;
 }
 .mon-offer.mon-visible .mon-offer-cta-row {
-  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.8s both;
+  animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) 0.72s both;
 }
 
 /* ── СХЕМЫ (блок-схемы вместо абзацев) ───────────────────── */
@@ -2013,13 +2134,13 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   }
 }
 
-/* Волна карточек метрик: stagger ~0.1s (анализ §4) */
+/* Волна карточек метрик: stagger 0.05–0.15s */
 .mon-status-grid .mon-stat-card.mon-reveal:nth-child(1) { --mon-reveal-delay: 0ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(2) { --mon-reveal-delay: 100ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(3) { --mon-reveal-delay: 200ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(4) { --mon-reveal-delay: 300ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(5) { --mon-reveal-delay: 400ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(6) { --mon-reveal-delay: 500ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(2) { --mon-reveal-delay: 90ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(3) { --mon-reveal-delay: 180ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(4) { --mon-reveal-delay: 270ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(5) { --mon-reveal-delay: 360ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(6) { --mon-reveal-delay: 450ms; }
 
 /* ── COLLAPSIBLE ─────────────────────────────────────────── */
 
@@ -2078,7 +2199,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-row-appear {
   opacity: 0;
-  animation: rowAppear 0.48s var(--mon-ease-soft) both;
+  animation: rowAppear 0.58s var(--mon-ease-soft) both;
 }
 
 /* ── BOOT OVERLAY — «окно» с таблицей статусов (как на главной) ── */
@@ -2417,6 +2538,16 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   }
   .mon-hero-copy > *,
   .mon-hero-aside {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .mon-hero-copy .mon-hero-tags .mon-hero-tag {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .mon-route-map .mon-route-map-list > .mon-route-map-row {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
