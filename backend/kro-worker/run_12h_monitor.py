@@ -2497,7 +2497,6 @@ async def analyze_channel_content(username, client=None, link=None):
     }
 
     if client is not None:
-        import asyncio
         from telethon.tl.functions.channels import GetFullChannelRequest
         for i, channel_ref in enumerate(refs):
             try:
