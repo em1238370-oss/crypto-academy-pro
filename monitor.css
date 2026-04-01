@@ -1436,6 +1436,12 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   box-shadow: none;
 }
 .mon-status.risk::before       { content: '●'; font-size: 7px; opacity: 0.85; }
+.mon-status.scam {
+  background: rgba(185,28,28,0.18);
+  color: #f87171;
+  border-color: rgba(185,28,28,0.35);
+}
+.mon-status.scam::before       { content: '●'; font-size: 7px; opacity: 0.9; }
 .mon-status.watch {
   background: rgba(245,158,11,0.12);
   color: #fbbf24;

@@ -33,11 +33,4 @@ jobs:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION_NAME: kro_session
-        run: |
-          set +e
-          python3 backend/scripts/kro-enforce-channel-filters.py
-          code=$?
-          if [ "$code" -ne 0 ]; then
-            echo "::warning::enforce-channel-filters exited with $code (Telethon/фильтры — см. лог)"
-          fi
-          exit 0
+        run: python3 backend/scripts/kro-enforce-channel-filters.py

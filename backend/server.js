@@ -1828,9 +1828,14 @@ function isCryptoContextAllowed(...parts) {
 function normalizeRiskStatusByLoss(totalLossRub, status) {
   const base = (status || '').toString().trim();
   const loss = Number(totalLossRub) || 0;
+  const low = base.toLowerCase();
+  const isConfirmedScam = low.includes('подтвержд') && low.includes('скам');
   if (loss > 0) {
+    if (isConfirmedScam) return base;
     if (!base || base === 'без нарушений' || base === 'под наблюдением') return 'в риске';
-    return base.includes('в риске') ? base : 'в риске';
+    if (low.includes('в риске')) return base;
+    if (low.includes('не по теме')) return 'в риске';
+    return 'в риске';
   }
   return base || 'под наблюдением';
 }

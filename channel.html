@@ -145,6 +145,7 @@
 
   function statusClass(s) {
     var v = (s || '').toLowerCase();
+    if (v.includes('подтвержд') && v.includes('скам')) return 'scam';
     if (v.includes('без нарушений')) return 'clean';
     if (v.includes('в риске') || (v.includes('риск') && !v.includes('наблю'))) return 'risk';
     return 'watch';

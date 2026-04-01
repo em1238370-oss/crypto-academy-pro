@@ -39,6 +39,8 @@ except ImportError:
     _ORGANIC_HELPERS_AVAILABLE = False
 
 import kro_red_flags as _kro_red_flags
+import kro_telethon_limits as _kro_tw
+import kro_unified_risk as _kro_unified
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
@@ -544,15 +546,16 @@ def _normalize_channel_link(ch_or_link):
 
 async def _verify_telegram_channel_exists(client, username_or_link):
     """Проверить существование канала/чата по username или ссылке. Вернуть True если существует."""
+    import asyncio
     try:
         uname = _normalize_channel_link(username_or_link)
         if not uname:
             return True  # домен — не проверяем
         if uname.startswith('joinchat/'):
             return True  # invite hash — не проверяем по get_entity
-        await client.get_entity('https://t.me/' + uname if not uname.startswith('@') else uname)
+        await _kro_tw.tw_call(client.get_entity('https://t.me/' + uname if not uname.startswith('@') else uname))
         return True
-    except Exception:
+    except (Exception, asyncio.TimeoutError):
         return False
 
 
@@ -567,7 +570,7 @@ async def _get_channel_created_at(client, username_or_link):
         if not uname or uname.startswith('joinchat/'):
             return None
         ref = 'https://t.me/' + uname if not uname.startswith('@') else uname
-        entity = await client.get_entity(ref)
+        entity = await _kro_tw.tw_call(client.get_entity(ref))
         created = getattr(entity, 'date', None)
         if created is None:
             return None
@@ -802,7 +805,7 @@ async def _collect_watch_channel_metrics(client, username_or_link):
         if not uname or uname.startswith('joinchat/'):
             return empty
         ref = 'https://t.me/' + uname if not uname.startswith('@') else uname
-        entity = await client.get_entity(ref)
+        entity = await _kro_tw.tw_call(client.get_entity(ref))
         now = datetime.now(timezone.utc)
         cutoff_30d = now - timedelta(days=30)
         fresh_cutoff = now - timedelta(days=WATCH_FRESH_POST_DAYS)
@@ -814,7 +817,8 @@ async def _collect_watch_channel_metrics(client, username_or_link):
         vip_hits = 0
         corpus_chunks = []
 
-        async for msg in client.iter_messages(entity, limit=40):
+        msgs = await _kro_tw.tw_collect_messages(client, entity, limit=40)
+        for msg in msgs:
             msg_date = getattr(msg, 'date', None)
             if not msg_date:
                 continue
@@ -926,14 +930,18 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
         new_tgstat = list(new_tgstat or []) + direct_channels
 
     async def get_entity(cid):
+        import asyncio
         cid = (cid or '').strip()
         if not cid:
             return None
         if not cid.startswith('@') and not cid.startswith('t.me/'):
             cid = '@' + cid
-        if cid.startswith('t.me/'):
-            return await client.get_entity('https://t.me/' + cid.split('/', 1)[-1])
-        return await client.get_entity(cid)
+        try:
+            if cid.startswith('t.me/'):
+                return await _kro_tw.tw_call(client.get_entity('https://t.me/' + cid.split('/', 1)[-1]))
+            return await _kro_tw.tw_call(client.get_entity(cid))
+        except (Exception, asyncio.TimeoutError):
+            return None
 
     def message_link(entity, msg):
         username = (getattr(entity, 'username', None) or '').strip()
@@ -962,7 +970,8 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
                 entity = await get_entity(ch)
                 if not entity:
                     continue
-                async for msg in client.iter_messages(entity, limit=150):
+                tmsgs = await _kro_tw.tw_collect_messages(client, entity, limit=150)
+                for msg in tmsgs:
                     if not msg or not msg.date:
                         continue
                     md = msg.date.replace(tzinfo=timezone.utc) if getattr(msg.date, 'tzinfo', None) is None else msg.date
@@ -1350,7 +1359,7 @@ def build_top3(complaints_list, channel_sum_pairs):
 #   J  source_primary    URL источника (TGStat / Telega)
 #   K  source_evidence   доп. доказательства через "; "
 #   L  cycle_window      YYYY-MM-DD_am | YYYY-MM-DD_pm
-#   M  status            в риске | под наблюдением | без риска
+#   M  status            подтверждённый скам | в риске | под наблюдением | без нарушений | не по теме
 # ---------------------------------------------------------------------------
 
 _SIGNAL_KEYWORDS = [
@@ -1572,14 +1581,20 @@ async def _open_telethon_gate_client():
 
 
 async def _telegram_quality_gate(client, username_or_link, object_type='', source_evidence='', content_analysis=''):
+    import asyncio
+    from telethon.tl.functions.channels import GetFullChannelRequest
+
     uname = _normalize_channel_link(username_or_link)
     if not uname:
         return True, 'not_telegram'
     if uname.startswith('joinchat/'):
         return False, 'invite_link_not_supported'
     ref = 'https://t.me/' + uname if not uname.startswith('@') else uname
+    full = None
     try:
-        entity = await client.get_entity(ref)
+        entity = await _kro_tw.tw_call(client.get_entity(ref))
+    except asyncio.TimeoutError:
+        return False, 'telethon_timeout_get_entity'
     except Exception:
         return False, 'channel_unavailable_or_blocked'
 
@@ -1588,9 +1603,10 @@ async def _telegram_quality_gate(client, username_or_link, object_type='', sourc
 
     participants = 0
     try:
-        from telethon.tl.functions.channels import GetFullChannelRequest
-        full = await client(GetFullChannelRequest(entity))
+        full = await _kro_tw.tw_call(client(GetFullChannelRequest(entity)))
         participants = int(getattr(getattr(full, 'full_chat', None), 'participants_count', 0) or 0)
+    except asyncio.TimeoutError:
+        participants = int(getattr(entity, 'participants_count', 0) or 0)
     except Exception:
         participants = int(getattr(entity, 'participants_count', 0) or 0)
     if participants < MIN_TELEGRAM_SUBSCRIBERS:
@@ -1599,13 +1615,15 @@ async def _telegram_quality_gate(client, username_or_link, object_type='', sourc
     title = (getattr(entity, 'title', None) or '').strip()
     about = ''
     try:
-        about = str(getattr(getattr(full, 'full_chat', None), 'about', '') or '')
+        if full is not None:
+            about = str(getattr(getattr(full, 'full_chat', None), 'about', '') or '')
     except Exception:
         about = ''
 
     posts = []
     try:
-        async for msg in client.iter_messages(entity, limit=40):
+        msgs = await _kro_tw.tw_collect_messages(client, entity, limit=40)
+        for msg in msgs:
             txt = _normalize_message_text((msg.text or '') + ' ' + (getattr(msg, 'message', '') or ''))
             if txt:
                 posts.append(txt)
@@ -1643,10 +1661,20 @@ def _apply_telegram_gate_to_rows(rows, context_label):
         client = await _open_telethon_gate_client()
         if client is None:
             for row in tg_rows:
-                print('%s: skip %s — telethon unavailable for strict gate' % (
-                    context_label,
-                    row.get('username') or row.get('link') or 'unknown',
-                ), file=sys.stderr)
+                ok, reason = _html_telegram_quality_gate_sync(
+                    row.get('username') or row.get('link') or '',
+                    object_type=row.get('object_type', ''),
+                    source_evidence=row.get('source_evidence', ''),
+                    content_analysis=row.get('content_analysis', ''),
+                )
+                if ok:
+                    pass_rows.append(row)
+                else:
+                    print('%s: skip %s — %s (html gate)' % (
+                        context_label,
+                        row.get('username') or row.get('link') or 'unknown',
+                        reason,
+                    ), file=sys.stderr)
             return pass_rows
 
         try:
@@ -1661,6 +1689,21 @@ def _apply_telegram_gate_to_rows(rows, context_label):
                 if ok:
                     pass_rows.append(row)
                 else:
+                    if reason == 'telethon_timeout_get_entity' or 'timeout' in (reason or ''):
+                        ok2, reason2 = _html_telegram_quality_gate_sync(
+                            row.get('username') or row.get('link') or '',
+                            object_type=row.get('object_type', ''),
+                            source_evidence=row.get('source_evidence', ''),
+                            content_analysis=row.get('content_analysis', ''),
+                        )
+                        if ok2:
+                            pass_rows.append(row)
+                            print('%s: html fallback pass %s after %s' % (
+                                context_label,
+                                row.get('username') or row.get('link') or 'unknown',
+                                reason,
+                            ), file=sys.stderr)
+                            continue
                     print('%s: skip %s — %s' % (
                         context_label,
                         row.get('username') or row.get('link') or 'unknown',
@@ -1678,13 +1721,17 @@ def _apply_telegram_gate_to_rows(rows, context_label):
 
 def _status_rank(value):
     v = (value or '').strip().lower()
+    if 'подтвержд' in v and 'скам' in v:
+        return 4
     if 'в риске' in v:
-        return 2
+        return 3
     if 'под наблюдением' in v:
-        return 1
+        return 2
     if 'без нарушений' in v or 'без риска' in v:
+        return 1
+    if 'не по теме' in v:
         return 0
-    return 1
+    return 2
 
 
 def normalizeRiskStatusByLoss(total_loss_rub, status):
@@ -1693,6 +1740,7 @@ def normalizeRiskStatusByLoss(total_loss_rub, status):
     except (ValueError, TypeError):
         loss = 0
     st = (status or '').strip() or 'под наблюдением'
+    # Потери тянут статус минимум до «в риске», но не понижают «подтверждённый скам»
     if loss > 0 and _status_rank(st) < _status_rank('в риске'):
         return 'в риске'
     return st
@@ -1717,6 +1765,121 @@ def _channel_public_slug(ch):
     if not key or key.startswith('t.me/+'):
         return ''
     return key
+
+
+def _parse_tg_view_count_text(raw):
+    """Парсинг '1.2K', '12 345' из блока просмотров t.me."""
+    if not raw:
+        return None
+    s = raw.strip().lower().replace('\xa0', ' ')
+    s = re.sub(r'[^\d.,kmk]', '', s)
+    m = re.match(r'^([\d.,]+)\s*([km])?$', s)
+    if not m:
+        return None
+    num = m.group(1).replace(',', '.')
+    try:
+        v = float(num)
+    except ValueError:
+        return None
+    suf = (m.group(2) or '').lower()
+    if suf == 'k':
+        v *= 1000
+    elif suf == 'm':
+        v *= 1_000_000
+    return int(round(v))
+
+
+def _fetch_tme_public_subscriber_count(slug):
+    """Число подписчиков с публичной страницы t.me/s/<slug> (без Telethon)."""
+    if not slug or slug.startswith('joinchat'):
+        return None
+    slug = slug.lstrip('@').split('/')[0]
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+    except ImportError:
+        return None
+    url = 'https://t.me/s/%s' % slug
+    for ua in (USER_AGENT, USER_AGENT_CHROME):
+        try:
+            resp = requests.get(
+                url,
+                headers={
+                    'User-Agent': ua,
+                    'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
+                },
+                timeout=15,
+            )
+            resp.raise_for_status()
+        except Exception:
+            continue
+        soup = BeautifulSoup(resp.text or '', 'html.parser')
+        extra = soup.select_one('.tgme_page_extra')
+        if not extra:
+            continue
+        text = extra.get_text(' ', strip=True).lower()
+        m = re.search(
+            r'([\d\s\u00a0.,]+)\s*([km])?\s*(?:subscribers|subscriber|подписчик)',
+            text.replace('\xa0', ' '),
+        )
+        if not m:
+            m = re.search(r'([\d\s\u00a0.,]+)\s*([km])?\b', text.replace('\xa0', ' '))
+        if not m:
+            continue
+        num = m.group(1).replace(' ', '').replace(',', '.')
+        try:
+            v = float(num)
+        except ValueError:
+            continue
+        suf = (m.group(2) or '').lower()
+        if suf == 'k':
+            v *= 1000
+        elif suf == 'm':
+            v *= 1_000_000
+        return int(round(v))
+    return None
+
+
+def _html_telegram_quality_gate_sync(username_or_link, object_type='', source_evidence='', content_analysis=''):
+    """Строгий фильтр канала по публичному HTML (если Telethon недоступен)."""
+    uname = _normalize_channel_link(username_or_link)
+    if not uname or uname.startswith('joinchat/'):
+        return False, 'invalid_or_invite_ref'
+    slug = uname.lstrip('@').split('/')[0]
+    subs = _fetch_tme_public_subscriber_count(slug)
+    if subs is None:
+        return False, 'subscribers_unknown_html'
+    if subs < MIN_TELEGRAM_SUBSCRIBERS:
+        return False, 'subscribers_below_%d' % MIN_TELEGRAM_SUBSCRIBERS
+    ref = '@' + slug
+    msgs = _fetch_public_channel_messages(ref, limit=40)
+    last_dt = None
+    posts = []
+    for m in msgs:
+        dt = m.get('date')
+        if dt is not None and (last_dt is None or dt > last_dt):
+            last_dt = dt
+        t = m.get('text') or ''
+        if t:
+            posts.append(t.lower())
+    posts_blob = ' '.join(posts)
+    now = datetime.now(timezone.utc)
+    if last_dt is not None:
+        if last_dt.tzinfo is None:
+            last_dt = last_dt.replace(tzinfo=timezone.utc)
+        if (now - last_dt).days > _kro_unified.MANDATORY_LAST_POST_DAYS:
+            return False, 'mandatory_last_post_stale_html'
+    else:
+        return False, 'mandatory_no_post_date'
+    if not _kro_unified.has_mandatory_crypto_topic(
+        ref, posts_blob, source_evidence, object_type, content_analysis,
+    ):
+        return False, 'mandatory_not_crypto_topic'
+    if not _has_required_signal_channel_terms(
+        ref, '', '', posts_blob, source_evidence, content_analysis, object_type,
+    ):
+        return False, 'missing_required_signal_terms'
+    return True, 'ok_html_fallback'
 
 
 def _content_posts_limit():
@@ -1793,7 +1956,16 @@ def _extract_message_mentions(text, self_key=''):
     return mentions
 
 
-def _summarize_content_messages(messages, channel_ref='', max_posts=None):
+def _summarize_content_messages(
+    messages,
+    channel_ref='',
+    max_posts=None,
+    *,
+    telegram_subscribers=0,
+    channel_date=None,
+    channel_title='',
+    channel_about='',
+):
     cap = _content_posts_limit() if max_posts is None else max(1, min(int(max_posts), 200))
     now = datetime.now(timezone.utc)
     self_key = _norm_ch_key(channel_ref)
@@ -1805,6 +1977,7 @@ def _summarize_content_messages(messages, channel_ref='', max_posts=None):
     last_post_dt = None
     network_mentions = []
     seen_edges = set()
+    post_view_counts = []
 
     slice_msgs = messages[:cap]
     corpus_chunks = []
@@ -1814,6 +1987,12 @@ def _summarize_content_messages(messages, channel_ref='', max_posts=None):
         dt = item.get('date')
         if dt and (last_post_dt is None or dt > last_post_dt):
             last_post_dt = dt
+        v = item.get('views')
+        if v is not None:
+            try:
+                post_view_counts.append(int(v))
+            except (TypeError, ValueError):
+                pass
         if not text:
             continue
         corpus_chunks.append(lower)
@@ -1854,10 +2033,26 @@ def _summarize_content_messages(messages, channel_ref='', max_posts=None):
         activity = 'активен' if age_days <= WATCH_FRESH_POST_DAYS else 'тихий'
 
     corpus_lower = ' '.join(corpus_chunks)
+    title_l = (channel_title or '').lower()
+    about_l = (channel_about or '').lower()
+    if title_l:
+        corpus_lower = title_l + ' ' + corpus_lower
+    if about_l:
+        corpus_lower = about_l + ' ' + corpus_lower
     only_profit_flag = bool(profit_posts and loss_posts == 0)
     red_flags_typed = _kro_red_flags.all_red_flags_by_type(
         corpus_lower, only_profit_posts=only_profit_flag
     )
+
+    ch_created_iso = ''
+    if channel_date is not None:
+        try:
+            cd = channel_date
+            if getattr(cd, 'tzinfo', None) is None:
+                cd = cd.replace(tzinfo=timezone.utc)
+            ch_created_iso = cd.strftime('%Y-%m-%dT%H:%M:%SZ')
+        except Exception:
+            ch_created_iso = ''
 
     analyzed = {
         'status': 'ok' if messages else 'недоступен',
@@ -1876,6 +2071,11 @@ def _summarize_content_messages(messages, channel_ref='', max_posts=None):
         'red_flags_typed': red_flags_typed,
         'red_flags_signal': red_flags_typed.get('сигнал-канал') or [],
         'red_flags_signal_count': len(red_flags_typed.get('сигнал-канал') or []),
+        'telegram_subscribers': int(telegram_subscribers or 0),
+        'post_view_counts': post_view_counts,
+        'channel_title': channel_title or '',
+        'channel_about': channel_about or '',
+        'channel_created_at': ch_created_iso,
     }
     return analyzed
 
@@ -2244,10 +2444,13 @@ def _fetch_public_channel_messages(channel_ref, limit=None):
                     dt = None
             link_node = msg.select_one('a.tgme_widget_message_date')
             post_url = link_node.get('href', '').strip() if link_node else ''
+            vn = msg.select_one('.tgme_widget_message_views')
+            views = _parse_tg_view_count_text(vn.get_text(' ', strip=True) if vn else '') if vn else None
             messages.append({
                 'text': text,
                 'date': dt,
                 'url': post_url,
+                'views': views,
             })
         if messages:
             return messages
@@ -2274,8 +2477,16 @@ async def analyze_channel_content(username, client=None, link=None):
     messages = []
     source = ''
     primary_ref = refs[0]
+    summarize_kw = {
+        'telegram_subscribers': 0,
+        'channel_date': None,
+        'channel_title': '',
+        'channel_about': '',
+    }
 
     if client is not None:
+        import asyncio
+        from telethon.tl.functions.channels import GetFullChannelRequest
         for i, channel_ref in enumerate(refs):
             try:
                 if i:
@@ -2289,9 +2500,30 @@ async def analyze_channel_content(username, client=None, link=None):
                     entity_ref = er
                 else:
                     entity_ref = '@' + _norm_ch_key(er)
-                entity = await client.get_entity(entity_ref)
+                try:
+                    entity = await _kro_tw.tw_call(client.get_entity(entity_ref))
+                except asyncio.TimeoutError:
+                    print('telethon content analysis timeout get_entity %s' % channel_ref, file=sys.stderr)
+                    continue
+                subs = int(getattr(entity, 'participants_count', 0) or 0)
+                about_txt = ''
+                try:
+                    full = await _kro_tw.tw_call(client(GetFullChannelRequest(entity)))
+                    subs = int(getattr(getattr(full, 'full_chat', None), 'participants_count', 0) or subs)
+                    about_txt = str(getattr(getattr(full, 'full_chat', None), 'about', '') or '')
+                except asyncio.TimeoutError:
+                    pass
+                except Exception:
+                    pass
+                title_txt = (getattr(entity, 'title', None) or '').strip()
+                ch_date = getattr(entity, 'date', None)
                 batch = []
-                async for msg in client.iter_messages(entity, limit=lim):
+                try:
+                    tmsgs = await _kro_tw.tw_collect_messages(client, entity, limit=lim)
+                except Exception as e:
+                    print('telethon iter_messages for %s: %s' % (channel_ref, e), file=sys.stderr)
+                    tmsgs = []
+                for msg in tmsgs:
                     text = _normalize_message_text((msg.text or '') + ' ' + (getattr(msg, 'message', '') or ''))
                     msg_dt = getattr(msg, 'date', None)
                     if msg_dt and getattr(msg_dt, 'tzinfo', None) is None:
@@ -2300,11 +2532,23 @@ async def analyze_channel_content(username, client=None, link=None):
                     username_slug = (getattr(entity, 'username', None) or '').strip()
                     if username_slug and getattr(msg, 'id', None):
                         post_url = 'https://t.me/%s/%s' % (username_slug, msg.id)
-                    batch.append({'text': text, 'date': msg_dt, 'url': post_url})
+                    vw = getattr(msg, 'views', None)
+                    batch.append({
+                        'text': text,
+                        'date': msg_dt,
+                        'url': post_url,
+                        'views': int(vw) if vw is not None else None,
+                    })
                 if batch:
                     messages = batch
                     source = 'telethon'
                     primary_ref = channel_ref
+                    summarize_kw = {
+                        'telegram_subscribers': subs,
+                        'channel_about': about_txt,
+                        'channel_title': title_txt,
+                        'channel_date': ch_date,
+                    }
                     break
             except Exception as e:
                 print('telethon content analysis for %s: %s' % (channel_ref, e), file=sys.stderr)
@@ -2318,12 +2562,18 @@ async def analyze_channel_content(username, client=None, link=None):
                 messages = batch
                 source = 'public_html'
                 primary_ref = channel_ref
+                slug = _channel_public_slug(channel_ref)
+                sc = _fetch_tme_public_subscriber_count(slug) if slug else None
+                if sc is not None:
+                    summarize_kw['telegram_subscribers'] = int(sc)
                 break
 
     if not messages:
         return 'недоступен'
 
-    analysis = _summarize_content_messages(messages, channel_ref=primary_ref, max_posts=lim)
+    analysis = _summarize_content_messages(
+        messages, channel_ref=primary_ref, max_posts=lim, **summarize_kw
+    )
     if isinstance(analysis, dict):
         analysis['source'] = source or 'public_html'
         analysis = _attach_deep_content_layer(analysis, messages, primary_ref, lim)
@@ -2391,6 +2641,11 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
     enriched = []
     network_rows = []
     seen_network = set()
+    known_keys = set()
+    for o in confirmed_objects:
+        nk = _norm_ch_key(o.get('username') or o.get('link') or '')
+        if nk:
+            known_keys.add(nk)
     try:
         for obj in confirmed_objects:
             analysis = await analyze_channel_content(
@@ -2400,30 +2655,33 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
             )
             obj = dict(obj)
             if isinstance(analysis, dict):
-                risk_hits = sum(int(v or 0) for v in (analysis.get('keywords') or {}).values())
-                complaints = int(obj.get('complaints') or 0)
-                only_profit = bool(analysis.get('only_profit_posts'))
-                ad_posts = int(analysis.get('ad_posts') or 0)
-                signal_posts = int(analysis.get('signal_posts') or 0)
                 ot_key = _kro_red_flags.object_type_red_flag_key(obj.get('object_type') or '')
                 rf_map = analysis.get('red_flags_typed') or {}
                 typed_flags = list(rf_map.get(ot_key) or [])
                 analysis['red_flags_applied_object_type'] = ot_key
                 analysis['red_flags_applied'] = typed_flags
                 analysis['red_flags_applied_count'] = len(typed_flags)
+
+                subs = int(analysis.get('telegram_subscribers') or 0)
+                ch_iso = analysis.get('channel_created_at') or ''
+                ch_dt = None
+                if ch_iso:
+                    try:
+                        ch_dt = datetime.fromisoformat(ch_iso.replace('Z', '+00:00'))
+                    except ValueError:
+                        ch_dt = None
+                vc = analysis.get('post_view_counts')
+                st, patch = _kro_unified.apply_unified_risk_to_row(
+                    obj,
+                    analysis,
+                    subscribers=subs,
+                    channel_created_dt=ch_dt,
+                    view_counts=vc,
+                    known_base_keys=known_keys,
+                )
+                analysis['unified_risk'] = patch.get('unified_risk') or {}
+                obj['status'] = st
                 obj['content_analysis'] = json.dumps(analysis, ensure_ascii=False)
-                n_type = len(typed_flags)
-                if complaints >= 2 and (
-                    only_profit
-                    or risk_hits >= 3
-                    or ad_posts > signal_posts
-                    or n_type >= 2
-                ):
-                    obj['status'] = 'в риске'
-                elif complaints >= 2:
-                    obj['status'] = 'под наблюдением'
-                if n_type >= 5:
-                    obj['status'] = 'в риске'
                 for mention in (analysis.get('network_mentions') or []):
                     source_channel = mention.get('source_channel') or _channel_display_name(obj.get('username'))
                     target_channel = mention.get('target_channel') or ''
@@ -2441,12 +2699,18 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
                         mention.get('post_url', ''),
                     ])
             else:
-                obj['content_analysis'] = json.dumps(
-                    _sheet_only_content_analysis_from_confirmed(obj, fetch_failed=True),
-                    ensure_ascii=False,
+                sheet_ca = _sheet_only_content_analysis_from_confirmed(obj, fetch_failed=True)
+                st, patch = _kro_unified.apply_unified_risk_to_row(
+                    obj,
+                    sheet_ca,
+                    subscribers=0,
+                    channel_created_dt=None,
+                    view_counts=[],
+                    known_base_keys=known_keys,
                 )
-                if (obj.get('complaints') or 0) >= 2:
-                    obj['status'] = 'под наблюдением'
+                sheet_ca['unified_risk'] = patch.get('unified_risk') or {}
+                obj['status'] = st
+                obj['content_analysis'] = json.dumps(sheet_ca, ensure_ascii=False)
             obj['status'] = _apply_loss_status_floor(obj.get('status', ''), obj.get('total_loss_rub') or 0)
             enriched.append(obj)
     finally:

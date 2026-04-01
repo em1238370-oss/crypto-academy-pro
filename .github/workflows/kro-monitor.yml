@@ -96,6 +96,10 @@ jobs:
           KRO_SCAM_BASE_RANGE: scam_base!A2:N
         run: python3 "${GITHUB_WORKSPACE}/.github/scripts/kro-ci-post-checks.py"
 
+      - name: KRO monitor rollout note
+        run: |
+          echo "::notice::KRO 12h monitor — kro_telethon_limits (10s/RPC), HTML gate fallback, kro_unified_risk + статус подтверждённый скам в content_analysis."
+
       - name: Trigger Render deploy
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}

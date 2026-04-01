@@ -3,7 +3,19 @@ import os
 import re
 import json
 import asyncio
+import sys
 from typing import List, Tuple
+
+# kro-worker на PYTHONPATH (скрипт запускают из корня репозитория)
+_KW = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'kro-worker'))
+if _KW not in sys.path:
+    sys.path.insert(0, _KW)
+
+try:
+    from kro_telethon_limits import tw_call, tw_collect_messages
+except ImportError:
+    tw_call = None
+    tw_collect_messages = None
 
 MIN_TELEGRAM_SUBSCRIBERS = 100
 REQUIRED_SIGNAL_TERMS = (
@@ -17,6 +29,11 @@ REQUIRED_SIGNAL_TERMS = (
     'обменник usdt', 'usdt exchange',
 )
 NOTE = 'не по теме: канал не проходит фильтры (мин. 100 подписчиков + обязательные сигнальные признаки)'
+
+USER_AGENT = (
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+    '(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+)
 
 
 def _load_env():
@@ -101,6 +118,57 @@ def _is_telegram_row(row: List[str]) -> bool:
     return 'сигнал' in obj_type
 
 
+def _fetch_html_subscribers_and_posts(slug: str, post_limit: int = 40):
+    """Возвращает (subscribers_or_none, posts_text_blob_lower)."""
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+    except ImportError:
+        return None, ''
+    slug = slug.lstrip('@').split('/')[0]
+    if not slug or slug.startswith('joinchat'):
+        return None, ''
+    url = 'https://t.me/s/%s' % slug
+    try:
+        resp = requests.get(
+            url,
+            headers={'User-Agent': USER_AGENT, 'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8'},
+            timeout=18,
+        )
+        resp.raise_for_status()
+    except Exception:
+        return None, ''
+    soup = BeautifulSoup(resp.text or '', 'html.parser')
+    extra = soup.select_one('.tgme_page_extra')
+    subs = None
+    if extra:
+        text = extra.get_text(' ', strip=True).lower()
+        m = re.search(
+            r'([\d\s\u00a0.,]+)\s*([km])?\s*(?:subscribers|subscriber|подписчик)',
+            text.replace('\xa0', ' '),
+        )
+        if not m:
+            m = re.search(r'([\d\s\u00a0.,]+)\s*([km])?\b', text.replace('\xa0', ' '))
+        if m:
+            num = m.group(1).replace(' ', '').replace(',', '.')
+            try:
+                v = float(num)
+                suf = (m.group(2) or '').lower()
+                if suf == 'k':
+                    v *= 1000
+                elif suf == 'm':
+                    v *= 1_000_000
+                subs = int(round(v))
+            except ValueError:
+                pass
+    chunks = []
+    for w in soup.select('.tgme_widget_message')[:post_limit]:
+        tn = w.select_one('.tgme_widget_message_text')
+        if tn:
+            chunks.append(tn.get_text(' ', strip=True).lower())
+    return subs, ' '.join(chunks)
+
+
 async def _open_telethon_client():
     from telethon import TelegramClient
     api_id = (os.environ.get('TELEGRAM_API_ID') or '').strip()
@@ -116,7 +184,27 @@ async def _open_telethon_client():
     return client
 
 
-async def _validate_row(client, row: List[str]) -> Tuple[bool, str]:
+def _validate_row_html(row: List[str]) -> Tuple[bool, str]:
+    username = (row[0] if len(row) > 0 else '').strip()
+    link = (row[1] if len(row) > 1 else '').strip()
+    source_evidence = (row[10] if len(row) > 10 else '').strip()
+    content_analysis = (row[13] if len(row) > 13 else '').strip()
+    ref_norm = _normalize_channel_link(link or username)
+    if not ref_norm or ref_norm.startswith('joinchat/'):
+        return False, 'invalid_or_invite_ref'
+    subs, blob = _fetch_html_subscribers_and_posts(ref_norm)
+    if subs is None:
+        print('html_fallback: %s — subscribers_unknown' % (username or link))
+        return False, 'subscribers_unknown_html'
+    if subs < MIN_TELEGRAM_SUBSCRIBERS:
+        return False, 'subscribers_below_100'
+    if not _has_required_terms(username, link, source_evidence, content_analysis, blob):
+        return False, 'missing_required_signal_terms'
+    print('html_fallback_ok: %s (subs≈%s)' % ((username or link), subs))
+    return True, 'ok_html'
+
+
+async def _validate_row_telethon(client, row: List[str]) -> Tuple[bool, str]:
     from telethon.tl.functions.channels import GetFullChannelRequest
 
     username = (row[0] if len(row) > 0 else '').strip()
@@ -127,36 +215,58 @@ async def _validate_row(client, row: List[str]) -> Tuple[bool, str]:
     if not ref_norm or ref_norm.startswith('joinchat/'):
         return False, 'invalid_or_invite_ref'
     ref = 'https://t.me/' + ref_norm if not ref_norm.startswith('@') else ref_norm
+    if tw_call is None:
+        return _validate_row_html(row)
     try:
-        entity = await client.get_entity(ref)
+        entity = await tw_call(client.get_entity(ref))
+    except asyncio.TimeoutError:
+        print('telethon_timeout get_entity: %s' % (username or link))
+        return _validate_row_html(row)
     except Exception:
+        ok_h, why = _validate_row_html(row)
+        if ok_h:
+            return True, 'ok_html_after_telethon_fail'
         return False, 'channel_unavailable_or_blocked'
     if bool(getattr(entity, 'deleted', False)):
         return False, 'channel_deleted'
     participants = 0
     about = ''
     try:
-        full = await client(GetFullChannelRequest(entity))
+        full = await tw_call(client(GetFullChannelRequest(entity)))
         participants = int(getattr(getattr(full, 'full_chat', None), 'participants_count', 0) or 0)
         about = str(getattr(getattr(full, 'full_chat', None), 'about', '') or '')
+    except asyncio.TimeoutError:
+        participants = int(getattr(entity, 'participants_count', 0) or 0)
     except Exception:
         participants = int(getattr(entity, 'participants_count', 0) or 0)
     if participants < MIN_TELEGRAM_SUBSCRIBERS:
         return False, 'subscribers_below_100'
     posts = []
     try:
-        async for msg in client.iter_messages(entity, limit=40):
+        if tw_collect_messages:
+            msgs = await tw_collect_messages(client, entity, limit=40)
+        else:
+            msgs = []
+            agen = client.iter_messages(entity, limit=40).__aiter__()
+            while True:
+                try:
+                    msg = await asyncio.wait_for(agen.__anext__(), timeout=10.0)
+                except (StopAsyncIteration, asyncio.TimeoutError):
+                    break
+                msgs.append(msg)
+        for msg in msgs:
             txt = ((getattr(msg, 'text', None) or '') + ' ' + (getattr(msg, 'message', None) or '')).strip().lower()
             if txt:
                 posts.append(txt)
     except Exception:
         pass
-    if not _has_required_terms(username, link, about, source_evidence, content_analysis, ' '.join(posts)):
+    posts_blob = ' '.join(posts)
+    if not _has_required_terms(username, link, about, source_evidence, content_analysis, posts_blob):
         return False, 'missing_required_signal_terms'
     return True, 'ok'
 
 
-async def _run():
+async def _run_async():
     from googleapiclient.discovery import build
 
     _load_env()
@@ -171,12 +281,13 @@ async def _run():
     rows = (sheets.spreadsheets().values().get(spreadsheetId=sheet_id, range=range_all).execute().get('values') or [])
     if not rows:
         print('No rows in scam_base')
-        return
+        return 0
 
     client = await _open_telethon_client()
+    mode = 'telethon' if client is not None else 'html_fallback'
+    print('enforce-channel-filters: mode=%s' % mode)
     if client is None:
-        print('Telethon unavailable or unauthorized; skipping strict channel filters (no changes applied)')
-        return
+        print('Telethon unavailable or unauthorized; using public t.me HTML for subscriber/signal checks.')
 
     updates = []
     failed = 0
@@ -186,7 +297,10 @@ async def _run():
             if not _is_telegram_row(row):
                 continue
             checked += 1
-            ok, reason = await _validate_row(client, row)
+            if client is not None:
+                ok, reason = await _validate_row_telethon(client, row)
+            else:
+                ok, reason = _validate_row_html(row)
             if ok:
                 continue
             failed += 1
@@ -199,22 +313,28 @@ async def _run():
                 'range': f'{sheet_name}!A{i+2}:N{i+2}',
                 'values': [padded[:14]],
             })
-            print(f"mark_not_relevant: {(padded[0] or padded[1] or 'unknown')} — {reason}")
+            print('mark_not_relevant: %s — %s' % ((padded[0] or padded[1] or 'unknown'), reason))
     finally:
-        try:
-            await client.disconnect()
-        except Exception:
-            pass
+        if client is not None:
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
 
     if updates:
         sheets.spreadsheets().values().batchUpdate(
             spreadsheetId=sheet_id,
             body={'valueInputOption': 'USER_ENTERED', 'data': updates},
         ).execute()
-    print(f'Checked telegram rows: {checked}')
-    print(f'Marked "не по теме": {failed}')
-    print(f'Updated rows: {len(updates)}')
+    print('Checked telegram rows: %d' % checked)
+    print('Marked "не по теме": %d' % failed)
+    print('Updated rows: %d' % len(updates))
+    return 0
+
+
+def main():
+    return asyncio.run(_run_async())
 
 
 if __name__ == '__main__':
-    asyncio.run(_run())
+    raise SystemExit(main())

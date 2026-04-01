@@ -30,7 +30,9 @@ function hasCryptoContext(...parts) {
 
 function statusIsExactRisk(status) {
   const s = String(status || '').trim().toLowerCase();
-  return s === 'в риске';
+  if (s === 'в риске') return true;
+  if (s.includes('подтвержд') && s.includes('скам')) return true;
+  return false;
 }
 
 function parseArgs(argv) {
