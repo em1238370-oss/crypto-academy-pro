@@ -14,7 +14,8 @@ on:
 jobs:
   run-monitor:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Полный collect (веб-парсинг, DDG и т.д.) с раннера GitHub часто >30 мин из‑за таймаутов сети
+    timeout-minutes: 120
 
     steps:
       - name: Checkout repository
