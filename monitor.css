@@ -360,7 +360,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 /* Пролог: hero + оффер — единый «лид» страницы как на одностраничном портфолио */
 .mon-prologue {
   padding-bottom: clamp(44px, 6.5vw, 80px);
-  margin-bottom: clamp(8px, 2vw, 16px);
+  margin-bottom: clamp(14px, 2.6vw, 22px);
   border-bottom: 1px solid var(--mon-border-quiet);
 }
 
@@ -552,18 +552,25 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   white-space: nowrap;
 }
 .mon-hero-jump-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.38);
+  color: rgba(255,255,255,0.56);
   text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: color 0.22s var(--mon-ease-out), border-color 0.22s var(--mon-ease-out);
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: color 0.22s var(--mon-ease-out), border-color 0.22s var(--mon-ease-out), background 0.22s var(--mon-ease-out);
 }
 .mon-hero-jump-link:hover {
-  color: rgba(255, 248, 235, 0.95);
-  border-bottom-color: rgba(245, 158, 11, 0.55);
+  color: rgba(255, 248, 235, 0.98);
+  border-color: rgba(245, 158, 11, 0.52);
+  background: rgba(245, 158, 11, 0.08);
 }
 
 /* ── Оффер (между hero и метриками, как «Стратегия. Эффективность…») ── */
@@ -824,7 +831,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-radius: 0;
   box-shadow: none;
   overflow: visible;
-  padding: clamp(44px, 7vw, 88px) 0;
+  padding: clamp(48px, 7.2vw, 92px) 0;
   margin: 0;
   border-top: 1px solid var(--mon-border-quiet);
 }
@@ -847,6 +854,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-chapter-head-main {
   flex: 1 1 16rem;
   min-width: 0;
+  max-width: 780px;
 }
 .mon-chapter-kicker {
   position: relative;
@@ -877,6 +885,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   line-height: var(--mon-leading-tight);
   color: #fff;
   margin: 0 0 14px;
+  max-width: 18ch;
 }
 .mon-chapter-lead {
   font-size: 16px;
@@ -905,7 +914,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-surface {
   background: var(--mon-surface);
   border: 1px solid var(--mon-border-quiet);
-  border-radius: var(--mon-radius-sm);
+  border-radius: 14px;
   overflow: hidden;
   box-shadow: none;
   transition:
@@ -920,7 +929,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   }
 }
 .mon-surface--pad {
-  padding: clamp(20px, 3vw, 28px);
+  padding: clamp(22px, 3.2vw, 32px);
 }
 .mon-surface .mon-scheme-block:last-of-type + .mon-table-wrap,
 .mon-surface > .mon-table-wrap:first-child {
