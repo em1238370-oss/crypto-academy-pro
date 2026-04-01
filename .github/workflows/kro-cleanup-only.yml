@@ -1,4 +1,5 @@
 # Ручной запуск: только чистка scam_base (без 30+ мин полного монитора).
+# Требует тот же секрет KRO_TELEGRAM_SESSION_BASE64, что и kro-monitor.yml (kro_worker.session в base64).
 name: KRO scam_base cleanup only
 
 on:
@@ -25,17 +26,21 @@ jobs:
           KRO_GOOGLE_CREDENTIALS_BASE64: ${{ secrets.KRO_GOOGLE_CREDENTIALS_BASE64 }}
         run: python3 "${{ github.workspace }}/.github/scripts/write-google-credentials.py"
 
-      - name: Write Telegram session for cleanup (optional)
+      - name: Write Telegram session (KRO_TELEGRAM_SESSION_BASE64)
         env:
           KRO_TELEGRAM_SESSION_BASE64: ${{ secrets.KRO_TELEGRAM_SESSION_BASE64 }}
         run: |
-          if [ -n "${KRO_TELEGRAM_SESSION_BASE64:-}" ]; then
-            mkdir -p backend/kro-worker
-            echo "$KRO_TELEGRAM_SESSION_BASE64" | base64 -d > backend/kro-worker/kro_session.session
-            echo "::notice::Telegram session written for cleanup."
-          else
-            echo "No KRO_TELEGRAM_SESSION_BASE64 — только списки/маркер/лист kro_remove_queue удаляют строки целиком."
+          if [ -z "${KRO_TELEGRAM_SESSION_BASE64:-}" ]; then
+            echo "::error::Задайте секрет KRO_TELEGRAM_SESSION_BASE64 (тот же файл kro_worker.session в base64)."
+            exit 1
           fi
+          mkdir -p backend/kro-worker
+          echo "$KRO_TELEGRAM_SESSION_BASE64" | tr -d '\n\r' | base64 -d > backend/kro-worker/kro_worker.session
+          if [ ! -s backend/kro-worker/kro_worker.session ]; then
+            echo "::error::Файл сессии пуст после base64."
+            exit 1
+          fi
+          echo "::notice::kro_worker.session готов для Telethon."
 
       - name: Run scam_base cleanup
         env:
@@ -43,7 +48,7 @@ jobs:
           KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
-          TELEGRAM_SESSION_NAME: kro_session
+          TELEGRAM_SESSION_NAME: kro_worker
           KRO_CLEANUP_EXTRA_DELETE: ${{ secrets.KRO_CLEANUP_EXTRA_DELETE }}
         run: python3 backend/scripts/kro-cleanup-scam-base.py
 

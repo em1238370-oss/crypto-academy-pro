@@ -8,8 +8,8 @@
      (лист можно создать в той же книге); или
   2) Задайте секрет GitHub **KRO_CLEANUP_EXTRA_DELETE** (или env): список @ через запятую/перенос; или
   3) В колонке N (content_analysis) для строки впишите маркер **__KRO_REMOVE__** — строка будет удалена.
-- «Строгая» проверка через Telethon (пометка удалён / отсев) работает только если на раннере есть
-  авторизованный файл сессии (см. секрет KRO_TELEGRAM_SESSION_BASE64 в workflow).
+- «Строгая» проверка через Telethon (пометка удалён / отсев) — на CI нужен **kro_worker.session**
+  в секрете KRO_TELEGRAM_SESSION_BASE64 (как в kro-monitor.yml).
 """
 import argparse
 import asyncio
@@ -100,7 +100,7 @@ def _get_sheet_client():
 
 def _telegram_session_path() -> str:
     """Путь к сессии Telethon без суффикса .session (его добавляет клиент)."""
-    name = (os.environ.get('TELEGRAM_SESSION_NAME') or 'kro_session').strip()
+    name = (os.environ.get('TELEGRAM_SESSION_NAME') or 'kro_worker').strip()
     explicit = (os.environ.get('TELEGRAM_SESSION_PATH') or '').strip()
     if explicit:
         return explicit
