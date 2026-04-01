@@ -40,6 +40,7 @@ except ImportError:
 
 import kro_red_flags as _kro_red_flags
 import kro_telethon_limits as _kro_tw
+import kro_telethon_session as _kro_ts
 import kro_unified_risk as _kro_unified
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -896,7 +897,7 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
         return tg_data, existing, channel_ages_from_tg
 
     try:
-        from telethon import TelegramClient
+        from telethon import TelegramClient  # noqa: F401 — только проверка, что Telethon установлен
     except ImportError as e:
         print('Telethon не установлен: %s. Установите: pip install telethon. Чаты с жалобами недоступны, отчёт формируется без них.' % e, file=sys.stderr)
         tg_data['_telegram_unavailable'] = True
@@ -913,7 +914,7 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
                 existing.add(_object_link(ch))
         return tg_data, existing, channel_ages_from_tg
 
-    client = TelegramClient(TELEGRAM_SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+    client = _kro_ts.build_kro_telegram_client(TELEGRAM_API_ID, TELEGRAM_API_HASH)
     await client.start()
 
     # Прямой поиск новых каналов в Telegram (основной источник, не требует TGStat API)
@@ -1563,8 +1564,7 @@ async def _open_telethon_gate_client():
         return None
     client = None
     try:
-        from telethon import TelegramClient
-        client = TelegramClient(TELEGRAM_SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+        client = _kro_ts.build_kro_telegram_client(TELEGRAM_API_ID, TELEGRAM_API_HASH)
         await client.connect()
         if not await client.is_user_authorized():
             await client.disconnect()
@@ -2633,8 +2633,7 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
     client = None
     if TELEGRAM_API_ID and TELEGRAM_API_HASH:
         try:
-            from telethon import TelegramClient
-            client = TelegramClient(TELEGRAM_SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+            client = _kro_ts.build_kro_telegram_client(TELEGRAM_API_ID, TELEGRAM_API_HASH)
             await client.connect()
             if not await client.is_user_authorized():
                 await client.disconnect()
@@ -3643,8 +3642,7 @@ async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=No
     client_tg = None
     if TELEGRAM_API_ID and TELEGRAM_API_HASH:
         try:
-            from telethon import TelegramClient
-            client_tg = TelegramClient(TELEGRAM_SESSION_NAME, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+            client_tg = _kro_ts.build_kro_telegram_client(TELEGRAM_API_ID, TELEGRAM_API_HASH)
             await client_tg.connect()
             if not await client_tg.is_user_authorized():
                 await client_tg.disconnect()

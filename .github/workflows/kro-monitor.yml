@@ -6,12 +6,11 @@ name: KRO 12h Monitor
 # После успешного цикла монитора: POST на Render Deploy Hook (секрет RENDER_DEPLOY_HOOK).
 # Создать hook: Render → сервис → Settings → Deploy Hook → Create hook → URL в GitHub → Secrets.
 #
-# Telethon на CI (обязательно для реальных проверок каналов перед записью в scam_base):
-#   1) Локально: backend/kro-worker/kro_worker.session (вход по QR / Desktop, см. docs в kro-worker).
-#   2) Закодировать в одну строку base64 и добавить секрет KRO_TELEGRAM_SESSION_BASE64.
-#      macOS:  base64 -i backend/kro-worker/kro_worker.session | tr -d '\n' | pbcopy
-#      Linux:  base64 -w0 backend/kro-worker/kro_worker.session | xclip -selection clipboard
-#   3) В репозитории уже заданы TELEGRAM_API_ID / TELEGRAM_API_HASH (secrets).
+# Telethon на CI: секрет KRO_TELEGRAM_SESSION_STRING (Telethon StringSession, ~350 символов).
+# Файл .session в base64 в GitHub Secret не помещается — используйте экспорт строки:
+#   cd backend/kro-worker && python3 export_telethon_string_session.py
+# Скопируйте одну строку вывода в Secrets → KRO_TELEGRAM_SESSION_STRING.
+# Также нужны TELEGRAM_API_ID и TELEGRAM_API_HASH (secrets).
 on:
   schedule:
     - cron: '0 9 * * *'   # 12:00 MSK
@@ -42,22 +41,15 @@ jobs:
           KRO_GOOGLE_CREDENTIALS_BASE64: ${{ secrets.KRO_GOOGLE_CREDENTIALS_BASE64 }}
         run: python3 "${{ github.workspace }}/.github/scripts/write-google-credentials.py"
 
-      # До монитора: иначе Telethon не авторизован и жёсткие проверки объекта не выполняются.
-      - name: Write Telegram session (KRO_TELEGRAM_SESSION_BASE64)
+      - name: Check Telethon StringSession secret
         env:
-          KRO_TELEGRAM_SESSION_BASE64: ${{ secrets.KRO_TELEGRAM_SESSION_BASE64 }}
+          KRO_TELEGRAM_SESSION_STRING: ${{ secrets.KRO_TELEGRAM_SESSION_STRING }}
         run: |
-          if [ -z "${KRO_TELEGRAM_SESSION_BASE64:-}" ]; then
-            echo "::error::Задайте секрет KRO_TELEGRAM_SESSION_BASE64 (base64 файла backend/kro-worker/kro_worker.session). Без него на CI Telethon не работает."
+          if [ -z "${KRO_TELEGRAM_SESSION_STRING:-}" ]; then
+            echo "::error::Задайте KRO_TELEGRAM_SESSION_STRING (вывод export_telethon_string_session.py). Base64-файл сессии в Secret не помещается."
             exit 1
           fi
-          mkdir -p backend/kro-worker
-          echo "$KRO_TELEGRAM_SESSION_BASE64" | tr -d '\n\r' | base64 -d > backend/kro-worker/kro_worker.session
-          if [ ! -s backend/kro-worker/kro_worker.session ]; then
-            echo "::error::Файл сессии пуст после base64 — проверьте секрет (одна строка, без лишних переносов)."
-            exit 1
-          fi
-          echo "::notice::kro_worker.session записан в backend/kro-worker/ для Run 12h monitor и cleanup."
+          echo "::notice::KRO_TELEGRAM_SESSION_STRING задан (длина ${#KRO_TELEGRAM_SESSION_STRING} символов)."
 
       - name: Read previous last_cycle_at snapshot
         id: pre_cycle
@@ -108,6 +100,7 @@ jobs:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION_NAME: kro_worker
+          KRO_TELEGRAM_SESSION_STRING: ${{ secrets.KRO_TELEGRAM_SESSION_STRING }}
         run: python3 run_12h_monitor.py
 
       - name: Periodic scam_base cleanup (strict gate)
@@ -117,6 +110,7 @@ jobs:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION_NAME: kro_worker
+          KRO_TELEGRAM_SESSION_STRING: ${{ secrets.KRO_TELEGRAM_SESSION_STRING }}
           KRO_CLEANUP_EXTRA_DELETE: ${{ secrets.KRO_CLEANUP_EXTRA_DELETE }}
         run: python3 backend/scripts/kro-cleanup-scam-base.py
 

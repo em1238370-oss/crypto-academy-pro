@@ -8,8 +8,7 @@
      (лист можно создать в той же книге); или
   2) Задайте секрет GitHub **KRO_CLEANUP_EXTRA_DELETE** (или env): список @ через запятую/перенос; или
   3) В колонке N (content_analysis) для строки впишите маркер **__KRO_REMOVE__** — строка будет удалена.
-- «Строгая» проверка через Telethon (пометка удалён / отсев) — на CI нужен **kro_worker.session**
-  в секрете KRO_TELEGRAM_SESSION_BASE64 (как в kro-monitor.yml).
+- На CI: секрет **KRO_TELEGRAM_SESSION_STRING** (Telethon StringSession, см. export_telethon_string_session.py).
 """
 import argparse
 import asyncio
@@ -19,6 +18,9 @@ import re
 import sys
 from datetime import datetime, timedelta, timezone
 
+_KRO_WORKER = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'kro-worker'))
+if _KRO_WORKER not in sys.path:
+    sys.path.insert(0, _KRO_WORKER)
 
 TARGET_DELETE = {
     '@poizongo',
@@ -98,22 +100,6 @@ def _get_sheet_client():
     return build('sheets', 'v4', credentials=creds, cache_discovery=False)
 
 
-def _telegram_session_path() -> str:
-    """Путь к сессии Telethon без суффикса .session (его добавляет клиент)."""
-    name = (os.environ.get('TELEGRAM_SESSION_NAME') or 'kro_worker').strip()
-    explicit = (os.environ.get('TELEGRAM_SESSION_PATH') or '').strip()
-    if explicit:
-        return explicit
-    root = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
-    worker = os.path.join(root, 'backend', 'kro-worker', name)
-    if os.path.isfile(worker + '.session'):
-        return worker
-    cwd_path = os.path.join(os.getcwd(), name)
-    if os.path.isfile(cwd_path + '.session'):
-        return cwd_path
-    return name
-
-
 def _extra_delete_from_env() -> set:
     raw = (os.environ.get('KRO_CLEANUP_EXTRA_DELETE') or '').strip()
     if not raw:
@@ -161,19 +147,18 @@ def _row_marked_for_removal(rr: list) -> bool:
 
 
 async def _open_tg_client():
+    import kro_telethon_session as _kro_ts
+
     api_id = (os.environ.get('TELEGRAM_API_ID') or '').strip()
     api_hash = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
     if not api_id or not api_hash:
         return None
     try:
-        from telethon import TelegramClient
-
-        session_path = _telegram_session_path()
-        c = TelegramClient(session_path, int(api_id), api_hash)
+        c = _kro_ts.build_kro_telegram_client(int(api_id), api_hash)
         await c.connect()
         if not await c.is_user_authorized():
             await c.disconnect()
-            print('WARNING: Telethon сессия не авторизована (нет файла .session на раннере?)')
+            print('WARNING: Telethon не авторизован (проверьте KRO_TELEGRAM_SESSION_STRING или .session)')
             return None
         print('INFO: Telethon подключён, строгие проверки строк включены')
         return c

@@ -180,13 +180,13 @@ def _fetch_html_subscribers_and_posts(slug: str, post_limit: int = 40):
 
 
 async def _open_telethon_client():
-    from telethon import TelegramClient
+    import kro_telethon_session as _kro_ts
+
     api_id = (os.environ.get('TELEGRAM_API_ID') or '').strip()
     api_hash = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
-    session = (os.environ.get('TELEGRAM_SESSION_NAME') or 'kro_session').strip()
     if not api_id or not api_hash:
         return None
-    client = TelegramClient(session, int(api_id), api_hash)
+    client = _kro_ts.build_kro_telegram_client(int(api_id), api_hash)
     await client.connect()
     if not await client.is_user_authorized():
         await client.disconnect()

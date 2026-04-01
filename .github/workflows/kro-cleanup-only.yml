@@ -1,5 +1,5 @@
 # Ручной запуск: только чистка scam_base (без 30+ мин полного монитора).
-# Требует тот же секрет KRO_TELEGRAM_SESSION_BASE64, что и kro-monitor.yml (kro_worker.session в base64).
+# Тот же секрет KRO_TELEGRAM_SESSION_STRING, что и kro-monitor.yml.
 name: KRO scam_base cleanup only
 
 on:
@@ -26,21 +26,14 @@ jobs:
           KRO_GOOGLE_CREDENTIALS_BASE64: ${{ secrets.KRO_GOOGLE_CREDENTIALS_BASE64 }}
         run: python3 "${{ github.workspace }}/.github/scripts/write-google-credentials.py"
 
-      - name: Write Telegram session (KRO_TELEGRAM_SESSION_BASE64)
+      - name: Check Telethon StringSession secret
         env:
-          KRO_TELEGRAM_SESSION_BASE64: ${{ secrets.KRO_TELEGRAM_SESSION_BASE64 }}
+          KRO_TELEGRAM_SESSION_STRING: ${{ secrets.KRO_TELEGRAM_SESSION_STRING }}
         run: |
-          if [ -z "${KRO_TELEGRAM_SESSION_BASE64:-}" ]; then
-            echo "::error::Задайте секрет KRO_TELEGRAM_SESSION_BASE64 (тот же файл kro_worker.session в base64)."
+          if [ -z "${KRO_TELEGRAM_SESSION_STRING:-}" ]; then
+            echo "::error::Задайте KRO_TELEGRAM_SESSION_STRING (python3 backend/kro-worker/export_telethon_string_session.py)."
             exit 1
           fi
-          mkdir -p backend/kro-worker
-          echo "$KRO_TELEGRAM_SESSION_BASE64" | tr -d '\n\r' | base64 -d > backend/kro-worker/kro_worker.session
-          if [ ! -s backend/kro-worker/kro_worker.session ]; then
-            echo "::error::Файл сессии пуст после base64."
-            exit 1
-          fi
-          echo "::notice::kro_worker.session готов для Telethon."
 
       - name: Run scam_base cleanup
         env:
@@ -49,6 +42,7 @@ jobs:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION_NAME: kro_worker
+          KRO_TELEGRAM_SESSION_STRING: ${{ secrets.KRO_TELEGRAM_SESSION_STRING }}
           KRO_CLEANUP_EXTRA_DELETE: ${{ secrets.KRO_CLEANUP_EXTRA_DELETE }}
         run: python3 backend/scripts/kro-cleanup-scam-base.py
 
