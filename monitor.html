@@ -7,9 +7,9 @@
   <meta name="description" content="Живой монитор системы антискам-мониторинга. Актуальные данные о скам-каналах, история циклов, источники.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
-  <link rel="stylesheet" href="/monitor.css?v=20260403-monitor-stack">
+  <link rel="stylesheet" href="/monitor.css?v=20260403-no-tech-stack">
 </head>
 <body class="mon-page">
 
@@ -137,49 +137,6 @@
       <span class="mon-offer-cta-hint">Тот же визуальный язык и данные — отдельная страница только для монитора.</span>
     </div>
   </section>
-
-  <!-- Стек «Верстка · Анимации · Сборка» — по §6 анализа medvedevart + главная KRO -->
-  <section class="mon-chapter mon-section mon-tech-dossier" id="tech-stack" aria-labelledby="mon-tech-heading">
-    <header class="mon-chapter-head">
-      <p class="mon-chapter-kicker">Стек страницы</p>
-      <h2 id="mon-tech-heading" class="mon-chapter-title mon-chapter-title--dossier">Верстка · Анимации · Сборка</h2>
-      <p class="mon-chapter-lead">Статическая страница с токенами движения и лёгким JS — тот же принцип, что у executive-портфолио: без тяжёлого фреймворка, упор на типографику и метрики.</p>
-    </header>
-    <div class="mon-chapter-body">
-      <div class="mon-tech-grid">
-        <article class="mon-tech-card">
-          <span class="mon-tech-card-index" aria-hidden="true">01</span>
-          <h3 class="mon-tech-card-title">Верстка</h3>
-          <p class="mon-tech-card-lead">Семантика, сетка и переменные в <code class="mon-tech-code">:root</code> — полный контроль без разрастания утилит.</p>
-          <ul class="mon-tech-chip-row" aria-label="Слой вёрстки">
-            <li><span class="mon-tech-chip">HTML5</span></li>
-            <li><span class="mon-tech-chip">CSS tokens</span></li>
-            <li><span class="mon-tech-chip">Grid / flex</span></li>
-          </ul>
-        </article>
-        <article class="mon-tech-card">
-          <span class="mon-tech-card-index" aria-hidden="true">02</span>
-          <h3 class="mon-tech-card-title">Анимации</h3>
-          <p class="mon-tech-card-lead">Появление hero каскадом; секции и карточки — <span class="mon-tech-mono">fade-up</span> через IntersectionObserver и задержки по дочерним элементам.</p>
-          <ul class="mon-tech-chip-row" aria-label="Слой анимаций">
-            <li><span class="mon-tech-chip">CSS keyframes</span></li>
-            <li><span class="mon-tech-chip">IO + класс</span></li>
-            <li><span class="mon-tech-chip">RAF счётчики</span></li>
-          </ul>
-        </article>
-        <article class="mon-tech-card">
-          <span class="mon-tech-card-index" aria-hidden="true">03</span>
-          <h3 class="mon-tech-card-title">Сборка</h3>
-          <p class="mon-tech-card-lead">Готовые HTML/CSS/JS на сервере; шрифты и Lenis с CDN; версия в query у стилей для сброса кэша.</p>
-          <ul class="mon-tech-chip-row" aria-label="Слой деплоя">
-            <li><span class="mon-tech-chip">Статика</span></li>
-            <li><span class="mon-tech-chip">API + Sheets</span></li>
-            <li><span class="mon-tech-chip">Lenis desktop</span></li>
-          </ul>
-        </article>
-      </div>
-    </div>
-  </section>
   </div>
 
   <!-- Карта страницы: иерархия как у executive-портфолио (см. анализ medvedevart) -->
@@ -187,7 +144,7 @@
     <header class="mon-chapter-head">
       <p class="mon-chapter-kicker">00 · Навигация</p>
       <h2 id="mon-map-heading" class="mon-chapter-title">Структура страницы</h2>
-      <p class="mon-chapter-lead">Один поток сверху вниз: главный акцент → оффер → блок стека (верстка / анимации / сборка) → метрики → кейсы → таблицы → происхождение данных.</p>
+      <p class="mon-chapter-lead">Один поток сверху вниз: от снимка системы к деталям и архиву — главный акцент → оффер → метрики → кейсы → таблицы → происхождение данных.</p>
     </header>
     <div class="mon-chapter-body">
       <div class="mon-surface mon-route-map-surface">
@@ -206,11 +163,6 @@
             <span class="mon-route-map-num">—</span>
             <a class="mon-route-map-block" href="#mon-offer-section">Подход</a>
             <span class="mon-route-map-desc">Три столпа: источники, строка в таблице, живой цикл — аналог блока «Стратегия. Эффективность…».</span>
-          </li>
-          <li class="mon-route-map-row">
-            <span class="mon-route-map-num">—</span>
-            <a class="mon-route-map-block" href="#tech-stack">Стек</a>
-            <span class="mon-route-map-desc">Верстка, анимации и сборка страницы — как в разделе про технологии medvedevart.</span>
           </li>
           <li class="mon-route-map-row">
             <span class="mon-route-map-num">01</span>

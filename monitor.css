@@ -34,10 +34,9 @@
   --mon-cyan:       #06b6d4;
   --mon-violet:     #8b5cf6;
 
-  /* Syne + Manrope + Archivo для «стальных» подзаголовков стека (medvedevart §3, §6) */
+  /* Как на главной: Syne + Manrope */
   --mon-font:         'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --mon-font-display: 'Syne', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-  --mon-font-tech:    'Archivo', 'Syne', var(--mon-font);
   --mon-font-mono:    'SF Mono', ui-monospace, Monaco, 'Cascadia Code', monospace;
   --mon-steel:        rgba(110, 122, 145, 0.35);
   --mon-steel-line:   rgba(72, 82, 104, 0.55);
@@ -750,131 +749,6 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   max-width: 36rem;
 }
 
-/* ── TECH DOSSIER (§6 анализа medvedevart: верстка / анимации / сборка) ── */
-
-.mon-tech-dossier {
-  padding-top: clamp(36px, 5.5vw, 64px);
-}
-
-.mon-tech-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(14px, 2vw, 22px);
-}
-
-.mon-tech-card {
-  position: relative;
-  padding: clamp(22px, 2.8vw, 28px) clamp(20px, 2.4vw, 26px) 24px;
-  background: linear-gradient(165deg, rgba(20, 22, 30, 0.98) 0%, rgba(11, 13, 19, 0.96) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 14px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
-  transition:
-    transform 0.28s var(--mon-ease-out),
-    border-color 0.28s var(--mon-ease-out),
-    box-shadow 0.32s var(--mon-ease-soft);
-  overflow: hidden;
-}
-.mon-tech-card::after {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 2px;
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.55), transparent 72%);
-  opacity: 0.85;
-  pointer-events: none;
-}
-@media (min-width: 641px) and (hover: hover) {
-  .mon-tech-card:hover {
-    transform: translateY(-3px);
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 20px 52px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(245, 158, 11, 0.06);
-  }
-}
-
-.mon-tech-card-index {
-  position: absolute;
-  right: 14px;
-  top: 10px;
-  font-family: var(--mon-font-tech);
-  font-size: clamp(2.5rem, 5vw, 3.25rem);
-  font-weight: 800;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.04);
-  letter-spacing: -0.04em;
-  user-select: none;
-  pointer-events: none;
-}
-
-.mon-tech-card-title {
-  font-family: var(--mon-font-tech);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 240, 220, 0.92);
-  margin: 0 0 12px;
-  padding-right: 3rem;
-}
-
-.mon-tech-card-lead {
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--mon-text-prose);
-  margin: 0 0 18px;
-}
-
-.mon-tech-code {
-  font-family: var(--mon-font-mono);
-  font-size: 0.9em;
-  color: rgba(255, 200, 140, 0.88);
-  font-weight: 500;
-}
-
-.mon-tech-mono {
-  font-family: var(--mon-font-mono);
-  font-size: 0.92em;
-  color: rgba(255, 255, 255, 0.62);
-}
-
-.mon-tech-chip-row {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-}
-
-.mon-tech-chip {
-  display: inline-block;
-  font-family: var(--mon-font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 5px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--mon-steel-line);
-  color: rgba(255, 255, 255, 0.52);
-  background: rgba(0, 0, 0, 0.25);
-}
-
-/* Волна карточек стека при появлении секции */
-.mon-tech-dossier.mon-section.mon-visible .mon-tech-card {
-  opacity: 0;
-  animation: monRouteMapRowIn var(--mon-dur-reveal) var(--mon-ease-soft) forwards;
-}
-.mon-tech-dossier.mon-section.mon-visible .mon-tech-card:nth-child(1) { animation-delay: 0.08s; }
-.mon-tech-dossier.mon-section.mon-visible .mon-tech-card:nth-child(2) { animation-delay: 0.18s; }
-.mon-tech-dossier.mon-section.mon-visible .mon-tech-card:nth-child(3) { animation-delay: 0.28s; }
-
-@media (max-width: 900px) {
-  .mon-tech-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* Карта страницы — таблица иерархии как в анализе структуры medvedevart */
 .mon-route-map .mon-chapter-lead {
   max-width: 46rem;
@@ -1002,7 +876,6 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(10) { animation-delay: 0.59s; }
 .mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(11) { animation-delay: 0.65s; }
 .mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(12) { animation-delay: 0.71s; }
-.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(13) { animation-delay: 0.77s; }
 
 @keyframes monRouteMapRowIn {
   from { opacity: 0; transform: translateY(14px); }
@@ -1259,14 +1132,6 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   color: #fff;
   margin: 0 0 14px;
   max-width: min(22ch, 100%);
-}
-.mon-chapter-title--dossier {
-  font-family: var(--mon-font-tech);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-  font-size: clamp(1.35rem, 3vw, 2.05rem);
-  max-width: none;
 }
 .mon-chapter-lead {
   font-size: 16px;
@@ -2209,11 +2074,6 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     transform: none !important;
     animation: none !important;
   }
-  .mon-tech-dossier.mon-section .mon-tech-card {
-    opacity: 1 !important;
-    animation: none !important;
-    transform: none !important;
-  }
   .mon-row-appear,
   tr.mon-row-appear,
   article.mon-row-appear {
@@ -2631,11 +2491,6 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     transform: none !important;
   }
   .mon-route-map .mon-route-map-list > .mon-route-map-row {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
-  .mon-tech-dossier.mon-section .mon-tech-card {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
