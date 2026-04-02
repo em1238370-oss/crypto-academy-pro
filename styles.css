@@ -1227,11 +1227,15 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-feature1-dashboard-sub {
    font-size: 13px;
    color: rgba(255, 255, 255, 0.6);
-   margin: 20px 0 0;
+   margin: 20px auto 0;
+   max-width: 560px;
+   text-align: center;
 }
 
 .kro-f1-source-doc-wrap {
-   margin: 14px 0 0;
+   margin: 14px auto 0;
+   max-width: 560px;
+   text-align: center;
 }
 
 .kro-f1-source-doc-link {
@@ -1396,9 +1400,10 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-feature1-source-caption {
    font-size: 12px;
    color: rgba(255, 255, 255, 0.5);
-   margin: 8px 0 0 0;
-   max-width: 520px;
-   line-height: 1.4;
+   margin: 10px auto 0;
+   max-width: min(560px, 100%);
+   line-height: 1.45;
+   text-align: center;
 }
 
 .kro-f1-system-note {
