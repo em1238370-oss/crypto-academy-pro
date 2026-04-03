@@ -42,7 +42,7 @@ cd "/Users/macmini/Documents/Crypto academy pro/crypto-academy-pro1/backend/kro-
 Скопируй и вставь целиком, нажми Enter:
 
 ```bash
-cd "/Users/macmini/Documents/Crypto academy pro/crypto-academy-pro1/backend/kro-worker" && TELEGRAM_API_ID=12768690 TELEGRAM_API_HASH=7c85f4ac3da945983d72d69fbf4485c5 python3 -c "
+cd "/path/to/crypto-academy-pro/backend/kro-worker" && set -a && source .env 2>/dev/null || source env 2>/dev/null; set +a && python3 -c "
 from telethon import TelegramClient
 import os
 client = TelegramClient('kro_worker', int(os.environ['TELEGRAM_API_ID']), os.environ['TELEGRAM_API_HASH'])
@@ -51,6 +51,7 @@ asyncio.run(client.start())
 print('Готово! Сессия сохранена.')
 "
 ```
+(В `.env` или `env` в этой папке должны быть заданы `TELEGRAM_API_ID` и `TELEGRAM_API_HASH`.)
 
 - Телеграм попросит **номер телефона** (в формате +79xxxxxxxxx).
 - Потом придёт **код** в приложение Telegram — введи его в терминал.

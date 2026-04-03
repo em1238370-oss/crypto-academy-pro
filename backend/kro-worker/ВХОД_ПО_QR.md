@@ -52,5 +52,5 @@ python3 run_with_env.py @durov
 
 ## Важно
 
-- В **env** для этого способа оставь **свой** TELEGRAM_API_ID и TELEGRAM_API_HASH (12768690 и твой hash), не подменяй на 2040.
+- В **env** / **.env** укажи **свои** TELEGRAM_API_ID и TELEGRAM_API_HASH с my.telegram.org, не подменяй на чужие примеры (в старых инструкциях встречался тестовый 2040).
 - QR действует примерно 30 секунд. Если не успела — запусти `python3 login_via_qr.py` ещё раз и отсканируй новый QR.

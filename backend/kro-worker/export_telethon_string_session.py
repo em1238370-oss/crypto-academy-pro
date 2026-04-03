@@ -19,34 +19,40 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 
 
-def _load_dotenv() -> None:
-    for name in ('.env', 'env'):
-        p = SCRIPT_DIR / name
-        if not p.is_file():
+def _apply_env_lines(text: str) -> None:
+    """Подставляет только непустые значения (пустые TELEGRAM_API_ID= в .env не затирают GitHub)."""
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
             continue
-        for line in p.read_text(encoding='utf-8', errors='replace').splitlines():
-            line = line.strip()
-            if not line or line.startswith('#') or '=' not in line:
-                continue
-            k, _, v = line.partition('=')
-            k, v = k.strip(), v.strip()
-            if (v.startswith('"') and v.endswith('"')) or (v.startswith("'") and v.endswith("'")):
-                v = v[1:-1]
-            if k and k not in os.environ:
-                os.environ[k] = v
-        break
+        k, _, v = line.partition('=')
+        k, v = k.strip(), v.strip()
+        if not k:
+            continue
+        if (v.startswith('"') and v.endswith('"')) or (v.startswith("'") and v.endswith("'")):
+            v = v[1:-1]
+        if not v.strip():
+            continue
+        os.environ[k] = v.strip()
+
+
+def _load_dotenv() -> None:
+    # Корень репозитория → backend/kro-worker (типично: уже заполненный .env в корне)
+    repo_root = SCRIPT_DIR.parent.parent
+    for p in (repo_root / '.env', SCRIPT_DIR / 'env', SCRIPT_DIR / '.env'):
+        if p.is_file():
+            _apply_env_lines(p.read_text(encoding='utf-8', errors='replace'))
 
 
 _HELP_ENV = """
-Нет TELEGRAM_API_ID / TELEGRAM_API_HASH.
+Нет TELEGRAM_API_ID / TELEGRAM_API_HASH (или в файлах только пустые значения после =).
 
-  1) Зайдите на https://my.telegram.org → API development tools → создайте приложение.
-  2) В этой папке выполните:
-       cp .env.example .env
-     откройте .env и вставьте в TELEGRAM_API_ID и TELEGRAM_API_HASH числа/строку с сайта.
+Скрипт читает по порядку: корень репозитория .env → backend/kro-worker/env → backend/kro-worker/.env
+(подставляются только строки с непустым значением).
+
+  1) https://my.telegram.org → API development tools → api_id и api_hash.
+  2) Впишите их в backend/kro-worker/.env или в корневой .env проекта.
   3) Снова: python3 export_telethon_string_session.py
-
-(Можно вместо .env положить файл «env» без точки — скрипт читает и его.)
 """
 
 _HELP_SESSION = """

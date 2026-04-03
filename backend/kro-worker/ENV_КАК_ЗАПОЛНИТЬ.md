@@ -7,8 +7,8 @@
 Одна строка — одна переменная, без пробелов вокруг `=`:
 
 ```
-TELEGRAM_API_ID=12768690
-TELEGRAM_API_HASH=7c85f4ac3da945983d72d69fbf4485c5
+TELEGRAM_API_ID=ваш_api_id_число
+TELEGRAM_API_HASH=ваш_api_hash_строка
 KRO_SHEET_ID=1C1NQwqmLRg59xgplnz5PeghRxaR_YY2lfSWZAJae6qM
 KRO_CHECK_QUEUE_RANGE=check_queue!A2:B
 KRO_SCAM_BASE_RANGE=scam_base!A2:H
