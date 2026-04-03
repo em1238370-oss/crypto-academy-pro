@@ -14,8 +14,9 @@
 пустой — используется значение по умолчанию в коде (прод-таблица KRO).
 
 Учётные данные Google Sheets (любой вариант):
-  KRO_GOOGLE_CREDENTIALS_JSON в .env, или KRO_GOOGLE_CREDENTIALS_BASE64, или
-  GOOGLE_APPLICATION_CREDENTIALS, или backend/kro-worker/kro-google-credentials.json
+  файл в backend/kro-worker/ (credentials.json, kro-google-credentials.json, service_account.json,
+  google-credentials.json или любой *.json с type=service_account), либо KRO_GOOGLE_CREDENTIALS_FILE,
+  KRO_GOOGLE_CREDENTIALS_JSON, KRO_GOOGLE_CREDENTIALS_BASE64, GOOGLE_APPLICATION_CREDENTIALS.
 
 Запуск из backend/kro-worker:
   python3 ../scripts/kro-prune-scam-base-html.py --dry-run
@@ -73,26 +74,50 @@ def _kro_worker_dir() -> str:
 
 
 def _standard_credential_files() -> List[str]:
-    """Все типичные пути к JSON ключу (первый существующий wins)."""
+    """Типичные имена ключей Google (как в доке и в kro-enforce-channel-filters)."""
     d = os.path.dirname(os.path.abspath(__file__))
     kw = os.path.normpath(os.path.join(d, '..', 'kro-worker'))
     root = os.path.normpath(os.path.join(d, '..', '..'))
     cwd = os.getcwd()
+    names = (
+        'kro-google-credentials.json',
+        'credentials.json',
+        'service_account.json',
+        'google-credentials.json',
+    )
     seen = set()
     out: List[str] = []
-    for p in (
-        os.path.join(kw, 'kro-google-credentials.json'),
-        os.path.join(kw, 'credentials.json'),
-        os.path.join(root, 'backend', 'kro-worker', 'kro-google-credentials.json'),
-        os.path.join(root, 'backend', 'kro-worker', 'credentials.json'),
-        os.path.join(cwd, 'kro-google-credentials.json'),
-        os.path.join(cwd, 'credentials.json'),
-    ):
-        n = os.path.normpath(p)
-        if n not in seen:
-            seen.add(n)
-            out.append(n)
+    for base in (kw, os.path.join(root, 'backend', 'kro-worker'), cwd):
+        for name in names:
+            p = os.path.join(base, name)
+            n = os.path.normpath(p)
+            if n not in seen:
+                seen.add(n)
+                out.append(n)
     return out
+
+
+def _discover_service_account_json_in_kw() -> List[str]:
+    """Любой *.json в kro-worker с type=service_account (файл из Google Cloud часто с длинным именем)."""
+    kw = _kro_worker_dir()
+    if not os.path.isdir(kw):
+        return []
+    skip = {'package.json', 'package-lock.json'}
+    found: List[str] = []
+    for name in sorted(os.listdir(kw)):
+        if not name.endswith('.json') or name in skip:
+            continue
+        path = os.path.join(kw, name)
+        if not os.path.isfile(path) or os.path.getsize(path) > 2_000_000:
+            continue
+        try:
+            with open(path, encoding='utf-8') as f:
+                data = json.load(f)
+        except Exception:
+            continue
+        if isinstance(data, dict) and data.get('type') == 'service_account' and (data.get('private_key') or ''):
+            found.append(path)
+    return found
 
 # Если в .env нет или пустой KRO_SHEET_ID — используется эта таблица (тот же ID, что в проде KRO).
 _DEFAULT_KRO_SHEET_ID = '1C1NQwqmLRg59xgplnz5PeghRxaR_YY2lfSWZAJae6qM'
@@ -166,10 +191,18 @@ def _get_credentials():
                 return cand
         return ''
 
-    def _try_standard_files():
+    def _try_all_local_json_files():
         for path in _standard_credential_files():
             if os.path.isfile(path):
+                try:
+                    return _file_creds(path)
+                except Exception:
+                    continue
+        for path in _discover_service_account_json_in_kw():
+            try:
                 return _file_creds(path)
+            except Exception:
+                continue
         return None
 
     # 1) Только если JSON в env валидный (как на Render). Битая строка в .env не должна блокировать файл на диске.
@@ -181,11 +214,18 @@ def _get_credentials():
                 info, scopes=['https://www.googleapis.com/auth/spreadsheets']
             )
         except (json.JSONDecodeError, ValueError, KeyError):
-            # Невалидный JSON или не service account — пробуем файл kro-google-credentials.json
+            # Невалидный JSON или не service account — пробуем файл на диске
             pass
 
-    # 2) Файлы kro-google-credentials.json / credentials.json в kro-worker (и cwd) — сразу после env-JSON
-    hit = _try_standard_files()
+    # 1b) Явный путь в .env (удобно, если ключ лежит в Downloads под длинным именем)
+    kcf = (os.environ.get('KRO_GOOGLE_CREDENTIALS_FILE') or '').strip()
+    if kcf:
+        path = _resolve_cred_path(kcf)
+        if path:
+            return _file_creds(path)
+
+    # 2) Стандартные имена + авто-поиск любого service_account *.json в kro-worker
+    hit = _try_all_local_json_files()
     if hit is not None:
         return hit
 
@@ -214,13 +254,19 @@ def _get_credentials():
         if path:
             return _file_creds(path)
 
-    checked = ', '.join(_standard_credential_files()[:2])
+    kw = _kro_worker_dir()
+    checked = ', '.join(_standard_credential_files()[:4])
     raise RuntimeError(
-        'Google credentials not found. Проверены пути (первые): %s\n'
-        'Задайте валидный KRO_GOOGLE_CREDENTIALS_JSON, или KRO_GOOGLE_CREDENTIALS_BASE64, '
-        'или GOOGLE_APPLICATION_CREDENTIALS, или положите ключ в backend/kro-worker/kro-google-credentials.json.\n'
-        'Если в .env есть битая строка KRO_GOOGLE_CREDENTIALS_JSON (начинается с { но не полный JSON) — удалите её или закомментируйте.'
-        % (checked,)
+        'Google credentials not found.\n'
+        'По путям вроде «%s» файлов нет (или в папке kro-worker нет JSON ключа service account).\n'
+        'Сделайте одно из:\n'
+        '  • Скачайте JSON ключ в Google Cloud → IAM → Service accounts → Keys → Add key, '
+        'сохраните как %s/credentials.json (или любое имя .json в этой папке).\n'
+        '  • Или в .env: GOOGLE_APPLICATION_CREDENTIALS=/полный/путь/к/ключу.json\n'
+        '  • Или KRO_GOOGLE_CREDENTIALS_FILE=относительный_или_полный_путь\n'
+        '  • Или валидный KRO_GOOGLE_CREDENTIALS_JSON / KRO_GOOGLE_CREDENTIALS_BASE64.\n'
+        'Если в .env битая строка KRO_GOOGLE_CREDENTIALS_JSON (начинается с { но не полный JSON) — закомментируйте её.'
+        % (checked, kw)
     )
 
 
