@@ -160,12 +160,29 @@ def _row_marked_for_removal(rr: list) -> bool:
 async def _open_tg_client():
     import kro_telethon_session as _kro_ts
 
-    api_id = (os.environ.get('TELEGRAM_API_ID') or '').strip()
+    api_id = (os.environ.get('TELEGRAM_API_ID') or '').strip().lstrip('\ufeff')
     api_hash = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
+    sess_len = len((os.environ.get('KRO_TELEGRAM_SESSION_STRING') or '').strip())
     if not api_id or not api_hash:
+        print(
+            'WARNING: для cleanup нужны TELEGRAM_API_ID и TELEGRAM_API_HASH в env шага '
+            '(репозиторий → Secrets → Actions).',
+            file=sys.stderr,
+        )
         return None
+    if sess_len == 0:
+        print(
+            'WARNING: пустой KRO_TELEGRAM_SESSION_STRING — строгий gate в cleanup не включится.',
+            file=sys.stderr,
+        )
     try:
-        c = _kro_ts.build_kro_telegram_client(int(api_id), api_hash)
+        api_id_int = int(api_id)
+    except ValueError:
+        print('WARNING: TELEGRAM_API_ID не число:', repr(api_id[:20]), file=sys.stderr)
+        return None
+    print('cleanup Telethon env: SESSION_STRING_len=%d' % sess_len)
+    try:
+        c = _kro_ts.build_kro_telegram_client(api_id_int, api_hash)
         await c.connect()
         if not await c.is_user_authorized():
             await c.disconnect()
