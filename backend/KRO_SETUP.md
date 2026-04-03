@@ -18,6 +18,20 @@
 | `KRO_EXCHANGER_BASE_RANGE` | Диапазон листа «база обменников» для проверки по ссылке. Например: `exchanger_base!A2:E`. Колонки: A — URL/домен, B — название, C — risk_score, D — total_loss, E — verdict. Если не задан, `GET /api/kro/check-exchanger` возвращает «не найден». |
 | `KRO_SOURCES_DOC_ID` | ID Google Doc для единого документа «Источники и данные». При каждом запуске `run_12h_monitor.py` документ обновляется: все источники, ссылки и ссылка на последний автоотчёт. Из URL: `.../document/d/<KRO_SOURCES_DOC_ID>/edit`. |
 
+### Где взять ключ Google и как узнать `client_email`
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → ваш проект → **IAM и администрирование** → **Сервисные аккаунты** → нужная учётная запись → **Ключи** → **Добавить ключ** → JSON. Сохраните файл локально, например как `backend/kro-worker/credentials.json` (не коммитьте в git).
+
+2. В JSON есть поле **`client_email`** (вида `name@project-id.iam.gserviceaccount.com`). Этот адрес нужно **добавить в доступ** к таблице: в Google Sheets **Настройки доступа** → вставить email → роль **Редактор**.
+
+3. Секрет GitHub **`KRO_GOOGLE_CREDENTIALS_BASE64`** никто извне (включая ассистента) прочитать не может. Чтобы увидеть `client_email` **у себя**, после экспорта секрета в переменную выполните:
+
+```bash
+echo "$KRO_GOOGLE_CREDENTIALS_BASE64" | base64 -d | python3 -c "import sys,json; print(json.load(sys.stdin).get('client_email',''))"
+```
+
+(На macOS при необходимости используйте `base64 -D`.)
+
 ---
 
 ## Живая проверка каналов (без базы)

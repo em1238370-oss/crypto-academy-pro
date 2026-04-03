@@ -1389,6 +1389,15 @@ _NON_CRYPTO_EXCLUDE_PATTERNS = (
 
 MIN_TELEGRAM_SUBSCRIBERS = 100
 
+# --- Публичный HTTP-gate для записи в scam_base (без Telethon; GitHub Actions и локально одинаково) ---
+# Правила: (1) не личный профиль (2) ≥100 подписчиков если число видно (3) крипто-маркеры в описании/постах
+# (4) страница t.me открывается (5) есть пост не старше SCAM_BASE_HTTP_POST_MAX_AGE_DAYS.
+SCAM_BASE_HTTP_POST_MAX_AGE_DAYS = 60
+SCAM_BASE_HTTP_CRYPTO_TERMS = (
+    'крипт', 'bitcoin', 'btc', 'usdt', 'трейд', 'сигнал',
+    'invest', 'trade', 'forex', 'бинанс', 'bybit',
+)
+
 # Обязательные маркеры «сигнального» профиля канала:
 # без хотя бы одного маркера канал не должен попадать в scam_base.
 _REQUIRED_SIGNAL_CHANNEL_TERMS = (
@@ -1559,176 +1568,50 @@ def _has_required_signal_channel_terms(*parts):
     return any(term in blob for term in _REQUIRED_SIGNAL_CHANNEL_TERMS)
 
 
-async def _open_telethon_gate_client():
-    if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
-        return None
-    client = None
-    try:
-        client = _kro_ts.build_kro_telegram_client(TELEGRAM_API_ID, TELEGRAM_API_HASH)
-        await client.connect()
-        if not await client.is_user_authorized():
-            await client.disconnect()
-            return None
-        return client
-    except Exception as e:
-        print('telethon gate client unavailable: %s' % e, file=sys.stderr)
-        try:
-            if client is not None:
-                await client.disconnect()
-        except Exception:
-            pass
-        return None
-
-
-async def _telegram_quality_gate(client, username_or_link, object_type='', source_evidence='', content_analysis=''):
-    import asyncio
-    from telethon.tl.functions.channels import GetFullChannelRequest
-    from telethon.tl.types import Channel, Chat, User
-
-    uname = _normalize_channel_link(username_or_link)
-    if not uname:
-        return True, 'not_telegram'
-    if uname.startswith('joinchat/'):
-        return False, 'invite_link_not_supported'
-    ref = 'https://t.me/' + uname if not uname.startswith('@') else uname
-    full = None
-    try:
-        entity = await _kro_tw.tw_call(client.get_entity(ref))
-    except asyncio.TimeoutError:
-        return False, 'telethon_timeout_get_entity'
-    except Exception:
-        return False, 'channel_unavailable_or_blocked'
-
-    # Никогда не записываем личные аккаунты (User) в scam_base.
-    # Боты на username в Telegram тоже приходят как User, их не включаем в этот поток.
-    if isinstance(entity, User):
-        return False, 'entity_is_user_not_channel'
-    if not isinstance(entity, (Channel, Chat)):
-        return False, 'entity_is_not_channel_or_chat'
-
-    if bool(getattr(entity, 'deleted', False)):
-        return False, 'channel_deleted'
-
-    participants = 0
-    try:
-        full = await _kro_tw.tw_call(client(GetFullChannelRequest(entity)))
-        participants = int(getattr(getattr(full, 'full_chat', None), 'participants_count', 0) or 0)
-    except asyncio.TimeoutError:
-        participants = int(getattr(entity, 'participants_count', 0) or 0)
-    except Exception:
-        participants = int(getattr(entity, 'participants_count', 0) or 0)
-    if participants < MIN_TELEGRAM_SUBSCRIBERS:
-        return False, 'subscribers_below_%d' % MIN_TELEGRAM_SUBSCRIBERS
-
-    title = (getattr(entity, 'title', None) or '').strip()
-    about = ''
-    try:
-        if full is not None:
-            about = str(getattr(getattr(full, 'full_chat', None), 'about', '') or '')
-    except Exception:
-        about = ''
-
-    posts = []
-    post_dates = []
-    try:
-        msgs = await _kro_tw.tw_collect_messages(client, entity, limit=40)
-        for msg in msgs:
-            txt = _normalize_message_text((msg.text or '') + ' ' + (getattr(msg, 'message', '') or ''))
-            if txt:
-                posts.append(txt)
-            mdt = getattr(msg, 'date', None)
-            if mdt:
-                if getattr(mdt, 'tzinfo', None) is None:
-                    mdt = mdt.replace(tzinfo=timezone.utc)
-                post_dates.append(mdt)
-    except Exception:
-        pass
-    posts_blob = ' '.join(posts)
-
-    # Должны быть живые посты: минимум 1 пост за последние 60 дней.
-    now_utc = datetime.now(timezone.utc)
-    fresh_cutoff = now_utc - timedelta(days=60)
-    fresh_posts = [d for d in post_dates if d >= fresh_cutoff]
-    if not fresh_posts:
-        return False, 'no_posts_last_60d'
-
-    # Минимум базового содержания: описание канала + контент.
-    if not about.strip():
-        return False, 'empty_channel_description'
-
-    # Крипто-тематика проверяется по последним постам (не только по username/описанию).
-    last_posts_blob = ' '.join((posts or [])[:10])
-    if not _has_crypto_context(last_posts_blob):
-        return False, 'posts_not_crypto_topic'
-
-    # Отсеиваем компрометированные/взломанные каналы.
-    hacked_markers = ('взлом', 'взломан', 'hacked', 'канал взломали', 'аккаунт взломан')
-    if any(hm in posts_blob.lower() for hm in hacked_markers):
-        return False, 'channel_reported_hacked'
-
-    if not _has_required_signal_channel_terms(
-        '@' + uname, title, about, posts_blob, source_evidence, content_analysis, object_type
-    ):
-        return False, 'missing_required_signal_terms'
-    return True, 'ok'
-
-
 def _apply_telegram_gate_to_rows(rows, context_label):
+    """
+    Фильтр Telegram-строк перед записью в scam_base.
+    Только публичный HTTP к t.me (без Telethon) — одинаково локально и в GitHub Actions.
+    """
     if not rows:
         return []
 
-    async def _run():
-        tg_rows = []
-        pass_rows = []
-        for row in rows:
-            if _looks_like_telegram_channel_ref(
-                row.get('username', ''),
-                row.get('link', ''),
-                row.get('object_type', ''),
-            ):
-                tg_rows.append(row)
-            else:
-                pass_rows.append(row)
+    tg_rows = []
+    pass_rows = []
+    for row in rows:
+        if _looks_like_telegram_channel_ref(
+            row.get('username', ''),
+            row.get('link', ''),
+            row.get('object_type', ''),
+        ):
+            tg_rows.append(row)
+        else:
+            pass_rows.append(row)
 
-        if not tg_rows:
-            return rows
+    if not tg_rows:
+        return rows
 
-        client = await _open_telethon_gate_client()
-        if client is None:
-            # Принцип strict-gate: если Telethon недоступен, Telegram-объекты не пишем.
-            # Unknown == reject (а не auto-pass).
-            for row in tg_rows:
-                print('%s: skip %s — telethon_unavailable_strict_reject' % (
-                    context_label,
-                    row.get('username') or row.get('link') or 'unknown',
-                ), file=sys.stderr)
-            return pass_rows
+    pause = float(os.environ.get('KRO_SCAM_BASE_HTTP_GATE_PAUSE', '0.45') or '0.45')
+    pause = max(0.15, min(pause, 3.0))
 
-        try:
-            for row in tg_rows:
-                ok, reason = await _telegram_quality_gate(
-                    client,
-                    row.get('username') or row.get('link') or '',
-                    object_type=row.get('object_type', ''),
-                    source_evidence=row.get('source_evidence', ''),
-                    content_analysis=row.get('content_analysis', ''),
-                )
-                if ok:
-                    pass_rows.append(row)
-                else:
-                    print('%s: skip %s — %s' % (
-                        context_label,
-                        row.get('username') or row.get('link') or 'unknown',
-                        reason,
-                    ), file=sys.stderr)
-        finally:
-            try:
-                await client.disconnect()
-            except Exception:
-                pass
-        return pass_rows
-
-    return asyncio.run(_run())
+    for i, row in enumerate(tg_rows):
+        if i:
+            time.sleep(pause)
+        ok, reason = _tme_http_gate_for_scam_base_write(
+            row.get('username') or row.get('link') or '',
+            object_type=row.get('object_type', ''),
+            source_evidence=row.get('source_evidence', ''),
+            content_analysis=row.get('content_analysis', ''),
+        )
+        if ok:
+            pass_rows.append(row)
+        else:
+            print('%s: skip %s — %s' % (
+                context_label,
+                row.get('username') or row.get('link') or 'unknown',
+                reason,
+            ), file=sys.stderr)
+    return pass_rows
 
 
 def _status_rank(value):
@@ -1852,46 +1735,216 @@ def _fetch_tme_public_subscriber_count(slug):
     return None
 
 
-def _html_telegram_quality_gate_sync(username_or_link, object_type='', source_evidence='', content_analysis=''):
-    """Строгий фильтр канала по публичному HTML (если Telethon недоступен)."""
-    uname = _normalize_channel_link(username_or_link)
-    if not uname or uname.startswith('joinchat/'):
-        return False, 'invalid_or_invite_ref'
-    slug = uname.lstrip('@').split('/')[0]
-    subs = _fetch_tme_public_subscriber_count(slug)
-    if subs is None:
-        return False, 'subscribers_unknown_html'
-    if subs < MIN_TELEGRAM_SUBSCRIBERS:
-        return False, 'subscribers_below_%d' % MIN_TELEGRAM_SUBSCRIBERS
-    ref = '@' + slug
-    msgs = _fetch_public_channel_messages(ref, limit=40)
+def _tme_parse_subscriber_count_from_extra_text(text: str):
+    """Число подписчиков из текста блока .tgme_page_extra."""
+    if not text:
+        return None
+    t = text.replace('\xa0', ' ').lower()
+    m = re.search(
+        r'([\d\s.,]+)\s*([km])?\s*(?:subscribers|subscriber|подписчик)',
+        t,
+    )
+    if not m:
+        m = re.search(r'([\d\s.,]+)\s*([km])?\b', t)
+    if not m:
+        return None
+    num = m.group(1).replace(' ', '').replace(',', '.')
+    try:
+        v = float(num)
+    except ValueError:
+        return None
+    suf = (m.group(2) or '').lower()
+    if suf == 'k':
+        v *= 1000
+    elif suf == 'm':
+        v *= 1_000_000
+    return int(round(v))
+
+
+def _tme_http_page_unavailable(soup, status_code: int, raw_lower: str) -> bool:
+    if status_code in (404, 410):
+        return True
+    if soup.select_one('.tgme_page_error'):
+        return True
+    for phrase in (
+        "doesn't exist",
+        'does not exist',
+        'username is not available',
+        'channel is private',
+        'канал недоступен',
+        'пользователь не найден',
+        'не существует',
+        'sorry, too many',
+    ):
+        if phrase in raw_lower:
+            return True
+    return False
+
+
+def _tme_http_looks_like_user_profile(extra_text: str, raw_lower: str) -> bool:
+    """Личный аккаунт / не публичный канал с подписчиками (эвристика по HTML t.me)."""
+    ex = (extra_text or '').lower()
+    if any(
+        x in ex
+        for x in (
+            'last seen',
+            'was online',
+            'online',
+            'в сети',
+            'заходил',
+            'заходила',
+            'недавно',
+            'long ago',
+        )
+    ):
+        if 'подписчик' not in ex and 'subscriber' not in ex:
+            return True
+    ex_l = ex
+    if re.search(r'"type"\s*:\s*"user"', raw_lower):
+        if 'подписчик' not in ex_l and 'subscriber' not in ex_l:
+            return True
+    if '@type":"person"' in raw_lower or '"@type": "person"' in raw_lower:
+        return True
+    return False
+
+
+def _tme_http_fetch_scam_base_preview(slug: str) -> dict:
+    """
+    Один проход по публичной странице t.me/s/<slug> (fallback: t.me/<slug>).
+    Без Telethon.
+    """
+    out = {
+        'ok_fetch': False,
+        'unavailable': True,
+        'is_user_profile': False,
+        'subs': None,
+        'desc': '',
+        'posts_blob_lower': '',
+        'last_post_dt': None,
+    }
+    slug = (slug or '').lstrip('@').split('/')[0]
+    if not slug or slug.startswith('joinchat') or slug.startswith('+'):
+        return out
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+    except ImportError:
+        return out
+
+    last_status = 0
+    raw = ''
+    for url in ('https://t.me/s/%s' % slug, 'https://t.me/%s' % slug):
+        for ua in (USER_AGENT, USER_AGENT_CHROME):
+            try:
+                resp = requests.get(
+                    url,
+                    headers={
+                        'User-Agent': ua,
+                        'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
+                    },
+                    timeout=22,
+                )
+                last_status = resp.status_code
+                raw = resp.text or ''
+                if resp.status_code == 200 and len(raw) > 200:
+                    break
+            except Exception:
+                continue
+        if last_status == 200 and len(raw) > 200:
+            break
+
+    if last_status != 200 or len(raw) < 200:
+        return out
+
+    raw_lower = raw.lower()
+    soup = BeautifulSoup(raw, 'html.parser')
+    if _tme_http_page_unavailable(soup, last_status, raw_lower):
+        return out
+
+    out['ok_fetch'] = True
+    out['unavailable'] = False
+    extra_el = soup.select_one('.tgme_page_extra')
+    extra_text = extra_el.get_text(' ', strip=True) if extra_el else ''
+    out['subs'] = _tme_parse_subscriber_count_from_extra_text(extra_text)
+    desc_el = soup.select_one('.tgme_page_description')
+    out['desc'] = (desc_el.get_text(' ', strip=True) if desc_el else '') or ''
+    if _tme_http_looks_like_user_profile(extra_text, raw_lower):
+        out['is_user_profile'] = True
+
+    texts = []
     last_dt = None
-    posts = []
-    for m in msgs:
-        dt = m.get('date')
-        if dt is not None and (last_dt is None or dt > last_dt):
-            last_dt = dt
-        t = m.get('text') or ''
+    for w in soup.select('.tgme_widget_message')[:50]:
+        t = _extract_post_text_from_widget(w)
         if t:
-            posts.append(t.lower())
-    posts_blob = ' '.join(posts)
+            texts.append(t.lower())
+        time_node = w.select_one('time')
+        if time_node and time_node.get('datetime'):
+            try:
+                dt = datetime.fromisoformat(time_node['datetime'].replace('Z', '+00:00')).astimezone(timezone.utc)
+                if last_dt is None or dt > last_dt:
+                    last_dt = dt
+            except ValueError:
+                pass
+    out['posts_blob_lower'] = ' '.join(texts)
+    out['last_post_dt'] = last_dt
+    return out
+
+
+def _tme_http_gate_for_scam_base_write(
+    username_or_link,
+    object_type='',
+    source_evidence='',
+    content_analysis='',
+):
+    """
+    Обязательные проверки перед записью ЛЮБОГО Telegram-канала в scam_base.
+    Только HTTP к публичным страницам t.me (без Telethon).
+    """
+    uname = _normalize_channel_link(username_or_link)
+    if not uname:
+        return True, 'not_telegram'
+    if uname.startswith('joinchat/'):
+        return False, 'invite_link_not_supported'
+    slug = uname.lstrip('@').split('/')[0]
+    prev = _tme_http_fetch_scam_base_preview(slug)
+
+    if not prev['ok_fetch'] or prev['unavailable']:
+        return False, 'tme_unavailable_or_no_public_page'
+
+    if prev['is_user_profile']:
+        return False, 'tme_personal_account_not_channel'
+
+    subs = prev['subs']
+    if subs is None:
+        return False, 'tme_subscribers_not_visible_reject'
+    if subs < MIN_TELEGRAM_SUBSCRIBERS:
+        return False, 'tme_subscribers_below_%d' % MIN_TELEGRAM_SUBSCRIBERS
+
+    blob = (prev['desc'] + ' ' + prev['posts_blob_lower']).lower()
+    if not any(term in blob for term in SCAM_BASE_HTTP_CRYPTO_TERMS):
+        return False, 'tme_no_crypto_terms_in_desc_or_posts'
+
     now = datetime.now(timezone.utc)
-    if last_dt is not None:
-        if last_dt.tzinfo is None:
-            last_dt = last_dt.replace(tzinfo=timezone.utc)
-        if (now - last_dt).days > _kro_unified.MANDATORY_LAST_POST_DAYS:
-            return False, 'mandatory_last_post_stale_html'
-    else:
-        return False, 'mandatory_no_post_date'
-    if not _kro_unified.has_mandatory_crypto_topic(
-        ref, posts_blob, source_evidence, object_type, content_analysis,
-    ):
-        return False, 'mandatory_not_crypto_topic'
-    if not _has_required_signal_channel_terms(
-        ref, '', '', posts_blob, source_evidence, content_analysis, object_type,
-    ):
-        return False, 'missing_required_signal_terms'
-    return True, 'ok_html_fallback'
+    last_dt = prev['last_post_dt']
+    if last_dt is None:
+        return False, 'tme_no_public_posts_or_dates'
+    if last_dt.tzinfo is None:
+        last_dt = last_dt.replace(tzinfo=timezone.utc)
+    if (now - last_dt).days > SCAM_BASE_HTTP_POST_MAX_AGE_DAYS:
+        return False, 'tme_no_fresh_post_%dd' % SCAM_BASE_HTTP_POST_MAX_AGE_DAYS
+
+    hacked_markers = ('взлом', 'взломан', 'hacked', 'канал взломали', 'аккаунт взломан')
+    if any(hm in prev['posts_blob_lower'] for hm in hacked_markers):
+        return False, 'tme_channel_reported_hacked'
+
+    return True, 'ok_tme_http_gate'
+
+
+def _html_telegram_quality_gate_sync(username_or_link, object_type='', source_evidence='', content_analysis=''):
+    """Совместимость: тот же публичный HTTP-gate, что и для scam_base."""
+    return _tme_http_gate_for_scam_base_write(
+        username_or_link, object_type, source_evidence, content_analysis,
+    )
 
 
 def _content_posts_limit():
