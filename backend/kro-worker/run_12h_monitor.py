@@ -53,6 +53,18 @@ PUBLISH_HISTORY_JSON = os.path.join(DATA_DIR, 'kro-publish-history.json')
 CHANNEL_OBJECTS_JSON = os.path.join(DATA_DIR, 'channel_objects.json')
 LIVE_LOG_FILE = os.path.join(DATA_DIR, 'live_log_5min.json')
 LIVE_LOG_MAX_LINES = 50
+
+_KRO_RISK_CAP_FROM_DESC = re.compile(r'\[\[kro_risk_cap:([^\]]+)\]\]', re.I)
+
+
+def _risk_cap_from_report_rows(reports):
+    """Маркер из web_scraper (напр. vklader: только имя в списке) — ограничение статуса при промо."""
+    for r in reports or []:
+        d = (r.get('description') or '')
+        m = _KRO_RISK_CAP_FROM_DESC.search(d)
+        if m:
+            return (m.group(1) or '').strip().lower()
+    return None
 REPORT_COUNTER_KEY = 'lastReportNumber'
 PUBLISH_HISTORY_LIMIT = 10
 SUSPICIOUS_ZERO_STREAK_ALERT = 2
@@ -5542,6 +5554,9 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
             continue
         has_facts = _has_concrete_scam_facts(evidence)
         status = 'в риске' if has_facts else 'под наблюдением'
+        cap = _risk_cap_from_report_rows(reports)
+        if cap and 'под наблюдением' in cap:
+            status = 'под наблюдением'
         status = _apply_loss_status_floor(status, total_loss)
         detected_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
         cycle_window = now.strftime('%Y-%m-%d') + ('_am' if now.hour < 12 else '_pm')

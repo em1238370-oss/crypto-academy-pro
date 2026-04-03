@@ -34,6 +34,7 @@ USER_AGENT_CHROME = (
 
 MIN_TELEGRAM_SUBSCRIBERS_HTTP = 100
 SCAM_BASE_HTTP_POST_MAX_AGE_DAYS = 60
+# Синхронно с ТЗ KRO (фильтр 4 — крипто-тематика) и server.js KRO_TME_HTTP_GATE_CRYPTO
 SCAM_BASE_HTTP_CRYPTO_TERMS = (
     'крипт',
     'bitcoin',
@@ -46,8 +47,33 @@ SCAM_BASE_HTTP_CRYPTO_TERMS = (
     'forex',
     'форекс',
     'обменник',
-    'бинанс',
+    'binance',
     'bybit',
+    'бинанс',
+    'биткоин',
+    'альткоин',
+    'депозит',
+    'профит',
+    'лонг',
+    'шорт',
+    'фьючерс',
+    'спот',
+    'defi',
+    'nft',
+    'токен',
+    'майнинг',
+)
+
+TME_HACKED_POST_MARKERS = (
+    'взлом',
+    'взломан',
+    'hacked',
+    'канал взломали',
+    'канал взломан',
+    'аккаунт взломан',
+    'меня взломали',
+    'не я пишу',
+    'мошенники захватили',
 )
 
 # Жёсткий список: строки scam_base с этими @ всегда удалять при чистке.
@@ -374,9 +400,8 @@ def tme_http_gate_for_scam_base_write(
                 last_dt = last_dt.replace(tzinfo=timezone.utc)
             if (now - last_dt).days > SCAM_BASE_HTTP_POST_MAX_AGE_DAYS:
                 return False, 'tme_no_fresh_post_%dd' % SCAM_BASE_HTTP_POST_MAX_AGE_DAYS
-        hacked_markers = ('взлом', 'взломан', 'hacked', 'канал взломали', 'аккаунт взломан')
         posts = prev['posts_blob_lower']
-        if any(hm in posts for hm in hacked_markers):
+        if any(hm in posts for hm in TME_HACKED_POST_MARKERS):
             return False, 'tme_channel_reported_hacked'
         return True, 'ok_tme_http_gate_bot'
 
@@ -402,8 +427,7 @@ def tme_http_gate_for_scam_base_write(
     if (now - last_dt).days > SCAM_BASE_HTTP_POST_MAX_AGE_DAYS:
         return False, 'tme_no_fresh_post_%dd' % SCAM_BASE_HTTP_POST_MAX_AGE_DAYS
 
-    hacked_markers = ('взлом', 'взломан', 'hacked', 'канал взломали', 'аккаунт взломан')
-    if any(hm in prev['posts_blob_lower'] for hm in hacked_markers):
+    if any(hm in prev['posts_blob_lower'] for hm in TME_HACKED_POST_MARKERS):
         return False, 'tme_channel_reported_hacked'
 
     return True, 'ok_tme_http_gate'

@@ -215,7 +215,7 @@ def collect_unified_flags(
     for edge in analysis.get('network_mentions') or []:
         tgt = _norm_username_key(edge.get('target_channel', ''), '')
         if tgt and tgt != self_key and tgt in keys:
-            add_red('реклама канала из базы KRO')
+            add_yellow('рекламирует канал из базы KRO')
             break
 
     return red, yellow
@@ -246,15 +246,16 @@ def json_corpus_from_analysis(analysis: Dict[str, Any]) -> str:
 
 
 def status_from_flag_counts(red_n: int, yellow_n: int) -> str:
-    """Политика: 3+ жёлтых = «в риске» (не «под наблюдением») — сумма мелких подозрений = серьёзный сигнал."""
+    """
+    ТЗ KRO ч.3–4: «в риске» только при ≥1 красном (ч.4 запрещает в риске без красного).
+    3+ жёлтых без красных → «под наблюдением» (накопление жёлтых не повышает до в риске).
+    """
     if red_n >= 2:
         return 'подтверждённый скам'
     if red_n >= 1:
         return 'в риске'
-    if 1 <= yellow_n <= 2:
+    if yellow_n >= 1:
         return 'под наблюдением'
-    if yellow_n >= 3:
-        return 'в риске'
     return 'без нарушений'
 
 

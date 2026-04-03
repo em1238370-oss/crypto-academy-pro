@@ -1,0 +1,17 @@
+---
+description: KRO 12h мониторинг — ТЗ (источники, HTTP-gate t.me, флаги, scam_base, расписание MSK)
+globs: backend/kro-worker/**/*.py,backend/scripts/kro*.py,.github/workflows/kro*.yml,backend/server.js,index.html,monitor.html
+alwaysApply: false
+---
+
+# KRO — правила из ТЗ
+
+При правках пайплайна, воркера, `server.js` (HTTP-gate), страниц главной/монитора — соблюдать полное ТЗ владельца (чаты/задачи). Кратко:
+
+1. **Источники цикла (каждые 12 ч):** stop-scam1.com, fin-obzor.net, vklader.com/blacklist-telegram, telltrue.net (только крипто-контекст), forteck.net, лист `reports` + поисковые запросы DDG+Bing (до 5 результатов на запрос) — см. `web_scraper.py` (`_VICTIM_*_QUERIES`, `scrape_all`).
+2. **Жёсткие фильтры записи в scam_base:** публичный HTTP `t.me` без Telethon — `kro_tme_http_gate.py` (доступность, не личный аккаунт, ≥100 подписчиков где применимо, крипто-маркеры, пост ≤60 дней, боты, маркеры взлома).
+3. **Статусы по флагам:** `kro_unified_risk.status_from_flag_counts` — «в риске» только при ≥1 красном (ч.4 ТЗ); без красных при жёлтых — «под наблюдением»; 2+ красных — «подтверждённый скам».
+4. **Промо из reports:** `_check_and_promote_from_reports` — ≥2 уникальных жалобщика; маркер `[[kro_risk_cap:под наблюдением]]` в description (vklader, только имя в списке) ограничивает статус.
+5. **Расписание CI:** `.github/workflows/kro-monitor.yml` — `cron` 09:00 и 21:00 UTC (= 12:00 и 00:00 MSK).
+
+Ручной запуск полного цикла: GitHub → Actions → **KRO 12h Monitor** → Run workflow.

@@ -292,30 +292,23 @@ _SEARCH_ENGINE_URLS = (
 _VICTIM_QUERY_LIMIT_PER_QUERY = 5
 
 # Запросы, которыми реально пользуются пострадавшие и люди перед входом в канал/сервис.
+# ТЗ KRO ч.1: DuckDuckGo + Bing, макс. 5 результатов на запрос (см. _scrape_victim_queries)
 _VICTIM_SCAM_CHANNEL_QUERIES = [
     'крипто сигналы телеграм заработок отзывы',
     'VIP сигналы крипта развод обман',
     'быстрый заработок криптовалюта телеграм',
     'трейдинг сигналы гарантия прибыль телеграм',
     'крипто гуру телеграм развод',
-    'сигналы long short телеграм мошенники',
-    'инвестиции крипта телеграм бот отзывы',
-    'доверительное управление крипта телеграм',
-    'крипто наставник телеграм скам',
-    'заработок на бирже телеграм сигналы обман',
 ]
 
 _VICTIM_EXCHANGER_QUERIES = [
-    'крипто обменник не выводит деньги',
-    'телеграм обменник криптовалюта развод',
-    'P2P обменник крипта мошенники',
-    'обменник USDT заблокировал вывод',
+    'крипто обменник не выводит деньги отзывы',
+    'телеграм обменник USDT мошенники',
 ]
 
 _VICTIM_INVEST_BOT_QUERIES = [
-    'инвест бот телеграм процент в день',
-    'торговый бот крипта автоматический заработок развод',
-    'бот трейдинг телеграм депозит не выводит',
+    'инвестиции крипта телеграм бот депозит обман',
+    'инвест бот телеграм процент в день развод',
 ]
 
 
@@ -391,7 +384,7 @@ def _scrape_victim_queries():
             total_queries += 1
             per_query_count = 0
             per_query_seen = set()
-            urls = _search_urls_for_query(query, max_links=18)
+            urls = _search_urls_for_query(query, max_links=5)
             for url in urls:
                 page = _fetch(url)
                 if not page:
@@ -624,6 +617,15 @@ def _build_findings_from_page(page, url, source_name, max_channels=3):
 
     if not clean_for_channels:
         return []
+    # ТЗ: stop-scam1 — минимум 2 осмысленных абзаца с описанием, иначе не брать
+    if source_name == 'stop-scam1':
+        if paragraphs:
+            if len(paragraphs) < 2:
+                return []
+        else:
+            blocks = [p.strip() for p in re.split(r'\n\s*\n', clean_for_channels) if len(p.strip()) > 80]
+            if len(blocks) < 2:
+                return []
     channels = _extract_channel_mentions(clean_for_channels)
     if not channels:
         # Also scan full page for channel mentions (in case BS4 missed them)
@@ -722,6 +724,9 @@ def _build_blacklist_page_findings(page, url, source_field, noise_handles=()):
         if not (_has_concrete_scam_facts(clean) or 'черн' in clean_lower or 'лохотрон' in clean_lower or 'мошенн' in clean_lower):
             continue
         evidence = f'Источник: {url} | {clean[:400]}'
+        # ТЗ vklader: только имя в списке без описания → не выше «под наблюдением» при промо из reports
+        if source_field == 'vklader' and (not _has_concrete_scam_facts(clean)) and len(clean) < 140:
+            evidence = '[[kro_risk_cap:под наблюдением]] ' + evidence
         sum_rub = _extract_loss_amount(clean)
         for ch in channels[:3]:
             key = ('@' + ch, url, clean[:120])
@@ -1286,11 +1291,22 @@ def _scrape_blacklist_telegram_portal(base_url, blacklist_url, status_name, sour
     return deduped
 
 
+def _telltrue_finding_is_crypto(r: dict) -> bool:
+    """ТЗ: telltrue — только крипто-тематика."""
+    blob = ((r.get('description') or '') + ' ' + (r.get('source_url') or '')).lower()
+    return any(h in blob for h in _VICTIM_CRYPTO_STRICT_HINTS)
+
+
 def scrape_telltrue():
-    """telltrue.net/blacklist-telegram — тот же формат, что у vklader."""
-    return _scrape_blacklist_telegram_portal(
+    """telltrue.net/blacklist-telegram — формат как vklader; отзывы только с крипто-контекстом."""
+    raw = _scrape_blacklist_telegram_portal(
         _TELLTRUE_BASE, _TELLTRUE_BLACKLIST_URL, 'telltrue.net', 'telltrue', ('telltrue',), article_limit=20
     )
+    filtered = [r for r in raw if _telltrue_finding_is_crypto(r)]
+    unique_channels = len({r.get('channel') for r in filtered if r.get('channel')})
+    _set_source_status('telltrue.net', 'found' if unique_channels else 'not_found', unique_channels)
+    logger.info('telltrue.net: crypto-filtered %d findings (%d channels)', len(filtered), unique_channels)
+    return filtered
 
 
 def scrape_forteck():

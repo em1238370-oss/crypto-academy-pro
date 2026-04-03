@@ -2227,8 +2227,11 @@ function channelMatchKey(channel) {
 }
 
 /** Синхронно с kro_tme_http_gate.tme_http_gate_for_scam_base_write (только публичный HTML t.me). */
+/** Синхронно с backend/kro-worker/kro_tme_http_gate.SCAM_BASE_HTTP_CRYPTO_TERMS (ТЗ KRO фильтр 4). */
 const KRO_TME_HTTP_GATE_CRYPTO = [
-  'крипт', 'bitcoin', 'btc', 'usdt', 'трейд', 'сигнал', 'invest', 'trade', 'forex', 'форекс', 'обменник', 'бинанс', 'bybit',
+  'крипт', 'bitcoin', 'btc', 'usdt', 'трейд', 'сигнал', 'invest', 'trade', 'forex', 'форекс', 'обменник',
+  'binance', 'bybit', 'бинанс', 'биткоин', 'альткоин', 'депозит', 'профит', 'лонг', 'шорт', 'фьючерс', 'спот',
+  'defi', 'nft', 'токен', 'майнинг',
 ];
 const KRO_TME_HTTP_GATE_MIN_SUBS = 100;
 const KRO_TME_HTTP_GATE_MAX_POST_DAYS = 60;
