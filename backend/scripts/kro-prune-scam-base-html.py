@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
 """
-Чистка листа scam_base по публичному HTML t.me (без Telethon).
+Чистка листа scam_base по публичному HTML t.me.
+
+Без Telethon — только HTTP к публичным страницам t.me; сессия Telegram не нужна,
+скрипт пригоден для локального запуска и для CI (в отличие от cleanup с Telethon).
 
 Удаляется строка Telegram-канала, если выполняется хотя бы одно:
+- username в жёстком списке FORCE_REMOVE_USERNAMES (см. ниже в коде);
 - канал недоступен (ошибка HTTP, страница ошибки t.me, не существует и т.п.);
 - в описании и в текстах постов с превью t.me/s/… нет ни одного крипто-маркера.
+
+Переменные: загружаются из backend/kro-worker/.env через python-dotenv; если KRO_SHEET_ID
+пустой — используется значение по умолчанию в коде (прод-таблица KRO).
 
 Учётные данные Google Sheets (по умолчанию):
   backend/kro-worker/kro-google-credentials.json
 
-Дополнительно: GOOGLE_APPLICATION_CREDENTIALS, KRO_GOOGLE_CREDENTIALS_JSON,
-backend/kro-worker/credentials.json.
-
 Запуск из backend/kro-worker:
   python3 ../scripts/kro-prune-scam-base-html.py --dry-run
   python3 ../scripts/kro-prune-scam-base-html.py
-
-Нужны KRO_SHEET_ID (и опционально KRO_SCAM_BASE_RANGE, по умолчанию scam_base!A2:N).
 """
 from __future__ import annotations
 
@@ -28,7 +30,14 @@ import sys
 import time
 from typing import Any, Dict, List, Tuple
 
-_KW = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'kro-worker'))
+from dotenv import load_dotenv
+
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Сначала kro-worker/.env, затем корень репозитория/.env — без перезаписи уже заданных ключей.
+load_dotenv(os.path.normpath(os.path.join(_SCRIPT_DIR, '..', 'kro-worker', '.env')))
+load_dotenv(os.path.normpath(os.path.join(_SCRIPT_DIR, '..', '..', '.env')))
+
+_KW = os.path.normpath(os.path.join(_SCRIPT_DIR, '..', 'kro-worker'))
 if _KW not in sys.path:
     sys.path.insert(0, _KW)
 
@@ -55,6 +64,28 @@ CRYPTO_TERMS = (
 REQUEST_PAUSE_SEC = 1.35
 _DEFAULT_CREDS = os.path.join(_KW, 'kro-google-credentials.json')
 _FALLBACK_CREDS = os.path.join(_KW, 'credentials.json')
+
+# Если в .env нет или пустой KRO_SHEET_ID — используется эта таблица (тот же ID, что в проде KRO).
+_DEFAULT_KRO_SHEET_ID = '1C1NQwqmLRg59xgplnz5PeghRxaR_YY2lfSWZAJae6qM'
+
+# Всегда удалить строку, если @username (колонка A или ссылка B) совпадает после нормализации.
+FORCE_REMOVE_USERNAMES = frozenset(
+    {
+        '@poizongo',
+        '@auraselect',
+        '@vipbyrodion_bot',
+        '@snipervip0001_bot',
+        '@copytradiings',
+        '@copytradlngss',
+        '@ukrainchuk_yuriy',
+        '@alex_wise_trade',
+        '@poizonstorm',
+        '@rublevinvestrus',
+        '@vladislav_belokrylov',
+        '@maxcrypto_adm',
+        '@trader_servver',
+    }
+)
 
 
 def _load_env():
@@ -115,6 +146,20 @@ def _get_credentials():
         'Google credentials not found. Положите ключ в backend/kro-worker/kro-google-credentials.json '
         'или задайте GOOGLE_APPLICATION_CREDENTIALS / KRO_GOOGLE_CREDENTIALS_JSON.'
     )
+
+
+def _norm_username_cell(v: str) -> str:
+    """@username lower для сравнения с FORCE_REMOVE (колонки A/B)."""
+    s = (v or '').strip()
+    if not s:
+        return ''
+    if s.startswith('https://t.me/'):
+        s = '@' + s.split('https://t.me/', 1)[-1].split('/')[0]
+    elif s.startswith('t.me/'):
+        s = '@' + s.split('t.me/', 1)[-1].split('/')[0]
+    if not s.startswith('@'):
+        s = '@' + s.lstrip('@')
+    return s.lower()
 
 
 def _normalize_slug(ch_or_link: str) -> str:
@@ -266,10 +311,7 @@ def main() -> int:
     args = parser.parse_args()
 
     _load_env()
-    sheet_id = (os.environ.get('KRO_SHEET_ID') or '').strip()
-    if not sheet_id:
-        print('KRO_SHEET_ID required', file=sys.stderr)
-        return 1
+    sheet_id = (os.environ.get('KRO_SHEET_ID') or '').strip() or _DEFAULT_KRO_SHEET_ID
 
     try:
         creds = _get_credentials()
@@ -295,6 +337,13 @@ def main() -> int:
             continue
         u = (row[0] if len(row) > 0 else '').strip()
         link = (row[1] if len(row) > 1 else '').strip()
+        u_n = _norm_username_cell(u)
+        link_n = _norm_username_cell(link)
+        if u_n in FORCE_REMOVE_USERNAMES or link_n in FORCE_REMOVE_USERNAMES:
+            remove_indices.append(i)
+            log_lines.append('REMOVE row %d: %s — force_list' % (i + 2, u or link or '?'))
+            continue
+
         slug = _normalize_slug(link or u)
         if not slug or slug.startswith('+'):
             log_lines.append('skip row %d: %s — no public slug' % (i + 2, u or link))
