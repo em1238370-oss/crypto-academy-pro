@@ -16,29 +16,43 @@
 import asyncio
 import getpass
 import os
+import shlex
 import sys
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
+def _apply_env_file(path: str) -> None:
+    with open(path, 'r', encoding='utf-8', errors='replace') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            key, _, value = line.partition('=')
+            key, value = key.strip(), value.strip()
+            if not key:
+                continue
+            if (value.startswith("'") and value.endswith("'")) or (value.startswith('"') and value.endswith('"')):
+                value = value[1:-1]
+            if not value.strip():
+                continue
+            os.environ[key] = value.strip()
+
+
 def load_env():
-    for name in ('env', '.env'):
-        path = os.path.join(SCRIPT_DIR, name)
-        if not os.path.isfile(path):
-            continue
-        with open(path, 'r', encoding='utf-8', errors='replace') as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith('#') or '=' not in line:
-                    continue
-                key, _, value = line.partition('=')
-                key, value = key.strip(), value.strip()
-                if (value.startswith("'") and value.endswith("'")) or (value.startswith('"') and value.endswith('"')):
-                    value = value[1:-1]
-                if key:
-                    os.environ[key] = value
-        return True
-    return False
+    """Корень репозитория .env, затем env и .env в kro-worker (непустые значения перекрывают)."""
+    repo_root = os.path.normpath(os.path.join(SCRIPT_DIR, '..', '..'))
+    paths = [
+        os.path.join(repo_root, '.env'),
+        os.path.join(SCRIPT_DIR, 'env'),
+        os.path.join(SCRIPT_DIR, '.env'),
+    ]
+    found = False
+    for path in paths:
+        if os.path.isfile(path):
+            _apply_env_file(path)
+            found = True
+    return found
 
 
 async def main():
@@ -58,7 +72,7 @@ async def main():
     session_path = os.path.join(SCRIPT_DIR, session_name)
 
     from telethon import TelegramClient
-    from telethon.errors import SessionPasswordNeededError
+    from telethon.errors import PasswordHashInvalidError, SessionPasswordNeededError
 
     client = TelegramClient(session_path, api_id, api_hash)
 
@@ -101,9 +115,28 @@ async def main():
         user = await qr_login.wait()
         print('Вход выполнен:', user.phone or user.username or user.id)
     except SessionPasswordNeededError:
-        pwd = getpass.getpass('Включён пароль 2FA. Введи пароль: ')
-        await client.sign_in(password=pwd)
-        print('Вход выполнен.')
+        print(
+            'Нужен облачный пароль Telegram (Настройки → Конфиденциальность → Двухэтапная аутентификация). '
+            'Это НЕ пароль от Mac.',
+            file=sys.stderr,
+        )
+        for attempt in range(1, 4):
+            pwd = getpass.getpass('Пароль 2FA (попытка %d/3): ' % attempt)
+            try:
+                await client.sign_in(password=pwd)
+                print('Вход выполнен.')
+                break
+            except PasswordHashInvalidError:
+                print('Telegram отклонил пароль — неверный или опечатка.', file=sys.stderr)
+                if attempt >= 3:
+                    print(
+                        'Удалите файл сессии и начните снова: rm -f '
+                        + shlex.quote(session_path + '.session'),
+                        file=sys.stderr,
+                    )
+                    print('Восстановление пароля 2FA — в том же разделе настроек Telegram (часто через e-mail).', file=sys.stderr)
+                    await client.disconnect()
+                    sys.exit(1)
     except asyncio.TimeoutError:
         print('Время вышло. Запусти скрипт снова и отсканируй QR быстрее.', file=sys.stderr)
         await client.disconnect()
