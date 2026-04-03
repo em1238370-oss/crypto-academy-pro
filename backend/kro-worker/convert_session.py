@@ -7,12 +7,17 @@ KRO_TELEGRAM_SESSION_STRING.
   python3 convert_session.py
 
 Нужны TELEGRAM_API_ID и TELEGRAM_API_HASH (корневой .env, env или .env в этой папке).
+
+Сессия копируется во временный файл, чтобы не ловить sqlite «database is locked», если
+открыты Telegram Desktop / другой скрипт с тем же kro_worker.session.
 """
 from __future__ import annotations
 
 import asyncio
 import os
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -76,21 +81,36 @@ async def main() -> None:
         print(_HELP_SESSION.format(path=sess_file).strip(), file=sys.stderr)
         raise SystemExit(1)
 
-    client = TelegramClient(str(base), api_id, api_hash)
-    await client.connect()
-    if not await client.is_user_authorized():
-        print('Сессия не авторизована. Сначала: python3 login_via_qr.py', file=sys.stderr)
-        raise SystemExit(1)
+    tmpdir = tempfile.mkdtemp(prefix='kro_convert_')
+    copy_path = Path(tmpdir) / (name + '.session')
+    try:
+        shutil.copy2(sess_file, copy_path)
+        session_arg = str(copy_path.with_suffix(''))
+        client = TelegramClient(session_arg, api_id, api_hash)
+        await client.connect()
+        if not await client.is_user_authorized():
+            print('Сессия не авторизована. Сначала: python3 login_via_qr.py', file=sys.stderr)
+            raise SystemExit(1)
 
-    ss = StringSession()
-    ss.set_dc(client.session.dc_id, client.session.server_address, client.session.port)
-    ss.auth_key = client.session.auth_key
-    line = ss.save()
-    if not line:
-        print('Не удалось сформировать StringSession.', file=sys.stderr)
-        raise SystemExit(1)
-    print(line)
-    await client.disconnect()
+        ss = StringSession()
+        ss.set_dc(client.session.dc_id, client.session.server_address, client.session.port)
+        ss.auth_key = client.session.auth_key
+        line = ss.save()
+        if not line:
+            print('Не удалось сформировать StringSession.', file=sys.stderr)
+            raise SystemExit(1)
+        print(line)
+        await client.disconnect()
+    except Exception as e:
+        if 'database is locked' in str(e).lower():
+            print(
+                'SQLite: database is locked — закройте Telegram Desktop и другие скрипты, '
+                'использующие этот .session, и запустите снова.',
+                file=sys.stderr,
+            )
+        raise
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 if __name__ == '__main__':
