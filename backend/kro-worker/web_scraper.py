@@ -12,6 +12,9 @@ KRO Web Scraper: собирает упоминания скам-каналов �
   - forteck.net       — blacklist-telegram (формат как у vklader)
   - kurs.expert       — черный список фейковых крипто-обменников (домены из таблицы)
 
+По умолчанию в scrape_all() идут только stop-scam1, fin-obzor, vklader, telltrue, forteck.
+Остальное (cryptorussia, brokers-check, kurs, DDG и web-search по сидам) — при KRO_WEB_EXTRA_SOURCES=1.
+
 Каждая найденная запись: {channel, sum_rub, description, source_url, source[, object_type]}
 Возвращаемые данные пишутся в лист reports Google Sheets с пометкой source='web'.
 """
@@ -1301,44 +1304,52 @@ def scrape_forteck():
 # Combined entry point
 # ---------------------------------------------------------------------------
 
+def _web_extra_sources_enabled() -> bool:
+    """ТЗ по умолчанию: только stop-scam1, fin-obzor, vklader, telltrue, forteck + форма (не здесь)."""
+    return (os.environ.get('KRO_WEB_EXTRA_SOURCES') or '').strip().lower() in ('1', 'true', 'yes', 'on')
+
+
 def scrape_all():
     """
     Run all scrapers and return deduplicated list of findings.
     Each item: {channel, sum_rub, description, source_url, source[, object_type]}.
+
+    По умолчанию (без KRO_WEB_EXTRA_SOURCES): только источники из ТЗ —
+    stop-scam1, fin-obzor, vklader, telltrue, forteck.
+    При KRO_WEB_EXTRA_SOURCES=1 дополнительно: cryptorussia, brokers-check,
+    kurs (если включён KRO_KURS_BULK_WEB_REPORTS), victim_queries, web-search по сидам.
     """
     global _LAST_SOURCE_STATUS
     _LAST_SOURCE_STATUS = []
     results = []
     results.extend(scrape_stop_scam1())
-    results.extend(scrape_cryptorussia())
     results.extend(scrape_fin_obzor())
-    results.extend(scrape_brokers_check())
-    # Массовая заливка kurs в reports отключена по умолчанию — см. органический цикл в run_12h_monitor
-    if (os.environ.get('KRO_KURS_BULK_WEB_REPORTS') or '').strip().lower() in ('1', 'true', 'yes', 'on'):
-        results.extend(scrape_kurs_expert())
     results.extend(scrape_vklader())
     results.extend(scrape_telltrue())
     results.extend(scrape_forteck())
-    results.extend(_scrape_victim_queries())
 
-    # Additional enrichment: search internet reviews for usernames already found
-    # in primary sources. This makes it easy to expand evidence without changing
-    # the rest of the pipeline.
-    def _is_seed_telegram_ref(ch):
-        c = (ch or '').strip().lower()
-        return bool(c) and (c.startswith('@') or 't.me/' in c)
+    if _web_extra_sources_enabled():
+        results.extend(scrape_cryptorussia())
+        results.extend(scrape_brokers_check())
+        if (os.environ.get('KRO_KURS_BULK_WEB_REPORTS') or '').strip().lower() in ('1', 'true', 'yes', 'on'):
+            results.extend(scrape_kurs_expert())
+        results.extend(_scrape_victim_queries())
 
-    seed_usernames = sorted({
-        (r.get('channel') or '').strip()
-        for r in results
-        if _is_seed_telegram_ref(r.get('channel'))
-    })[:20]
-    for channel in seed_usernames:
-        for url in _search_review_urls_for_username(channel, max_links=2):
-            page = _fetch(url)
-            if not page:
-                continue
-            results.extend(_build_findings_from_page(page, url, 'web-search'))
+        def _is_seed_telegram_ref(ch):
+            c = (ch or '').strip().lower()
+            return bool(c) and (c.startswith('@') or 't.me/' in c)
+
+        seed_usernames = sorted({
+            (r.get('channel') or '').strip()
+            for r in results
+            if _is_seed_telegram_ref(r.get('channel'))
+        })[:20]
+        for channel in seed_usernames:
+            for url in _search_review_urls_for_username(channel, max_links=2):
+                page = _fetch(url)
+                if not page:
+                    continue
+                results.extend(_build_findings_from_page(page, url, 'web-search'))
 
     # Deduplicate: keep highest sum_rub per channel per source_url
     seen = {}

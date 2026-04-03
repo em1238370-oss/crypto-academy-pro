@@ -2530,6 +2530,7 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
                     known_base_keys=known_keys,
                 )
                 analysis['unified_risk'] = patch.get('unified_risk') or {}
+                # Колонка M scam_base: статус из kro_unified_risk (флаги); ниже — только floor по потерям.
                 obj['status'] = st
                 obj['content_analysis'] = json.dumps(analysis, ensure_ascii=False)
                 for mention in (analysis.get('network_mentions') or []):

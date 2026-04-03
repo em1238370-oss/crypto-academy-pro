@@ -11,6 +11,11 @@ name: KRO 12h Monitor
 #   cd backend/kro-worker && python3 convert_session.py
 # Скопируйте одну строку вывода в Secrets → KRO_TELEGRAM_SESSION_STRING.
 # Также нужны TELEGRAM_API_ID и TELEGRAM_API_HASH (secrets).
+#
+# Ручной запуск (workflow_dispatch): в логах шага «Run 12h monitor» смотрите stderr —
+#   «scam_base: записано N…», строки skip по HTTP-gate, «web_scraper.scrape_all: …».
+# Доп. веб-источники (cryptorussia, brokers-check, DDG и т.д.): переменная KRO_WEB_EXTRA_SOURCES=1
+# в env этого шага (по умолчанию только stop-scam1, fin-obzor, vklader, telltrue, forteck).
 on:
   schedule:
     - cron: '0 9 * * *'   # 12:00 MSK

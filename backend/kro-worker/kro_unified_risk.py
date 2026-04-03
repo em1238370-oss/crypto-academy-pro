@@ -11,13 +11,11 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import kro_red_flags as _kro_red_flags
+from kro_tme_http_gate import SCAM_BASE_HTTP_CRYPTO_TERMS, SCAM_BASE_HTTP_POST_MAX_AGE_DAYS
 
-MANDATORY_CRYPTO_TERMS = (
-    'bitcoin', 'btc', 'крипт', 'crypto', 'usdt',
-    'трейдинг', 'trading', 'сигнал', 'signal', 'обменник',
-)
-
-MANDATORY_LAST_POST_DAYS = 30
+# Синхронно с HTTP-gate scam_base (kro_tme_http_gate)
+MANDATORY_CRYPTO_TERMS = SCAM_BASE_HTTP_CRYPTO_TERMS
+MANDATORY_LAST_POST_DAYS = SCAM_BASE_HTTP_POST_MAX_AGE_DAYS
 CHANNEL_YOUNG_DAYS = 90  # < 3 месяцев — жёлтый флаг
 
 BLACKLIST_SOURCE_MARKERS = (

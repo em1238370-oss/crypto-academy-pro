@@ -2225,7 +2225,7 @@ function channelMatchKey(channel) {
 
 /** Синхронно с kro_tme_http_gate.tme_http_gate_for_scam_base_write (только публичный HTML t.me). */
 const KRO_TME_HTTP_GATE_CRYPTO = [
-  'крипт', 'bitcoin', 'btc', 'usdt', 'трейд', 'сигнал', 'invest', 'trade', 'forex', 'бинанс', 'bybit',
+  'крипт', 'bitcoin', 'btc', 'usdt', 'трейд', 'сигнал', 'invest', 'trade', 'forex', 'форекс', 'обменник', 'бинанс', 'bybit',
 ];
 const KRO_TME_HTTP_GATE_MIN_SUBS = 100;
 const KRO_TME_HTTP_GATE_MAX_POST_DAYS = 60;
@@ -2242,10 +2242,35 @@ function _stripTags(html) {
   return (html || '').toString().replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<[^>]+>/g, ' ');
 }
 
+function _kroSlugLooksLikeBot(slug, objectType) {
+  const s = (slug || '').toLowerCase().replace(/\/$/, '');
+  if (s.endsWith('bot') || s.endsWith('_bot')) return true;
+  const ot = (objectType || '').toLowerCase().replace(/\s+/g, '');
+  if (ot.includes('инвест-бот') || ot.includes('инвестбот')) return true;
+  const otRaw = (objectType || '').toLowerCase();
+  if (otRaw.includes('бот') && !otRaw.includes('канал')) return true;
+  return false;
+}
+
+function _kroHtmlBotStartVisible(html, low) {
+  if (low.includes('tgme_page_error')) return false;
+  if (low.includes('chat not found') || low.includes('bot was blocked')) return false;
+  if (low.includes('?start=') && (low.includes('t.me/') || low.includes('telegram.me'))) return true;
+  const re = /<a[^>]+class="[^"]*tgme_action_button[^"]*"[^>]*>([\s\S]*?)<\/a>/gi;
+  let mm;
+  while ((mm = re.exec(html)) !== null) {
+    const inner = (mm[1] || '').toLowerCase();
+    const full = mm[0].toLowerCase();
+    if (full.includes('?start=') || full.includes('start=')) return true;
+    if (['start', 'запустить', 'открыть', 'open', 'launch'].some((w) => inner.includes(w))) return true;
+  }
+  return false;
+}
+
 /**
  * @returns {Promise<{ ok: boolean, reason: string }>}
  */
-async function passesKroTmeHttpGateForScamBase(link, contentBlob) {
+async function passesKroTmeHttpGateForScamBase(link, contentBlob, objectType = '') {
   const L = (link || '').toString().trim().toLowerCase();
   if (!L.includes('t.me/')) {
     return { ok: true, reason: 'not_telegram' };
@@ -2257,6 +2282,7 @@ async function passesKroTmeHttpGateForScamBase(link, contentBlob) {
   if (!slug) {
     return { ok: true, reason: 'not_telegram' };
   }
+  const isBot = _kroSlugLooksLikeBot(slug, objectType);
 
   const headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -2290,6 +2316,43 @@ async function passesKroTmeHttpGateForScamBase(link, contentBlob) {
     low.includes('не существует')
   ) {
     return { ok: false, reason: 'tme_unavailable_or_no_public_page' };
+  }
+
+  const descMatch = html.match(/class="tgme_page_description"[^>]*>([\s\S]*?)<\/div>/i);
+  const desc = descMatch ? _stripTags(descMatch[1]).toLowerCase() : '';
+  const postsChunk = low.split('tgme_widget_message').slice(0, 60).join(' ');
+
+  if (isBot) {
+    if (!_kroHtmlBotStartVisible(html, low)) {
+      return { ok: false, reason: 'tme_bot_not_working_no_start' };
+    }
+    const blobBot = `${desc} ${postsChunk} ${(contentBlob || '').toString().toLowerCase()}`;
+    const hasCryptoBot = KRO_TME_HTTP_GATE_CRYPTO.some((t) => blobBot.includes(t));
+    if (!hasCryptoBot) {
+      return { ok: false, reason: 'tme_no_crypto_terms_in_desc_or_posts' };
+    }
+    const dtReBot = /datetime="([^"]+)"/g;
+    let lastB = null;
+    let mb;
+    while ((mb = dtReBot.exec(html)) !== null) {
+      try {
+        const d = new Date(mb[1].replace(/\+00:00$/, 'Z'));
+        if (!Number.isNaN(d.getTime()) && (!lastB || d > lastB)) lastB = d;
+      } catch {
+        /* ignore */
+      }
+    }
+    if (lastB != null) {
+      const ageDaysB = (Date.now() - lastB.getTime()) / 864e5;
+      if (ageDaysB > KRO_TME_HTTP_GATE_MAX_POST_DAYS) {
+        return { ok: false, reason: `tme_no_fresh_post_${KRO_TME_HTTP_GATE_MAX_POST_DAYS}d` };
+      }
+    }
+    const hackedB = ['взлом', 'взломан', 'hacked', 'канал взломали', 'аккаунт взломан'];
+    if (hackedB.some((h) => postsChunk.includes(h))) {
+      return { ok: false, reason: 'tme_channel_reported_hacked' };
+    }
+    return { ok: true, reason: 'ok_tme_http_gate_bot' };
   }
 
   const extraMatch = html.match(/class="tgme_page_extra"[^>]*>([\s\S]*?)<\/div>/i);
@@ -2328,9 +2391,6 @@ async function passesKroTmeHttpGateForScamBase(link, contentBlob) {
     return { ok: false, reason: `tme_subscribers_below_${KRO_TME_HTTP_GATE_MIN_SUBS}` };
   }
 
-  const descMatch = html.match(/class="tgme_page_description"[^>]*>([\s\S]*?)<\/div>/i);
-  const desc = descMatch ? _stripTags(descMatch[1]).toLowerCase() : '';
-  const postsChunk = low.split('tgme_widget_message').slice(0, 60).join(' ');
   const blob = `${desc} ${postsChunk} ${(contentBlob || '').toString().toLowerCase()}`;
   const hasCrypto = KRO_TME_HTTP_GATE_CRYPTO.some((t) => blob.includes(t));
   if (!hasCrypto) {
@@ -3164,7 +3224,7 @@ async function checkAndPromoteToScamBase(client, channel) {
       sourceEvidence,
       ...reports.map(r => `${r.description || ''} ${r.proof_url || ''}`),
     ].join(' ');
-    const gate = await passesKroTmeHttpGateForScamBase(link, gateBlob);
+    const gate = await passesKroTmeHttpGateForScamBase(link, gateBlob, objectType);
     if (!gate.ok) {
       console.log(`[KRO] ${display} skipped: t.me HTTP gate ${gate.reason}`);
       return;

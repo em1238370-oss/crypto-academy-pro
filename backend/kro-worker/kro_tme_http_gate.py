@@ -3,13 +3,16 @@
 Единый публичный HTTP-gate для записи в scam_base (без Telethon).
 Используется: run_12h_monitor, check_once, kro-prune-scam-base-html, опционально — полная чистка за цикл.
 
-Правила перед записью / удержанием строки Telegram:
+Правила перед записью / удержанием строки Telegram (канал):
   1) публичная страница доступна;
   2) не считаем личным профилем (эвристика HTML);
   3) число подписчиков видно и >= 100;
   4) в описании или постах есть крипто-маркеры;
   5) есть пост с датой не старше SCAM_BASE_HTTP_POST_MAX_AGE_DAYS;
   + посты без маркеров взлома.
+
+Для объекта-бота (инвест-бот / @*bot): без требования 100 подписчиков; нужна
+публичная кнопка Start/Запустить (?start=); крипто-маркеры; если есть посты с датами — не старше лимита.
 """
 from __future__ import annotations
 
@@ -41,6 +44,8 @@ SCAM_BASE_HTTP_CRYPTO_TERMS = (
     'invest',
     'trade',
     'forex',
+    'форекс',
+    'обменник',
     'бинанс',
     'bybit',
 )
@@ -224,6 +229,37 @@ def _looks_like_user_profile(extra_text: str, raw_lower: str) -> bool:
     return False
 
 
+def _slug_looks_like_telegram_bot(slug: str, object_type: str) -> bool:
+    s = (slug or '').strip().lower().rstrip('/')
+    if s.endswith('bot') or s.endswith('_bot'):
+        return True
+    ot = (object_type or '').strip().lower()
+    ot_compact = ot.replace(' ', '').replace('-', '')
+    if 'инвестбот' in ot_compact:
+        return True
+    if 'бот' in ot and 'канал' not in ot:
+        return True
+    return False
+
+
+def _tme_bot_page_has_start(soup, raw_lower: str) -> bool:
+    if 'tgme_page_error' in raw_lower:
+        return False
+    if 'chat not found' in raw_lower or 'bot was blocked' in raw_lower:
+        return False
+    if '?start=' in raw_lower and ('t.me/' in raw_lower or 'telegram.me' in raw_lower):
+        return True
+    for sel in ('a.tgme_action_button_new', 'a.tgme_action_button'):
+        for a in soup.select(sel):
+            href = (a.get('href') or '').lower()
+            if '?start=' in href or 'start=' in href:
+                return True
+            t = (a.get_text() or '').strip().lower()
+            if any(w in t for w in ('start', 'запустить', 'открыть', 'open', 'launch')):
+                return True
+    return False
+
+
 def fetch_tme_public_preview(slug: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {
         'ok_fetch': False,
@@ -233,6 +269,7 @@ def fetch_tme_public_preview(slug: str) -> Dict[str, Any]:
         'desc': '',
         'posts_blob_lower': '',
         'last_post_dt': None,
+        'bot_start_visible': False,
     }
     slug = (slug or '').lstrip('@').split('/')[0]
     if not slug or slug.startswith('joinchat') or slug.startswith('+'):
@@ -299,6 +336,7 @@ def fetch_tme_public_preview(slug: str) -> Dict[str, Any]:
                 pass
     out['posts_blob_lower'] = ' '.join(texts)
     out['last_post_dt'] = last_dt
+    out['bot_start_visible'] = _tme_bot_page_has_start(soup, raw_lower)
     return out
 
 
@@ -316,9 +354,31 @@ def tme_http_gate_for_scam_base_write(
         return False, 'invite_link_not_supported'
     slug = uname.lstrip('@').split('/')[0]
     prev = fetch_tme_public_preview(slug)
+    is_bot = _slug_looks_like_telegram_bot(slug, object_type)
 
     if not prev['ok_fetch'] or prev['unavailable']:
         return False, 'tme_unavailable_or_no_public_page'
+
+    if is_bot:
+        if not prev.get('bot_start_visible'):
+            return False, 'tme_bot_not_working_no_start'
+        blob = (
+            (prev['desc'] + ' ' + prev['posts_blob_lower'] + ' ' + source_evidence + ' ' + content_analysis).lower()
+        )
+        if not any(term in blob for term in SCAM_BASE_HTTP_CRYPTO_TERMS):
+            return False, 'tme_no_crypto_terms_in_desc_or_posts'
+        now = datetime.now(timezone.utc)
+        last_dt = prev['last_post_dt']
+        if last_dt is not None:
+            if last_dt.tzinfo is None:
+                last_dt = last_dt.replace(tzinfo=timezone.utc)
+            if (now - last_dt).days > SCAM_BASE_HTTP_POST_MAX_AGE_DAYS:
+                return False, 'tme_no_fresh_post_%dd' % SCAM_BASE_HTTP_POST_MAX_AGE_DAYS
+        hacked_markers = ('взлом', 'взломан', 'hacked', 'канал взломали', 'аккаунт взломан')
+        posts = prev['posts_blob_lower']
+        if any(hm in posts for hm in hacked_markers):
+            return False, 'tme_channel_reported_hacked'
+        return True, 'ok_tme_http_gate_bot'
 
     if prev['is_user_profile']:
         return False, 'tme_personal_account_not_channel'
