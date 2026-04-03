@@ -10,7 +10,7 @@ alwaysApply: false
 
 1. **Источники цикла (каждые 12 ч):** stop-scam1.com, fin-obzor.net, vklader.com/blacklist-telegram, telltrue.net (только крипто-контекст), forteck.net, лист `reports` + поисковые запросы DDG+Bing (до 5 результатов на запрос) — см. `web_scraper.py` (`_VICTIM_*_QUERIES`, `scrape_all`).
 2. **Жёсткие фильтры записи в scam_base:** публичный HTTP `t.me` без Telethon — `kro_tme_http_gate.py` (доступность, не личный аккаунт, ≥100 подписчиков где применимо, крипто-маркеры, пост ≤60 дней, боты, маркеры взлома).
-3. **Статусы по флагам:** `kro_unified_risk.status_from_flag_counts` — «в риске» только при ≥1 красном (ч.4 ТЗ); без красных при жёлтых — «под наблюдением»; 2+ красных — «подтверждённый скам».
+3. **Статусы по флагам:** `kro_unified_risk.status_from_flag_counts` — 1–2 жёлтых → под наблюдением; **3+ жёлтых → в риске**; 1+ красный → в риске; 2+ красных → подтверждённый скам.
 4. **Промо из reports:** `_check_and_promote_from_reports` — ≥2 уникальных жалобщика; маркер `[[kro_risk_cap:под наблюдением]]` в description (vklader, только имя в списке) ограничивает статус.
 5. **Расписание CI:** `.github/workflows/kro-monitor.yml` — `cron` 09:00 и 21:00 UTC (= 12:00 и 00:00 MSK).
 
