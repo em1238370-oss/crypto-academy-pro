@@ -1,106 +1,16 @@
 #!/usr/bin/env python3
 """
-Один раз локально: прочитать kro_worker.session и вывести строку для GitHub Secret
-KRO_TELEGRAM_SESSION_STRING (короче, чем base64 всего файла).
+Алиас для convert_session.py — та же одна строка StringSession для KRO_TELEGRAM_SESSION_STRING.
 
-Запуск из backend/kro-worker при заданных TELEGRAM_API_ID / TELEGRAM_API_HASH в env или .env:
+Предпочтительно:
 
-  cd backend/kro-worker && python3 export_telethon_string_session.py
-
-Скопируйте одну строку вывода в Settings → Secrets → KRO_TELEGRAM_SESSION_STRING.
+  cd backend/kro-worker && python3 convert_session.py
 """
 from __future__ import annotations
 
 import asyncio
-import os
-import sys
-from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-
-
-def _apply_env_lines(text: str) -> None:
-    """Подставляет только непустые значения (пустые TELEGRAM_API_ID= в .env не затирают GitHub)."""
-    for line in text.splitlines():
-        line = line.strip()
-        if not line or line.startswith('#') or '=' not in line:
-            continue
-        k, _, v = line.partition('=')
-        k, v = k.strip(), v.strip()
-        if not k:
-            continue
-        if (v.startswith('"') and v.endswith('"')) or (v.startswith("'") and v.endswith("'")):
-            v = v[1:-1]
-        if not v.strip():
-            continue
-        os.environ[k] = v.strip()
-
-
-def _load_dotenv() -> None:
-    # Корень репозитория → backend/kro-worker (типично: уже заполненный .env в корне)
-    repo_root = SCRIPT_DIR.parent.parent
-    for p in (repo_root / '.env', SCRIPT_DIR / 'env', SCRIPT_DIR / '.env'):
-        if p.is_file():
-            _apply_env_lines(p.read_text(encoding='utf-8', errors='replace'))
-
-
-_HELP_ENV = """
-Нет TELEGRAM_API_ID / TELEGRAM_API_HASH (или в файлах только пустые значения после =).
-
-Скрипт читает по порядку: корень репозитория .env → backend/kro-worker/env → backend/kro-worker/.env
-(подставляются только строки с непустым значением).
-
-  1) https://my.telegram.org → API development tools → api_id и api_hash.
-  2) Впишите их в backend/kro-worker/.env или в корневой .env проекта.
-  3) Снова: python3 export_telethon_string_session.py
-"""
-
-_HELP_SESSION = """
-Нет файла сессии: {path}
-
-  Сначала один раз войдите в Telegram из этой папки (появится kro_worker.session):
-    pip install "qrcode[pil]" telethon
-    python3 login_via_qr.py
-  Инструкция: ВХОД_ПО_QR.md
-
-  Потом снова: python3 export_telethon_string_session.py
-"""
-
-
-async def main() -> None:
-    _load_dotenv()
-    api_id = int(os.environ.get('TELEGRAM_API_ID') or 0)
-    api_hash = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
-    if not api_id or not api_hash:
-        print(_HELP_ENV.strip(), file=sys.stderr)
-        raise SystemExit(1)
-
-    from telethon import TelegramClient
-    from telethon.sessions import StringSession
-
-    name = (os.environ.get('TELEGRAM_SESSION_NAME') or 'kro_worker').strip()
-    base = SCRIPT_DIR / name
-    sess_file = base.with_suffix('.session')
-    if not sess_file.is_file():
-        print(_HELP_SESSION.format(path=sess_file).strip(), file=sys.stderr)
-        raise SystemExit(1)
-
-    client = TelegramClient(str(base), api_id, api_hash)
-    await client.connect()
-    if not await client.is_user_authorized():
-        print('Сессия не авторизована. Сначала войдите (login_via_qr.py и т.д.).', file=sys.stderr)
-        raise SystemExit(1)
-
-    ss = StringSession()
-    ss.set_dc(client.session.dc_id, client.session.server_address, client.session.port)
-    ss.auth_key = client.session.auth_key
-    line = ss.save()
-    if not line:
-        print('Не удалось сформировать StringSession (нет auth_key?).', file=sys.stderr)
-        raise SystemExit(1)
-    print(line)
-    await client.disconnect()
-
+from convert_session import main
 
 if __name__ == '__main__':
     asyncio.run(main())

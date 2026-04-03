@@ -31,7 +31,7 @@ jobs:
           KRO_TELEGRAM_SESSION_STRING: ${{ secrets.KRO_TELEGRAM_SESSION_STRING }}
         run: |
           if [ -z "${KRO_TELEGRAM_SESSION_STRING:-}" ]; then
-            echo "::error::Задайте KRO_TELEGRAM_SESSION_STRING (python3 backend/kro-worker/export_telethon_string_session.py)."
+            echo "::error::Задайте KRO_TELEGRAM_SESSION_STRING (python3 backend/kro-worker/convert_session.py)."
             exit 1
           fi
 

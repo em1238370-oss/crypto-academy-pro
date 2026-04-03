@@ -8,7 +8,7 @@
      (лист можно создать в той же книге); или
   2) Задайте секрет GitHub **KRO_CLEANUP_EXTRA_DELETE** (или env): список @ через запятую/перенос; или
   3) В колонке N (content_analysis) для строки впишите маркер **__KRO_REMOVE__** — строка будет удалена.
-- На CI: секрет **KRO_TELEGRAM_SESSION_STRING** (Telethon StringSession, см. export_telethon_string_session.py).
+- На CI: секрет **KRO_TELEGRAM_SESSION_STRING** (Telethon StringSession, см. `backend/kro-worker/convert_session.py`).
 """
 import argparse
 import asyncio

@@ -8,7 +8,7 @@ name: KRO 12h Monitor
 #
 # Telethon на CI: секрет KRO_TELEGRAM_SESSION_STRING (Telethon StringSession, ~350 символов).
 # Файл .session в base64 в GitHub Secret не помещается — используйте экспорт строки:
-#   cd backend/kro-worker && python3 export_telethon_string_session.py
+#   cd backend/kro-worker && python3 convert_session.py
 # Скопируйте одну строку вывода в Secrets → KRO_TELEGRAM_SESSION_STRING.
 # Также нужны TELEGRAM_API_ID и TELEGRAM_API_HASH (secrets).
 on:
@@ -46,7 +46,7 @@ jobs:
           KRO_TELEGRAM_SESSION_STRING: ${{ secrets.KRO_TELEGRAM_SESSION_STRING }}
         run: |
           if [ -z "${KRO_TELEGRAM_SESSION_STRING:-}" ]; then
-            echo "::error::Задайте KRO_TELEGRAM_SESSION_STRING (вывод export_telethon_string_session.py). Base64-файл сессии в Secret не помещается."
+            echo "::error::Задайте KRO_TELEGRAM_SESSION_STRING (вывод: python3 backend/kro-worker/convert_session.py). Base64-файл сессии в Secret не помещается."
             exit 1
           fi
           echo "::notice::KRO_TELEGRAM_SESSION_STRING задан (длина ${#KRO_TELEGRAM_SESSION_STRING} символов)."
