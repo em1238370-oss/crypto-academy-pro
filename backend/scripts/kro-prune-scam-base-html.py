@@ -13,8 +13,9 @@
 Переменные: загружаются из backend/kro-worker/.env через python-dotenv; если KRO_SHEET_ID
 пустой — используется значение по умолчанию в коде (прод-таблица KRO).
 
-Учётные данные Google Sheets (по умолчанию):
-  backend/kro-worker/kro-google-credentials.json
+Учётные данные Google Sheets (любой вариант):
+  KRO_GOOGLE_CREDENTIALS_JSON в .env, или KRO_GOOGLE_CREDENTIALS_BASE64, или
+  GOOGLE_APPLICATION_CREDENTIALS, или backend/kro-worker/kro-google-credentials.json
 
 Запуск из backend/kro-worker:
   python3 ../scripts/kro-prune-scam-base-html.py --dry-run
@@ -112,22 +113,31 @@ def _load_env():
 
 
 def _get_credentials():
+    import base64
+
     from google.oauth2 import service_account
 
-    gac = (os.environ.get('GOOGLE_APPLICATION_CREDENTIALS') or '').strip()
-    if gac:
-        path = gac if os.path.isabs(gac) else os.path.join(os.getcwd(), gac)
-        if os.path.isfile(path):
-            return service_account.Credentials.from_service_account_file(
-                path, scopes=['https://www.googleapis.com/auth/spreadsheets']
-            )
+    def _file_creds(path: str):
+        return service_account.Credentials.from_service_account_file(
+            path, scopes=['https://www.googleapis.com/auth/spreadsheets']
+        )
 
-    for path in (_DEFAULT_CREDS, _FALLBACK_CREDS):
-        if os.path.isfile(path):
-            return service_account.Credentials.from_service_account_file(
-                path, scopes=['https://www.googleapis.com/auth/spreadsheets']
-            )
+    def _resolve_cred_path(p: str) -> str:
+        p = (p or '').strip()
+        if not p:
+            return ''
+        if os.path.isabs(p) and os.path.isfile(p):
+            return p
+        exp = os.path.expanduser(p)
+        if os.path.isfile(exp):
+            return exp
+        for base in (_KW, os.getcwd()):
+            cand = os.path.join(base, p)
+            if os.path.isfile(cand):
+                return cand
+        return ''
 
+    # 1) JSON строкой в .env / env (как на Render) — раньше файлов, чтобы не требовать kro-google-credentials.json
     raw = (os.environ.get('KRO_GOOGLE_CREDENTIALS_JSON') or '').strip()
     if raw.startswith('{'):
         try:
@@ -137,14 +147,41 @@ def _get_credentials():
             )
         except json.JSONDecodeError:
             pass
-    elif raw and os.path.isfile(os.path.expanduser(raw)):
-        return service_account.Credentials.from_service_account_file(
-            os.path.expanduser(raw), scopes=['https://www.googleapis.com/auth/spreadsheets']
-        )
+    elif raw:
+        path = _resolve_cred_path(raw)
+        if path:
+            return _file_creds(path)
+
+    # 2) Base64 целого JSON (как KRO_GOOGLE_CREDENTIALS_BASE64 в GitHub Actions)
+    b64 = (os.environ.get('KRO_GOOGLE_CREDENTIALS_BASE64') or '').strip()
+    if b64:
+        try:
+            data = base64.standard_b64decode(b64)
+            info = json.loads(data.decode('utf-8'))
+            return service_account.Credentials.from_service_account_info(
+                info, scopes=['https://www.googleapis.com/auth/spreadsheets']
+            )
+        except (ValueError, json.JSONDecodeError, UnicodeDecodeError):
+            pass
+
+    # 3) Путь к файлу ключа
+    gac = (os.environ.get('GOOGLE_APPLICATION_CREDENTIALS') or '').strip()
+    if gac:
+        path = _resolve_cred_path(gac)
+        if path:
+            return _file_creds(path)
+
+    # 4) Стандартные имена в папке kro-worker (абсолютные пути)
+    for path in (_DEFAULT_CREDS, _FALLBACK_CREDS):
+        if os.path.isfile(path):
+            return _file_creds(path)
 
     raise RuntimeError(
-        'Google credentials not found. Положите ключ в backend/kro-worker/kro-google-credentials.json '
-        'или задайте GOOGLE_APPLICATION_CREDENTIALS / KRO_GOOGLE_CREDENTIALS_JSON.'
+        'Google credentials not found. Задайте один из вариантов:\n'
+        '  • KRO_GOOGLE_CREDENTIALS_JSON в backend/kro-worker/.env (целиком JSON одной строкой)\n'
+        '  • KRO_GOOGLE_CREDENTIALS_BASE64 (как в GitHub Actions)\n'
+        '  • GOOGLE_APPLICATION_CREDENTIALS=имя_или_путь_к_json (ищется в kro-worker/ и текущей папке)\n'
+        '  • файл backend/kro-worker/kro-google-credentials.json или credentials.json'
     )
 
 
