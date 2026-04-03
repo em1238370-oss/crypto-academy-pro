@@ -1,0 +1,46 @@
+name: KRO Reset monitor dashboard
+
+# Сброс листов, из которых собирается /monitor (не scam_base, не reports).
+# workflow_dispatch; секреты как у монитора.
+on:
+  workflow_dispatch:
+
+jobs:
+  reset-monitor-sheets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install -r backend/kro-worker/requirements.txt
+
+      - name: Write Google credentials file
+        env:
+          KRO_GOOGLE_CREDENTIALS_BASE64: ${{ secrets.KRO_GOOGLE_CREDENTIALS_BASE64 }}
+        run: python3 "${{ github.workspace }}/.github/scripts/write-google-credentials.py"
+
+      - name: Verify KRO_SHEET_ID
+        env:
+          KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
+        run: |
+          if [ -z "${KRO_SHEET_ID:-}" ]; then
+            echo "::error::Секрет KRO_SHEET_ID не задан."
+            exit 1
+          fi
+          echo "::notice::KRO_SHEET_ID задан."
+
+      - name: Reset monitor Sheets (watch, network, meta, history)
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/backend/kro-worker/credentials.json
+          KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
+        run: |
+          echo "::warning::Обнуляются channels_watch, channels_network, kro_meta, kro_history (заголовки сохраняются где применимо)."
+          python3 "${{ github.workspace }}/backend/scripts/kro-reset-monitor-dashboard.py" --execute
