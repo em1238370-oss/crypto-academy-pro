@@ -1275,6 +1275,13 @@ const KRO_PENDING_REPORT_TEXT = 'Данные появятся после пер
 const LIVE_COUNTER_CACHE_TTL_MS = 60 * 1000; // 1 minute
 let kroLiveCounterCache = { payload: null, ts: 0 };
 
+function resetKroLiveCounterCache() {
+  kroLiveCounterCache = { payload: null, ts: 0 };
+}
+
+// Новый процесс Node = старт после деплоя (Render и т.д.) — кеш live-counter сбрасываем сразу.
+resetKroLiveCounterCache();
+
 /** URLs embedded in complaints_row fields (Python worker / kro-12h-stats.json). */
 function collectComplaintRowUrls(row) {
   const out = [];
@@ -2899,7 +2906,7 @@ function handleKroUpdate(req, res) {
     fs.writeFileSync(KRO_12H_STATS_PATH, JSON.stringify(payload, null, 2), 'utf8');
     const referenceSnapshot = buildKroReferenceSnapshot(payload);
     fs.writeFileSync(KRO_REFERENCE_STATS_PATH, JSON.stringify(referenceSnapshot, null, 2), 'utf8');
-    kroLiveCounterCache = { payload: null, ts: 0 };
+    resetKroLiveCounterCache();
     res.status(200).json({ ok: true });
   } catch (e) {
     console.error('KRO update write error:', e);
@@ -3166,12 +3173,16 @@ try {
 
 // Start both HTTP and HTTPS servers
 app.listen(PORT, '0.0.0.0', () => {
+  resetKroLiveCounterCache();
+  console.log('[KRO] live-counter cache reset on HTTP server listen (start / post-deploy process)');
   console.log(`✅ HTTP Backend listening on port ${PORT}`);
   console.log(`🌐 Access via: http://localhost:${PORT} or http://192.168.1.142:${PORT}`);
 });
 
 if (httpsOptions) {
   https.createServer(httpsOptions, app).listen(4443, '0.0.0.0', () => {
+    resetKroLiveCounterCache();
+    console.log('[KRO] live-counter cache reset on HTTPS server listen');
     console.log(`✅ HTTPS Backend listening on port 4443`);
     console.log(`🔒 Access via: https://localhost:4443 or https://192.168.1.142:4443`);
   });
