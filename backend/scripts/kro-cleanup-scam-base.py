@@ -2,6 +2,11 @@
 """
 Чистка листа scam_base.
 
+Строгий gate (нужен авторизованный Telethon на CI или локально):
+  User/бот → удалить строку | подписчики < 100 → удалить | нет описания → удалить
+  | нет постов за 60 дней → удалить | нет крипто-терминов в свежих постах → удалить
+  | признаки взлома в постах → удалить | сущность недоступна / нет прав / ошибка чтения → удалить
+
 Важно для владельца таблицы:
 - Комментарии в произвольных ячейках скрипт НЕ парсит. Чтобы удалить канал:
   1) Добавьте @username в лист **kro_remove_queue**, колонка A (с строки 2), один на строку
@@ -22,6 +27,7 @@ _KRO_WORKER = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__fi
 if _KRO_WORKER not in sys.path:
     sys.path.insert(0, _KRO_WORKER)
 
+# Явный список (эталонные «плохие» из ТЗ + очередь до первого прогона строгих правил).
 TARGET_DELETE = {
     '@poizongo',
     '@auraselect',
@@ -33,8 +39,13 @@ TARGET_DELETE = {
     '@alex_wise_trade',
     '@poizonstorm',
     '@rublevinvestrus',
+    '@trader_servver',
+    '@vladislav_belokrylov',
+    '@maxcrypto_adm',
 }
-CHECK_PERSONAL = {'@vladislav_belokrylov', '@maxcrypto_adm'}
+
+# Эталон «хорошей» строки — после чистки должен остаться (если был в листе).
+ETALON_USERNAME = '@sergeytrader_plus'
 CRYPTO_TERMS = ('bitcoin', 'btc', 'крипт', 'crypto', 'usdt', 'трейдинг', 'trading', 'сигнал', 'signal', 'обменник')
 
 
@@ -167,38 +178,39 @@ async def _open_tg_client():
         return None
 
 
-async def _is_personal_user(client, username: str) -> bool:
-    if client is None:
-        return False
-    try:
-        from telethon.tl.types import User
-        ent = await asyncio.wait_for(client.get_entity(username), timeout=10.0)
-        return isinstance(ent, User)
-    except Exception:
-        return False
+def _row_telegram_keys(rr: list) -> tuple:
+    """(username_norm, link_norm) для поиска сущности."""
+    u = _norm_username(rr[0] if len(rr) > 0 else '')
+    link = _norm_username(rr[1] if len(rr) > 1 else '')
+    ref = u or link
+    return u, link, ref
 
 
 async def _validate_row_strict(client, row_obj):
     """
-    Возвращает (ok, reason, mark_deleted)
-    mark_deleted=True для удалённых/недоступных объектов (периодическая проверка).
+    Возвращает (ok, reason, remove_row).
+    remove_row=True — строка полностью удаляется из scam_base (не только статус).
     """
     from telethon.tl.functions.channels import GetFullChannelRequest
     from telethon.tl.types import Channel, Chat, User
 
     uname = _norm_username(row_obj.get('username') or row_obj.get('link') or '')
     if not uname:
-        return False, 'empty_username', False
+        return False, 'empty_username', True
     if client is None:
-        return False, 'telethon_unavailable_strict_reject', False
+        return False, 'telethon_unavailable', False
+
     try:
         ent = await asyncio.wait_for(client.get_entity(uname), timeout=10.0)
     except Exception:
+        # Недоступен / бот только по инвайту / нет прав — убираем из базы
         return False, 'entity_unavailable', True
+
+    # Личный аккаунт или бот (User) — не канал для scam_base
     if isinstance(ent, User):
-        return False, 'entity_is_user', False
+        return False, 'entity_is_user_or_bot', True
     if not isinstance(ent, (Channel, Chat)):
-        return False, 'entity_not_channel_or_chat', False
+        return False, 'entity_not_channel_or_chat', True
     if bool(getattr(ent, 'deleted', False)):
         return False, 'channel_deleted', True
 
@@ -206,12 +218,14 @@ async def _validate_row_strict(client, row_obj):
         full = await asyncio.wait_for(client(GetFullChannelRequest(ent)), timeout=10.0)
     except Exception:
         return False, 'cannot_read_full_channel', True
+
     subs = int(getattr(getattr(full, 'full_chat', None), 'participants_count', 0) or 0)
     if subs < 100:
-        return False, 'subs_below_100', False
+        return False, 'subs_below_100', True
+
     about = str(getattr(getattr(full, 'full_chat', None), 'about', '') or '')
     if not about.strip():
-        return False, 'empty_description', False
+        return False, 'empty_description', True
 
     posts = []
     post_dates = []
@@ -229,14 +243,17 @@ async def _validate_row_strict(client, row_obj):
         return False, 'iter_messages_error', True
 
     cutoff = datetime.now(timezone.utc) - timedelta(days=60)
-    if not any(dt >= cutoff for dt in post_dates):
+    if not post_dates or not any(dt >= cutoff for dt in post_dates):
         return False, 'no_posts_60d', True
+
     recent_blob = ' '.join(posts[:10])
     if not any(t in recent_blob for t in CRYPTO_TERMS):
-        return False, 'posts_not_crypto', False
+        return False, 'posts_not_crypto', True
+
     hacked = ('взлом', 'взломан', 'hacked', 'канал взломали', 'аккаунт взломан')
     if any(h in ' '.join(posts) for h in hacked):
         return False, 'channel_hacked_notice', True
+
     return True, 'ok', False
 
 
@@ -270,32 +287,34 @@ async def main():
 
     kept = []
     deleted_names = []
-    marked_deleted = []
+    strict_removed = []
 
     for r in rows:
         rr = list(r) + [''] * (14 - len(r))
-        uname = _norm_username(rr[0])
+        u_col, _link_col, ref = _row_telegram_keys(rr)
 
-        # Step 1: полное удаление строки — жёсткий список, env, лист kro_remove_queue, маркер в колонке N
-        if uname in delete_set:
-            deleted_names.append(uname)
+        if not ref:
+            deleted_names.append('(empty_username_link)')
+            continue
+
+        # Step 1: полное удаление — список, env, kro_remove_queue, маркер N
+        if ref in delete_set or u_col in delete_set:
+            deleted_names.append(ref)
             continue
         if _row_marked_for_removal(rr):
-            deleted_names.append(uname or _norm_username(rr[1]) or '(row)')
+            deleted_names.append(ref)
             continue
 
-        # Step 2: verify two personal-account suspects via Telethon
-        if uname in CHECK_PERSONAL and client is not None:
-            if await _is_personal_user(client, uname):
-                deleted_names.append(uname)
+        # Step 2: строгий Telethon-gate — любое нарушение → строка удаляется целиком
+        if client is not None:
+            ok, reason, remove_row = await _validate_row_strict(
+                client, {'username': rr[0], 'link': rr[1]}
+            )
+            if not ok and remove_row:
+                deleted_names.append(ref)
+                strict_removed.append((ref, reason))
                 continue
 
-        # Step 3/periodic: strict gate for all telegram usernames
-        if uname:
-            ok, reason, mark_del = await _validate_row_strict(client, {'username': rr[0], 'link': rr[1]})
-            if not ok and mark_del:
-                rr[12] = 'удалён'
-                marked_deleted.append((uname, reason))
         kept.append(rr[:14])
 
     if client is not None:
@@ -304,13 +323,22 @@ async def main():
         except Exception:
             pass
 
-    print('explicitly deleted rows:', len(deleted_names))
+    print('removed rows (total):', len(deleted_names))
     if deleted_names:
-        print('deleted:', ', '.join(sorted(set(deleted_names))))
-    print('marked as удалён:', len(marked_deleted))
-    if marked_deleted:
-        print('marked_deleted_sample:', marked_deleted[:10])
+        print('removed sample:', ', '.join(sorted(set(deleted_names))[:40]))
+        if len(set(deleted_names)) > 40:
+            print('... и ещё', len(set(deleted_names)) - 40, 'уникальных')
+    print('strict_gate removals:', len(strict_removed))
+    if strict_removed:
+        print('strict_gate sample:', strict_removed[:15])
     print('rows after cleanup:', len(kept))
+
+    etalon_n = _norm_username(ETALON_USERNAME)
+    etalon_kept = any(_row_telegram_keys(k)[2] == etalon_n for k in kept)
+    print(
+        'etalon %s in result: %s'
+        % (ETALON_USERNAME, 'YES' if etalon_kept else 'NO (не было в листе или удалён правилами — проверьте вручную)')
+    )
 
     if args.dry_run:
         return 0
