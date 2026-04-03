@@ -133,7 +133,7 @@
                </div>
                <div class="kro-feature1-stat kro-card">
                    <span class="kro-feature1-stat-value" id="kro-stat-channels">—</span>
-                   <span class="kro-feature1-stat-label">Telegram каналов</span>
+                   <span class="kro-feature1-stat-label">Всего в подтверждённой базе</span>
                </div>
                <div class="kro-feature1-stat kro-card">
                    <span class="kro-feature1-stat-value" id="kro-stat-courses">—</span>
@@ -616,13 +616,17 @@
            }
            function applyData(data) {
                var el;
-               if ((el = document.getElementById('kro-stat-channels-today'))) { el.dataset.target = data.channelsToday; el.textContent = data.channelsToday; }
+               var ch12 = data.new_in_cycle != null && data.new_in_cycle !== '' ? Number(data.new_in_cycle) : Number(data.channelsToday);
+               if (!isFinite(ch12)) ch12 = 0;
+               var chTotal = Number(data.channelsTotal);
+               if (!isFinite(chTotal)) chTotal = 0;
+               if ((el = document.getElementById('kro-stat-channels-today'))) { el.dataset.target = ch12; el.textContent = ch12; }
                if ((el = document.getElementById('kro-stat-lost'))) { el.dataset.target = data.totalLost; el.textContent = formatFull(data.totalLost); }
-               if ((el = document.getElementById('kro-stat-channels'))) { el.dataset.target = data.telegramCount; el.textContent = data.telegramCount; }
+               if ((el = document.getElementById('kro-stat-channels'))) { el.dataset.target = chTotal; el.textContent = chTotal; }
                if ((el = document.getElementById('kro-stat-courses'))) { el.dataset.target = data.coursesCount; el.textContent = data.coursesCount; }
                if ((el = document.getElementById('kro-live-datetime'))) {
-                   var updatedAt = data.lastValidUpdatedAt || data.updatedAt || null;
-                   el.textContent = window.__formatKroMskTimestamp ? window.__formatKroMskTimestamp(updatedAt) : '—';
+                   var rawTime = data.last_cycle_at || data.lastValidUpdatedAt || data.updatedAt || null;
+                   el.textContent = window.__formatKroMskTimestamp ? window.__formatKroMskTimestamp(rawTime) : '—';
                }
                if ((el = document.getElementById('kro-f1-shock-text'))) el.textContent = data.shockText || 'Данные появятся после первого верифицированного отчёта.';
                if ((el = document.getElementById('kro-f1-shock-total'))) el.textContent = 'ИТОГО: -' + formatFull(data.totalLost) + '₽';
@@ -670,9 +674,9 @@
                }
                var statsHero = document.getElementById('kro-hero-live-stats');
                if (statsHero) {
-                   var chN = Math.max(0, Math.floor(Number(data.channelsToday) || 0));
+                   var totalBase = Math.max(0, Math.floor(Number(data.channelsTotal) || 0));
                    var compN = Math.max(0, Math.floor(Number(data.complaints_received) || 0));
-                   statsHero.textContent = 'Уже проверено ' + chN + ' ' + ruChannelsWord(chN) + ' · ' + compN + ' ' + ruComplaintsWord(compN) + ' получено';
+                   statsHero.textContent = 'Уже проверено ' + totalBase + ' ' + ruChannelsWord(totalBase) + ' · ' + compN + ' ' + ruComplaintsWord(compN) + ' получено';
                }
                var docWrap = document.getElementById('kro-f1-source-doc-wrap');
                var docLink = document.getElementById('kro-f1-source-doc-link');

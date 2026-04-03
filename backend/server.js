@@ -1508,6 +1508,7 @@ function buildMonitorRecentCasesFromScamBase(scamRows, limit = 3) {
 
 const KRO_FALLBACK = {
   channelsToday: 0,
+  channelsTotal: 0,
   totalLost: 0,
   telegramCount: 0,
   coursesCount: 0,
@@ -1587,8 +1588,10 @@ function hasKroVisibleData(data) {
   const telegramCount = pickFirstNumber(data.telegram_channels, data.telegramCount);
   const coursesCount = pickFirstNumber(data.courses_products, data.courses, data.coursesCount);
   const top3 = Array.isArray(data.display_top3) && data.display_top3.length ? data.display_top3 : data.top3;
+  const channelsTotal = pickFirstNumber(data.channelsTotal);
   return (
     Number(channelsToday || 0) > 0 ||
+    Number(channelsTotal || 0) > 0 ||
     Number(totalLost || 0) > 0 ||
     Number(telegramCount || 0) > 0 ||
     Number(coursesCount || 0) > 0 ||
@@ -1633,6 +1636,7 @@ function buildKroLiveResponse(data, options = {}) {
 
   return {
     channelsToday,
+    channelsTotal: pickFirstNumber(data.channelsTotal),
     totalLost,
     telegramCount,
     coursesCount,
@@ -1658,6 +1662,7 @@ function buildKroReferenceSnapshot(data) {
     source: 'site_snapshot',
     sourceCaption: data.sourceCaption || 'Последний подтверждённый снимок для сайта.',
     channelsToday: pickFirstNumber(data.new_scam_channels, data.new_scams, data.channelsToday),
+    channelsTotal: pickFirstNumber(data.channelsTotal),
     totalLost: pickFirstNumber(data.losses_12h, data.totalLost),
     telegramCount: pickFirstNumber(data.telegram_channels, data.telegramCount),
     coursesCount: pickFirstNumber(data.courses_products, data.courses, data.coursesCount),
@@ -1988,8 +1993,8 @@ function parseChannelsNetworkRow(row) {
 }
 
 /**
- * Build live-counter payload from scam_base v2 rows (confirmed objects from last 12h).
- * Falls back to null if no v2 rows are recent enough.
+ * Build live-counter payload from scam_base v2 rows (подтверждённые объекты, дедуп по каналу).
+ * Всегда возвращает объект; при пустой базе — нули и honest_zero.
  */
 function buildLiveCounterFromScamBase(parsedRows) {
   const now = Date.now();
@@ -2012,11 +2017,8 @@ function buildLiveCounterFromScamBase(parsedRows) {
     }
   }
   const allRows = Array.from(byChannel.values());
-  if (!allRows.length) return null;
+  const channels_total = allRows.length;
 
-  // channelsToday = все подтверждённые каналы в базе (не только за 24ч)
-  // publishStatus: valid если база не пустая
-  const new_scam_channels = allRows.length;
   const losses_12h = allRows.reduce((s, r) => s + (r.total_loss_rub || 0), 0);
 
   // telegramCount = ALL confirmed telegram signal channels in scam_base
@@ -2044,10 +2046,11 @@ function buildLiveCounterFromScamBase(parsedRows) {
     try { const t = new Date(r.detected_at || 0).getTime(); return t > best ? t : best; } catch { return best; }
   }, 0);
 
-  const isHonestZero = new_scam_channels === 0;
+  const isHonestZero = channels_total === 0;
   const status_summary = buildStatusSummary(allRows);
   return {
-    new_scam_channels,
+    channels_total,
+    new_scam_channels: channels_total,
     losses_12h,
     telegram_channels,
     courses_products,
@@ -2749,37 +2752,38 @@ app.get('/api/kro/live-counter', async (req, res) => {
       const parsedRows = rawRows.map(parseScamBaseRow).filter(r => r.username && r.username !== 'username');
       console.log(`[KRO live-counter] parsed ${parsedRows.length} rows from scam_base`);
       const scamBaseCounter = buildLiveCounterFromScamBase(parsedRows);
-      if (scamBaseCounter) {
-        const top3rows = Array.isArray(scamBaseCounter.top3) ? scamBaseCounter.top3 : [];
-        console.log('TOP3 RAW:', JSON.stringify(top3rows.slice(0,3)));
-        // Use last_cycle_at from kro_meta when it's newer than latest scam_base row
-        const cycleTs = cycleMeta.last_cycle_at ? new Date(cycleMeta.last_cycle_at).getTime() : 0;
-        const rowTs = scamBaseCounter.updatedAt ? new Date(scamBaseCounter.updatedAt).getTime() : 0;
-        const bestUpdatedAt = cycleTs > rowTs ? cycleMeta.last_cycle_at : scamBaseCounter.updatedAt;
-        const payload = {
-          channelsToday: scamBaseCounter.new_scam_channels,
-          totalLost: scamBaseCounter.losses_12h,
-          telegramCount: scamBaseCounter.telegram_channels,
-          coursesCount: scamBaseCounter.courses_products,
-          complaints_received: scamBaseCounter.complaints_received,
-          victims_12h: null,
-          shockText: KRO_PENDING_REPORT_TEXT,
-          top3: scamBaseCounter.top3,
-          report_doc_url: KRO_SOURCES_DOC_URL,
-          sourceCaption: scamBaseCounter.sourceCaption,
-          status_summary: scamBaseCounter.status_summary,
-          publishStatus: scamBaseCounter.publishStatus,
-          isHonestZero: scamBaseCounter.isHonestZero,
-          siteNotice: null,
-          lastValidUpdatedAt: bestUpdatedAt,
-          updatedAt: bestUpdatedAt,
-          last_cycle_at: cycleMeta.last_cycle_at,
-          new_in_cycle: cycleMeta.new_in_cycle,
-          sources_checked: cycleMeta.sources_checked
-        };
-        kroLiveCounterCache = { payload, ts: Date.now() };
-        return res.json(payload);
-      }
+      const top3rows = Array.isArray(scamBaseCounter.top3) ? scamBaseCounter.top3 : [];
+      console.log('TOP3 RAW:', JSON.stringify(top3rows.slice(0, 3)));
+      const cycleTs = cycleMeta.last_cycle_at ? new Date(cycleMeta.last_cycle_at).getTime() : 0;
+      const rowTs = scamBaseCounter.updatedAt ? new Date(scamBaseCounter.updatedAt).getTime() : 0;
+      const bestUpdatedAt = cycleTs >= rowTs ? cycleMeta.last_cycle_at : scamBaseCounter.updatedAt;
+      const displayUpdatedAt = cycleMeta.last_cycle_at || bestUpdatedAt || scamBaseCounter.updatedAt || null;
+      const newInCycle = Number(cycleMeta.new_in_cycle);
+      const channelsTodayVal = Number.isFinite(newInCycle) ? newInCycle : 0;
+      const payload = {
+        channelsToday: channelsTodayVal,
+        channelsTotal: scamBaseCounter.channels_total,
+        totalLost: scamBaseCounter.losses_12h,
+        telegramCount: scamBaseCounter.telegram_channels,
+        coursesCount: scamBaseCounter.courses_products,
+        complaints_received: scamBaseCounter.complaints_received,
+        victims_12h: null,
+        shockText: KRO_PENDING_REPORT_TEXT,
+        top3: scamBaseCounter.top3,
+        report_doc_url: KRO_SOURCES_DOC_URL,
+        sourceCaption: scamBaseCounter.sourceCaption,
+        status_summary: scamBaseCounter.status_summary,
+        publishStatus: scamBaseCounter.publishStatus,
+        isHonestZero: scamBaseCounter.isHonestZero,
+        siteNotice: null,
+        lastValidUpdatedAt: displayUpdatedAt,
+        updatedAt: displayUpdatedAt,
+        last_cycle_at: cycleMeta.last_cycle_at,
+        new_in_cycle: channelsTodayVal,
+        sources_checked: cycleMeta.sources_checked
+      };
+      kroLiveCounterCache = { payload, ts: Date.now() };
+      return res.json(payload);
     } else {
       console.warn('[KRO live-counter] no Sheets client — KRO_GOOGLE_CREDENTIALS_JSON not set on Render?');
     }
@@ -2789,6 +2793,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
     console.log('KRO META SOURCE: reading from', 'unavailable (no Sheets client)');
     return res.json({
       channelsToday: 0,
+      channelsTotal: 0,
       totalLost: 0,
       telegramCount: 0,
       coursesCount: 0,
@@ -2814,6 +2819,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
     console.log('KRO META SOURCE: reading from', 'unavailable (exception path)');
     res.json({
       channelsToday: 0,
+      channelsTotal: 0,
       totalLost: 0,
       telegramCount: 0,
       coursesCount: 0,
@@ -2914,6 +2920,11 @@ app.get('/api/kro/monitor-data', async (req, res) => {
 
     const recent_cases = buildMonitorRecentCasesFromScamBase(scamRows, 3);
     const status_summary = buildStatusSummary(scamRows);
+    const parsedForLive = scamRawRows
+      .slice(1)
+      .map(parseScamBaseRow)
+      .filter((r) => r.username && r.username !== 'username');
+    const liveFromBase = buildLiveCounterFromScamBase(parsedForLive);
 
     return res.json({
       scam_base: scamRows,
@@ -2921,6 +2932,8 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       channels_network: channelsNetwork,
       meta,
       status_summary,
+      channels_total: liveFromBase.channels_total,
+      confirmed_status_summary: liveFromBase.status_summary,
       history,
       recent_cases
     });

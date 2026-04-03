@@ -1342,6 +1342,31 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   gap: 16px;
 }
 
+.mon-metric-tables {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.mon-metric-table-title {
+  font-family: var(--mon-font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  margin: 0 0 12px;
+  letter-spacing: 0.02em;
+}
+
+.mon-table.mon-metric-table {
+  margin-top: 0;
+}
+
+.mon-table.mon-metric-table td:first-child {
+  color: var(--mon-text-dim);
+  max-width: 62%;
+}
+
 .mon-stat-card {
   position: relative;
   overflow: hidden;
