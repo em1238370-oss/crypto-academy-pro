@@ -37,12 +37,36 @@ def _load_dotenv() -> None:
         break
 
 
+_HELP_ENV = """
+Нет TELEGRAM_API_ID / TELEGRAM_API_HASH.
+
+  1) Зайдите на https://my.telegram.org → API development tools → создайте приложение.
+  2) В этой папке выполните:
+       cp .env.example .env
+     откройте .env и вставьте в TELEGRAM_API_ID и TELEGRAM_API_HASH числа/строку с сайта.
+  3) Снова: python3 export_telethon_string_session.py
+
+(Можно вместо .env положить файл «env» без точки — скрипт читает и его.)
+"""
+
+_HELP_SESSION = """
+Нет файла сессии: {path}
+
+  Сначала один раз войдите в Telegram из этой папки (появится kro_worker.session):
+    pip install "qrcode[pil]" telethon
+    python3 login_via_qr.py
+  Инструкция: ВХОД_ПО_QR.md
+
+  Потом снова: python3 export_telethon_string_session.py
+"""
+
+
 async def main() -> None:
     _load_dotenv()
     api_id = int(os.environ.get('TELEGRAM_API_ID') or 0)
     api_hash = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
     if not api_id or not api_hash:
-        print('Задайте TELEGRAM_API_ID и TELEGRAM_API_HASH (env или .env в kro-worker).', file=sys.stderr)
+        print(_HELP_ENV.strip(), file=sys.stderr)
         raise SystemExit(1)
 
     from telethon import TelegramClient
@@ -50,6 +74,11 @@ async def main() -> None:
 
     name = (os.environ.get('TELEGRAM_SESSION_NAME') or 'kro_worker').strip()
     base = SCRIPT_DIR / name
+    sess_file = base.with_suffix('.session')
+    if not sess_file.is_file():
+        print(_HELP_SESSION.format(path=sess_file).strip(), file=sys.stderr)
+        raise SystemExit(1)
+
     client = TelegramClient(str(base), api_id, api_hash)
     await client.connect()
     if not await client.is_user_authorized():
