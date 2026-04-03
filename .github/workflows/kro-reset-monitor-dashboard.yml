@@ -1,7 +1,13 @@
 name: KRO Reset monitor dashboard
 
 # Сброс листов, из которых собирается /monitor (не scam_base, не reports).
-# workflow_dispatch; секреты как у монитора.
+# Очищает: channels_watch («Все найденные каналы»), channels_network, kro_meta
+# (последний цикл + источники), kro_history (история циклов). Заголовки таблиц сохраняются.
+#
+# Запуск: GitHub → Actions → этот workflow → «Run workflow» → ветка main.
+# Локально: backend/scripts/kro-reset-monitor-dashboard.py --execute (нужен JSON ключ SA и KRO_SHEET_ID).
+#
+# workflow_dispatch; секреты: KRO_GOOGLE_CREDENTIALS_BASE64, KRO_SHEET_ID (как у kro-monitor).
 on:
   workflow_dispatch:
 

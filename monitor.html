@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
-  <link rel="stylesheet" href="/monitor.css?v=20260401-object-sheet-metrics">
+  <link rel="stylesheet" href="/monitor.css?v=20260403-log-empty">
 </head>
 <body class="mon-page">
 
@@ -1436,10 +1436,20 @@
     var label = document.getElementById('s2-cycle-label');
     if (label) label.textContent = cycleAt ? fmtDate(cycleAt) : '';
 
+    var sources = meta.sources_checked || [];
+    var newCount = meta.new_in_cycle || 0;
+    var hasRealCycle = Boolean((cycleAt && String(cycleAt).trim()) || (sources && sources.length) || newCount > 0);
+
+    if (!hasRealCycle) {
+      if (el) {
+        el.innerHTML = '<div class="mon-log-empty">Нет записей о последнем цикле — лист kro_meta сброшен или цикл ещё не выполнялся. После сброса дашборда данные появятся снова после следующего прогона монитора.</div>';
+      }
+      return;
+    }
+
     var lines = [];
     lines.push({ time: cycleAt, msg: 'Цикл запущен', cls: 'info' });
 
-    var sources = meta.sources_checked || [];
     sources.forEach(function(src) {
       var cls = src.status === 'found' ? 'ok'
               : src.status === 'unavailable' ? 'err' : 'warn';
@@ -1448,7 +1458,6 @@
       lines.push({ time: cycleAt, msg: text, cls: cls });
     });
 
-    var newCount = meta.new_in_cycle || 0;
     if (newCount > 0) {
       lines.push({ time: cycleAt, msg: 'Добавлено в базу: ' + newCount + ' каналов', cls: 'ok' });
       // Show which channels were added in this cycle
