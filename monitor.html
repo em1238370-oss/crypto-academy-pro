@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
-  <link rel="stylesheet" href="/monitor.css?v=20260401-metrics-tables">
+  <link rel="stylesheet" href="/monitor.css?v=20260401-object-sheet-metrics">
 </head>
 <body class="mon-page">
 
@@ -251,8 +251,8 @@
           <div class="mon-stat-value cyan" id="s1-sources-active">—</div>
         </div>
       </div>
-      <div id="mon-metrics-tables" class="mon-metric-tables" aria-live="polite"></div>
       </div>
+      <div id="mon-metrics-tables" class="mon-metrics-object-blocks" aria-live="polite"></div>
     </div>
   </section>
 
@@ -1370,31 +1370,62 @@
     var chTot = typeof channelsTotal === 'number' ? channelsTotal : 0;
 
     function sumRow(label, val) {
-      return '<tr><td>' + esc(label) + '</td><td>' + esc(String(val)) + '</td></tr>';
+      return '<tr><td class="mon-cell-muted">' + esc(label) + '</td><td class="mon-cell-value-strong">' + esc(String(val)) + '</td></tr>';
     }
     function n(k) {
       return Number(confirmedSummary[k] || 0);
     }
 
-    var t1 = '<h3 class="mon-metric-table-title">Последний цикл (12:00 / 00:00 MSK, лист kro_meta)</h3>' +
-      '<table class="mon-table mon-metric-table"><thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>' +
-      sumRow('Дата и время последнего обновления цикла', cycleTime) +
-      sumRow('Новых каналов за последний цикл (new_in_cycle)', newC) +
-      sumRow('Источников в опросе / ответили «нашёл»', src.length + ' / ' + srcOk) +
-      '</tbody></table>';
+    function objectSheetBlock(kicker, title, lead, tableInner) {
+      return '<article class="mon-object-sheet">' +
+        '<header class="mon-object-sheet__head">' +
+        '<p class="mon-chapter-kicker">' + esc(kicker) + '</p>' +
+        '<h3 class="mon-object-sheet__title">' + esc(title) + '</h3>' +
+        '<p class="mon-chapter-lead mon-chapter-lead--inline">' + esc(lead) + '</p>' +
+        '</header>' +
+        '<div class="mon-object-sheet__body">' +
+        '<div class="mon-surface mon-surface--data-sheet">' +
+        '<div class="mon-table-wrap">' +
+        '<table class="mon-table mon-table--summary">' + tableInner + '</table>' +
+        '</div></div></div></article>';
+    }
 
-    var t2 = '<h3 class="mon-metric-table-title">Подтверждённая база за всё время (scam_base, те же правила, что на главной)</h3>' +
-      '<table class="mon-table mon-metric-table"><thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>' +
-      sumRow('Всего уникальных каналов в базе', chTot) +
+    var table1 =
+      '<thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>' +
+      sumRow('Дата и время последнего цикла', cycleTime) +
+      sumRow('Новых каналов за цикл', newC) +
+      sumRow('Источников опрошено / ответили «нашёл»', src.length + ' / ' + srcOk) +
+      '</tbody>';
+
+    var table2 =
+      '<thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>' +
+      sumRow('Всего уникальных объектов в базе', chTot) +
       sumRow('Подтверждённый скам', n('confirmed_scam')) +
       sumRow('В зоне риска', n('at_risk')) +
       sumRow('Под наблюдением', n('under_watch')) +
       sumRow('Без нарушений / без риска', n('no_violations')) +
       sumRow('Не по теме', n('off_topic')) +
       sumRow('Иной статус', n('unknown')) +
-      '</tbody></table>';
+      '</tbody>';
 
-    wrap.innerHTML = t1 + t2;
+    wrap.innerHTML =
+      objectSheetBlock(
+        'Сводка цикла · kro_meta',
+        'Последний прогон',
+        'Фиксация после цикла 12:00 и 00:00 (МСК): когда обновились метаданные, сколько новых каналов и как отработали источники.',
+        table1
+      ) +
+      objectSheetBlock(
+        'Таблица · scam_base',
+        'База объектов (итог)',
+        'Те же правила отбора и дедупликации, что на главной странице: сколько объектов в подтверждённой базе и разбивка по статусам.',
+        table2
+      );
+
+    wrap.querySelectorAll('.mon-table--summary tbody tr').forEach(function(tr, i) {
+      tr.classList.add('mon-row-appear');
+      tr.style.animationDelay = Math.min(i * 55, 600) + 'ms';
+    });
   }
 
   // ── SECTION 2: LAST CYCLE LOG ─────────────────────────────
