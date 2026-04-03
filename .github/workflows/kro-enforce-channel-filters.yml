@@ -50,10 +50,11 @@ jobs:
       - name: Validate enforce-filters run output (no silent green)
         run: |
           set -euo pipefail
-          if ! rg -q "Checked telegram rows:" /tmp/kro-enforce-filters.log; then
+          # grep (не rg): на ubuntu-latest нет ripgrep по умолчанию
+          if ! grep -q "Checked telegram rows:" /tmp/kro-enforce-filters.log; then
             echo "Missing completion marker from enforce script. Treating as system failure."
             exit 1
           fi
-          if rg -q "skip_channel:" /tmp/kro-enforce-filters.log; then
+          if grep -q "skip_channel:" /tmp/kro-enforce-filters.log; then
             echo "Detected per-channel soft-skip entries (expected for isolated Telethon/channel issues)."
           fi
