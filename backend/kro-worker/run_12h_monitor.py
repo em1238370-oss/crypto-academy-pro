@@ -42,6 +42,7 @@ import kro_red_flags as _kro_red_flags
 import kro_telethon_limits as _kro_tw
 import kro_telethon_session as _kro_ts
 import kro_unified_risk as _kro_unified
+import kro_tme_http_gate as _kro_tme_http_gate
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
@@ -1389,15 +1390,6 @@ _NON_CRYPTO_EXCLUDE_PATTERNS = (
 
 MIN_TELEGRAM_SUBSCRIBERS = 100
 
-# --- Публичный HTTP-gate для записи в scam_base (без Telethon; GitHub Actions и локально одинаково) ---
-# Правила: (1) не личный профиль (2) ≥100 подписчиков если число видно (3) крипто-маркеры в описании/постах
-# (4) страница t.me открывается (5) есть пост не старше SCAM_BASE_HTTP_POST_MAX_AGE_DAYS.
-SCAM_BASE_HTTP_POST_MAX_AGE_DAYS = 60
-SCAM_BASE_HTTP_CRYPTO_TERMS = (
-    'крипт', 'bitcoin', 'btc', 'usdt', 'трейд', 'сигнал',
-    'invest', 'trade', 'forex', 'бинанс', 'bybit',
-)
-
 # Обязательные маркеры «сигнального» профиля канала:
 # без хотя бы одного маркера канал не должен попадать в scam_base.
 _REQUIRED_SIGNAL_CHANNEL_TERMS = (
@@ -1597,11 +1589,11 @@ def _apply_telegram_gate_to_rows(rows, context_label):
     for i, row in enumerate(tg_rows):
         if i:
             time.sleep(pause)
-        ok, reason = _tme_http_gate_for_scam_base_write(
+        ok, reason = _kro_tme_http_gate.tme_http_gate_for_scam_base_write(
             row.get('username') or row.get('link') or '',
-            object_type=row.get('object_type', ''),
-            source_evidence=row.get('source_evidence', ''),
-            content_analysis=row.get('content_analysis', ''),
+            row.get('object_type', ''),
+            row.get('source_evidence', ''),
+            row.get('content_analysis', ''),
         )
         if ok:
             pass_rows.append(row)
@@ -1735,214 +1727,9 @@ def _fetch_tme_public_subscriber_count(slug):
     return None
 
 
-def _tme_parse_subscriber_count_from_extra_text(text: str):
-    """Число подписчиков из текста блока .tgme_page_extra."""
-    if not text:
-        return None
-    t = text.replace('\xa0', ' ').lower()
-    m = re.search(
-        r'([\d\s.,]+)\s*([km])?\s*(?:subscribers|subscriber|подписчик)',
-        t,
-    )
-    if not m:
-        m = re.search(r'([\d\s.,]+)\s*([km])?\b', t)
-    if not m:
-        return None
-    num = m.group(1).replace(' ', '').replace(',', '.')
-    try:
-        v = float(num)
-    except ValueError:
-        return None
-    suf = (m.group(2) or '').lower()
-    if suf == 'k':
-        v *= 1000
-    elif suf == 'm':
-        v *= 1_000_000
-    return int(round(v))
-
-
-def _tme_http_page_unavailable(soup, status_code: int, raw_lower: str) -> bool:
-    if status_code in (404, 410):
-        return True
-    if soup.select_one('.tgme_page_error'):
-        return True
-    for phrase in (
-        "doesn't exist",
-        'does not exist',
-        'username is not available',
-        'channel is private',
-        'канал недоступен',
-        'пользователь не найден',
-        'не существует',
-        'sorry, too many',
-    ):
-        if phrase in raw_lower:
-            return True
-    return False
-
-
-def _tme_http_looks_like_user_profile(extra_text: str, raw_lower: str) -> bool:
-    """Личный аккаунт / не публичный канал с подписчиками (эвристика по HTML t.me)."""
-    ex = (extra_text or '').lower()
-    if any(
-        x in ex
-        for x in (
-            'last seen',
-            'was online',
-            'online',
-            'в сети',
-            'заходил',
-            'заходила',
-            'недавно',
-            'long ago',
-        )
-    ):
-        if 'подписчик' not in ex and 'subscriber' not in ex:
-            return True
-    ex_l = ex
-    if re.search(r'"type"\s*:\s*"user"', raw_lower):
-        if 'подписчик' not in ex_l and 'subscriber' not in ex_l:
-            return True
-    if '@type":"person"' in raw_lower or '"@type": "person"' in raw_lower:
-        return True
-    return False
-
-
-def _tme_http_fetch_scam_base_preview(slug: str) -> dict:
-    """
-    Один проход по публичной странице t.me/s/<slug> (fallback: t.me/<slug>).
-    Без Telethon.
-    """
-    out = {
-        'ok_fetch': False,
-        'unavailable': True,
-        'is_user_profile': False,
-        'subs': None,
-        'desc': '',
-        'posts_blob_lower': '',
-        'last_post_dt': None,
-    }
-    slug = (slug or '').lstrip('@').split('/')[0]
-    if not slug or slug.startswith('joinchat') or slug.startswith('+'):
-        return out
-    try:
-        import requests
-        from bs4 import BeautifulSoup
-    except ImportError:
-        return out
-
-    last_status = 0
-    raw = ''
-    for url in ('https://t.me/s/%s' % slug, 'https://t.me/%s' % slug):
-        for ua in (USER_AGENT, USER_AGENT_CHROME):
-            try:
-                resp = requests.get(
-                    url,
-                    headers={
-                        'User-Agent': ua,
-                        'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
-                    },
-                    timeout=22,
-                )
-                last_status = resp.status_code
-                raw = resp.text or ''
-                if resp.status_code == 200 and len(raw) > 200:
-                    break
-            except Exception:
-                continue
-        if last_status == 200 and len(raw) > 200:
-            break
-
-    if last_status != 200 or len(raw) < 200:
-        return out
-
-    raw_lower = raw.lower()
-    soup = BeautifulSoup(raw, 'html.parser')
-    if _tme_http_page_unavailable(soup, last_status, raw_lower):
-        return out
-
-    out['ok_fetch'] = True
-    out['unavailable'] = False
-    extra_el = soup.select_one('.tgme_page_extra')
-    extra_text = extra_el.get_text(' ', strip=True) if extra_el else ''
-    out['subs'] = _tme_parse_subscriber_count_from_extra_text(extra_text)
-    desc_el = soup.select_one('.tgme_page_description')
-    out['desc'] = (desc_el.get_text(' ', strip=True) if desc_el else '') or ''
-    if _tme_http_looks_like_user_profile(extra_text, raw_lower):
-        out['is_user_profile'] = True
-
-    texts = []
-    last_dt = None
-    for w in soup.select('.tgme_widget_message')[:50]:
-        t = _extract_post_text_from_widget(w)
-        if t:
-            texts.append(t.lower())
-        time_node = w.select_one('time')
-        if time_node and time_node.get('datetime'):
-            try:
-                dt = datetime.fromisoformat(time_node['datetime'].replace('Z', '+00:00')).astimezone(timezone.utc)
-                if last_dt is None or dt > last_dt:
-                    last_dt = dt
-            except ValueError:
-                pass
-    out['posts_blob_lower'] = ' '.join(texts)
-    out['last_post_dt'] = last_dt
-    return out
-
-
-def _tme_http_gate_for_scam_base_write(
-    username_or_link,
-    object_type='',
-    source_evidence='',
-    content_analysis='',
-):
-    """
-    Обязательные проверки перед записью ЛЮБОГО Telegram-канала в scam_base.
-    Только HTTP к публичным страницам t.me (без Telethon).
-    """
-    uname = _normalize_channel_link(username_or_link)
-    if not uname:
-        return True, 'not_telegram'
-    if uname.startswith('joinchat/'):
-        return False, 'invite_link_not_supported'
-    slug = uname.lstrip('@').split('/')[0]
-    prev = _tme_http_fetch_scam_base_preview(slug)
-
-    if not prev['ok_fetch'] or prev['unavailable']:
-        return False, 'tme_unavailable_or_no_public_page'
-
-    if prev['is_user_profile']:
-        return False, 'tme_personal_account_not_channel'
-
-    subs = prev['subs']
-    if subs is None:
-        return False, 'tme_subscribers_not_visible_reject'
-    if subs < MIN_TELEGRAM_SUBSCRIBERS:
-        return False, 'tme_subscribers_below_%d' % MIN_TELEGRAM_SUBSCRIBERS
-
-    blob = (prev['desc'] + ' ' + prev['posts_blob_lower']).lower()
-    if not any(term in blob for term in SCAM_BASE_HTTP_CRYPTO_TERMS):
-        return False, 'tme_no_crypto_terms_in_desc_or_posts'
-
-    now = datetime.now(timezone.utc)
-    last_dt = prev['last_post_dt']
-    if last_dt is None:
-        return False, 'tme_no_public_posts_or_dates'
-    if last_dt.tzinfo is None:
-        last_dt = last_dt.replace(tzinfo=timezone.utc)
-    if (now - last_dt).days > SCAM_BASE_HTTP_POST_MAX_AGE_DAYS:
-        return False, 'tme_no_fresh_post_%dd' % SCAM_BASE_HTTP_POST_MAX_AGE_DAYS
-
-    hacked_markers = ('взлом', 'взломан', 'hacked', 'канал взломали', 'аккаунт взломан')
-    if any(hm in prev['posts_blob_lower'] for hm in hacked_markers):
-        return False, 'tme_channel_reported_hacked'
-
-    return True, 'ok_tme_http_gate'
-
-
 def _html_telegram_quality_gate_sync(username_or_link, object_type='', source_evidence='', content_analysis=''):
-    """Совместимость: тот же публичный HTTP-gate, что и для scam_base."""
-    return _tme_http_gate_for_scam_base_write(
+    """Публичный HTTP-gate scam_base (модуль kro_tme_http_gate)."""
+    return _kro_tme_http_gate.tme_http_gate_for_scam_base_write(
         username_or_link, object_type, source_evidence, content_analysis,
     )
 
@@ -2997,6 +2784,36 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
     except Exception as e:
         print('scam_base write error: %s' % e, file=sys.stderr)
         return []
+
+
+def _maybe_prune_scam_base_http_after_cycle(client, sheet_id):
+    """
+    Чистка scam_base по HTTP-gate + FORCE_REMOVE (как в kro_tme_http_gate).
+    По умолчанию после каждого цикла монитора (KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE=0 — выкл.).
+    """
+    if not client or not sheet_id:
+        return
+    flag = (os.environ.get('KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE') or '1').strip().lower()
+    if flag in ('0', 'false', 'no', 'off'):
+        return
+    try:
+        p = float(os.environ.get('KRO_SCAM_BASE_HTTP_PRUNE_PAUSE', '0.4') or '0.4')
+    except ValueError:
+        p = 0.4
+    try:
+        pr = _kro_tme_http_gate.prune_scam_base_telegram_rows_http(
+            client, sheet_id, dry_run=False, pause_sec=p,
+        )
+        print(
+            'scam_base HTTP prune after cycle: removed %d of %d rows (after=%s)' % (
+                pr.get('removed', 0),
+                pr.get('rows_before', 0),
+                pr.get('rows_after', ''),
+            ),
+            file=sys.stderr,
+        )
+    except Exception as e:
+        print('scam_base HTTP prune after cycle error: %s' % e, file=sys.stderr)
 
 
 def _watch_source_label(row):
@@ -5936,6 +5753,7 @@ def main():
         _write_channels_network_to_sheet(channels_network_rows, client, sheet_id)
         _enqueue_channels_for_check([row[1] for row in channels_network_rows], client, sheet_id)
         asyncio.run(_fill_missing_content_analysis_in_scam_base(client, sheet_id))
+        _maybe_prune_scam_base_http_after_cycle(client, sheet_id)
     confirmed_stats = _build_stats_from_confirmed(confirmed_objects)
     # Цифры для сайта — только из подтверждённых объектов
     site_new_scams = confirmed_stats['new_scam_channels']

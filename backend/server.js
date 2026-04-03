@@ -2223,6 +2223,147 @@ function channelMatchKey(channel) {
   return s.startsWith('@') ? s.slice(1) : s;
 }
 
+/** Синхронно с kro_tme_http_gate.tme_http_gate_for_scam_base_write (только публичный HTML t.me). */
+const KRO_TME_HTTP_GATE_CRYPTO = [
+  'крипт', 'bitcoin', 'btc', 'usdt', 'трейд', 'сигнал', 'invest', 'trade', 'forex', 'бинанс', 'bybit',
+];
+const KRO_TME_HTTP_GATE_MIN_SUBS = 100;
+const KRO_TME_HTTP_GATE_MAX_POST_DAYS = 60;
+
+function _extractTgmeSlugFromLink(link) {
+  const s = (link || '').toString().trim().toLowerCase();
+  if (!s.includes('t.me/')) return '';
+  if (s.includes('t.me/+')) return '';
+  const m = s.match(/t\.me\/(?:s\/)?([^/?#]+)/);
+  return m ? m[1].replace(/^@/, '') : '';
+}
+
+function _stripTags(html) {
+  return (html || '').toString().replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<[^>]+>/g, ' ');
+}
+
+/**
+ * @returns {Promise<{ ok: boolean, reason: string }>}
+ */
+async function passesKroTmeHttpGateForScamBase(link, contentBlob) {
+  const L = (link || '').toString().trim().toLowerCase();
+  if (!L.includes('t.me/')) {
+    return { ok: true, reason: 'not_telegram' };
+  }
+  if (L.includes('t.me/+')) {
+    return { ok: false, reason: 'invite_link_not_supported' };
+  }
+  const slug = _extractTgmeSlugFromLink(link);
+  if (!slug) {
+    return { ok: true, reason: 'not_telegram' };
+  }
+
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
+  };
+  let html = '';
+  let status = 0;
+  for (const url of [`https://t.me/s/${slug}`, `https://t.me/${slug}`]) {
+    try {
+      const res = await axios.get(url, { headers, timeout: 22000, validateStatus: () => true });
+      status = res.status;
+      html = typeof res.data === 'string' ? res.data : '';
+      if (status === 200 && html.length > 200) break;
+    } catch {
+      /* try next URL */
+    }
+  }
+  if (status !== 200 || html.length < 200) {
+    return { ok: false, reason: 'tme_unavailable_or_no_public_page' };
+  }
+
+  const low = html.toLowerCase();
+  if (
+    low.includes('tgme_page_error') ||
+    low.includes("doesn't exist") ||
+    low.includes('does not exist') ||
+    low.includes('username is not available') ||
+    low.includes('channel is private') ||
+    low.includes('канал недоступен') ||
+    low.includes('пользователь не найден') ||
+    low.includes('не существует')
+  ) {
+    return { ok: false, reason: 'tme_unavailable_or_no_public_page' };
+  }
+
+  const extraMatch = html.match(/class="tgme_page_extra"[^>]*>([\s\S]*?)<\/div>/i);
+  const extraText = extraMatch ? _stripTags(extraMatch[1]).toLowerCase() : '';
+  const hasSubsHint = extraText.includes('подписчик') || extraText.includes('subscriber');
+  if (
+    (extraText.includes('last seen') ||
+      extraText.includes('was online') ||
+      /\bonline\b/.test(extraText) ||
+      extraText.includes('в сети') ||
+      extraText.includes('заходил') ||
+      extraText.includes('заходила')) &&
+    !hasSubsHint
+  ) {
+    return { ok: false, reason: 'tme_personal_account_not_channel' };
+  }
+  if (/"type"\s*:\s*"user"/.test(low) && !hasSubsHint) {
+    return { ok: false, reason: 'tme_personal_account_not_channel' };
+  }
+
+  let subs = null;
+  const subM =
+    extraText.match(/([\d\s\u00a0.,]+)\s*([km])?\s*(?:subscribers|subscriber|подписчик)/i) ||
+    extraText.match(/([\d\s\u00a0.,]+)\s*([km])?\b/);
+  if (subM) {
+    let v = parseFloat(subM[1].replace(/\s/g, '').replace(',', '.'));
+    const suf = (subM[2] || '').toLowerCase();
+    if (suf === 'k') v *= 1000;
+    if (suf === 'm') v *= 1e6;
+    if (Number.isFinite(v)) subs = Math.round(v);
+  }
+  if (subs == null) {
+    return { ok: false, reason: 'tme_subscribers_not_visible_reject' };
+  }
+  if (subs < KRO_TME_HTTP_GATE_MIN_SUBS) {
+    return { ok: false, reason: `tme_subscribers_below_${KRO_TME_HTTP_GATE_MIN_SUBS}` };
+  }
+
+  const descMatch = html.match(/class="tgme_page_description"[^>]*>([\s\S]*?)<\/div>/i);
+  const desc = descMatch ? _stripTags(descMatch[1]).toLowerCase() : '';
+  const postsChunk = low.split('tgme_widget_message').slice(0, 60).join(' ');
+  const blob = `${desc} ${postsChunk} ${(contentBlob || '').toString().toLowerCase()}`;
+  const hasCrypto = KRO_TME_HTTP_GATE_CRYPTO.some((t) => blob.includes(t));
+  if (!hasCrypto) {
+    return { ok: false, reason: 'tme_no_crypto_terms_in_desc_or_posts' };
+  }
+
+  const dtRe = /datetime="([^"]+)"/g;
+  let last = null;
+  let m;
+  while ((m = dtRe.exec(html)) !== null) {
+    try {
+      const d = new Date(m[1].replace(/\+00:00$/, 'Z'));
+      if (!Number.isNaN(d.getTime()) && (!last || d > last)) last = d;
+    } catch {
+      /* ignore */
+    }
+  }
+  if (!last) {
+    return { ok: false, reason: 'tme_no_public_posts_or_dates' };
+  }
+  const ageDays = (Date.now() - last.getTime()) / 864e5;
+  if (ageDays > KRO_TME_HTTP_GATE_MAX_POST_DAYS) {
+    return { ok: false, reason: `tme_no_fresh_post_${KRO_TME_HTTP_GATE_MAX_POST_DAYS}d` };
+  }
+
+  const hacked = ['взлом', 'взломан', 'hacked', 'канал взломали', 'аккаунт взломан'];
+  if (hacked.some((h) => postsChunk.includes(h))) {
+    return { ok: false, reason: 'tme_channel_reported_hacked' };
+  }
+
+  return { ok: true, reason: 'ok_tme_http_gate' };
+}
+
 /** Get complaints count and total_loss from reports sheet (first sheet A2:F, B=channel, C=sum). */
 async function getComplaintsAndLossForChannel(client, channel) {
   if (!client || !kroSheetId) return { complaints: null, total_loss: null };
@@ -3019,6 +3160,15 @@ async function checkAndPromoteToScamBase(client, channel) {
     let sourceEvidence = reports.slice(0, 3).map(r => r.description || r.proof_url).filter(Boolean).join('; ');
     const rp = riskPrefixForObjectType(objectType);
     if (rp) sourceEvidence = `${rp} | ${sourceEvidence}`.slice(0, 500);
+    const gateBlob = [
+      sourceEvidence,
+      ...reports.map(r => `${r.description || ''} ${r.proof_url || ''}`),
+    ].join(' ');
+    const gate = await passesKroTmeHttpGateForScamBase(link, gateBlob);
+    if (!gate.ok) {
+      console.log(`[KRO] ${display} skipped: t.me HTTP gate ${gate.reason}`);
+      return;
+    }
     const cycleWindow = now.toISOString().slice(0, 10) + (now.getUTCHours() < 12 ? '_am' : '_pm');
 
     const sheetName = kroScamBaseRange.split('!')[0] || 'scam_base';

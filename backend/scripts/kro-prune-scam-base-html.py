@@ -43,25 +43,19 @@ _KW = os.path.normpath(os.path.join(_SCRIPT_DIR, '..', 'kro-worker'))
 if _KW not in sys.path:
     sys.path.insert(0, _KW)
 
+from kro_tme_http_gate import (  # noqa: E402
+    FORCE_REMOVE_USERNAMES,
+    SCAM_BASE_HTTP_CRYPTO_TERMS as CRYPTO_TERMS,
+    is_telegram_scam_base_row as _is_telegram_row,
+    norm_username_cell as _norm_username_cell,
+    normalize_tme_slug as _normalize_slug,
+)
+
 USER_AGENT = (
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
     '(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
 )
 USER_AGENT_ALT = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0'
-
-CRYPTO_TERMS = (
-    'крипт',
-    'bitcoin',
-    'btc',
-    'usdt',
-    'трейд',
-    'сигнал',
-    'invest',
-    'trade',
-    'forex',
-    'бинанс',
-    'bybit',
-)
 
 REQUEST_PAUSE_SEC = 1.35
 _DEFAULT_CREDS = os.path.join(_KW, 'kro-google-credentials.json')
@@ -121,26 +115,6 @@ def _discover_service_account_json_in_kw() -> List[str]:
 
 # Если в .env нет или пустой KRO_SHEET_ID — используется эта таблица (тот же ID, что в проде KRO).
 _DEFAULT_KRO_SHEET_ID = '1C1NQwqmLRg59xgplnz5PeghRxaR_YY2lfSWZAJae6qM'
-
-# Всегда удалить строку, если @username (колонка A или ссылка B) совпадает после нормализации.
-FORCE_REMOVE_USERNAMES = frozenset(
-    {
-        '@poizongo',
-        '@auraselect',
-        '@vipbyrodion_bot',
-        '@snipervip0001_bot',
-        '@copytradiings',
-        '@copytradlngss',
-        '@ukrainchuk_yuriy',
-        '@alex_wise_trade',
-        '@poizonstorm',
-        '@rublevinvestrus',
-        '@vladislav_belokrylov',
-        '@maxcrypto_adm',
-        '@trader_servver',
-    }
-)
-
 
 def _load_env():
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -268,48 +242,6 @@ def _get_credentials():
         'Если в .env битая строка KRO_GOOGLE_CREDENTIALS_JSON (начинается с { но не полный JSON) — закомментируйте её.'
         % (checked, kw)
     )
-
-
-def _norm_username_cell(v: str) -> str:
-    """@username lower для сравнения с FORCE_REMOVE (колонки A/B)."""
-    s = (v or '').strip()
-    if not s:
-        return ''
-    if s.startswith('https://t.me/'):
-        s = '@' + s.split('https://t.me/', 1)[-1].split('/')[0]
-    elif s.startswith('t.me/'):
-        s = '@' + s.split('t.me/', 1)[-1].split('/')[0]
-    if not s.startswith('@'):
-        s = '@' + s.lstrip('@')
-    return s.lower()
-
-
-def _normalize_slug(ch_or_link: str) -> str:
-    ch = (ch_or_link or '').strip()
-    if not ch:
-        return ''
-    if ch.startswith('http'):
-        if 't.me/' in ch:
-            return ch.split('t.me/')[-1].split('?')[0].strip().lstrip('/')
-        return ''
-    if ch.startswith('t.me/'):
-        return ch.split('/', 1)[-1].split('?')[0].strip()
-    if ch.startswith('@'):
-        return ch.lstrip('@').split('?')[0].strip()
-    if 't.me/' in ch:
-        return ch.split('t.me/')[-1].split('?')[0].strip()
-    return ''
-
-
-def _is_telegram_row(row: List[str]) -> bool:
-    username = (row[0] if len(row) > 0 else '').strip()
-    link = (row[1] if len(row) > 1 else '').strip()
-    obj_type = (row[5] if len(row) > 5 else '').strip().lower()
-    if 't.me/' in username.lower() or 't.me/' in link.lower():
-        return True
-    if username.startswith('@'):
-        return True
-    return 'сигнал' in obj_type
 
 
 def _extract_post_text_from_widget(msg) -> str:

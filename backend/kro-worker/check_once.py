@@ -28,6 +28,8 @@ from telethon.errors import ChannelPrivateError, InviteHashExpiredError, Usernam
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
+import kro_tme_http_gate as _tme_gate
+
 _raw_id = (os.environ.get('TELEGRAM_API_ID') or '').strip()
 TELEGRAM_API_ID = int(_raw_id) if _raw_id.isdigit() else 0
 TELEGRAM_API_HASH = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
@@ -843,17 +845,28 @@ def main():
             return
         result = _build_confirmation(result)
         if result.get('is_confirmed'):
-            append_to_scam_base(
-                result['username'],
-                result['risk_score'],
-                result['ads_per_week'],
-                result['bot_pct'],
-                result['vip_price'],
-                result['complaints'],
-                result['total_loss'],
-                result['verdict'],
-                result_obj=result
+            ok_gate, gate_reason = _tme_gate.tme_http_gate_for_scam_base_write(
+                result.get('username') or channel_id,
+                result.get('object_type', '') or '',
+                '',
+                (result.get('content_analysis') or '')[:2000],
             )
+            if not ok_gate:
+                result['is_confirmed'] = False
+                result['http_gate_reject'] = gate_reason
+                append_to_unconfirmed_base(result)
+            else:
+                append_to_scam_base(
+                    result['username'],
+                    result['risk_score'],
+                    result['ads_per_week'],
+                    result['bot_pct'],
+                    result['vip_price'],
+                    result['complaints'],
+                    result['total_loss'],
+                    result['verdict'],
+                    result_obj=result
+                )
         else:
             append_to_unconfirmed_base(result)
         # Убираем внутреннее поле перед выводом
