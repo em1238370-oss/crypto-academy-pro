@@ -94,7 +94,10 @@ def main() -> int:
 
     sheets.spreadsheets().values().clear(spreadsheetId=sheet_id, range=clear_range, body={}).execute()
     print('cleared OK: %s' % clear_range)
-    print('data_rows_after=0 (заголовок в строке 1 сохранён)')
+    if n_data == 0:
+        print('Примечание: строк данных уже не было — лист в нужном состоянии (заголовок в строке 1).')
+    else:
+        print('data_rows_after=0 (заголовок в строке 1 сохранён)')
     return 0
 
 

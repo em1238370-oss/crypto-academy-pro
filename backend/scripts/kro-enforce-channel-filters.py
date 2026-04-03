@@ -299,6 +299,10 @@ async def _run_async():
     rows = (sheets.spreadsheets().values().get(spreadsheetId=sheet_id, range=range_all).execute().get('values') or [])
     if not rows:
         print('No rows in scam_base')
+        # Те же маркеры, что после полного прогона — иначе GitHub Actions validate шаг падает на пустом листе.
+        print('Checked telegram rows: 0')
+        print('Marked "не по теме": 0')
+        print('Updated rows: 0')
         return 0
 
     client = await _open_telethon_client()
