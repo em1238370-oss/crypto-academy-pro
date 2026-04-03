@@ -1,7 +1,8 @@
 name: KRO Clear scam_base
 
-# Ручная очистка данных листа scam_base (строки A2:N), строка 1 (заголовок) сохраняется.
-# Секреты: KRO_GOOGLE_CREDENTIALS_BASE64, KRO_SHEET_ID (как у KRO 12h Monitor).
+# workflow_dispatch: только лист scam_base (диапазон A2:N — все строки данных).
+# Строка 1 = заголовок, не очищается. Листы kro_meta, reports, channels_* и др. не изменяются.
+# Секреты: KRO_GOOGLE_CREDENTIALS_BASE64, KRO_SHEET_ID.
 on:
   workflow_dispatch:
 
@@ -43,5 +44,5 @@ jobs:
           KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
           KRO_SCAM_BASE_RANGE: scam_base!A2:N
         run: |
-          echo "::warning::Удаляются все строки данных scam_base!A2:N (заголовок в строке 1 не трогается)."
+          echo "::warning::Очистка только scam_base!A2:N. Другие листы таблицы не трогаем."
           python3 "${{ github.workspace }}/backend/scripts/kro-clear-scam-base-data.py" --execute
