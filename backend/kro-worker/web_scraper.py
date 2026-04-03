@@ -1380,12 +1380,21 @@ def scrape_all():
     return deduped
 
 
-def write_web_reports_to_sheet(sheets_client, sheet_id, reports, reports_range='A:I'):
+def _reports_append_range_explicit():
+    """Синхронно с run_12h_monitor._kro_reports_read_range: лист + колонки для append."""
+    sheet = (os.environ.get('KRO_REPORTS_SHEET') or '').strip()
+    return f'{sheet}!A:I' if sheet else 'A:I'
+
+
+def write_web_reports_to_sheet(sheets_client, sheet_id, reports, reports_range=None):
     """
     Append web-sourced reports to the reports sheet.
     Schema A:I: date, channel, sum_rub, source='web', status='Активен',
                 reporter='web_parser', description, proof_url=source_url, object_type (опц.)
+    reports_range: если None — из KRO_REPORTS_SHEET + A:I (как чтение A2:I в мониторе).
     """
+    if reports_range is None:
+        reports_range = _reports_append_range_explicit()
     if not sheets_client or not sheet_id or not reports:
         return 0
     now = datetime.now(timezone.utc)

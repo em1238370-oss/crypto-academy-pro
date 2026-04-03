@@ -1229,13 +1229,19 @@ def write_kro_meta_to_sheet(sheets_client, sheet_id, last_cycle_at, new_in_cycle
         return False
 
 
+def _kro_reports_read_range():
+    """Данные листа reports без строки заголовка. Пустой лист (только шапка) → API вернёт []."""
+    sheet = (os.environ.get('KRO_REPORTS_SHEET') or '').strip()
+    return f'{sheet}!A2:I' if sheet else 'A2:I'
+
+
 def _fetch_reports_sheet_rows_raw(client, sheet_id):
     if not client or not sheet_id:
         return []
     try:
         resp = client.spreadsheets().values().get(
             spreadsheetId=sheet_id,
-            range='A2:I'
+            range=_kro_reports_read_range(),
         ).execute()
         return resp.get('values') or []
     except Exception:
@@ -5658,7 +5664,8 @@ def main():
             web_findings = _web_scraper.scrape_all()
             web_source_statuses = getattr(_web_scraper, 'get_last_source_statuses', lambda: [])()
             if web_findings:
-                written = _web_scraper.write_web_reports_to_sheet(client, sheet_id, web_findings, reports_range='A:I')
+                # append на тот же лист, что и _fetch_reports_sheet_rows_raw (KRO_REPORTS_SHEET или первая вкладка)
+                written = _web_scraper.write_web_reports_to_sheet(client, sheet_id, web_findings)
                 print(f'[web_scraper] wrote {written} rows from {len(web_findings)} findings', file=sys.stderr)
         except Exception as _ws_err:
             print(f'[web_scraper] error: {_ws_err}', file=sys.stderr)

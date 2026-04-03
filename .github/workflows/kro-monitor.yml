@@ -107,6 +107,10 @@ jobs:
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION_NAME: kro_worker
           KRO_TELEGRAM_SESSION_STRING: ${{ secrets.KRO_TELEGRAM_SESSION_STRING }}
+          # Поиск DDG+Bing + extra-источники каждый цикл (web_scraper._scrape_victim_queries и др.)
+          KRO_WEB_EXTRA_SOURCES: '1'
+          # Явный лист жалоб: чтение A2:I и append в тот же лист после очистки (остался только заголовок)
+          KRO_REPORTS_SHEET: reports
         run: python3 run_12h_monitor.py
 
       - name: Periodic scam_base cleanup (strict gate)
