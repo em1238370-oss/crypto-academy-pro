@@ -248,6 +248,7 @@ def json_corpus_from_analysis(analysis: Dict[str, Any]) -> str:
 
 
 def status_from_flag_counts(red_n: int, yellow_n: int) -> str:
+    """Политика: 3+ жёлтых = «в риске» (не «под наблюдением») — сумма мелких подозрений = серьёзный сигнал."""
     if red_n >= 2:
         return 'подтверждённый скам'
     if red_n >= 1:
