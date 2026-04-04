@@ -14,8 +14,8 @@
   function initWheelSmoothFallback() {
     var targetY = window.pageYOffset || 0;
     var running = false;
-    var wheelGain = 0.26;
-    var smooth = 0.11;
+    var wheelGain = 0.052;
+    var smooth = 0.022;
 
     function clamp() {
       var m = maxScrollY();
@@ -70,9 +70,9 @@
     orientation: 'vertical',
     gestureOrientation: 'vertical',
     smoothWheel: true,
-    wheelMultiplier: 0.2,
-    touchMultiplier: 0.72,
-    lerp: 0.019,
+    wheelMultiplier: 0.04,
+    touchMultiplier: 0.14,
+    lerp: 0.004,
     autoRaf: false,
   });
 
