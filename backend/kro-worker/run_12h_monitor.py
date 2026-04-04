@@ -1580,8 +1580,9 @@ def _has_required_signal_channel_terms(*parts):
 
 def _apply_telegram_gate_to_rows(rows, context_label):
     """
-    Фильтр Telegram-строк перед записью в scam_base.
-    Только публичный HTTP к t.me (без Telethon) — одинаково локально и в GitHub Actions.
+    Опциональный фильтр по публичному HTTP t.me (без Telethon).
+    Запись в scam_base из цикла монитора к нему больше не привязана — раннеры CI часто не видят t.me.
+    Оставлено для ручных сценариев / отладки при явном вызове.
     """
     if not rows:
         return []
@@ -2775,7 +2776,8 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             )
             continue
         pre_gate.append(obj)
-    gated_objects = _apply_telegram_gate_to_rows(pre_gate, 'scam_base write')
+    # Без повторного HTTP-gate к t.me: отбор уже в _collect_confirmed_objects (+ крипто/гемблинг/жалобы).
+    gated_objects = pre_gate
     new_rows = []
     inserted_channels = []
     for obj in gated_objects:
@@ -2834,12 +2836,12 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
 def _maybe_prune_scam_base_http_after_cycle(client, sheet_id):
     """
     Чистка scam_base по HTTP-gate + FORCE_REMOVE (как в kro_tme_http_gate).
-    По умолчанию после каждого цикла монитора (KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE=0 — выкл.).
+    По умолчанию выключено: на CI t.me недоступен и лист обнулялся. Включить явно: 1/true/on.
     """
     if not client or not sheet_id:
         return
-    flag = (os.environ.get('KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE') or '1').strip().lower()
-    if flag in ('0', 'false', 'no', 'off'):
+    flag = (os.environ.get('KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE') or '0').strip().lower()
+    if flag not in ('1', 'true', 'yes', 'on'):
         return
     try:
         p = float(os.environ.get('KRO_SCAM_BASE_HTTP_PRUNE_PAUSE', '0.4') or '0.4')
@@ -3298,16 +3300,6 @@ def _append_organic_scam_base_row(client, sheet_id, display, link, obj_type, sta
         return False
     if not _is_crypto_context_allowed_parts(display, link, obj_type, evidence, source_primary):
         print('organic: skip %s — no crypto context' % (display or link), file=sys.stderr)
-        return False
-    gate_rows = _apply_telegram_gate_to_rows([{
-        'username': display or '',
-        'link': link or '',
-        'object_type': obj_type or '',
-        'source_evidence': evidence or '',
-        'content_analysis': '',
-    }], 'organic write')
-    if not gate_rows:
-        print('organic: skip %s — failed telegram quality gate' % (display or link), file=sys.stderr)
         return False
     scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
     sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
@@ -5589,16 +5581,6 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
             continue
         if not _is_crypto_context_allowed_parts(display, obj_type, evidence, 'form+web'):
             print(f'[promote] skip {display}: no crypto context', file=sys.stderr)
-            continue
-        gate_rows = _apply_telegram_gate_to_rows([{
-            'username': display or '',
-            'link': link or '',
-            'object_type': obj_type or '',
-            'source_evidence': evidence or '',
-            'content_analysis': '',
-        }], 'promote')
-        if not gate_rows:
-            print(f'[promote] skip {display}: failed telegram quality gate', file=sys.stderr)
             continue
         has_facts = _has_concrete_scam_facts(evidence)
         status = 'в риске' if has_facts else 'под наблюдением'

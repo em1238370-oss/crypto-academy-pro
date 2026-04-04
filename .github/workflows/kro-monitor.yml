@@ -111,6 +111,9 @@ jobs:
           KRO_WEB_EXTRA_SOURCES: '1'
           # Явный лист жалоб: чтение A2:I и append в тот же лист после очистки (остался только заголовок)
           KRO_REPORTS_SHEET: reports
+          # Не чистить scam_base HTTP-gate с раннера GitHub (t.me часто блокирует CI → лист обнулялся).
+          # Prune вручную: локально или отдельным шагом/скриптом при KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE=1.
+          KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE: '0'
         run: python3 run_12h_monitor.py
 
       - name: Periodic scam_base cleanup (strict gate)
