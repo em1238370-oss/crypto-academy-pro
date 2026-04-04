@@ -9,23 +9,23 @@
 
     function initLenis() {
         if (prefersReducedMotion || typeof Lenis === 'undefined') return null;
-        // На мобильной — только нативный скролл, чтобы можно было сразу листать вниз без нажатия на кнопку
-        if (window.matchMedia('(max-width: 768px)').matches) return null;
+        /* Раньше отключали до 768px — при узком окне на ПК Lenis не работал, «изменений не видно».
+           Отключаем только на очень узких экранах (типичный телефон). */
+        if (window.matchMedia('(max-width: 480px)').matches) return null;
 
-        // Очень нежный, медленный скролл (колёсико / трекпад)
-        const easeOutSoft = (t) => 1 - Math.pow(1 - t, 4); // easeOutQuart — ещё мягче сход к цели
+        /* Режим только lerp (без duration): страница заметно медленнее «догоняет» колёсико/трекпад —
+           именно ощущение «листаешь вниз — едет медленно». */
         const lenis = new Lenis({
-            duration: 2.85,
-            easing: easeOutSoft,
             orientation: 'vertical',
             gestureOrientation: 'vertical',
             smoothWheel: true,
-            wheelMultiplier: 0.42,
-            touchMultiplier: 0.92,
-            lerp: 0.065,
+            wheelMultiplier: 0.22,
+            touchMultiplier: 0.78,
+            lerp: 0.022,
             autoRaf: true,
         });
 
+        window.__KRO_LENIS__ = lenis;
         return lenis;
     }
 
