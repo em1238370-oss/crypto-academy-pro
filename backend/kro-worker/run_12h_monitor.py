@@ -1283,6 +1283,34 @@ def _parse_reports_sheet_row(r):
     }
 
 
+# Сайты-разоблачители (ТЗ / web_scraper по умолчанию): одна запись с article URL = достаточное доказательство для scam_base.
+_WHISTLEBLOWER_SITE_MARKERS = (
+    'stop-scam1.com',
+    'fin-obzor.net',
+    'vklader.com',
+    'telltrue.net',
+    'forteck.net',
+)
+
+
+def _text_has_whistleblower_site_marker(text):
+    if not text:
+        return False
+    low = text.lower()
+    return any(m in low for m in _WHISTLEBLOWER_SITE_MARKERS)
+
+
+def _report_row_is_whistleblower_site(rec):
+    """Строка reports с первоисточником на разоблачительном сайте (не DDG/Bing и пр. поиск)."""
+    if not rec:
+        return False
+    if _text_has_whistleblower_site_marker((rec.get('proof_url') or '').strip()):
+        return True
+    if _text_has_whistleblower_site_marker((rec.get('description') or '').strip()):
+        return True
+    return False
+
+
 def read_reports_last_12h(client, sheet_id):
     """
     Строки reports за текущие сутки / вчера (как раньше) — для сводки цикла и top3.
@@ -1331,6 +1359,7 @@ def _empty_agg_complaint_bucket():
         'query_group': '',
         'query': '',
         'internal_links': [],
+        'whistleblower_site_evidence': False,
     }
 
 
@@ -1349,6 +1378,10 @@ def _merge_telegram_complaints_into_agg(agg, complaints_by_channel):
         agg[ch]['query'] = data.get('query') or agg[ch].get('query') or 'скам, обман, слил депозит'
         if agg[ch]['complaints'] >= 2:
             agg[ch]['status'] = 'Скам'
+        for u in data.get('source_urls') or []:
+            if _text_has_whistleblower_site_marker(u if isinstance(u, str) else str(u)):
+                agg[ch]['whistleblower_site_evidence'] = True
+                break
 
 
 # --- JSON 12h stats ---
@@ -2605,12 +2638,14 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
     """
     Отбор подтверждённых скам-каналов для записи в scam_base.
 
-    Обязательные критерии (два):
-    1. Минимум 2 жалобы от разных людей на один канал (из чатов жалоб + листа отчётов).
-    2. Сигнальные слова в названии или username канала (long/short/сигнал/VIP и т.д.).
+    Жалобы / источники:
+    - Сайты-разоблачители (stop-scam1, fin-obzor, vklader, telltrue, forteck): достаточно 1 строки
+      в агрегате с proof_url на этот домен.
+    - Остальное (форма, поиск DDG/Bing и т.д., только чаты): по-прежнему минимум 2 «жалобы»
+      в агрегате (чаты + лист reports).
 
-    Возраст канала — информационный: записывается в scam_base если известен,
-    но НЕ блокирует подтверждение.
+    Далее: сигнальные слова + крипто-контекст в названии/username (и гемблинг-фильтр).
+    Возраст канала — только для статуса, не блокирует подтверждение.
     """
     now = _msk_now()
     tgstat_by_key = {}
@@ -2635,9 +2670,10 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             print('confirmed-filter: %s — в списке исключений (известный не-скам)' % ch, file=sys.stderr)
             continue
 
-        # Критерий 3: минимум 2 жалобы
+        # Порог жалоб: 1 если есть статья с разоблачительного сайта, иначе ≥2
         complaint_count = complaint_data.get('complaints') or 0
-        if complaint_count < 2:
+        min_complaints = 1 if complaint_data.get('whistleblower_site_evidence') else 2
+        if complaint_count < min_complaints:
             continue
 
         # Получаем данные о канале из TGStat (если есть) для обогащения записи
@@ -5509,8 +5545,9 @@ def _run_publish_only():
 def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, all_reports):
     """
     После сбора всех жалоб (форма + веб) — проверяем каждый канал.
-    Если канал набрал ≥2 уникальных жалобщиков и ещё не в scam_base —
-    автоматически записываем его туда со статусом 'в риске'.
+    Разоблачительные сайты (stop-scam1, fin-obzor, vklader, telltrue, forteck): достаточно одной
+    строки reports с URL статьи на этом домене. Иначе — по-прежнему ≥2 уникальных источника
+    (reporter или отдельные анонимные строки). Далее крипто-контекст и запись в scam_base.
     """
     if not sheets_client or not sheet_id or not all_reports:
         return
@@ -5554,8 +5591,13 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
             len(set(named_non_empty)) + (len(reports) - len(named_non_empty))
             if named_non_empty else len(reports)
         )
-        if unique_count < 2:
-            continue
+        has_whistleblower = any(_report_row_is_whistleblower_site(r) for r in reports)
+        if has_whistleblower:
+            if unique_count < 1:
+                continue
+        else:
+            if unique_count < 2:
+                continue
 
         total_loss = sum(r.get('sum') or 0 for r in reports)
         ot_sheet = next(
@@ -5722,6 +5764,8 @@ def main():
         if ch:
             agg_complaints[ch]['complaints'] += 1
             agg_complaints[ch]['sum'] += r.get('sum') or 0
+            if _report_row_is_whistleblower_site(r):
+                agg_complaints[ch]['whistleblower_site_evidence'] = True
             if agg_complaints[ch]['complaints'] >= 2:
                 agg_complaints[ch]['status'] = 'Скам'
     _merge_telegram_complaints_into_agg(agg_complaints, complaints_by_channel)
@@ -5733,6 +5777,8 @@ def main():
         if ch:
             agg_complaints_total[ch]['complaints'] += 1
             agg_complaints_total[ch]['sum'] += r.get('sum') or 0
+            if _report_row_is_whistleblower_site(r):
+                agg_complaints_total[ch]['whistleblower_site_evidence'] = True
             if agg_complaints_total[ch]['complaints'] >= 2:
                 agg_complaints_total[ch]['status'] = 'Скам'
     _merge_telegram_complaints_into_agg(agg_complaints_total, complaints_by_channel)
@@ -5774,7 +5820,7 @@ def main():
     total_losses_12h = sum(r.get('sum', 0) for r in sheet_reports) + sum(s for _, s in channel_sum_pairs)
     new_scams_count = len(risk_rows)
 
-    # --- AUTO-PROMOTE: каналы из формы/веб-парсера с ≥2 жалобами → scam_base ---
+    # --- AUTO-PROMOTE: форма/поиск — ≥2 уникальных источника; разоблачительные сайты — достаточно 1 строки reports ---
     scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
     _check_and_promote_from_reports(client, sheet_id, scam_base_range, sheet_reports_all)
 
