@@ -61,6 +61,11 @@
   /* Как kro-scroll-in на главной: лёгкий blur → focus (только ≥769px в медиа) */
   --mon-reveal-blur: 5px;
   --mon-link-dur: 0.28s;
+  /* §5 анализ medvedevart — эффекты: hover 0.2–0.3s, карточки: lift + тень */
+  --mon-fx-hover: 0.26s;
+  --mon-fx-hover-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --mon-card-lift: -5px;
+  --mon-card-lift-sm: -3px;
   --mon-shadow:       0 1px 0 rgba(255,255,255,0.06);
   --mon-shadow-hover: 0 10px 32px rgba(0, 0, 0, 0.32);
 
@@ -212,6 +217,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-main-nav-brand {
+  position: relative;
   font-family: var(--mon-font-display);
   font-size: 15px;
   font-weight: 700;
@@ -221,6 +227,30 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  transition: color var(--mon-fx-hover) var(--mon-fx-hover-ease);
+}
+.mon-main-nav-brand::after {
+  content: '';
+  position: absolute;
+  left: 38px;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.75), rgba(245, 158, 11, 0));
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--mon-fx-hover) var(--mon-fx-hover-ease);
+  pointer-events: none;
+}
+@media (min-width: 641px) and (hover: hover) {
+  .mon-main-nav-brand:hover,
+  .mon-main-nav-brand:focus-visible {
+    color: rgba(255, 236, 210, 0.98);
+  }
+  .mon-main-nav-brand:hover::after,
+  .mon-main-nav-brand:focus-visible::after {
+    transform: scaleX(1);
+  }
 }
 
 .mon-main-nav-brand-icon {
@@ -263,7 +293,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   padding: 8px 0;
   border-radius: 0;
   border-bottom: none;
-  transition: color var(--mon-link-dur) var(--mon-ease-out);
+  transition: color var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
 .mon-nav-link::after {
   content: '';
@@ -275,7 +305,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   background: linear-gradient(90deg, rgba(245, 158, 11, 0.9), rgba(245, 158, 11, 0.15));
   transform: scaleX(0);
   transform-origin: left center;
-  transition: transform var(--mon-link-dur) var(--mon-ease-out);
+  transition: transform var(--mon-fx-hover) var(--mon-fx-hover-ease);
   pointer-events: none;
 }
 .mon-nav-link:hover,
@@ -318,12 +348,21 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   padding: 10px 20px;
   cursor: pointer;
   box-shadow: none;
-  transition: border-color 0.22s var(--mon-ease-out), background 0.22s var(--mon-ease-out), color 0.22s var(--mon-ease-out);
+  transition:
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    background var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
-.mon-refresh-btn:hover {
-  border-color: rgba(245, 158, 11, 0.48);
-  background: rgba(245, 158, 11, 0.08);
-  color: #fff;
+@media (min-width: 641px) and (hover: hover) {
+  .mon-refresh-btn:hover {
+    border-color: rgba(245, 158, 11, 0.55);
+    background: rgba(245, 158, 11, 0.12);
+    color: #fff;
+    transform: translateY(var(--mon-card-lift-sm));
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(245, 158, 11, 0.12);
+  }
 }
 .mon-refresh-btn:active { transform: translateY(0); }
 
@@ -599,7 +638,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-weight: 600;
   text-decoration: none;
   border-bottom: 1px solid rgba(245, 158, 11, 0.35);
-  transition: color var(--mon-link-dur) var(--mon-ease-out), border-color var(--mon-link-dur) var(--mon-ease-out);
+  transition:
+    color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
 .mon-stack-strip-ref:hover,
 .mon-stack-strip-ref:focus-visible {
@@ -622,8 +663,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   opacity: 0;
   transform: translateY(26px);
   transition:
-    border-color 0.28s var(--mon-ease-out),
-    box-shadow 0.32s var(--mon-ease-soft);
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
 .mon-stack-strip.mon-visible .mon-stack-card:nth-child(1) {
   animation: monStackCardIn 0.74s var(--mon-ease-soft) 0.1s both;
@@ -636,10 +678,13 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 @media (min-width: 641px) and (hover: hover) {
-  /* Только свет/рамка — transform остаётся за keyframes, без конфликта */
-  .mon-stack-card:hover {
-    border-color: rgba(245, 158, 11, 0.28);
-    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.32);
+  /* §5: карточка приподнимается + тень (как метрики на medvedevart) */
+  .mon-stack-strip.mon-visible .mon-stack-card:hover {
+    border-color: rgba(245, 158, 11, 0.38);
+    box-shadow:
+      0 16px 44px rgba(0, 0, 0, 0.42),
+      0 0 0 1px rgba(245, 158, 11, 0.1);
+    transform: translateY(var(--mon-card-lift));
   }
 }
 
@@ -744,8 +789,12 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border: 1px solid rgba(245, 158, 11, 0.35);
   border-radius: 999px;
   text-decoration: none;
-  transition: border-color 0.28s ease, background-color 0.28s ease, color 0.28s ease,
-    transform 0.28s ease, box-shadow 0.28s ease;
+  transition:
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    background-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
   line-height: 1.35;
   box-shadow: 0 0 0 rgba(245, 158, 11, 0);
 }
@@ -757,16 +806,27 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f5c88c' stroke-width='2'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") no-repeat center;
   background-size: contain;
 }
-.mon-hero-cta:hover {
-  border-color: rgba(245, 158, 11, 0.55);
-  background-color: rgba(245, 158, 11, 0.24);
-  color: rgba(255, 248, 235, 1);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.3), 0 0 28px rgba(245, 158, 11, 0.22);
+@media (min-width: 641px) and (hover: hover) {
+  .mon-hero-cta:hover {
+    border-color: rgba(245, 158, 11, 0.62);
+    background-color: rgba(245, 158, 11, 0.26);
+    color: rgba(255, 248, 235, 1);
+    transform: translateY(var(--mon-card-lift-sm));
+    box-shadow:
+      0 10px 36px rgba(0, 0, 0, 0.38),
+      0 0 36px rgba(245, 158, 11, 0.28);
+  }
 }
 .mon-hero-cta:focus-visible {
   outline: 2px solid rgba(245, 158, 11, 0.7);
   outline-offset: 3px;
+  border-color: rgba(245, 158, 11, 0.62);
+  background-color: rgba(245, 158, 11, 0.22);
+  color: rgba(255, 248, 235, 1);
+  transform: translateY(var(--mon-card-lift-sm));
+  box-shadow:
+    0 10px 36px rgba(0, 0, 0, 0.38),
+    0 0 36px rgba(245, 158, 11, 0.22);
 }
 @media (max-width: 640px) {
   .mon-hero-cta { max-width: 100%; }
@@ -804,12 +864,25 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.02);
-  transition: color 0.22s var(--mon-ease-out), border-color 0.22s var(--mon-ease-out), background 0.22s var(--mon-ease-out);
+  transition:
+    color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    background var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
-.mon-hero-jump-link:hover {
-  color: rgba(255, 248, 235, 0.98);
-  border-color: rgba(245, 158, 11, 0.52);
-  background: rgba(245, 158, 11, 0.08);
+@media (min-width: 641px) and (hover: hover) {
+  .mon-hero-jump-link:hover {
+    color: rgba(255, 248, 235, 0.98);
+    border-color: rgba(245, 158, 11, 0.55);
+    background: rgba(245, 158, 11, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  }
+}
+.mon-hero-jump-link:focus-visible {
+  outline: 2px solid rgba(245, 158, 11, 0.55);
+  outline-offset: 2px;
 }
 
 /* ── Оффер (между hero и метриками, как «Стратегия. Эффективность…») ── */
@@ -918,13 +991,30 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-radius: 999px;
   border: 1px solid rgba(245, 158, 11, 0.42);
   background: rgba(245, 158, 11, 0.06);
-  transition: border-color 0.24s var(--mon-ease-out), background 0.24s var(--mon-ease-out), color 0.24s var(--mon-ease-out);
+  transition:
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    background var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
-.mon-offer-cta:hover,
+@media (min-width: 641px) and (hover: hover) {
+  .mon-offer-cta:hover {
+    border-color: rgba(245, 158, 11, 0.68);
+    background: rgba(245, 158, 11, 0.16);
+    color: #fff;
+    transform: translateY(var(--mon-card-lift-sm));
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), 0 0 24px rgba(245, 158, 11, 0.18);
+  }
+}
 .mon-offer-cta:focus-visible {
-  border-color: rgba(245, 158, 11, 0.62);
-  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.68);
+  background: rgba(245, 158, 11, 0.14);
   color: #fff;
+  outline: 2px solid rgba(245, 158, 11, 0.55);
+  outline-offset: 3px;
+  transform: translateY(var(--mon-card-lift-sm));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), 0 0 24px rgba(245, 158, 11, 0.16);
 }
 .mon-offer-cta-hint {
   font-size: 13px;
@@ -1350,14 +1440,17 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   overflow: hidden;
   box-shadow: none;
   transition:
-    transform 0.32s var(--mon-ease-soft),
-    border-color 0.28s var(--mon-ease-out);
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
 @media (min-width: 641px) and (hover: hover) {
   .mon-surface:hover {
-    transform: translateY(-4px);
-    border-color: rgba(255, 255, 255, 0.11);
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.34);
+    transform: translateY(var(--mon-card-lift));
+    border-color: rgba(255, 255, 255, 0.13);
+    box-shadow:
+      0 18px 48px rgba(0, 0, 0, 0.42),
+      0 0 0 1px rgba(245, 158, 11, 0.06);
   }
 }
 .mon-surface--pad {
@@ -1627,7 +1720,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   flex-direction: column;
   justify-content: space-between;
   gap: 10px;
-  transition: transform 0.26s var(--mon-ease-out), border-color 0.26s var(--mon-ease-out), box-shadow 0.26s var(--mon-ease-out);
+  transition:
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
   cursor: default;
   box-shadow: none;
 }
@@ -1641,10 +1737,14 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   background: rgba(255, 255, 255, 0.06);
   pointer-events: none;
 }
-.mon-stat-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(245, 158, 11, 0.08);
+@media (min-width: 641px) and (hover: hover) {
+  .mon-stat-card:hover {
+    transform: translateY(var(--mon-card-lift));
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow:
+      0 16px 44px rgba(0, 0, 0, 0.42),
+      0 0 0 1px rgba(245, 158, 11, 0.12);
+  }
 }
 
 .mon-stat-label {
@@ -1743,14 +1843,18 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border: 1px solid var(--mon-border-quiet);
   border-radius: var(--mon-radius-sm);
   padding: 20px;
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.28s ease;
+  transition:
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
-.mon-proof-card:hover,
-.mon-source-guide-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.26);
-  border-color: rgba(255, 255, 255, 0.09);
+@media (min-width: 641px) and (hover: hover) {
+  .mon-proof-card:hover,
+  .mon-source-guide-card:hover {
+    transform: translateY(var(--mon-card-lift-sm));
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
+    border-color: rgba(255, 255, 255, 0.11);
+  }
 }
 
 .mon-proof-card h3,
@@ -1798,7 +1902,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-size: 13px;
   border-bottom: none;
   padding-bottom: 1px;
-  transition: color var(--mon-link-dur) var(--mon-ease-out);
+  transition: color var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
 .mon-external-link::after {
   content: '';
@@ -1812,8 +1916,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   transform-origin: left center;
   opacity: 0.55;
   transition:
-    transform var(--mon-link-dur) var(--mon-ease-out),
-    opacity var(--mon-link-dur) var(--mon-ease-out);
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    opacity var(--mon-fx-hover) var(--mon-fx-hover-ease);
   pointer-events: none;
 }
 .mon-external-link:hover,
@@ -1911,17 +2015,23 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   vertical-align: top;
   color: rgba(255, 255, 255, 0.9);
   line-height: var(--mon-leading-body);
-  transition: background 0.12s ease;
+  transition:
+    background var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
 .mon-table tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.045);
 }
 .mon-table tbody tr:hover td:first-child {
   border-left: none;
   padding-left: 16px;
 }
-.mon-table td a { color: var(--mon-red); text-decoration: none; transition: color 0.15s ease; }
-.mon-table td a:hover { color: #ff8a8a; }
+.mon-table td a {
+  color: var(--mon-red);
+  text-decoration: none;
+  transition: color var(--mon-fx-hover) var(--mon-fx-hover-ease);
+}
+.mon-table td a:hover { color: #ff9494; }
 
 /* Первая таблица monitor (База объектов) — максимально близко к главной карточке */
 #data-scam .mon-surface {
@@ -1949,7 +2059,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 #data-scam .mon-table tbody tr:hover td {
-  background: rgba(245, 158, 11, 0.05);
+  background: rgba(245, 158, 11, 0.07);
+}
+#data-scam .mon-table tbody tr:hover td:first-child {
+  box-shadow: inset 3px 0 0 rgba(245, 158, 11, 0.55);
 }
 #data-scam .mon-cell-channel a.mon-channel-profile-link {
   color: rgba(255, 236, 208, 0.95);
@@ -2073,12 +2186,17 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   gap: 6px;
   min-height: 100%;
   box-sizing: border-box;
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.28s ease, box-shadow 0.28s ease;
+  transition:
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
-.mon-source-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.09);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.26);
+@media (min-width: 641px) and (hover: hover) {
+  .mon-source-card:hover {
+    transform: translateY(var(--mon-card-lift-sm));
+    border-color: rgba(255, 255, 255, 0.11);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
+  }
 }
 .mon-source-name  { font-size: 14px; font-weight: 700; color: #fff; }
 .mon-source-desc  { font-size: 13px; color: var(--mon-text-fade); line-height: 1.45; flex-shrink: 0; }
@@ -2121,12 +2239,17 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   align-items: stretch;
   gap: 10px;
   min-height: 100%;
-  transition: transform 0.28s var(--mon-ease-out), border-color 0.25s ease, box-shadow 0.28s ease;
+  transition:
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
-.mon-case-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
-  border-color: rgba(255, 255, 255, 0.09);
+@media (min-width: 641px) and (hover: hover) {
+  .mon-case-card:hover {
+    transform: translateY(var(--mon-card-lift-sm));
+    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.34);
+    border-color: rgba(255, 255, 255, 0.11);
+  }
 }
 
 .mon-case-channel-row {
@@ -2306,8 +2429,37 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-footer p { margin: 0 0 8px; }
 .mon-footer p:last-child { margin-bottom: 0; }
 .mon-footer-copy { font-size: 11px; letter-spacing: 0.02em; color: rgba(255, 255, 255, 0.26); }
-.mon-footer a { color: var(--mon-red); text-decoration: none; font-weight: 600; }
-.mon-footer a:hover { color: #ff7070; }
+.mon-footer a {
+  position: relative;
+  color: var(--mon-red);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color var(--mon-fx-hover) var(--mon-fx-hover-ease);
+}
+.mon-footer a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 104, 104, 0.9), rgba(255, 104, 104, 0.2));
+  transform: scaleX(0.4);
+  transform-origin: left center;
+  opacity: 0.5;
+  transition:
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    opacity var(--mon-fx-hover) var(--mon-fx-hover-ease);
+}
+.mon-footer a:hover,
+.mon-footer a:focus-visible {
+  color: #ff8a8a;
+}
+.mon-footer a:hover::after,
+.mon-footer a:focus-visible::after {
+  transform: scaleX(1);
+  opacity: 1;
+}
 
 /* ── SCROLL REVEAL ───────────────────────────────────────── */
 
@@ -2891,6 +3043,25 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   }
   .mon-page.mon-hero-offscreen .mon-bg-dot-grid {
     opacity: 0.14 !important;
+  }
+  .mon-hero-cta:hover,
+  .mon-hero-cta:focus-visible,
+  .mon-offer-cta:hover,
+  .mon-offer-cta:focus-visible,
+  .mon-refresh-btn:hover,
+  .mon-stack-strip.mon-visible .mon-stack-card:hover,
+  .mon-hero-jump-link:hover,
+  .mon-stat-card:hover,
+  .mon-proof-card:hover,
+  .mon-source-guide-card:hover,
+  .mon-source-card:hover,
+  .mon-case-card:hover {
+    transform: none !important;
+  }
+  .mon-main-nav-brand::after {
+    transition: none !important;
+    transform: none !important;
+    opacity: 0 !important;
   }
 }
 
