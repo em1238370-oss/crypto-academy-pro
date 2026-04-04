@@ -1802,6 +1802,8 @@ function scamBaseRowLooksV2(row) {
   const detected = (row[2] || '').toString().trim();
   if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(detected)) return true;
   if (/^\d{4}-\d{2}-\d{2}[ ]\d{2}:\d{2}/.test(detected)) return true;
+  // Лист часто хранит дату обнаружения как 03.04.2026 — без этого всё уходило в v1 и пропадало с монитора.
+  if (/^\d{1,2}\.\d{1,2}\.\d{4}/.test(detected)) return true;
   const link = (row[1] || '').toString().trim();
   if (/^https?:\/\//i.test(link)) return true;
   return false;
@@ -1873,6 +1875,13 @@ function isCryptoContextAllowed(...parts) {
   return REQUIRED_CRYPTO_HINTS.some((h) => blob.includes(h));
 }
 
+/** Явно не крипто-вертикаль (недвижимость, авто и т.д.) — для публичного счётчика и монитора. */
+function isBlatantNonCryptoVerticalInScamBaseRow(...parts) {
+  const blob = parts.map((x) => (x == null ? '' : String(x))).join(' ').toLowerCase();
+  if (!blob.trim()) return false;
+  return NON_CRYPTO_HINTS.some((h) => blob.includes(h));
+}
+
 function normalizeRiskStatusByLoss(totalLossRub, status) {
   const base = (status || '').toString().trim();
   const loss = Number(totalLossRub) || 0;
@@ -1930,7 +1939,19 @@ function isVisibleScamStatus(status) {
 
 /** Тот же набор строк scam_base, что и в GET /api/kro/live-counter (главная и цифры). */
 function isScamBaseRowInLiveCounterDataset(r) {
-  if (!r || r._schema !== 'v2' || !r.username || !isVisibleScamStatus(r.status)) return false;
+  if (!r || !r.username) return false;
+  // Старый лист (8 колонок): только осмысленные подтверждённые строки.
+  if (r._schema === 'v1') {
+    if (!isUsableScamBaseRow(r)) return false;
+    if (gamblingTopicHit(r.username, r.verdict, r.vip_price, r.total_loss, r.bot_pct)) return false;
+    return !isBlatantNonCryptoVerticalInScamBaseRow(
+      r.username,
+      r.verdict,
+      r.vip_price,
+      r.total_loss
+    );
+  }
+  if (r._schema !== 'v2' || !isVisibleScamStatus(r.status)) return false;
   if (
     gamblingTopicHit(
       r.username,
@@ -1942,13 +1963,20 @@ function isScamBaseRowInLiveCounterDataset(r) {
   ) {
     return false;
   }
-  return isCryptoContextAllowed(
-    r.username,
-    r.object_type,
-    r.source_primary,
-    r.source_evidence,
-    r.content_analysis
-  );
+  // Строка уже попала в scam_base после отбора — не требуем повторно слова «крипта» в ячейках,
+  // иначе монитор и главная оказываются пустыми при коротком @username и ссылке без ключевых слов.
+  if (
+    isBlatantNonCryptoVerticalInScamBaseRow(
+      r.username,
+      r.object_type,
+      r.source_primary,
+      r.source_evidence,
+      r.content_analysis
+    )
+  ) {
+    return false;
+  }
+  return true;
 }
 
 /** Честный fallback для монитора: без разбора постов, только поля строки scam_base. */
@@ -2823,11 +2851,12 @@ app.get('/api/kro/live-counter', async (req, res) => {
       console.log('KRO META SOURCE: reading from', `Google Sheets ${metaSheetName}`, cycleMeta.last_cycle_at);
       const sheetResp = await sheetsClient.sheets.spreadsheets.values.get({
         spreadsheetId: kroSheetId,
-        range: `${sheetName}!A:M`
+        range: kroScamBaseRange
       });
       const rawRows = sheetResp.data.values || [];
-      const parsedRows = rawRows.map(parseScamBaseRow).filter(r => r.username && r.username !== 'username');
-      console.log(`[KRO live-counter] parsed ${parsedRows.length} rows from scam_base`);
+      const dataRows = rawRows.length ? rawRows.slice(1) : [];
+      const parsedRows = dataRows.map(parseScamBaseRow).filter(r => r.username && r.username !== 'username');
+      console.log(`[KRO live-counter] parsed ${parsedRows.length} rows from scam_base (header row skipped)`);
       const scamBaseCounter = buildLiveCounterFromScamBase(parsedRows);
       const top3rows = Array.isArray(scamBaseCounter.top3) ? scamBaseCounter.top3 : [];
       console.log('TOP3 RAW:', JSON.stringify(top3rows.slice(0, 3)));
@@ -2959,10 +2988,14 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       })
     ]);
 
+    if (scamResp.status === 'rejected') {
+      console.error('KRO monitor-data: scam_base Sheets read failed:', scamResp.reason);
+    }
+
     // scam_base rows (skip header)
     const scamRawRows = scamResp.status === 'fulfilled' ? (scamResp.value.data.values || []) : [];
-    const scamRowsAll = scamRawRows
-      .slice(1)
+    const scamHeaderSkipped = scamRawRows.length > 0 ? scamRawRows.slice(1) : [];
+    const scamRowsAll = scamHeaderSkipped
       .map(parseScamBaseRow)
       .filter(r => r.username && r.username !== 'username')
       .map(enrichScamBaseContentAnalysisForMonitor);
@@ -3000,14 +3033,17 @@ app.get('/api/kro/monitor-data', async (req, res) => {
 
     const recent_cases = buildMonitorRecentCasesFromScamBase(scamRows, 3);
     const status_summary = buildStatusSummary(scamRows);
-    const parsedForLive = scamRawRows
-      .slice(1)
+    const parsedForLive = scamHeaderSkipped
       .map(parseScamBaseRow)
       .filter((r) => r.username && r.username !== 'username');
     const liveFromBase = buildLiveCounterFromScamBase(parsedForLive);
 
     return res.json({
       scam_base: scamRows,
+      /** Алиас для отладки и клиентов, ожидающих поле `rows` (то же, что scam_base после фильтров). */
+      rows: scamRows,
+      scam_base_sheet_rows: scamHeaderSkipped.length,
+      scam_base_after_filter: scamRows.length,
       channels_watch: channelsWatch,
       channels_network: channelsNetwork,
       meta,
