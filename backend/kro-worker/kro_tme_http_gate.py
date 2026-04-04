@@ -64,6 +64,54 @@ SCAM_BASE_HTTP_CRYPTO_TERMS = (
     'майнинг',
 )
 
+# Не наша тема: казино / ставки / гемблинг — не писать в scam_base (см. server.js KRO_GAMBLING_*).
+GAMBLING_TOPIC_SUBSTRINGS_RU = (
+    'казино',
+    'букмекер',
+    'букмекеры',
+    'букмекерская',
+    'рулетка',
+    'покер',
+    'слоты',
+    'gambling',
+    'casino',
+    'slots',
+    'bookmaker',
+    'bookmakers',
+)
+_GAMBLING_RE_EN = re.compile(
+    r'(?i)\b(?:gambling|casinos?|roulette|poker|slots?|bookmakers?|betting|bets?)\b|\bbet\b'
+)
+# «ставки» / «ставка» как отдельные слова (реже ложные срабатывания вроде «расстановки»)
+_GAMBLING_STAVKI_RE = re.compile(
+    r'(?i)(?<![а-яёa-z])ставки(?![а-яёa-z])|(?<![а-яёa-z])ставка(?![а-яёa-z])'
+)
+
+
+def gambling_topic_match(*parts: str) -> Optional[str]:
+    """
+    Если в объединённом тексте есть маркеры казино/ставок — вернуть первый найденный фрагмент (для лога), иначе None.
+    """
+    blob = ' '.join(
+        (p or '') if isinstance(p, str) else str(p or '')
+        for p in parts
+    )
+    if not blob.strip():
+        return None
+    low = blob.lower()
+    for s in GAMBLING_TOPIC_SUBSTRINGS_RU:
+        t = (s or '').strip().lower()
+        if t and t in low:
+            return t
+    m = _GAMBLING_STAVKI_RE.search(blob)
+    if m:
+        return m.group(0).strip().lower()
+    m2 = _GAMBLING_RE_EN.search(blob)
+    if m2:
+        return m2.group(0).strip().lower()
+    return None
+
+
 TME_HACKED_POST_MARKERS = (
     'взлом',
     'взломан',
@@ -373,6 +421,9 @@ def tme_http_gate_for_scam_base_write(
     content_analysis: str = '',
 ) -> Tuple[bool, str]:
     """True = можно писать в scam_base; False + код причины."""
+    gm0 = gambling_topic_match(username_or_link, object_type, source_evidence, content_analysis)
+    if gm0:
+        return False, 'blocked_gambling_topic:%s' % gm0
     uname = normalize_channel_link(username_or_link)
     if not uname:
         return True, 'not_telegram'
@@ -391,6 +442,9 @@ def tme_http_gate_for_scam_base_write(
         blob = (
             (prev['desc'] + ' ' + prev['posts_blob_lower'] + ' ' + source_evidence + ' ' + content_analysis).lower()
         )
+        gm_bot = gambling_topic_match(blob, username_or_link, object_type)
+        if gm_bot:
+            return False, 'blocked_gambling_tme:%s' % gm_bot
         if not any(term in blob for term in SCAM_BASE_HTTP_CRYPTO_TERMS):
             return False, 'tme_no_crypto_terms_in_desc_or_posts'
         now = datetime.now(timezone.utc)
@@ -415,6 +469,9 @@ def tme_http_gate_for_scam_base_write(
         return False, 'tme_subscribers_below_%d' % MIN_TELEGRAM_SUBSCRIBERS_HTTP
 
     blob = (prev['desc'] + ' ' + prev['posts_blob_lower']).lower()
+    gm_ch = gambling_topic_match(blob, source_evidence, content_analysis, username_or_link, object_type)
+    if gm_ch:
+        return False, 'blocked_gambling_tme:%s' % gm_ch
     if not any(term in blob for term in SCAM_BASE_HTTP_CRYPTO_TERMS):
         return False, 'tme_no_crypto_terms_in_desc_or_posts'
 

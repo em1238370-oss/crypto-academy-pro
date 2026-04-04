@@ -1930,18 +1930,24 @@ function isVisibleScamStatus(status) {
 
 /** Тот же набор строк scam_base, что и в GET /api/kro/live-counter (главная и цифры). */
 function isScamBaseRowInLiveCounterDataset(r) {
-  return (
-    r &&
-    r._schema === 'v2' &&
-    r.username &&
-    isVisibleScamStatus(r.status) &&
-    isCryptoContextAllowed(
+  if (!r || r._schema !== 'v2' || !r.username || !isVisibleScamStatus(r.status)) return false;
+  if (
+    gamblingTopicHit(
       r.username,
       r.object_type,
       r.source_primary,
       r.source_evidence,
       r.content_analysis
     )
+  ) {
+    return false;
+  }
+  return isCryptoContextAllowed(
+    r.username,
+    r.object_type,
+    r.source_primary,
+    r.source_evidence,
+    r.content_analysis
   );
 }
 
@@ -2269,6 +2275,26 @@ const KRO_TME_HTTP_GATE_CRYPTO = [
   'binance', 'bybit', 'бинанс', 'биткоин', 'альткоин', 'депозит', 'профит', 'лонг', 'шорт', 'фьючерс', 'спот',
   'defi', 'nft', 'токен', 'майнинг',
 ];
+/** Синхронно с kro_tme_http_gate.gambling_topic_match — не в scam_base / не промо. */
+const KRO_GAMBLING_SUBSTR = [
+  'казино', 'букмекер', 'букмекеры', 'букмекерская', 'рулетка', 'покер', 'слоты',
+  'gambling', 'casino', 'slots', 'bookmaker', 'bookmakers',
+];
+
+function gamblingTopicHit(...parts) {
+  const blob = parts.map((x) => (x == null ? '' : String(x))).join(' ');
+  if (!blob.trim()) return null;
+  const low = blob.toLowerCase();
+  for (const s of KRO_GAMBLING_SUBSTR) {
+    if (low.includes(s)) return s;
+  }
+  const stavkiRe = /(?<![\u0400-\u04FFa-z])ставки(?![\u0400-\u04FFa-z])|(?<![\u0400-\u04FFa-z])ставка(?![\u0400-\u04FFa-z])/i;
+  const st = stavkiRe.exec(blob);
+  if (st) return st[0].toLowerCase();
+  const reEn = /\b(?:gambling|casinos?|roulette|poker|slots?|bookmakers?|betting|bets?)\b|\bbet\b/gi;
+  const me = reEn.exec(blob);
+  return me ? me[0].toLowerCase() : null;
+}
 const KRO_TME_HTTP_GATE_MIN_SUBS = 100;
 const KRO_TME_HTTP_GATE_MAX_POST_DAYS = 60;
 
@@ -2324,6 +2350,10 @@ async function passesKroTmeHttpGateForScamBase(link, contentBlob, objectType = '
   if (!slug) {
     return { ok: true, reason: 'not_telegram' };
   }
+  const gEarly = gamblingTopicHit(link, contentBlob, objectType);
+  if (gEarly) {
+    return { ok: false, reason: `blocked_gambling_topic_${gEarly}` };
+  }
   const isBot = _kroSlugLooksLikeBot(slug, objectType);
 
   const headers = {
@@ -2369,6 +2399,10 @@ async function passesKroTmeHttpGateForScamBase(link, contentBlob, objectType = '
       return { ok: false, reason: 'tme_bot_not_working_no_start' };
     }
     const blobBot = `${desc} ${postsChunk} ${(contentBlob || '').toString().toLowerCase()}`;
+    const gBot = gamblingTopicHit(blobBot, link, objectType);
+    if (gBot) {
+      return { ok: false, reason: `blocked_gambling_tme_${gBot}` };
+    }
     const hasCryptoBot = KRO_TME_HTTP_GATE_CRYPTO.some((t) => blobBot.includes(t));
     if (!hasCryptoBot) {
       return { ok: false, reason: 'tme_no_crypto_terms_in_desc_or_posts' };
@@ -2434,6 +2468,10 @@ async function passesKroTmeHttpGateForScamBase(link, contentBlob, objectType = '
   }
 
   const blob = `${desc} ${postsChunk} ${(contentBlob || '').toString().toLowerCase()}`;
+  const gCh = gamblingTopicHit(blob, link, objectType);
+  if (gCh) {
+    return { ok: false, reason: `blocked_gambling_tme_${gCh}` };
+  }
   const hasCrypto = KRO_TME_HTTP_GATE_CRYPTO.some((t) => blob.includes(t));
   if (!hasCrypto) {
     return { ok: false, reason: 'tme_no_crypto_terms_in_desc_or_posts' };
@@ -3268,6 +3306,14 @@ async function checkAndPromoteToScamBase(client, channel) {
     const totalLoss = reports.reduce((s, r) => s + (r.sum || 0), 0);
     const explicitOt = reports.map(r => r.object_type).find(Boolean) || '';
     const { display, link, objectType } = scamBaseDisplayLinkForPromote(channel, explicitOt);
+    const reportsGamblingBlob = reports
+      .map(r => `${r.description || ''} ${r.proof_url || ''} ${r.object_type || ''}`)
+      .join(' ');
+    const gPromo = gamblingTopicHit(channel, display, link, objectType, reportsGamblingBlob);
+    if (gPromo) {
+      console.log(`[KRO] ${display} skipped: gambling topic (${gPromo})`);
+      return;
+    }
     if (!isCryptoContextAllowed(display, objectType, reports.map(r => `${r.description || ''} ${r.proof_url || ''}`).join(' '))) {
       console.log(`[KRO] ${display} skipped: no crypto context for scam_base promotion`);
       return;
@@ -3319,6 +3365,9 @@ app.post('/api/kro/report-scam', express.json(), async (req, res) => {
   }
   if (!description) {
     return res.status(400).json({ error: 'description is required' });
+  }
+  if (gamblingTopicHit(channelRaw, channel, description, proofUrl, objectType)) {
+    return res.status(400).json({ error: 'off_topic_gambling' });
   }
   try {
     const client = await getKroSheetsClient();

@@ -742,6 +742,17 @@ def append_to_scam_base(channel_id, risk, ads_week, bot_pct, vip, complaints, to
         sheets = build('sheets', 'v4', credentials=creds)
         now_iso = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
         r = result_obj or {}
+        if _tme_gate.gambling_topic_match(
+            str(channel_id),
+            str(r.get('username') or ''),
+            str(r.get('title') or ''),
+            str(r.get('link') or ''),
+            str(r.get('content_analysis') or ''),
+            str(r.get('object_type') or ''),
+            str(r.get('source_evidence') or ''),
+            str(r.get('source_primary') or ''),
+        ):
+            return
         # v2 schema: A username | B link | C detected_at | D created_at | E age_days |
         #            F object_type | G vip_price | H complaints | I total_loss_rub |
         #            J source_primary | K source_evidence | L cycle_window | M status

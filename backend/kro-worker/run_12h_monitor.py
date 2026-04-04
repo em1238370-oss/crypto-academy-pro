@@ -2679,6 +2679,15 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
                 ch, ch_username, title), file=sys.stderr)
             continue
 
+        ev_early = '; '.join(filter(None, (complaint_data.get('source_urls') or [])[:5]))
+        ev_early += ' ' + ' '.join(filter(None, (complaint_data.get('message_links') or [])[:5]))
+        gm_cf = _kro_tme_http_gate.gambling_topic_match(
+            ch_raw, ch_username, title, link, vip_str, source_primary, ev_early,
+        )
+        if gm_cf:
+            print('confirmed-filter: %s — казино/ставки/гемблинг (%s)' % (ch, gm_cf), file=sys.stderr)
+            continue
+
         seen_keys.add(key)
         obj_type = 'сигнал-канал (закрытый)' if ('+' in ch_username or 't.me/+' in link) else 'сигнал-канал'
         total_loss_rub = complaint_data.get('sum') or 0
@@ -2749,7 +2758,24 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
         print('scam_base read for dedup error: %s' % e, file=sys.stderr)
         existing_keys = set()
 
-    gated_objects = _apply_telegram_gate_to_rows(list(confirmed_objects or []), 'scam_base write')
+    pre_gate = []
+    for obj in list(confirmed_objects or []):
+        gm = _kro_tme_http_gate.gambling_topic_match(
+            obj.get('username', ''),
+            obj.get('link', ''),
+            obj.get('object_type', ''),
+            obj.get('source_primary', ''),
+            obj.get('source_evidence', ''),
+            obj.get('content_analysis', ''),
+        )
+        if gm:
+            print(
+                'scam_base write skip: %s — казино/ставки/гемблинг (%s)' % (obj.get('username') or '?', gm),
+                file=sys.stderr,
+            )
+            continue
+        pre_gate.append(obj)
+    gated_objects = _apply_telegram_gate_to_rows(pre_gate, 'scam_base write')
     new_rows = []
     inserted_channels = []
     for obj in gated_objects:
@@ -3266,6 +3292,10 @@ def _read_scam_base_keys_norm(client, sheet_id):
 
 def _append_organic_scam_base_row(client, sheet_id, display, link, obj_type, status, evidence, cycle_window, source_primary):
     """Одна строка v2 в scam_base (органический цикл)."""
+    gm = _kro_tme_http_gate.gambling_topic_match(display, link, obj_type, evidence, source_primary)
+    if gm:
+        print('organic: skip %s — казино/ставки/гемблинг (%s)' % (display or link, gm), file=sys.stderr)
+        return False
     if not _is_crypto_context_allowed_parts(display, link, obj_type, evidence, source_primary):
         print('organic: skip %s — no crypto context' % (display or link), file=sys.stderr)
         return False
@@ -5545,6 +5575,18 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
         risk_pre = _risk_prefix_for_object_type(obj_type)
         if risk_pre:
             evidence = (risk_pre + ' | ' + evidence)[:500]
+        rep_blob = ' '.join(
+            '%s %s %s' % (
+                (r.get('description') or ''),
+                (r.get('proof_url') or ''),
+                (r.get('object_type') or ''),
+            )
+            for r in reports
+        )
+        gm_pr = _kro_tme_http_gate.gambling_topic_match(ch, display, link, obj_type, evidence, rep_blob)
+        if gm_pr:
+            print(f'[promote] skip {display}: казино/ставки/гемблинг ({gm_pr})', file=sys.stderr)
+            continue
         if not _is_crypto_context_allowed_parts(display, obj_type, evidence, 'form+web'):
             print(f'[promote] skip {display}: no crypto context', file=sys.stderr)
             continue
