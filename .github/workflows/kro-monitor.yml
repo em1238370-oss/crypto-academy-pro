@@ -141,14 +141,16 @@ jobs:
         run: |
           echo "::notice::KRO 12h monitor — kro_telethon_limits (10s/RPC), HTML gate fallback, kro_unified_risk + статус подтверждённый скам в content_analysis."
 
-      - name: Trigger Render deploy
+      # После успешного прохода всех шагов выше: новый деплой на Render (подтягивает свежий main, перезапускает Node).
+      - name: Deploy to Render (deploy hook)
+        if: success()
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
           if [ -z "${RENDER_DEPLOY_HOOK:-}" ]; then
-            echo "RENDER_DEPLOY_HOOK is not set; skipping Render deploy."
+            echo "::warning::RENDER_DEPLOY_HOOK не задан в GitHub Secrets — автодеплой пропущен. Render → Service → Settings → Deploy Hook → URL в Secrets."
             exit 0
           fi
-          echo "Triggering Render deploy via hook..."
-          curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
-          echo "Render deploy hook OK."
+          echo "::notice::Запуск деплоя на Render через deploy hook…"
+          curl -fsS --connect-timeout 30 --max-time 120 --retry 3 --retry-delay 5 -X POST "$RENDER_DEPLOY_HOOK"
+          echo "::notice::Render deploy hook: запрос отправлен (деплой идёт на стороне Render)."
