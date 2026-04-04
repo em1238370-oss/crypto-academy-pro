@@ -17,6 +17,8 @@ KRO Web Scraper: собирает упоминания скам-каналов �
 
 Каждая найденная запись: {channel, sum_rub, description, source_url, source[, object_type]}
 Возвращаемые данные пишутся в лист reports Google Sheets с пометкой source='web'.
+В том же цикле run_12h_monitor.py вызывает _merge_web_scraper_findings_into_agg: находки с URL
+разоблачителя сразу попадают в агрегат для scam_base (не только через повторное чтение листа).
 """
 import os
 import re

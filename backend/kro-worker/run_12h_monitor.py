@@ -1308,7 +1308,78 @@ def _report_row_is_whistleblower_site(rec):
         return True
     if _text_has_whistleblower_site_marker((rec.get('description') or '').strip()):
         return True
+    src = (rec.get('source') or '').strip()
+    if src.startswith('http') and _text_has_whistleblower_site_marker(src):
+        return True
     return False
+
+
+def _complaint_bucket_has_whistleblower_evidence(complaint_data, tg_row=None):
+    """
+    Условие А (scam_base): маркер разоблачительного сайта в агрегате или в строке TGStat/Telega.
+    Достаточно одного упоминания URL/текста с доменом из _WHISTLEBLOWER_SITE_MARKERS.
+    """
+    if not complaint_data:
+        return False
+    if complaint_data.get('whistleblower_site_evidence'):
+        return True
+    for key in ('source_urls', 'message_links', 'internal_links'):
+        for u in (complaint_data.get(key) or []):
+            s = u if isinstance(u, str) else str(u)
+            if _text_has_whistleblower_site_marker(s):
+                return True
+    if tg_row:
+        for fld in ('source_url', 'link', 'title'):
+            if _text_has_whistleblower_site_marker((tg_row.get(fld) or '').strip()):
+                return True
+        for fld in ('source_links', 'evidence_links'):
+            v = tg_row.get(fld)
+            if isinstance(v, (list, tuple)):
+                for x in v:
+                    xs = (x or '').strip() if isinstance(x, str) else str(x or '')
+                    if _text_has_whistleblower_site_marker(xs):
+                        return True
+    return False
+
+
+def _merge_web_scraper_findings_into_agg(agg, findings):
+    """
+    То, что нашёл web_scraper в этом же цикле, сразу участвует в порогах scam_base,
+    даже если чтение листа reports отстаёт или флаг по строке не выставился.
+    """
+    for f in (findings or []):
+        url = (f.get('source_url') or '').strip()
+        ch = (f.get('channel') or '').strip()
+        if not ch or not url:
+            continue
+        if not _text_has_whistleblower_site_marker(url) and not _text_has_whistleblower_site_marker(
+            (f.get('description') or '').strip()
+        ):
+            continue
+        if ch not in agg:
+            agg[ch] = _empty_agg_complaint_bucket()
+        agg[ch]['whistleblower_site_evidence'] = True
+        agg[ch]['source_urls'] = _merge_text_values(agg[ch].get('source_urls'), [url])
+        if (agg[ch].get('complaints') or 0) < 1:
+            agg[ch]['complaints'] = 1
+        try:
+            sr = int(f.get('sum_rub') or 0)
+        except (TypeError, ValueError):
+            sr = 0
+        agg[ch]['sum'] = max(agg[ch].get('sum') or 0, sr)
+
+
+def _confirmed_obj_has_whistleblower_evidence(obj):
+    """Для записи в scam_base: маркер разоблачителя в source_primary / source_evidence / ссылке."""
+    if not obj:
+        return False
+    parts = (
+        obj.get('source_primary') or '',
+        obj.get('source_evidence') or '',
+        obj.get('link') or '',
+        obj.get('username') or '',
+    )
+    return any(_text_has_whistleblower_site_marker(p) for p in parts)
 
 
 def read_reports_last_12h(client, sheet_id):
@@ -2639,12 +2710,12 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
     Отбор подтверждённых скам-каналов для записи в scam_base.
 
     Жалобы / источники:
-    - Сайты-разоблачители (stop-scam1, fin-obzor, vklader, telltrue, forteck): достаточно 1 строки
-      в агрегате с proof_url на этот домен.
-    - Остальное (форма, поиск DDG/Bing и т.д., только чаты): по-прежнему минимум 2 «жалобы»
-      в агрегате (чаты + лист reports).
+    - Условие А — маркер разоблачительного сайта в агрегате (source_urls и т.д.) или в строке TGStat
+      (source_url / title / link): достаточно одного упоминания домена из ТЗ.
+    - Условие Б — иначе минимум 2 «жалобы» в агрегате (форма + чаты + лист reports).
 
-    Далее: сигнальные слова + крипто-контекст в названии/username (и гемблинг-фильтр).
+    Для Б: сигнальные слова + крипто-контекст в названии/username. Для А эти фильтры не применяются.
+    Гемблинг-фильтр — всегда.
     Возраст канала — только для статуса, не блокирует подтверждение.
     """
     now = _msk_now()
@@ -2670,14 +2741,15 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             print('confirmed-filter: %s — в списке исключений (известный не-скам)' % ch, file=sys.stderr)
             continue
 
-        # Порог жалоб: 1 если есть статья с разоблачительного сайта, иначе ≥2
+        # Данные TGStat/Telega нужны до порога жалоб: маркер разоблачителя может быть в source_url строки поиска
+        tg_row = tgstat_by_key.get(key)
+
+        # Порог: А — один след разоблачительского сайта; Б — ≥2 жалоб в агрегате
         complaint_count = complaint_data.get('complaints') or 0
-        min_complaints = 1 if complaint_data.get('whistleblower_site_evidence') else 2
+        whistle = _complaint_bucket_has_whistleblower_evidence(complaint_data, tg_row)
+        min_complaints = 1 if whistle else 2
         if complaint_count < min_complaints:
             continue
-
-        # Получаем данные о канале из TGStat (если есть) для обогащения записи
-        tg_row = tgstat_by_key.get(key)
         created_dt = None
         if tg_row is not None:
             date_str = (tg_row.get('date') or '').strip()
@@ -2698,8 +2770,15 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             vip_str = (tg_row.get('vip') or '—').strip()
             title = (tg_row.get('title') or '').strip()
             source_primary = tg_row.get('source_url') or tg_row.get('link') or 'TGStat'
+        elif whistle:
+            source_primary = 'сайт-разоблачитель (web)'
+            for u in complaint_data.get('source_urls') or []:
+                us = u if isinstance(u, str) else str(u)
+                if _text_has_whistleblower_site_marker(us):
+                    source_primary = us[:500]
+                    break
 
-        # КРИТЕРИЙ 2: сигнальные слова + явный крипто-контекст в названии или username
+        # КРИТЕРИЙ 2: сигнальные слова + крипто-контекст (для Б). Условие А — статья на разоблачителе задаёт тематику.
         has_signals = _has_signal_keywords(title) or _has_signal_keywords(ch_username)
         has_crypto_ctx = _has_crypto_context(title) or _has_crypto_context(ch_username)
         vip_num = 0
@@ -2707,14 +2786,15 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             digits = re.sub(r'[^\d]', '', str(vip_str))
             vip_num = int(digits) if digits else 0
 
-        if vip_num < VIP_MIN and not has_signals:
-            print('confirmed-filter: %s — нет сигнальных слов. username=%r title=%r' % (
-                ch, ch_username, title), file=sys.stderr)
-            continue
-        if not has_crypto_ctx:
-            print('confirmed-filter: %s — нет явного crypto-контекста. username=%r title=%r' % (
-                ch, ch_username, title), file=sys.stderr)
-            continue
+        if not whistle:
+            if vip_num < VIP_MIN and not has_signals:
+                print('confirmed-filter: %s — нет сигнальных слов. username=%r title=%r' % (
+                    ch, ch_username, title), file=sys.stderr)
+                continue
+            if not has_crypto_ctx:
+                print('confirmed-filter: %s — нет явного crypto-контекста. username=%r title=%r' % (
+                    ch, ch_username, title), file=sys.stderr)
+                continue
 
         ev_early = '; '.join(filter(None, (complaint_data.get('source_urls') or [])[:5]))
         ev_early += ' ' + ' '.join(filter(None, (complaint_data.get('message_links') or [])[:5]))
@@ -2828,7 +2908,7 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             obj.get('object_type', ''),
             obj.get('source_primary', ''),
             obj.get('source_evidence', ''),
-        ):
+        ) and not _confirmed_obj_has_whistleblower_evidence(obj):
             print('scam_base write skip: %s — no crypto context' % (obj.get('username') or key), file=sys.stderr)
             continue
         eff_status = _apply_loss_status_floor(obj.get('status', ''), obj.get('total_loss_rub', 0))
@@ -5621,7 +5701,7 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
         if gm_pr:
             print(f'[promote] skip {display}: казино/ставки/гемблинг ({gm_pr})', file=sys.stderr)
             continue
-        if not _is_crypto_context_allowed_parts(display, obj_type, evidence, 'form+web'):
+        if not has_whistleblower and not _is_crypto_context_allowed_parts(display, obj_type, evidence, 'form+web'):
             print(f'[promote] skip {display}: no crypto context', file=sys.stderr)
             continue
         has_facts = _has_concrete_scam_facts(evidence)
@@ -5769,6 +5849,7 @@ def main():
             if agg_complaints[ch]['complaints'] >= 2:
                 agg_complaints[ch]['status'] = 'Скам'
     _merge_telegram_complaints_into_agg(agg_complaints, complaints_by_channel)
+    _merge_web_scraper_findings_into_agg(agg_complaints, web_findings)
 
     # Полный учёт строк листа reports (форма + сайты из web_scraper) + Telegram — для подтверждённых объектов и промо
     agg_complaints_total = defaultdict(_empty_agg_complaint_bucket)
@@ -5782,6 +5863,7 @@ def main():
             if agg_complaints_total[ch]['complaints'] >= 2:
                 agg_complaints_total[ch]['status'] = 'Скам'
     _merge_telegram_complaints_into_agg(agg_complaints_total, complaints_by_channel)
+    _merge_web_scraper_findings_into_agg(agg_complaints_total, web_findings)
     complaints_rows = [
         {
             'channel': ch,
