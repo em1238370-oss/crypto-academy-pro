@@ -1,6 +1,7 @@
 /* ============================================================
-   KRO Monitor — executive / medvedevart: сдержанный премиум, минимум декора
-   Текст и метрики важнее эффектов; янтарь = тонкий хром, красный = данные о риске
+   KRO Monitor — executive / medvedevart (анализ §3 типографика):
+   Outfit — заголовки и крупные метрики; Inter — текст, таблицы, UI;
+   IBM Plex Mono — служебные строки (статус, время цикла). Сдержанный премиум.
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,10 +35,10 @@
   --mon-cyan:       #06b6d4;
   --mon-violet:     #8b5cf6;
 
-  /* Как на главной: Syne + Manrope */
-  --mon-font:         'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --mon-font-display: 'Syne', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-  --mon-font-mono:    'SF Mono', ui-monospace, Monaco, 'Cascadia Code', monospace;
+  /* medvedevart §3: геометрический display + нейтральный корпоративный текст */
+  --mon-font:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mon-font-display: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mon-font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', Monaco, 'Cascadia Code', monospace;
   --mon-steel:        rgba(110, 122, 145, 0.35);
   --mon-steel-line:   rgba(72, 82, 104, 0.55);
 
@@ -69,15 +70,15 @@
   --mon-shadow:       0 1px 0 rgba(255,255,255,0.06);
   --mon-shadow-hover: 0 10px 32px rgba(0, 0, 0, 0.32);
 
-  /* Типографика: executive / medvedevart — один ритм для текста и цифр */
-  --mon-leading-body:   1.62;
+  /* Типографика: плотнее и контрастнее — «официальный» отчёт, не маркетинг */
+  --mon-leading-body:   1.58;
   --mon-leading-snug:   1.22;
-  --mon-leading-tight:  1.08;
-  --mon-prose-max:      42rem;
-  --mon-text-prose:     rgba(255, 255, 255, 0.56);
-  --mon-text-prose-hi:  rgba(255, 255, 255, 0.62);
-  --mon-tracking-label: 0.11em;
-  --mon-tracking-kicker: 0.16em;
+  --mon-leading-tight:  1.05;
+  --mon-prose-max:      40rem;
+  --mon-text-prose:     rgba(255, 255, 255, 0.58);
+  --mon-text-prose-hi:  rgba(255, 255, 255, 0.7);
+  --mon-tracking-label: 0.09em;
+  --mon-tracking-kicker: 0.13em;
 }
 
 html { scroll-behavior: smooth; }
@@ -91,13 +92,15 @@ body {
   background-image: linear-gradient(180deg, var(--mon-bg-deep) 0%, var(--mon-bg) 38%, var(--mon-bg-deep) 100%);
   color: var(--mon-text);
   font-family: var(--mon-font);
-  font-size: 15px;
+  font-size: 16px;
+  font-weight: 400;
   line-height: var(--mon-leading-body);
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  font-feature-settings: "kern" 1, "liga" 1, "tnum" 1;
+  font-feature-settings: "kern" 1, "liga" 1, "tnum" 1, "cv05" 1;
 }
 
 a   { color: inherit; }
@@ -273,9 +276,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-refresh-countdown {
-  font-family: var(--mon-font);
+  font-family: var(--mon-font-mono);
   font-size: 12px;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
   color: var(--mon-text-dim);
   padding: 8px 0;
   border: none;
@@ -540,36 +545,36 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 /* Как на главной (kro-step1-role): верхняя строка после H1 */
 .mon-hero-eyebrow {
   font-family: var(--mon-font);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.5);
   margin: 0 0 16px;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
-/* Один H1 как на главной — крупная геометрия Syne, янтарный хвост */
+/* H1: плотный executive-заголовок (как крупное имя на medvedevart), Outfit */
 .mon-hero-title {
   font-family: var(--mon-font-display);
-  font-size: clamp(40px, 6.5vw, 72px);
-  font-weight: 700;
-  line-height: 1.06;
-  letter-spacing: -0.02em;
+  font-size: clamp(38px, 6.2vw, 68px);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
   margin: 0 0 10px;
-  max-width: 22ch;
-  color: rgba(255, 255, 255, 0.94);
+  max-width: 20ch;
+  color: rgba(255, 255, 255, 0.96);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   position: relative;
 }
 .mon-hero-title-sep {
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.26);
   margin: 0 0.08em;
 }
 .mon-hero-title-em {
   color: rgba(255, 230, 200, 0.96);
-  font-weight: 700;
+  font-weight: 800;
 }
 /* Линия-акцент под H1 — после окончания входа заголовка */
 .mon-hero-title::after {
@@ -591,9 +596,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-hero-tagline {
-  font-size: clamp(15px, 1.5vw, 17px);
+  font-size: clamp(15px, 1.45vw, 17px);
   font-weight: 400;
-  color: var(--mon-text-prose);
+  color: var(--mon-text-prose-hi);
   line-height: var(--mon-leading-body);
   margin-bottom: 20px;
   max-width: var(--mon-prose-max);
@@ -1215,11 +1220,12 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-chapter-kicker {
   position: relative;
-  font-size: 11px;
+  font-family: var(--mon-font);
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: var(--mon-tracking-kicker);
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.38);
   margin: 0 0 12px;
   padding-left: 14px;
 }
@@ -1236,16 +1242,17 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-chapter-title {
   font-family: var(--mon-font-display);
-  font-size: clamp(1.6rem, 3.5vw, 2.45rem);
-  font-weight: 800;
-  letter-spacing: -0.04em;
+  font-size: clamp(1.5rem, 3.2vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
   line-height: var(--mon-leading-tight);
   color: #fff;
   margin: 0 0 14px;
-  max-width: min(22ch, 100%);
+  max-width: min(28ch, 100%);
 }
 .mon-chapter-lead {
   font-size: 16px;
+  font-weight: 400;
   line-height: var(--mon-leading-body);
   color: var(--mon-text-prose-hi);
   margin: 0;
@@ -1257,7 +1264,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   color: var(--mon-text-prose);
 }
 .mon-chapter-meta {
-  font-size: 13px;
+  font-family: var(--mon-font);
+  font-size: 12px;
   font-weight: 500;
   color: var(--mon-text-dim);
   white-space: nowrap;
@@ -1374,12 +1382,12 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   margin-left: auto;
 }
 
-/* Заголовки секций: h2, регистр как в тексте (не ALL CAPS) */
+/* Заголовки карточек/панелей внутри глав — тот же Outfit, ступень ниже chapter */
 .mon-section-heading {
   font-family: var(--mon-font-display);
-  font-size: clamp(1.32rem, 2.5vw, 1.72rem);
+  font-size: clamp(1.2rem, 2.2vw, 1.5rem);
   font-weight: 700;
-  letter-spacing: -0.028em;
+  letter-spacing: -0.025em;
   line-height: var(--mon-leading-snug);
   color: #fff;
   margin: 0;
@@ -1395,8 +1403,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-section-label {
-  font-size: 13px;
-  font-weight: 500;
+  font-family: var(--mon-font);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--mon-text-dim);
   white-space: nowrap;
 }
@@ -1583,25 +1593,26 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-stat-label {
+  font-family: var(--mon-font);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: var(--mon-tracking-label);
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.44);
+  color: rgba(255, 255, 255, 0.42);
   margin-bottom: 0;
   line-height: 1.35;
 }
 
 .mon-stat-value {
   font-family: var(--mon-font-display);
-  font-size: clamp(24px, 2.85vw, 40px);
+  font-size: clamp(22px, 2.75vw, 38px);
   font-weight: 700;
   color: #fff;
   word-break: break-word;
   line-height: var(--mon-leading-tight);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1, "kern" 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.028em;
   text-shadow: none;
 }
 .mon-stat-value.green  { color: var(--mon-green); }
@@ -1823,9 +1834,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-family: var(--mon-font);
+  font-size: 14px;
   min-width: 900px;
-  line-height: var(--mon-leading-snug);
+  line-height: 1.5;
 }
 
 .mon-table th {
@@ -1833,10 +1845,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   text-align: left;
   font-family: var(--mon-font);
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: var(--mon-tracking-label);
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.44);
+  color: rgba(255, 255, 255, 0.46);
   border-bottom: 1px solid rgba(255,255,255,0.08);
   white-space: nowrap;
   background: rgba(255,255,255,0.03);
