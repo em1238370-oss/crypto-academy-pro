@@ -1272,14 +1272,16 @@ const KRO_SOURCES_DOC_URL = '/monitor';
 const KRO_REFERENCE_STATS_PATH = join(__dirname, 'data', 'kro-reference-stats.json');
 const KRO_12H_STATS_PATH = join(__dirname, 'data', 'kro-12h-stats.json');
 const KRO_PENDING_REPORT_TEXT = 'Данные появятся после первого верифицированного отчёта.';
-const LIVE_COUNTER_CACHE_TTL_MS = 60 * 1000; // 1 minute
+// Без TTL: live-counter и kro_meta всегда читаются из Sheets на каждый запрос (иначе после деплоя
+// или смены таблицы возможен устаревший снимок; in-memory кеш не заменяет CDN).
+const LIVE_COUNTER_CACHE_TTL_MS = 0;
 let kroLiveCounterCache = { payload: null, ts: 0 };
 
 function resetKroLiveCounterCache() {
   kroLiveCounterCache = { payload: null, ts: 0 };
 }
 
-// Новый процесс Node = старт после деплоя (Render и т.д.) — кеш live-counter сбрасываем сразу.
+// Новый процесс Node = старт после деплоя (Render и т.д.) — сброс кеша live-counter.
 resetKroLiveCounterCache();
 
 /** URLs embedded in complaints_row fields (Python worker / kro-12h-stats.json). */
@@ -1530,6 +1532,29 @@ function readJsonFileSafe(path, label) {
   }
 }
 
+/**
+ * В kro_meta ячейка last_cycle_at в API часто приходит как serial (дни от 30.12.1899), не как ISO.
+ * Тогда new Date(String(serial)).getTime() === NaN и live-counter ошибочно берёт updatedAt из scam_base.
+ */
+function coerceKroMetaLastCycleAtToIso(raw) {
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    const ms = (raw - 25569) * 86400 * 1000;
+    return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
+  }
+  const s = String(raw).trim();
+  if (!s) return null;
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    const n = parseFloat(s);
+    if (Number.isFinite(n) && n > 20000 && n < 600000) {
+      const ms = (n - 25569) * 86400 * 1000;
+      if (Number.isFinite(ms)) return new Date(ms).toISOString();
+    }
+  }
+  const parsed = Date.parse(s);
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
+}
+
 function parseKroCycleMetaRows(rows) {
   const values = {};
   for (const row of rows || []) {
@@ -1552,8 +1577,12 @@ function parseKroCycleMetaRows(rows) {
       console.warn('KRO cycle meta parse failed:', e?.message);
     }
   }
+  const rawLc = values.last_cycle_at;
+  const isoLc = coerceKroMetaLastCycleAtToIso(rawLc);
+  const last_cycle_at =
+    isoLc || (rawLc != null && String(rawLc).trim() ? String(rawLc).trim() : null);
   return {
-    last_cycle_at: values.last_cycle_at ? String(values.last_cycle_at) : null,
+    last_cycle_at,
     new_in_cycle: Number(values.new_in_cycle || 0) || 0,
     sources_checked,
   };
@@ -1884,24 +1913,29 @@ function buildStatusSummary(rows) {
   return summary;
 }
 
-function isCryptoRelevantScamRow(row) {
-  const blob = [
-    row?.username,
-    row?.object_type,
-    row?.source_primary,
-    row?.source_evidence,
-    row?.content_analysis,
-  ].map((x) => (x == null ? '' : String(x))).join(' ').toLowerCase();
-
-  return isCryptoContextAllowed(blob);
-}
-
 function isVisibleScamStatus(status) {
   const s = (status || '').toString().trim().toLowerCase();
   if (!s) return true;
   if (s.includes('удал')) return false;
   if (s.includes('неактив')) return false;
   return true;
+}
+
+/** Тот же набор строк scam_base, что и в GET /api/kro/live-counter (главная и цифры). */
+function isScamBaseRowInLiveCounterDataset(r) {
+  return (
+    r &&
+    r._schema === 'v2' &&
+    r.username &&
+    isVisibleScamStatus(r.status) &&
+    isCryptoContextAllowed(
+      r.username,
+      r.object_type,
+      r.source_primary,
+      r.source_evidence,
+      r.content_analysis
+    )
+  );
 }
 
 /** Честный fallback для монитора: без разбора постов, только поля строки scam_base. */
@@ -2001,12 +2035,7 @@ function buildLiveCounterFromScamBase(parsedRows) {
   const cutoff24h = now - 24 * 60 * 60 * 1000;
 
   // All confirmed rows (v2 schema) — survive restarts, not limited by time window
-  const filteredRows = parsedRows.filter(r =>
-    r._schema === 'v2' &&
-    r.username &&
-    isVisibleScamStatus(r.status) &&
-    isCryptoContextAllowed(r.username, r.object_type, r.source_primary, r.source_evidence, r.content_analysis)
-  );
+  const filteredRows = parsedRows.filter(isScamBaseRowInLiveCounterDataset);
   const byChannel = new Map();
   for (const row of filteredRows) {
     const key = channelMatchKey(row.username);
@@ -2757,10 +2786,13 @@ app.get('/api/kro/live-counter', async (req, res) => {
       const scamBaseCounter = buildLiveCounterFromScamBase(parsedRows);
       const top3rows = Array.isArray(scamBaseCounter.top3) ? scamBaseCounter.top3 : [];
       console.log('TOP3 RAW:', JSON.stringify(top3rows.slice(0, 3)));
-      const cycleTs = cycleMeta.last_cycle_at ? new Date(cycleMeta.last_cycle_at).getTime() : 0;
-      const rowTs = scamBaseCounter.updatedAt ? new Date(scamBaseCounter.updatedAt).getTime() : 0;
-      const bestUpdatedAt = cycleTs >= rowTs ? cycleMeta.last_cycle_at : scamBaseCounter.updatedAt;
-      const displayUpdatedAt = cycleMeta.last_cycle_at || bestUpdatedAt || scamBaseCounter.updatedAt || null;
+      const metaStr = cycleMeta.last_cycle_at;
+      const cycleTs = metaStr ? Date.parse(metaStr) : NaN;
+      const rowTs = scamBaseCounter.updatedAt ? Date.parse(scamBaseCounter.updatedAt) : NaN;
+      const displayUpdatedAt =
+        Number.isFinite(cycleTs) && Number.isFinite(rowTs)
+          ? (cycleTs >= rowTs ? metaStr : scamBaseCounter.updatedAt)
+          : (metaStr || scamBaseCounter.updatedAt || null);
       const newInCycle = Number(cycleMeta.new_in_cycle);
       const channelsTodayVal = Number.isFinite(newInCycle) ? newInCycle : 0;
       const payload = {
@@ -2874,7 +2906,7 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       }),
       sheetsClient.sheets.spreadsheets.values.get({
         spreadsheetId: kroSheetId,
-        range: 'kro_meta!A:B'
+        range: kroMetaRange
       }),
       sheetsClient.sheets.spreadsheets.values.get({
         spreadsheetId: kroSheetId,
@@ -2889,7 +2921,7 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       .map(parseScamBaseRow)
       .filter(r => r.username && r.username !== 'username')
       .map(enrichScamBaseContentAnalysisForMonitor);
-    const scamRows = scamRowsAll.filter((r) => isCryptoRelevantScamRow(r) && isVisibleScamStatus(r.status));
+    const scamRows = scamRowsAll.filter(isScamBaseRowInLiveCounterDataset);
 
     const watchRawRows = watchResp.status === 'fulfilled' ? (watchResp.value.data.values || []) : [];
     const channelsWatch = watchRawRows

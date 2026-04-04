@@ -707,7 +707,16 @@
            }
            function fetchLiveCounter() {
                if (!document.querySelector('.kro-feature1') && !document.getElementById('kro-hero-cases')) return;
-               fetch(base + '/api/kro/live-counter', { headers: { 'Cache-Control': 'no-store', Accept: 'application/json' } }).then(function(r) { return r.json(); }).then(applyData).catch(function() {});
+               fetch(base + '/api/kro/live-counter?t=' + Date.now(), {
+                   cache: 'no-store',
+                   headers: { 'Cache-Control': 'no-store', Pragma: 'no-cache', Accept: 'application/json' }
+               })
+                   .then(function(r) {
+                       if (!r.ok) throw new Error('live-counter HTTP ' + r.status);
+                       return r.json();
+                   })
+                   .then(applyData)
+                   .catch(function(e) { console.warn('[KRO] live-counter:', e && e.message ? e.message : e); });
            }
            function observeFeature1Reveal() {
                var section = document.getElementById('feature1');
