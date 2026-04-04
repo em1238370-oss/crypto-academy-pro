@@ -23,25 +23,27 @@ button:focus-visible {
 }
 
 .kro-tag:focus-visible {
-   outline: 2px solid rgba(245, 158, 11, 0.6);
+   outline: 2px solid rgba(197, 160, 89, 0.6);
    outline-offset: 3px;
 }
 
-/* ===== Крипта без розовых очков — стилистика medvedevart: премиум, сдержанно, акцент на тексте ===== */
+/* ===== Крипта без розовых очков — атмосфера executive / medvedevart: уголь + приглушённая бронза ===== */
 .kro-main,
 .kro-step1,
 .kro-feature1 {
-   /* Палитра: тёмный фон с лёгким тёплым подтоном (премиум, не холодный) */
-   --kro-bg: #0a0c10;
-   --kro-bg-mid: #0e1116;
-   --kro-bg-soft: #13161c;
-   --kro-accent: #f59e0b;
-   --kro-accent-hover: #fbbf24;
-   --kro-glow: rgba(245, 158, 11, 0.08);
-   --kro-glow-soft: rgba(245, 158, 11, 0.04);
-   /* Текст: иерархия как на medvedevart — основной и приглушённый */
-   --kro-text: rgba(255, 255, 255, 0.92);
-   --kro-text-muted: rgba(255, 255, 255, 0.52);
+   /* Фон: почти чёрный «матовый» (#121212) как на референсе скриншота */
+   --kro-bg-deep: #0d0d0d;
+   --kro-bg: #121212;
+   --kro-bg-mid: #161616;
+   --kro-bg-soft: #1a1a1c;
+   /* Акцент: бронза / приглушённое золото (#C5A059), не янтарь */
+   --kro-accent: #c5a059;
+   --kro-accent-hover: #d8b876;
+   --kro-glow: rgba(197, 160, 89, 0.1);
+   --kro-glow-soft: rgba(197, 160, 89, 0.045);
+   /* Текст: белый + вторичный как #8E8E93 */
+   --kro-text: rgba(255, 255, 255, 0.96);
+   --kro-text-muted: rgba(142, 142, 147, 0.95);
    /* Ритм отступов (8px база) */
    --kro-space-1: 8px;
    --kro-space-2: 16px;
@@ -124,7 +126,7 @@ button:focus-visible {
    --kro-inset-light: inset 0 1px 0 rgba(255, 255, 255, 0.04);
    --kro-btn-hover-y: -3px;
    --kro-btn-active-scale: 0.98;
-   --kro-glow-amber-soft: rgba(245, 158, 11, 0.12);
+   --kro-glow-amber-soft: rgba(197, 160, 89, 0.12);
    --kro-glow-red-soft: rgba(184, 74, 74, 0.2);
    --kro-glow-green-soft: rgba(55, 135, 55, 0.2);
    --kro-glow-purple-soft: rgba(139, 92, 246, 0.15);
@@ -142,10 +144,10 @@ button:focus-visible {
    position: relative;
    z-index: 1;
    overflow: hidden;
-   background: radial-gradient(ellipse 60% 50% at 80% 85%, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
-               radial-gradient(ellipse 50% 40% at 15% 25%, rgba(245, 158, 11, 0.03) 0%, transparent 55%),
-               radial-gradient(ellipse 70% 50% at 50% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
-               linear-gradient(180deg, var(--kro-bg) 0%, rgba(15, 18, 24, 0.98) 100%);
+   background: radial-gradient(ellipse 60% 50% at 80% 85%, rgba(255, 255, 255, 0.035) 0%, transparent 50%),
+               radial-gradient(ellipse 50% 40% at 15% 25%, rgba(197, 160, 89, 0.04) 0%, transparent 55%),
+               radial-gradient(ellipse 70% 50% at 50% 28%, rgba(255, 255, 255, 0.025) 0%, transparent 50%),
+               linear-gradient(180deg, var(--kro-bg-deep) 0%, var(--kro-bg) 42%, var(--kro-bg-mid) 100%);
    transition: opacity var(--kro-duration-reveal) var(--kro-ease-out), transform var(--kro-duration-reveal) var(--kro-ease-out);
 }
 
@@ -203,7 +205,7 @@ body.kro-hero-scrolled .kro-step1 {
    .kro-step1-cta:hover,
    .kro-step1-cta:active {
       transform: none;
-      box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+      box-shadow: 0 0 0 rgba(197, 160, 89, 0);
    }
    .kro-step1-cta:hover::before {
       transform: none;
@@ -211,7 +213,7 @@ body.kro-hero-scrolled .kro-step1 {
    .kro-main .news-footer.kro-footer .news-footer-cta:hover,
    .kro-main .news-footer.kro-footer .news-footer-cta:active {
       transform: none;
-      box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+      box-shadow: 0 0 0 rgba(197, 160, 89, 0);
    }
    .kro-main .news-footer.kro-footer .news-footer-link:hover {
       transform: none;
@@ -236,11 +238,11 @@ body.kro-hero-scrolled .kro-step1 {
    justify-content: space-between;
    padding: 12px 24px 12px 24px;
    border-radius: 999px;
-   background: rgba(10, 12, 16, 0.92);
+   background: rgba(18, 18, 20, 0.94);
    backdrop-filter: blur(24px);
    -webkit-backdrop-filter: blur(24px);
-   border: 1px solid rgba(255, 255, 255, 0.06);
-   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   border: 1px solid rgba(255, 255, 255, 0.065);
+   box-shadow: 0 4px 28px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(197, 160, 89, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.04);
    opacity: 0;
    visibility: hidden;
    pointer-events: none;
@@ -287,7 +289,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    width: 24px;
    height: 24px;
    flex-shrink: 0;
-   background: rgba(255, 255, 255, 0.2);
+   background: var(--kro-accent);
    border-radius: 8px;
    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cline x1='5' y1='5' x2='19' y2='19' stroke='black' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
    mask-size: 14px 14px;
@@ -331,8 +333,8 @@ body.kro-hero-scrolled .kro-floating-nav {
    font-family: var(--kro-font-body);
    padding: 10px 20px;
    border-radius: 999px;
-   background: rgba(245, 158, 11, 0.12);
-   border: 1px solid rgba(245, 158, 11, 0.28);
+   background: rgba(197, 160, 89, 0.12);
+   border: 1px solid rgba(197, 160, 89, 0.28);
    color: rgba(255, 230, 200, 0.95);
    font-weight: 700;
    font-size: 13px;
@@ -341,8 +343,8 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-floating-nav-cta:hover {
-   background: rgba(245, 158, 11, 0.2);
-   border-color: rgba(245, 158, 11, 0.4);
+   background: rgba(197, 160, 89, 0.2);
+   border-color: rgba(197, 160, 89, 0.4);
    color: #fff;
    transform: translateY(-2px);
 }
@@ -404,20 +406,26 @@ body.kro-hero-scrolled .kro-floating-nav {
    max-width: 1000px;
    margin: 0 auto;
    position: relative;
-   padding: 52px 32px 60px;
-   background: rgba(255, 255, 255, 0.025);
-   backdrop-filter: blur(16px);
-   -webkit-backdrop-filter: blur(16px);
-   border-radius: 20px;
-   border: 1px solid rgba(220, 225, 235, 0.08);
-   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   padding: clamp(40px, 5vw, 56px) clamp(28px, 4vw, 40px) clamp(48px, 6vw, 64px);
+   background: linear-gradient(165deg, rgba(28, 28, 30, 0.98) 0%, rgba(18, 18, 20, 0.99) 100%);
+   backdrop-filter: blur(20px);
+   -webkit-backdrop-filter: blur(20px);
+   border-radius: clamp(22px, 3vw, 30px);
+   border: 1px solid rgba(255, 255, 255, 0.065);
+   box-shadow:
+      0 4px 32px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(197, 160, 89, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.045);
    transition: box-shadow var(--kro-duration-hover) ease, border-color var(--kro-duration-hover) ease, transform var(--kro-duration-hover) ease;
 }
 
 .kro-step1-inner:hover {
-   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-   border-color: rgba(220, 225, 235, 0.15);
-   transform: translateY(-5px);
+   box-shadow:
+      0 20px 56px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(197, 160, 89, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   border-color: rgba(255, 255, 255, 0.1);
+   transform: translateY(-4px);
 }
 
 .kro-step1-left {
@@ -448,11 +456,11 @@ body.kro-hero-scrolled .kro-floating-nav {
 /* Hero: строка-роль — нежнее */
 .kro-step1-role {
    font-family: var(--kro-font-body);
-   font-size: 13px;
-   font-weight: 500;
-   letter-spacing: 0.12em;
+   font-size: 12px;
+   font-weight: 600;
+   letter-spacing: 0.14em;
    text-transform: uppercase;
-   color: rgba(255, 255, 255, 0.55);
+   color: var(--kro-text-muted);
    margin: 0 0 16px;
    line-height: 1.45;
 }
@@ -619,7 +627,7 @@ body.kro-hero-scrolled .kro-floating-nav {
       align-items: flex-start;
       text-align: left;
       padding-left: 48px;
-      border-left: 1px solid rgba(255, 255, 255, 0.12);
+      border-left: 1px solid rgba(197, 160, 89, 0.22);
    }
    .kro-step1-cta-note {
       max-width: 260px;
@@ -634,7 +642,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    inset: 0;
    z-index: -1;
    background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
-               linear-gradient(180deg, var(--kro-bg) 0%, rgba(14, 17, 22, 0.98) 45%, var(--kro-bg-soft) 100%);
+               linear-gradient(180deg, var(--kro-bg-deep) 0%, var(--kro-bg) 45%, var(--kro-bg-soft) 100%);
    transform: translateY(var(--kro-parallax-y, 0));
    transition: transform 0.12s ease-out;
 }
@@ -644,7 +652,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    content: '';
    position: absolute;
    inset: 0;
-   background: radial-gradient(ellipse 42% 32% at 50% 42%, rgba(245, 158, 11, 0.07) 0%, transparent 55%);
+   background: radial-gradient(ellipse 42% 32% at 50% 42%, rgba(197, 160, 89, 0.07) 0%, transparent 55%);
    pointer-events: none;
    animation: kro-hero-breathe 20s ease-in-out infinite;
 }
@@ -718,18 +726,20 @@ body.kro-hero-scrolled .kro-floating-nav {
    flex-direction: column;
    align-items: flex-start;
    gap: 8px;
-   padding: 16px 18px;
+   padding: 16px 18px 16px 16px;
    border-radius: 14px;
-   border: 1px solid rgba(255, 255, 255, 0.1);
-   background: rgba(0, 0, 0, 0.25);
-   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   border-left: 2px solid rgba(197, 160, 89, 0.55);
+   background: rgba(0, 0, 0, 0.32);
+   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.035);
    transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .kro-hero-case-card:hover {
-   border-color: rgba(245, 158, 11, 0.35);
+   border-color: rgba(255, 255, 255, 0.12);
+   border-left-color: rgba(197, 160, 89, 0.85);
    transform: translateY(-2px);
-   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+   box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4), 0 0 24px rgba(197, 160, 89, 0.06);
 }
 
 .kro-hero-case-channel {
@@ -743,7 +753,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-hero-case-channel:hover {
-   color: rgba(245, 158, 11, 0.95);
+   color: rgba(197, 160, 89, 0.95);
    text-decoration: underline;
    text-underline-offset: 3px;
 }
@@ -754,18 +764,18 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-hero-case-status {
-   font-size: 12px;
+   font-size: 11px;
    font-weight: 600;
-   letter-spacing: 0.06em;
+   letter-spacing: 0.08em;
    text-transform: uppercase;
-   color: rgba(255, 255, 255, 0.5);
+   color: var(--kro-text-muted);
 }
 
 .kro-hero-case-sum {
    font-family: var(--kro-font-heading);
    font-size: clamp(17px, 2.4vw, 20px);
    font-weight: 600;
-   color: rgba(255, 210, 170, 0.95);
+   color: rgba(216, 200, 165, 0.96);
    font-variant-numeric: tabular-nums;
 }
 
@@ -803,17 +813,17 @@ body.kro-hero-scrolled .kro-floating-nav {
    letter-spacing: -0.02em;
    text-align: center;
    text-decoration: none;
-   color: rgba(12, 10, 8, 0.95);
-   background: linear-gradient(135deg, rgba(245, 158, 11, 1) 0%, rgba(234, 120, 40, 0.98) 100%);
-   border: 1px solid rgba(255, 200, 120, 0.5);
-   box-shadow: 0 8px 32px rgba(245, 158, 11, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+   color: rgba(14, 12, 10, 0.96);
+   background: linear-gradient(145deg, #d8b876 0%, #c5a059 42%, #9a7340 100%);
+   border: 1px solid rgba(255, 220, 180, 0.35);
+   box-shadow: 0 10px 36px rgba(0, 0, 0, 0.35), 0 0 40px rgba(197, 160, 89, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.25);
    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
 .kro-hero-primary-cta:hover {
    transform: translateY(-2px) scale(1.02);
-   filter: brightness(1.06);
-   box-shadow: 0 14px 40px rgba(245, 158, 11, 0.45);
+   filter: brightness(1.05);
+   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.4), 0 0 48px rgba(197, 160, 89, 0.28);
 }
 
 .kro-hero-primary-cta:focus-visible {
@@ -853,13 +863,13 @@ body.kro-hero-scrolled .kro-floating-nav {
    width: min(72px, 18vw);
    height: 3px;
    border-radius: 2px;
-   background: linear-gradient(90deg, rgba(245, 158, 11, 0.95) 0%, rgba(245, 158, 11, 0.12) 100%);
+   background: linear-gradient(90deg, rgba(197, 160, 89, 0.95) 0%, rgba(197, 160, 89, 0.12) 100%);
 }
 
 .kro-step1-subtitle-em {
-   color: rgba(255, 210, 170, 0.96);
+   color: rgba(216, 184, 130, 0.98);
    font-weight: 700;
-   text-shadow: 0 0 28px rgba(245, 158, 11, 0.14);
+   text-shadow: 0 0 32px rgba(197, 160, 89, 0.12);
 }
 
 @media (max-width: 899px) {
@@ -919,33 +929,33 @@ body.kro-hero-scrolled .kro-floating-nav {
    letter-spacing: 0.04em;
    text-transform: uppercase;
    color: rgba(255, 230, 200, 0.92);
-   background-color: rgba(245, 158, 11, 0.12);
+   background-color: rgba(197, 160, 89, 0.12);
    padding: 12px 22px;
-   border: 1px solid rgba(245, 158, 11, 0.35);
+   border: 1px solid rgba(197, 160, 89, 0.35);
    border-radius: 999px;
    text-decoration: none;
    transition: border-color var(--kro-duration-hover) ease, background-color var(--kro-duration-hover) ease, color var(--kro-duration-hover) ease, transform var(--kro-duration-hover) ease, box-shadow var(--kro-duration-hover) ease;
    text-align: center;
    line-height: 1.35;
-   box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+   box-shadow: 0 0 0 rgba(197, 160, 89, 0);
 }
 
 .kro-step1-cta::before {
    content: '';
    width: 14px;
    height: 14px;
-   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f5c88c' stroke-width='2'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") no-repeat center;
+   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23dcc896' stroke-width='2'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") no-repeat center;
    background-size: contain;
    flex-shrink: 0;
    transition: transform var(--kro-duration-hover) ease;
 }
 
 .kro-step1-cta:hover {
-   border-color: rgba(245, 158, 11, 0.55);
-   background-color: rgba(245, 158, 11, 0.24);
+   border-color: rgba(197, 160, 89, 0.55);
+   background-color: rgba(197, 160, 89, 0.24);
    color: rgba(255, 248, 235, 1);
    transform: translateY(-3px) scale(1.05);
-   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.3), 0 0 32px rgba(245, 158, 11, 0.25);
+   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.3), 0 0 32px rgba(197, 160, 89, 0.25);
 }
 
 .kro-step1-cta:active {
@@ -958,9 +968,9 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-step1-cta:focus-visible {
-   outline: 2px solid rgba(245, 158, 11, 0.7);
+   outline: 2px solid rgba(197, 160, 89, 0.7);
    outline-offset: 3px;
-   box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
+   box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.15);
 }
 
 /* Scroll reveal: переменные из набора утилит Hero/Footer */
@@ -1797,7 +1807,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-feature1-top3 li:hover {
    transform: translateY(-4px);
    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-   border-color: rgba(245, 158, 11, 0.25);
+   border-color: rgba(197, 160, 89, 0.25);
 }
 .kro-feature1-top3 li:last-child {
    margin-bottom: 0;
@@ -1912,7 +1922,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 .kro-check-intro-accent {
-   background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 35%, #a78bfa 70%, #8b5cf6 100%);
+   background: linear-gradient(135deg, #c5a059 0%, #d8b876 35%, #a78bfa 70%, #8b5cf6 100%);
    -webkit-background-clip: text;
    background-clip: text;
    -webkit-text-fill-color: transparent;
@@ -1988,11 +1998,11 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 .kro-period-btn:hover {
    transform: translateY(var(--kro-btn-hover-y));
-   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25), 0 0 28px var(--kro-glow-amber-soft), 0 0 40px rgba(245, 158, 11, 0.1);
+   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25), 0 0 28px var(--kro-glow-amber-soft), 0 0 40px rgba(197, 160, 89, 0.1);
 }
 .kro-period-btn:active {
    transform: translateY(0) scale(var(--kro-btn-active-scale));
-   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), 0 0 14px rgba(245, 158, 11, 0.08);
+   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), 0 0 14px rgba(197, 160, 89, 0.08);
    border-radius: 999px;
 }
 .kro-period-btn:focus {
@@ -2054,7 +2064,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 .kro-result-card:hover {
    border-color: rgba(255, 255, 255, 0.1);
-   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 48px rgba(245, 158, 11, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.06);
+   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 48px rgba(197, 160, 89, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 .kro-result-period-banner {
    font-size: clamp(1.1rem, 2.5vw, 1.35rem);
@@ -2062,7 +2072,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    color: var(--kro-accent);
    margin: 0 0 18px 0;
    padding: 12px 0;
-   border-bottom: 2px solid rgba(245, 158, 11, 0.4);
+   border-bottom: 2px solid rgba(197, 160, 89, 0.4);
    letter-spacing: 0.02em;
 }
 .kro-result-card .kro-result-header {
@@ -2107,7 +2117,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    padding: 12px 14px;
    background: rgba(255, 255, 255, 0.02);
    border-radius: 10px;
-   border-left: 3px solid rgba(245, 158, 11, 0.6);
+   border-left: 3px solid rgba(197, 160, 89, 0.6);
 }
 .kro-result-facts-title {
    font-size: 0.95rem;
@@ -2141,10 +2151,10 @@ body.kro-hero-scrolled .kro-floating-nav {
    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
    border-color: rgba(255, 255, 255, 0.1);
 }
-.kro-result-minicard:nth-child(1):hover { border-color: rgba(245, 158, 11, 0.25); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(245, 158, 11, 0.1); }
+.kro-result-minicard:nth-child(1):hover { border-color: rgba(197, 160, 89, 0.25); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(197, 160, 89, 0.1); }
 .kro-result-minicard:nth-child(2):hover { border-color: var(--kro-violet-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(139, 92, 246, 0.1); }
 .kro-result-minicard:nth-child(3):hover { border-color: var(--kro-cyan-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(6, 182, 212, 0.1); }
-.kro-result-minicard:nth-child(4):hover { border-color: rgba(245, 158, 11, 0.25); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(245, 158, 11, 0.1); }
+.kro-result-minicard:nth-child(4):hover { border-color: rgba(197, 160, 89, 0.25); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(197, 160, 89, 0.1); }
 .kro-result-minicard:nth-child(5):hover { border-color: var(--kro-violet-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 28px rgba(139, 92, 246, 0.1); }
 .kro-result-minicard-icon {
    width: 36px;
@@ -2164,10 +2174,10 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 /* Разные акценты + мягкое свечение иконок (как на скрине) */
 .kro-result-minicard:nth-child(1) .kro-result-minicard-icon {
-   background: rgba(245, 158, 11, 0.22);
-   border-color: rgba(245, 158, 11, 0.45);
+   background: rgba(197, 160, 89, 0.22);
+   border-color: rgba(197, 160, 89, 0.45);
    color: var(--kro-accent);
-   box-shadow: 0 0 18px rgba(245, 158, 11, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+   box-shadow: 0 0 18px rgba(197, 160, 89, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .kro-result-minicard:nth-child(2) .kro-result-minicard-icon {
    background: var(--kro-violet-soft);
@@ -2182,10 +2192,10 @@ body.kro-hero-scrolled .kro-floating-nav {
    box-shadow: 0 0 18px rgba(6, 182, 212, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .kro-result-minicard:nth-child(4) .kro-result-minicard-icon {
-   background: rgba(245, 158, 11, 0.22);
-   border-color: rgba(245, 158, 11, 0.45);
+   background: rgba(197, 160, 89, 0.22);
+   border-color: rgba(197, 160, 89, 0.45);
    color: var(--kro-accent);
-   box-shadow: 0 0 18px rgba(245, 158, 11, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+   box-shadow: 0 0 18px rgba(197, 160, 89, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .kro-result-minicard:nth-child(5) .kro-result-minicard-icon {
    background: var(--kro-violet-soft);
@@ -2231,19 +2241,19 @@ body.kro-hero-scrolled .kro-floating-nav {
    font-style: italic;
 }
 .kro-result-card-preview .kro-result-period-banner {
-   background: rgba(245, 158, 11, 0.12);
-   border-color: rgba(245, 158, 11, 0.3);
+   background: rgba(197, 160, 89, 0.12);
+   border-color: rgba(197, 160, 89, 0.3);
 }
 .kro-result-verdict-badge {
    display: inline-block;
    padding: 6px 12px;
-   background: rgba(245, 158, 11, 0.15);
-   border: 1px solid rgba(245, 158, 11, 0.45);
+   background: rgba(197, 160, 89, 0.15);
+   border: 1px solid rgba(197, 160, 89, 0.45);
    border-radius: 10px;
    font-size: 0.875rem;
    font-weight: 600;
    color: var(--kro-accent);
-   box-shadow: 0 0 14px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   box-shadow: 0 0 14px rgba(197, 160, 89, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .kro-result-message {
@@ -2281,7 +2291,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    border-radius: 6px;
    font-family: ui-monospace, monospace;
    font-size: 14px;
-   color: #f59e0b;
+   color: #c5a059;
    user-select: all;
 }
 
@@ -2392,17 +2402,17 @@ body.kro-hero-scrolled .kro-floating-nav {
    font-family: inherit;
    color: #fff;
    cursor: pointer;
-   background: linear-gradient(180deg, rgba(245, 158, 11, 0.35) 0%, rgba(245, 158, 11, 0.22) 100%);
-   border: 1px solid rgba(245, 158, 11, 0.5);
+   background: linear-gradient(180deg, rgba(197, 160, 89, 0.35) 0%, rgba(197, 160, 89, 0.22) 100%);
+   border: 1px solid rgba(197, 160, 89, 0.5);
    border-radius: 999px;
    text-decoration: none;
    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .kro-f1-cta-btn:hover {
    transform: scale(1.03);
-   background: linear-gradient(180deg, rgba(245, 158, 11, 0.45) 0%, rgba(245, 158, 11, 0.28) 100%);
-   border-color: rgba(245, 158, 11, 0.6);
-   box-shadow: 0 4px 20px rgba(245, 158, 11, 0.2);
+   background: linear-gradient(180deg, rgba(197, 160, 89, 0.45) 0%, rgba(197, 160, 89, 0.28) 100%);
+   border-color: rgba(197, 160, 89, 0.6);
+   box-shadow: 0 4px 20px rgba(197, 160, 89, 0.2);
 }
 
 .kro-feature1-report-intro {
@@ -2468,23 +2478,23 @@ body.kro-hero-scrolled .kro-floating-nav {
    letter-spacing: 0.04em;
    text-transform: uppercase;
    color: rgba(255, 235, 210, 0.95);
-   background: linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%);
-   border: 1px solid rgba(245, 158, 11, 0.4);
+   background: linear-gradient(180deg, rgba(197, 160, 89, 0.12) 0%, rgba(197, 160, 89, 0.06) 100%);
+   border: 1px solid rgba(197, 160, 89, 0.4);
    border-radius: 999px;
    cursor: pointer;
    transition: transform 0.2s ease, border-color 0.25s ease, background 0.25s ease, color 0.2s ease, box-shadow 0.25s ease;
-   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2), 0 0 18px rgba(245, 158, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2), 0 0 18px rgba(197, 160, 89, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .kro-report-submit:hover {
-   border-color: rgba(245, 158, 11, 0.55);
-   background: linear-gradient(180deg, rgba(245, 158, 11, 0.18) 0%, rgba(245, 158, 11, 0.1) 100%);
+   border-color: rgba(197, 160, 89, 0.55);
+   background: linear-gradient(180deg, rgba(197, 160, 89, 0.18) 0%, rgba(197, 160, 89, 0.1) 100%);
    color: rgba(255, 248, 235, 1);
    transform: translateY(var(--kro-btn-hover-y));
-   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 28px rgba(245, 158, 11, 0.15), 0 0 40px rgba(245, 158, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 28px rgba(197, 160, 89, 0.15), 0 0 40px rgba(197, 160, 89, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .kro-report-submit:active {
    transform: translateY(0) scale(var(--kro-btn-active-scale));
-   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), 0 0 14px rgba(245, 158, 11, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), 0 0 14px rgba(197, 160, 89, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.04);
    border-radius: 999px;
 }
 .kro-report-submit:focus {
@@ -2581,7 +2591,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    display: none !important;
 }
 .kro-main {
-   background: linear-gradient(180deg, var(--kro-bg) 0%, var(--kro-bg-mid) 28%, var(--kro-bg-soft) 100%);
+   background: linear-gradient(180deg, var(--kro-bg-deep) 0%, var(--kro-bg) 32%, var(--kro-bg-mid) 72%, var(--kro-bg-soft) 100%);
    min-height: 100vh;
    position: relative;
 }
@@ -2645,7 +2655,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    position: absolute;
    inset: 0;
    z-index: -1;
-   background: radial-gradient(ellipse 32% 22% at 50% 30%, rgba(245, 158, 11, 0.05) 0%, transparent 55%),
+   background: radial-gradient(ellipse 32% 22% at 50% 30%, rgba(197, 160, 89, 0.05) 0%, transparent 55%),
                radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.025) 0%, transparent 50%),
                linear-gradient(180deg, var(--kro-bg) 0%, var(--kro-bg-mid) 25%, var(--kro-bg-soft) 100%);
 }
@@ -2733,21 +2743,21 @@ body.kro-hero-scrolled .kro-floating-nav {
    font-weight: 600;
    letter-spacing: 0.04em;
    color: rgba(255, 230, 200, 0.95);
-   background-color: rgba(245, 158, 11, 0.14);
-   border: 1px solid rgba(245, 158, 11, 0.38);
+   background-color: rgba(197, 160, 89, 0.14);
+   border: 1px solid rgba(197, 160, 89, 0.38);
    padding: 14px 26px;
    border-radius: 999px;
    text-decoration: none;
    transition: border-color var(--kro-duration-hover) ease, background-color var(--kro-duration-hover) ease, color var(--kro-duration-hover) ease, transform var(--kro-duration-hover) ease, box-shadow var(--kro-duration-hover) ease;
-   box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+   box-shadow: 0 0 0 rgba(197, 160, 89, 0);
 }
 
 .kro-main .news-footer.kro-footer .news-footer-cta:hover {
-   border-color: rgba(245, 158, 11, 0.55);
-   background-color: rgba(245, 158, 11, 0.24);
+   border-color: rgba(197, 160, 89, 0.55);
+   background-color: rgba(197, 160, 89, 0.24);
    color: rgba(255, 248, 235, 1);
    transform: translateY(-3px) scale(1.05);
-   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.3), 0 0 32px rgba(245, 158, 11, 0.22);
+   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.3), 0 0 32px rgba(197, 160, 89, 0.22);
 }
 
 .kro-main .news-footer.kro-footer .news-footer-cta:active {
@@ -2756,9 +2766,9 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-main .news-footer.kro-footer .news-footer-cta:focus-visible {
-   outline: 2px solid rgba(245, 158, 11, 0.7);
+   outline: 2px solid rgba(197, 160, 89, 0.7);
    outline-offset: 3px;
-   box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
+   box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.15);
 }
 
 /* Нижняя полоса футера: ритм отступов, разделитель, копирайт до самого конца */
@@ -2892,7 +2902,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    align-items: center;
    justify-content: space-between;
    padding: 18px 32px;
-   background: rgba(28, 0, 56, 0.85);
+   background: rgba(14, 14, 16, 0.9);
    backdrop-filter: blur(12px);
    -webkit-backdrop-filter: blur(12px);
    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -2914,7 +2924,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    width: 28px;
    height: 28px;
    flex-shrink: 0;
-   background: #f59e0b;
+   background: #c5a059;
    border-radius: 8px;
    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cline x1='5' y1='5' x2='19' y2='19' stroke='black' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
    mask-size: 18px 18px;
@@ -4584,7 +4594,7 @@ html {
    width: 24px;
    height: 24px;
    flex-shrink: 0;
-   background: #f59e0b;
+   background: #c5a059;
    border-radius: 6px;
    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Cline x1='5' y1='5' x2='19' y2='19' stroke='black' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
    mask-size: 14px 14px;

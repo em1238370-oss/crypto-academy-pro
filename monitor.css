@@ -1,46 +1,56 @@
 /* ============================================================
-   KRO Monitor — executive / medvedevart (анализ §3 типографика):
-   Outfit — заголовки и крупные метрики; Inter — текст, таблицы, UI;
-   IBM Plex Mono — служебные строки (статус, время цикла). Сдержанный премиум.
+   KRO Monitor — executive: тёмно-синяя палитра (navy / slate / индиго).
+   Типографика: Outfit / Inter / IBM Plex Mono.
+   Анимации: hero-каскад, scroll-reveal, волна строк; счётчики — JS при входе «Метрики».
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --mon-bg:         #07080c;
-  --mon-bg-deep:    #05060a;
-  --mon-glass:      rgba(255,255,255,0.055);
-  --mon-glass-hi:   rgba(255,255,255,0.09);
-  --mon-border:     rgba(255,255,255,0.09);
-  --mon-border-hi:  rgba(255,255,255,0.16);
-  --mon-text:       rgba(255,255,255,0.93);
-  --mon-text-dim:   rgba(255,255,255,0.50);
-  --mon-text-fade:  rgba(255,255,255,0.24);
+  /* Мониторинг: глубокий тёмно-синий (navy / slate / индиго) — не яркий голубой */
+  --mon-bg-deep:    #04060f;
+  --mon-bg:         #0a1020;
+  --mon-bg-mid:     #0d1528;
+  --mon-ink:        #020617;
+  --mon-glass:      rgba(120, 160, 220, 0.06);
+  --mon-glass-hi:   rgba(140, 180, 235, 0.1);
+  --mon-border:     rgba(100, 140, 200, 0.12);
+  --mon-border-hi:  rgba(130, 170, 220, 0.22);
+  --mon-text:       rgba(248, 250, 252, 0.94);
+  --mon-text-dim:   rgba(226, 232, 240, 0.45);
+  /* Вторичный: холодный серо-синий (slate) */
+  --mon-text-secondary: rgba(148, 163, 184, 0.92);
+  --mon-text-fade:  rgba(148, 163, 184, 0.28);
 
   --mon-red:        #ff4444;
   --mon-red-dim:    rgba(255,68,68,0.13);
   --mon-red-border: rgba(255,68,68,0.32);
-  --mon-yellow:     #f59e0b;
-  --mon-amber:      #f59e0b;
-  --mon-amber-hot:  #fbbf24;
-  --mon-amber-dim:  rgba(245, 158, 11, 0.12);
-  --mon-amber-border: rgba(245, 158, 11, 0.42);
-  --mon-amber-glow: rgba(245, 158, 11, 0.12);
-  /* Плоские «бумажные» поверхности вместо стекла — как на сдержанных портфолио */
-  --mon-surface:     #0e1015;
-  --mon-surface-hi:  #12151c;
-  --mon-border-quiet: rgba(255, 255, 255, 0.055);
+  /* Акцентные «жёлтые» метки в UI — ледяной сине-стальной (не бронза) */
+  --mon-yellow:     #6b9fe8;
+  --mon-amber:      #5080c8;
+  --mon-amber-hot:  #7eb3f5;
+  --mon-amber-dim:  rgba(80, 130, 200, 0.16);
+  --mon-amber-border: rgba(100, 155, 220, 0.45);
+  --mon-amber-glow: rgba(60, 120, 200, 0.14);
+  /* Карточки и листы — синие «пластины» */
+  --mon-surface:     #0f172a;
+  --mon-surface-hi:  #152238;
+  --mon-border-quiet: rgba(71, 100, 150, 0.22);
   --mon-green:      #22c55e;
-  --mon-grey:       #6b7280;
-  --mon-cyan:       #06b6d4;
-  --mon-violet:     #8b5cf6;
+  --mon-grey:       #64748b;
+  --mon-cyan:       #38bdf8;
+  --mon-violet:     #818cf8;
+  /* Доп. оттенки для фона и свечений */
+  --mon-blue-glow:   rgba(56, 120, 200, 0.14);
+  --mon-blue-mist:   rgba(30, 58, 120, 0.35);
+  --mon-indigo-soft: rgba(79, 70, 180, 0.07);
 
   /* medvedevart §3: геометрический display + нейтральный корпоративный текст */
   --mon-font:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --mon-font-display: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --mon-font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', Monaco, 'Cascadia Code', monospace;
-  --mon-steel:        rgba(110, 122, 145, 0.35);
-  --mon-steel-line:   rgba(72, 82, 104, 0.55);
+  --mon-steel:        rgba(100, 140, 200, 0.22);
+  --mon-steel-line:   rgba(70, 110, 170, 0.42);
 
   --mon-radius:    12px;
   --mon-radius-sm: 8px;
@@ -75,8 +85,8 @@
   --mon-leading-snug:   1.22;
   --mon-leading-tight:  1.05;
   --mon-prose-max:      40rem;
-  --mon-text-prose:     rgba(255, 255, 255, 0.58);
-  --mon-text-prose-hi:  rgba(255, 255, 255, 0.7);
+  --mon-text-prose:     rgba(203, 213, 225, 0.72);
+  --mon-text-prose-hi:  rgba(226, 232, 240, 0.82);
   --mon-tracking-label: 0.09em;
   --mon-tracking-kicker: 0.13em;
 }
@@ -88,8 +98,11 @@ html.lenis {
 }
 
 body {
-  background: var(--mon-bg-deep);
-  background-image: linear-gradient(180deg, var(--mon-bg-deep) 0%, var(--mon-bg) 38%, var(--mon-bg-deep) 100%);
+  background: var(--mon-ink);
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(30, 58, 120, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 100% 60%, rgba(20, 40, 90, 0.18) 0%, transparent 45%),
+    linear-gradient(180deg, var(--mon-bg-deep) 0%, var(--mon-bg) 42%, var(--mon-bg-mid) 100%);
   color: var(--mon-text);
   font-family: var(--mon-font);
   font-size: 16px;
@@ -118,15 +131,16 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   overflow: hidden;
 }
 
-/* Световые пятна: янтарь (бренд) + холодный контраст — всё на пределе видимости */
+/* Световые пятна: тёмно-синий / индиго / глубокий ультрамарин (без яркого cyan) */
 .mon-bg-atmosphere {
   position: absolute;
   inset: -8%;
   background:
-    radial-gradient(ellipse 55% 42% at 50% -5%, rgba(245, 158, 11, 0.09) 0%, transparent 52%),
-    radial-gradient(ellipse 50% 40% at 92% 88%, rgba(245, 158, 11, 0.055) 0%, transparent 48%),
-    radial-gradient(ellipse 45% 38% at 6% 72%, rgba(96, 125, 200, 0.04) 0%, transparent 45%),
-    linear-gradient(165deg, rgba(255, 255, 255, 0.02) 0%, transparent 38%, transparent 62%, rgba(0, 0, 0, 0.12) 100%);
+    radial-gradient(ellipse 58% 44% at 48% -8%, rgba(45, 90, 160, 0.14) 0%, transparent 52%),
+    radial-gradient(ellipse 48% 40% at 94% 85%, rgba(25, 55, 120, 0.18) 0%, transparent 48%),
+    radial-gradient(ellipse 42% 36% at 8% 68%, rgba(55, 75, 160, 0.1) 0%, transparent 46%),
+    radial-gradient(ellipse 50% 38% at 78% 18%, rgba(30, 50, 110, 0.08) 0%, transparent 50%),
+    linear-gradient(165deg, rgba(120, 160, 220, 0.04) 0%, transparent 40%, transparent 58%, rgba(2, 6, 18, 0.35) 100%);
   opacity: 0.92;
   animation: monBgAtmosphere 24s var(--mon-ease-soft) infinite alternate;
   will-change: opacity;
@@ -150,8 +164,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   background: radial-gradient(
     ellipse 92% 88% at 50% 42%,
     transparent 0%,
-    transparent 42%,
-    rgba(5, 7, 11, 0.38) 100%
+    transparent 40%,
+    rgba(2, 6, 20, 0.52) 100%
   );
   opacity: 0.85;
   pointer-events: none;
@@ -161,7 +175,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-bg-dot-grid {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(255,255,255,0.028) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(148, 180, 230, 0.055) 1px, transparent 1px);
   background-size: 40px 40px;
   opacity: 0.22;
   transition: opacity 0.7s var(--mon-ease-soft);
@@ -192,7 +206,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   top: 0;
   z-index: 100;
   border-bottom: 1px solid var(--mon-steel-line);
-  background: rgba(7, 8, 12, 0.94);
+  background: rgba(8, 14, 28, 0.92);
   backdrop-filter: var(--mon-blur);
   -webkit-backdrop-filter: var(--mon-blur);
   opacity: 0;
@@ -239,7 +253,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   right: 0;
   bottom: -2px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.75), rgba(245, 158, 11, 0));
+  background: linear-gradient(90deg, rgba(120, 170, 235, 0.85), rgba(120, 170, 235, 0));
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform var(--mon-fx-hover) var(--mon-fx-hover-ease);
@@ -248,7 +262,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 @media (min-width: 641px) and (hover: hover) {
   .mon-main-nav-brand:hover,
   .mon-main-nav-brand:focus-visible {
-    color: rgba(255, 236, 210, 0.98);
+    color: rgba(220, 235, 255, 0.98);
   }
   .mon-main-nav-brand:hover::after,
   .mon-main-nav-brand:focus-visible::after {
@@ -281,7 +295,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
-  color: var(--mon-text-dim);
+  color: var(--mon-text-secondary);
   padding: 8px 0;
   border: none;
   border-radius: 0;
@@ -293,7 +307,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-family: var(--mon-font);
   font-size: 13px;
   font-weight: 500;
-  color: var(--mon-text-dim);
+  color: var(--mon-text-secondary);
   text-decoration: none;
   padding: 8px 0;
   border-radius: 0;
@@ -307,7 +321,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   bottom: 4px;
   width: 100%;
   height: 1px;
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.9), rgba(245, 158, 11, 0.15));
+  background: linear-gradient(90deg, rgba(120, 170, 235, 0.9), rgba(80, 120, 190, 0.2));
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform var(--mon-fx-hover) var(--mon-fx-hover-ease);
@@ -348,8 +362,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   text-transform: uppercase;
   border-radius: 999px;
   background: transparent;
-  border: 1px solid rgba(245, 158, 11, 0.32);
-  color: rgba(255, 236, 210, 0.92);
+  border: 1px solid rgba(100, 150, 210, 0.42);
+  color: rgba(215, 230, 255, 0.94);
   padding: 10px 20px;
   cursor: pointer;
   box-shadow: none;
@@ -362,11 +376,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 @media (min-width: 641px) and (hover: hover) {
   .mon-refresh-btn:hover {
-    border-color: rgba(245, 158, 11, 0.55);
-    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(130, 175, 235, 0.6);
+    background: rgba(40, 90, 160, 0.2);
     color: #fff;
     transform: translateY(var(--mon-card-lift-sm));
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(245, 158, 11, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 8, 24, 0.4), 0 0 0 1px rgba(80, 130, 200, 0.18);
   }
 }
 .mon-refresh-btn:active { transform: translateY(0); }
@@ -377,11 +391,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   padding: 11px 60px 13px;
   border-top: 1px solid rgba(255, 255, 255, 0.04);
   border-bottom: 1px solid var(--mon-steel-line);
-  background: linear-gradient(180deg, rgba(6, 8, 12, 0.99) 0%, rgba(8, 10, 14, 0.98) 100%);
+  background: linear-gradient(180deg, rgba(10, 16, 32, 0.98) 0%, rgba(6, 10, 22, 0.99) 100%);
   font-family: var(--mon-font-mono);
   font-size: 12px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--mon-text-secondary);
   text-align: center;
   line-height: 1.45;
   letter-spacing: 0.06em;
@@ -392,7 +406,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   max-width: 1240px;
 }
 #mon-live-strip-time {
-  color: rgba(255, 224, 180, 0.95);
+  color: rgba(186, 220, 255, 0.95);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-family: var(--mon-font-display);
@@ -464,14 +478,16 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   opacity: 1;
   transform: translateY(0);
   transition: opacity 0.65s var(--mon-ease-soft), transform 0.65s var(--mon-ease-soft);
-  background: linear-gradient(165deg, rgba(18, 20, 28, 0.96), rgba(10, 12, 18, 0.94));
-  border: 1px solid rgba(255, 255, 255, 0.085);
-  border-radius: 20px;
+  background: linear-gradient(165deg, rgba(22, 32, 52, 0.97) 0%, rgba(12, 18, 36, 0.99) 100%);
+  border: 1px solid rgba(80, 120, 180, 0.18);
+  border-radius: clamp(22px, 3vw, 30px);
   padding: clamp(24px, 3.4vw, 42px);
   padding-left: clamp(28px, 3.8vw, 46px);
   box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+    0 24px 64px rgba(0, 8, 24, 0.55),
+    0 0 0 1px rgba(56, 100, 170, 0.14),
+    0 0 80px rgba(20, 50, 120, 0.12),
+    inset 0 1px 0 rgba(180, 210, 255, 0.06);
   overflow: hidden;
 }
 .mon-hero::before {
@@ -484,14 +500,14 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-radius: 0 4px 4px 0;
   background: linear-gradient(
     180deg,
-    rgba(245, 158, 11, 0.95) 0%,
-    rgba(245, 158, 11, 0.18) 38%,
-    rgba(72, 84, 108, 0.55) 100%
+    rgba(80, 140, 220, 0.9) 0%,
+    rgba(40, 80, 150, 0.45) 42%,
+    rgba(25, 40, 80, 0.35) 100%
   );
   pointer-events: none;
 }
 
-/* После boot: H1 → eyebrow → лид → CTA → aside */
+/* После boot: H1 → eyebrow → лид → теги → CTA → aside */
 .mon-hero-copy > *,
 .mon-hero-aside {
   opacity: 0;
@@ -507,14 +523,17 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-page-ready .mon-hero-copy .mon-hero-tagline {
   animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2);
 }
-.mon-page-ready .mon-hero-copy .mon-hero-cta-row {
+.mon-page-ready .mon-hero-copy .mon-hero-tags {
   animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 3);
+}
+.mon-page-ready .mon-hero-copy .mon-hero-cta-row {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 4);
 }
 
 .mon-hero-aside {
   padding: 22px 24px;
   border: 1px solid var(--mon-border-quiet);
-  border-left: 2px solid rgba(245, 158, 11, 0.28);
+  border-left: 2px solid rgba(80, 130, 200, 0.45);
   border-radius: var(--mon-radius-sm);
   background: var(--mon-surface);
   box-shadow: none;
@@ -523,7 +542,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-page-ready .mon-hero-aside {
   animation: monHeroIn var(--mon-dur-hero) var(--mon-ease-soft) both;
-  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 4);
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 5);
 }
 
 /* Лёгкое приглушение hero при уходе из вьюпорта (контент ниже не «исчезает») */
@@ -566,6 +585,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   color: rgba(255, 255, 255, 0.96);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   position: relative;
+  text-wrap: balance;
 }
 .mon-hero-title-sep {
   font-weight: 600;
@@ -573,7 +593,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   margin: 0 0.08em;
 }
 .mon-hero-title-em {
-  color: rgba(255, 230, 200, 0.96);
+  color: rgba(186, 215, 255, 0.97);
   font-weight: 800;
 }
 /* Линия-акцент под H1 — после окончания входа заголовка */
@@ -585,7 +605,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   height: 3px;
   margin-top: 18px;
   border-radius: 1px;
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.85) 0%, rgba(245, 158, 11, 0.2) 55%, rgba(255, 255, 255, 0.06) 100%);
+  background: linear-gradient(90deg, rgba(100, 160, 230, 0.9) 0%, rgba(60, 100, 180, 0.35) 55%, rgba(255, 255, 255, 0.05) 100%);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 0.95s var(--mon-ease-soft);
@@ -600,8 +620,42 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-weight: 400;
   color: var(--mon-text-prose-hi);
   line-height: var(--mon-leading-body);
-  margin-bottom: 20px;
+  margin-bottom: 18px;
   max-width: var(--mon-prose-max);
+}
+
+/* Теги как на executive-портфолио (анализ §2 hero): каскад после лида */
+.mon-hero-tags {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  max-width: var(--mon-prose-max);
+}
+.mon-hero-tag {
+  font-family: var(--mon-font);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  transition:
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    background var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    color var(--mon-fx-hover) var(--mon-fx-hover-ease);
+}
+@media (min-width: 641px) and (hover: hover) {
+  .mon-hero-tag:hover {
+    border-color: rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.96);
+  }
 }
 
 /* CTA — якорь на метрики/дашборд мониторинга */
@@ -623,10 +677,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: rgba(255, 230, 200, 0.92);
-  background-color: rgba(245, 158, 11, 0.12);
+  color: rgba(220, 235, 255, 0.95);
+  background-color: rgba(40, 90, 160, 0.18);
   padding: 12px 22px;
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  border: 1px solid rgba(100, 150, 220, 0.45);
   border-radius: 999px;
   text-decoration: none;
   transition:
@@ -636,37 +690,37 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
     box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
   line-height: 1.35;
-  box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+  box-shadow: 0 0 0 rgba(40, 100, 200, 0);
 }
 .mon-hero-cta::after {
   content: '';
   width: 14px;
   height: 14px;
   flex-shrink: 0;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f5c88c' stroke-width='2'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") no-repeat center;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a8c8f0' stroke-width='2'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") no-repeat center;
   background-size: contain;
 }
 @media (min-width: 641px) and (hover: hover) {
   .mon-hero-cta:hover {
-    border-color: rgba(245, 158, 11, 0.62);
-    background-color: rgba(245, 158, 11, 0.26);
-    color: rgba(255, 248, 235, 1);
+    border-color: rgba(130, 175, 235, 0.65);
+    background-color: rgba(50, 100, 180, 0.28);
+    color: #fff;
     transform: translateY(var(--mon-card-lift-sm));
     box-shadow:
-      0 10px 36px rgba(0, 0, 0, 0.38),
-      0 0 36px rgba(245, 158, 11, 0.28);
+      0 10px 36px rgba(0, 8, 24, 0.45),
+      0 0 40px rgba(60, 120, 200, 0.22);
   }
 }
 .mon-hero-cta:focus-visible {
-  outline: 2px solid rgba(245, 158, 11, 0.7);
+  outline: 2px solid rgba(120, 170, 240, 0.75);
   outline-offset: 3px;
-  border-color: rgba(245, 158, 11, 0.62);
-  background-color: rgba(245, 158, 11, 0.22);
-  color: rgba(255, 248, 235, 1);
+  border-color: rgba(130, 175, 235, 0.65);
+  background-color: rgba(50, 100, 180, 0.26);
+  color: #fff;
   transform: translateY(var(--mon-card-lift-sm));
   box-shadow:
-    0 10px 36px rgba(0, 0, 0, 0.38),
-    0 0 36px rgba(245, 158, 11, 0.22);
+    0 10px 36px rgba(0, 8, 24, 0.45),
+    0 0 36px rgba(60, 120, 200, 0.2);
 }
 @media (max-width: 640px) {
   .mon-hero-cta { max-width: 100%; }
@@ -694,9 +748,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 12px;
+  font-family: var(--mon-font);
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.56);
   text-decoration: none;
@@ -713,15 +768,15 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 @media (min-width: 641px) and (hover: hover) {
   .mon-hero-jump-link:hover {
-    color: rgba(255, 248, 235, 0.98);
-    border-color: rgba(245, 158, 11, 0.55);
-    background: rgba(245, 158, 11, 0.1);
+    color: rgba(235, 245, 255, 0.98);
+    border-color: rgba(120, 165, 230, 0.55);
+    background: rgba(40, 80, 150, 0.18);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+    box-shadow: 0 6px 22px rgba(0, 8, 24, 0.35);
   }
 }
 .mon-hero-jump-link:focus-visible {
-  outline: 2px solid rgba(245, 158, 11, 0.55);
+  outline: 2px solid rgba(120, 170, 235, 0.55);
   outline-offset: 2px;
 }
 
@@ -757,7 +812,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   height: 2px;
   margin-top: 16px;
   border-radius: 1px;
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.75), transparent);
+  background: linear-gradient(90deg, rgba(110, 160, 230, 0.85), transparent);
 }
 
 .mon-offer-lead {
@@ -826,11 +881,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   letter-spacing: 0.08em;
   text-transform: uppercase;
   text-decoration: none;
-  color: rgba(255, 248, 235, 0.95);
+  color: rgba(220, 235, 255, 0.96);
   padding: 12px 22px;
   border-radius: 999px;
-  border: 1px solid rgba(245, 158, 11, 0.42);
-  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(110, 155, 220, 0.48);
+  background: rgba(35, 75, 140, 0.2);
   transition:
     border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
     background var(--mon-fx-hover) var(--mon-fx-hover-ease),
@@ -840,21 +895,21 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 @media (min-width: 641px) and (hover: hover) {
   .mon-offer-cta:hover {
-    border-color: rgba(245, 158, 11, 0.68);
-    background: rgba(245, 158, 11, 0.16);
+    border-color: rgba(140, 185, 245, 0.65);
+    background: rgba(45, 95, 170, 0.32);
     color: #fff;
     transform: translateY(var(--mon-card-lift-sm));
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), 0 0 24px rgba(245, 158, 11, 0.18);
+    box-shadow: 0 8px 28px rgba(0, 8, 28, 0.4), 0 0 32px rgba(60, 120, 200, 0.2);
   }
 }
 .mon-offer-cta:focus-visible {
-  border-color: rgba(245, 158, 11, 0.68);
-  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(140, 185, 245, 0.65);
+  background: rgba(45, 95, 170, 0.28);
   color: #fff;
-  outline: 2px solid rgba(245, 158, 11, 0.55);
+  outline: 2px solid rgba(120, 170, 240, 0.6);
   outline-offset: 3px;
   transform: translateY(var(--mon-card-lift-sm));
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), 0 0 24px rgba(245, 158, 11, 0.16);
+  box-shadow: 0 8px 28px rgba(0, 8, 28, 0.4), 0 0 28px rgba(60, 120, 200, 0.18);
 }
 .mon-offer-cta-hint {
   font-size: 13px;
@@ -908,7 +963,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 @media (min-width: 641px) and (hover: hover) {
   .mon-route-map-row:hover {
-    background: rgba(245, 158, 11, 0.04);
+    background: rgba(56, 100, 170, 0.08);
   }
 }
 .mon-route-map-row--muted {
@@ -922,7 +977,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-size: 11px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: rgba(245, 158, 11, 0.85);
+  color: rgba(140, 180, 235, 0.9);
   text-align: center;
 }
 .mon-route-map-block {
@@ -938,8 +993,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-route-map-block:hover,
 .mon-route-map-block:focus-visible {
-  color: rgba(253, 224, 171, 0.98);
-  border-bottom-color: rgba(245, 158, 11, 0.45);
+  color: rgba(210, 230, 255, 0.98);
+  border-bottom-color: rgba(120, 165, 230, 0.55);
 }
 .mon-route-map-block--text {
   border-bottom: none;
@@ -969,7 +1024,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   .mon-route-map-num::before {
     content: '№ ';
     font-weight: 600;
-    color: rgba(245, 158, 11, 0.65);
+    color: rgba(130, 170, 230, 0.75);
   }
 }
 
@@ -1109,9 +1164,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-radius: 8px;
 }
 .mon-scheme-node--accent {
-  border-color: rgba(245, 158, 11, 0.32);
-  background: rgba(245, 158, 11, 0.07);
-  color: rgba(255, 250, 240, 0.96);
+  border-color: rgba(100, 150, 210, 0.45);
+  background: rgba(40, 85, 150, 0.22);
+  color: rgba(230, 240, 255, 0.98);
   font-family: var(--mon-font-display);
   letter-spacing: -0.02em;
 }
@@ -1144,9 +1199,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   color: rgba(255,255,255,0.55);
 }
 .mon-scheme-pill--accent {
-  border-color: var(--mon-amber-border);
-  color: rgba(255, 248, 230, 0.92);
-  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(110, 155, 215, 0.5);
+  color: rgba(225, 238, 255, 0.94);
+  background: rgba(40, 85, 150, 0.22);
 }
 .mon-scheme-pill--dim { opacity: 0.85; }
 
@@ -1184,7 +1239,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   box-shadow: none;
   transition: border-color 0.25s var(--mon-ease-out);
 }
-.mon-section:hover { border-color: rgba(255, 255, 255, 0.085); }
+.mon-section:hover { border-color: rgba(100, 140, 200, 0.2); }
 
 /* Главы страницы — как секции medvedevart: разделитель, воздух, без «коробки» вокруг всего */
 .mon-chapter.mon-section {
@@ -1198,7 +1253,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-top: 1px solid var(--mon-border-quiet);
 }
 .mon-chapter.mon-section:hover {
-  border-top-color: rgba(255, 255, 255, 0.07);
+  border-top-color: rgba(90, 130, 190, 0.28);
 }
 
 .mon-chapter-head {
@@ -1237,7 +1292,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   bottom: 0.12em;
   width: 3px;
   border-radius: 2px;
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.95), rgba(245, 158, 11, 0.06));
+  background: linear-gradient(180deg, rgba(120, 170, 240, 0.95), rgba(60, 100, 160, 0.12));
   opacity: 0.95;
 }
 .mon-chapter-title {
@@ -1257,6 +1312,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   color: var(--mon-text-prose-hi);
   margin: 0;
   max-width: var(--mon-prose-max);
+  text-wrap: balance;
 }
 .mon-chapter-lead--inline {
   margin-top: 8px;
@@ -1292,8 +1348,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     transform: translateY(var(--mon-card-lift));
     border-color: rgba(255, 255, 255, 0.13);
     box-shadow:
-      0 18px 48px rgba(0, 0, 0, 0.42),
-      0 0 0 1px rgba(245, 158, 11, 0.06);
+      0 18px 48px rgba(0, 8, 28, 0.48),
+      0 0 0 1px rgba(80, 130, 200, 0.14),
+      0 0 56px rgba(30, 70, 140, 0.1);
   }
 }
 .mon-surface--pad {
@@ -1453,7 +1510,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   content: '';
   width: 3px; height: 3px;
   border-radius: 50%;
-  background: rgba(245, 158, 11, 0.65);
+  background: rgba(120, 170, 235, 0.85);
   box-shadow: none;
   flex-shrink: 0;
 }
@@ -1498,8 +1555,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-object-sheet__title {
   font-family: var(--mon-font-display);
   font-size: clamp(1.2rem, 2.4vw, 1.65rem);
-  font-weight: 800;
-  letter-spacing: -0.035em;
+  font-weight: 700;
+  letter-spacing: -0.032em;
   line-height: var(--mon-leading-tight);
   color: #fff;
   margin: 0 0 10px;
@@ -1511,7 +1568,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 /* Тот же «лист» таблицы, что у раздела «База объектов» (#data-scam) */
 .mon-surface.mon-surface--data-sheet {
-  background: linear-gradient(180deg, rgba(17, 20, 28, 0.98), rgba(13, 15, 22, 0.96));
+  background: linear-gradient(180deg, rgba(15, 24, 42, 0.98), rgba(10, 16, 32, 0.97));
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 14px;
   overflow: hidden;
@@ -1538,13 +1595,13 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary tbody tr:hover td {
-  background: rgba(245, 158, 11, 0.05);
+  background: rgba(56, 100, 170, 0.08);
 }
 
 .mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary td.mon-cell-value-strong {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: rgba(255, 236, 208, 0.96);
+  color: rgba(210, 230, 255, 0.96);
   text-align: right;
   white-space: nowrap;
 }
@@ -1585,10 +1642,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 @media (min-width: 641px) and (hover: hover) {
   .mon-stat-card:hover {
     transform: translateY(var(--mon-card-lift));
-    border-color: rgba(255, 255, 255, 0.16);
+    border-color: rgba(120, 160, 210, 0.35);
     box-shadow:
-      0 16px 44px rgba(0, 0, 0, 0.42),
-      0 0 0 1px rgba(245, 158, 11, 0.12);
+      0 16px 44px rgba(0, 8, 28, 0.48),
+      0 0 0 1px rgba(80, 130, 200, 0.2),
+      0 0 48px rgba(30, 70, 140, 0.12);
   }
 }
 
@@ -1618,6 +1676,20 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-stat-value.green  { color: var(--mon-green); }
 .mon-stat-value.yellow { color: var(--mon-yellow); }
 .mon-stat-value.cyan   { color: var(--mon-cyan); }
+
+/* «N из M» — крупное число (display), суффикст как подпись (Inter), §3–4 medvedevart */
+.mon-stat-value .mon-stat-value-suffix {
+  font-family: var(--mon-font);
+  font-size: clamp(13px, 1.25vw, 16px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  margin-left: 0.1em;
+  color: rgba(255, 255, 255, 0.52);
+}
+.mon-stat-value.cyan .mon-stat-value-suffix {
+  color: rgba(125, 211, 252, 0.78);
+}
 
 .mon-badge {
   display: inline-flex;
@@ -1882,7 +1954,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 /* Первая таблица monitor (База объектов) — максимально близко к главной карточке */
 #data-scam .mon-surface {
-  background: linear-gradient(180deg, rgba(17, 20, 28, 0.98), rgba(13, 15, 22, 0.96));
+  background: linear-gradient(180deg, rgba(15, 24, 42, 0.98), rgba(10, 16, 32, 0.97));
   border-color: rgba(255, 255, 255, 0.09);
   box-shadow: 0 18px 46px rgba(0, 0, 0, 0.3);
 }
@@ -1895,8 +1967,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-color: rgba(255, 255, 255, 0.16);
 }
 #data-scam .mon-search-input:focus {
-  border-color: rgba(245, 158, 11, 0.46);
-  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.16);
+  border-color: rgba(110, 155, 215, 0.55);
+  box-shadow: 0 0 0 1px rgba(70, 120, 190, 0.22);
 }
 #data-scam .mon-table th {
   background: rgba(255, 255, 255, 0.045);
@@ -1906,18 +1978,18 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 #data-scam .mon-table tbody tr:hover td {
-  background: rgba(245, 158, 11, 0.07);
+  background: rgba(56, 100, 170, 0.1);
 }
 #data-scam .mon-table tbody tr:hover td:first-child {
-  box-shadow: inset 3px 0 0 rgba(245, 158, 11, 0.55);
+  box-shadow: inset 3px 0 0 rgba(100, 150, 220, 0.65);
 }
 #data-scam .mon-cell-channel a.mon-channel-profile-link {
-  color: rgba(255, 236, 208, 0.95);
-  border-bottom-color: rgba(245, 158, 11, 0.4);
+  color: rgba(210, 228, 255, 0.96);
+  border-bottom-color: rgba(120, 165, 230, 0.45);
 }
 #data-scam .mon-cell-channel a.mon-channel-profile-link:hover {
   color: #fff;
-  border-bottom-color: rgba(245, 158, 11, 0.72);
+  border-bottom-color: rgba(150, 190, 255, 0.75);
 }
 
 .mon-cell-num      { color: var(--mon-text-fade); font-size: 11px; font-weight: 700; width: 36px; text-align: right; padding-right: 8px; }
@@ -1929,7 +2001,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-cell-compact  { font-size: 12px; }
 .mon-cell-ca       { min-width: 140px; }
 .mon-cell-type     { font-size: 12px; vertical-align: top; }
-.mon-type-bad      { color: var(--mon-yellow, #facc15); font-size: 12px; line-height: 1.35; }
+.mon-type-bad      { color: var(--mon-yellow, #7eb3f5); font-size: 12px; line-height: 1.35; }
 .mon-type-bad-num  { color: var(--mon-text-dim); font-weight: 600; }
 .mon-comp-main     { font-weight: 600; }
 .mon-comp-hint     {
@@ -1988,15 +2060,15 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-status.scam::before       { content: '●'; font-size: 7px; opacity: 0.9; }
 .mon-status.watch {
-  background: rgba(245,158,11,0.12);
-  color: #fbbf24;
-  border-color: rgba(245,158,11,0.26);
+  background: rgba(59, 130, 200, 0.14);
+  color: #7eb3f5;
+  border-color: rgba(100, 160, 220, 0.32);
 }
 .mon-status.watch::before      { content: '●'; font-size: 7px; opacity: 0.85; }
 .mon-status.behavioral {
-  background: rgba(245,158,11,0.12);
-  color: #fbbf24;
-  border-color: rgba(245,158,11,0.26);
+  background: rgba(59, 130, 200, 0.14);
+  color: #7eb3f5;
+  border-color: rgba(100, 160, 220, 0.32);
 }
 .mon-status.behavioral::before { content: '●'; font-size: 7px; opacity: 0.85; }
 .mon-status.clean {
@@ -2098,6 +2170,18 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     border-color: rgba(255, 255, 255, 0.11);
   }
 }
+
+/* Кейсы: волна fade-up при появлении секции (анализ §4, stagger 0.05–0.15s) */
+#recent-cases.mon-section.mon-visible .mon-cases-grid .mon-case-card {
+  opacity: 0;
+  animation: monRouteMapRowIn var(--mon-dur-reveal) var(--mon-ease-soft) both;
+}
+#recent-cases.mon-section.mon-visible .mon-cases-grid .mon-case-card:nth-child(1) { animation-delay: 0.06s; }
+#recent-cases.mon-section.mon-visible .mon-cases-grid .mon-case-card:nth-child(2) { animation-delay: 0.14s; }
+#recent-cases.mon-section.mon-visible .mon-cases-grid .mon-case-card:nth-child(3) { animation-delay: 0.22s; }
+#recent-cases.mon-section.mon-visible .mon-cases-grid .mon-case-card:nth-child(4) { animation-delay: 0.3s; }
+#recent-cases.mon-section.mon-visible .mon-cases-grid .mon-case-card:nth-child(5) { animation-delay: 0.38s; }
+#recent-cases.mon-section.mon-visible .mon-cases-grid .mon-case-card:nth-child(6) { animation-delay: 0.46s; }
 
 .mon-case-channel-row {
   margin: 0;
@@ -2363,6 +2447,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     animation: none !important;
     filter: none !important;
   }
+  #recent-cases.mon-section.mon-visible .mon-cases-grid .mon-case-card {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
   .mon-row-appear,
   tr.mon-row-appear,
   article.mon-row-appear {
@@ -2425,7 +2514,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-verify-meta { margin-top: 6px; font-size: 11px; color: var(--mon-text-dim); }
 .mon-verify-step { margin-top: 5px; font-size: 11px; color: rgba(255,255,255,0.78); }
 .mon-verify-step--muted { color: var(--mon-text-dim); }
-.mon-verify-llm { margin-top: 6px; font-size: 10px; line-height: 1.4; color: var(--mon-yellow, #facc15); opacity: 0.95; }
+.mon-verify-llm { margin-top: 6px; font-size: 10px; line-height: 1.4; color: var(--mon-yellow, #7eb3f5); opacity: 0.95; }
 .mon-source-link { font-size: 12px; }
 
 /* ── ROW APPEAR ──────────────────────────────────────────── */
@@ -2443,7 +2532,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 #mon-boot-overlay.mon-boot-overlay {
   position: fixed; inset: 0; z-index: 1000;
-  background: #0a0c10;
+  background: #050810;
   display: flex; align-items: center; justify-content: center;
   transition: opacity var(--mon-dur-boot-fade) var(--mon-ease-soft);
 }
@@ -2578,7 +2667,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 .mon-boot-terminal-frame {
   padding: 0;
-  background: #111318;
+  background: #0c1424;
   position: relative;
   z-index: 1;
 }
@@ -2640,7 +2729,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   height: 100%;
   width: 0%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #5c2a18, var(--mon-red) 36%, var(--mon-amber) 88%, var(--mon-amber-hot));
+  background: linear-gradient(90deg, #0f2847, #1a3a5c 22%, var(--mon-red) 42%, #2d5a9e 72%, var(--mon-amber-hot) 100%);
   box-shadow: none;
   transition: width 0.34s var(--mon-ease-soft);
 }
@@ -2785,6 +2874,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     opacity: 1 !important;
     transform: none !important;
   }
+  #recent-cases.mon-section.mon-visible .mon-cases-grid .mon-case-card {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
   .mon-page.mon-hero-offscreen .mon-hero {
     opacity: 1 !important;
     transform: none !important;
@@ -2906,13 +3000,13 @@ a.mon-channel-profile-link {
   color: var(--mon-amber-hot);
   font-weight: 600;
   text-decoration: none;
-  border-bottom: 1px solid rgba(251, 191, 36, 0.35);
+  border-bottom: 1px solid rgba(120, 170, 235, 0.4);
   transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 a.mon-channel-profile-link:hover {
-  color: #fcd34d;
-  border-bottom-color: rgba(252, 211, 77, 0.55);
+  color: #b8d4ff;
+  border-bottom-color: rgba(160, 200, 255, 0.6);
 }
 
 a.mon-channel-external {

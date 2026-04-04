@@ -3293,7 +3293,7 @@ def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_cha
 
 
 def _write_channels_watch_to_sheet(watch_rows, client, sheet_id):
-    """Upsert wide monitoring rows into channels_watch sheet."""
+    """Перезаписывает channels_watch снимком текущего цикла (без накопления истории)."""
     if not client or not sheet_id:
         return []
 
@@ -3315,7 +3315,7 @@ def _write_channels_watch_to_sheet(watch_rows, client, sheet_id):
             client.spreadsheets().values().update(
                 spreadsheetId=sheet_id,
                 range='%s!A1:M1' % sheet_name,
-                valueInputOption='USER_ENTERED',
+                valueInputOption='RAW',
                 body={'values': header}
             ).execute()
     except Exception as e:
@@ -3323,57 +3323,39 @@ def _write_channels_watch_to_sheet(watch_rows, client, sheet_id):
         return []
 
     try:
-        existing_resp = client.spreadsheets().values().get(
+        client.spreadsheets().values().clear(
             spreadsheetId=sheet_id,
-            range='%s!A2:M' % sheet_name
+            range='%s!A2:M50000' % sheet_name,
+            body={},
         ).execute()
-        existing_rows = existing_resp.get('values', []) or []
     except Exception as e:
-        print('channels_watch read error: %s' % e, file=sys.stderr)
-        existing_rows = []
+        print('channels_watch clear error: %s' % e, file=sys.stderr)
+        return []
 
-    row_map = {}
-    for idx, row in enumerate(existing_rows, start=2):
-        key = _norm_ch_key((row[0] if row else '').strip())
-        if key:
-            row_map[key] = idx
-
-    updated = []
-    append_rows = []
+    rows_out = []
     for row in (watch_rows or []):
         key = _norm_ch_key(row[0] if row else '')
         if not key or key in _KNOWN_NON_SCAM_CHANNELS:
             continue
-        if key in row_map:
-            try:
-                client.spreadsheets().values().update(
-                    spreadsheetId=sheet_id,
-                    range='%s!A%d:M%d' % (sheet_name, row_map[key], row_map[key]),
-                    valueInputOption='USER_ENTERED',
-                    body={'values': [row]}
-                ).execute()
-                updated.append(row[0])
-            except Exception as e:
-                print('channels_watch update error for %s: %s' % (row[0], e), file=sys.stderr)
-        else:
-            append_rows.append(row)
-            updated.append(row[0])
+        rows_out.append(row)
 
-    if append_rows:
-        try:
-            client.spreadsheets().values().append(
-                spreadsheetId=sheet_id,
-                range='%s!A:M' % sheet_name,
-                valueInputOption='USER_ENTERED',
-                insertDataOption='INSERT_ROWS',
-                body={'values': append_rows}
-            ).execute()
-        except Exception as e:
-            print('channels_watch append error: %s' % e, file=sys.stderr)
+    if not rows_out:
+        print('channels_watch: 0 каналов в цикле (лист очищен до заголовка).', file=sys.stderr)
+        return []
 
-    if updated:
-        print('channels_watch: upsert %d каналов.' % len(updated), file=sys.stderr)
-    return updated
+    try:
+        client.spreadsheets().values().update(
+            spreadsheetId=sheet_id,
+            range='%s!A2' % sheet_name,
+            valueInputOption='RAW',
+            body={'values': rows_out}
+        ).execute()
+        print('channels_watch: записано %d каналов (снимок текущего цикла).' % len(rows_out), file=sys.stderr)
+    except Exception as e:
+        print('channels_watch write error: %s' % e, file=sys.stderr)
+        return []
+
+    return [r[0] for r in rows_out]
 
 
 def _write_channels_network_to_sheet(network_rows, client, sheet_id):
