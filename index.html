@@ -129,7 +129,7 @@
                <div class="kro-feature1-stats">
                    <div class="kro-feature1-stat kro-card">
                    <span class="kro-feature1-stat-value" id="kro-stat-lost">—</span>
-                   <span class="kro-feature1-stat-label">Потеряно ₽</span>
+                   <span class="kro-feature1-stat-label">Потеряно ₽ за 12 ч</span>
                </div>
                <div class="kro-feature1-stat kro-card">
                    <span class="kro-feature1-stat-value" id="kro-stat-channels">—</span>
@@ -137,7 +137,7 @@
                </div>
                <div class="kro-feature1-stat kro-card">
                    <span class="kro-feature1-stat-value" id="kro-stat-courses">—</span>
-                   <span class="kro-feature1-stat-label">Курсы фейк-продуктов</span>
+                   <span class="kro-feature1-stat-label">Курсы / сайты за 12 ч</span>
                </div>
                </div>
                <p class="kro-feature1-dashboard-sub kro-scroll-in">Цифры обновляются автоматически</p>
@@ -616,7 +616,7 @@
            }
            function applyData(data) {
                var el;
-               var ch12 = data.new_in_cycle != null && data.new_in_cycle !== '' ? Number(data.new_in_cycle) : Number(data.channelsToday);
+               var ch12 = Number(data.channelsToday);
                if (!isFinite(ch12)) ch12 = 0;
                var chTotal = Number(data.channelsTotal);
                if (!isFinite(chTotal)) chTotal = 0;

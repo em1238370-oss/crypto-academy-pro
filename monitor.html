@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260404-type-medvedev2">
+  <link rel="stylesheet" href="/monitor.css?v=20260404-medvedev-motion">
 </head>
 <body class="mon-page">
 
@@ -85,6 +85,12 @@
       <h1 id="mon-hero-title" class="mon-hero-title">Мониторинг <span class="mon-hero-title-sep">/</span> <span class="mon-hero-title-em">Антискам</span></h1>
       <p class="mon-hero-eyebrow">Снимок системы · проверка каналов · открытые источники</p>
       <p class="mon-hero-tagline">Живой дашборд базы и циклов. Факты и ссылки на первоисточники — без лишнего шума.</p>
+      <ul class="mon-hero-tags" aria-label="Темы дашборда">
+        <li class="mon-hero-tag">Google Sheets</li>
+        <li class="mon-hero-tag">Цикл 12 ч</li>
+        <li class="mon-hero-tag">Публичные источники</li>
+        <li class="mon-hero-tag">Проверяемость</li>
+      </ul>
       <div class="mon-hero-cta-row">
         <a class="mon-hero-cta" href="#metrics">К метрикам и таблицам</a>
       </div>
@@ -248,7 +254,7 @@
         </div>
         <div class="mon-stat-card">
           <div class="mon-stat-label">активных источников</div>
-          <div class="mon-stat-value cyan" id="s1-sources-active">—</div>
+          <div class="mon-stat-value cyan" id="s1-sources-active"><span id="s1-sources-n">—</span><span id="s1-sources-suffix" class="mon-stat-value-suffix"></span></div>
         </div>
       </div>
       </div>
@@ -367,6 +373,21 @@
       <div class="mon-log" id="s2-log">
         <div class="mon-loading mon-spinner">Загружаю данные цикла</div>
       </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mon-chapter mon-section mon-reveal" id="findings-12h" aria-labelledby="mon-findings-12h-heading">
+    <header class="mon-chapter-head">
+      <p class="mon-chapter-kicker">06b · Скользящее окно</p>
+      <h2 id="mon-findings-12h-heading" class="mon-chapter-title">Найдено за последние 12 часов</h2>
+      <p class="mon-chapter-lead">Строки scam_base с датой обнаружения в окне 12 ч (как на главной для «Потеряно ₽ за 12 ч»). Колонки совпадают по смыслу с листом: тип объекта, первоисточник, доказательства — почему канал в базе.</p>
+    </header>
+    <div class="mon-chapter-body">
+      <div class="mon-surface mon-surface--pad">
+        <div class="mon-table-wrap" id="s2-findings-12h-wrap">
+          <div class="mon-loading mon-spinner" style="padding:32px">Загружаю…</div>
+        </div>
       </div>
     </div>
   </section>
@@ -1321,6 +1342,68 @@
     requestAnimationFrame(step);
   }
 
+  /** Число в span (суффикст « из N» снаружи) — §4 анализа medvedevart, счётчики 1–2 с */
+  function countUpPlainNumber(elId, target, duration) {
+    var el = document.getElementById(elId);
+    if (!el || isNaN(target) || target < 0) return;
+    duration = duration || 1450;
+    if (target === 0) {
+      el.textContent = '0';
+      return;
+    }
+    var start = performance.now();
+    function step(now) {
+      var t = Math.min((now - start) / duration, 1);
+      var ease = 1 - Math.pow(1 - t, 2.6);
+      el.textContent = String(Math.round(ease * target));
+      if (t < 1) requestAnimationFrame(step);
+      else el.textContent = String(target);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function setSourcesActivePlain(active, totalSrc) {
+    var el = document.getElementById('s1-sources-active');
+    if (!el) return;
+    el.textContent = String(active) + ' из ' + String(totalSrc);
+  }
+
+  function setSourcesActiveForCountUp(totalSrc) {
+    var el = document.getElementById('s1-sources-active');
+    if (!el) return;
+    el.innerHTML = '<span id="s1-sources-n">0</span><span id="s1-sources-suffix" class="mon-stat-value-suffix"> из ' +
+      String(totalSrc) + '</span>';
+  }
+
+  function tryFlushMetricCounts(force) {
+    var p = window.__monMetricCountPending;
+    if (!p) return;
+    var m = document.getElementById('metrics');
+    if (!force && (!m || !m.classList.contains('mon-visible'))) return;
+    window.__monMetricCountPending = null;
+    if (window.__monMetricFallbackT) {
+      clearTimeout(window.__monMetricFallbackT);
+      window.__monMetricFallbackT = null;
+    }
+    if (p.newCount > 0) countUp('s1-new-in-cycle', p.newCount, ' каналов', 1750);
+    else setText('s1-new-in-cycle', '0 каналов');
+    if (p.total > 0) countUp('s1-total', p.total, ' каналов', 2100);
+    else setText('s1-total', '0 каналов');
+    countUpPlainNumber('s1-sources-n', p.active, 1500);
+  }
+
+  function scheduleMetricCountFlush() {
+    if (window.__monMetricFallbackT) {
+      clearTimeout(window.__monMetricFallbackT);
+      window.__monMetricFallbackT = null;
+    }
+    tryFlushMetricCounts(false);
+    window.__monMetricFallbackT = setTimeout(function() {
+      window.__monMetricFallbackT = null;
+      tryFlushMetricCounts(true);
+    }, 1650);
+  }
+
   function renderStatus(meta, scamBase, statusSummary, channelsTotalConfirmed, confirmedSummary) {
     var lastMs = parseLastCycleAt(meta.last_cycle_at);
     var cycleDt = fmtMoscowPlainFromRaw(meta.last_cycle_at);
@@ -1340,11 +1423,25 @@
       if (strip) strip.classList.add('mon-live-strip--error');
       setText('mon-cycle-warning', ' · данные могут быть устаревшими');
     }
-    if (newCount > 0) countUp('s1-new-in-cycle', newCount, ' каналов', 1750);
-    else setText('s1-new-in-cycle', '0 каналов');
-    if (total > 0) countUp('s1-total', total, ' каналов', 2100);
-    else setText('s1-total', '0 каналов');
-    setText('s1-sources-active', active + ' из ' + (meta.sources_checked || []).length);
+
+    var totalSrc = (meta.sources_checked || []).length;
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      window.__monMetricCountPending = null;
+      if (window.__monMetricFallbackT) {
+        clearTimeout(window.__monMetricFallbackT);
+        window.__monMetricFallbackT = null;
+      }
+      setText('s1-new-in-cycle', newCount === 0 ? '0 каналов' : newCount + ' каналов');
+      setText('s1-total', total === 0 ? '0 каналов' : total + ' каналов');
+      setSourcesActivePlain(active, totalSrc);
+    } else {
+      setText('s1-new-in-cycle', '0 каналов');
+      setText('s1-total', '0 каналов');
+      setSourcesActiveForCountUp(totalSrc);
+      window.__monMetricCountPending = { newCount: newCount, total: total, active: active, totalSrc: totalSrc };
+      scheduleMetricCountFlush();
+    }
 
     var ss = (confirmedSummary && typeof confirmedSummary === 'object') ? confirmedSummary : (statusSummary || {});
     var confirmed = Number(ss.confirmed_scam || 0);
@@ -1359,15 +1456,19 @@
     );
   }
 
-  function renderMetricTables(meta, channelsTotal, confirmedSummary) {
+  function renderMetricTables(meta, channelsTotal, confirmedSummary, rollup12) {
     var wrap = document.getElementById('mon-metrics-tables');
     if (!wrap) return;
     confirmedSummary = confirmedSummary || {};
+    rollup12 = rollup12 || {};
     var cycleTime = fmtMoscowPlainFromRaw(meta.last_cycle_at);
     var newC = Number(meta.new_in_cycle || 0);
     var src = meta.sources_checked || [];
     var srcOk = src.filter(function(s) { return s.status === 'found'; }).length;
     var chTot = typeof channelsTotal === 'number' ? channelsTotal : 0;
+    var r12n = Number(rollup12.new_count);
+    var r12l = Number(rollup12.losses_rub);
+    var r12c = Number(rollup12.complaints);
 
     function sumRow(label, val) {
       return '<tr><td class="mon-cell-muted">' + esc(label) + '</td><td class="mon-cell-value-strong">' + esc(String(val)) + '</td></tr>';
@@ -1393,7 +1494,10 @@
     var table1 =
       '<thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>' +
       sumRow('Дата и время последнего цикла', cycleTime) +
-      sumRow('Новых каналов за цикл', newC) +
+      sumRow('Новых каналов за цикл (kro_meta)', newC) +
+      (isFinite(r12n) ? sumRow('Объектов за 12 ч по дате обнаружения (scam_base)', r12n) : '') +
+      (isFinite(r12l) ? sumRow('Потери ₽ за 12 ч (те же объекты)', (Math.round(r12l) || 0).toLocaleString('ru-RU') + ' ₽') : '') +
+      (isFinite(r12c) ? sumRow('Сумма «жалоб» в строках за 12 ч', r12c) : '') +
       sumRow('Источников опрошено / ответили «нашёл»', src.length + ' / ' + srcOk) +
       '</tbody>';
 
@@ -1418,7 +1522,7 @@
       objectSheetBlock(
         'Таблица · scam_base',
         'База объектов (итог)',
-        'Те же правила отбора и дедупликации, что на главной странице: сколько объектов в подтверждённой базе и разбивка по статусам.',
+        'Полный снимок подтверждённой базы после фильтров сайта (не ограничен 12 ч). Ниже отдельная таблица — только скользящие 12 ч.',
         table2
       );
 
@@ -1517,14 +1621,14 @@
       el.innerHTML = '<div class="mon-cases-empty">В последнем опубликованном снимке сводки жалоб пока нет строк — после следующего цикла мониторинга здесь появятся до трёх случаев с каналом, суммой и ссылкой на первоисточник.</div>';
       return;
     }
-    var html = list.map(function(c, i) {
+    var html = list.map(function(c) {
       var chUrl = c.channel_url || '';
       var chLabel = c.channel_label || c.channel || 'канал';
       var channelBlock = chUrl
         ? renderExternalLink(chUrl, chLabel, 'mon-external-link mon-case-channel')
         : '<span class="mon-case-channel mon-case-channel--text">' + esc(chLabel) + '</span>';
       var lossClass = (c.loss_rub && Number(c.loss_rub) > 0) ? 'mon-case-loss' : 'mon-case-loss mon-case-loss--muted';
-      return '<article class="mon-case-card mon-row-appear" style="animation-delay:' + Math.min(i * 90, 400) + 'ms">' +
+      return '<article class="mon-case-card">' +
         '<h3 class="mon-case-channel-row">' + channelBlock + '</h3>' +
         '<p class="' + lossClass + '" aria-label="Сумма потерь по сводке">' + esc(fmtLossRub(c.loss_rub)) + '</p>' +
         '<p class="mon-case-story">' + esc(c.summary || '') + '</p>' +
@@ -1532,6 +1636,60 @@
         '</article>';
     }).join('');
     el.innerHTML = html;
+  }
+
+  function renderFindings12h(rows) {
+    var wrap = document.getElementById('s2-findings-12h-wrap');
+    if (!wrap) return;
+    var list = Array.isArray(rows) ? rows : [];
+    if (!list.length) {
+      wrap.innerHTML = '<div class="mon-loading">За последние 12 ч нет строк scam_base с датой обнаружения в этом окне (или после фильтров сайта список пуст).</div>';
+      return;
+    }
+    var tableHtml = '<table class="mon-table">' +
+      '<thead><tr>' +
+      '<th style="width:36px">#</th>' +
+      '<th title="Колонка A листа scam_base">Объект</th>' +
+      '<th title="Тип: сигнал‑канал, обменник, курс…">Тип объекта</th>' +
+      '<th title="Первоисточник (source_primary / J)">Первоисточник</th>' +
+      '<th title="Сводка: тип + источник + цитата из доказательств">Почему в базе</th>' +
+      '<th title="Число жалоб в строке (H)">Жалоб</th>' +
+      '<th title="Потери ₽ в строке (I)">Потери ₽</th>' +
+      '<th title="Статус строки (M)">Статус</th>' +
+      '<th title="Дата обнаружения (C), ISO в таблице">Обнаружен</th>' +
+      '</tr></thead><tbody>';
+    list.forEach(function(r, idx) {
+      var slug = encodeURIComponent((r.username || '').trim());
+      var profHref = '/channel/' + slug;
+      var lossTxt = fmtLossRub(r.total_loss_rub);
+      var reason = (r.reason_summary || '').trim();
+      tableHtml += '<tr>' +
+        '<td class="mon-cell-num">' + (idx + 1) + '</td>' +
+        '<td class="mon-cell-channel"><a class="mon-channel-profile-link" href="' + esc(profHref) + '" target="_blank" rel="noopener noreferrer">' + esc(r.username || '—') + '</a></td>' +
+        '<td class="mon-cell-type">' + esc(r.object_type || '—') + '</td>' +
+        '<td class="mon-cell-muted">' + esc((r.source_primary || '').slice(0, 140)) + ((r.source_primary || '').length > 140 ? '…' : '') + '</td>' +
+        '<td><div class="mon-evidence" title="' + esc(reason) + '">' + esc(reason.slice(0, 320)) + (reason.length > 320 ? '…' : '') + '</div></td>' +
+        '<td class="mon-cell-muted">' + esc(r.complaints != null && r.complaints !== '' ? String(r.complaints) : '—') + '</td>' +
+        '<td class="mon-cell-muted">' + esc(lossTxt) + '</td>' +
+        '<td><span class="mon-status ' + statusClass(r.status) + '">' + esc(r.status || '—') + '</span></td>' +
+        '<td class="mon-cell-muted mon-cell-date">' + esc(fmtDateShort(r.detected_at)) + '</td>' +
+        '</tr>';
+    });
+    tableHtml += '</tbody></table>';
+    wrap.innerHTML = tableHtml;
+    var trs = wrap.querySelectorAll('tbody tr');
+    trs.forEach(function(tr, i) {
+      tr.classList.add('mon-row-appear');
+      tr.style.animationDelay = Math.min(i * 50, 900) + 'ms';
+    });
+    var profileLinks = wrap.querySelectorAll('a.mon-channel-profile-link');
+    profileLinks.forEach(function(a) {
+      a.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        var href = a.getAttribute('href') || '';
+        if (href) window.open(href, '_blank', 'noopener,noreferrer');
+      });
+    });
   }
 
   // ── SECTION 3: SCAM BASE TABLE ────────────────────────────
@@ -1804,10 +1962,17 @@
     requestPending = true;
     countdown = REFRESH_INTERVAL;
 
+    if (window.__monMetricFallbackT) {
+      clearTimeout(window.__monMetricFallbackT);
+      window.__monMetricFallbackT = null;
+    }
+    window.__monMetricCountPending = null;
+
     setText('mon-live-strip-time', 'загрузка');
 
     // Reset loading states
     setHTML('s2-log', '<div class="mon-loading mon-spinner">Загружаю данные цикла</div>');
+    setHTML('s2-findings-12h-wrap', '<div class="mon-loading mon-spinner" style="padding:32px">Загружаю таблицу за 12 ч…</div>');
     setHTML('s3-table-wrap', '<div class="mon-loading mon-spinner" style="padding:32px">Загружаю базу</div>');
     setHTML('s4-watch-wrap', '<div class="mon-loading mon-spinner" style="padding:32px">Загружаю широкий мониторинг</div>');
     setHTML('s4-network-wrap', '<div class="mon-loading mon-spinner" style="padding:32px">Загружаю связи каналов</div>');
@@ -1833,9 +1998,10 @@
 
       var chTotalApi = data.channels_total;
       renderStatus(meta, scamBase, data.status_summary || {}, chTotalApi, data.confirmed_status_summary);
-      renderMetricTables(meta, typeof chTotalApi === 'number' ? chTotalApi : (scamBase || []).length, data.confirmed_status_summary);
+      renderMetricTables(meta, typeof chTotalApi === 'number' ? chTotalApi : (scamBase || []).length, data.confirmed_status_summary, data.rollup_12h || {});
       renderCycleLog(meta, scamBase);
       renderRecentCases(data.recent_cases || []);
+      renderFindings12h(data.findings_12h || []);
       renderScamBase(scamBase);
       renderChannelsWatch(watchRows);
       renderChannelNetworks(networkRows);
@@ -1855,6 +2021,7 @@
       if (strip) strip.classList.add('mon-live-strip--error');
       var msg = '<div class="mon-error">Ошибка загрузки данных: ' + esc(err.message) + '</div>';
       setHTML('s2-log', msg);
+      setHTML('s2-findings-12h-wrap', msg);
       setHTML('s3-table-wrap', msg);
       setHTML('s4-watch-wrap', msg);
       setHTML('s4-network-wrap', msg);
@@ -1972,6 +2139,7 @@
       var r = el.getBoundingClientRect();
       if (r.bottom > -pad && r.top < vh + pad) el.classList.add('mon-visible');
     });
+    tryFlushMetricCounts(false);
   }
 
   function initScrollReveal() {
@@ -1998,6 +2166,7 @@
       entries.forEach(function(entry) {
         if (entry.isIntersecting) {
           entry.target.classList.add('mon-visible');
+          if (entry.target.id === 'metrics') tryFlushMetricCounts(false);
           observer.unobserve(entry.target);
         }
       });

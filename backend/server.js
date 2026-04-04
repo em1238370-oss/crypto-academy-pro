@@ -2134,6 +2134,66 @@ function buildLiveCounterFromScamBase(parsedRows) {
   };
 }
 
+/** Скользящее окно 12 ч по колонке «дата обнаружения» (detected_at) в scam_base. */
+const KRO_SCAM_BASE_ROLLING_12H_MS = 12 * 60 * 60 * 1000;
+
+function kroScamBaseReasonSummaryLine(r) {
+  const ot = (r?.object_type || '').toString().trim();
+  const sp = (r?.source_primary || '').toString().trim();
+  const ev = (r?.source_evidence || '').toString().trim().replace(/\s+/g, ' ');
+  const parts = [];
+  if (ot) parts.push(`Тип объекта: ${ot}`);
+  if (sp) parts.push(`Первоисточник: ${sp}`);
+  if (ev) parts.push(`Цитата/доказательства: ${ev.length > 220 ? `${ev.slice(0, 217)}…` : ev}`);
+  return parts.join(' · ') || 'Подтверждённая запись в scam_base';
+}
+
+/**
+ * Метрики «за последние 12 ч» по дате обнаружения (не за всю историю листа).
+ */
+function buildScamBase12hRollup(parsedRows, nowMs = Date.now()) {
+  const cutoff = nowMs - KRO_SCAM_BASE_ROLLING_12H_MS;
+  const filtered = (parsedRows || [])
+    .filter(isScamBaseRowInLiveCounterDataset)
+    .filter((row) => parseScamDetectedAtMs(row) >= cutoff);
+  const byChannel = new Map();
+  for (const row of filtered) {
+    const key = channelMatchKey(row.username);
+    if (!key) continue;
+    const prev = byChannel.get(key);
+    if (!prev || parseScamDetectedAtMs(row) >= parseScamDetectedAtMs(prev)) {
+      byChannel.set(key, row);
+    }
+  }
+  const rows = Array.from(byChannel.values());
+  const lossesSum = rows.reduce((s, r) => s + (r.total_loss_rub || 0), 0);
+  const telegramCount = rows.filter(
+    (r) => (r.object_type || '').toLowerCase().includes('сигнал') || !(r.object_type || '').trim()
+  ).length;
+  const coursesCount = rows.filter((r) =>
+    ['курс', 'сайт', 'обучен', 'обменник', 'инвест'].some((kw) => (r.object_type || '').toLowerCase().includes(kw))
+  ).length;
+  const complaintsSum = rows.reduce((s, r) => s + (Number(r.complaints) || 0), 0);
+  const top3 = [...rows]
+    .sort((a, b) => (b.total_loss_rub || 0) - (a.total_loss_rub || 0))
+    .slice(0, 3)
+    .map((r) => ({
+      channel: r.username,
+      sum: r.total_loss_rub || 0,
+      status: statusWithLossFloor(r.status, r.total_loss_rub || 0),
+      link: r.link || '',
+    }));
+  return {
+    uniqueChannels: rows.length,
+    lossesSum,
+    telegramCount,
+    coursesCount,
+    complaintsSum,
+    top3,
+    rowSnapshots: rows,
+  };
+}
+
 function isUsableScamBaseRow(row) {
   const verdict = (row?.verdict || '').toString().trim().toLowerCase();
   if (!verdict) return false;
@@ -2858,8 +2918,9 @@ app.get('/api/kro/live-counter', async (req, res) => {
       const parsedRows = dataRows.map(parseScamBaseRow).filter(r => r.username && r.username !== 'username');
       console.log(`[KRO live-counter] parsed ${parsedRows.length} rows from scam_base (header row skipped)`);
       const scamBaseCounter = buildLiveCounterFromScamBase(parsedRows);
-      const top3rows = Array.isArray(scamBaseCounter.top3) ? scamBaseCounter.top3 : [];
-      console.log('TOP3 RAW:', JSON.stringify(top3rows.slice(0, 3)));
+      const roll12 = buildScamBase12hRollup(parsedRows);
+      const top3rows = Array.isArray(roll12.top3) ? roll12.top3 : [];
+      console.log('TOP3 (12h window):', JSON.stringify(top3rows.slice(0, 3)));
       const metaStr = cycleMeta.last_cycle_at;
       const cycleTs = metaStr ? Date.parse(metaStr) : NaN;
       const rowTs = scamBaseCounter.updatedAt ? Date.parse(scamBaseCounter.updatedAt) : NaN;
@@ -2869,27 +2930,39 @@ app.get('/api/kro/live-counter', async (req, res) => {
           : (metaStr || scamBaseCounter.updatedAt || null);
       const newInCycle = Number(cycleMeta.new_in_cycle);
       const channelsTodayVal = Number.isFinite(newInCycle) ? newInCycle : 0;
+      const heroNew12h = Math.max(channelsTodayVal, roll12.uniqueChannels);
+      const caption12 = `За последние 12 ч (по дате обнаружения в scam_base): ${roll12.uniqueChannels} объектов, потери ${roll12.lossesSum.toLocaleString('ru-RU')} ₽. Всего в подтверждённой базе: ${scamBaseCounter.channels_total}.`;
       const payload = {
-        channelsToday: channelsTodayVal,
+        channelsToday: heroNew12h,
         channelsTotal: scamBaseCounter.channels_total,
-        totalLost: scamBaseCounter.losses_12h,
-        telegramCount: scamBaseCounter.telegram_channels,
-        coursesCount: scamBaseCounter.courses_products,
+        totalLost: roll12.lossesSum,
+        telegramCount: roll12.telegramCount,
+        coursesCount: roll12.coursesCount,
         complaints_received: scamBaseCounter.complaints_received,
+        complaints_12h: roll12.complaintsSum,
         victims_12h: null,
         shockText: KRO_PENDING_REPORT_TEXT,
-        top3: scamBaseCounter.top3,
+        top3: roll12.top3,
         report_doc_url: KRO_SOURCES_DOC_URL,
-        sourceCaption: scamBaseCounter.sourceCaption,
-        status_summary: scamBaseCounter.status_summary,
-        publishStatus: scamBaseCounter.publishStatus,
-        isHonestZero: scamBaseCounter.isHonestZero,
+        sourceCaption: caption12,
+        status_summary: buildStatusSummary(roll12.rowSnapshots),
+        status_summary_all_time: scamBaseCounter.status_summary,
+        publishStatus: scamBaseCounter.isHonestZero && roll12.uniqueChannels === 0 ? 'honest_zero' : scamBaseCounter.publishStatus,
+        isHonestZero: scamBaseCounter.isHonestZero && roll12.uniqueChannels === 0,
         siteNotice: null,
         lastValidUpdatedAt: displayUpdatedAt,
         updatedAt: displayUpdatedAt,
         last_cycle_at: cycleMeta.last_cycle_at,
         new_in_cycle: channelsTodayVal,
-        sources_checked: cycleMeta.sources_checked
+        new_in_base_12h: roll12.uniqueChannels,
+        sources_checked: cycleMeta.sources_checked,
+        rollup_12h: {
+          new_count: roll12.uniqueChannels,
+          losses_rub: roll12.lossesSum,
+          complaints: roll12.complaintsSum,
+          telegram: roll12.telegramCount,
+          courses: roll12.coursesCount,
+        },
       };
       kroLiveCounterCache = { payload, ts: Date.now() };
       return res.json(payload);
@@ -3037,6 +3110,24 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       .map(parseScamBaseRow)
       .filter((r) => r.username && r.username !== 'username');
     const liveFromBase = buildLiveCounterFromScamBase(parsedForLive);
+    const nowMs = Date.now();
+    const roll12 = buildScamBase12hRollup(parsedForLive, nowMs);
+    const cutoff12 = nowMs - KRO_SCAM_BASE_ROLLING_12H_MS;
+    const findings12h = [...scamRows]
+      .filter((r) => parseScamDetectedAtMs(r) >= cutoff12)
+      .sort((a, b) => parseScamDetectedAtMs(b) - parseScamDetectedAtMs(a))
+      .map((r) => ({
+        username: r.username,
+        link: r.link || '',
+        detected_at: r.detected_at || '',
+        object_type: r.object_type || '',
+        source_primary: r.source_primary || '',
+        source_evidence: r.source_evidence || '',
+        status: r.status || '',
+        complaints: r.complaints != null ? r.complaints : null,
+        total_loss_rub: r.total_loss_rub != null ? r.total_loss_rub : 0,
+        reason_summary: kroScamBaseReasonSummaryLine(r),
+      }));
 
     return res.json({
       scam_base: scamRows,
@@ -3050,6 +3141,15 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       status_summary,
       channels_total: liveFromBase.channels_total,
       confirmed_status_summary: liveFromBase.status_summary,
+      confirmed_status_summary_12h: buildStatusSummary(roll12.rowSnapshots),
+      rollup_12h: {
+        new_count: roll12.uniqueChannels,
+        losses_rub: roll12.lossesSum,
+        complaints: roll12.complaintsSum,
+        telegram: roll12.telegramCount,
+        courses: roll12.coursesCount,
+      },
+      findings_12h: findings12h,
       history,
       recent_cases
     });
