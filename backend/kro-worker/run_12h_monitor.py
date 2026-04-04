@@ -1229,10 +1229,22 @@ def write_kro_meta_to_sheet(sheets_client, sheet_id, last_cycle_at, new_in_cycle
         return False
 
 
+def _quote_sheet_name_for_a1(title: str) -> str:
+    """Имя вкладки в A1-диапазоне (пробелы/кириллица → в кавычках)."""
+    t = (title or '').strip()
+    if not t:
+        return ''
+    if all((c.isalnum() or c == '_') for c in t):
+        return t
+    return "'" + t.replace("'", "''") + "'"
+
+
 def _kro_reports_read_range():
     """Данные листа reports без строки заголовка. Пустой лист (только шапка) → API вернёт []."""
     sheet = (os.environ.get('KRO_REPORTS_SHEET') or '').strip()
-    return f'{sheet}!A2:I' if sheet else 'A2:I'
+    if not sheet:
+        return 'A2:I'
+    return '%s!A2:I' % _quote_sheet_name_for_a1(sheet)
 
 
 def _fetch_reports_sheet_rows_raw(client, sheet_id):
@@ -5912,6 +5924,13 @@ def main():
             web_findings = _web_scraper.scrape_all()
             web_source_statuses = getattr(_web_scraper, 'get_last_source_statuses', lambda: [])()
             if web_findings:
+                # Лист из KRO_REPORTS_SHEET должен существовать, иначе append даёт 400 Unable to parse range.
+                rep_sheet = (os.environ.get('KRO_REPORTS_SHEET') or '').strip()
+                if rep_sheet:
+                    try:
+                        ensure_sheet_exists(client, sheet_id, rep_sheet, row_count=5000, column_count=9)
+                    except Exception as _es_err:
+                        print('[web_scraper] ensure_sheet reports: %s' % _es_err, file=sys.stderr)
                 # append на тот же лист, что и _fetch_reports_sheet_rows_raw (KRO_REPORTS_SHEET или первая вкладка)
                 written = _web_scraper.write_web_reports_to_sheet(client, sheet_id, web_findings)
                 print(f'[web_scraper] wrote {written} rows from {len(web_findings)} findings', file=sys.stderr)

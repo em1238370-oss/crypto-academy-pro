@@ -1382,10 +1382,22 @@ def scrape_all():
     return deduped
 
 
+def _quote_sheet_name_for_range(title: str) -> str:
+    """A1-нотация: пробелы и спецсимволы в имени листа → в одинарных кавычках."""
+    t = (title or '').strip()
+    if not t:
+        return ''
+    if all((c.isalnum() or c == '_') for c in t):
+        return t
+    return "'" + t.replace("'", "''") + "'"
+
+
 def _reports_append_range_explicit():
     """Синхронно с run_12h_monitor._kro_reports_read_range: лист + колонки для append."""
     sheet = (os.environ.get('KRO_REPORTS_SHEET') or '').strip()
-    return f'{sheet}!A:I' if sheet else 'A:I'
+    if not sheet:
+        return 'A:I'
+    return '%s!A:I' % _quote_sheet_name_for_range(sheet)
 
 
 def write_web_reports_to_sheet(sheets_client, sheet_id, reports, reports_range=None):
@@ -1394,6 +1406,7 @@ def write_web_reports_to_sheet(sheets_client, sheet_id, reports, reports_range=N
     Schema A:I: date, channel, sum_rub, source='web', status='Активен',
                 reporter='web_parser', description, proof_url=source_url, object_type (опц.)
     reports_range: если None — из KRO_REPORTS_SHEET + A:I (как чтение A2:I в мониторе).
+    Лист должен существовать в книге (run_12h_monitor вызывает ensure_sheet_exists перед записью).
     """
     if reports_range is None:
         reports_range = _reports_append_range_explicit()
