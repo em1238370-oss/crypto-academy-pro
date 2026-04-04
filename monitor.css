@@ -17,9 +17,9 @@
   --mon-text-dim:   rgba(255,255,255,0.50);
   --mon-text-fade:  rgba(255,255,255,0.24);
 
-  --mon-red:        #ff4444;
-  --mon-red-dim:    rgba(255,68,68,0.13);
-  --mon-red-border: rgba(255,68,68,0.32);
+  --mon-red:        #b84a4a;
+  --mon-red-dim:    rgba(184, 74, 74, 0.13);
+  --mon-red-border: rgba(184, 74, 74, 0.32);
   --mon-yellow:     #f59e0b;
   --mon-amber:      #f59e0b;
   --mon-amber-hot:  #fbbf24;
@@ -399,7 +399,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   letter-spacing: -0.02em;
 }
 .mon-live-strip--error {
-  border-bottom-color: rgba(255, 68, 68, 0.4);
+  border-bottom-color: rgba(184, 74, 74, 0.4);
 }
 .mon-live-strip--error #mon-live-strip-time {
   color: var(--mon-red);
@@ -1162,16 +1162,16 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-weight: 600;
   padding: 6px 12px;
   border-radius: 8px;
-  border: 1px solid rgba(255,68,68,0.25);
+  border: 1px solid rgba(184,74,74,0.25);
   color: var(--mon-red);
   text-decoration: none;
-  background: rgba(255,68,68,0.06);
+  background: rgba(184,74,74,0.06);
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 .mon-source-chip:hover {
-  background: rgba(255,68,68,0.12);
-  border-color: rgba(255,68,68,0.45);
-  color: #ff6a6a;
+  background: rgba(184,74,74,0.12);
+  border-color: rgba(184,74,74,0.45);
+  color: #d89090;
 }
 
 /* ── SECTION / CHAPTER (портфельный поток: глава = типографика, surface = данные) ── */
@@ -1757,7 +1757,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   bottom: 0;
   width: 100%;
   height: 1px;
-  background: linear-gradient(90deg, rgba(255, 68, 68, 0.75), rgba(255, 68, 68, 0.2));
+  background: linear-gradient(90deg, rgba(184, 74, 74, 0.75), rgba(184, 74, 74, 0.2));
   transform: scaleX(0.35);
   transform-origin: left center;
   opacity: 0.55;
@@ -1768,7 +1768,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-external-link:hover,
 .mon-external-link:focus-visible {
-  color: #ff7070;
+  color: #dc9595;
 }
 .mon-external-link:hover::after,
 .mon-external-link:focus-visible::after {
@@ -1878,7 +1878,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   text-decoration: none;
   transition: color var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
-.mon-table td a:hover { color: #ff9494; }
+.mon-table td a:hover { color: #e8b8b8; }
 
 /* Первая таблица monitor (База объектов) — максимально близко к главной карточке */
 #data-scam .mon-surface {
@@ -1975,9 +1975,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border: 1px solid transparent;
 }
 .mon-status.risk {
-  background: rgba(255,68,68,0.13);
-  color: #ff6b6b;
-  border-color: rgba(255,68,68,0.28);
+  background: rgba(184,74,74,0.13);
+  color: #d88888;
+  border-color: rgba(184,74,74,0.28);
   box-shadow: none;
 }
 .mon-status.risk::before       { content: '●'; font-size: 7px; opacity: 0.85; }
@@ -2219,8 +2219,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-loading { color: var(--mon-text-dim); font-size: 13px; padding: 28px; text-align: center; }
 .mon-error {
   color: var(--mon-red); font-size: 13px; padding: 14px;
-  background: rgba(255,68,68,0.08); border-radius: var(--mon-radius-sm);
-  border: 1px solid rgba(255,68,68,0.24);
+  background: rgba(184,74,74,0.08); border-radius: var(--mon-radius-sm);
+  border: 1px solid rgba(184,74,74,0.24);
 }
 .mon-spinner::after {
   content: '';
@@ -2300,7 +2300,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-footer a:hover,
 .mon-footer a:focus-visible {
-  color: #ff8a8a;
+  color: #deb0b0;
 }
 .mon-footer a:hover::after,
 .mon-footer a:focus-visible::after {
@@ -2393,7 +2393,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-col-name { font-size: 12px; font-weight: 800; color: #fff; margin-bottom: 3px; }
 .mon-col-desc { font-size: 11px; color: var(--mon-text-dim); line-height: 1.5; }
 .mon-forbidden-list { display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
-.mon-forbidden-item { display: flex; gap: 8px; font-size: 13px; color: var(--mon-text-dim); padding: 5px 10px; border-radius: 7px; background: rgba(255,68,68,0.07); border: 1px solid rgba(255,68,68,0.18); }
+.mon-forbidden-item { display: flex; gap: 8px; font-size: 13px; color: var(--mon-text-dim); padding: 5px 10px; border-radius: 7px; background: rgba(184,74,74,0.07); border: 1px solid rgba(184,74,74,0.18); }
 .mon-forbidden-item::before { content: '✕'; color: var(--mon-red); flex-shrink: 0; font-weight: 800; }
 
 /* ── CONTENT ANALYSIS ────────────────────────────────────── */
@@ -2457,7 +2457,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   content: '';
   position: absolute;
   inset: -15%;
-  background: radial-gradient(ellipse 55% 48% at 50% 42%, rgba(255, 68, 68, 0.12), transparent 72%);
+  background: radial-gradient(ellipse 55% 48% at 50% 42%, rgba(184, 74, 74, 0.12), transparent 72%);
   animation: monBootAmbient 3.4s ease-in-out infinite;
   pointer-events: none;
 }
@@ -2542,7 +2542,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   box-shadow: 0 0 0 1px rgba(0,0,0,0.35) inset;
 }
 .mon-boot-light--r {
-  background: #ff5f57;
+  background: #b86a68;
   animation: monBootLed 2.3s ease-in-out infinite;
 }
 .mon-boot-light--y {
@@ -2591,7 +2591,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   color: rgba(255,255,255,0.35);
   padding: 12px 16px 10px;
   border-bottom: 1px solid rgba(255,255,255,0.07);
-  background: linear-gradient(105deg, rgba(255, 68, 68, 0.07), rgba(255, 255, 255, 0.02) 42%);
+  background: linear-gradient(105deg, rgba(184, 74, 74, 0.07), rgba(255, 255, 255, 0.02) 42%);
   background-size: 200% 100%;
   animation: monBootTheadShimmer 2.8s ease-in-out infinite;
 }
@@ -2683,12 +2683,12 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-boot-line.dim .mon-boot-line-txt { color: rgba(255,255,255,0.38); }
 .mon-boot-line.dim .mon-boot-line-num { color: rgba(255,255,255,0.18); }
 .mon-boot-line.info .mon-boot-line-txt { color: var(--mon-red); font-weight: 600; }
-.mon-boot-line.info .mon-boot-line-num { color: rgba(255,68,68,0.45); }
+.mon-boot-line.info .mon-boot-line-num { color: rgba(184,74,74,0.45); }
 .mon-boot-line.ok .mon-boot-line-txt { color: var(--mon-green); font-weight: 600; }
 .mon-boot-line.ok .mon-boot-line-num { color: rgba(34,197,94,0.45); }
 
 .mon-boot-line--active {
-  background: linear-gradient(90deg, rgba(255, 68, 68, 0.16), transparent 58%);
+  background: linear-gradient(90deg, rgba(184, 74, 74, 0.16), transparent 58%);
   box-shadow: inset 3px 0 0 var(--mon-red);
 }
 .mon-boot-line.visible.mon-boot-line--active {
@@ -2696,11 +2696,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 @keyframes monBootRowPulse {
   from {
-    background: linear-gradient(90deg, rgba(255, 68, 68, 0.3), transparent 62%);
-    box-shadow: inset 4px 0 0 var(--mon-red), 0 0 24px rgba(255, 68, 68, 0.12);
+    background: linear-gradient(90deg, rgba(184, 74, 74, 0.3), transparent 62%);
+    box-shadow: inset 4px 0 0 var(--mon-red), 0 0 24px rgba(184, 74, 74, 0.12);
   }
   to {
-    background: linear-gradient(90deg, rgba(255, 68, 68, 0.14), transparent 58%);
+    background: linear-gradient(90deg, rgba(184, 74, 74, 0.14), transparent 58%);
     box-shadow: inset 3px 0 0 var(--mon-red);
   }
 }
@@ -3087,7 +3087,7 @@ a.mon-channel-external:hover {
     margin: 0 auto;
     border-radius: 16px;
     box-shadow:
-      0 8px 40px rgba(255, 68, 68, 0.12),
+      0 8px 40px rgba(184, 74, 74, 0.12),
       0 28px 64px rgba(0, 0, 0, 0.55),
       0 0 0 1px rgba(255, 255, 255, 0.07) inset;
   }
