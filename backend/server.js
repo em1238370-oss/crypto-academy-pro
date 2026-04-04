@@ -3522,7 +3522,7 @@ app.post('/api/kro/report-scam', express.json(), async (req, res) => {
     await client.sheets.spreadsheets.values.append({
       spreadsheetId: kroSheetId,
       range: 'A:I',
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: { values: row }
     });

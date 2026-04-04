@@ -1433,10 +1433,11 @@ def write_web_reports_to_sheet(sheets_client, sheet_id, reports, reports_range=N
     if not rows:
         return 0
     try:
+        # RAW: дата в колонке A не превращается в сериал числа (ДД.ММ.ГГГГ остаётся текстом).
         sheets_client.spreadsheets().values().append(
             spreadsheetId=sheet_id,
             range=reports_range,
-            valueInputOption='USER_ENTERED',
+            valueInputOption='RAW',
             insertDataOption='INSERT_ROWS',
             body={'values': rows}
         ).execute()

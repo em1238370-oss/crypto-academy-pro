@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260404-medvedev-motion">
+  <link rel="stylesheet" href="/monitor.css?v=20260404-atmosphere-bronze">
 </head>
 <body class="mon-page">
 
@@ -316,16 +316,16 @@
       <div class="mon-chapter-head-main">
         <p class="mon-chapter-kicker">04 · Мониторинг</p>
         <h2 id="mon-watch-heading" class="mon-chapter-title">Все найденные каналы</h2>
-        <p class="mon-chapter-lead mon-chapter-lead--inline">Широкий список наблюдения рядом с узкой базой подтверждённого скама.</p>
+        <p class="mon-chapter-lead mon-chapter-lead--inline">Те же каналы, что в листе scam_base (без накопленного листа channels_watch) — только актуальные строки из API.</p>
       </div>
       <span class="mon-chapter-meta" id="s4-watch-count"></span>
     </header>
     <div class="mon-chapter-body">
       <div class="mon-surface">
-      <div class="mon-scheme-inline" role="img" aria-label="Подтверждённый скам в таблице выше; здесь — широкий список">
-        <span class="mon-scheme-pill mon-scheme-pill--dim">База скама ↑</span>
+      <div class="mon-scheme-inline" role="img" aria-label="Дублирование таблицы scam_base для наглядности">
+        <span class="mon-scheme-pill mon-scheme-pill--dim">scam_base ↑</span>
         <span class="mon-scheme-arrow" aria-hidden="true">|</span>
-        <span class="mon-scheme-pill mon-scheme-pill--accent">Широкий мониторинг</span>
+        <span class="mon-scheme-pill mon-scheme-pill--accent">тот же состав строк</span>
       </div>
       <div class="mon-table-wrap" id="s4-watch-wrap">
         <div class="mon-loading mon-spinner" style="padding:32px">Загружаю широкий мониторинг</div>
@@ -1720,13 +1720,18 @@
     return out;
   }
 
-  function renderScamBase(rows) {
-    var wrap = document.getElementById('s3-table-wrap');
-    var countEl = document.getElementById('s3-count');
+  function renderScamBase(rows, opts) {
+    opts = opts || {};
+    var wrapId = opts.wrapId || 's3-table-wrap';
+    var countId = opts.countId || 's3-count';
+    var searchPrefix = opts.searchPrefix || 's3';
+    var emptyMsg = opts.emptyMsg || 'База пуста';
+    var wrap = document.getElementById(wrapId);
+    var countEl = document.getElementById(countId);
     if (countEl) countEl.textContent = rows.length + ' объектов';
 
     if (!rows.length) {
-      if (wrap) wrap.innerHTML = '<div class="mon-loading">База пуста</div>';
+      if (wrap) wrap.innerHTML = '<div class="mon-loading">' + esc(emptyMsg) + '</div>';
       return;
     }
 
@@ -1775,9 +1780,11 @@
 
     tableHtml += '</tbody></table>';
 
+    var sid = searchPrefix + '-search';
+    var scid = searchPrefix + '-search-count';
     var searchBar = '<div class="mon-table-search">' +
-      '<input type="text" id="s3-search" class="mon-search-input" placeholder="🔍  Найти объект, тип, источник, признак…" autocomplete="off" spellcheck="false">' +
-      '<span class="mon-search-count" id="s3-search-count">' + rows.length + ' объектов</span>' +
+      '<input type="text" id="' + esc(sid) + '" class="mon-search-input" placeholder="🔍  Найти объект, тип, источник, признак…" autocomplete="off" spellcheck="false">' +
+      '<span class="mon-search-count" id="' + esc(scid) + '">' + rows.length + ' объектов</span>' +
       '</div>';
 
     if (wrap) {
@@ -1789,8 +1796,8 @@
         tr.style.animationDelay = Math.min(i * 55, 1200) + 'ms';
       });
 
-      var input = document.getElementById('s3-search');
-      var cnt   = document.getElementById('s3-search-count');
+      var input = document.getElementById(sid);
+      var cnt   = document.getElementById(scid);
       if (input) {
         input.addEventListener('input', function() {
           var q = input.value.toLowerCase().trim();
@@ -1817,43 +1824,15 @@
     }
   }
 
-  // ── SECTION 4: WIDE WATCH TABLE ───────────────────────────
+  // ── SECTION 4: те же строки scam_base (не channels_watch — без «старых» циклов из листа watch)
 
   function renderChannelsWatch(rows) {
-    var wrap = document.getElementById('s4-watch-wrap');
-    var countEl = document.getElementById('s4-watch-count');
-    if (countEl) countEl.textContent = rows.length + ' каналов';
-
-    if (!rows.length) {
-      if (wrap) wrap.innerHTML = '<div class="mon-loading">Пока нет каналов старше месяца для широкого мониторинга</div>';
-      return;
-    }
-
-    var html = '<table class="mon-table">' +
-      '<thead><tr>' +
-      '<th>Канал</th><th>Возраст</th><th>Источник</th><th>Активность</th>' +
-      '<th>VIP / сигналы</th><th>Отзывы</th><th>Оценка</th><th>Статус</th><th>Дата</th>' +
-      '</tr></thead><tbody>';
-
-    rows.forEach(function(r) {
-      var channelUrl = r.link || '';
-      var channelLabel = (r.username || r.link || 'канал').replace(/^https?:\/\/t\.me\//i, '@');
-      if (channelLabel.charAt(0) !== '@' && !/^t\.me\//i.test(channelLabel)) channelLabel = '@' + channelLabel.replace(/^@+/,'');
-      html += '<tr>' +
-        '<td class="mon-cell-channel">' + renderExternalLink(channelUrl, channelLabel, 'mon-external-link mon-channel-link') + '</td>' +
-        '<td class="mon-cell-muted mon-cell-date">' + esc(String(r.channel_age_days || '—')) + (r.channel_age_days ? ' дн.' : '') + '</td>' +
-        '<td class="mon-cell-muted mon-cell-compact">' + esc(r.source_primary || '—') + '</td>' +
-        '<td class="mon-cell-muted mon-cell-compact">' + esc(r.activity_summary || '—') + '</td>' +
-        '<td class="mon-cell-compact">' + esc(r.vip_price || '—') + '</td>' +
-        '<td class="mon-cell-compact">' + esc(r.reviews_summary || '—') + '</td>' +
-        '<td><div class="mon-evidence" title="' + esc(r.source_evidence || '') + '">' + renderFacts(r.source_evidence || '') + '</div></td>' +
-        '<td><span class="mon-status ' + statusClass(r.status) + '">' + esc(r.status || '—') + '</span></td>' +
-        '<td class="mon-cell-muted mon-cell-date">' + esc(fmtDateShort(r.detected_at)) + '</td>' +
-        '</tr>';
+    renderScamBase(rows, {
+      wrapId: 's4-watch-wrap',
+      countId: 's4-watch-count',
+      searchPrefix: 's4watch',
+      emptyMsg: 'В scam_base пока нет строк — после цикла монитора они появятся здесь.'
     });
-
-    html += '</tbody></table>';
-    if (wrap) wrap.innerHTML = html;
   }
 
   // ── SECTION 5: CHANNEL NETWORKS ───────────────────────────
@@ -1992,7 +1971,6 @@
     .then(function(data) {
       var meta      = data.meta || {};
       var scamBase  = data.scam_base || [];
-      var watchRows = data.channels_watch || [];
       var networkRows = data.channels_network || [];
       var history   = data.history || [];
 
@@ -2003,7 +1981,7 @@
       renderRecentCases(data.recent_cases || []);
       renderFindings12h(data.findings_12h || []);
       renderScamBase(scamBase);
-      renderChannelsWatch(watchRows);
+      renderChannelsWatch(scamBase);
       renderChannelNetworks(networkRows);
       renderSources(meta.sources_checked || []);
       renderHistory(history);

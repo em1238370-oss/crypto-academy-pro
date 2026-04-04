@@ -1260,6 +1260,23 @@ def _fetch_reports_sheet_rows_raw(client, sheet_id):
         return []
 
 
+def _normalize_reports_sheet_date_cell(val):
+    """Колонка A: если API вернул сериал Sheets/Excel — в строку ДД.ММ.ГГГГ."""
+    if val is None or val == '':
+        return ''
+    if isinstance(val, (int, float)):
+        n = int(val)
+        if 20000 <= n <= 80000:
+            try:
+                base = datetime(1899, 12, 30, tzinfo=timezone.utc)
+                d = base + timedelta(days=n)
+                return d.strftime('%d.%m.%Y')
+            except (ValueError, OverflowError):
+                pass
+        return str(val)
+    return str(val).strip()
+
+
 def _parse_reports_sheet_row(r):
     """
     Одна строка листа reports.
@@ -1267,7 +1284,7 @@ def _parse_reports_sheet_row(r):
     """
     if not r:
         return None
-    date_val = (r[0] if len(r) > 0 else '').strip()
+    date_val = _normalize_reports_sheet_date_cell(r[0] if len(r) > 0 else '')
     channel = (r[1] if len(r) > 1 else '').strip()
     if not channel:
         return None
