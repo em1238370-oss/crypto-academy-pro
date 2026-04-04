@@ -2930,10 +2930,11 @@ app.get('/api/kro/live-counter', async (req, res) => {
           : (metaStr || scamBaseCounter.updatedAt || null);
       const newInCycle = Number(cycleMeta.new_in_cycle);
       const channelsTodayVal = Number.isFinite(newInCycle) ? newInCycle : 0;
-      const heroNew12h = Math.max(channelsTodayVal, roll12.uniqueChannels);
+      // Первая цифра на главной (ТЗ): строго new_in_cycle из kro_meta, не max с rollup 12h.
       const caption12 = `За последние 12 ч (по дате обнаружения в scam_base): ${roll12.uniqueChannels} объектов, потери ${roll12.lossesSum.toLocaleString('ru-RU')} ₽. Всего в подтверждённой базе: ${scamBaseCounter.channels_total}.`;
       const payload = {
-        channelsToday: heroNew12h,
+        channelsToday: channelsTodayVal,
+        new_in_cycle_meta: channelsTodayVal,
         channelsTotal: scamBaseCounter.channels_total,
         totalLost: roll12.lossesSum,
         telegramCount: roll12.telegramCount,
@@ -2954,6 +2955,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
         updatedAt: displayUpdatedAt,
         last_cycle_at: cycleMeta.last_cycle_at,
         new_in_cycle: channelsTodayVal,
+        /** Сколько новых за последние 12ч по detected_at в scam_base (для подписей / сравнения с meta). */
         new_in_base_12h: roll12.uniqueChannels,
         sources_checked: cycleMeta.sources_checked,
         rollup_12h: {
@@ -2975,6 +2977,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
     console.log('KRO META SOURCE: reading from', 'unavailable (no Sheets client)');
     return res.json({
       channelsToday: 0,
+      new_in_cycle_meta: 0,
       channelsTotal: 0,
       totalLost: 0,
       telegramCount: 0,
@@ -2993,6 +2996,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
       updatedAt: null,
       last_cycle_at: cycleMeta.last_cycle_at,
       new_in_cycle: cycleMeta.new_in_cycle,
+      new_in_base_12h: 0,
       sources_checked: cycleMeta.sources_checked
     });
   } catch (e) {
@@ -3001,6 +3005,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
     console.log('KRO META SOURCE: reading from', 'unavailable (exception path)');
     res.json({
       channelsToday: 0,
+      new_in_cycle_meta: 0,
       channelsTotal: 0,
       totalLost: 0,
       telegramCount: 0,
@@ -3019,6 +3024,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
       updatedAt: null,
       last_cycle_at: cycleMeta.last_cycle_at,
       new_in_cycle: cycleMeta.new_in_cycle,
+      new_in_base_12h: 0,
       sources_checked: cycleMeta.sources_checked
     });
   }

@@ -21,11 +21,14 @@ import json
 import os
 import re
 import sys
-from datetime import datetime, timedelta, timezone
-
 _KRO_WORKER = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'kro-worker'))
 if _KRO_WORKER not in sys.path:
     sys.path.insert(0, _KRO_WORKER)
+
+from kro_telegram_channel_gate import (  # noqa: E402
+    norm_username_for_gate as _norm_username,
+    validate_telegram_scam_base_row_strict as _validate_row_strict,
+)
 
 # Явный список (эталонные «плохие» из ТЗ + очередь до первого прогона строгих правил).
 TARGET_DELETE = {
@@ -46,20 +49,6 @@ TARGET_DELETE = {
 
 # Эталон «хорошей» строки — после чистки должен остаться (если был в листе).
 ETALON_USERNAME = '@sergeytrader_plus'
-CRYPTO_TERMS = ('bitcoin', 'btc', 'крипт', 'crypto', 'usdt', 'трейдинг', 'trading', 'сигнал', 'signal', 'обменник')
-
-
-def _norm_username(v: str) -> str:
-    s = (v or '').strip()
-    if not s:
-        return ''
-    if s.startswith('https://t.me/'):
-        s = '@' + s.split('https://t.me/', 1)[-1].split('/')[0]
-    elif s.startswith('t.me/'):
-        s = '@' + s.split('t.me/', 1)[-1].split('/')[0]
-    if not s.startswith('@'):
-        s = '@' + s.lstrip('@')
-    return s.lower()
 
 
 def _load_env():
@@ -201,77 +190,6 @@ def _row_telegram_keys(rr: list) -> tuple:
     link = _norm_username(rr[1] if len(rr) > 1 else '')
     ref = u or link
     return u, link, ref
-
-
-async def _validate_row_strict(client, row_obj):
-    """
-    Возвращает (ok, reason, remove_row).
-    remove_row=True — строка полностью удаляется из scam_base (не только статус).
-    """
-    from telethon.tl.functions.channels import GetFullChannelRequest
-    from telethon.tl.types import Channel, Chat, User
-
-    uname = _norm_username(row_obj.get('username') or row_obj.get('link') or '')
-    if not uname:
-        return False, 'empty_username', True
-    if client is None:
-        return False, 'telethon_unavailable', False
-
-    try:
-        ent = await asyncio.wait_for(client.get_entity(uname), timeout=10.0)
-    except Exception:
-        # Недоступен / бот только по инвайту / нет прав — убираем из базы
-        return False, 'entity_unavailable', True
-
-    # Личный аккаунт или бот (User) — не канал для scam_base
-    if isinstance(ent, User):
-        return False, 'entity_is_user_or_bot', True
-    if not isinstance(ent, (Channel, Chat)):
-        return False, 'entity_not_channel_or_chat', True
-    if bool(getattr(ent, 'deleted', False)):
-        return False, 'channel_deleted', True
-
-    try:
-        full = await asyncio.wait_for(client(GetFullChannelRequest(ent)), timeout=10.0)
-    except Exception:
-        return False, 'cannot_read_full_channel', True
-
-    subs = int(getattr(getattr(full, 'full_chat', None), 'participants_count', 0) or 0)
-    if subs < 100:
-        return False, 'subs_below_100', True
-
-    about = str(getattr(getattr(full, 'full_chat', None), 'about', '') or '')
-    if not about.strip():
-        return False, 'empty_description', True
-
-    posts = []
-    post_dates = []
-    try:
-        async for m in client.iter_messages(ent, limit=20):
-            t = ((getattr(m, 'text', None) or '') + ' ' + (getattr(m, 'message', None) or '')).strip()
-            if t:
-                posts.append(t.lower())
-            dt = getattr(m, 'date', None)
-            if dt:
-                if getattr(dt, 'tzinfo', None) is None:
-                    dt = dt.replace(tzinfo=timezone.utc)
-                post_dates.append(dt)
-    except Exception:
-        return False, 'iter_messages_error', True
-
-    cutoff = datetime.now(timezone.utc) - timedelta(days=60)
-    if not post_dates or not any(dt >= cutoff for dt in post_dates):
-        return False, 'no_posts_60d', True
-
-    recent_blob = ' '.join(posts[:10])
-    if not any(t in recent_blob for t in CRYPTO_TERMS):
-        return False, 'posts_not_crypto', True
-
-    hacked = ('взлом', 'взломан', 'hacked', 'канал взломали', 'аккаунт взломан')
-    if any(h in ' '.join(posts) for h in hacked):
-        return False, 'channel_hacked_notice', True
-
-    return True, 'ok', False
 
 
 async def main():

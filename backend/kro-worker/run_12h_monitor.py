@@ -1369,6 +1369,29 @@ def _merge_web_scraper_findings_into_agg(agg, findings):
         agg[ch]['sum'] = max(agg[ch].get('sum') or 0, sr)
 
 
+def _merge_tgstat_whistleblower_rows_into_agg(agg, tgstat_rows):
+    """Строки TGStat/Telega с маркером разоблачителя в source_url / link / title → agg (условие А)."""
+    for row in (tgstat_rows or []):
+        ch = (row.get('channel') or '').strip()
+        if not ch:
+            continue
+        parts = [
+            (row.get('source_url') or '').strip(),
+            (row.get('link') or '').strip(),
+            (row.get('title') or '').strip(),
+        ]
+        if not any(_text_has_whistleblower_site_marker(p) for p in parts if p):
+            continue
+        if ch not in agg:
+            agg[ch] = _empty_agg_complaint_bucket()
+        agg[ch]['whistleblower_site_evidence'] = True
+        su = (row.get('source_url') or '').strip()
+        if su:
+            agg[ch]['source_urls'] = _merge_text_values(agg[ch].get('source_urls'), [su])
+        if (agg[ch].get('complaints') or 0) < 1:
+            agg[ch]['complaints'] = 1
+
+
 def _confirmed_obj_has_whistleblower_evidence(obj):
     """Для записи в scam_base: маркер разоблачителя в source_primary / source_evidence / ссылке."""
     if not obj:
@@ -2695,6 +2718,84 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
                 pass
 
     return enriched, network_rows
+
+
+async def _filter_confirmed_by_strict_telethon_gate(confirmed_objects):
+    """
+    Step 2 ТЗ: перед записью в scam_base — строгий Telethon-gate для t.me-каналов
+    (тот же критерий, что kro-cleanup-scam-base при Telethon).
+    Отключить: KRO_TELEGRAM_STRICT_GATE_BEFORE_WRITE=0
+    """
+    if not confirmed_objects:
+        return [], 0, {}
+    if (os.environ.get('KRO_TELEGRAM_STRICT_GATE_BEFORE_WRITE') or '1').strip().lower() in ('0', 'false', 'no'):
+        print(
+            'telethon strict gate before write: disabled (KRO_TELEGRAM_STRICT_GATE_BEFORE_WRITE=0)',
+            file=sys.stderr,
+        )
+        return list(confirmed_objects), len(confirmed_objects), {}
+
+    from kro_telegram_channel_gate import validate_telegram_scam_base_row_strict
+
+    client = None
+    if TELEGRAM_API_ID and TELEGRAM_API_HASH:
+        try:
+            client = _kro_ts.build_kro_telegram_client(TELEGRAM_API_ID, TELEGRAM_API_HASH)
+            await client.connect()
+            if not await client.is_user_authorized():
+                await client.disconnect()
+                client = None
+                print(
+                    'telethon gate: session not authorized; telegram channels pass without strict gate',
+                    file=sys.stderr,
+                )
+        except Exception as e:
+            print('telethon gate: client unavailable: %s' % e, file=sys.stderr)
+            try:
+                if client is not None:
+                    await client.disconnect()
+            except Exception:
+                pass
+            client = None
+
+    passed = []
+    reason_counts = {}
+    try:
+        for obj in confirmed_objects:
+            o = dict(obj)
+            if not _looks_like_telegram_channel_ref(o.get('username', ''), o.get('link', '')):
+                passed.append(o)
+                continue
+            ok, reason, remove_row = await validate_telegram_scam_base_row_strict(
+                client, {'username': o.get('username'), 'link': o.get('link')}
+            )
+            if client is None:
+                passed.append(o)
+                continue
+            if ok:
+                passed.append(o)
+            elif remove_row:
+                reason_counts[reason] = reason_counts.get(reason, 0) + 1
+                print(
+                    'telethon_gate_skip_write: %s — %s' % (o.get('username') or o.get('link'), reason),
+                    file=sys.stderr,
+                )
+            else:
+                passed.append(o)
+    finally:
+        if client is not None:
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
+
+    return passed, len(passed), reason_counts
+
+
+async def _run_analyze_then_strict_telethon_gate(confirmed_objects):
+    enriched, network_rows = await _analyze_confirmed_channels_content(confirmed_objects)
+    gated, after_n, gate_reasons = await _filter_confirmed_by_strict_telethon_gate(enriched)
+    return gated, network_rows, after_n, gate_reasons
 
 
 def _parse_date_ddmmyyyy(date_str):
@@ -5867,6 +5968,17 @@ def main():
                 agg_complaints_total[ch]['status'] = 'Скам'
     _merge_telegram_complaints_into_agg(agg_complaints_total, complaints_by_channel)
     _merge_web_scraper_findings_into_agg(agg_complaints_total, web_findings)
+
+    # Фильтр: только проверенные реальные каналы (Правило №1). Домены (сайты) не проверяем — оставляем.
+    def _link_exists(link):
+        if not link or 't.me/' not in link:
+            return True
+        return link in existing_channel_links
+    new_tgstat = [r for r in (new_tgstat or []) if _link_exists(r.get('link') or _object_link(r.get('channel', '')))]
+    telega_channels = [r for r in (telega_channels or []) if _link_exists(r.get('link') or _object_link(r.get('channel', '')))]
+
+    _merge_tgstat_whistleblower_rows_into_agg(agg_complaints, new_tgstat)
+    _merge_tgstat_whistleblower_rows_into_agg(agg_complaints_total, new_tgstat)
     complaints_rows = [
         {
             'channel': ch,
@@ -5884,14 +5996,6 @@ def main():
         for ch, d in agg_complaints.items()
     ]
     complaints_rows.sort(key=lambda x: -(x.get('losses') or 0))
-
-    # Фильтр: только проверенные реальные каналы (Правило №1). Домены (сайты) не проверяем — оставляем.
-    def _link_exists(link):
-        if not link or 't.me/' not in link:
-            return True
-        return link in existing_channel_links
-    new_tgstat = [r for r in (new_tgstat or []) if _link_exists(r.get('link') or _object_link(r.get('channel', '')))]
-    telega_channels = [r for r in (telega_channels or []) if _link_exists(r.get('link') or _object_link(r.get('channel', '')))]
     complaints_rows = [r for r in complaints_rows if _link_exists(_object_link(r.get('channel', '')))]
 
     tgstat_by_key_for_counts = {}
@@ -5926,13 +6030,30 @@ def main():
     cycle_window = '%s_%s' % (report_date_str, 'am' if now_msk_dt.hour < 12 else 'pm')
     confirmed_objects = _collect_confirmed_objects(new_tgstat, agg_complaints_total, cycle_window, channel_ages_from_tg)
     confirmed_before_gate = len(confirmed_objects)
-    confirmed_objects, channels_network_rows = asyncio.run(_analyze_confirmed_channels_content(confirmed_objects))
+    confirmed_objects, channels_network_rows, confirmed_after_telethon_gate, telethon_gate_reasons = asyncio.run(
+        _run_analyze_then_strict_telethon_gate(confirmed_objects)
+    )
+    telethon_gate_rejected = max(0, confirmed_before_gate - confirmed_after_telethon_gate)
+    if telethon_gate_reasons:
+        print(
+            '[kro_cycle_counters] telethon_gate_reasons: %s'
+            % json.dumps(telethon_gate_reasons, ensure_ascii=False, sort_keys=True),
+            file=sys.stderr,
+        )
     inserted_confirmed_channels = []
     if client and sheet_id:
         inserted_confirmed_channels = _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id)
     print(
-        '[kro_cycle_counters] web_findings_count=%d agg_whistleblower_channels=%d confirmed_before_gate=%d scam_base_inserted=%d'
-        % (web_findings_count, agg_whistleblower_channels, confirmed_before_gate, len(inserted_confirmed_channels)),
+        '[kro_cycle_counters] web_findings_count=%d agg_whistleblower_channels=%d confirmed_before_gate=%d '
+        'confirmed_after_telethon_gate=%d telethon_gate_rejected=%d scam_base_inserted=%d'
+        % (
+            web_findings_count,
+            agg_whistleblower_channels,
+            confirmed_before_gate,
+            confirmed_after_telethon_gate,
+            telethon_gate_rejected,
+            len(inserted_confirmed_channels),
+        ),
         file=sys.stderr,
     )
     channels_watch_rows = _build_channels_watch_rows(

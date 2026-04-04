@@ -116,8 +116,9 @@ jobs:
           KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE: '0'
         run: python3 run_12h_monitor.py
 
-      # ВРЕМЕННО ОТКЛЮЧЕНО: строгий cleanup удалял свежезаписанные строки сразу после монитора.
-      # Включить обратно: убрать if: false или вынести gate до записи в scam_base.
+      # ОТКЛЮЧЕНО (if: false): пост-цикловый cleanup дублировал gate и очищал лист сразу после записи.
+      # Строгий Telethon-gate теперь в run_12h_monitor до записи в scam_base (kro_telegram_channel_gate).
+      # Включить снова только при необходимости «дочистки» вручную: убрать if: false.
       - name: Periodic scam_base cleanup (strict gate)
         if: false
         env:
