@@ -9,14 +9,16 @@
   if (window.matchMedia('(max-width: 768px)').matches) return;
   if (typeof Lenis === 'undefined') return;
 
+  var easeOutSoft = function (t) { return 1 - Math.pow(1 - t, 3); };
   var lenis = new Lenis({
-    duration: 1.35,
-    easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
+    duration: 2.05,
+    easing: easeOutSoft,
     orientation: 'vertical',
     gestureOrientation: 'vertical',
     smoothWheel: true,
-    wheelMultiplier: 0.78,
-    touchMultiplier: 1.2,
+    wheelMultiplier: 0.58,
+    touchMultiplier: 1.05,
+    lerp: 0.085,
     autoRaf: true,
   });
 
