@@ -10,6 +10,11 @@ html {
    scroll-behavior: smooth;
 }
 
+/* Lenis сам сглаживает колёсико; native smooth на html конфликтует с догоном */
+html.lenis {
+   scroll-behavior: auto !important;
+}
+
 /* Доступность: видимый фокус для клавиатурной навигации */
 a:focus-visible,
 button:focus-visible {

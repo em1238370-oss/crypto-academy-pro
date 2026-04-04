@@ -1,29 +1,92 @@
 /**
- * Плавный скролл с инерцией (Lenis)
- * Когда пользователь быстро листает — страница плавно «догоняет» с замедлением
+ * Плавный скролл: Lenis с локального бандла + гарантированный RAF.
+ * Если Lenis не загрузился — запасной wheel-сглаживатель (тот же эффект «едет медленно»).
  */
-(function() {
+(function () {
     'use strict';
 
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var narrowPhone = window.matchMedia('(max-width: 480px)').matches;
+
+    function maxScrollY() {
+        return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    }
+
+    /** Запас, если нет Lenis: перехват wheel + инерция к targetY */
+    function initWheelSmoothFallback() {
+        if (prefersReducedMotion || narrowPhone) return;
+        var targetY = window.pageYOffset || 0;
+        var running = false;
+        var wheelGain = 0.26;
+        var smooth = 0.11;
+
+        function clamp() {
+            var m = maxScrollY();
+            if (targetY < 0) targetY = 0;
+            if (targetY > m) targetY = m;
+        }
+
+        function tick() {
+            var y = window.pageYOffset || 0;
+            var d = targetY - y;
+            if (Math.abs(d) < 0.45) {
+                window.scrollTo(0, targetY);
+                running = false;
+                return;
+            }
+            window.scrollTo(0, y + d * smooth);
+            requestAnimationFrame(tick);
+        }
+
+        function onWheel(e) {
+            if (e.ctrlKey) return;
+            var t = e.target;
+            if (t && t.closest && t.closest('[data-lenis-prevent], [data-lenis-prevent-wheel], textarea, [contenteditable="true"]')) {
+                return;
+            }
+            e.preventDefault();
+            targetY += (e.deltaY || 0) * wheelGain;
+            clamp();
+            if (!running) {
+                running = true;
+                requestAnimationFrame(tick);
+            }
+        }
+
+        window.addEventListener('wheel', onWheel, { passive: false });
+        window.addEventListener(
+            'scroll',
+            function () {
+                if (!running) targetY = window.pageYOffset || 0;
+            },
+            { passive: true }
+        );
+        window.__KRO_SCROLL_FALLBACK__ = true;
+    }
 
     function initLenis() {
-        if (prefersReducedMotion || typeof Lenis === 'undefined') return null;
-        /* Раньше отключали до 768px — при узком окне на ПК Lenis не работал, «изменений не видно».
-           Отключаем только на очень узких экранах (типичный телефон). */
-        if (window.matchMedia('(max-width: 480px)').matches) return null;
+        if (prefersReducedMotion) return null;
+        if (narrowPhone) return null;
+        if (typeof Lenis === 'undefined') {
+            initWheelSmoothFallback();
+            return null;
+        }
 
-        /* Режим только lerp (без duration): страница заметно медленнее «догоняет» колёсико/трекпад —
-           именно ощущение «листаешь вниз — едет медленно». */
-        const lenis = new Lenis({
+        var lenis = new Lenis({
             orientation: 'vertical',
             gestureOrientation: 'vertical',
             smoothWheel: true,
-            wheelMultiplier: 0.22,
-            touchMultiplier: 0.78,
-            lerp: 0.022,
-            autoRaf: true,
+            wheelMultiplier: 0.2,
+            touchMultiplier: 0.72,
+            lerp: 0.019,
+            autoRaf: false,
         });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
 
         window.__KRO_LENIS__ = lenis;
         return lenis;
@@ -32,34 +95,36 @@
     function initScrollReveal() {
         if (prefersReducedMotion) return;
 
-        const sections = document.querySelectorAll(
+        var sections = document.querySelectorAll(
             '.main-text-section, .trust-stats, .mission-section, .news-hero, .news-today, .news-trust-stats, .signal-noise, .before-react, .news-sources-section, .editor-lens, .news-row'
         );
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('scroll-revealed');
-                }
-            });
-        }, {
-            threshold: 0.15,
-            rootMargin: '0px 0px -40px 0px'
-        });
+        var observer = new IntersectionObserver(
+            function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) entry.target.classList.add('scroll-revealed');
+                });
+            },
+            {
+                threshold: 0.15,
+                rootMargin: '0px 0px -40px 0px',
+            }
+        );
 
-        sections.forEach(section => {
+        sections.forEach(function (section) {
             section.classList.add('scroll-reveal');
             observer.observe(section);
         });
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            initLenis();
-            initScrollReveal();
-        });
-    } else {
+    function boot() {
         initLenis();
         initScrollReveal();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
     }
 })();

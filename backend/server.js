@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import https from 'https';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { basename, dirname, join } from 'path';
+import { basename, dirname, join, sep } from 'path';
 import { spawnSync } from 'child_process';
 import Stripe from 'stripe';
 
@@ -50,6 +50,13 @@ app.use(
       if (name === 'index.html' || name === 'monitor.html' || name === 'channel.html') {
         res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         res.setHeader('Pragma', 'no-cache');
+      }
+      const root = join(__dirname, '..');
+      if (filePath.startsWith(root + sep) && filePath.endsWith('.js')) {
+        const rel = filePath.slice(root.length + 1);
+        if (rel.startsWith('scripts' + sep)) {
+          res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        }
       }
     },
   })
