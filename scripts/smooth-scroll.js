@@ -12,17 +12,17 @@
         // На мобильной — только нативный скролл, чтобы можно было сразу листать вниз без нажатия на кнопку
         if (window.matchMedia('(max-width: 768px)').matches) return null;
 
-        // Нежный, чуть более медленный скролл вниз/вверх (колёсико и трекпад)
-        const easeOutSoft = (t) => 1 - Math.pow(1 - t, 3); // easeOutCubic — мягче экспоненты по умолчанию
+        // Очень нежный, медленный скролл (колёсико / трекпад)
+        const easeOutSoft = (t) => 1 - Math.pow(1 - t, 4); // easeOutQuart — ещё мягче сход к цели
         const lenis = new Lenis({
-            duration: 2.05,
+            duration: 2.85,
             easing: easeOutSoft,
             orientation: 'vertical',
             gestureOrientation: 'vertical',
             smoothWheel: true,
-            wheelMultiplier: 0.58,
-            touchMultiplier: 1.05,
-            lerp: 0.085,
+            wheelMultiplier: 0.42,
+            touchMultiplier: 0.92,
+            lerp: 0.065,
             autoRaf: true,
         });
 
