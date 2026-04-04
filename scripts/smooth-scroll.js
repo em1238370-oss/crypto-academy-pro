@@ -1,23 +1,20 @@
 /**
- * Плавный скролл: Lenis с локального бандла + гарантированный RAF.
- * Если Lenis не загрузился — запасной wheel-сглаживатель (тот же эффект «едет медленно»).
+ * Плавный медленный скролл: Lenis (колёсико + тач) или запасной wheel.
+ * Раньше отключали на узком экране — из‑за этого на телефоне «не было никаких изменений».
  */
 (function () {
     'use strict';
 
     var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var narrowPhone = window.matchMedia('(max-width: 480px)').matches;
 
     function maxScrollY() {
         return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
     }
 
-    /** Запас, если нет Lenis: перехват wheel + инерция к targetY */
     function initWheelSmoothFallback() {
-        if (prefersReducedMotion || narrowPhone) return;
+        if (prefersReducedMotion) return;
         var targetY = window.pageYOffset || 0;
         var running = false;
-        /* ~5× медленнее: меньший шаг от колёса + дольше «догон» к цели */
         var wheelGain = 0.052;
         var smooth = 0.022;
 
@@ -62,22 +59,26 @@
             },
             { passive: true }
         );
+        window.__KRO_SCROLL_MODE__ = 'fallback';
         window.__KRO_SCROLL_FALLBACK__ = true;
     }
 
     function initLenis() {
-        if (prefersReducedMotion) return null;
-        if (narrowPhone) return null;
+        if (prefersReducedMotion) {
+            window.__KRO_SCROLL_MODE__ = 'reduced';
+            return null;
+        }
         if (typeof Lenis === 'undefined') {
             initWheelSmoothFallback();
             return null;
         }
 
-        /* ~5× медленнее листание вверх/вниз: слабее импульс колёса + плавнее догон */
         var lenis = new Lenis({
             orientation: 'vertical',
             gestureOrientation: 'vertical',
             smoothWheel: true,
+            syncTouch: true,
+            syncTouchLerp: 0.055,
             wheelMultiplier: 0.04,
             touchMultiplier: 0.14,
             lerp: 0.004,
@@ -91,6 +92,7 @@
         requestAnimationFrame(raf);
 
         window.__KRO_LENIS__ = lenis;
+        window.__KRO_SCROLL_MODE__ = 'lenis';
         return lenis;
     }
 

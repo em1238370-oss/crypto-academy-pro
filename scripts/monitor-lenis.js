@@ -1,11 +1,13 @@
 /**
- * Плавный скролл (Lenis) для /monitor — локальный бандл, явный RAF, запас без Lenis.
+ * Плавный медленный скролл для /monitor (колёсико + тач).
  */
 (function () {
   'use strict';
   if (!document.body.classList.contains('mon-page')) return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  if (window.matchMedia('(max-width: 480px)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    window.__MON_SCROLL_MODE__ = 'reduced';
+    return;
+  }
 
   function maxScrollY() {
     return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
@@ -58,6 +60,7 @@
       },
       { passive: true }
     );
+    window.__MON_SCROLL_MODE__ = 'fallback';
     window.__monLenisFallback = true;
   }
 
@@ -70,6 +73,8 @@
     orientation: 'vertical',
     gestureOrientation: 'vertical',
     smoothWheel: true,
+    syncTouch: true,
+    syncTouchLerp: 0.055,
     wheelMultiplier: 0.04,
     touchMultiplier: 0.14,
     lerp: 0.004,
@@ -83,4 +88,5 @@
   requestAnimationFrame(raf);
 
   window.__monLenis = lenis;
+  window.__MON_SCROLL_MODE__ = 'lenis';
 })();
