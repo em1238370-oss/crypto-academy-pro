@@ -2958,6 +2958,7 @@ def _maybe_prune_scam_base_http_after_cycle(client, sheet_id):
         return
     flag = (os.environ.get('KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE') or '0').strip().lower()
     if flag not in ('1', 'true', 'yes', 'on'):
+        print('prune skipped (flag=0)', file=sys.stderr)
         return
     try:
         p = float(os.environ.get('KRO_SCAM_BASE_HTTP_PRUNE_PAUSE', '0.4') or '0.4')
@@ -5816,6 +5817,8 @@ def main():
         except Exception as _ws_err:
             print(f'[web_scraper] error: {_ws_err}', file=sys.stderr)
 
+    web_findings_count = len(web_findings or [])
+
     # 4b) Органический рост (годовой темп): 5–10 новых доменов kurs.expert → поиск → scam_base;
     #     оставшиеся слоты (всего ≤10) — кандидаты @*bot* из текстов скам-каналов → check_queue.
     organic_cw = '%s_%s' % (date_str_0, 'am' if now_msk_dt.hour < 12 else 'pm')
@@ -5891,6 +5894,19 @@ def main():
     telega_channels = [r for r in (telega_channels or []) if _link_exists(r.get('link') or _object_link(r.get('channel', '')))]
     complaints_rows = [r for r in complaints_rows if _link_exists(_object_link(r.get('channel', '')))]
 
+    tgstat_by_key_for_counts = {}
+    for row in (new_tgstat or []):
+        ch = (row.get('channel') or '').strip()
+        k = _norm_ch_key(ch)
+        if k:
+            tgstat_by_key_for_counts[k] = row
+    agg_whistleblower_channels = 0
+    for ch_raw, d in agg_complaints_total.items():
+        key = _norm_ch_key((ch_raw or '').strip())
+        tg_row_c = tgstat_by_key_for_counts.get(key)
+        if _complaint_bucket_has_whistleblower_evidence(d, tg_row_c):
+            agg_whistleblower_channels += 1
+
     report_date_str = now_msk_dt.strftime('%d.%m.%Y')
     risk_rows, telegram_count_from_risk, courses_count_from_risk = _build_risk_table_rows(
         new_tgstat, telega_channels, complaints_rows, report_date_str
@@ -5909,10 +5925,16 @@ def main():
     # --- CONFIRMED PIPELINE: строгий 3-критерийный отбор для сайта и scam_base ---
     cycle_window = '%s_%s' % (report_date_str, 'am' if now_msk_dt.hour < 12 else 'pm')
     confirmed_objects = _collect_confirmed_objects(new_tgstat, agg_complaints_total, cycle_window, channel_ages_from_tg)
+    confirmed_before_gate = len(confirmed_objects)
     confirmed_objects, channels_network_rows = asyncio.run(_analyze_confirmed_channels_content(confirmed_objects))
     inserted_confirmed_channels = []
     if client and sheet_id:
         inserted_confirmed_channels = _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id)
+    print(
+        '[kro_cycle_counters] web_findings_count=%d agg_whistleblower_channels=%d confirmed_before_gate=%d scam_base_inserted=%d'
+        % (web_findings_count, agg_whistleblower_channels, confirmed_before_gate, len(inserted_confirmed_channels)),
+        file=sys.stderr,
+    )
     channels_watch_rows = _build_channels_watch_rows(
         tgstat_watch_channels,
         telega_channels,

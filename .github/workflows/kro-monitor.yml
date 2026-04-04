@@ -116,7 +116,10 @@ jobs:
           KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE: '0'
         run: python3 run_12h_monitor.py
 
+      # ВРЕМЕННО ОТКЛЮЧЕНО: строгий cleanup удалял свежезаписанные строки сразу после монитора.
+      # Включить обратно: убрать if: false или вынести gate до записи в scam_base.
       - name: Periodic scam_base cleanup (strict gate)
+        if: false
         env:
           GOOGLE_APPLICATION_CREDENTIALS: backend/kro-worker/credentials.json
           KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
