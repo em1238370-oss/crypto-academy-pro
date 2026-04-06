@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260411-tg-browser-primary">
+  <link rel="stylesheet" href="/monitor.css?v=20260411-tme-s-preview-fix">
 </head>
 <body class="mon-page ch-page">
 
@@ -201,10 +201,24 @@
   }
 
   function telegramAppOpenHref(safeHttps) {
-    var h = String(safeHttps || '').split('#')[0];
+    var h = String(safeHttps || '').split('#')[0].replace(/\/+$/, '');
     var m = /^https:\/\/t\.me\/([a-zA-Z0-9_]{3,64})(?:\?.*)?$/i.exec(h);
-    if (!m) return h;
+    if (!m) return String(safeHttps || '').split('#')[0];
     return 'tg://resolve?domain=' + encodeURIComponent(m[1].toLowerCase());
+  }
+
+  function telegramBrowserChannelHref(safeHttps) {
+    var raw = String(safeHttps || '').split('#')[0];
+    var q = '';
+    var qi = raw.indexOf('?');
+    if (qi >= 0) {
+      q = raw.slice(qi);
+      raw = raw.slice(0, qi);
+    }
+    var h = raw.replace(/\/+$/, '');
+    var m = /^https:\/\/t\.me\/([a-zA-Z0-9_]{3,64})$/i.exec(h);
+    if (!m) return String(safeHttps || '').split('#')[0];
+    return 'https://t.me/s/' + m[1].toLowerCase() + q;
   }
 
   function telegramClickAttrs(finalHref) {
@@ -286,8 +300,9 @@
       var objHref = r.link;
       var tgCanon = canonicalTelegramHttps(normalizeHttpHref(r.link) || r.link);
       if (tgCanon) objHref = tgCanon;
-      parts.push('<a class="mon-external-link" data-lenis-prevent="" href="' + esc(objHref) + '" target="_blank" rel="noopener noreferrer" title="Открыть в браузере">' +
-        esc(hostLabel(objHref)) + ' (объект)' + externalIcon() + '</a>');
+      var objWeb = telegramBrowserChannelHref(objHref);
+      parts.push('<a class="mon-external-link" data-lenis-prevent="" href="' + esc(objWeb) + '" target="_blank" rel="noopener noreferrer" title="Лента в браузере (t.me/s)">' +
+        esc(hostLabel(objWeb)) + ' (объект)' + externalIcon() + '</a>');
     }
     if (!nonTg.length && r && r.source_primary && /^https?:\/\//i.test(r.source_primary)) {
       nonTg = [r.source_primary];
@@ -301,8 +316,9 @@
     for (var j = 0; j < tg.length; j++) {
       var t = tg[j];
       var th = canonicalTelegramHttps(t) || t;
-      parts.push('<a class="mon-external-link mon-source-link" data-lenis-prevent="" href="' + esc(th) + '" target="_blank" rel="noopener noreferrer" title="Открыть в браузере">' +
-        esc(hostLabel(th)) + externalIcon() + '</a>');
+      var thWeb = telegramBrowserChannelHref(th);
+      parts.push('<a class="mon-external-link mon-source-link" data-lenis-prevent="" href="' + esc(thWeb) + '" target="_blank" rel="noopener noreferrer" title="Лента в браузере (t.me/s)">' +
+        esc(hostLabel(thWeb)) + externalIcon() + '</a>');
     }
     if (!parts.length) return '<span class="mon-text-fallback">Ссылки не извлечены из строки — смотрите таблицу в мониторе.</span>';
     return parts.join(' ');
@@ -351,13 +367,14 @@
         if (/^[a-zA-Z0-9_]{3,64}$/.test(sl)) tgHref = 'https://t.me/' + sl;
       }
       if (tgHref) {
+        var webH = telegramBrowserChannelHref(tgHref);
         var appLine = '';
         var appH = telegramAppOpenHref(tgHref);
-        if (appH !== tgHref) {
+        if (/^tg:\/\//i.test(appH)) {
           appLine = ' <a class="mon-tg-app-chip" data-lenis-prevent="" href="' + esc(appH) + '"' + telegramClickAttrs(appH) + ' title="Открыть в приложении Telegram">прил.</a>';
         }
         document.getElementById('ch-heading').insertAdjacentHTML('afterend',
-          '<p class="ch-tg-line"><a class="mon-external-link" data-lenis-prevent="" href="' + esc(tgHref) + '" target="_blank" rel="noopener noreferrer" title="Канал в браузере (t.me)">Канал в Telegram' + externalIcon() + '</a>' + appLine + '</p>');
+          '<p class="ch-tg-line"><a class="mon-external-link" data-lenis-prevent="" href="' + esc(webH) + '" target="_blank" rel="noopener noreferrer" title="Лента канала в браузере (t.me/s)">Канал в Telegram' + externalIcon() + '</a>' + appLine + '</p>');
       }
 
       if (data.merged_rows && data.merged_rows > 1) {

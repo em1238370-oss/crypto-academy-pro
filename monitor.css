@@ -2950,6 +2950,22 @@ a.mon-tg-app-chip:focus-visible {
   margin-left: 0.15rem;
 }
 
+.mon-tg-browser-hint {
+  margin: 0.75rem 0 0.6rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--mon-text-dim);
+  background: var(--mon-glass);
+  border: 1px solid var(--mon-border);
+  border-radius: 10px;
+}
+
+.mon-tg-browser-hint strong {
+  color: var(--mon-text);
+  font-weight: 600;
+}
+
 a.mon-channel-profile-link {
   color: var(--mon-amber-hot);
   font-weight: 600;
