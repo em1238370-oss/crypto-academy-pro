@@ -1369,7 +1369,9 @@ function channelLabelForMonitorCase(ch) {
   if (!raw) return '—';
   if (raw.startsWith('@')) return raw;
   if (/^https?:\/\/t\.me\//i.test(raw)) {
-    return `@${raw.replace(/^https?:\/\/t\.me\//i, '').replace(/\/$/, '')}`;
+    const n = normalizeTelegramTmeUrl(raw) || raw;
+    const seg = (n.replace(/^https?:\/\/t\.me\//i, '').split('/')[0] || '').replace(/^@+/, '');
+    return seg ? `@${seg}` : `@${raw.replace(/^@+/, '')}`;
   }
   return `@${raw.replace(/^@+/, '')}`;
 }
@@ -1377,8 +1379,11 @@ function channelLabelForMonitorCase(ch) {
 function channelUrlForMonitorCase(ch) {
   const raw = String(ch || '').trim();
   if (!raw) return '';
-  if (/^https?:\/\//i.test(raw)) return raw;
-  const name = raw.replace(/^@+/, '');
+  if (/^https?:\/\//i.test(raw)) {
+    const n = normalizeTelegramTmeUrl(raw);
+    return n || raw;
+  }
+  const name = raw.replace(/^@+/, '').replace(/^%40+/i, '');
   return name ? `https://t.me/${name}` : '';
 }
 
@@ -1387,6 +1392,73 @@ function collectUrlsFromString(s) {
   if (!s || typeof s !== 'string') return [];
   const matches = s.match(/https?:\/\/[^\s\])'"<>|]+/g) || [];
   return matches.map((m) => m.replace(/[),.;]+$/g, ''));
+}
+
+/** Синхронно с monitor.html: путь t.me без @ и без %40 в сегментах. */
+function telegramPathSegmentsForTme(pathname) {
+  let pathRaw = pathname || '/';
+  try {
+    pathRaw = decodeURIComponent(pathRaw);
+  } catch {
+    /* ignore */
+  }
+  pathRaw = pathRaw.replace(/\/@+/g, '/');
+  return pathRaw
+    .split('/')
+    .filter(Boolean)
+    .map((seg) => {
+      const q = seg.indexOf('?');
+      const base = q >= 0 ? seg.slice(0, q) : seg;
+      return base.replace(/^@+/, '').replace(/^(%40)+/gi, '');
+    })
+    .filter(Boolean);
+}
+
+/** https://t.me/username, никогда https://t.me/@username (иначе Telegram показывает «канал не существует»). */
+function normalizeTelegramTmeUrl(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return '';
+  let u = s;
+  if (!/^https?:\/\//i.test(u)) {
+    if (/^t\.me\//i.test(u)) u = `https://${u}`;
+    else if (/^telegram\.me\//i.test(u)) u = `https://${u}`;
+    else return '';
+  }
+  try {
+    const parsed = new URL(u);
+    const host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+    if (host !== 't.me' && host !== 'telegram.me') return '';
+    const search = parsed.search || '';
+    const segments = telegramPathSegmentsForTme(parsed.pathname || '/');
+    if (!segments.length) return '';
+    const p0 = segments[0];
+    const p1 = segments[1] || '';
+    if (p0.toLowerCase() === 'joinchat' && p1) {
+      const jh = p1.replace(/^@+/, '').replace(/^(%40)+/gi, '');
+      if (!/^[\w-]+$/.test(jh)) return '';
+      return `https://t.me/joinchat/${jh}${search}`;
+    }
+    if (p0.charAt(0) === '+') {
+      const inv = p0.slice(1).replace(/^@+/, '').replace(/^(%40)+/gi, '');
+      if (!/^[\w-]+$/.test(inv)) return '';
+      return `https://t.me/+${inv}${search}`;
+    }
+    if (p0 === 's' && p1) {
+      const un = p1.replace(/^@+/, '').replace(/^(%40)+/gi, '');
+      if (!/^[a-zA-Z0-9_]{3,64}$/.test(un)) return '';
+      return `https://t.me/${un}${search}`;
+    }
+    return `https://t.me/${segments.join('/')}${search}`;
+  } catch {
+    return '';
+  }
+}
+
+function maybeNormalizeSheetTelegramLink(link) {
+  const s = String(link || '').trim();
+  if (!s || !/t\.me|telegram\.me/i.test(s)) return s;
+  const n = normalizeTelegramTmeUrl(s);
+  return n || s;
 }
 
 function parseScamBaseTotalLossRub(row) {
@@ -1416,9 +1488,13 @@ function pickScamBaseCaseSource(row) {
   ];
   const external = urls.find((u) => !/t\.me\//i.test(u));
   if (external) return { url: external, kind: 'external' };
-  const link = String(row.link || '').trim();
+  const link = maybeNormalizeSheetTelegramLink(String(row.link || '').trim());
   if (/^https?:\/\//i.test(link)) return { url: link, kind: 'telegram' };
-  if (urls.length) return { url: urls[0], kind: 'telegram' };
+  if (urls.length) {
+    const u0 = urls[0];
+    const u0n = /t\.me|telegram\.me/i.test(u0) ? normalizeTelegramTmeUrl(u0) || u0 : u0;
+    return { url: u0n, kind: 'telegram' };
+  }
   const slug = encodeURIComponent(String(row.username || '').trim().replace(/^@+/, ''));
   if (slug) return { url: `/channel/${slug}`, kind: 'monitor' };
   return { url: '/monitor#data-scam', kind: 'monitor' };
@@ -1823,7 +1899,7 @@ function parseScamBaseRow(row) {
   // old v1 (8 cols):      username | risk_score | ads_per_week | bot_pct | vip_price | complaints | total_loss | verdict
   if (scamBaseRowLooksV2(row)) {
     // new v2 schema
-    const link = (row[1] || '').toString().trim();
+    const link = maybeNormalizeSheetTelegramLink((row[1] || '').toString().trim());
     const detected_at = (row[2] || '').toString().trim();
     const created_at = (row[3] || '').toString().trim();
     const channel_age_days = parseInt((row[4] ?? '').toString(), 10);
@@ -2028,7 +2104,7 @@ function enrichScamBaseContentAnalysisForMonitor(row) {
 function parseChannelsWatchRow(row) {
   const username = (row[0] || '').toString().trim();
   if (!username) return null;
-  const link = (row[1] || '').toString().trim();
+  const link = maybeNormalizeSheetTelegramLink((row[1] || '').toString().trim());
   const detected_at = (row[2] || '').toString().trim();
   const created_at = (row[3] || '').toString().trim();
   const channel_age_days = parseInt((row[4] ?? '').toString(), 10);
@@ -2063,6 +2139,7 @@ function parseChannelsNetworkRow(row) {
   const source_channel = (row[0] || '').toString().trim();
   const target_channel = (row[1] || '').toString().trim();
   if (!source_channel || !target_channel) return null;
+  const postRaw = (row[6] || '').toString().trim();
   return {
     source_channel,
     target_channel,
@@ -2070,7 +2147,7 @@ function parseChannelsNetworkRow(row) {
     detected_at: (row[3] || '').toString().trim(),
     last_post_at: (row[4] || '').toString().trim(),
     evidence: (row[5] || '').toString().trim(),
-    post_url: (row[6] || '').toString().trim(),
+    post_url: maybeNormalizeSheetTelegramLink(postRaw) || postRaw,
   };
 }
 
