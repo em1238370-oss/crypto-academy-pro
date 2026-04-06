@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260411-tg-ios-telegram-scheme">
+  <link rel="stylesheet" href="/monitor.css?v=20260411-tg-ios-click-handoff">
 </head>
 <body class="mon-page">
 
@@ -829,7 +829,19 @@
       var parsed = new URL(u);
       var host = (parsed.hostname || '').replace(/^www\./i, '').toLowerCase();
       if (host !== 't.me' && host !== 'telegram.me') return null;
-      var seg = (parsed.pathname || '').replace(/^\//, '').split('/')[0];
+      var parts = (parsed.pathname || '').replace(/^\//, '').split('/').filter(function(p) { return p; });
+      if (!parts.length) return null;
+      if (parts[0].toLowerCase() === 'joinchat' && parts[1]) {
+        var jh = parts[1].split('?')[0];
+        if (!/^[\w-]+$/.test(jh)) return null;
+        var jq = encodeURIComponent(jh);
+        return {
+          https: 'https://t.me/joinchat/' + jh,
+          tg: 'tg://join?invite=' + jq,
+          telegramIos: 'telegram://join?invite=' + jq
+        };
+      }
+      var seg = parts[0] === 's' && parts.length >= 2 ? parts[1].split('?')[0] : parts[0].split('?')[0];
       if (!seg) return null;
       if (seg.charAt(0) === '+') {
         var inv = seg.slice(1);
@@ -871,7 +883,22 @@
     return deep.tg || '';
   }
 
-  /** Ссылка на объект в таблице: на телефоне href=tg:// (нативно открывает приложение), иначе https. */
+  /** data-tg-open: нативная ссылка; на iOS href остаётся https (иначе Safari теряет deep link). */
+  function telegramLinkAttrs(deep, mobile) {
+    if (!deep || !mobile) return { href: deep ? deep.https : '', dataOpen: '', dataHttps: '', useDeep: false };
+    var native = telegramNativeHref(deep);
+    if (isIOSLike()) {
+      return {
+        href: deep.https,
+        dataOpen: native,
+        dataHttps: deep.https,
+        useDeep: true
+      };
+    }
+    return { href: native, dataOpen: '', dataHttps: deep.https, useDeep: true };
+  }
+
+  /** Ссылка на объект в таблице: мобильный Telegram — нативный URI + https-запас. */
   function anchorMonChannelObject(channelLabel, row) {
     var tgHttps = extractTelegramPublicUrl(row);
     if (!tgHttps) {
@@ -881,26 +908,35 @@
     }
     var deep = parseTelegramUrlForApp(tgHttps);
     var mobile = isTelegramMobileOpen();
-    var useDeep = !!(deep && mobile);
-    var href = deep && mobile ? telegramNativeHref(deep) : (deep ? deep.https : tgHttps);
-    var cls = 'mon-channel-profile-link' + (useDeep ? ' mon-tg-app-link' : '');
-    var dataHttps = useDeep ? ' data-tg-https="' + esc(deep.https) + '"' : '';
-    return '<a class="' + cls + '" href="' + esc(href) + '"' + dataHttps +
+    var t = telegramLinkAttrs(deep, mobile);
+    var href = t.href || (deep ? deep.https : tgHttps);
+    var cls = 'mon-channel-profile-link' + (t.useDeep ? ' mon-tg-app-link' : '');
+    var dataOpen = t.dataOpen ? ' data-tg-open="' + esc(t.dataOpen) + '"' : '';
+    var dataHttps = t.dataHttps ? ' data-tg-https="' + esc(t.dataHttps) + '"' : '';
+    return '<a class="' + cls + '" href="' + esc(href) + '"' + dataOpen + dataHttps +
       ' target="_self" rel="noopener noreferrer" title="Открыть канал в Telegram">' + esc(channelLabel) + '</a>';
   }
 
-  /** Резерв https://t.me только если приложение не забрало фокус (отмена таймера при hidden/pagehide). */
+  /** iOS: клик → data-tg-open (жест пользователя). Android: href=tg://. Fallback на https.t.me только если приложение не забрало вкладку. */
   function initTelegramAppLinks() {
     document.addEventListener('click', function(ev) {
       var a = ev.target.closest('a.mon-tg-app-link[data-tg-https]');
-      if (!a) return;
-      if (!isTelegramMobileOpen()) return;
-      var h = a.getAttribute('href') || '';
-      if (h.indexOf('tg:') !== 0 && h.indexOf('telegram:') !== 0) return;
+      if (!a || !isTelegramMobileOpen()) return;
       var https = a.getAttribute('data-tg-https');
       if (!https) return;
 
-      var delayMs = isIOSLike() ? 2200 : 1400;
+      var openUrl = a.getAttribute('data-tg-open');
+      var h = a.getAttribute('href') || '';
+
+      if (isIOSLike() && openUrl) {
+        ev.preventDefault();
+        if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+        window.location.href = openUrl;
+      } else if (h.indexOf('tg:') !== 0 && h.indexOf('telegram:') !== 0) {
+        return;
+      }
+
+      var delayMs = isIOSLike() ? 2800 : 1600;
       var tid = window.setTimeout(function() {
         if (document.visibilityState === 'visible') window.location.href = https;
       }, delayMs);
@@ -914,7 +950,7 @@
       }
       document.addEventListener('visibilitychange', onVis);
       window.addEventListener('pagehide', cleanup, { once: true });
-      window.setTimeout(cleanup, Math.max(delayMs, 2500) + 800);
+      window.setTimeout(cleanup, Math.max(delayMs, 3000) + 1000);
     }, true);
   }
 
@@ -951,12 +987,13 @@
     var norm = normalizeHttpHref(url) || url;
     var deep = parseTelegramUrlForApp(norm);
     var mobile = isTelegramMobileOpen();
-    var useDeep = !!(deep && mobile);
-    var href = deep && mobile ? telegramNativeHref(deep) : (deep ? deep.https : norm);
-    var c = (cls || 'mon-external-link') + (useDeep ? ' mon-tg-app-link' : '');
-    var dataHttps = useDeep ? ' data-tg-https="' + esc(deep.https) + '"' : '';
-    var tgt = useDeep ? '_self' : '_blank';
-    return '<a class="' + esc(c) + '" href="' + esc(href) + '"' + dataHttps + ' target="' + tgt + '" rel="noopener noreferrer">' +
+    var t = telegramLinkAttrs(deep, mobile);
+    var href = t.href || (deep ? deep.https : norm);
+    var c = (cls || 'mon-external-link') + (t.useDeep ? ' mon-tg-app-link' : '');
+    var dataOpen = t.dataOpen ? ' data-tg-open="' + esc(t.dataOpen) + '"' : '';
+    var dataHttps = t.dataHttps ? ' data-tg-https="' + esc(t.dataHttps) + '"' : '';
+    var tgt = t.useDeep ? '_self' : '_blank';
+    return '<a class="' + esc(c) + '" href="' + esc(href) + '"' + dataOpen + dataHttps + ' target="' + tgt + '" rel="noopener noreferrer">' +
       esc(label) + externalIcon() + '</a>';
   }
 
@@ -2386,6 +2423,6 @@
 })();
 </script>
 <script src="/scripts/vendor/lenis-1.3.17.min.js?v=1"></script>
-<script src="/scripts/monitor-lenis.js?v=20260411-tg-ios-telegram-scheme"></script>
+<script src="/scripts/monitor-lenis.js?v=20260411-tg-ios-click-handoff"></script>
 </body>
 </html>
