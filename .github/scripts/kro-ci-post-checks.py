@@ -51,7 +51,7 @@ def run_data_quality(root: Path) -> None:
     )
     if r.returncode != 0:
         print(
-            f"::warning::kro-data-quality.mjs exited with {r.returncode}",
+            f"::warning::Проверка scam_base (Node): скрипт завершился с кодом {r.returncode}",
             file=sys.stderr,
         )
         if r.stderr:
@@ -61,7 +61,7 @@ def run_data_quality(root: Path) -> None:
     try:
         q = json.loads(r.stdout)
     except json.JSONDecodeError as e:
-        print(f"::warning::failed to parse kro-data-quality JSON: {e}", file=sys.stderr)
+        print(f"::warning::Проверка scam_base: не удалось разобрать JSON ({e})", file=sys.stderr)
         print(r.stdout[:2000], file=sys.stderr)
         return
 
@@ -71,18 +71,32 @@ def run_data_quality(root: Path) -> None:
     lm = int(q.get("lossStatusMismatchCount") or 0)
     print(json.dumps(q, ensure_ascii=False, indent=2))
     if nc > 0 or lm > 0:
-        print("KRO quality violations:", nc, lm, file=sys.stderr)
-        if bad_crypto:
-            print("Non-crypto usernames:", ", ".join(bad_crypto), file=sys.stderr)
-        if bad_loss:
-            print("Loss-status usernames:", ", ".join(bad_loss), file=sys.stderr)
         print(
-            "::warning::KRO data-quality: "
-            f"{nc} non-crypto / {lm} loss-status mismatches — fix in Sheets or run migration",
+            "KRO: замечания по scam_base — строк без крипто-маркеров в тексте: %s; "
+            "несовпадение «есть потери, но статус не «в риске»»: %s"
+            % (nc, lm),
+            file=sys.stderr,
+        )
+        if bad_crypto:
+            print(
+                "Проверьте строки (мало признаков крипто-контекста): "
+                + ", ".join(bad_crypto),
+                file=sys.stderr,
+            )
+        if bad_loss:
+            print(
+                "Потери > 0, но статус не «в риске»: " + ", ".join(bad_loss),
+                file=sys.stderr,
+            )
+        print(
+            "::warning::KRO / scam_base: "
+            f"{nc} строк без явного крипто-текста, {lm} несовпадений статуса при потерях. "
+            "Исправьте в Google Таблице или запустите "
+            "`node backend/scripts/kro-data-quality.mjs --apply` для авто-статуса «в риске».",
             file=sys.stderr,
         )
     else:
-        print("KRO quality check OK")
+        print("Проверка качества scam_base: OK")
 
 
 def main() -> int:
@@ -91,12 +105,12 @@ def main() -> int:
         verify_main = _load_verify_main()
         verify_main()
     except Exception as e:
-        print(f"::warning::last_cycle verify crashed: {e}", file=sys.stderr)
+        print(f"::warning::Проверка last_cycle_at: сбой ({e})", file=sys.stderr)
 
     try:
         run_data_quality(root)
     except Exception as e:
-        print(f"::warning::data-quality runner crashed: {e}", file=sys.stderr)
+        print(f"::warning::Проверка scam_base: сбой ({e})", file=sys.stderr)
 
     return 0
 

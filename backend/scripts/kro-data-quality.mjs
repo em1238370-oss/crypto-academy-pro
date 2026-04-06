@@ -28,6 +28,17 @@ function hasCryptoContext(...parts) {
   return REQUIRED.some((h) => blob.includes(h));
 }
 
+/** Тип объекта в scam_base уже отнесён к крипто-тематике — не требовать слова «crypto» в username. */
+function rowLooksCryptoByType(objectType) {
+  const t = String(objectType || '').toLowerCase();
+  const hints = [
+    'сигнал', 'крипт', 'биткоин', 'bitcoin', 'btc', 'usdt', 'обменник',
+    'арбитраж', 'трейд', 'инвест', 'nft', 'defi', 'майнинг', 'альткоин',
+    'стейкинг', 'токен', 'блокчейн', 'p2p',
+  ];
+  return hints.some((kw) => t.includes(kw));
+}
+
 function statusIsExactRisk(status) {
   const s = String(status || '').trim().toLowerCase();
   if (s === 'в риске') return true;
@@ -99,7 +110,9 @@ async function main() {
       coursesRows.push({ rowNo, username, objectType, totalLoss, status });
     }
 
-    const okCrypto = hasCryptoContext(username, objectType, sourcePrimary, sourceEvidence, r[13] || '');
+    const okCrypto =
+      rowLooksCryptoByType(objectType) ||
+      hasCryptoContext(username, objectType, sourcePrimary, sourceEvidence, r[13] || '');
     if (!okCrypto) {
       nonCryptoRows.push({ rowNo, username, objectType, status });
     }
@@ -119,7 +132,7 @@ async function main() {
     await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId: sheetId,
       requestBody: {
-        valueInputOption: 'USER_ENTERED',
+        valueInputOption: 'RAW',
         data: updates,
       },
     });

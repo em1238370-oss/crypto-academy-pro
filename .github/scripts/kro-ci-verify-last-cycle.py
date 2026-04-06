@@ -93,15 +93,15 @@ def main() -> int:
     ok = True
     sheet_id = os.environ.get("KRO_SHEET_ID", "").strip()
     if not sheet_id:
-        print("missing KRO_SHEET_ID", file=sys.stderr)
-        print("::warning::last_cycle_at verify skipped — missing KRO_SHEET_ID")
+        print("не задан KRO_SHEET_ID", file=sys.stderr)
+        print("::warning::Проверка last_cycle_at пропущена — не задан секрет KRO_SHEET_ID")
         return 0
 
     try:
         creds_info = _load_service_account_dict()
     except (ValueError, json.JSONDecodeError, OSError) as e:
-        print(f"credentials load error: {e}", file=sys.stderr)
-        print(f"::warning::last_cycle_at verify — cannot load credentials: {e}")
+        print(f"ошибка загрузки ключа Google: {e}", file=sys.stderr)
+        print(f"::warning::Проверка last_cycle_at — не удалось загрузить ключ: {e}")
         return 0
 
     try:
@@ -123,21 +123,21 @@ def main() -> int:
         }
         last_cycle = str(kv.get("last_cycle_at", "")).strip()
     except Exception as e:
-        print(f"kro_meta read error: {e}", file=sys.stderr)
-        print(f"::warning::last_cycle_at verify — Sheets API error: {e}")
+        print(f"ошибка чтения kro_meta: {e}", file=sys.stderr)
+        print(f"::warning::Проверка last_cycle_at — ошибка Google Sheets: {e}")
         return 0
 
     if not last_cycle:
-        print("kro_meta.last_cycle_at is empty", file=sys.stderr)
-        print("::warning::last_cycle_at verify — kro_meta.last_cycle_at is empty")
+        print("kro_meta.last_cycle_at пусто", file=sys.stderr)
+        print("::warning::Проверка last_cycle_at — в листе kro_meta пустое поле last_cycle_at")
         return 0
 
     ts = parse_cycle_ts(last_cycle)
     if ts is None:
-        print(f"invalid last_cycle_at: {last_cycle}", file=sys.stderr)
+        print(f"не удалось разобрать last_cycle_at: {last_cycle}", file=sys.stderr)
         print(
-            "::warning::last_cycle_at verify — could not parse timestamp "
-            f"(value={last_cycle!r})"
+            "::warning::Проверка last_cycle_at — не удалось разобрать дату "
+            f"(значение={last_cycle!r})"
         )
         return 0
 
@@ -146,21 +146,20 @@ def main() -> int:
     prev = os.environ.get("PREVIOUS_LAST_CYCLE_AT", "").strip()
     if prev and prev == last_cycle:
         print(
-            f"warning: last_cycle_at did not change after run: {last_cycle}",
+            f"внимание: last_cycle_at после запуска не изменился: {last_cycle}",
             file=sys.stderr,
         )
     age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600.0
     print(f"kro_meta.last_cycle_at={last_cycle} age_hours={age_h:.2f}")
     if age_h > 13.0:
-        print("last_cycle_at is stale (>13h)", file=sys.stderr)
+        print("last_cycle_at устарел (>13 ч)", file=sys.stderr)
         print(
-            "::warning::last_cycle_at is stale (>13h) — check that the monitor "
-            "updated kro_meta"
+            "::warning::last_cycle_at устарел (>13 ч) — проверьте, что монитор обновил лист kro_meta"
         )
         ok = False
 
     if ok:
-        print("last_cycle_at verify OK")
+        print("Проверка last_cycle_at: OK")
     return 0
 
 

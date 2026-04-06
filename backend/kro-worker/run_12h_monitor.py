@@ -3315,7 +3315,7 @@ def _write_channels_watch_to_sheet(watch_rows, client, sheet_id):
             client.spreadsheets().values().update(
                 spreadsheetId=sheet_id,
                 range='%s!A1:M1' % sheet_name,
-                valueInputOption='USER_ENTERED',
+                valueInputOption='RAW',
                 body={'values': header}
             ).execute()
     except Exception as e:
@@ -3340,31 +3340,45 @@ def _write_channels_watch_to_sheet(watch_rows, client, sheet_id):
 
     updated = []
     append_rows = []
+    batch_data = []
     for row in (watch_rows or []):
         key = _norm_ch_key(row[0] if row else '')
         if not key or key in _KNOWN_NON_SCAM_CHANNELS:
             continue
         if key in row_map:
-            try:
-                client.spreadsheets().values().update(
-                    spreadsheetId=sheet_id,
-                    range='%s!A%d:M%d' % (sheet_name, row_map[key], row_map[key]),
-                    valueInputOption='USER_ENTERED',
-                    body={'values': [row]}
-                ).execute()
-                updated.append(row[0])
-            except Exception as e:
-                print('channels_watch update error for %s: %s' % (row[0], e), file=sys.stderr)
+            batch_data.append({
+                'range': '%s!A%d:M%d' % (sheet_name, row_map[key], row_map[key]),
+                'values': [row],
+            })
+            updated.append(row[0])
         else:
             append_rows.append(row)
             updated.append(row[0])
+
+    # Один update на строку даёт сотни запросов и ловит 429 (лимит записей/мин).
+    # batchUpdate + небольшие паузы между чанками.
+    _CW_BATCH = 35
+    for i in range(0, len(batch_data), _CW_BATCH):
+        chunk = batch_data[i:i + _CW_BATCH]
+        try:
+            client.spreadsheets().values().batchUpdate(
+                spreadsheetId=sheet_id,
+                body={
+                    'valueInputOption': 'RAW',
+                    'data': chunk,
+                },
+            ).execute()
+        except Exception as e:
+            print('channels_watch batchUpdate error (chunk %d–%d): %s' % (i, i + len(chunk), e), file=sys.stderr)
+        if i + _CW_BATCH < len(batch_data):
+            time.sleep(0.7)
 
     if append_rows:
         try:
             client.spreadsheets().values().append(
                 spreadsheetId=sheet_id,
                 range='%s!A:M' % sheet_name,
-                valueInputOption='USER_ENTERED',
+                valueInputOption='RAW',
                 insertDataOption='INSERT_ROWS',
                 body={'values': append_rows}
             ).execute()
