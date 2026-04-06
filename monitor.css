@@ -2908,6 +2908,8 @@ a.mon-channel-profile-link {
   text-decoration: none;
   border-bottom: 1px solid rgba(251, 191, 36, 0.35);
   transition: color 0.15s ease, border-color 0.15s ease;
+  touch-action: manipulation;
+  -webkit-touch-callout: default;
 }
 
 a.mon-channel-profile-link:hover {

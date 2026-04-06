@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260410-monitor-tg-links">
+  <link rel="stylesheet" href="/monitor.css?v=20260411-lenis-tap-fix">
 </head>
 <body class="mon-page">
 
@@ -76,7 +76,7 @@
   <span class="mon-live-strip-inner">Система работает · время после цикла <span id="mon-live-strip-time">—</span><span id="mon-cycle-warning"></span></span>
 </p>
 
-<main class="mon-container">
+<main class="mon-container" data-lenis-prevent-touch>
 
   <div class="mon-prologue">
   <section class="mon-hero" aria-labelledby="mon-hero-title">
@@ -815,7 +815,7 @@
     var slug = raw.replace(/^@+/, '').replace(/^t\.me\//i, '').split(/[/?#]/)[0];
     if (!slug) return '';
     if (/^\+[\w-]+$/.test(slug)) return 'https://t.me/' + slug;
-    if (!/^[a-zA-Z0-9_]{4,64}$/.test(slug)) return '';
+    if (!/^[a-zA-Z0-9_]{3,64}$/.test(slug)) return '';
     return 'https://t.me/' + slug;
   }
 
@@ -2283,6 +2283,6 @@
 })();
 </script>
 <script src="/scripts/vendor/lenis-1.3.17.min.js?v=1"></script>
-<script src="/scripts/monitor-lenis.js?v=20260410-lenis-scroll-10x"></script>
+<script src="/scripts/monitor-lenis.js?v=20260411-lenis-no-synctouch"></script>
 </body>
 </html>

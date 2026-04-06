@@ -69,12 +69,12 @@
     return;
   }
 
+  // syncTouch: false — иначе Lenis перехватывает жесты: на телефоне ссылки t.me часто не открываются (тап «съедается» скроллом).
   var lenis = new Lenis({
     orientation: 'vertical',
     gestureOrientation: 'vertical',
     smoothWheel: true,
-    syncTouch: true,
-    syncTouchLerp: 0.55,
+    syncTouch: false,
     wheelMultiplier: 0.4,
     touchMultiplier: 1.4,
     lerp: 0.04,
