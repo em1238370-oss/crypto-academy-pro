@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260411-tg-app-deeplink">
+  <link rel="stylesheet" href="/monitor.css?v=20260411-tg-href-native">
 </head>
 <body class="mon-page">
 
@@ -848,7 +848,7 @@
     return /Mobi|Android|iPhone|iPad|iPod|webOS|BlackBerry|Opera Mini/i.test(navigator.userAgent || '');
   }
 
-  /** Ссылка на объект в таблице: Telegram → t.me + при необходимости tg:// на телефоне. */
+  /** Ссылка на объект в таблице: на телефоне href=tg:// (нативно открывает приложение), иначе https. */
   function anchorMonChannelObject(channelLabel, row) {
     var tgHttps = extractTelegramPublicUrl(row);
     if (!tgHttps) {
@@ -857,26 +857,28 @@
       return '<a class="mon-channel-profile-link" href="' + esc('/channel/' + profileSlug) + '" target="_blank" rel="noopener noreferrer" title="Карточка объекта на сайте">' + esc(channelLabel) + '</a>';
     }
     var deep = parseTelegramUrlForApp(tgHttps);
-    var cls = 'mon-channel-profile-link' + (deep ? ' mon-tg-app-link' : '');
-    var dataNat = deep ? ' data-tg-native="' + esc(deep.tg) + '"' : '';
-    return '<a class="' + cls + '" href="' + esc(deep ? deep.https : tgHttps) + '"' + dataNat +
+    var mobile = isTelegramMobileOpen();
+    var useDeep = !!(deep && mobile);
+    var href = deep && mobile ? deep.tg : (deep ? deep.https : tgHttps);
+    var cls = 'mon-channel-profile-link' + (useDeep ? ' mon-tg-app-link' : '');
+    var dataHttps = useDeep ? ' data-tg-https="' + esc(deep.https) + '"' : '';
+    return '<a class="' + cls + '" href="' + esc(href) + '"' + dataHttps +
       ' target="_self" rel="noopener noreferrer" title="Открыть канал в Telegram">' + esc(channelLabel) + '</a>';
   }
 
+  /** Если приложение не перехватило tg://, через ~1 с открываем t.me в браузере (без preventDefault). */
   function initTelegramAppLinks() {
     document.addEventListener('click', function(ev) {
-      var a = ev.target.closest('a.mon-tg-app-link[data-tg-native]');
+      var a = ev.target.closest('a.mon-tg-app-link[data-tg-https]');
       if (!a) return;
       if (!isTelegramMobileOpen()) return;
-      var tg = a.getAttribute('data-tg-native');
-      var https = a.getAttribute('href');
-      if (!tg || !https) return;
-      ev.preventDefault();
-      if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
-      window.location.href = tg;
+      var h = a.getAttribute('href') || '';
+      if (h.indexOf('tg:') !== 0) return;
+      var https = a.getAttribute('data-tg-https');
+      if (!https) return;
       window.setTimeout(function() {
         if (document.visibilityState === 'visible') window.location.href = https;
-      }, 750);
+      }, 1100);
     }, true);
   }
 
@@ -912,11 +914,13 @@
     if (!url) return '<span class="mon-text-fallback">нет публичной ссылки</span>';
     var norm = normalizeHttpHref(url) || url;
     var deep = parseTelegramUrlForApp(norm);
-    var c = (cls || 'mon-external-link') + (deep ? ' mon-tg-app-link' : '');
-    var dataNat = deep ? ' data-tg-native="' + esc(deep.tg) + '"' : '';
-    var href = deep ? deep.https : norm;
-    var tgt = deep ? '_self' : '_blank';
-    return '<a class="' + esc(c) + '" href="' + esc(href) + '"' + dataNat + ' target="' + tgt + '" rel="noopener noreferrer">' +
+    var mobile = isTelegramMobileOpen();
+    var useDeep = !!(deep && mobile);
+    var href = deep && mobile ? deep.tg : (deep ? deep.https : norm);
+    var c = (cls || 'mon-external-link') + (useDeep ? ' mon-tg-app-link' : '');
+    var dataHttps = useDeep ? ' data-tg-https="' + esc(deep.https) + '"' : '';
+    var tgt = useDeep ? '_self' : '_blank';
+    return '<a class="' + esc(c) + '" href="' + esc(href) + '"' + dataHttps + ' target="' + tgt + '" rel="noopener noreferrer">' +
       esc(label) + externalIcon() + '</a>';
   }
 
@@ -2346,6 +2350,6 @@
 })();
 </script>
 <script src="/scripts/vendor/lenis-1.3.17.min.js?v=1"></script>
-<script src="/scripts/monitor-lenis.js?v=20260411-tg-deeplink-primaryfix"></script>
+<script src="/scripts/monitor-lenis.js?v=20260411-tg-href-native"></script>
 </body>
 </html>
