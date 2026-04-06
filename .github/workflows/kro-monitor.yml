@@ -114,8 +114,8 @@ jobs:
           # Не чистить scam_base HTTP-gate с раннера GitHub (t.me часто блокирует CI → лист обнулялся).
           # Prune вручную: локально или отдельным шагом/скриптом при KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE=1.
           KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE: '0'
-          # Строгий Telethon-gate до записи: по умолчанию 1. При системных FloodWait в логах можно временно
-          # выставить 0 в секретах репозитория (KRO_TELEGRAM_STRICT_GATE_BEFORE_WRITE) — не рекомендуется на постоянку.
+          # ВРЕМЕННО: запись в scam_base без строгого Telethon-gate (FloodWait). Вернуть '1' после стабилизации.
+          KRO_TELEGRAM_STRICT_GATE_BEFORE_WRITE: '0'
         run: python3 run_12h_monitor.py
 
       # ОТКЛЮЧЕНО (if: false): пост-цикловый cleanup дублировал gate и очищал лист сразу после записи.
@@ -158,8 +158,25 @@ jobs:
         run: |
           if [ -z "${RENDER_DEPLOY_HOOK:-}" ]; then
             echo "::warning::RENDER_DEPLOY_HOOK не задан в GitHub Secrets — автодеплой пропущен. Render → Service → Settings → Deploy Hook → URL в Secrets."
+            echo "::notice::render_deploy_hook_status=SKIPPED reason=secret_missing"
             exit 0
           fi
-          echo "::notice::Запуск деплоя на Render через deploy hook…"
-          curl -fsS --connect-timeout 30 --max-time 120 --retry 3 --retry-delay 5 -X POST "$RENDER_DEPLOY_HOOK"
-          echo "::notice::Render deploy hook: запрос отправлен (деплой идёт на стороне Render)."
+          echo "render_deploy_hook_invoked_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "::notice::RENDER_DEPLOY_HOOK: отправка POST (curl с ретраями)…"
+          HTTP_CODE=$(curl -sS -o /tmp/render_hook_body.txt -w "%{http_code}" \
+            --connect-timeout 30 --max-time 120 --retry 3 --retry-delay 5 \
+            -X POST "$RENDER_DEPLOY_HOOK") || {
+            echo "::error::RENDER_DEPLOY_HOOK: curl завершился с ошибкой (сеть/таймаут)."
+            exit 1
+          }
+          echo "render_deploy_hook_http_status=${HTTP_CODE}"
+          BODY_PREVIEW=$(head -c 400 /tmp/render_hook_body.txt 2>/dev/null | tr '\n\r' ' ' | sed 's/  */ /g')
+          if [ -n "${BODY_PREVIEW}" ]; then
+            echo "render_deploy_hook_response_preview=${BODY_PREVIEW}"
+          fi
+          if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 300 ]; then
+            echo "::notice::RENDER_DEPLOY_HOOK_OK http_status=${HTTP_CODE} — hook вызван, Render принял запрос (деплой на стороне Render)."
+          else
+            echo "::error::RENDER_DEPLOY_HOOK_FAIL http_status=${HTTP_CODE} — проверьте URL hook и Dashboard Render."
+            exit 1
+          fi
