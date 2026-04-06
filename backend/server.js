@@ -3337,6 +3337,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
   } catch {
     decoded = rawQ;
   }
+  decoded = decoded.replace(/^@+/, '').replace(/^(%40)+/gi, '').trim();
   const key = channelMatchKey(decoded);
   if (!key) {
     return res.status(400).json({ error: 'bad_request', message: 'invalid channel key' });

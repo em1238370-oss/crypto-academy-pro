@@ -5,7 +5,10 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 from datetime import datetime, timedelta, timezone
+
+from telethon.errors import FloodWaitError
 
 CRYPTO_TERMS = (
     'bitcoin',
@@ -26,9 +29,13 @@ def norm_username_for_gate(v: str) -> str:
     if not s:
         return ''
     if s.startswith('https://t.me/'):
-        s = '@' + s.split('https://t.me/', 1)[-1].split('/')[0]
+        part = s.split('https://t.me/', 1)[-1].split('/')[0].lstrip('@')
+        s = '@' + part if part else ''
     elif s.startswith('t.me/'):
-        s = '@' + s.split('t.me/', 1)[-1].split('/')[0]
+        part = s.split('t.me/', 1)[-1].split('/')[0].lstrip('@')
+        s = '@' + part if part else ''
+    if not s:
+        return ''
     if not s.startswith('@'):
         s = '@' + s.lstrip('@')
     return s.lower()
@@ -52,6 +59,12 @@ async def validate_telegram_scam_base_row_strict(client, row_obj: dict):
 
     try:
         ent = await asyncio.wait_for(client.get_entity(uname), timeout=10.0)
+    except FloodWaitError as e:
+        print(
+            'telethon_gate flood_wait get_entity %s: %s' % (uname, e),
+            file=sys.stderr,
+        )
+        return False, 'telegram_flood_wait', False
     except Exception:
         return False, 'entity_unavailable', True
 
@@ -64,6 +77,12 @@ async def validate_telegram_scam_base_row_strict(client, row_obj: dict):
 
     try:
         full = await asyncio.wait_for(client(GetFullChannelRequest(ent)), timeout=10.0)
+    except FloodWaitError as e:
+        print(
+            'telethon_gate flood_wait GetFullChannel %s: %s' % (uname, e),
+            file=sys.stderr,
+        )
+        return False, 'telegram_flood_wait', False
     except Exception:
         return False, 'cannot_read_full_channel', True
 
@@ -87,6 +106,12 @@ async def validate_telegram_scam_base_row_strict(client, row_obj: dict):
                 if getattr(dt, 'tzinfo', None) is None:
                     dt = dt.replace(tzinfo=timezone.utc)
                 post_dates.append(dt)
+    except FloodWaitError as e:
+        print(
+            'telethon_gate flood_wait iter_messages %s: %s' % (uname, e),
+            file=sys.stderr,
+        )
+        return False, 'telegram_flood_wait', False
     except Exception:
         return False, 'iter_messages_error', True
 
