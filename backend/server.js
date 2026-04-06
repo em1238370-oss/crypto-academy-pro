@@ -3032,9 +3032,12 @@ app.get('/api/kro/live-counter', async (req, res) => {
   }
 });
 
-// Serve /monitor page
-app.get('/monitor', (req, res) =>
-  res.sendFile('monitor.html', { root: join(__dirname, '..') }));
+// Serve /monitor page (явный no-store — иначе старая разметка/скрипт залипают в кэше клиента)
+app.get('/monitor', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.sendFile('monitor.html', { root: join(__dirname, '..') });
+});
 
 // GET /api/kro/monitor-data — full data for the /monitor dashboard
 // Returns: scam_base, channels_watch, channels_network, kro_meta, kro_history
