@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260411-tg-app-deeplink">
+  <link rel="stylesheet" href="/monitor.css?v=20260411-tg-browser-primary">
 </head>
 <body class="mon-page ch-page">
 
@@ -286,9 +286,8 @@
       var objHref = r.link;
       var tgCanon = canonicalTelegramHttps(normalizeHttpHref(r.link) || r.link);
       if (tgCanon) objHref = tgCanon;
-      var objOpen = /^https:\/\/t\.me\//i.test(objHref) ? telegramAppOpenHref(objHref) : objHref;
-      parts.push('<a class="mon-external-link" data-lenis-prevent="" href="' + esc(objOpen) + '"' + telegramClickAttrs(objOpen) + ' title="Открыть в Telegram">' +
-        esc(hostLabel(objOpen)) + ' (объект)' + externalIcon() + '</a>');
+      parts.push('<a class="mon-external-link" data-lenis-prevent="" href="' + esc(objHref) + '" target="_blank" rel="noopener noreferrer" title="Открыть в браузере">' +
+        esc(hostLabel(objHref)) + ' (объект)' + externalIcon() + '</a>');
     }
     if (!nonTg.length && r && r.source_primary && /^https?:\/\//i.test(r.source_primary)) {
       nonTg = [r.source_primary];
@@ -302,9 +301,8 @@
     for (var j = 0; j < tg.length; j++) {
       var t = tg[j];
       var th = canonicalTelegramHttps(t) || t;
-      var thOpen = telegramAppOpenHref(th);
-      parts.push('<a class="mon-external-link mon-source-link" data-lenis-prevent="" href="' + esc(thOpen) + '"' + telegramClickAttrs(thOpen) + ' title="Открыть в Telegram">' +
-        esc(hostLabel(thOpen)) + externalIcon() + '</a>');
+      parts.push('<a class="mon-external-link mon-source-link" data-lenis-prevent="" href="' + esc(th) + '" target="_blank" rel="noopener noreferrer" title="Открыть в браузере">' +
+        esc(hostLabel(th)) + externalIcon() + '</a>');
     }
     if (!parts.length) return '<span class="mon-text-fallback">Ссылки не извлечены из строки — смотрите таблицу в мониторе.</span>';
     return parts.join(' ');
@@ -353,9 +351,13 @@
         if (/^[a-zA-Z0-9_]{3,64}$/.test(sl)) tgHref = 'https://t.me/' + sl;
       }
       if (tgHref) {
-        var openTg = telegramAppOpenHref(tgHref);
+        var appLine = '';
+        var appH = telegramAppOpenHref(tgHref);
+        if (appH !== tgHref) {
+          appLine = ' <a class="mon-tg-app-chip" data-lenis-prevent="" href="' + esc(appH) + '"' + telegramClickAttrs(appH) + ' title="Открыть в приложении Telegram">прил.</a>';
+        }
         document.getElementById('ch-heading').insertAdjacentHTML('afterend',
-          '<p class="ch-tg-line"><a class="mon-external-link" data-lenis-prevent="" href="' + esc(openTg) + '"' + telegramClickAttrs(openTg) + ' title="Открыть в приложении Telegram">Канал в Telegram' + externalIcon() + '</a></p>');
+          '<p class="ch-tg-line"><a class="mon-external-link" data-lenis-prevent="" href="' + esc(tgHref) + '" target="_blank" rel="noopener noreferrer" title="Канал в браузере (t.me)">Канал в Telegram' + externalIcon() + '</a>' + appLine + '</p>');
       }
 
       if (data.merged_rows && data.merged_rows > 1) {

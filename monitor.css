@@ -2915,6 +2915,41 @@ a.mon-ca-sample-link[href^="tg:"] {
   gap: 0.35em 0.5em;
 }
 
+/* Имя канала (браузер) + опционально «прил.» (клиент Telegram) */
+.mon-channel-tg-pair {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.45rem;
+}
+
+a.mon-tg-app-chip {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--mon-text-dim);
+  text-decoration: none;
+  border: 1px solid var(--mon-border);
+  border-radius: 6px;
+  padding: 3px 7px;
+  line-height: 1.2;
+  white-space: nowrap;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(126, 179, 245, 0.2);
+}
+
+a.mon-tg-app-chip:hover,
+a.mon-tg-app-chip:focus-visible {
+  color: var(--mon-text);
+  border-color: var(--mon-border-hi);
+  background: var(--mon-glass);
+}
+
+.ch-tg-line .mon-tg-app-chip {
+  vertical-align: middle;
+  margin-left: 0.15rem;
+}
+
 a.mon-channel-profile-link {
   color: var(--mon-amber-hot);
   font-weight: 600;
@@ -2968,6 +3003,13 @@ a.mon-channel-external:hover {
     min-height: 44px;
     flex-shrink: 0;
     -webkit-tap-highlight-color: rgba(126, 179, 245, 0.25);
+  }
+  a.mon-tg-app-chip {
+    min-height: 36px;
+    padding: 6px 10px;
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
   }
   .mon-ext-site-icon {
     font-weight: 800;

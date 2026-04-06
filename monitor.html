@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260411-tg-app-deeplink">
+  <link rel="stylesheet" href="/monitor.css?v=20260411-tg-browser-primary">
 </head>
 <body class="mon-page">
 
@@ -903,10 +903,17 @@
     return 'tg://resolve?domain=' + encodeURIComponent(m[1].toLowerCase());
   }
 
-  /** tg:// — в этой же вкладке (ОС передаёт в приложение); https — новая вкладка. */
+  /** tg:// — в этой же вкладке (ОС передаёт в приложение); https — новая вкладка браузера. */
   function telegramClickAttrs(finalHref) {
-    if (/^tg:\/\//i.test(finalHref)) return ' target="_self"';
+    if (/^tg:\/\//i.test(finalHref)) return ' target="_self" rel="nofollow"';
     return ' target="_blank" rel="noopener noreferrer"';
+  }
+
+  /** Маленькая ссылка «прил.» рядом с именем, если есть отдельный tg:// для этого же канала. */
+  function telegramAppChipHtml(safeHttps) {
+    var appH = telegramAppOpenHref(safeHttps);
+    if (appH === safeHttps) return '';
+    return '<a class="mon-tg-app-chip" href="' + esc(appH) + '"' + extraAttrsForTelegramOpen(appH) + telegramClickAttrs(appH) + ' title="Открыть в приложении Telegram (если доступно)">прил.</a>';
   }
 
   /** Чтобы Lenis не перехватывал жест у ссылок в Telegram. */
@@ -951,14 +958,19 @@
     return 'https://t.me/' + slug;
   }
 
-  /** Ссылка на канал: по возможности tg:// → приложение Telegram; иначе карточка на сайте. */
+  /**
+   * Ссылка на канал: основная — https://t.me/… в браузере (новая вкладка, удобно при блокировках/сбоях клиента).
+   * Рядом — «прил.» → tg:// для тех, у кого приложение работает.
+   */
   function anchorMonChannelObject(channelLabel, row) {
     var tgHttps = extractTelegramPublicUrl(row);
     if (tgHttps) {
       var safe = validatedTmeOpenUrl(tgHttps);
       if (safe) {
-        var openH = telegramAppOpenHref(safe);
-        return '<a class="mon-channel-profile-link"' + extraAttrsForTelegramOpen(openH) + ' href="' + esc(openH) + '"' + telegramClickAttrs(openH) + ' title="Открыть в приложении Telegram">' + esc(channelLabel) + '</a>';
+        return '<span class="mon-channel-tg-pair">' +
+          '<a class="mon-channel-profile-link"' + extraAttrsForTelegramOpen(safe) + ' href="' + esc(safe) + '" target="_blank" rel="noopener noreferrer" title="Канал в браузере (t.me)">' + esc(channelLabel) + '</a>' +
+          telegramAppChipHtml(safe) +
+          '</span>';
       }
       console.warn('[monitor] Telegram href failed validation for row:', row && row.username, tgHttps);
     }
@@ -1010,8 +1022,7 @@
       }
       href = v;
     }
-    var openH = /^https:\/\/t\.me\//i.test(href) || /^tg:\/\//i.test(href) ? telegramAppOpenHref(href) : href;
-    return '<a class="' + esc(cls || 'mon-external-link') + '"' + extraAttrsForTelegramOpen(openH) + ' href="' + esc(openH) + '"' + telegramClickAttrs(openH) + ' title="Открыть в Telegram">' +
+    return '<a class="' + esc(cls || 'mon-external-link') + '"' + extraAttrsForTelegramOpen(href) + ' href="' + esc(href) + '" target="_blank" rel="noopener noreferrer" title="Открыть в браузере">' +
       esc(label) + externalIcon() + '</a>';
   }
 
@@ -1430,10 +1441,7 @@
           if (/^https:\/\/t\.me\//i.test(postHref)) postHref = validatedTmeOpenUrl(postHref) || '';
         }
         var link = postHref
-          ? (function() {
-              var ph = telegramAppOpenHref(postHref);
-              return '<a class="mon-ca-sample-link"' + extraAttrsForTelegramOpen(ph) + ' href="' + esc(ph) + '"' + telegramClickAttrs(ph) + ' rel="noopener">пост</a> ';
-            })()
+          ? '<a class="mon-ca-sample-link"' + extraAttrsForTelegramOpen(postHref) + ' href="' + esc(postHref) + '" target="_blank" rel="noopener noreferrer" title="Пост в браузере">пост</a> '
           : (s.post_url ? '<span class="mon-ca-muted" title="Некорректная ссылка t.me">пост</span> ' : '');
         var lit = s.verbatim_from_post ? '<span class="mon-ca-sample-lit">дословно из поста</span> · ' : '';
         parts.push('<div class="mon-ca-sample">' + link + lit + '«' + esc(s.excerpt || '') + '»</div>');
@@ -1498,8 +1506,7 @@
       if (mainCanon && uCanon === mainCanon) {
         lab = /t\.me\//i.test(href) ? (lab + ' · объект') : (lab + ' · сайт');
       }
-      var openH = telegramAppOpenHref(href);
-      return '<a class="mon-external-link mon-source-link"' + extraAttrsForTelegramOpen(openH) + ' href="' + esc(openH) + '"' + telegramClickAttrs(openH) + ' title="Открыть в Telegram">' +
+      return '<a class="mon-external-link mon-source-link"' + extraAttrsForTelegramOpen(href) + ' href="' + esc(href) + '" target="_blank" rel="noopener noreferrer" title="Открыть в браузере">' +
         esc(lab) + externalIcon() + '</a>';
     }).filter(Boolean).join(' ') || '<span class="mon-text-fallback">нет публичной ссылки</span>';
   }
@@ -1834,8 +1841,7 @@
       console.warn('[monitor] recentCaseSourceAnchor: invalid or empty href after cleanup:', url);
       return '<span class="mon-case-source mon-case-source--missing">некорректная ссылка Telegram</span>';
     }
-    var openOut = /^https:\/\/t\.me\//i.test(hrefOut) ? telegramAppOpenHref(hrefOut) : hrefOut;
-    return '<a class="mon-case-source"' + extraAttrsForTelegramOpen(openOut) + ' href="' + esc(openOut) + '"' + telegramClickAttrs(openOut) + ' title="Открыть в Telegram">' + esc(label) + externalIcon() + '</a>';
+    return '<a class="mon-case-source"' + extraAttrsForTelegramOpen(hrefOut) + ' href="' + esc(hrefOut) + '" target="_blank" rel="noopener noreferrer" title="Открыть в браузере">' + esc(label) + externalIcon() + '</a>';
   }
 
   function renderRecentCases(cases) {
@@ -1990,9 +1996,8 @@
       var secondaryTitle = secondaryHref.indexOf('/channel/') === 0
         ? 'Справка на сайте'
         : 'Доп. ссылка из таблицы';
-      var secOpen = secondaryHref.indexOf('/channel/') === 0 ? secondaryHref : (secondaryHref && /^https:\/\/t\.me\//i.test(secondaryHref) ? telegramAppOpenHref(secondaryHref) : secondaryHref);
       var extOpen = secondaryHref
-        ? '<a class="mon-channel-external' + (secondaryHref.indexOf('/channel/') === 0 ? ' mon-channel-external--site' : '') + '"' + extraAttrsForTelegramOpen(secOpen) + ' href="' + esc(secOpen) + '"' + telegramClickAttrs(secOpen) + ' title="' + esc(secondaryTitle) + '">' +
+        ? '<a class="mon-channel-external' + (secondaryHref.indexOf('/channel/') === 0 ? ' mon-channel-external--site' : '') + '"' + extraAttrsForTelegramOpen(secondaryHref) + ' href="' + esc(secondaryHref) + '" target="_blank" rel="noopener noreferrer" title="' + esc(secondaryTitle) + '">' +
             (secondaryHref.indexOf('/channel/') === 0
               ? '<span class="mon-ext-site-icon" aria-hidden="true">i</span>'
               : '<span class="mon-link-arrow" aria-hidden="true">↗</span>') +
@@ -2482,6 +2487,6 @@
 })();
 </script>
 <script src="/scripts/vendor/lenis-1.3.17.min.js?v=1"></script>
-<script src="/scripts/monitor-lenis.js?v=20260411-tg-app-deeplink"></script>
+<script src="/scripts/monitor-lenis.js?v=20260411-tg-browser-primary"></script>
 </body>
 </html>
