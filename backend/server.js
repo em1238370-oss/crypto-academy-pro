@@ -1414,6 +1414,24 @@ function telegramPathSegmentsForTme(pathname) {
     .filter(Boolean);
 }
 
+/** tg://resolve?domain=username → https://t.me/username */
+function normalizeTgResolveToHttps(raw) {
+  const s = String(raw || '').trim();
+  if (!/^tg:\/\//i.test(s)) return '';
+  try {
+    const u = new URL(s);
+    if ((u.hostname || '').toLowerCase() !== 'resolve') return '';
+    const domain = String(u.searchParams.get('domain') || '')
+      .trim()
+      .replace(/^@+/, '')
+      .replace(/^(%40)+/gi, '');
+    if (/^[a-zA-Z0-9_]{3,64}$/.test(domain)) return `https://t.me/${domain}`;
+  } catch {
+    /* ignore */
+  }
+  return '';
+}
+
 /** https://t.me/username, никогда https://t.me/@username (иначе Telegram показывает «канал не существует»). */
 function normalizeTelegramTmeUrl(raw) {
   const s = String(raw || '').trim();
@@ -1454,11 +1472,33 @@ function normalizeTelegramTmeUrl(raw) {
   }
 }
 
+/**
+ * Очистка ссылки из Sheets: путь t.me без @/%40, telegram.me → t.me, tg://resolve → https.
+ * Не-телеграм http(s) возвращает как есть; голый @username → https://t.me/username.
+ */
+function cleanTelegramLink(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return '';
+  const fromTg = normalizeTgResolveToHttps(s);
+  if (fromTg) return fromTg;
+  if (/^tg:\/\//i.test(s)) return '';
+  if (/t\.me|telegram\.me/i.test(s)) {
+    const n = normalizeTelegramTmeUrl(s);
+    return n || s;
+  }
+  const bare = s.replace(/^@+/, '').replace(/^(%40)+/gi, '');
+  if (
+    /^[a-zA-Z0-9_]{3,64}$/.test(bare) &&
+    !/^https?:\/\//i.test(s) &&
+    !s.includes('/')
+  ) {
+    return `https://t.me/${bare}`;
+  }
+  return s;
+}
+
 function maybeNormalizeSheetTelegramLink(link) {
-  const s = String(link || '').trim();
-  if (!s || !/t\.me|telegram\.me/i.test(s)) return s;
-  const n = normalizeTelegramTmeUrl(s);
-  return n || s;
+  return cleanTelegramLink(String(link || '').trim());
 }
 
 function parseScamBaseTotalLossRub(row) {
@@ -1899,7 +1939,7 @@ function parseScamBaseRow(row) {
   // old v1 (8 cols):      username | risk_score | ads_per_week | bot_pct | vip_price | complaints | total_loss | verdict
   if (scamBaseRowLooksV2(row)) {
     // new v2 schema
-    const link = maybeNormalizeSheetTelegramLink((row[1] || '').toString().trim());
+    const link = cleanTelegramLink((row[1] || '').toString().trim());
     const detected_at = (row[2] || '').toString().trim();
     const created_at = (row[3] || '').toString().trim();
     const channel_age_days = parseInt((row[4] ?? '').toString(), 10);
