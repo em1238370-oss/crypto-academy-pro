@@ -42,6 +42,13 @@ app.get(/^\/channel\/(.+)$/, (req, res, next) => {
   res.sendFile('channel.html', { root: join(__dirname, '..') });
 });
 
+// /monitor до express.static — всегда свежий monitor.html + no-store (иначе залипает старый inline-скрипт)
+app.get('/monitor', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.sendFile('monitor.html', { root: join(__dirname, '..') });
+});
+
 // Serve static files from parent directory (HTML, CSS, JS)
 app.use(
   express.static(join(__dirname, '..'), {
@@ -3030,13 +3037,6 @@ app.get('/api/kro/live-counter', async (req, res) => {
       sources_checked: cycleMeta.sources_checked
     });
   }
-});
-
-// Serve /monitor page (явный no-store — иначе старая разметка/скрипт залипают в кэше клиента)
-app.get('/monitor', (req, res) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-  res.setHeader('Pragma', 'no-cache');
-  res.sendFile('monitor.html', { root: join(__dirname, '..') });
 });
 
 // GET /api/kro/monitor-data — full data for the /monitor dashboard
