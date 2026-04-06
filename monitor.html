@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260404-tme-clean-all">
+  <link rel="stylesheet" href="/monitor.css?v=20260411-tg-tap-instant">
 </head>
 <body class="mon-page">
 
@@ -892,6 +892,13 @@
     return '';
   }
 
+  /** Чтобы Lenis не перехватывал жест: тап сразу открывает t.me / приложение Telegram. */
+  function extraAttrsForTelegramOpen(href) {
+    if (!href) return '';
+    var h = String(href).split('#')[0];
+    return /^https:\/\/t\.me\//i.test(h) ? ' data-lenis-prevent=""' : '';
+  }
+
   /**
    * Публичная ссылка на Telegram-канал в формате https://t.me/username (без @).
    * Пустая строка — не TG-ник (сайт и т.д.) → остаётся /channel/… на сайте.
@@ -932,7 +939,7 @@
     if (tgHttps) {
       var safe = validatedTmeOpenUrl(tgHttps);
       if (safe) {
-        return '<a class="mon-channel-profile-link" href="' + esc(safe) + '" target="_blank" rel="noopener noreferrer" title="Канал в Telegram (t.me)">' + esc(channelLabel) + '</a>';
+        return '<a class="mon-channel-profile-link"' + extraAttrsForTelegramOpen(safe) + ' href="' + esc(safe) + '" target="_blank" rel="noopener noreferrer" title="Канал в Telegram (t.me)">' + esc(channelLabel) + '</a>';
       }
       console.warn('[monitor] Telegram href failed validation for row:', row && row.username, tgHttps);
     }
@@ -983,7 +990,7 @@
       }
       href = v;
     }
-    return '<a class="' + esc(cls || 'mon-external-link') + '" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' +
+    return '<a class="' + esc(cls || 'mon-external-link') + '"' + extraAttrsForTelegramOpen(href) + ' href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' +
       esc(label) + externalIcon() + '</a>';
   }
 
@@ -1402,7 +1409,7 @@
           if (/^https:\/\/t\.me\//i.test(postHref)) postHref = validatedTmeOpenUrl(postHref) || '';
         }
         var link = postHref
-          ? '<a class="mon-ca-sample-link" href="' + esc(postHref) + '" target="_blank" rel="noopener">пост</a> '
+          ? '<a class="mon-ca-sample-link"' + extraAttrsForTelegramOpen(postHref) + ' href="' + esc(postHref) + '" target="_blank" rel="noopener">пост</a> '
           : (s.post_url ? '<span class="mon-ca-muted" title="Некорректная ссылка t.me">пост</span> ' : '');
         var lit = s.verbatim_from_post ? '<span class="mon-ca-sample-lit">дословно из поста</span> · ' : '';
         parts.push('<div class="mon-ca-sample">' + link + lit + '«' + esc(s.excerpt || '') + '»</div>');
@@ -1467,7 +1474,7 @@
       if (mainCanon && uCanon === mainCanon) {
         lab = /t\.me\//i.test(href) ? (lab + ' · объект') : (lab + ' · сайт');
       }
-      return '<a class="mon-external-link mon-source-link" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' +
+      return '<a class="mon-external-link mon-source-link"' + extraAttrsForTelegramOpen(href) + ' href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' +
         esc(lab) + externalIcon() + '</a>';
     }).filter(Boolean).join(' ') || '<span class="mon-text-fallback">нет публичной ссылки</span>';
   }
@@ -1802,7 +1809,7 @@
       console.warn('[monitor] recentCaseSourceAnchor: invalid or empty href after cleanup:', url);
       return '<span class="mon-case-source mon-case-source--missing">некорректная ссылка Telegram</span>';
     }
-    return '<a class="mon-case-source" href="' + esc(hrefOut) + '" target="_blank" rel="noopener noreferrer">' + esc(label) + externalIcon() + '</a>';
+    return '<a class="mon-case-source"' + extraAttrsForTelegramOpen(hrefOut) + ' href="' + esc(hrefOut) + '" target="_blank" rel="noopener noreferrer">' + esc(label) + externalIcon() + '</a>';
   }
 
   function renderRecentCases(cases) {
@@ -1958,7 +1965,7 @@
         ? 'Справка на сайте'
         : 'Доп. ссылка из таблицы';
       var extOpen = secondaryHref
-        ? '<a class="mon-channel-external' + (secondaryHref.indexOf('/channel/') === 0 ? ' mon-channel-external--site' : '') + '" href="' + esc(secondaryHref) + '" target="_blank" rel="noopener noreferrer" title="' + esc(secondaryTitle) + '">' +
+        ? '<a class="mon-channel-external' + (secondaryHref.indexOf('/channel/') === 0 ? ' mon-channel-external--site' : '') + '"' + extraAttrsForTelegramOpen(secondaryHref) + ' href="' + esc(secondaryHref) + '" target="_blank" rel="noopener noreferrer" title="' + esc(secondaryTitle) + '">' +
             (secondaryHref.indexOf('/channel/') === 0
               ? '<span class="mon-ext-site-icon" aria-hidden="true">i</span>'
               : '<span class="mon-link-arrow" aria-hidden="true">↗</span>') +
@@ -2448,6 +2455,6 @@
 })();
 </script>
 <script src="/scripts/vendor/lenis-1.3.17.min.js?v=1"></script>
-<script src="/scripts/monitor-lenis.js?v=20260404-tme-clean-all"></script>
+<script src="/scripts/monitor-lenis.js?v=20260411-tg-tap-instant"></script>
 </body>
 </html>

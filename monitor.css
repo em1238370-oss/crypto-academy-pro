@@ -1750,6 +1750,14 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   padding-bottom: 1px;
   transition: color var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
+
+/* t.me: без задержки double-tap zoom; мгновенный переход в Telegram / браузер */
+a.mon-external-link[href^="https://t.me/"],
+a.mon-channel-external[href^="https://t.me/"],
+a.mon-case-source[href^="https://t.me/"],
+a.mon-ca-sample-link[href^="https://t.me/"] {
+  touch-action: manipulation;
+}
 .mon-external-link::after {
   content: '';
   position: absolute;
