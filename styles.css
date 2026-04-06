@@ -1157,6 +1157,29 @@ body.kro-hero-scrolled .kro-floating-nav {
    margin-top: 10px;
 }
 
+.kro-feature1-status-summary {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   justify-content: center;
+   gap: 6px 10px;
+   margin: -12px auto 28px;
+   max-width: 640px;
+   font-size: clamp(12px, 1.9vw, 15px);
+   line-height: 1.45;
+   color: rgba(255, 255, 255, 0.72);
+   text-align: center;
+}
+.kro-feature1-status-summary strong {
+   color: rgba(255, 255, 255, 0.95);
+   font-weight: 700;
+   font-variant-numeric: tabular-nums;
+}
+.kro-feature1-status-sep {
+   color: rgba(255, 255, 255, 0.28);
+   user-select: none;
+}
+
 /* Бейджи в стиле sitelove (Zero Knowledge Required · …) */
 .kro-f1-badges-row {
    display: flex;

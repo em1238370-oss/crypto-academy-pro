@@ -2919,8 +2919,8 @@ app.get('/api/kro/live-counter', async (req, res) => {
       console.log(`[KRO live-counter] parsed ${parsedRows.length} rows from scam_base (header row skipped)`);
       const scamBaseCounter = buildLiveCounterFromScamBase(parsedRows);
       const roll12 = buildScamBase12hRollup(parsedRows);
-      const top3rows = Array.isArray(roll12.top3) ? roll12.top3 : [];
-      console.log('TOP3 (12h window):', JSON.stringify(top3rows.slice(0, 3)));
+      const top3AllTime = Array.isArray(scamBaseCounter.top3) ? scamBaseCounter.top3 : [];
+      console.log('TOP3 (вся база по потерям):', JSON.stringify(top3AllTime.slice(0, 3)));
       const metaStr = cycleMeta.last_cycle_at;
       const cycleTs = metaStr ? Date.parse(metaStr) : NaN;
       const rowTs = scamBaseCounter.updatedAt ? Date.parse(scamBaseCounter.updatedAt) : NaN;
@@ -2930,7 +2930,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
           : (metaStr || scamBaseCounter.updatedAt || null);
       const newInCycle = Number(cycleMeta.new_in_cycle);
       const channelsTodayVal = Number.isFinite(newInCycle) ? newInCycle : 0;
-      // Первая цифра на главной (ТЗ): строго new_in_cycle из kro_meta, не max с rollup 12h.
+      // Главная: new_in_cycle из kro_meta; топ‑3 и статусы — по всей базе (см. index.html applyData).
       const caption12 = `За последние 12 ч (по дате обнаружения в scam_base): ${roll12.uniqueChannels} объектов, потери ${roll12.lossesSum.toLocaleString('ru-RU')} ₽. Всего в подтверждённой базе: ${scamBaseCounter.channels_total}.`;
       const payload = {
         channelsToday: channelsTodayVal,
@@ -2943,7 +2943,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
         complaints_12h: roll12.complaintsSum,
         victims_12h: null,
         shockText: KRO_PENDING_REPORT_TEXT,
-        top3: roll12.top3,
+        top3: top3AllTime,
         report_doc_url: KRO_SOURCES_DOC_URL,
         sourceCaption: caption12,
         status_summary: buildStatusSummary(roll12.rowSnapshots),
@@ -2989,6 +2989,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
       report_doc_url: KRO_SOURCES_DOC_URL,
       sourceCaption: 'Мониторинг запущен. Первые данные появятся после завершения цикла проверки.',
       status_summary: buildStatusSummary([]),
+      status_summary_all_time: buildStatusSummary([]),
       publishStatus: 'honest_zero',
       isHonestZero: true,
       siteNotice: null,
@@ -3017,6 +3018,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
       report_doc_url: KRO_SOURCES_DOC_URL,
       sourceCaption: 'Мониторинг запущен.',
       status_summary: buildStatusSummary([]),
+      status_summary_all_time: buildStatusSummary([]),
       publishStatus: 'honest_zero',
       isHonestZero: true,
       siteNotice: null,

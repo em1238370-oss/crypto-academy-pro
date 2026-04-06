@@ -124,8 +124,15 @@
                <p class="kro-feature1-date" id="kro-feature1-date">Последнее подтверждённое обновление: <span id="kro-live-datetime">—</span></p>
                <div class="kro-feature1-hero-number">
                    <span class="kro-feature1-hero-value" id="kro-stat-channels-today">—</span>
-                   <span class="kro-feature1-hero-label">новых скам-каналов за последние 12 ч</span>
+                   <span class="kro-feature1-hero-label" id="kro-feature1-hero-label">новых скам-каналов за последний цикл</span>
                </div>
+               <p class="kro-feature1-status-summary kro-scroll-in" id="kro-feature1-status-summary" aria-label="Статусы по всей подтверждённой базе">
+                   <span>В риске: <strong id="kro-stat-at-risk">—</strong></span>
+                   <span class="kro-feature1-status-sep" aria-hidden="true">·</span>
+                   <span>Под наблюдением: <strong id="kro-stat-under-watch">—</strong></span>
+                   <span class="kro-feature1-status-sep" aria-hidden="true">·</span>
+                   <span>Подтверждённый скам: <strong id="kro-stat-confirmed-scam">—</strong></span>
+               </p>
                <div class="kro-feature1-stats">
                    <div class="kro-feature1-stat kro-card">
                    <span class="kro-feature1-stat-value" id="kro-stat-lost">—</span>
@@ -223,9 +230,9 @@
                </div>
            </div>
            <div class="kro-f1-top3-wrap kro-scroll-in">
-               <span class="kro-f1-badge kro-f1-badge-top3">По потерям за сегодня</span>
-               <h2 class="kro-feature1-heading" id="kro-feature1-heading">Топ-3 сегодня</h2>
-               <p class="kro-feature1-heading-sub">Каналы с самыми большими потерями за сегодня</p>
+               <span class="kro-f1-badge kro-f1-badge-top3">По сумме потерь · вся база</span>
+               <h2 class="kro-feature1-heading" id="kro-feature1-heading">Топ‑3 по потерям</h2>
+               <p class="kro-feature1-heading-sub">Каналы с наибольшими зафиксированными потерями ₽ (все подтверждённые записи)</p>
            </div>
            <ol class="kro-feature1-top3 kro-scroll-in" id="kro-feature1-top3">
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-1-channel">—</span> → <span class="kro-top3-sum" id="kro-top3-1-sum">—</span> → <span class="kro-top3-status" id="kro-top3-1-status">—</span></li>
@@ -616,12 +623,27 @@
            }
            function applyData(data) {
                var el;
-               // ТЗ: первая цифра — new_in_cycle из kro_meta (API: new_in_cycle_meta / channelsToday).
-               var ch12 = Number(data.new_in_cycle_meta != null && data.new_in_cycle_meta !== undefined ? data.new_in_cycle_meta : data.channelsToday);
-               if (!isFinite(ch12)) ch12 = 0;
+               var newInCycle = Number(
+                   data.new_in_cycle_meta != null && data.new_in_cycle_meta !== undefined
+                       ? data.new_in_cycle_meta
+                       : (data.channelsToday != null ? data.channelsToday : data.new_in_cycle)
+               );
+               if (!isFinite(newInCycle)) newInCycle = 0;
                var chTotal = Number(data.channelsTotal);
                if (!isFinite(chTotal)) chTotal = 0;
-               if ((el = document.getElementById('kro-stat-channels-today'))) { el.dataset.target = ch12; el.textContent = ch12; }
+               var heroVal = newInCycle > 0 ? newInCycle : chTotal;
+               var heroLabel = newInCycle > 0
+                   ? 'новых скам-каналов за последний цикл (12 ч)'
+                   : 'всего в базе';
+               if ((el = document.getElementById('kro-stat-channels-today'))) {
+                   el.dataset.target = heroVal;
+                   el.textContent = heroVal;
+               }
+               if ((el = document.getElementById('kro-feature1-hero-label'))) el.textContent = heroLabel;
+               var ssAll = data.status_summary_all_time || {};
+               if ((el = document.getElementById('kro-stat-at-risk'))) el.textContent = ssAll.at_risk != null ? String(ssAll.at_risk) : '—';
+               if ((el = document.getElementById('kro-stat-under-watch'))) el.textContent = ssAll.under_watch != null ? String(ssAll.under_watch) : '—';
+               if ((el = document.getElementById('kro-stat-confirmed-scam'))) el.textContent = ssAll.confirmed_scam != null ? String(ssAll.confirmed_scam) : '—';
                if ((el = document.getElementById('kro-stat-lost'))) { el.dataset.target = data.totalLost; el.textContent = formatFull(data.totalLost); }
                if ((el = document.getElementById('kro-stat-channels'))) { el.dataset.target = chTotal; el.textContent = chTotal; }
                if ((el = document.getElementById('kro-stat-courses'))) { el.dataset.target = data.coursesCount; el.textContent = data.coursesCount; }
