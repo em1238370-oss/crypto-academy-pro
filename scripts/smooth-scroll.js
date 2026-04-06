@@ -1,6 +1,6 @@
 /**
- * Плавный медленный скролл: Lenis (колёсико + тач) или запасной wheel.
- * Раньше отключали на узком экране — из‑за этого на телефоне «не было никаких изменений».
+ * Плавный скролл: Lenis (колёсико + тач) или запасной wheel.
+ * touchMultiplier / wheelMultiplier держим ощутимыми — иначе на телефоне скролл «ползёт».
  */
 (function () {
     'use strict';
@@ -15,8 +15,8 @@
         if (prefersReducedMotion) return;
         var targetY = window.pageYOffset || 0;
         var running = false;
-        var wheelGain = 0.052;
-        var smooth = 0.022;
+        var wheelGain = 0.52;
+        var smooth = 0.15;
 
         function clamp() {
             var m = maxScrollY();
@@ -78,10 +78,10 @@
             gestureOrientation: 'vertical',
             smoothWheel: true,
             syncTouch: true,
-            syncTouchLerp: 0.055,
-            wheelMultiplier: 0.04,
-            touchMultiplier: 0.14,
-            lerp: 0.004,
+            syncTouchLerp: 0.55,
+            wheelMultiplier: 0.4,
+            touchMultiplier: 1.4,
+            lerp: 0.04,
             autoRaf: false,
         });
 
