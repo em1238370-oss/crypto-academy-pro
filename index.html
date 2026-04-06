@@ -549,15 +549,71 @@
                if (sum > 0) return 'в риске';
                return row.status || '—';
            }
+           function normalizeHttpHref(raw) {
+               var u = (raw == null ? '' : String(raw)).trim();
+               if (!u) return '';
+               if (/^https?:\/\//i.test(u)) return u;
+               if (/^\/\//.test(u)) return 'https:' + u;
+               if (/^t\.me\//i.test(u)) return 'https://' + u;
+               if (/^telegram\.me\//i.test(u)) return 'https://' + u;
+               return '';
+           }
+           function canonicalTelegramHttps(raw) {
+               var s = (raw == null ? '' : String(raw)).trim();
+               if (!s) return '';
+               var u = normalizeHttpHref(s);
+               if (!u && /^t\.me\//i.test(s)) u = 'https://' + s.split('#')[0];
+               if (!u && /^telegram\.me\//i.test(s)) u = 'https://' + s.split('#')[0];
+               if (!u) return '';
+               try {
+                   var parsed = new URL(u);
+                   var host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+                   if (host !== 't.me' && host !== 'telegram.me') return '';
+                   var search = parsed.search || '';
+                   var pathNoAt = (parsed.pathname || '').replace(/\/@+/g, '/');
+                   var parts = pathNoAt.replace(/^\//, '').split('/').filter(function(p) { return p; });
+                   if (!parts.length) return '';
+                   var p0 = parts[0].split('?')[0];
+                   var p1 = parts[1] ? parts[1].split('?')[0] : '';
+                   if (p0.toLowerCase() === 'joinchat' && p1) {
+                       var jh = p1.replace(/^@+/, '');
+                       if (!/^[\w-]+$/.test(jh)) return '';
+                       return 'https://t.me/joinchat/' + jh + search;
+                   }
+                   if (p0.charAt(0) === '+') {
+                       var inv = p0.slice(1).replace(/^@+/, '');
+                       if (!/^[\w-]+$/.test(inv)) return '';
+                       return 'https://t.me/+' + inv + search;
+                   }
+                   if (p0 === 's' && p1) {
+                       var un = p1.replace(/^@+/, '');
+                       if (!/^[a-zA-Z0-9_]{3,64}$/.test(un)) return '';
+                       return 'https://t.me/' + un + search;
+                   }
+                   return 'https://t.me' + pathNoAt + search;
+               } catch (e) {
+                   return '';
+               }
+           }
            function channelTelegramUrl(r) {
                if (!r) return '';
                var L = (r.link || '').toString().trim();
-               if (/^https?:\/\/t\.me\//i.test(L)) return L.split(/[?#]/)[0];
-               if (/^t\.me\//i.test(L)) return 'https://' + L.replace(/^\/+/, '').split(/[?#]/)[0];
+               if (L && /t\.me|telegram\.me/i.test(L)) {
+                   var cc = canonicalTelegramHttps(normalizeHttpHref(L) || L);
+                   if (cc) return cc.split('#')[0];
+               }
                var ch = (r.channel || '').toString().trim();
                if (!ch) return '';
-               var u = ch.replace(/^@+/, '').replace(/^https?:\/\/t\.me\//i, '').split(/[/?#]/)[0];
-               return u ? ('https://t.me/' + u) : '';
+               var u = ch.replace(/^@+/, '')
+                   .replace(/^https?:\/\/t\.me\//i, '')
+                   .replace(/^https?:\/\/telegram\.me\//i, '')
+                   .replace(/^t\.me\//i, '')
+                   .replace(/^telegram\.me\//i, '')
+                   .split(/[/?#]/)[0];
+               if (!u) return '';
+               if (/^\+[\w-]+$/.test(u)) return 'https://t.me/' + u;
+               if (!/^[a-zA-Z0-9_]{3,64}$/.test(u)) return '';
+               return 'https://t.me/' + u;
            }
            function ruChannelsWord(n) {
                n = Math.abs(Math.floor(Number(n) || 0));

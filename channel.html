@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260329-channel">
+  <link rel="stylesheet" href="/monitor.css?v=20260411-tme-https-unified">
 </head>
 <body class="mon-page ch-page">
 
@@ -139,6 +139,54 @@
     }
   }
 
+  function normalizeHttpHref(raw) {
+    var u = (raw == null ? '' : String(raw)).trim();
+    if (!u) return '';
+    if (/^https?:\/\//i.test(u)) return u;
+    if (/^\/\//.test(u)) return 'https:' + u;
+    if (/^t\.me\//i.test(u)) return 'https://' + u;
+    if (/^telegram\.me\//i.test(u)) return 'https://' + u;
+    return '';
+  }
+
+  function canonicalTelegramHttps(raw) {
+    var s = (raw == null ? '' : String(raw)).trim();
+    if (!s) return '';
+    var u = normalizeHttpHref(s);
+    if (!u && /^t\.me\//i.test(s)) u = 'https://' + s.split('#')[0];
+    if (!u && /^telegram\.me\//i.test(s)) u = 'https://' + s.split('#')[0];
+    if (!u) return '';
+    try {
+      var parsed = new URL(u);
+      var host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+      if (host !== 't.me' && host !== 'telegram.me') return '';
+      var search = parsed.search || '';
+      var pathNoAt = (parsed.pathname || '').replace(/\/@+/g, '/');
+      var parts = pathNoAt.replace(/^\//, '').split('/').filter(function (p) { return p; });
+      if (!parts.length) return '';
+      var p0 = parts[0].split('?')[0];
+      var p1 = parts[1] ? parts[1].split('?')[0] : '';
+      if (p0.toLowerCase() === 'joinchat' && p1) {
+        var jh = p1.replace(/^@+/, '');
+        if (!/^[\w-]+$/.test(jh)) return '';
+        return 'https://t.me/joinchat/' + jh + search;
+      }
+      if (p0.charAt(0) === '+') {
+        var inv = p0.slice(1).replace(/^@+/, '');
+        if (!/^[\w-]+$/.test(inv)) return '';
+        return 'https://t.me/+' + inv + search;
+      }
+      if (p0 === 's' && p1) {
+        var un = p1.replace(/^@+/, '');
+        if (!/^[a-zA-Z0-9_]{3,64}$/.test(un)) return '';
+        return 'https://t.me/' + un + search;
+      }
+      return 'https://t.me' + pathNoAt + search;
+    } catch (e) {
+      return '';
+    }
+  }
+
   function externalIcon() {
     return '<span class="mon-link-arrow" aria-hidden="true">↗</span>';
   }
@@ -207,25 +255,29 @@
 
   function renderSourceLinks(r) {
     var urls = extractUrls(r && r.source_evidence);
-    var nonTg = urls.filter(function (u) { return !/t\.me\//i.test(u); });
+    var nonTg = urls.filter(function (u) { return !/t\.me\//i.test(u) && !/telegram\.me\//i.test(u); });
     var parts = [];
     if (r && r.link && /^https?:\/\//i.test(r.link)) {
-      parts.push('<a class="mon-external-link" href="' + esc(r.link) + '" target="_blank" rel="noopener">' +
-        esc(hostLabel(r.link)) + ' (объект)' + externalIcon() + '</a>');
+      var objHref = r.link;
+      var tgCanon = canonicalTelegramHttps(normalizeHttpHref(r.link) || r.link);
+      if (tgCanon) objHref = tgCanon;
+      parts.push('<a class="mon-external-link" href="' + esc(objHref) + '" target="_blank" rel="noopener noreferrer">' +
+        esc(hostLabel(objHref)) + ' (объект)' + externalIcon() + '</a>');
     }
     if (!nonTg.length && r && r.source_primary && /^https?:\/\//i.test(r.source_primary)) {
       nonTg = [r.source_primary];
     }
     for (var i = 0; i < Math.min(nonTg.length, 4); i++) {
       var u = nonTg[i];
-      parts.push('<a class="mon-external-link mon-source-link" href="' + esc(u) + '" target="_blank" rel="noopener">' +
+      parts.push('<a class="mon-external-link mon-source-link" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' +
         esc(hostLabel(u)) + externalIcon() + '</a>');
     }
-    var tg = urls.filter(function (u) { return /t\.me\//i.test(u); }).slice(0, 2);
+    var tg = urls.filter(function (u) { return /t\.me\//i.test(u) || /telegram\.me\//i.test(u); }).slice(0, 2);
     for (var j = 0; j < tg.length; j++) {
       var t = tg[j];
-      parts.push('<a class="mon-external-link mon-source-link" href="' + esc(t) + '" target="_blank" rel="noopener">' +
-        esc(hostLabel(t)) + externalIcon() + '</a>');
+      var th = canonicalTelegramHttps(t) || t;
+      parts.push('<a class="mon-external-link mon-source-link" href="' + esc(th) + '" target="_blank" rel="noopener noreferrer">' +
+        esc(hostLabel(th)) + externalIcon() + '</a>');
     }
     if (!parts.length) return '<span class="mon-text-fallback">Ссылки не извлечены из строки — смотрите таблицу в мониторе.</span>';
     return parts.join(' ');
@@ -258,6 +310,18 @@
       var label = (r.username || '').trim();
       document.title = label + ' — база KRO';
       document.getElementById('ch-heading').textContent = label;
+
+      var oldTg = document.querySelector('.ch-tg-line');
+      if (oldTg) oldTg.remove();
+      var tgHref = canonicalTelegramHttps(normalizeHttpHref((r.link || '').trim()) || '');
+      if (!tgHref) {
+        var sl = label.replace(/^@+/, '').split(/[/?#]/)[0];
+        if (/^[a-zA-Z0-9_]{3,64}$/.test(sl)) tgHref = 'https://t.me/' + sl;
+      }
+      if (tgHref) {
+        document.getElementById('ch-heading').insertAdjacentHTML('afterend',
+          '<p class="ch-tg-line"><a class="mon-external-link" href="' + esc(tgHref) + '" target="_blank" rel="noopener noreferrer">Канал в Telegram' + externalIcon() + '</a></p>');
+      }
 
       if (data.merged_rows && data.merged_rows > 1) {
         var mn = document.getElementById('ch-merged-note');

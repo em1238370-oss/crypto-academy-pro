@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260411-tg-ios-click-handoff">
+  <link rel="stylesheet" href="/monitor.css?v=20260411-tme-https-unified">
 </head>
 <body class="mon-page">
 
@@ -778,127 +778,90 @@
     });
   }
 
-  /** Приводит ссылку из таблицы к абсолютному http(s) (t.me/…, //host → https). */
+  /** Приводит ссылку из таблицы к абсолютному http(s) (t.me/…, telegram.me/…, //host → https). */
   function normalizeHttpHref(raw) {
     var u = (raw == null ? '' : String(raw)).trim();
     if (!u) return '';
     if (/^https?:\/\//i.test(u)) return u;
     if (/^\/\//.test(u)) return 'https:' + u;
     if (/^t\.me\//i.test(u)) return 'https://' + u;
+    if (/^telegram\.me\//i.test(u)) return 'https://' + u;
     return '';
   }
 
   /**
-   * Публичная ссылка на Telegram (для телефона: обычный href, без window.open).
-   * Пустая строка — не TG-ник (сайт, бот-домен и т.д.) → остаётся /channel/… на сайте.
+   * Единый вид ссылок Telegram: только https://t.me/…, host t.me, в пути к каналу без символа @.
+   * (На телефоне ОС сама откроет приложение по https Universal Link.)
+   */
+  function canonicalTelegramHttps(raw) {
+    var s = (raw == null ? '' : String(raw)).trim();
+    if (!s) return '';
+    var u = normalizeHttpHref(s);
+    if (!u && /^t\.me\//i.test(s)) u = 'https://' + s.split('#')[0];
+    if (!u && /^telegram\.me\//i.test(s)) u = 'https://' + s.split('#')[0];
+    if (!u) return '';
+    try {
+      var parsed = new URL(u);
+      var host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+      if (host !== 't.me' && host !== 'telegram.me') return '';
+      var search = parsed.search || '';
+      var pathNoAt = (parsed.pathname || '').replace(/\/@+/g, '/');
+      var parts = pathNoAt.replace(/^\//, '').split('/').filter(function(p) { return p; });
+      if (!parts.length) return '';
+      var p0 = parts[0].split('?')[0];
+      var p1 = parts[1] ? parts[1].split('?')[0] : '';
+      if (p0.toLowerCase() === 'joinchat' && p1) {
+        var jh = p1.replace(/^@+/, '');
+        if (!/^[\w-]+$/.test(jh)) return '';
+        return 'https://t.me/joinchat/' + jh + search;
+      }
+      if (p0.charAt(0) === '+') {
+        var inv = p0.slice(1).replace(/^@+/, '');
+        if (!/^[\w-]+$/.test(inv)) return '';
+        return 'https://t.me/+' + inv + search;
+      }
+      if (p0 === 's' && p1) {
+        var un = p1.replace(/^@+/, '');
+        if (!/^[a-zA-Z0-9_]{3,64}$/.test(un)) return '';
+        return 'https://t.me/' + un + search;
+      }
+      return 'https://t.me' + pathNoAt + search;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  /**
+   * Публичная ссылка на Telegram-канал в формате https://t.me/username (без @).
+   * Пустая строка — не TG-ник (сайт и т.д.) → остаётся /channel/… на сайте.
    */
   function extractTelegramPublicUrl(r) {
     var link = normalizeHttpHref(r && r.link || '');
-    if (link && /^https?:\/\/(t\.me|telegram\.me)\//i.test(link)) {
-      try {
-        var u = new URL(link);
-        return 'https://t.me' + u.pathname + (u.search || '');
-      } catch (e) {
-        return link.split('#')[0];
-      }
+    if (link && /t\.me|telegram\.me/i.test(link)) {
+      var c = canonicalTelegramHttps(link);
+      if (c) return c.split('#')[0];
     }
     var raw = (r && r.username || '').trim();
     if (!raw) return '';
     if (/^https?:\/\//i.test(raw)) {
       var n = normalizeHttpHref(raw);
-      if (n && /t\.me|telegram\.me/i.test(n)) return n.split('#')[0];
+      if (n && /t\.me|telegram\.me/i.test(n)) {
+        var cn = canonicalTelegramHttps(n);
+        return cn ? cn.split('#')[0] : '';
+      }
       return '';
     }
     if (/^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$/i.test(raw.replace(/\.$/, ''))) {
       return '';
     }
-    var slug = raw.replace(/^@+/, '').replace(/^t\.me\//i, '').split(/[/?#]/)[0];
+    var slug = raw.replace(/^@+/, '').replace(/^t\.me\//i, '').replace(/^telegram\.me\//i, '').split(/[/?#]/)[0];
     if (!slug) return '';
     if (/^\+[\w-]+$/.test(slug)) return 'https://t.me/' + slug;
     if (!/^[a-zA-Z0-9_]{3,64}$/.test(slug)) return '';
     return 'https://t.me/' + slug;
   }
 
-  /** Для мобильного: tg:// открывает приложение Telegram; https — запасной вариант в браузере. */
-  function parseTelegramUrlForApp(httpsUrl) {
-    var raw = (httpsUrl || '').trim();
-    if (!raw) return null;
-    try {
-      var u = raw.replace(/^\/\//, 'https://');
-      if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
-      var parsed = new URL(u);
-      var host = (parsed.hostname || '').replace(/^www\./i, '').toLowerCase();
-      if (host !== 't.me' && host !== 'telegram.me') return null;
-      var parts = (parsed.pathname || '').replace(/^\//, '').split('/').filter(function(p) { return p; });
-      if (!parts.length) return null;
-      if (parts[0].toLowerCase() === 'joinchat' && parts[1]) {
-        var jh = parts[1].split('?')[0];
-        if (!/^[\w-]+$/.test(jh)) return null;
-        var jq = encodeURIComponent(jh);
-        return {
-          https: 'https://t.me/joinchat/' + jh,
-          tg: 'tg://join?invite=' + jq,
-          telegramIos: 'telegram://join?invite=' + jq
-        };
-      }
-      var seg = parts[0] === 's' && parts.length >= 2 ? parts[1].split('?')[0] : parts[0].split('?')[0];
-      if (!seg) return null;
-      if (seg.charAt(0) === '+') {
-        var inv = seg.slice(1);
-        if (!/^[\w-]+$/.test(inv)) return null;
-        var q = encodeURIComponent(inv);
-        return {
-          https: 'https://t.me/+' + inv,
-          tg: 'tg://join?invite=' + q,
-          telegramIos: 'telegram://join?invite=' + q
-        };
-      }
-      if (/^[a-zA-Z0-9_]{3,64}$/.test(seg)) {
-        var d = encodeURIComponent(seg);
-        return {
-          https: 'https://t.me/' + seg,
-          tg: 'tg://resolve?domain=' + d,
-          telegramIos: 'telegram://resolve?domain=' + d
-        };
-      }
-    } catch (e) {}
-    return null;
-  }
-
-  function isTelegramMobileOpen() {
-    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return true;
-    return /Mobi|Android|iPhone|iPad|iPod|webOS|BlackBerry|Opera Mini/i.test(navigator.userAgent || '');
-  }
-
-  /** iPhone/iPad: схема telegram:// часто отрабатывает resolve надёжнее, чем tg:// из Safari. */
-  function isIOSLike() {
-    var ua = navigator.userAgent || '';
-    if (/iPhone|iPad|iPod/i.test(ua)) return true;
-    return navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1;
-  }
-
-  function telegramNativeHref(deep) {
-    if (!deep) return '';
-    if (isIOSLike() && deep.telegramIos) return deep.telegramIos;
-    return deep.tg || '';
-  }
-
-  /** data-tg-open: нативная ссылка; на iOS href остаётся https (иначе Safari теряет deep link). */
-  function telegramLinkAttrs(deep, mobile) {
-    if (!deep || !mobile) return { href: deep ? deep.https : '', dataOpen: '', dataHttps: '', useDeep: false };
-    var native = telegramNativeHref(deep);
-    if (isIOSLike()) {
-      return {
-        href: deep.https,
-        dataOpen: native,
-        dataHttps: deep.https,
-        useDeep: true
-      };
-    }
-    return { href: native, dataOpen: '', dataHttps: deep.https, useDeep: true };
-  }
-
-  /** Ссылка на объект в таблице: мобильный Telegram — нативный URI + https-запас. */
+  /** Ссылка на объект в таблице: только https://t.me/…, новая вкладка на десктопе; на телефоне — открытие приложения по t.me. */
   function anchorMonChannelObject(channelLabel, row) {
     var tgHttps = extractTelegramPublicUrl(row);
     if (!tgHttps) {
@@ -906,52 +869,7 @@
       var profileSlug = encodeURIComponent(rawU.replace(/^@+/, '') || String(channelLabel).replace(/^@+/, ''));
       return '<a class="mon-channel-profile-link" href="' + esc('/channel/' + profileSlug) + '" target="_blank" rel="noopener noreferrer" title="Карточка объекта на сайте">' + esc(channelLabel) + '</a>';
     }
-    var deep = parseTelegramUrlForApp(tgHttps);
-    var mobile = isTelegramMobileOpen();
-    var t = telegramLinkAttrs(deep, mobile);
-    var href = t.href || (deep ? deep.https : tgHttps);
-    var cls = 'mon-channel-profile-link' + (t.useDeep ? ' mon-tg-app-link' : '');
-    var dataOpen = t.dataOpen ? ' data-tg-open="' + esc(t.dataOpen) + '"' : '';
-    var dataHttps = t.dataHttps ? ' data-tg-https="' + esc(t.dataHttps) + '"' : '';
-    return '<a class="' + cls + '" href="' + esc(href) + '"' + dataOpen + dataHttps +
-      ' target="_self" rel="noopener noreferrer" title="Открыть канал в Telegram">' + esc(channelLabel) + '</a>';
-  }
-
-  /** iOS: клик → data-tg-open (жест пользователя). Android: href=tg://. Fallback на https.t.me только если приложение не забрало вкладку. */
-  function initTelegramAppLinks() {
-    document.addEventListener('click', function(ev) {
-      var a = ev.target.closest('a.mon-tg-app-link[data-tg-https]');
-      if (!a || !isTelegramMobileOpen()) return;
-      var https = a.getAttribute('data-tg-https');
-      if (!https) return;
-
-      var openUrl = a.getAttribute('data-tg-open');
-      var h = a.getAttribute('href') || '';
-
-      if (isIOSLike() && openUrl) {
-        ev.preventDefault();
-        if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
-        window.location.href = openUrl;
-      } else if (h.indexOf('tg:') !== 0 && h.indexOf('telegram:') !== 0) {
-        return;
-      }
-
-      var delayMs = isIOSLike() ? 2800 : 1600;
-      var tid = window.setTimeout(function() {
-        if (document.visibilityState === 'visible') window.location.href = https;
-      }, delayMs);
-
-      function cleanup() {
-        window.clearTimeout(tid);
-        document.removeEventListener('visibilitychange', onVis);
-      }
-      function onVis() {
-        if (document.visibilityState === 'hidden') cleanup();
-      }
-      document.addEventListener('visibilitychange', onVis);
-      window.addEventListener('pagehide', cleanup, { once: true });
-      window.setTimeout(cleanup, Math.max(delayMs, 3000) + 1000);
-    }, true);
+    return '<a class="mon-channel-profile-link" href="' + esc(tgHttps) + '" target="_blank" rel="noopener noreferrer" title="Канал в Telegram (t.me)">' + esc(channelLabel) + '</a>';
   }
 
   function extractUrls(text) {
@@ -985,15 +903,8 @@
   function renderExternalLink(url, label, cls) {
     if (!url) return '<span class="mon-text-fallback">нет публичной ссылки</span>';
     var norm = normalizeHttpHref(url) || url;
-    var deep = parseTelegramUrlForApp(norm);
-    var mobile = isTelegramMobileOpen();
-    var t = telegramLinkAttrs(deep, mobile);
-    var href = t.href || (deep ? deep.https : norm);
-    var c = (cls || 'mon-external-link') + (t.useDeep ? ' mon-tg-app-link' : '');
-    var dataOpen = t.dataOpen ? ' data-tg-open="' + esc(t.dataOpen) + '"' : '';
-    var dataHttps = t.dataHttps ? ' data-tg-https="' + esc(t.dataHttps) + '"' : '';
-    var tgt = t.useDeep ? '_self' : '_blank';
-    return '<a class="' + esc(c) + '" href="' + esc(href) + '"' + dataOpen + dataHttps + ' target="' + tgt + '" rel="noopener noreferrer">' +
+    var href = canonicalTelegramHttps(norm) || norm;
+    return '<a class="' + esc(cls || 'mon-external-link') + '" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' +
       esc(label) + externalIcon() + '</a>';
   }
 
@@ -1455,12 +1366,14 @@
     if (!ordered.length) return '<span class="mon-text-fallback">нет публичной ссылки</span>';
 
     var mainLink = normalizeHttpHref(row && row.link) || '';
+    var mainCanon = mainLink ? (canonicalTelegramHttps(mainLink) || mainLink) : '';
     return ordered.slice(0, 4).map(function(u) {
-      var lab = hostLabel(u);
-      if (mainLink && u === mainLink) {
-        lab = /t\.me\//i.test(u) ? (lab + ' · объект') : (lab + ' · сайт');
+      var href = canonicalTelegramHttps(u) || u;
+      var lab = hostLabel(href);
+      if (mainCanon && (canonicalTelegramHttps(u) || u) === mainCanon) {
+        lab = /t\.me\//i.test(href) ? (lab + ' · объект') : (lab + ' · сайт');
       }
-      return '<a class="mon-external-link mon-source-link" href="' + esc(u) + '" target="_blank" rel="noopener">' +
+      return '<a class="mon-external-link mon-source-link" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' +
         esc(lab) + externalIcon() + '</a>';
     }).join(' ');
   }
@@ -1785,7 +1698,12 @@
     if (internal) {
       return '<a class="mon-case-source mon-case-source--internal" href="' + esc(url) + '">' + esc(label) + ' ›</a>';
     }
-    return '<a class="mon-case-source" href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(label) + externalIcon() + '</a>';
+    var hrefOut = url;
+    if (/t\.me|telegram\.me/i.test(url)) {
+      var cq = canonicalTelegramHttps(normalizeHttpHref(url) || url);
+      if (cq) hrefOut = cq;
+    }
+    return '<a class="mon-case-source" href="' + esc(hrefOut) + '" target="_blank" rel="noopener noreferrer">' + esc(label) + externalIcon() + '</a>';
   }
 
   function renderRecentCases(cases) {
@@ -2022,8 +1940,10 @@
       '</tr></thead><tbody>';
 
     rows.forEach(function(r) {
-      var sourceUrl = 'https://t.me/' + String(r.source_channel || '').replace(/^@+/, '');
-      var targetUrl = 'https://t.me/' + String(r.target_channel || '').replace(/^@+/, '');
+      var sc = String(r.source_channel || '').replace(/^@+/, '').trim();
+      var tc = String(r.target_channel || '').replace(/^@+/, '').trim();
+      var sourceUrl = /^[a-zA-Z0-9_]{3,64}$/.test(sc) ? ('https://t.me/' + sc) : '';
+      var targetUrl = /^[a-zA-Z0-9_]{3,64}$/.test(tc) ? ('https://t.me/' + tc) : '';
       html += '<tr>' +
         '<td class="mon-cell-channel">' + renderExternalLink(sourceUrl, r.source_channel || '—', 'mon-external-link mon-channel-link') + '</td>' +
         '<td class="mon-cell-channel">' + renderExternalLink(targetUrl, r.target_channel || '—', 'mon-external-link mon-channel-link') + '</td>' +
@@ -2393,7 +2313,6 @@
   // ── INIT ──────────────────────────────────────────────────
 
   document.addEventListener('DOMContentLoaded', function() {
-    initTelegramAppLinks();
     var refreshBtn = document.getElementById('mon-refresh-btn');
     if (refreshBtn) refreshBtn.addEventListener('click', function() { loadData(true); });
     window.loadData = loadData;
@@ -2423,6 +2342,6 @@
 })();
 </script>
 <script src="/scripts/vendor/lenis-1.3.17.min.js?v=1"></script>
-<script src="/scripts/monitor-lenis.js?v=20260411-tg-ios-click-handoff"></script>
+<script src="/scripts/monitor-lenis.js?v=20260411-tme-https-unified"></script>
 </body>
 </html>
