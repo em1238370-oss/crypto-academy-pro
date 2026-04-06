@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260411-lenis-tap-fix">
+  <link rel="stylesheet" href="/monitor.css?v=20260411-tg-app-deeplink">
 </head>
 <body class="mon-page">
 
@@ -819,6 +819,67 @@
     return 'https://t.me/' + slug;
   }
 
+  /** Для мобильного: tg:// открывает приложение Telegram; https — запасной вариант в браузере. */
+  function parseTelegramUrlForApp(httpsUrl) {
+    var raw = (httpsUrl || '').trim();
+    if (!raw) return null;
+    try {
+      var u = raw.replace(/^\/\//, 'https://');
+      if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+      var parsed = new URL(u);
+      var host = (parsed.hostname || '').replace(/^www\./i, '').toLowerCase();
+      if (host !== 't.me' && host !== 'telegram.me') return null;
+      var seg = (parsed.pathname || '').replace(/^\//, '').split('/')[0];
+      if (!seg) return null;
+      if (seg.charAt(0) === '+') {
+        var inv = seg.slice(1);
+        if (!/^[\w-]+$/.test(inv)) return null;
+        return { https: 'https://t.me/+' + inv, tg: 'tg://join?invite=' + encodeURIComponent(inv) };
+      }
+      if (/^[a-zA-Z0-9_]{3,64}$/.test(seg)) {
+        return { https: 'https://t.me/' + seg, tg: 'tg://resolve?domain=' + encodeURIComponent(seg) };
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function isTelegramMobileOpen() {
+    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return true;
+    return /Mobi|Android|iPhone|iPad|iPod|webOS|BlackBerry|Opera Mini/i.test(navigator.userAgent || '');
+  }
+
+  /** Ссылка на объект в таблице: Telegram → t.me + при необходимости tg:// на телефоне. */
+  function anchorMonChannelObject(channelLabel, row) {
+    var tgHttps = extractTelegramPublicUrl(row);
+    if (!tgHttps) {
+      var rawU = (row && row.username || channelLabel || '').trim();
+      var profileSlug = encodeURIComponent(rawU.replace(/^@+/, '') || String(channelLabel).replace(/^@+/, ''));
+      return '<a class="mon-channel-profile-link" href="' + esc('/channel/' + profileSlug) + '" target="_blank" rel="noopener noreferrer" title="Карточка объекта на сайте">' + esc(channelLabel) + '</a>';
+    }
+    var deep = parseTelegramUrlForApp(tgHttps);
+    var cls = 'mon-channel-profile-link' + (deep ? ' mon-tg-app-link' : '');
+    var dataNat = deep ? ' data-tg-native="' + esc(deep.tg) + '"' : '';
+    return '<a class="' + cls + '" href="' + esc(deep ? deep.https : tgHttps) + '"' + dataNat +
+      ' target="_self" rel="noopener noreferrer" title="Открыть канал в Telegram">' + esc(channelLabel) + '</a>';
+  }
+
+  function initTelegramAppLinks() {
+    document.addEventListener('click', function(ev) {
+      var a = ev.target.closest('a.mon-tg-app-link[data-tg-native]');
+      if (!a) return;
+      if (!isTelegramMobileOpen()) return;
+      var tg = a.getAttribute('data-tg-native');
+      var https = a.getAttribute('href');
+      if (!tg || !https) return;
+      ev.preventDefault();
+      if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+      window.location.href = tg;
+      window.setTimeout(function() {
+        if (document.visibilityState === 'visible') window.location.href = https;
+      }, 750);
+    }, true);
+  }
+
   function extractUrls(text) {
     return uniq(((text || '').match(/https?:\/\/[^\s|;]+/g) || []).map(function(url) {
       return url.replace(/[),.]+$/,'');
@@ -849,7 +910,13 @@
 
   function renderExternalLink(url, label, cls) {
     if (!url) return '<span class="mon-text-fallback">нет публичной ссылки</span>';
-    return '<a class="' + (cls || 'mon-external-link') + '" href="' + esc(url) + '" target="_blank" rel="noopener">' +
+    var norm = normalizeHttpHref(url) || url;
+    var deep = parseTelegramUrlForApp(norm);
+    var c = (cls || 'mon-external-link') + (deep ? ' mon-tg-app-link' : '');
+    var dataNat = deep ? ' data-tg-native="' + esc(deep.tg) + '"' : '';
+    var href = deep ? deep.https : norm;
+    var tgt = deep ? '_self' : '_blank';
+    return '<a class="' + esc(c) + '" href="' + esc(href) + '"' + dataNat + ' target="' + tgt + '" rel="noopener noreferrer">' +
       esc(label) + externalIcon() + '</a>';
   }
 
@@ -1690,15 +1757,11 @@
       '<th title="Дата обнаружения (C), ISO в таблице">Обнаружен</th>' +
       '</tr></thead><tbody>';
     list.forEach(function(r, idx) {
-      var slug = encodeURIComponent((r.username || '').trim());
-      var tgOpen = extractTelegramPublicUrl(r);
-      var profHref = tgOpen || ('/channel/' + slug);
-      var profTitle = tgOpen ? 'Открыть канал в Telegram (t.me)' : 'Карточка объекта на сайте';
       var lossTxt = fmtLossRub(r.total_loss_rub);
       var reason = (r.reason_summary || '').trim();
       tableHtml += '<tr>' +
         '<td class="mon-cell-num">' + (idx + 1) + '</td>' +
-        '<td class="mon-cell-channel"><a class="mon-channel-profile-link" href="' + esc(profHref) + '" target="_blank" rel="noopener noreferrer" title="' + esc(profTitle) + '">' + esc(r.username || '—') + '</a></td>' +
+        '<td class="mon-cell-channel">' + anchorMonChannelObject(r.username || '—', r) + '</td>' +
         '<td class="mon-cell-type">' + esc(r.object_type || '—') + '</td>' +
         '<td class="mon-cell-muted">' + esc((r.source_primary || '').slice(0, 140)) + ((r.source_primary || '').length > 140 ? '…' : '') + '</td>' +
         '<td><div class="mon-evidence" title="' + esc(reason) + '">' + esc(reason.slice(0, 320)) + (reason.length > 320 ? '…' : '') + '</div></td>' +
@@ -1781,12 +1844,11 @@
 
       var profileSlug = encodeURIComponent(rawU || channelLabel.replace(/^@+/, ''));
       var tgHref = extractTelegramPublicUrl(r);
-      var profileHref = tgHref || '/channel/' + profileSlug;
-      var profileTitle = tgHref ? 'Открыть в Telegram (t.me)' : 'Карточка объекта на сайте';
-      var profileLink = '<a class="mon-channel-profile-link" href="' + esc(profileHref) + '" target="_blank" rel="noopener noreferrer" title="' + esc(profileTitle) + '">' + esc(channelLabel) + '</a>';
+      var profileLink = anchorMonChannelObject(channelLabel, r);
+      var primaryHref = tgHref || ('/channel/' + profileSlug);
 
       var secondaryHref = '';
-      if (channelUrl && channelUrl.replace(/\?.*$/, '') !== String(profileHref).replace(/\?.*$/, '')) {
+      if (channelUrl && channelUrl.replace(/\?.*$/, '') !== primaryHref.replace(/\?.*$/, '')) {
         secondaryHref = channelUrl;
       } else if (tgHref) {
         secondaryHref = '/channel/' + profileSlug;
@@ -2254,6 +2316,7 @@
   // ── INIT ──────────────────────────────────────────────────
 
   document.addEventListener('DOMContentLoaded', function() {
+    initTelegramAppLinks();
     var refreshBtn = document.getElementById('mon-refresh-btn');
     if (refreshBtn) refreshBtn.addEventListener('click', function() { loadData(true); });
     window.loadData = loadData;
@@ -2283,6 +2346,6 @@
 })();
 </script>
 <script src="/scripts/vendor/lenis-1.3.17.min.js?v=1"></script>
-<script src="/scripts/monitor-lenis.js?v=20260411-lenis-no-synctouch"></script>
+<script src="/scripts/monitor-lenis.js?v=20260411-tg-deeplink-primaryfix"></script>
 </body>
 </html>
