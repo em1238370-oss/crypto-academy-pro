@@ -1753,9 +1753,14 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 /* t.me: без задержки double-tap zoom; мгновенный переход в Telegram / браузер */
 a.mon-external-link[href^="https://t.me/"],
+a.mon-external-link[href^="tg:"],
+a.mon-channel-profile-link[href^="tg:"],
 a.mon-channel-external[href^="https://t.me/"],
+a.mon-channel-external[href^="tg:"],
 a.mon-case-source[href^="https://t.me/"],
-a.mon-ca-sample-link[href^="https://t.me/"] {
+a.mon-case-source[href^="tg:"],
+a.mon-ca-sample-link[href^="https://t.me/"],
+a.mon-ca-sample-link[href^="tg:"] {
   touch-action: manipulation;
 }
 .mon-external-link::after {
