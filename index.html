@@ -124,7 +124,7 @@
                <p class="kro-feature1-date" id="kro-feature1-date">Последнее подтверждённое обновление: <span id="kro-live-datetime">—</span></p>
                <div class="kro-feature1-hero-number">
                    <span class="kro-feature1-hero-value" id="kro-stat-channels-today">—</span>
-                   <span class="kro-feature1-hero-label" id="kro-feature1-hero-label">новых скам-каналов за последний цикл</span>
+                   <span class="kro-feature1-hero-label" id="kro-feature1-hero-label">найдено в последнем цикле / всего в базе</span>
                </div>
                <p class="kro-feature1-status-summary kro-scroll-in" id="kro-feature1-status-summary" aria-label="Статусы по всей подтверждённой базе">
                    <span>В риске: <strong id="kro-stat-at-risk">—</strong></span>
@@ -701,7 +701,7 @@
                if (!isFinite(chTotal)) chTotal = 0;
                var heroVal = newInCycle > 0 ? newInCycle : chTotal;
                var heroLabel = newInCycle > 0
-                   ? 'новых скам-каналов за последний цикл (12 ч)'
+                   ? 'найдено в последнем цикле'
                    : 'всего в базе';
                if ((el = document.getElementById('kro-stat-channels-today'))) {
                    el.dataset.target = heroVal;
@@ -766,8 +766,9 @@
                var statsHero = document.getElementById('kro-hero-live-stats');
                if (statsHero) {
                    var totalBase = Math.max(0, Math.floor(Number(data.channelsTotal) || 0));
-                   var compN = Math.max(0, Math.floor(Number(data.complaints_received) || 0));
-                   statsHero.textContent = 'Уже проверено ' + totalBase + ' ' + ruChannelsWord(totalBase) + ' · ' + compN + ' ' + ruComplaintsWord(compN) + ' получено';
+                   var mentions = Math.max(0, Math.floor(Number(data.mentions_in_sources_sum != null ? data.mentions_in_sources_sum : data.complaints_received) || 0));
+                   var repForm = Math.max(0, Math.floor(Number(data.reports_via_form_count) || 0));
+                   statsHero.textContent = 'Уже проверено ' + totalBase + ' ' + ruChannelsWord(totalBase) + ' · упоминаний в источниках (сумма по строкам базы): ' + mentions + ' · жалоб через форму на сайте: ' + repForm;
                }
                var docWrap = document.getElementById('kro-f1-source-doc-wrap');
                var docLink = document.getElementById('kro-f1-source-doc-link');

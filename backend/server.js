@@ -2024,6 +2024,12 @@ function statusWithLossFloor(status, totalLossRub) {
   return normalizeRiskStatusByLoss(totalLossRub, status);
 }
 
+/** Статус «не по теме» — не показываем в публичном API (главная, монитор). */
+function isOffTopicScamBaseStatus(status, verdict) {
+  const blob = `${status ?? ''} ${verdict ?? ''}`.toLowerCase();
+  return blob.includes('не по теме');
+}
+
 function buildStatusSummary(rows) {
   const summary = {
     confirmed_scam: 0,
@@ -2066,6 +2072,7 @@ function isScamBaseRowInLiveCounterDataset(r) {
   // Старый лист (8 колонок): только осмысленные подтверждённые строки.
   if (r._schema === 'v1') {
     if (!isUsableScamBaseRow(r)) return false;
+    if (isOffTopicScamBaseStatus(null, r.verdict)) return false;
     if (gamblingTopicHit(r.username, r.verdict, r.vip_price, r.total_loss, r.bot_pct)) return false;
     return !isBlatantNonCryptoVerticalInScamBaseRow(
       r.username,
@@ -2075,6 +2082,7 @@ function isScamBaseRowInLiveCounterDataset(r) {
     );
   }
   if (r._schema !== 'v2' || !isVisibleScamStatus(r.status)) return false;
+  if (isOffTopicScamBaseStatus(r.status, null)) return false;
   if (
     gamblingTopicHit(
       r.username,
@@ -2100,6 +2108,27 @@ function isScamBaseRowInLiveCounterDataset(r) {
     return false;
   }
   return true;
+}
+
+/** Число строк на листе отчётов (первая вкладка), source = form — жалобы через форму сайта. */
+async function countReportsFormRows(client) {
+  if (!client || !kroSheetId) return null;
+  try {
+    const response = await client.sheets.spreadsheets.values.get({
+      spreadsheetId: kroSheetId,
+      range: 'A2:I'
+    });
+    const rows = response.data.values || [];
+    let n = 0;
+    for (const r of rows) {
+      const src = (r[3] || '').toString().trim().toLowerCase();
+      if (src === 'form') n += 1;
+    }
+    return n;
+  } catch (e) {
+    console.warn('countReportsFormRows:', e?.message);
+    return null;
+  }
 }
 
 /** Честный fallback для монитора: без разбора постов, только поля строки scam_base. */
@@ -2773,7 +2802,7 @@ app.get('/api/kro/check', async (req, res) => {
     for (let i = 0; i < rows.length; i++) {
       const row = parseScamBaseRow(rows[i]);
       if (requestKey && channelMatchKey(row.username) === requestKey) {
-        if (!isUsableScamBaseRow(row)) {
+        if (!isScamBaseRowInLiveCounterDataset(row)) {
           continue;
         }
         let complaints = row.complaints;
@@ -3054,8 +3083,9 @@ app.get('/api/kro/live-counter', async (req, res) => {
           : (metaStr || scamBaseCounter.updatedAt || null);
       const newInCycle = Number(cycleMeta.new_in_cycle);
       const channelsTodayVal = Number.isFinite(newInCycle) ? newInCycle : 0;
+      const reportsFormCount = await countReportsFormRows(sheetsClient);
       // Главная: new_in_cycle из kro_meta; топ‑3 и статусы — по всей базе (см. index.html applyData).
-      const caption12 = `За последние 12 ч (по дате обнаружения в scam_base): ${roll12.uniqueChannels} объектов, потери ${roll12.lossesSum.toLocaleString('ru-RU')} ₽. Всего в подтверждённой базе: ${scamBaseCounter.channels_total}.`;
+      const caption12 = `За последние 12 ч (по дате обнаружения в scam_base): потери ${roll12.lossesSum.toLocaleString('ru-RU')} ₽. Всего в публичной базе: ${scamBaseCounter.channels_total}. Сумма столбца «упоминания» по строкам — см. подписи на главной.`;
       const payload = {
         channelsToday: channelsTodayVal,
         new_in_cycle_meta: channelsTodayVal,
@@ -3063,7 +3093,11 @@ app.get('/api/kro/live-counter', async (req, res) => {
         totalLost: roll12.lossesSum,
         telegramCount: roll12.telegramCount,
         coursesCount: roll12.coursesCount,
+        /** Сумма числового столбца по строкам базы (не число людей и не строки листа reports). */
+        mentions_in_sources_sum: scamBaseCounter.complaints_received,
         complaints_received: scamBaseCounter.complaints_received,
+        /** Строки на листе отчётов с source=form (форма на сайте). */
+        reports_via_form_count: reportsFormCount != null ? reportsFormCount : 0,
         complaints_12h: roll12.complaintsSum,
         victims_12h: null,
         shockText: KRO_PENDING_REPORT_TEXT,
@@ -3079,13 +3113,10 @@ app.get('/api/kro/live-counter', async (req, res) => {
         updatedAt: displayUpdatedAt,
         last_cycle_at: cycleMeta.last_cycle_at,
         new_in_cycle: channelsTodayVal,
-        /** Сколько новых за последние 12ч по detected_at в scam_base (для подписей / сравнения с meta). */
-        new_in_base_12h: roll12.uniqueChannels,
         sources_checked: cycleMeta.sources_checked,
         rollup_12h: {
-          new_count: roll12.uniqueChannels,
           losses_rub: roll12.lossesSum,
-          complaints: roll12.complaintsSum,
+          mentions_in_sources_sum: roll12.complaintsSum,
           telegram: roll12.telegramCount,
           courses: roll12.coursesCount,
         },
@@ -3106,7 +3137,10 @@ app.get('/api/kro/live-counter', async (req, res) => {
       totalLost: 0,
       telegramCount: 0,
       coursesCount: 0,
+      mentions_in_sources_sum: 0,
       complaints_received: 0,
+      reports_via_form_count: 0,
+      complaints_12h: 0,
       victims_12h: null,
       shockText: KRO_PENDING_REPORT_TEXT,
       top3: [],
@@ -3121,8 +3155,13 @@ app.get('/api/kro/live-counter', async (req, res) => {
       updatedAt: null,
       last_cycle_at: cycleMeta.last_cycle_at,
       new_in_cycle: cycleMeta.new_in_cycle,
-      new_in_base_12h: 0,
-      sources_checked: cycleMeta.sources_checked
+      sources_checked: cycleMeta.sources_checked,
+      rollup_12h: {
+        losses_rub: 0,
+        mentions_in_sources_sum: 0,
+        telegram: 0,
+        courses: 0,
+      },
     });
   } catch (e) {
     console.error('KRO live-counter error:', e);
@@ -3135,7 +3174,10 @@ app.get('/api/kro/live-counter', async (req, res) => {
       totalLost: 0,
       telegramCount: 0,
       coursesCount: 0,
+      mentions_in_sources_sum: 0,
       complaints_received: 0,
+      reports_via_form_count: 0,
+      complaints_12h: 0,
       victims_12h: null,
       shockText: KRO_PENDING_REPORT_TEXT,
       top3: [],
@@ -3150,8 +3192,13 @@ app.get('/api/kro/live-counter', async (req, res) => {
       updatedAt: null,
       last_cycle_at: cycleMeta.last_cycle_at,
       new_in_cycle: cycleMeta.new_in_cycle,
-      new_in_base_12h: 0,
-      sources_checked: cycleMeta.sources_checked
+      sources_checked: cycleMeta.sources_checked,
+      rollup_12h: {
+        losses_rub: 0,
+        mentions_in_sources_sum: 0,
+        telegram: 0,
+        courses: 0,
+      },
     });
   }
 });
@@ -3271,9 +3318,8 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       confirmed_status_summary: liveFromBase.status_summary,
       confirmed_status_summary_12h: buildStatusSummary(roll12.rowSnapshots),
       rollup_12h: {
-        new_count: roll12.uniqueChannels,
         losses_rub: roll12.lossesSum,
-        complaints: roll12.complaintsSum,
+        mentions_in_sources_sum: roll12.complaintsSum,
         telegram: roll12.telegramCount,
         courses: roll12.coursesCount,
       },
@@ -3364,6 +3410,9 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     const profile = matches.reduce((best, cur) =>
       parseScamDetectedAtMs(cur) >= parseScamDetectedAtMs(best) ? cur : best
     );
+    if (!isScamBaseRowInLiveCounterDataset(profile)) {
+      return res.status(404).json({ error: 'not_found' });
+    }
     return res.json({
       profile,
       merged_rows: matches.length > 1 ? matches.length : undefined

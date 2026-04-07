@@ -1722,9 +1722,8 @@
     var src = meta.sources_checked || [];
     var srcOk = src.filter(function(s) { return s.status === 'found'; }).length;
     var chTot = typeof channelsTotal === 'number' ? channelsTotal : 0;
-    var r12n = Number(rollup12.new_count);
     var r12l = Number(rollup12.losses_rub);
-    var r12c = Number(rollup12.complaints);
+    var r12c = Number(rollup12.mentions_in_sources_sum != null ? rollup12.mentions_in_sources_sum : rollup12.complaints);
 
     function sumRow(label, val) {
       return '<tr><td class="mon-cell-muted">' + esc(label) + '</td><td class="mon-cell-value-strong">' + esc(String(val)) + '</td></tr>';
@@ -1750,10 +1749,9 @@
     var table1 =
       '<thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>' +
       sumRow('Дата и время последнего цикла', cycleTime) +
-      sumRow('Новых каналов за цикл (kro_meta)', newC) +
-      (isFinite(r12n) ? sumRow('Объектов за 12 ч по дате обнаружения (scam_base)', r12n) : '') +
-      (isFinite(r12l) ? sumRow('Потери ₽ за 12 ч (те же объекты)', (Math.round(r12l) || 0).toLocaleString('ru-RU') + ' ₽') : '') +
-      (isFinite(r12c) ? sumRow('Сумма «жалоб» в строках за 12 ч', r12c) : '') +
+      sumRow('Найдено в последнем цикле (kro_meta)', newC) +
+      (isFinite(r12l) ? sumRow('Потери ₽ за 12 ч (по дате обнаружения в scam_base)', (Math.round(r12l) || 0).toLocaleString('ru-RU') + ' ₽') : '') +
+      (isFinite(r12c) ? sumRow('Упоминаний в источниках за 12 ч (сумма по столбцу в строках)', r12c) : '') +
       sumRow('Источников опрошено / ответили «нашёл»', src.length + ' / ' + srcOk) +
       '</tbody>';
 
