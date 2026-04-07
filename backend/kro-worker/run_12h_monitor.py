@@ -2265,7 +2265,7 @@ def _summarize_content_messages(
     channel_ref='',
     max_posts=None,
     *,
-    telegram_subscribers=0,
+    telegram_subscribers=None,
     channel_date=None,
     channel_title='',
     channel_about='',
@@ -2375,7 +2375,9 @@ def _summarize_content_messages(
         'red_flags_typed': red_flags_typed,
         'red_flags_signal': red_flags_typed.get('сигнал-канал') or [],
         'red_flags_signal_count': len(red_flags_typed.get('сигнал-канал') or []),
-        'telegram_subscribers': int(telegram_subscribers or 0),
+        'telegram_subscribers': (
+            None if telegram_subscribers is None else int(telegram_subscribers)
+        ),
         'post_view_counts': post_view_counts,
         'channel_title': channel_title or '',
         'channel_about': channel_about or '',
@@ -2786,7 +2788,7 @@ async def analyze_channel_content(username, client=None, link=None, telethon_dee
     source = ''
     primary_ref = refs[0]
     summarize_kw = {
-        'telegram_subscribers': 0,
+        'telegram_subscribers': None,
         'channel_date': None,
         'channel_title': '',
         'channel_about': '',
@@ -3008,7 +3010,14 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
                 analysis['red_flags_applied'] = typed_flags
                 analysis['red_flags_applied_count'] = len(typed_flags)
 
-                subs = int(analysis.get('telegram_subscribers') or 0)
+                _raw_subs = analysis.get('telegram_subscribers')
+                if _raw_subs is None:
+                    subs = None
+                else:
+                    try:
+                        subs = int(_raw_subs)
+                    except (TypeError, ValueError):
+                        subs = None
                 ch_iso = analysis.get('channel_created_at') or ''
                 ch_dt = None
                 if ch_iso:
@@ -3050,7 +3059,7 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
                 st, patch = _kro_unified.apply_unified_risk_to_row(
                     obj,
                     sheet_ca,
-                    subscribers=0,
+                    subscribers=None,
                     channel_created_dt=None,
                     view_counts=[],
                     known_base_keys=known_keys,

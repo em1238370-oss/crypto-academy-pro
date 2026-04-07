@@ -73,7 +73,7 @@ def engagement_flag_yellow(subscribers: int, view_counts: List[int]) -> bool:
 
 def mandatory_gate_telegram(
     *,
-    subscribers: int,
+    subscribers: Optional[int],
     last_post_dt: Optional[datetime],
     username: str,
     link: str,
@@ -84,7 +84,8 @@ def mandatory_gate_telegram(
     object_type: str,
     content_analysis_text: str,
 ) -> Tuple[bool, str]:
-    if subscribers < 100:
+    # Подписчики из Telethon/HTML могут отсутствовать (FloodWait, скрытый счётчик) — тогда не отклоняем.
+    if subscribers is not None and subscribers < 100:
         return False, 'mandatory_subs_below_100'
     if last_post_dt is None:
         return False, 'mandatory_no_post_date'
@@ -266,7 +267,7 @@ def apply_unified_risk_to_row(
     obj: Dict[str, Any],
     analysis: Optional[Dict[str, Any]],
     *,
-    subscribers: int = 0,
+    subscribers: Optional[int] = None,
     channel_created_dt: Optional[datetime] = None,
     view_counts: Optional[List[int]] = None,
     known_base_keys: Optional[Set[str]] = None,
@@ -318,7 +319,7 @@ def apply_unified_risk_to_row(
     red, yellow = collect_unified_flags(
         obj,
         analysis,
-        subscribers=subscribers,
+        subscribers=subscribers if subscribers is not None else 0,
         channel_created_dt=channel_created_dt,
         view_counts=view_counts,
         known_base_keys=known_base_keys,
