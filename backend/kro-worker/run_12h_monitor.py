@@ -27,7 +27,7 @@ import asyncio
 import time
 import html
 from datetime import datetime, timedelta, timezone
-from collections import defaultdict
+from collections import Counter, defaultdict
 from urllib.parse import quote, urlparse
 
 # Web scraper for monitored complaint/review sources (imported lazily to avoid breaking if missing)
@@ -1719,6 +1719,246 @@ except Exception as _bl_err:
     print('KRO_PERMANENT_BLOCKLIST: не удалось загрузить %s: %s' % (_BLOCKLIST_JSON_PATH, _bl_err), file=sys.stderr)
     KRO_PERMANENT_BLOCKLIST = set()
 
+# Метрики одного прогона для блока [KRO_DETAILED_CYCLE_REPORT] в логах Actions.
+KRO_CYCLE_ANALYTICS = {}
+
+
+def _kro_cycle_analytics_reset():
+    global KRO_CYCLE_ANALYTICS
+    KRO_CYCLE_ANALYTICS = {
+        'collect_reject_known_non_scam': 0,
+        'collect_reject_blocklist': 0,
+        'collect_reject_low_complaints': 0,
+        'collect_reject_no_signals': 0,
+        'collect_reject_no_crypto_context': 0,
+        'collect_reject_gambling': 0,
+        'collect_confirmed_out': 0,
+        'write_pre_skip_gambling': 0,
+        'write_skip_duplicate_or_empty_key': 0,
+        'write_reject_known_non_scam': 0,
+        'write_reject_blocklist': 0,
+        'write_reject_off_topic': 0,
+        'write_reject_no_crypto': 0,
+        'write_downgrade_no_external_source': 0,
+        'write_reject_http_gate_append': 0,
+    }
+
+
+def _kro_cycle_analytics_inc(key, n=1):
+    global KRO_CYCLE_ANALYTICS
+    KRO_CYCLE_ANALYTICS[key] = KRO_CYCLE_ANALYTICS.get(key, 0) + n
+
+
+def _web_findings_unique_counts_by_source(web_findings):
+    """Сколько уникальных каналов/доменов дал каждый source в findings web_scraper."""
+    by_src = defaultdict(set)
+    for r in web_findings or []:
+        src = (r.get('source') or '').strip() or 'unknown'
+        ch = (r.get('channel') or '').strip()
+        if not ch:
+            continue
+        k = _norm_ch_key(ch) or ch.lower()
+        by_src[src].add(k)
+    return {s: len(by_src[s]) for s in sorted(by_src.keys())}
+
+
+def _unified_gate_bucket_counts(confirmed_objects):
+    """Сводка mandatory / HTTP-gate из unified_risk в content_analysis после анализа."""
+    buckets = Counter()
+    gate_ok_n = 0
+    gate_fail_n = 0
+    for o in confirmed_objects or []:
+        raw = o.get('content_analysis') or ''
+        if not isinstance(raw, str) or not raw.strip().startswith('{'):
+            continue
+        try:
+            d = json.loads(raw)
+        except Exception:
+            continue
+        ur = d.get('unified_risk') or {}
+        if ur.get('gate_ok'):
+            gate_ok_n += 1
+        else:
+            gate_fail_n += 1
+            reason = (ur.get('gate_reason') or 'unknown').strip()
+            rl = reason.lower()
+            if 'personal' in rl or 'tme_personal' in rl:
+                buckets['personal_account'] += 1
+            elif 'subs_below' in rl or 'subscribers_below' in rl:
+                buckets['subscribers_below_100'] += 1
+            elif 'not_visible' in rl or 'subscribers_not_visible' in rl:
+                buckets['subscribers_not_visible'] += 1
+            elif 'not_crypto' in rl or 'no_crypto' in rl:
+                buckets['not_crypto_topic'] += 1
+            elif 'stale' in rl or 'no_fresh_post' in rl or 'no_post' in rl or 'no_public_posts' in rl:
+                buckets['inactive_or_no_posts'] += 1
+            elif 'gambling' in rl or 'blocked_gambling' in rl:
+                buckets['gambling'] += 1
+            elif 'hacked' in rl or 'взлом' in reason:
+                buckets['hacked_markers'] += 1
+            elif 'unavailable' in rl or 'invite' in rl or 'bot_not' in rl:
+                buckets['other_gate_fail'] += 1
+            elif reason.startswith('mandatory_'):
+                buckets['mandatory_' + reason.replace('mandatory_', '')] += 1
+            else:
+                buckets[reason or 'unknown'] += 1
+    return gate_ok_n, gate_fail_n, buckets
+
+
+def _telethon_gate_reasons_to_user_buckets(reason_counts):
+    """Агрегация причин strict Telethon-gate под формулировки отчёта."""
+    rc = reason_counts or {}
+    buckets = {
+        'personal_account': 0,
+        'subs_below_100': 0,
+        'not_crypto_topic': 0,
+        'inactive': 0,
+        'other': 0,
+    }
+    for reason, n in rc.items():
+        n = int(n or 0)
+        if not n:
+            continue
+        r = (reason or '').strip()
+        if r in ('entity_is_user_or_bot',):
+            buckets['personal_account'] += n
+        elif r in ('subs_below_100',):
+            buckets['subs_below_100'] += n
+        elif r in ('posts_not_crypto',):
+            buckets['not_crypto_topic'] += n
+        elif r in ('no_posts_60d', 'empty_description', 'iter_messages_error', 'channel_deleted'):
+            buckets['inactive'] += n
+        else:
+            buckets['other'] += n
+    return buckets
+
+
+def _print_kro_detailed_cycle_report(
+    sources_checked,
+    web_findings,
+    confirmed_objects,
+    inserted_confirmed_channels,
+    telethon_gate_reasons=None,
+    confirmed_before_gate=0,
+    confirmed_after_telethon_gate=0,
+    telethon_gate_rejected=0,
+):
+    """Подробный текстовый отчёт в stderr (ищи маркер KRO_DETAILED_CYCLE_REPORT)."""
+    lines = []
+    lines.append('')
+    lines.append('=' * 72)
+    lines.append('[KRO_DETAILED_CYCLE_REPORT] Источники (уникальные каналы/домены в findings)')
+    uniq = _web_findings_unique_counts_by_source(web_findings)
+    label_map = {
+        'stop-scam1': 'stop-scam1.com',
+        'fin-obzor': 'fin-obzor.net',
+        'vklader': 'vklader.com',
+        'telltrue': 'telltrue.net',
+        'forteck': 'forteck.net',
+    }
+    for key, label in label_map.items():
+        lines.append('  %s: %d каналов' % (label, int(uniq.get(key, 0) or 0)))
+    lines.append('  (прочие source в findings: %s)' % (
+        ', '.join('%s=%d' % (k, uniq[k]) for k in uniq if k not in label_map) or '—',
+    ))
+    lines.append('')
+    lines.append('[KRO_DETAILED_CYCLE_REPORT] Источники (как в kro_meta / live-counter, count из web_scraper)')
+    for row in sources_checked or []:
+        nm = row.get('name') or ''
+        if nm == 'форма жалоб':
+            continue
+        lines.append(
+            '  %s: status=%s count=%s'
+            % (nm, row.get('status', ''), row.get('count', 0))
+        )
+    lines.append('')
+    lines.append('[KRO_DETAILED_CYCLE_REPORT] Сводка по фильтрам (разные этапы — не складывайте с unified ниже)')
+    a = dict(KRO_CYCLE_ANALYTICS)
+    tg_b = _telethon_gate_reasons_to_user_buckets(telethon_gate_reasons)
+    gok, gfail, ur_b = _unified_gate_bucket_counts(confirmed_objects)
+
+    blocklist_n = int(a.get('collect_reject_blocklist', 0) or 0) + int(a.get('write_reject_blocklist', 0) or 0)
+    gambling_n = int(a.get('collect_reject_gambling', 0) or 0) + int(a.get('write_pre_skip_gambling', 0) or 0)
+
+    lines.append('  Отклонено blocklist: %d' % blocklist_n)
+    lines.append('  Отклонено личный аккаунт (strict Telethon-gate, user/bot): %d' % int(tg_b['personal_account']))
+    lines.append('  Отклонено меньше 100 подписчиков (strict Telethon-gate): %d' % int(tg_b['subs_below_100']))
+    lines.append('  Отклонено не крипто тематика (strict Telethon-gate, посты канала): %d' % int(tg_b['not_crypto_topic']))
+    lines.append(
+        '  Отклонено неактивен / нет свежих постов / пустое описание (strict Telethon-gate): %d'
+        % int(tg_b['inactive'])
+    )
+    lines.append('  Отклонено гемблинг (confirmed-filter + перед append в scam_base): %d' % gambling_n)
+    lines.append(
+        '  Отклонено не крипто тематика (этап сбора, нет crypto-контекста в агрегате): %d'
+        % int(a.get('collect_reject_no_crypto_context', 0) or 0)
+    )
+    lines.append(
+        '  Прочие отказы на strict Telethon-gate (см. список причин ниже): %d' % int(tg_b['other'])
+    )
+    lines.append('  Прошли все фильтры (после strict Telethon-gate, кандидаты на запись): %d' % int(confirmed_after_telethon_gate or 0))
+    lines.append(
+        '  (до Telethon-gate было кандидатов: %d; отклонено на gate: %d; известный не-скам / жалобы / сигналы на сборе — см. детализацию)'
+        % (int(confirmed_before_gate or 0), int(telethon_gate_rejected or 0))
+    )
+
+    lines.append('')
+    lines.append('[KRO_DETAILED_CYCLE_REPORT] Детализация: этап confirmed-filter (_collect_confirmed_objects)')
+    lines.append('  Отклонено blocklist: %d' % int(a.get('collect_reject_blocklist', 0) or 0))
+    lines.append('  Отклонено гемблинг: %d' % int(a.get('collect_reject_gambling', 0) or 0))
+    lines.append('  Нет crypto-контекста (агрегат): %d' % int(a.get('collect_reject_no_crypto_context', 0) or 0))
+    lines.append('  Нет сигнальных слов: %d' % int(a.get('collect_reject_no_signals', 0) or 0))
+    lines.append('  Жалоб ниже порога: %d' % int(a.get('collect_reject_low_complaints', 0) or 0))
+    lines.append('  Подтверждённых после фильтра сбора (до анализа+gate): %d' % int(a.get('collect_confirmed_out', 0) or 0))
+
+    lines.append('')
+    lines.append('[KRO_DETAILED_CYCLE_REPORT] Strict Telethon-gate перед записью (причины remove_row)')
+    if not telethon_gate_reasons:
+        lines.append('  (нет отклонений или gate выключен / нет сессии)')
+    else:
+        for k in sorted(telethon_gate_reasons.keys()):
+            lines.append('  %s: %d' % (k, int(telethon_gate_reasons[k] or 0)))
+        if int(tg_b['other'] or 0) > 0:
+            lines.append('  (прочие причины в сводке «другое»: %d)' % tg_b['other'])
+
+    lines.append('')
+    lines.append('[KRO_DETAILED_CYCLE_REPORT] Запись в scam_base (_write_confirmed_to_scam_base)')
+    lines.append('  Пропуск гемблинг перед append: %d' % int(a.get('write_pre_skip_gambling', 0) or 0))
+    lines.append('  Дубликат / пустой ключ: %d' % int(a.get('write_skip_duplicate_or_empty_key', 0) or 0))
+    lines.append('  Известный не-скам: %d' % int(a.get('write_reject_known_non_scam', 0) or 0))
+    lines.append('  Blocklist при записи: %d' % int(a.get('write_reject_blocklist', 0) or 0))
+    lines.append('  Статус «не по теме» (unified / пол): %d' % int(a.get('write_reject_off_topic', 0) or 0))
+    lines.append('  Нет crypto context при записи: %d' % int(a.get('write_reject_no_crypto', 0) or 0))
+    lines.append('  Понижение статуса (нет внешнего разоблачителя): %d' % int(a.get('write_downgrade_no_external_source', 0) or 0))
+    lines.append('  Отклонено финальным HTTP-gate перед append: %d' % int(a.get('write_reject_http_gate_append', 0) or 0))
+    lines.append('  Записано в scam_base (новых строк): %d' % len(inserted_confirmed_channels or []))
+
+    lines.append('')
+    lines.append('[KRO_DETAILED_CYCLE_REPORT] Unified mandatory gate в content_analysis (Telegram-объекты)')
+    lines.append('  gate_ok=True: %d' % gok)
+    lines.append('  gate_ok=False (итого): %d' % gfail)
+    for k, v in ur_b.most_common():
+        lines.append('    — %s: %d' % (k, v))
+    lines.append('')
+    lines.append('[KRO_DETAILED_CYCLE_REPORT] Каналы, записанные в scam_base (username | статус)')
+    if not inserted_confirmed_channels:
+        lines.append('  (нет новых записей в этом цикле)')
+    else:
+        ins_set = {_norm_ch_key(x) for x in inserted_confirmed_channels if x}
+        for o in confirmed_objects or []:
+            u = o.get('username') or ''
+            if _norm_ch_key(u) not in ins_set:
+                continue
+            st = _apply_loss_status_floor(o.get('status', ''), o.get('total_loss_rub', 0))
+            lines.append('  %s | %s' % (u, st))
+    lines.append('')
+    lines.append(
+        '[KRO_DETAILED_CYCLE_REPORT] Примечание: финальный HTTP-gate t.me перед append включается только при '
+        'KRO_HTTP_GATE_BEFORE_SCAM_BASE_APPEND=1 (по умолчанию выкл.). Иначе — strict Telethon-gate и unified_risk.'
+    )
+    lines.append('=' * 72)
+    print('\n'.join(lines), file=sys.stderr)
+
 
 def _scam_base_status_is_off_topic(status):
     """True если статус — «не по теме» или off_topic; такие строки не пишем в scam_base."""
@@ -2949,11 +3189,13 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
 
         # Пропускаем известные анти-скам каналы, биржи и агрегаторы
         if key in _KNOWN_NON_SCAM_CHANNELS:
+            _kro_cycle_analytics_inc('collect_reject_known_non_scam')
             print('confirmed-filter: %s — в списке исключений (известный не-скам)' % ch, file=sys.stderr)
             continue
 
         # Постоянный blocklist: не подтверждаем в цикле и не дергаем Telethon (снижает FloodWait на ResolveUsername).
         if key in KRO_PERMANENT_BLOCKLIST:
+            _kro_cycle_analytics_inc('collect_reject_blocklist')
             print(
                 'confirmed-filter: %s — постоянный blocklist (не подтверждаем для цикла)' % ch,
                 file=sys.stderr,
@@ -2968,6 +3210,7 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
         whistle = _complaint_bucket_has_whistleblower_evidence(complaint_data, tg_row)
         min_complaints = 1 if whistle else 2
         if complaint_count < min_complaints:
+            _kro_cycle_analytics_inc('collect_reject_low_complaints')
             continue
         created_dt = None
         if tg_row is not None:
@@ -3007,10 +3250,12 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
 
         if not whistle:
             if vip_num < VIP_MIN and not has_signals:
+                _kro_cycle_analytics_inc('collect_reject_no_signals')
                 print('confirmed-filter: %s — нет сигнальных слов. username=%r title=%r' % (
                     ch, ch_username, title), file=sys.stderr)
                 continue
             if not has_crypto_ctx:
+                _kro_cycle_analytics_inc('collect_reject_no_crypto_context')
                 print('confirmed-filter: %s — нет явного crypto-контекста. username=%r title=%r' % (
                     ch, ch_username, title), file=sys.stderr)
                 continue
@@ -3021,6 +3266,7 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             ch_raw, ch_username, title, link, vip_str, source_primary, ev_early,
         )
         if gm_cf:
+            _kro_cycle_analytics_inc('collect_reject_gambling')
             print('confirmed-filter: %s — казино/ставки/гемблинг (%s)' % (ch, gm_cf), file=sys.stderr)
             continue
 
@@ -3067,8 +3313,90 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             'cycle_window': cycle_window,
             'status': status,
         })
+        _kro_cycle_analytics_inc('collect_confirmed_out')
 
     return confirmed
+
+
+_KRO_INTERNAL_COMPLAINT_SOURCE_NOTE = (
+    'Источник: жалобы пользователей сайта. Внешнее подтверждение на сайтах-разоблачителях не найдено.'
+)
+
+# Подстроки для «внешнего» источника (разоблачитель или не-t.me URL в доказательствах).
+_WHISTLEBLOWER_URL_MARKERS = (
+    'stop-scam1', 'fin-obzor', 'vklader', 'telltrue', 'forteck',
+    'cryptorussia', 'brokers-check', 'kurs.expert',
+)
+
+
+def _is_internal_complaints_only_source(primary):
+    p = (primary or '').strip().lower()
+    if not p:
+        return False
+    if 'form' in p or 'форма' in p:
+        return True
+    if 'жалоб' in p and 'telegram' in p:
+        return True
+    return False
+
+
+def _blob_has_non_telegram_http_url(blob):
+    for m in re.finditer(r'https?://[^\s<>"\']+', blob or '', re.I):
+        u = m.group(0).lower().split('?')[0].rstrip('/')
+        if 't.me/' in u or u.endswith('t.me') or 'telegram.me/' in u:
+            continue
+        return True
+    return False
+
+
+def _has_external_whistleblower_evidence(source_primary, source_evidence):
+    blob = '%s %s' % ((source_primary or ''), (source_evidence or ''))
+    low = blob.lower()
+    if any(m in low for m in _WHISTLEBLOWER_URL_MARKERS):
+        return True
+    return _blob_has_non_telegram_http_url(blob)
+
+
+def _status_is_high_risk_for_downgrade(status):
+    s = unicodedata.normalize('NFKC', (status or '').replace('\u00a0', ' '))
+    s = re.sub(r'\s+', ' ', s).strip().lower()
+    if 'не по теме' in s:
+        return False
+    if 'подтвержд' in s and 'скам' in s:
+        return True
+    if 'в риске' in s:
+        return True
+    return False
+
+
+def _downgrade_status_to_observation(prev_status, channel_age_days):
+    m = re.search(r'\(\s*(\d+)\s*дн', prev_status or '', re.I)
+    if m:
+        return 'под наблюдением (%s дн.)' % m.group(1)
+    try:
+        d = int(channel_age_days)
+        if d >= 0:
+            return 'под наблюдением (%d дн.)' % d
+    except (TypeError, ValueError):
+        pass
+    return 'под наблюдением'
+
+
+def _sync_content_analysis_unified_status(obj, new_status):
+    raw = obj.get('content_analysis')
+    if not isinstance(raw, str) or not raw.strip().startswith('{'):
+        return
+    try:
+        d = json.loads(raw)
+    except Exception:
+        return
+    ur = d.get('unified_risk')
+    if not isinstance(ur, dict):
+        ur = {}
+    ur['status'] = new_status
+    ur['status_downgrade_reason'] = 'no_external_whistleblower'
+    d['unified_risk'] = ur
+    obj['content_analysis'] = json.dumps(d, ensure_ascii=False)
 
 
 def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
@@ -3105,29 +3433,35 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             obj.get('content_analysis', ''),
         )
         if gm:
+            _kro_cycle_analytics_inc('write_pre_skip_gambling')
             print(
                 'scam_base write skip: %s — казино/ставки/гемблинг (%s)' % (obj.get('username') or '?', gm),
                 file=sys.stderr,
             )
             continue
         pre_gate.append(obj)
-    # Без повторного HTTP-gate к t.me: отбор уже в _collect_confirmed_objects (+ крипто/гемблинг/жалобы).
+    # Финальная проверка публичного t.me перед append — опционально: KRO_HTTP_GATE_BEFORE_SCAM_BASE_APPEND=1
+    # (по умолчанию выкл., чтобы на GitHub Actions не обнулять вставки при недоступности t.me).
     gated_objects = pre_gate
     new_rows = []
     inserted_channels = []
     for obj in gated_objects:
         key = _norm_ch_key(obj.get('username') or '')
         if not key or key in existing_keys:
+            _kro_cycle_analytics_inc('write_skip_duplicate_or_empty_key')
             continue
         if key in _KNOWN_NON_SCAM_CHANNELS:
+            _kro_cycle_analytics_inc('write_reject_known_non_scam')
             print('scam_base write skip: %s — в списке исключений' % (obj.get('username') or key), file=sys.stderr)
             continue
         if key in KRO_PERMANENT_BLOCKLIST:
+            _kro_cycle_analytics_inc('write_reject_blocklist')
             print('blocklist: пропущен @%s — в постоянном списке исключений' % key, file=sys.stderr)
             continue
         # Статус (колонка M) до прочих фильтров: «не по теме» не пишем в Sheets.
         eff_status = _apply_loss_status_floor(obj.get('status', ''), obj.get('total_loss_rub', 0))
         if _scam_base_status_is_off_topic(eff_status):
+            _kro_cycle_analytics_inc('write_reject_off_topic')
             print('skip: @%s — статус не по теме, не записываем в scam_base' % key, file=sys.stderr)
             continue
         if not _is_crypto_context_allowed_parts(
@@ -3136,8 +3470,51 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             obj.get('source_primary', ''),
             obj.get('source_evidence', ''),
         ) and not _confirmed_obj_has_whistleblower_evidence(obj):
+            _kro_cycle_analytics_inc('write_reject_no_crypto')
             print('scam_base write skip: %s — no crypto context' % (obj.get('username') or key), file=sys.stderr)
             continue
+
+        sp = (obj.get('source_primary') or '').strip()
+        ev = (obj.get('source_evidence') or '').strip()
+        if not ev and _is_internal_complaints_only_source(sp):
+            obj['source_evidence'] = _KRO_INTERNAL_COMPLAINT_SOURCE_NOTE
+            ev = obj['source_evidence']
+
+        if not _has_external_whistleblower_evidence(sp, ev) and _status_is_high_risk_for_downgrade(eff_status):
+            new_st = _downgrade_status_to_observation(eff_status, obj.get('channel_age_days'))
+            print(
+                'downgrade: @%s — нет внешнего источника, статус понижен до под наблюдением'
+                % key,
+                file=sys.stderr,
+            )
+            eff_status = new_st
+            obj['status'] = new_st
+            _sync_content_analysis_unified_status(obj, new_st)
+            _kro_cycle_analytics_inc('write_downgrade_no_external_source')
+
+        http_append = (os.environ.get('KRO_HTTP_GATE_BEFORE_SCAM_BASE_APPEND') or '0').strip().lower()
+        if http_append in ('1', 'true', 'yes', 'on'):
+            link_or_u = (obj.get('link') or obj.get('username') or '').strip()
+            ok_http, reason_http = _kro_tme_http_gate.tme_http_gate_for_scam_base_write(
+                link_or_u,
+                (obj.get('object_type') or '') or '',
+                (obj.get('source_evidence') or '') or '',
+                (obj.get('content_analysis') or '') or '',
+            )
+            if not ok_http and reason_http != 'not_telegram':
+                _kro_cycle_analytics_inc('write_reject_http_gate_append')
+                print(
+                    'http_gate_final_check: пропущен @%s — %s' % (key, reason_http),
+                    file=sys.stderr,
+                )
+                continue
+            try:
+                pause_http = float(os.environ.get('KRO_HTTP_GATE_APPEND_PAUSE_SEC', '0') or '0')
+            except ValueError:
+                pause_http = 0.0
+            if pause_http > 0:
+                time.sleep(min(pause_http, 3.0))
+
         new_rows.append([
             obj.get('username', ''),
             obj.get('link', ''),
@@ -6192,6 +6569,7 @@ def main():
 
     # --- CONFIRMED PIPELINE: строгий 3-критерийный отбор для сайта и scam_base ---
     cycle_window = '%s_%s' % (report_date_str, 'am' if now_msk_dt.hour < 12 else 'pm')
+    _kro_cycle_analytics_reset()
     confirmed_objects = _collect_confirmed_objects(new_tgstat, agg_complaints_total, cycle_window, channel_ages_from_tg)
     confirmed_before_gate = len(confirmed_objects)
     confirmed_objects, channels_network_rows, confirmed_after_telethon_gate, telethon_gate_reasons = asyncio.run(
@@ -6322,6 +6700,17 @@ def main():
             'count': len(form_cycle_channels),
         },
     ]
+
+    _print_kro_detailed_cycle_report(
+        sources_checked,
+        web_findings,
+        confirmed_objects,
+        inserted_confirmed_channels,
+        telethon_gate_reasons=telethon_gate_reasons,
+        confirmed_before_gate=confirmed_before_gate,
+        confirmed_after_telethon_gate=confirmed_after_telethon_gate,
+        telethon_gate_rejected=telethon_gate_rejected,
+    )
 
     # 5) Report number and Google Doc
     last_report_num = 0

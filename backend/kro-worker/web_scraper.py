@@ -17,6 +17,7 @@ KRO Web Scraper: собирает упоминания скам-каналов �
 """
 import os
 import re
+import sys
 import json
 import logging
 import socket
@@ -160,15 +161,52 @@ _CHANNEL_NOISE = frozenset({
     'contact', 'manager', 'operator', 'bot', 'feedback',
 })
 
+# Статьи разоблачителей: @username только при маркерах мошенничества рядом с упоминанием.
+_SCAM_CONTEXT_NEAR_RADIUS = 200
+_SCAM_CONTEXT_WORDS = (
+    'развод', 'мошенник', 'мошенничество', 'лохотрон', 'скам', 'scam',
+    'обман', 'обманул', 'украли', 'потерял', 'жертва', 'предупреждение',
+    'осторожно', 'опасно', 'не доверяйте', 'черный список', 'блэклист', 'blacklist',
+    'разоблачение', 'фейк', 'fake', 'кидалово', 'кинул', 'развели', 'аферист', 'жулик',
+)
 
-def _extract_channel_mentions(text):
+_ARTICLE_SOURCES_REQUIRE_SCAM_CONTEXT = frozenset({
+    'stop-scam1', 'fin-obzor', 'web-search', 'cryptorussia', 'brokers-check',
+})
+
+
+def _has_scam_context_near(text, match_start, match_end, radius=_SCAM_CONTEXT_NEAR_RADIUS):
+    """True если в окне ±radius символов от совпадения есть маркер мошенничества."""
+    if not text:
+        return False
+    lo = max(0, int(match_start) - radius)
+    hi = min(len(text), int(match_end) + radius)
+    ctx = text[lo:hi].lower()
+    return any(w in ctx for w in _SCAM_CONTEXT_WORDS)
+
+
+def _extract_channel_mentions(text, require_scam_context=False):
     """
     Extract @username and t.me/ channel references from plain text.
     Filters out JSON-LD schema noise, known non-channel handles (email services,
     site admins, generic words), and very short strings.
+    If require_scam_context=True (статьи разоблачителей), отбрасывает упоминания без
+    маркеров мошенничества в окне вокруг совпадения.
     Returns list of normalised usernames (without @).
     """
+    text = text or ''
     found = set()
+    skip_logged = set()
+
+    def _maybe_log_skip(uname_lower):
+        if uname_lower in skip_logged:
+            return
+        skip_logged.add(uname_lower)
+        print(
+            'skip: @%s — нет контекста мошенничества рядом' % uname_lower,
+            file=sys.stderr,
+        )
+
     for m in re.finditer(r'@([A-Za-z][A-Za-z0-9_]{3,})', text):
         uname = m.group(1)
         uname_lower = uname.lower()
@@ -178,8 +216,10 @@ def _extract_channel_mentions(text):
             continue
         if len(uname) < 5:
             continue
+        if require_scam_context and not _has_scam_context_near(text, m.start(), m.end()):
+            _maybe_log_skip(uname_lower)
+            continue
         found.add(uname_lower)
-    # t.me/username (skip invite links with +, skip known service paths)
     _skip_paths = frozenset({'joinchat', 'addstickers', 'share', 'proxy', 'm', 's'})
     for m in re.finditer(r't\.me/([A-Za-z][A-Za-z0-9_]{3,})', text):
         uname = m.group(1)
@@ -187,6 +227,9 @@ def _extract_channel_mentions(text):
         if uname_lower in _skip_paths or uname_lower in _JSON_LD_NOISE:
             continue
         if uname_lower in _CHANNEL_NOISE:
+            continue
+        if require_scam_context and not _has_scam_context_near(text, m.start(), m.end()):
+            _maybe_log_skip(uname_lower)
             continue
         found.add(uname_lower)
     return list(found)
@@ -643,7 +686,10 @@ def _extract_cryptorussia_channels(page, url):
     """
     title = _extract_title_from_html(page)
     clean = _clean_html_text(page)
-    channels = [c for c in _extract_channel_mentions(f'{title} {clean}') if c != 'cryptorussia']
+    channels = [
+        c for c in _extract_channel_mentions(f'{title} {clean}', require_scam_context=True)
+        if c != 'cryptorussia'
+    ]
     return _unique_list(channels)
 
 
@@ -665,11 +711,12 @@ def _build_findings_from_page(page, url, source_name, max_channels=3):
 
     if not clean_for_channels:
         return []
-    channels = _extract_channel_mentions(clean_for_channels)
+    req_ctx = source_name in _ARTICLE_SOURCES_REQUIRE_SCAM_CONTEXT
+    channels = _extract_channel_mentions(clean_for_channels, require_scam_context=req_ctx)
     if not channels:
         # Also scan full page for channel mentions (in case BS4 missed them)
         full_clean = _clean_html_text(page)
-        channels = _extract_channel_mentions(full_clean)
+        channels = _extract_channel_mentions(full_clean, require_scam_context=req_ctx)
     if not channels:
         return []
     if not _has_crypto_context(clean_for_channels, url):
