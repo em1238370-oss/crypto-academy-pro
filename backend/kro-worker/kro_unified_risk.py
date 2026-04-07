@@ -324,6 +324,8 @@ def apply_unified_risk_to_row(
         known_base_keys=known_base_keys,
     )
     if not gate_ok:
+        # Каналы со статусом 'не по теме' не записываются в scam_base (run_12h_monitor: _scam_base_status_is_off_topic).
+        # Правило: лучше меньше но правда
         status = 'не по теме'
     else:
         status = status_from_flag_counts(len(red), len(yellow))

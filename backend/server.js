@@ -2225,6 +2225,9 @@ function parseChannelsNetworkRow(row) {
  * Всегда возвращает объект; при пустой базе — нули и honest_zero.
  */
 function buildLiveCounterFromScamBase(parsedRows) {
+  // ПРАВИЛО: показываем только проверенные данные с источниками
+  // Принцип проекта: лучше меньше но правда
+  // Каналы со статусом 'не по теме' скрыты от пользователя (isScamBaseRowInLiveCounterDataset)
   const now = Date.now();
   const cutoff24h = now - 24 * 60 * 60 * 1000;
 
@@ -2507,6 +2510,18 @@ function channelMatchKey(channel) {
   if (s.startsWith('t.me/+')) return s;
   if (s.startsWith('t.me/')) return s.slice(6);
   return s.startsWith('@') ? s.slice(1) : s;
+}
+
+/** Единый список с backend/kro-worker/kro_permanent_blocklist.json (не дублировать в коде). */
+let KRO_PERMANENT_BLOCKLIST;
+try {
+  const raw = JSON.parse(readFileSync(join(__dirname, 'kro-worker', 'kro_permanent_blocklist.json'), 'utf8'));
+  KRO_PERMANENT_BLOCKLIST = new Set(
+    (Array.isArray(raw) ? raw : []).map((u) => channelMatchKey(String(u))).filter(Boolean)
+  );
+} catch (e) {
+  console.warn('KRO_PERMANENT_BLOCKLIST: failed to load kro_permanent_blocklist.json', e?.message);
+  KRO_PERMANENT_BLOCKLIST = new Set();
 }
 
 /** Синхронно с kro_tme_http_gate.tme_http_gate_for_scam_base_write (только публичный HTML t.me). */
@@ -3600,6 +3615,10 @@ async function checkAndPromoteToScamBase(client, channel) {
   // Never promote excluded channels (anti-scam projects, major exchanges, etc.)
   if (KRO_CHANNEL_EXCLUSION.has(channelMatchKey(channel))) {
     console.log(`[KRO] ${channel} is in exclusion list — skipping scam_base promotion`);
+    return;
+  }
+  if (KRO_PERMANENT_BLOCKLIST.has(channelMatchKey(channel))) {
+    console.log(`[KRO] ${channel} is in permanent blocklist (kro_permanent_blocklist.json) — skipping scam_base promotion`);
     return;
   }
   try {

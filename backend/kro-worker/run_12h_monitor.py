@@ -5,6 +5,10 @@ Telega.io каталога и чатов Telegram; применяет крите
 пишет в JSON и лист; создаёт отчёт и документ SOURCE & DATA. Документ обновляется автоматически (проверка «Готово/Не готово» не обязательна);
 Данные отправляются на сайт (POST KRO_SITE_UPDATE_URL) при каждом запуске сбора, чтобы цифры сразу отражались на сайте.
 
+Принцип проекта: лучше меньше, но правда. В scam_base попадают только проверяемые данные с источниками;
+каналы из kro_permanent_blocklist.json никогда не записываются; статус «не по теме» в лист не пишется
+(см. проверки перед append в _write_confirmed_to_scam_base и смежных функциях).
+
 Источники: 1) TGStat channels/search (криптовалюта), 2) Telega.io catalog, 3) KRO_SOURCE_CHANNELS (жалобы за 12ч).
 
 Запуск: из папки backend/kro-worker:
@@ -1701,6 +1705,26 @@ def _norm_ch_key(ch):
     return s.split('/')[0].split('?')[0]
 
 
+_BLOCKLIST_JSON_PATH = os.path.join(SCRIPT_DIR, 'kro_permanent_blocklist.json')
+try:
+    with open(_BLOCKLIST_JSON_PATH, encoding='utf-8') as _bl_f:
+        _bl_raw = json.load(_bl_f)
+    KRO_PERMANENT_BLOCKLIST = set()
+    for _u in _bl_raw or []:
+        _nk = _norm_ch_key(str(_u))
+        if _nk:
+            KRO_PERMANENT_BLOCKLIST.add(_nk)
+except Exception as _bl_err:
+    print('KRO_PERMANENT_BLOCKLIST: не удалось загрузить %s: %s' % (_BLOCKLIST_JSON_PATH, _bl_err), file=sys.stderr)
+    KRO_PERMANENT_BLOCKLIST = set()
+
+
+def _scam_base_status_is_off_topic(status):
+    """True если статус — «не по теме» или off_topic; такие строки не пишем в scam_base."""
+    s = (status or '').strip().lower()
+    return 'не по теме' in s or 'off_topic' in s
+
+
 def _has_signal_keywords(text):
     if not text:
         return False
@@ -3033,6 +3057,9 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
         if key in _KNOWN_NON_SCAM_CHANNELS:
             print('scam_base write skip: %s — в списке исключений' % (obj.get('username') or key), file=sys.stderr)
             continue
+        if key in KRO_PERMANENT_BLOCKLIST:
+            print('blocklist: пропущен @%s — в постоянном списке исключений' % key, file=sys.stderr)
+            continue
         if not _is_crypto_context_allowed_parts(
             obj.get('username', ''),
             obj.get('object_type', ''),
@@ -3042,6 +3069,9 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             print('scam_base write skip: %s — no crypto context' % (obj.get('username') or key), file=sys.stderr)
             continue
         eff_status = _apply_loss_status_floor(obj.get('status', ''), obj.get('total_loss_rub', 0))
+        if _scam_base_status_is_off_topic(eff_status):
+            print('skip: @%s — статус не по теме, не записываем в scam_base' % key, file=sys.stderr)
+            continue
         new_rows.append([
             obj.get('username', ''),
             obj.get('link', ''),
@@ -3562,6 +3592,10 @@ def _append_organic_scam_base_row(client, sheet_id, display, link, obj_type, sta
     if not _is_crypto_context_allowed_parts(display, link, obj_type, evidence, source_primary):
         print('organic: skip %s — no crypto context' % (display or link), file=sys.stderr)
         return False
+    _dk = _norm_ch_key(display or '')
+    if _dk and _dk in KRO_PERMANENT_BLOCKLIST:
+        print('blocklist: пропущен %s — в постоянном списке исключений' % (display or link), file=sys.stderr)
+        return False
     scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
     sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
     now = datetime.now(timezone.utc)
@@ -3569,6 +3603,9 @@ def _append_organic_scam_base_row(client, sheet_id, display, link, obj_type, sta
     ev = (evidence or '')[:500]
     sp = (source_primary or 'organic+kurs+search')[:120]
     eff_status = _apply_loss_status_floor(status, 0)
+    if _scam_base_status_is_off_topic(eff_status):
+        print('skip: %s — статус не по теме, не записываем в scam_base' % (display or link), file=sys.stderr)
+        return False
     v2_row = [[
         display, link, detected_at, '', '', obj_type, '',
         1, 0, sp, ev, cycle_window, eff_status, ''
@@ -5808,6 +5845,9 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
         if key in _KNOWN_NON_SCAM_CHANNELS:
             print(f'[promote] skip {ch}: в списке исключений (anti-scam/exchange)', file=sys.stderr)
             continue
+        if key in KRO_PERMANENT_BLOCKLIST:
+            print(f'blocklist: пропущен @{key} — в постоянном списке исключений', file=sys.stderr)
+            continue
 
         # Уникальность: по reporter-полю, если заполнено; иначе каждая строка = 1 человек
         named = [r.get('reporter') or '' for r in reports]
@@ -5855,6 +5895,9 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
         if cap and 'под наблюдением' in cap:
             status = 'под наблюдением'
         status = _apply_loss_status_floor(status, total_loss)
+        if _scam_base_status_is_off_topic(status):
+            print(f'skip: @{key} — статус не по теме, не записываем в scam_base', file=sys.stderr)
+            continue
         detected_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
         cycle_window = now.strftime('%Y-%m-%d') + ('_am' if now.hour < 12 else '_pm')
         sheet_name = (scam_base_range or 'scam_base!A2:N').split('!')[0]
