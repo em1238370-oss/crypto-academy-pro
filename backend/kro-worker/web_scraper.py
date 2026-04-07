@@ -12,13 +12,8 @@ KRO Web Scraper: собирает упоминания скам-каналов �
   - forteck.net       — blacklist-telegram (формат как у vklader)
   - kurs.expert       — черный список фейковых крипто-обменников (домены из таблицы)
 
-По умолчанию в scrape_all() идут только stop-scam1, fin-obzor, vklader, telltrue, forteck.
-Остальное (cryptorussia, brokers-check, kurs, DDG и web-search по сидам) — при KRO_WEB_EXTRA_SOURCES=1.
-
 Каждая найденная запись: {channel, sum_rub, description, source_url, source[, object_type]}
 Возвращаемые данные пишутся в лист reports Google Sheets с пометкой source='web'.
-В том же цикле run_12h_monitor.py вызывает _merge_web_scraper_findings_into_agg: находки с URL
-разоблачителя сразу попадают в агрегат для scam_base (не только через повторное чтение листа).
 """
 import os
 import re
@@ -40,7 +35,19 @@ _HEADERS = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 }
 
-_TIMEOUT = 25
+def _running_on_github_actions() -> bool:
+    return os.environ.get("GITHUB_ACTIONS", "").lower() == "true"
+
+
+def _fetch_timeout() -> float:
+    """На раннерах GitHub DDG/часть сайтов таймаутятся; короче таймаут = меньше шума в логе."""
+    if _running_on_github_actions():
+        return float(os.environ.get("KRO_WEB_FETCH_TIMEOUT_GHA", "12"))
+    return float(os.environ.get("KRO_WEB_FETCH_TIMEOUT", "25"))
+
+
+# Сообщение про пропуск DDG в CI — один раз за процесс
+_DDG_SKIP_IN_CI_LOGGED = False
 _CRYPTO_HINTS = (
     'telegram', 'телеграм', 't.me', '@',
     'crypto', 'крипт', 'сигнал', 'signal',
@@ -80,7 +87,7 @@ def _fetch(url):
         import requests
         sess = requests.Session()
         sess.headers.update(_HEADERS)
-        resp = sess.get(url, timeout=_TIMEOUT, allow_redirects=True)
+        resp = sess.get(url, timeout=_fetch_timeout(), allow_redirects=True)
         resp.raise_for_status()
         return resp.text
     except Exception as e:
@@ -90,7 +97,7 @@ def _fetch(url):
         from urllib.request import urlopen, Request as URequest
         from urllib.error import URLError, HTTPError
         req = URequest(url, headers=_HEADERS)
-        with urlopen(req, timeout=_TIMEOUT) as resp:
+        with urlopen(req, timeout=_fetch_timeout()) as resp:
             charset = resp.headers.get_content_charset() or 'utf-8'
             return resp.read().decode(charset, errors='replace')
     except Exception as e:
@@ -294,23 +301,30 @@ _SEARCH_ENGINE_URLS = (
 _VICTIM_QUERY_LIMIT_PER_QUERY = 5
 
 # Запросы, которыми реально пользуются пострадавшие и люди перед входом в канал/сервис.
-# ТЗ KRO ч.1: DuckDuckGo + Bing, макс. 5 результатов на запрос (см. _scrape_victim_queries)
 _VICTIM_SCAM_CHANNEL_QUERIES = [
     'крипто сигналы телеграм заработок отзывы',
     'VIP сигналы крипта развод обман',
     'быстрый заработок криптовалюта телеграм',
     'трейдинг сигналы гарантия прибыль телеграм',
     'крипто гуру телеграм развод',
+    'сигналы long short телеграм мошенники',
+    'инвестиции крипта телеграм бот отзывы',
+    'доверительное управление крипта телеграм',
+    'крипто наставник телеграм скам',
+    'заработок на бирже телеграм сигналы обман',
 ]
 
 _VICTIM_EXCHANGER_QUERIES = [
-    'крипто обменник не выводит деньги отзывы',
-    'телеграм обменник USDT мошенники',
+    'крипто обменник не выводит деньги',
+    'телеграм обменник криптовалюта развод',
+    'P2P обменник крипта мошенники',
+    'обменник USDT заблокировал вывод',
 ]
 
 _VICTIM_INVEST_BOT_QUERIES = [
-    'инвестиции крипта телеграм бот депозит обман',
-    'инвест бот телеграм процент в день развод',
+    'инвест бот телеграм процент в день',
+    'торговый бот крипта автоматический заработок развод',
+    'бот трейдинг телеграм депозит не выводит',
 ]
 
 
@@ -386,7 +400,7 @@ def _scrape_victim_queries():
             total_queries += 1
             per_query_count = 0
             per_query_seen = set()
-            urls = _search_urls_for_query(query, max_links=5)
+            urls = _search_urls_for_query(query, max_links=18)
             for url in urls:
                 page = _fetch(url)
                 if not page:
@@ -619,15 +633,6 @@ def _build_findings_from_page(page, url, source_name, max_channels=3):
 
     if not clean_for_channels:
         return []
-    # ТЗ: stop-scam1 — минимум 2 осмысленных абзаца с описанием, иначе не брать
-    if source_name == 'stop-scam1':
-        if paragraphs:
-            if len(paragraphs) < 2:
-                return []
-        else:
-            blocks = [p.strip() for p in re.split(r'\n\s*\n', clean_for_channels) if len(p.strip()) > 80]
-            if len(blocks) < 2:
-                return []
     channels = _extract_channel_mentions(clean_for_channels)
     if not channels:
         # Also scan full page for channel mentions (in case BS4 missed them)
@@ -726,9 +731,6 @@ def _build_blacklist_page_findings(page, url, source_field, noise_handles=()):
         if not (_has_concrete_scam_facts(clean) or 'черн' in clean_lower or 'лохотрон' in clean_lower or 'мошенн' in clean_lower):
             continue
         evidence = f'Источник: {url} | {clean[:400]}'
-        # ТЗ vklader: только имя в списке без описания → не выше «под наблюдением» при промо из reports
-        if source_field == 'vklader' and (not _has_concrete_scam_facts(clean)) and len(clean) < 140:
-            evidence = '[[kro_risk_cap:под наблюдением]] ' + evidence
         sum_rub = _extract_loss_amount(clean)
         for ch in channels[:3]:
             key = ('@' + ch, url, clean[:120])
@@ -1293,22 +1295,11 @@ def _scrape_blacklist_telegram_portal(base_url, blacklist_url, status_name, sour
     return deduped
 
 
-def _telltrue_finding_is_crypto(r: dict) -> bool:
-    """ТЗ: telltrue — только крипто-тематика."""
-    blob = ((r.get('description') or '') + ' ' + (r.get('source_url') or '')).lower()
-    return any(h in blob for h in _VICTIM_CRYPTO_STRICT_HINTS)
-
-
 def scrape_telltrue():
-    """telltrue.net/blacklist-telegram — формат как vklader; отзывы только с крипто-контекстом."""
-    raw = _scrape_blacklist_telegram_portal(
+    """telltrue.net/blacklist-telegram — тот же формат, что у vklader."""
+    return _scrape_blacklist_telegram_portal(
         _TELLTRUE_BASE, _TELLTRUE_BLACKLIST_URL, 'telltrue.net', 'telltrue', ('telltrue',), article_limit=20
     )
-    filtered = [r for r in raw if _telltrue_finding_is_crypto(r)]
-    unique_channels = len({r.get('channel') for r in filtered if r.get('channel')})
-    _set_source_status('telltrue.net', 'found' if unique_channels else 'not_found', unique_channels)
-    logger.info('telltrue.net: crypto-filtered %d findings (%d channels)', len(filtered), unique_channels)
-    return filtered
 
 
 def scrape_forteck():
@@ -1322,52 +1313,44 @@ def scrape_forteck():
 # Combined entry point
 # ---------------------------------------------------------------------------
 
-def _web_extra_sources_enabled() -> bool:
-    """ТЗ по умолчанию: только stop-scam1, fin-obzor, vklader, telltrue, forteck + форма (не здесь)."""
-    return (os.environ.get('KRO_WEB_EXTRA_SOURCES') or '').strip().lower() in ('1', 'true', 'yes', 'on')
-
-
 def scrape_all():
     """
     Run all scrapers and return deduplicated list of findings.
     Each item: {channel, sum_rub, description, source_url, source[, object_type]}.
-
-    По умолчанию (без KRO_WEB_EXTRA_SOURCES): только источники из ТЗ —
-    stop-scam1, fin-obzor, vklader, telltrue, forteck.
-    При KRO_WEB_EXTRA_SOURCES=1 дополнительно: cryptorussia, brokers-check,
-    kurs (если включён KRO_KURS_BULK_WEB_REPORTS), victim_queries, web-search по сидам.
     """
     global _LAST_SOURCE_STATUS
     _LAST_SOURCE_STATUS = []
     results = []
     results.extend(scrape_stop_scam1())
+    results.extend(scrape_cryptorussia())
     results.extend(scrape_fin_obzor())
+    results.extend(scrape_brokers_check())
+    # Массовая заливка kurs в reports отключена по умолчанию — см. органический цикл в run_12h_monitor
+    if (os.environ.get('KRO_KURS_BULK_WEB_REPORTS') or '').strip().lower() in ('1', 'true', 'yes', 'on'):
+        results.extend(scrape_kurs_expert())
     results.extend(scrape_vklader())
     results.extend(scrape_telltrue())
     results.extend(scrape_forteck())
+    results.extend(_scrape_victim_queries())
 
-    if _web_extra_sources_enabled():
-        results.extend(scrape_cryptorussia())
-        results.extend(scrape_brokers_check())
-        if (os.environ.get('KRO_KURS_BULK_WEB_REPORTS') or '').strip().lower() in ('1', 'true', 'yes', 'on'):
-            results.extend(scrape_kurs_expert())
-        results.extend(_scrape_victim_queries())
+    # Additional enrichment: search internet reviews for usernames already found
+    # in primary sources. This makes it easy to expand evidence without changing
+    # the rest of the pipeline.
+    def _is_seed_telegram_ref(ch):
+        c = (ch or '').strip().lower()
+        return bool(c) and (c.startswith('@') or 't.me/' in c)
 
-        def _is_seed_telegram_ref(ch):
-            c = (ch or '').strip().lower()
-            return bool(c) and (c.startswith('@') or 't.me/' in c)
-
-        seed_usernames = sorted({
-            (r.get('channel') or '').strip()
-            for r in results
-            if _is_seed_telegram_ref(r.get('channel'))
-        })[:20]
-        for channel in seed_usernames:
-            for url in _search_review_urls_for_username(channel, max_links=2):
-                page = _fetch(url)
-                if not page:
-                    continue
-                results.extend(_build_findings_from_page(page, url, 'web-search'))
+    seed_usernames = sorted({
+        (r.get('channel') or '').strip()
+        for r in results
+        if _is_seed_telegram_ref(r.get('channel'))
+    })[:20]
+    for channel in seed_usernames:
+        for url in _search_review_urls_for_username(channel, max_links=2):
+            page = _fetch(url)
+            if not page:
+                continue
+            results.extend(_build_findings_from_page(page, url, 'web-search'))
 
     # Deduplicate: keep highest sum_rub per channel per source_url
     seen = {}
@@ -1382,34 +1365,12 @@ def scrape_all():
     return deduped
 
 
-def _quote_sheet_name_for_range(title: str) -> str:
-    """A1-нотация: пробелы и спецсимволы в имени листа → в одинарных кавычках."""
-    t = (title or '').strip()
-    if not t:
-        return ''
-    if all((c.isalnum() or c == '_') for c in t):
-        return t
-    return "'" + t.replace("'", "''") + "'"
-
-
-def _reports_append_range_explicit():
-    """Синхронно с run_12h_monitor._kro_reports_read_range: лист + колонки для append."""
-    sheet = (os.environ.get('KRO_REPORTS_SHEET') or '').strip()
-    if not sheet:
-        return 'A:I'
-    return '%s!A:I' % _quote_sheet_name_for_range(sheet)
-
-
-def write_web_reports_to_sheet(sheets_client, sheet_id, reports, reports_range=None):
+def write_web_reports_to_sheet(sheets_client, sheet_id, reports, reports_range='A:I'):
     """
     Append web-sourced reports to the reports sheet.
     Schema A:I: date, channel, sum_rub, source='web', status='Активен',
                 reporter='web_parser', description, proof_url=source_url, object_type (опц.)
-    reports_range: если None — из KRO_REPORTS_SHEET + A:I (как чтение A2:I в мониторе).
-    Лист должен существовать в книге (run_12h_monitor вызывает ensure_sheet_exists перед записью).
     """
-    if reports_range is None:
-        reports_range = _reports_append_range_explicit()
     if not sheets_client or not sheet_id or not reports:
         return 0
     now = datetime.now(timezone.utc)
@@ -1433,11 +1394,10 @@ def write_web_reports_to_sheet(sheets_client, sheet_id, reports, reports_range=N
     if not rows:
         return 0
     try:
-        # RAW: дата в колонке A не превращается в сериал числа (ДД.ММ.ГГГГ остаётся текстом).
         sheets_client.spreadsheets().values().append(
             spreadsheetId=sheet_id,
             range=reports_range,
-            valueInputOption='RAW',
+            valueInputOption='USER_ENTERED',
             insertDataOption='INSERT_ROWS',
             body={'values': rows}
         ).execute()
