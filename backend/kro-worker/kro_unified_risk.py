@@ -288,8 +288,11 @@ def apply_unified_risk_to_row(
             last_post = datetime.fromisoformat(str(lpa).replace('Z', '+00:00'))
         except ValueError:
             last_post = None
-    posts_blob = ''
-    # восстановить корпус постов из network + keywords слабо; используем пустой — флаги из typed уже в analysis
+    # Корпус постов с HTML/Telethon (см. _summarize_content_messages → unified_mandatory_posts_blob)
+    raw_blob = analysis.get('unified_mandatory_posts_blob')
+    posts_blob = (raw_blob if isinstance(raw_blob, str) else '') or ''
+    if len(posts_blob) > 50000:
+        posts_blob = posts_blob[:50000]
     title = analysis.get('channel_title') or ''
     about = analysis.get('channel_about') or ''
 

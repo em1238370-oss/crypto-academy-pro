@@ -2285,6 +2285,7 @@ def _summarize_content_messages(
 
     slice_msgs = messages[:cap]
     corpus_chunks = []
+    dated_post_parts = []
     for item in slice_msgs:
         text = _normalize_message_text(item.get('text') or '')
         lower = text.lower()
@@ -2300,6 +2301,14 @@ def _summarize_content_messages(
         if not text:
             continue
         corpus_chunks.append(lower)
+        date_prefix = ''
+        if dt is not None:
+            try:
+                dtu = dt if getattr(dt, 'tzinfo', None) else dt.replace(tzinfo=timezone.utc)
+                date_prefix = dtu.strftime('%Y-%m-%dT%H:%M:%SZ') + ' '
+            except Exception:
+                date_prefix = ''
+        dated_post_parts.append(date_prefix + lower)
 
         for key, variants in CONTENT_RISK_KEYWORDS.items():
             keyword_counts[key] += sum(lower.count(variant) for variant in variants)
@@ -2343,6 +2352,16 @@ def _summarize_content_messages(
         corpus_lower = title_l + ' ' + corpus_lower
     if about_l:
         corpus_lower = about_l + ' ' + corpus_lower
+
+    # Для mandatory_gate_telegram: тексты постов + ISO-даты (HTML t.me / Telethon)
+    unified_mandatory_posts_blob = ' '.join(dated_post_parts)
+    if title_l:
+        unified_mandatory_posts_blob = title_l + ' ' + unified_mandatory_posts_blob
+    if about_l:
+        unified_mandatory_posts_blob = about_l + ' ' + unified_mandatory_posts_blob
+    _max_gate_blob = 45000
+    if len(unified_mandatory_posts_blob) > _max_gate_blob:
+        unified_mandatory_posts_blob = unified_mandatory_posts_blob[:_max_gate_blob]
     only_profit_flag = bool(profit_posts and loss_posts == 0)
     red_flags_typed = _kro_red_flags.all_red_flags_by_type(
         corpus_lower, only_profit_posts=only_profit_flag
@@ -2382,6 +2401,7 @@ def _summarize_content_messages(
         'channel_title': channel_title or '',
         'channel_about': channel_about or '',
         'channel_created_at': ch_created_iso,
+        'unified_mandatory_posts_blob': unified_mandatory_posts_blob,
     }
     return analyzed
 
