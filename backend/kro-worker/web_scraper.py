@@ -5,7 +5,7 @@ KRO Web Scraper: собирает упоминания скам-каналов �
 Источники:
   - stop-scam1.com    — разоблачение телеграм-каналов сигналов и курсов
   - fin-obzor.net     — обзоры финансовых и крипто-мошенников
-  - brokers-check.ru  — доп. источник жалоб, если сайт доступен и содержит крипто-каналы
+  - brokers-check.ru  — доп. источник жалоб (если домен резолвится; иначе один лог и пропуск)
   - cryptorussia.ru   — разборы крипто-каналов и трейдеров с отзывами и схемами обмана
   - vklader.com       — чёрный список Telegram-каналов и пользовательские проверки
   - telltrue.net      — blacklist-telegram (формат как у vklader)
@@ -19,6 +19,7 @@ import os
 import re
 import json
 import logging
+import socket
 from datetime import datetime, timezone
 from urllib.parse import urljoin, quote_plus, urlparse
 
@@ -1077,6 +1078,14 @@ def scrape_brokers_check():
     Returns list of {channel, sum_rub, description, source_url, source}.
     """
     results = []
+    # Сайт часто не резолвится (NXDOMAIN / DNS) — не дергать все URL подряд и не засорять лог.
+    try:
+        socket.getaddrinfo('brokers-check.ru', 443, type=socket.SOCK_STREAM)
+    except OSError as e:
+        _set_source_status('brokers-check.ru', 'unavailable', 0)
+        logger.info('brokers-check.ru: host unreachable (DNS/network: %s), skip', e)
+        return results
+
     article_links = []
     seen = set()
     available = False
