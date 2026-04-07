@@ -35,6 +35,15 @@ _HEADERS = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 }
 
+# Часть сайтов режет типичный «Windows Chrome» или urllib; для них — десктопный macOS UA.
+_BROWSER_HEADERS = {
+    **_HEADERS,
+    'User-Agent': (
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 '
+        '(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+    ),
+}
+
 def _running_on_github_actions() -> bool:
     return os.environ.get("GITHUB_ACTIONS", "").lower() == "true"
 
@@ -102,6 +111,28 @@ def _fetch(url):
             return resp.read().decode(charset, errors='replace')
     except Exception as e:
         logger.warning('web_scraper fetch error %s: %s', url, e)
+        return None
+
+
+def _fetch_with_browser_ua(url: str):
+    """Тот же таймаут, что _fetch, но User-Agent как у браузера на macOS (brokers-check.ru, kurs.expert)."""
+    try:
+        import requests
+        sess = requests.Session()
+        sess.headers.update(_BROWSER_HEADERS)
+        resp = sess.get(url, timeout=_fetch_timeout(), allow_redirects=True)
+        resp.raise_for_status()
+        return resp.text
+    except Exception as e:
+        logger.debug('requests fetch (browser UA) failed for %s: %s', url, e)
+    try:
+        from urllib.request import urlopen, Request as URequest
+        req = URequest(url, headers=_BROWSER_HEADERS)
+        with urlopen(req, timeout=_fetch_timeout()) as resp:
+            charset = resp.headers.get_content_charset() or 'utf-8'
+            return resp.read().decode(charset, errors='replace')
+    except Exception as e:
+        logger.warning('web_scraper fetch (browser UA) error %s: %s', url, e)
         return None
 
 
@@ -868,7 +899,7 @@ def scrape_kurs_expert():
     html = None
     page_url = None
     for url in _KURS_EXPERT_PAGE_URLS:
-        html = _fetch(url)
+        html = _fetch_with_browser_ua(url) or _fetch(url)
         if html:
             page_url = url
             break
@@ -921,7 +952,7 @@ def get_kurs_expert_blacklist_hosts(max_hosts=8000):
     html = None
     page_url = None
     for url in _KURS_EXPERT_PAGE_URLS:
-        html = _fetch(url)
+        html = _fetch_with_browser_ua(url) or _fetch(url)
         if html:
             page_url = url
             break
@@ -1050,7 +1081,7 @@ def scrape_brokers_check():
     seen = set()
     available = False
     for listing_url in _BROKERS_CHECK_LISTINGS:
-        html = _fetch(listing_url)
+        html = _fetch_with_browser_ua(listing_url) or _fetch(listing_url)
         if not html:
             continue
         available = True
@@ -1074,7 +1105,7 @@ def scrape_brokers_check():
         return results
 
     for url in article_links:
-        page = _fetch(url)
+        page = _fetch_with_browser_ua(url) or _fetch(url)
         if not page:
             continue
         findings = _build_findings_from_page(page, url, 'brokers-check')

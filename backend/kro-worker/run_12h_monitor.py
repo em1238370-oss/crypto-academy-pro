@@ -2508,7 +2508,7 @@ def _fetch_public_channel_messages(channel_ref, limit=None):
     return []
 
 
-async def analyze_channel_content(username, client=None, link=None):
+async def analyze_channel_content(username, client=None, link=None, telethon_deep=False):
     """
     Анализировать контент канала:
     - последние N постов (KRO_CONTENT_POSTS_LIMIT, по умолчанию 90);
@@ -2519,6 +2519,10 @@ async def analyze_channel_content(username, client=None, link=None):
     - связи с другими каналами.
 
     Сначала username, при неудаче — link из таблицы (часто полный https://t.me/…).
+
+    По умолчанию данные берутся с публичной ленты t.me/s/… (без Telethon), чтобы не ловить
+    FloodWait на ResolveUsername. Telethon — только если telethon_deep=True (топ-N каналов
+    за цикл, см. KRO_TELETHON_DEEP_PER_CYCLE).
     """
     refs = _unique_channel_refs(username, link)
     if not refs:
@@ -2535,7 +2539,23 @@ async def analyze_channel_content(username, client=None, link=None):
         'channel_about': '',
     }
 
-    if client is not None:
+    # 1) Публичный HTML — для всех (без лимитов MTProto на резолв username).
+    for i, channel_ref in enumerate(refs):
+        if i:
+            await asyncio.sleep(0.65)
+        batch = _fetch_public_channel_messages(channel_ref, limit=lim)
+        if batch:
+            messages = batch
+            source = 'public_html'
+            primary_ref = channel_ref
+            slug = _channel_public_slug(channel_ref)
+            sc = _fetch_tme_public_subscriber_count(slug) if slug else None
+            if sc is not None:
+                summarize_kw['telegram_subscribers'] = int(sc)
+            break
+
+    # 2) Telethon — только для ограниченного числа «глубоких» каналов за цикл.
+    if client is not None and telethon_deep:
         from telethon.tl.functions.channels import GetFullChannelRequest
         for i, channel_ref in enumerate(refs):
             try:
@@ -2602,21 +2622,6 @@ async def analyze_channel_content(username, client=None, link=None):
                     break
             except Exception as e:
                 print('telethon content analysis for %s: %s' % (channel_ref, e), file=sys.stderr)
-
-    if not messages:
-        for i, channel_ref in enumerate(refs):
-            if i:
-                await asyncio.sleep(0.65)
-            batch = _fetch_public_channel_messages(channel_ref, limit=lim)
-            if batch:
-                messages = batch
-                source = 'public_html'
-                primary_ref = channel_ref
-                slug = _channel_public_slug(channel_ref)
-                sc = _fetch_tme_public_subscriber_count(slug) if slug else None
-                if sc is not None:
-                    summarize_kw['telegram_subscribers'] = int(sc)
-                break
 
     if not messages:
         return 'недоступен'
@@ -2687,6 +2692,43 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
                 pass
             client = None
 
+    try:
+        n_deep = int(os.environ.get('KRO_TELETHON_DEEP_PER_CYCLE', '10') or '10')
+    except ValueError:
+        n_deep = 10
+    n_deep = max(0, min(50, n_deep))
+    deep_keys = set()
+    if client is not None and n_deep > 0:
+        scored = []
+        for o in confirmed_objects:
+            k = _norm_ch_key(o.get('username') or o.get('link') or '')
+            if not k:
+                continue
+            try:
+                loss = int(o.get('total_loss_rub') or 0)
+            except (TypeError, ValueError):
+                loss = 0
+            try:
+                complaints = int(o.get('complaints') or 0)
+            except (TypeError, ValueError):
+                complaints = 0
+            scored.append((loss, complaints, k))
+        scored.sort(key=lambda t: (t[0], t[1]), reverse=True)
+        seen_k = set()
+        for loss, complaints, k in scored:
+            if k in seen_k:
+                continue
+            seen_k.add(k)
+            deep_keys.add(k)
+            if len(deep_keys) >= n_deep:
+                break
+        print(
+            'content analysis: Telethon deep for %d channel(s) (KRO_TELETHON_DEEP_PER_CYCLE=%d); '
+            'остальные — только публичный HTML t.me/s/…'
+            % (len(deep_keys), n_deep),
+            file=sys.stderr,
+        )
+
     enriched = []
     network_rows = []
     seen_network = set()
@@ -2697,10 +2739,12 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
             known_keys.add(nk)
     try:
         for obj in confirmed_objects:
+            nk = _norm_ch_key(obj.get('username') or obj.get('link') or '')
             analysis = await analyze_channel_content(
                 obj.get('username') or '',
                 client=client,
                 link=obj.get('link') or '',
+                telethon_deep=(nk in deep_keys),
             )
             obj = dict(obj)
             if isinstance(analysis, dict):
@@ -3068,6 +3112,11 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
         if key in KRO_PERMANENT_BLOCKLIST:
             print('blocklist: пропущен @%s — в постоянном списке исключений' % key, file=sys.stderr)
             continue
+        # Статус (колонка M) до прочих фильтров: «не по теме» не пишем в Sheets.
+        eff_status = _apply_loss_status_floor(obj.get('status', ''), obj.get('total_loss_rub', 0))
+        if _scam_base_status_is_off_topic(eff_status):
+            print('skip: @%s — статус не по теме, не записываем в scam_base' % key, file=sys.stderr)
+            continue
         if not _is_crypto_context_allowed_parts(
             obj.get('username', ''),
             obj.get('object_type', ''),
@@ -3075,10 +3124,6 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             obj.get('source_evidence', ''),
         ) and not _confirmed_obj_has_whistleblower_evidence(obj):
             print('scam_base write skip: %s — no crypto context' % (obj.get('username') or key), file=sys.stderr)
-            continue
-        eff_status = _apply_loss_status_floor(obj.get('status', ''), obj.get('total_loss_rub', 0))
-        if _scam_base_status_is_off_topic(eff_status):
-            print('skip: @%s — статус не по теме, не записываем в scam_base' % key, file=sys.stderr)
             continue
         new_rows.append([
             obj.get('username', ''),
@@ -3886,7 +3931,12 @@ async def _fill_missing_content_analysis_in_scam_base(client, sheet_id, hours=No
             if not _is_crypto_context_allowed_parts(username, link, object_type, source_primary, source_evidence):
                 print('scam_base enrich skip %s: no crypto context' % (username or link), file=sys.stderr)
                 continue
-            analysis = await analyze_channel_content(username, client=client_tg, link=link)
+            enrich_telethon = (os.environ.get('KRO_TELETHON_ENRICH_DEEP') or '0').strip().lower() in (
+                '1', 'true', 'yes', 'on',
+            )
+            analysis = await analyze_channel_content(
+                username, client=client_tg, link=link, telethon_deep=enrich_telethon
+            )
             status = (row[12] if len(row) > 12 else '').strip()
             complaints = 0
             try:
