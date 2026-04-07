@@ -15,6 +15,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'kro-worker')))
 
@@ -40,13 +41,22 @@ def _load_env():
             break
 
 
+def _norm_status(cell: str) -> str:
+    s = unicodedata.normalize('NFKC', (cell or '').replace('\u00a0', ' '))
+    s = re.sub(r'\s+', ' ', s).strip().lower()
+    return s
+
+
 def _status_is_off_topic(cell: str) -> bool:
-    s = (cell or '').strip().lower()
+    s = _norm_status(cell)
     if not s:
         return False
     if 'не по теме' in s:
         return True
-    if 'off_topic' in s.replace('-', '_').replace(' ', '_'):
+    if 'непотеме' in s.replace(' ', ''):
+        return True
+    u = s.replace('-', '_').replace(' ', '_')
+    if 'off_topic' in u:
         return True
     if 'off topic' in s:
         return True

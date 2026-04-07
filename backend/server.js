@@ -1681,6 +1681,18 @@ function coerceKroMetaLastCycleAtToIso(raw) {
       if (Number.isFinite(ms)) return new Date(ms).toISOString();
     }
   }
+  // Ручной ввод / документ: «07.04.2026 18:42 MSK» (фиксированное UTC+3)
+  const msk = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*MSK$/i);
+  if (msk) {
+    const day = Number(msk[1]);
+    const month = Number(msk[2]);
+    const year = Number(msk[3]);
+    const hour = Number(msk[4]);
+    const minute = Number(msk[5]);
+    const second = msk[6] ? Number(msk[6]) : 0;
+    const utcMs = Date.UTC(year, month - 1, day, hour - 3, minute, second);
+    if (Number.isFinite(utcMs)) return new Date(utcMs).toISOString();
+  }
   const parsed = Date.parse(s);
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
 }
@@ -2008,7 +2020,7 @@ function isBlatantNonCryptoVerticalInScamBaseRow(...parts) {
 function normalizeRiskStatusByLoss(totalLossRub, status) {
   const base = (status || '').toString().trim();
   const loss = Number(totalLossRub) || 0;
-  const low = base.toLowerCase();
+  const low = normalizeKroStatusBlob(base);
   const isConfirmedScam = low.includes('подтвержд') && low.includes('скам');
   if (loss > 0) {
     if (isConfirmedScam) return base;
@@ -2024,10 +2036,26 @@ function statusWithLossFloor(status, totalLossRub) {
   return normalizeRiskStatusByLoss(totalLossRub, status);
 }
 
+/** Нормализация статуса: NFKC, NBSP→пробел, схлопывание пробелов — чтобы ловить «не по теме» и off_topic стабильно. */
+function normalizeKroStatusBlob(s) {
+  return (s ?? '')
+    .toString()
+    .normalize('NFKC')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
 /** Статус «не по теме» — не показываем в публичном API (главная, монитор). */
 function isOffTopicScamBaseStatus(status, verdict) {
-  const blob = `${status ?? ''} ${verdict ?? ''}`.toLowerCase();
-  return blob.includes('не по теме');
+  const blob = normalizeKroStatusBlob(`${status ?? ''} ${verdict ?? ''}`);
+  return (
+    blob.includes('не по теме') ||
+    blob.includes('off_topic') ||
+    blob.includes('off topic') ||
+    blob.includes('непотеме')
+  );
 }
 
 function buildStatusSummary(rows) {
@@ -2040,7 +2068,7 @@ function buildStatusSummary(rows) {
     unknown: 0,
   };
   for (const row of rows || []) {
-    const s = (row?.status || '').toString().trim().toLowerCase();
+    const s = normalizeKroStatusBlob(row?.status || '');
     if (s.includes('подтвержд') && s.includes('скам')) {
       summary.confirmed_scam += 1;
     } else if (s.includes('в риске')) {
@@ -2049,7 +2077,12 @@ function buildStatusSummary(rows) {
       summary.under_watch += 1;
     } else if (s.includes('без нарушений') || s.includes('без риска')) {
       summary.no_violations += 1;
-    } else if (s.includes('не по теме')) {
+    } else if (
+      s.includes('не по теме') ||
+      s.includes('off_topic') ||
+      s.includes('off topic') ||
+      s.includes('непотеме')
+    ) {
       summary.off_topic += 1;
     } else {
       summary.unknown += 1;

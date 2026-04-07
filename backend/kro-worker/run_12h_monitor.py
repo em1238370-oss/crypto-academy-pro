@@ -21,6 +21,7 @@ import os
 import random
 import re
 import sys
+import unicodedata
 import json
 import asyncio
 import time
@@ -1721,8 +1722,20 @@ except Exception as _bl_err:
 
 def _scam_base_status_is_off_topic(status):
     """True если статус — «не по теме» или off_topic; такие строки не пишем в scam_base."""
-    s = (status or '').strip().lower()
-    return 'не по теме' in s or 'off_topic' in s
+    s = unicodedata.normalize('NFKC', (status or '').replace('\u00a0', ' '))
+    s = re.sub(r'\s+', ' ', s).strip().lower()
+    if not s:
+        return False
+    if 'не по теме' in s:
+        return True
+    if 'непотеме' in s.replace(' ', ''):
+        return True
+    u = s.replace('-', '_').replace(' ', '_')
+    if 'off_topic' in u or 'offtopic' in u.replace('_', ''):
+        return True
+    if 'off topic' in s:
+        return True
+    return False
 
 
 def _has_signal_keywords(text):
