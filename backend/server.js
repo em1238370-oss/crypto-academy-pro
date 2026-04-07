@@ -1286,6 +1286,24 @@ const KRO_SOURCES_DOC_URL = '/monitor';
 const KRO_REFERENCE_STATS_PATH = join(__dirname, 'data', 'kro-reference-stats.json');
 const KRO_12H_STATS_PATH = join(__dirname, 'data', 'kro-12h-stats.json');
 const KRO_PENDING_REPORT_TEXT = 'Данные появятся после первого верифицированного отчёта.';
+
+function ruPoKanalamPhrase(n) {
+  const k = Math.max(0, Math.floor(Number(n) || 0));
+  if (k === 0) return '0 каналам';
+  const m = k % 100;
+  const m1 = k % 10;
+  if (m > 10 && m < 20) return `${k} каналам`;
+  if (m1 === 1) return `${k} каналу`;
+  return `${k} каналам`;
+}
+
+/** Текст шок-блока на главной: сумма total_loss_rub по всей dedup-базе scam_base. */
+function buildKroDocumentedShockText(lossesRub, channelCount) {
+  const loss = Math.max(0, Math.round(Number(lossesRub) || 0));
+  const ch = Math.max(0, Math.floor(Number(channelCount) || 0));
+  if (ch <= 0 && loss <= 0) return null;
+  return `Всего задокументировано потерь: ${loss.toLocaleString('ru-RU')} ₽ по ${ruPoKanalamPhrase(ch)}.`;
+}
 // Без TTL: live-counter и kro_meta всегда читаются из Sheets на каждый запрос (иначе после деплоя
 // или смены таблицы возможен устаревший снимок; in-memory кеш не заменяет CDN).
 const LIVE_COUNTER_CACHE_TTL_MS = 0;
@@ -1702,7 +1720,10 @@ function parseKroCycleMetaRows(rows) {
   for (const row of rows || []) {
     const key = String(row?.[0] || '').trim();
     const value = row?.[1];
-    if (key) values[key] = value;
+    if (!key) continue;
+    // Воркер пишет шапку «key | value» в A1:B1 — не кладём её в map как обычный ключ.
+    if (/^key$/i.test(key) && String(value ?? '').trim().toLowerCase() === 'value') continue;
+    values[key] = value;
   }
   let sources_checked = [];
   if (typeof values.sources_checked === 'string' && values.sources_checked.trim()) {
@@ -1723,9 +1744,15 @@ function parseKroCycleMetaRows(rows) {
   const isoLc = coerceKroMetaLastCycleAtToIso(rawLc);
   const last_cycle_at =
     isoLc || (rawLc != null && String(rawLc).trim() ? String(rawLc).trim() : null);
+  const rawNic = values.new_in_cycle;
+  let new_in_cycle = 0;
+  if (rawNic != null && rawNic !== '') {
+    const n = parseInt(String(rawNic).replace(/\s/g, ''), 10);
+    if (Number.isFinite(n) && n >= 0) new_in_cycle = n;
+  }
   return {
     last_cycle_at,
-    new_in_cycle: Number(values.new_in_cycle || 0) || 0,
+    new_in_cycle,
     sources_checked,
   };
 }
@@ -2278,6 +2305,7 @@ function buildLiveCounterFromScamBase(parsedRows) {
   const allRows = Array.from(byChannel.values());
   const channels_total = allRows.length;
 
+  // Сумма total_loss_rub по всей dedup-базе (имя поля losses_12h — историческое).
   const losses_12h = allRows.reduce((s, r) => s + (r.total_loss_rub || 0), 0);
 
   // telegramCount = ALL confirmed telegram signal channels in scam_base
@@ -3129,16 +3157,19 @@ app.get('/api/kro/live-counter', async (req, res) => {
         Number.isFinite(cycleTs) && Number.isFinite(rowTs)
           ? (cycleTs >= rowTs ? metaStr : scamBaseCounter.updatedAt)
           : (metaStr || scamBaseCounter.updatedAt || null);
-      const newInCycle = Number(cycleMeta.new_in_cycle);
-      const channelsTodayVal = Number.isFinite(newInCycle) ? newInCycle : 0;
+      const newInCycle = Math.max(0, Math.floor(Number(cycleMeta.new_in_cycle) || 0));
+      const channelsTodayVal = newInCycle;
       const reportsFormCount = await countReportsFormRows(sheetsClient);
-      // Главная: new_in_cycle из kro_meta; топ‑3 и статусы — по всей базе (см. index.html applyData).
+      // Главная — большая цифра: только new_in_cycle из kro_meta (не окно 12 ч по дате обнаружения в scam_base).
       const caption12 = `За последние 12 ч (по дате обнаружения в scam_base): потери ${roll12.lossesSum.toLocaleString('ru-RU')} ₽. Всего в публичной базе: ${scamBaseCounter.channels_total}. Сумма столбца «упоминания» по строкам — см. подписи на главной.`;
+      const totalLostAllTime = scamBaseCounter.losses_12h;
+      const shockTextLive =
+        buildKroDocumentedShockText(totalLostAllTime, scamBaseCounter.channels_total) || KRO_PENDING_REPORT_TEXT;
       const payload = {
         channelsToday: channelsTodayVal,
         new_in_cycle_meta: channelsTodayVal,
         channelsTotal: scamBaseCounter.channels_total,
-        totalLost: roll12.lossesSum,
+        totalLost: totalLostAllTime,
         telegramCount: roll12.telegramCount,
         coursesCount: roll12.coursesCount,
         /** Сумма числового столбца по строкам базы (не число людей и не строки листа reports). */
@@ -3148,7 +3179,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
         reports_via_form_count: reportsFormCount != null ? reportsFormCount : 0,
         complaints_12h: roll12.complaintsSum,
         victims_12h: null,
-        shockText: KRO_PENDING_REPORT_TEXT,
+        shockText: shockTextLive,
         top3: top3AllTime,
         report_doc_url: KRO_SOURCES_DOC_URL,
         sourceCaption: caption12,
@@ -3160,7 +3191,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
         lastValidUpdatedAt: displayUpdatedAt,
         updatedAt: displayUpdatedAt,
         last_cycle_at: cycleMeta.last_cycle_at,
-        new_in_cycle: channelsTodayVal,
+        new_in_cycle: newInCycle,
         sources_checked: cycleMeta.sources_checked,
         rollup_12h: {
           losses_rub: roll12.lossesSum,

@@ -385,7 +385,8 @@
     <header class="mon-chapter-head">
       <p class="mon-chapter-kicker">06b · Скользящее окно</p>
       <h2 id="mon-findings-12h-heading" class="mon-chapter-title">Найдено за последние 12 часов</h2>
-      <p class="mon-chapter-lead">Строки scam_base с датой обнаружения в окне 12 ч (как на главной для «Потеряно ₽ за 12 ч»). Колонки совпадают по смыслу с листом: тип объекта, первоисточник, доказательства — почему канал в базе.</p>
+      <p class="mon-chapter-lead">Таблица ниже — только строки scam_base с датой обнаружения в скользящем окне 12 ч. Сводка по всей подтверждённой базе (сумма потерь и число каналов) — в абзаце перед таблицей; на главной карточка «Потеряно ₽ всего» использует те же агрегаты по всей базе.</p>
+      <p class="mon-findings-base-summary mon-chapter-lead" id="s2-findings-base-summary" aria-live="polite"></p>
     </header>
     <div class="mon-chapter-body">
       <div class="mon-surface mon-surface--pad">
@@ -770,6 +771,16 @@
 
   function esc(str) {
     return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function ruPoKanalamPhrase(n) {
+    var k = Math.max(0, Math.floor(Number(n) || 0));
+    if (k === 0) return '0 каналам';
+    var m = k % 100;
+    var m1 = k % 10;
+    if (m > 10 && m < 20) return k + ' каналам';
+    if (m1 === 1) return k + ' каналу';
+    return k + ' каналам';
   }
 
   function uniq(list) {
@@ -1903,7 +1914,22 @@
     el.innerHTML = html;
   }
 
-  function renderFindings12h(rows) {
+  function renderFindings12h(rows, fullBaseForTotals) {
+    var summaryEl = document.getElementById('s2-findings-base-summary');
+    var base = Array.isArray(fullBaseForTotals) ? fullBaseForTotals : [];
+    var sumLoss = 0;
+    for (var bi = 0; bi < base.length; bi++) {
+      var lo = Number(base[bi].total_loss_rub);
+      if (isFinite(lo)) sumLoss += lo;
+    }
+    if (summaryEl) {
+      summaryEl.textContent =
+        'Всего задокументировано потерь: ' +
+        (Math.round(sumLoss) || 0).toLocaleString('ru-RU') +
+        ' ₽ по ' +
+        ruPoKanalamPhrase(base.length) +
+        '.';
+    }
     var wrap = document.getElementById('s2-findings-12h-wrap');
     if (!wrap) return;
     var list = Array.isArray(rows) ? rows : [];
@@ -2248,7 +2274,7 @@
       renderMetricTables(meta, typeof chTotalApi === 'number' ? chTotalApi : (scamBase || []).length, data.confirmed_status_summary, data.rollup_12h || {});
       renderCycleLog(meta, scamBase);
       renderRecentCases(data.recent_cases || []);
-      renderFindings12h(data.findings_12h || []);
+      renderFindings12h(data.findings_12h || [], scamBase);
       renderScamBase(scamBase);
       renderChannelsWatch(scamBase);
       renderChannelNetworks(networkRows);

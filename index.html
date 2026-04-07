@@ -124,7 +124,7 @@
                <p class="kro-feature1-date" id="kro-feature1-date">Последнее подтверждённое обновление: <span id="kro-live-datetime">—</span></p>
                <div class="kro-feature1-hero-number">
                    <span class="kro-feature1-hero-value" id="kro-stat-channels-today">—</span>
-                   <span class="kro-feature1-hero-label" id="kro-feature1-hero-label">найдено в последнем цикле / всего в базе</span>
+                   <span class="kro-feature1-hero-label" id="kro-feature1-hero-label">найдено в последнем цикле</span>
                </div>
                <p class="kro-feature1-status-summary kro-scroll-in" id="kro-feature1-status-summary" aria-label="Статусы по всей подтверждённой базе">
                    <span>В риске: <strong id="kro-stat-at-risk">—</strong></span>
@@ -136,7 +136,7 @@
                <div class="kro-feature1-stats">
                    <div class="kro-feature1-stat kro-card">
                    <span class="kro-feature1-stat-value" id="kro-stat-lost">—</span>
-                   <span class="kro-feature1-stat-label">Потеряно ₽ за 12 ч</span>
+                   <span class="kro-feature1-stat-label">Потеряно ₽ всего</span>
                </div>
                <div class="kro-feature1-stat kro-card">
                    <span class="kro-feature1-stat-value" id="kro-stat-channels">—</span>
@@ -157,8 +157,8 @@
            <div class="kro-f1-blocks kro-f1-content-card">
                <!-- Блок 1: Шок-цифры -->
                <div class="kro-f1-block kro-f1-shock">
-                   <p class="kro-f1-shock-heading">ЗА ПОСЛЕДНИЕ 12 ЧАСОВ:</p>
-                   <p class="kro-f1-shock-text" id="kro-f1-shock-text">Данные появятся после первого верифицированного отчёта.</p>
+                   <p class="kro-f1-shock-heading">ПО ВСЕЙ ПОДТВЕРЖДЁННОЙ БАЗЕ:</p>
+                   <p class="kro-f1-shock-text" id="kro-f1-shock-text">Загрузка сводки по базе…</p>
                    <p class="kro-f1-shock-total" id="kro-f1-shock-total">ИТОГО: —</p>
                </div>
                <!-- Блок 2: Твой тип лоха -->
@@ -691,12 +691,11 @@
            }
            function applyData(data) {
                var el;
-               var newInCycle = Number(
-                   data.new_in_cycle_meta != null && data.new_in_cycle_meta !== undefined
-                       ? data.new_in_cycle_meta
-                       : (data.channelsToday != null ? data.channelsToday : data.new_in_cycle)
-               );
-               if (!isFinite(newInCycle)) newInCycle = 0;
+               // Только kro_meta.new_in_cycle (не channelsToday / не окно 12 ч по дате обнаружения).
+               var nicRaw = data.new_in_cycle;
+               if (nicRaw == null || nicRaw === '') nicRaw = data.new_in_cycle_meta;
+               var newInCycle = parseInt(String(nicRaw).replace(/\s/g, ''), 10);
+               if (!isFinite(newInCycle) || newInCycle < 0) newInCycle = 0;
                var chTotal = Number(data.channelsTotal);
                if (!isFinite(chTotal)) chTotal = 0;
                var heroVal = newInCycle > 0 ? newInCycle : chTotal;

@@ -2298,9 +2298,6 @@ def _summarize_content_messages(
                 post_view_counts.append(int(v))
             except (TypeError, ValueError):
                 pass
-        if not text:
-            continue
-        corpus_chunks.append(lower)
         date_prefix = ''
         if dt is not None:
             try:
@@ -2308,37 +2305,47 @@ def _summarize_content_messages(
                 date_prefix = dtu.strftime('%Y-%m-%dT%H:%M:%SZ') + ' '
             except Exception:
                 date_prefix = ''
-        dated_post_parts.append(date_prefix + lower)
 
-        for key, variants in CONTENT_RISK_KEYWORDS.items():
-            keyword_counts[key] += sum(lower.count(variant) for variant in variants)
+        if text:
+            corpus_chunks.append(lower)
+            dated_post_parts.append(date_prefix + lower)
 
-        if any(p in lower for p in PROFIT_PATTERNS):
-            profit_posts += 1
-        if any(p in lower for p in LOSS_PATTERNS):
-            loss_posts += 1
-        if any(p in lower for p in CONTENT_SIGNAL_PATTERNS):
-            signal_posts += 1
-        if any(p in lower for p in CONTENT_AD_PATTERNS):
-            ad_posts += 1
+            for key, variants in CONTENT_RISK_KEYWORDS.items():
+                keyword_counts[key] += sum(lower.count(variant) for variant in variants)
 
-        mentions = _extract_message_mentions(text, self_key=self_key)
-        if not mentions:
-            continue
-        if not any(p in lower for p in CONTENT_NETWORK_PATTERNS + CONTENT_AD_PATTERNS + WATCH_VIP_PATTERNS):
-            continue
-        sample_text = text[:220]
-        for mention in mentions:
-            edge_key = (self_key, _norm_ch_key(mention))
-            if edge_key in seen_edges:
+            if any(p in lower for p in PROFIT_PATTERNS):
+                profit_posts += 1
+            if any(p in lower for p in LOSS_PATTERNS):
+                loss_posts += 1
+            if any(p in lower for p in CONTENT_SIGNAL_PATTERNS):
+                signal_posts += 1
+            if any(p in lower for p in CONTENT_AD_PATTERNS):
+                ad_posts += 1
+
+            mentions = _extract_message_mentions(text, self_key=self_key)
+            if not mentions:
                 continue
-            seen_edges.add(edge_key)
-            network_mentions.append({
-                'source_channel': _channel_display_name(channel_ref) or _channel_display_name(self_key),
-                'target_channel': mention,
-                'evidence': sample_text,
-                'post_url': item.get('url') or '',
-            })
+            if not any(p in lower for p in CONTENT_NETWORK_PATTERNS + CONTENT_AD_PATTERNS + WATCH_VIP_PATTERNS):
+                continue
+            sample_text = text[:220]
+            for mention in mentions:
+                edge_key = (self_key, _norm_ch_key(mention))
+                if edge_key in seen_edges:
+                    continue
+                seen_edges.add(edge_key)
+                network_mentions.append({
+                    'source_channel': _channel_display_name(channel_ref) or _channel_display_name(self_key),
+                    'target_channel': mention,
+                    'evidence': sample_text,
+                    'post_url': item.get('url') or '',
+                })
+        else:
+            # Медиа/новая вёрстка t.me: дата и ссылка в blob для mandatory_gate (крипто-тема — из title/about страницы).
+            if dt is not None:
+                dated_post_parts.append(date_prefix.rstrip() + ' [пост без распарсенного текста]')
+            post_url = (item.get('url') or '').strip()
+            if post_url:
+                dated_post_parts.append(post_url.lower())
 
     activity = 'нет данных'
     if last_post_dt is not None:
@@ -2724,18 +2731,22 @@ def _sheet_only_content_analysis_from_confirmed(obj, fetch_failed=False):
     }
 
 
+def _empty_public_tme_meta():
+    return {'channel_title': '', 'channel_about': '', 'telegram_subscribers': None}
+
+
 def _fetch_public_channel_messages(channel_ref, limit=None):
+    """Возвращает (messages, page_meta). page_meta — заголовок/описание/подписчики с той же HTML-страницы t.me/s/…."""
     slug = _channel_public_slug(channel_ref)
     if not slug:
-        return []
+        return [], _empty_public_tme_meta()
     try:
         import requests
         from bs4 import BeautifulSoup
     except ImportError:
-        return []
+        return [], _empty_public_tme_meta()
     lim = limit if limit is not None else _content_posts_limit()
     url = 'https://t.me/s/%s' % slug
-    messages = []
     for attempt, ua in enumerate((USER_AGENT, USER_AGENT_CHROME)):
         if attempt:
             time.sleep(min(2.0, float(REQUEST_DELAY)))
@@ -2754,6 +2765,19 @@ def _fetch_public_channel_messages(channel_ref, limit=None):
             continue
 
         soup = BeautifulSoup(resp.text or '', 'html.parser')
+        page_meta = _empty_public_tme_meta()
+        tit_el = soup.select_one('.tgme_page_title')
+        if tit_el:
+            page_meta['channel_title'] = (tit_el.get_text(' ', strip=True) or '')[:2000]
+        desc_el = soup.select_one('.tgme_page_description')
+        if desc_el:
+            page_meta['channel_about'] = (desc_el.get_text(' ', strip=True) or '')[:8000]
+        extra_el = soup.select_one('.tgme_page_extra')
+        if extra_el:
+            page_meta['telegram_subscribers'] = _kro_tme_http_gate._parse_subscriber_count_from_extra_text(
+                extra_el.get_text(' ', strip=True) or ''
+            )
+
         raw_widgets = soup.select('.tgme_widget_message')[:lim]
         if not raw_widgets:
             continue
@@ -2779,8 +2803,8 @@ def _fetch_public_channel_messages(channel_ref, limit=None):
                 'views': views,
             })
         if messages:
-            return messages
-    return []
+            return messages, page_meta
+    return [], _empty_public_tme_meta()
 
 
 async def analyze_channel_content(username, client=None, link=None, telethon_deep=False):
@@ -2818,15 +2842,19 @@ async def analyze_channel_content(username, client=None, link=None, telethon_dee
     for i, channel_ref in enumerate(refs):
         if i:
             await asyncio.sleep(0.65)
-        batch = _fetch_public_channel_messages(channel_ref, limit=lim)
+        batch, page_meta = _fetch_public_channel_messages(channel_ref, limit=lim)
         if batch:
             messages = batch
             source = 'public_html'
             primary_ref = channel_ref
-            slug = _channel_public_slug(channel_ref)
-            sc = _fetch_tme_public_subscriber_count(slug) if slug else None
-            if sc is not None:
-                summarize_kw['telegram_subscribers'] = int(sc)
+            summarize_kw['channel_title'] = (page_meta.get('channel_title') or '').strip()
+            summarize_kw['channel_about'] = (page_meta.get('channel_about') or '').strip()
+            ts = page_meta.get('telegram_subscribers')
+            if ts is not None:
+                try:
+                    summarize_kw['telegram_subscribers'] = int(ts)
+                except (TypeError, ValueError):
+                    pass
             break
 
     # 2) Telethon — только для ограниченного числа «глубоких» каналов за цикл.

@@ -288,9 +288,19 @@ def apply_unified_risk_to_row(
             last_post = datetime.fromisoformat(str(lpa).replace('Z', '+00:00'))
         except ValueError:
             last_post = None
-    # Корпус постов с HTML/Telethon (см. _summarize_content_messages → unified_mandatory_posts_blob)
+    # Корпус постов с HTML/Telethon (см. _summarize_content_messages → unified_mandatory_posts_blob).
+    # При публичном HTML без Telethon title/about и даты постов должны попасть в blob; иначе дублируем из полей анализа.
     raw_blob = analysis.get('unified_mandatory_posts_blob')
     posts_blob = (raw_blob if isinstance(raw_blob, str) else '') or ''
+    posts_blob = posts_blob.strip()
+    if not posts_blob:
+        t = _lower(analysis.get('channel_title'))
+        a = _lower(analysis.get('channel_about'))
+        lpa = analysis.get('last_post_at')
+        if lpa:
+            posts_blob = ('%s %s %s' % (t, a, _lower(str(lpa)))).strip()
+        else:
+            posts_blob = ('%s %s' % (t, a)).strip()
     if len(posts_blob) > 50000:
         posts_blob = posts_blob[:50000]
     title = analysis.get('channel_title') or ''
