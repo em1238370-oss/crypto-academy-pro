@@ -2895,6 +2895,14 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             print('confirmed-filter: %s — в списке исключений (известный не-скам)' % ch, file=sys.stderr)
             continue
 
+        # Постоянный blocklist: не подтверждаем в цикле и не дергаем Telethon (снижает FloodWait на ResolveUsername).
+        if key in KRO_PERMANENT_BLOCKLIST:
+            print(
+                'confirmed-filter: %s — постоянный blocklist (не подтверждаем для цикла)' % ch,
+                file=sys.stderr,
+            )
+            continue
+
         # Данные TGStat/Telega нужны до порога жалоб: маркер разоблачителя может быть в source_url строки поиска
         tg_row = tgstat_by_key.get(key)
 
