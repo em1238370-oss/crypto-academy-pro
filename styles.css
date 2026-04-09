@@ -201,13 +201,13 @@ body.kro-hero-scrolled .kro-step1 {
    .kro-tag:hover {
       transform: none;
    }
+   .kro-step1-cta::after {
+      animation: none;
+   }
    .kro-step1-cta:hover,
    .kro-step1-cta:active {
       transform: none;
-      box-shadow: 0 0 0 rgba(245, 158, 11, 0);
-   }
-   .kro-step1-cta:hover::before {
-      transform: none;
+      filter: none;
    }
    .kro-main .news-footer.kro-footer .news-footer-cta:hover,
    .kro-main .news-footer.kro-footer .news-footer-cta:active {
@@ -436,10 +436,11 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-step1-cta-note {
    font-family: var(--kro-font-body);
    font-size: 12px;
-   color: rgba(255, 255, 255, 0.45);
-   line-height: 1.45;
+   color: rgba(255, 255, 255, 0.38);
+   line-height: 1.55;
    max-width: 240px;
    margin: 0;
+   letter-spacing: 0.02em;
 }
 
 .kro-cta-note-mobile {
@@ -647,7 +648,7 @@ body.kro-hero-scrolled .kro-floating-nav {
       border-left: 1px solid rgba(255, 255, 255, 0.12);
    }
    .kro-step1-cta-note {
-      max-width: 260px;
+      max-width: 240px;
    }
    .kro-step1 {
       text-align: left;
@@ -941,56 +942,74 @@ body.kro-hero-scrolled .kro-floating-nav {
    display: inline-flex;
    align-items: center;
    justify-content: center;
-   gap: 8px;
-   max-width: 280px;
+   gap: 10px;
+   max-width: 320px;
    font-family: var(--kro-font-body);
-   font-size: clamp(13px, 1.5vw, 15px);
-   font-weight: 600;
-   letter-spacing: 0.04em;
+   font-size: clamp(14px, 1.6vw, 16px);
+   font-weight: 800;
+   letter-spacing: 0.08em;
    text-transform: uppercase;
-   color: rgba(255, 230, 200, 0.92);
-   background-color: rgba(245, 158, 11, 0.12);
-   padding: 12px 22px;
-   border: 1px solid rgba(245, 158, 11, 0.35);
+   color: #fff;
+   background: linear-gradient(135deg, #b84a4a 0%, #8b2e2e 100%);
+   padding: 18px 36px;
+   border: none;
    border-radius: 999px;
    text-decoration: none;
-   transition: border-color var(--kro-duration-hover) ease, background-color var(--kro-duration-hover) ease, color var(--kro-duration-hover) ease, transform var(--kro-duration-hover) ease, box-shadow var(--kro-duration-hover) ease;
+   position: relative;
+   overflow: hidden;
+   box-shadow: 0 0 0 1px rgba(184, 74, 74, 0.5), 0 8px 32px rgba(184, 74, 74, 0.35), 0 0 64px rgba(184, 74, 74, 0.15), inset 0 1px 0 rgba(255,255,255,0.15);
+   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, filter 0.25s ease;
    text-align: center;
    line-height: 1.35;
-   box-shadow: 0 0 0 rgba(245, 158, 11, 0);
 }
 
 .kro-step1-cta::before {
    content: '';
-   width: 14px;
-   height: 14px;
-   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f5c88c' stroke-width='2'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") no-repeat center;
-   background-size: contain;
-   flex-shrink: 0;
-   transition: transform var(--kro-duration-hover) ease;
+   position: absolute;
+   inset: 0;
+   background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+   border-radius: 999px;
+   pointer-events: none;
+}
+
+.kro-step1-cta::after {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: -100%;
+   width: 50%;
+   height: 100%;
+   background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%);
+   animation: kro-cta-shimmer 3.5s ease-in-out infinite;
+}
+
+@keyframes kro-cta-shimmer {
+   0%   { left: -100%; opacity: 1; }
+   45%  { left: 160%;  opacity: 1; }
+   46%  { opacity: 0; }
+   100% { left: 160%;  opacity: 0; }
 }
 
 .kro-step1-cta:hover {
-   border-color: rgba(245, 158, 11, 0.55);
-   background-color: rgba(245, 158, 11, 0.24);
-   color: rgba(255, 248, 235, 1);
-   transform: translateY(-3px) scale(1.05);
-   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.3), 0 0 32px rgba(245, 158, 11, 0.25);
+   transform: translateY(-5px) scale(1.04);
+   filter: brightness(1.15);
+   box-shadow: 0 0 0 1px rgba(184, 74, 74, 0.6), 0 16px 48px rgba(184, 74, 74, 0.5), 0 0 80px rgba(184, 74, 74, 0.2), inset 0 1px 0 rgba(255,255,255,0.2);
 }
 
 .kro-step1-cta:active {
-   transform: scale(0.98);
-   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+   transform: scale(0.97);
+   filter: brightness(0.95);
 }
 
-.kro-step1-cta:hover::before {
-   transform: translateX(3px);
+@media (prefers-reduced-motion: reduce) {
+   .kro-step1-cta::after { animation: none; }
+   .kro-step1-cta:hover { transform: none; }
 }
 
 .kro-step1-cta:focus-visible {
-   outline: 2px solid rgba(245, 158, 11, 0.7);
+   outline: 2px solid rgba(184, 74, 74, 0.85);
    outline-offset: 3px;
-   box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
+   box-shadow: 0 0 0 4px rgba(184, 74, 74, 0.2);
 }
 
 /* Scroll reveal: переменные из набора утилит Hero/Footer */
@@ -2976,7 +2995,7 @@ body.kro-hero-scrolled .kro-floating-nav {
       gap: 16px;
    }
    .kro-step1-cta-note {
-      max-width: 280px;
+      max-width: 240px;
       margin-left: auto;
       margin-right: auto;
    }
