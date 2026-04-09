@@ -753,6 +753,17 @@ def append_to_scam_base(channel_id, risk, ads_week, bot_pct, vip, complaints, to
             str(r.get('source_primary') or ''),
         ):
             return
+        if _tme_gate.off_topic_business_match(
+            str(channel_id),
+            str(r.get('username') or ''),
+            str(r.get('title') or ''),
+            str(r.get('link') or ''),
+            str(r.get('content_analysis') or ''),
+            str(r.get('object_type') or ''),
+            str(r.get('source_evidence') or ''),
+            str(r.get('source_primary') or ''),
+        ):
+            return
         # v2 schema: A username | B link | C detected_at | D created_at | E age_days |
         #            F object_type | G vip_price | H complaints | I total_loss_rub |
         #            J source_primary | K source_evidence | L cycle_window | M status

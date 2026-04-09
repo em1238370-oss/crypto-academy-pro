@@ -1732,13 +1732,18 @@ def _kro_cycle_analytics_reset():
         'collect_reject_no_signals': 0,
         'collect_reject_no_crypto_context': 0,
         'collect_reject_gambling': 0,
+        'collect_reject_off_topic_topic': 0,
         'collect_confirmed_out': 0,
         'write_pre_skip_gambling': 0,
+        'write_pre_skip_off_topic_topic': 0,
         'write_skip_duplicate_or_empty_key': 0,
         'write_reject_known_non_scam': 0,
         'write_reject_blocklist': 0,
         'write_reject_off_topic': 0,
         'write_reject_no_crypto': 0,
+        'write_reject_recent_posts_no_crypto': 0,
+        'write_note_source_evidence_review': 0,
+        'write_note_foreign_channel': 0,
         'write_downgrade_no_external_source': 0,
         'write_reject_http_gate_append': 0,
     }
@@ -2282,6 +2287,7 @@ def _summarize_content_messages(
     network_mentions = []
     seen_edges = set()
     post_view_counts = []
+    recent_posts_for_gate = []
 
     slice_msgs = messages[:cap]
     corpus_chunks = []
@@ -2309,6 +2315,8 @@ def _summarize_content_messages(
         if text:
             corpus_chunks.append(lower)
             dated_post_parts.append(date_prefix + lower)
+            if len(recent_posts_for_gate) < 5:
+                recent_posts_for_gate.append(date_prefix + lower)
 
             for key, variants in CONTENT_RISK_KEYWORDS.items():
                 keyword_counts[key] += sum(lower.count(variant) for variant in variants)
@@ -2362,13 +2370,18 @@ def _summarize_content_messages(
 
     # Для mandatory_gate_telegram: тексты постов + ISO-даты (HTML t.me / Telethon)
     unified_mandatory_posts_blob = ' '.join(dated_post_parts)
+    recent_posts_5_blob = ' '.join(recent_posts_for_gate)
     if title_l:
         unified_mandatory_posts_blob = title_l + ' ' + unified_mandatory_posts_blob
+        recent_posts_5_blob = title_l + ' ' + recent_posts_5_blob
     if about_l:
         unified_mandatory_posts_blob = about_l + ' ' + unified_mandatory_posts_blob
+        recent_posts_5_blob = about_l + ' ' + recent_posts_5_blob
     _max_gate_blob = 45000
     if len(unified_mandatory_posts_blob) > _max_gate_blob:
         unified_mandatory_posts_blob = unified_mandatory_posts_blob[:_max_gate_blob]
+    if len(recent_posts_5_blob) > 12000:
+        recent_posts_5_blob = recent_posts_5_blob[:12000]
     only_profit_flag = bool(profit_posts and loss_posts == 0)
     red_flags_typed = _kro_red_flags.all_red_flags_by_type(
         corpus_lower, only_profit_posts=only_profit_flag
@@ -2409,6 +2422,7 @@ def _summarize_content_messages(
         'channel_about': channel_about or '',
         'channel_created_at': ch_created_iso,
         'unified_mandatory_posts_blob': unified_mandatory_posts_blob,
+        'recent_posts_5_blob': recent_posts_5_blob,
     }
     return analyzed
 
@@ -3326,6 +3340,13 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             _kro_cycle_analytics_inc('collect_reject_gambling')
             print('confirmed-filter: %s — казино/ставки/гемблинг (%s)' % (ch, gm_cf), file=sys.stderr)
             continue
+        ot_cf = _kro_tme_http_gate.off_topic_business_match(
+            ch_raw, ch_username, title, link, vip_str, source_primary, ev_early,
+        )
+        if ot_cf:
+            _kro_cycle_analytics_inc('collect_reject_off_topic_topic')
+            print('confirmed-filter: %s — не по теме (%s)' % (ch, ot_cf), file=sys.stderr)
+            continue
 
         seen_keys.add(key)
         obj_type = 'сигнал-канал (закрытый)' if ('+' in ch_username or 't.me/+' in link) else 'сигнал-канал'
@@ -3456,6 +3477,73 @@ def _sync_content_analysis_unified_status(obj, new_status):
     obj['content_analysis'] = json.dumps(d, ensure_ascii=False)
 
 
+_EVIDENCE_QA_NOTE = 'требует проверки источника'
+_FOREIGN_CHANNEL_NOTE = 'иностранный канал'
+
+
+def _append_source_evidence_note(evidence, note):
+    ev = (evidence or '').strip()
+    n = (note or '').strip()
+    if not n:
+        return ev
+    if n.lower() in ev.lower():
+        return ev
+    return ('%s | %s' % (ev, n)).strip(' |')
+
+
+def _source_evidence_needs_review(ev):
+    txt = (ev or '').strip()
+    if len(txt) < 20:
+        return True
+    # Только URL без пояснения
+    no_urls = re.sub(r'https?://[^\s<>"\']+', '', txt, flags=re.I).strip(' ;,|')
+    return not no_urls
+
+
+def _extract_analysis_dict(obj):
+    raw = obj.get('content_analysis') or ''
+    if isinstance(raw, dict):
+        return raw
+    if not isinstance(raw, str) or not raw.strip().startswith('{'):
+        return {}
+    try:
+        d = json.loads(raw)
+        return d if isinstance(d, dict) else {}
+    except Exception:
+        return {}
+
+
+def _recent_posts_have_crypto_terms(obj):
+    d = _extract_analysis_dict(obj)
+    blob = (d.get('recent_posts_5_blob') or d.get('unified_mandatory_posts_blob') or '')
+    blob_l = (blob or '').lower()
+    if not blob_l.strip():
+        return False
+    return any(term in blob_l for term in _kro_tme_http_gate.SCAM_BASE_HTTP_CRYPTO_TERMS)
+
+
+def _detect_channel_lang(obj):
+    d = _extract_analysis_dict(obj)
+    blob = ' '.join([
+        str(d.get('recent_posts_5_blob') or ''),
+        str(d.get('unified_mandatory_posts_blob') or ''),
+        str(d.get('channel_title') or ''),
+        str(d.get('channel_about') or ''),
+    ])
+    if not blob.strip():
+        return 'unknown'
+    cyr = len(re.findall(r'[А-Яа-яЁё]', blob))
+    lat = len(re.findall(r'[A-Za-z]', blob))
+    total = cyr + lat
+    if total < 30:
+        return 'unknown'
+    if cyr >= lat * 0.5:
+        return 'ru'
+    if lat >= cyr * 0.5:
+        return 'en'
+    return 'other'
+
+
 def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
     """
     Записать подтверждённые объекты в расширенную scam_base (14 колонок A–N).
@@ -3496,6 +3584,21 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
                 file=sys.stderr,
             )
             continue
+        ot = _kro_tme_http_gate.off_topic_business_match(
+            obj.get('username', ''),
+            obj.get('link', ''),
+            obj.get('object_type', ''),
+            obj.get('source_primary', ''),
+            obj.get('source_evidence', ''),
+            obj.get('content_analysis', ''),
+        )
+        if ot:
+            _kro_cycle_analytics_inc('write_pre_skip_off_topic_topic')
+            print(
+                'scam_base write skip: %s — не по теме (%s)' % (obj.get('username') or '?', ot),
+                file=sys.stderr,
+            )
+            continue
         pre_gate.append(obj)
     # Финальная проверка публичного t.me перед append — опционально: KRO_HTTP_GATE_BEFORE_SCAM_BASE_APPEND=1
     # (по умолчанию выкл., чтобы на GitHub Actions не обнулять вставки при недоступности t.me).
@@ -3530,12 +3633,30 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             _kro_cycle_analytics_inc('write_reject_no_crypto')
             print('scam_base write skip: %s — no crypto context' % (obj.get('username') or key), file=sys.stderr)
             continue
+        if not _recent_posts_have_crypto_terms(obj):
+            _kro_cycle_analytics_inc('write_reject_recent_posts_no_crypto')
+            print(
+                'scam_base write skip: %s — в последних 5 постах нет crypto-терминов'
+                % (obj.get('username') or key),
+                file=sys.stderr,
+            )
+            continue
 
         sp = (obj.get('source_primary') or '').strip()
         ev = (obj.get('source_evidence') or '').strip()
         if not ev and _is_internal_complaints_only_source(sp):
             obj['source_evidence'] = _KRO_INTERNAL_COMPLAINT_SOURCE_NOTE
             ev = obj['source_evidence']
+        if _source_evidence_needs_review(ev):
+            obj['source_evidence'] = _append_source_evidence_note(ev, _EVIDENCE_QA_NOTE)
+            ev = obj['source_evidence']
+            _kro_cycle_analytics_inc('write_note_source_evidence_review')
+
+        lang = _detect_channel_lang(obj)
+        if lang not in ('ru', 'en', 'unknown'):
+            obj['source_evidence'] = _append_source_evidence_note(ev, _FOREIGN_CHANNEL_NOTE)
+            ev = obj['source_evidence']
+            _kro_cycle_analytics_inc('write_note_foreign_channel')
 
         if not _has_external_whistleblower_evidence(sp, ev) and _status_is_high_risk_for_downgrade(eff_status):
             new_st = _downgrade_status_to_observation(eff_status, obj.get('channel_age_days'))
@@ -4089,6 +4210,10 @@ def _append_organic_scam_base_row(client, sheet_id, display, link, obj_type, sta
     if gm:
         print('organic: skip %s — казино/ставки/гемблинг (%s)' % (display or link, gm), file=sys.stderr)
         return False
+    ot = _kro_tme_http_gate.off_topic_business_match(display, link, obj_type, evidence, source_primary)
+    if ot:
+        print('organic: skip %s — не по теме (%s)' % (display or link, ot), file=sys.stderr)
+        return False
     if not _is_crypto_context_allowed_parts(display, link, obj_type, evidence, source_primary):
         print('organic: skip %s — no crypto context' % (display or link), file=sys.stderr)
         return False
@@ -4100,7 +4225,10 @@ def _append_organic_scam_base_row(client, sheet_id, display, link, obj_type, sta
     sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
     now = datetime.now(timezone.utc)
     detected_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
-    ev = (evidence or '')[:500]
+    ev = (evidence or '').strip()
+    if _source_evidence_needs_review(ev):
+        ev = _append_source_evidence_note(ev, _EVIDENCE_QA_NOTE)
+    ev = ev[:500]
     sp = (source_primary or 'organic+kurs+search')[:120]
     eff_status = _apply_loss_status_floor(status, 0)
     if _scam_base_status_is_off_topic(eff_status):
@@ -6391,9 +6519,15 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
         if gm_pr:
             print(f'[promote] skip {display}: казино/ставки/гемблинг ({gm_pr})', file=sys.stderr)
             continue
+        ot_pr = _kro_tme_http_gate.off_topic_business_match(ch, display, link, obj_type, evidence, rep_blob)
+        if ot_pr:
+            print(f'[promote] skip {display}: не по теме ({ot_pr})', file=sys.stderr)
+            continue
         if not has_whistleblower and not _is_crypto_context_allowed_parts(display, obj_type, evidence, 'form+web'):
             print(f'[promote] skip {display}: no crypto context', file=sys.stderr)
             continue
+        if _source_evidence_needs_review(evidence):
+            evidence = _append_source_evidence_note(evidence, _EVIDENCE_QA_NOTE)
         has_facts = _has_concrete_scam_facts(evidence)
         status = 'в риске' if has_facts else 'под наблюдением'
         cap = _risk_cap_from_report_rows(reports)

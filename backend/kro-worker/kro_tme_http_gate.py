@@ -87,6 +87,25 @@ _GAMBLING_STAVKI_RE = re.compile(
     r'(?i)(?<![а-яёa-z])ставки(?![а-яёa-z])|(?<![а-яёa-z])ставка(?![а-яёa-z])'
 )
 
+OFFTOPIC_TOPIC_SUBSTRINGS = (
+    # Одежда / мода
+    'одежда', 'кроссовки', 'обувь', 'fashion', 'shoes', 'одяг', 'кросівки',
+    'бренд', 'бутик', 'магазин одежды',
+    # Еда / рестораны
+    'ресторан', 'доставка еды', 'суши', 'пицца', 'кафе', 'food delivery',
+    # Недвижимость
+    'квартира', 'аренда', 'продажа квартир', 'недвижимость', 'риэлтор',
+    # Авто
+    'продажа авто', 'автосалон', 'машина купить',
+    # Работа / вакансии
+    'вакансия', 'найм', 'hr', 'работа в',
+)
+_OFFTOPIC_RE_EN = re.compile(
+    r'(?i)\b(?:fashion|shoes?|boutique|restaurant|pizza|sushi|cafe|food\s+delivery|'
+    r'real\s*estate|realtor|apartment\s+rent|car\s+sale|dealer|vacanc(?:y|ies)|'
+    r'hiring|recruit(?:er|ment)|hr)\b'
+)
+
 
 def gambling_topic_match(*parts: str) -> Optional[str]:
     """
@@ -109,6 +128,28 @@ def gambling_topic_match(*parts: str) -> Optional[str]:
     m2 = _GAMBLING_RE_EN.search(blob)
     if m2:
         return m2.group(0).strip().lower()
+    return None
+
+
+def off_topic_business_match(*parts: str) -> Optional[str]:
+    """
+    Маркеры «не по теме» для KRO (одежда/еда/недвижимость/авто/вакансии).
+    Возвращает первый найденный фрагмент для логов или None.
+    """
+    blob = ' '.join(
+        (p or '') if isinstance(p, str) else str(p or '')
+        for p in parts
+    )
+    if not blob.strip():
+        return None
+    low = blob.lower()
+    for s in OFFTOPIC_TOPIC_SUBSTRINGS:
+        t = (s or '').strip().lower()
+        if t and t in low:
+            return t
+    m = _OFFTOPIC_RE_EN.search(blob)
+    if m:
+        return m.group(0).strip().lower()
     return None
 
 
@@ -424,6 +465,9 @@ def tme_http_gate_for_scam_base_write(
     gm0 = gambling_topic_match(username_or_link, object_type, source_evidence, content_analysis)
     if gm0:
         return False, 'blocked_gambling_topic:%s' % gm0
+    ot0 = off_topic_business_match(username_or_link, object_type, source_evidence, content_analysis)
+    if ot0:
+        return False, 'blocked_offtopic_topic:%s' % ot0
     uname = normalize_channel_link(username_or_link)
     if not uname:
         return True, 'not_telegram'
