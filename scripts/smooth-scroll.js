@@ -1,11 +1,17 @@
 /**
  * Плавный скролл: Lenis (колёсико + тач) или запасной wheel.
- * touchMultiplier / wheelMultiplier держим ощутимыми — иначе на телефоне скролл «ползёт».
+ * На телефоне (≤640px) touchMultiplier уменьшен в 11× — жест не «мчит» страницу.
  */
 (function () {
     'use strict';
 
     var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    /** Соответствует брейкпоинтам CSS; только init — при повороте экрана перезагрузка подхватит новые значения. */
+    var isNarrowPhone =
+        typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
+    var TOUCH_MULT_BASE = 1.4;
+    var TOUCH_SLOW_FACTOR = 11;
+    var touchMultiplier = isNarrowPhone ? TOUCH_MULT_BASE / TOUCH_SLOW_FACTOR : TOUCH_MULT_BASE;
 
     function maxScrollY() {
         return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
@@ -80,7 +86,7 @@
             syncTouch: true,
             syncTouchLerp: 0.55,
             wheelMultiplier: 0.4,
-            touchMultiplier: 1.4,
+            touchMultiplier: touchMultiplier,
             lerp: 0.04,
             autoRaf: false,
         });

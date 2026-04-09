@@ -1,5 +1,7 @@
 /**
- * Плавный скролл для /monitor (колёсико + тач). Множители ~×10 к ранним значениям — нормальная скорость на телефоне.
+ * Плавный скролл для /monitor (колёсико + тач).
+ * На узком экране (≤640px) тач идёт через Lenis (syncTouch) с touchMultiplier / 11 — медленнее прокрутка;
+ * на десктопе syncTouch: false — не перехватывать жест у ссылок t.me (см. data-lenis-prevent на ссылках).
  */
 (function () {
   'use strict';
@@ -8,6 +10,12 @@
     window.__MON_SCROLL_MODE__ = 'reduced';
     return;
   }
+
+  var isNarrowPhone =
+    typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
+  var TOUCH_MULT_BASE = 1.4;
+  var TOUCH_SLOW_FACTOR = 11;
+  var touchMultiplier = isNarrowPhone ? TOUCH_MULT_BASE / TOUCH_SLOW_FACTOR : TOUCH_MULT_BASE;
 
   function maxScrollY() {
     return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
@@ -69,17 +77,18 @@
     return;
   }
 
-  // syncTouch: false — иначе Lenis перехватывает жесты: на телефоне ссылки t.me часто не открываются (тап «съедается» скроллом).
-  var lenis = new Lenis({
+  var lenisOpts = {
     orientation: 'vertical',
     gestureOrientation: 'vertical',
     smoothWheel: true,
-    syncTouch: false,
+    syncTouch: isNarrowPhone,
     wheelMultiplier: 0.4,
-    touchMultiplier: 1.4,
+    touchMultiplier: touchMultiplier,
     lerp: 0.04,
     autoRaf: false,
-  });
+  };
+  if (isNarrowPhone) lenisOpts.syncTouchLerp = 0.55;
+  var lenis = new Lenis(lenisOpts);
 
   function raf(time) {
     lenis.raf(time);
