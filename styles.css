@@ -1115,20 +1115,6 @@ body.kro-hero-scrolled .kro-floating-nav {
    transition: none;
 }
 
-/* Лёгкое движение строк над дашбордом без opacity:0 */
-@media (prefers-reduced-motion: no-preference) {
-   .kro-feature1.kro-reveal:not(.kro-reveal-visible) .kro-f1-badges-row,
-   .kro-feature1.kro-reveal:not(.kro-reveal-visible) .kro-f1-metrics-head {
-      transform: translateY(10px);
-      transition: transform 0.6s var(--kro-ease-reveal);
-   }
-   .kro-feature1.kro-reveal-visible .kro-f1-badges-row,
-   .kro-feature1.kro-reveal-visible .kro-f1-metrics-head {
-      transform: translateY(0);
-      transition: transform 0.6s var(--kro-ease-reveal);
-   }
-}
-
 /* Дашборд: LIVE + большая цифра + 3 карточки (тёплый контрастный фон, без сияния) */
 .kro-feature1-dashboard {
    max-width: calc(680px + 4cm);
@@ -2722,6 +2708,8 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 .kro-main .page {
    padding-top: 0;
+   position: relative;
+   z-index: 1;
 }
 
 /* Футер главной: активная нижняя часть — та же атмосфера, что и Hero (премиум, ритм, акценты) */
