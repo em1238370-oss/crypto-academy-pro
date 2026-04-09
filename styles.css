@@ -678,24 +678,17 @@ body.kro-hero-scrolled .kro-floating-nav {
    50% { opacity: 1; }
 }
 
-.kro-step1-bg::after {
-   content: '';
-   position: absolute;
-   inset: 0;
-   background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.2) 100%);
-   pointer-events: none;
-}
-
-/* Виньетка + сетка точек Hero */
+/* Виньетка + сетка точек Hero + noise (sitelove) */
 .kro-step1-bg::after {
    content: '';
    position: absolute;
    inset: 0;
    background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.2) 100%),
                radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.018) 1px, transparent 0),
-               radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.012) 1px, transparent 0);
-   background-size: 100% 100%, 32px 32px, 24px 24px;
-   background-position: 0 0, 0 0, 0 0;
+               radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.012) 1px, transparent 0),
+               url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+   background-size: 100% 100%, 32px 32px, 24px 24px, 200px 200px;
+   background-position: 0 0, 0 0, 0 0, 0 0;
    pointer-events: none;
 }
 
@@ -1081,6 +1074,19 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 /* Фишка 1: Живой счётчик — карточки метрик, фон с глубиной (отдельный шрифт как на sitelove) */
+.kro-feature1::before {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: 50%;
+   transform: translateX(-50%);
+   width: 60%;
+   height: 1px;
+   background: radial-gradient(ellipse at center, rgba(245, 158, 11, 0.35) 0%, transparent 70%);
+   pointer-events: none;
+   z-index: 2;
+}
+
 .kro-feature1 {
    font-family: 'Plus Jakarta Sans', sans-serif;
    padding: 100px 24px 120px;
@@ -1095,8 +1101,9 @@ body.kro-hero-scrolled .kro-floating-nav {
    position: absolute;
    inset: 0;
    z-index: 0;
-   /* Другой тон относительно hero: мягкий красный «денежный» градиент сзади карточек, без точек */
-   background: radial-gradient(ellipse 80% 70% at 50% 45%, rgba(100, 45, 45, 0.22) 0%, transparent 55%),
+   /* Переход из hero + мягкий красный «денежный» градиент сзади карточек */
+   background: linear-gradient(180deg, rgba(10, 12, 16, 0.95) 0%, transparent 12%),
+               radial-gradient(ellipse 80% 70% at 50% 45%, rgba(100, 45, 45, 0.22) 0%, transparent 55%),
                radial-gradient(ellipse 70% 50% at 50% 35%, rgba(72, 48, 42, 0.18) 0%, transparent 55%),
                radial-gradient(ellipse 100% 80% at 50% 50%, rgba(50, 30, 32, 0.15) 0%, transparent 65%),
                linear-gradient(180deg, #140e0f 0%, #110d0e 35%, #0e0b0c 100%);
