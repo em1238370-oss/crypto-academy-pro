@@ -1086,7 +1086,8 @@ body.kro-hero-scrolled .kro-floating-nav {
    padding: 100px 24px 120px;
    text-align: center;
    position: relative;
-   overflow: hidden;
+   overflow-x: hidden;
+   overflow-y: visible;
    isolation: isolate;
 }
 
@@ -1105,6 +1106,27 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-feature1 > :not(.kro-feature1-bg) {
    position: relative;
    z-index: 1;
+}
+
+/* Не даём общему .kro-reveal гасить всю секцию: иначе LIVE/подзаголовок пропадают при скролле hero→фишка 1; анимируются только дашборд и блоки ниже */
+.kro-feature1.kro-reveal {
+   opacity: 1;
+   transform: none;
+   transition: none;
+}
+
+/* Лёгкое движение строк над дашбордом без opacity:0 */
+@media (prefers-reduced-motion: no-preference) {
+   .kro-feature1.kro-reveal:not(.kro-reveal-visible) .kro-f1-badges-row,
+   .kro-feature1.kro-reveal:not(.kro-reveal-visible) .kro-f1-metrics-head {
+      transform: translateY(10px);
+      transition: transform 0.6s var(--kro-ease-reveal);
+   }
+   .kro-feature1.kro-reveal-visible .kro-f1-badges-row,
+   .kro-feature1.kro-reveal-visible .kro-f1-metrics-head {
+      transform: translateY(0);
+      transition: transform 0.6s var(--kro-ease-reveal);
+   }
 }
 
 /* Дашборд: LIVE + большая цифра + 3 карточки (тёплый контрастный фон, без сияния) */
@@ -2614,19 +2636,6 @@ body.kro-hero-scrolled .kro-floating-nav {
       padding: 64px 20px 64px;
       padding-left: max(20px, env(safe-area-inset-left));
       padding-right: max(20px, env(safe-area-inset-right));
-   }
-   @media (prefers-reduced-motion: no-preference) {
-      /* LIVE / «12 ч» / «Результаты в цифрах»: движение сохраняем, но не уходим в opacity:0 при скролле */
-      .kro-feature1 > .kro-f1-badges-row.kro-scroll-in,
-      .kro-feature1 > .kro-f1-metrics-head.kro-scroll-in {
-         opacity: 0.5;
-         transform: translateY(12px);
-      }
-      .kro-feature1 > .kro-f1-badges-row.kro-scroll-in.kro-scroll-in-visible,
-      .kro-feature1 > .kro-f1-metrics-head.kro-scroll-in.kro-scroll-in-visible {
-         opacity: 1;
-         transform: translateY(0);
-      }
    }
    .kro-feature1-top3 li {
       overflow: hidden;
