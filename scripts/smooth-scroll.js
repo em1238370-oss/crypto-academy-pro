@@ -1,6 +1,6 @@
 /**
  * Плавный скролл: Lenis (колёсико + тач) или запасной wheel.
- * На узком экране (≤640px) touchMultiplier чуть ниже 1.4 — прокрутка немного спокойнее, без сильного «тормоза».
+ * На узком экране (≤640px): touchMultiplier 1.05 + мягче lerp / syncTouchLerp / inertia — плавный тач без «рвани».
  */
 (function () {
     'use strict';
@@ -10,6 +10,10 @@
         typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
     /** Десктоп 1.4; на телефоне 1.05 (~на четверть спокойнее тот же жест). */
     var touchMultiplier = isNarrowPhone ? 1.05 : 1.4;
+    /** Lenis: дефолт lerp 0.1, syncTouchLerp 0.075. Слишком низкий lerp + огромный syncTouchLerp дают «рваный» тач. */
+    var lenisLerp = isNarrowPhone ? 0.088 : 0.058;
+    var lenisSyncTouchLerp = isNarrowPhone ? 0.12 : 0.32;
+    var lenisTouchInertia = isNarrowPhone ? 1.48 : 1.58;
 
     function maxScrollY() {
         return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
@@ -82,10 +86,11 @@
             gestureOrientation: 'vertical',
             smoothWheel: true,
             syncTouch: true,
-            syncTouchLerp: 0.55,
+            syncTouchLerp: lenisSyncTouchLerp,
+            touchInertiaExponent: lenisTouchInertia,
             wheelMultiplier: 0.4,
             touchMultiplier: touchMultiplier,
-            lerp: 0.04,
+            lerp: lenisLerp,
             autoRaf: false,
         });
 

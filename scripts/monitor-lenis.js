@@ -1,6 +1,6 @@
 /**
  * Плавный скролл для /monitor (колёсико + тач).
- * На ≤640px: syncTouch + touchMultiplier 1.05 — чуть медленнее тач, как на главной; на шире — syncTouch off (t.me).
+ * На ≤640px: syncTouch, touchMultiplier 1.05, lerp/syncTouchLerp ближе к дефолтам Lenis — плавнее, без рывков.
  */
 (function () {
   'use strict';
@@ -13,6 +13,9 @@
   var isNarrowPhone =
     typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
   var touchMultiplier = isNarrowPhone ? 1.05 : 1.4;
+  var lenisLerp = isNarrowPhone ? 0.088 : 0.055;
+  var lenisSyncTouchLerp = isNarrowPhone ? 0.12 : 0.32;
+  var lenisTouchInertia = isNarrowPhone ? 1.48 : 1.58;
 
   function maxScrollY() {
     return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
@@ -81,10 +84,13 @@
     syncTouch: isNarrowPhone,
     wheelMultiplier: 0.4,
     touchMultiplier: touchMultiplier,
-    lerp: 0.04,
+    lerp: lenisLerp,
     autoRaf: false,
   };
-  if (isNarrowPhone) lenisOpts.syncTouchLerp = 0.55;
+  if (isNarrowPhone) {
+    lenisOpts.syncTouchLerp = lenisSyncTouchLerp;
+    lenisOpts.touchInertiaExponent = lenisTouchInertia;
+  }
   var lenis = new Lenis(lenisOpts);
 
   function raf(time) {
