@@ -109,6 +109,7 @@
       <nav class="mon-hero-jump" aria-label="Разделы страницы">
         <a class="mon-hero-jump-link" href="#page-map">Карта</a>
         <a class="mon-hero-jump-link" href="#metrics">Метрики</a>
+        <a class="mon-hero-jump-link" href="#data-quality">Качество данных</a>
         <a class="mon-hero-jump-link" href="#recent-cases">Случаи</a>
         <a class="mon-hero-jump-link" href="#data-scam">База</a>
         <a class="mon-hero-jump-link" href="#data-watch">Мониторинг</a>
@@ -176,6 +177,11 @@
             <span class="mon-route-map-num">01</span>
             <a class="mon-route-map-block" href="#metrics">Метрики</a>
             <span class="mon-route-map-desc">«Результаты в цифрах»: статус цикла, база, источники.</span>
+          </li>
+          <li class="mon-route-map-row">
+            <span class="mon-route-map-num">—</span>
+            <a class="mon-route-map-block" href="#data-quality">Качество данных</a>
+            <span class="mon-route-map-desc">Веса источников, качество жалоб, граф связей, молодые каналы с жалобами — из kro_meta.</span>
           </li>
           <li class="mon-route-map-row">
             <span class="mon-route-map-num">02</span>
@@ -1743,8 +1749,9 @@
       return Number(confirmedSummary[k] || 0);
     }
 
-    function objectSheetBlock(kicker, title, lead, tableInner) {
-      return '<article class="mon-object-sheet">' +
+    function objectSheetBlock(kicker, title, lead, tableInner, sectionId) {
+      var sid = sectionId ? (' id="' + sectionId + '"') : '';
+      return '<article class="mon-object-sheet"' + sid + '>' +
         '<header class="mon-object-sheet__head">' +
         '<p class="mon-chapter-kicker">' + esc(kicker) + '</p>' +
         '<h3 class="mon-object-sheet__title">' + esc(title) + '</h3>' +
@@ -1793,20 +1800,33 @@
       objectSheetBlock(
         'Качество данных · kro_meta',
         'Контроль точности',
-        'Метрики из листа kro_meta: false_positive_signals, avg_source_weight, channels_with_complaints_only — сигналы ложных срабатываний, средний вес источников по scam_base и строки только с жалобами без внешнего URL разоблачителя.',
+        'Порог веса источников для новой записи в scam_base — не ниже min_source_weight_policy (сумма весов: разоблачители, форма с учётом качества текста жалобы, молодой канал с жалобами и т.д.). Метрики пересчитываются воркером и пишутся в лист kro_meta.',
         (function() {
           var fp = Number(meta.false_positive_signals || 0);
           var aw = meta.avg_source_weight;
           var awStr = (aw != null && isFinite(Number(aw))) ? Number(aw).toFixed(3) : '—';
           var co = Number(meta.channels_with_complaints_only || 0);
+          var aq = meta.avg_complaint_quality;
+          var aqStr = (aq != null && isFinite(Number(aq))) ? Number(aq).toFixed(3) : '—';
+          var bw = Number(meta.scam_base_rows_below_min_weight || 0);
+          var ne = Number(meta.channels_network_edges || 0);
+          var mw = meta.min_source_weight_policy;
+          var mwStr = (mw != null && isFinite(Number(mw))) ? String(Number(mw)) : '3';
+          var yw = Number(meta.young_with_complaints_in_base || 0);
           var tableQ =
             '<thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>' +
+            sumRow('Минимальный вес источников для scam_base (политика)', mwStr) +
             sumRow('Каналов с сигналом false_positive (от пользователей)', fp) +
-            sumRow('Средний вес источников по scam_base', awStr) +
+            sumRow('Средний вес источников по строкам scam_base', awStr) +
+            sumRow('Средняя оценка качества текста жалобы (форма, есть описание)', aqStr) +
+            sumRow('Строк scam_base с суммарным весом ниже порога (аудит)', bw) +
+            sumRow('Рёбер графа связей (channels_network)', ne) +
+            sumRow('В базе: канал <90 дн. и есть жалобы (красный флаг в скоринге)', yw) +
             sumRow('Строк в базе только с жалобами (без внешнего URL разоблачителя)', co) +
             '</tbody>';
           return tableQ;
-        })()
+        })(),
+        'data-quality'
       );
 
     wrap.querySelectorAll('.mon-table--summary tbody tr').forEach(function(tr, i) {

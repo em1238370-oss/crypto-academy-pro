@@ -72,15 +72,30 @@ def _telltrue_net_weight(blob: str) -> float:
 
 
 def _form_complaint_row_weights(rows: Optional[List[Dict[str, Any]]]) -> float:
-    """Жалобы через форму: с описанием = 2, без описания = 1 (на строку)."""
+    """Жалобы через форму: с описанием — 1.5 + 0.5×score_complaint_quality (2.0…3.0), без — 1.0."""
     w = 0.0
     for row in rows or []:
         src = (row.get('source') or '').strip().lower()
         if src != 'form' and not src.endswith('form'):
             continue
         desc = (row.get('description') or '').strip()
-        w += 2.0 if desc else 1.0
+        if desc:
+            w += 1.5 + 0.5 * float(score_complaint_quality(desc))
+        else:
+            w += 1.0
     return w
+
+
+def _complaint_texts_joined_quality_bonus(obj: Dict[str, Any]) -> float:
+    """Доп. вес по объединённым текстам жалоб (Telegram/агрегат), до +1.5."""
+    raw = (obj.get('complaint_texts_joined') or '').strip()
+    if len(raw) < 20:
+        return 0.0
+    chunks = [p.strip() for p in re.split(r'[\n;•|]+', raw) if len(p.strip()) > 15][:8]
+    if not chunks:
+        chunks = [raw[:800]]
+    avg_q = sum(score_complaint_quality(c) for c in chunks) / len(chunks)
+    return min(1.5, max(0.0, (float(avg_q) - 1.0) * 0.75))
 
 
 def temporal_young_channel_complaints_weight(obj: Dict[str, Any]) -> float:
@@ -110,7 +125,8 @@ def _compute_source_weight(
     """
     Сумма весов источников:
     stop-scam1.com = 3, fin-obzor.net = 3, vklader.com (страница /slug) = 2, telltrue.net = 2,
-    форма: с описанием = 2 / без = 1 на строку; молодой канал (<90 дн.) при жалобах = +2.
+    форма: с описанием — 1.5 + 0.5×качество текста; без описания = 1; бонус по complaint_texts_joined;
+    молодой канал (<90 дн.) при жалобах = +2.
     """
     sp = (obj.get('source_primary') or '').strip()
     ev = (obj.get('source_evidence') or '').strip()
@@ -125,6 +141,7 @@ def _compute_source_weight(
     w += _dedicated_vklader_weight(blob)
     w += _telltrue_net_weight(blob)
     w += _form_complaint_row_weights(report_rows)
+    w += _complaint_texts_joined_quality_bonus(obj)
     w += temporal_young_channel_complaints_weight(obj)
 
     return float(w)
@@ -158,13 +175,25 @@ def should_cap_status_reputation(
     *,
     http_subs: Optional[int],
     form_complaint_count: int,
+    analysis_subs: Optional[int] = None,
 ) -> bool:
     """
     >10k подписчиков, нет жалоб через форму, единственный след — без подробного описания
     (короткий текст после вырезания URL; без сильных маркеров stop-scam1 / fin-obzor).
     → статус не выше «под наблюдением».
+    Подписчики: сначала HTTP-gate (t.me), иначе число из content_analysis / Telethon.
     """
-    subs = http_subs
+    subs = None
+    if http_subs is not None:
+        try:
+            subs = int(http_subs)
+        except (TypeError, ValueError):
+            subs = None
+    if subs is None and analysis_subs is not None:
+        try:
+            subs = int(analysis_subs)
+        except (TypeError, ValueError):
+            subs = None
     if subs is None or subs <= 10000:
         return False
     if form_complaint_count and form_complaint_count > 0:

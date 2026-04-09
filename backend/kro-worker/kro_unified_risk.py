@@ -16,7 +16,7 @@ from kro_tme_http_gate import SCAM_BASE_HTTP_CRYPTO_TERMS, SCAM_BASE_HTTP_POST_M
 # Синхронно с HTTP-gate scam_base (kro_tme_http_gate)
 MANDATORY_CRYPTO_TERMS = SCAM_BASE_HTTP_CRYPTO_TERMS
 MANDATORY_LAST_POST_DAYS = SCAM_BASE_HTTP_POST_MAX_AGE_DAYS
-CHANNEL_YOUNG_DAYS = 90  # < 3 месяцев — жёлтый флаг
+CHANNEL_YOUNG_DAYS = 90  # <90 дн. без жалоб — жёлтый; при жалобах — красный (см. collect_unified_flags)
 
 BLACKLIST_SOURCE_MARKERS = (
     'stop-scam', 'fin-obzor', 'vklader', 'telltrue', 'forteck',
@@ -214,14 +214,24 @@ def collect_unified_flags(
     if any(m in blob_src for m in BLACKLIST_SOURCE_MARKERS):
         add_red('упоминание на сайте-разоблачителе')
 
-    # 13 реклама каналов из базы
+    # 13 Сеть связей — красный флаг (не жёлтый): перекрёстные упоминания; если цель в базе KRO — отдельная формулировка
     keys = known_base_keys or set()
     self_key = _norm_username_key(obj.get('username', ''), obj.get('link', ''))
-    for edge in analysis.get('network_mentions') or []:
+    mentions = analysis.get('network_mentions') or []
+    kro_hit = False
+    other_net = False
+    for edge in mentions:
         tgt = _norm_username_key(edge.get('target_channel', ''), '')
-        if tgt and tgt != self_key and tgt in keys:
-            add_red('рекламирует канал из базы KRO (подтверждённый скам)')
+        if not tgt or tgt == self_key:
+            continue
+        if tgt in keys:
+            kro_hit = True
             break
+        other_net = True
+    if kro_hit:
+        add_red('рекламирует канал из базы KRO (подтверждённый скам)')
+    elif other_net:
+        add_red('перекрёстные упоминания каналов (сеть связей)')
 
     return red, yellow
 

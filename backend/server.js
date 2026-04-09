@@ -1768,6 +1768,36 @@ function parseKroCycleMetaRows(rows) {
     const n2 = parseInt(String(rawCo).replace(/\s/g, ''), 10);
     if (Number.isFinite(n2) && n2 >= 0) channels_with_complaints_only = n2;
   }
+  let avg_complaint_quality = null;
+  const rawAq = values.avg_complaint_quality;
+  if (rawAq != null && String(rawAq).trim() !== '') {
+    const aq = parseFloat(String(rawAq).replace(',', '.'));
+    if (Number.isFinite(aq)) avg_complaint_quality = aq;
+  }
+  let scam_base_rows_below_min_weight = 0;
+  const rawBw = values.scam_base_rows_below_min_weight;
+  if (rawBw != null && rawBw !== '') {
+    const nb = parseInt(String(rawBw).replace(/\s/g, ''), 10);
+    if (Number.isFinite(nb) && nb >= 0) scam_base_rows_below_min_weight = nb;
+  }
+  let channels_network_edges = 0;
+  const rawNe = values.channels_network_edges;
+  if (rawNe != null && rawNe !== '') {
+    const ne = parseInt(String(rawNe).replace(/\s/g, ''), 10);
+    if (Number.isFinite(ne) && ne >= 0) channels_network_edges = ne;
+  }
+  let min_source_weight_policy = null;
+  const rawMw = values.min_source_weight_policy;
+  if (rawMw != null && String(rawMw).trim() !== '') {
+    const mw = parseFloat(String(rawMw).replace(',', '.'));
+    if (Number.isFinite(mw)) min_source_weight_policy = mw;
+  }
+  let young_with_complaints_in_base = 0;
+  const rawYw = values.young_with_complaints_in_base;
+  if (rawYw != null && rawYw !== '') {
+    const yw = parseInt(String(rawYw).replace(/\s/g, ''), 10);
+    if (Number.isFinite(yw) && yw >= 0) young_with_complaints_in_base = yw;
+  }
   return {
     last_cycle_at,
     new_in_cycle,
@@ -1775,6 +1805,11 @@ function parseKroCycleMetaRows(rows) {
     false_positive_signals,
     avg_source_weight,
     channels_with_complaints_only,
+    avg_complaint_quality,
+    scam_base_rows_below_min_weight,
+    channels_network_edges,
+    min_source_weight_policy,
+    young_with_complaints_in_base,
   };
 }
 
@@ -1785,6 +1820,11 @@ const KRO_META_EMPTY = {
   false_positive_signals: 0,
   avg_source_weight: null,
   channels_with_complaints_only: 0,
+  avg_complaint_quality: null,
+  scam_base_rows_below_min_weight: 0,
+  channels_network_edges: 0,
+  min_source_weight_policy: null,
+  young_with_complaints_in_base: 0,
 };
 
 async function readKroCycleMetaFromSheets(sheetsClient) {
@@ -2898,14 +2938,43 @@ function kroTelltrueNetWeight(low) {
   return low.includes('telltrue.net') ? 2 : 0;
 }
 
-/** Форма: с описанием = 2, без = 1 (паритет с kro_source_policy._form_complaint_row_weights). */
+/** Качество текста жалобы 1.0…3.0 (паритет с kro_source_policy.score_complaint_quality). */
+function kroScoreComplaintQualityRaw(text) {
+  const t = (text || '').trim();
+  if (!t) return 0;
+  const low = t.toLowerCase();
+  let score = 0;
+  if (/\d[\d\s\u00a0.,]*\s*(?:₽|р\.|руб|rub|usd|\$|\beur\b)/i.test(t)) score += 0.5;
+  const scheme = ['оплат', 'vip', 'вип', 'подписк', 'перевёл', 'перевел', 'схем', 'депозит', 'инвест', 'сигнал', 'гарант', 'курс', 'обучен'];
+  if (scheme.some((m) => low.includes(m))) score += 0.5;
+  const action = ['заблок', 'удалил', 'не отвеч', 'обман', 'кинул', 'кидал', 'слил', 'мошен', 'не вернул', 'пропал'];
+  if (action.some((m) => low.includes(m))) score += 0.5;
+  if (t.length > 100) score += 0.5;
+  return Math.min(2, score);
+}
+
+function kroScoreComplaintQuality(text) {
+  return Math.min(3, 1 + kroScoreComplaintQualityRaw(text));
+}
+
+/** Бонус по объединённым описаниям жалоб (до +1.5), паритет с kro_source_policy._complaint_texts_joined_quality_bonus. */
+function kroComplaintTextsJoinedBonus(joined) {
+  const raw = (joined || '').trim();
+  if (raw.length < 20) return 0;
+  const chunks = raw.split(/[\n;•|]+/).map((p) => p.trim()).filter((p) => p.length > 15).slice(0, 8);
+  const use = chunks.length ? chunks : [raw.slice(0, 800)];
+  const avgQ = use.reduce((s, c) => s + kroScoreComplaintQuality(c), 0) / use.length;
+  return Math.min(1.5, Math.max(0, (avgQ - 1) * 0.75));
+}
+
+/** Форма: с описанием — 1.5 + 0.5×kroScoreComplaintQuality; без — 1 (паритет с kro_source_policy). */
 function kroFormComplaintRowWeights(reports) {
   let w = 0;
   for (const row of reports || []) {
     const src = (row.source || '').trim().toLowerCase();
     if (src !== 'form' && !src.endsWith('form')) continue;
     const d = (row.description || '').trim();
-    w += d ? 2 : 1;
+    w += d ? 1.5 + 0.5 * kroScoreComplaintQuality(d) : 1;
   }
   return w;
 }
@@ -2920,6 +2989,8 @@ function kroComputeSourceWeightForPromote(reports, sourceEvidence) {
   w += kroDedicatedVkladerWeight(blob);
   w += kroTelltrueNetWeight(blob);
   w += kroFormComplaintRowWeights(reports);
+  const joined = (reports || []).map((r) => (r.description || '').trim()).filter(Boolean).join('\n');
+  w += kroComplaintTextsJoinedBonus(joined);
   return w;
 }
 

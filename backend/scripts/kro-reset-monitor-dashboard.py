@@ -19,7 +19,7 @@
   KRO_SHEET_ID
   KRO_CHANNELS_WATCH_RANGE   (по умолчанию channels_watch!A2:M)
   KRO_CHANNELS_NETWORK_RANGE   (по умолчанию channels_network!A2:G)
-  KRO_META_RANGE               (по умолчанию kro_meta!A:B; пишем ключи в A1:B7)
+  KRO_META_RANGE               (по умолчанию kro_meta!A:B; пишем ключи в A1:B12)
 """
 from __future__ import annotations
 
@@ -98,7 +98,7 @@ def main() -> int:
     print('channels_watch %s: rows=%d' % (watch_rng, wn))
     print('channels_network %s: rows=%d' % (network_rng, nn))
     print('kro_history %s: data rows=%d (row 1 = заголовок)' % (history_clear_rng, hn))
-    print('kro_meta: будет записан сброс в %s!A1:B7' % meta_sheet)
+    print('kro_meta: будет записан сброс в %s!A1:B12' % meta_sheet)
 
     if args.dry_run:
         print('dry-run: изменений нет.')
@@ -116,10 +116,15 @@ def main() -> int:
         ['false_positive_signals', '0'],
         ['avg_source_weight', ''],
         ['channels_with_complaints_only', '0'],
+        ['avg_complaint_quality', ''],
+        ['scam_base_rows_below_min_weight', '0'],
+        ['channels_network_edges', '0'],
+        ['min_source_weight_policy', '3'],
+        ['young_with_complaints_in_base', '0'],
     ]
     sheets.spreadsheets().values().update(
         spreadsheetId=sheet_id,
-        range='%s!A1:B7' % meta_sheet,
+        range='%s!A1:B12' % meta_sheet,
         valueInputOption='RAW',
         body={'values': meta_rows},
     ).execute()

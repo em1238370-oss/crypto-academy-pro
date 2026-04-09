@@ -1241,6 +1241,31 @@ def append_kro_history_row(sheets_client, sheet_id, last_cycle_at, new_in_cycle,
         return False
 
 
+def _analysis_subscribers_from_content(obj):
+    """Подписчики из JSON content_analysis (Telethon / unified_risk) для reputation-cap при отключённом HTTP-gate."""
+    raw = obj.get('content_analysis')
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        d = json.loads(raw)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return None
+    ur = d.get('unified_risk') or {}
+    v = ur.get('telegram_subscribers_sample')
+    if v is not None:
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            pass
+    v2 = d.get('telegram_subscribers')
+    if v2 is not None:
+        try:
+            return int(v2)
+        except (TypeError, ValueError):
+            pass
+    return None
+
+
 def write_kro_meta_to_sheet(
     sheets_client,
     sheet_id,
@@ -1261,7 +1286,7 @@ def write_kro_meta_to_sheet(
     sheet_name = (meta_range or 'kro_meta!A:B').split('!')[0].strip() or 'kro_meta'
     q = quality_metrics or {}
     try:
-        ensure_sheet_exists(sheets_client, sheet_id, sheet_name, row_count=30, column_count=2)
+        ensure_sheet_exists(sheets_client, sheet_id, sheet_name, row_count=40, column_count=2)
         rows = [
             ['key', 'value'],
             ['last_cycle_at', str(last_cycle_at or '')],
@@ -1270,10 +1295,15 @@ def write_kro_meta_to_sheet(
             ['false_positive_signals', str(int(q.get('false_positive_signals') or 0))],
             ['avg_source_weight', str(q.get('avg_source_weight') if q.get('avg_source_weight') is not None else '')],
             ['channels_with_complaints_only', str(int(q.get('channels_with_complaints_only') or 0))],
+            ['avg_complaint_quality', str(q.get('avg_complaint_quality') if q.get('avg_complaint_quality') is not None else '')],
+            ['scam_base_rows_below_min_weight', str(int(q.get('scam_base_rows_below_min_weight') or 0))],
+            ['channels_network_edges', str(int(q.get('channels_network_edges') or 0))],
+            ['min_source_weight_policy', str(q.get('min_source_weight_policy') if q.get('min_source_weight_policy') is not None else _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_SCAM_BASE)],
+            ['young_with_complaints_in_base', str(int(q.get('young_with_complaints_in_base') or 0))],
         ]
         sheets_client.spreadsheets().values().update(
             spreadsheetId=sheet_id,
-            range=f'{sheet_name}!A1:B7',
+            range=f'{sheet_name}!A1:B12',
             valueInputOption='RAW',
             body={'values': rows}
         ).execute()
@@ -1292,11 +1322,17 @@ def build_kro_quality_metrics(sheets_client, sheet_id):
         'false_positive_signals': 0,
         'avg_source_weight': None,
         'channels_with_complaints_only': 0,
+        'avg_complaint_quality': None,
+        'scam_base_rows_below_min_weight': 0,
+        'channels_network_edges': 0,
+        'min_source_weight_policy': _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_SCAM_BASE,
+        'young_with_complaints_in_base': 0,
     }
     if not sheets_client or not sheet_id:
         return out
-    # false_positive: число каналов (уникальных), получивших хотя бы один сигнал false_positive
+    # false_positive + среднее качество жалоб (форма, есть описание) — один проход по reports
     fp_channels = set()
+    cq_scores = []
     try:
         rep_rng = _kro_reports_read_range()
         resp = sheets_client.spreadsheets().values().get(
@@ -1306,12 +1342,18 @@ def build_kro_quality_metrics(sheets_client, sheet_id):
             rec = _parse_reports_sheet_row(r)
             if not rec:
                 continue
-            if (rec.get('source') or '').strip().lower() != 'false_positive':
-                continue
-            k = _norm_ch_key(rec.get('channel') or '')
-            if k:
-                fp_channels.add(k)
+            src_l = (rec.get('source') or '').strip().lower()
+            if src_l == 'false_positive':
+                k = _norm_ch_key(rec.get('channel') or '')
+                if k:
+                    fp_channels.add(k)
+            elif src_l == 'form':
+                desc = (rec.get('description') or '').strip()
+                if len(desc) >= 5:
+                    cq_scores.append(_kro_source_policy.score_complaint_quality(desc))
         out['false_positive_signals'] = len(fp_channels)
+        if cq_scores:
+            out['avg_complaint_quality'] = round(sum(cq_scores) / len(cq_scores), 3)
     except Exception as e:
         print('build_kro_quality_metrics reports: %s' % e, file=sys.stderr)
 
@@ -1348,6 +1390,16 @@ def build_kro_quality_metrics(sheets_client, sheet_id):
             }
             w = _kro_source_policy.compute_source_weight(obj, report_rows=None)
             weights.append(w)
+            if w < _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_SCAM_BASE - 1e-6:
+                out['scam_base_rows_below_min_weight'] += 1
+            age_days = None
+            try:
+                if age_raw is not None and str(age_raw).strip() != '':
+                    age_days = int(str(age_raw).strip())
+            except (TypeError, ValueError):
+                age_days = None
+            if age_days is not None and 0 <= age_days < 90 and complaints >= 1:
+                out['young_with_complaints_in_base'] += 1
             if complaints >= 1 and not _has_external_whistleblower_evidence(sp, ev):
                 comp_only += 1
         if weights:
@@ -1355,6 +1407,22 @@ def build_kro_quality_metrics(sheets_client, sheet_id):
         out['channels_with_complaints_only'] = comp_only
     except Exception as e:
         print('build_kro_quality_metrics scam_base: %s' % e, file=sys.stderr)
+
+    try:
+        net_rng = (os.environ.get('KRO_CHANNELS_NETWORK_RANGE') or 'channels_network!A2:G').strip()
+        net_sheet = net_rng.split('!')[0] if '!' in net_rng else 'channels_network'
+        net_resp = sheets_client.spreadsheets().values().get(
+            spreadsheetId=sheet_id, range='%s!A2:G' % net_sheet
+        ).execute()
+        for nrow in net_resp.get('values') or []:
+            if not nrow:
+                continue
+            s = (nrow[0] or '').strip() if len(nrow) > 0 else ''
+            t = (nrow[1] or '').strip() if len(nrow) > 1 else ''
+            if s and t:
+                out['channels_network_edges'] += 1
+    except Exception as e:
+        print('build_kro_quality_metrics network: %s' % e, file=sys.stderr)
     return out
 
 
@@ -3833,6 +3901,7 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             obj,
             http_subs=gate_meta.get('subs') if isinstance(gate_meta, dict) else None,
             form_complaint_count=int(obj.get('_form_complaint_count') or 0),
+            analysis_subs=_analysis_subscribers_from_content(obj),
         ):
             eff_status = _downgrade_status_to_observation(eff_status, obj.get('channel_age_days'))
             obj['status'] = eff_status
