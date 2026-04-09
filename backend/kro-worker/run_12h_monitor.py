@@ -335,15 +335,20 @@ def _run_suspicious_zero_self_check(stats, suspicious_zero_streak, previous_prim
     return diagnostics
 
 
-# --- Критерии релевантности: только каналы с торговыми сигналами (покупать вверх/вниз, лонг/шорт) ---
+# --- Критерии релевантности: крипто-сигнальные каналы (в т.ч. «обычные» обзоры/графики, не только агрессивный маркетинг) ---
 STRONG_CRYPTO_SIGNAL = (
     'сигнал', 'сигналы', 'крипто', 'crypto', 'bitcoin', 'btc', 'eth',
-    'трейдинг', 'trading', 'криптовалюта', 'фьючерс', 'биржа', 'trade', 'pump', 'скам'
+    'трейдинг', 'trading', 'trader', 'trade', 'криптовалюта', 'фьючерс', 'биржа', 'pump', 'скам',
+    'chart', 'график', 'анализ', 'analysis', 'прогноз', 'forecast',
 )
-# Каналы, где именно говорят покупать/продавать, вверх/вниз, лонг/шорт — приоритет для отбора
+# Торговый/сигнальный контекст (лонг-шорт или явные сигналы, или нейтральный трейдинг-контент)
 SIGNAL_DIRECTION = (
     'лонг', 'шорт', 'long', 'short', 'покупка', 'продажа', 'buy', 'sell',
-    'вход', 'вверх', 'вниз', 'лонги', 'шорты', 'сигнал', 'сигналы'
+    'вход', 'вверх', 'вниз', 'лонги', 'шорты', 'сигнал', 'сигналы', 'signals', 'signal',
+    'трейдинг', 'trading', 'trader', 'trade', 'торговл',
+    'chart', 'charts', 'график', 'графики', 'анализ', 'analysis', 'теханализ',
+    'прогноз', 'forecast', 'идеи', 'ideas', 'setups', 'сетап',
+    'памп', 'pump', 'альткоин', 'altcoin', 'defi', 'nft',
 )
 # Если в названии/username есть это и нет ни одного STRONG — канал отсекаем (не про крипто/сигналы)
 NOT_CRYPTO_SIGNAL = (
@@ -353,13 +358,12 @@ NOT_CRYPTO_SIGNAL = (
 
 
 def _is_crypto_signal_channel(title, username):
-    """Проверка: канал явно про крипту и/или торговые сигналы (покупать вверх/вниз, лонг/шорт).
-    Отсекаем VPN, gossip, книги, общие новости без крипто и без формулировок про сигналы."""
+    """Проверка: канал про крипту и сигналы/трейдинг (в т.ч. спокойные обзоры и графики).
+    Отсекаем VPN, gossip, книги, общие новости без крипто и без торгового контекста."""
     text = ((title or '') + ' ' + (username or '')).lower()
     has_strong = any(kw in text for kw in STRONG_CRYPTO_SIGNAL)
     if not has_strong:
         return False
-    # Только каналы, где именно сигналы: лонг/шорт, покупка/продажа, вверх/вниз или слово «сигнал/сигналы»
     has_signal_direction = any(kw in text for kw in SIGNAL_DIRECTION)
     if not has_signal_direction:
         return False
@@ -625,6 +629,32 @@ _KNOWN_NON_SCAM_CHANNELS = {
 WATCH_MIN_AGE_DAYS = 30
 WATCH_ACTIVE_POSTS_30D = 4
 WATCH_FRESH_POST_DAYS = 14
+
+
+def _watch_parse_subscribers(row):
+    """Число подписчиков из строки TGStat/Telegram-поиска (поле growth / participants_count)."""
+    if not row:
+        return 0
+    g = row.get('growth')
+    if g is None:
+        return 0
+    if isinstance(g, bool):
+        return 0
+    if isinstance(g, int):
+        return max(0, g)
+    if isinstance(g, float):
+        if g != g:  # NaN
+            return 0
+        return max(0, int(g))
+    s = str(g).strip().replace('\xa0', '')
+    if not s or s == '—':
+        return 0
+    s = s.replace(' ', '')
+    try:
+        return max(0, int(float(s)))
+    except (TypeError, ValueError):
+        return 0
+
 
 PROFIT_PATTERNS = (
     'профит', 'в плюс', 'закрыли в плюс', 'take profit', 'тейк', 'tp ', 'x2', 'х2',
@@ -970,6 +1000,7 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
         return ''
 
     try:
+        tg_data = {'by_channel': {}, 'victims_12h': 0, 'channel_sum_pairs': []}
         if KRO_SOURCE_CHANNELS:
             now = datetime.now(timezone.utc)
             since = now - timedelta(hours=HOURS_12)
@@ -985,46 +1016,55 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
             })
             victims_12h = 0
             channel_sum_pairs = []
-        for ch in KRO_SOURCE_CHANNELS:
-            try:
-                entity = await get_entity(ch)
-                if not entity:
-                    continue
-                tmsgs = await _kro_tw.tw_collect_messages(client, entity, limit=150)
-                for msg in tmsgs:
-                    if not msg or not msg.date:
+            for ch in KRO_SOURCE_CHANNELS:
+                try:
+                    entity = await get_entity(ch)
+                    if not entity:
                         continue
-                    md = msg.date.replace(tzinfo=timezone.utc) if getattr(msg.date, 'tzinfo', None) is None else msg.date
-                    if md < since:
-                        break
-                    victims_12h += 1
-                    text = (msg.text or '') + (getattr(msg, 'message', '') or '')
-                    sums = _extract_sums(text)
-                    channels_mentioned = _extract_channels_from_text(text)
-                    msg_link = message_link(entity, msg)
-                    chat_link = _object_link('@' + entity.username) if getattr(entity, 'username', None) else ''
-                    for c in channels_mentioned:
-                        by_channel[c]['complaints'] += 1
-                        by_channel[c]['messages'] += 1
-                        if msg_link:
-                            by_channel[c]['message_links'].append(msg_link)
-                        if chat_link:
-                            by_channel[c]['source_urls'].append(chat_link)
-                        by_channel[c]['internal_links'].append(_object_link(c))
-                        if sums:
-                            by_channel[c]['sums'].extend(sums)
-                            channel_sum_pairs.append((c, max(sums)))
-            except Exception as e:
-                print('Telegram %s: %s' % (ch, e), file=sys.stderr)
-                await asyncio.sleep(1)
+                    tmsgs = await _kro_tw.tw_collect_messages(client, entity, limit=150)
+                    for msg in tmsgs:
+                        if not msg or not msg.date:
+                            continue
+                        md = msg.date.replace(tzinfo=timezone.utc) if getattr(msg.date, 'tzinfo', None) is None else msg.date
+                        if md < since:
+                            break
+                        victims_12h += 1
+                        text = (msg.text or '') + (getattr(msg, 'message', '') or '')
+                        sums = _extract_sums(text)
+                        channels_mentioned = _extract_channels_from_text(text)
+                        msg_link = message_link(entity, msg)
+                        chat_link = _object_link('@' + entity.username) if getattr(entity, 'username', None) else ''
+                        for c in channels_mentioned:
+                            by_channel[c]['complaints'] += 1
+                            by_channel[c]['messages'] += 1
+                            if msg_link:
+                                by_channel[c]['message_links'].append(msg_link)
+                            if chat_link:
+                                by_channel[c]['source_urls'].append(chat_link)
+                            by_channel[c]['internal_links'].append(_object_link(c))
+                            if sums:
+                                by_channel[c]['sums'].extend(sums)
+                                channel_sum_pairs.append((c, max(sums)))
+                except Exception as e:
+                    print('Telegram %s: %s' % (ch, e), file=sys.stderr)
+                    await asyncio.sleep(1)
             tg_data = {'by_channel': dict(by_channel), 'victims_12h': victims_12h, 'channel_sum_pairs': channel_sum_pairs}
 
         to_verify = []
         watch_metric_targets = set()
+        try:
+            _young_subs_thr = int((os.environ.get('KRO_YOUNG_SIGNAL_WATCH_MIN_SUBS') or '100').strip() or '100')
+        except ValueError:
+            _young_subs_thr = 100
+        _young_subs_thr = max(1, min(_young_subs_thr, 500_000_000))
         for row in (new_tgstat or []):
             link = row.get('link') or _object_link(row.get('channel', ''))
             if link and 't.me/' in link:
                 to_verify.append((link, link))
+                if _watch_parse_subscribers(row) >= _young_subs_thr:
+                    k = _norm_ch_key(row.get('channel') or link)
+                    if k:
+                        watch_metric_targets.add(k)
         for row in (telega_channels or []):
             link = row.get('link') or _object_link(row.get('channel', ''))
             if link and 't.me/' in link:
@@ -3884,14 +3924,31 @@ def _watch_source_label(row):
     return 'поиск в Telegram'
 
 
-def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_channels, complaints_rows, channel_ages_from_tg, watch_metrics, report_date_str, cycle_window):
+def _build_channels_watch_rows(
+    tgstat_watch_channels,
+    telega_channels,
+    watch_channels,
+    new_signal_channels,
+    complaints_rows,
+    channel_ages_from_tg,
+    watch_metrics,
+    report_date_str,
+    cycle_window,
+):
     """
     Собрать широкий список channels_watch:
-    любые найденные крипто-сигнальные каналы старше месяца с честной оценкой.
+    — крипто-сигнальные каналы старше месяца;
+    — плюс новые сигнальные (<30 дн.) при подписчиках ≥ KRO_YOUNG_SIGNAL_WATCH_MIN_SUBS (по умолчанию 100):
+      проверка постов; при отсутствии признаков риска — статус «без нарушений» (не в зоне риска).
     """
     now = _msk_now()
     complaints_map = {}
     candidates = {}
+    try:
+        young_subs_min = int((os.environ.get('KRO_YOUNG_SIGNAL_WATCH_MIN_SUBS') or '100').strip() or '100')
+    except ValueError:
+        young_subs_min = 100
+    young_subs_min = max(1, min(young_subs_min, 500_000_000))
 
     for row in (complaints_rows or []):
         key = _norm_ch_key(row.get('channel') or '')
@@ -3903,7 +3960,7 @@ def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_cha
             'source_url': (row.get('source_url') or '').strip(),
         }
 
-    def add_candidate(row, fallback_source):
+    def add_candidate(row, fallback_source, *, youth_entry=False):
         key = _norm_ch_key(row.get('channel') or row.get('link') or '')
         if not key or key in _KNOWN_NON_SCAM_CHANNELS:
             return
@@ -3918,7 +3975,9 @@ def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_cha
         if created_dt is None:
             return
         age_days = (now - created_dt).days
-        if age_days < WATCH_MIN_AGE_DAYS:
+        subs_n = _watch_parse_subscribers(row)
+        youth_ok = bool(youth_entry and subs_n >= young_subs_min)
+        if age_days < WATCH_MIN_AGE_DAYS and not youth_ok:
             return
         existing = candidates.get(key)
         source_label = _watch_source_label(row) if row.get('query_group') else fallback_source
@@ -3932,6 +3991,8 @@ def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_cha
                 'source_primary': source_label,
                 'vip_price': (row.get('vip') or '').strip(),
                 'title': (row.get('title') or '').strip(),
+                '_youth_signal_review': youth_ok,
+                '_subs_at_find': subs_n if youth_ok else 0,
             }
             return
         existing_sources = set([s.strip() for s in (existing.get('source_primary') or '').split('+') if s.strip()])
@@ -3942,6 +4003,9 @@ def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_cha
         vip_val = (row.get('vip') or '').strip()
         if vip_val and vip_val != '—' and not existing.get('vip_price'):
             existing['vip_price'] = vip_val
+        if youth_ok:
+            existing['_youth_signal_review'] = True
+            existing['_subs_at_find'] = max(int(existing.get('_subs_at_find') or 0), subs_n)
 
     for row in (tgstat_watch_channels or []):
         add_candidate(row, 'широкий поиск TGStat')
@@ -3949,6 +4013,8 @@ def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_cha
         add_candidate(row, 'каталог Telegram')
     for row in (watch_channels or []):
         add_candidate(row, 'поиск в Telegram')
+    for row in (new_signal_channels or []):
+        add_candidate(row, 'новые сигнальные (TGStat/Telegram)', youth_entry=True)
     for row in (complaints_rows or []):
         add_candidate({
             'channel': row.get('channel'),
@@ -3992,6 +4058,7 @@ def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_cha
         elif (
             'TGStat' in (row.get('source_primary') or '')
             or 'поиск' in (row.get('source_primary') or '')
+            or 'новые сигнальные' in (row.get('source_primary') or '')
             or 'kurs.expert' in (row.get('source_primary') or '')
         ):
             activity_summary = 'найден в текущем поиске; свежие посты не проверены'
@@ -4032,6 +4099,15 @@ def _build_channels_watch_rows(tgstat_watch_channels, telega_channels, watch_cha
         if red_sig:
             evidence_parts.append(
                 'Red flags (сигнал-канал): %s.' % ', '.join(red_sig)
+            )
+        if row.get('_youth_signal_review') and status == 'без нарушений':
+            subs_note = int(row.get('_subs_at_find') or 0)
+            evidence_parts.append(
+                'Новый сигнальный канал из TGStat/Telegram-поиска (≥%d подписчиков по данным источника%s): по постам явных признаков зоны риска не выявлено — вне зоны повышенного риска.'
+                % (
+                    young_subs_min,
+                    (', зафиксировано ~%d' % subs_note) if subs_note > 0 else '',
+                )
             )
 
         watch_rows.append([
@@ -6874,6 +6950,8 @@ def main():
         return link in existing_channel_links
     new_tgstat = [r for r in (new_tgstat or []) if _link_exists(r.get('link') or _object_link(r.get('channel', '')))]
     telega_channels = [r for r in (telega_channels or []) if _link_exists(r.get('link') or _object_link(r.get('channel', '')))]
+    # Каналы из «новых сигналов» (TGStat + прямой Telegram-поиск) — для channels_watch при возрасте <30 дн. и подписчиках ≥ порога
+    new_signal_channels = list(new_tgstat or [])
 
     _merge_tgstat_whistleblower_rows_into_agg(agg_complaints, new_tgstat)
     _merge_tgstat_whistleblower_rows_into_agg(agg_complaints_total, new_tgstat)
@@ -6959,6 +7037,7 @@ def main():
         tgstat_watch_channels,
         telega_channels,
         tg_watch,
+        new_signal_channels,
         complaints_rows,
         channel_ages_from_tg,
         watch_metrics,
