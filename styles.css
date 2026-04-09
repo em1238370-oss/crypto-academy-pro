@@ -59,16 +59,16 @@ button:focus-visible {
    --kro-gray-soft: #cccccc;
 }
 
-/* Hero + Footer: утилиты анимации (transition, keyframes) — только главная часть, без Фишки 1 */
+/* Hero + Footer: утилиты анимации — ритм ближе к sitelove: короткий fade-up, без лишнего scale */
 .kro-main {
    --kro-ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
    --kro-ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-   --kro-duration-reveal: 0.7s;
-   --kro-duration-reveal-slow: 0.85s;
+   --kro-duration-reveal: 0.68s;
+   --kro-duration-reveal-slow: 0.76s;
    --kro-duration-hover: 0.25s;
-   --kro-stagger: 0.12s;
-   --kro-reveal-y: 44px;
-   --kro-scroll-in-y: 52px;
+   --kro-stagger: 0.09s;
+   --kro-reveal-y: 22px;
+   --kro-scroll-in-y: 26px;
    /* Типографика (medvedevart): акцент — заголовки, основной текст — тело */
    --kro-font-heading: 'Syne', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
    --kro-font-body: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -94,7 +94,7 @@ button:focus-visible {
 
 /* Hero: карточка — лёгкое появление (keyframes один раз при загрузке) */
 .kro-step1.kro-reveal-visible .kro-step1-inner {
-   animation: kro-hero-card-in 0.8s var(--kro-ease-reveal) forwards;
+   animation: kro-hero-card-in 0.64s var(--kro-ease-reveal) forwards;
 }
 
 @keyframes kro-hero-card-in {
@@ -150,8 +150,8 @@ button:focus-visible {
 }
 
 body.kro-hero-scrolled .kro-step1 {
-   opacity: 0.65;
-   transform: translateY(-32px);
+   opacity: 0.72;
+   transform: translateY(-20px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -533,7 +533,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-step1.kro-reveal .kro-tag {
-   transform: translateY(12px);
+   transform: translateY(8px);
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-role {
@@ -545,79 +545,79 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-step1.kro-reveal-visible .kro-step1-title {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.1s;
+   transition-delay: 0.08s;
 }
 
 .kro-step1.kro-reveal-visible .kro-hero-cases {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.2s;
+   transition-delay: 0.16s;
 }
 
 .kro-step1.kro-reveal-visible .kro-hero-live-stats {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.3s;
+   transition-delay: 0.24s;
 }
 
 .kro-step1.kro-reveal-visible .kro-hero-primary-cta {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.38s;
+   transition-delay: 0.32s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-subtitle {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.48s;
+   transition-delay: 0.4s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-tags {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.58s;
+   transition-delay: 0.48s;
 }
 
 .kro-step1.kro-reveal-visible .kro-tag:nth-child(1) {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.58s;
+   transition-delay: 0.48s;
 }
 
 .kro-step1.kro-reveal-visible .kro-tag:nth-child(2) {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.68s;
+   transition-delay: 0.56s;
 }
 
 .kro-step1.kro-reveal-visible .kro-tag:nth-child(3) {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.78s;
+   transition-delay: 0.64s;
 }
 
 .kro-step1.kro-reveal-visible .kro-tag:nth-child(4) {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.88s;
+   transition-delay: 0.72s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-cta {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 1s;
+   transition-delay: 0.8s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-cta-note {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 1.12s;
+   transition-delay: 0.88s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-cta-secondary {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 1.24s;
+   transition-delay: 0.96s;
 }
 
 @media (min-width: 900px) {
@@ -1003,7 +1003,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-reveal {
    opacity: 0;
    transform: translateY(var(--kro-reveal-y));
-   transition: opacity var(--kro-duration-reveal) var(--kro-ease-out), transform var(--kro-duration-reveal) var(--kro-ease-out);
+   transition: opacity var(--kro-duration-reveal) var(--kro-ease-reveal), transform var(--kro-duration-reveal) var(--kro-ease-reveal);
 }
 
 .kro-reveal.kro-reveal-visible {
@@ -1011,16 +1011,19 @@ body.kro-hero-scrolled .kro-floating-nav {
    transform: translateY(0);
 }
 
-/* Scroll-in: появление при входе во вьюпорт (keyframes-темп 0.5–0.8 s, fade-up + scale) */
+/* Scroll-in: чистый fade-up (sitelove), без scale — аккуратнее на скролле */
 .kro-scroll-in {
    opacity: 0;
-   transform: translateY(var(--kro-scroll-in-y)) scale(0.98);
-   transition: opacity var(--kro-duration-reveal-slow) var(--kro-ease-reveal), transform var(--kro-duration-reveal-slow) var(--kro-ease-reveal);
+   transform: translateY(var(--kro-scroll-in-y));
+   filter: none;
+   transition:
+      opacity var(--kro-duration-reveal) var(--kro-ease-reveal),
+      transform var(--kro-duration-reveal) var(--kro-ease-reveal);
 }
 
 .kro-scroll-in.kro-scroll-in-visible {
    opacity: 1;
-   transform: translateY(0) scale(1);
+   transform: translateY(0);
 }
 
 /* Футер: каскадное появление (stagger 0.1 s), включая нижнюю полосу */
@@ -1040,6 +1043,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    .kro-scroll-in {
        opacity: 1;
        transform: none;
+       filter: none;
        transition: none;
    }
    .news-footer.kro-scroll-in .kro-footer-reveal,
