@@ -216,7 +216,7 @@ def collect_unified_flags(
     for edge in analysis.get('network_mentions') or []:
         tgt = _norm_username_key(edge.get('target_channel', ''), '')
         if tgt and tgt != self_key and tgt in keys:
-            add_yellow('рекламирует канал из базы KRO')
+            add_red('рекламирует канал из базы KRO (подтверждённый скам)')
             break
 
     return red, yellow

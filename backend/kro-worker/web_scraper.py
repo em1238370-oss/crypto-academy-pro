@@ -1575,7 +1575,8 @@ def scrape_all():
             page = _fetch(url)
             if not page:
                 continue
-            results.extend(_build_findings_from_page(page, url, 'web-search'))
+            # Одна страница поиска ≠ один канал: не тащим чужие @ с обзорных статей
+            results.extend(_build_findings_from_page(page, url, 'web-search', max_channels=1))
 
     # Deduplicate: keep highest sum_rub per channel per source_url
     seen = {}

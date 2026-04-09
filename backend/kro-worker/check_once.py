@@ -753,17 +753,7 @@ def append_to_scam_base(channel_id, risk, ads_week, bot_pct, vip, complaints, to
             str(r.get('source_primary') or ''),
         ):
             return
-        if _tme_gate.off_topic_business_match(
-            str(channel_id),
-            str(r.get('username') or ''),
-            str(r.get('title') or ''),
-            str(r.get('link') or ''),
-            str(r.get('content_analysis') or ''),
-            str(r.get('object_type') or ''),
-            str(r.get('source_evidence') or ''),
-            str(r.get('source_primary') or ''),
-        ):
-            return
+        # off_topic проверяется в tme_http_gate_for_scam_base_write по реальному HTML t.me
         # v2 schema: A username | B link | C detected_at | D created_at | E age_days |
         #            F object_type | G vip_price | H complaints | I total_loss_rub |
         #            J source_primary | K source_evidence | L cycle_window | M status
@@ -867,7 +857,7 @@ def main():
             return
         result = _build_confirmation(result)
         if result.get('is_confirmed'):
-            ok_gate, gate_reason = _tme_gate.tme_http_gate_for_scam_base_write(
+            ok_gate, gate_reason, _gate_meta = _tme_gate.tme_http_gate_for_scam_base_write(
                 result.get('username') or channel_id,
                 result.get('object_type', '') or '',
                 '',

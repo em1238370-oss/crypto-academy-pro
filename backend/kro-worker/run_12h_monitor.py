@@ -48,6 +48,7 @@ import kro_telethon_limits as _kro_tw
 import kro_telethon_session as _kro_ts
 import kro_unified_risk as _kro_unified
 import kro_tme_http_gate as _kro_tme_http_gate
+import kro_source_policy as _kro_source_policy
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
@@ -1200,30 +1201,39 @@ def append_kro_history_row(sheets_client, sheet_id, last_cycle_at, new_in_cycle,
         return False
 
 
-def write_kro_meta_to_sheet(sheets_client, sheet_id, last_cycle_at, new_in_cycle, sources_checked, meta_range='kro_meta!A:B'):
+def write_kro_meta_to_sheet(
+    sheets_client,
+    sheet_id,
+    last_cycle_at,
+    new_in_cycle,
+    sources_checked,
+    meta_range='kro_meta!A:B',
+    quality_metrics=None,
+):
     """
     Persist cycle metadata in Google Sheets so Render restarts do not lose it.
     Sheet schema:
       A=key, B=value
-      last_cycle_at / new_in_cycle / sources_checked(JSON)
+      last_cycle_at / new_in_cycle / sources_checked(JSON) / метрики качества
     """
     if not sheets_client or not sheet_id:
         return False
     sheet_name = (meta_range or 'kro_meta!A:B').split('!')[0].strip() or 'kro_meta'
+    q = quality_metrics or {}
     try:
-        ensure_sheet_exists(sheets_client, sheet_id, sheet_name, row_count=20, column_count=2)
-        rows = [[
-            'key', 'value'
-        ], [
-            'last_cycle_at', str(last_cycle_at or '')
-        ], [
-            'new_in_cycle', str(int(new_in_cycle or 0))
-        ], [
-            'sources_checked', json.dumps(sources_checked or [], ensure_ascii=False)
-        ]]
+        ensure_sheet_exists(sheets_client, sheet_id, sheet_name, row_count=30, column_count=2)
+        rows = [
+            ['key', 'value'],
+            ['last_cycle_at', str(last_cycle_at or '')],
+            ['new_in_cycle', str(int(new_in_cycle or 0))],
+            ['sources_checked', json.dumps(sources_checked or [], ensure_ascii=False)],
+            ['false_positive_signals', str(int(q.get('false_positive_signals') or 0))],
+            ['avg_source_weight', str(q.get('avg_source_weight') if q.get('avg_source_weight') is not None else '')],
+            ['channels_with_complaints_only', str(int(q.get('channels_with_complaints_only') or 0))],
+        ]
         sheets_client.spreadsheets().values().update(
             spreadsheetId=sheet_id,
-            range=f'{sheet_name}!A1:B4',
+            range=f'{sheet_name}!A1:B7',
             valueInputOption='RAW',
             body={'values': rows}
         ).execute()
@@ -1232,6 +1242,80 @@ def write_kro_meta_to_sheet(sheets_client, sheet_id, last_cycle_at, new_in_cycle
     except Exception as e:
         print('kro_meta write failed: %s' % e, file=sys.stderr)
         return False
+
+
+def build_kro_quality_metrics(sheets_client, sheet_id):
+    """
+    Метрики для блока «Качество данных» на /monitor.
+    """
+    out = {
+        'false_positive_signals': 0,
+        'avg_source_weight': None,
+        'channels_with_complaints_only': 0,
+    }
+    if not sheets_client or not sheet_id:
+        return out
+    # false_positive: число каналов (уникальных), получивших хотя бы один сигнал false_positive
+    fp_channels = set()
+    try:
+        rep_rng = _kro_reports_read_range()
+        resp = sheets_client.spreadsheets().values().get(
+            spreadsheetId=sheet_id, range=rep_rng
+        ).execute()
+        for r in resp.get('values') or []:
+            rec = _parse_reports_sheet_row(r)
+            if not rec:
+                continue
+            if (rec.get('source') or '').strip().lower() != 'false_positive':
+                continue
+            k = _norm_ch_key(rec.get('channel') or '')
+            if k:
+                fp_channels.add(k)
+        out['false_positive_signals'] = len(fp_channels)
+    except Exception as e:
+        print('build_kro_quality_metrics reports: %s' % e, file=sys.stderr)
+
+    weights = []
+    comp_only = 0
+    try:
+        rng = (os.environ.get('KRO_SCAM_BASE_RANGE') or 'scam_base!A2:N').strip()
+        sn = rng.split('!')[0] if '!' in rng else 'scam_base'
+        resp = sheets_client.spreadsheets().values().get(
+            spreadsheetId=sheet_id, range='%s!A2:N' % sn
+        ).execute()
+        for row in resp.get('values') or []:
+            if not row or (row[0] or '').strip().lower() in ('', 'username'):
+                continue
+            username = (row[0] or '').strip()
+            link = (row[1] if len(row) > 1 else '') or ''
+            obj_type = (row[5] if len(row) > 5 else '') or ''
+            complaints = 0
+            try:
+                complaints = int((row[7] if len(row) > 7 else '').replace(' ', '') or 0)
+            except (TypeError, ValueError):
+                complaints = 0
+            sp = (row[9] if len(row) > 9 else '') or ''
+            ev = (row[10] if len(row) > 10 else '') or ''
+            age_raw = row[4] if len(row) > 4 else ''
+            obj = {
+                'username': username,
+                'link': link,
+                'object_type': obj_type,
+                'complaints': complaints,
+                'source_primary': sp,
+                'source_evidence': ev,
+                'channel_age_days': age_raw,
+            }
+            w = _kro_source_policy.compute_source_weight(obj, report_rows=None)
+            weights.append(w)
+            if complaints >= 1 and not _has_external_whistleblower_evidence(sp, ev):
+                comp_only += 1
+        if weights:
+            out['avg_source_weight'] = round(sum(weights) / len(weights), 3)
+        out['channels_with_complaints_only'] = comp_only
+    except Exception as e:
+        print('build_kro_quality_metrics scam_base: %s' % e, file=sys.stderr)
+    return out
 
 
 def _quote_sheet_name_for_a1(title: str) -> str:
@@ -1401,6 +1485,9 @@ def _merge_web_scraper_findings_into_agg(agg, findings):
         except (TypeError, ValueError):
             sr = 0
         agg[ch]['sum'] = max(agg[ch].get('sum') or 0, sr)
+        desc = (f.get('description') or '').strip()
+        if desc:
+            agg[ch]['report_rows'].append({'source': 'web', 'description': desc[:1500]})
 
 
 def _merge_tgstat_whistleblower_rows_into_agg(agg, tgstat_rows):
@@ -1488,6 +1575,8 @@ def _empty_agg_complaint_bucket():
         'query': '',
         'internal_links': [],
         'whistleblower_site_evidence': False,
+        'report_rows': [],
+        'form_complaint_count': 0,
     }
 
 
@@ -1746,6 +1835,8 @@ def _kro_cycle_analytics_reset():
         'write_note_foreign_channel': 0,
         'write_downgrade_no_external_source': 0,
         'write_reject_http_gate_append': 0,
+        'write_reject_source_weight': 0,
+        'write_reject_no_signal_a_crypto': 0,
     }
 
 
@@ -2046,7 +2137,7 @@ def _apply_telegram_gate_to_rows(rows, context_label):
     for i, row in enumerate(tg_rows):
         if i:
             time.sleep(pause)
-        ok, reason = _kro_tme_http_gate.tme_http_gate_for_scam_base_write(
+        ok, reason, _gm = _kro_tme_http_gate.tme_http_gate_for_scam_base_write(
             row.get('username') or row.get('link') or '',
             row.get('object_type', ''),
             row.get('source_evidence', ''),
@@ -2188,7 +2279,7 @@ def _html_telegram_quality_gate_sync(username_or_link, object_type='', source_ev
     """Публичный HTTP-gate scam_base (модуль kro_tme_http_gate)."""
     return _kro_tme_http_gate.tme_http_gate_for_scam_base_write(
         username_or_link, object_type, source_evidence, content_analysis,
-    )
+    )[:2]
 
 
 def _content_posts_limit():
@@ -3340,13 +3431,7 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             _kro_cycle_analytics_inc('collect_reject_gambling')
             print('confirmed-filter: %s — казино/ставки/гемблинг (%s)' % (ch, gm_cf), file=sys.stderr)
             continue
-        ot_cf = _kro_tme_http_gate.off_topic_business_match(
-            ch_raw, ch_username, title, link, vip_str, source_primary, ev_early,
-        )
-        if ot_cf:
-            _kro_cycle_analytics_inc('collect_reject_off_topic_topic')
-            print('confirmed-filter: %s — не по теме (%s)' % (ch, ot_cf), file=sys.stderr)
-            continue
+        # off_topic по одежде/авто и т.д. — только по реальному t.me в HTTP-gate при записи в scam_base
 
         seen_keys.add(key)
         obj_type = 'сигнал-канал (закрытый)' if ('+' in ch_username or 't.me/+' in link) else 'сигнал-канал'
@@ -3367,6 +3452,11 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
         evidence_parts.extend(complaint_data.get('source_urls') or [])
         evidence_parts.extend(complaint_data.get('message_links') or [])
         source_evidence = '; '.join(filter(None, evidence_parts[:5]))
+
+        rep_rows = list(complaint_data.get('report_rows') or [])
+        joined_desc = ' '.join(
+            (x.get('description') or '').strip() for x in rep_rows if (x.get('description') or '').strip()
+        )
 
         print('confirmed: %s | возраст %s | жалоб %d | потери %d ₽ | статус: %s' % (
             ch_username,
@@ -3390,6 +3480,9 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             'source_evidence': source_evidence,
             'cycle_window': cycle_window,
             'status': status,
+            'complaint_texts_joined': joined_desc[:4000],
+            '_report_rows_for_weight': rep_rows,
+            '_form_complaint_count': int(complaint_data.get('form_complaint_count') or 0),
         })
         _kro_cycle_analytics_inc('collect_confirmed_out')
 
@@ -3544,6 +3637,16 @@ def _detect_channel_lang(obj):
     return 'other'
 
 
+def _http_gate_before_append_enabled():
+    """В проде по умолчанию вкл.; явный 0 — выкл.; на GitHub Actions по умолчанию выкл."""
+    v = (os.environ.get('KRO_HTTP_GATE_BEFORE_SCAM_BASE_APPEND') or '').strip().lower()
+    if v in ('1', 'true', 'yes', 'on'):
+        return True
+    if v in ('0', 'false', 'no', 'off'):
+        return False
+    return os.environ.get('GITHUB_ACTIONS', '').lower() != 'true'
+
+
 def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
     """
     Записать подтверждённые объекты в расширенную scam_base (14 колонок A–N).
@@ -3584,28 +3687,14 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
                 file=sys.stderr,
             )
             continue
-        ot = _kro_tme_http_gate.off_topic_business_match(
-            obj.get('username', ''),
-            obj.get('link', ''),
-            obj.get('object_type', ''),
-            obj.get('source_primary', ''),
-            obj.get('source_evidence', ''),
-            obj.get('content_analysis', ''),
-        )
-        if ot:
-            _kro_cycle_analytics_inc('write_pre_skip_off_topic_topic')
-            print(
-                'scam_base write skip: %s — не по теме (%s)' % (obj.get('username') or '?', ot),
-                file=sys.stderr,
-            )
-            continue
         pre_gate.append(obj)
-    # Финальная проверка публичного t.me перед append — опционально: KRO_HTTP_GATE_BEFORE_SCAM_BASE_APPEND=1
-    # (по умолчанию выкл., чтобы на GitHub Actions не обнулять вставки при недоступности t.me).
+
     gated_objects = pre_gate
     new_rows = []
     inserted_channels = []
+    http_on = _http_gate_before_append_enabled()
     for obj in gated_objects:
+        gate_meta = {}
         key = _norm_ch_key(obj.get('username') or '')
         if not key or key in existing_keys:
             _kro_cycle_analytics_inc('write_skip_duplicate_or_empty_key')
@@ -3618,29 +3707,67 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             _kro_cycle_analytics_inc('write_reject_blocklist')
             print('blocklist: пропущен @%s — в постоянном списке исключений' % key, file=sys.stderr)
             continue
-        # Статус (колонка M) до прочих фильтров: «не по теме» не пишем в Sheets.
         eff_status = _apply_loss_status_floor(obj.get('status', ''), obj.get('total_loss_rub', 0))
         if _scam_base_status_is_off_topic(eff_status):
             _kro_cycle_analytics_inc('write_reject_off_topic')
             print('skip: @%s — статус не по теме, не записываем в scam_base' % key, file=sys.stderr)
             continue
-        if not _is_crypto_context_allowed_parts(
-            obj.get('username', ''),
-            obj.get('object_type', ''),
-            obj.get('source_primary', ''),
-            obj.get('source_evidence', ''),
-        ) and not _confirmed_obj_has_whistleblower_evidence(obj):
-            _kro_cycle_analytics_inc('write_reject_no_crypto')
-            print('scam_base write skip: %s — no crypto context' % (obj.get('username') or key), file=sys.stderr)
-            continue
-        if not _recent_posts_have_crypto_terms(obj):
-            _kro_cycle_analytics_inc('write_reject_recent_posts_no_crypto')
+
+        rep_rows = obj.get('_report_rows_for_weight') or []
+        w_src = _kro_source_policy.compute_source_weight(obj, report_rows=rep_rows)
+        if w_src < 3.0 - 1e-6:
+            _kro_cycle_analytics_inc('write_reject_source_weight')
             print(
-                'scam_base write skip: %s — в последних 5 постах нет crypto-терминов'
+                'scam_base write skip: %s — суммарный вес источников %.2f < 3'
+                % (obj.get('username') or key, w_src),
+                file=sys.stderr,
+            )
+            continue
+
+        if not _kro_source_policy.source_signal_a_crypto(obj):
+            _kro_cycle_analytics_inc('write_reject_no_signal_a_crypto')
+            print(
+                'scam_base write skip: %s — нет сигнала А (крипто-маркеры в наводке/жалобах)'
                 % (obj.get('username') or key),
                 file=sys.stderr,
             )
             continue
+
+        link_or_u = (obj.get('link') or obj.get('username') or '').strip()
+        is_tg = _looks_like_telegram_channel_ref(
+            obj.get('username', ''),
+            obj.get('link', ''),
+            obj.get('object_type', ''),
+        )
+        if http_on and is_tg:
+            ok_http, reason_http, gate_meta = _kro_tme_http_gate.tme_http_gate_for_scam_base_write(
+                link_or_u,
+                (obj.get('object_type') or '') or '',
+                (obj.get('source_evidence') or '') or '',
+                (obj.get('content_analysis') or '') or '',
+            )
+            if not ok_http and reason_http != 'not_telegram':
+                _kro_cycle_analytics_inc('write_reject_http_gate_append')
+                print(
+                    'http_gate_final_check: пропущен @%s — %s' % (key, reason_http),
+                    file=sys.stderr,
+                )
+                continue
+            try:
+                pause_http = float(os.environ.get('KRO_HTTP_GATE_APPEND_PAUSE_SEC', '0') or '0')
+            except ValueError:
+                pause_http = 0.0
+            if pause_http > 0:
+                time.sleep(min(pause_http, 3.0))
+        elif is_tg:
+            if not _recent_posts_have_crypto_terms(obj):
+                _kro_cycle_analytics_inc('write_reject_recent_posts_no_crypto')
+                print(
+                    'scam_base write skip: %s — сигнал Б: нет crypto в постах Telethon (HTTP-gate выкл.)'
+                    % (obj.get('username') or key),
+                    file=sys.stderr,
+                )
+                continue
 
         sp = (obj.get('source_primary') or '').strip()
         ev = (obj.get('source_evidence') or '').strip()
@@ -3670,28 +3797,19 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             _sync_content_analysis_unified_status(obj, new_st)
             _kro_cycle_analytics_inc('write_downgrade_no_external_source')
 
-        http_append = (os.environ.get('KRO_HTTP_GATE_BEFORE_SCAM_BASE_APPEND') or '0').strip().lower()
-        if http_append in ('1', 'true', 'yes', 'on'):
-            link_or_u = (obj.get('link') or obj.get('username') or '').strip()
-            ok_http, reason_http = _kro_tme_http_gate.tme_http_gate_for_scam_base_write(
-                link_or_u,
-                (obj.get('object_type') or '') or '',
-                (obj.get('source_evidence') or '') or '',
-                (obj.get('content_analysis') or '') or '',
+        if _kro_source_policy.should_cap_status_reputation(
+            obj,
+            http_subs=gate_meta.get('subs') if isinstance(gate_meta, dict) else None,
+            form_complaint_count=int(obj.get('_form_complaint_count') or 0),
+        ):
+            eff_status = _downgrade_status_to_observation(eff_status, obj.get('channel_age_days'))
+            obj['status'] = eff_status
+            _sync_content_analysis_unified_status(obj, eff_status)
+            print(
+                'reputation_cap: @%s — крупный канал, нет жалоб формы, только короткий vklader/telltrue → под наблюдением'
+                % key,
+                file=sys.stderr,
             )
-            if not ok_http and reason_http != 'not_telegram':
-                _kro_cycle_analytics_inc('write_reject_http_gate_append')
-                print(
-                    'http_gate_final_check: пропущен @%s — %s' % (key, reason_http),
-                    file=sys.stderr,
-                )
-                continue
-            try:
-                pause_http = float(os.environ.get('KRO_HTTP_GATE_APPEND_PAUSE_SEC', '0') or '0')
-            except ValueError:
-                pause_http = 0.0
-            if pause_http > 0:
-                time.sleep(min(pause_http, 3.0))
 
         new_rows.append([
             obj.get('username', ''),
@@ -6413,13 +6531,15 @@ def _run_publish_only():
     }
     sheet_id = os.environ.get('KRO_SHEET_ID', '').strip()
     sheets_client = get_sheets_client()
+    _qm_pub = build_kro_quality_metrics(sheets_client, sheet_id)
     write_kro_meta_to_sheet(
         sheets_client,
         sheet_id,
         payload.get('last_cycle_at'),
         payload.get('new_in_cycle', 0),
         payload.get('sources_checked', []),
-        meta_range=os.environ.get('KRO_META_RANGE', 'kro_meta!A:B').strip() or 'kro_meta!A:B'
+        meta_range=os.environ.get('KRO_META_RANGE', 'kro_meta!A:B').strip() or 'kro_meta!A:B',
+        quality_metrics=_qm_pub,
     )
     _pub_channels = [t.get('channel') or t.get('name') or '' for t in (payload.get('top3') or [])[:10]]
     append_kro_history_row(
@@ -6680,6 +6800,12 @@ def main():
         if ch:
             agg_complaints[ch]['complaints'] += 1
             agg_complaints[ch]['sum'] += r.get('sum') or 0
+            agg_complaints[ch]['report_rows'].append({
+                'source': (r.get('source') or '').strip(),
+                'description': (r.get('description') or '').strip(),
+            })
+            if (r.get('source') or '').strip().lower() == 'form':
+                agg_complaints[ch]['form_complaint_count'] += 1
             if _report_row_is_whistleblower_site(r):
                 agg_complaints[ch]['whistleblower_site_evidence'] = True
             if agg_complaints[ch]['complaints'] >= 2:
@@ -6694,6 +6820,12 @@ def main():
         if ch:
             agg_complaints_total[ch]['complaints'] += 1
             agg_complaints_total[ch]['sum'] += r.get('sum') or 0
+            agg_complaints_total[ch]['report_rows'].append({
+                'source': (r.get('source') or '').strip(),
+                'description': (r.get('description') or '').strip(),
+            })
+            if (r.get('source') or '').strip().lower() == 'form':
+                agg_complaints_total[ch]['form_complaint_count'] += 1
             if _report_row_is_whistleblower_site(r):
                 agg_complaints_total[ch]['whistleblower_site_evidence'] = True
             if agg_complaints_total[ch]['complaints'] >= 2:
@@ -7032,13 +7164,15 @@ def main():
     out['lastValidUpdatedAt'] = last_valid_updated_at
     out['display_top3'] = display_top3[:3] if isinstance(display_top3, list) else []
 
+    _qm = build_kro_quality_metrics(client, sheet_id)
     write_kro_meta_to_sheet(
         client,
         sheet_id,
         out.get('last_cycle_at'),
         out.get('new_in_cycle', 0),
         out.get('sources_checked', []),
-        meta_range=os.environ.get('KRO_META_RANGE', 'kro_meta!A:B').strip() or 'kro_meta!A:B'
+        meta_range=os.environ.get('KRO_META_RANGE', 'kro_meta!A:B').strip() or 'kro_meta!A:B',
+        quality_metrics=_qm,
     )
     append_kro_history_row(
         client,

@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260411-tme-s-preview-fix">
+  <link rel="stylesheet" href="/monitor.css?v=20260412-monitor-ui">
 </head>
 <body class="mon-page">
 
@@ -1789,6 +1789,24 @@
         'База объектов (итог)',
         'Полный снимок подтверждённой базы после фильтров сайта (не ограничен 12 ч). Ниже отдельная таблица — только скользящие 12 ч.',
         table2
+      ) +
+      objectSheetBlock(
+        'Качество данных · kro_meta',
+        'Контроль точности',
+        'Сигналы ложных срабатываний, средний вес источников по базе и доля записей только по жалобам без внешнего разоблачителя.',
+        (function() {
+          var fp = Number(meta.false_positive_signals || 0);
+          var aw = meta.avg_source_weight;
+          var awStr = (aw != null && isFinite(Number(aw))) ? Number(aw).toFixed(3) : '—';
+          var co = Number(meta.channels_with_complaints_only || 0);
+          var tableQ =
+            '<thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>' +
+            sumRow('Каналов с сигналом false_positive (от пользователей)', fp) +
+            sumRow('Средний вес источников по scam_base', awStr) +
+            sumRow('Строк в базе только с жалобами (без внешнего URL разоблачителя)', co) +
+            '</tbody>';
+          return tableQ;
+        })()
       );
 
     wrap.querySelectorAll('.mon-table--summary tbody tr').forEach(function(tr, i) {

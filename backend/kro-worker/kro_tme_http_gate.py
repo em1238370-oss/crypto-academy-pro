@@ -460,78 +460,86 @@ def tme_http_gate_for_scam_base_write(
     object_type: str = '',
     source_evidence: str = '',
     content_analysis: str = '',
-) -> Tuple[bool, str]:
-    """True = можно писать в scam_base; False + код причины."""
+) -> Tuple[bool, str, Dict[str, Any]]:
+    """
+    True = можно писать в scam_base; False + код причины.
+    Третий элемент — метаданные превью (subs и т.д.) для пост-правил на стороне монитора.
+
+    off_topic (одежда/еда/авто/…): только по реальному HTML t.me (описание + посты), не по тексту разоблачителя.
+    """
+    meta: Dict[str, Any] = {'subs': None, 'slug': '', 'tme_preview_ok': False}
     gm0 = gambling_topic_match(username_or_link, object_type, source_evidence, content_analysis)
     if gm0:
-        return False, 'blocked_gambling_topic:%s' % gm0
-    ot0 = off_topic_business_match(username_or_link, object_type, source_evidence, content_analysis)
-    if ot0:
-        return False, 'blocked_offtopic_topic:%s' % ot0
+        return False, 'blocked_gambling_topic:%s' % gm0, meta
     uname = normalize_channel_link(username_or_link)
     if not uname:
-        return True, 'not_telegram'
+        return True, 'not_telegram', meta
     if uname.startswith('joinchat/'):
-        return False, 'invite_link_not_supported'
+        return False, 'invite_link_not_supported', meta
     slug = uname.lstrip('@').split('/')[0]
+    meta['slug'] = slug
     prev = fetch_tme_public_preview(slug)
     is_bot = _slug_looks_like_telegram_bot(slug, object_type)
 
     if not prev['ok_fetch'] or prev['unavailable']:
-        return False, 'tme_unavailable_or_no_public_page'
+        return False, 'tme_unavailable_or_no_public_page', meta
+
+    meta['tme_preview_ok'] = True
+    meta['subs'] = prev.get('subs')
+
+    tme_blob = ((prev.get('desc') or '') + ' ' + (prev.get('posts_blob_lower') or '')).lower()
+    ot_tme = off_topic_business_match(tme_blob)
+    if ot_tme:
+        return False, 'blocked_offtopic_tme:%s' % ot_tme, meta
 
     if is_bot:
         if not prev.get('bot_start_visible'):
-            return False, 'tme_bot_not_working_no_start'
-        blob = (
-            (prev['desc'] + ' ' + prev['posts_blob_lower'] + ' ' + source_evidence + ' ' + content_analysis).lower()
-        )
-        gm_bot = gambling_topic_match(blob, username_or_link, object_type)
+            return False, 'tme_bot_not_working_no_start', meta
+        gm_bot = gambling_topic_match(tme_blob, username_or_link, object_type)
         if gm_bot:
-            return False, 'blocked_gambling_tme:%s' % gm_bot
-        if not any(term in blob for term in SCAM_BASE_HTTP_CRYPTO_TERMS):
-            return False, 'tme_no_crypto_terms_in_desc_or_posts'
+            return False, 'blocked_gambling_tme:%s' % gm_bot, meta
+        if not any(term in tme_blob for term in SCAM_BASE_HTTP_CRYPTO_TERMS):
+            return False, 'tme_no_crypto_terms_in_desc_or_posts', meta
         now = datetime.now(timezone.utc)
         last_dt = prev['last_post_dt']
         if last_dt is not None:
             if last_dt.tzinfo is None:
                 last_dt = last_dt.replace(tzinfo=timezone.utc)
             if (now - last_dt).days > SCAM_BASE_HTTP_POST_MAX_AGE_DAYS:
-                return False, 'tme_no_fresh_post_%dd' % SCAM_BASE_HTTP_POST_MAX_AGE_DAYS
+                return False, 'tme_no_fresh_post_%dd' % SCAM_BASE_HTTP_POST_MAX_AGE_DAYS, meta
         posts = prev['posts_blob_lower']
         if any(hm in posts for hm in TME_HACKED_POST_MARKERS):
-            return False, 'tme_channel_reported_hacked'
-        return True, 'ok_tme_http_gate_bot'
+            return False, 'tme_channel_reported_hacked', meta
+        return True, 'ok_tme_http_gate_bot', meta
 
     if prev['is_user_profile']:
-        return False, 'tme_personal_account_not_channel'
+        return False, 'tme_personal_account_not_channel', meta
 
     subs = prev['subs']
     if subs is None:
-        return False, 'tme_subscribers_not_visible_reject'
+        return False, 'tme_subscribers_not_visible_reject', meta
     if subs < MIN_TELEGRAM_SUBSCRIBERS_HTTP:
-        return False, 'tme_subscribers_below_%d' % MIN_TELEGRAM_SUBSCRIBERS_HTTP
+        return False, 'tme_subscribers_below_%d' % MIN_TELEGRAM_SUBSCRIBERS_HTTP, meta
 
-    blob = (prev['desc'] + ' ' + prev['posts_blob_lower']).lower()
-    gm_ch = gambling_topic_match(blob, source_evidence, content_analysis, username_or_link, object_type)
+    gm_ch = gambling_topic_match(tme_blob, username_or_link, object_type)
     if gm_ch:
-        return False, 'blocked_gambling_tme:%s' % gm_ch
-    if not any(term in blob for term in SCAM_BASE_HTTP_CRYPTO_TERMS):
-        return False, 'tme_no_crypto_terms_in_desc_or_posts'
+        return False, 'blocked_gambling_tme:%s' % gm_ch, meta
+    if not any(term in tme_blob for term in SCAM_BASE_HTTP_CRYPTO_TERMS):
+        return False, 'tme_no_crypto_terms_in_desc_or_posts', meta
 
     now = datetime.now(timezone.utc)
     last_dt = prev['last_post_dt']
     if last_dt is None:
-        return False, 'tme_no_public_posts_or_dates'
+        return False, 'tme_no_public_posts_or_dates', meta
     if last_dt.tzinfo is None:
         last_dt = last_dt.replace(tzinfo=timezone.utc)
     if (now - last_dt).days > SCAM_BASE_HTTP_POST_MAX_AGE_DAYS:
-        return False, 'tme_no_fresh_post_%dd' % SCAM_BASE_HTTP_POST_MAX_AGE_DAYS
+        return False, 'tme_no_fresh_post_%dd' % SCAM_BASE_HTTP_POST_MAX_AGE_DAYS, meta
 
     if any(hm in prev['posts_blob_lower'] for hm in TME_HACKED_POST_MARKERS):
-        return False, 'tme_channel_reported_hacked'
+        return False, 'tme_channel_reported_hacked', meta
 
-    return True, 'ok_tme_http_gate'
+    return True, 'ok_tme_http_gate', meta
 
 
 def prune_scam_base_telegram_rows_http(
@@ -557,7 +565,7 @@ def prune_scam_base_telegram_rows_http(
         .get('values', [])
     )
 
-    slug_cache: Dict[str, Tuple[bool, str]] = {}
+    slug_cache: Dict[str, Tuple[bool, str, Dict[str, Any]]] = {}
     remove_idx: List[int] = []
     pause_sec = max(0.1, min(float(pause_sec), 3.0))
 
@@ -582,7 +590,7 @@ def prune_scam_base_telegram_rows_http(
                 content_analysis=(row[13] if len(row) > 13 else '') or '',
             )
             time.sleep(pause_sec)
-        ok, _ = slug_cache[slug]
+        ok, _, _meta = slug_cache[slug]
         if not ok:
             remove_idx.append(i)
 

@@ -114,6 +114,8 @@ jobs:
           # Не чистить scam_base HTTP-gate с раннера GitHub (t.me часто блокирует CI → лист обнулялся).
           # Prune вручную: локально или отдельным шагом/скриптом при KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE=1.
           KRO_SCAM_BASE_HTTP_PRUNE_EACH_CYCLE: '0'
+          # На CI явно выкл. финальный HTTP-gate перед append (иначе t.me может заблокировать запись).
+          KRO_HTTP_GATE_BEFORE_SCAM_BASE_APPEND: '0'
           # ВРЕМЕННО: запись в scam_base без строгого Telethon-gate (FloodWait). Вернуть '1' после стабилизации.
           KRO_TELEGRAM_STRICT_GATE_BEFORE_WRITE: '0'
         run: python3 run_12h_monitor.py

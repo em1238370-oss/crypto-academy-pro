@@ -1750,16 +1750,46 @@ function parseKroCycleMetaRows(rows) {
     const n = parseInt(String(rawNic).replace(/\s/g, ''), 10);
     if (Number.isFinite(n) && n >= 0) new_in_cycle = n;
   }
+  let false_positive_signals = 0;
+  const rawFp = values.false_positive_signals;
+  if (rawFp != null && rawFp !== '') {
+    const n = parseInt(String(rawFp).replace(/\s/g, ''), 10);
+    if (Number.isFinite(n) && n >= 0) false_positive_signals = n;
+  }
+  let avg_source_weight = null;
+  const rawAw = values.avg_source_weight;
+  if (rawAw != null && String(rawAw).trim() !== '') {
+    const a = parseFloat(String(rawAw).replace(',', '.'));
+    if (Number.isFinite(a)) avg_source_weight = a;
+  }
+  let channels_with_complaints_only = 0;
+  const rawCo = values.channels_with_complaints_only;
+  if (rawCo != null && rawCo !== '') {
+    const n2 = parseInt(String(rawCo).replace(/\s/g, ''), 10);
+    if (Number.isFinite(n2) && n2 >= 0) channels_with_complaints_only = n2;
+  }
   return {
     last_cycle_at,
     new_in_cycle,
     sources_checked,
+    false_positive_signals,
+    avg_source_weight,
+    channels_with_complaints_only,
   };
 }
 
+const KRO_META_EMPTY = {
+  last_cycle_at: null,
+  new_in_cycle: 0,
+  sources_checked: [],
+  false_positive_signals: 0,
+  avg_source_weight: null,
+  channels_with_complaints_only: 0,
+};
+
 async function readKroCycleMetaFromSheets(sheetsClient) {
   if (!sheetsClient || !kroSheetId) {
-    return { last_cycle_at: null, new_in_cycle: 0, sources_checked: [] };
+    return { ...KRO_META_EMPTY };
   }
   try {
     const sheetName = kroMetaRange.split('!')[0] || 'kro_meta';
@@ -1770,7 +1800,7 @@ async function readKroCycleMetaFromSheets(sheetsClient) {
     return parseKroCycleMetaRows(resp.data.values || []);
   } catch (e) {
     console.warn('KRO cycle meta read failed:', e?.message);
-    return { last_cycle_at: null, new_in_cycle: 0, sources_checked: [] };
+    return { ...KRO_META_EMPTY };
   }
 }
 
@@ -2612,6 +2642,25 @@ function gamblingTopicHit(...parts) {
   const me = reEn.exec(blob);
   return me ? me[0].toLowerCase() : null;
 }
+
+/** Синхронно с kro_tme_http_gate.off_topic_business_match — только для текста с реальной страницы t.me */
+function kroOffTopicBusinessHit(blob) {
+  const low = (blob || '').toString().toLowerCase();
+  if (!low.trim()) return null;
+  const ru = [
+    'одежда', 'кроссовки', 'обувь', 'fashion', 'shoes', 'одяг', 'кросівки', 'бренд', 'бутик', 'магазин одежды',
+    'ресторан', 'доставка еды', 'суши', 'пицца', 'кафе', 'food delivery', 'квартира', 'аренда', 'продажа квартир',
+    'недвижимость', 'риэлтор', 'продажа авто', 'автосалон', 'машина купить', 'вакансия', 'найм', 'работа в',
+  ];
+  for (const s of ru) {
+    if (low.includes(s)) return s;
+  }
+  if (/\bhr\b/i.test(blob || '')) return 'hr';
+  const reEn =
+    /\b(?:fashion|shoes?|boutique|restaurant|pizza|sushi|cafe|food\s+delivery|real\s*estate|realtor|apartment\s+rent|car\s+sale|dealer|vacanc(?:y|ies)|hiring|recruit(?:er|ment))\b/i;
+  const m = reEn.exec(blob || '');
+  return m ? m[0].toLowerCase() : null;
+}
 const KRO_TME_HTTP_GATE_MIN_SUBS = 100;
 const KRO_TME_HTTP_GATE_MAX_POST_DAYS = 60;
 
@@ -2710,17 +2759,21 @@ async function passesKroTmeHttpGateForScamBase(link, contentBlob, objectType = '
   const descMatch = html.match(/class="tgme_page_description"[^>]*>([\s\S]*?)<\/div>/i);
   const desc = descMatch ? _stripTags(descMatch[1]).toLowerCase() : '';
   const postsChunk = low.split('tgme_widget_message').slice(0, 60).join(' ');
+  const tmeCore = `${desc} ${postsChunk}`;
+  const otTme = kroOffTopicBusinessHit(tmeCore);
+  if (otTme) {
+    return { ok: false, reason: `blocked_offtopic_tme_${otTme}` };
+  }
 
   if (isBot) {
     if (!_kroHtmlBotStartVisible(html, low)) {
       return { ok: false, reason: 'tme_bot_not_working_no_start' };
     }
-    const blobBot = `${desc} ${postsChunk} ${(contentBlob || '').toString().toLowerCase()}`;
-    const gBot = gamblingTopicHit(blobBot, link, objectType);
+    const gBot = gamblingTopicHit(tmeCore, link, objectType);
     if (gBot) {
       return { ok: false, reason: `blocked_gambling_tme_${gBot}` };
     }
-    const hasCryptoBot = KRO_TME_HTTP_GATE_CRYPTO.some((t) => blobBot.includes(t));
+    const hasCryptoBot = KRO_TME_HTTP_GATE_CRYPTO.some((t) => tmeCore.includes(t));
     if (!hasCryptoBot) {
       return { ok: false, reason: 'tme_no_crypto_terms_in_desc_or_posts' };
     }
@@ -2784,12 +2837,11 @@ async function passesKroTmeHttpGateForScamBase(link, contentBlob, objectType = '
     return { ok: false, reason: `tme_subscribers_below_${KRO_TME_HTTP_GATE_MIN_SUBS}` };
   }
 
-  const blob = `${desc} ${postsChunk} ${(contentBlob || '').toString().toLowerCase()}`;
-  const gCh = gamblingTopicHit(blob, link, objectType);
+  const gCh = gamblingTopicHit(tmeCore, link, objectType);
   if (gCh) {
     return { ok: false, reason: `blocked_gambling_tme_${gCh}` };
   }
-  const hasCrypto = KRO_TME_HTTP_GATE_CRYPTO.some((t) => blob.includes(t));
+  const hasCrypto = KRO_TME_HTTP_GATE_CRYPTO.some((t) => tmeCore.includes(t));
   if (!hasCrypto) {
     return { ok: false, reason: 'tme_no_crypto_terms_in_desc_or_posts' };
   }

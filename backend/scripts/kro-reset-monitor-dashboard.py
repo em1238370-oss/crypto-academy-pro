@@ -4,7 +4,7 @@
 
   - channels_watch  — блок «Все найденные каналы»
   - channels_network — связи каналов (рядом с watch)
-  - kro_meta        — «последний цикл», счётчики, «источники данных» (sources_checked)
+  - kro_meta        — «последний цикл», счётчики, «источники данных» (sources_checked), метрики качества
   - kro_history     — «История циклов» (строка заголовка в строке 1 сохраняется)
 
 Не трогает: scam_base, reports, лист первой вкладки с жалобами и т.д.
@@ -19,7 +19,7 @@
   KRO_SHEET_ID
   KRO_CHANNELS_WATCH_RANGE   (по умолчанию channels_watch!A2:M)
   KRO_CHANNELS_NETWORK_RANGE   (по умолчанию channels_network!A2:G)
-  KRO_META_RANGE               (по умолчанию kro_meta!A:B; пишем ключи в A1:B4)
+  KRO_META_RANGE               (по умолчанию kro_meta!A:B; пишем ключи в A1:B7)
 """
 from __future__ import annotations
 
@@ -98,7 +98,7 @@ def main() -> int:
     print('channels_watch %s: rows=%d' % (watch_rng, wn))
     print('channels_network %s: rows=%d' % (network_rng, nn))
     print('kro_history %s: data rows=%d (row 1 = заголовок)' % (history_clear_rng, hn))
-    print('kro_meta: будет записан сброс в %s!A1:B4' % meta_sheet)
+    print('kro_meta: будет записан сброс в %s!A1:B7' % meta_sheet)
 
     if args.dry_run:
         print('dry-run: изменений нет.')
@@ -113,10 +113,13 @@ def main() -> int:
         ['last_cycle_at', ''],
         ['new_in_cycle', '0'],
         ['sources_checked', '[]'],
+        ['false_positive_signals', '0'],
+        ['avg_source_weight', ''],
+        ['channels_with_complaints_only', '0'],
     ]
     sheets.spreadsheets().values().update(
         spreadsheetId=sheet_id,
-        range='%s!A1:B4' % meta_sheet,
+        range='%s!A1:B7' % meta_sheet,
         valueInputOption='RAW',
         body={'values': meta_rows},
     ).execute()
