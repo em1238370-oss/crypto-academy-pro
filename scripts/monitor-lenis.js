@@ -1,7 +1,6 @@
 /**
- * Плавный скролл для /monitor (колёсико + тач).
- * На узком экране (≤640px) тач идёт через Lenis (syncTouch) с touchMultiplier / 11 — медленнее прокрутка;
- * на десктопе syncTouch: false — не перехватывать жест у ссылок t.me (см. data-lenis-prevent на ссылках).
+ * Плавный скролл для /monitor (колёсико + тач). Множители как на главной.
+ * syncTouch: false — тач остаётся нативным (как в обычном браузере); см. data-lenis-prevent-touch на main.
  */
 (function () {
   'use strict';
@@ -10,12 +9,6 @@
     window.__MON_SCROLL_MODE__ = 'reduced';
     return;
   }
-
-  var isNarrowPhone =
-    typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
-  var TOUCH_MULT_BASE = 1.4;
-  var TOUCH_SLOW_FACTOR = 11;
-  var touchMultiplier = isNarrowPhone ? TOUCH_MULT_BASE / TOUCH_SLOW_FACTOR : TOUCH_MULT_BASE;
 
   function maxScrollY() {
     return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
@@ -77,18 +70,16 @@
     return;
   }
 
-  var lenisOpts = {
+  var lenis = new Lenis({
     orientation: 'vertical',
     gestureOrientation: 'vertical',
     smoothWheel: true,
-    syncTouch: isNarrowPhone,
+    syncTouch: false,
     wheelMultiplier: 0.4,
-    touchMultiplier: touchMultiplier,
+    touchMultiplier: 1.4,
     lerp: 0.04,
     autoRaf: false,
-  };
-  if (isNarrowPhone) lenisOpts.syncTouchLerp = 0.55;
-  var lenis = new Lenis(lenisOpts);
+  });
 
   function raf(time) {
     lenis.raf(time);
