@@ -142,10 +142,11 @@ button:focus-visible {
    position: relative;
    z-index: 1;
    overflow: hidden;
-   background: radial-gradient(ellipse 60% 50% at 80% 85%, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
-               radial-gradient(ellipse 50% 40% at 15% 25%, rgba(245, 158, 11, 0.03) 0%, transparent 55%),
-               radial-gradient(ellipse 70% 50% at 50% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
-               linear-gradient(180deg, var(--kro-bg) 0%, rgba(15, 18, 24, 0.98) 100%);
+   background: radial-gradient(ellipse 55% 45% at 70% 80%, rgba(245, 158, 11, 0.10) 0%, transparent 55%),
+               radial-gradient(ellipse 50% 40% at 15% 20%, rgba(184, 74, 74, 0.10) 0%, transparent 55%),
+               radial-gradient(ellipse 80% 60% at 50% 25%, rgba(139, 92, 246, 0.07) 0%, transparent 60%),
+               radial-gradient(ellipse 100% 50% at 50% 100%, rgba(245, 158, 11, 0.06) 0%, transparent 50%),
+               linear-gradient(180deg, #07080d 0%, #0a0c12 60%, #0d0f16 100%);
    transition: opacity var(--kro-duration-reveal) var(--kro-ease-out), transform var(--kro-duration-reveal) var(--kro-ease-out);
 }
 
@@ -663,19 +664,19 @@ body.kro-hero-scrolled .kro-floating-nav {
    transition: transform 0.12s ease-out;
 }
 
-/* Янтарный блик с «дыханием» (медленная пульсация атмосферы) */
 .kro-step1-bg::before {
    content: '';
    position: absolute;
    inset: 0;
-   background: radial-gradient(ellipse 42% 32% at 50% 42%, rgba(245, 158, 11, 0.07) 0%, transparent 55%);
+   background: radial-gradient(ellipse 50% 38% at 50% 45%, rgba(245, 158, 11, 0.13) 0%, transparent 55%),
+               radial-gradient(ellipse 30% 20% at 80% 20%, rgba(184, 74, 74, 0.10) 0%, transparent 50%);
    pointer-events: none;
-   animation: kro-hero-breathe 20s ease-in-out infinite;
+   animation: kro-hero-breathe 14s ease-in-out infinite;
 }
 
 @keyframes kro-hero-breathe {
-   0%, 100% { opacity: 0.8; }
-   50% { opacity: 1; }
+   0%, 100% { opacity: 0.7; transform: scale(1); }
+   50% { opacity: 1; transform: scale(1.04); }
 }
 
 /* Виньетка + сетка точек Hero + noise (sitelove) */
@@ -695,13 +696,13 @@ body.kro-hero-scrolled .kro-floating-nav {
 /* Hero-заголовок: Syne — нежнее */
 .kro-step1-title {
    font-family: var(--kro-font-heading);
-   font-size: clamp(48px, 11vw, 88px);
-   font-weight: 700;
-   line-height: 1.06;
-   letter-spacing: -0.02em;
+   font-size: clamp(52px, 12vw, 96px);
+   font-weight: 800;
+   line-height: 1.04;
+   letter-spacing: -0.03em;
    margin-bottom: 26px;
-   color: rgba(255, 255, 255, 0.94);
-   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+   color: rgba(255, 255, 255, 0.97);
+   text-shadow: 0 0 80px rgba(245, 158, 11, 0.12), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Hero: реальные случаи (top3 из live-counter) + счётчик + главный CTA */
@@ -1100,13 +1101,12 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-feature1-bg {
    position: absolute;
    inset: 0;
-   z-index: 0;
-   /* Переход из hero + мягкий красный «денежный» градиент сзади карточек */
-   background: linear-gradient(180deg, rgba(10, 12, 16, 0.95) 0%, transparent 12%),
-               radial-gradient(ellipse 80% 70% at 50% 45%, rgba(100, 45, 45, 0.22) 0%, transparent 55%),
-               radial-gradient(ellipse 70% 50% at 50% 35%, rgba(72, 48, 42, 0.18) 0%, transparent 55%),
-               radial-gradient(ellipse 100% 80% at 50% 50%, rgba(50, 30, 32, 0.15) 0%, transparent 65%),
-               linear-gradient(180deg, #140e0f 0%, #110d0e 35%, #0e0b0c 100%);
+   z-index: -1;
+   background: radial-gradient(ellipse 70% 50% at 20% 50%, rgba(139, 92, 246, 0.12) 0%, transparent 55%),
+               radial-gradient(ellipse 60% 50% at 80% 30%, rgba(184, 74, 74, 0.14) 0%, transparent 50%),
+               radial-gradient(ellipse 80% 70% at 50% 60%, rgba(100, 45, 45, 0.20) 0%, transparent 55%),
+               radial-gradient(ellipse 100% 40% at 50% 100%, rgba(245, 158, 11, 0.06) 0%, transparent 50%),
+               linear-gradient(180deg, #0d0a0b 0%, #110d0e 40%, #0e0b0c 100%);
 }
 
 /* Контент поверх локального фона: без отрицательного z-index у bg (на мобильных не «наезжает» слой main / скролл) */
