@@ -455,6 +455,11 @@ def fetch_tme_public_preview(slug: str) -> Dict[str, Any]:
     return out
 
 
+def tme_preview_combined_lower(prev: Dict[str, Any]) -> str:
+    """Описание + посты публичной страницы t.me (нижний регистр) — единый blob для off_topic / crypto / gambling."""
+    return ((prev.get('desc') or '') + ' ' + (prev.get('posts_blob_lower') or '')).lower()
+
+
 def tme_http_gate_for_scam_base_write(
     username_or_link: str,
     object_type: str = '',
@@ -466,11 +471,10 @@ def tme_http_gate_for_scam_base_write(
     Третий элемент — метаданные превью (subs и т.д.) для пост-правил на стороне монитора.
 
     off_topic (одежда/еда/авто/…): только по реальному HTML t.me (описание + посты), не по тексту разоблачителя.
+    Крипта и гемблинг по каналу/боту — только по этому же blob после fetch (source_evidence/content_analysis не подмешиваются).
+    Параметры source_evidence/content_analysis оставлены для совместимости вызовов.
     """
     meta: Dict[str, Any] = {'subs': None, 'slug': '', 'tme_preview_ok': False}
-    gm0 = gambling_topic_match(username_or_link, object_type, source_evidence, content_analysis)
-    if gm0:
-        return False, 'blocked_gambling_topic:%s' % gm0, meta
     uname = normalize_channel_link(username_or_link)
     if not uname:
         return True, 'not_telegram', meta
@@ -487,7 +491,7 @@ def tme_http_gate_for_scam_base_write(
     meta['tme_preview_ok'] = True
     meta['subs'] = prev.get('subs')
 
-    tme_blob = ((prev.get('desc') or '') + ' ' + (prev.get('posts_blob_lower') or '')).lower()
+    tme_blob = tme_preview_combined_lower(prev)
     ot_tme = off_topic_business_match(tme_blob)
     if ot_tme:
         return False, 'blocked_offtopic_tme:%s' % ot_tme, meta

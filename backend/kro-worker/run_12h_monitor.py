@@ -1835,6 +1835,7 @@ def _kro_cycle_analytics_reset():
         'write_note_foreign_channel': 0,
         'write_downgrade_no_external_source': 0,
         'write_reject_http_gate_append': 0,
+        'write_reject_offtopic_tme': 0,
         'write_reject_source_weight': 0,
         'write_reject_no_signal_a_crypto': 0,
     }
@@ -2024,9 +2025,13 @@ def _print_kro_detailed_cycle_report(
     lines.append('  Известный не-скам: %d' % int(a.get('write_reject_known_non_scam', 0) or 0))
     lines.append('  Blocklist при записи: %d' % int(a.get('write_reject_blocklist', 0) or 0))
     lines.append('  Статус «не по теме» (unified / пол): %d' % int(a.get('write_reject_off_topic', 0) or 0))
+    lines.append('  Нет сигнала А (крипто в наводке/жалобах): %d' % int(a.get('write_reject_no_signal_a_crypto', 0) or 0))
+    lines.append('  Вес источников < 3: %d' % int(a.get('write_reject_source_weight', 0) or 0))
+    lines.append('  off_topic по HTML t.me (HTTP-gate): %d' % int(a.get('write_reject_offtopic_tme', 0) or 0))
     lines.append('  Нет crypto context при записи: %d' % int(a.get('write_reject_no_crypto', 0) or 0))
+    lines.append('  Сигнал Б (Telethon, HTTP-gate выкл.): нет crypto в постах: %d' % int(a.get('write_reject_recent_posts_no_crypto', 0) or 0))
     lines.append('  Понижение статуса (нет внешнего разоблачителя): %d' % int(a.get('write_downgrade_no_external_source', 0) or 0))
-    lines.append('  Отклонено финальным HTTP-gate перед append: %d' % int(a.get('write_reject_http_gate_append', 0) or 0))
+    lines.append('  Отклонено финальным HTTP-gate перед append (всего): %d' % int(a.get('write_reject_http_gate_append', 0) or 0))
     lines.append('  Записано в scam_base (новых строк): %d' % len(inserted_confirmed_channels or []))
 
     lines.append('')
@@ -3670,30 +3675,10 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
         print('scam_base read for dedup error: %s' % e, file=sys.stderr)
         existing_keys = set()
 
-    pre_gate = []
-    for obj in list(confirmed_objects or []):
-        gm = _kro_tme_http_gate.gambling_topic_match(
-            obj.get('username', ''),
-            obj.get('link', ''),
-            obj.get('object_type', ''),
-            obj.get('source_primary', ''),
-            obj.get('source_evidence', ''),
-            obj.get('content_analysis', ''),
-        )
-        if gm:
-            _kro_cycle_analytics_inc('write_pre_skip_gambling')
-            print(
-                'scam_base write skip: %s — казино/ставки/гемблинг (%s)' % (obj.get('username') or '?', gm),
-                file=sys.stderr,
-            )
-            continue
-        pre_gate.append(obj)
-
-    gated_objects = pre_gate
     new_rows = []
     inserted_channels = []
     http_on = _http_gate_before_append_enabled()
-    for obj in gated_objects:
+    for obj in list(confirmed_objects or []):
         gate_meta = {}
         key = _norm_ch_key(obj.get('username') or '')
         if not key or key in existing_keys:
@@ -3747,6 +3732,8 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
                 (obj.get('content_analysis') or '') or '',
             )
             if not ok_http and reason_http != 'not_telegram':
+                if (reason_http or '').startswith('blocked_offtopic_tme'):
+                    _kro_cycle_analytics_inc('write_reject_offtopic_tme')
                 _kro_cycle_analytics_inc('write_reject_http_gate_append')
                 print(
                     'http_gate_final_check: пропущен @%s — %s' % (key, reason_http),
@@ -6635,14 +6622,55 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
             )
             for r in reports
         )
-        gm_pr = _kro_tme_http_gate.gambling_topic_match(ch, display, link, obj_type, evidence, rep_blob)
-        if gm_pr:
-            print(f'[promote] skip {display}: казино/ставки/гемблинг ({gm_pr})', file=sys.stderr)
-            continue
-        ot_pr = _kro_tme_http_gate.off_topic_business_match(ch, display, link, obj_type, evidence, rep_blob)
-        if ot_pr:
-            print(f'[promote] skip {display}: не по теме ({ot_pr})', file=sys.stderr)
-            continue
+        is_tg_promo = _looks_like_telegram_channel_ref(display, link, obj_type)
+        if is_tg_promo:
+            joined_desc = ' '.join(
+                (r.get('description') or '').strip()
+                for r in reports
+                if (r.get('description') or '').strip()
+            )
+            promo_obj = {
+                'username': display,
+                'link': link,
+                'object_type': obj_type,
+                'source_primary': 'form+web',
+                'source_evidence': evidence,
+                'complaint_texts_joined': (joined_desc or rep_blob)[:4000],
+                'complaints': unique_count,
+                'channel_age_days': '',
+            }
+            if not _kro_source_policy.source_signal_a_crypto(promo_obj):
+                print(
+                    '[promote] skip %s: нет сигнала А (крипто в наводке/жалобах)' % display,
+                    file=sys.stderr,
+                )
+                continue
+            w_promo = _kro_source_policy.compute_source_weight(promo_obj, report_rows=reports)
+            if w_promo < 3.0 - 1e-6:
+                print(
+                    '[promote] skip %s: вес источников %.2f < 3' % (display, w_promo),
+                    file=sys.stderr,
+                )
+                continue
+            if _http_gate_before_append_enabled():
+                ok_h, reason_h, _gm = _kro_tme_http_gate.tme_http_gate_for_scam_base_write(
+                    (link or display or '').strip(),
+                    obj_type,
+                    evidence,
+                    '',
+                )
+                if not ok_h and reason_h != 'not_telegram':
+                    print('[promote] skip %s: HTTP-gate %s' % (display, reason_h), file=sys.stderr)
+                    continue
+        else:
+            gm_pr = _kro_tme_http_gate.gambling_topic_match(ch, display, link, obj_type, evidence, rep_blob)
+            if gm_pr:
+                print(f'[promote] skip {display}: казино/ставки/гемблинг ({gm_pr})', file=sys.stderr)
+                continue
+            ot_pr = _kro_tme_http_gate.off_topic_business_match(ch, display, link, obj_type, evidence, rep_blob)
+            if ot_pr:
+                print(f'[promote] skip {display}: не по теме ({ot_pr})', file=sys.stderr)
+                continue
         if not has_whistleblower and not _is_crypto_context_allowed_parts(display, obj_type, evidence, 'form+web'):
             print(f'[promote] skip {display}: no crypto context', file=sys.stderr)
             continue

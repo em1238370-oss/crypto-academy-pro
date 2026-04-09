@@ -2704,7 +2704,8 @@ function _kroHtmlBotStartVisible(html, low) {
 /**
  * @returns {Promise<{ ok: boolean, reason: string }>}
  */
-async function passesKroTmeHttpGateForScamBase(link, contentBlob, objectType = '') {
+async function passesKroTmeHttpGateForScamBase(link, _contentBlob, objectType = '') {
+  void _contentBlob;
   const L = (link || '').toString().trim().toLowerCase();
   if (!L.includes('t.me/')) {
     return { ok: true, reason: 'not_telegram' };
@@ -2715,10 +2716,6 @@ async function passesKroTmeHttpGateForScamBase(link, contentBlob, objectType = '
   const slug = _extractTgmeSlugFromLink(link);
   if (!slug) {
     return { ok: true, reason: 'not_telegram' };
-  }
-  const gEarly = gamblingTopicHit(link, contentBlob, objectType);
-  if (gEarly) {
-    return { ok: false, reason: `blocked_gambling_topic_${gEarly}` };
   }
   const isBot = _kroSlugLooksLikeBot(slug, objectType);
 
@@ -2871,6 +2868,103 @@ async function passesKroTmeHttpGateForScamBase(link, contentBlob, objectType = '
   }
 
   return { ok: true, reason: 'ok_tme_http_gate' };
+}
+
+/** Паритет с kro_source_policy / run_12h_monitor: promote в scam_base с сайта. */
+function looksLikeTelegramChannelRef(...parts) {
+  const blob = parts.map((x) => (x == null ? '' : String(x))).join(' ').toLowerCase();
+  if (blob.includes('t.me/')) return true;
+  return /(^|\s)@[a-z0-9_]{4,}\b/.test(blob);
+}
+
+const _KRO_HUB_SLUGS_PROMOTE = new Set([
+  'blacklist-telegram',
+  'proverka-telegram',
+  'wp-admin',
+  'feed',
+  'category',
+  'author',
+  'page',
+  'tag',
+]);
+
+function kroScoreComplaintQuality(text) {
+  const t = (text || '').trim();
+  if (!t) return 1.0;
+  const low = t.toLowerCase();
+  let score = 1.0;
+  if (t.length > 100) score += 0.5;
+  if (/\d[\d\s\u00a0.,]*\s*(?:₽|р\.|руб|rub|usd|\$|\beur\b)/i.test(t)) score += 0.5;
+  const schemeMarkers = [
+    'оплат',
+    'vip',
+    'вип',
+    'подписк',
+    'перевёл',
+    'перевел',
+    'схем',
+    'депозит',
+    'инвест',
+    'сигнал',
+    'гарант',
+    'курс',
+    'обучен',
+  ];
+  if (schemeMarkers.some((m) => low.includes(m))) score += 0.5;
+  const actionMarkers = [
+    'заблок',
+    'удалил',
+    'не отвеч',
+    'обман',
+    'кинул',
+    'кидал',
+    'слил',
+    'мошен',
+    'не вернул',
+    'пропал',
+  ];
+  if (actionMarkers.some((m) => low.includes(m))) score += 0.5;
+  return Math.min(2.0, score);
+}
+
+function kroDedicatedListingWeightFromBlob(low) {
+  let w = 0;
+  let m = low.match(/vklader\.com\/([a-z][a-z0-9_]{3,31})(?:\/|\?|$)/);
+  if (m && !_KRO_HUB_SLUGS_PROMOTE.has(m[1].toLowerCase())) w += 2;
+  m = low.match(/telltrue\.net\/([a-z][a-z0-9_]{3,31})(?:\/|\?|$)/);
+  if (m && !_KRO_HUB_SLUGS_PROMOTE.has(m[1].toLowerCase())) w += 2;
+  return w;
+}
+
+function kroFormWebReportWeights(reports) {
+  let w = 0;
+  for (const row of reports || []) {
+    const src = (row.source || '').trim().toLowerCase();
+    const desc = (row.description || '').trim();
+    if (src === 'form' || src.endsWith('form')) {
+      if (desc.length < 12) w += 1.0;
+      else w += Math.min(2.0, kroScoreComplaintQuality(desc));
+    } else if (src === 'web') {
+      if (desc.length > 40) w += Math.min(2.0, Math.max(1.0, kroScoreComplaintQuality(desc) * 0.75));
+    }
+  }
+  return w;
+}
+
+function kroComputeSourceWeightForPromote(reports, sourceEvidence) {
+  const blob = `form+web ${sourceEvidence || ''}`.toLowerCase();
+  let w = 0;
+  if (blob.includes('stop-scam1.com') || blob.includes('stop-scam1')) w += 3;
+  if (blob.includes('fin-obzor.net') || blob.includes('fin-obzor')) w += 3;
+  w += kroDedicatedListingWeightFromBlob(blob);
+  w += kroFormWebReportWeights(reports);
+  return w;
+}
+
+function kroSourceSignalACryptoFromParts(sourcePrimary, sourceEvidence, objectType, complaintJoined) {
+  const blob = [sourcePrimary, sourceEvidence, objectType, complaintJoined].map(String).join(' ').toLowerCase();
+  if (!blob.trim()) return false;
+  return KRO_TME_HTTP_GATE_CRYPTO.some((t) => blob.includes(t));
 }
 
 /** Get complaints count and total_loss from reports sheet (first sheet A2:F, B=channel, C=sum). */
@@ -3855,25 +3949,46 @@ async function checkAndPromoteToScamBase(client, channel) {
     const explicitOt = reports.map(r => r.object_type).find(Boolean) || '';
     const { display, link, objectType } = scamBaseDisplayLinkForPromote(channel, explicitOt);
     const reportsGamblingBlob = reports
-      .map(r => `${r.description || ''} ${r.proof_url || ''} ${r.object_type || ''}`)
+      .map((r) => `${r.description || ''} ${r.proof_url || ''} ${r.object_type || ''}`)
       .join(' ');
-    const gPromo = gamblingTopicHit(channel, display, link, objectType, reportsGamblingBlob);
-    if (gPromo) {
-      console.log(`[KRO] ${display} skipped: gambling topic (${gPromo})`);
-      return;
-    }
-    if (!isCryptoContextAllowed(display, objectType, reports.map(r => `${r.description || ''} ${r.proof_url || ''}`).join(' '))) {
-      console.log(`[KRO] ${display} skipped: no crypto context for scam_base promotion`);
-      return;
-    }
-    let sourceEvidence = reports.slice(0, 3).map(r => r.description || r.proof_url).filter(Boolean).join('; ');
+    let sourceEvidence = reports
+      .slice(0, 3)
+      .map((r) => r.description || r.proof_url)
+      .filter(Boolean)
+      .join('; ');
     const rp = riskPrefixForObjectType(objectType);
     if (rp) sourceEvidence = `${rp} | ${sourceEvidence}`.slice(0, 500);
-    const gateBlob = [
-      sourceEvidence,
-      ...reports.map(r => `${r.description || ''} ${r.proof_url || ''}`),
-    ].join(' ');
-    const gate = await passesKroTmeHttpGateForScamBase(link, gateBlob, objectType);
+
+    const isTg = looksLikeTelegramChannelRef(channel, display, link, objectType);
+    if (isTg) {
+      const complaintJoined = reports.map((r) => (r.description || '').trim()).filter(Boolean).join(' ');
+      if (!kroSourceSignalACryptoFromParts('form+web', sourceEvidence, objectType, complaintJoined)) {
+        console.log(`[KRO] ${display} skipped: no signal A (crypto markers in lead/complaints)`);
+        return;
+      }
+      const wSrc = kroComputeSourceWeightForPromote(reports, sourceEvidence);
+      if (wSrc < 3 - 1e-6) {
+        console.log(`[KRO] ${display} skipped: source weight ${wSrc.toFixed(2)} < 3`);
+        return;
+      }
+    } else {
+      const gPromo = gamblingTopicHit(channel, display, link, objectType, reportsGamblingBlob);
+      if (gPromo) {
+        console.log(`[KRO] ${display} skipped: gambling topic (${gPromo})`);
+        return;
+      }
+      const otHit = kroOffTopicBusinessHit(reportsGamblingBlob);
+      if (otHit) {
+        console.log(`[KRO] ${display} skipped: off-topic (${otHit})`);
+        return;
+      }
+      if (!isCryptoContextAllowed(display, objectType, reports.map((r) => `${r.description || ''} ${r.proof_url || ''}`).join(' '))) {
+        console.log(`[KRO] ${display} skipped: no crypto context for scam_base promotion`);
+        return;
+      }
+    }
+
+    const gate = await passesKroTmeHttpGateForScamBase(link, '', objectType);
     if (!gate.ok) {
       console.log(`[KRO] ${display} skipped: t.me HTTP gate ${gate.reason}`);
       return;

@@ -882,15 +882,13 @@ def _blacklist_slug_from_dedicated_url(url, allowed_hosts):
 
 
 def _page_substantially_about_slug(page, slug):
-    """Страница действительно про этот канал (@slug / t.me/slug / заголовок)."""
+    """Страница действительно про этот канал: @slug или t.me/slug в тексте (не «slug в title» без привязки к Telegram)."""
     if not page or not slug:
         return False
     s = slug.lower()
     title = _extract_title_from_html(page).lower()
     blob = _clean_html_text(page).lower()
     if f'@{s}' in blob or f'@{s}' in title:
-        return True
-    if len(s) >= 4 and (s in title or f' {s} ' in f' {title} '):
         return True
     compact = re.sub(r'\s+', '', blob)
     if f't.me/{s}' in compact or f't.me/s/{s}' in compact:
@@ -901,6 +899,7 @@ def _page_substantially_about_slug(page, slug):
 def _build_findings_dedicated_blacklist_page(page, url, source_field, slug):
     """
     Одна запись с URL вида site/{username}: не ищем чужие @ в тексте, только подтверждаем slug.
+    Инвариант vklader/telltrue: channel в finding совпадает с единственным сегментом пути (slug), см. _blacklist_slug_from_dedicated_url.
     """
     if not page or not slug:
         return []
@@ -1497,7 +1496,8 @@ def _scrape_blacklist_telegram_portal(
             page = _fetch(url)
             if not page:
                 continue
-            results.extend(_build_findings_from_page(page, url, source_tag, max_channels=3))
+            # Сторонняя статья на хабе может упоминать несколько @ — ограничиваем одним каналом (как web-search).
+            results.extend(_build_findings_from_page(page, url, source_tag, max_channels=1))
     deduped = _dedupe_findings_channel_per_url(results)
     unique_channels = len({r.get('channel') for r in deduped if r.get('channel')})
     _set_source_status(status_name, 'found' if unique_channels else 'not_found', unique_channels)

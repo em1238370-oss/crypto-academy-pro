@@ -857,11 +857,12 @@ def main():
             return
         result = _build_confirmation(result)
         if result.get('is_confirmed'):
+            # Крипта/off_topic/gambling по каналу — только публичный HTML t.me в gate; Telethon-blob не подмешиваем.
             ok_gate, gate_reason, _gate_meta = _tme_gate.tme_http_gate_for_scam_base_write(
                 result.get('username') or channel_id,
                 result.get('object_type', '') or '',
                 '',
-                (result.get('content_analysis') or '')[:2000],
+                '',
             )
             if not ok_gate:
                 result['is_confirmed'] = False
