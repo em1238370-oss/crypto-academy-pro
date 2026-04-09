@@ -1573,12 +1573,16 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-f1-shock-total {
-   font-size: clamp(36px, 5.5vw, 52px);
+   font-size: clamp(42px, 7vw, 68px);
    font-weight: 800;
-   color: var(--kro-accent-muted);
+   background: linear-gradient(135deg, #e05555 0%, #ff8080 100%);
+   -webkit-background-clip: text;
+   -webkit-text-fill-color: transparent;
+   background-clip: text;
    line-height: 1.1;
    margin: 0;
-   text-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
+   text-shadow: none;
+   filter: drop-shadow(0 0 24px rgba(224, 85, 85, 0.4));
 }
 
 /* Блок 2: Твой тип лоха */
@@ -1587,14 +1591,17 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-f1-loh-title {
-   font-size: clamp(18px, 2.5vw, 24px);
-   font-weight: 700;
-   color: rgba(255, 255, 255, 0.95);
-   margin-bottom: 20px;
+   font-size: clamp(22px, 3vw, 30px);
+   font-weight: 800;
+   background: linear-gradient(135deg, #ffffff 0%, rgba(245, 158, 11, 0.85) 100%);
+   -webkit-background-clip: text;
+   -webkit-text-fill-color: transparent;
+   background-clip: text;
+   margin-bottom: 24px;
    text-transform: uppercase;
-   letter-spacing: 0.02em;
+   letter-spacing: 0.01em;
    position: relative;
-   padding-bottom: 14px;
+   padding-bottom: 16px;
 }
 
 .kro-f1-loh-title::after {
@@ -1602,10 +1609,11 @@ body.kro-hero-scrolled .kro-floating-nav {
    position: absolute;
    left: 0;
    bottom: 0;
-   width: 40px;
-   height: 2px;
-   border-radius: 2px;
-   background: linear-gradient(90deg, rgba(245, 158, 11, 0.9) 0%, rgba(245, 158, 11, 0.0) 100%);
+   width: 56px;
+   height: 3px;
+   border-radius: 3px;
+   background: linear-gradient(90deg, #f59e0b 0%, rgba(245, 158, 11, 0.0) 100%);
+   box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
 }
 
 .kro-f1-loh-types {
@@ -1660,14 +1668,17 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-f1-math-title {
-   font-size: clamp(18px, 2.5vw, 24px);
-   font-weight: 700;
-   color: rgba(255, 255, 255, 0.95);
-   margin-bottom: 20px;
+   font-size: clamp(22px, 3vw, 30px);
+   font-weight: 800;
+   background: linear-gradient(135deg, #ffffff 0%, rgba(245, 158, 11, 0.85) 100%);
+   -webkit-background-clip: text;
+   -webkit-text-fill-color: transparent;
+   background-clip: text;
+   margin-bottom: 24px;
    text-transform: uppercase;
-   letter-spacing: 0.02em;
+   letter-spacing: 0.01em;
    position: relative;
-   padding-bottom: 14px;
+   padding-bottom: 16px;
 }
 
 .kro-f1-math-title::after {
@@ -1675,10 +1686,11 @@ body.kro-hero-scrolled .kro-floating-nav {
    position: absolute;
    left: 0;
    bottom: 0;
-   width: 40px;
-   height: 2px;
-   border-radius: 2px;
-   background: linear-gradient(90deg, rgba(245, 158, 11, 0.9) 0%, rgba(245, 158, 11, 0.0) 100%);
+   width: 56px;
+   height: 3px;
+   border-radius: 3px;
+   background: linear-gradient(90deg, #f59e0b 0%, rgba(245, 158, 11, 0.0) 100%);
+   box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
 }
 
 .kro-f1-math-slider-wrap {
