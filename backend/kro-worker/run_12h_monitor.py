@@ -3700,11 +3700,15 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
 
         rep_rows = obj.get('_report_rows_for_weight') or []
         w_src = _kro_source_policy.compute_source_weight(obj, report_rows=rep_rows)
-        if w_src < 3.0 - 1e-6:
+        if w_src < _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_SCAM_BASE - 1e-6:
             _kro_cycle_analytics_inc('write_reject_source_weight')
             print(
-                'scam_base write skip: %s — суммарный вес источников %.2f < 3'
-                % (obj.get('username') or key, w_src),
+                'scam_base write skip: %s — суммарный вес источников %.2f < %.0f'
+                % (
+                    obj.get('username') or key,
+                    w_src,
+                    _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_SCAM_BASE,
+                ),
                 file=sys.stderr,
             )
             continue
@@ -6646,9 +6650,10 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
                 )
                 continue
             w_promo = _kro_source_policy.compute_source_weight(promo_obj, report_rows=reports)
-            if w_promo < 3.0 - 1e-6:
+            if w_promo < _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_SCAM_BASE - 1e-6:
                 print(
-                    '[promote] skip %s: вес источников %.2f < 3' % (display, w_promo),
+                    '[promote] skip %s: вес источников %.2f < %.0f'
+                    % (display, w_promo, _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_SCAM_BASE),
                     file=sys.stderr,
                 )
                 continue

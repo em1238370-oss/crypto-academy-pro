@@ -2888,76 +2888,38 @@ const _KRO_HUB_SLUGS_PROMOTE = new Set([
   'tag',
 ]);
 
-function kroScoreComplaintQuality(text) {
-  const t = (text || '').trim();
-  if (!t) return 1.0;
-  const low = t.toLowerCase();
-  let score = 1.0;
-  if (t.length > 100) score += 0.5;
-  if (/\d[\d\s\u00a0.,]*\s*(?:₽|р\.|руб|rub|usd|\$|\beur\b)/i.test(t)) score += 0.5;
-  const schemeMarkers = [
-    'оплат',
-    'vip',
-    'вип',
-    'подписк',
-    'перевёл',
-    'перевел',
-    'схем',
-    'депозит',
-    'инвест',
-    'сигнал',
-    'гарант',
-    'курс',
-    'обучен',
-  ];
-  if (schemeMarkers.some((m) => low.includes(m))) score += 0.5;
-  const actionMarkers = [
-    'заблок',
-    'удалил',
-    'не отвеч',
-    'обман',
-    'кинул',
-    'кидал',
-    'слил',
-    'мошен',
-    'не вернул',
-    'пропал',
-  ];
-  if (actionMarkers.some((m) => low.includes(m))) score += 0.5;
-  return Math.min(2.0, score);
+function kroDedicatedVkladerWeight(low) {
+  const m = low.match(/vklader\.com\/([a-z][a-z0-9_]{3,31})(?:\/|\?|$)/);
+  if (m && !_KRO_HUB_SLUGS_PROMOTE.has(m[1].toLowerCase())) return 2;
+  return 0;
 }
 
-function kroDedicatedListingWeightFromBlob(low) {
-  let w = 0;
-  let m = low.match(/vklader\.com\/([a-z][a-z0-9_]{3,31})(?:\/|\?|$)/);
-  if (m && !_KRO_HUB_SLUGS_PROMOTE.has(m[1].toLowerCase())) w += 2;
-  m = low.match(/telltrue\.net\/([a-z][a-z0-9_]{3,31})(?:\/|\?|$)/);
-  if (m && !_KRO_HUB_SLUGS_PROMOTE.has(m[1].toLowerCase())) w += 2;
-  return w;
+function kroTelltrueNetWeight(low) {
+  return low.includes('telltrue.net') ? 2 : 0;
 }
 
-function kroFormWebReportWeights(reports) {
+/** Форма: с описанием = 2, без = 1 (паритет с kro_source_policy._form_complaint_row_weights). */
+function kroFormComplaintRowWeights(reports) {
   let w = 0;
   for (const row of reports || []) {
     const src = (row.source || '').trim().toLowerCase();
-    const desc = (row.description || '').trim();
-    if (src === 'form' || src.endsWith('form')) {
-      if (desc.length < 12) w += 1.0;
-      else w += Math.min(2.0, kroScoreComplaintQuality(desc));
-    } else if (src === 'web') {
-      if (desc.length > 40) w += Math.min(2.0, Math.max(1.0, kroScoreComplaintQuality(desc) * 0.75));
-    }
+    if (src !== 'form' && !src.endsWith('form')) continue;
+    const d = (row.description || '').trim();
+    w += d ? 2 : 1;
   }
   return w;
 }
+
+const KRO_MIN_SOURCE_WEIGHT_SCAM_BASE = 3;
 
 function kroComputeSourceWeightForPromote(reports, sourceEvidence) {
   const blob = `form+web ${sourceEvidence || ''}`.toLowerCase();
   let w = 0;
   if (blob.includes('stop-scam1.com') || blob.includes('stop-scam1')) w += 3;
   if (blob.includes('fin-obzor.net') || blob.includes('fin-obzor')) w += 3;
-  w += kroDedicatedListingWeightFromBlob(blob);
-  w += kroFormWebReportWeights(reports);
+  w += kroDedicatedVkladerWeight(blob);
+  w += kroTelltrueNetWeight(blob);
+  w += kroFormComplaintRowWeights(reports);
   return w;
 }
 
@@ -3967,8 +3929,8 @@ async function checkAndPromoteToScamBase(client, channel) {
         return;
       }
       const wSrc = kroComputeSourceWeightForPromote(reports, sourceEvidence);
-      if (wSrc < 3 - 1e-6) {
-        console.log(`[KRO] ${display} skipped: source weight ${wSrc.toFixed(2)} < 3`);
+      if (wSrc < KRO_MIN_SOURCE_WEIGHT_SCAM_BASE - 1e-6) {
+        console.log(`[KRO] ${display} skipped: source weight ${wSrc.toFixed(2)} < ${KRO_MIN_SOURCE_WEIGHT_SCAM_BASE}`);
         return;
       }
     } else {

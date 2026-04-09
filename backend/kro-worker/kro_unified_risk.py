@@ -175,7 +175,12 @@ def collect_unified_flags(
     if any(p in corpus for p in ANON_PATTERNS):
         add_yellow('анонимный админ / без верификации')
 
-    # 9 возраст канала < 3 мес
+    try:
+        complaints = int(obj.get('complaints') or 0)
+    except (TypeError, ValueError):
+        complaints = 0
+
+    # 9 возраст канала < 90 дн.; при жалобах — красный флаг (вес +2 в политике источников), иначе жёлтый
     age_days = None
     if channel_created_dt is not None:
         cd = channel_created_dt
@@ -187,7 +192,10 @@ def collect_unified_flags(
             age_days = int(obj.get('channel_age_days'))
         except (TypeError, ValueError):
             age_days = None
-    if age_days is not None and age_days < CHANNEL_YOUNG_DAYS:
+    young = age_days is not None and age_days < CHANNEL_YOUNG_DAYS
+    if young and complaints >= 1:
+        add_red('канал моложе 90 дней при наличии жалоб')
+    elif young:
         add_yellow('канал моложе 3 месяцев')
 
     # 10 накрутка просмотров
@@ -195,12 +203,8 @@ def collect_unified_flags(
     if engagement_flag_yellow(subscribers, vc):
         add_yellow('низкое соотношение просмотров к подписчикам (<5%)')
 
-    # 11 жалобы
-    try:
-        complaints = int(obj.get('complaints') or 0)
-    except (TypeError, ValueError):
-        complaints = 0
-    if complaints >= 1:
+    # 11 жалобы (комбинацию «молодой + жалобы» уже отразили отдельным красным в п.9)
+    if complaints >= 1 and not (young and complaints >= 1):
         add_red('есть жалобы от пользователей')
 
     # 12 сайты-разоблачители

@@ -1793,7 +1793,7 @@
       objectSheetBlock(
         'Качество данных · kro_meta',
         'Контроль точности',
-        'Сигналы ложных срабатываний, средний вес источников по базе и доля записей только по жалобам без внешнего разоблачителя.',
+        'Метрики из листа kro_meta: false_positive_signals, avg_source_weight, channels_with_complaints_only — сигналы ложных срабатываний, средний вес источников по scam_base и строки только с жалобами без внешнего URL разоблачителя.',
         (function() {
           var fp = Number(meta.false_positive_signals || 0);
           var aw = meta.avg_source_weight;
