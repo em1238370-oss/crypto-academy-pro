@@ -3335,6 +3335,7 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
     Для Б: сигнальные слова + крипто-контекст в названии/username. Для А эти фильтры не применяются.
     Гемблинг-фильтр — всегда.
     Возраст канала — только для статуса, не блокирует подтверждение.
+    Поиск/скрапинг: web_scraper упорядочивает @ по тексту и при DDG-обогащении привязывает страницу к seed-каналу (см. KRO_WEB_ENRICHMENT_STRICT_ANCHOR).
     """
     now = _msk_now()
     tgstat_by_key = {}

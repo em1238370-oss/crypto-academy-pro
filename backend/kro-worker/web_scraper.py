@@ -193,11 +193,13 @@ def _extract_channel_mentions(text, require_scam_context=False):
     site admins, generic words), and very short strings.
     If require_scam_context=True (статьи разоблачителей), отбрасывает упоминания без
     маркеров мошенничества в окне вокруг совпадения.
-    Returns list of normalised usernames (without @).
+    Returns list of normalised usernames (without @), по порядку первого вхождения
+    в тексте (важно для страниц с несколькими @ — не брать случайный из set).
     """
     text = text or ''
-    found = set()
+    first_pos = {}
     skip_logged = set()
+    _skip_paths = frozenset({'joinchat', 'addstickers', 'share', 'proxy', 'm', 's'})
 
     def _maybe_log_skip(uname_lower):
         if uname_lower in skip_logged:
@@ -208,32 +210,26 @@ def _extract_channel_mentions(text, require_scam_context=False):
             file=sys.stderr,
         )
 
-    for m in re.finditer(r'@([A-Za-z][A-Za-z0-9_]{3,})', text):
-        uname = m.group(1)
+    def _consider(start, end, uname, is_tme=False):
         uname_lower = uname.lower()
-        if uname_lower in _JSON_LD_NOISE:
-            continue
-        if uname_lower in _CHANNEL_NOISE:
-            continue
+        if is_tme and uname_lower in _skip_paths:
+            return
+        if uname_lower in _JSON_LD_NOISE or uname_lower in _CHANNEL_NOISE:
+            return
         if len(uname) < 5:
-            continue
-        if require_scam_context and not _has_scam_context_near(text, m.start(), m.end()):
+            return
+        if require_scam_context and not _has_scam_context_near(text, start, end):
             _maybe_log_skip(uname_lower)
-            continue
-        found.add(uname_lower)
-    _skip_paths = frozenset({'joinchat', 'addstickers', 'share', 'proxy', 'm', 's'})
+            return
+        prev = first_pos.get(uname_lower)
+        if prev is None or start < prev:
+            first_pos[uname_lower] = start
+
+    for m in re.finditer(r'@([A-Za-z][A-Za-z0-9_]{3,})', text):
+        _consider(m.start(), m.end(), m.group(1), is_tme=False)
     for m in re.finditer(r't\.me/([A-Za-z][A-Za-z0-9_]{3,})', text):
-        uname = m.group(1)
-        uname_lower = uname.lower()
-        if uname_lower in _skip_paths or uname_lower in _JSON_LD_NOISE:
-            continue
-        if uname_lower in _CHANNEL_NOISE:
-            continue
-        if require_scam_context and not _has_scam_context_near(text, m.start(), m.end()):
-            _maybe_log_skip(uname_lower)
-            continue
-        found.add(uname_lower)
-    return list(found)
+        _consider(m.start(), m.end(), m.group(1), is_tme=True)
+    return sorted(first_pos.keys(), key=lambda u: first_pos[u])
 
 
 def _clean_html_text(raw_html):
@@ -483,7 +479,7 @@ def _scrape_victim_queries():
                     continue
                 if not _victim_query_page_is_crypto_relevant(page, url, query, object_type):
                     continue
-                findings = _build_findings_from_page(page, url, 'web-search')
+                findings = _build_findings_from_page(page, url, 'web-search', max_channels=1)
                 for f in findings:
                     ch = (f.get('channel') or '').strip().lower()
                     if not ch:
@@ -694,10 +690,12 @@ def _extract_cryptorussia_channels(page, url):
     return _unique_list(channels)
 
 
-def _build_findings_from_page(page, url, source_name, max_channels=3):
+def _build_findings_from_page(page, url, source_name, max_channels=3, anchor_username=None):
     """
     Turn a fetched article page into complaint findings.
     Uses BeautifulSoup for clean description extraction (no footer noise).
+    anchor_username: если задан (slug без @), findings только для этого канала и только если
+    он реально упомянут на странице — режет ложные срабатывания при DDG-обогащении.
     """
     # Try BS4-based paragraph extraction first
     paragraphs = _extract_article_paragraphs(page)
@@ -720,6 +718,11 @@ def _build_findings_from_page(page, url, source_name, max_channels=3):
         channels = _extract_channel_mentions(full_clean, require_scam_context=req_ctx)
     if not channels:
         return []
+    anchor = (anchor_username or '').strip().lstrip('@').lower()
+    if anchor:
+        if anchor not in channels:
+            return []
+        channels = [anchor]
     if not _has_crypto_context(clean_for_channels, url):
         return []
     if not _has_concrete_scam_facts(desc_snippet or clean_for_channels):
@@ -1561,6 +1564,9 @@ def scrape_all():
         for r in results
         if _is_seed_telegram_ref(r.get('channel'))
     })[:20]
+    _enrich_anchor_strict = (os.environ.get('KRO_WEB_ENRICHMENT_STRICT_ANCHOR') or '1').strip().lower() not in (
+        '0', 'false', 'no', 'off',
+    )
     for channel in seed_usernames:
         uname = (channel or '').strip().lstrip('@').lower()
         if _TELEGRAM_SLUG_PATH_RE.match(uname):
@@ -1575,8 +1581,16 @@ def scrape_all():
             page = _fetch(url)
             if not page:
                 continue
-            # Одна страница поиска ≠ один канал: не тащим чужие @ с обзорных статей
-            results.extend(_build_findings_from_page(page, url, 'web-search', max_channels=1))
+            # Страница из DDG может упоминать несколько @ — только seed-канал (см. anchor_username).
+            results.extend(
+                _build_findings_from_page(
+                    page,
+                    url,
+                    'web-search',
+                    max_channels=1,
+                    anchor_username=(uname if _enrich_anchor_strict else None),
+                )
+            )
 
     # Deduplicate: keep highest sum_rub per channel per source_url
     seen = {}
