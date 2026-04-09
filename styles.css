@@ -1087,17 +1087,24 @@ body.kro-hero-scrolled .kro-floating-nav {
    text-align: center;
    position: relative;
    overflow: hidden;
+   isolation: isolate;
 }
 
 .kro-feature1-bg {
    position: absolute;
    inset: 0;
-   z-index: -1;
+   z-index: 0;
    /* Другой тон относительно hero: мягкий красный «денежный» градиент сзади карточек, без точек */
    background: radial-gradient(ellipse 80% 70% at 50% 45%, rgba(100, 45, 45, 0.22) 0%, transparent 55%),
                radial-gradient(ellipse 70% 50% at 50% 35%, rgba(72, 48, 42, 0.18) 0%, transparent 55%),
                radial-gradient(ellipse 100% 80% at 50% 50%, rgba(50, 30, 32, 0.15) 0%, transparent 65%),
                linear-gradient(180deg, #140e0f 0%, #110d0e 35%, #0e0b0c 100%);
+}
+
+/* Контент поверх локального фона: без отрицательного z-index у bg (на мобильных не «наезжает» слой main / скролл) */
+.kro-feature1 > :not(.kro-feature1-bg) {
+   position: relative;
+   z-index: 1;
 }
 
 /* Дашборд: LIVE + большая цифра + 3 карточки (тёплый контрастный фон, без сияния) */
@@ -2607,6 +2614,19 @@ body.kro-hero-scrolled .kro-floating-nav {
       padding: 64px 20px 64px;
       padding-left: max(20px, env(safe-area-inset-left));
       padding-right: max(20px, env(safe-area-inset-right));
+   }
+   @media (prefers-reduced-motion: no-preference) {
+      /* LIVE / «12 ч» / «Результаты в цифрах»: движение сохраняем, но не уходим в opacity:0 при скролле */
+      .kro-feature1 > .kro-f1-badges-row.kro-scroll-in,
+      .kro-feature1 > .kro-f1-metrics-head.kro-scroll-in {
+         opacity: 0.5;
+         transform: translateY(12px);
+      }
+      .kro-feature1 > .kro-f1-badges-row.kro-scroll-in.kro-scroll-in-visible,
+      .kro-feature1 > .kro-f1-metrics-head.kro-scroll-in.kro-scroll-in-visible {
+         opacity: 1;
+         transform: translateY(0);
+      }
    }
    .kro-feature1-top3 li {
       overflow: hidden;
