@@ -841,6 +841,103 @@ def _dedupe_findings_channel_per_url(results):
     return list(dedup.values())
 
 
+# vklader.com / telltrue.net: надёжный сигнал — страница /{username}, а не @ в тексте хаба.
+_TELEGRAM_SLUG_PATH_RE = re.compile(r'^[a-zA-Z][a-zA-Z0-9_]{3,31}$')
+_DEDICATED_BLACKLIST_SKIP_SLUGS = frozenset({
+    'blacklist-telegram', 'proverka-telegram', 'wp-admin', 'wp-login', 'wp-content',
+    'feed', 'category', 'author', 'page', 'tag', 'vash-post', 'pamyatka', 'rubrika',
+    'comments', 'replytocom', 'xmlrpc', 'robots',
+})
+
+
+def _hostname_no_port(netloc):
+    if not netloc:
+        return ''
+    return (netloc.split(':')[0] or '').lower().lstrip('@')
+
+
+def _blacklist_slug_from_dedicated_url(url, allowed_hosts):
+    """
+    Один сегмент пути на разрешённом хосте — кандидат в Telegram-username (как в URL канала).
+    allowed_hosts: iterable of lowercase hostnames without www.
+    """
+    allowed = {h.lower().replace('www.', '') for h in (allowed_hosts or []) if h}
+    if not allowed:
+        return None
+    try:
+        p = urlparse(url)
+    except Exception:
+        return None
+    host = _hostname_no_port(p.netloc).replace('www.', '')
+    if host not in allowed:
+        return None
+    path = (p.path or '').strip('/')
+    if not path or '/' in path:
+        return None
+    if path.lower() in _DEDICATED_BLACKLIST_SKIP_SLUGS:
+        return None
+    if not _TELEGRAM_SLUG_PATH_RE.match(path):
+        return None
+    return path.lower()
+
+
+def _page_substantially_about_slug(page, slug):
+    """Страница действительно про этот канал (@slug / t.me/slug / заголовок)."""
+    if not page or not slug:
+        return False
+    s = slug.lower()
+    title = _extract_title_from_html(page).lower()
+    blob = _clean_html_text(page).lower()
+    if f'@{s}' in blob or f'@{s}' in title:
+        return True
+    if len(s) >= 4 and (s in title or f' {s} ' in f' {title} '):
+        return True
+    compact = re.sub(r'\s+', '', blob)
+    if f't.me/{s}' in compact or f't.me/s/{s}' in compact:
+        return True
+    return False
+
+
+def _build_findings_dedicated_blacklist_page(page, url, source_field, slug):
+    """
+    Одна запись с URL вида site/{username}: не ищем чужие @ в тексте, только подтверждаем slug.
+    """
+    if not page or not slug:
+        return []
+    if not _page_substantially_about_slug(page, slug):
+        return []
+    paragraphs = _extract_article_paragraphs(page)
+    if paragraphs:
+        clean_for = ' '.join(paragraphs)
+        evidence_paragraphs = _select_evidence_paragraphs(paragraphs)
+        desc_snippet = ' | '.join(evidence_paragraphs)
+    else:
+        clean_for = _extract_article_body(page) or _clean_html_text(page)
+        desc_snippet = clean_for[:400].strip()
+    if not clean_for:
+        return []
+    if not _has_crypto_context(clean_for, url):
+        return []
+    blob_low = clean_for.lower()
+    if not (
+        _has_concrete_scam_facts(clean_for)
+        or 'мошенн' in blob_low
+        or 'скам' in blob_low
+        or 'лохотрон' in blob_low
+        or 'черн' in blob_low
+    ):
+        return []
+    sum_rub = _extract_loss_amount(clean_for)
+    evidence = f'Источник: {url} | {desc_snippet[:400]}'
+    return [{
+        'channel': '@' + slug,
+        'sum_rub': sum_rub,
+        'description': evidence[:500],
+        'source_url': url,
+        'source': source_field,
+    }]
+
+
 _DOMAIN_HOST_RE = re.compile(
     r'^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$',
     re.IGNORECASE,
@@ -1317,9 +1414,11 @@ _VKLADER_PROVERKA_URL = 'https://vklader.com/proverka-telegram/'
 def scrape_vklader():
     """
     Scrape vklader.com blacklist and user verification pages.
+    Только страницы /{username} с хабов — не парсим случайные @ в тексте листингов.
     Returns list of {channel, sum_rub, description, source_url, source}.
     """
     results = []
+    allowed = ('vklader.com',)
 
     blacklist_html = _fetch(_VKLADER_BLACKLIST_URL)
     proverka_html = _fetch(_VKLADER_PROVERKA_URL)
@@ -1328,22 +1427,24 @@ def scrape_vklader():
         logger.info('vklader.com: both pages unavailable')
         return results
 
-    if blacklist_html:
-        results.extend(_build_blacklist_page_findings(
-            blacklist_html, _VKLADER_BLACKLIST_URL, 'vklader', noise_handles=('vklader',)
-        ))
-        for url in _extract_blacklist_site_article_links(blacklist_html, _VKLADER_BASE, limit=20):
+    seen_urls = set()
+    for hub_html, link_limit in (
+        (blacklist_html, 25),
+        (proverka_html, 15),
+    ):
+        if not hub_html:
+            continue
+        for url in _extract_blacklist_site_article_links(hub_html, _VKLADER_BASE, limit=link_limit):
+            if url in seen_urls:
+                continue
+            slug = _blacklist_slug_from_dedicated_url(url, allowed)
+            if not slug:
+                continue
+            seen_urls.add(url)
             page = _fetch(url)
             if not page:
                 continue
-            results.extend(_build_findings_from_page(page, url, 'vklader', max_channels=3))
-
-    if proverka_html:
-        for url in _extract_blacklist_site_article_links(proverka_html, _VKLADER_BASE, limit=12):
-            page = _fetch(url)
-            if not page:
-                continue
-            results.extend(_build_findings_from_page(page, url, 'vklader', max_channels=3))
+            results.extend(_build_findings_dedicated_blacklist_page(page, url, 'vklader', slug))
 
     deduped = _dedupe_findings_channel_per_url(results)
     unique_channels = len({r.get('channel') for r in deduped if r.get('channel')})
@@ -1362,20 +1463,41 @@ _FORTECK_BASE = 'https://forteck.net'
 _FORTECK_BLACKLIST_URL = 'https://forteck.net/blacklist-telegram/'
 
 
-def _scrape_blacklist_telegram_portal(base_url, blacklist_url, status_name, source_tag, noise_handles, article_limit=20):
-    """Single blacklist-telegram hub + linked articles (vklader-style)."""
+def _scrape_blacklist_telegram_portal(
+    base_url, blacklist_url, status_name, source_tag, noise_handles, article_limit=20, dedicated_only=False
+):
+    """
+    Single blacklist-telegram hub + linked articles (vklader-style).
+    dedicated_only=True (telltrue): только URL /{username}, без @ в тексте хаба.
+    """
     results = []
     html = _fetch(blacklist_url)
     if not html:
         _set_source_status(status_name, 'unavailable', 0)
         logger.info('%s: blacklist page unavailable', status_name)
         return results
-    results.extend(_build_blacklist_page_findings(html, blacklist_url, source_tag, noise_handles=noise_handles))
+    allowed_host = _hostname_no_port(urlparse(base_url).netloc).replace('www.', '')
+    allowed_hosts = (allowed_host,) if allowed_host else ()
+    if not dedicated_only:
+        results.extend(_build_blacklist_page_findings(html, blacklist_url, source_tag, noise_handles=noise_handles))
+    seen_urls = set()
     for url in _extract_blacklist_site_article_links(html, base_url, limit=article_limit):
-        page = _fetch(url)
-        if not page:
+        if url in seen_urls:
             continue
-        results.extend(_build_findings_from_page(page, url, source_tag, max_channels=3))
+        if dedicated_only:
+            slug = _blacklist_slug_from_dedicated_url(url, allowed_hosts)
+            if not slug:
+                continue
+            seen_urls.add(url)
+            page = _fetch(url)
+            if not page:
+                continue
+            results.extend(_build_findings_dedicated_blacklist_page(page, url, source_tag, slug))
+        else:
+            page = _fetch(url)
+            if not page:
+                continue
+            results.extend(_build_findings_from_page(page, url, source_tag, max_channels=3))
     deduped = _dedupe_findings_channel_per_url(results)
     unique_channels = len({r.get('channel') for r in deduped if r.get('channel')})
     _set_source_status(status_name, 'found' if unique_channels else 'not_found', unique_channels)
@@ -1384,9 +1506,15 @@ def _scrape_blacklist_telegram_portal(base_url, blacklist_url, status_name, sour
 
 
 def scrape_telltrue():
-    """telltrue.net/blacklist-telegram — тот же формат, что у vklader."""
+    """telltrue.net/blacklist-telegram — только страницы /{username}, без @ в тексте хаба."""
     return _scrape_blacklist_telegram_portal(
-        _TELLTRUE_BASE, _TELLTRUE_BLACKLIST_URL, 'telltrue.net', 'telltrue', ('telltrue',), article_limit=20
+        _TELLTRUE_BASE,
+        _TELLTRUE_BLACKLIST_URL,
+        'telltrue.net',
+        'telltrue',
+        ('telltrue',),
+        article_limit=20,
+        dedicated_only=True,
     )
 
 
@@ -1434,6 +1562,15 @@ def scrape_all():
         if _is_seed_telegram_ref(r.get('channel'))
     })[:20]
     for channel in seed_usernames:
+        uname = (channel or '').strip().lstrip('@').lower()
+        if _TELEGRAM_SLUG_PATH_RE.match(uname):
+            for base, tag in ((_VKLADER_BASE, 'vklader'), (_TELLTRUE_BASE, 'telltrue')):
+                dedicated_url = '%s/%s' % (base.rstrip('/'), uname)
+                page = _fetch(dedicated_url)
+                if page:
+                    results.extend(
+                        _build_findings_dedicated_blacklist_page(page, dedicated_url, tag, uname)
+                    )
         for url in _search_review_urls_for_username(channel, max_links=2):
             page = _fetch(url)
             if not page:

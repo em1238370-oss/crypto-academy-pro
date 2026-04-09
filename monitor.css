@@ -3125,6 +3125,60 @@ a.mon-channel-external:hover {
   font-size: 15px;
 }
 
+.ch-risk-index {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--mon-text);
+  margin: 0;
+}
+
+.ch-block--action .ch-meta {
+  margin-bottom: 14px;
+}
+
+.ch-false-positive-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--mon-text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ch-false-positive-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.ch-false-positive-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ch-fp-msg {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mon-text-dim);
+}
+
+.ch-fp-msg--ok {
+  color: #8fd4a4;
+}
+
+.ch-fp-msg--err {
+  color: #e8a0a0;
+}
+
 .ch-lead {
   color: var(--mon-text-dim);
   font-size: 15px;

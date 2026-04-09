@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260411-tme-s-preview-fix">
+  <link rel="stylesheet" href="/monitor.css?v=20260412-kro-channel-risk-fp">
 </head>
 <body class="mon-page ch-page">
 
@@ -50,6 +50,11 @@
       <p class="ch-status-wrap"><span id="ch-status" class="mon-status watch">—</span></p>
     </section>
 
+    <section class="ch-block" aria-labelledby="ch-ri-h">
+      <h2 id="ch-ri-h" class="ch-h2">Индекс риска</h2>
+      <p class="ch-risk-index" id="ch-risk-index">—</p>
+    </section>
+
     <section class="ch-block" aria-labelledby="ch-risk-h">
       <h2 id="ch-risk-h" class="ch-h2">Признаки риска</h2>
       <div id="ch-risk" class="ch-body"></div>
@@ -64,6 +69,13 @@
     <section class="ch-block" aria-labelledby="ch-date-h">
       <h2 id="ch-date-h" class="ch-h2">Дата добавления</h2>
       <p class="ch-body" id="ch-detected">—</p>
+    </section>
+
+    <section class="ch-block ch-block--action" aria-labelledby="ch-fp-h">
+      <h2 id="ch-fp-h" class="ch-h2">Оспаривание</h2>
+      <p class="ch-meta">Если считаете, что канал ошибочно попал в базу, отправьте сигнал модераторам.</p>
+      <button type="button" class="ch-false-positive-btn" id="ch-fp-btn">Этот канал честный — сообщить об ошибке</button>
+      <p class="ch-fp-msg" id="ch-fp-msg" hidden></p>
     </section>
   </article>
 </main>
@@ -388,6 +400,13 @@
       st.textContent = r.status || '—';
       st.className = 'mon-status ' + statusClass(r.status);
 
+      var ri = document.getElementById('ch-risk-index');
+      var rim = data.risk_index_max != null ? Number(data.risk_index_max) : 100;
+      var riv = data.risk_index != null && data.risk_index !== '' ? Number(data.risk_index) : null;
+      ri.textContent = riv != null && !isNaN(riv)
+        ? ('Индекс риска: ' + riv + '/' + rim)
+        : 'Индекс риска: —';
+
       document.getElementById('ch-risk').innerHTML = renderRisk(r);
 
       var sp = (r.source_primary || '').trim() || '—';
@@ -395,6 +414,59 @@
       document.getElementById('ch-source-links').innerHTML = renderSourceLinks(r);
 
       document.getElementById('ch-detected').textContent = fmtDateShort(r.detected_at);
+
+      var fpBtn = document.getElementById('ch-fp-btn');
+      var fpMsg = document.getElementById('ch-fp-msg');
+      fpBtn.disabled = false;
+      fpMsg.hidden = true;
+      fpBtn.onclick = function () {
+        fpBtn.disabled = true;
+        fpMsg.hidden = false;
+        fpMsg.textContent = 'Отправка…';
+        fpMsg.className = 'ch-fp-msg';
+        var payload = { channel: (r.username || '').trim() || queryU };
+        fetch('/api/kro/report-false-positive', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+          .then(function (res) {
+            return res.json().then(function (j) {
+              if (!res.ok) throw new Error(j.error || 'request_failed');
+              return j;
+            });
+          })
+          .then(function (j) {
+            fpMsg.textContent = j.downgraded
+              ? 'Сигнал записан. После нескольких обращений статус снижен до «под наблюдением», запись помечена как оспариваемая.'
+              : 'Спасибо, сигнал записан. После трёх независимых отметок запись будет понижена до «под наблюдением».';
+            fpMsg.className = 'ch-fp-msg ch-fp-msg--ok';
+            if (j.downgraded) {
+              return fetch('/api/kro/channel-profile?u=' + encodeURIComponent(queryU), { cache: 'no-store' }).then(function (res2) {
+                return res2.json();
+              }).then(function (data2) {
+                var r2 = data2.profile;
+                if (r2 && r2.username) {
+                  st.textContent = r2.status || '—';
+                  st.className = 'mon-status ' + statusClass(r2.status);
+                  var riv2 = data2.risk_index != null ? Number(data2.risk_index) : null;
+                  var rim2 = data2.risk_index_max != null ? Number(data2.risk_index_max) : 100;
+                  document.getElementById('ch-risk-index').textContent = riv2 != null && !isNaN(riv2)
+                    ? ('Индекс риска: ' + riv2 + '/' + rim2)
+                    : 'Индекс риска: —';
+                  document.getElementById('ch-risk').innerHTML = renderRisk(r2);
+                }
+              });
+            }
+          })
+          .catch(function () {
+            fpMsg.textContent = 'Не удалось отправить. Попробуйте позже.';
+            fpMsg.className = 'ch-fp-msg ch-fp-msg--err';
+          })
+          .finally(function () {
+            fpBtn.disabled = false;
+          });
+      };
     })
     .catch(function () {
       document.getElementById('ch-loading').hidden = true;

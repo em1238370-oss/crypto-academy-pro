@@ -3492,9 +3492,17 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     if (!isScamBaseRowInLiveCounterDataset(profile)) {
       return res.status(404).json({ error: 'not_found' });
     }
+    const reportsForChannel = await getAllReportsForChannel(sheetsClient, profile.username);
+    const risk_index = computeKroRiskIndex(profile, reportsForChannel);
+    const false_positive_count = reportsForChannel.filter(
+      (r) => (r.source || '').toLowerCase() === 'false_positive'
+    ).length;
     return res.json({
       profile,
-      merged_rows: matches.length > 1 ? matches.length : undefined
+      merged_rows: matches.length > 1 ? matches.length : undefined,
+      risk_index,
+      risk_index_max: 100,
+      false_positive_count,
     });
   } catch (e) {
     console.error('KRO channel-profile error:', e);
@@ -3622,6 +3630,7 @@ async function getAllReportsForChannel(client, channel) {
       channel: (r[1] || '').toString().trim(),
       sum: parseInt((r[2] || '0').toString().replace(/\s/g, ''), 10) || 0,
       source: (r[3] || '').toString().trim(),
+      status: (r[4] || '').toString().trim(),
       reporter: (r[5] || '').toString().trim(),
       description: (r[6] || '').toString().trim(),
       proof_url: (r[7] || '').toString().trim(),
@@ -3629,6 +3638,96 @@ async function getAllReportsForChannel(client, channel) {
     }));
   } catch (e) {
     return [];
+  }
+}
+
+/** Маркеры URL разоблачителей для индекса риска (должны пересекаться с source_evidence / source_primary). */
+const KRO_WHISTLEBLOWER_RISK_MARKERS = [
+  'stop-scam',
+  'fin-obzor',
+  'vklader',
+  'telltrue',
+  'forteck',
+  'cryptorussia',
+  'brokers-check',
+  'kurs.expert',
+];
+
+function computeKroRiskIndex(profile, reports) {
+  let score = 0;
+  let red = 0;
+  let yellow = 0;
+  const caRaw = profile && profile.content_analysis;
+  try {
+    const ca = typeof caRaw === 'string' ? JSON.parse(caRaw || '{}') : caRaw || {};
+    const ur = ca.unified_risk || {};
+    const reds = ur.red_flags;
+    const yellows = ur.yellow_flags;
+    red = Array.isArray(reds) ? reds.length : (Number(ur.red_count) || 0);
+    yellow = Array.isArray(yellows) ? yellows.length : (Number(ur.yellow_count) || 0);
+  } catch (_) {
+    /* ignore */
+  }
+  score += red * 20 + yellow * 10;
+  const repList = Array.isArray(reports) ? reports : [];
+  const formCount = repList.filter((r) => (r.source || '').toLowerCase() === 'form').length;
+  const sheetComplaints = Number(profile && profile.complaints) || 0;
+  const userComplaintUnits = Math.max(formCount, sheetComplaints);
+  score += userComplaintUnits * 15;
+  const blob = `${profile && profile.source_primary ? profile.source_primary : ''} ${profile && profile.source_evidence ? profile.source_evidence : ''}`.toLowerCase();
+  if (KRO_WHISTLEBLOWER_RISK_MARKERS.some((m) => blob.includes(m))) {
+    score += 25;
+  }
+  return Math.min(100, score);
+}
+
+/**
+ * После ≥3 отчётов false_positive — статус «под наблюдением», в доказательствах — «оспаривается».
+ */
+async function applyFalsePositiveDowngradeIfNeeded(client, channel) {
+  if (!client || !kroSheetId) {
+    return { false_positive_count: 0, downgraded: false };
+  }
+  const reports = await getAllReportsForChannel(client, channel);
+  const fpCount = reports.filter((r) => (r.source || '').toLowerCase() === 'false_positive').length;
+  if (fpCount < 3) {
+    return { false_positive_count: fpCount, downgraded: false };
+  }
+  const sheetName = kroScamBaseSheet;
+  const key = channelMatchKey(channel);
+  try {
+    const resp = await client.sheets.spreadsheets.values.get({
+      spreadsheetId: kroSheetId,
+      range: `${sheetName}!A2:N`,
+    });
+    const rows = resp.data.values || [];
+    const data = [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (channelMatchKey((row[0] || '').toString()) !== key) {
+        continue;
+      }
+      const rowNum = i + 2;
+      const currentEv = (row[10] || '').toString();
+      const newEv = currentEv.includes('оспаривается')
+        ? currentEv
+        : `${currentEv}${currentEv ? ' ' : ''}(оспаривается)`.trim();
+      data.push({ range: `${sheetName}!M${rowNum}`, values: [['под наблюдением']] });
+      data.push({ range: `${sheetName}!K${rowNum}`, values: [[newEv]] });
+    }
+    if (data.length) {
+      await client.sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: kroSheetId,
+        requestBody: {
+          valueInputOption: 'USER_ENTERED',
+          data,
+        },
+      });
+    }
+    return { false_positive_count: fpCount, downgraded: data.length > 0 };
+  } catch (e) {
+    console.error('[KRO] applyFalsePositiveDowngradeIfNeeded:', e);
+    return { false_positive_count: fpCount, downgraded: false };
   }
 }
 
@@ -3791,6 +3890,40 @@ app.post('/api/kro/report-scam', express.json(), async (req, res) => {
     });
   } catch (e) {
     console.error('KRO report-scam error:', e);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+app.post('/api/kro/report-false-positive', express.json(), async (req, res) => {
+  const channelRaw = (req.body?.channel ?? '').toString().trim();
+  const channel = normalizeChannel(channelRaw) || channelRaw.toLowerCase().replace(/\s/g, '');
+  if (!channel) {
+    return res.status(400).json({ error: 'channel is required' });
+  }
+  try {
+    const client = await getKroSheetsClient();
+    if (!client) {
+      return res.status(503).json({ error: 'live_counter_not_configured' });
+    }
+    const today = getTodayMSK();
+    const desc =
+      'false_positive: пользователь на странице канала отметил запись как ошибочную (честный канал).';
+    const row = [[today.dateKey, channel, 0, 'false_positive', 'Активен', 'site_channel_page', desc, '', '']];
+    await client.sheets.spreadsheets.values.append({
+      spreadsheetId: kroSheetId,
+      range: 'A:I',
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: { values: row },
+    });
+    const fpResult = await applyFalsePositiveDowngradeIfNeeded(client, channel);
+    res.status(200).json({
+      ok: true,
+      false_positive_count: fpResult.false_positive_count,
+      downgraded: fpResult.downgraded,
+    });
+  } catch (e) {
+    console.error('KRO report-false-positive error:', e);
     res.status(500).json({ error: 'internal_error' });
   }
 });
