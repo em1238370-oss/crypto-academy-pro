@@ -1595,7 +1595,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-f1-shock-total {
    font-size: clamp(42px, 7vw, 68px);
    font-weight: 800;
-   color: #c97b7b;
+   color: rgba(255, 255, 255, 0.88);
    line-height: 1.1;
    margin: 0;
    letter-spacing: -0.02em;
@@ -1610,7 +1610,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-f1-loh-title {
    font-size: clamp(18px, 2.5vw, 24px);
    font-weight: 700;
-   color: #5dcaa5;
+   color: rgba(255, 255, 255, 0.92);
    margin-bottom: 20px;
    text-transform: uppercase;
    letter-spacing: 0.02em;
@@ -1623,10 +1623,10 @@ body.kro-hero-scrolled .kro-floating-nav {
    position: absolute;
    left: 0;
    bottom: 0;
-   width: 36px;
+   width: 32px;
    height: 2px;
    border-radius: 2px;
-   background: rgba(93, 202, 165, 0.4);
+   background: rgba(255, 255, 255, 0.2);
 }
 
 .kro-f1-loh-types {
@@ -1683,7 +1683,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-f1-math-title {
    font-size: clamp(18px, 2.5vw, 24px);
    font-weight: 700;
-   color: #5dcaa5;
+   color: rgba(255, 255, 255, 0.92);
    margin-bottom: 20px;
    text-transform: uppercase;
    letter-spacing: 0.02em;
@@ -1696,10 +1696,10 @@ body.kro-hero-scrolled .kro-floating-nav {
    position: absolute;
    left: 0;
    bottom: 0;
-   width: 36px;
+   width: 32px;
    height: 2px;
    border-radius: 2px;
-   background: rgba(93, 202, 165, 0.4);
+   background: rgba(255, 255, 255, 0.2);
 }
 
 .kro-f1-math-slider-wrap {
