@@ -943,31 +943,33 @@ body.kro-hero-scrolled .kro-floating-nav {
    align-items: center;
    justify-content: center;
    gap: 10px;
-   max-width: 320px;
+   max-width: 300px;
    font-family: var(--kro-font-body);
-   font-size: clamp(14px, 1.6vw, 16px);
-   font-weight: 800;
-   letter-spacing: 0.08em;
+   font-size: clamp(12px, 1.4vw, 14px);
+   font-weight: 600;
+   letter-spacing: 0.1em;
    text-transform: uppercase;
-   color: #0a0c10;
-   background: linear-gradient(135deg, #f59e0b 0%, #ea7828 100%);
-   padding: 18px 36px;
-   border: none;
+   color: rgba(255, 240, 210, 0.88);
+   background: transparent;
+   padding: 16px 32px;
+   border: 1px solid rgba(245, 158, 11, 0.22);
    border-radius: 999px;
    text-decoration: none;
    position: relative;
    overflow: hidden;
-   box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.6), 0 8px 32px rgba(245, 158, 11, 0.4), 0 0 64px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(255,255,255,0.25);
-   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, filter 0.25s ease;
+   box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 24px rgba(0,0,0,0.2);
+   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease, border-color 0.3s ease, color 0.3s ease;
    text-align: center;
-   line-height: 1.35;
+   line-height: 1.4;
+   backdrop-filter: blur(8px);
+   -webkit-backdrop-filter: blur(8px);
 }
 
 .kro-step1-cta::before {
    content: '';
    position: absolute;
    inset: 0;
-   background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 60%);
+   background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245, 158, 11, 0.06) 0%, transparent 70%);
    border-radius: 999px;
    pointer-events: none;
 }
@@ -976,29 +978,28 @@ body.kro-hero-scrolled .kro-floating-nav {
    content: '';
    position: absolute;
    top: 0;
-   left: -100%;
-   width: 50%;
+   left: -120%;
+   width: 45%;
    height: 100%;
-   background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.22) 50%, transparent 100%);
-   animation: kro-cta-shimmer 3.5s ease-in-out infinite;
+   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+   animation: kro-cta-shimmer 4s ease-in-out infinite;
 }
 
 @keyframes kro-cta-shimmer {
-   0%   { left: -100%; opacity: 1; }
-   45%  { left: 160%;  opacity: 1; }
-   46%  { opacity: 0; }
-   100% { left: 160%;  opacity: 0; }
+   0%   { left: -120%; }
+   50%  { left: 160%; }
+   100% { left: 160%; }
 }
 
 .kro-step1-cta:hover {
-   transform: translateY(-5px) scale(1.04);
-   filter: brightness(1.1);
-   box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.8), 0 16px 48px rgba(245, 158, 11, 0.55), 0 0 80px rgba(245, 158, 11, 0.2), inset 0 1px 0 rgba(255,255,255,0.3);
+   border-color: rgba(245, 158, 11, 0.5);
+   color: rgba(255, 248, 230, 1);
+   transform: translateY(-4px);
+   box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 40px rgba(245, 158, 11, 0.1), inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
 .kro-step1-cta:active {
-   transform: scale(0.97);
-   filter: brightness(0.95);
+   transform: scale(0.98);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1007,9 +1008,9 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-step1-cta:focus-visible {
-   outline: 2px solid rgba(245, 158, 11, 0.95);
+   outline: 2px solid rgba(245, 158, 11, 0.42);
    outline-offset: 3px;
-   box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.25);
+   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
 /* Scroll reveal: переменные из набора утилит Hero/Footer */
