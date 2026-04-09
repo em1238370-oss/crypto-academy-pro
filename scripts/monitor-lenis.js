@@ -1,6 +1,6 @@
 /**
  * Плавный скролл для /monitor (колёсико + тач).
- * На ≤640px: syncTouch, touchMultiplier 1.05, lerp/syncTouchLerp ближе к дефолтам Lenis — плавнее, без рывков.
+ * На ≤640px: syncTouch + те же плавные lerp/syncTouchLerp/inertia; touchMultiplier 1.4 — обычная скорость, не «заторможенная».
  */
 (function () {
   'use strict';
@@ -12,10 +12,10 @@
 
   var isNarrowPhone =
     typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
-  var touchMultiplier = isNarrowPhone ? 1.05 : 1.4;
-  var lenisLerp = isNarrowPhone ? 0.088 : 0.055;
-  var lenisSyncTouchLerp = isNarrowPhone ? 0.12 : 0.32;
-  var lenisTouchInertia = isNarrowPhone ? 1.48 : 1.58;
+  var touchMultiplier = 1.4;
+  var lenisLerp = isNarrowPhone ? 0.094 : 0.055;
+  var lenisSyncTouchLerp = isNarrowPhone ? 0.14 : 0.34;
+  var lenisTouchInertia = isNarrowPhone ? 1.52 : 1.58;
 
   function maxScrollY() {
     return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);

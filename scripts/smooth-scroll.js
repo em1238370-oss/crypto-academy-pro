@@ -1,6 +1,6 @@
 /**
  * Плавный скролл: Lenis (колёсико + тач) или запасной wheel.
- * На узком экране (≤640px): touchMultiplier 1.05 + мягче lerp / syncTouchLerp / inertia — плавный тач без «рвани».
+ * Скорость тача как раньше (1.4); на телефоне мягче lerp / syncTouchLerp / inertia — плавно, не «медленно».
  */
 (function () {
     'use strict';
@@ -8,12 +8,11 @@
     var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var isNarrowPhone =
         typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
-    /** Десктоп 1.4; на телефоне 1.05 (~на четверть спокойнее тот же жест). */
-    var touchMultiplier = isNarrowPhone ? 1.05 : 1.4;
+    var touchMultiplier = 1.4;
     /** Lenis: дефолт lerp 0.1, syncTouchLerp 0.075. Слишком низкий lerp + огромный syncTouchLerp дают «рваный» тач. */
-    var lenisLerp = isNarrowPhone ? 0.088 : 0.058;
-    var lenisSyncTouchLerp = isNarrowPhone ? 0.12 : 0.32;
-    var lenisTouchInertia = isNarrowPhone ? 1.48 : 1.58;
+    var lenisLerp = isNarrowPhone ? 0.094 : 0.062;
+    var lenisSyncTouchLerp = isNarrowPhone ? 0.14 : 0.34;
+    var lenisTouchInertia = isNarrowPhone ? 1.52 : 1.58;
 
     function maxScrollY() {
         return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
