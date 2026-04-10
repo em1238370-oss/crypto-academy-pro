@@ -195,6 +195,17 @@ _ARTICLE_SOURCES_REQUIRE_SCAM_CONTEXT = frozenset({
 _ARTICLE_HEAD_PRIORITY_SOURCES = frozenset({
     'stop-scam1', 'fin-obzor', 'vklader', 'telltrue', 'forteck',
 })
+# + web-search (DDG): заголовок/URL/slug страницы или явное обвинение рядом с @ в теле.
+_ACCUSATION_PRIORITY_SOURCES = _ARTICLE_HEAD_PRIORITY_SOURCES | frozenset({'web-search'})
+
+_URL_PATH_SLUG_USERNAME_RE = re.compile(r'^[a-z][a-z0-9_]{3,31}$')
+_BODY_ACCUSATION_MARKERS = (
+    'развод', 'мошенник', 'мошенничество', 'скам', 'scam', 'лохотрон',
+    'кидал', 'кинул', 'обман', 'обманул', 'жалоб', 'жертв', 'жертва',
+    'чёрный список', 'черный список', 'blacklist', 'разоблачен', 'не платит',
+    'не возвращ', 'украл', 'украли', 'слил', 'слив', 'аферист', 'кидалово',
+    'предупреждение', 'осторожно', 'обвиняют', 'обвинение',
+)
 
 
 def _has_scam_context_near(text, match_start, match_end, radius=_SCAM_CONTEXT_NEAR_RADIUS):
@@ -264,17 +275,84 @@ def _extract_article_head_zone_text(page, paragraphs, clean_fallback):
     return ' '.join(x for x in (title, first_para) if x).strip()
 
 
-def _filter_channels_article_head_priority(channels_full, channels_head, source_name):
+def _telegram_like_slug_from_article_url(url: str) -> str:
+    """Последний сегмент пути, если похож на t.me username (статья site.com/foo/bar/username)."""
+    try:
+        p = urlparse(url or '')
+        parts = [x for x in (p.path or '').strip('/').split('/') if x]
+        if not parts:
+            return ''
+        last = parts[-1].split('?')[0].lower()
+        if _URL_PATH_SLUG_USERNAME_RE.match(last):
+            return last
+    except Exception:
+        pass
+    return ''
+
+
+def _mention_is_substantive_accusation(full_text: str, title_lower: str, username: str) -> bool:
     """
-    Если в «шапке» статьи есть @ — считаем их целью разоблачения; иначе отбрасываем
-    только глобально исключаемые username из полного текста (официальные платформы, Poizon*).
+    @username только в теле: нужен маркер обвинения в окне вокруг упоминания или имя в заголовке.
+    Отсекает «мошенники в Telegram» → @telegram в абзаце без прямого обвинения канала @telegram.
     """
-    if source_name not in _ARTICLE_HEAD_PRIORITY_SOURCES:
+    u = (username or '').strip().lower()
+    if not u or not full_text:
+        return False
+    tl = (title_lower or '').lower()
+    if u in tl.replace('@', ''):
+        return True
+    low = full_text.lower()
+    idx = low.find('@' + u)
+    if idx < 0:
+        idx = low.find('t.me/' + u)
+    if idx < 0:
+        return False
+    win = low[max(0, idx - 180) : idx + len(u) + 180]
+    if any(m in win for m in _BODY_ACCUSATION_MARKERS):
+        return True
+    snip = low[max(0, idx - 50) : idx + len(u) + 90]
+    if re.search(r'канал\s*@?' + re.escape(u) + r'\b', snip):
+        return True
+    if re.search(r'@' + re.escape(u) + r'\s*[—\-–]\s*', snip):
+        return True
+    return False
+
+
+def _filter_channels_accusation_evidence(
+    channels_full,
+    channels_head,
+    source_name,
+    page_url,
+    title_text,
+    full_text_body,
+):
+    """
+    1) Заголовок + 1-й абзац: кандидаты «главные подозреваемые».
+    2) URL страницы: если последний сегмент пути = username и он среди кандидатов — высокая уверенность.
+    3) Иначе только тело: оставляем @ только при явном обвинении рядом (не голое упоминание платформы).
+    """
+    if source_name not in _ACCUSATION_PRIORITY_SOURCES:
         return channels_full
     head_set = set(channels_head or [])
-    if head_set:
-        return [c for c in channels_full if c in head_set]
-    return [c for c in channels_full if not should_never_scam_base_norm_key(c)]
+    slug = _telegram_like_slug_from_article_url(page_url or '')
+    slug_match = {slug} if slug and slug in set(channels_full) else set()
+    high = head_set | slug_match
+    if high:
+        return [c for c in channels_full if c in high]
+    out = []
+    title_l = (title_text or '').strip()
+    for c in channels_full:
+        if should_never_scam_base_norm_key(c):
+            continue
+        if _mention_is_substantive_accusation(full_text_body or '', title_l.lower(), c):
+            out.append(c)
+        else:
+            print(
+                'skip: @%s — только в теле, нет связи с заголовком/URL и нет явного обвинения рядом с @'
+                % c,
+                file=sys.stderr,
+            )
+    return out
 
 
 def _clean_html_text(raw_html):
@@ -857,7 +935,15 @@ def _build_findings_from_page(
     channels_head = (
         _extract_channel_mentions(head_zone, require_scam_context=req_ctx) if head_zone else []
     )
-    channels = _filter_channels_article_head_priority(channels, channels_head, source_name)
+    acc_text_blob = ((clean_for_channels or '') + '\n' + (_clean_html_text(page) or ''))[:120000]
+    channels = _filter_channels_accusation_evidence(
+        channels,
+        channels_head,
+        source_name,
+        url,
+        title,
+        acc_text_blob,
+    )
     if not channels:
         return []
     anchor = (anchor_username or '').strip().lstrip('@').lower()

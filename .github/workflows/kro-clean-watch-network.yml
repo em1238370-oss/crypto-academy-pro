@@ -1,0 +1,44 @@
+# Удаление строк на channels_watch и channels_network, если канал в denylist
+# (kro_permanent_blocklist.json + Poizon* + официальные платформы) — как для scam_base.
+#
+# Счётчики «Источники данных» (kro_meta) обновятся при следующем успешном KRO 12h Monitor.
+name: KRO Clean watch & network (denylist)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'true = только лог, без удаления'
+        required: false
+        default: 'false'
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install -r backend/kro-worker/requirements.txt python-dotenv
+
+      - name: Write Google credentials
+        env:
+          KRO_GOOGLE_CREDENTIALS_BASE64: ${{ secrets.KRO_GOOGLE_CREDENTIALS_BASE64 }}
+        run: python3 "${{ github.workspace }}/.github/scripts/write-google-credentials.py"
+
+      - name: Clean channels_watch and channels_network
+        working-directory: backend/kro-worker
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: credentials.json
+          KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            python3 ../scripts/kro-clean-watch-network-denylist.py --dry-run
+          else
+            python3 ../scripts/kro-clean-watch-network-denylist.py --execute
+          fi
