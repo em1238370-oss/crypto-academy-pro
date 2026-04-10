@@ -2299,13 +2299,7 @@ a.mon-ca-sample-link[href^="tg:"] {
   margin-bottom: 4px;
 }
 
-#data-scam .mon-table-wrap--registry,
-#data-watch .mon-table-wrap--registry {
-  max-height: min(78vh, 860px);
-  overflow: auto;
-  border-radius: 0 0 12px 12px;
-}
-
+/* Реестр scam_base / watch — полная высота страницы, только горизонтальный скролл как у «Сети каналов» */
 .mon-table--registry thead th {
   white-space: normal;
   vertical-align: bottom;
