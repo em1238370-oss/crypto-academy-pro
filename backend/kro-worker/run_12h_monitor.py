@@ -4005,6 +4005,23 @@ def _maybe_prune_scam_base_http_after_cycle(client, sheet_id):
         print('scam_base HTTP prune after cycle error: %s' % e, file=sys.stderr)
 
 
+def _prune_scam_base_blocklist_after_cycle(client, sheet_id):
+    """Каждый цикл: убрать из scam_base строки blocklist / Poizon* / платформы (без HTTP)."""
+    if not client or not sheet_id:
+        return
+    try:
+        pr = _kro_tme_http_gate.prune_scam_base_blocklist_rows(client, sheet_id, dry_run=False)
+        if pr.get('removed_denylist', 0):
+            print(
+                'scam_base blocklist prune: removed %d of %d rows (after=%s)'
+                % (pr.get('removed_denylist', 0), pr.get('rows_before', 0), pr.get('rows_after', '')),
+                file=sys.stderr,
+            )
+    except Exception as e:
+        print('scam_base blocklist prune error: %s' % e, file=sys.stderr)
+
+
+
 def _watch_source_label(row):
     qg = (row.get('query_group') or '').strip().lower()
     if qg == 'telegram_watch':
@@ -7142,6 +7159,7 @@ def main():
         _write_channels_network_to_sheet(channels_network_rows, client, sheet_id)
         _enqueue_channels_for_check([row[1] for row in channels_network_rows], client, sheet_id)
         asyncio.run(_fill_missing_content_analysis_in_scam_base(client, sheet_id))
+        _prune_scam_base_blocklist_after_cycle(client, sheet_id)
         _maybe_prune_scam_base_http_after_cycle(client, sheet_id)
     confirmed_stats = _build_stats_from_confirmed(confirmed_objects)
     # Цифры для сайта — только из подтверждённых объектов

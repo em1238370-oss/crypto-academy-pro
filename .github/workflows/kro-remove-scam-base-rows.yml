@@ -9,7 +9,7 @@ on:
       usernames:
         description: 'Через запятую, без обязательного @ (напр. telegram,poizonsector,poizonsystem)'
         required: true
-        default: 'telegram,poizonsector,poizonsystem'
+        default: 'telegram,proton,poizonsector,poizonsystem,poizonrider,poizonnation,poizonfenix,poizonlevel,airolejon,davydovavioletta,hellcrome,pinso75,aminaworkuk,finside,incom_biz,anisimov,alex_wise_trade'
 
 jobs:
   remove-rows:

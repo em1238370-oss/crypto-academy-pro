@@ -6,7 +6,8 @@
 скрипт пригоден для локального запуска и для CI (в отличие от cleanup с Telethon).
 
 Удаляется строка Telegram-канала, если выполняется хотя бы одно:
-- username в жёстком списке FORCE_REMOVE_USERNAMES (см. ниже в коде);
+- username в kro_permanent_blocklist.json или Poizon* / официальные платформы (denylist);
+- username в жёстком списке FORCE_REMOVE_USERNAMES (см. kro_tme_http_gate);
 - канал недоступен (ошибка HTTP, страница ошибки t.me, не существует и т.п.);
 - в описании и в текстах постов с превью t.me/s/… нет ни одного крипто-маркера.
 
@@ -45,6 +46,7 @@ if _KW not in sys.path:
 
 from kro_tme_http_gate import (  # noqa: E402
     FORCE_REMOVE_USERNAMES,
+    telegram_scam_base_row_matches_denylist,
     SCAM_BASE_HTTP_CRYPTO_TERMS as CRYPTO_TERMS,
     is_telegram_scam_base_row as _is_telegram_row,
     norm_username_cell as _norm_username_cell,
@@ -396,6 +398,11 @@ def main() -> int:
         if u_n in FORCE_REMOVE_USERNAMES or link_n in FORCE_REMOVE_USERNAMES:
             remove_indices.append(i)
             log_lines.append('REMOVE row %d: %s — force_list' % (i + 2, u or link or '?'))
+            continue
+
+        if telegram_scam_base_row_matches_denylist(row):
+            remove_indices.append(i)
+            log_lines.append('REMOVE row %d: %s — denylist_or_platform' % (i + 2, u or link or '?'))
             continue
 
         slug = _normalize_slug(link or u)
