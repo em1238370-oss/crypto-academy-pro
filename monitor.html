@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260409-monitor-medvedev">
+  <link rel="stylesheet" href="/monitor.css?v=20260410-metrics-digest">
 </head>
 <body class="mon-page">
 
@@ -233,7 +233,7 @@
     <header class="mon-chapter-head">
       <p class="mon-chapter-kicker">01 · Система</p>
       <h2 id="mon-metrics-heading" class="mon-chapter-title">Результаты в цифрах</h2>
-      <p class="mon-chapter-lead">Ключевые метрики и последние циклы — всё, что нужно для снимка состояния сейчас.</p>
+      <p class="mon-chapter-lead">Карточки сверху — мгновенный снимок; таблицы ниже — те же показатели с расшифровкой: откуда поле, что оно значит для интерпретации (в духе executive-дашборда).</p>
     </header>
     <div class="mon-chapter-body">
       <div class="mon-surface mon-surface--pad">
@@ -1742,8 +1742,16 @@
     var r12l = Number(rollup12.losses_rub);
     var r12c = Number(rollup12.mentions_in_sources_sum != null ? rollup12.mentions_in_sources_sum : rollup12.complaints);
 
-    function sumRow(label, val) {
-      return '<tr><td class="mon-cell-muted">' + esc(label) + '</td><td class="mon-cell-value-strong">' + esc(String(val)) + '</td></tr>';
+    var theadSummary =
+      '<thead><tr>' +
+      '<th scope="col">Показатель</th>' +
+      '<th scope="col" class="mon-th-metric-val">Значение</th>' +
+      '<th scope="col" class="mon-th-metric-note">Смысл и источник</th>' +
+      '</tr></thead>';
+
+    function sumRow(label, val, note) {
+      var n = note != null && String(note).length ? String(note) : '—';
+      return '<tr><td class="mon-cell-muted">' + esc(label) + '</td><td class="mon-cell-value-strong">' + esc(String(val)) + '</td><td class="mon-cell-note">' + esc(n) + '</td></tr>';
     }
     function n(k) {
       return Number(confirmedSummary[k] || 0);
@@ -1764,43 +1772,103 @@
         '</div></div></div></article>';
     }
 
+    var lastMsDigest = parseLastCycleAt(meta.last_cycle_at);
+    var nextCycleDigest = lastMsDigest ? fmtMoscowPlainDate(new Date(lastMsDigest.getTime() + CYCLE_MS)) : '—';
+
     var table1 =
-      '<thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>' +
-      sumRow('Дата и время последнего цикла', cycleTime) +
-      sumRow('Найдено в последнем цикле (kro_meta)', newC) +
-      (isFinite(r12l) ? sumRow('Потери ₽ за 12 ч (по дате обнаружения в scam_base)', (Math.round(r12l) || 0).toLocaleString('ru-RU') + ' ₽') : '') +
-      (isFinite(r12c) ? sumRow('Упоминаний в источниках за 12 ч (сумма по столбцу в строках)', r12c) : '') +
-      sumRow('Источников опрошено / ответили «нашёл»', src.length + ' / ' + srcOk) +
+      theadSummary + '<tbody>' +
+      sumRow(
+        'Дата и время последнего цикла',
+        cycleTime,
+        'Поле last_cycle_at в kro_meta: когда воркер зафиксировал завершение прогона. Отображение в МСК; совпадает со строкой статуса под шапкой.'
+      ) +
+      sumRow(
+        'Следующий цикл (план)',
+        nextCycleDigest,
+        'Ориентир: +12 ч к отметке последнего цикла (расписание 00:00 и 12:00 МСК). Не гарантия старта — зависит от GitHub Actions и очереди.'
+      ) +
+      sumRow(
+        'Найдено в последнем цикле',
+        newC,
+        'Поле new_in_cycle в kro_meta: число новых записей в scam_base, появившихся в этом прогоне относительно предыдущего снимка.'
+      ) +
+      (isFinite(r12l)
+        ? sumRow(
+            'Потери ₽ за 12 ч',
+            (Math.round(r12l) || 0).toLocaleString('ru-RU') + ' ₽',
+            'Сумма estimated_loss_rub по строкам scam_base, у которых дата обнаружения попадает в скользящее окно 12 ч (как в блоке «Найдено за 12 ч»).'
+          )
+        : '') +
+      (isFinite(r12c)
+        ? sumRow(
+            'Упоминаний в источниках за 12 ч',
+            r12c,
+            'Агрегат по числовому столбцу жалоб/упоминаний в отфильтрованных строках окна 12 ч; методика — отчёт Source & Data, раздел про rollup.'
+          )
+        : '') +
+      sumRow(
+        'Источники: опрошено / «нашёл»',
+        src.length + ' / ' + srcOk,
+        'Список sources_checked в kro_meta за цикл. «Нашёл» — статус found: источник доступен и дал данные для пайплайна.'
+      ) +
       '</tbody>';
 
     var table2 =
-      '<thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>' +
-      sumRow('Всего уникальных объектов в базе', chTot) +
-      sumRow('Подтверждённый скам', n('confirmed_scam')) +
-      sumRow('В зоне риска', n('at_risk')) +
-      sumRow('Под наблюдением', n('under_watch')) +
-      sumRow('Без нарушений / без риска', n('no_violations')) +
-      sumRow('Не по теме', n('off_topic')) +
-      sumRow('Иной статус', n('unknown')) +
+      theadSummary + '<tbody>' +
+      sumRow(
+        'Всего уникальных объектов в базе',
+        chTot,
+        'Тот же счётчик, что в шапке раздела «База объектов»: уникальные объекты в scam_base после фильтров сайта (не окно 12 ч).'
+      ) +
+      sumRow(
+        'Подтверждённый скам',
+        n('confirmed_scam'),
+        'Статус confirmed_scam в сводке confirmed_status_summary: несколько независимых сигналов и порог по методологии отчёта.'
+      ) +
+      sumRow(
+        'В зоне риска',
+        n('at_risk'),
+        'at_risk: есть признаки мошенничества или сомнительной практики, но ещё не выполнен полный порог для «подтверждённый скам».'
+      ) +
+      sumRow(
+        'Под наблюдением',
+        n('under_watch'),
+        'under_watch: объект в мониторинге, данных недостаточно для жёсткой классификации; повторные циклы могут изменить статус.'
+      ) +
+      sumRow(
+        'Без нарушений / без риска',
+        n('no_violations'),
+        'no_violations: по текущим правилам нарушений не зафиксировано; не равно «рекомендация инвестировать».'
+      ) +
+      sumRow(
+        'Не по теме',
+        n('off_topic'),
+        'off_topic: запись не относится к предмету мониторинга (крипто-скам / каналы из периметра).'
+      ) +
+      sumRow(
+        'Иной статус',
+        n('unknown'),
+        'unknown: классификация не попала в перечисленные категории или требует ручной проверки.'
+      ) +
       '</tbody>';
 
     wrap.innerHTML =
       objectSheetBlock(
         'Сводка цикла · kro_meta',
         'Последний прогон',
-        'Фиксация после цикла 12:00 и 00:00 (МСК): когда обновились метаданные, сколько новых каналов и как отработали источники.',
+        'Метаданные после цикла 12:00 / 00:00 МСК: время, прирост, окно 12 ч, опрос источников. Колонка «Смысл и источник» привязана к полям kro_meta и rollup.',
         table1
       ) +
       objectSheetBlock(
         'Таблица · scam_base',
         'База объектов (итог)',
-        'Полный снимок подтверждённой базы после фильтров сайта (не ограничен 12 ч). Ниже отдельная таблица — только скользящие 12 ч.',
+        'Распределение по статусам на всей базе после фильтров сайта (не окно 12 ч). Пояснения — к категориям сводки confirmed_status_summary; детали — в Source & Data.',
         table2
       ) +
       objectSheetBlock(
         'Качество данных · kro_meta',
         'Контроль точности',
-        'Порог веса источников для новой записи в scam_base — не ниже min_source_weight_policy (сумма весов: разоблачители, форма с учётом качества текста жалобы, молодой канал с жалобами и т.д.). Метрики пересчитываются воркером и пишутся в лист kro_meta.',
+        'Порог веса источников для новой записи в scam_base — не ниже min_source_weight_policy. Метрики пересчитывает воркер и пишет в kro_meta; третья колонка кратко поясняет каждый счётчик для проверки методологии.',
         (function() {
           var fp = Number(meta.false_positive_signals || 0);
           var aw = meta.avg_source_weight;
@@ -1814,15 +1882,47 @@
           var mwStr = (mw != null && isFinite(Number(mw))) ? String(Number(mw)) : '3';
           var yw = Number(meta.young_with_complaints_in_base || 0);
           var tableQ =
-            '<thead><tr><th>Показатель</th><th>Значение</th></tr></thead><tbody>' +
-            sumRow('Минимальный вес источников для scam_base (политика)', mwStr) +
-            sumRow('Каналов с сигналом false_positive (от пользователей)', fp) +
-            sumRow('Средний вес источников по строкам scam_base', awStr) +
-            sumRow('Средняя оценка качества текста жалобы (форма, есть описание)', aqStr) +
-            sumRow('Строк scam_base с суммарным весом ниже порога (аудит)', bw) +
-            sumRow('Рёбер графа связей (channels_network)', ne) +
-            sumRow('В базе: канал <90 дн. и есть жалобы (красный флаг в скоринге)', yw) +
-            sumRow('Строк в базе только с жалобами (без внешнего URL разоблачителя)', co) +
+            theadSummary + '<tbody>' +
+            sumRow(
+              'Минимальный вес источников (политика)',
+              mwStr,
+              'min_source_weight_policy в kro_meta: сумма весов источников для новой строки в scam_base не должна быть ниже этого порога.'
+            ) +
+            sumRow(
+              'Сигнал false_positive (от пользователей)',
+              fp,
+              'false_positive_signals: отметки пользователей о возможной ошибке классификации; участвуют в аудите качества, не удаляют строку автоматически.'
+            ) +
+            sumRow(
+              'Средний вес источников по scam_base',
+              awStr,
+              'avg_source_weight: среднее по строкам базы; показывает, насколько «тяжёлые» доказательства типичны для текущего состава.'
+            ) +
+            sumRow(
+              'Среднее качество текста жалобы',
+              aqStr,
+              'avg_complaint_quality: оценка полноты описания в форме (есть сумма, контекст, контакты); влияет на вес жалобы в скоринге.'
+            ) +
+            sumRow(
+              'Строк ниже порога веса (аудит)',
+              bw,
+              'scam_base_rows_below_min_weight: строки, накопленные до ужесточения политики или с пограничным весом — кандидаты на пересмотр.'
+            ) +
+            sumRow(
+              'Рёбер графа связей',
+              ne,
+              'channels_network_edges: число связей «канал A продвигает B» с доказательством в таблице сетей ниже по странице.'
+            ) +
+            sumRow(
+              'Канал младше 90 дн. + жалобы',
+              yw,
+              'young_with_complaints_in_base: молодые каналы с жалобами получают повышенный риск в скоринге (красный флаг в отчёте).'
+            ) +
+            sumRow(
+              'Только жалобы (без URL разоблачителя)',
+              co,
+              'channels_with_complaints_only: подтверждение в основном через форму; полезно отличать от кейсов с внешними статьями-источниками.'
+            ) +
             '</tbody>';
           return tableQ;
         })(),
