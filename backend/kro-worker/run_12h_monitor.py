@@ -3496,8 +3496,16 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
         # Порог: А — один след разоблачительского сайта; Б — ≥2 жалоб в агрегате
         complaint_count = complaint_data.get('complaints') or 0
         whistle = _complaint_bucket_has_whistleblower_evidence(complaint_data, tg_row)
-        min_complaints = 1 if whistle else 2
-        if complaint_count < min_complaints:
+        # В scam_base только при маркере сайта-разоблачителя в агрегате (не «только form+web»).
+        if not whistle:
+            _kro_cycle_analytics_inc('collect_reject_no_whistleblower_external')
+            print(
+                'confirmed-filter: %s — нет URL/маркера разоблачителя (vklader, stop-scam1, …); '
+                'остаётся в reports до внешнего подтверждения.' % ch,
+                file=sys.stderr,
+            )
+            continue
+        if complaint_count < 1:
             _kro_cycle_analytics_inc('collect_reject_low_complaints')
             continue
         created_dt = None
@@ -6760,12 +6768,15 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
             if named_non_empty else len(reports)
         )
         has_whistleblower = any(_report_row_is_whistleblower_site(r) for r in reports)
-        if has_whistleblower:
-            if unique_count < 1:
-                continue
-        else:
-            if unique_count < 2:
-                continue
+        if not has_whistleblower:
+            print(
+                '[promote] skip %s: нет URL разоблачителя в reports (только form/web — не пишем в scam_base).'
+                % ch,
+                file=sys.stderr,
+            )
+            continue
+        if unique_count < 1:
+            continue
 
         total_loss = sum(r.get('sum') or 0 for r in reports)
         ot_sheet = next(

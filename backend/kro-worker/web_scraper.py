@@ -24,6 +24,8 @@ import socket
 from datetime import datetime, timezone
 from urllib.parse import urljoin, quote_plus, urlparse
 
+from kro_false_positive_guards import should_never_scam_base_norm_key
+
 logger = logging.getLogger(__name__)
 _LAST_SOURCE_STATUS = []
 
@@ -176,6 +178,12 @@ _SCAM_CONTEXT_WORDS = (
 
 _ARTICLE_SOURCES_REQUIRE_SCAM_CONTEXT = frozenset({
     'stop-scam1', 'fin-obzor', 'web-search', 'cryptorussia', 'brokers-check',
+    'vklader', 'telltrue', 'forteck',
+})
+
+# Статьи разоблачителей: приоритет @username в заголовке / первом абзаце (не платформа в теле статьи).
+_ARTICLE_HEAD_PRIORITY_SOURCES = frozenset({
+    'stop-scam1', 'fin-obzor', 'vklader', 'telltrue', 'forteck',
 })
 
 
@@ -233,6 +241,30 @@ def _extract_channel_mentions(text, require_scam_context=False):
     for m in re.finditer(r't\.me/([A-Za-z][A-Za-z0-9_]{3,})', text):
         _consider(m.start(), m.end(), m.group(1), is_tme=True)
     return sorted(first_pos.keys(), key=lambda u: first_pos[u])
+
+
+def _extract_article_head_zone_text(page, paragraphs, clean_fallback):
+    """Заголовок + первый абзац (или начало тела), для эвристики «предмет обвинения»."""
+    title = (_extract_title_from_html(page) or '').strip()
+    first_para = ''
+    if paragraphs:
+        first_para = (paragraphs[0] or '').strip()
+    elif clean_fallback:
+        first_para = (clean_fallback or '')[:600].strip()
+    return ' '.join(x for x in (title, first_para) if x).strip()
+
+
+def _filter_channels_article_head_priority(channels_full, channels_head, source_name):
+    """
+    Если в «шапке» статьи есть @ — считаем их целью разоблачения; иначе отбрасываем
+    только глобально исключаемые username из полного текста (официальные платформы, Poizon*).
+    """
+    if source_name not in _ARTICLE_HEAD_PRIORITY_SOURCES:
+        return channels_full
+    head_set = set(channels_head or [])
+    if head_set:
+        return [c for c in channels_full if c in head_set]
+    return [c for c in channels_full if not should_never_scam_base_norm_key(c)]
 
 
 def _clean_html_text(raw_html):
@@ -719,6 +751,14 @@ def _build_findings_from_page(page, url, source_name, max_channels=3, anchor_use
         # Also scan full page for channel mentions (in case BS4 missed them)
         full_clean = _clean_html_text(page)
         channels = _extract_channel_mentions(full_clean, require_scam_context=req_ctx)
+    if not channels:
+        return []
+    para_list = paragraphs if paragraphs else []
+    head_zone = _extract_article_head_zone_text(page, para_list, clean_for_channels)
+    channels_head = (
+        _extract_channel_mentions(head_zone, require_scam_context=req_ctx) if head_zone else []
+    )
+    channels = _filter_channels_article_head_priority(channels, channels_head, source_name)
     if not channels:
         return []
     anchor = (anchor_username or '').strip().lstrip('@').lower()

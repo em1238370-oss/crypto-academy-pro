@@ -13,6 +13,7 @@ OFFICIAL_PLATFORM_USERNAMES = frozenset({
     'telegram', 'durov', 'toncoin', 'fragment', 'wallet',
     # Крупные платформы (никогда не считать «скам-каналом» по совпадению username)
     'instagram', 'tiktok', 'youtube', 'vk', 'ok',
+    'proton',  # Proton Mail / VPN — не крипто-скам по упоминанию в статьях
     'whatsapp', 'viber', 'signal', 'discord', 'reddit',
     'twitter', 'x', 'facebook', 'meta',
     'google', 'apple', 'microsoft', 'amazon',

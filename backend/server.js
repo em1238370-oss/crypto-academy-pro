@@ -3832,6 +3832,22 @@ const KRO_WHISTLEBLOWER_RISK_MARKERS = [
   'kurs.expert',
 ];
 
+/** True если в жалобах или evidence есть ссылка/упоминание сайта-разоблачителя (паритет с worker). */
+function kroBlobHasWhistleblowerMarker(blob) {
+  const low = String(blob || '').toLowerCase();
+  if (!low.trim()) return false;
+  return KRO_WHISTLEBLOWER_RISK_MARKERS.some((m) => low.includes(String(m).toLowerCase()));
+}
+
+function kroReportsHaveWhistleblowerEvidence(reports, sourceEvidence) {
+  const parts = [];
+  for (const r of reports || []) {
+    parts.push((r.description || '').trim(), (r.proof_url || '').trim(), (r.source || '').trim());
+  }
+  parts.push(sourceEvidence || '');
+  return kroBlobHasWhistleblowerMarker(parts.join(' '));
+}
+
 function computeKroRiskIndex(profile, reports) {
   let score = 0;
   let red = 0;
@@ -3953,6 +3969,7 @@ const KRO_CHANNEL_EXCLUSION = new Set([
   // Telegram / TON / крупные платформы (паритет с kro_false_positive_guards.py)
   'telegram', 'durov', 'toncoin', 'fragment', 'wallet',
   'instagram', 'tiktok', 'youtube', 'vk', 'ok',
+  'proton',
   'whatsapp', 'viber', 'signal', 'discord', 'reddit',
   'twitter', 'x', 'facebook', 'meta',
   'google', 'apple', 'microsoft', 'amazon',
@@ -4003,6 +4020,13 @@ async function checkAndPromoteToScamBase(client, channel) {
       .join('; ');
     const rp = riskPrefixForObjectType(objectType);
     if (rp) sourceEvidence = `${rp} | ${sourceEvidence}`.slice(0, 500);
+
+    if (!kroReportsHaveWhistleblowerEvidence(reports, sourceEvidence)) {
+      console.log(
+        `[KRO] ${display} skipped: scam_base promotion requires external whistleblower URL (vklader, stop-scam1, …) in reports`,
+      );
+      return;
+    }
 
     const isTg = looksLikeTelegramChannelRef(channel, display, link, objectType);
     if (isTg) {
