@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Удалить строки на листе scam_base, где username (колонка A) совпадает с заданным списком.
+Удалить строки на листе scam_base, где username (колонка A) совпадает с заданным списком,
+или (режим --from-permanent-blocklist) все Telegram-строки под blocklist / Poizon* / платформы.
 
 Использование:
   cd backend/kro-worker && python3 ../scripts/kro-remove-scam-base-usernames.py --dry-run --usernames telegram,poizonsector
-  python3 ../scripts/kro-remove-scam-base-usernames.py --execute --usernames telegram,poizonsector,poizonsystem
+  python3 ../scripts/kro-remove-scam-base-usernames.py --execute --from-permanent-blocklist
 
 Учётные данные: GOOGLE_APPLICATION_CREDENTIALS или KRO_GOOGLE_CREDENTIALS_JSON (как у воркера).
 """
@@ -20,6 +21,9 @@ import sys
 from dotenv import load_dotenv
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_KW = os.path.normpath(os.path.join(_SCRIPT_DIR, '..', 'kro-worker'))
+if _KW not in sys.path:
+    sys.path.insert(0, _KW)
 load_dotenv(os.path.normpath(os.path.join(_SCRIPT_DIR, '..', 'kro-worker', '.env')))
 load_dotenv(os.path.normpath(os.path.join(_SCRIPT_DIR, '..', '..', '.env')))
 
@@ -45,15 +49,30 @@ def _norm_key(cell: str) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description='Remove scam_base rows by username (column A).')
-    parser.add_argument('--usernames', required=True, help='Comma-separated @optional usernames')
+    parser.add_argument(
+        '--usernames',
+        default='',
+        help='Comma-separated @optional usernames (не нужен с --from-permanent-blocklist)',
+    )
+    parser.add_argument(
+        '--from-permanent-blocklist',
+        action='store_true',
+        help='Удалить все t.me-строки, попадающие под kro_permanent_blocklist.json и should_never (Poizon*, платформы)',
+    )
     parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--execute', action='store_true')
     args = parser.parse_args()
     if not args.dry_run and not args.execute:
         parser.error('Укажите --dry-run или --execute')
+    if not args.from_permanent_blocklist and not (args.usernames or '').strip():
+        parser.error('Укажите --usernames … или --from-permanent-blocklist')
 
-    targets = {_norm_key(x) for x in args.usernames.split(',') if _norm_key(x)}
-    if not targets:
+    targets = (
+        set()
+        if args.from_permanent_blocklist
+        else {_norm_key(x) for x in args.usernames.split(',') if _norm_key(x)}
+    )
+    if not args.from_permanent_blocklist and not targets:
         print('Нет валидных username в --usernames', file=sys.stderr)
         return 1
 
@@ -89,15 +108,24 @@ def main() -> int:
         .get('values', [])
     )
 
+    from kro_tme_http_gate import telegram_scam_base_row_matches_denylist  # noqa: E402
+
     # 0-based row index in sheet; row 0 = первая строка листа; данные с индекса 1 (строка 2)
     to_delete = []
     for i, row in enumerate(data):
         a0 = (row[0] if row else '') or ''
-        if _norm_key(a0) in targets:
-            sheet_row_index = 1 + i  # 0-based
-            to_delete.append((sheet_row_index, a0.strip()))
+        if args.from_permanent_blocklist:
+            if not telegram_scam_base_row_matches_denylist(list(row) + [''] * 14):
+                continue
+        elif _norm_key(a0) not in targets:
+            continue
+        sheet_row_index = 1 + i  # 0-based в данных A2:N → строка листа 2+i
+        to_delete.append((sheet_row_index, a0.strip()))
 
-    print('targets=%s' % sorted(targets))
+    if args.from_permanent_blocklist:
+        print('mode=from_permanent_blocklist (kro_permanent_blocklist.json + Poizon* + офиц. платформы)')
+    else:
+        print('targets=%s' % sorted(targets))
     print('matched_rows=%d' % len(to_delete))
     for idx, uname in to_delete:
         print('  sheet row %d (1-based UI row %d): %r' % (idx + 1, idx + 1, uname))

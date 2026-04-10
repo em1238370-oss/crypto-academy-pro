@@ -3,6 +3,16 @@
 Единый публичный HTTP-gate для записи в scam_base (без Telethon).
 Используется: run_12h_monitor, check_once, kro-prune-scam-base-html, опционально — полная чистка за цикл.
 
+Почему раньше появлялись «чужие» каналы (и как не повторять):
+  • Парсер тянул @username из текста статей без различия «платформа Telegram» и «обвиняемый канал»
+    → web_scraper: приоритет заголовка/1-го абзаца; kro_false_positive_guards для платформ и Poizon*.
+  • В scam_base попадали жалобы только из формы без ссылки на разоблачитель
+    → порог: только с маркером сайта-разоблачителя в агрегате.
+  • В листе копились старые строки, а API отдавал сырые дубликаты
+    → dedupe в server.js; периодическая чистка по denylist (см. telegram_scam_base_row_matches_denylist).
+  • «Взломан» только в описании канала не отсекался HTTP-gate
+    → маркеры взлома в описании + постах (tme_preview_combined_lower).
+
 Правила перед записью / удержанием строки Telegram (канал):
   1) публичная страница доступна;
   2) не считаем личным профилем (эвристика HTML);
@@ -21,7 +31,7 @@ import os
 import re
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 USER_AGENT = (
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
@@ -190,6 +200,64 @@ FORCE_REMOVE_USERNAMES = frozenset(
     }
 )
 
+_PERM_BLOCKLIST_NORM_KEYS: Optional[frozenset] = None
+
+
+def _norm_key_scam_base_cell(cell: str) -> str:
+    s = (cell or '').strip().lower()
+    if not s:
+        return ''
+    if s.startswith('@'):
+        s = s[1:]
+    if 't.me/' in s:
+        s = s.split('t.me/', 1)[-1].split('/')[0].split('?')[0]
+    return (s or '').strip()
+
+
+def _load_permanent_blocklist_norm_keys() -> frozenset:
+    """Нормализованные username из kro_permanent_blocklist.json (кэш на процесс)."""
+    global _PERM_BLOCKLIST_NORM_KEYS
+    if _PERM_BLOCKLIST_NORM_KEYS is not None:
+        return _PERM_BLOCKLIST_NORM_KEYS
+    keys: set = set()
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kro_permanent_blocklist.json')
+    try:
+        with open(path, encoding='utf-8') as f:
+            raw = json.load(f)
+        for u in raw or []:
+            nk = _norm_key_scam_base_cell(str(u))
+            if nk:
+                keys.add(nk)
+    except Exception:
+        pass
+    _PERM_BLOCKLIST_NORM_KEYS = frozenset(keys)
+    return _PERM_BLOCKLIST_NORM_KEYS
+
+
+def telegram_scam_base_row_matches_denylist(row: List[str]) -> bool:
+    """
+    True — строка scam_base (Telegram) не должна быть в листе: постоянный blocklist,
+    префикс poizon*, официальные платформы (kro_false_positive_guards). Без HTTP к t.me.
+    """
+    if not is_telegram_scam_base_row(row):
+        return False
+    u = (row[0] if len(row) > 0 else '').strip()
+    link = (row[1] if len(row) > 1 else '').strip()
+    bl = _load_permanent_blocklist_norm_keys()
+    for cell in (u, link):
+        key = _norm_key_scam_base_cell(cell)
+        if not key:
+            continue
+        if key in bl:
+            return True
+        try:
+            from kro_false_positive_guards import should_never_scam_base_norm_key
+        except ImportError:
+            should_never_scam_base_norm_key = lambda _k: False  # type: ignore
+        if should_never_scam_base_norm_key(key):
+            return True
+    return False
+
 
 def normalize_channel_link(ch_or_link: str) -> str:
     ch = (ch_or_link or '').strip()
@@ -248,105 +316,6 @@ def _normalize_slug(ch_or_link: str) -> str:
 
 
 normalize_tme_slug = _normalize_slug
-
-_USER_DIR = os.path.dirname(os.path.abspath(__file__))
-_BLOCKLIST_JSON_PATH = os.path.join(_USER_DIR, 'kro_permanent_blocklist.json')
-_BLOCKLIST_SLUGS_CACHE: Optional[Set[str]] = None
-
-
-def _permanent_blocklist_slugs_lower() -> Set[str]:
-    """Username из kro_permanent_blocklist.json (нижний регистр, без @)."""
-    global _BLOCKLIST_SLUGS_CACHE
-    if _BLOCKLIST_SLUGS_CACHE is not None:
-        return _BLOCKLIST_SLUGS_CACHE
-    out: Set[str] = set()
-    try:
-        with open(_BLOCKLIST_JSON_PATH, encoding='utf-8') as f:
-            raw = json.load(f)
-        for x in raw or []:
-            u = str(x).strip().lstrip('@').lower()
-            if u:
-                out.add(u)
-    except (OSError, json.JSONDecodeError, TypeError):
-        pass
-    _BLOCKLIST_SLUGS_CACHE = out
-    return out
-
-
-def invalidate_permanent_blocklist_cache() -> None:
-    global _BLOCKLIST_SLUGS_CACHE
-    _BLOCKLIST_SLUGS_CACHE = None
-
-
-def telegram_scam_base_row_matches_denylist(row: List[str]) -> bool:
-    """
-    Строка scam_base (Telegram) подлежит удалению: kro_permanent_blocklist.json
-    или should_never_scam_base_norm_key (Poizon*, официальные платформы). Без HTTP.
-    """
-    from kro_false_positive_guards import should_never_scam_base_norm_key
-
-    if not is_telegram_scam_base_row(row):
-        return False
-    u = (row[0] if len(row) > 0 else '').strip()
-    link = (row[1] if len(row) > 1 else '').strip()
-    bl = _permanent_blocklist_slugs_lower()
-    for ref in (link, u):
-        slug = _normalize_slug(ref)
-        if not slug or slug.startswith('+'):
-            continue
-        sk = slug.lower().strip()
-        if sk in bl or should_never_scam_base_norm_key(sk):
-            return True
-    return False
-
-
-def prune_scam_base_blocklist_rows(
-    sheets,
-    spreadsheet_id: str,
-    *,
-    sheet_name: Optional[str] = None,
-    dry_run: bool = False,
-) -> Dict[str, Any]:
-    """
-    Удалить из scam_base строки blocklist / Poizon* / официальные платформы.
-    Не ходит в интернет — вызывать каждый цикл монитора.
-    """
-    rng = (os.environ.get('KRO_SCAM_BASE_RANGE') or 'scam_base!A2:N').strip()
-    sn = sheet_name or (rng.split('!')[0] if '!' in rng else 'scam_base')
-    range_all = f'{sn}!A2:N'
-
-    rows = (
-        sheets.spreadsheets()
-        .values()
-        .get(spreadsheetId=spreadsheet_id, range=range_all)
-        .execute()
-        .get('values', [])
-    )
-
-    remove_idx = [i for i, row in enumerate(rows) if telegram_scam_base_row_matches_denylist(row)]
-    out: Dict[str, Any] = {
-        'rows_before': len(rows),
-        'removed_denylist': len(remove_idx),
-        'dry_run': dry_run,
-    }
-    if dry_run or not remove_idx:
-        out['rows_after'] = len(rows)
-        return out
-
-    kill = set(remove_idx)
-    kept = [(list(rows[j]) + [''] * 14)[:14] for j in range(len(rows)) if j not in kill]
-
-    sheets.spreadsheets().values().clear(spreadsheetId=spreadsheet_id, range=range_all, body={}).execute()
-    if kept:
-        sheets.spreadsheets().values().append(
-            spreadsheetId=spreadsheet_id,
-            range=f'{sn}!A2:N',
-            valueInputOption='USER_ENTERED',
-            insertDataOption='INSERT_ROWS',
-            body={'values': kept},
-        ).execute()
-    out['rows_after'] = len(kept)
-    return out
 
 
 def _normalize_message_text(text: str) -> str:

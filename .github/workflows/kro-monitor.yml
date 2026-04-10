@@ -120,6 +120,14 @@ jobs:
           KRO_TELEGRAM_STRICT_GATE_BEFORE_WRITE: '0'
         run: python3 run_12h_monitor.py
 
+      # Удалить из scam_base все строки под blocklist / Poizon* / офиц. платформы (старые ошибки в листе).
+      - name: Purge scam_base denylist rows
+        working-directory: backend/kro-worker
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: credentials.json
+          KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
+        run: python3 ../scripts/kro-remove-scam-base-usernames.py --execute --from-permanent-blocklist
+
       # ОТКЛЮЧЕНО (if: false): пост-цикловый cleanup дублировал gate и очищал лист сразу после записи.
       # Строгий Telethon-gate теперь в run_12h_monitor до записи в scam_base (kro_telegram_channel_gate).
       # Включить снова только при необходимости «дочистки» вручную: убрать if: false.
