@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260409-watch-accordion">
+  <link rel="stylesheet" href="/monitor.css?v=20260409-offer-underline">
 </head>
 <body class="mon-page">
 
@@ -124,7 +124,7 @@
   <!-- Оффер: тезис + столпы (как блок «Стратегия. Эффективность…») -->
   <section class="mon-offer" id="mon-offer-section" aria-labelledby="mon-offer-title">
     <p class="mon-offer-kicker">Подход</p>
-    <h2 id="mon-offer-title" class="mon-offer-title">Прозрачность. Источники. Циклы.</h2>
+    <h2 id="mon-offer-title" class="mon-offer-title"><span class="mon-offer-title-hit"><span class="mon-offer-title-hit-text">Прозрачность</span></span><span class="mon-offer-title-punct">. </span><span class="mon-offer-title-hit"><span class="mon-offer-title-hit-text">Источники</span></span><span class="mon-offer-title-punct">. </span><span class="mon-offer-title-hit"><span class="mon-offer-title-hit-text">Циклы</span></span><span class="mon-offer-title-punct">.</span></h2>
     <p class="mon-offer-lead">Публичный дашборд: что нашли, откуда цитата, куда кликнуть. Данные из Google Sheets, цикл обновления каждые 12 часов — без ручной «магии» в интерфейсе.</p>
     <div class="mon-pillars">
       <article class="mon-pillar">
@@ -2817,6 +2817,74 @@
     if (h) h.setAttribute('aria-expanded', 'true');
   }
 
+  /**
+   * Десктоп: когда блок «Прозрачность. Источники. Циклы.» целиком в окне просмотра —
+   * поочерёдное подчёркивание трёх ключевых слов (янтарная линия).
+   */
+  function initOfferTitleKeywordUnderline() {
+    var mqDesk = window.matchMedia('(min-width: 900px)');
+    var sec = document.getElementById('mon-offer-section');
+    if (!sec) return;
+
+    function sectionFullyInViewport(el) {
+      var r = el.getBoundingClientRect();
+      var vh = window.innerHeight;
+      var vw = window.innerWidth;
+      var pad = 10;
+      if (r.height > vh - pad * 2) {
+        var title = el.querySelector('.mon-offer-title');
+        if (!title) return false;
+        var tr = title.getBoundingClientRect();
+        return tr.top >= pad && tr.bottom <= vh - pad && tr.left >= pad && tr.right <= vw - pad;
+      }
+      return r.top >= pad && r.bottom <= vh - pad && r.left >= pad && r.right <= vw - pad;
+    }
+
+    function tryActivate() {
+      if (!mqDesk.matches) return;
+      if (sec.classList.contains('mon-offer--keywords-underline')) return;
+      if (!sectionFullyInViewport(sec)) return;
+      sec.classList.add('mon-offer--keywords-underline');
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        sec.classList.add('mon-offer--keywords-underline--instant');
+      }
+    }
+
+    var fired = false;
+    function onSeen() {
+      if (fired) return;
+      if (!mqDesk.matches) return;
+      tryActivate();
+      if (sec.classList.contains('mon-offer--keywords-underline')) {
+        fired = true;
+        if (io) io.disconnect();
+        window.removeEventListener('resize', onResize);
+        window.removeEventListener('scroll', onSeen);
+      }
+    }
+
+    function onResize() {
+      if (!mqDesk.matches) return;
+      onSeen();
+    }
+
+    var io = typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) onSeen();
+          });
+        }, { root: null, rootMargin: '0px', threshold: [0, 0.25, 0.5, 0.75, 1] })
+      : null;
+
+    if (io) io.observe(sec);
+    window.addEventListener('resize', onResize, { passive: true });
+    window.addEventListener('scroll', onSeen, { passive: true });
+    tryActivate();
+    requestAnimationFrame(function() {
+      requestAnimationFrame(onSeen);
+    });
+  }
+
   // ── INIT ──────────────────────────────────────────────────
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -2832,6 +2900,7 @@
       initCollapsibles();
       expandWatchSectionIfHash();
       window.addEventListener('hashchange', expandWatchSectionIfHash);
+      initOfferTitleKeywordUnderline();
       initHeroScrollFade();
       initBgParallax();
       loadData();
@@ -2843,6 +2912,7 @@
       initCollapsibles();
       expandWatchSectionIfHash();
       window.addEventListener('hashchange', expandWatchSectionIfHash);
+      initOfferTitleKeywordUnderline();
       initHeroScrollFade();
       initBgParallax();
       loadData();

@@ -860,6 +860,51 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   background: linear-gradient(90deg, rgba(245, 158, 11, 0.75), transparent);
 }
 
+/* Десктоп: подчёркивание трёх слов заголовка при появлении блока целиком в окне (JS: mon-offer--keywords-underline) */
+@media (min-width: 900px) {
+  .mon-offer-title-hit-text {
+    position: relative;
+    display: inline;
+  }
+  .mon-offer-title-punct {
+    font: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+  }
+  .mon-offer-title-hit-text::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0.1em;
+    height: 0.11em;
+    min-height: 2px;
+    max-height: 4px;
+    border-radius: 1px;
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.92), rgba(245, 158, 11, 0.22));
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    transition: transform 0.72s var(--mon-ease-soft);
+    pointer-events: none;
+  }
+  .mon-offer--keywords-underline .mon-offer-title-hit:nth-child(1) .mon-offer-title-hit-text::after {
+    transform: scaleX(1);
+    transition-delay: 0.08s;
+  }
+  .mon-offer--keywords-underline .mon-offer-title-hit:nth-child(3) .mon-offer-title-hit-text::after {
+    transform: scaleX(1);
+    transition-delay: 0.3s;
+  }
+  .mon-offer--keywords-underline .mon-offer-title-hit:nth-child(5) .mon-offer-title-hit-text::after {
+    transform: scaleX(1);
+    transition-delay: 0.52s;
+  }
+  .mon-offer--keywords-underline--instant .mon-offer-title-hit-text::after {
+    transition-delay: 0s !important;
+    transition-duration: 0.02ms !important;
+  }
+}
+
 .mon-offer-lead {
   font-size: clamp(15px, 1.45vw, 17px);
   line-height: var(--mon-leading-body);
