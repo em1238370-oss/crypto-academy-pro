@@ -2098,6 +2098,7 @@ const REQUIRED_CRYPTO_HINTS = [
 const NON_CRYPTO_HINTS = [
   'недвижим', 'квартир', 'новострой', 'ипотек', 'риелт', 'аренд',
   'автомоб', 'машин', 'дилер', 'real estate', 'car ', 'mortgage',
+  'футбол', 'футболь', 'fc ', 'чемпионат мира', 'premier league', 'soccer',
 ];
 
 function isCryptoContextAllowed(...parts) {
@@ -2196,9 +2197,26 @@ function isVisibleScamStatus(status) {
   return true;
 }
 
+/** Одна строка на канал: оставляем самую свежую по дате обнаружения (дубликаты в листе не раздувают API/монитор). */
+function dedupeScamBaseRowsByChannelLatest(rows) {
+  const byChannel = new Map();
+  for (const row of rows || []) {
+    const key = channelMatchKey(row.username);
+    if (!key) continue;
+    const prev = byChannel.get(key);
+    if (!prev || parseScamDetectedAtMs(row) >= parseScamDetectedAtMs(prev)) {
+      byChannel.set(key, row);
+    }
+  }
+  return Array.from(byChannel.values()).sort(
+    (a, b) => parseScamDetectedAtMs(b) - parseScamDetectedAtMs(a),
+  );
+}
+
 /** Тот же набор строк scam_base, что и в GET /api/kro/live-counter (главная и цифры). */
 function isScamBaseRowInLiveCounterDataset(r) {
   if (!r || !r.username) return false;
+  if (kroUsernameGloballyExcluded(r.username)) return false;
   // Старый лист (8 колонок): только осмысленные подтверждённые строки.
   if (r._schema === 'v1') {
     if (!isUsableScamBaseRow(r)) return false;
@@ -2688,16 +2706,18 @@ function kroOffTopicBusinessHit(blob) {
   const low = (blob || '').toString().toLowerCase();
   if (!low.trim()) return null;
   const ru = [
-    'одежда', 'кроссовки', 'обувь', 'fashion', 'shoes', 'одяг', 'кросівки', 'бренд', 'бутик', 'магазин одежды',
+    'poizon', 'одежда', 'кроссовки', 'обувь', 'fashion', 'shoes', 'sneakers', 'streetwear', 'дроп', 'лимитка',
+    'коллаб', 'одяг', 'кросівки', 'бренд', 'бутик', 'магазин одежды',
     'ресторан', 'доставка еды', 'суши', 'пицца', 'кафе', 'food delivery', 'квартира', 'аренда', 'продажа квартир',
     'недвижимость', 'риэлтор', 'продажа авто', 'автосалон', 'машина купить', 'вакансия', 'найм', 'работа в',
+    'футбол', 'футболь', 'чемпионат мира',
   ];
   for (const s of ru) {
     if (low.includes(s)) return s;
   }
   if (/\bhr\b/i.test(blob || '')) return 'hr';
   const reEn =
-    /\b(?:fashion|shoes?|boutique|restaurant|pizza|sushi|cafe|food\s+delivery|real\s*estate|realtor|apartment\s+rent|car\s+sale|dealer|vacanc(?:y|ies)|hiring|recruit(?:er|ment))\b/i;
+    /\b(?:poizon|sneakers?|streetwear|fashion|shoes?|boutique|restaurant|pizza|sushi|cafe|food\s+delivery|real\s*estate|realtor|apartment\s+rent|car\s+sale|dealer|vacanc(?:y|ies)|hiring|recruit(?:er|ment)|football|soccer)\b/i;
   const m = reEn.exec(blob || '');
   return m ? m[0].toLowerCase() : null;
 }
@@ -3505,7 +3525,9 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       .map(parseScamBaseRow)
       .filter(r => r.username && r.username !== 'username')
       .map(enrichScamBaseContentAnalysisForMonitor);
-    const scamRows = scamRowsAll.filter(isScamBaseRowInLiveCounterDataset);
+    const scamRows = dedupeScamBaseRowsByChannelLatest(
+      scamRowsAll.filter(isScamBaseRowInLiveCounterDataset),
+    );
 
     const watchRawRows = watchResp.status === 'fulfilled' ? (watchResp.value.data.values || []) : [];
     const channelsWatch = watchRawRows

@@ -325,17 +325,17 @@
     <header class="mon-chapter-head mon-chapter-head--split">
       <div class="mon-chapter-head-main">
         <p class="mon-chapter-kicker">04 · Мониторинг</p>
-        <h2 id="mon-watch-heading" class="mon-chapter-title">Все найденные каналы</h2>
-        <p class="mon-chapter-lead mon-chapter-lead--inline">Те же каналы, что в листе scam_base (без накопленного листа channels_watch) — только актуальные строки из API.</p>
+        <h2 id="mon-watch-heading" class="mon-chapter-title">Широкий мониторинг</h2>
+        <p class="mon-chapter-lead mon-chapter-lead--inline">Отдельный лист <strong>channels_watch</strong> (кандидаты и сигналы за циклы). Подтверждённая база — только в разделе «База объектов» выше, без повторения строк.</p>
       </div>
       <span class="mon-chapter-meta" id="s4-watch-count"></span>
     </header>
     <div class="mon-chapter-body">
       <div class="mon-surface">
-      <div class="mon-scheme-inline" role="img" aria-label="Дублирование таблицы scam_base для наглядности">
-        <span class="mon-scheme-pill mon-scheme-pill--dim">scam_base ↑</span>
-        <span class="mon-scheme-arrow" aria-hidden="true">|</span>
-        <span class="mon-scheme-pill mon-scheme-pill--accent">тот же состав строк</span>
+      <div class="mon-scheme-inline" role="img" aria-label="channels_watch — не дубликат scam_base">
+        <span class="mon-scheme-pill mon-scheme-pill--dim">channels_watch</span>
+        <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+        <span class="mon-scheme-pill mon-scheme-pill--accent">кандидаты / наблюдение</span>
       </div>
       <div class="mon-table-wrap" id="s4-watch-wrap">
         <div class="mon-loading mon-spinner" style="padding:32px">Загружаю широкий мониторинг</div>
@@ -2258,12 +2258,59 @@
   // ── SECTION 4: те же строки scam_base (не channels_watch — без «старых» циклов из листа watch)
 
   function renderChannelsWatch(rows) {
-    renderScamBase(rows, {
-      wrapId: 's4-watch-wrap',
-      countId: 's4-watch-count',
-      searchPrefix: 's4watch',
-      emptyMsg: 'В scam_base пока нет строк — после цикла монитора они появятся здесь.'
+    var wrap = document.getElementById('s4-watch-wrap');
+    var countEl = document.getElementById('s4-watch-count');
+    var list = Array.isArray(rows) ? rows : [];
+    if (countEl) countEl.textContent = list.length + ' в мониторинге';
+    if (!wrap) return;
+    if (!list.length) {
+      wrap.innerHTML =
+        '<div class="mon-loading">В листе channels_watch сейчас нет строк. Это нормально: подтверждённые объекты смотрите в разделе «База объектов».</div>';
+      return;
+    }
+    var sid = 's4watch-filter';
+    var scid = 's4watch-count-inline';
+    var searchBar =
+      '<div class="mon-table-toolbar">' +
+      '<label class="mon-filter-label" for="' + sid + '">Фильтр</label>' +
+      '<input type="search" id="' + sid + '" class="mon-filter-input" placeholder="канал, источник…" autocomplete="off">' +
+      '<span class="mon-filter-meta" id="' + scid + '">' + list.length + ' объектов</span>' +
+      '</div>';
+    var html = searchBar + '<table class="mon-table"><thead><tr>' +
+      '<th style="width:36px">#</th><th>Канал</th><th>Источник</th><th>Жалоб</th><th>Статус</th><th>Дата</th>' +
+      '</tr></thead><tbody>';
+    list.forEach(function(r, idx) {
+      var un = (r.username || '—').toString();
+      var slug = un.replace(/^@+/, '').trim();
+      var turl = /^[a-zA-Z0-9_]{3,64}$/.test(slug) ? ('https://t.me/' + slug) : '';
+      html += '<tr><td class="mon-cell-num">' + (idx + 1) + '</td>' +
+        '<td class="mon-cell-channel">' + renderExternalLink(turl, un, 'mon-external-link mon-channel-link') + '</td>' +
+        '<td class="mon-cell-muted mon-cell-compact">' + esc((r.source_primary || '').slice(0, 120)) + '</td>' +
+        '<td class="mon-cell-muted">' + esc(String(r.complaints != null ? r.complaints : '—')) + '</td>' +
+        '<td><span class="mon-status watch">' + esc(r.status || '—') + '</span></td>' +
+        '<td class="mon-cell-muted mon-cell-date">' + esc(fmtDateShort(r.detected_at)) + '</td></tr>';
     });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+    var trs = wrap.querySelectorAll('tbody tr');
+    trs.forEach(function(tr, i) {
+      tr.classList.add('mon-row-appear');
+      tr.style.animationDelay = Math.min(i * 50, 900) + 'ms';
+    });
+    var input = document.getElementById(sid);
+    var cnt = document.getElementById(scid);
+    if (input) {
+      input.addEventListener('input', function() {
+        var q = input.value.toLowerCase().trim();
+        var visible = 0;
+        trs.forEach(function(tr) {
+          var match = !q || tr.textContent.toLowerCase().indexOf(q) !== -1;
+          tr.style.display = match ? '' : 'none';
+          if (match) visible++;
+        });
+        if (cnt) cnt.textContent = (q ? visible + ' из ' + list.length : list.length) + ' объектов';
+      });
+    }
   }
 
   // ── SECTION 5: CHANNEL NETWORKS ───────────────────────────
@@ -2414,7 +2461,7 @@
       renderRecentCases(data.recent_cases || []);
       renderFindings12h(data.findings_12h || [], scamBase);
       renderScamBase(scamBase);
-      renderChannelsWatch(scamBase);
+      renderChannelsWatch(data.channels_watch || []);
       renderChannelNetworks(networkRows);
       renderSources(meta.sources_checked || []);
       renderHistory(history);

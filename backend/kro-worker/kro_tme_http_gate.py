@@ -102,12 +102,14 @@ OFFTOPIC_TOPIC_SUBSTRINGS = (
     'продажа авто', 'автосалон', 'машина купить',
     # Работа / вакансии
     'вакансия', 'найм', 'hr', 'работа в',
+    # Спорт / развлечения — не крипто-KRO (личные контакты «про футбол» и т.п.)
+    'футбол', 'футболь', 'чемпионат мира',
 )
 _OFFTOPIC_RE_EN = re.compile(
     r'(?i)\b(?:poizon|sneakers?|sneakerhead|streetwear|collab(?:oration)?|nike|adidas|jordan|yeezy|supreme|'
     r'fashion|shoes?|boutique|restaurant|pizza|sushi|cafe|food\s+delivery|'
     r'real\s*estate|realtor|apartment\s+rent|car\s+sale|dealer|vacanc(?:y|ies)|'
-    r'hiring|recruit(?:er|ment)|hr)\b'
+    r'hiring|recruit(?:er|ment)|hr|football|soccer)\b'
 )
 
 
@@ -515,8 +517,7 @@ def tme_http_gate_for_scam_base_write(
                 last_dt = last_dt.replace(tzinfo=timezone.utc)
             if (now - last_dt).days > SCAM_BASE_HTTP_POST_MAX_AGE_DAYS:
                 return False, 'tme_no_fresh_post_%dd' % SCAM_BASE_HTTP_POST_MAX_AGE_DAYS, meta
-        posts = prev['posts_blob_lower']
-        if any(hm in posts for hm in TME_HACKED_POST_MARKERS):
+        if any(hm in tme_preview_combined_lower(prev) for hm in TME_HACKED_POST_MARKERS):
             return False, 'tme_channel_reported_hacked', meta
         return True, 'ok_tme_http_gate_bot', meta
 
@@ -544,7 +545,7 @@ def tme_http_gate_for_scam_base_write(
     if (now - last_dt).days > SCAM_BASE_HTTP_POST_MAX_AGE_DAYS:
         return False, 'tme_no_fresh_post_%dd' % SCAM_BASE_HTTP_POST_MAX_AGE_DAYS, meta
 
-    if any(hm in prev['posts_blob_lower'] for hm in TME_HACKED_POST_MARKERS):
+    if any(hm in tme_preview_combined_lower(prev) for hm in TME_HACKED_POST_MARKERS):
         return False, 'tme_channel_reported_hacked', meta
 
     return True, 'ok_tme_http_gate', meta
