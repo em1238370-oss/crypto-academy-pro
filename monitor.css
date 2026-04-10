@@ -414,6 +414,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   display: flex;
   flex-direction: column;
   gap: 0;
+  min-width: 0;
 }
 
 /* Пролог: hero + оффер — единый «лид» страницы как на одностраничном портфолио */
@@ -1373,6 +1374,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 .mon-chapter-body {
   padding: 0;
+  min-width: 0;
 }
 
 .mon-surface {
@@ -1569,6 +1571,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-metrics-digest-shell {
   margin-top: clamp(32px, 5vw, 48px);
   padding: clamp(22px, 3.5vw, 34px) clamp(20px, 3.2vw, 32px) clamp(26px, 4vw, 38px) clamp(28px, 4vw, 40px);
+  min-width: 0;
+  max-width: 100%;
   border-radius: 20px;
   border: 1px solid rgba(245, 158, 11, 0.28);
   background:
@@ -1639,16 +1643,17 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   background: rgba(0, 0, 0, 0.2);
 }
 
-/* Сводные таблицы: на широком экране первые два листа в два столбца */
+/* Сводные таблицы: minmax(0,1fr) — иначе грид не сжимает широкие таблицы */
 .mon-metrics-object-blocks {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(24px, 3.5vw, 36px);
   margin-top: 0;
+  min-width: 0;
 }
-@media (min-width: 1080px) {
+@media (min-width: 1200px) {
   .mon-metrics-object-blocks {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
   }
   .mon-metrics-object-blocks .mon-object-sheet--wide {
@@ -1671,7 +1676,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   padding-top: 16px !important;
   padding-bottom: 16px !important;
   vertical-align: top;
-  max-width: 17rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 .mon-digest-label-text {
   display: block;
@@ -1696,6 +1703,12 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   color: rgba(255, 255, 255, 0.62);
   border-left: 1px solid rgba(245, 158, 11, 0.12);
   padding-left: 18px;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 .mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary tbody tr:nth-child(even) td {
   background: rgba(255, 255, 255, 0.025);
@@ -1718,6 +1731,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border: none;
   background: transparent;
   box-shadow: none;
+  min-width: 0;
 }
 
 .mon-object-sheet__head {
@@ -1737,6 +1751,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 .mon-object-sheet__body {
   padding: 0;
+  min-width: 0;
 }
 
 /* Тот же «лист» таблицы, что у раздела «База объектов» (#data-scam) */
@@ -1750,11 +1765,13 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 .mon-surface.mon-surface--data-sheet .mon-table-wrap {
   border-radius: 0;
+  max-width: 100%;
 }
 
 .mon-table.mon-table--summary {
   min-width: 0;
   width: 100%;
+  table-layout: fixed;
 }
 
 .mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary th {
@@ -1768,8 +1785,21 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary th.mon-th-metric-val {
   text-align: right;
-  width: 11rem;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary th:nth-child(1),
+.mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary td:nth-child(1) {
+  width: 30%;
+}
+.mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary th:nth-child(2),
+.mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary td:nth-child(2) {
+  width: 24%;
+}
+.mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary th:nth-child(3),
+.mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary td:nth-child(3) {
+  width: 46%;
 }
 .mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary th.mon-th-metric-note {
   font-weight: 600;
@@ -1787,7 +1817,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-variant-numeric: tabular-nums;
   color: rgba(255, 236, 208, 0.96);
   text-align: right;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary td.mon-cell-muted {
@@ -1803,12 +1835,12 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   vertical-align: top;
   padding-top: 14px;
   padding-bottom: 14px;
-  min-width: min(22rem, 52vw);
-}
-@media (max-width: 720px) {
-  .mon-surface.mon-surface--data-sheet .mon-table.mon-table--summary td.mon-cell-note {
-    min-width: 12rem;
-  }
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 
 .mon-stat-card {
@@ -2107,8 +2139,11 @@ a.mon-ca-sample-link[href^="tg:"] {
   border-collapse: collapse;
   font-family: var(--mon-font);
   font-size: 14px;
-  min-width: 900px;
   line-height: 1.5;
+}
+/* Широкие реестры — горизонтальный скролл; сводные таблицы метрик — без min-width (см. .mon-table--summary) */
+.mon-table:not(.mon-table--summary) {
+  min-width: 900px;
 }
 
 .mon-table th {
