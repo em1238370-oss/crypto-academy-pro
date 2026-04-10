@@ -10,7 +10,7 @@ kro_permanent_blocklist.json или глобальные исключения (P
 
 Переменные окружения:
   KRO_SHEET_ID
-  KRO_CHANNELS_WATCH_RANGE (по умолчанию channels_watch!A2:M)
+  KRO_CHANNELS_WATCH_RANGE (по умолчанию channels_watch!A2:P)
   KRO_CHANNELS_NETWORK_RANGE (по умолчанию channels_network!A2:G)
 
 Запуск из backend/kro-worker:
@@ -64,7 +64,7 @@ def _cell_matches_telegram_denylist(cell: str, telegram_scam_base_row_matches_de
         return False
     link = 'https://t.me/' + k
     u = s if s.startswith('@') or 't.me' in s.lower() else '@' + k
-    fake_row = [u, link] + [''] * 12
+    fake_row = [u, link] + [''] * 14
     return telegram_scam_base_row_matches_denylist(fake_row)
 
 
@@ -166,7 +166,7 @@ def main() -> int:
         )
 
     sheet_id = (os.environ.get('KRO_SHEET_ID') or '').strip() or _DEFAULT_KRO_SHEET_ID
-    watch_rng = (os.environ.get('KRO_CHANNELS_WATCH_RANGE') or 'channels_watch!A2:M').strip()
+    watch_rng = (os.environ.get('KRO_CHANNELS_WATCH_RANGE') or 'channels_watch!A2:P').strip()
     net_rng = (os.environ.get('KRO_CHANNELS_NETWORK_RANGE') or 'channels_network!A2:G').strip()
 
     try:

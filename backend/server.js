@@ -1238,7 +1238,7 @@ const kroCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 const kroScamBaseRangeRaw = process.env.KRO_SCAM_BASE_RANGE || 'scam_base!A2:N';
 const kroScamBaseSheet = kroScamBaseRangeRaw.includes('!') ? kroScamBaseRangeRaw.split('!')[0] : 'scam_base';
 const kroScamBaseRange = `${kroScamBaseSheet}!A:N`;
-const kroChannelsWatchRange = process.env.KRO_CHANNELS_WATCH_RANGE || 'channels_watch!A2:M';
+const kroChannelsWatchRange = process.env.KRO_CHANNELS_WATCH_RANGE || 'channels_watch!A2:P';
 const kroChannelsNetworkRange = process.env.KRO_CHANNELS_NETWORK_RANGE || 'channels_network!A2:G';
 const kroMetaRange = process.env.KRO_META_RANGE || 'kro_meta!A:B';
 const kroCheckQueueRange = process.env.KRO_CHECK_QUEUE_RANGE || '';
@@ -2333,6 +2333,9 @@ function parseChannelsWatchRow(row) {
   const source_evidence = (row[10] || '').toString().trim();
   const cycle_window = (row[11] || '').toString().trim();
   const status = (row[12] || '').toString().trim();
+  const status_reason = (row[13] || '').toString().trim();
+  const evidence_url = (row[14] || '').toString().trim();
+  const last_checked_at = (row[15] || '').toString().trim();
   return {
     username,
     link,
@@ -2347,8 +2350,12 @@ function parseChannelsWatchRow(row) {
     source_evidence,
     cycle_window,
     status,
+    status_reason,
+    evidence_url,
+    last_checked_at,
+    object_type: 'широкий мониторинг',
     verdict: 'watch',
-    _schema: 'watch_v1',
+    _schema: 'watch_v2',
   };
 }
 

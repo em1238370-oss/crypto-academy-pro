@@ -1384,7 +1384,8 @@
         complaints: row.complaints != null ? row.complaints : '',
         total_loss_rub: row.total_loss_rub != null ? row.total_loss_rub : 0,
         source_primary: row.source_primary || '',
-        status: row.status || ''
+        status: row.status || '',
+        status_reason: row.status_reason || ''
       },
     };
   }
@@ -1418,6 +1419,7 @@
     var f = d.sheet_facts || {};
     var lines = [];
     if (f.status) lines.push('Статус: ' + esc(String(f.status)));
+    if (f.status_reason) lines.push('Почему так: ' + esc(String(f.status_reason)));
     if (f.object_type) lines.push('Тип объекта: ' + esc(String(f.object_type)));
     if (f.complaints !== '' && f.complaints != null) lines.push('Жалоб: ' + esc(String(f.complaints)));
     var loss = Number(f.total_loss_rub);
@@ -1583,6 +1585,8 @@
       seen[u] = true;
       ordered.push(u);
     }
+    // 0) Прямая ссылка на статью/источник из листа (channels_watch evidence_url)
+    if (row && row.evidence_url) pushUrl(row.evidence_url);
     // 1) Ссылка на сам объект (t.me, сайт обменника и т.д.)
     pushUrl(row && row.link);
     // 2) Все URL из доказательств (kurs, статьи, t.me из цитат)
@@ -1628,8 +1632,16 @@
     var v = (s || '').toLowerCase();
     if (v.includes('подтвержд') && v.includes('скам')) return 'scam';
     if (v.includes('без нарушений')) return 'clean';
+    if (v.includes('не по теме')) return 'offtopic';
     if (v.includes('в риске') || (v.includes('риск') && !v.includes('наблю'))) return 'risk';
     return 'watch';
+  }
+
+  function truncateCell(s, maxLen) {
+    var t = (s || '').trim();
+    if (!t) return '—';
+    if (t.length <= maxLen) return t;
+    return t.slice(0, maxLen - 1) + '…';
   }
 
   function sourceStatusClass(s) {
@@ -2238,6 +2250,7 @@
     var searchPrefix = opts.searchPrefix || 's3';
     var emptyMsg = opts.emptyMsg || 'После фильтров сайта в scam_base нет строк для показа (или лист пуст). Данные появятся после цикла монитора и отбора.';
     var tableCaption = opts.tableCaption || '';
+    var watchMode = !!opts.watchMode;
     var wrap = document.getElementById(wrapId);
     var countEl = document.getElementById(countId);
     if (countEl) countEl.textContent = rows.length + ' объектов';
@@ -2252,18 +2265,35 @@
     var capHtml = tableCaption
       ? '<caption class="mon-registry-caption">' + esc(tableCaption) + '</caption>'
       : '';
+    var typeHint = watchMode
+      ? 'Широкий мониторинг: каналы из поиска, каталогов, жалоб и веба; тип строки для сопоставления с базой объектов.'
+      : 'Класс записи (сигнал‑канал, бот, сайт…). Это не число жалоб — смотрите столбец «Жалоб (учтено)».';
+    var statusHint = watchMode
+      ? 'Оценка системы: без нарушений, под наблюдением, в риске, подтверждённый скам (2+ красных флага и внешний источник), не по теме.'
+      : 'Итог по правилам сводки отчёта. Плашка «жалобы пользователей» — когда опорный сигнал из формы на сайте.';
+    var dateHint = watchMode
+      ? 'Когда канал впервые попал в выборку широкого мониторинга.'
+      : 'Дата обнаружения в данных или попадания в базу; таблица отсортирована по этому полю (новее выше).';
+    var thReason = watchMode
+      ? registryTh('Почему так', 'Краткая причина статуса: флаги риска, жалобы, внешний источник разоблачителя.')
+      : '';
+    var thChecked = watchMode
+      ? registryTh('Проверка', 'Дата последней автоматической оценки в цикле монитора.')
+      : '';
     var tableHtml = '<table class="mon-table mon-table--registry">' + capHtml +
       '<thead><tr>' +
       '<th scope="col" class="mon-th-registry--tight" style="width:42px" title="Номер строки только на этой странице (не ID в Google Sheets). Порядок таблицы: по дате обнаружения, новее выше.">' +
       '<span class="mon-th-registry-main">#</span><span class="mon-th-registry-hint">сорт. по дате</span></th>' +
       registryTh('Объект', 'Username или домен из строки scam_base. Имя ведёт на публичную ленту t.me/s в браузере; иконки — карточка на сайте и доп. URL из таблицы.') +
-      registryTh('Тип объекта', 'Класс записи (сигнал‑канал, бот, сайт…). Это не число жалоб — смотрите столбец «Жалоб (учтено)».') +
+      registryTh('Тип объекта', typeHint) +
       registryTh('Источник', 'Внешние ссылки из блока доказательств: статьи, чёрные списки, отзывы — первоисточники обоснования.') +
       registryTh('Признаки риска', 'Сжатый текст и цитаты. Развёрнуто — в подсказке ячейки (наведите курсор на содержимое).') +
       registryTh('Контент-анализ', 'Автовыжимка по постам канала (если лента доступна) или по сохранённым полям анализа в строке.') +
-      registryTh('Статус', 'Итог по правилам сводки отчёта. Плашка «жалобы пользователей» — когда опорный сигнал из формы на сайте.') +
+      registryTh('Статус', statusHint) +
+      thReason +
       registryTh('Жалоб (учтено)', 'Сводное число по данным строки и листам отчётов. Кружок «?» у числа — пояснение методики подсчёта.') +
-      registryTh('Дата', 'Дата обнаружения в данных или попадания в базу; таблица отсортирована по этому полю (новее выше).') +
+      registryTh('Дата', dateHint) +
+      thChecked +
       '</tr></thead><tbody>';
 
     rows.forEach(function(r, idx) {
@@ -2308,6 +2338,13 @@
             '</a>'
         : '';
 
+      var reasonCell = '';
+      var checkCell = '';
+      if (watchMode) {
+        reasonCell = '<td class="mon-cell-muted mon-cell-compact mon-cell-reason" title="' + esc(r.status_reason || '') + '">' +
+          esc(truncateCell(r.status_reason, 140)) + '</td>';
+        checkCell = '<td class="mon-cell-muted mon-cell-date">' + esc(fmtDateShort(r.last_checked_at || r.detected_at)) + '</td>';
+      }
       tableHtml += '<tr>' +
         '<td class="mon-cell-num">' + (idx + 1) + '</td>' +
         '<td class="mon-cell-channel"><span class="mon-channel-cell">' + profileLink + extOpen + '</span></td>' +
@@ -2319,8 +2356,10 @@
           '<span class="mon-status ' + statusClass(r.status) + '">' + esc(r.status || '—') + '</span>' +
           (isFormSource(r.source_primary) ? '<br><span class="mon-source-tag">жалобы пользователей</span>' : '') +
         '</td>' +
+        reasonCell +
         '<td class="mon-cell-muted mon-cell-date">' + formatScamComplaintsCell(r) + '</td>' +
         '<td class="mon-cell-muted mon-cell-date">' + esc(fmtDateShort(r.detected_at)) + '</td>' +
+        checkCell +
         '</tr>';
     });
 
@@ -2370,8 +2409,9 @@
       wrapId: 's4-watch-wrap',
       countId: 's4-watch-count',
       searchPrefix: 's4watch',
+      watchMode: true,
       emptyMsg: 'В листе channels_watch нет строк для отображения (или список пуст после фильтров). Подтверждённая база — в разделе «База объектов» выше.',
-      tableCaption: 'Данные листа channels_watch: кандидаты и сигналы широкого мониторинга, не дубликат подтверждённой scam_base. Порядок: по дате обнаружения, новее выше. Те же колонки, что в базе объектов, для сопоставления.'
+      tableCaption: 'Широкий мониторинг: все найденные каналы с честной оценкой системы (статус, причина, ссылка на источник в колонке «Источник», даты обнаружения и проверки). Здесь и «чистые», и рисковые — чтобы было видно, что пайплайн работает.'
     });
   }
 

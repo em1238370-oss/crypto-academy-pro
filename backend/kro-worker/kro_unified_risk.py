@@ -371,3 +371,171 @@ def apply_unified_risk_to_row(
         },
     }
     return status, patch
+
+
+_WATCH_GATE_REASON_RU = {
+    'mandatory_subs_below_100': 'мало подписчиков (<100) для критерия крипто-канала',
+    'mandatory_no_post_date': 'нет даты поста и по полям канала не видно крипто-темы',
+    'mandatory_last_post_stale': 'давно не было постов — вне активного крипто-контента по правилам мониторинга',
+    'mandatory_not_crypto_topic': 'в описании и источниках нет маркеров крипто-темы',
+    'ok_watch_without_post_date': '',
+}
+
+
+def mandatory_gate_watch_relaxed(
+    *,
+    subscribers: Optional[int],
+    last_post_dt: Optional[datetime],
+    username: str,
+    link: str,
+    title: str,
+    about: str,
+    posts_blob: str,
+    source_evidence: str,
+    object_type: str,
+) -> Tuple[bool, str]:
+    """
+    Широкий мониторинг (channels_watch): при известной дате поста — полный mandatory_gate_telegram;
+    устаревшие/пропущенные посты не переводят в «не по теме» — только проверка крипто-маркеров.
+    """
+    if last_post_dt is not None:
+        ok, r = mandatory_gate_telegram(
+            subscribers=subscribers,
+            last_post_dt=last_post_dt,
+            username=username,
+            link=link,
+            title=title,
+            about=about,
+            posts_blob=posts_blob,
+            source_evidence=source_evidence,
+            object_type=object_type,
+            content_analysis_text='',
+        )
+        if ok:
+            return True, r
+        if r in ('mandatory_last_post_stale', 'mandatory_no_post_date'):
+            if subscribers is not None and subscribers > 0 and subscribers < 100:
+                return False, 'mandatory_subs_below_100'
+            if not has_mandatory_crypto_topic(
+                username, link, title, about, posts_blob, source_evidence, object_type, '',
+            ):
+                return False, 'mandatory_not_crypto_topic'
+            return True, 'ok_watch_relaxed_stale_posts'
+        return ok, r
+    if subscribers is not None and subscribers > 0 and subscribers < 100:
+        return False, 'mandatory_subs_below_100'
+    if not has_mandatory_crypto_topic(
+        username, link, title, about, posts_blob, source_evidence, object_type, '',
+    ):
+        return False, 'mandatory_not_crypto_topic'
+    return True, 'ok_watch_without_post_date'
+
+
+def watch_evaluate_status(
+    obj: Dict[str, Any],
+    analysis: Dict[str, Any],
+    *,
+    subscribers: Optional[int],
+    channel_created_dt: Optional[datetime],
+    view_counts: Optional[List[int]],
+    known_base_keys: Optional[Set[str]],
+    complaints_count: int,
+    has_whistleblower_external: bool,
+) -> Tuple[str, str, List[str], List[str]]:
+    """
+    Итоговая оценка для channels_watch.
+    Жалобы не дублируются как красные флаги в collect: complaints=0 в копии obj.
+
+    Возвращает (status, status_reason_ru, red_flags, yellow_flags).
+    """
+    obj2 = dict(obj)
+    obj2['complaints'] = 0
+    analysis = dict(analysis) if isinstance(analysis, dict) else {}
+    red, yellow = collect_unified_flags(
+        obj2,
+        analysis,
+        subscribers=subscribers if subscribers is not None else 0,
+        channel_created_dt=channel_created_dt,
+        view_counts=view_counts,
+        known_base_keys=known_base_keys,
+    )
+    raw_blob = analysis.get('unified_mandatory_posts_blob')
+    posts_blob = (raw_blob if isinstance(raw_blob, str) else '') or ''
+    posts_blob = posts_blob.strip()
+    if not posts_blob:
+        t = _lower(analysis.get('channel_title'))
+        a = _lower(analysis.get('channel_about'))
+        posts_blob = ('%s %s' % (t, a)).strip()
+    title = str(analysis.get('channel_title') or '')
+    about = str(analysis.get('channel_about') or '')
+    lp = analysis.get('last_post_at')
+    last_post_dt = None
+    if lp:
+        try:
+            last_post_dt = datetime.fromisoformat(str(lp).replace('Z', '+00:00'))
+        except ValueError:
+            last_post_dt = None
+
+    gate_ok, gate_reason = mandatory_gate_watch_relaxed(
+        subscribers=subscribers,
+        last_post_dt=last_post_dt,
+        username=str(obj.get('username', '') or ''),
+        link=str(obj.get('link', '') or ''),
+        title=title,
+        about=about,
+        posts_blob=posts_blob,
+        source_evidence=str(obj.get('source_evidence', '') or ''),
+        object_type=str(obj.get('object_type', '') or 'сигнал-канал'),
+    )
+
+    R = len(red)
+    Y = len(yellow)
+    try:
+        C = max(0, int(complaints_count or 0))
+    except (TypeError, ValueError):
+        C = 0
+
+    if not gate_ok:
+        msg = _WATCH_GATE_REASON_RU.get(gate_reason) or (gate_reason or 'вне темы крипто-мониторинга')
+        return 'не по теме', msg, red, yellow
+
+    if R >= 2 and has_whistleblower_external:
+        tail = '…' if len(red) > 5 else ''
+        reason = '≥2 признаков риска и внешний источник (разоблачитель/статья): %s%s' % (
+            '; '.join(red[:5]),
+            tail,
+        )
+        return 'подтверждённый скам', reason, red, yellow
+
+    if R >= 1:
+        tail = '…' if len(red) > 6 else ''
+        return (
+            'в риске',
+            'Красные флаги по контенту/сети: %s%s' % ('; '.join(red[:6]), tail),
+            red,
+            yellow,
+        )
+
+    if C >= 2:
+        return (
+            'в риске',
+            'Несколько жалоб или сигналов в данных (%d) без отдельных контент-флагов в выборке.' % C,
+            red,
+            yellow,
+        )
+
+    if Y >= 1 or C == 1:
+        parts = []
+        if Y >= 1:
+            ytail = '…' if len(yellow) > 4 else ''
+            parts.append('Жёлтые флаги: %s%s' % ('; '.join(yellow[:4]), ytail))
+        if C == 1:
+            parts.append('одна зафиксированная жалоба или сигнал')
+        return 'под наблюдением', '. '.join(parts), red, yellow
+
+    return (
+        'без нарушений',
+        'Контент-флагов нет; повторных жалоб нет — по текущей выборке канал выглядит чистым.',
+        red,
+        yellow,
+    )

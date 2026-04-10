@@ -632,6 +632,15 @@ WATCH_ACTIVE_POSTS_30D = 4
 WATCH_FRESH_POST_DAYS = 14
 
 
+def _first_http_url(text):
+    if not text:
+        return ''
+    m = re.search(r'https?://[^\s\]|<>"\']+', str(text))
+    if not m:
+        return ''
+    return m.group(0).rstrip(').,;\'"')
+
+
 def _watch_parse_subscribers(row):
     """Число подписчиков из строки TGStat/Telegram-поиска (поле growth / participants_count)."""
     if not row:
@@ -4028,12 +4037,14 @@ def _build_channels_watch_rows(
     watch_metrics,
     report_date_str,
     cycle_window,
+    web_findings=None,
+    known_scam_keys=None,
 ):
     """
-    Собрать широкий список channels_watch:
-    — крипто-сигнальные каналы старше месяца;
-    — плюс новые сигнальные (<30 дн.) при подписчиках ≥ KRO_YOUNG_SIGNAL_WATCH_MIN_SUBS (по умолчанию 100):
-      проверка постов; при отсутствии признаков риска — статус «без нарушений» (не в зоне риска).
+    Собрать широкий список channels_watch (все найденные каналы с оценкой):
+    — TGStat / Telega / Telegram-поиск / жалобы / веб-источники;
+    — статус и причина по kro_unified_risk.watch_evaluate_status (красные/жёлтые без дубля жалоб в флагах);
+    — колонки A–P: + status_reason, evidence_url, last_checked_at.
     """
     now = _msk_now()
     complaints_map = {}
@@ -4075,6 +4086,8 @@ def _build_channels_watch_rows(
             return
         existing = candidates.get(key)
         source_label = _watch_source_label(row) if row.get('query_group') else fallback_source
+        subs_row = _watch_parse_subscribers(row)
+        ev_url = (row.get('_evidence_url') or '').strip()
         if not existing:
             candidates[key] = {
                 'username': row.get('channel') or ('@' + key),
@@ -4087,6 +4100,8 @@ def _build_channels_watch_rows(
                 'title': (row.get('title') or '').strip(),
                 '_youth_signal_review': youth_ok,
                 '_subs_at_find': subs_n if youth_ok else 0,
+                '_subs': subs_row,
+                '_evidence_url': ev_url,
             }
             return
         existing_sources = set([s.strip() for s in (existing.get('source_primary') or '').split('+') if s.strip()])
@@ -4100,6 +4115,10 @@ def _build_channels_watch_rows(
         if youth_ok:
             existing['_youth_signal_review'] = True
             existing['_subs_at_find'] = max(int(existing.get('_subs_at_find') or 0), subs_n)
+        if subs_row > int(existing.get('_subs') or 0):
+            existing['_subs'] = subs_row
+        if ev_url and not (existing.get('_evidence_url') or '').strip():
+            existing['_evidence_url'] = ev_url
 
     for row in (tgstat_watch_channels or []):
         add_candidate(row, 'широкий поиск TGStat')
@@ -4118,7 +4137,28 @@ def _build_channels_watch_rows(
             'title': '',
         }, 'форма жалоб / чаты')
 
+    for f in (web_findings or []):
+        ch = (f.get('channel') or '').strip()
+        url = (f.get('source_url') or '').strip()
+        if not ch or not url:
+            continue
+        src_tag = (f.get('source') or 'web').strip() or 'web'
+        add_candidate(
+            {
+                'channel': ch,
+                'link': _object_link(ch),
+                'query_group': '',
+                'vip': '',
+                'title': '',
+                '_evidence_url': url,
+            },
+            'веб (%s)' % src_tag.replace('web-search', 'поиск'),
+        )
+
     watch_rows = []
+    known_keys = frozenset(known_scam_keys or ())
+    checked_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
+
     for key, row in sorted(candidates.items(), key=lambda item: (-item[1].get('channel_age_days', 0), item[1].get('username', ''))):
         metrics = watch_metrics.get(key) or {}
         complaints = complaints_map.get(key, {})
@@ -4137,7 +4177,6 @@ def _build_channels_watch_rows(
             suspicious.append('похоже, показывает только прибыль')
 
         red_sig = list(metrics.get('red_flags_signal') or [])
-        n_rf = len(red_sig)
 
         vip_summary = (row.get('vip_price') or '').strip()
         if not vip_summary or vip_summary == '—':
@@ -4154,6 +4193,7 @@ def _build_channels_watch_rows(
             or 'поиск' in (row.get('source_primary') or '')
             or 'новые сигнальные' in (row.get('source_primary') or '')
             or 'kurs.expert' in (row.get('source_primary') or '')
+            or 'веб' in (row.get('source_primary') or '').lower()
         ):
             activity_summary = 'найден в текущем поиске; свежие посты не проверены'
         else:
@@ -4166,20 +4206,6 @@ def _build_channels_watch_rows(
             )
         else:
             reviews_summary = 'Жалоб не найдено. Положительных отзывов в текущих источниках не найдено.'
-
-        combined_risk = len(suspicious) + n_rf
-        if complaints_count >= 2 and (suspicious or n_rf >= 2):
-            status = 'в риске'
-        elif complaints_count >= 2:
-            status = 'под наблюдением'
-        elif combined_risk >= 4 or n_rf >= 4:
-            status = 'в риске'
-        elif suspicious or n_rf >= 1:
-            status = 'под наблюдением'
-        elif complaints_count == 0 and combined_risk == 0:
-            status = 'без нарушений'
-        else:
-            status = 'под наблюдением'
 
         evidence_parts = [
             'Возраст канала: %d дней.' % int(row.get('channel_age_days') or 0),
@@ -4194,6 +4220,69 @@ def _build_channels_watch_rows(
             evidence_parts.append(
                 'Red flags (сигнал-канал): %s.' % ', '.join(red_sig)
             )
+
+        se_eval = ' | '.join(evidence_parts)
+        comp_url = (complaints.get('source_url') or '').strip()
+        has_ext = False
+        for blob in (
+            row.get('source_primary') or '',
+            comp_url,
+            se_eval,
+            row.get('_evidence_url') or '',
+        ):
+            if blob and _text_has_whistleblower_site_marker(blob):
+                has_ext = True
+                break
+
+        ch_created = None
+        created_raw = row.get('created_at')
+        if created_raw:
+            try:
+                ch_created = datetime.fromisoformat(str(created_raw).replace('Z', '+00:00'))
+            except ValueError:
+                ch_created = None
+
+        subs_n = int(row.get('_subs') or 0)
+        subs_for_gate = subs_n if subs_n > 0 else None
+
+        analysis_w = {
+            'only_profit_posts': (metrics.get('profit_mode') == 'похоже, показывает только прибыль'),
+            'red_flags_typed': {'сигнал-канал': red_sig},
+            'channel_title': title,
+            'channel_about': '',
+            'last_post_at': metrics.get('last_post_at') or '',
+            'post_view_counts': [],
+        }
+        obj_w = {
+            'username': row.get('username', ''),
+            'link': row.get('link', ''),
+            'source_primary': row.get('source_primary', ''),
+            'source_evidence': se_eval[:8000],
+            'vip_price': (row.get('vip_price') or '—'),
+            'complaints': complaints_count,
+            'channel_age_days': row.get('channel_age_days'),
+            'object_type': 'сигнал-канал',
+        }
+
+        status, status_reason, red_ur, yellow_ur = _kro_unified.watch_evaluate_status(
+            obj_w,
+            analysis_w,
+            subscribers=subs_for_gate,
+            channel_created_dt=ch_created,
+            view_counts=None,
+            known_base_keys=known_keys,
+            complaints_count=complaints_count,
+            has_whistleblower_external=has_ext,
+        )
+
+        if red_ur or yellow_ur:
+            evidence_parts.append(
+                'Сводка флагов: красные [%s]; жёлтые [%s].'
+                % (
+                    ', '.join(red_ur[:8]) + ('…' if len(red_ur) > 8 else ''),
+                    ', '.join(yellow_ur[:6]) + ('…' if len(yellow_ur) > 6 else ''),
+                )
+            )
         if row.get('_youth_signal_review') and status == 'без нарушений':
             subs_note = int(row.get('_subs_at_find') or 0)
             evidence_parts.append(
@@ -4203,6 +4292,13 @@ def _build_channels_watch_rows(
                     (', зафиксировано ~%d' % subs_note) if subs_note > 0 else '',
                 )
             )
+
+        se_full = ' | '.join(evidence_parts)
+        evu = (row.get('_evidence_url') or '').strip()
+        if not evu:
+            evu = _first_http_url(comp_url) or _first_http_url(se_full)
+        if not evu:
+            evu = (row.get('link') or '').strip()
 
         watch_rows.append([
             row.get('username', ''),
@@ -4215,9 +4311,12 @@ def _build_channels_watch_rows(
             complaints_count,
             activity_summary,
             reviews_summary,
-            ' | '.join(evidence_parts),
+            se_full[:5000],
             cycle_window,
             status,
+            (status_reason or '')[:1500],
+            (evu or '')[:500],
+            checked_at,
         ])
 
     return watch_rows
@@ -4228,27 +4327,23 @@ def _write_channels_watch_to_sheet(watch_rows, client, sheet_id):
     if not client or not sheet_id:
         return []
 
-    watch_range = os.environ.get('KRO_CHANNELS_WATCH_RANGE', 'channels_watch!A2:M')
+    watch_range = os.environ.get('KRO_CHANNELS_WATCH_RANGE', 'channels_watch!A2:P')
     sheet_name = watch_range.split('!')[0] if '!' in watch_range else 'channels_watch'
     header = [[
         'username', 'link', 'detected_at', 'created_at', 'channel_age_days',
         'source_primary', 'vip_price', 'complaints', 'activity_summary',
-        'reviews_summary', 'source_evidence', 'cycle_window', 'status'
+        'reviews_summary', 'source_evidence', 'cycle_window', 'status',
+        'status_reason', 'evidence_url', 'last_checked_at',
     ]]
 
     try:
-        ensure_sheet_exists(client, sheet_id, sheet_name, row_count=500, column_count=13)
-        existing_header = client.spreadsheets().values().get(
+        ensure_sheet_exists(client, sheet_id, sheet_name, row_count=500, column_count=16)
+        client.spreadsheets().values().update(
             spreadsheetId=sheet_id,
-            range='%s!A1' % sheet_name
-        ).execute().get('values', [])
-        if not existing_header:
-            client.spreadsheets().values().update(
-                spreadsheetId=sheet_id,
-                range='%s!A1:M1' % sheet_name,
-                valueInputOption='RAW',
-                body={'values': header}
-            ).execute()
+            range='%s!A1:P1' % sheet_name,
+            valueInputOption='RAW',
+            body={'values': header},
+        ).execute()
     except Exception as e:
         print('channels_watch ensure header error: %s' % e, file=sys.stderr)
         return []
@@ -4256,7 +4351,7 @@ def _write_channels_watch_to_sheet(watch_rows, client, sheet_id):
     try:
         existing_resp = client.spreadsheets().values().get(
             spreadsheetId=sheet_id,
-            range='%s!A2:M' % sheet_name
+            range='%s!A2:P' % sheet_name
         ).execute()
         existing_rows = existing_resp.get('values', []) or []
     except Exception as e:
@@ -4278,7 +4373,7 @@ def _write_channels_watch_to_sheet(watch_rows, client, sheet_id):
             continue
         if key in row_map:
             batch_data.append({
-                'range': '%s!A%d:M%d' % (sheet_name, row_map[key], row_map[key]),
+                'range': '%s!A%d:P%d' % (sheet_name, row_map[key], row_map[key]),
                 'values': [row],
             })
             updated.append(row[0])
@@ -4308,7 +4403,7 @@ def _write_channels_watch_to_sheet(watch_rows, client, sheet_id):
         try:
             client.spreadsheets().values().append(
                 spreadsheetId=sheet_id,
-                range='%s!A:M' % sheet_name,
+                range='%s!A:P' % sheet_name,
                 valueInputOption='RAW',
                 insertDataOption='INSERT_ROWS',
                 body={'values': append_rows}
@@ -7126,6 +7221,11 @@ def main():
         ),
         file=sys.stderr,
     )
+    known_watch_keys = set()
+    for _o in confirmed_objects or []:
+        _nk = _norm_ch_key((_o.get('username') or '').strip())
+        if _nk:
+            known_watch_keys.add(_nk)
     channels_watch_rows = _build_channels_watch_rows(
         tgstat_watch_channels,
         telega_channels,
@@ -7135,7 +7235,9 @@ def main():
         channel_ages_from_tg,
         watch_metrics,
         report_date_str,
-        cycle_window
+        cycle_window,
+        web_findings=web_findings,
+        known_scam_keys=known_watch_keys,
     )
     if client and sheet_id:
         _write_channels_watch_to_sheet(channels_watch_rows, client, sheet_id)

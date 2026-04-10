@@ -17,7 +17,7 @@
 
 Переменные (как на Render / в server.js):
   KRO_SHEET_ID
-  KRO_CHANNELS_WATCH_RANGE   (по умолчанию channels_watch!A2:M)
+  KRO_CHANNELS_WATCH_RANGE   (по умолчанию channels_watch!A2:P)
   KRO_CHANNELS_NETWORK_RANGE   (по умолчанию channels_network!A2:G)
   KRO_META_RANGE               (по умолчанию kro_meta!A:B; пишем ключи в A1:B12)
 """
@@ -72,7 +72,7 @@ def main() -> int:
         print('KRO_SHEET_ID должен быть ID из URL таблицы Google.', file=sys.stderr)
         return 1
 
-    watch_rng = (os.environ.get('KRO_CHANNELS_WATCH_RANGE') or 'channels_watch!A2:M').strip()
+    watch_rng = (os.environ.get('KRO_CHANNELS_WATCH_RANGE') or 'channels_watch!A2:P').strip()
     network_rng = (os.environ.get('KRO_CHANNELS_NETWORK_RANGE') or 'channels_network!A2:G').strip()
     meta_rng = (os.environ.get('KRO_META_RANGE') or 'kro_meta!A:B').strip()
     meta_sheet = (meta_rng.split('!')[0] if '!' in meta_rng else 'kro_meta').strip() or 'kro_meta'
