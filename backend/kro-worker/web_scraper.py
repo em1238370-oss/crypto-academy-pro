@@ -14,6 +14,16 @@ KRO Web Scraper: собирает упоминания скам-каналов �
 
 Каждая найденная запись: {channel, sum_rub, description, source_url, source[, object_type]}
 Возвращаемые данные пишутся в лист reports Google Sheets с пометкой source='web'.
+
+Охват поиска (без правки кода): переменные окружения
+  KRO_WEB_VICTIM_MAX_PER_QUERY — находок с одного DDG-запроса (по умол. 7);
+  KRO_WEB_SEARCH_MAX_LINKS — ссылок с одного запроса (22);
+  KRO_WEB_PORTAL_ARTICLE_LIMIT — статей с хаба blacklist-telegram (28);
+  KRO_WEB_VKLADER_BLACKLIST_LINKS / KRO_WEB_VKLADER_PROVERKA_LINKS — лимиты vklader;
+  KRO_WEB_SEED_USERNAMES — сколько каналов обогащать вторым кругом;
+  KRO_WEB_ENRICH_MAX_LINKS — DDG-страниц на seed;
+  KRO_WEB_ARTICLE_REQUIRE_SIGNAL_ANCHOR=1 — жёсткий якорь сигнал/VIP/трейдинг для статей
+    stop-scam1 / fin-obzor / vklader / telltrue / forteck (осторожно: может резать не-сигнальные статьи).
 """
 import os
 import re
@@ -153,7 +163,7 @@ _CHANNEL_NOISE = frozenset({
     'telegram', 'durov', 'instagram', 'youtube', 'tiktok', 'twitter', 'facebook',
     'google', 'vk', 'ok',
     # Generic internet/email services — not Telegram channels
-    'gmail', 'yahoo', 'mail', 'yandex', 'outlook', 'hotmail', 'protonmail',
+    'gmail', 'yahoo', 'mail', 'yandex', 'outlook', 'hotmail', 'protonmail', 'proton',
     # Stop-scam1.com site admin contact
     'feel340',
     # Common social media handles mistaken for TG channels
@@ -405,7 +415,16 @@ _SEARCH_ENGINE_URLS = (
     'https://www.bing.com/search?q={q}',
 )
 
-_VICTIM_QUERY_LIMIT_PER_QUERY = 5
+def _env_int(name: str, default: int, *, lo: int = 1, hi: int = 200) -> int:
+    try:
+        v = int((os.environ.get(name) or str(default)).strip())
+        return max(lo, min(v, hi))
+    except (TypeError, ValueError):
+        return default
+
+
+# Сколько новых каналов максимум с одного поискового запроса (жертва / DDG).
+_VICTIM_QUERY_LIMIT_PER_QUERY = _env_int('KRO_WEB_VICTIM_MAX_PER_QUERY', 7)
 
 # Запросы, которыми реально пользуются пострадавшие и люди перед входом в канал/сервис.
 _VICTIM_SCAM_CHANNEL_QUERIES = [
@@ -419,6 +438,12 @@ _VICTIM_SCAM_CHANNEL_QUERIES = [
     'доверительное управление крипта телеграм',
     'крипто наставник телеграм скам',
     'заработок на бирже телеграм сигналы обман',
+    'telegram crypto signals channel scam review',
+    'крипто сигналы телеграм VIP отзывы обман',
+    'pump signals telegram crypto развод',
+    'фьючерсы крипта телеграм сигналы мошенники',
+    'крипто трейдер телеграм гарантия прибыли развод',
+    'private channel crypto signals telegram отзывы',
 ]
 
 _VICTIM_EXCHANGER_QUERIES = [
@@ -469,6 +494,53 @@ def _search_urls_for_query(query, max_links=20):
     return links
 
 
+# Минимум «торгового/сигнального» якоря — чтобы не тащить «просто заработок» и новости рынка без сигналов.
+_SIGNAL_TRADING_ANCHOR_TERMS = (
+    'сигнал', 'signals', 'signal',
+    'vip', 'вип',
+    'лонг', 'long', 'шорт', 'short',
+    'сделк', 'фьючерс', 'фьючи', 'плечо', 'маржа', 'маржин',
+    'pump', 'дамп', 'dump',
+    'трейд', 'trading', 'трейдер',
+    'btc', 'eth', 'usdt', 'usdc', 'bnb', 'sol', 'ton',
+    'крипт', 'crypto', 'бирж', 'binance', 'bybit', 'okx', 'kucoin',
+    'инвест', 'invest', 'депозит', 'профит',
+)
+
+_GENERIC_EARN_SPAM = (
+    'как заработать', 'заработок без вложений', 'пассивный доход',
+    'удалённая работа', 'удаленная работа', 'простой заработок',
+)
+
+_PURE_NEWS_MARKET = (
+    'новости рынка', 'дайджест новостей', 'обзор рынка', 'новости экономики',
+    'только новости', 'информационный канал',
+)
+
+
+def _blob_lower(*parts) -> str:
+    return ' '.join((p or '') if isinstance(p, str) else str(p or '') for p in parts).lower()
+
+
+def _signal_trading_anchor_present(blob: str) -> bool:
+    low = (blob or '').lower()
+    return any(t in low for t in _SIGNAL_TRADING_ANCHOR_TERMS)
+
+
+def _web_reject_generic_earn_or_news_without_trading(blob: str) -> bool:
+    """
+    True — страница по смыслу «чистый заработок/новости» без крипто-трейдинг якоря (отсекаем finside-подобное).
+    """
+    low = (blob or '').lower()
+    if any(x in low for x in _GENERIC_EARN_SPAM):
+        if not _signal_trading_anchor_present(low):
+            return True
+    if any(x in low for x in _PURE_NEWS_MARKET):
+        if not _signal_trading_anchor_present(low):
+            return True
+    return False
+
+
 def _victim_query_page_is_crypto_relevant(page, url, query, object_type):
     """
     Early anti-noise filter before _build_findings_from_page:
@@ -507,14 +579,20 @@ def _scrape_victim_queries():
             total_queries += 1
             per_query_count = 0
             per_query_seen = set()
-            urls = _search_urls_for_query(query, max_links=18)
+            urls = _search_urls_for_query(query, max_links=_env_int('KRO_WEB_SEARCH_MAX_LINKS', 22))
             for url in urls:
                 page = _fetch(url)
                 if not page:
                     continue
                 if not _victim_query_page_is_crypto_relevant(page, url, query, object_type):
                     continue
-                findings = _build_findings_from_page(page, url, 'web-search', max_channels=1)
+                findings = _build_findings_from_page(
+                    page,
+                    url,
+                    'web-search',
+                    max_channels=1,
+                    signal_trading_anchor_required=(object_type == 'сигнал-канал'),
+                )
                 for f in findings:
                     ch = (f.get('channel') or '').strip().lower()
                     if not ch:
@@ -725,12 +803,21 @@ def _extract_cryptorussia_channels(page, url):
     return _unique_list(channels)
 
 
-def _build_findings_from_page(page, url, source_name, max_channels=3, anchor_username=None):
+def _build_findings_from_page(
+    page,
+    url,
+    source_name,
+    max_channels=3,
+    anchor_username=None,
+    signal_trading_anchor_required=False,
+):
     """
     Turn a fetched article page into complaint findings.
     Uses BeautifulSoup for clean description extraction (no footer noise).
     anchor_username: если задан (slug без @), findings только для этого канала и только если
     он реально упомянут на странице — режет ложные срабатывания при DDG-обогащении.
+    signal_trading_anchor_required: для поиска «сигнал-канал» — в тексте должен быть якорь
+    трейдинга/сигналов/VIP/крипты (отсекает «просто заработок» и сухие новости рынка).
     """
     # Try BS4-based paragraph extraction first
     paragraphs = _extract_article_paragraphs(page)
@@ -744,6 +831,18 @@ def _build_findings_from_page(page, url, source_name, max_channels=3, anchor_use
         desc_snippet = clean_for_channels[:400].strip()
 
     if not clean_for_channels:
+        return []
+    title = (_extract_title_from_html(page) or '').strip()
+    blob = _blob_lower(title, clean_for_channels, url)
+    if _web_reject_generic_earn_or_news_without_trading(blob):
+        return []
+    req_sig = bool(signal_trading_anchor_required)
+    if (os.environ.get('KRO_WEB_ARTICLE_REQUIRE_SIGNAL_ANCHOR') or '').strip().lower() in (
+        '1', 'true', 'yes', 'on',
+    ):
+        if source_name in _ARTICLE_HEAD_PRIORITY_SOURCES:
+            req_sig = True
+    if req_sig and not _signal_trading_anchor_present(blob):
         return []
     req_ctx = source_name in _ARTICLE_SOURCES_REQUIRE_SCAM_CONTEXT
     channels = _extract_channel_mentions(clean_for_channels, require_scam_context=req_ctx)
@@ -1474,8 +1573,8 @@ def scrape_vklader():
 
     seen_urls = set()
     for hub_html, link_limit in (
-        (blacklist_html, 25),
-        (proverka_html, 15),
+        (blacklist_html, _env_int('KRO_WEB_VKLADER_BLACKLIST_LINKS', 35)),
+        (proverka_html, _env_int('KRO_WEB_VKLADER_PROVERKA_LINKS', 22)),
     ):
         if not hub_html:
             continue
@@ -1509,12 +1608,20 @@ _FORTECK_BLACKLIST_URL = 'https://forteck.net/blacklist-telegram/'
 
 
 def _scrape_blacklist_telegram_portal(
-    base_url, blacklist_url, status_name, source_tag, noise_handles, article_limit=20, dedicated_only=False
+    base_url,
+    blacklist_url,
+    status_name,
+    source_tag,
+    noise_handles,
+    article_limit=None,
+    dedicated_only=False,
 ):
     """
     Single blacklist-telegram hub + linked articles (vklader-style).
     dedicated_only=True (telltrue): только URL /{username}, без @ в тексте хаба.
     """
+    if article_limit is None:
+        article_limit = _env_int('KRO_WEB_PORTAL_ARTICLE_LIMIT', 28)
     results = []
     html = _fetch(blacklist_url)
     if not html:
@@ -1559,7 +1666,7 @@ def scrape_telltrue():
         'telltrue.net',
         'telltrue',
         ('telltrue',),
-        article_limit=20,
+        article_limit=None,
         dedicated_only=True,
     )
 
@@ -1567,7 +1674,12 @@ def scrape_telltrue():
 def scrape_forteck():
     """forteck.net/blacklist-telegram — тот же формат, что у vklader."""
     return _scrape_blacklist_telegram_portal(
-        _FORTECK_BASE, _FORTECK_BLACKLIST_URL, 'forteck.net', 'forteck', ('forteck',), article_limit=20
+        _FORTECK_BASE,
+        _FORTECK_BLACKLIST_URL,
+        'forteck.net',
+        'forteck',
+        ('forteck',),
+        article_limit=None,
     )
 
 
@@ -1606,10 +1718,11 @@ def scrape_all():
         (r.get('channel') or '').strip()
         for r in results
         if _is_seed_telegram_ref(r.get('channel'))
-    })[:20]
+    })[: _env_int('KRO_WEB_SEED_USERNAMES', 28)]
     _enrich_anchor_strict = (os.environ.get('KRO_WEB_ENRICHMENT_STRICT_ANCHOR') or '1').strip().lower() not in (
         '0', 'false', 'no', 'off',
     )
+    _enrich_max = _env_int('KRO_WEB_ENRICH_MAX_LINKS', 3)
     for channel in seed_usernames:
         uname = (channel or '').strip().lstrip('@').lower()
         if _TELEGRAM_SLUG_PATH_RE.match(uname):
@@ -1620,7 +1733,7 @@ def scrape_all():
                     results.extend(
                         _build_findings_dedicated_blacklist_page(page, dedicated_url, tag, uname)
                     )
-        for url in _search_review_urls_for_username(channel, max_links=2):
+        for url in _search_review_urls_for_username(channel, max_links=_enrich_max):
             page = _fetch(url)
             if not page:
                 continue

@@ -109,6 +109,14 @@ jobs:
           KRO_TELEGRAM_SESSION_STRING: ${{ secrets.KRO_TELEGRAM_SESSION_STRING }}
           # Поиск DDG+Bing + extra-источники каждый цикл (web_scraper._scrape_victim_queries и др.)
           KRO_WEB_EXTRA_SOURCES: '1'
+          # Шире поиск по умолчанию (лимиты можно снизить при шуме)
+          KRO_WEB_SEARCH_MAX_LINKS: '24'
+          KRO_WEB_PORTAL_ARTICLE_LIMIT: '32'
+          KRO_WEB_VKLADER_BLACKLIST_LINKS: '40'
+          KRO_WEB_VKLADER_PROVERKA_LINKS: '24'
+          KRO_WEB_VICTIM_MAX_PER_QUERY: '8'
+          KRO_WEB_SEED_USERNAMES: '30'
+          KRO_WEB_ENRICH_MAX_LINKS: '3'
           # Явный лист жалоб: чтение A2:I и append в тот же лист после очистки (остался только заголовок)
           KRO_REPORTS_SHEET: reports
           # Не чистить scam_base HTTP-gate с раннера GitHub (t.me часто блокирует CI → лист обнулялся).
