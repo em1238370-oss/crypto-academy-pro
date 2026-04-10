@@ -1,7 +1,7 @@
 /* ============================================================
-   KRO Monitor — executive / medvedevart (анализ §3 типографика):
-   Outfit — заголовки и крупные метрики; Inter — текст, таблицы, UI;
-   IBM Plex Mono — служебные строки (статус, время цикла). Сдержанный премиум.
+   KRO Monitor — executive / medvedevart (см. Анализ_дизайна_medvedevart.md):
+   Syne — display (hero, главы, крупные акценты); Manrope + Inter — текст и UI;
+   IBM Plex Mono — служебные строки. Motion: §4 анализа (0.5–0.8s, stagger ~0.1–0.15s).
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -35,9 +35,9 @@
   --mon-cyan:       #06b6d4;
   --mon-violet:     #8b5cf6;
 
-  /* medvedevart §3: геометрический display + нейтральный корпоративный текст */
-  --mon-font:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --mon-font-display: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* medvedevart §3: геометрический display + читаемый корпоративный текст (как на kro главной) */
+  --mon-font:         'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mon-font-display: 'Syne', 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --mon-font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', Monaco, 'Cascadia Code', monospace;
   --mon-steel:        rgba(110, 122, 145, 0.35);
   --mon-steel-line:   rgba(72, 82, 104, 0.55);
@@ -127,19 +127,19 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     radial-gradient(ellipse 50% 40% at 92% 88%, rgba(245, 158, 11, 0.055) 0%, transparent 48%),
     radial-gradient(ellipse 45% 38% at 6% 72%, rgba(96, 125, 200, 0.04) 0%, transparent 45%),
     linear-gradient(165deg, rgba(255, 255, 255, 0.02) 0%, transparent 38%, transparent 62%, rgba(0, 0, 0, 0.12) 100%);
-  opacity: 0.92;
-  animation: monBgAtmosphere 24s var(--mon-ease-soft) infinite alternate;
+  opacity: 0.88;
+  animation: monBgAtmosphere 28s var(--mon-ease-soft) infinite alternate;
   will-change: opacity;
 }
 
 @keyframes monBgAtmosphere {
   0% {
-    opacity: 0.72;
+    opacity: 0.66;
     transform: translate3d(0, 0, 0) scale(1);
   }
   100% {
-    opacity: 1;
-    transform: translate3d(1.1%, -0.75%, 0) scale(1.024);
+    opacity: 0.94;
+    transform: translate3d(0.85%, -0.55%, 0) scale(1.018);
   }
 }
 
@@ -448,7 +448,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   to { opacity: 1; transform: translateY(0); }
 }
 @media (max-width: 640px) {
-  .mon-page-ready .mon-hero-copy > *,
+  .mon-page-ready .mon-hero-copy > *:not(.mon-hero-tags),
   .mon-page-ready .mon-hero-aside {
     animation-name: monHeroInLite !important;
   }
@@ -508,7 +508,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2);
 }
 .mon-page-ready .mon-hero-copy .mon-hero-cta-row {
-  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 3);
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 3.85);
 }
 
 .mon-hero-aside {
@@ -523,7 +523,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-page-ready .mon-hero-aside {
   animation: monHeroIn var(--mon-dur-hero) var(--mon-ease-soft) both;
-  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 4);
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 4.35);
 }
 
 /* Лёгкое приглушение hero при уходе из вьюпорта (контент ниже не «исчезает») */
@@ -554,7 +554,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   line-height: 1.4;
 }
 
-/* H1: плотный executive-заголовок (как крупное имя на medvedevart), Outfit */
+/* H1: плотный executive-заголовок (как крупное имя на medvedevart), Syne */
 .mon-hero-title {
   font-family: var(--mon-font-display);
   font-size: clamp(38px, 6.2vw, 68px);
@@ -602,6 +602,92 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   line-height: var(--mon-leading-body);
   margin-bottom: 20px;
   max-width: var(--mon-prose-max);
+}
+
+/* Темы дашборда — теги как на портфолио-reference; волна по §4 анализа */
+.mon-hero-tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin: 0 0 22px;
+  padding: 0;
+  max-width: 100%;
+}
+@keyframes monHeroTagChip {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(var(--mon-reveal-blur));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+@keyframes monHeroTagChipLite {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tags {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag {
+  opacity: 0;
+  animation: monHeroTagChip 0.62s var(--mon-ease-soft) both;
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(1) {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2.55);
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(2) {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2.55 + 0.12s);
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(3) {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2.55 + 0.24s);
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(4) {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2.55 + 0.36s);
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(5) {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2.55 + 0.48s);
+}
+.mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag:nth-child(6) {
+  animation-delay: calc(var(--mon-hero-enter) + var(--mon-hero-step) * 2.55 + 0.6s);
+}
+@media (max-width: 640px) {
+  .mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag {
+    animation-name: monHeroTagChipLite;
+  }
+}
+.mon-hero-tag {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mon-font);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 240, 220, 0.88);
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  background: linear-gradient(165deg, rgba(245, 158, 11, 0.09), rgba(255, 255, 255, 0.03));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition:
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    background var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease);
+}
+@media (min-width: 641px) and (hover: hover) {
+  .mon-hero-tag:hover {
+    border-color: rgba(245, 158, 11, 0.42);
+    background: linear-gradient(165deg, rgba(245, 158, 11, 0.16), rgba(255, 255, 255, 0.05));
+    transform: translateY(-1px);
+  }
 }
 
 /* CTA — якорь на метрики/дашборд мониторинга */
@@ -733,12 +819,25 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-offer-kicker {
-  font-size: 11px;
+  position: relative;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: var(--mon-tracking-kicker);
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.36);
+  color: rgba(255, 255, 255, 0.38);
   margin: 0 0 14px;
+  padding-left: 14px;
+}
+.mon-offer-kicker::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.12em;
+  bottom: 0.12em;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.95), rgba(245, 158, 11, 0.06));
+  opacity: 0.95;
 }
 
 .mon-offer-title {
@@ -1382,7 +1481,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   margin-left: auto;
 }
 
-/* Заголовки карточек/панелей внутри глав — тот же Outfit, ступень ниже chapter */
+/* Заголовки карточек/панелей внутри глав — тот же display, ступень ниже chapter */
 .mon-section-heading {
   font-family: var(--mon-font-display);
   font-size: clamp(1.2rem, 2.2vw, 1.5rem);
@@ -2386,11 +2485,11 @@ a.mon-ca-sample-link[href^="tg:"] {
 
 /* Волна карточек метрик: stagger 0.05–0.15s */
 .mon-status-grid .mon-stat-card.mon-reveal:nth-child(1) { --mon-reveal-delay: 0ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(2) { --mon-reveal-delay: 110ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(3) { --mon-reveal-delay: 220ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(4) { --mon-reveal-delay: 330ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(5) { --mon-reveal-delay: 440ms; }
-.mon-status-grid .mon-stat-card.mon-reveal:nth-child(6) { --mon-reveal-delay: 550ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(2) { --mon-reveal-delay: 100ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(3) { --mon-reveal-delay: 200ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(4) { --mon-reveal-delay: 300ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(5) { --mon-reveal-delay: 400ms; }
+.mon-status-grid .mon-stat-card.mon-reveal:nth-child(6) { --mon-reveal-delay: 500ms; }
 
 /* ── COLLAPSIBLE ─────────────────────────────────────────── */
 
@@ -2788,6 +2887,12 @@ a.mon-ca-sample-link[href^="tg:"] {
   }
   .mon-hero-copy > *,
   .mon-hero-aside {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
