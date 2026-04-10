@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260411-registry-full">
+  <link rel="stylesheet" href="/monitor.css?v=20260409-scam-guide-medvedev">
 </head>
 <body class="mon-page">
 
@@ -326,15 +326,16 @@
 
       <div class="mon-scam-data-guide" aria-label="Расшифровка колонок таблицы базы">
         <p class="mon-scam-data-guide-kicker">Как читать таблицу</p>
+        <p class="mon-scam-data-guide-lead">Каждая строка — объект в листе <strong>scam_base</strong> после фильтров и порогов из отчёта Source&nbsp;&amp;&nbsp;Data. Колонки дублируют поля строки: от идентификатора до статуса и даты фиксации.</p>
         <div class="mon-scam-data-guide-grid">
-          <div class="mon-scam-data-guide-item"><strong>Объект</strong>Идентификатор в scam_base; ссылки — лента t.me в браузере, карточка на сайте и доп. URL из строки.</div>
-          <div class="mon-scam-data-guide-item"><strong>Тип объекта</strong>Категория (канал, бот, сайт…). Это не число жалоб.</div>
-          <div class="mon-scam-data-guide-item"><strong>Источник</strong>Внешние URL из поля доказательств — первоисточники и материалы разбора.</div>
-          <div class="mon-scam-data-guide-item"><strong>Признаки риска</strong>Факты и цитаты из карточки и автоматического сбора; полный текст — в title ячейки.</div>
-          <div class="mon-scam-data-guide-item"><strong>Контент-анализ</strong>Выжимка по постам канала или сохранённым полям записи.</div>
-          <div class="mon-scam-data-guide-item"><strong>Статус</strong>Итоговая метка по методологии отчёта; «жалобы пользователей» — если главный сигнал из формы.</div>
-          <div class="mon-scam-data-guide-item"><strong>Жалоб (учтено)</strong>Счётчик по строке и отчётам; символ ? рядом с числом раскрывает логику подсчёта.</div>
-          <div class="mon-scam-data-guide-item"><strong>Дата</strong>Когда объект попал в базу / дата обнаружения в данных.</div>
+          <div class="mon-scam-data-guide-item"><strong>Объект</strong>Username / сайт из строки. Ссылка с имени — публичная лента <code class="mon-scam-data-guide-code">t.me/s/…</code> в браузере; иконки — карточка на сайте и дополнительный URL из таблицы.</div>
+          <div class="mon-scam-data-guide-item"><strong>Тип объекта</strong>Класс записи (сигнал‑канал, бот, сайт и т.д.). Не путать с числом жалоб — это отдельная колонка.</div>
+          <div class="mon-scam-data-guide-item"><strong>Источник</strong>Ссылки из блока доказательств: статьи разоблачителей, чёрные списки, отзывы — всё, что вошло в обоснование строки.</div>
+          <div class="mon-scam-data-guide-item"><strong>Признаки риска</strong>Сжатые формулировки и цитаты; развёрнутый текст обычно в подсказке ячейки (наведите курсор).</div>
+          <div class="mon-scam-data-guide-item"><strong>Контент-анализ</strong>Автоматическая выжимка по постам канала (если есть) или по сохранённым полям анализа.</div>
+          <div class="mon-scam-data-guide-item"><strong>Статус</strong>Итог по правилам сводки (подтверждённый скам, риск, наблюдение и т.д.). Плашка «жалобы пользователей» — если опорный сигнал из формы, а не только сайт.</div>
+          <div class="mon-scam-data-guide-item"><strong>Жалоб (учтено)</strong>Агрегат по данным строки и листам отчётов; кружок «?» в самой таблице открывает подсказку по методике счёта.</div>
+          <div class="mon-scam-data-guide-item"><strong>Дата</strong>Когда запись попала в базу или дата обнаружения в источнике — в формате, как пришло из воркера.</div>
         </div>
       </div>
 
