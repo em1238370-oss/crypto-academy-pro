@@ -1363,6 +1363,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-size: 15px;
   color: var(--mon-text-prose);
 }
+.mon-chapter-lead--inline strong {
+  font-weight: 600;
+  color: rgba(255, 244, 228, 0.9);
+}
 .mon-chapter-meta {
   font-family: var(--mon-font);
   font-size: 12px;
@@ -2310,8 +2314,24 @@ a.mon-ca-sample-link[href^="tg:"] {
   font-weight: 400;
   line-height: 1.62;
   color: var(--mon-text-prose);
+  margin: 0 0 12px;
+  max-width: var(--mon-prose-max);
+}
+.mon-scam-data-guide-note {
+  font-family: var(--mon-font);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.58;
+  color: rgba(255, 255, 255, 0.52);
   margin: 0 0 18px;
   max-width: var(--mon-prose-max);
+  padding: 10px 14px 12px 16px;
+  border-left: 1px solid rgba(245, 158, 11, 0.22);
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 0 10px 10px 0;
+}
+.mon-scam-data-guide-note .mon-scam-data-guide-key {
+  color: rgba(255, 242, 220, 0.88);
 }
 .mon-scam-data-guide-key {
   font-family: inherit;
@@ -2384,6 +2404,20 @@ a.mon-ca-sample-link[href^="tg:"] {
 }
 .mon-scam-data-guide-item-text .mon-scam-data-guide-code {
   font-size: 0.85em;
+}
+
+/* Подпись над реестром: как сноска к таблице, без нового цвета */
+.mon-table--registry > caption.mon-registry-caption {
+  caption-side: top;
+  text-align: left;
+  font-family: var(--mon-font);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.58;
+  color: rgba(255, 255, 255, 0.52);
+  margin: 0 0 14px;
+  padding: 0 2px 0 0;
+  max-width: 50rem;
 }
 
 /* Реестр scam_base / watch — полная высота страницы, только горизонтальный скролл как у «Сети каналов» */

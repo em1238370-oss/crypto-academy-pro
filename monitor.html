@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260409-scam-guide-typography">
+  <link rel="stylesheet" href="/monitor.css?v=20260409-scam-table-inform">
 </head>
 <body class="mon-page">
 
@@ -302,7 +302,7 @@
       <div class="mon-chapter-head-main">
         <p class="mon-chapter-kicker">03 · Таблица</p>
         <h2 id="mon-scam-heading" class="mon-chapter-title">База объектов</h2>
-        <p class="mon-chapter-lead mon-chapter-lead--inline">Сигнал‑каналы, крипто‑обменники, инвест‑боты: тип, статус, число жалоб, признаки риска с цитатой, ссылки (объект и первоисточники).</p>
+        <p class="mon-chapter-lead mon-chapter-lead--inline">Подтверждённые объекты из <strong>scam_base</strong>: сигнал‑каналы, обменники, боты. На канал/домен — <strong>одна строка</strong> после дедупликации; <strong>сначала более свежие</strong> по дате обнаружения. Колонки повторяют поля строки; пустая ячейка («—») — нет значения в Sheets. <strong>Поиск</strong> над таблицей фильтрует строки на этой странице.</p>
       </div>
       <span class="mon-chapter-meta" id="s3-count"></span>
     </header>
@@ -327,7 +327,8 @@
       <div class="mon-scam-data-guide" aria-label="Расшифровка колонок таблицы базы">
         <p class="mon-scam-data-guide-kicker">Как читать таблицу</p>
         <p class="mon-scam-data-guide-punch">Одна строка таблицы = одна запись в листе <code class="mon-scam-data-guide-code mon-scam-data-guide-code--punch">scam_base</code>.</p>
-        <p class="mon-scam-data-guide-lead">Строки попадают сюда после фильтров и порогов из отчёта <strong class="mon-scam-data-guide-key">Source&nbsp;&amp;&nbsp;Data</strong>. Колонки повторяют поля записи слева направо: идентификатор, смысловые блоки, итоговый статус и дата фиксации.</p>
+        <p class="mon-scam-data-guide-lead">Строки попадают сюда после фильтров и порогов из отчёта <strong class="mon-scam-data-guide-key">Source&nbsp;&amp;&nbsp;Data</strong> (вес источников, политика промо в лист и т.д.). Колонки слева направо повторяют поля записи: кто это, тип, откуда вывод, признаки, автоматический разбор, статус, число жалоб, дата.</p>
+        <p class="mon-scam-data-guide-note"><strong class="mon-scam-data-guide-key">Порядок строк:</strong> API отдаёт таблицу с сортировкой по дате обнаружения — <strong class="mon-scam-data-guide-key">новее выше</strong>. Номер «#» — только порядок на экране, не ID в Google Sheets. Длинные тексты в «Признаках» смотрите в подсказке ячейки (наведите курсор).</p>
         <p class="mon-scam-data-guide-grid-label">Расшифровка колонок</p>
         <div class="mon-scam-data-guide-grid">
           <div class="mon-scam-data-guide-item">
@@ -2231,7 +2232,8 @@
     var wrapId = opts.wrapId || 's3-table-wrap';
     var countId = opts.countId || 's3-count';
     var searchPrefix = opts.searchPrefix || 's3';
-    var emptyMsg = opts.emptyMsg || 'База пуста';
+    var emptyMsg = opts.emptyMsg || 'После фильтров сайта в scam_base нет строк для показа (или лист пуст). Данные появятся после цикла монитора и отбора.';
+    var tableCaption = opts.tableCaption || '';
     var wrap = document.getElementById(wrapId);
     var countEl = document.getElementById(countId);
     if (countEl) countEl.textContent = rows.length + ' объектов';
@@ -2243,18 +2245,21 @@
       return;
     }
 
-    var tableHtml = '<table class="mon-table mon-table--registry">' +
+    var capHtml = tableCaption
+      ? '<caption class="mon-registry-caption">' + esc(tableCaption) + '</caption>'
+      : '';
+    var tableHtml = '<table class="mon-table mon-table--registry">' + capHtml +
       '<thead><tr>' +
-      '<th scope="col" class="mon-th-registry--tight" style="width:42px" title="Порядковый номер строки в текущей таблице на странице">' +
-      '<span class="mon-th-registry-main">#</span><span class="mon-th-registry-hint">п / п</span></th>' +
-      registryTh('Объект', 'Имя в scam_base; ссылки на ленту, карточку и URL из строки') +
-      registryTh('Тип объекта', 'Категория записи, не число жалоб') +
-      registryTh('Источник', 'Внешние первоисточники из доказательств') +
-      registryTh('Признаки риска', 'Факты и цитаты; полный текст в подсказке ячейки') +
-      registryTh('Контент-анализ', 'По постам или сохранённым полям') +
-      registryTh('Статус', 'Метка по правилам отчёта + форма жалоб при необходимости') +
-      registryTh('Жалоб (учтено)', 'Счётчик по строке и отчётам; ? — расшифровка') +
-      registryTh('Дата', 'Обнаружение / попадание в базу') +
+      '<th scope="col" class="mon-th-registry--tight" style="width:42px" title="Номер строки только на этой странице (не ID в Google Sheets). Порядок таблицы: по дате обнаружения, новее выше.">' +
+      '<span class="mon-th-registry-main">#</span><span class="mon-th-registry-hint">сорт. по дате</span></th>' +
+      registryTh('Объект', 'Username или домен из строки scam_base. Имя ведёт на публичную ленту t.me/s в браузере; иконки — карточка на сайте и доп. URL из таблицы.') +
+      registryTh('Тип объекта', 'Класс записи (сигнал‑канал, бот, сайт…). Это не число жалоб — смотрите столбец «Жалоб (учтено)».') +
+      registryTh('Источник', 'Внешние ссылки из блока доказательств: статьи, чёрные списки, отзывы — первоисточники обоснования.') +
+      registryTh('Признаки риска', 'Сжатый текст и цитаты. Развёрнуто — в подсказке ячейки (наведите курсор на содержимое).') +
+      registryTh('Контент-анализ', 'Автовыжимка по постам канала (если лента доступна) или по сохранённым полям анализа в строке.') +
+      registryTh('Статус', 'Итог по правилам сводки отчёта. Плашка «жалобы пользователей» — когда опорный сигнал из формы на сайте.') +
+      registryTh('Жалоб (учтено)', 'Сводное число по данным строки и листам отчётов. Кружок «?» у числа — пояснение методики подсчёта.') +
+      registryTh('Дата', 'Дата обнаружения в данных или попадания в базу; таблица отсортирована по этому полю (новее выше).') +
       '</tr></thead><tbody>';
 
     rows.forEach(function(r, idx) {
@@ -2319,8 +2324,11 @@
 
     var sid = searchPrefix + '-search';
     var scid = searchPrefix + '-search-count';
+    var searchPh = searchPrefix === 's4watch'
+      ? '🔍  Фильтр по строке: объект, тип, источник, статус, дата…'
+      : '🔍  Фильтр по строке: @канал, домен, тип, источник, признак, статус, дата…';
     var searchBar = '<div class="mon-table-search">' +
-      '<input type="text" id="' + esc(sid) + '" class="mon-search-input" placeholder="🔍  Найти объект, тип, источник, признак…" autocomplete="off" spellcheck="false">' +
+      '<input type="text" id="' + esc(sid) + '" class="mon-search-input" placeholder="' + esc(searchPh) + '" autocomplete="off" spellcheck="false" title="Поиск только по уже загруженным строкам на странице; регистр не важен">' +
       '<span class="mon-search-count" id="' + esc(scid) + '">' + rows.length + ' объектов</span>' +
       '</div>';
 
@@ -2358,7 +2366,8 @@
       wrapId: 's4-watch-wrap',
       countId: 's4-watch-count',
       searchPrefix: 's4watch',
-      emptyMsg: 'В scam_base пока нет строк — после цикла монитора они появятся здесь.'
+      emptyMsg: 'В листе channels_watch нет строк для отображения (или список пуст после фильтров). Подтверждённая база — в разделе «База объектов» выше.',
+      tableCaption: 'Данные листа channels_watch: кандидаты и сигналы широкого мониторинга, не дубликат подтверждённой scam_base. Порядок: по дате обнаружения, новее выше. Те же колонки, что в базе объектов, для сопоставления.'
     });
   }
 
@@ -2509,7 +2518,9 @@
       renderCycleLog(meta, scamBase);
       renderRecentCases(data.recent_cases || []);
       renderFindings12h(data.findings_12h || [], scamBase);
-      renderScamBase(scamBase);
+      renderScamBase(scamBase, {
+        tableCaption: 'Подтверждённые записи scam_base после фильтров сайта: одна строка на канал или домен (актуальная запись по дате обнаружения). Сортировка — по колонке «Дата», новее сверху. Символ «—» в ячейке: в источнике нет значения. Поле поиска выше отфильтровывает строки на этой странице.'
+      });
       renderChannelsWatch(data.channels_watch || []);
       renderChannelNetworks(networkRows);
       renderSources(meta.sources_checked || []);
