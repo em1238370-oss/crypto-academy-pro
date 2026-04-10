@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260409-scam-guide-medvedev">
+  <link rel="stylesheet" href="/monitor.css?v=20260409-scam-guide-typography">
 </head>
 <body class="mon-page">
 
@@ -326,16 +326,42 @@
 
       <div class="mon-scam-data-guide" aria-label="Расшифровка колонок таблицы базы">
         <p class="mon-scam-data-guide-kicker">Как читать таблицу</p>
-        <p class="mon-scam-data-guide-lead">Каждая строка — объект в листе <strong>scam_base</strong> после фильтров и порогов из отчёта Source&nbsp;&amp;&nbsp;Data. Колонки дублируют поля строки: от идентификатора до статуса и даты фиксации.</p>
+        <p class="mon-scam-data-guide-punch">Одна строка таблицы = одна запись в листе <code class="mon-scam-data-guide-code mon-scam-data-guide-code--punch">scam_base</code>.</p>
+        <p class="mon-scam-data-guide-lead">Строки попадают сюда после фильтров и порогов из отчёта <strong class="mon-scam-data-guide-key">Source&nbsp;&amp;&nbsp;Data</strong>. Колонки повторяют поля записи слева направо: идентификатор, смысловые блоки, итоговый статус и дата фиксации.</p>
+        <p class="mon-scam-data-guide-grid-label">Расшифровка колонок</p>
         <div class="mon-scam-data-guide-grid">
-          <div class="mon-scam-data-guide-item"><strong>Объект</strong>Username / сайт из строки. Ссылка с имени — публичная лента <code class="mon-scam-data-guide-code">t.me/s/…</code> в браузере; иконки — карточка на сайте и дополнительный URL из таблицы.</div>
-          <div class="mon-scam-data-guide-item"><strong>Тип объекта</strong>Класс записи (сигнал‑канал, бот, сайт и т.д.). Не путать с числом жалоб — это отдельная колонка.</div>
-          <div class="mon-scam-data-guide-item"><strong>Источник</strong>Ссылки из блока доказательств: статьи разоблачителей, чёрные списки, отзывы — всё, что вошло в обоснование строки.</div>
-          <div class="mon-scam-data-guide-item"><strong>Признаки риска</strong>Сжатые формулировки и цитаты; развёрнутый текст обычно в подсказке ячейки (наведите курсор).</div>
-          <div class="mon-scam-data-guide-item"><strong>Контент-анализ</strong>Автоматическая выжимка по постам канала (если есть) или по сохранённым полям анализа.</div>
-          <div class="mon-scam-data-guide-item"><strong>Статус</strong>Итог по правилам сводки (подтверждённый скам, риск, наблюдение и т.д.). Плашка «жалобы пользователей» — если опорный сигнал из формы, а не только сайт.</div>
-          <div class="mon-scam-data-guide-item"><strong>Жалоб (учтено)</strong>Агрегат по данным строки и листам отчётов; кружок «?» в самой таблице открывает подсказку по методике счёта.</div>
-          <div class="mon-scam-data-guide-item"><strong>Дата</strong>Когда запись попала в базу или дата обнаружения в источнике — в формате, как пришло из воркера.</div>
+          <div class="mon-scam-data-guide-item">
+            <span class="mon-scam-data-guide-item-label">Объект</span>
+            <p class="mon-scam-data-guide-item-text"><strong class="mon-scam-data-guide-key">Имя или домен из строки.</strong> Клик по имени открывает публичную ленту <code class="mon-scam-data-guide-code">t.me/s/…</code> в браузере; иконки рядом — карточка на сайте и дополнительный URL из таблицы.</p>
+          </div>
+          <div class="mon-scam-data-guide-item">
+            <span class="mon-scam-data-guide-item-label">Тип объекта</span>
+            <p class="mon-scam-data-guide-item-text">Класс записи: сигнал‑канал, бот, сайт и т.д. <strong class="mon-scam-data-guide-key">Не путать с «Жалоб (учтено)»</strong> — это разные колонки.</p>
+          </div>
+          <div class="mon-scam-data-guide-item">
+            <span class="mon-scam-data-guide-item-label">Источник</span>
+            <p class="mon-scam-data-guide-item-text"><strong class="mon-scam-data-guide-key">Внешние ссылки из блока доказательств:</strong> статьи, чёрные списки, отзывы — всё, что обосновывает строку.</p>
+          </div>
+          <div class="mon-scam-data-guide-item">
+            <span class="mon-scam-data-guide-item-label">Признаки риска</span>
+            <p class="mon-scam-data-guide-item-text">Сжатые формулировки и цитаты. <strong class="mon-scam-data-guide-key">Полный текст чаще в подсказке ячейки</strong> — наведите курсор на строку.</p>
+          </div>
+          <div class="mon-scam-data-guide-item">
+            <span class="mon-scam-data-guide-item-label">Контент-анализ</span>
+            <p class="mon-scam-data-guide-item-text"><strong class="mon-scam-data-guide-key">Автоматическая выжимка</strong> по постам канала (если лента есть) или по сохранённым полям анализа.</p>
+          </div>
+          <div class="mon-scam-data-guide-item">
+            <span class="mon-scam-data-guide-item-label">Статус</span>
+            <p class="mon-scam-data-guide-item-text"><strong class="mon-scam-data-guide-key">Итог по правилам сводки</strong> (подтверждённый скам, риск, наблюдение…). Плашка «жалобы пользователей» — когда опорный сигнал из формы, а не только с сайта.</p>
+          </div>
+          <div class="mon-scam-data-guide-item">
+            <span class="mon-scam-data-guide-item-label">Жалоб (учтено)</span>
+            <p class="mon-scam-data-guide-item-text">Сводное число по строке и листам отчётов. <strong class="mon-scam-data-guide-key">Кружок «?» в таблице</strong> открывает пояснение методики подсчёта.</p>
+          </div>
+          <div class="mon-scam-data-guide-item">
+            <span class="mon-scam-data-guide-item-label">Дата</span>
+            <p class="mon-scam-data-guide-item-text"><strong class="mon-scam-data-guide-key">Когда запись попала в базу</strong> или дата обнаружения в источнике — в том виде, как отдал воркер.</p>
+          </div>
         </div>
       </div>
 
