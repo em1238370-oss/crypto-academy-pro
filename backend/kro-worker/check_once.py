@@ -29,6 +29,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 import kro_tme_http_gate as _tme_gate
+import kro_false_positive_guards as _kro_fp_guards
 
 _raw_id = (os.environ.get('TELEGRAM_API_ID') or '').strip()
 TELEGRAM_API_ID = int(_raw_id) if _raw_id.isdigit() else 0
@@ -725,6 +726,9 @@ def append_to_scam_base(channel_id, risk, ads_week, bot_pct, vip, complaints, to
                         result_obj=None):
     """Write confirmed channel to scam_base using v2 schema (13 cols A:M)."""
     if not KRO_SHEET_ID or not KRO_SCAM_BASE_RANGE:
+        return
+    _ck = str(channel_id).strip().lstrip('@').lower().split('/')[0]
+    if _kro_fp_guards.should_never_scam_base_norm_key(_ck):
         return
     try:
         from google.oauth2 import service_account

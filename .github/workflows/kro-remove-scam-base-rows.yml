@@ -1,0 +1,40 @@
+# Ручное удаление строк scam_base по username (колонка A).
+# Запуск: Actions → KRO Remove scam_base rows → Run workflow.
+# После удаления при следующем цикле монитора эти каналы не вернутся при наличии защиты в коде + blocklist.
+name: KRO Remove scam_base rows
+
+on:
+  workflow_dispatch:
+    inputs:
+      usernames:
+        description: 'Через запятую, без обязательного @ (напр. telegram,poizonsector,poizonsystem)'
+        required: true
+        default: 'telegram,poizonsector,poizonsystem'
+
+jobs:
+  remove-rows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install -r backend/kro-worker/requirements.txt python-dotenv
+
+      - name: Write Google credentials
+        env:
+          KRO_GOOGLE_CREDENTIALS_BASE64: ${{ secrets.KRO_GOOGLE_CREDENTIALS_BASE64 }}
+        run: python3 "${{ github.workspace }}/.github/scripts/write-google-credentials.py"
+
+      - name: Remove rows
+        working-directory: backend/kro-worker
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: credentials.json
+          KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
+        run: |
+          python3 ../scripts/kro-remove-scam-base-usernames.py --execute \
+            --usernames "${{ github.event.inputs.usernames }}"

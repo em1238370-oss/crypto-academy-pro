@@ -147,6 +147,9 @@ _JSON_LD_NOISE = frozenset({
 
 
 _CHANNEL_NOISE = frozenset({
+    # Официальные / платформы — не считать находкой скам-канала
+    'telegram', 'durov', 'instagram', 'youtube', 'tiktok', 'twitter', 'facebook',
+    'google', 'vk', 'ok',
     # Generic internet/email services — not Telegram channels
     'gmail', 'yahoo', 'mail', 'yandex', 'outlook', 'hotmail', 'protonmail',
     # Stop-scam1.com site admin contact
@@ -1601,6 +1604,25 @@ def scrape_all():
         if key not in seen or r['sum_rub'] > seen[key]['sum_rub']:
             seen[key] = r
     deduped = list(seen.values())
+    try:
+        from kro_false_positive_guards import should_never_scam_base_norm_key as _never_scam_un
+    except ImportError:
+        def _never_scam_un(_k):
+            return False
+
+    def _norm_ch_guard(ch):
+        c = (ch or '').strip().lstrip('@').lower()
+        if 't.me/' in c:
+            c = c.split('t.me/', 1)[-1]
+        return c.split('/')[0].split('?')[0]
+
+    before_g = len(deduped)
+    deduped = [r for r in deduped if not _never_scam_un(_norm_ch_guard(r.get('channel')))]
+    if before_g > len(deduped):
+        logger.info(
+            'web_scraper.scrape_all: removed %d official/Poizon* findings after dedup',
+            before_g - len(deduped),
+        )
     logger.info('web_scraper.scrape_all: %d unique findings', len(deduped))
     return deduped
 

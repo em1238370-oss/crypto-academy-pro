@@ -49,6 +49,7 @@ import kro_telethon_session as _kro_ts
 import kro_unified_risk as _kro_unified
 import kro_tme_http_gate as _kro_tme_http_gate
 import kro_source_policy as _kro_source_policy
+import kro_false_positive_guards as _kro_fp_guards
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
@@ -449,7 +450,7 @@ def fetch_tgstat_watch_channels():
                     continue
                 ch = (x.get('username') or x.get('link') or '').strip() or ('@' + (x.get('link') or '').replace('https://t.me/', ''))
                 key = ch.lower().replace('@', '')
-                if key in seen or key in _KNOWN_NON_SCAM_CHANNELS:
+                if key in seen or _username_is_globally_excluded(key):
                     continue
                 title = (x.get('title') or '').strip()
                 if not _is_crypto_signal_channel(title, ch):
@@ -731,7 +732,7 @@ async def _search_new_channels_via_telegram(client, days_max=30):
                 username = (getattr(chat, 'username', None) or '').strip().lower()
                 if not username:
                     continue
-                if username in _KNOWN_NON_SCAM_CHANNELS:
+                if _username_is_globally_excluded(username):
                     continue
                 if username in seen:
                     continue
@@ -799,7 +800,7 @@ async def _search_watch_channels_via_telegram(client, days_min=30):
                 username = (getattr(chat, 'username', None) or '').strip().lower()
                 if not username:
                     continue
-                if username in _KNOWN_NON_SCAM_CHANNELS or username in seen:
+                if _username_is_globally_excluded(username) or username in seen:
                     continue
                 created = getattr(chat, 'date', None)
                 if created is None:
@@ -1916,6 +1917,20 @@ except Exception as _bl_err:
     print('KRO_PERMANENT_BLOCKLIST: не удалось загрузить %s: %s' % (_BLOCKLIST_JSON_PATH, _bl_err), file=sys.stderr)
     KRO_PERMANENT_BLOCKLIST = set()
 
+
+def _username_is_globally_excluded(norm_key: str) -> bool:
+    """Официальные платформы, Poizon*, постоянный blocklist, известные не-скам (биржи, анти-скам)."""
+    if not norm_key:
+        return False
+    if norm_key in _KNOWN_NON_SCAM_CHANNELS:
+        return True
+    if norm_key in KRO_PERMANENT_BLOCKLIST:
+        return True
+    if _kro_fp_guards.should_never_scam_base_norm_key(norm_key):
+        return True
+    return False
+
+
 # Метрики одного прогона для блока [KRO_DETAILED_CYCLE_REPORT] в логах Actions.
 KRO_CYCLE_ANALYTICS = {}
 
@@ -2462,7 +2477,7 @@ def _extract_message_mentions(text, self_key=''):
     for match in re.finditer(r'(?<!\w)@([a-zA-Z0-9_]{4,32})', text or ''):
         username = match.group(1)
         key = _norm_ch_key(username)
-        if not key or key == self_key or key in _KNOWN_NON_SCAM_CHANNELS or key in seen:
+        if not key or key == self_key or _username_is_globally_excluded(key) or key in seen:
             continue
         seen.add(key)
         mentions.append('@' + username)
@@ -3464,16 +3479,13 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
             continue
 
         # Пропускаем известные анти-скам каналы, биржи и агрегаторы
-        if key in _KNOWN_NON_SCAM_CHANNELS:
-            _kro_cycle_analytics_inc('collect_reject_known_non_scam')
-            print('confirmed-filter: %s — в списке исключений (известный не-скам)' % ch, file=sys.stderr)
-            continue
-
-        # Постоянный blocklist: не подтверждаем в цикле и не дергаем Telethon (снижает FloodWait на ResolveUsername).
-        if key in KRO_PERMANENT_BLOCKLIST:
-            _kro_cycle_analytics_inc('collect_reject_blocklist')
+        if _username_is_globally_excluded(key):
+            if key in KRO_PERMANENT_BLOCKLIST:
+                _kro_cycle_analytics_inc('collect_reject_blocklist')
+            else:
+                _kro_cycle_analytics_inc('collect_reject_known_non_scam')
             print(
-                'confirmed-filter: %s — постоянный blocklist (не подтверждаем для цикла)' % ch,
+                'confirmed-filter: %s — глобальное исключение (официальный сервис / Poizon* / blocklist / биржи)' % ch,
                 file=sys.stderr,
             )
             continue
@@ -3793,13 +3805,18 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
         if not key or key in existing_keys:
             _kro_cycle_analytics_inc('write_skip_duplicate_or_empty_key')
             continue
-        if key in _KNOWN_NON_SCAM_CHANNELS:
-            _kro_cycle_analytics_inc('write_reject_known_non_scam')
-            print('scam_base write skip: %s — в списке исключений' % (obj.get('username') or key), file=sys.stderr)
-            continue
-        if key in KRO_PERMANENT_BLOCKLIST:
-            _kro_cycle_analytics_inc('write_reject_blocklist')
-            print('blocklist: пропущен @%s — в постоянном списке исключений' % key, file=sys.stderr)
+        if _username_is_globally_excluded(key):
+            if key in KRO_PERMANENT_BLOCKLIST:
+                _kro_cycle_analytics_inc('write_reject_blocklist')
+                print('blocklist: пропущен @%s — в постоянном списке исключений' % key, file=sys.stderr)
+            else:
+                _kro_cycle_analytics_inc('write_reject_known_non_scam')
+                print(
+                    'scam_base write skip: %s — глобальное исключение (официальный сервис / Poizon* / биржи)' % (
+                        obj.get('username') or key,
+                    ),
+                    file=sys.stderr,
+                )
             continue
         eff_status = _apply_loss_status_floor(obj.get('status', ''), obj.get('total_loss_rub', 0))
         if _scam_base_status_is_off_topic(eff_status):
@@ -4031,7 +4048,7 @@ def _build_channels_watch_rows(
 
     def add_candidate(row, fallback_source, *, youth_entry=False):
         key = _norm_ch_key(row.get('channel') or row.get('link') or '')
-        if not key or key in _KNOWN_NON_SCAM_CHANNELS:
+        if not key or _username_is_globally_excluded(key):
             return
         link = row.get('link') or _object_link(row.get('channel', ''))
         if not link or 't.me/' not in link:
@@ -4249,7 +4266,7 @@ def _write_channels_watch_to_sheet(watch_rows, client, sheet_id):
     batch_data = []
     for row in (watch_rows or []):
         key = _norm_ch_key(row[0] if row else '')
-        if not key or key in _KNOWN_NON_SCAM_CHANNELS:
+        if not key or _username_is_globally_excluded(key):
             continue
         if key in row_map:
             batch_data.append({
@@ -4341,7 +4358,7 @@ def _write_channels_network_to_sheet(network_rows, client, sheet_id):
     for row in (network_rows or []):
         src = _norm_ch_key(row[0] if len(row) > 0 else '')
         tgt = _norm_ch_key(row[1] if len(row) > 1 else '')
-        if not src or not tgt or src == tgt or tgt in _KNOWN_NON_SCAM_CHANNELS:
+        if not src or not tgt or src == tgt or _username_is_globally_excluded(tgt):
             continue
         key = (src, tgt)
         if key in row_map:
@@ -4409,7 +4426,7 @@ def _enqueue_channels_for_check(channels, client, sheet_id):
     queued = []
     for ch in channels or []:
         key = _norm_ch_key(ch)
-        if not key or key in existing or key in _KNOWN_NON_SCAM_CHANNELS:
+        if not key or key in existing or _username_is_globally_excluded(key):
             continue
         display = _channel_display_name(ch)
         if not display:
@@ -4612,7 +4629,7 @@ def _run_organic_growth_cycle(client, sheet_id, cycle_window_label):
                 )
                 for h in _organic_helpers.extract_invest_bot_handles_from_text(*parts):
                     key = _norm_ch_key(h)
-                    if not key or key in scam_keys or key in seen_b or key in _KNOWN_NON_SCAM_CHANNELS:
+                    if not key or key in scam_keys or key in seen_b or _username_is_globally_excluded(key):
                         continue
                     seen_b.add(key)
                     bot_candidates.append('@' + h)
@@ -6731,12 +6748,8 @@ def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, al
         key = _norm_ch_key(ch)
         if key in existing_in_scam:
             continue
-        # Никогда не добавлять антискам-проекты, биржи и сервисы аналитики
-        if key in _KNOWN_NON_SCAM_CHANNELS:
-            print(f'[promote] skip {ch}: в списке исключений (anti-scam/exchange)', file=sys.stderr)
-            continue
-        if key in KRO_PERMANENT_BLOCKLIST:
-            print(f'blocklist: пропущен @{key} — в постоянном списке исключений', file=sys.stderr)
+        if _username_is_globally_excluded(key):
+            print(f'[promote] skip {ch}: глобальное исключение (официальный сервис / Poizon* / blocklist / биржи)', file=sys.stderr)
             continue
 
         # Уникальность: по reporter-полю, если заполнено; иначе каждая строка = 1 человек

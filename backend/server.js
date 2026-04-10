@@ -3950,17 +3950,29 @@ const KRO_CHANNEL_EXCLUSION = new Set([
   'tgstat', 'telemetr', 'telega', 'telegaio',
   // Generic / service names that must never be treated as scam channels
   'gmail', 'feel340', 'support', 'admin',
+  // Telegram / TON / крупные платформы (паритет с kro_false_positive_guards.py)
+  'telegram', 'durov', 'toncoin', 'fragment', 'wallet',
+  'instagram', 'tiktok', 'youtube', 'vk', 'ok',
+  'whatsapp', 'viber', 'signal', 'discord', 'reddit',
+  'twitter', 'x', 'facebook', 'meta',
+  'google', 'apple', 'microsoft', 'amazon',
+  'alibaba', 'aliexpress', 'wildberries', 'ozon',
+  'avito', 'sbermegamarket',
 ]);
+
+function kroUsernameGloballyExcluded(channel) {
+  const key = channelMatchKey(channel);
+  if (!key) return false;
+  if (KRO_CHANNEL_EXCLUSION.has(key)) return true;
+  if (KRO_PERMANENT_BLOCKLIST.has(key)) return true;
+  if (key.startsWith('poizon')) return true;
+  return false;
+}
 
 async function checkAndPromoteToScamBase(client, channel) {
   if (!client || !kroSheetId || !kroScamBaseRange) return;
-  // Never promote excluded channels (anti-scam projects, major exchanges, etc.)
-  if (KRO_CHANNEL_EXCLUSION.has(channelMatchKey(channel))) {
-    console.log(`[KRO] ${channel} is in exclusion list — skipping scam_base promotion`);
-    return;
-  }
-  if (KRO_PERMANENT_BLOCKLIST.has(channelMatchKey(channel))) {
-    console.log(`[KRO] ${channel} is in permanent blocklist (kro_permanent_blocklist.json) — skipping scam_base promotion`);
+  if (kroUsernameGloballyExcluded(channel)) {
+    console.log(`[KRO] ${channel} — глобальное исключение (платформа / Poizon* / blocklist / биржи), не промотируем в scam_base`);
     return;
   }
   try {

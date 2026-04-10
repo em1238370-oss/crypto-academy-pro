@@ -88,8 +88,10 @@ _GAMBLING_STAVKI_RE = re.compile(
 )
 
 OFFTOPIC_TOPIC_SUBSTRINGS = (
-    # Одежда / мода
-    'одежда', 'кроссовки', 'обувь', 'fashion', 'shoes', 'одяг', 'кросівки',
+    # Одежда / мода / Poizon (маркетплейс кроссовок — не крипто-KRO)
+    'poizon', 'одежда', 'кроссовки', 'обувь', 'fashion', 'shoes', 'sneakers', 'streetwear',
+    'дроп', 'лимитка', 'коллаб', 'найк', 'адидас', 'nike', 'adidas', 'jordan', 'yeezy', 'supreme',
+    'бренд одежды', 'одяг', 'кросівки',
     'бренд', 'бутик', 'магазин одежды',
     # Еда / рестораны
     'ресторан', 'доставка еды', 'суши', 'пицца', 'кафе', 'food delivery',
@@ -101,7 +103,8 @@ OFFTOPIC_TOPIC_SUBSTRINGS = (
     'вакансия', 'найм', 'hr', 'работа в',
 )
 _OFFTOPIC_RE_EN = re.compile(
-    r'(?i)\b(?:fashion|shoes?|boutique|restaurant|pizza|sushi|cafe|food\s+delivery|'
+    r'(?i)\b(?:poizon|sneakers?|streetwear|nike|adidas|jordan|yeezy|supreme|'
+    r'fashion|shoes?|boutique|restaurant|pizza|sushi|cafe|food\s+delivery|'
     r'real\s*estate|realtor|apartment\s+rent|car\s+sale|dealer|vacanc(?:y|ies)|'
     r'hiring|recruit(?:er|ment)|hr)\b'
 )
