@@ -1981,12 +1981,11 @@ body.kro-hero-scrolled .kro-floating-nav {
    margin: 0 auto;
    text-align: left;
    position: relative;
-   padding: 36px 32px 40px;
-   border-radius: 24px;
-   background: linear-gradient(145deg, rgba(28, 22, 38, 0.97) 0%, rgba(20, 16, 28, 0.99) 100%);
-   border: 1px solid rgba(93, 202, 165, 0.2);
-   box-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 16px 56px rgba(0,0,0,0.5), 0 0 48px rgba(93, 202, 165, 0.05), inset 0 1px 0 rgba(255,255,255,0.06);
-   transition: box-shadow 0.4s ease, transform 0.35s ease, border-color 0.3s ease;
+   padding: 40px 36px 44px;
+   border-radius: 28px;
+   background: linear-gradient(160deg, rgba(22, 18, 34, 0.98) 0%, rgba(16, 13, 26, 0.99) 100%);
+   border: 1px solid rgba(139, 92, 246, 0.22);
+   box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 .kro-feature1-check::before {
    content: '';
@@ -1998,7 +1997,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 .kro-feature1-check:hover {
    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.07);
-   border-color: rgba(93, 202, 165, 0.35);
+   border-color: rgba(139, 92, 246, 0.38);
    transform: translateY(-2px);
 }
 
@@ -2073,16 +2072,16 @@ body.kro-hero-scrolled .kro-floating-nav {
    display: flex;
    gap: 0;
    align-items: stretch;
-   background: rgba(0,0,0,0.3);
-   border: 1px solid rgba(255,255,255,0.1);
-   border-radius: 14px;
+   background: rgba(0, 0, 0, 0.35);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   border-radius: 16px;
    overflow: hidden;
-   transition: border-color 0.25s ease, box-shadow 0.25s ease;
+   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .kro-feature1-check-row:focus-within {
-   border-color: rgba(93, 202, 165, 0.45);
-   box-shadow: 0 0 0 3px rgba(93, 202, 165, 0.08);
+   border-color: rgba(139, 92, 246, 0.5);
+   box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.08);
 }
 
 .kro-feature1-check-row .kro-report-label {
@@ -2103,40 +2102,43 @@ body.kro-hero-scrolled .kro-floating-nav {
    background: transparent;
    border: none;
    outline: none;
-   padding: 16px 20px;
+   padding: 18px 22px;
    font-family: var(--kro-font-body);
    font-size: 15px;
-   color: rgba(255,255,255,0.9);
+   color: rgba(255, 255, 255, 0.88);
    letter-spacing: 0.01em;
 }
 
 #kro-check-channel::placeholder {
-   color: rgba(255,255,255,0.28);
+   color: rgba(255, 255, 255, 0.22);
+   font-style: italic;
 }
 
 #kro-check-btn {
    width: auto;
    margin-top: 0;
    box-sizing: border-box;
-   background: linear-gradient(135deg, #5dcaa5 0%, #1d9e75 100%);
+   background: rgba(139, 92, 246, 0.15);
    border: none;
-   border-radius: 0 14px 14px 0;
-   color: #0a0c10;
+   border-left: 1px solid rgba(139, 92, 246, 0.25);
+   border-radius: 0 16px 16px 0;
+   color: rgba(200, 180, 255, 0.9);
    font-family: var(--kro-font-body);
    font-size: 13px;
-   font-weight: 800;
+   font-weight: 700;
    letter-spacing: 0.08em;
    text-transform: uppercase;
-   padding: 16px 28px;
+   padding: 18px 28px;
    cursor: pointer;
    white-space: nowrap;
-   transition: filter 0.2s ease, transform 0.2s ease;
+   transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
    box-shadow: none;
 }
 
 #kro-check-btn:hover {
-   filter: brightness(1.1);
-   transform: scale(1.02);
+   background: rgba(139, 92, 246, 0.28);
+   color: rgba(220, 210, 255, 1);
+   border-color: rgba(139, 92, 246, 0.4);
 }
 
 #kro-check-btn:active {
