@@ -1460,6 +1460,35 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   outline-offset: 4px;
 }
 
+/* Широкий мониторинг: аккордеон как «Правила и критерии», счётчик + шеврон справа */
+.mon-chapter-head--watch-accordion {
+  align-items: flex-start;
+}
+.mon-watch-accordion-tail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-top: 2px;
+}
+.mon-chapter-head--watch-accordion .mon-collapse-chevron {
+  margin-left: 0;
+}
+.mon-watch-accordion-peek {
+  display: none;
+  font-family: var(--mon-font);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--mon-text-dim);
+  margin: 8px 0 0;
+  max-width: min(36rem, 100%);
+}
+.mon-chapter--collapsed .mon-chapter-head--watch-accordion .mon-watch-accordion-peek {
+  display: block;
+}
+
 .mon-section-header {
   display: flex;
   align-items: center;
@@ -3767,6 +3796,13 @@ a.mon-channel-external:hover {
   .mon-footer { padding: 24px 20px 40px; }
   .mon-main-nav { padding: 12px 14px; }
   .mon-chapter-head--split .mon-chapter-meta { width: 100%; white-space: normal; }
+  .mon-chapter-head--watch-accordion { flex-wrap: wrap; }
+  .mon-chapter-head--watch-accordion .mon-watch-accordion-tail {
+    width: 100%;
+    margin-left: 0;
+    justify-content: space-between;
+    padding-top: 10px;
+  }
   .mon-status-grid, .mon-proof-grid, .mon-source-guide-grid, .mon-sources-grid, .mon-level-grid { grid-template-columns: 1fr; }
   .mon-stat-card { min-height: 100px; }
   .mon-log-line { flex-direction: column; gap: 3px; }
