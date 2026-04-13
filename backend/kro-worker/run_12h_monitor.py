@@ -733,6 +733,8 @@ async def _search_new_channels_via_telegram(client, days_max=30):
     found = []
     ages = {}
     seen = set()
+    degraded = False
+    degrade_reason = ''
 
     for query in _TELEGRAM_SEARCH_QUERIES:
         try:
@@ -779,9 +781,25 @@ async def _search_new_channels_via_telegram(client, days_max=30):
                     username, created.strftime('%d.%m.%Y'), age_days, title), file=sys.stderr)
             await asyncio.sleep(1.5)
         except Exception as e:
+            err_name = e.__class__.__name__
+            err_text = str(e or '')
+            if err_name == 'TypeNotFoundError' or 'matching Constructor ID' in err_text:
+                degraded = True
+                degrade_reason = '%s: %s' % (err_name, err_text.splitlines()[0][:220])
+                print(
+                    'telegram_search: SearchRequest degraded, ветка прямого Telegram-поиска пропущена в этом цикле (%s)'
+                    % degrade_reason,
+                    file=sys.stderr,
+                )
+                break
             print('Telegram SearchRequest %r: %s' % (query, e), file=sys.stderr)
             await asyncio.sleep(2)
 
+    if degraded:
+        print(
+            'telegram_search: деградация SearchRequest не ломает цикл; используем web/TGStat/жалобы как основные источники.',
+            file=sys.stderr,
+        )
     print('telegram_search: всего найдено новых сигнальных каналов: %d' % len(found), file=sys.stderr)
     return found, ages
 
@@ -801,6 +819,8 @@ async def _search_watch_channels_via_telegram(client, days_min=30):
     found = []
     ages = {}
     seen = set()
+    degraded = False
+    degrade_reason = ''
 
     for query in _TELEGRAM_SEARCH_QUERIES:
         try:
@@ -842,9 +862,25 @@ async def _search_watch_channels_via_telegram(client, days_min=30):
                 })
             await asyncio.sleep(1.5)
         except Exception as e:
+            err_name = e.__class__.__name__
+            err_text = str(e or '')
+            if err_name == 'TypeNotFoundError' or 'matching Constructor ID' in err_text:
+                degraded = True
+                degrade_reason = '%s: %s' % (err_name, err_text.splitlines()[0][:220])
+                print(
+                    'telegram_watch: SearchRequest degraded, ветка широкого Telegram-поиска пропущена в этом цикле (%s)'
+                    % degrade_reason,
+                    file=sys.stderr,
+                )
+                break
             print('Telegram watch SearchRequest %r: %s' % (query, e), file=sys.stderr)
             await asyncio.sleep(2)
 
+    if degraded:
+        print(
+            'telegram_watch: деградация SearchRequest не ломает цикл; channels_watch добирается из остальных источников.',
+            file=sys.stderr,
+        )
     print('telegram_watch: всего найдено каналов старше %d дней: %d' % (days_min, len(found)), file=sys.stderr)
     return found, ages
 
@@ -3452,6 +3488,18 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
                     known_base_keys=known_keys,
                 )
                 analysis['unified_risk'] = patch.get('unified_risk') or {}
+                ur = analysis.get('unified_risk') or {}
+                if not ur.get('gate_ok', True):
+                    print(
+                        'mandatory_gate_offtopic: %s — %s | subs=%s | source_primary=%r'
+                        % (
+                            obj.get('username') or obj.get('link') or 'unknown',
+                            ur.get('gate_reason') or 'unknown',
+                            subs if subs is not None else 'None',
+                            (obj.get('source_primary') or '')[:160],
+                        ),
+                        file=sys.stderr,
+                    )
                 # Колонка M scam_base: статус из kro_unified_risk (флаги); ниже — только floor по потерям.
                 obj['status'] = st
                 obj['content_analysis'] = json.dumps(analysis, ensure_ascii=False)

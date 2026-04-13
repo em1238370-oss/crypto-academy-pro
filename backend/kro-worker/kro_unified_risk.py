@@ -80,24 +80,36 @@ def mandatory_gate_telegram(
     title: str,
     about: str,
     posts_blob: str,
+    source_primary: str,
     source_evidence: str,
     object_type: str,
     content_analysis_text: str,
 ) -> Tuple[bool, str]:
     # Подписчики из Telethon/HTML могут отсутствовать (FloodWait, скрытый счётчик) — тогда не отклоняем.
+    # Если Telegram-данные неполные, но в source_primary/source_evidence уже есть явный крипто-контекст,
+    # не считаем такой объект «не по теме» только из-за отсутствия метрик канала.
+    source_crypto_fallback = (
+        subscribers is None and has_mandatory_crypto_topic(source_primary, source_evidence)
+    )
     if subscribers is not None and subscribers < 100:
         return False, 'mandatory_subs_below_100'
     if last_post_dt is None:
+        if source_crypto_fallback:
+            return True, 'ok_source_crypto_fallback_no_post_date'
         return False, 'mandatory_no_post_date'
     lp = last_post_dt
     if lp.tzinfo is None:
         lp = lp.replace(tzinfo=timezone.utc)
     age_days = (datetime.now(timezone.utc) - lp).days
     if age_days > MANDATORY_LAST_POST_DAYS:
+        if source_crypto_fallback:
+            return True, 'ok_source_crypto_fallback_stale_posts'
         return False, 'mandatory_last_post_stale'
     if not has_mandatory_crypto_topic(
-        username, link, title, about, posts_blob, source_evidence, object_type, content_analysis_text,
+        username, link, title, about, posts_blob, source_primary, source_evidence, object_type, content_analysis_text,
     ):
+        if source_crypto_fallback:
+            return True, 'ok_source_crypto_fallback_topic'
         return False, 'mandatory_not_crypto_topic'
     return True, 'ok'
 
@@ -331,6 +343,7 @@ def apply_unified_risk_to_row(
             title=title,
             about=about,
             posts_blob=posts_blob,
+            source_primary=obj.get('source_primary', '') or '',
             source_evidence=obj.get('source_evidence', '') or '',
             object_type=obj.get('object_type', '') or '',
             content_analysis_text='',
@@ -391,6 +404,7 @@ def mandatory_gate_watch_relaxed(
     title: str,
     about: str,
     posts_blob: str,
+    source_primary: str,
     source_evidence: str,
     object_type: str,
 ) -> Tuple[bool, str]:
@@ -407,6 +421,7 @@ def mandatory_gate_watch_relaxed(
             title=title,
             about=about,
             posts_blob=posts_blob,
+            source_primary=source_primary,
             source_evidence=source_evidence,
             object_type=object_type,
             content_analysis_text='',
@@ -484,6 +499,7 @@ def watch_evaluate_status(
         title=title,
         about=about,
         posts_blob=posts_blob,
+        source_primary=str(obj.get('source_primary', '') or ''),
         source_evidence=str(obj.get('source_evidence', '') or ''),
         object_type=str(obj.get('object_type', '') or 'сигнал-канал'),
     )
