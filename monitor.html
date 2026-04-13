@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260413-tier-hierarchy">
+  <link rel="stylesheet" href="/monitor.css?v=20260413-motion-official">
 </head>
 <body class="mon-page">
 
@@ -1719,12 +1719,12 @@
   function countUp(elId, target, suffix, duration) {
     var el = document.getElementById(elId);
     if (!el || isNaN(target) || target <= 0) return;
-    duration = duration || 1600;
+    duration = duration || 1750;
     var start = performance.now();
     function step(now) {
       var t = Math.min((now - start) / duration, 1);
-      /* ease-out (как --mon-ease-soft): 1 - (1-t)^2.6 */
-      var ease = 1 - Math.pow(1 - t, 2.6);
+      /* ease-out §4 анализа (1–2s): мягче к концу, без «рывка» цифр */
+      var ease = 1 - Math.pow(1 - t, 2.35);
       el.textContent = Math.round(ease * target) + (suffix || '');
       if (t < 1) requestAnimationFrame(step);
     }
@@ -1735,7 +1735,7 @@
   function countUpPlainNumber(elId, target, duration) {
     var el = document.getElementById(elId);
     if (!el || isNaN(target) || target < 0) return;
-    duration = duration || 1450;
+    duration = duration || 1650;
     if (target === 0) {
       el.textContent = '0';
       return;
@@ -1743,7 +1743,7 @@
     var start = performance.now();
     function step(now) {
       var t = Math.min((now - start) / duration, 1);
-      var ease = 1 - Math.pow(1 - t, 2.6);
+      var ease = 1 - Math.pow(1 - t, 2.35);
       el.textContent = String(Math.round(ease * target));
       if (t < 1) requestAnimationFrame(step);
       else el.textContent = String(target);
@@ -1774,11 +1774,11 @@
       clearTimeout(window.__monMetricFallbackT);
       window.__monMetricFallbackT = null;
     }
-    if (p.newCount > 0) countUp('s1-new-in-cycle', p.newCount, ' каналов', 1750);
+    if (p.newCount > 0) countUp('s1-new-in-cycle', p.newCount, ' каналов', 1900);
     else setText('s1-new-in-cycle', '0 каналов');
-    if (p.total > 0) countUp('s1-total', p.total, ' каналов', 2100);
+    if (p.total > 0) countUp('s1-total', p.total, ' каналов', 2200);
     else setText('s1-total', '0 каналов');
-    countUpPlainNumber('s1-sources-n', p.active, 1500);
+    countUpPlainNumber('s1-sources-n', p.active, 1750);
   }
 
   function scheduleMetricCountFlush() {
@@ -1790,7 +1790,7 @@
     window.__monMetricFallbackT = setTimeout(function() {
       window.__monMetricFallbackT = null;
       tryFlushMetricCounts(true);
-    }, 1650);
+    }, 2000);
   }
 
   function renderStatus(meta, scamBase, statusSummary, channelsTotalConfirmed, confirmedSummary) {
@@ -2696,10 +2696,10 @@
 
     var n = lines.length;
     var prevActive = null;
-    /** ~3+ с на экране: строки тянутся равномерно, потом пауза на «Готово», без резкого среза */
-    var BOOT_LINE_STEP_MS = 420;
-    var HOLD_AFTER_LAST_MS = 720;
-    var FADE_OUT_MS = 780;
+    /** Темп как §4 анализа: строки чуть реже, пауза на «Готово», затем спокойный fade-out оверлея */
+    var BOOT_LINE_STEP_MS = 520;
+    var HOLD_AFTER_LAST_MS = 880;
+    var FADE_OUT_MS = 920;
 
     var delays = [];
     for (var di = 0; di < n; di++) delays.push(di * BOOT_LINE_STEP_MS);
@@ -2720,7 +2720,7 @@
     setTimeout(function() {
       if (prevActive) prevActive.classList.remove('mon-boot-line--active');
       setBootProgressUi(n, n);
-    }, lastLineAt + 120);
+    }, lastLineAt + 180);
 
     setTimeout(function() {
       overlay.classList.add('fade-out');
@@ -2731,7 +2731,7 @@
     }, fadeStartAt);
   }
 
-  // ── SCROLL REVEAL (fade-up 0.5–0.8s, волна по метрикам — в CSS) ──
+  // ── SCROLL REVEAL (§4 medvedevart: 0.5–0.8s fade-up, волна и токены — в monitor.css) ──
   /* На длинных секциях с таблицами доля пересечения < 8% → threshold 0.08 не срабатывает,
      контент остаётся opacity:0. Принудительно показываем блоки в/у вьюпорта после отрисовки. */
   function unveilMonRevealInViewport() {
@@ -2748,6 +2748,7 @@
     var sel = [
       '.mon-offer',
       '.mon-section',
+      '.mon-tier-slab',
       '.mon-proof-card',
       '.mon-source-card',
       '.mon-scheme-block',
