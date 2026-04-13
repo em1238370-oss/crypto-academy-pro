@@ -355,16 +355,19 @@
   </div>
 
   <!-- Глава: подтверждённая база (полная таблица после свежего окна) -->
-  <section class="mon-chapter mon-section mon-chapter--tier-registry" id="data-scam" aria-labelledby="mon-scam-heading">
-    <header class="mon-chapter-head mon-chapter-head--split">
+  <section class="mon-chapter mon-section mon-chapter--tier-registry mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" id="data-scam" aria-labelledby="mon-scam-heading">
+    <header class="mon-chapter-head mon-chapter-head--accordion mon-chapter-head--split" role="button" tabindex="0" aria-expanded="false">
       <div class="mon-chapter-head-main">
         <p class="mon-chapter-kicker">04 · Таблица</p>
         <h2 id="mon-scam-heading" class="mon-chapter-title">База объектов</h2>
         <p class="mon-chapter-lead mon-chapter-lead--inline">Подтверждённые объекты из <strong>scam_base</strong>: сигнал‑каналы, обменники, боты. На канал/домен — <strong>одна строка</strong> после дедупликации; <strong>сначала более свежие</strong> по дате обнаружения. Колонки повторяют поля строки; пустая ячейка («—») — нет значения в Sheets. <strong>Поиск</strong> над таблицей фильтрует строки на этой странице.</p>
       </div>
-      <span class="mon-chapter-meta" id="s3-count"></span>
+      <div class="mon-watch-accordion-tail">
+        <span class="mon-chapter-meta" id="s3-count"></span>
+        <span class="mon-collapse-chevron" aria-hidden="true">›</span>
+      </div>
     </header>
-    <div class="mon-chapter-body">
+    <div class="mon-chapter-body mon-chapter-body--accordion">
       <div class="mon-surface">
 
       <div class="mon-scheme-block">
@@ -2989,6 +2992,17 @@
     if (h) h.setAttribute('aria-expanded', 'true');
   }
 
+  function expandDataScamIfHash() {
+    var hash = (location.hash || '').replace(/^#/, '');
+    if (hash !== 'data-scam') return;
+    var sec = document.getElementById('data-scam');
+    if (!sec || !sec.classList.contains('mon-chapter--collapsible')) return;
+    sec.classList.remove('mon-chapter--collapsed');
+    sec.classList.remove('mon-section--collapsed');
+    var h = sec.querySelector('.mon-chapter-head--accordion');
+    if (h) h.setAttribute('aria-expanded', 'true');
+  }
+
   /**
    * Десктоп: строка заголовка «Прозрачность…» без учёта декоративной полоски h2::after —
    * иначе нижняя граница h2 уезжает за экран и эффект никогда не включался.
@@ -3074,8 +3088,10 @@
       initCollapsibles();
       expandWatchSectionIfHash();
       expandPageMapIfHash();
+      expandDataScamIfHash();
       window.addEventListener('hashchange', expandWatchSectionIfHash);
       window.addEventListener('hashchange', expandPageMapIfHash);
+      window.addEventListener('hashchange', expandDataScamIfHash);
       initOfferTitleKeywordUnderline();
       initHeroScrollFade();
       initBgParallax();
@@ -3089,8 +3105,10 @@
       initCollapsibles();
       expandWatchSectionIfHash();
       expandPageMapIfHash();
+      expandDataScamIfHash();
       window.addEventListener('hashchange', expandWatchSectionIfHash);
       window.addEventListener('hashchange', expandPageMapIfHash);
+      window.addEventListener('hashchange', expandDataScamIfHash);
       initOfferTitleKeywordUnderline();
       initHeroScrollFade();
       initBgParallax();
