@@ -758,7 +758,11 @@
               if ((el = document.getElementById('kro-stat-channels-label'))) el.textContent = 'Проверено за цикл';
               if ((el = document.getElementById('kro-watch-cycle-count'))) { el.dataset.target = scannedInCycle; el.textContent = scannedInCycle; }
               if ((el = document.getElementById('kro-watch-current-count'))) {
-                  var uw = ssAll.under_watch != null ? parseInt(String(ssAll.under_watch).replace(/\s/g, ''), 10) : 0;
+                  var watchSummary = data.watch_status_summary || {};
+                  var uwRaw = data.watch_under_observation_total;
+                  if (uwRaw == null || uwRaw === '') uwRaw = watchSummary.under_watch;
+                  if (uwRaw == null || uwRaw === '') uwRaw = 0;
+                  var uw = parseInt(String(uwRaw).replace(/\s/g, ''), 10);
                   if (!isFinite(uw) || uw < 0) uw = 0;
                   el.dataset.target = uw;
                   el.textContent = uw;

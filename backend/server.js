@@ -2412,6 +2412,26 @@ function isVisibleChannelsWatchRow(row) {
   );
 }
 
+function buildVisibleChannelsWatchSummary(rows) {
+  const filteredRows = (rows || []).filter(isVisibleChannelsWatchRow);
+  const byChannel = new Map();
+  for (const row of filteredRows) {
+    const key = channelMatchKey(row.username);
+    if (!key) continue;
+    const prev = byChannel.get(key);
+    if (!prev || parseScamDetectedAtMs(row) >= parseScamDetectedAtMs(prev)) {
+      byChannel.set(key, row);
+    }
+  }
+  const latestRows = Array.from(byChannel.values());
+  const statusSummary = buildStatusSummary(latestRows);
+  return {
+    visible_total: latestRows.length,
+    under_watch_total: statusSummary.under_watch,
+    status_summary: statusSummary,
+  };
+}
+
 function parseChannelsNetworkRow(row) {
   const source_channel = (row[0] || '').toString().trim();
   const target_channel = (row[1] || '').toString().trim();
@@ -3402,14 +3422,25 @@ app.get('/api/kro/live-counter', async (req, res) => {
       const metaSheetName = kroMetaRange.split('!')[0] || 'kro_meta';
       console.log(`[KRO live-counter] reading from Sheets: ${kroSheetId} / ${sheetName}`);
       console.log('KRO META SOURCE: reading from', `Google Sheets ${metaSheetName}`, cycleMeta.last_cycle_at);
-      const sheetResp = await sheetsClient.sheets.spreadsheets.values.get({
-        spreadsheetId: kroSheetId,
-        range: kroScamBaseRange
-      });
+      const [sheetResp, watchResp] = await Promise.all([
+        sheetsClient.sheets.spreadsheets.values.get({
+          spreadsheetId: kroSheetId,
+          range: kroScamBaseRange
+        }),
+        sheetsClient.sheets.spreadsheets.values.get({
+          spreadsheetId: kroSheetId,
+          range: kroChannelsWatchRange
+        }),
+      ]);
       const rawRows = sheetResp.data.values || [];
       const dataRows = rawRows.length ? rawRows.slice(1) : [];
       const parsedRows = dataRows.map(parseScamBaseRow).filter(r => r.username && r.username !== 'username');
       console.log(`[KRO live-counter] parsed ${parsedRows.length} rows from scam_base (header row skipped)`);
+      const watchRawRows = watchResp.data.values || [];
+      const channelsWatch = watchRawRows
+        .map(parseChannelsWatchRow)
+        .filter((r) => r && r.username && r.username !== 'username');
+      const watchSummary = buildVisibleChannelsWatchSummary(channelsWatch);
       const scamBaseCounter = buildLiveCounterFromScamBase(parsedRows);
       const roll12 = buildScamBase12hRollup(parsedRows);
       const top3AllTime = Array.isArray(scamBaseCounter.top3) ? scamBaseCounter.top3 : [];
@@ -3451,6 +3482,9 @@ app.get('/api/kro/live-counter', async (req, res) => {
         sourceCaption: caption12,
         status_summary: buildStatusSummary(roll12.rowSnapshots),
         status_summary_all_time: scamBaseCounter.status_summary,
+        watch_under_observation_total: watchSummary.under_watch_total,
+        watch_visible_total: watchSummary.visible_total,
+        watch_status_summary: watchSummary.status_summary,
         publishStatus: scamBaseCounter.isHonestZero && roll12.uniqueChannels === 0 ? 'honest_zero' : scamBaseCounter.publishStatus,
         isHonestZero: scamBaseCounter.isHonestZero && roll12.uniqueChannels === 0,
         siteNotice: null,
@@ -3495,6 +3529,9 @@ app.get('/api/kro/live-counter', async (req, res) => {
       sourceCaption: 'Мониторинг запущен. Первые данные появятся после завершения цикла проверки.',
       status_summary: buildStatusSummary([]),
       status_summary_all_time: buildStatusSummary([]),
+      watch_under_observation_total: 0,
+      watch_visible_total: 0,
+      watch_status_summary: buildStatusSummary([]),
       publishStatus: 'honest_zero',
       isHonestZero: true,
       siteNotice: null,
@@ -3533,6 +3570,9 @@ app.get('/api/kro/live-counter', async (req, res) => {
       sourceCaption: 'Мониторинг запущен.',
       status_summary: buildStatusSummary([]),
       status_summary_all_time: buildStatusSummary([]),
+      watch_under_observation_total: 0,
+      watch_visible_total: 0,
+      watch_status_summary: buildStatusSummary([]),
       publishStatus: 'honest_zero',
       isHonestZero: true,
       siteNotice: null,
