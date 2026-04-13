@@ -11,7 +11,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260413-reveal-rAF">
+  <script>
+    (function() {
+      var v = '20260414-reveal-complete';
+      var l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = '/monitor.css?v=' + encodeURIComponent(v);
+      l.id = 'mon-monitor-css';
+      document.head.appendChild(l);
+    })();
+  </script>
 </head>
 <body class="mon-page">
 
@@ -318,7 +327,7 @@
   </section>
 
   <!-- Скользящее окно 12 ч — сразу после кейсов, до полной базы (executive-flow) -->
-  <section class="mon-chapter mon-section mon-chapter--tier-snapshot mon-reveal" id="findings-12h" aria-labelledby="mon-findings-12h-heading">
+  <section class="mon-chapter mon-section mon-chapter--tier-snapshot" id="findings-12h" aria-labelledby="mon-findings-12h-heading">
     <header class="mon-chapter-head">
       <p class="mon-chapter-kicker">03 · Скользящее окно</p>
       <h2 id="mon-findings-12h-heading" class="mon-chapter-title">Найдено за последние 12 часов</h2>
@@ -2736,12 +2745,30 @@
      контент остаётся opacity:0. Принудительно показываем блоки в/у вьюпорта после отрисовки. */
   function unveilMonRevealInViewport() {
     var vh = window.innerHeight || document.documentElement.clientHeight || 0;
-    var pad = 120;
+    var narrow = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
+    var pad = narrow ? 320 : 120;
     document.querySelectorAll('.mon-reveal:not(.mon-visible)').forEach(function(el) {
       var r = el.getBoundingClientRect();
       if (r.bottom > -pad && r.top < vh + pad) el.classList.add('mon-visible');
     });
     tryFlushMetricCounts(false);
+  }
+
+  var __monUnveilScrollScheduled = false;
+  function scheduleUnveilMonRevealOnScroll() {
+    if (__monUnveilScrollScheduled) return;
+    __monUnveilScrollScheduled = true;
+    requestAnimationFrame(function() {
+      __monUnveilScrollScheduled = false;
+      unveilMonRevealInViewport();
+    });
+  }
+
+  function installMonRevealUnveilGuards() {
+    if (window.__monRevealGuardsInstalled) return;
+    window.__monRevealGuardsInstalled = true;
+    window.addEventListener('scroll', scheduleUnveilMonRevealOnScroll, { passive: true });
+    window.addEventListener('resize', scheduleUnveilMonRevealOnScroll, { passive: true });
   }
 
   function initScrollReveal() {
@@ -2762,6 +2789,7 @@
       document.querySelectorAll('.mon-status-grid .mon-stat-card').forEach(function(card) {
         card.classList.add('mon-reveal', 'mon-visible');
       });
+      installMonRevealUnveilGuards();
       return;
     }
     var rootMargin = '0px 0px 12% 0px';
@@ -2788,8 +2816,11 @@
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
         unveilMonRevealInViewport();
+        setTimeout(unveilMonRevealInViewport, 0);
+        setTimeout(unveilMonRevealInViewport, 48);
       });
     });
+    installMonRevealUnveilGuards();
   }
 
   function initHeroScrollFade() {

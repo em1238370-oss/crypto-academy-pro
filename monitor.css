@@ -3139,17 +3139,18 @@ a.mon-ca-sample-link[href^="tg:"] {
 }
 
 /*
- * Узкие экраны (телефон): не держим секции невидимыми из‑за IO на длинных таблицах.
- * Планшеты и десктоп сохраняют fade-up + blur (анализ §4–6, medvedevart).
+ * Узкий экран: короче и ниже fade-up, без blur — анимация остаётся (§4), но не «тяжёлая».
+ * Залипание opacity:0 на длинных таблицах снимает unveil в JS (больший pad) + scroll/resize.
  */
 @media (max-width: 640px) {
-  .mon-reveal {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
-    filter: none !important;
+  :root {
+    --mon-dur-reveal: 0.44s;
+    --mon-reveal-y: 16px;
   }
-  /* Тактильная обратная связь без scroll-reveal (эффекты из §5 анализа) */
+  .mon-reveal:not(.mon-visible) {
+    filter: none;
+  }
+  /* Тактильная обратная связь (эффекты из §5 анализа) */
   .mon-stat-card:active,
   .mon-proof-card:active,
   .mon-source-card:active,
@@ -3158,23 +3159,18 @@ a.mon-ca-sample-link[href^="tg:"] {
     transform: scale(0.985) !important;
     transition: transform 0.12s ease;
   }
-  .mon-offer.mon-reveal .mon-offer-kicker,
-  .mon-offer.mon-reveal .mon-offer-title,
-  .mon-offer.mon-reveal .mon-offer-lead,
-  .mon-offer.mon-reveal .mon-pillar,
-  .mon-offer.mon-reveal .mon-offer-focus,
-  .mon-offer.mon-reveal .mon-offer-cta-row {
-    opacity: 1 !important;
-    transform: none !important;
-    animation: none !important;
-    filter: none !important;
-  }
   .mon-row-appear,
   tr.mon-row-appear,
   article.mon-row-appear {
     opacity: 1 !important;
     animation: none !important;
   }
+  .mon-status-grid .mon-stat-card.mon-reveal:nth-child(1) { --mon-reveal-delay: 0ms; }
+  .mon-status-grid .mon-stat-card.mon-reveal:nth-child(2) { --mon-reveal-delay: 70ms; }
+  .mon-status-grid .mon-stat-card.mon-reveal:nth-child(3) { --mon-reveal-delay: 140ms; }
+  .mon-status-grid .mon-stat-card.mon-reveal:nth-child(4) { --mon-reveal-delay: 210ms; }
+  .mon-status-grid .mon-stat-card.mon-reveal:nth-child(5) { --mon-reveal-delay: 280ms; }
+  .mon-status-grid .mon-stat-card.mon-reveal:nth-child(6) { --mon-reveal-delay: 350ms; }
 }
 
 /* Волна карточек метрик: stagger §4 (0.1–0.15s) */
