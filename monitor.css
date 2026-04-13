@@ -419,8 +419,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 /* Пролог: hero + оффер — единый «лид» страницы как на одностраничном портфолио */
 .mon-prologue {
-  padding-bottom: clamp(44px, 6.5vw, 80px);
-  margin-bottom: clamp(14px, 2.6vw, 22px);
+  padding-bottom: clamp(36px, 5.6vw, 68px);
+  margin-bottom: clamp(10px, 2vw, 18px);
   border-bottom: 1px solid var(--mon-border-quiet);
 }
 
@@ -879,14 +879,14 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-size: clamp(15px, 1.45vw, 17px);
   line-height: var(--mon-leading-body);
   color: var(--mon-text-prose-hi);
-  margin: 0 0 36px;
+  margin: 0 0 28px;
   max-width: var(--mon-prose-max);
 }
 
 .mon-pillars {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 28px 32px;
+  gap: 22px 28px;
 }
 
 .mon-pillar {
@@ -1105,6 +1105,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(10) { animation-delay: 0.59s; }
 .mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(11) { animation-delay: 0.65s; }
 .mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(12) { animation-delay: 0.71s; }
+.mon-route-map.mon-section.mon-visible .mon-route-map-list > .mon-route-map-row:nth-child(13) { animation-delay: 0.77s; }
 
 @keyframes monRouteMapRowIn {
   from { opacity: 0; transform: translateY(22px); }
@@ -1314,6 +1315,22 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 .mon-chapter.mon-section:hover {
   border-top-color: rgba(255, 255, 255, 0.07);
+}
+
+/* Приложение внизу страницы: метод и критерии — спокойнее основного потока */
+.mon-chapter.mon-section.mon-chapter--appendix {
+  padding-top: clamp(36px, 5.4vw, 76px);
+  padding-bottom: clamp(36px, 5.4vw, 76px);
+}
+.mon-chapter--appendix .mon-chapter-title {
+  font-size: clamp(22px, 1.9vw + 14px, 30px);
+  letter-spacing: -0.03em;
+}
+.mon-chapter--appendix .mon-chapter-kicker {
+  color: rgba(255, 255, 255, 0.34);
+}
+.mon-chapter--appendix .mon-chapter-head {
+  padding-bottom: clamp(14px, 2.2vw, 22px);
 }
 
 .mon-chapter-head {
@@ -2448,6 +2465,48 @@ a.mon-ca-sample-link[href^="tg:"] {
 }
 .mon-scam-data-guide-item-text .mon-scam-data-guide-code {
   font-size: 0.85em;
+}
+
+/* Легенда базы: таблица первой, расшифровка по раскрытию */
+.mon-scam-data-guide-wrap {
+  margin: clamp(18px, 2.4vw, 26px) 0 0;
+  border-radius: 12px;
+  border: 1px solid var(--mon-border-quiet);
+  background: rgba(255, 255, 255, 0.018);
+  overflow: hidden;
+}
+.mon-scam-data-guide-summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 18px 14px 20px;
+  font-family: var(--mon-font);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255, 248, 235, 0.78);
+  transition: color 0.2s var(--mon-ease-out), background 0.2s var(--mon-ease-out);
+}
+.mon-scam-data-guide-summary::-webkit-details-marker {
+  display: none;
+}
+.mon-scam-data-guide-summary::marker {
+  content: '';
+}
+.mon-scam-data-guide-summary:hover {
+  color: rgba(255, 252, 245, 0.92);
+  background: rgba(255, 255, 255, 0.03);
+}
+.mon-scam-data-guide-wrap[open] .mon-scam-data-guide-summary {
+  border-bottom: 1px solid var(--mon-border-quiet);
+}
+.mon-scam-data-guide-wrap .mon-scam-data-guide {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+.mon-scam-data-guide-wrap .mon-scam-data-guide::before {
+  display: none;
 }
 
 /* Подпись над реестром: как сноска к таблице, без нового цвета */

@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260413-offer-clean">
+  <link rel="stylesheet" href="/monitor.css?v=20260413-structure-flow">
 </head>
 <body class="mon-page">
 
@@ -111,6 +111,7 @@
         <a class="mon-hero-jump-link" href="#metrics">Метрики</a>
         <a class="mon-hero-jump-link" href="#data-quality">Качество данных</a>
         <a class="mon-hero-jump-link" href="#recent-cases">Случаи</a>
+        <a class="mon-hero-jump-link" href="#findings-12h">12 часов</a>
         <a class="mon-hero-jump-link" href="#data-scam">База</a>
         <a class="mon-hero-jump-link" href="#data-watch">Мониторинг</a>
         <a class="mon-hero-jump-link" href="#data-network">Связи</a>
@@ -153,7 +154,7 @@
     <header class="mon-chapter-head">
       <p class="mon-chapter-kicker">00 · Навигация</p>
       <h2 id="mon-map-heading" class="mon-chapter-title">Структура страницы</h2>
-      <p class="mon-chapter-lead">Один поток сверху вниз: от снимка системы к деталям и архиву — главный акцент → оффер → метрики → кейсы → таблицы → происхождение данных.</p>
+      <p class="mon-chapter-lead">Один поток сверху вниз: снимок системы → подход → метрики → кейсы → свежие находки за 12 ч → полная база → широкий мониторинг и связи → журнал цикла → источники и архив → методология внизу страницы.</p>
     </header>
     <div class="mon-chapter-body">
       <div class="mon-surface mon-route-map-surface">
@@ -181,7 +182,7 @@
           <li class="mon-route-map-row">
             <span class="mon-route-map-num">—</span>
             <a class="mon-route-map-block" href="#data-quality">Качество данных</a>
-            <span class="mon-route-map-desc">Веса источников, качество жалоб, граф связей, молодые каналы с жалобами — из kro_meta.</span>
+            <span class="mon-route-map-desc">Короткий блок надёжности внутри метрик: порог доказательств, сигналы на ошибку, сила источников, полнота жалоб и записи на перепроверку.</span>
           </li>
           <li class="mon-route-map-row">
             <span class="mon-route-map-num">02</span>
@@ -190,38 +191,43 @@
           </li>
           <li class="mon-route-map-row">
             <span class="mon-route-map-num">03</span>
+            <a class="mon-route-map-block" href="#findings-12h">12 часов</a>
+            <span class="mon-route-map-desc">Свежие подтверждённые строки базы за скользящее окно 12 ч — быстрый срез «что изменилось недавно».</span>
+          </li>
+          <li class="mon-route-map-row">
+            <span class="mon-route-map-num">04</span>
             <a class="mon-route-map-block" href="#data-scam">База</a>
             <span class="mon-route-map-desc">Полная таблица объектов, фильтр поиска, доказательства и статусы.</span>
           </li>
           <li class="mon-route-map-row">
-            <span class="mon-route-map-num">04</span>
+            <span class="mon-route-map-num">05</span>
             <a class="mon-route-map-block" href="#data-watch">Широкий мониторинг</a>
             <span class="mon-route-map-desc">Все найденные каналы наблюдения рядом с узкой базой.</span>
           </li>
           <li class="mon-route-map-row">
-            <span class="mon-route-map-num">05</span>
+            <span class="mon-route-map-num">06</span>
             <a class="mon-route-map-block" href="#data-network">Связи</a>
             <span class="mon-route-map-desc">Кто кого продвигает — сеть и доказательства.</span>
           </li>
           <li class="mon-route-map-row">
-            <span class="mon-route-map-num">06</span>
+            <span class="mon-route-map-num">07</span>
             <a class="mon-route-map-block" href="#cycle-log">Журнал</a>
             <span class="mon-route-map-desc">Хронология последнего цикла — как таймлайн «опыта».</span>
           </li>
           <li class="mon-route-map-row">
-            <span class="mon-route-map-num">07</span>
+            <span class="mon-route-map-num">08</span>
             <a class="mon-route-map-block" href="#sources">Источники</a>
             <span class="mon-route-map-desc">Происхождение данных и статус опроса сайтов.</span>
           </li>
           <li class="mon-route-map-row">
-            <span class="mon-route-map-num">08</span>
+            <span class="mon-route-map-num">09</span>
             <a class="mon-route-map-block" href="#history">Архив</a>
             <span class="mon-route-map-desc">История циклов — сводка прошлых прогонов.</span>
           </li>
           <li class="mon-route-map-row mon-route-map-row--muted">
-            <span class="mon-route-map-num">09–10</span>
+            <span class="mon-route-map-num">10–11</span>
             <span class="mon-route-map-block mon-route-map-block--text">Метод и критерии</span>
-            <span class="mon-route-map-desc">Раскрывающиеся блоки: как собирается строка и правила отбора.</span>
+            <span class="mon-route-map-desc">Раскрывающиеся блоки внизу страницы: как собирается строка и правила отбора.</span>
           </li>
         </ul>
       </div>
@@ -296,11 +302,28 @@
     </div>
   </section>
 
-  <!-- Глава: подтверждённая база (полная таблица после кейсов) -->
+  <!-- Скользящее окно 12 ч — сразу после кейсов, до полной базы (executive-flow) -->
+  <section class="mon-chapter mon-section mon-reveal" id="findings-12h" aria-labelledby="mon-findings-12h-heading">
+    <header class="mon-chapter-head">
+      <p class="mon-chapter-kicker">03 · Скользящее окно</p>
+      <h2 id="mon-findings-12h-heading" class="mon-chapter-title">Найдено за последние 12 часов</h2>
+      <p class="mon-chapter-lead">Таблица ниже — только строки scam_base с датой обнаружения в скользящем окне 12 ч. Сводка по всей подтверждённой базе (сумма потерь и число каналов) — в абзаце перед таблицей; на главной карточка «Потеряно ₽ всего» использует те же агрегаты по всей базе.</p>
+      <p class="mon-findings-base-summary mon-chapter-lead" id="s2-findings-base-summary" aria-live="polite"></p>
+    </header>
+    <div class="mon-chapter-body">
+      <div class="mon-surface mon-surface--pad">
+        <div class="mon-table-wrap" id="s2-findings-12h-wrap">
+          <div class="mon-loading mon-spinner" style="padding:32px">Загружаю…</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Глава: подтверждённая база (полная таблица после свежего окна) -->
   <section class="mon-chapter mon-section" id="data-scam" aria-labelledby="mon-scam-heading">
     <header class="mon-chapter-head mon-chapter-head--split">
       <div class="mon-chapter-head-main">
-        <p class="mon-chapter-kicker">03 · Таблица</p>
+        <p class="mon-chapter-kicker">04 · Таблица</p>
         <h2 id="mon-scam-heading" class="mon-chapter-title">База объектов</h2>
         <p class="mon-chapter-lead mon-chapter-lead--inline">Подтверждённые объекты из <strong>scam_base</strong>: сигнал‑каналы, обменники, боты. На канал/домен — <strong>одна строка</strong> после дедупликации; <strong>сначала более свежие</strong> по дате обнаружения. Колонки повторяют поля строки; пустая ячейка («—») — нет значения в Sheets. <strong>Поиск</strong> над таблицей фильтрует строки на этой странице.</p>
       </div>
@@ -324,8 +347,13 @@
 
       <p class="mon-tg-browser-hint" role="note">Имя канала открывает <strong>ленту t.me/s</strong> в браузере (видны посты). <strong>прил.</strong> — открыть в приложении Telegram. Если экран пустой — у провайдера может быть заблокирован t.me; попробуйте VPN или другое соединение.</p>
 
-      <div class="mon-scam-data-guide" aria-label="Расшифровка колонок таблицы базы">
-        <p class="mon-scam-data-guide-kicker">Как читать таблицу</p>
+      <div class="mon-table-wrap mon-table-wrap--registry" id="s3-table-wrap">
+        <div class="mon-loading mon-spinner" style="padding:32px">Загружаю базу</div>
+      </div>
+
+      <details class="mon-scam-data-guide-wrap">
+        <summary class="mon-scam-data-guide-summary">Легенда таблицы и расшифровка колонок</summary>
+        <div class="mon-scam-data-guide" aria-label="Расшифровка колонок таблицы базы">
         <p class="mon-scam-data-guide-punch">Одна строка таблицы = одна запись в листе <code class="mon-scam-data-guide-code mon-scam-data-guide-code--punch">scam_base</code>.</p>
         <p class="mon-scam-data-guide-lead">Строки попадают сюда после фильтров и порогов из отчёта <strong class="mon-scam-data-guide-key">Source&nbsp;&amp;&nbsp;Data</strong> (вес источников, политика промо в лист и т.д.). Колонки слева направо повторяют поля записи: кто это, тип, откуда вывод, признаки, автоматический разбор, статус, число жалоб, дата.</p>
         <p class="mon-scam-data-guide-note"><strong class="mon-scam-data-guide-key">Порядок строк:</strong> API отдаёт таблицу с сортировкой по дате обнаружения — <strong class="mon-scam-data-guide-key">новее выше</strong>. Номер «#» — только порядок на экране, не ID в Google Sheets. Длинные тексты в «Признаках» смотрите в подсказке ячейки (наведите курсор).</p>
@@ -364,11 +392,8 @@
             <p class="mon-scam-data-guide-item-text"><strong class="mon-scam-data-guide-key">Когда запись попала в базу</strong> или дата обнаружения в источнике — в том виде, как отдал воркер.</p>
           </div>
         </div>
-      </div>
-
-      <div class="mon-table-wrap mon-table-wrap--registry" id="s3-table-wrap">
-        <div class="mon-loading mon-spinner" style="padding:32px">Загружаю базу</div>
-      </div>
+        </div>
+      </details>
       </div>
     </div>
   </section>
@@ -376,7 +401,7 @@
   <section class="mon-chapter mon-section mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" id="data-watch" aria-labelledby="mon-watch-heading">
     <header class="mon-chapter-head mon-chapter-head--accordion mon-chapter-head--watch-accordion" role="button" tabindex="0" aria-expanded="false" aria-controls="mon-watch-panel" id="mon-watch-accordion-trigger">
       <div class="mon-chapter-head-main">
-        <p class="mon-chapter-kicker">04 · Мониторинг</p>
+        <p class="mon-chapter-kicker">05 · Мониторинг</p>
         <h2 id="mon-watch-heading" class="mon-chapter-title">Широкий мониторинг</h2>
         <p class="mon-watch-accordion-peek">Таблица листа channels_watch — кликните, чтобы показать</p>
       </div>
@@ -403,7 +428,7 @@
   <section class="mon-chapter mon-section" id="data-network" aria-labelledby="mon-network-heading">
     <header class="mon-chapter-head mon-chapter-head--split">
       <div class="mon-chapter-head-main">
-        <p class="mon-chapter-kicker">05 · Связи</p>
+        <p class="mon-chapter-kicker">06 · Связи</p>
         <h2 id="mon-network-heading" class="mon-chapter-title">Сети каналов</h2>
         <p class="mon-chapter-lead mon-chapter-lead--inline">Кто кого продвигает — с доказательством в таблице.</p>
       </div>
@@ -428,7 +453,7 @@
   <section class="mon-chapter mon-section" id="cycle-log" aria-labelledby="mon-cycle-heading">
     <header class="mon-chapter-head mon-chapter-head--split">
       <div class="mon-chapter-head-main">
-        <p class="mon-chapter-kicker">06 · Журнал</p>
+        <p class="mon-chapter-kicker">07 · Журнал</p>
         <h2 id="mon-cycle-heading" class="mon-chapter-title">Последний цикл</h2>
         <p class="mon-chapter-lead mon-chapter-lead--inline">События последнего прогона — как хронология дня.</p>
       </div>
@@ -443,25 +468,9 @@
     </div>
   </section>
 
-  <section class="mon-chapter mon-section mon-reveal" id="findings-12h" aria-labelledby="mon-findings-12h-heading">
-    <header class="mon-chapter-head">
-      <p class="mon-chapter-kicker">06b · Скользящее окно</p>
-      <h2 id="mon-findings-12h-heading" class="mon-chapter-title">Найдено за последние 12 часов</h2>
-      <p class="mon-chapter-lead">Таблица ниже — только строки scam_base с датой обнаружения в скользящем окне 12 ч. Сводка по всей подтверждённой базе (сумма потерь и число каналов) — в абзаце перед таблицей; на главной карточка «Потеряно ₽ всего» использует те же агрегаты по всей базе.</p>
-      <p class="mon-findings-base-summary mon-chapter-lead" id="s2-findings-base-summary" aria-live="polite"></p>
-    </header>
-    <div class="mon-chapter-body">
-      <div class="mon-surface mon-surface--pad">
-        <div class="mon-table-wrap" id="s2-findings-12h-wrap">
-          <div class="mon-loading mon-spinner" style="padding:32px">Загружаю…</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <section class="mon-chapter mon-section" id="sources" aria-labelledby="mon-sources-heading">
     <header class="mon-chapter-head">
-      <p class="mon-chapter-kicker">07 · Происхождение данных</p>
+      <p class="mon-chapter-kicker">08 · Происхождение данных</p>
       <h2 id="mon-sources-heading" class="mon-chapter-title">Источники данных</h2>
       <p class="mon-chapter-lead">Сайты, списки и жалобы → таблицы → эта страница. Ниже — статус опроса на последнем цикле.</p>
     </header>
@@ -492,7 +501,7 @@
 
   <section class="mon-chapter mon-section" id="history" aria-labelledby="mon-history-heading">
     <header class="mon-chapter-head">
-      <p class="mon-chapter-kicker">08 · Архив циклов</p>
+      <p class="mon-chapter-kicker">09 · Архив циклов</p>
       <h2 id="mon-history-heading" class="mon-chapter-title">История циклов</h2>
       <p class="mon-chapter-lead">Сводка прошлых прогонов: что нашли, что добавили, как отработали источники.</p>
     </header>
@@ -505,10 +514,10 @@
     </div>
   </section>
 
-  <section class="mon-chapter mon-section mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" aria-labelledby="mon-how-heading">
+  <section class="mon-chapter mon-section mon-chapter--appendix mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" aria-labelledby="mon-how-heading">
     <header class="mon-chapter-head mon-chapter-head--accordion" role="button" tabindex="0" aria-expanded="false">
       <div class="mon-chapter-head-main">
-        <p class="mon-chapter-kicker">09 · Метод</p>
+        <p class="mon-chapter-kicker">10 · Метод</p>
         <h2 id="mon-how-heading" class="mon-chapter-title">Как мы проверяем</h2>
       </div>
       <span class="mon-collapse-chevron" aria-hidden="true">›</span>
@@ -529,10 +538,10 @@
     </div>
   </section>
 
-  <section class="mon-chapter mon-section mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" aria-labelledby="mon-rules-heading">
+  <section class="mon-chapter mon-section mon-chapter--appendix mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" aria-labelledby="mon-rules-heading">
     <header class="mon-chapter-head mon-chapter-head--accordion" role="button" tabindex="0" aria-expanded="false">
       <div class="mon-chapter-head-main">
-        <p class="mon-chapter-kicker">10 · Критерии</p>
+        <p class="mon-chapter-kicker">11 · Критерии</p>
         <h2 id="mon-rules-heading" class="mon-chapter-title">Правила и критерии</h2>
       </div>
       <span class="mon-collapse-chevron" aria-hidden="true">›</span>
