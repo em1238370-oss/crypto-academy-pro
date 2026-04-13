@@ -15,7 +15,7 @@ _HUB_SLUGS = frozenset({
 })
 
 # Минимальная сумма весов для записи в scam_base (проверяет вызывающий код).
-MIN_SOURCE_WEIGHT_FOR_SCAM_BASE = 3.0
+MIN_SOURCE_WEIGHT_FOR_SCAM_BASE = 2.0
 MIN_SOURCE_WEIGHT_FOR_OBSERVATION = 2.0
 
 
@@ -131,7 +131,7 @@ def _compute_source_weight(
     report_rows: Optional[List[Dict[str, Any]]] = None,
 ) -> float:
     """
-    Сумма весов источников (минимум 3 для записи в scam_base):
+    Сумма весов источников (минимум 2 для записи в scam_base):
     stop-scam1.com = 3; fin-obzor.net = 3;
     vklader.com: +2 за посвящённую страницу /username (не хаб), иначе +2 за любое упоминание vklader.com (не суммируется со slug);
     telltrue.net = 2; forteck.net = 2;
@@ -205,7 +205,7 @@ def compute_source_weight(
     *,
     report_rows: Optional[List[Dict[str, Any]]] = None,
 ) -> float:
-    """Публичный алиас к _compute_source_weight (минимум 3 для записи в scam_base — снаружи)."""
+    """Публичный алиас к _compute_source_weight (минимум 2 для записи в scam_base — снаружи)."""
     return _compute_source_weight(obj, report_rows=report_rows)
 
 

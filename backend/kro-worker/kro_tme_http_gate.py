@@ -16,12 +16,12 @@
 Правила перед записью / удержанием строки Telegram (канал):
   1) публичная страница доступна;
   2) не считаем личным профилем (эвристика HTML);
-  3) число подписчиков видно и >= 100;
+  3) число подписчиков видно и >= 50;
   4) в описании или постах есть крипто-маркеры;
   5) есть пост с датой не старше SCAM_BASE_HTTP_POST_MAX_AGE_DAYS;
   + посты без маркеров взлома.
 
-Для объекта-бота (инвест-бот / @*bot): без требования 100 подписчиков; нужна
+Для объекта-бота (инвест-бот / @*bot): без требования 50 подписчиков; нужна
 публичная кнопка Start/Запустить (?start=); крипто-маркеры; если есть посты с датами — не старше лимита.
 """
 from __future__ import annotations
@@ -42,8 +42,8 @@ USER_AGENT_CHROME = (
     'Chrome/122.0.0.0 Safari/537.36'
 )
 
-MIN_TELEGRAM_SUBSCRIBERS_HTTP = 100
-SCAM_BASE_HTTP_POST_MAX_AGE_DAYS = 60
+MIN_TELEGRAM_SUBSCRIBERS_HTTP = 50
+SCAM_BASE_HTTP_POST_MAX_AGE_DAYS = 90
 # Синхронно с ТЗ KRO (фильтр 4) и server.js KRO_TME_HTTP_GATE_CRYPTO.
 # + forex / бинанс — для англ. «forex» и кириллического написания биржи.
 SCAM_BASE_HTTP_CRYPTO_TERMS = (
@@ -51,8 +51,23 @@ SCAM_BASE_HTTP_CRYPTO_TERMS = (
     'bitcoin',
     'btc',
     'usdt',
+    'заработок',
+    'доход',
+    'прибыль',
+    'вложение',
+    'капитал',
+    'трейдер',
+    'аналитик',
+    'прогноз',
     'трейд',
     'сигнал',
+    'вип',
+    'premium',
+    'profit',
+    'earn',
+    'money',
+    'trading',
+    'signals',
     'invest',
     'trade',
     'форекс',

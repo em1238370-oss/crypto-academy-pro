@@ -10,18 +10,22 @@ from datetime import datetime, timedelta, timezone
 
 from telethon.errors import FloodWaitError
 
-CRYPTO_TERMS = (
-    'bitcoin',
-    'btc',
-    'крипт',
-    'crypto',
-    'usdt',
-    'трейдинг',
-    'trading',
-    'сигнал',
-    'signal',
-    'обменник',
-)
+from kro_tme_http_gate import SCAM_BASE_HTTP_CRYPTO_TERMS
+
+CRYPTO_TERMS = SCAM_BASE_HTTP_CRYPTO_TERMS
+MIN_SUBSCRIBERS_STRICT = 50
+MAX_POST_AGE_DAYS_STRICT = 90
+
+
+def _has_whistleblower_marker(row_obj: dict) -> bool:
+    blob = ' '.join(
+        str(x or '')
+        for x in (
+            row_obj.get('source_primary'),
+            row_obj.get('source_evidence'),
+        )
+    ).lower()
+    return any(marker in blob for marker in ('stop-scam1', 'fin-obzor', 'vklader', 'telltrue', 'forteck'))
 
 
 def norm_username_for_gate(v: str) -> str:
@@ -54,6 +58,8 @@ async def validate_telegram_scam_base_row_strict(client, row_obj: dict):
     uname = norm_username_for_gate(row_obj.get('username') or row_obj.get('link') or '')
     if not uname:
         return False, 'empty_username', True
+    if _has_whistleblower_marker(row_obj):
+        return True, 'ok_whistleblower_bypass', False
     if client is None:
         return False, 'telethon_unavailable', False
 
@@ -87,8 +93,8 @@ async def validate_telegram_scam_base_row_strict(client, row_obj: dict):
         return False, 'cannot_read_full_channel', True
 
     subs = int(getattr(getattr(full, 'full_chat', None), 'participants_count', 0) or 0)
-    if subs < 100:
-        return False, 'subs_below_100', True
+    if subs < MIN_SUBSCRIBERS_STRICT:
+        return False, 'subs_below_50', True
 
     about = str(getattr(getattr(full, 'full_chat', None), 'about', '') or '')
     if not about.strip():
@@ -115,9 +121,9 @@ async def validate_telegram_scam_base_row_strict(client, row_obj: dict):
     except Exception:
         return False, 'iter_messages_error', True
 
-    cutoff = datetime.now(timezone.utc) - timedelta(days=60)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=MAX_POST_AGE_DAYS_STRICT)
     if not post_dates or not any(dt >= cutoff for dt in post_dates):
-        return False, 'no_posts_60d', True
+        return False, 'no_posts_90d', True
 
     recent_blob = ' '.join(posts[:10])
     if not any(t in recent_blob for t in CRYPTO_TERMS):

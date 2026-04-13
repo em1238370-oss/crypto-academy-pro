@@ -2081,7 +2081,7 @@ def _telethon_gate_reasons_to_user_buckets(reason_counts):
     rc = reason_counts or {}
     buckets = {
         'personal_account': 0,
-        'subs_below_100': 0,
+        'subs_below_min': 0,
         'not_crypto_topic': 0,
         'inactive': 0,
         'other': 0,
@@ -2093,11 +2093,11 @@ def _telethon_gate_reasons_to_user_buckets(reason_counts):
         r = (reason or '').strip()
         if r in ('entity_is_user_or_bot',):
             buckets['personal_account'] += n
-        elif r in ('subs_below_100',):
-            buckets['subs_below_100'] += n
+        elif r in ('subs_below_100', 'subs_below_50'):
+            buckets['subs_below_min'] += n
         elif r in ('posts_not_crypto',):
             buckets['not_crypto_topic'] += n
-        elif r in ('no_posts_60d', 'empty_description', 'iter_messages_error', 'channel_deleted'):
+        elif r in ('no_posts_60d', 'no_posts_90d', 'empty_description', 'iter_messages_error', 'channel_deleted'):
             buckets['inactive'] += n
         else:
             buckets['other'] += n
@@ -2153,10 +2153,10 @@ def _print_kro_detailed_cycle_report(
 
     lines.append('  Отклонено blocklist: %d' % blocklist_n)
     lines.append('  Отклонено личный аккаунт (strict Telethon-gate, user/bot): %d' % int(tg_b['personal_account']))
-    lines.append('  Отклонено меньше 100 подписчиков (strict Telethon-gate): %d' % int(tg_b['subs_below_100']))
+    lines.append('  Отклонено меньше 50 подписчиков (strict Telethon-gate): %d' % int(tg_b['subs_below_min']))
     lines.append('  Отклонено не крипто тематика (strict Telethon-gate, посты канала): %d' % int(tg_b['not_crypto_topic']))
     lines.append(
-        '  Отклонено неактивен / нет свежих постов / пустое описание (strict Telethon-gate): %d'
+        '  Отклонено неактивен / нет свежих постов за 90 дней / пустое описание (strict Telethon-gate): %d'
         % int(tg_b['inactive'])
     )
     lines.append('  Отклонено гемблинг (confirmed-filter + перед append в scam_base): %d' % gambling_n)
@@ -2204,7 +2204,13 @@ def _print_kro_detailed_cycle_report(
     lines.append('  Blocklist при записи: %d' % int(a.get('write_reject_blocklist', 0) or 0))
     lines.append('  Статус «не по теме» (unified / пол): %d' % int(a.get('write_reject_off_topic', 0) or 0))
     lines.append('  Нет сигнала А (крипто в наводке/жалобах): %d' % int(a.get('write_reject_no_signal_a_crypto', 0) or 0))
-    lines.append('  Вес источников < 3: %d' % int(a.get('write_reject_source_weight', 0) or 0))
+    lines.append(
+        '  Вес источников < %s: %d'
+        % (
+            _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_SCAM_BASE,
+            int(a.get('write_reject_source_weight', 0) or 0),
+        )
+    )
     lines.append('  off_topic по HTML t.me (HTTP-gate): %d' % int(a.get('write_reject_offtopic_tme', 0) or 0))
     lines.append('  Нет crypto context при записи: %d' % int(a.get('write_reject_no_crypto', 0) or 0))
     lines.append('  Сигнал Б (Telethon, HTTP-gate выкл.): нет crypto в постах: %d' % int(a.get('write_reject_recent_posts_no_crypto', 0) or 0))

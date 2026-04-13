@@ -90,6 +90,8 @@ def mandatory_gate_telegram(
     object_type: str,
     content_analysis_text: str,
 ) -> Tuple[bool, str]:
+    if _has_strong_whistleblower_source(source_primary, source_evidence):
+        return True, 'ok_strong_whistleblower_bypass'
     # Подписчики из Telethon/HTML могут отсутствовать (FloodWait, скрытый счётчик) — тогда не отклоняем.
     # Если Telegram-данные неполные, но есть сильный whistleblower-источник + крипто-контекст в источнике,
     # не считаем такой объект «не по теме» только из-за отсутствия/устаревания телега-метрик.
@@ -100,8 +102,8 @@ def mandatory_gate_telegram(
     source_crypto_fallback = (
         subscribers is None and has_mandatory_crypto_topic(source_primary, source_evidence)
     ) or strong_source_crypto_fallback
-    if subscribers is not None and subscribers < 100:
-        return False, 'mandatory_subs_below_100'
+    if subscribers is not None and subscribers < 50:
+        return False, 'mandatory_subs_below_50'
     if last_post_dt is None:
         if source_crypto_fallback:
             return True, 'ok_source_crypto_fallback_no_post_date'
@@ -396,10 +398,11 @@ def apply_unified_risk_to_row(
 
 
 _WATCH_GATE_REASON_RU = {
-    'mandatory_subs_below_100': 'мало подписчиков (<100) для критерия крипто-канала',
+    'mandatory_subs_below_50': 'мало подписчиков (<50) для критерия крипто-канала',
     'mandatory_no_post_date': 'нет даты поста и по полям канала не видно крипто-темы',
     'mandatory_last_post_stale': 'давно не было постов — вне активного крипто-контента по правилам мониторинга',
     'mandatory_not_crypto_topic': 'в описании и источниках нет маркеров крипто-темы',
+    'ok_strong_whistleblower_bypass': '',
     'ok_watch_without_post_date': '',
 }
 
@@ -438,16 +441,16 @@ def mandatory_gate_watch_relaxed(
         if ok:
             return True, r
         if r in ('mandatory_last_post_stale', 'mandatory_no_post_date'):
-            if subscribers is not None and subscribers > 0 and subscribers < 100:
-                return False, 'mandatory_subs_below_100'
+            if subscribers is not None and subscribers > 0 and subscribers < 50:
+                return False, 'mandatory_subs_below_50'
             if not has_mandatory_crypto_topic(
                 username, link, title, about, posts_blob, source_evidence, object_type, '',
             ):
                 return False, 'mandatory_not_crypto_topic'
             return True, 'ok_watch_relaxed_stale_posts'
         return ok, r
-    if subscribers is not None and subscribers > 0 and subscribers < 100:
-        return False, 'mandatory_subs_below_100'
+    if subscribers is not None and subscribers > 0 and subscribers < 50:
+        return False, 'mandatory_subs_below_50'
     if not has_mandatory_crypto_topic(
         username, link, title, about, posts_blob, source_evidence, object_type, '',
     ):
