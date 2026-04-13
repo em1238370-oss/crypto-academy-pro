@@ -43,6 +43,17 @@ def _has_strong_whistleblower_source(source_primary: str, source_evidence: str) 
     return any(marker in blob for marker in BLACKLIST_SOURCE_MARKERS)
 
 
+def _has_strong_whistleblower_crypto_context(*parts: str) -> bool:
+    if len(parts) < 2:
+        return False
+    source_primary = parts[0] or ''
+    source_evidence = parts[1] or ''
+    return (
+        _has_strong_whistleblower_source(source_primary, source_evidence)
+        and has_mandatory_crypto_topic(*parts)
+    )
+
+
 def _parse_views_string(raw: str) -> Optional[int]:
     if not raw:
         return None
@@ -93,9 +104,9 @@ def mandatory_gate_telegram(
     # Подписчики из Telethon/HTML могут отсутствовать (FloodWait, скрытый счётчик) — тогда не отклоняем.
     # Если Telegram-данные неполные, но есть сильный whistleblower-источник + крипто-контекст в источнике,
     # не считаем такой объект «не по теме» только из-за отсутствия/устаревания телега-метрик.
-    strong_source_crypto_fallback = (
-        _has_strong_whistleblower_source(source_primary, source_evidence)
-        and has_mandatory_crypto_topic(source_primary, source_evidence)
+    strong_source_crypto_fallback = _has_strong_whistleblower_crypto_context(
+        source_primary,
+        source_evidence,
     )
     # Внешний разоблачительный источник важнее дырявых Telegram-метрик,
     # но bypass разрешён только для реальных crypto-кейсов.
@@ -426,6 +437,16 @@ def mandatory_gate_watch_relaxed(
     Широкий мониторинг (channels_watch): при известной дате поста — полный mandatory_gate_telegram;
     устаревшие/пропущенные посты не переводят в «не по теме» — только проверка крипто-маркеров.
     """
+    strong_source_crypto_fallback = _has_strong_whistleblower_crypto_context(
+        source_primary,
+        source_evidence,
+        username,
+        link,
+        title,
+        about,
+        posts_blob,
+        object_type,
+    )
     if last_post_dt is not None:
         ok, r = mandatory_gate_telegram(
             subscribers=subscribers,
@@ -442,8 +463,12 @@ def mandatory_gate_watch_relaxed(
         )
         if ok:
             return True, r
+        if r == 'mandatory_subs_below_50' and strong_source_crypto_fallback:
+            return True, 'ok_watch_relaxed_low_subs_strong_source'
         if r in ('mandatory_last_post_stale', 'mandatory_no_post_date'):
             if subscribers is not None and subscribers > 0 and subscribers < 50:
+                if strong_source_crypto_fallback:
+                    return True, 'ok_watch_relaxed_low_subs_strong_source'
                 return False, 'mandatory_subs_below_50'
             if not has_mandatory_crypto_topic(
                 username, link, title, about, posts_blob, source_evidence, object_type, '',
@@ -452,6 +477,8 @@ def mandatory_gate_watch_relaxed(
             return True, 'ok_watch_relaxed_stale_posts'
         return ok, r
     if subscribers is not None and subscribers > 0 and subscribers < 50:
+        if strong_source_crypto_fallback:
+            return True, 'ok_watch_relaxed_low_subs_strong_source'
         return False, 'mandatory_subs_below_50'
     if not has_mandatory_crypto_topic(
         username, link, title, about, posts_blob, source_evidence, object_type, '',
