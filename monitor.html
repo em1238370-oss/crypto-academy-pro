@@ -226,13 +226,16 @@
   </section>
 
   <!-- Карта страницы сразу после снимка в цифрах: ориентир по остальному потоку (medvedevart: сначала факт, потом навигация) -->
-  <section class="mon-chapter mon-section mon-chapter--tier-snapshot mon-route-map mon-route-map--after-metrics" id="page-map" aria-labelledby="mon-map-heading">
-    <header class="mon-chapter-head">
-      <p class="mon-chapter-kicker">Ориентир</p>
-      <h2 id="mon-map-heading" class="mon-chapter-title">Карта разделов</h2>
-      <p class="mon-chapter-lead">Снимок в цифрах уже выше. Здесь — сжатая карта остальной страницы: куда перейти за кейсами, реестрами, источниками и архивом.</p>
+  <section class="mon-chapter mon-section mon-chapter--tier-snapshot mon-route-map mon-route-map--after-metrics mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" id="page-map" aria-labelledby="mon-map-heading">
+    <header class="mon-chapter-head mon-chapter-head--accordion" role="button" tabindex="0" aria-expanded="false">
+      <div class="mon-chapter-head-main">
+        <p class="mon-chapter-kicker">Ориентир</p>
+        <h2 id="mon-map-heading" class="mon-chapter-title">Карта разделов</h2>
+        <p class="mon-chapter-lead">Снимок в цифрах уже выше. Здесь — сжатая карта остальной страницы: куда перейти за кейсами, реестрами, источниками и архивом.</p>
+      </div>
+      <span class="mon-collapse-chevron" aria-hidden="true">›</span>
     </header>
-    <div class="mon-chapter-body">
+    <div class="mon-chapter-body mon-chapter-body--accordion">
       <div class="mon-surface mon-route-map-surface">
         <div class="mon-route-map-thead" aria-hidden="true">
           <span class="mon-route-map-th mon-route-map-th--num">№</span>
@@ -2975,6 +2978,17 @@
     if (h) h.setAttribute('aria-expanded', 'true');
   }
 
+  function expandPageMapIfHash() {
+    var hash = (location.hash || '').replace(/^#/, '');
+    if (hash !== 'page-map') return;
+    var sec = document.getElementById('page-map');
+    if (!sec || !sec.classList.contains('mon-chapter--collapsible')) return;
+    sec.classList.remove('mon-chapter--collapsed');
+    sec.classList.remove('mon-section--collapsed');
+    var h = sec.querySelector('.mon-chapter-head--accordion');
+    if (h) h.setAttribute('aria-expanded', 'true');
+  }
+
   /**
    * Десктоп: строка заголовка «Прозрачность…» без учёта декоративной полоски h2::after —
    * иначе нижняя граница h2 уезжает за экран и эффект никогда не включался.
@@ -3059,7 +3073,9 @@
       initLivePassObserver();
       initCollapsibles();
       expandWatchSectionIfHash();
+      expandPageMapIfHash();
       window.addEventListener('hashchange', expandWatchSectionIfHash);
+      window.addEventListener('hashchange', expandPageMapIfHash);
       initOfferTitleKeywordUnderline();
       initHeroScrollFade();
       initBgParallax();
@@ -3072,7 +3088,9 @@
       initLivePassObserver();
       initCollapsibles();
       expandWatchSectionIfHash();
+      expandPageMapIfHash();
       window.addEventListener('hashchange', expandWatchSectionIfHash);
+      window.addEventListener('hashchange', expandPageMapIfHash);
       initOfferTitleKeywordUnderline();
       initHeroScrollFade();
       initBgParallax();
