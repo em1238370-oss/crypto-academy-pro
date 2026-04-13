@@ -2134,7 +2134,8 @@
 
     var html = lines.map(function(l, i) {
       var d = Math.min(i * 65, 950);
-      return '<div class="mon-log-line mon-row-appear" style="animation-delay:' + d + 'ms">' +
+      var dir = i % 2 === 0 ? ' mon-row-appear--left' : ' mon-row-appear--right';
+      return '<div class="mon-log-line mon-row-appear' + dir + '" style="animation-delay:' + d + 'ms">' +
         '<span class="mon-log-time">' + esc(fmtDate(l.time)) + '</span>' +
         '<span class="mon-log-msg ' + l.cls + '">' + esc(l.msg) + '</span>' +
         '</div>';
@@ -2263,6 +2264,7 @@
     var trs = wrap.querySelectorAll('tbody tr');
     trs.forEach(function(tr, i) {
       tr.classList.add('mon-row-appear');
+      tr.classList.add(i % 2 === 0 ? 'mon-row-appear--left' : 'mon-row-appear--right');
       tr.style.animationDelay = Math.min(i * 50, 900) + 'ms';
     });
   }
@@ -2441,6 +2443,7 @@
       var trs = wrap.querySelectorAll('tbody tr');
       trs.forEach(function(tr, i) {
         tr.classList.add('mon-row-appear');
+        tr.classList.add(i % 2 === 0 ? 'mon-row-appear--left' : 'mon-row-appear--right');
         tr.style.animationDelay = Math.min(i * 55, 1200) + 'ms';
       });
 
@@ -2586,6 +2589,7 @@
       var htrs = wrap.querySelectorAll('tbody tr');
       htrs.forEach(function(tr, i) {
         tr.classList.add('mon-row-appear');
+        tr.classList.add(i % 2 === 0 ? 'mon-row-appear--left' : 'mon-row-appear--right');
         tr.style.animationDelay = Math.min(i * 60, 1000) + 'ms';
       });
     }

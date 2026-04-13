@@ -3289,6 +3289,18 @@ a.mon-ca-sample-link[href^="tg:"] {
 .mon-source-card.mon-row-appear {
   animation-duration: calc(var(--mon-dur-reveal) + 0.08s);
 }
+.mon-section:not(.mon-visible) .mon-row-appear,
+.mon-offer:not(.mon-visible) .mon-row-appear,
+.mon-footer:not(.mon-visible) .mon-row-appear,
+.mon-chapter--collapsed .mon-row-appear {
+  animation-play-state: paused;
+}
+.mon-section.mon-visible .mon-row-appear,
+.mon-offer.mon-visible .mon-row-appear,
+.mon-footer.mon-visible .mon-row-appear,
+.mon-chapter--collapsible:not(.mon-chapter--collapsed) .mon-row-appear {
+  animation-play-state: running;
+}
 
 /* ── BOOT OVERLAY — «окно» с таблицей статусов (как на главной) ── */
 
