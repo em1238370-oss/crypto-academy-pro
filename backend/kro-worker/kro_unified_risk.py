@@ -38,6 +38,11 @@ def has_mandatory_crypto_topic(*parts: str) -> bool:
     return any(t in blob for t in MANDATORY_CRYPTO_TERMS)
 
 
+def _has_strong_whistleblower_source(source_primary: str, source_evidence: str) -> bool:
+    blob = _lower(' '.join((source_primary or '', source_evidence or '')))
+    return any(marker in blob for marker in BLACKLIST_SOURCE_MARKERS)
+
+
 def _parse_views_string(raw: str) -> Optional[int]:
     if not raw:
         return None
@@ -86,11 +91,15 @@ def mandatory_gate_telegram(
     content_analysis_text: str,
 ) -> Tuple[bool, str]:
     # Подписчики из Telethon/HTML могут отсутствовать (FloodWait, скрытый счётчик) — тогда не отклоняем.
-    # Если Telegram-данные неполные, но в source_primary/source_evidence уже есть явный крипто-контекст,
-    # не считаем такой объект «не по теме» только из-за отсутствия метрик канала.
+    # Если Telegram-данные неполные, но есть сильный whistleblower-источник + крипто-контекст в источнике,
+    # не считаем такой объект «не по теме» только из-за отсутствия/устаревания телега-метрик.
+    strong_source_crypto_fallback = (
+        _has_strong_whistleblower_source(source_primary, source_evidence)
+        and has_mandatory_crypto_topic(source_primary, source_evidence)
+    )
     source_crypto_fallback = (
         subscribers is None and has_mandatory_crypto_topic(source_primary, source_evidence)
-    )
+    ) or strong_source_crypto_fallback
     if subscribers is not None and subscribers < 100:
         return False, 'mandatory_subs_below_100'
     if last_post_dt is None:

@@ -16,6 +16,7 @@ _HUB_SLUGS = frozenset({
 
 # Минимальная сумма весов для записи в scam_base (проверяет вызывающий код).
 MIN_SOURCE_WEIGHT_FOR_SCAM_BASE = 3.0
+MIN_SOURCE_WEIGHT_FOR_OBSERVATION = 2.0
 
 
 def _score_complaint_quality(text: str) -> float:
@@ -160,6 +161,43 @@ def _compute_source_weight(
     w += temporal_young_channel_complaints_weight(obj)
 
     return float(w)
+
+
+def compute_source_weight_breakdown(
+    obj: Dict[str, Any],
+    *,
+    report_rows: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, float]:
+    """Подробный состав веса источников для логов и разбора пограничных кейсов."""
+    sp = (obj.get('source_primary') or '').strip()
+    ev = (obj.get('source_evidence') or '').strip()
+    blob = f'{sp} {ev}'.lower()
+
+    stop_scam = 3.0 if ('stop-scam1.com' in blob or 'stop-scam1' in blob) else 0.0
+    fin_obzor = 3.0 if ('fin-obzor.net' in blob or 'fin-obzor' in blob) else 0.0
+    dedicated_vklader = _dedicated_vklader_weight(blob)
+    vklader_host = 0.0 if dedicated_vklader > 0 else (2.0 if 'vklader.com' in blob else 0.0)
+    telltrue = _telltrue_net_weight(blob)
+    forteck = _forteck_net_weight(blob)
+    form_rows = _form_complaint_row_weights(report_rows)
+    complaint_bonus = _complaint_texts_joined_quality_bonus(obj)
+    young_bonus = temporal_young_channel_complaints_weight(obj)
+    total = float(
+        stop_scam + fin_obzor + dedicated_vklader + vklader_host + telltrue + forteck
+        + form_rows + complaint_bonus + young_bonus
+    )
+    return {
+        'stop_scam1': float(stop_scam),
+        'fin_obzor': float(fin_obzor),
+        'vklader_dedicated': float(dedicated_vklader),
+        'vklader_host': float(vklader_host),
+        'telltrue': float(telltrue),
+        'forteck': float(forteck),
+        'form_rows': float(form_rows),
+        'complaint_bonus': float(complaint_bonus),
+        'young_bonus': float(young_bonus),
+        'total': total,
+    }
 
 
 def compute_source_weight(
