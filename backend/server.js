@@ -2371,6 +2371,47 @@ function parseChannelsWatchRow(row) {
   };
 }
 
+function isVisibleChannelsWatchRow(row) {
+  if (!row || !row.username) return false;
+  if (kroUsernameGloballyExcluded(row.username)) return false;
+  if (!isVisibleScamStatus(row.status)) return false;
+  if (isOffTopicScamBaseStatus(row.status, row.verdict)) return false;
+  if (
+    gamblingTopicHit(
+      row.username,
+      row.source_primary,
+      row.activity_summary,
+      row.reviews_summary,
+      row.source_evidence,
+      row.status_reason,
+      row.evidence_url,
+    )
+  ) {
+    return false;
+  }
+  if (
+    isBlatantNonCryptoVerticalInScamBaseRow(
+      row.username,
+      row.source_primary,
+      row.activity_summary,
+      row.reviews_summary,
+      row.source_evidence,
+      row.status_reason,
+      row.evidence_url,
+    )
+  ) {
+    return false;
+  }
+  return isCryptoContextAllowed(
+    row.username,
+    row.source_primary,
+    row.activity_summary,
+    row.reviews_summary,
+    row.source_evidence,
+    row.status_reason,
+  );
+}
+
 function parseChannelsNetworkRow(row) {
   const source_channel = (row[0] || '').toString().trim();
   const target_channel = (row[1] || '').toString().trim();
@@ -3561,7 +3602,8 @@ app.get('/api/kro/monitor-data', async (req, res) => {
     const watchRawRows = watchResp.status === 'fulfilled' ? (watchResp.value.data.values || []) : [];
     const channelsWatch = watchRawRows
       .map(parseChannelsWatchRow)
-      .filter((r) => r && r.username && r.username !== 'username');
+      .filter((r) => r && r.username && r.username !== 'username')
+      .filter(isVisibleChannelsWatchRow);
 
     const networkRawRows = networkResp.status === 'fulfilled' ? (networkResp.value.data.values || []) : [];
     const channelsNetwork = networkRawRows

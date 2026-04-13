@@ -463,16 +463,19 @@
     </div>
   </section>
 
-  <section class="mon-chapter mon-section mon-chapter--tier-registry" id="data-network" aria-labelledby="mon-network-heading">
-    <header class="mon-chapter-head mon-chapter-head--split">
+  <section class="mon-chapter mon-section mon-chapter--tier-registry mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" id="data-network" aria-labelledby="mon-network-heading">
+    <header class="mon-chapter-head mon-chapter-head--accordion mon-chapter-head--split" role="button" tabindex="0" aria-expanded="false" aria-controls="mon-network-panel">
       <div class="mon-chapter-head-main">
         <p class="mon-chapter-kicker">06 · Связи</p>
         <h2 id="mon-network-heading" class="mon-chapter-title">Сети каналов</h2>
         <p class="mon-chapter-lead mon-chapter-lead--inline">Кто кого продвигает — с доказательством в таблице.</p>
       </div>
-      <span class="mon-chapter-meta" id="s4-network-count"></span>
+      <div class="mon-watch-accordion-tail">
+        <span class="mon-chapter-meta" id="s4-network-count"></span>
+        <span class="mon-collapse-chevron" aria-hidden="true">›</span>
+      </div>
     </header>
-    <div class="mon-chapter-body">
+    <div class="mon-chapter-body mon-chapter-body--accordion" id="mon-network-panel" role="region" aria-labelledby="mon-network-heading">
       <div class="mon-surface">
       <div class="mon-scheme-inline mon-scheme-inline--network" role="img" aria-label="Канал А продвигает канал Б">
         <span class="mon-scheme-node mon-scheme-node--sm">канал A</span>
@@ -514,13 +517,18 @@
     </div>
   </div>
 
-  <section class="mon-chapter mon-section mon-chapter--tier-provenance" id="sources" aria-labelledby="mon-sources-heading">
-    <header class="mon-chapter-head">
-      <p class="mon-chapter-kicker">08 · Происхождение данных</p>
-      <h2 id="mon-sources-heading" class="mon-chapter-title">Источники данных</h2>
-      <p class="mon-chapter-lead">Сайты, списки и жалобы → таблицы → эта страница. Ниже — статус опроса на последнем цикле.</p>
+  <section class="mon-chapter mon-section mon-chapter--tier-provenance mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" id="sources" aria-labelledby="mon-sources-heading">
+    <header class="mon-chapter-head mon-chapter-head--accordion mon-chapter-head--split" role="button" tabindex="0" aria-expanded="false" aria-controls="mon-sources-panel">
+      <div class="mon-chapter-head-main">
+        <p class="mon-chapter-kicker">08 · Происхождение данных</p>
+        <h2 id="mon-sources-heading" class="mon-chapter-title">Источники данных</h2>
+        <p class="mon-chapter-lead">Сайты, списки и жалобы → таблицы → эта страница. Ниже — статус опроса на последнем цикле.</p>
+      </div>
+      <div class="mon-watch-accordion-tail">
+        <span class="mon-collapse-chevron" aria-hidden="true">›</span>
+      </div>
     </header>
-    <div class="mon-chapter-body">
+    <div class="mon-chapter-body mon-chapter-body--accordion" id="mon-sources-panel" role="region" aria-labelledby="mon-sources-heading">
       <div class="mon-surface mon-surface--pad">
       <div class="mon-scheme-block mon-scheme-block--compact">
         <div class="mon-scheme-row mon-scheme-row--sources" role="img" aria-label="Сайты и форма → таблицы → эта страница">
@@ -3003,6 +3011,28 @@
     if (h) h.setAttribute('aria-expanded', 'true');
   }
 
+  function expandDataNetworkIfHash() {
+    var hash = (location.hash || '').replace(/^#/, '');
+    if (hash !== 'data-network') return;
+    var sec = document.getElementById('data-network');
+    if (!sec || !sec.classList.contains('mon-chapter--collapsible')) return;
+    sec.classList.remove('mon-chapter--collapsed');
+    sec.classList.remove('mon-section--collapsed');
+    var h = sec.querySelector('.mon-chapter-head--accordion');
+    if (h) h.setAttribute('aria-expanded', 'true');
+  }
+
+  function expandSourcesIfHash() {
+    var hash = (location.hash || '').replace(/^#/, '');
+    if (hash !== 'sources') return;
+    var sec = document.getElementById('sources');
+    if (!sec || !sec.classList.contains('mon-chapter--collapsible')) return;
+    sec.classList.remove('mon-chapter--collapsed');
+    sec.classList.remove('mon-section--collapsed');
+    var h = sec.querySelector('.mon-chapter-head--accordion');
+    if (h) h.setAttribute('aria-expanded', 'true');
+  }
+
   /**
    * Десктоп: строка заголовка «Прозрачность…» без учёта декоративной полоски h2::after —
    * иначе нижняя граница h2 уезжает за экран и эффект никогда не включался.
@@ -3089,9 +3119,13 @@
       expandWatchSectionIfHash();
       expandPageMapIfHash();
       expandDataScamIfHash();
+      expandDataNetworkIfHash();
+      expandSourcesIfHash();
       window.addEventListener('hashchange', expandWatchSectionIfHash);
       window.addEventListener('hashchange', expandPageMapIfHash);
       window.addEventListener('hashchange', expandDataScamIfHash);
+      window.addEventListener('hashchange', expandDataNetworkIfHash);
+      window.addEventListener('hashchange', expandSourcesIfHash);
       initOfferTitleKeywordUnderline();
       initHeroScrollFade();
       initBgParallax();
@@ -3106,9 +3140,13 @@
       expandWatchSectionIfHash();
       expandPageMapIfHash();
       expandDataScamIfHash();
+      expandDataNetworkIfHash();
+      expandSourcesIfHash();
       window.addEventListener('hashchange', expandWatchSectionIfHash);
       window.addEventListener('hashchange', expandPageMapIfHash);
       window.addEventListener('hashchange', expandDataScamIfHash);
+      window.addEventListener('hashchange', expandDataNetworkIfHash);
+      window.addEventListener('hashchange', expandSourcesIfHash);
       initOfferTitleKeywordUnderline();
       initHeroScrollFade();
       initBgParallax();
