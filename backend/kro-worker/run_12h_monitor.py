@@ -2012,6 +2012,8 @@ def _kro_cycle_analytics_reset():
         'write_reject_offtopic_tme': 0,
         'write_reject_source_weight': 0,
         'write_reject_no_signal_a_crypto': 0,
+        'write_accept_borderline_observation': 0,
+        'write_accept_telethon_fallback': 0,
     }
 
 
@@ -2204,6 +2206,14 @@ def _print_kro_detailed_cycle_report(
     lines.append('  Blocklist при записи: %d' % int(a.get('write_reject_blocklist', 0) or 0))
     lines.append('  Статус «не по теме» (unified / пол): %d' % int(a.get('write_reject_off_topic', 0) or 0))
     lines.append('  Нет сигнала А (крипто в наводке/жалобах): %d' % int(a.get('write_reject_no_signal_a_crypto', 0) or 0))
+    lines.append(
+        '  Принято как borderline -> под наблюдением: %d'
+        % int(a.get('write_accept_borderline_observation', 0) or 0)
+    )
+    lines.append(
+        '  Принято через telethon-fallback -> под наблюдением: %d'
+        % int(a.get('write_accept_telethon_fallback', 0) or 0)
+    )
     lines.append(
         '  Вес источников < %s: %d'
         % (
@@ -4049,6 +4059,7 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
             and strong_external
             and signal_a_crypto
         ):
+            _kro_cycle_analytics_inc('write_accept_borderline_observation')
             new_st = _downgrade_status_to_observation(eff_status, obj.get('channel_age_days'))
             print(
                 'scam_base borderline weight: %s — %.2f in [%.1f, %.1f) (breakdown=%s); записываем как %s'
@@ -4119,6 +4130,7 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
         elif is_tg:
             if not _recent_posts_have_crypto_terms(obj):
                 if strong_external and signal_a_crypto:
+                    _kro_cycle_analytics_inc('write_accept_telethon_fallback')
                     new_st = _downgrade_status_to_observation(eff_status, obj.get('channel_age_days'))
                     print(
                         'scam_base telethon-fallback: %s — нет crypto в постах Telethon (HTTP-gate выкл.), '

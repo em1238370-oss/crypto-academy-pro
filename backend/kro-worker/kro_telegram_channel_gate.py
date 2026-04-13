@@ -17,7 +17,7 @@ MIN_SUBSCRIBERS_STRICT = 50
 MAX_POST_AGE_DAYS_STRICT = 90
 
 
-def _has_whistleblower_marker(row_obj: dict) -> bool:
+def _has_whistleblower_crypto_marker(row_obj: dict) -> bool:
     blob = ' '.join(
         str(x or '')
         for x in (
@@ -25,7 +25,9 @@ def _has_whistleblower_marker(row_obj: dict) -> bool:
             row_obj.get('source_evidence'),
         )
     ).lower()
-    return any(marker in blob for marker in ('stop-scam1', 'fin-obzor', 'vklader', 'telltrue', 'forteck'))
+    has_whistleblower = any(marker in blob for marker in ('stop-scam1', 'fin-obzor', 'vklader', 'telltrue', 'forteck'))
+    has_crypto = any(term in blob for term in CRYPTO_TERMS)
+    return has_whistleblower and has_crypto
 
 
 def norm_username_for_gate(v: str) -> str:
@@ -58,10 +60,10 @@ async def validate_telegram_scam_base_row_strict(client, row_obj: dict):
     uname = norm_username_for_gate(row_obj.get('username') or row_obj.get('link') or '')
     if not uname:
         return False, 'empty_username', True
-    # До записи в базу не отсекаем вручную подтверждённые whistleblower-кейсы
+    # До записи в базу не отсекаем вручную подтверждённые whistleblower crypto-кейсы
     # только из-за неполного ответа Telethon.
-    if _has_whistleblower_marker(row_obj):
-        return True, 'ok_whistleblower_bypass', False
+    if _has_whistleblower_crypto_marker(row_obj):
+        return True, 'ok_whistleblower_crypto_bypass', False
     if client is None:
         return False, 'telethon_unavailable', False
 

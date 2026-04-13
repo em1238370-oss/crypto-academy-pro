@@ -90,10 +90,6 @@ def mandatory_gate_telegram(
     object_type: str,
     content_analysis_text: str,
 ) -> Tuple[bool, str]:
-    # Внешний разоблачительный источник важнее дырявых Telegram-метрик:
-    # такие кейсы не должны улетать в "не по теме" только из-за stale/no-posts/subscribers.
-    if _has_strong_whistleblower_source(source_primary, source_evidence):
-        return True, 'ok_strong_whistleblower_bypass'
     # Подписчики из Telethon/HTML могут отсутствовать (FloodWait, скрытый счётчик) — тогда не отклоняем.
     # Если Telegram-данные неполные, но есть сильный whistleblower-источник + крипто-контекст в источнике,
     # не считаем такой объект «не по теме» только из-за отсутствия/устаревания телега-метрик.
@@ -101,6 +97,10 @@ def mandatory_gate_telegram(
         _has_strong_whistleblower_source(source_primary, source_evidence)
         and has_mandatory_crypto_topic(source_primary, source_evidence)
     )
+    # Внешний разоблачительный источник важнее дырявых Telegram-метрик,
+    # но bypass разрешён только для реальных crypto-кейсов.
+    if strong_source_crypto_fallback:
+        return True, 'ok_strong_whistleblower_bypass'
     source_crypto_fallback = (
         subscribers is None and has_mandatory_crypto_topic(source_primary, source_evidence)
     ) or strong_source_crypto_fallback
