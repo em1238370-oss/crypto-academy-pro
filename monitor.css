@@ -1672,6 +1672,38 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   outline-offset: 4px;
 }
 
+.mon-native-accordion {
+  display: block;
+}
+.mon-native-accordion-summary {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.mon-native-accordion-summary::-webkit-details-marker {
+  display: none;
+}
+.mon-native-accordion-summary::marker {
+  content: '';
+}
+.mon-native-accordion:not([open]) .mon-native-accordion-body {
+  display: none;
+}
+.mon-native-accordion:not([open]) .mon-native-accordion-summary .mon-chapter-kicker {
+  display: none;
+}
+.mon-native-accordion:not([open]) .mon-native-accordion-summary {
+  padding-bottom: 16px;
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+.mon-native-accordion[open] .mon-collapse-chevron {
+  transform: rotate(90deg);
+}
+.mon-native-accordion-summary:focus-visible {
+  outline: 2px solid var(--mon-cyan);
+  outline-offset: 4px;
+}
+
 /* Широкий мониторинг: аккордеон как «Правила и критерии», счётчик + шеврон справа */
 .mon-chapter-head--watch-accordion {
   align-items: flex-start;

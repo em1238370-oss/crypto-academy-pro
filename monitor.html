@@ -463,32 +463,34 @@
     </div>
   </section>
 
-  <section class="mon-chapter mon-section mon-chapter--tier-registry mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" id="data-network" aria-labelledby="mon-network-heading">
-    <header class="mon-chapter-head mon-chapter-head--accordion mon-chapter-head--split" role="button" tabindex="0" aria-expanded="false" aria-controls="mon-network-panel">
-      <div class="mon-chapter-head-main">
-        <p class="mon-chapter-kicker">06 · Связи</p>
-        <h2 id="mon-network-heading" class="mon-chapter-title">Сети каналов</h2>
-        <p class="mon-chapter-lead mon-chapter-lead--inline">Кто кого продвигает — с доказательством в таблице.</p>
+  <section class="mon-chapter mon-section mon-chapter--tier-registry" id="data-network" aria-labelledby="mon-network-heading">
+    <details class="mon-native-accordion mon-native-accordion--chapter">
+      <summary class="mon-chapter-head mon-chapter-head--split mon-native-accordion-summary">
+        <div class="mon-chapter-head-main">
+          <p class="mon-chapter-kicker">06 · Связи</p>
+          <h2 id="mon-network-heading" class="mon-chapter-title">Сети каналов</h2>
+          <p class="mon-chapter-lead mon-chapter-lead--inline">Кто кого продвигает — с доказательством в таблице.</p>
+        </div>
+        <div class="mon-watch-accordion-tail">
+          <span class="mon-chapter-meta" id="s4-network-count"></span>
+          <span class="mon-collapse-chevron" aria-hidden="true">›</span>
+        </div>
+      </summary>
+      <div class="mon-chapter-body mon-native-accordion-body">
+        <div class="mon-surface">
+        <div class="mon-scheme-inline mon-scheme-inline--network" role="img" aria-label="Канал А продвигает канал Б">
+          <span class="mon-scheme-node mon-scheme-node--sm">канал A</span>
+          <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+          <span class="mon-scheme-node mon-scheme-node--sm mon-scheme-node--accent">реклама</span>
+          <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+          <span class="mon-scheme-node mon-scheme-node--sm">канал B</span>
+        </div>
+        <div class="mon-table-wrap" id="s4-network-wrap">
+          <div class="mon-loading mon-spinner" style="padding:32px">Загружаю связи каналов</div>
+        </div>
+        </div>
       </div>
-      <div class="mon-watch-accordion-tail">
-        <span class="mon-chapter-meta" id="s4-network-count"></span>
-        <span class="mon-collapse-chevron" aria-hidden="true">›</span>
-      </div>
-    </header>
-    <div class="mon-chapter-body mon-chapter-body--accordion" id="mon-network-panel" role="region" aria-labelledby="mon-network-heading">
-      <div class="mon-surface">
-      <div class="mon-scheme-inline mon-scheme-inline--network" role="img" aria-label="Канал А продвигает канал Б">
-        <span class="mon-scheme-node mon-scheme-node--sm">канал A</span>
-        <span class="mon-scheme-arrow" aria-hidden="true">→</span>
-        <span class="mon-scheme-node mon-scheme-node--sm mon-scheme-node--accent">реклама</span>
-        <span class="mon-scheme-arrow" aria-hidden="true">→</span>
-        <span class="mon-scheme-node mon-scheme-node--sm">канал B</span>
-      </div>
-      <div class="mon-table-wrap" id="s4-network-wrap">
-        <div class="mon-loading mon-spinner" style="padding:32px">Загружаю связи каналов</div>
-      </div>
-      </div>
-    </div>
+    </details>
   </section>
 
   <section class="mon-chapter mon-section mon-chapter--tier-registry" id="cycle-log" aria-labelledby="mon-cycle-heading">
@@ -517,40 +519,42 @@
     </div>
   </div>
 
-  <section class="mon-chapter mon-section mon-chapter--tier-provenance mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" id="sources" aria-labelledby="mon-sources-heading">
-    <header class="mon-chapter-head mon-chapter-head--accordion mon-chapter-head--split" role="button" tabindex="0" aria-expanded="false" aria-controls="mon-sources-panel">
-      <div class="mon-chapter-head-main">
-        <p class="mon-chapter-kicker">08 · Происхождение данных</p>
-        <h2 id="mon-sources-heading" class="mon-chapter-title">Источники данных</h2>
-        <p class="mon-chapter-lead">Сайты, списки и жалобы → таблицы → эта страница. Ниже — статус опроса на последнем цикле.</p>
-      </div>
-      <div class="mon-watch-accordion-tail">
-        <span class="mon-collapse-chevron" aria-hidden="true">›</span>
-      </div>
-    </header>
-    <div class="mon-chapter-body mon-chapter-body--accordion" id="mon-sources-panel" role="region" aria-labelledby="mon-sources-heading">
-      <div class="mon-surface mon-surface--pad">
-      <div class="mon-scheme-block mon-scheme-block--compact">
-        <div class="mon-scheme-row mon-scheme-row--sources" role="img" aria-label="Сайты и форма → таблицы → эта страница">
-          <span class="mon-scheme-node mon-scheme-node--sm">сайты</span>
-          <span class="mon-scheme-arrow" aria-hidden="true">→</span>
-          <span class="mon-scheme-node mon-scheme-node--sm">Sheets</span>
-          <span class="mon-scheme-arrow" aria-hidden="true">→</span>
-          <span class="mon-scheme-node mon-scheme-node--sm mon-scheme-node--accent">монитор</span>
+  <section class="mon-chapter mon-section mon-chapter--tier-provenance" id="sources" aria-labelledby="mon-sources-heading">
+    <details class="mon-native-accordion mon-native-accordion--chapter">
+      <summary class="mon-chapter-head mon-chapter-head--split mon-native-accordion-summary">
+        <div class="mon-chapter-head-main">
+          <p class="mon-chapter-kicker">08 · Происхождение данных</p>
+          <h2 id="mon-sources-heading" class="mon-chapter-title">Источники данных</h2>
+          <p class="mon-chapter-lead">Сайты, списки и жалобы → таблицы → эта страница. Ниже — статус опроса на последнем цикле.</p>
+        </div>
+        <div class="mon-watch-accordion-tail">
+          <span class="mon-collapse-chevron" aria-hidden="true">›</span>
+        </div>
+      </summary>
+      <div class="mon-chapter-body mon-native-accordion-body">
+        <div class="mon-surface mon-surface--pad">
+        <div class="mon-scheme-block mon-scheme-block--compact">
+          <div class="mon-scheme-row mon-scheme-row--sources" role="img" aria-label="Сайты и форма → таблицы → эта страница">
+            <span class="mon-scheme-node mon-scheme-node--sm">сайты</span>
+            <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+            <span class="mon-scheme-node mon-scheme-node--sm">Sheets</span>
+            <span class="mon-scheme-arrow" aria-hidden="true">→</span>
+            <span class="mon-scheme-node mon-scheme-node--sm mon-scheme-node--accent">монитор</span>
+          </div>
+        </div>
+        <div class="mon-sources-grid" id="s5-sources">
+          <div class="mon-loading mon-spinner">Загружаю</div>
+        </div>
+        <div class="mon-source-strip">
+          <a class="mon-source-chip" href="https://stop-scam1.com/" target="_blank" rel="noopener">stop-scam1</a>
+          <a class="mon-source-chip" href="https://fin-obzor.net/" target="_blank" rel="noopener">fin-obzor</a>
+          <a class="mon-source-chip" href="https://cryptorussia.ru/" target="_blank" rel="noopener">cryptorussia</a>
+          <a class="mon-source-chip" href="https://vklader.com/blacklist-telegram/" target="_blank" rel="noopener">vklader</a>
+          <a class="mon-source-chip" href="/#checkers" rel="noopener">жалобы</a>
+        </div>
         </div>
       </div>
-      <div class="mon-sources-grid" id="s5-sources">
-        <div class="mon-loading mon-spinner">Загружаю</div>
-      </div>
-      <div class="mon-source-strip">
-        <a class="mon-source-chip" href="https://stop-scam1.com/" target="_blank" rel="noopener">stop-scam1</a>
-        <a class="mon-source-chip" href="https://fin-obzor.net/" target="_blank" rel="noopener">fin-obzor</a>
-        <a class="mon-source-chip" href="https://cryptorussia.ru/" target="_blank" rel="noopener">cryptorussia</a>
-        <a class="mon-source-chip" href="https://vklader.com/blacklist-telegram/" target="_blank" rel="noopener">vklader</a>
-        <a class="mon-source-chip" href="/#checkers" rel="noopener">жалобы</a>
-      </div>
-      </div>
-    </div>
+    </details>
   </section>
 
   <section class="mon-chapter mon-section mon-chapter--tier-provenance" id="history" aria-labelledby="mon-history-heading">
@@ -3015,7 +3019,13 @@
     var hash = (location.hash || '').replace(/^#/, '');
     if (hash !== 'data-network') return;
     var sec = document.getElementById('data-network');
-    if (!sec || !sec.classList.contains('mon-chapter--collapsible')) return;
+    if (!sec) return;
+    var native = sec.querySelector('.mon-native-accordion');
+    if (native) {
+      native.open = true;
+      return;
+    }
+    if (!sec.classList.contains('mon-chapter--collapsible')) return;
     sec.classList.remove('mon-chapter--collapsed');
     sec.classList.remove('mon-section--collapsed');
     var h = sec.querySelector('.mon-chapter-head--accordion');
@@ -3026,7 +3036,13 @@
     var hash = (location.hash || '').replace(/^#/, '');
     if (hash !== 'sources') return;
     var sec = document.getElementById('sources');
-    if (!sec || !sec.classList.contains('mon-chapter--collapsible')) return;
+    if (!sec) return;
+    var native = sec.querySelector('.mon-native-accordion');
+    if (native) {
+      native.open = true;
+      return;
+    }
+    if (!sec.classList.contains('mon-chapter--collapsible')) return;
     sec.classList.remove('mon-chapter--collapsed');
     sec.classList.remove('mon-section--collapsed');
     var h = sec.querySelector('.mon-chapter-head--accordion');
