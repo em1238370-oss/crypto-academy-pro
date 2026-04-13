@@ -90,6 +90,8 @@ def mandatory_gate_telegram(
     object_type: str,
     content_analysis_text: str,
 ) -> Tuple[bool, str]:
+    # Внешний разоблачительный источник важнее дырявых Telegram-метрик:
+    # такие кейсы не должны улетать в "не по теме" только из-за stale/no-posts/subscribers.
     if _has_strong_whistleblower_source(source_primary, source_evidence):
         return True, 'ok_strong_whistleblower_bypass'
     # Подписчики из Telethon/HTML могут отсутствовать (FloodWait, скрытый счётчик) — тогда не отклоняем.

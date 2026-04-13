@@ -58,6 +58,8 @@ async def validate_telegram_scam_base_row_strict(client, row_obj: dict):
     uname = norm_username_for_gate(row_obj.get('username') or row_obj.get('link') or '')
     if not uname:
         return False, 'empty_username', True
+    # До записи в базу не отсекаем вручную подтверждённые whistleblower-кейсы
+    # только из-за неполного ответа Telethon.
     if _has_whistleblower_marker(row_obj):
         return True, 'ok_whistleblower_bypass', False
     if client is None:

@@ -15,8 +15,11 @@ _HUB_SLUGS = frozenset({
 })
 
 # Минимальная сумма весов для записи в scam_base (проверяет вызывающий код).
+# 2.0..2.99 не теряем: при внешнем whistleblower-источнике и crypto signal такие кейсы
+# пишем в базу как "под наблюдением". 3.0+ — полный проход без принудительного downgrade.
 MIN_SOURCE_WEIGHT_FOR_SCAM_BASE = 2.0
 MIN_SOURCE_WEIGHT_FOR_OBSERVATION = 2.0
+MIN_SOURCE_WEIGHT_FOR_DIRECT_STATUS = 3.0
 
 
 def _score_complaint_quality(text: str) -> float:

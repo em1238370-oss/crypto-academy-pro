@@ -1815,7 +1815,7 @@ _NON_CRYPTO_EXCLUDE_PATTERNS = (
     'автомоб', 'авто', 'машин', 'дилер', 'car ', 'cars ', 'real estate',
 )
 
-MIN_TELEGRAM_SUBSCRIBERS = 100
+MIN_TELEGRAM_SUBSCRIBERS = 50
 
 # Обязательные маркеры «сигнального» профиля канала:
 # без хотя бы одного маркера канал не должен попадать в scam_base.
@@ -4031,38 +4031,53 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
         )
         signal_a_crypto = _kro_source_policy.source_signal_a_crypto(obj)
         if w_src < _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_SCAM_BASE - 1e-6:
-            if (
-                w_src >= _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_OBSERVATION - 1e-6
-                and strong_external
-                and signal_a_crypto
-            ):
-                new_st = _downgrade_status_to_observation(eff_status, obj.get('channel_age_days'))
-                print(
-                    'scam_base borderline weight: %s — %.2f (breakdown=%s); записываем как %s'
-                    % (
-                        obj.get('username') or key,
-                        w_src,
-                        json.dumps(w_breakdown, ensure_ascii=False, sort_keys=True),
-                        new_st,
-                    ),
-                    file=sys.stderr,
-                )
-                eff_status = new_st
-                obj['status'] = new_st
-                _sync_content_analysis_unified_status(obj, new_st)
-            else:
-                _kro_cycle_analytics_inc('write_reject_source_weight')
-                print(
-                    'scam_base write skip: %s — суммарный вес источников %.2f < %.0f (breakdown=%s)'
-                    % (
-                        obj.get('username') or key,
-                        w_src,
-                        _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_SCAM_BASE,
-                        json.dumps(w_breakdown, ensure_ascii=False, sort_keys=True),
-                    ),
-                    file=sys.stderr,
-                )
-                continue
+            _kro_cycle_analytics_inc('write_reject_source_weight')
+            print(
+                'scam_base write skip: %s — суммарный вес источников %.2f < %.1f (breakdown=%s)'
+                % (
+                    obj.get('username') or key,
+                    w_src,
+                    _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_SCAM_BASE,
+                    json.dumps(w_breakdown, ensure_ascii=False, sort_keys=True),
+                ),
+                file=sys.stderr,
+            )
+            continue
+
+        if (
+            w_src < _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_DIRECT_STATUS - 1e-6
+            and strong_external
+            and signal_a_crypto
+        ):
+            new_st = _downgrade_status_to_observation(eff_status, obj.get('channel_age_days'))
+            print(
+                'scam_base borderline weight: %s — %.2f in [%.1f, %.1f) (breakdown=%s); записываем как %s'
+                % (
+                    obj.get('username') or key,
+                    w_src,
+                    _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_OBSERVATION,
+                    _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_DIRECT_STATUS,
+                    json.dumps(w_breakdown, ensure_ascii=False, sort_keys=True),
+                    new_st,
+                ),
+                file=sys.stderr,
+            )
+            eff_status = new_st
+            obj['status'] = new_st
+            _sync_content_analysis_unified_status(obj, new_st)
+        elif w_src < _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_DIRECT_STATUS - 1e-6:
+            _kro_cycle_analytics_inc('write_reject_source_weight')
+            print(
+                'scam_base write skip: %s — пограничный вес %.2f без достаточного внешнего подтверждения/crypto signal '
+                '(breakdown=%s)'
+                % (
+                    obj.get('username') or key,
+                    w_src,
+                    json.dumps(w_breakdown, ensure_ascii=False, sort_keys=True),
+                ),
+                file=sys.stderr,
+            )
+            continue
 
         if not signal_a_crypto:
             _kro_cycle_analytics_inc('write_reject_no_signal_a_crypto')
@@ -4103,13 +4118,25 @@ def _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id):
                 time.sleep(min(pause_http, 3.0))
         elif is_tg:
             if not _recent_posts_have_crypto_terms(obj):
-                _kro_cycle_analytics_inc('write_reject_recent_posts_no_crypto')
-                print(
-                    'scam_base write skip: %s — сигнал Б: нет crypto в постах Telethon (HTTP-gate выкл.)'
-                    % (obj.get('username') or key),
-                    file=sys.stderr,
-                )
-                continue
+                if strong_external and signal_a_crypto:
+                    new_st = _downgrade_status_to_observation(eff_status, obj.get('channel_age_days'))
+                    print(
+                        'scam_base telethon-fallback: %s — нет crypto в постах Telethon (HTTP-gate выкл.), '
+                        'но есть strong_external + signal_a_crypto; записываем как %s'
+                        % ((obj.get('username') or key), new_st),
+                        file=sys.stderr,
+                    )
+                    eff_status = new_st
+                    obj['status'] = new_st
+                    _sync_content_analysis_unified_status(obj, new_st)
+                else:
+                    _kro_cycle_analytics_inc('write_reject_recent_posts_no_crypto')
+                    print(
+                        'scam_base write skip: %s — сигнал Б: нет crypto в постах Telethon (HTTP-gate выкл.)'
+                        % (obj.get('username') or key),
+                        file=sys.stderr,
+                    )
+                    continue
 
         sp = (obj.get('source_primary') or '').strip()
         ev = (obj.get('source_evidence') or '').strip()
