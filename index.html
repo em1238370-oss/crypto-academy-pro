@@ -124,8 +124,9 @@
                <p class="kro-feature1-date" id="kro-feature1-date">Последнее подтверждённое обновление: <span id="kro-live-datetime">—</span></p>
                <div class="kro-feature1-hero-number">
                    <span class="kro-feature1-hero-value" id="kro-stat-channels-today">—</span>
-                   <span class="kro-feature1-hero-label" id="kro-feature1-hero-label">найдено в последнем цикле</span>
+                   <span class="kro-feature1-hero-label" id="kro-feature1-hero-label">каналов за цикл (широкий мониторинг)</span>
                </div>
+               <p class="kro-feature1-hero-sub kro-scroll-in" id="kro-feature1-hero-sub" aria-live="polite">Новых в подтверждённой базе за тот же цикл: <strong id="kro-stat-new-confirmed">—</strong></p>
                <p class="kro-feature1-status-summary kro-scroll-in" id="kro-feature1-status-summary" aria-label="Статусы по всей подтверждённой базе">
                    <span>В риске: <strong id="kro-stat-at-risk">—</strong></span>
                    <span class="kro-feature1-status-sep" aria-hidden="true">·</span>
@@ -691,22 +692,29 @@
            }
            function applyData(data) {
                var el;
-               // Только kro_meta.new_in_cycle (не channelsToday / не окно 12 ч по дате обнаружения).
+               // Крупная цифра: сколько каналов прошли широкий мониторинг за последний цикл (kro_meta.channels_scanned_in_cycle).
+               var scanRaw = data.channels_scanned_in_cycle;
+               if (scanRaw == null || scanRaw === '') scanRaw = data.channelsToday;
+               var heroVal = parseInt(String(scanRaw).replace(/\s/g, ''), 10);
+               if (!isFinite(heroVal) || heroVal < 0) heroVal = 0;
                var nicRaw = data.new_in_cycle;
                if (nicRaw == null || nicRaw === '') nicRaw = data.new_in_cycle_meta;
                var newInCycle = parseInt(String(nicRaw).replace(/\s/g, ''), 10);
                if (!isFinite(newInCycle) || newInCycle < 0) newInCycle = 0;
                var chTotal = Number(data.channelsTotal);
                if (!isFinite(chTotal)) chTotal = 0;
-               var heroVal = newInCycle > 0 ? newInCycle : chTotal;
-               var heroLabel = newInCycle > 0
-                   ? 'найдено в последнем цикле'
-                   : 'всего в базе';
+               var heroLabel = 'каналов за цикл (широкий мониторинг)';
                if ((el = document.getElementById('kro-stat-channels-today'))) {
                    el.dataset.target = heroVal;
                    el.textContent = heroVal;
                }
                if ((el = document.getElementById('kro-feature1-hero-label'))) el.textContent = heroLabel;
+               var subEl = document.getElementById('kro-feature1-hero-sub');
+               var ncf = document.getElementById('kro-stat-new-confirmed');
+               if (subEl && ncf) {
+                   ncf.textContent = String(newInCycle);
+                   subEl.style.display = '';
+               }
                var ssAll = data.status_summary_all_time || {};
                if ((el = document.getElementById('kro-stat-at-risk'))) el.textContent = ssAll.at_risk != null ? String(ssAll.at_risk) : '—';
                if ((el = document.getElementById('kro-stat-under-watch'))) el.textContent = ssAll.under_watch != null ? String(ssAll.under_watch) : '—';

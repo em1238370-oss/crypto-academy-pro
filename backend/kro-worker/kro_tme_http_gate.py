@@ -49,9 +49,12 @@ SCAM_BASE_HTTP_CRYPTO_TERMS = (
     'крипт',
     'bitcoin',
     'btc',
+    # Синхрон с kro_telegram_channel_gate.CRYPTO_TERMS (иначе strict-gate проходит по «crypto»/«signal», а запись на CI — нет)
+    'crypto',
     'usdt',
     'трейд',
     'сигнал',
+    'signal',
     'invest',
     'trade',
     'forex',

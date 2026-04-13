@@ -1284,6 +1284,7 @@ def write_kro_meta_to_sheet(
     sources_checked,
     meta_range='kro_meta!A:B',
     quality_metrics=None,
+    channels_scanned_in_cycle=0,
 ):
     """
     Persist cycle metadata in Google Sheets so Render restarts do not lose it.
@@ -1310,10 +1311,14 @@ def write_kro_meta_to_sheet(
             ['channels_network_edges', str(int(q.get('channels_network_edges') or 0))],
             ['min_source_weight_policy', str(q.get('min_source_weight_policy') if q.get('min_source_weight_policy') is not None else _kro_source_policy.MIN_SOURCE_WEIGHT_FOR_SCAM_BASE)],
             ['young_with_complaints_in_base', str(int(q.get('young_with_complaints_in_base') or 0))],
+            [
+                'channels_scanned_in_cycle',
+                str(max(0, int(channels_scanned_in_cycle or 0))),
+            ],
         ]
         sheets_client.spreadsheets().values().update(
             spreadsheetId=sheet_id,
-            range=f'{sheet_name}!A1:B12',
+            range=f'{sheet_name}!A1:B13',
             valueInputOption='RAW',
             body={'values': rows}
         ).execute()
@@ -1949,6 +1954,7 @@ def _kro_cycle_analytics_reset():
     KRO_CYCLE_ANALYTICS = {
         'collect_reject_known_non_scam': 0,
         'collect_reject_blocklist': 0,
+        'collect_reject_no_whistleblower_external': 0,
         'collect_reject_low_complaints': 0,
         'collect_reject_no_signals': 0,
         'collect_reject_no_crypto_context': 0,
@@ -2134,6 +2140,10 @@ def _print_kro_detailed_cycle_report(
     lines.append('')
     lines.append('[KRO_DETAILED_CYCLE_REPORT] Детализация: этап confirmed-filter (_collect_confirmed_objects)')
     lines.append('  Отклонено blocklist: %d' % int(a.get('collect_reject_blocklist', 0) or 0))
+    lines.append(
+        '  Нет маркера разоблачителя (vklader/stop-scam1/… в агрегате): %d'
+        % int(a.get('collect_reject_no_whistleblower_external', 0) or 0)
+    )
     lines.append('  Отклонено гемблинг: %d' % int(a.get('collect_reject_gambling', 0) or 0))
     lines.append('  Нет crypto-контекста (агрегат): %d' % int(a.get('collect_reject_no_crypto_context', 0) or 0))
     lines.append('  Нет сигнальных слов: %d' % int(a.get('collect_reject_no_signals', 0) or 0))
@@ -6797,6 +6807,7 @@ def _run_publish_only():
         payload.get('sources_checked', []),
         meta_range=os.environ.get('KRO_META_RANGE', 'kro_meta!A:B').strip() or 'kro_meta!A:B',
         quality_metrics=_qm_pub,
+        channels_scanned_in_cycle=int(payload.get('channels_scanned_in_cycle') or 0),
     )
     _pub_channels = [t.get('channel') or t.get('name') or '' for t in (payload.get('top3') or [])[:10]]
     append_kro_history_row(
@@ -7420,6 +7431,7 @@ def main():
         'new_scams': site_new_scams,
         'new_scam_channels': site_new_scams,
         'new_in_cycle': len(inserted_confirmed_channels),
+        'channels_scanned_in_cycle': len(channels_watch_rows or []),
         'last_cycle_at': now_msk.strftime('%Y-%m-%dT%H:%M:%SZ'),
         'sources_checked': sources_checked,
         'losses_12h': site_losses,
@@ -7481,6 +7493,7 @@ def main():
         out.get('sources_checked', []),
         meta_range=os.environ.get('KRO_META_RANGE', 'kro_meta!A:B').strip() or 'kro_meta!A:B',
         quality_metrics=_qm,
+        channels_scanned_in_cycle=out.get('channels_scanned_in_cycle', 0),
     )
     append_kro_history_row(
         client,
@@ -7539,6 +7552,7 @@ def main():
         'timestamp': out.get('timestamp', ''),
         'new_scam_channels': out.get('new_scams', 0),
         'new_in_cycle': out.get('new_in_cycle', 0),
+        'channels_scanned_in_cycle': out.get('channels_scanned_in_cycle', 0),
         'last_cycle_at': out.get('last_cycle_at'),
         'sources_checked': out.get('sources_checked', []),
         'losses_12h': out.get('losses_12h', 0),
@@ -7563,8 +7577,10 @@ def main():
     sent = _send_to_site(site_payload)
     if not sent:
         raise RuntimeError('Не удалось отправить данные цикла на сайт через KRO_SITE_UPDATE_URL.')
-    print('На сайт отправлены данные цикла: new_in_cycle=%d, site_new_scams=%d.' % (
-        out.get('new_in_cycle', 0), site_new_scams
+    print('На сайт отправлены данные цикла: channels_scanned_in_cycle=%d, new_in_cycle=%d, site_new_scams=%d.' % (
+        out.get('channels_scanned_in_cycle', 0),
+        out.get('new_in_cycle', 0),
+        site_new_scams,
     ), flush=True)
 
 

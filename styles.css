@@ -1239,6 +1239,19 @@ body.kro-hero-scrolled .kro-floating-nav {
    margin-top: 10px;
 }
 
+.kro-feature1-hero-sub {
+   text-align: center;
+   font-size: clamp(12px, 1.85vw, 15px);
+   line-height: 1.45;
+   color: rgba(255, 255, 255, 0.62);
+   margin: 8px auto 0;
+   max-width: 520px;
+}
+.kro-feature1-hero-sub strong {
+   color: rgba(255, 255, 255, 0.9);
+   font-weight: 700;
+}
+
 .kro-feature1-status-summary {
    display: flex;
    flex-wrap: wrap;

@@ -71,6 +71,13 @@ def _telltrue_net_weight(blob: str) -> float:
     return 0.0
 
 
+def _forteck_net_weight(blob: str) -> float:
+    """+2 за источник forteck.net (тот же статус разоблачителя, что у telltrue; раньше не учитывался → вес < 3)."""
+    if 'forteck.net' in (blob or '').lower():
+        return 2.0
+    return 0.0
+
+
 def _form_complaint_row_weights(rows: Optional[List[Dict[str, Any]]]) -> float:
     """Жалобы через форму: с описанием — 1.5 + 0.5×score_complaint_quality (2.0…3.0), без — 1.0."""
     w = 0.0
@@ -138,8 +145,14 @@ def _compute_source_weight(
     if 'fin-obzor.net' in blob or 'fin-obzor' in blob:
         w += 3.0
 
-    w += _dedicated_vklader_weight(blob)
+    dv = _dedicated_vklader_weight(blob)
+    if dv > 0:
+        w += dv
+    elif 'vklader.com' in blob:
+        # Страница-хаб /blacklist-telegram/ и т.п.: slug в _HUB_SLUGS → dedicated=0, но источник всё равно vklader.
+        w += 2.0
     w += _telltrue_net_weight(blob)
+    w += _forteck_net_weight(blob)
     w += _form_complaint_row_weights(report_rows)
     w += _complaint_texts_joined_quality_bonus(obj)
     w += temporal_young_channel_complaints_weight(obj)

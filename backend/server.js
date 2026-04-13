@@ -1798,9 +1798,16 @@ function parseKroCycleMetaRows(rows) {
     const yw = parseInt(String(rawYw).replace(/\s/g, ''), 10);
     if (Number.isFinite(yw) && yw >= 0) young_with_complaints_in_base = yw;
   }
+  let channels_scanned_in_cycle = 0;
+  const rawScan = values.channels_scanned_in_cycle;
+  if (rawScan != null && rawScan !== '') {
+    const sc = parseInt(String(rawScan).replace(/\s/g, ''), 10);
+    if (Number.isFinite(sc) && sc >= 0) channels_scanned_in_cycle = sc;
+  }
   return {
     last_cycle_at,
     new_in_cycle,
+    channels_scanned_in_cycle,
     sources_checked,
     false_positive_signals,
     avg_source_weight,
@@ -1816,6 +1823,7 @@ function parseKroCycleMetaRows(rows) {
 const KRO_META_EMPTY = {
   last_cycle_at: null,
   new_in_cycle: 0,
+  channels_scanned_in_cycle: 0,
   sources_checked: [],
   false_positive_signals: 0,
   avg_source_weight: null,
@@ -1852,6 +1860,7 @@ function normalizeKroShockText(value) {
 function hasKroVisibleData(data) {
   if (!data || typeof data !== 'object') return false;
   const channelsToday = pickFirstNumber(data.new_scam_channels, data.new_scams, data.channelsToday);
+  const scanned = pickFirstNumber(data.channels_scanned_in_cycle);
   const totalLost = pickFirstNumber(data.losses_12h, data.totalLost);
   const telegramCount = pickFirstNumber(data.telegram_channels, data.telegramCount);
   const coursesCount = pickFirstNumber(data.courses_products, data.courses, data.coursesCount);
@@ -1859,6 +1868,7 @@ function hasKroVisibleData(data) {
   const channelsTotal = pickFirstNumber(data.channelsTotal);
   return (
     Number(channelsToday || 0) > 0 ||
+    Number(scanned || 0) > 0 ||
     Number(channelsTotal || 0) > 0 ||
     Number(totalLost || 0) > 0 ||
     Number(telegramCount || 0) > 0 ||
@@ -1959,12 +1969,14 @@ function buildKroShockText(victims12h, publishStatus) {
 function isKroZeroSnapshot(data) {
   if (!data || typeof data !== 'object') return false;
   const newScamChannels = pickFirstNumber(data.new_scam_channels, data.new_scams, data.channelsToday);
+  const scanned = pickFirstNumber(data.channels_scanned_in_cycle);
   const losses12h = pickFirstNumber(data.losses_12h, data.totalLost);
   const telegramChannels = pickFirstNumber(data.telegram_channels, data.telegramCount);
   const coursesProducts = pickFirstNumber(data.courses_products, data.courses, data.coursesCount);
   const primaryTop3 = Array.isArray(data.display_top3) && data.display_top3.length ? data.display_top3 : data.top3;
   return (
     Number(newScamChannels || 0) === 0 &&
+    Number(scanned || 0) === 0 &&
     Number(losses12h || 0) === 0 &&
     Number(telegramChannels || 0) === 0 &&
     Number(coursesProducts || 0) === 0 &&
@@ -3364,16 +3376,18 @@ app.get('/api/kro/live-counter', async (req, res) => {
           ? (cycleTs >= rowTs ? metaStr : scamBaseCounter.updatedAt)
           : (metaStr || scamBaseCounter.updatedAt || null);
       const newInCycle = Math.max(0, Math.floor(Number(cycleMeta.new_in_cycle) || 0));
-      const channelsTodayVal = newInCycle;
+      const channelsScanned = Math.max(0, Math.floor(Number(cycleMeta.channels_scanned_in_cycle) || 0));
+      const channelsTodayVal = channelsScanned > 0 ? channelsScanned : newInCycle;
       const reportsFormCount = await countReportsFormRows(sheetsClient);
       // Главная — большая цифра: только new_in_cycle из kro_meta (не окно 12 ч по дате обнаружения в scam_base).
-      const caption12 = `За последние 12 ч (по дате обнаружения в scam_base): потери ${roll12.lossesSum.toLocaleString('ru-RU')} ₽. Всего в публичной базе: ${scamBaseCounter.channels_total}. Сумма столбца «упоминания» по строкам — см. подписи на главной.`;
+      const caption12 = `За последний цикл: ${channelsScanned} каналов прошли широкий мониторинг (channels_watch). Новых в подтверждённой базе за цикл: ${newInCycle}. За 12 ч по дате в scam_base: потери ${roll12.lossesSum.toLocaleString('ru-RU')} ₽. Всего в публичной базе: ${scamBaseCounter.channels_total}.`;
       const totalLostAllTime = scamBaseCounter.losses_12h;
       const shockTextLive =
         buildKroDocumentedShockText(totalLostAllTime, scamBaseCounter.channels_total) || KRO_PENDING_REPORT_TEXT;
       const payload = {
         channelsToday: channelsTodayVal,
-        new_in_cycle_meta: channelsTodayVal,
+        new_in_cycle_meta: newInCycle,
+        channels_scanned_in_cycle: channelsScanned,
         channelsTotal: scamBaseCounter.channels_total,
         totalLost: totalLostAllTime,
         telegramCount: roll12.telegramCount,
@@ -3398,6 +3412,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
         updatedAt: displayUpdatedAt,
         last_cycle_at: cycleMeta.last_cycle_at,
         new_in_cycle: newInCycle,
+        channels_scanned_in_cycle: channelsScanned,
         sources_checked: cycleMeta.sources_checked,
         rollup_12h: {
           losses_rub: roll12.lossesSum,
@@ -3418,6 +3433,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
     return res.json({
       channelsToday: 0,
       new_in_cycle_meta: 0,
+      channels_scanned_in_cycle: 0,
       channelsTotal: 0,
       totalLost: 0,
       telegramCount: 0,
@@ -3455,6 +3471,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
     res.json({
       channelsToday: 0,
       new_in_cycle_meta: 0,
+      channels_scanned_in_cycle: 0,
       channelsTotal: 0,
       totalLost: 0,
       telegramCount: 0,
