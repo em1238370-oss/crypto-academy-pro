@@ -134,6 +134,22 @@
                    <span class="kro-feature1-status-sep" aria-hidden="true">·</span>
                    <span>Подтверждённый скам: <strong id="kro-stat-confirmed-scam">—</strong></span>
                </p>
+               <div class="kro-feature1-watch-pulse kro-card kro-scroll-in" aria-label="Индикатор широкого мониторинга">
+                   <div class="kro-feature1-watch-pulse-head">
+                       <strong>Пульс мониторинга</strong>
+                       <span>Watch-слой показывает, что система ищет шире, чем подтверждённая база.</span>
+                   </div>
+                   <div class="kro-feature1-watch-pulse-grid">
+                       <div class="kro-feature1-watch-pulse-item">
+                           <span class="kro-feature1-watch-pulse-value" id="kro-watch-cycle-count">—</span>
+                           <span class="kro-feature1-watch-pulse-label">кандидатов прошло широкий мониторинг за цикл</span>
+                       </div>
+                       <div class="kro-feature1-watch-pulse-item">
+                           <span class="kro-feature1-watch-pulse-value" id="kro-watch-current-count">—</span>
+                           <span class="kro-feature1-watch-pulse-label">объектов сейчас в статусе «под наблюдением»</span>
+                       </div>
+                   </div>
+               </div>
                <div class="kro-feature1-stats">
                    <div class="kro-feature1-stat kro-card">
                    <span class="kro-feature1-stat-value" id="kro-stat-lost">—</span>
@@ -740,6 +756,13 @@
                if ((el = document.getElementById('kro-stat-lost'))) { el.dataset.target = data.totalLost; el.textContent = formatFull(data.totalLost); }
               if ((el = document.getElementById('kro-stat-channels'))) { el.dataset.target = scannedInCycle; el.textContent = scannedInCycle; }
               if ((el = document.getElementById('kro-stat-channels-label'))) el.textContent = 'Проверено за цикл';
+              if ((el = document.getElementById('kro-watch-cycle-count'))) { el.dataset.target = scannedInCycle; el.textContent = scannedInCycle; }
+              if ((el = document.getElementById('kro-watch-current-count'))) {
+                  var uw = ssAll.under_watch != null ? parseInt(String(ssAll.under_watch).replace(/\s/g, ''), 10) : 0;
+                  if (!isFinite(uw) || uw < 0) uw = 0;
+                  el.dataset.target = uw;
+                  el.textContent = uw;
+              }
                if ((el = document.getElementById('kro-stat-courses'))) { el.dataset.target = data.coursesCount; el.textContent = data.coursesCount; }
                if ((el = document.getElementById('kro-live-datetime'))) {
                    var rawTime = data.last_cycle_at || data.lastValidUpdatedAt || data.updatedAt || null;
