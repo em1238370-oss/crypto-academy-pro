@@ -4248,6 +4248,36 @@ a.mon-channel-external:hover {
   margin: 0;
 }
 
+.ch-why-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ch-why-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px 15px;
+  border-radius: 14px;
+  background: var(--mon-glass);
+  border: 1px solid var(--mon-border);
+}
+
+.ch-why-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mon-text-fade);
+}
+
+.ch-why-value {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--mon-text);
+}
+
 .ch-block--action .ch-meta {
   margin-bottom: 14px;
 }
@@ -4324,6 +4354,9 @@ a.mon-channel-external:hover {
 }
 
 @media (max-width: 640px) {
+  .ch-why-grid {
+    grid-template-columns: 1fr;
+  }
   .mon-topbar {
     padding: 16px 20px 0;
   }

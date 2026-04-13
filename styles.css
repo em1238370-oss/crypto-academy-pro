@@ -1548,8 +1548,71 @@ body.kro-hero-scrolled .kro-floating-nav {
    line-height: 1.45;
 }
 
+.kro-f1-explain {
+   max-width: min(760px, 100%);
+   margin: 18px auto 0;
+   padding: 18px 20px;
+   text-align: left;
+}
+
+.kro-f1-explain-title {
+   font-size: clamp(15px, 1.8vw, 18px);
+   font-weight: 700;
+   color: rgba(255, 255, 255, 0.92);
+   margin: 0 0 10px;
+}
+
+.kro-f1-explain-lead {
+   font-size: 14px;
+   line-height: 1.6;
+   color: rgba(255, 255, 255, 0.74);
+   margin: 0 0 14px;
+}
+
+.kro-f1-explain-grid {
+   display: grid;
+   grid-template-columns: repeat(3, minmax(0, 1fr));
+   gap: 12px;
+}
+
+.kro-f1-explain-item {
+   display: grid;
+   gap: 6px;
+   padding: 12px 14px;
+   border-radius: 12px;
+   background: rgba(255, 255, 255, 0.035);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kro-f1-explain-item strong {
+   font-size: 12px;
+   letter-spacing: 0.04em;
+   text-transform: uppercase;
+   color: rgba(255, 255, 255, 0.92);
+}
+
+.kro-f1-explain-item span {
+   font-size: 13px;
+   line-height: 1.55;
+   color: rgba(255, 255, 255, 0.66);
+}
+
+.kro-f1-explain-item em {
+   font-style: normal;
+   color: rgba(255, 255, 255, 0.88);
+}
+
 .kro-feature1-stat.kro-card {
    padding: 14px 18px;
+}
+
+@media (max-width: 720px) {
+   .kro-f1-explain-grid {
+      grid-template-columns: 1fr;
+   }
+   .kro-f1-explain {
+      padding: 16px;
+   }
 }
 
 /* Фишка 1: четыре блока (шок, типы лоха, математика, выбор) в одной контент-карточке */

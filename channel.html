@@ -66,6 +66,25 @@
       <div id="ch-source-links" class="ch-links"></div>
     </section>
 
+    <section class="ch-block" aria-labelledby="ch-why-h">
+      <h2 id="ch-why-h" class="ch-h2">Почему этот канал здесь</h2>
+      <p class="ch-meta">Коротко: что именно привело объект в базу и как система трактует его текущий статус.</p>
+      <div class="ch-why-grid">
+        <div class="ch-why-card">
+          <span class="ch-why-label">Тип объекта</span>
+          <p class="ch-why-value" id="ch-why-type">—</p>
+        </div>
+        <div class="ch-why-card">
+          <span class="ch-why-label">Основание</span>
+          <p class="ch-why-value" id="ch-why-reason">—</p>
+        </div>
+        <div class="ch-why-card">
+          <span class="ch-why-label">Что значит статус</span>
+          <p class="ch-why-value" id="ch-why-status">—</p>
+        </div>
+      </div>
+    </section>
+
     <section class="ch-block" aria-labelledby="ch-date-h">
       <h2 id="ch-date-h" class="ch-h2">Дата добавления</h2>
       <p class="ch-body" id="ch-detected">—</p>
@@ -336,6 +355,50 @@
     return parts.join(' ');
   }
 
+  function friendlyObjectType(raw) {
+    var v = String(raw || '').trim().toLowerCase();
+    if (!v) return 'Тип не указан в строке базы.';
+    if (v.indexOf('бот') >= 0) return 'Инвест-бот или Telegram-бот';
+    if (v.indexOf('обмен') >= 0 || v.indexOf('сайт') >= 0 || v.indexOf('курс') >= 0) return 'Обменник / сайт / внешний сервис';
+    if (v.indexOf('сигнал') >= 0) return 'Сигнальный канал';
+    return String(raw || '').trim();
+  }
+
+  function confidenceText(status) {
+    var v = String(status || '').toLowerCase();
+    if (v.includes('подтвержд') && v.includes('скам')) {
+      return 'Это самый жёсткий уровень уверенности: по объекту собран набор сильных признаков и внешних подтверждений.';
+    }
+    if (v.includes('в риске') || (v.includes('риск') && !v.includes('наблю'))) {
+      return 'Система видит серьёзный набор тревожных сигналов: к таким объектам стоит относиться как к потенциально опасным.';
+    }
+    if (v.includes('без нарушений')) {
+      return 'По текущим данным система не видит достаточных оснований считать объект рисковым. Это не вечная гарантия безопасности.';
+    }
+    return 'Это раннее предупреждение: по объекту уже есть сигналы риска или внешние упоминания, но данных пока недостаточно для более жёсткого вывода.';
+  }
+
+  function shortReason(r) {
+    var reasons = [];
+    var sp = String((r && r.source_primary) || '').trim();
+    var ev = String((r && r.source_evidence) || '').trim();
+    if (sp && sp !== '—') reasons.push('Источник в строке: ' + sp + '.');
+    var links = extractUrls(ev).filter(function (u) {
+      return !/t\.me\/|telegram\.me\//i.test(u);
+    });
+    if (links.length) {
+      reasons.push('Есть внешние ссылки на проверку: ' + links.slice(0, 2).map(hostLabel).join(', ') + '.');
+    }
+    var complaints = Number(r && r.complaints);
+    if (complaints > 0) reasons.push('По записи учтено жалоб: ' + complaints + '.');
+    var quotes = cleanEvidenceQuotes(ev);
+    if (quotes.length) reasons.push('Ключевой сигнал: «' + quotes[0] + '»');
+    if (!reasons.length) {
+      reasons.push('Объект попал в базу после фильтрации источников, признаков риска и автоматической проверки цикла.');
+    }
+    return reasons.join(' ');
+  }
+
   var slug = window.location.pathname.replace(/^\/channel\//, '');
   if (!slug) {
     document.getElementById('ch-loading').hidden = true;
@@ -412,6 +475,9 @@
       var sp = (r.source_primary || '').trim() || '—';
       document.getElementById('ch-source-primary').textContent = 'Поле источника в таблице: ' + sp;
       document.getElementById('ch-source-links').innerHTML = renderSourceLinks(r);
+      document.getElementById('ch-why-type').textContent = friendlyObjectType(r.object_type);
+      document.getElementById('ch-why-reason').textContent = shortReason(r);
+      document.getElementById('ch-why-status').textContent = confidenceText(r.status);
 
       document.getElementById('ch-detected').textContent = fmtDateShort(r.detected_at);
 
