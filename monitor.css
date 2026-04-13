@@ -3367,6 +3367,28 @@ a.mon-ca-sample-link[href^="tg:"] {
     transform: translate3d(0, -6px, 0) scale(1.008);
   }
 }
+@keyframes monDropInTop {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -24px, 0);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+}
+@keyframes monSurfaceSettle {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -18px, 0) scaleY(0.96);
+  }
+  to {
+    opacity: 0.5;
+    transform: translate3d(0, 0, 0) scaleY(1);
+  }
+}
 @keyframes rowAppearLeft {
   from { opacity: 0; transform: translate3d(-30px, 8px, 0); }
   to   { opacity: 1; transform: translate3d(0, 0, 0); }
@@ -3397,8 +3419,51 @@ a.mon-ca-sample-link[href^="tg:"] {
 .mon-source-card.mon-row-appear {
   animation-duration: calc(var(--mon-dur-reveal) + 0.08s);
 }
+.mon-section .mon-chapter-head > *,
+.mon-object-sheet__head > *,
+.mon-metrics-digest-banner > *,
+.mon-route-map-thead,
+.mon-table-search,
+.mon-table thead th {
+  will-change: transform, opacity, filter;
+}
+.mon-section.mon-visible .mon-chapter-head .mon-chapter-kicker,
+.mon-section.mon-visible .mon-object-sheet__head .mon-chapter-kicker,
+.mon-section.mon-visible .mon-metrics-digest-banner .mon-metrics-digest-eyebrow {
+  animation: monDropInTop 0.58s var(--mon-ease-soft) both;
+}
+.mon-section.mon-visible .mon-chapter-head .mon-chapter-title,
+.mon-section.mon-visible .mon-object-sheet__head .mon-object-sheet__title,
+.mon-section.mon-visible .mon-metrics-digest-banner .mon-metrics-digest-title {
+  animation: monDropInTop 0.68s var(--mon-ease-soft) 0.08s both;
+}
+.mon-section.mon-visible .mon-chapter-head .mon-chapter-lead,
+.mon-section.mon-visible .mon-chapter-head .mon-chapter-meta,
+.mon-section.mon-visible .mon-object-sheet__head .mon-chapter-lead,
+.mon-section.mon-visible .mon-metrics-digest-banner .mon-metrics-digest-sub {
+  animation: monDropInTop 0.74s var(--mon-ease-soft) 0.16s both;
+}
+.mon-section.mon-visible .mon-route-map-thead,
+.mon-section.mon-visible .mon-table-search {
+  animation: monDropInTop 0.56s var(--mon-ease-soft) 0.12s both;
+}
+.mon-section.mon-visible .mon-table thead th {
+  animation: monDropInTop 0.52s var(--mon-ease-soft) both;
+}
+.mon-section.mon-visible .mon-table thead th:nth-child(1) { animation-delay: 0.06s; }
+.mon-section.mon-visible .mon-table thead th:nth-child(2) { animation-delay: 0.1s; }
+.mon-section.mon-visible .mon-table thead th:nth-child(3) { animation-delay: 0.14s; }
+.mon-section.mon-visible .mon-table thead th:nth-child(4) { animation-delay: 0.18s; }
+.mon-section.mon-visible .mon-table thead th:nth-child(5) { animation-delay: 0.22s; }
+.mon-section.mon-visible .mon-table thead th:nth-child(6) { animation-delay: 0.26s; }
+.mon-section.mon-visible .mon-table thead th:nth-child(7) { animation-delay: 0.3s; }
+.mon-section.mon-visible .mon-table thead th:nth-child(8) { animation-delay: 0.34s; }
+.mon-section.mon-visible .mon-table thead th:nth-child(9) { animation-delay: 0.38s; }
 .mon-section.mon-visible .mon-surface:not(.mon-surface--data-sheet) {
   animation: monPanelFloat 7.2s ease-in-out infinite alternate;
+}
+.mon-section.mon-visible .mon-surface::before {
+  animation: monSurfaceSettle 0.9s var(--mon-ease-soft) both;
 }
 .mon-section.mon-visible .mon-surface::after,
 .mon-tier-slab::after {
@@ -3861,6 +3926,7 @@ a.mon-ca-sample-link[href^="tg:"] {
   }
   .mon-tier-slab,
   .mon-surface,
+  .mon-surface::before,
   .mon-surface::after,
   .mon-stat-card,
   .mon-case-card,
@@ -3872,6 +3938,17 @@ a.mon-ca-sample-link[href^="tg:"] {
   .mon-row-appear {
     animation: none !important;
     opacity: 1 !important;
+  }
+  .mon-chapter-head > *,
+  .mon-object-sheet__head > *,
+  .mon-metrics-digest-banner > *,
+  .mon-route-map-thead,
+  .mon-table-search,
+  .mon-table thead th {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
   }
   .mon-bg-dot-grid {
     transition: none !important;
