@@ -428,6 +428,143 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-top: none;
 }
 
+/* Уровни страницы I–IV: явная иерархия «снимок → реестры → происхождение → приложение» */
+.mon-prologue + .mon-tier-slab {
+  margin-top: clamp(4px, 1vw, 12px);
+}
+
+.mon-tier-slab {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(14px, 2.4vw, 22px);
+  margin: clamp(20px, 3.2vw, 40px) 0 clamp(8px, 1.5vw, 16px);
+  padding: clamp(18px, 2.6vw, 26px) clamp(18px, 2.8vw, 28px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, transparent 42%),
+    linear-gradient(180deg, rgba(14, 16, 21, 0.98), rgba(10, 11, 16, 0.94));
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+.mon-tier-slab::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.95), rgba(245, 158, 11, 0.12), rgba(72, 84, 108, 0.45));
+  pointer-events: none;
+}
+.mon-tier-slab--registry::before {
+  background: linear-gradient(180deg, rgba(6, 182, 212, 0.95), rgba(6, 182, 212, 0.1), rgba(72, 84, 108, 0.5));
+}
+.mon-tier-slab--provenance::before {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.92), rgba(139, 92, 246, 0.12), rgba(72, 84, 108, 0.5));
+}
+.mon-tier-slab--appendix::before {
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.75), rgba(148, 163, 184, 0.08), rgba(72, 84, 108, 0.45));
+}
+.mon-tier-slab-ix {
+  font-family: var(--mon-font-display);
+  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 0 40px rgba(245, 158, 11, 0.22);
+  padding: 4px 4px 0 6px;
+  min-width: 2.5rem;
+  text-align: center;
+}
+.mon-tier-slab--registry .mon-tier-slab-ix {
+  text-shadow: 0 0 36px rgba(6, 182, 212, 0.28);
+}
+.mon-tier-slab--provenance .mon-tier-slab-ix {
+  text-shadow: 0 0 36px rgba(139, 92, 246, 0.26);
+}
+.mon-tier-slab--appendix .mon-tier-slab-ix {
+  color: rgba(226, 232, 240, 0.88);
+  text-shadow: none;
+}
+.mon-tier-slab-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mon-tier-slab-title {
+  font-family: var(--mon-font-display);
+  font-size: clamp(15px, 1.1vw + 12px, 18px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.mon-tier-slab-note {
+  font-size: 14px;
+  line-height: var(--mon-leading-body);
+  color: var(--mon-text-prose-hi);
+  max-width: 52rem;
+}
+
+.mon-tier-slab + .mon-chapter.mon-section {
+  border-top: none;
+}
+
+.mon-chapter--tier-snapshot .mon-chapter-kicker::before {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.95), rgba(245, 158, 11, 0.08));
+}
+.mon-chapter--tier-registry .mon-chapter-kicker::before {
+  background: linear-gradient(180deg, rgba(6, 182, 212, 0.95), rgba(6, 182, 212, 0.06));
+}
+.mon-chapter--tier-provenance .mon-chapter-kicker::before {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.92), rgba(139, 92, 246, 0.06));
+}
+
+.mon-route-map--after-metrics.mon-chapter.mon-section {
+  padding-top: clamp(26px, 4vw, 52px);
+}
+
+.mon-hero-jump--primary {
+  margin-top: 20px;
+}
+.mon-hero-jump-more {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.mon-hero-jump-more-summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.44);
+  padding: 4px 0 2px;
+  transition: color 0.2s var(--mon-ease-out);
+}
+.mon-hero-jump-more-summary::-webkit-details-marker {
+  display: none;
+}
+.mon-hero-jump-more-summary::marker {
+  content: '';
+}
+.mon-hero-jump-more[open] .mon-hero-jump-more-summary {
+  color: rgba(255, 255, 255, 0.62);
+}
+.mon-hero-jump-more .mon-hero-jump {
+  margin-top: 12px;
+  padding-top: 0;
+  border-top: none;
+}
+
 /* ── HERO (каскад fade-up как в портфолио) ───────────────── */
 
 @keyframes monHeroIn {

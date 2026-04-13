@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
-  <link rel="stylesheet" href="/monitor.css?v=20260413-structure-flow">
+  <link rel="stylesheet" href="/monitor.css?v=20260413-tier-hierarchy">
 </head>
 <body class="mon-page">
 
@@ -106,19 +106,26 @@
         <span class="mon-scheme-arrow" aria-hidden="true">→</span>
         <span class="mon-scheme-node">Ссылки</span>
       </div>
-      <nav class="mon-hero-jump" aria-label="Разделы страницы">
-        <a class="mon-hero-jump-link" href="#page-map">Карта</a>
+      <nav class="mon-hero-jump mon-hero-jump--primary" aria-label="Основные разделы">
         <a class="mon-hero-jump-link" href="#metrics">Метрики</a>
-        <a class="mon-hero-jump-link" href="#data-quality">Качество данных</a>
-        <a class="mon-hero-jump-link" href="#recent-cases">Случаи</a>
+        <a class="mon-hero-jump-link" href="#recent-cases">Кейсы</a>
         <a class="mon-hero-jump-link" href="#findings-12h">12 часов</a>
         <a class="mon-hero-jump-link" href="#data-scam">База</a>
-        <a class="mon-hero-jump-link" href="#data-watch">Мониторинг</a>
-        <a class="mon-hero-jump-link" href="#data-network">Связи</a>
-        <a class="mon-hero-jump-link" href="#cycle-log">Цикл</a>
-        <a class="mon-hero-jump-link" href="#sources">Источники</a>
-        <a class="mon-hero-jump-link" href="#history">История</a>
+        <a class="mon-hero-jump-link" href="#page-map">Карта</a>
       </nav>
+      <details class="mon-hero-jump-more">
+        <summary class="mon-hero-jump-more-summary">Ещё разделы</summary>
+        <nav class="mon-hero-jump mon-hero-jump--secondary" aria-label="Дополнительные разделы">
+          <a class="mon-hero-jump-link" href="#data-quality">Надёжность данных</a>
+          <a class="mon-hero-jump-link" href="#data-watch">Мониторинг</a>
+          <a class="mon-hero-jump-link" href="#data-network">Связи</a>
+          <a class="mon-hero-jump-link" href="#cycle-log">Журнал цикла</a>
+          <a class="mon-hero-jump-link" href="#sources">Источники</a>
+          <a class="mon-hero-jump-link" href="#history">Архив</a>
+          <a class="mon-hero-jump-link" href="#mon-how-heading">Метод</a>
+          <a class="mon-hero-jump-link" href="#mon-rules-heading">Критерии</a>
+        </nav>
+      </details>
     </aside>
   </section>
 
@@ -149,12 +156,72 @@
   </section>
   </div>
 
-  <!-- Карта страницы: иерархия как у executive-портфолио (см. анализ medvedevart) -->
-  <section class="mon-chapter mon-section mon-route-map" id="page-map" aria-labelledby="mon-map-heading">
+  <div class="mon-tier-slab" aria-label="Уровень страницы: снимок системы">
+    <span class="mon-tier-slab-ix" aria-hidden="true">I</span>
+    <div class="mon-tier-slab-body">
+      <strong class="mon-tier-slab-title">Снимок системы</strong>
+      <span class="mon-tier-slab-note">Сначала цифры и смысл — как блок «Результаты в цифрах» на витрине: быстро понять состояние монитора.</span>
+    </div>
+  </div>
+
+  <!-- Глава: метрики (иерархия как «Результаты в цифрах» на medvedevart) -->
+  <section class="mon-chapter mon-section mon-chapter--tier-snapshot" id="metrics" aria-labelledby="mon-metrics-heading">
     <header class="mon-chapter-head">
-      <p class="mon-chapter-kicker">00 · Навигация</p>
-      <h2 id="mon-map-heading" class="mon-chapter-title">Структура страницы</h2>
-      <p class="mon-chapter-lead">Один поток сверху вниз: снимок системы → подход → метрики → кейсы → свежие находки за 12 ч → полная база → широкий мониторинг и связи → журнал цикла → источники и архив → методология внизу страницы.</p>
+      <p class="mon-chapter-kicker">01 · Система</p>
+      <h2 id="mon-metrics-heading" class="mon-chapter-title">Результаты в цифрах</h2>
+      <p class="mon-chapter-lead">Карточки сверху — мгновенный снимок; таблицы ниже — те же показатели с расшифровкой: откуда поле, что оно значит для интерпретации (в духе executive-дашборда).</p>
+    </header>
+    <div class="mon-chapter-body">
+      <div class="mon-surface mon-surface--pad">
+      <div class="mon-status-grid">
+        <div class="mon-stat-card">
+          <div class="mon-stat-label">статус</div>
+          <div class="mon-stat-value" id="s1-status">
+            <span class="mon-badge active">● СИСТЕМА АКТИВНА</span>
+          </div>
+        </div>
+        <div class="mon-stat-card">
+          <div class="mon-stat-label">последний цикл</div>
+          <div class="mon-stat-value cyan" id="s1-last-cycle">загрузка…</div>
+        </div>
+        <div class="mon-stat-card">
+          <div class="mon-stat-label">следующий цикл</div>
+          <div class="mon-stat-value" id="s1-next-cycle">загрузка…</div>
+        </div>
+        <div class="mon-stat-card">
+          <div class="mon-stat-label">найдено в последнем цикле</div>
+          <div class="mon-stat-value green" id="s1-new-in-cycle">—</div>
+        </div>
+        <div class="mon-stat-card">
+          <div class="mon-stat-label">всего в базе</div>
+          <div class="mon-stat-value yellow" id="s1-total">—</div>
+        </div>
+        <div class="mon-stat-card">
+          <div class="mon-stat-label">активных источников</div>
+          <div class="mon-stat-value cyan" id="s1-sources-active"><span id="s1-sources-n">—</span><span id="s1-sources-suffix" class="mon-stat-value-suffix"></span></div>
+        </div>
+      </div>
+      </div>
+
+      <div class="mon-metrics-digest-shell">
+        <header class="mon-metrics-digest-banner" aria-hidden="false">
+          <p class="mon-metrics-digest-eyebrow">Детальная сводка</p>
+          <h3 class="mon-metrics-digest-title">Живая сводка системы</h3>
+          <p class="mon-metrics-digest-sub">Ниже показано, что сейчас видит система, и простыми словами объяснено, что означает каждая цифра.</p>
+        </header>
+        <div id="mon-metrics-tables" class="mon-metrics-object-blocks" aria-live="polite" role="region" aria-label="Таблицы показателей мониторинга">
+          <div class="mon-metrics-digest-placeholder mon-loading mon-spinner">Загружаю сводки цикла, базы и качества данных…</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Карта страницы сразу после снимка в цифрах: ориентир по остальному потоку (medvedevart: сначала факт, потом навигация) -->
+  <section class="mon-chapter mon-section mon-chapter--tier-snapshot mon-route-map mon-route-map--after-metrics" id="page-map" aria-labelledby="mon-map-heading">
+    <header class="mon-chapter-head">
+      <p class="mon-chapter-kicker">Ориентир</p>
+      <h2 id="mon-map-heading" class="mon-chapter-title">Карта разделов</h2>
+      <p class="mon-chapter-lead">Снимок в цифрах уже выше. Здесь — сжатая карта остальной страницы: куда перейти за кейсами, реестрами, источниками и архивом.</p>
     </header>
     <div class="mon-chapter-body">
       <div class="mon-surface mon-route-map-surface">
@@ -181,8 +248,8 @@
           </li>
           <li class="mon-route-map-row">
             <span class="mon-route-map-num">—</span>
-            <a class="mon-route-map-block" href="#data-quality">Качество данных</a>
-            <span class="mon-route-map-desc">Короткий блок надёжности внутри метрик: порог доказательств, сигналы на ошибку, сила источников, полнота жалоб и записи на перепроверку.</span>
+            <a class="mon-route-map-block" href="#data-quality">Надёжность данных</a>
+            <span class="mon-route-map-desc">Короткий блок внутри метрик: порог доказательств, сигналы на ошибку, сила источников, полнота жалоб и записи на перепроверку.</span>
           </li>
           <li class="mon-route-map-row">
             <span class="mon-route-map-num">02</span>
@@ -234,60 +301,8 @@
     </div>
   </section>
 
-  <!-- Глава: метрики (иерархия как «Результаты в цифрах» на medvedevart) -->
-  <section class="mon-chapter mon-section" id="metrics" aria-labelledby="mon-metrics-heading">
-    <header class="mon-chapter-head">
-      <p class="mon-chapter-kicker">01 · Система</p>
-      <h2 id="mon-metrics-heading" class="mon-chapter-title">Результаты в цифрах</h2>
-      <p class="mon-chapter-lead">Карточки сверху — мгновенный снимок; таблицы ниже — те же показатели с расшифровкой: откуда поле, что оно значит для интерпретации (в духе executive-дашборда).</p>
-    </header>
-    <div class="mon-chapter-body">
-      <div class="mon-surface mon-surface--pad">
-      <div class="mon-status-grid">
-        <div class="mon-stat-card">
-          <div class="mon-stat-label">статус</div>
-          <div class="mon-stat-value" id="s1-status">
-            <span class="mon-badge active">● СИСТЕМА АКТИВНА</span>
-          </div>
-        </div>
-        <div class="mon-stat-card">
-          <div class="mon-stat-label">последний цикл</div>
-          <div class="mon-stat-value cyan" id="s1-last-cycle">загрузка…</div>
-        </div>
-        <div class="mon-stat-card">
-          <div class="mon-stat-label">следующий цикл</div>
-          <div class="mon-stat-value" id="s1-next-cycle">загрузка…</div>
-        </div>
-        <div class="mon-stat-card">
-          <div class="mon-stat-label">найдено в последнем цикле</div>
-          <div class="mon-stat-value green" id="s1-new-in-cycle">—</div>
-        </div>
-        <div class="mon-stat-card">
-          <div class="mon-stat-label">всего в базе</div>
-          <div class="mon-stat-value yellow" id="s1-total">—</div>
-        </div>
-        <div class="mon-stat-card">
-          <div class="mon-stat-label">активных источников</div>
-          <div class="mon-stat-value cyan" id="s1-sources-active"><span id="s1-sources-n">—</span><span id="s1-sources-suffix" class="mon-stat-value-suffix"></span></div>
-        </div>
-      </div>
-      </div>
-
-      <div class="mon-metrics-digest-shell">
-        <header class="mon-metrics-digest-banner" aria-hidden="false">
-          <p class="mon-metrics-digest-eyebrow">Детальная сводка</p>
-          <h3 class="mon-metrics-digest-title">Живая сводка системы</h3>
-          <p class="mon-metrics-digest-sub">Ниже показано, что сейчас видит система, и простыми словами объяснено, что означает каждая цифра.</p>
-        </header>
-        <div id="mon-metrics-tables" class="mon-metrics-object-blocks" aria-live="polite" role="region" aria-label="Таблицы показателей мониторинга">
-          <div class="mon-metrics-digest-placeholder mon-loading mon-spinner">Загружаю сводки цикла, базы и качества данных…</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- Кейсы сразу после метрик — как блок «Кейсы» на портфолио: сначала истории, потом полная таблица -->
-  <section class="mon-chapter mon-section" id="recent-cases" aria-labelledby="mon-cases-heading">
+  <section class="mon-chapter mon-section mon-chapter--tier-snapshot" id="recent-cases" aria-labelledby="mon-cases-heading">
     <header class="mon-chapter-head">
       <p class="mon-chapter-kicker">02 · Кейсы</p>
       <h2 id="mon-cases-heading" class="mon-chapter-title">Последние случаи</h2>
@@ -303,7 +318,7 @@
   </section>
 
   <!-- Скользящее окно 12 ч — сразу после кейсов, до полной базы (executive-flow) -->
-  <section class="mon-chapter mon-section mon-reveal" id="findings-12h" aria-labelledby="mon-findings-12h-heading">
+  <section class="mon-chapter mon-section mon-chapter--tier-snapshot mon-reveal" id="findings-12h" aria-labelledby="mon-findings-12h-heading">
     <header class="mon-chapter-head">
       <p class="mon-chapter-kicker">03 · Скользящее окно</p>
       <h2 id="mon-findings-12h-heading" class="mon-chapter-title">Найдено за последние 12 часов</h2>
@@ -319,8 +334,16 @@
     </div>
   </section>
 
+  <div class="mon-tier-slab mon-tier-slab--registry" aria-label="Уровень страницы: реестры и операционный слой">
+    <span class="mon-tier-slab-ix" aria-hidden="true">II</span>
+    <div class="mon-tier-slab-body">
+      <strong class="mon-tier-slab-title">Реестры и операционный слой</strong>
+      <span class="mon-tier-slab-note">Подтверждённая база, широкий мониторинг, сеть связей и журнал последнего цикла — рабочая глубина после быстрого среза.</span>
+    </div>
+  </div>
+
   <!-- Глава: подтверждённая база (полная таблица после свежего окна) -->
-  <section class="mon-chapter mon-section" id="data-scam" aria-labelledby="mon-scam-heading">
+  <section class="mon-chapter mon-section mon-chapter--tier-registry" id="data-scam" aria-labelledby="mon-scam-heading">
     <header class="mon-chapter-head mon-chapter-head--split">
       <div class="mon-chapter-head-main">
         <p class="mon-chapter-kicker">04 · Таблица</p>
@@ -398,7 +421,7 @@
     </div>
   </section>
 
-  <section class="mon-chapter mon-section mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" id="data-watch" aria-labelledby="mon-watch-heading">
+  <section class="mon-chapter mon-section mon-chapter--tier-registry mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" id="data-watch" aria-labelledby="mon-watch-heading">
     <header class="mon-chapter-head mon-chapter-head--accordion mon-chapter-head--watch-accordion" role="button" tabindex="0" aria-expanded="false" aria-controls="mon-watch-panel" id="mon-watch-accordion-trigger">
       <div class="mon-chapter-head-main">
         <p class="mon-chapter-kicker">05 · Мониторинг</p>
@@ -425,7 +448,7 @@
     </div>
   </section>
 
-  <section class="mon-chapter mon-section" id="data-network" aria-labelledby="mon-network-heading">
+  <section class="mon-chapter mon-section mon-chapter--tier-registry" id="data-network" aria-labelledby="mon-network-heading">
     <header class="mon-chapter-head mon-chapter-head--split">
       <div class="mon-chapter-head-main">
         <p class="mon-chapter-kicker">06 · Связи</p>
@@ -450,7 +473,7 @@
     </div>
   </section>
 
-  <section class="mon-chapter mon-section" id="cycle-log" aria-labelledby="mon-cycle-heading">
+  <section class="mon-chapter mon-section mon-chapter--tier-registry" id="cycle-log" aria-labelledby="mon-cycle-heading">
     <header class="mon-chapter-head mon-chapter-head--split">
       <div class="mon-chapter-head-main">
         <p class="mon-chapter-kicker">07 · Журнал</p>
@@ -468,7 +491,15 @@
     </div>
   </section>
 
-  <section class="mon-chapter mon-section" id="sources" aria-labelledby="mon-sources-heading">
+  <div class="mon-tier-slab mon-tier-slab--provenance" aria-label="Уровень страницы: происхождение и архив">
+    <span class="mon-tier-slab-ix" aria-hidden="true">III</span>
+    <div class="mon-tier-slab-body">
+      <strong class="mon-tier-slab-title">Происхождение и архив</strong>
+      <span class="mon-tier-slab-note">Откуда взялись данные и как менялись циклы — проверяемость и память системы.</span>
+    </div>
+  </div>
+
+  <section class="mon-chapter mon-section mon-chapter--tier-provenance" id="sources" aria-labelledby="mon-sources-heading">
     <header class="mon-chapter-head">
       <p class="mon-chapter-kicker">08 · Происхождение данных</p>
       <h2 id="mon-sources-heading" class="mon-chapter-title">Источники данных</h2>
@@ -499,7 +530,7 @@
     </div>
   </section>
 
-  <section class="mon-chapter mon-section" id="history" aria-labelledby="mon-history-heading">
+  <section class="mon-chapter mon-section mon-chapter--tier-provenance" id="history" aria-labelledby="mon-history-heading">
     <header class="mon-chapter-head">
       <p class="mon-chapter-kicker">09 · Архив циклов</p>
       <h2 id="mon-history-heading" class="mon-chapter-title">История циклов</h2>
@@ -513,6 +544,14 @@
       </div>
     </div>
   </section>
+
+  <div class="mon-tier-slab mon-tier-slab--appendix" aria-label="Уровень страницы: приложение">
+    <span class="mon-tier-slab-ix" aria-hidden="true">IV</span>
+    <div class="mon-tier-slab-body">
+      <strong class="mon-tier-slab-title">Приложение</strong>
+      <span class="mon-tier-slab-note">Метод и критерии — для тех, кому нужна логика строки и правила отбора; основной поток решений читается без этого блока.</span>
+    </div>
+  </div>
 
   <section class="mon-chapter mon-section mon-chapter--appendix mon-chapter--collapsible mon-chapter--collapsed mon-section--collapsible mon-section--collapsed" aria-labelledby="mon-how-heading">
     <header class="mon-chapter-head mon-chapter-head--accordion" role="button" tabindex="0" aria-expanded="false">
