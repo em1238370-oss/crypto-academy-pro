@@ -2801,6 +2801,55 @@
     window.addEventListener('resize', scheduleUnveilMonRevealOnScroll, { passive: true });
   }
 
+  function restartMonRowAnimations(root) {
+    if (!root) return;
+    root.querySelectorAll('.mon-row-appear').forEach(function(node) {
+      node.style.animation = 'none';
+      void node.offsetWidth;
+      node.style.animation = '';
+    });
+  }
+
+  function pulseMonLivePass(root) {
+    if (!root) return;
+    if (root.__monLivePassT) {
+      clearTimeout(root.__monLivePassT);
+      root.__monLivePassT = null;
+    }
+    restartMonRowAnimations(root);
+    root.classList.remove('mon-live-pass');
+    void root.offsetWidth;
+    root.classList.add('mon-live-pass');
+    root.__monLivePassT = setTimeout(function() {
+      root.classList.remove('mon-live-pass');
+      root.__monLivePassT = null;
+    }, 1600);
+  }
+
+  function initLivePassObserver() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var sel = [
+      '.mon-offer',
+      '.mon-section',
+      '.mon-tier-slab'
+    ].join(', ');
+    if (!window.IntersectionObserver) {
+      document.querySelectorAll(sel).forEach(function(el) {
+        pulseMonLivePass(el);
+      });
+      return;
+    }
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) pulseMonLivePass(entry.target);
+        else entry.target.classList.remove('mon-live-pass');
+      });
+    }, { threshold: 0.22, rootMargin: '0px 0px -6% 0px' });
+    document.querySelectorAll(sel).forEach(function(el) {
+      io.observe(el);
+    });
+  }
+
   function initScrollReveal() {
     var sel = [
       '.mon-offer',
@@ -3007,6 +3056,7 @@
       var ov = document.getElementById('mon-boot-overlay');
       if (ov) ov.style.display = 'none';
       initScrollReveal();
+      initLivePassObserver();
       initCollapsibles();
       expandWatchSectionIfHash();
       window.addEventListener('hashchange', expandWatchSectionIfHash);
@@ -3019,6 +3069,7 @@
     }
     runBootSequence(function() {
       initScrollReveal();
+      initLivePassObserver();
       initCollapsibles();
       expandWatchSectionIfHash();
       window.addEventListener('hashchange', expandWatchSectionIfHash);

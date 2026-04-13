@@ -3370,8 +3370,8 @@ a.mon-ca-sample-link[href^="tg:"] {
 @keyframes monDropInTop {
   from {
     opacity: 0;
-    transform: translate3d(0, -24px, 0);
-    filter: blur(4px);
+    transform: translate3d(0, -42px, 0);
+    filter: blur(6px);
   }
   to {
     opacity: 1;
@@ -3427,47 +3427,52 @@ a.mon-ca-sample-link[href^="tg:"] {
 .mon-table thead th {
   will-change: transform, opacity, filter;
 }
-.mon-section.mon-visible .mon-chapter-head .mon-chapter-kicker,
-.mon-section.mon-visible .mon-object-sheet__head .mon-chapter-kicker,
-.mon-section.mon-visible .mon-metrics-digest-banner .mon-metrics-digest-eyebrow {
-  animation: monDropInTop 0.58s var(--mon-ease-soft) both;
+.mon-section.mon-live-pass .mon-chapter-head .mon-chapter-kicker,
+.mon-section.mon-live-pass .mon-object-sheet__head .mon-chapter-kicker,
+.mon-section.mon-live-pass .mon-metrics-digest-banner .mon-metrics-digest-eyebrow,
+.mon-offer.mon-live-pass .mon-offer-kicker {
+  animation: monDropInTop 0.62s var(--mon-ease-soft) both;
 }
-.mon-section.mon-visible .mon-chapter-head .mon-chapter-title,
-.mon-section.mon-visible .mon-object-sheet__head .mon-object-sheet__title,
-.mon-section.mon-visible .mon-metrics-digest-banner .mon-metrics-digest-title {
-  animation: monDropInTop 0.68s var(--mon-ease-soft) 0.08s both;
+.mon-section.mon-live-pass .mon-chapter-head .mon-chapter-title,
+.mon-section.mon-live-pass .mon-object-sheet__head .mon-object-sheet__title,
+.mon-section.mon-live-pass .mon-metrics-digest-banner .mon-metrics-digest-title,
+.mon-offer.mon-live-pass .mon-offer-title {
+  animation: monDropInTop 0.76s var(--mon-ease-soft) 0.1s both;
 }
-.mon-section.mon-visible .mon-chapter-head .mon-chapter-lead,
-.mon-section.mon-visible .mon-chapter-head .mon-chapter-meta,
-.mon-section.mon-visible .mon-object-sheet__head .mon-chapter-lead,
-.mon-section.mon-visible .mon-metrics-digest-banner .mon-metrics-digest-sub {
-  animation: monDropInTop 0.74s var(--mon-ease-soft) 0.16s both;
+.mon-section.mon-live-pass .mon-chapter-head .mon-chapter-lead,
+.mon-section.mon-live-pass .mon-chapter-head .mon-chapter-meta,
+.mon-section.mon-live-pass .mon-object-sheet__head .mon-chapter-lead,
+.mon-section.mon-live-pass .mon-metrics-digest-banner .mon-metrics-digest-sub,
+.mon-offer.mon-live-pass .mon-offer-lead,
+.mon-offer.mon-live-pass .mon-offer-focus,
+.mon-offer.mon-live-pass .mon-offer-cta-row {
+  animation: monDropInTop 0.82s var(--mon-ease-soft) 0.2s both;
 }
-.mon-section.mon-visible .mon-route-map-thead,
-.mon-section.mon-visible .mon-table-search {
-  animation: monDropInTop 0.56s var(--mon-ease-soft) 0.12s both;
+.mon-section.mon-live-pass .mon-route-map-thead,
+.mon-section.mon-live-pass .mon-table-search {
+  animation: monDropInTop 0.66s var(--mon-ease-soft) 0.16s both;
 }
-.mon-section.mon-visible .mon-table thead th {
-  animation: monDropInTop 0.52s var(--mon-ease-soft) both;
+.mon-section.mon-live-pass .mon-table thead th {
+  animation: monDropInTop 0.6s var(--mon-ease-soft) both;
 }
-.mon-section.mon-visible .mon-table thead th:nth-child(1) { animation-delay: 0.06s; }
-.mon-section.mon-visible .mon-table thead th:nth-child(2) { animation-delay: 0.1s; }
-.mon-section.mon-visible .mon-table thead th:nth-child(3) { animation-delay: 0.14s; }
-.mon-section.mon-visible .mon-table thead th:nth-child(4) { animation-delay: 0.18s; }
-.mon-section.mon-visible .mon-table thead th:nth-child(5) { animation-delay: 0.22s; }
-.mon-section.mon-visible .mon-table thead th:nth-child(6) { animation-delay: 0.26s; }
-.mon-section.mon-visible .mon-table thead th:nth-child(7) { animation-delay: 0.3s; }
-.mon-section.mon-visible .mon-table thead th:nth-child(8) { animation-delay: 0.34s; }
-.mon-section.mon-visible .mon-table thead th:nth-child(9) { animation-delay: 0.38s; }
+.mon-section.mon-live-pass .mon-table thead th:nth-child(1) { animation-delay: 0.08s; }
+.mon-section.mon-live-pass .mon-table thead th:nth-child(2) { animation-delay: 0.14s; }
+.mon-section.mon-live-pass .mon-table thead th:nth-child(3) { animation-delay: 0.2s; }
+.mon-section.mon-live-pass .mon-table thead th:nth-child(4) { animation-delay: 0.26s; }
+.mon-section.mon-live-pass .mon-table thead th:nth-child(5) { animation-delay: 0.32s; }
+.mon-section.mon-live-pass .mon-table thead th:nth-child(6) { animation-delay: 0.38s; }
+.mon-section.mon-live-pass .mon-table thead th:nth-child(7) { animation-delay: 0.44s; }
+.mon-section.mon-live-pass .mon-table thead th:nth-child(8) { animation-delay: 0.5s; }
+.mon-section.mon-live-pass .mon-table thead th:nth-child(9) { animation-delay: 0.56s; }
 .mon-section.mon-visible .mon-surface:not(.mon-surface--data-sheet) {
   animation: monPanelFloat 7.2s ease-in-out infinite alternate;
 }
-.mon-section.mon-visible .mon-surface::before {
+.mon-section.mon-live-pass .mon-surface::before {
   animation: monSurfaceSettle 0.9s var(--mon-ease-soft) both;
 }
-.mon-section.mon-visible .mon-surface::after,
-.mon-tier-slab::after {
-  animation: monPanelGlow 7.8s ease-in-out infinite;
+.mon-section.mon-live-pass .mon-surface::after,
+.mon-tier-slab.mon-live-pass::after {
+  animation: monPanelGlow 1.45s var(--mon-ease-soft) both;
 }
 .mon-section.mon-visible .mon-stat-card,
 .mon-section.mon-visible .mon-case-card,
