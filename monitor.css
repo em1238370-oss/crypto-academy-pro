@@ -3126,6 +3126,30 @@ a.mon-ca-sample-link[href^="tg:"] {
     filter var(--mon-dur-reveal) var(--mon-ease-soft);
   transition-delay: var(--mon-reveal-delay, 0ms);
 }
+.mon-section.mon-reveal,
+.mon-tier-slab.mon-reveal,
+.mon-object-sheet.mon-reveal,
+.mon-case-card.mon-reveal,
+.mon-source-card.mon-reveal {
+  will-change: transform, opacity, filter;
+}
+.mon-chapter--tier-snapshot.mon-reveal,
+.mon-route-map.mon-reveal,
+.mon-tier-slab.mon-reveal {
+  transform: translate3d(0, var(--mon-reveal-y), 0);
+}
+.mon-chapter--tier-registry.mon-reveal,
+.mon-tier-slab--registry.mon-reveal {
+  transform: translate3d(42px, 14px, 0);
+}
+.mon-chapter--tier-provenance.mon-reveal,
+.mon-tier-slab--provenance.mon-reveal {
+  transform: translate3d(-42px, 14px, 0);
+}
+.mon-chapter--appendix.mon-reveal,
+.mon-tier-slab--appendix.mon-reveal {
+  transform: translate3d(0, 22px, 0);
+}
 .mon-reveal.mon-visible {
   opacity: 1;
   transform: translateY(0);
@@ -3162,8 +3186,7 @@ a.mon-ca-sample-link[href^="tg:"] {
   .mon-row-appear,
   tr.mon-row-appear,
   article.mon-row-appear {
-    opacity: 1 !important;
-    animation: none !important;
+    animation-duration: 0.4s !important;
   }
   .mon-status-grid .mon-stat-card.mon-reveal:nth-child(1) { --mon-reveal-delay: 0ms; }
   .mon-status-grid .mon-stat-card.mon-reveal:nth-child(2) { --mon-reveal-delay: 70ms; }
@@ -3236,9 +3259,35 @@ a.mon-ca-sample-link[href^="tg:"] {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+@keyframes rowAppearLeft {
+  from { opacity: 0; transform: translate3d(-30px, 8px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes rowAppearRight {
+  from { opacity: 0; transform: translate3d(30px, 8px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes rowAppearSoftScale {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
 .mon-row-appear {
   opacity: 0;
   animation: rowAppear var(--mon-dur-reveal) var(--mon-ease-soft) both;
+}
+.mon-row-appear--left {
+  animation-name: rowAppearLeft;
+}
+.mon-row-appear--right {
+  animation-name: rowAppearRight;
+}
+.mon-row-appear--soft {
+  animation-name: rowAppearSoftScale;
+}
+.mon-object-sheet.mon-row-appear,
+.mon-case-card.mon-row-appear,
+.mon-source-card.mon-row-appear {
+  animation-duration: calc(var(--mon-dur-reveal) + 0.08s);
 }
 
 /* ── BOOT OVERLAY — «окно» с таблицей статусов (как на главной) ── */

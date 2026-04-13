@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
   <script>
     (function() {
-      var v = '20260414-reveal-complete';
+      var v = '20260414-duoview-motion';
       var l = document.createElement('link');
       l.rel = 'stylesheet';
       l.href = '/monitor.css?v=' + encodeURIComponent(v);
@@ -2074,6 +2074,12 @@
         'mon-object-sheet--wide'
       );
 
+    wrap.querySelectorAll('.mon-object-sheet').forEach(function(sheet, i) {
+      sheet.classList.add('mon-row-appear');
+      sheet.classList.add(i % 2 === 0 ? 'mon-row-appear--left' : 'mon-row-appear--right');
+      if (i === 2) sheet.classList.add('mon-row-appear--soft');
+      sheet.style.animationDelay = Math.min(i * 120, 320) + 'ms';
+    });
     wrap.querySelectorAll('.mon-table--summary tbody tr').forEach(function(tr, i) {
       tr.classList.add('mon-row-appear');
       tr.style.animationDelay = Math.min(i * 55, 600) + 'ms';
@@ -2195,6 +2201,11 @@
         '</article>';
     }).join('');
     el.innerHTML = html;
+    el.querySelectorAll('.mon-case-card').forEach(function(card, i) {
+      card.classList.add('mon-row-appear');
+      card.classList.add(i % 2 === 0 ? 'mon-row-appear--left' : 'mon-row-appear--right');
+      card.style.animationDelay = Math.min(i * 120, 360) + 'ms';
+    });
   }
 
   function renderFindings12h(rows, fullBaseForTotals) {
@@ -2497,7 +2508,14 @@
     });
 
     html += '</tbody></table>';
-    if (wrap) wrap.innerHTML = html;
+    if (wrap) {
+      wrap.innerHTML = html;
+      wrap.querySelectorAll('tbody tr').forEach(function(tr, i) {
+        tr.classList.add('mon-row-appear');
+        tr.classList.add(i % 2 === 0 ? 'mon-row-appear--left' : 'mon-row-appear--right');
+        tr.style.animationDelay = Math.min(i * 42, 840) + 'ms';
+      });
+    }
   }
 
   // ── SECTION 6: SOURCES ────────────────────────────────────
@@ -2528,7 +2546,15 @@
         '<div class="mon-source-count">' + (src.count || 0) + '</div>' +
         '</div>';
     }).join('');
-    if (el) el.innerHTML = html;
+    if (el) {
+      el.innerHTML = html;
+      el.querySelectorAll('.mon-source-card').forEach(function(card, i) {
+        card.classList.add('mon-row-appear');
+        card.classList.add(i % 2 === 0 ? 'mon-row-appear--left' : 'mon-row-appear--right');
+        if (i % 3 === 1) card.classList.add('mon-row-appear--soft');
+        card.style.animationDelay = Math.min(i * 90, 540) + 'ms';
+      });
+    }
   }
 
   // ── SECTION 6: HISTORY ────────────────────────────────────
