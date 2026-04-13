@@ -130,8 +130,10 @@ def _compute_source_weight(
     report_rows: Optional[List[Dict[str, Any]]] = None,
 ) -> float:
     """
-    Сумма весов источников:
-    stop-scam1.com = 3, fin-obzor.net = 3, vklader.com (страница /slug) = 2, telltrue.net = 2,
+    Сумма весов источников (минимум 3 для записи в scam_base):
+    stop-scam1.com = 3; fin-obzor.net = 3;
+    vklader.com: +2 за посвящённую страницу /username (не хаб), иначе +2 за любое упоминание vklader.com (не суммируется со slug);
+    telltrue.net = 2; forteck.net = 2;
     форма: с описанием — 1.5 + 0.5×качество текста; без описания = 1; бонус по complaint_texts_joined;
     молодой канал (<90 дн.) при жалобах = +2.
     """

@@ -2695,9 +2695,9 @@ try {
 /** Синхронно с kro_tme_http_gate.tme_http_gate_for_scam_base_write (только публичный HTML t.me). */
 /** Синхронно с backend/kro-worker/kro_tme_http_gate.SCAM_BASE_HTTP_CRYPTO_TERMS (ТЗ KRO фильтр 4). */
 const KRO_TME_HTTP_GATE_CRYPTO = [
-  'крипт', 'bitcoin', 'btc', 'usdt', 'трейд', 'сигнал', 'invest', 'trade', 'forex', 'форекс', 'обменник',
-  'binance', 'bybit', 'бинанс', 'биткоин', 'альткоин', 'депозит', 'профит', 'лонг', 'шорт', 'фьючерс', 'спот',
-  'defi', 'nft', 'токен', 'майнинг',
+  'крипт', 'bitcoin', 'btc', 'usdt', 'трейд', 'сигнал', 'invest', 'trade', 'форекс', 'обменник',
+  'binance', 'bybit', 'биткоин', 'альткоин', 'депозит', 'профит', 'лонг', 'шорт', 'фьючерс', 'спот',
+  'defi', 'nft', 'токен', 'майнинг', 'crypto', 'signal', 'forex', 'бинанс',
 ];
 /** Синхронно с kro_tme_http_gate.gambling_topic_match — не в scam_base / не промо. */
 const KRO_GAMBLING_SUBSTR = [
@@ -2725,10 +2725,15 @@ function kroOffTopicBusinessHit(blob) {
   const low = (blob || '').toString().toLowerCase();
   if (!low.trim()) return null;
   const ru = [
-    'poizon', 'одежда', 'кроссовки', 'обувь', 'fashion', 'shoes', 'sneakers', 'streetwear', 'дроп', 'лимитка',
-    'коллаб', 'одяг', 'кросівки', 'бренд', 'бутик', 'магазин одежды',
-    'ресторан', 'доставка еды', 'суши', 'пицца', 'кафе', 'food delivery', 'квартира', 'аренда', 'продажа квартир',
-    'недвижимость', 'риэлтор', 'продажа авто', 'автосалон', 'машина купить', 'вакансия', 'найм', 'работа в',
+    'poizon', 'одежда', 'мода', 'кроссовки', 'обувь', 'fashion', 'shoes', 'sneakers', 'streetwear', 'дроп', 'лимитка',
+    'коллаб', 'коллаборация', 'найк', 'адидас', 'nike', 'adidas', 'jordan', 'yeezy', 'supreme',
+    'сникер', 'кросовки',
+    'бренд одежды', 'одяг', 'кросівки',
+    'бренд', 'бутик', 'магазин одежды',
+    'ресторан', 'доставка еды', 'суши', 'пицца', 'кафе', 'food delivery',
+    'квартира', 'аренда', 'продажа квартир', 'недвижимость', 'риэлтор', 'жильё', 'жилье',
+    'продажа авто', 'автосалон', 'машина купить',
+    'вакансия', 'найм', 'работа в',
     'футбол', 'футболь', 'чемпионат мира',
   ];
   for (const s of ru) {
@@ -2736,7 +2741,7 @@ function kroOffTopicBusinessHit(blob) {
   }
   if (/\bhr\b/i.test(blob || '')) return 'hr';
   const reEn =
-    /\b(?:poizon|sneakers?|streetwear|fashion|shoes?|boutique|restaurant|pizza|sushi|cafe|food\s+delivery|real\s*estate|realtor|apartment\s+rent|car\s+sale|dealer|vacanc(?:y|ies)|hiring|recruit(?:er|ment)|football|soccer)\b/i;
+    /\b(?:poizon|sneakers?|sneakerhead|streetwear|collab(?:oration)?|nike|adidas|jordan|yeezy|supreme|fashion|shoes?|boutique|restaurant|pizza|sushi|cafe|food\s+delivery|real\s*estate|realtor|apartment\s+rent|car\s+sale|dealer|vacanc(?:y|ies)|hiring|recruit(?:er|ment)|football|soccer)\b/i;
   const m = reEn.exec(blob || '');
   return m ? m[0].toLowerCase() : null;
 }

@@ -44,25 +44,21 @@ USER_AGENT_CHROME = (
 
 MIN_TELEGRAM_SUBSCRIBERS_HTTP = 100
 SCAM_BASE_HTTP_POST_MAX_AGE_DAYS = 60
-# Синхронно с ТЗ KRO (фильтр 4 — крипто-тематика) и server.js KRO_TME_HTTP_GATE_CRYPTO
+# Синхронно с ТЗ KRO (фильтр 4) и server.js KRO_TME_HTTP_GATE_CRYPTO.
+# + forex / бинанс — для англ. «forex» и кириллического написания биржи.
 SCAM_BASE_HTTP_CRYPTO_TERMS = (
     'крипт',
     'bitcoin',
     'btc',
-    # Синхрон с kro_telegram_channel_gate.CRYPTO_TERMS (иначе strict-gate проходит по «crypto»/«signal», а запись на CI — нет)
-    'crypto',
     'usdt',
     'трейд',
     'сигнал',
-    'signal',
     'invest',
     'trade',
-    'forex',
     'форекс',
     'обменник',
     'binance',
     'bybit',
-    'бинанс',
     'биткоин',
     'альткоин',
     'депозит',
@@ -75,6 +71,10 @@ SCAM_BASE_HTTP_CRYPTO_TERMS = (
     'nft',
     'токен',
     'майнинг',
+    'crypto',
+    'signal',
+    'forex',
+    'бинанс',
 )
 
 # Не наша тема: казино / ставки / гемблинг — не писать в scam_base (см. server.js KRO_GAMBLING_*).
@@ -102,7 +102,7 @@ _GAMBLING_STAVKI_RE = re.compile(
 
 OFFTOPIC_TOPIC_SUBSTRINGS = (
     # Одежда / мода / Poizon (маркетплейс кроссовок — не крипто-KRO)
-    'poizon', 'одежда', 'кроссовки', 'обувь', 'fashion', 'shoes', 'sneakers', 'streetwear',
+    'poizon', 'одежда', 'мода', 'кроссовки', 'обувь', 'fashion', 'shoes', 'sneakers', 'streetwear',
     'дроп', 'лимитка', 'коллаб', 'коллаборация', 'найк', 'адидас', 'nike', 'adidas', 'jordan', 'yeezy', 'supreme',
     'сникер', 'кросовки',
     'бренд одежды', 'одяг', 'кросівки',
@@ -110,7 +110,7 @@ OFFTOPIC_TOPIC_SUBSTRINGS = (
     # Еда / рестораны
     'ресторан', 'доставка еды', 'суши', 'пицца', 'кафе', 'food delivery',
     # Недвижимость
-    'квартира', 'аренда', 'продажа квартир', 'недвижимость', 'риэлтор',
+    'квартира', 'аренда', 'продажа квартир', 'недвижимость', 'риэлтор', 'жильё', 'жилье',
     # Авто
     'продажа авто', 'автосалон', 'машина купить',
     # Работа / вакансии

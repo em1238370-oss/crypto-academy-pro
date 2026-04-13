@@ -183,7 +183,7 @@ _SCAM_CONTEXT_WORDS = (
     'обман', 'обманул', 'украли', 'потерял', 'жертва', 'предупреждение',
     'осторожно', 'опасно', 'не доверяйте', 'черный список', 'блэклист', 'blacklist',
     'разоблачение', 'фейк', 'fake', 'кидалово', 'кинул', 'кинули', 'развели', 'аферист', 'жулик',
-    'слив', 'обвели', 'оставили без денег', 'потерял деньги',
+    'слив', 'обвели', 'оставили без денег', 'потерял деньги', 'украли деньги',
 )
 
 _ARTICLE_SOURCES_REQUIRE_SCAM_CONTEXT = frozenset({
@@ -205,6 +205,7 @@ _BODY_ACCUSATION_MARKERS = (
     'чёрный список', 'черный список', 'blacklist', 'разоблачен', 'не платит',
     'не возвращ', 'украл', 'украли', 'слил', 'слив', 'аферист', 'кидалово',
     'предупреждение', 'осторожно', 'обвиняют', 'обвинение',
+    'потерял деньги',
 )
 
 
@@ -244,6 +245,8 @@ def _extract_channel_mentions(text, require_scam_context=False):
 
     def _consider(start, end, uname, is_tme=False):
         uname_lower = uname.lower()
+        if should_never_scam_base_norm_key(uname_lower):
+            return
         if is_tme and uname_lower in _skip_paths:
             return
         if uname_lower in _JSON_LD_NOISE or uname_lower in _CHANNEL_NOISE:
@@ -298,6 +301,9 @@ def _mention_is_substantive_accusation(full_text: str, title_lower: str, usernam
     u = (username or '').strip().lower()
     if not u or not full_text:
         return False
+    # Официальные платформы (Telegram, Instagram, …) — никогда не «главный подозреваемый», даже в заголовке.
+    if should_never_scam_base_norm_key(u):
+        return False
     tl = (title_lower or '').lower()
     if u in tl.replace('@', ''):
         return True
@@ -338,7 +344,7 @@ def _filter_channels_accusation_evidence(
     slug_match = {slug} if slug and slug in set(channels_full) else set()
     high = head_set | slug_match
     if high:
-        return [c for c in channels_full if c in high]
+        return [c for c in channels_full if c in high and not should_never_scam_base_norm_key(c)]
     out = []
     title_l = (title_text or '').strip()
     for c in channels_full:

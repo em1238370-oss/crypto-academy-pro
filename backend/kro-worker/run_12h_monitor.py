@@ -2910,6 +2910,123 @@ def _parse_scam_base_detected_utc(detected_raw):
         return None
 
 
+def _parse_scam_base_detected_sortable(detected_raw):
+    """ISO Z или DD.MM.YYYY… для сортировки при дедупе scam_base; иначе None (= самый старый)."""
+    d = _parse_scam_base_detected_utc(detected_raw)
+    if d:
+        return d
+    s = (detected_raw or '').strip()
+    m = re.match(r'^(\d{1,2})\.(\d{1,2})\.(\d{4})', s)
+    if m:
+        dd, mm, yy = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        try:
+            return datetime(yy, mm, dd, 12, 0, 0, tzinfo=timezone.utc)
+        except ValueError:
+            pass
+    return None
+
+
+def _dedupe_scam_base_sheet_keep_latest(client, sheet_id):
+    """
+    В scam_base одна строка на username (ключ A после _norm_ch_key): остаётся строка с самой свежей датой в C.
+    При равной дате — строка с меньшим номером в листе. Отключить: KRO_SCAM_BASE_DEDUPE_EACH_CYCLE=0.
+    """
+    if not client or not sheet_id:
+        return 0
+    if (os.environ.get('KRO_SCAM_BASE_DEDUPE_EACH_CYCLE') or '1').strip().lower() in ('0', 'false', 'no', 'off'):
+        return 0
+    scam_base_range = (os.environ.get('KRO_SCAM_BASE_RANGE') or 'scam_base!A2:N').strip()
+    sheet_name = scam_base_range.split('!')[0] if '!' in scam_base_range else 'scam_base'
+    try:
+        rows = (
+            client.spreadsheets()
+            .values()
+            .get(spreadsheetId=sheet_id, range='%s!A2:N' % sheet_name)
+            .execute()
+            .get('values', [])
+        )
+    except Exception as e:
+        print('scam_base dedupe read error: %s' % e, file=sys.stderr)
+        return 0
+    indexed = []
+    for i, row in enumerate(rows):
+        if not row:
+            continue
+        u = str(row[0]).strip()
+        if not u or u.lower() == 'username':
+            continue
+        nk = _norm_ch_key(u)
+        if not nk:
+            continue
+        det_cell = str(row[2]).strip() if len(row) > 2 else ''
+        dt = _parse_scam_base_detected_sortable(det_cell)
+        sheet_row = i + 2
+        indexed.append((sheet_row, nk, dt, row))
+    by_k = defaultdict(list)
+    for tup in indexed:
+        by_k[tup[1]].append(tup)
+    to_del = []
+    for _nk, group in by_k.items():
+        if len(group) <= 1:
+            continue
+
+        def _dedupe_sort_key(tup):
+            sr, _k, dt, _r = tup
+            epoch = dt.timestamp() if isinstance(dt, datetime) else float('-inf')
+            return (-epoch, sr)
+
+        sorted_g = sorted(group, key=_dedupe_sort_key)
+        for dup in sorted_g[1:]:
+            to_del.append(dup[0])
+    if not to_del:
+        return 0
+    to_del.sort(reverse=True)
+    try:
+        meta = client.spreadsheets().get(spreadsheetId=sheet_id, fields='sheets.properties').execute()
+        sid = None
+        for sh in meta.get('sheets', []):
+            props = sh.get('properties', {})
+            if props.get('title') == sheet_name:
+                sid = int(props.get('sheetId', 0))
+                break
+        if sid is None:
+            print('scam_base dedupe: sheetId not found for %s' % sheet_name, file=sys.stderr)
+            return 0
+    except Exception as e:
+        print('scam_base dedupe meta error: %s' % e, file=sys.stderr)
+        return 0
+    chunk = 400
+    deleted = 0
+    for start in range(0, len(to_del), chunk):
+        part = to_del[start : start + chunk]
+        requests = [
+            {
+                'deleteDimension': {
+                    'range': {
+                        'sheetId': sid,
+                        'dimension': 'ROWS',
+                        'startIndex': r - 1,
+                        'endIndex': r,
+                    }
+                }
+            }
+            for r in part
+        ]
+        try:
+            client.spreadsheets().batchUpdate(spreadsheetId=sheet_id, body={'requests': requests}).execute()
+        except Exception as e:
+            print('scam_base dedupe batchUpdate error: %s' % e, file=sys.stderr)
+            break
+        deleted += len(part)
+    if deleted:
+        print(
+            'scam_base dedupe: удалено %d строк-дубликатов (по username, оставлена самая свежая колонка C).'
+            % deleted,
+            file=sys.stderr,
+        )
+    return deleted
+
+
 def _sheet_only_content_analysis_from_row(row, fetch_failed=False, note=None):
     """Честный мини-анализ без ленты постов: только поля строки scam_base (колонки A–M)."""
     def cell(i):
@@ -7219,6 +7336,7 @@ def main():
     inserted_confirmed_channels = []
     if client and sheet_id:
         inserted_confirmed_channels = _write_confirmed_to_scam_base(confirmed_objects, client, sheet_id)
+        _dedupe_scam_base_sheet_keep_latest(client, sheet_id)
     print(
         '[kro_cycle_counters] web_findings_count=%d agg_whistleblower_channels=%d confirmed_before_gate=%d '
         'confirmed_after_telethon_gate=%d telethon_gate_rejected=%d scam_base_inserted=%d'
