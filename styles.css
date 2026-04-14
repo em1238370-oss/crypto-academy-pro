@@ -1538,6 +1538,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    max-width: min(560px, 100%);
    line-height: 1.45;
    text-align: center;
+   white-space: pre-line;
 }
 
 .kro-f1-system-note {

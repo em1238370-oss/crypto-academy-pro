@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260410-check-spacing">
+   <link rel="stylesheet" href="styles.css?v=20260414-home-dashboard-tight">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -116,10 +116,6 @@
                <span class="kro-f1-badge-sep" aria-hidden="true">·</span>
                <span class="kro-f1-badge">Обновление каждые 12 ч</span>
            </div>
-           <div class="kro-f1-metrics-head">
-               <h2 class="kro-f1-metrics-title">Результаты в цифрах</h2>
-               <p class="kro-f1-metrics-sub">Актуальные данные по скам-каналам и потерям</p>
-           </div>
            <div class="kro-feature1-dashboard">
                <p class="kro-feature1-date" id="kro-feature1-date">Последнее подтверждённое обновление: <span id="kro-live-datetime">—</span></p>
                <div class="kro-feature1-hero-number">
@@ -137,7 +133,7 @@
                <div class="kro-feature1-watch-pulse kro-card kro-scroll-in" aria-label="Индикатор широкого мониторинга">
                    <div class="kro-feature1-watch-pulse-head">
                        <strong>Пульс мониторинга</strong>
-                       <span>Watch-слой показывает, что система ищет шире, чем подтверждённая база.</span>
+                       <span>Шире подтверждённой базы — только наблюдение.</span>
                    </div>
                    <div class="kro-feature1-watch-pulse-grid">
                        <div class="kro-feature1-watch-pulse-item">
@@ -172,19 +168,19 @@
                <p class="kro-f1-system-note kro-scroll-in" id="kro-f1-system-note" hidden></p>
                <section class="kro-f1-explain kro-card kro-scroll-in" aria-labelledby="kro-f1-explain-title">
                    <h3 class="kro-f1-explain-title" id="kro-f1-explain-title">Как читать эти данные</h3>
-                   <p class="kro-f1-explain-lead">Мы не придумываем обвинения из воздуха. Система собирает сигналы из открытых источников, жалоб пользователей и мониторинга Telegram, а затем показывает уровень подтверждённости по каждому объекту.</p>
+                   <p class="kro-f1-explain-lead">Сигналы из открытых источников и мониторинга — затем статус по правилам.</p>
                    <div class="kro-f1-explain-grid">
                        <div class="kro-f1-explain-item">
                            <strong>Откуда берутся данные</strong>
-                           <span>Открытые расследования, чёрные списки, жалобы с сайта и автоматический мониторинг Telegram-каналов.</span>
+                           <span>Расследования, списки, жалобы, мониторинг Telegram.</span>
                        </div>
                        <div class="kro-f1-explain-item">
                            <strong>Что означает статус</strong>
-                           <span>Это уровень уверенности системы, а не эмоция или мнение. Если данных мало, объект остаётся <em>под наблюдением</em>, а не получает жёсткий ярлык.</span>
+                           <span>Уверенность системы, не эмоция. Мало данных — под наблюдением.</span>
                        </div>
                        <div class="kro-f1-explain-item">
                            <strong>Принцип проекта</strong>
-                           <span>Лучше меньше, но правда: в базу попадают только кейсы, которые можно перепроверить по источникам и признакам риска.</span>
+                           <span>Лучше меньше, но правда — только перепроверяемое.</span>
                        </div>
                    </div>
                </section>
@@ -267,7 +263,7 @@
            <div class="kro-f1-top3-wrap kro-scroll-in">
                <span class="kro-f1-badge kro-f1-badge-top3">По сумме потерь · вся база</span>
                <h2 class="kro-feature1-heading" id="kro-feature1-heading">Топ‑3 по потерям</h2>
-               <p class="kro-feature1-heading-sub">Каналы с наибольшими зафиксированными потерями ₽ (все подтверждённые записи)</p>
+               <p class="kro-feature1-heading-sub">По всей подтверждённой базе</p>
            </div>
            <ol class="kro-feature1-top3 kro-scroll-in" id="kro-feature1-top3">
                <li class="kro-top3-item kro-card"><span class="kro-top3-channel" id="kro-top3-1-channel">—</span> → <span class="kro-top3-sum" id="kro-top3-1-sum">—</span> → <span class="kro-top3-status" id="kro-top3-1-status">—</span></li>
@@ -821,7 +817,7 @@
                    var totalBase = Math.max(0, Math.floor(Number(data.channelsTotal) || 0));
                    var mentions = Math.max(0, Math.floor(Number(data.mentions_in_sources_sum != null ? data.mentions_in_sources_sum : data.complaints_received) || 0));
                    var repForm = Math.max(0, Math.floor(Number(data.reports_via_form_count) || 0));
-                   statsHero.textContent = 'Уже проверено ' + totalBase + ' ' + ruChannelsWord(totalBase) + ' · упоминаний в источниках (сумма по строкам базы): ' + mentions + ' · жалоб через форму на сайте: ' + repForm;
+                   statsHero.textContent = 'В базе ' + totalBase + ' ' + ruChannelsWord(totalBase) + ' · упоминаний: ' + mentions + ' · форма: ' + repForm;
                }
                var docWrap = document.getElementById('kro-f1-source-doc-wrap');
                var docLink = document.getElementById('kro-f1-source-doc-link');
