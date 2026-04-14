@@ -1242,8 +1242,8 @@ const kroChannelsWatchRange = process.env.KRO_CHANNELS_WATCH_RANGE || 'channels_
 const kroChannelsNetworkRange = process.env.KRO_CHANNELS_NETWORK_RANGE || 'channels_network!A2:G';
 const kroMetaRange = process.env.KRO_META_RANGE || 'kro_meta!A:B';
 const kroCheckQueueRange = process.env.KRO_CHECK_QUEUE_RANGE || '';
-/** Окно истории постов для живой проверки (check_once): только 30, 180 или 365. */
-const kroCheckOncePeriodDaysParsed = parseInt(process.env.KRO_CHECK_ONCE_PERIOD_DAYS || '30', 10);
+/** Окно истории постов для живой проверки (check_once): только 30, 180 или 365. По умолчанию год — главный сценарий «полная проверка канала». */
+const kroCheckOncePeriodDaysParsed = parseInt(process.env.KRO_CHECK_ONCE_PERIOD_DAYS || '365', 10);
 const kroCheckOncePeriodDays = [30, 180, 365].includes(kroCheckOncePeriodDaysParsed) ? kroCheckOncePeriodDaysParsed : 30;
 const kroCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_CHECK_ONCE_TIMEOUT_MS || '', 10);
 /** Полная выборка Telegram может занять минуты — не обрывать раньше 2 мин и позже 20 мин. */
@@ -3101,6 +3101,19 @@ function kroRunCheckOnce(channel, opts) {
   }
 }
 
+/** Для UI главной страницы: период и объём выборки без парсинга текста basic_info. */
+function kroLiveMetricsFromParsed(parsed) {
+  if (!parsed || typeof parsed !== 'object') return null;
+  const p = parsed;
+  return {
+    found: p.found === true,
+    username: (p.username || '').toString().trim() || null,
+    analysis_window_days: Number.isFinite(Number(p.analysis_window_days)) ? Number(p.analysis_window_days) : null,
+    posts_fetched: Number.isFinite(Number(p.posts_fetched)) ? Number(p.posts_fetched) : null,
+    read_only: !!p.read_only,
+  };
+}
+
 function looksLikeSiteHostname(s) {
   const t = (s || '').toString().trim().toLowerCase().replace(/\.$/, '');
   if (!t || /\s|\/|@/.test(t)) return false;
@@ -4433,6 +4446,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         risk_index_max: 100,
         false_positive_count: 0,
         analysis,
+        live_metrics: null,
       });
     }
     const scamResp = await sheetsClient.sheets.spreadsheets.values.get({
@@ -4463,6 +4477,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         risk_index_max: 100,
         false_positive_count: 0,
         analysis,
+        live_metrics: kroLiveMetricsFromParsed(once.parsed),
       });
     }
     const bestAny = matches.reduce((best, cur) =>
@@ -4492,6 +4507,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         risk_index_max: 100,
         false_positive_count: 0,
         analysis,
+        live_metrics: kroLiveMetricsFromParsed(once.parsed),
       });
     }
     const profile = liveMatches.reduce((best, cur) =>
@@ -4513,6 +4529,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       risk_index_max: 100,
       false_positive_count,
       analysis,
+      live_metrics: null,
     });
   } catch (e) {
     console.error('KRO channel-profile error:', e);
@@ -4536,6 +4553,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
           reasons: ['Сервис не смог прочитать базу — попробуйте обновить страницу позже.'],
         },
       },
+      live_metrics: null,
       error: 'internal_error',
     });
   }
