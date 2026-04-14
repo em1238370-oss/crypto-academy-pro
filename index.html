@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260414-home-dashboard-tight">
+   <link rel="stylesheet" href="styles.css?v=20260414-home-strip-pulse-explain">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -122,7 +122,6 @@
                    <span class="kro-feature1-hero-value" id="kro-stat-channels-today">—</span>
                   <span class="kro-feature1-hero-label" id="kro-feature1-hero-label">всего в подтверждённой базе</span>
                </div>
-               <p class="kro-feature1-hero-sub kro-scroll-in" id="kro-feature1-hero-sub" aria-live="polite">Новых в подтверждённой базе за тот же цикл: <strong id="kro-stat-new-confirmed">—</strong></p>
                <p class="kro-feature1-status-summary kro-scroll-in" id="kro-feature1-status-summary" aria-label="Статусы по всей подтверждённой базе">
                    <span>В риске: <strong id="kro-stat-at-risk">—</strong></span>
                    <span class="kro-feature1-status-sep" aria-hidden="true">·</span>
@@ -130,22 +129,6 @@
                    <span class="kro-feature1-status-sep" aria-hidden="true">·</span>
                    <span>Подтверждённый скам: <strong id="kro-stat-confirmed-scam">—</strong></span>
                </p>
-               <div class="kro-feature1-watch-pulse kro-card kro-scroll-in" aria-label="Индикатор широкого мониторинга">
-                   <div class="kro-feature1-watch-pulse-head">
-                       <strong>Пульс мониторинга</strong>
-                       <span>Шире подтверждённой базы — только наблюдение.</span>
-                   </div>
-                   <div class="kro-feature1-watch-pulse-grid">
-                       <div class="kro-feature1-watch-pulse-item">
-                           <span class="kro-feature1-watch-pulse-value" id="kro-watch-cycle-count">—</span>
-                           <span class="kro-feature1-watch-pulse-label">кандидатов прошло широкий мониторинг за цикл</span>
-                       </div>
-                       <div class="kro-feature1-watch-pulse-item">
-                           <span class="kro-feature1-watch-pulse-value" id="kro-watch-current-count">—</span>
-                           <span class="kro-feature1-watch-pulse-label">объектов сейчас в статусе «под наблюдением»</span>
-                       </div>
-                   </div>
-               </div>
                <div class="kro-feature1-stats">
                    <div class="kro-feature1-stat kro-card">
                    <span class="kro-feature1-stat-value" id="kro-stat-lost">—</span>
@@ -166,24 +149,6 @@
                </p>
                <p class="kro-f1-metrics-sub kro-scroll-in kro-feature1-source-caption" id="kro-f1-source-caption"></p>
                <p class="kro-f1-system-note kro-scroll-in" id="kro-f1-system-note" hidden></p>
-               <section class="kro-f1-explain kro-card kro-scroll-in" aria-labelledby="kro-f1-explain-title">
-                   <h3 class="kro-f1-explain-title" id="kro-f1-explain-title">Как читать эти данные</h3>
-                   <p class="kro-f1-explain-lead">Сигналы из открытых источников и мониторинга — затем статус по правилам.</p>
-                   <div class="kro-f1-explain-grid">
-                       <div class="kro-f1-explain-item">
-                           <strong>Откуда берутся данные</strong>
-                           <span>Расследования, списки, жалобы, мониторинг Telegram.</span>
-                       </div>
-                       <div class="kro-f1-explain-item">
-                           <strong>Что означает статус</strong>
-                           <span>Уверенность системы, не эмоция. Мало данных — под наблюдением.</span>
-                       </div>
-                       <div class="kro-f1-explain-item">
-                           <strong>Принцип проекта</strong>
-                           <span>Лучше меньше, но правда — только перепроверяемое.</span>
-                       </div>
-                   </div>
-               </section>
            </div>
            <div class="kro-f1-blocks kro-f1-content-card">
                <!-- Блок 1: Шок-цифры -->
@@ -273,14 +238,14 @@
            <div class="kro-f1-cta-check-wrap kro-scroll-in" id="kro-f1-cta-check-wrap">
                <div class="kro-f1-cta-block" id="kro-f1-cta-block">
                    <h2 class="kro-f1-cta-heading">Готов проверить гуру?</h2>
-                   <p class="kro-f1-cta-sub">Один клик — и ты увидишь, что за канал или обменник.</p>
+                   <p class="kro-f1-cta-sub">Один клик — и ты увидишь полный отчёт по Telegram‑каналу.</p>
                    <button type="button" class="kro-f1-cta-btn" id="kro-f1-cta-btn">Проверь своего гуру</button>
                </div>
                <div class="kro-feature1-check kro-f1-check-reveal" id="kro-feature1-check">
-                   <p class="kro-feature1-check-intro">Проверить канал</p>
+                   <p class="kro-feature1-check-intro">Проверить Telegram‑канал</p>
                    <div class="kro-feature1-check-row">
-                       <label class="kro-report-label" for="kro-check-channel">@username / ссылка на канал или обменник <input type="text" id="kro-check-channel" placeholder="@channel, t.me/..., или ссылка на обменник" autocomplete="off"></label>
-                       <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить</button>
+                       <label class="kro-report-label" for="kro-check-channel">@username или ссылка на канал <input type="text" id="kro-check-channel" placeholder="@channel или t.me/..." autocomplete="off"></label>
+                       <button type="button" class="kro-report-submit" id="kro-check-btn">Открыть отчёт</button>
                    </div>
                    <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
                </div>
@@ -723,10 +688,6 @@
            function applyData(data) {
                var el;
               // Крупная цифра на главной: общее число подтверждённых каналов в живой dedup-базе.
-               var nicRaw = data.new_in_cycle;
-               if (nicRaw == null || nicRaw === '') nicRaw = data.new_in_cycle_meta;
-               var newInCycle = parseInt(String(nicRaw).replace(/\s/g, ''), 10);
-               if (!isFinite(newInCycle) || newInCycle < 0) newInCycle = 0;
                var chTotal = Number(data.channelsTotal);
                if (!isFinite(chTotal)) chTotal = 0;
               var scanRaw = data.channels_scanned_in_cycle;
@@ -740,11 +701,6 @@
                    el.textContent = heroVal;
                }
                if ((el = document.getElementById('kro-feature1-hero-label'))) el.textContent = heroLabel;
-              var subEl = document.getElementById('kro-feature1-hero-sub');
-              if (subEl) {
-                  subEl.innerHTML = 'Новых в подтверждённой базе за последний цикл: <strong id="kro-stat-new-confirmed">' + String(newInCycle) + '</strong>';
-                  subEl.style.display = '';
-              }
                var ssAll = data.status_summary_all_time || {};
                if ((el = document.getElementById('kro-stat-at-risk'))) el.textContent = ssAll.at_risk != null ? String(ssAll.at_risk) : '—';
                if ((el = document.getElementById('kro-stat-under-watch'))) el.textContent = ssAll.under_watch != null ? String(ssAll.under_watch) : '—';
@@ -752,17 +708,6 @@
                if ((el = document.getElementById('kro-stat-lost'))) { el.dataset.target = data.totalLost; el.textContent = formatFull(data.totalLost); }
               if ((el = document.getElementById('kro-stat-channels'))) { el.dataset.target = scannedInCycle; el.textContent = scannedInCycle; }
               if ((el = document.getElementById('kro-stat-channels-label'))) el.textContent = 'Проверено за цикл';
-              if ((el = document.getElementById('kro-watch-cycle-count'))) { el.dataset.target = scannedInCycle; el.textContent = scannedInCycle; }
-              if ((el = document.getElementById('kro-watch-current-count'))) {
-                  var watchSummary = data.watch_status_summary || {};
-                  var uwRaw = data.watch_under_observation_total;
-                  if (uwRaw == null || uwRaw === '') uwRaw = watchSummary.under_watch;
-                  if (uwRaw == null || uwRaw === '') uwRaw = 0;
-                  var uw = parseInt(String(uwRaw).replace(/\s/g, ''), 10);
-                  if (!isFinite(uw) || uw < 0) uw = 0;
-                  el.dataset.target = uw;
-                  el.textContent = uw;
-              }
                if ((el = document.getElementById('kro-stat-courses'))) { el.dataset.target = data.coursesCount; el.textContent = data.coursesCount; }
                if ((el = document.getElementById('kro-live-datetime'))) {
                    var rawTime = data.last_cycle_at || data.lastValidUpdatedAt || data.updatedAt || null;
@@ -930,36 +875,27 @@
                    }
                    return t.charAt(0) === '@' ? t : '@' + t;
                }
-               function isExchangerUrl(s) {
+               function channelPathSlug(channel) {
+                   var c = (channel || '').trim();
+                   if (!c) return '';
+                   if (/^t\.me\//i.test(c)) return c;
+                   return c.replace(/^@+/, '');
+               }
+               function isNonTelegramHttp(s) {
                    var t = (s || '').trim();
                    return (t.indexOf('http://') === 0 || t.indexOf('https://') === 0) && t.toLowerCase().indexOf('t.me') === -1;
                }
                checkBtn.addEventListener('click', function() {
                    var raw = checkInput.value;
                    if (!raw || !raw.trim()) {
-                       checkResult.textContent = 'Введите @username, ссылку на канал (t.me/...) или ссылку на обменник.';
+                       checkResult.textContent = 'Введите @username или ссылку на Telegram‑канал (t.me/...).';
                        checkResult.classList.remove('hidden');
                        return;
                    }
                    checkResult.classList.remove('hidden');
-                   if (isExchangerUrl(raw)) {
-                       checkResult.textContent = 'Загрузка…';
-                       fetch(base + '/api/kro/check-exchanger?url=' + encodeURIComponent(raw.trim())).then(function(r) { return r.json(); }).then(function(data) {
-                           if (!data.found) {
-                               checkResult.textContent = (data.message || ('Обменник не найден в базе.'));
-                               checkResult.className = 'kro-check-result';
-                               return;
-                           }
-                           var riskStr = (data.risk_score != null) ? data.risk_score + '/100' : '—';
-                           var lines = ['Риск ' + riskStr];
-                           if (data.total_loss) lines.push('💸 Потери пользователей: ' + data.total_loss);
-                           lines.push('📊 Вердикт: ' + (data.verdictText || data.verdict || '—'));
-                           checkResult.textContent = lines.join('\n');
-                           checkResult.className = 'kro-check-result';
-                       }).catch(function() {
-                           checkResult.textContent = 'Ошибка запроса.';
-                           checkResult.className = 'kro-check-result';
-                       });
+                   if (isNonTelegramHttp(raw)) {
+                       checkResult.textContent = 'Этот блок проверяет только Telegram‑каналы. Для сайтов/обменников используйте другие инструменты.';
+                       checkResult.className = 'kro-check-result';
                        return;
                    }
                    var channel = normChannel(raw);
@@ -968,28 +904,15 @@
                        checkResult.className = 'kro-check-result';
                        return;
                    }
-                   checkResult.textContent = 'Анализируем канал… может занять до минуты';
-                   fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(data) {
-                       if (!data.found) {
-                           checkResult.textContent = (data.message || 'Анализируем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
-                           if (data.pending && !data.error_detail) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
-                           checkResult.className = 'kro-check-result';
-                           return;
-                       }
-                       var risk = data.risk_score;
-                       var riskStr = risk != null ? risk + '/100' : '—';
-                       var lines = ['Риск ' + riskStr];
-                       if (data.ads_per_week != null) lines.push('⚠️ ' + data.ads_per_week + ' реклам/неделя');
-                       if (data.bot_pct) lines.push('⚠️ ' + data.bot_pct + ' ботов в комментах');
-                       var lossStr = data.total_loss ? (data.total_loss + '') : (data.complaints != null ? data.complaints + ' жалоб' : '—');
-                       lines.push('💸 Потери пользователей: ' + lossStr);
-                       lines.push('📊 Вердикт: ' + (data.verdictText || data.verdict || '—'));
-                       checkResult.textContent = lines.join('\n');
+                   var slug = channelPathSlug(channel);
+                   if (!slug) {
+                       checkResult.textContent = 'Не удалось разобрать ссылку.';
                        checkResult.className = 'kro-check-result';
-                   }).catch(function() {
-                       checkResult.textContent = 'Ошибка запроса.';
-                       checkResult.className = 'kro-check-result';
-                   });
+                       return;
+                   }
+                   checkResult.textContent = 'Открываем отчёт…';
+                   checkResult.className = 'kro-check-result';
+                   window.location.href = '/channel/' + encodeURIComponent(slug);
                });
                var screenshotInput = document.getElementById('kro-check-screenshot');
                var screenshotBtn = document.getElementById('kro-check-screenshot-btn');
@@ -997,7 +920,7 @@
                    screenshotBtn.addEventListener('click', function() {
                        var file = screenshotInput && screenshotInput.files && screenshotInput.files[0];
                        if (!file) {
-                           checkResult.textContent = 'Выберите изображение (скрин канала или обменника).';
+                           checkResult.textContent = 'Выберите изображение (скрин канала).';
                            checkResult.classList.remove('hidden');
                            checkResult.className = 'kro-check-result';
                            return;
@@ -1014,29 +937,14 @@
                            }).then(function(r) { return r.json(); }).then(function(data) {
                                var extracted = (data.extracted || []).filter(Boolean);
                                if (!extracted.length) {
-                                   checkResult.textContent = 'На скрине не найдено ни @ника, ни ссылки на канал/обменник.';
+                                   checkResult.textContent = 'На скрине не найдено ни @ника, ни ссылки на Telegram‑канал.';
                                    checkResult.className = 'kro-check-result';
                                    return;
                                }
                                var first = extracted[0];
-                               var isExch = (first.indexOf('http://') === 0 || first.indexOf('https://') === 0) && first.toLowerCase().indexOf('t.me') === -1;
-                               if (isExch) {
-                                   fetch(base + '/api/kro/check-exchanger?url=' + encodeURIComponent(first)).then(function(r) { return r.json(); }).then(function(exData) {
-                                       if (!exData.found) {
-                                           checkResult.textContent = (exData.message || 'Обменник не найден в базе.');
-                                           checkResult.className = 'kro-check-result';
-                                           return;
-                                       }
-                                       var riskStr = (exData.risk_score != null) ? exData.risk_score + '/100' : '—';
-                                       var lines = ['Риск ' + riskStr];
-                                       if (exData.total_loss) lines.push('💸 Потери пользователей: ' + exData.total_loss);
-                                       lines.push('📊 Вердикт: ' + (exData.verdict || '—'));
-                                       checkResult.textContent = lines.join('\n');
-                                       checkResult.className = 'kro-check-result';
-                                   }).catch(function() {
-                                       checkResult.textContent = 'Ошибка запроса.';
-                                       checkResult.className = 'kro-check-result';
-                                   });
+                               if ((first.indexOf('http://') === 0 || first.indexOf('https://') === 0) && first.toLowerCase().indexOf('t.me') === -1) {
+                                   checkResult.textContent = 'На скрине найден URL сайта, а не Telegram‑канал — для этого блока нужен @username или t.me/....';
+                                   checkResult.className = 'kro-check-result';
                                    return;
                                }
                                var channel = normChannel(first);
@@ -1045,19 +953,15 @@
                                    checkResult.className = 'kro-check-result';
                                    return;
                                }
-                               fetch(base + '/api/kro/check?channel=' + encodeURIComponent(channel)).then(function(r) { return r.json(); }).then(function(chData) {
-                                   if (!chData.found) {
-                                       checkResult.textContent = (chData.message || 'Проверяем канал. Подождите 1–2 минуты и нажмите «Проверить» снова.');
-                                       if (chData.pending) checkResult.textContent += '\nНажмите «Проверить» снова через 1–2 минуты.';
-                                       checkResult.className = 'kro-check-result';
-                                       return;
-                                   }
-                                   checkResult.innerHTML = buildCheckResultCardHtml(chData);
+                               var slug2 = channelPathSlug(channel);
+                               if (!slug2) {
+                                   checkResult.textContent = 'Не удалось разобрать канал из скрина.';
                                    checkResult.className = 'kro-check-result';
-                               }).catch(function() {
-                                   checkResult.textContent = 'Ошибка запроса.';
-                                   checkResult.className = 'kro-check-result';
-                               });
+                                   return;
+                               }
+                               checkResult.textContent = 'Открываем отчёт…';
+                               checkResult.className = 'kro-check-result';
+                               window.location.href = '/channel/' + encodeURIComponent(slug2);
                            }).catch(function() {
                                checkResult.textContent = 'Ошибка распознавания скрина.';
                                checkResult.className = 'kro-check-result';

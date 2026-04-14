@@ -1239,26 +1239,13 @@ body.kro-hero-scrolled .kro-floating-nav {
    margin-top: 10px;
 }
 
-.kro-feature1-hero-sub {
-   text-align: center;
-   font-size: clamp(12px, 1.85vw, 15px);
-   line-height: 1.45;
-   color: rgba(255, 255, 255, 0.62);
-   margin: 8px auto 0;
-   max-width: 520px;
-}
-.kro-feature1-hero-sub strong {
-   color: rgba(255, 255, 255, 0.9);
-   font-weight: 700;
-}
-
 .kro-feature1-status-summary {
    display: flex;
    flex-wrap: wrap;
    align-items: center;
    justify-content: center;
    gap: 6px 10px;
-   margin: -12px auto 28px;
+   margin: 6px auto 24px;
    max-width: 640px;
    font-size: clamp(12px, 1.9vw, 15px);
    line-height: 1.45;
@@ -1549,131 +1536,8 @@ body.kro-hero-scrolled .kro-floating-nav {
    line-height: 1.45;
 }
 
-.kro-feature1-watch-pulse {
-   max-width: min(760px, 100%);
-   margin: 14px auto 0;
-   padding: 16px 18px;
-   text-align: left;
-}
-
-.kro-feature1-watch-pulse-head {
-   display: grid;
-   gap: 4px;
-   margin-bottom: 12px;
-}
-
-.kro-feature1-watch-pulse-head strong {
-   font-size: 14px;
-   font-weight: 700;
-   color: rgba(255, 255, 255, 0.92);
-}
-
-.kro-feature1-watch-pulse-head span {
-   font-size: 13px;
-   line-height: 1.5;
-   color: rgba(255, 255, 255, 0.64);
-}
-
-.kro-feature1-watch-pulse-grid {
-   display: grid;
-   grid-template-columns: repeat(2, minmax(0, 1fr));
-   gap: 12px;
-}
-
-.kro-feature1-watch-pulse-item {
-   display: grid;
-   gap: 4px;
-   padding: 12px 14px;
-   border-radius: 12px;
-   background: rgba(255, 255, 255, 0.035);
-   border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.kro-feature1-watch-pulse-value {
-   font-size: clamp(20px, 2.8vw, 28px);
-   font-weight: 800;
-   line-height: 1.1;
-   color: rgba(255, 255, 255, 0.94);
-   font-variant-numeric: tabular-nums;
-}
-
-.kro-feature1-watch-pulse-label {
-   font-size: 12px;
-   line-height: 1.5;
-   color: rgba(255, 255, 255, 0.62);
-}
-
-.kro-f1-explain {
-   max-width: min(760px, 100%);
-   margin: 18px auto 0;
-   padding: 18px 20px;
-   text-align: left;
-}
-
-.kro-f1-explain-title {
-   font-size: clamp(15px, 1.8vw, 18px);
-   font-weight: 700;
-   color: rgba(255, 255, 255, 0.92);
-   margin: 0 0 10px;
-}
-
-.kro-f1-explain-lead {
-   font-size: 14px;
-   line-height: 1.6;
-   color: rgba(255, 255, 255, 0.74);
-   margin: 0 0 14px;
-}
-
-.kro-f1-explain-grid {
-   display: grid;
-   grid-template-columns: repeat(3, minmax(0, 1fr));
-   gap: 12px;
-}
-
-.kro-f1-explain-item {
-   display: grid;
-   gap: 6px;
-   padding: 12px 14px;
-   border-radius: 12px;
-   background: rgba(255, 255, 255, 0.035);
-   border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.kro-f1-explain-item strong {
-   font-size: 12px;
-   letter-spacing: 0.04em;
-   text-transform: uppercase;
-   color: rgba(255, 255, 255, 0.92);
-}
-
-.kro-f1-explain-item span {
-   font-size: 13px;
-   line-height: 1.55;
-   color: rgba(255, 255, 255, 0.66);
-}
-
-.kro-f1-explain-item em {
-   font-style: normal;
-   color: rgba(255, 255, 255, 0.88);
-}
-
 .kro-feature1-stat.kro-card {
    padding: 14px 18px;
-}
-
-@media (max-width: 720px) {
-   .kro-feature1-watch-pulse-grid {
-      grid-template-columns: 1fr;
-   }
-   .kro-feature1-watch-pulse {
-      padding: 16px;
-   }
-   .kro-f1-explain-grid {
-      grid-template-columns: 1fr;
-   }
-   .kro-f1-explain {
-      padding: 16px;
-   }
 }
 
 /* Фишка 1: четыре блока (шок, типы лоха, математика, выбор) в одной контент-карточке */
