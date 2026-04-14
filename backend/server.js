@@ -3105,11 +3105,16 @@ function kroRunCheckOnce(channel, opts) {
 function kroLiveMetricsFromParsed(parsed) {
   if (!parsed || typeof parsed !== 'object') return null;
   const p = parsed;
+  const complaintsRaw = p.complaints;
+  const complaintsNum = complaintsRaw == null || complaintsRaw === '' || complaintsRaw === '—'
+    ? null
+    : Number(complaintsRaw);
   return {
     found: p.found === true,
     username: (p.username || '').toString().trim() || null,
     analysis_window_days: Number.isFinite(Number(p.analysis_window_days)) ? Number(p.analysis_window_days) : null,
     posts_fetched: Number.isFinite(Number(p.posts_fetched)) ? Number(p.posts_fetched) : null,
+    complaints_count: Number.isFinite(complaintsNum) ? complaintsNum : null,
     read_only: !!p.read_only,
   };
 }
