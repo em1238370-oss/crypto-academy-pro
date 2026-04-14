@@ -2601,321 +2601,6 @@ function normalizeCheckOnceError(error) {
   return text.split('\n').slice(-1)[0].trim() || text;
 }
 
-const KRO_V0_STATUS = {
-  watch: 'под наблюдением',
-  risk: 'в риске',
-  scam: 'подтверждённый скам',
-  clean: 'на текущий момент нарушений не видно',
-};
-
-function kroV0CleanEvidenceQuotes(evidence) {
-  const parts = (evidence || '')
-    .toString()
-    .replace(/Источник:\s*/gi, '')
-    .split(/\s*\|\s*|\s*;\s*|\n+/);
-  const codeLike = /function\s*\(|=>|<\/?script|javascript:/i;
-  const out = [];
-  for (const p0 of parts) {
-    const p = p0.replace(/https?:\/\/[^\s|;]+/gi, '').replace(/\s+/g, ' ').trim();
-    if (p.length < 22 || p.length > 520) continue;
-    if (codeLike.test(p)) continue;
-    if (!/[а-яёА-ЯЁ]/.test(p) && p.length < 100) continue;
-    out.push(p);
-    if (out.length >= 4) break;
-  }
-  return out;
-}
-
-function kroV0RiskBulletsFromScamBaseRow(r) {
-  const bullets = [];
-  if (!r) return bullets;
-  const ot = (r.object_type || '').toString().trim();
-  if (ot && ot !== '—' && !/^\d+$/.test(ot)) bullets.push(`Тип объекта в базе: ${ot}`);
-  const complaints = r.complaints;
-  if (complaints != null && complaints !== '' && !Number.isNaN(Number(complaints)) && Number(complaints) > 0) {
-    bullets.push(`Жалоб по записи: ${Number(complaints)}`);
-  }
-  const loss = Number(r.total_loss_rub);
-  if (Number.isFinite(loss) && loss > 0) {
-    bullets.push(`Сумма потерь в строке: ${loss.toLocaleString('ru-RU')} ₽`);
-  }
-  for (const q of kroV0CleanEvidenceQuotes(r.source_evidence || '')) {
-    bullets.push(`Из поля доказательств: «${q}»`);
-  }
-  try {
-    const caRaw = (r.content_analysis || '').toString().trim();
-    if (caRaw) {
-      const ca = JSON.parse(caRaw);
-      const kws = ca && ca.keywords;
-      if (kws && typeof kws === 'object') {
-        const hits = Object.keys(kws).filter((k) => Number(kws[k]) > 0);
-        if (hits.length) bullets.push(`Маркеры в контент-анализе: ${hits.slice(0, 10).join(', ')}.`);
-      }
-    }
-  } catch (_) {
-    /* ignore */
-  }
-  return bullets;
-}
-
-function kroV0MapScamBaseStatusToConclusion(status, verdict, totalLossRub) {
-  const adjusted = statusWithLossFloor(status, totalLossRub);
-  const s = normalizeKroStatusBlob(adjusted);
-  if (s.includes('подтвержд') && s.includes('скам')) return KRO_V0_STATUS.scam;
-  if (s.includes('в риске')) return KRO_V0_STATUS.risk;
-  if (s.includes('без нарушений') || s.includes('без риска')) return KRO_V0_STATUS.clean;
-  const v = normalizeKroStatusBlob(verdict);
-  if (v.includes('scam') || v.includes('скам')) return KRO_V0_STATUS.scam;
-  return KRO_V0_STATUS.watch;
-}
-
-function kroV0ConclusionFromLiveParsed(parsed) {
-  if (!parsed || parsed.not_crypto) {
-    return { status: KRO_V0_STATUS.watch, reasons: ['Канал не относится к крипто-тематике по сигналам постов — отчёт ограничен.'] };
-  }
-  if (parsed.found !== true) {
-    const err = normalizeCheckOnceError(parsed.error) || 'Проверка не дала результата.';
-    return { status: KRO_V0_STATUS.watch, reasons: [err] };
-  }
-  if (parsed.is_confirmed === true || parsed.verdict === 'scam') {
-    const reasons = [];
-    if (parsed.confirmation_status === 'confirmed' || parsed.is_confirmed === true) {
-      reasons.push('Пройдены три критерия подтверждённого скам-канала (возраст ≤14 дней, оффер/VIP/сигналы, ≥2 жалоб).');
-    }
-    if (parsed.complaints != null) reasons.push(`Жалоб в таблице отчётов: ${parsed.complaints}.`);
-    if (parsed.total_loss) reasons.push(`Сумма потерь по жалобам: ${parsed.total_loss}.`);
-    if (parsed.risk_score != null) reasons.push(`Итоговый risk_score после разбора постов: ${parsed.risk_score}/100.`);
-    return { status: KRO_V0_STATUS.scam, reasons: reasons.slice(0, 4) };
-  }
-  const rl = (parsed.risk_level || '').toString().trim();
-  if (rl === 'в риске') {
-    const reasons = [];
-    if (parsed.complaints != null) reasons.push(`Жалоб: ${parsed.complaints} (порог для уровня «в риске» в логике мониторинга: ≥2 при наличии сигналов/VIP).`);
-    if (Array.isArray(parsed.risk_evidence) && parsed.risk_evidence.length) {
-      reasons.push(`Совпадения по текстам/заголовку: ${parsed.risk_evidence.slice(0, 3).join(', ')}.`);
-    }
-    if (parsed.only_profits_flag) reasons.push('Флаг «только профиты / скрытые убытки» включён по выборке постов.');
-    if (parsed.has_signal_offer) reasons.push('В выборке постов есть явные long/short сигналы или похожий оффер.');
-    return { status: KRO_V0_STATUS.risk, reasons: reasons.slice(0, 4) };
-  }
-  if (rl === 'поведенческий риск') {
-    const reasons = [];
-    if (parsed.fomo_pct != null) reasons.push(`FOMO-маркеры встречаются примерно в ${parsed.fomo_pct}% постов выборки.`);
-    if (Array.isArray(parsed.shame_phrases_detected) && parsed.shame_phrases_detected.length) {
-      reasons.push(`Найдены «стыдящие» формулировки: ${parsed.shame_phrases_detected.slice(0, 2).join('; ')}.`);
-    }
-    if (parsed.ads_ratio != null) reasons.push(`Доля «рекламных» постов по ключам: ~${parsed.ads_ratio}%.`);
-    if (Array.isArray(parsed.risk_evidence) && parsed.risk_evidence.length) {
-      reasons.push(`Поведенческие маркеры: ${parsed.risk_evidence.slice(0, 3).join(', ')}.`);
-    }
-    return { status: KRO_V0_STATUS.risk, reasons: reasons.slice(0, 4) };
-  }
-  if (rl === 'под наблюдением') {
-    const reasons = [];
-    if (parsed.complaints === 1) reasons.push('Есть ровно одна зафиксированная жалоба — по правилам мониторинга это зона «под наблюдением», а не «в риске».');
-    if (parsed.has_signal_offer) reasons.push('Есть признаки сигнального оффера в выборке постов.');
-    if (parsed.vip_price && String(parsed.vip_price).trim() && String(parsed.vip_price).trim() !== '—') {
-      reasons.push(`В текстах найден VIP/прайс: ${String(parsed.vip_price).trim()}.`);
-    }
-    if (parsed.risk_verdict) reasons.push(`Предварительный risk_verdict по формуле: ${parsed.risk_verdict}.`);
-    if (!reasons.length) reasons.push('Есть отдельные маркеры риска, но без набора для более жёсткого статуса.');
-    return { status: KRO_V0_STATUS.watch, reasons: reasons.slice(0, 4) };
-  }
-  if (rl === 'нет риска') {
-    const reasons = [];
-    if (parsed.risk_verdict) reasons.push(`Предварительный risk_verdict по формуле: ${parsed.risk_verdict}.`);
-    if (parsed.risk_score != null) reasons.push(`Итоговый risk_score: ${parsed.risk_score}/100.`);
-    reasons.push('По выборке постов не собран набор маркеров для «в риске» / «поведенческий риск».');
-    return { status: KRO_V0_STATUS.clean, reasons: reasons.slice(0, 4) };
-  }
-  const reasons = [];
-  if (parsed.risk_score != null) reasons.push(`Итоговый risk_score: ${parsed.risk_score}/100.`);
-  if (parsed.risk_verdict) reasons.push(`Предварительный risk_verdict по формуле: ${parsed.risk_verdict}.`);
-  return { status: KRO_V0_STATUS.watch, reasons: reasons.slice(0, 4) };
-}
-
-function kroV0BuildAnalysisFromScamBaseProfile(profile, extra) {
-  const r = profile;
-  const username = (r?.username || '').toString().trim() || (extra && extra.channel_key) || '';
-  const lossRub = Number(r?.total_loss_rub) || 0;
-  const conclusion = {
-    status: kroV0MapScamBaseStatusToConclusion(r?.status, r?.verdict, lossRub),
-    reasons: [],
-  };
-  if (r?._schema === 'v2') {
-    if (Number.isFinite(lossRub) && lossRub > 0) conclusion.reasons.push(`В строке базы указаны потери: ${lossRub.toLocaleString('ru-RU')} ₽.`);
-    if (r.complaints != null && r.complaints !== '') conclusion.reasons.push(`В строке базы указано жалоб: ${r.complaints}.`);
-    const st = (r.status || '').toString().trim();
-    if (st) conclusion.reasons.push(`Статус в scam_base: ${st}.`);
-    const sp = (r.source_primary || '').toString().trim();
-    if (sp && sp !== '—') conclusion.reasons.push(`Первоисточник в строке: ${sp}.`);
-  } else {
-    if (r?.risk_score != null) conclusion.reasons.push(`В строке базы risk_score: ${r.risk_score}/100.`);
-    if (r?.verdict) conclusion.reasons.push(`Вердикт в строке базы: ${r.verdict}.`);
-    if (r?.complaints != null) conclusion.reasons.push(`Жалоб в строке: ${r.complaints}.`);
-    if (r?.total_loss) conclusion.reasons.push(`Потери в строке: ${r.total_loss}.`);
-  }
-  conclusion.reasons = conclusion.reasons.filter(Boolean).slice(0, 4);
-
-  const riskBullets = kroV0RiskBulletsFromScamBaseRow(r);
-  const baseInfo = [];
-  baseInfo.push(`Идентификатор: ${username || '—'}`);
-  if (r?.link) baseInfo.push(`Ссылка в строке базы: ${r.link}`);
-  if (r?._schema === 'v2') {
-    if (r.created_at) baseInfo.push(`Дата создания (как в строке): ${r.created_at}`);
-    if (r.channel_age_days != null && r.channel_age_days !== '') {
-      baseInfo.push(`Возраст канала (дней, как в строке): ${r.channel_age_days}`);
-    }
-    if (r.cycle_window) baseInfo.push(`Окно цикла: ${r.cycle_window}`);
-    if (r.detected_at) baseInfo.push(`Дата обнаружения в базе: ${r.detected_at}`);
-  } else {
-    if (r?.risk_score != null) baseInfo.push(`risk_score (как в строке): ${r.risk_score}/100`);
-    if (r?.ads_per_week != null) baseInfo.push(`Рекламных постов/неделя (как в строке): ${r.ads_per_week}`);
-    if (r?.bot_pct) baseInfo.push(`Доля похожих на ботов ответов (как в строке): ${r.bot_pct}`);
-    if (r?.vip_price) baseInfo.push(`VIP/прайс (как в строке): ${r.vip_price}`);
-  }
-
-  const content = [];
-  if (r?._schema === 'v2') {
-    if (r.vip_price) content.push(`VIP/прайс в строке: ${r.vip_price}`);
-  } else {
-    if (r?.ads_per_week != null) content.push(`Реклама (постов/7 дней) по строке: ${r.ads_per_week}`);
-    if (r?.bot_pct) content.push(`Похожие на ботов ответы: ${r.bot_pct}`);
-  }
-  for (const b of riskBullets.slice(0, 6)) content.push(b);
-
-  const external = [];
-  const sp = (r?.source_primary || '').toString().trim();
-  if (sp && sp !== '—') external.push(`Первоисточник: ${sp}`);
-  const ev = (r?.source_evidence || '').toString().trim();
-  if (ev && ev !== '—') {
-    external.push(`Поле доказательств заполнено (${ev.length} симв.) — ниже на странице есть извлечённые ссылки.`);
-  }
-  if (r?.complaints != null && r.complaints !== '') external.push(`Учтённые жалобы в строке: ${r.complaints}`);
-  if (Number.isFinite(lossRub) && lossRub > 0) {
-    external.push(`Сумма потерь в строке: ${lossRub.toLocaleString('ru-RU')} ₽`);
-  }
-
-  const network = [];
-  try {
-    const caRaw = (r?.content_analysis || '').toString().trim();
-    if (caRaw) {
-      const ca = JSON.parse(caRaw);
-      const pc = ca?.promoted_channels;
-      if (Array.isArray(pc) && pc.length) {
-        network.push(`В контент-анализе упомянуты связанные каналы/боты: ${pc.slice(0, 6).join(', ')}.`);
-      } else if (ca?.network_connections != null) {
-        network.push(`network_connections (как в контент-анализе): ${ca.network_connections}`);
-      }
-    }
-  } catch (_) {
-    /* ignore */
-  }
-  if (!network.length) network.push('Отдельный граф связей в данных строки не выделен — смотрите внешние ссылки и «Почему в базе».');
-
-  return {
-    v: 0,
-    channel_key: (extra && extra.channel_key) || channelMatchKey(username) || username,
-    generated_at: new Date().toISOString(),
-    sources: ['scam_base'],
-    basic_info: baseInfo,
-    content_behavior: content,
-    external_reports: external,
-    ties_risk_factors: network,
-    conclusion,
-  };
-}
-
-function kroV0BuildAnalysisFromLiveParsed(parsed, channelKey) {
-  const p = parsed && typeof parsed === 'object' ? parsed : {};
-  const username = (p.username || '').toString().trim();
-  const conclusion = kroV0ConclusionFromLiveParsed(p);
-
-  const baseInfo = [];
-  baseInfo.push(`Идентификатор: ${username || channelKey || '—'}`);
-  if (p.title) baseInfo.push(`Название в Telegram: ${p.title}`);
-  if (p.channel_age_days != null) baseInfo.push(`Возраст канала (оценка по дате создания): ${p.channel_age_days} дн.`);
-  if (p.risk_score != null) baseInfo.push(`risk_score (формула check_once): ${p.risk_score}/100`);
-  if (p.risk_verdict) baseInfo.push(`risk_verdict (до порога 3 критериев): ${p.risk_verdict}`);
-
-  const content = [];
-  if (p.ads_per_week != null) content.push(`Рекламных постов за 7 дней (по ключам): ${p.ads_per_week}`);
-  if (p.bot_pct != null && p.bot_pct !== '') content.push(`Оценка «ботовых» ответов в ветках: ${p.bot_pct}`);
-  if (p.fomo_pct != null) content.push(`FOMO-маркеры: ~${p.fomo_pct}% постов выборки`);
-  if (p.ads_ratio != null) content.push(`Доля постов с рекламными ключами (ads_ratio): ${p.ads_ratio}%`);
-  if (p.only_profits_flag) content.push('Флаг only_profits_flag: в выборке много постов про прибыль и почти нет упоминаний убытков');
-  if (Array.isArray(p.sample_posts) && p.sample_posts.length) {
-    content.push(`Пример поста: «${String(p.sample_posts[0]).slice(0, 180)}${String(p.sample_posts[0]).length > 180 ? '…' : ''}»`);
-  }
-
-  const external = [];
-  if (p.complaints != null) external.push(`Жалоб по таблице отчётов: ${p.complaints}`);
-  if (p.total_loss) external.push(`Сумма потерь по жалобам (как в таблице): ${p.total_loss}`);
-  if (p.complaints == null && p.total_loss == null) {
-    external.push('Жалобы/потери по таблице отчётов сейчас не подтянулись (либо записей нет).');
-  }
-
-  const network = [];
-  if (p.promoted_channels_count != null) {
-    network.push(`Упоминаний других каналов в постах: ${p.promoted_channels_count}`);
-  }
-  if (Array.isArray(p.promoted_channels_sample) && p.promoted_channels_sample.length) {
-    network.push(`Примеры упомянутых каналов: ${p.promoted_channels_sample.slice(0, 6).join(', ')}`);
-  }
-  if (p.subscriber_growth_per_day != null) {
-    network.push(`TGStat: рост подписчиков/сутки: ${p.subscriber_growth_per_day}`);
-  }
-  if (p.growth_anomaly != null) network.push(`TGStat: аномалия роста (growth_anomaly): ${p.growth_anomaly}`);
-  if (p.reach_ratio != null) network.push(`TGStat: reach_ratio: ${p.reach_ratio}`);
-  if (!network.length) network.push('Связи/сеть по TGStat и кросс-промо в выборке не выделены отдельным сигналом.');
-
-  return {
-    v: 0,
-    channel_key: channelKey || channelMatchKey(username) || username,
-    generated_at: new Date().toISOString(),
-    sources: ['check_once'],
-    basic_info: baseInfo,
-    content_behavior: content,
-    external_reports: external,
-    ties_risk_factors: network,
-    conclusion,
-  };
-}
-
-function kroRunCheckOnce(channel) {
-  const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
-  if (!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath))) {
-    return { ok: false, error: 'live_check_unavailable', parsed: null, stderr: '' };
-  }
-  try {
-    const child = spawnSync('python3', [scriptPath, channel], {
-      cwd: join(__dirname, 'kro-worker'),
-      timeout: 60000,
-      encoding: 'utf8',
-      env: { ...process.env },
-    });
-    const stdout = (child.stdout || '').trim();
-    const stderr = (child.stderr || '').trim();
-    const line = stdout.split('\n').find((l) => l.trim().startsWith('{'));
-    if (!line) {
-      return {
-        ok: false,
-        error: normalizeCheckOnceError(stderr) || (child.status !== 0 ? 'Скрипт завершился с ошибкой' : 'Пустой ответ скрипта'),
-        parsed: null,
-        stderr,
-      };
-    }
-    try {
-      const parsed = JSON.parse(line);
-      return { ok: true, error: null, parsed, stderr };
-    } catch (e) {
-      return { ok: false, error: normalizeCheckOnceError(stderr) || 'Ошибка ответа скрипта', parsed: null, stderr };
-    }
-  } catch (e) {
-    return { ok: false, error: normalizeCheckOnceError(e.message) || 'Запуск проверки не удался', parsed: null, stderr: '' };
-  }
-}
-
 function looksLikeSiteHostname(s) {
   const t = (s || '').toString().trim().toLowerCase().replace(/\.$/, '');
   if (!t || /\s|\/|@/.test(t)) return false;
@@ -3461,50 +3146,12 @@ app.get('/api/kro/check', async (req, res) => {
   }
   const checkingMessage = 'Проверяем канал по Telegram. Подождите 1–2 минуты и нажмите «Проверить» снова.';
   if (!kroScamBaseRange || !kroSheetId) {
-    return res.json({
-      found: false,
-      channel,
-      pending: true,
-      message: checkingMessage,
-      analysis: {
-        v: 0,
-        channel_key: channelMatchKey(channel) || channel,
-        generated_at: new Date().toISOString(),
-        sources: [],
-        basic_info: ['Мониторинговая таблица (scam_base) не настроена на этом окружении — живой отчёт недоступен.'],
-        content_behavior: [],
-        external_reports: [],
-        ties_risk_factors: [],
-        conclusion: {
-          status: KRO_V0_STATUS.watch,
-          reasons: ['Нет доступа к Google Sheets / диапазону scam_base, поэтому сравнение с базой и разбор не запускаются.'],
-        },
-      },
-    });
+    return res.json({ found: false, channel, pending: true, message: checkingMessage });
   }
   try {
     const client = await getKroSheetsClient();
     if (!client) {
-      return res.json({
-        found: false,
-        channel,
-        pending: true,
-        message: checkingMessage,
-        analysis: {
-          v: 0,
-          channel_key: channelMatchKey(channel) || channel,
-          generated_at: new Date().toISOString(),
-          sources: [],
-          basic_info: ['Google Sheets клиент недоступен (нет credentials) — проверка отложена.'],
-          content_behavior: [],
-          external_reports: [],
-          ties_risk_factors: [],
-          conclusion: {
-            status: KRO_V0_STATUS.watch,
-            reasons: ['Сервис не смог подключиться к таблице мониторинга — попробуйте позже.'],
-          },
-        },
-      });
+      return res.json({ found: false, channel, pending: true, message: checkingMessage });
     }
     const response = await client.sheets.spreadsheets.values.get({
       spreadsheetId: kroSheetId,
@@ -3526,8 +3173,6 @@ app.get('/api/kro/check', async (req, res) => {
           if (report.complaints != null) complaints = report.complaints;
           if (report.total_loss != null) total_loss = report.total_loss;
         }
-        const profileForAnalysis = enrichScamBaseContentAnalysisForMonitor({ ...row, complaints, total_loss });
-        const analysis = kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: requestKey });
         return res.json({
           found: true,
           username: row.username,
@@ -3537,108 +3182,99 @@ app.get('/api/kro/check', async (req, res) => {
           vip_price: row.vip_price,
           complaints,
           total_loss,
-          verdict: row.verdict,
-          analysis,
+          verdict: row.verdict
         });
       }
     }
 
+    const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
+    const hasPython = (process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath));
     let checkOnceError = null;
-    const once = kroRunCheckOnce(channel);
-    if (once.stderr) console.error('KRO check_once stderr:', once.stderr);
-    const parsed = once.parsed;
-    if (parsed && parsed.not_crypto) {
-      return res.json({
-        found: false,
-        pending: false,
-        channel,
-        message: parsed.error || 'Канал не связан с криптой, поэтому в мониторинг не попадает.',
-        analysis: kroV0BuildAnalysisFromLiveParsed(parsed, requestKey),
-      });
-    }
-    if (once.ok && parsed && parsed.found === true && parsed.is_confirmed === true) {
-      let complaints = parsed.complaints;
-      let total_loss = parsed.total_loss;
-      const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
-      if (empty(complaints) || empty(total_loss)) {
-        const report = await getComplaintsAndLossForChannel(client, channel);
-        if (report.complaints != null) complaints = report.complaints;
-        if (report.total_loss != null) total_loss = report.total_loss;
+    if (hasPython) {
+      try {
+        const child = spawnSync('python3', [scriptPath, channel], {
+          cwd: join(__dirname, 'kro-worker'),
+          timeout: 60000,
+          encoding: 'utf8',
+          env: { ...process.env }
+        });
+        const stdout = (child.stdout || '').trim();
+        const stderr = (child.stderr || '').trim();
+        const line = stdout.split('\n').find((l) => l.trim().startsWith('{'));
+        if (line) {
+          try {
+            const parsed = JSON.parse(line);
+            if (parsed && parsed.not_crypto) {
+              return res.json({
+                found: false,
+                pending: false,
+                channel,
+                message: parsed.error || 'Канал не связан с криптой, поэтому в мониторинг не попадает.'
+              });
+            }
+            if (parsed && parsed.found === true && parsed.is_confirmed === true) {
+              let complaints = parsed.complaints;
+              let total_loss = parsed.total_loss;
+              const empty = (v) => v == null || v === '' || (typeof v === 'string' && v.trim() === '—');
+              if (empty(complaints) || empty(total_loss)) {
+                const report = await getComplaintsAndLossForChannel(client, channel);
+                if (report.complaints != null) complaints = report.complaints;
+                if (report.total_loss != null) total_loss = report.total_loss;
+              }
+              const risk_score = parsed.risk_score != null
+                ? parsed.risk_score
+                : computeRiskScoreFromFeatures(parsed.ads_per_week, parsed.bot_pct, complaints ?? parsed.complaints, parsed.vip_price);
+              return res.json({
+                found: true,
+                username: parsed.username,
+                risk_score,
+                ads_per_week: parsed.ads_per_week,
+                bot_pct: parsed.bot_pct,
+                vip_price: parsed.vip_price,
+                complaints,
+                total_loss,
+                verdict: parsed.verdict,
+                is_confirmed: true,
+                fomo_pct: parsed.fomo_pct,
+                shame_phrases_detected: parsed.shame_phrases_detected,
+                ads_ratio: parsed.ads_ratio,
+                only_profits_flag: parsed.only_profits_flag,
+                promoted_channels_count: parsed.promoted_channels_count,
+                promoted_channels_sample: parsed.promoted_channels_sample,
+                subscriber_growth_per_day: parsed.subscriber_growth_per_day,
+                growth_anomaly: parsed.growth_anomaly,
+                reach_ratio: parsed.reach_ratio,
+                channel_age_days: parsed.channel_age_days
+              });
+            }
+            if (parsed && parsed.found === true && parsed.is_confirmed === false) {
+              return res.json({
+                found: false,
+                pending: false,
+                channel,
+                message: parsed.message || 'Канал проверен, но пока не проходит 3 критерия подтверждённого скам-канала.',
+                confirmation_status: parsed.confirmation_status || 'not_confirmed',
+                confirmation_checks: parsed.confirmation_checks || undefined,
+                missing_criteria: parsed.missing_criteria || undefined
+              });
+            }
+            if (parsed && parsed.found === false && parsed.error) {
+              checkOnceError = normalizeCheckOnceError(parsed.error);
+            }
+          } catch (parseErr) {
+            console.error('KRO check_once parse error:', parseErr.message);
+            checkOnceError = normalizeCheckOnceError(stderr) || 'Ошибка ответа скрипта';
+          }
+        } else {
+          checkOnceError = normalizeCheckOnceError(stderr) || (child.status !== 0 ? 'Скрипт завершился с ошибкой' : null);
+        }
+        if (stderr) console.error('KRO check_once stderr:', stderr);
+      } catch (e) {
+        console.error('KRO check_once error:', e.message);
+        checkOnceError = normalizeCheckOnceError(e.message) || 'Запуск проверки не удался';
       }
-      const risk_score = parsed.risk_score != null
-        ? parsed.risk_score
-        : computeRiskScoreFromFeatures(parsed.ads_per_week, parsed.bot_pct, complaints ?? parsed.complaints, parsed.vip_price);
-      const analysis = kroV0BuildAnalysisFromLiveParsed(
-        { ...parsed, complaints, total_loss, risk_score, is_confirmed: true, verdict: 'scam' },
-        requestKey,
-      );
-      return res.json({
-        found: true,
-        username: parsed.username,
-        risk_score,
-        ads_per_week: parsed.ads_per_week,
-        bot_pct: parsed.bot_pct,
-        vip_price: parsed.vip_price,
-        complaints,
-        total_loss,
-        verdict: parsed.verdict,
-        is_confirmed: true,
-        fomo_pct: parsed.fomo_pct,
-        shame_phrases_detected: parsed.shame_phrases_detected,
-        ads_ratio: parsed.ads_ratio,
-        only_profits_flag: parsed.only_profits_flag,
-        promoted_channels_count: parsed.promoted_channels_count,
-        promoted_channels_sample: parsed.promoted_channels_sample,
-        subscriber_growth_per_day: parsed.subscriber_growth_per_day,
-        growth_anomaly: parsed.growth_anomaly,
-        reach_ratio: parsed.reach_ratio,
-        channel_age_days: parsed.channel_age_days,
-        risk_level: parsed.risk_level,
-        risk_evidence: parsed.risk_evidence,
-        confirmation_checks: parsed.confirmation_checks,
-        confirmation_status: parsed.confirmation_status,
-        analysis,
-      });
-    }
-    if (once.ok && parsed && parsed.found === true && parsed.is_confirmed === false) {
-      return res.json({
-        found: false,
-        pending: false,
-        channel,
-        message: parsed.message || 'Канал проверен, но пока не проходит 3 критерия подтверждённого скам-канала.',
-        confirmation_status: parsed.confirmation_status || 'not_confirmed',
-        confirmation_checks: parsed.confirmation_checks || undefined,
-        missing_criteria: parsed.missing_criteria || undefined,
-        username: parsed.username,
-        risk_score: parsed.risk_score,
-        ads_per_week: parsed.ads_per_week,
-        bot_pct: parsed.bot_pct,
-        vip_price: parsed.vip_price,
-        complaints: parsed.complaints,
-        total_loss: parsed.total_loss,
-        verdict: parsed.verdict,
-        risk_verdict: parsed.risk_verdict,
-        risk_level: parsed.risk_level,
-        risk_evidence: parsed.risk_evidence,
-        fomo_pct: parsed.fomo_pct,
-        shame_phrases_detected: parsed.shame_phrases_detected,
-        ads_ratio: parsed.ads_ratio,
-        only_profits_flag: parsed.only_profits_flag,
-        promoted_channels_count: parsed.promoted_channels_count,
-        promoted_channels_sample: parsed.promoted_channels_sample,
-        subscriber_growth_per_day: parsed.subscriber_growth_per_day,
-        growth_anomaly: parsed.growth_anomaly,
-        reach_ratio: parsed.reach_ratio,
-        channel_age_days: parsed.channel_age_days,
-        has_signal_offer: parsed.has_signal_offer,
-        sample_posts: parsed.sample_posts,
-        analysis: kroV0BuildAnalysisFromLiveParsed(parsed, requestKey),
-      });
-    }
-    if (once.ok && parsed && parsed.found === false && parsed.error) {
-      checkOnceError = normalizeCheckOnceError(parsed.error);
-    } else if (!once.ok) {
-      checkOnceError = once.error || null;
+    } else {
+      checkOnceError = 'На сервере не настроены TELEGRAM_API_ID/Telethon — живая проверка недоступна.';
     }
 
     if (kroCheckQueueRange && client) {
@@ -3657,59 +3293,16 @@ app.get('/api/kro/check', async (req, res) => {
     const finalMessage = checkOnceError
       ? `Не удалось проверить канал: ${checkOnceError}${kroCheckQueueRange ? ' Канал добавлен в очередь — попробуйте нажать «Проверить» через 1–2 минуты.' : ''}`
       : checkingMessage;
-    const analysis = {
-      v: 0,
-      channel_key: requestKey || channelMatchKey(channel) || channel,
-      generated_at: new Date().toISOString(),
-      sources: checkOnceError ? [] : ['check_queue'],
-      basic_info: [
-        `Запрошенный идентификатор: ${channel}`,
-        checkOnceError ? `Ошибка живой проверки: ${checkOnceError}` : 'Живая проверка не вернула финальный JSON — канал поставлен в очередь/ожидает воркер.',
-      ],
-      content_behavior: [],
-      external_reports: [],
-      ties_risk_factors: [],
-      conclusion: {
-        status: KRO_V0_STATUS.watch,
-        reasons: [
-          checkOnceError
-            ? `Сигнал ошибки: ${checkOnceError}`
-            : 'Пока нет устойчивого результата Telethon-проверки — это состояние ожидания, не «чисто» и не «скам».',
-          kroCheckQueueRange ? 'Канал добавлен в очередь проверки — повторите запрос через 1–2 минуты.' : 'Очередь проверки не настроена — остаётся только ручной/фоновый цикл мониторинга.',
-        ].filter(Boolean),
-      },
-    };
     return res.json({
       found: false,
       pending: !!kroCheckQueueRange,
       channel,
       message: finalMessage,
-      error_detail: checkOnceError || undefined,
-      analysis,
+      error_detail: checkOnceError || undefined
     });
   } catch (e) {
     console.error('KRO check error:', e);
-    return res.status(500).json({
-      found: false,
-      channel,
-      pending: true,
-      message: checkingMessage,
-      error: 'internal_error',
-      analysis: {
-        v: 0,
-        channel_key: channelMatchKey(channel) || channel,
-        generated_at: new Date().toISOString(),
-        sources: [],
-        basic_info: ['Внутренняя ошибка сервера при обработке запроса проверки.'],
-        content_behavior: [],
-        external_reports: [],
-        ties_risk_factors: [],
-        conclusion: {
-          status: KRO_V0_STATUS.watch,
-          reasons: ['Произошёл сбой на стороне API — попробуйте позже.'],
-        },
-      },
-    });
+    return res.status(500).json({ found: false, channel, pending: true, message: checkingMessage, error: 'internal_error' });
   }
 });
 
@@ -4193,28 +3786,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
   try {
     const sheetsClient = await getKroSheetsClient();
     if (!sheetsClient || !kroSheetId) {
-      const analysis = {
-        v: 0,
-        channel_key: key,
-        generated_at: new Date().toISOString(),
-        sources: [],
-        basic_info: [`Запрошенный идентификатор: @${decoded}`, 'Таблица мониторинга не настроена на этом окружении (Sheets).'],
-        content_behavior: [],
-        external_reports: [],
-        ties_risk_factors: [],
-        conclusion: {
-          status: KRO_V0_STATUS.watch,
-          reasons: ['Нет подключения к Google Sheets — сравнение с scam_base и разбор постов с сервера сейчас недоступны.'],
-        },
-      };
-      return res.status(200).json({
-        profile: null,
-        merged_rows: undefined,
-        risk_index: null,
-        risk_index_max: 100,
-        false_positive_count: 0,
-        analysis,
-      });
+      return res.status(503).json({ error: 'not_configured' });
     }
     const scamResp = await sheetsClient.sheets.spreadsheets.values.get({
       spreadsheetId: kroSheetId,
@@ -4228,89 +3800,29 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       .map(enrichScamBaseContentAnalysisForMonitor);
     const matches = scamRows.filter((r) => channelMatchKey(r.username) === key);
     if (!matches.length) {
-      const channelForOnce = /^t\.me\//i.test(decoded) || decoded.includes('+')
-        ? decoded
-        : `@${decoded}`;
-      const once = kroRunCheckOnce(channelForOnce);
-      if (once.stderr) console.error('KRO channel-profile check_once stderr:', once.stderr);
-      const analysis = kroV0BuildAnalysisFromLiveParsed(once.parsed, key);
-      return res.status(200).json({
-        profile: null,
-        merged_rows: undefined,
-        risk_index: null,
-        risk_index_max: 100,
-        false_positive_count: 0,
-        analysis,
-      });
+      return res.status(404).json({ error: 'not_found' });
     }
-    const bestAny = matches.reduce((best, cur) =>
+    const profile = matches.reduce((best, cur) =>
       parseScamDetectedAtMs(cur) >= parseScamDetectedAtMs(best) ? cur : best
     );
-    const liveMatches = matches.filter((r) => isScamBaseRowInLiveCounterDataset(r));
-    if (!liveMatches.length) {
-      const channelForOnce = /^t\.me\//i.test(decoded) || decoded.includes('+')
-        ? decoded
-        : `@${decoded}`;
-      const once = kroRunCheckOnce(channelForOnce);
-      if (once.stderr) console.error('KRO channel-profile check_once stderr:', once.stderr);
-      const analysis = kroV0BuildAnalysisFromLiveParsed(once.parsed, key);
-      return res.status(200).json({
-        profile: null,
-        merged_rows: matches.length > 1 ? matches.length : undefined,
-        risk_index: null,
-        risk_index_max: 100,
-        false_positive_count: 0,
-        analysis: {
-          ...analysis,
-          basic_info: [
-            `В таблице есть ${matches.length} строк(и) по этому ключу, но ни одна не проходит публичные фильтры монитора — показываем живую проверку.`,
-            `Последняя «сырая» строка (для справки): статус «${(bestAny.status || bestAny.verdict || '—')}».`,
-          ].concat(analysis.basic_info || []),
-        },
-      });
+    if (!isScamBaseRowInLiveCounterDataset(profile)) {
+      return res.status(404).json({ error: 'not_found' });
     }
-    const profile = liveMatches.reduce((best, cur) =>
-      parseScamDetectedAtMs(cur) >= parseScamDetectedAtMs(best) ? cur : best
-    );
     const reportsForChannel = await getAllReportsForChannel(sheetsClient, profile.username);
     const risk_index = computeKroRiskIndex(profile, reportsForChannel);
     const false_positive_count = reportsForChannel.filter(
       (r) => (r.source || '').toLowerCase() === 'false_positive'
     ).length;
-    const profileForAnalysis = enrichScamBaseContentAnalysisForMonitor(profile);
-    const analysis = kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: key });
     return res.json({
       profile,
       merged_rows: matches.length > 1 ? matches.length : undefined,
       risk_index,
       risk_index_max: 100,
       false_positive_count,
-      analysis,
     });
   } catch (e) {
     console.error('KRO channel-profile error:', e);
-    return res.status(200).json({
-      profile: null,
-      merged_rows: undefined,
-      risk_index: null,
-      risk_index_max: 100,
-      false_positive_count: 0,
-      analysis: {
-        v: 0,
-        channel_key: key,
-        generated_at: new Date().toISOString(),
-        sources: [],
-        basic_info: ['Произошла ошибка при загрузке профиля из таблицы.'],
-        content_behavior: [],
-        external_reports: [],
-        ties_risk_factors: [],
-        conclusion: {
-          status: KRO_V0_STATUS.watch,
-          reasons: ['Сервер не смог прочитать scam_base — отчёт временно недоступен по данным таблицы.'],
-        },
-      },
-      error: 'internal_error',
-    });
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 
