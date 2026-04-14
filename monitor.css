@@ -68,6 +68,8 @@
   /* §5 анализ medvedevart — эффекты: hover 0.2–0.3s, карточки: lift + тень */
   --mon-fx-hover: 0.26s;
   --mon-fx-hover-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* View Transitions (якорная навигация): короткий кросс-фейд в духе §4 */
+  --mon-vt-cross: 0.42s;
   --mon-card-lift: -5px;
   --mon-card-lift-sm: -3px;
   --mon-shadow:       0 1px 0 rgba(255,255,255,0.06);
@@ -87,6 +89,15 @@
 }
 
 html { scroll-behavior: smooth; }
+
+/* View Transitions API — мягкий слой при смене «снимка» страницы (якоря /monitor) */
+@supports (view-transition-name: none) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: var(--mon-vt-cross);
+    animation-timing-function: var(--mon-fx-hover-ease);
+  }
+}
 
 html.lenis {
   scroll-behavior: auto !important;
@@ -855,6 +866,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   margin-bottom: 0;
 }
 .mon-hero-cta {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -870,6 +882,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border: 1px solid rgba(245, 158, 11, 0.35);
   border-radius: 999px;
   text-decoration: none;
+  overflow: hidden;
+  isolation: isolate;
   transition:
     border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
     background-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
@@ -879,13 +893,40 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   line-height: 1.35;
   box-shadow: 0 0 0 rgba(245, 158, 11, 0);
 }
+.mon-hero-cta::before {
+  content: '';
+  position: absolute;
+  inset: -40% -30%;
+  background: linear-gradient(
+    118deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.14) 48%,
+    rgba(255, 230, 200, 0.1) 52%,
+    transparent 62%
+  );
+  transform: translateX(-58%) skewX(-12deg);
+  opacity: 0;
+  transition:
+    transform 0.72s var(--mon-fx-hover-ease),
+    opacity 0.35s var(--mon-fx-hover-ease);
+  pointer-events: none;
+  z-index: 0;
+}
 .mon-hero-cta::after {
   content: '';
   width: 14px;
   height: 14px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f5c88c' stroke-width='2'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") no-repeat center;
   background-size: contain;
+}
+@media (min-width: 641px) and (hover: hover) {
+  .mon-hero-cta:hover::before {
+    opacity: 1;
+    transform: translateX(42%) skewX(-12deg);
+  }
 }
 @media (min-width: 641px) and (hover: hover) {
   .mon-hero-cta:hover {
@@ -1018,6 +1059,21 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-radius: var(--mon-radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.025);
+  transition:
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    background var(--mon-fx-hover) var(--mon-fx-hover-ease);
+}
+@media (min-width: 641px) and (hover: hover) {
+  .mon-tech-card:hover {
+    transform: translateY(var(--mon-card-lift-sm));
+    border-color: rgba(245, 158, 11, 0.28);
+    background: rgba(255, 255, 255, 0.045);
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.28),
+      0 0 0 1px rgba(245, 158, 11, 0.1);
+  }
 }
 
 .mon-tech-card-title {
@@ -1051,6 +1107,109 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 
 @media (max-width: 900px) {
   .mon-tech-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Эффекты §5 medvedevart: hover / карточки / CTA / скролл / View Transitions ── */
+
+.mon-fx-lane {
+  max-width: min(1100px, 100%);
+  margin: 0 auto clamp(18px, 2.8vw, 28px);
+  padding: clamp(20px, 3vw, 28px) clamp(18px, 3vw, 26px) clamp(22px, 3.2vw, 30px);
+  border-radius: var(--mon-radius);
+  border: 1px solid var(--mon-border-quiet);
+  border-left: 3px solid rgba(6, 182, 212, 0.72);
+  background: linear-gradient(152deg, rgba(16, 20, 26, 0.98) 0%, rgba(10, 12, 18, 0.94) 100%);
+  box-shadow: var(--mon-shadow);
+}
+
+.mon-fx-lane-kicker {
+  font-family: var(--mon-font);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: var(--mon-tracking-kicker);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0 0 8px;
+}
+
+.mon-fx-lane-title {
+  font-family: var(--mon-font-display);
+  font-size: clamp(19px, 2.35vw, 26px);
+  font-weight: 800;
+  letter-spacing: -0.024em;
+  line-height: 1.12;
+  color: rgba(255, 252, 250, 0.96);
+  margin: 0 0 10px;
+}
+
+.mon-fx-lane-lead {
+  font-size: 14px;
+  line-height: var(--mon-leading-body);
+  color: var(--mon-text-prose);
+  max-width: 44rem;
+  margin: 0 0 20px;
+}
+
+.mon-fx-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 18px;
+}
+
+.mon-fx-card {
+  padding: 16px 16px 18px;
+  border-radius: var(--mon-radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.022);
+  transition:
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
+}
+
+@media (min-width: 641px) and (hover: hover) {
+  .mon-fx-card:hover {
+    transform: translateY(var(--mon-card-lift-sm));
+    border-color: rgba(6, 182, 212, 0.35);
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.28),
+      0 0 0 1px rgba(6, 182, 212, 0.12);
+  }
+}
+
+.mon-fx-card-title {
+  font-family: var(--mon-font);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(186, 230, 253, 0.9);
+  margin: 0 0 10px;
+}
+
+.mon-fx-card-list {
+  margin: 0;
+  padding: 0 0 0 1.1em;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.mon-fx-card-list li {
+  margin: 6px 0;
+}
+
+.mon-fx-code {
+  font-family: var(--mon-font-mono);
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.84);
+  word-break: break-word;
+}
+
+@media (max-width: 900px) {
+  .mon-fx-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -1133,9 +1292,26 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-pillar {
-  padding: 0;
-  border: none;
-  background: transparent;
+  padding: 18px 20px 20px;
+  border-radius: var(--mon-radius-sm);
+  border: 1px solid var(--mon-border-quiet);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition:
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    background var(--mon-fx-hover) var(--mon-fx-hover-ease);
+}
+@media (min-width: 641px) and (hover: hover) {
+  .mon-pillar:hover {
+    transform: translateY(var(--mon-card-lift-sm));
+    border-color: rgba(245, 158, 11, 0.22);
+    background: linear-gradient(165deg, rgba(245, 158, 11, 0.07), rgba(255, 255, 255, 0.03));
+    box-shadow:
+      0 10px 28px rgba(0, 0, 0, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
 }
 
 .mon-pillar-title {
@@ -1175,6 +1351,7 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   gap: 10px;
 }
 .mon-offer-cta {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1189,12 +1366,44 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-radius: 999px;
   border: 1px solid rgba(245, 158, 11, 0.42);
   background: rgba(245, 158, 11, 0.06);
+  overflow: hidden;
+  isolation: isolate;
+  z-index: 0;
   transition:
     border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
     background var(--mon-fx-hover) var(--mon-fx-hover-ease),
     color var(--mon-fx-hover) var(--mon-fx-hover-ease),
     transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
     box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
+}
+.mon-offer-cta::before {
+  content: '';
+  position: absolute;
+  inset: -50% -25%;
+  background: linear-gradient(
+    112deg,
+    transparent 36%,
+    rgba(255, 255, 255, 0.12) 48%,
+    rgba(255, 220, 170, 0.14) 52%,
+    transparent 64%
+  );
+  transform: translateX(-55%) skewX(-11deg);
+  opacity: 0;
+  transition:
+    transform 0.7s var(--mon-fx-hover-ease),
+    opacity 0.32s var(--mon-fx-hover-ease);
+  pointer-events: none;
+  z-index: 0;
+}
+.mon-offer-cta__label {
+  position: relative;
+  z-index: 1;
+}
+@media (min-width: 641px) and (hover: hover) {
+  .mon-offer-cta:hover::before {
+    opacity: 1;
+    transform: translateX(38%) skewX(-11deg);
+  }
 }
 @media (min-width: 641px) and (hover: hover) {
   .mon-offer-cta:hover {
@@ -2410,8 +2619,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   .mon-proof-card:hover,
   .mon-source-guide-card:hover {
     transform: translateY(var(--mon-card-lift-sm));
-    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
-    border-color: rgba(255, 255, 255, 0.11);
+    box-shadow:
+      0 16px 40px rgba(0, 0, 0, 0.36),
+      0 0 0 1px rgba(245, 158, 11, 0.1),
+      0 0 28px rgba(245, 158, 11, 0.08);
+    border-color: rgba(255, 255, 255, 0.13);
   }
 }
 
@@ -2601,11 +2813,43 @@ a.mon-ca-sample-link[href^="tg:"] {
   padding-left: 16px;
 }
 .mon-table td a {
+  position: relative;
+  display: inline;
   color: var(--mon-red);
   text-decoration: none;
-  transition: color var(--mon-fx-hover) var(--mon-fx-hover-ease);
+  padding-bottom: 1px;
+  transition:
+    color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    text-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
-.mon-table td a:hover { color: #e8b8b8; }
+.mon-table td a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.55), rgba(184, 74, 74, 0.45));
+  transform: scaleX(0.32);
+  transform-origin: left center;
+  opacity: 0.5;
+  transition:
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    opacity var(--mon-fx-hover) var(--mon-fx-hover-ease);
+  pointer-events: none;
+}
+.mon-table td a:hover {
+  color: #f0d0d0;
+  text-shadow: 0 0 20px rgba(245, 158, 11, 0.12);
+}
+.mon-table td a:hover::after {
+  transform: scaleX(1);
+  opacity: 0.92;
+}
+.mon-table td a:focus-visible::after {
+  transform: scaleX(1);
+  opacity: 1;
+}
 
 /* Первая таблица monitor (База объектов) — максимально близко к главной карточке */
 #data-scam .mon-surface {
@@ -3032,8 +3276,11 @@ a.mon-ca-sample-link[href^="tg:"] {
 @media (min-width: 641px) and (hover: hover) {
   .mon-source-card:hover {
     transform: translateY(var(--mon-card-lift-sm));
-    border-color: rgba(255, 255, 255, 0.11);
-    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
+    border-color: rgba(255, 255, 255, 0.13);
+    box-shadow:
+      0 16px 40px rgba(0, 0, 0, 0.34),
+      0 0 0 1px rgba(245, 158, 11, 0.09),
+      0 0 26px rgba(245, 158, 11, 0.07);
   }
 }
 .mon-source-name  { font-size: 14px; font-weight: 700; color: #fff; }
@@ -3090,8 +3337,11 @@ a.mon-ca-sample-link[href^="tg:"] {
 @media (min-width: 641px) and (hover: hover) {
   .mon-case-card:hover {
     transform: translateY(var(--mon-card-lift-sm));
-    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.34);
-    border-color: rgba(255, 255, 255, 0.11);
+    box-shadow:
+      0 16px 42px rgba(0, 0, 0, 0.36),
+      0 0 0 1px rgba(245, 158, 11, 0.1),
+      0 0 30px rgba(245, 158, 11, 0.08);
+    border-color: rgba(255, 255, 255, 0.13);
   }
 }
 
@@ -3954,6 +4204,12 @@ a.mon-ca-sample-link[href^="tg:"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  @supports (view-transition-name: none) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 1ms !important;
+    }
+  }
   html {
     scroll-behavior: auto !important;
   }
@@ -4102,6 +4358,33 @@ a.mon-ca-sample-link[href^="tg:"] {
   .mon-source-card:hover,
   .mon-case-card:hover {
     transform: none !important;
+  }
+  .mon-tech-card:hover,
+  .mon-fx-card:hover {
+    transform: none !important;
+    border-color: rgba(255, 255, 255, 0.07) !important;
+    box-shadow: none !important;
+  }
+  .mon-tech-card:hover {
+    background: rgba(255, 255, 255, 0.025) !important;
+  }
+  .mon-fx-card:hover {
+    border-color: rgba(255, 255, 255, 0.07) !important;
+  }
+  .mon-pillar:hover {
+    transform: none !important;
+    border-color: var(--mon-border-quiet) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    background: linear-gradient(165deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)) !important;
+  }
+  .mon-hero-cta:hover::before,
+  .mon-offer-cta:hover::before {
+    opacity: 0 !important;
+    transform: none !important;
+  }
+  .mon-table td a::after {
+    transform: scaleX(1) !important;
+    opacity: 0.55 !important;
   }
   .mon-main-nav-brand::after {
     transition: none !important;

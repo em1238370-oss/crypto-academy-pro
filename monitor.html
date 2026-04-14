@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
   <script>
     (function() {
-      var v = '20260414-medvedev-tech-lane';
+      var v = '20260414-medvedev-fx';
       var l = document.createElement('link');
       l.rel = 'stylesheet';
       l.href = '/monitor.css?v=' + encodeURIComponent(v);
@@ -132,6 +132,7 @@
           <a class="mon-hero-jump-link" href="#sources">Источники</a>
           <a class="mon-hero-jump-link" href="#history">Архив</a>
           <a class="mon-hero-jump-link" href="#monitor-tech">Технологии</a>
+          <a class="mon-hero-jump-link" href="#monitor-fx">Эффекты</a>
           <a class="mon-hero-jump-link" href="#mon-how-heading">Метод</a>
           <a class="mon-hero-jump-link" href="#mon-rules-heading">Критерии</a>
         </nav>
@@ -172,6 +173,37 @@
     </div>
   </section>
 
+  <!-- §5 medvedevart: эффекты — hover, карточки, CTA, скролл, View Transitions (явный слой для проверки) -->
+  <section class="mon-fx-lane" id="monitor-fx" aria-labelledby="mon-fx-heading">
+    <p class="mon-fx-lane-kicker">Эффекты интерфейса</p>
+    <h2 id="mon-fx-heading" class="mon-fx-lane-title">Hover · карточки · CTA · скролл · View Transitions</h2>
+    <p class="mon-fx-lane-lead">Спокойный «официальный» регистр: 0,2–0,3&nbsp;с на hover, лёгкий lift у карточек, янтарь на призывах, Lenis на десктопе, при якорных ссылках — <span class="mon-fx-code">document.startViewTransition</span> + догоняющий скролл (Chrome; без API — только плавный скролл).</p>
+    <div class="mon-fx-grid" role="list">
+      <article class="mon-fx-card" role="listitem">
+        <h3 class="mon-fx-card-title">Hover</h3>
+        <ul class="mon-fx-card-list">
+          <li>Пилюли навигации <span class="mon-fx-code">.mon-hero-jump-link</span> — рамка и янтарный фон.</li>
+          <li>Внешние ссылки <span class="mon-fx-code">.mon-external-link</span> и строки таблицы — подчёркивание и цвет.</li>
+          <li>Только при <span class="mon-fx-code">(hover: hover)</span>; клавиатура — <span class="mon-fx-code">:focus-visible</span>.</li>
+        </ul>
+      </article>
+      <article class="mon-fx-card" role="listitem">
+        <h3 class="mon-fx-card-title">Карточки</h3>
+        <ul class="mon-fx-card-list">
+          <li>Метрики / кейсы / источники — lift + тень + тонкая янтарная кайма на hover.</li>
+          <li>Карточки «Технологии» и столпы оффера — отдельный микро-сдвиг и свет.</li>
+        </ul>
+      </article>
+      <article class="mon-fx-card" role="listitem">
+        <h3 class="mon-fx-card-title">CTA и переходы</h3>
+        <ul class="mon-fx-card-list">
+          <li><span class="mon-fx-code">.mon-hero-cta</span> / <span class="mon-fx-code">.mon-offer-cta</span> — шёлк по градиенту при наведении.</li>
+          <li>Плавный скролл: Lenis (или fallback колеса); якорь — View Transition + <span class="mon-fx-code">onComplete</span> у Lenis.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
   <!-- Оффер: тезис + столпы (как блок «Стратегия. Эффективность…») -->
   <section class="mon-offer" id="mon-offer-section" aria-labelledby="mon-offer-title">
     <p class="mon-offer-kicker">Подход</p>
@@ -193,7 +225,7 @@
     </div>
     <p class="mon-offer-focus">Focus: антискам · факты · проверяемость</p>
     <div class="mon-offer-cta-row" role="navigation" aria-label="Действие на главном сайте">
-      <a class="mon-offer-cta" href="/#checkers">Проверь своего гуру на главной →</a>
+      <a class="mon-offer-cta" href="/#checkers"><span class="mon-offer-cta__label">Проверь своего гуру на главной →</span></a>
       <span class="mon-offer-cta-hint">Тот же визуальный язык и данные — отдельная страница только для монитора.</span>
     </div>
   </section>
@@ -2905,6 +2937,7 @@
   function initScrollReveal() {
     var sel = [
       '.mon-tech-lane',
+      '.mon-fx-lane',
       '.mon-offer',
       '.mon-section',
       '.mon-tier-slab',
@@ -3084,6 +3117,89 @@
     if (h) h.setAttribute('aria-expanded', 'true');
   }
 
+  /** Якоря внутри /monitor: hash + раскрытие секций; View Transitions + Lenis (или мгновенно при reduced motion). */
+  function initInPageAnchorFx() {
+    document.addEventListener(
+      'click',
+      function (e) {
+        var a = e.target.closest && e.target.closest('a[href^="#"]');
+        if (!a || !document.body.classList.contains('mon-page')) return;
+        var href = a.getAttribute('href');
+        if (!href || href === '#' || href.length < 2) return;
+        if (e.defaultPrevented) return;
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        var id = href.slice(1);
+        var target = document.getElementById(id);
+        if (!target) return;
+        e.preventDefault();
+
+        function applyHashAndExpand() {
+          if (location.hash !== href) {
+            if (history.replaceState) {
+              history.replaceState(null, '', href);
+            } else {
+              location.hash = id;
+            }
+          }
+          expandWatchSectionIfHash();
+          expandPageMapIfHash();
+          expandDataScamIfHash();
+          expandDataNetworkIfHash();
+          expandSourcesIfHash();
+        }
+
+        function headerOffset() {
+          var topbar = document.querySelector('.mon-topbar');
+          return topbar ? Math.round(topbar.getBoundingClientRect().height) + 12 : 76;
+        }
+
+        function scrollToTarget(done) {
+          var off = headerOffset();
+          var L = window.__monLenis;
+          if (L && typeof L.scrollTo === 'function') {
+            L.scrollTo(target, {
+              offset: -off,
+              duration: 0.88,
+              easing: function (t) {
+                return 1 - Math.pow(1 - t, 3);
+              },
+              onComplete: done || function () {}
+            });
+          } else {
+            var y = target.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0) - off;
+            window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+            window.setTimeout(done || function () {}, 520);
+          }
+        }
+
+        applyHashAndExpand();
+
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          var offR = headerOffset();
+          var LR = window.__monLenis;
+          if (LR && typeof LR.scrollTo === 'function') {
+            LR.scrollTo(target, { offset: -offR, immediate: true });
+          } else {
+            var y0 = target.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0) - offR;
+            window.scrollTo(0, Math.max(0, y0));
+          }
+          return;
+        }
+
+        if (typeof document.startViewTransition === 'function') {
+          document.startViewTransition(function () {
+            return new Promise(function (resolve) {
+              scrollToTarget(resolve);
+            });
+          });
+        } else {
+          scrollToTarget();
+        }
+      },
+      true
+    );
+  }
+
   /**
    * Десктоп: строка заголовка «Прозрачность…» без учёта декоративной полоски h2::after —
    * иначе нижняя граница h2 уезжает за экран и эффект никогда не включался.
@@ -3165,6 +3281,7 @@
       var ov = document.getElementById('mon-boot-overlay');
       if (ov) ov.style.display = 'none';
       initScrollReveal();
+      initInPageAnchorFx();
       initLivePassObserver();
       initCollapsibles();
       expandWatchSectionIfHash();
@@ -3186,6 +3303,7 @@
     }
     runBootSequence(function() {
       initScrollReveal();
+      initInPageAnchorFx();
       initLivePassObserver();
       initCollapsibles();
       expandWatchSectionIfHash();
