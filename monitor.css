@@ -65,11 +65,11 @@
   /* Лёгкий blur до фокуса (≥769px): слабее, читается как отчёт, не шоу) */
   --mon-reveal-blur: 3px;
   --mon-link-dur: 0.28s;
-  /* §5 анализ medvedevart — эффекты: hover 0.2–0.3s, карточки: lift + тень */
-  --mon-fx-hover: 0.22s;
+  /* §5 medvedevart — hover 0.2–0.3 s */
+  --mon-fx-hover: 0.26s;
   --mon-fx-hover-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  /* View Transitions: заметнее при якорной навигации */
-  --mon-vt-cross: 0.58s;
+  /* Якорные View Transitions: явный сдвиг + кросс-фейд (~0.7 s, в духе §4) */
+  --mon-vt-cross: 0.78s;
   --mon-card-lift: -9px;
   --mon-card-lift-sm: -5px;
   --mon-shadow:       0 1px 0 rgba(255,255,255,0.06);
@@ -90,12 +90,37 @@
 
 html { scroll-behavior: smooth; }
 
-/* View Transitions API — мягкий слой при смене «снимка» страницы (якоря /monitor) */
+/* View Transitions API — §5/§6: заметный слой при якорной навигации (не только длительность) */
 @supports (view-transition-name: none) {
-  ::view-transition-old(root),
+  @keyframes mon-vt-root-out {
+    from {
+      opacity: 1;
+      filter: brightness(1);
+      transform: translateY(0) scale(1);
+    }
+    to {
+      opacity: 0.72;
+      filter: brightness(0.88);
+      transform: translateY(12px) scale(0.998);
+    }
+  }
+  @keyframes mon-vt-root-in {
+    from {
+      opacity: 0.68;
+      filter: brightness(1.06);
+      transform: translateY(-16px) scale(1.002);
+    }
+    to {
+      opacity: 1;
+      filter: brightness(1);
+      transform: translateY(0) scale(1);
+    }
+  }
+  ::view-transition-old(root) {
+    animation: mon-vt-root-out var(--mon-vt-cross) var(--mon-ease-soft) both;
+  }
   ::view-transition-new(root) {
-    animation-duration: var(--mon-vt-cross);
-    animation-timing-function: var(--mon-fx-hover-ease);
+    animation: mon-vt-root-in var(--mon-vt-cross) var(--mon-ease-soft) both;
   }
 }
 
@@ -246,7 +271,16 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  transition: color var(--mon-fx-hover) var(--mon-fx-hover-ease);
+  padding: 8px 14px 8px 10px;
+  margin: -8px 0 -8px -10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  transition:
+    color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    background var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
 .mon-main-nav-brand::after {
   content: '';
@@ -264,7 +298,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 @media (min-width: 641px) and (hover: hover) {
   .mon-main-nav-brand:hover,
   .mon-main-nav-brand:focus-visible {
-    color: rgba(255, 236, 210, 0.98);
+    color: rgba(255, 248, 235, 1);
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), 0 0 24px rgba(245, 158, 11, 0.2);
   }
   .mon-main-nav-brand:hover::after,
   .mon-main-nav-brand:focus-visible::after {
@@ -311,19 +349,26 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   font-weight: 500;
   color: var(--mon-text-dim);
   text-decoration: none;
-  padding: 8px 0;
-  border-radius: 0;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid transparent;
   border-bottom: none;
-  transition: color var(--mon-fx-hover) var(--mon-fx-hover-ease);
+  transition:
+    color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    background var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
 .mon-nav-link::after {
   content: '';
   position: absolute;
-  left: 0;
-  bottom: 4px;
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.9), rgba(245, 158, 11, 0.15));
+  left: 12px;
+  right: 12px;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.95), rgba(245, 158, 11, 0.2));
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform var(--mon-fx-hover) var(--mon-fx-hover-ease);
@@ -332,6 +377,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-nav-link:hover,
 .mon-nav-link:focus-visible {
   color: #fff;
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.32);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.32), 0 0 20px rgba(245, 158, 11, 0.18);
 }
 .mon-nav-link:hover::after,
 .mon-nav-link:focus-visible::after {
@@ -470,6 +519,11 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   position: relative;
   overflow: hidden;
   transform-style: preserve-3d;
+  transition:
+    transform var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    filter var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
 .mon-tier-slab::before {
   content: '';
@@ -542,6 +596,18 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   line-height: var(--mon-leading-body);
   color: var(--mon-text-prose-hi);
   max-width: 52rem;
+}
+
+@media (min-width: 641px) and (hover: hover) {
+  .mon-tier-slab:hover {
+    transform: translateY(-5px);
+    border-color: rgba(251, 191, 36, 0.42);
+    box-shadow:
+      0 30px 70px rgba(0, 0, 0, 0.48),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 0 40px rgba(245, 158, 11, 0.22);
+    filter: saturate(1.06);
+  }
 }
 
 .mon-tier-slab + .mon-chapter.mon-section {
@@ -1280,7 +1346,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 @media (min-width: 641px) and (hover: hover) {
   .mon-route-map-row:hover {
-    background: rgba(245, 158, 11, 0.04);
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.14), rgba(255, 255, 255, 0.04));
+    box-shadow: inset 3px 0 0 0 rgba(245, 158, 11, 0.75);
   }
 }
 .mon-route-map-row--muted {
@@ -1705,15 +1772,25 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   transform: rotate(12deg) translateX(-120%);
   background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.085) 48%, transparent 100%);
   opacity: 0;
+  transition:
+    opacity 0.5s var(--mon-ease-soft),
+    transform 0.5s var(--mon-ease-soft);
 }
 @media (min-width: 641px) and (hover: hover) {
   .mon-surface:hover {
-    transform: translateY(var(--mon-card-lift)) rotateX(3deg) rotateY(-2deg);
-    border-color: rgba(255, 255, 255, 0.13);
+    transform: translateY(calc(var(--mon-card-lift) - 1px)) rotateX(3deg) rotateY(-2deg);
+    border-color: rgba(251, 191, 36, 0.28);
     box-shadow:
-      0 28px 72px rgba(0, 0, 0, 0.48),
-      0 0 0 1px rgba(245, 158, 11, 0.08),
-      0 0 40px rgba(245, 158, 11, 0.08);
+      0 32px 80px rgba(0, 0, 0, 0.52),
+      0 0 0 1px rgba(245, 158, 11, 0.2),
+      0 0 48px rgba(245, 158, 11, 0.16);
+  }
+  .mon-surface:hover::after {
+    opacity: 0.55;
+    transform: rotate(12deg) translateX(18%);
+    transition:
+      opacity 0.55s var(--mon-ease-soft),
+      transform 0.55s var(--mon-ease-soft);
   }
 }
 .mon-surface--pad {
@@ -1735,10 +1812,18 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   padding: 20px 0 18px;
   margin: 0;
   border-bottom: 1px solid rgba(255,255,255,0.06);
-  transition: background 0.2s var(--mon-ease-out);
+  border-radius: var(--mon-radius-sm);
+  transition:
+    background var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    border-bottom-color var(--mon-fx-hover) var(--mon-fx-hover-ease),
+    box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
-.mon-chapter-head--accordion:hover {
-  background: rgba(255,255,255,0.02);
+@media (min-width: 641px) and (hover: hover) {
+  .mon-chapter-head--accordion:hover {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.16), rgba(255, 255, 255, 0.04) 38%, transparent);
+    border-bottom-color: rgba(245, 158, 11, 0.28);
+    box-shadow: inset 4px 0 0 0 rgba(245, 158, 11, 0.82);
+  }
 }
 .mon-chapter-head--accordion .mon-chapter-head-main {
   flex: 1;
@@ -1752,10 +1837,22 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-chapter--collapsible .mon-collapse-chevron {
   margin-left: auto;
   flex-shrink: 0;
-  transition: transform 0.3s var(--mon-ease-out);
+  transition:
+    transform 0.3s var(--mon-ease-out),
+    color var(--mon-fx-hover) var(--mon-fx-hover-ease);
 }
 .mon-chapter--collapsible:not(.mon-chapter--collapsed) .mon-collapse-chevron {
   transform: rotate(90deg);
+}
+@media (min-width: 641px) and (hover: hover) {
+  .mon-chapter--collapsible.mon-chapter--collapsed .mon-chapter-head--accordion:hover .mon-collapse-chevron {
+    color: rgba(251, 191, 36, 0.95);
+    transform: translateX(3px) scale(1.12);
+  }
+  .mon-chapter--collapsible:not(.mon-chapter--collapsed) .mon-chapter-head--accordion:hover .mon-collapse-chevron {
+    color: rgba(251, 191, 36, 0.95);
+    transform: rotate(90deg) scale(1.12);
+  }
 }
 .mon-chapter--collapsed .mon-chapter-body--accordion {
   display: none;
@@ -3456,7 +3553,17 @@ a.mon-ca-sample-link[href^="tg:"] {
 
 /* ── COLLAPSIBLE ─────────────────────────────────────────── */
 
-.mon-collapse-chevron { margin-left: auto; font-size: 18px; font-weight: 300; color: var(--mon-text-dim); transition: transform 0.26s ease; flex-shrink: 0; line-height: 1; }
+.mon-collapse-chevron {
+  margin-left: auto;
+  font-size: 18px;
+  font-weight: 300;
+  color: var(--mon-text-dim);
+  transition:
+    transform 0.3s var(--mon-ease-out),
+    color var(--mon-fx-hover) var(--mon-fx-hover-ease);
+  flex-shrink: 0;
+  line-height: 1;
+}
 
 /* ── SPEC BLOCKS ─────────────────────────────────────────── */
 
@@ -4116,6 +4223,49 @@ a.mon-ca-sample-link[href^="tg:"] {
     transform: none !important;
     box-shadow: none !important;
     border-color: var(--mon-border-quiet) !important;
+  }
+  .mon-surface:hover::after {
+    opacity: 0 !important;
+    transform: rotate(12deg) translateX(-120%) !important;
+  }
+  .mon-tier-slab:hover {
+    transform: none !important;
+    filter: none !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow:
+      0 20px 48px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  }
+  .mon-main-nav-brand:hover,
+  .mon-main-nav-brand:focus-visible {
+    transform: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-color: transparent !important;
+  }
+  .mon-nav-link:hover,
+  .mon-nav-link:focus-visible {
+    transform: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-color: transparent !important;
+  }
+  .mon-chapter-head--accordion:hover {
+    background: transparent !important;
+    border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+    box-shadow: none !important;
+  }
+  .mon-route-map-row:hover {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .mon-chapter--collapsible.mon-chapter--collapsed .mon-chapter-head--accordion:hover .mon-collapse-chevron {
+    transform: none !important;
+    color: var(--mon-text-dim) !important;
+  }
+  .mon-chapter--collapsible:not(.mon-chapter--collapsed) .mon-chapter-head--accordion:hover .mon-collapse-chevron {
+    transform: rotate(90deg) !important;
+    color: var(--mon-text-dim) !important;
   }
   .mon-tier-slab,
   .mon-surface,

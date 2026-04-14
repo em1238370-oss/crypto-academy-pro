@@ -13,7 +13,8 @@
   var isNarrowPhone =
     typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
   var touchMultiplier = isNarrowPhone ? 1.0 : 1.4;
-  var lenisLerp = isNarrowPhone ? 0.105 : 0.055;
+  /* Чуть ниже lerp на десктопе — более «шёлковая» инерция (§5 плавный скролл) */
+  var lenisLerp = isNarrowPhone ? 0.105 : 0.048;
   var lenisSyncTouchLerp = isNarrowPhone ? 0.095 : 0.34;
   var lenisTouchInertia = isNarrowPhone ? 1.42 : 1.58;
 
