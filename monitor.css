@@ -4822,6 +4822,71 @@ a.mon-channel-external:hover {
   background: rgba(255, 255, 255, 0.12);
 }
 
+.ch-retry-btn--primary {
+  font-size: 16px;
+  padding: 14px 28px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(120, 100, 255, 0.45), rgba(80, 140, 255, 0.35));
+  border-color: rgba(160, 180, 255, 0.45);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.ch-retry-btn--primary:hover {
+  background: linear-gradient(135deg, rgba(130, 110, 255, 0.55), rgba(90, 150, 255, 0.45));
+}
+
+.ch-error-body .ch-lead {
+  margin-bottom: 12px;
+}
+
+.ch-error-body .ch-lead:last-child {
+  margin-bottom: 0;
+}
+
+.ch-error-persist {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--mon-text-dim);
+  max-width: 52ch;
+  margin: 20px auto 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--mon-border-quiet);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.ch-error-secondary-actions {
+  margin-top: 18px;
+  font-size: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.ch-retry-link {
+  font-family: var(--mon-font);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0;
+  border: none;
+  background: none;
+  color: rgba(180, 200, 255, 0.95);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ch-retry-link:hover {
+  color: #fff;
+}
+
+.ch-error-action-sep {
+  color: var(--mon-text-fade);
+  user-select: none;
+}
+
 .ch-lead {
   color: var(--mon-text-dim);
   font-size: 15px;
