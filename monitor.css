@@ -706,7 +706,8 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   padding-left: clamp(28px, 3.8vw, 46px);
   box-shadow:
     0 24px 64px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
   overflow: hidden;
 }
 .mon-hero::before {
@@ -747,14 +748,51 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 }
 
 .mon-hero-aside {
+  position: relative;
   padding: 22px 24px;
   border: 1px solid var(--mon-border-quiet);
   border-left: 2px solid rgba(245, 158, 11, 0.28);
   border-radius: var(--mon-radius-sm);
-  background: var(--mon-surface);
-  box-shadow: none;
+  background:
+    radial-gradient(ellipse 120% 80% at 100% 100%, rgba(245, 158, 11, 0.09), transparent 52%),
+    var(--mon-surface);
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   min-width: 0;
   overflow-x: hidden;
+}
+/* Мини-бары «как на витрине метрик» — декор, объём без текста */
+.mon-hero-aside > * {
+  position: relative;
+  z-index: 1;
+}
+.mon-hero-aside::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  right: 12px;
+  bottom: 14px;
+  width: 112px;
+  height: 54px;
+  pointer-events: none;
+  opacity: 0.4;
+  background:
+    linear-gradient(to top, rgba(245, 158, 11, 0.55), rgba(245, 158, 11, 0.06)) 0 100% / 15px 48% no-repeat,
+    linear-gradient(to top, rgba(245, 158, 11, 0.48), rgba(245, 158, 11, 0.05)) 24px 100% / 15px 72% no-repeat,
+    linear-gradient(to top, rgba(245, 158, 11, 0.42), rgba(245, 158, 11, 0.04)) 48px 100% / 15px 38% no-repeat,
+    linear-gradient(to top, rgba(245, 158, 11, 0.5), rgba(245, 158, 11, 0.06)) 72px 100% / 15px 62% no-repeat,
+    linear-gradient(to top, rgba(255, 255, 255, 0.14), transparent) 0 calc(100% - 1px) / 100% 1px no-repeat;
+  border-radius: 6px;
+}
+@media (max-width: 640px) {
+  .mon-hero-aside::after {
+    opacity: 0.22;
+    width: 76px;
+    height: 40px;
+    right: 8px;
+    bottom: 10px;
+  }
 }
 .mon-page-ready .mon-hero-aside {
   animation: monHeroIn var(--mon-dur-hero) var(--mon-ease-soft) both;
@@ -2036,6 +2074,56 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   flex-shrink: 0;
 }
 
+/* ── CHART PANEL / VOLUME (medvedev: сетка + кривая + глубина, без «игрушечного» 3D) ── */
+
+#metrics .mon-surface.mon-surface--chart-panel {
+  isolation: isolate;
+  background-color: #0e1015;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 56' preserveAspectRatio='none'%3E%3Cpath fill='%23f59e0b' fill-opacity='0.11' d='M4,46 L52,38 L100,42 L148,28 L196,34 L244,18 L292,24 L316,14 L316,56 L4,56 Z'/%3E%3Cpath fill='none' stroke='%23fbbf24' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' d='M4,46 L52,38 L100,42 L148,28 L196,34 L244,18 L292,24 L316,14'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 26px,
+      rgba(255, 255, 255, 0.04) 26px,
+      rgba(255, 255, 255, 0.04) 27px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 38px,
+      rgba(255, 255, 255, 0.032) 38px,
+      rgba(255, 255, 255, 0.032) 39px
+    ),
+    radial-gradient(ellipse 72% 58% at 90% 10%, rgba(245, 158, 11, 0.16), transparent 58%),
+    radial-gradient(ellipse 48% 42% at 6% 92%, rgba(6, 182, 212, 0.07), transparent 52%),
+    linear-gradient(168deg, rgba(22, 24, 32, 0.99), rgba(10, 11, 16, 0.97));
+  background-size:
+    100% 46%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%;
+  background-position:
+    center bottom,
+    center,
+    center,
+    center,
+    center,
+    center;
+  background-repeat: no-repeat;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -22px 56px rgba(245, 158, 11, 0.045);
+}
+
+#metrics .mon-surface.mon-surface--chart-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* ── STATUS GRID — glass cards ───────────────────────────── */
 
 .mon-status-grid {
@@ -2071,6 +2159,28 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   border-radius: 0 4px 4px 0;
   background: linear-gradient(180deg, rgba(245, 158, 11, 0.95), rgba(245, 158, 11, 0.12));
   pointer-events: none;
+}
+.mon-metrics-digest-shell > * {
+  position: relative;
+  z-index: 1;
+}
+.mon-metrics-digest-shell::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.55;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 44px,
+    rgba(255, 255, 255, 0.028) 44px,
+    rgba(255, 255, 255, 0.028) 45px
+  );
+  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 18%, #000 38%, #000 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.35) 18%, #000 38%, #000 100%);
 }
 .mon-metrics-digest-banner {
   padding: 0 0 clamp(18px, 2.8vw, 26px) 12px;
@@ -2361,8 +2471,10 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-stat-card {
   position: relative;
   overflow: hidden;
-  background: var(--mon-surface);
-  border: 1px solid var(--mon-border-quiet);
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.04) 0%, transparent 38%),
+    var(--mon-surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--mon-radius-sm);
   padding: 22px 20px 20px;
   min-height: 108px;
@@ -2376,8 +2488,9 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
     box-shadow var(--mon-fx-hover) var(--mon-fx-hover-ease);
   cursor: default;
   box-shadow:
-    0 12px 30px rgba(0, 0, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 16px 38px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -10px 28px rgba(0, 0, 0, 0.18);
   transform-style: preserve-3d;
 }
 .mon-stat-card::before {
@@ -2386,8 +2499,13 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
   left: 0;
   right: 0;
   top: 0;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.06);
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(245, 158, 11, 0.65) 0%,
+    rgba(255, 255, 255, 0.14) 38%,
+    transparent 78%
+  );
   pointer-events: none;
 }
 .mon-stat-card::after {
@@ -4142,6 +4260,12 @@ a.mon-ca-sample-link[href^="tg:"] {
     transform: none !important;
     filter: none !important;
   }
+  .mon-hero-aside::after {
+    opacity: 0.12 !important;
+  }
+  .mon-metrics-digest-shell::after {
+    opacity: 0.2 !important;
+  }
   .mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag {
     animation: none !important;
     opacity: 1 !important;
@@ -4643,6 +4767,59 @@ a.mon-channel-external:hover {
 
 .ch-fp-msg--err {
   color: #e8a0a0;
+}
+
+.ch-state--loading .ch-title.ch-title--loading {
+  color: var(--mon-text);
+  margin-bottom: 16px;
+}
+
+.ch-lead--loading,
+.ch-meta--loading {
+  max-width: 52ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ch-meta--loading {
+  font-size: 14px;
+  color: var(--mon-text-dim);
+  margin-bottom: 10px;
+}
+
+.ch-live-banner {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--mon-text);
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(120, 170, 255, 0.28);
+  background: rgba(80, 120, 220, 0.08);
+}
+
+.ch-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.ch-retry-btn {
+  font-family: var(--mon-font);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--mon-border-quiet);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--mon-text);
+  cursor: pointer;
+}
+
+.ch-retry-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .ch-lead {
