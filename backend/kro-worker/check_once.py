@@ -696,6 +696,8 @@ async def run_check(channel_id, period_days=30):
             'found': True,
             'username': canonical_channel_id,
             'title': getattr(entity, 'title', None) or '',
+            'analysis_window_days': period_days,
+            'posts_fetched': len(messages),
             'risk_score': risk_score,
             'ads_per_week': ads_week,
             'bot_pct': bot_pct,
@@ -860,32 +862,36 @@ def main():
             out(result)
             return
         result = _build_confirmation(result)
-        if result.get('is_confirmed'):
-            # Крипта/off_topic/gambling по каналу — только публичный HTML t.me в gate; Telethon-blob не подмешиваем.
-            ok_gate, gate_reason, _gate_meta = _tme_gate.tme_http_gate_for_scam_base_write(
-                result.get('username') or channel_id,
-                result.get('object_type', '') or '',
-                '',
-                '',
-            )
-            if not ok_gate:
-                result['is_confirmed'] = False
-                result['http_gate_reject'] = gate_reason
-                append_to_unconfirmed_base(result)
-            else:
-                append_to_scam_base(
-                    result['username'],
-                    result['risk_score'],
-                    result['ads_per_week'],
-                    result['bot_pct'],
-                    result['vip_price'],
-                    result['complaints'],
-                    result['total_loss'],
-                    result['verdict'],
-                    result_obj=result
+        read_only = (os.environ.get('KRO_CHECK_ONCE_NO_WRITE') or '').strip().lower() in ('1', 'true', 'yes', 'y', 'on')
+        if not read_only:
+            if result.get('is_confirmed'):
+                # Крипта/off_topic/gambling по каналу — только публичный HTML t.me в gate; Telethon-blob не подмешиваем.
+                ok_gate, gate_reason, _gate_meta = _tme_gate.tme_http_gate_for_scam_base_write(
+                    result.get('username') or channel_id,
+                    result.get('object_type', '') or '',
+                    '',
+                    '',
                 )
+                if not ok_gate:
+                    result['is_confirmed'] = False
+                    result['http_gate_reject'] = gate_reason
+                    append_to_unconfirmed_base(result)
+                else:
+                    append_to_scam_base(
+                        result['username'],
+                        result['risk_score'],
+                        result['ads_per_week'],
+                        result['bot_pct'],
+                        result['vip_price'],
+                        result['complaints'],
+                        result['total_loss'],
+                        result['verdict'],
+                        result_obj=result
+                    )
+            else:
+                append_to_unconfirmed_base(result)
         else:
-            append_to_unconfirmed_base(result)
+            result['read_only'] = True
         # Убираем внутреннее поле перед выводом
         result.pop('_sample_texts', None)
         out(result)

@@ -910,7 +910,7 @@
                        checkResult.className = 'kro-check-result';
                        return;
                    }
-                   checkResult.textContent = 'Открываем отчёт…';
+                   checkResult.textContent = 'Открываем страницу отчёта: запустится живая проверка Telegram (обычно до ~10 минут). Пока ждёте — не закрывайте вкладку; при обрыве обновите страницу.';
                    checkResult.className = 'kro-check-result';
                    window.location.href = '/channel/' + encodeURIComponent(slug);
                });
@@ -959,7 +959,7 @@
                                    checkResult.className = 'kro-check-result';
                                    return;
                                }
-                               checkResult.textContent = 'Открываем отчёт…';
+                               checkResult.textContent = 'Открываем страницу отчёта: запустится живая проверка (до ~10 минут). При обрыве — обновите вкладку.';
                                checkResult.className = 'kro-check-result';
                                window.location.href = '/channel/' + encodeURIComponent(slug2);
                            }).catch(function() {

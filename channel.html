@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Карточка из базы — KRO</title>
-  <meta name="description" content="Статус, признаки риска и источники по записи из публичной базы scam_base.">
+  <title>Отчёт по Telegram‑каналу — KRO</title>
+  <meta name="description" content="Структурированный отчёт по каналу: база, поведение, внешние сигналы, связи и итоговый вывод.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260412-kro-channel-risk-fp">
+  <link rel="stylesheet" href="/monitor.css?v=20260414-kro-channel-ux-live">
 </head>
 <body class="mon-page ch-page">
 
@@ -33,42 +33,62 @@
 
 <main class="mon-container ch-main">
   <div id="ch-loading" class="ch-state ch-state--loading">
-    <p class="ch-lead">Загрузка карточки из scam_base…</p>
+    <h1 class="ch-title ch-title--loading">Готовим отчёт по каналу</h1>
+    <p class="ch-lead ch-lead--loading">Запрашиваем живую проверку Telegram и данные мониторинга. Это не мгновенный поиск по таблице: сервер собирает ленту и метрики — обычно до ~10 минут, на больших каналах иногда дольше.</p>
+    <p class="ch-meta ch-meta--loading">Окно анализа постов задаётся на сервере (часто 30 дней; при настройке — до полугода или года). Учитывается текст сообщений; медиа без подписи в текст не входят.</p>
+    <p class="ch-meta ch-meta--loading">Если канала не было в публичной базе — это нормально: отчёт всё равно строится из проверки ленты и строк широкого мониторинга.</p>
   </div>
   <div id="ch-error" class="ch-state ch-state--error" hidden>
-    <h1 class="ch-title">Запись не найдена</h1>
-    <p class="ch-lead" id="ch-error-msg">Нет данных для этого идентификатора в базе.</p>
-    <p><a class="mon-nav-link" href="/monitor#data-scam">Вернуться к монитору</a></p>
+    <h1 class="ch-title">Не получилось показать отчёт сразу</h1>
+    <p class="ch-lead" id="ch-error-msg">Часто это таймаут сети или прокси, пока шла долгая проверка. Попробуйте обновить страницу — запрос уйдёт снова.</p>
+    <p class="ch-error-actions">
+      <button type="button" class="ch-retry-btn" id="ch-retry-btn">Обновить страницу</button>
+      <a class="mon-nav-link" href="/">На главную</a>
+      <a class="mon-nav-link" href="/monitor#data-scam">К монитору</a>
+    </p>
   </div>
   <article id="ch-content" class="ch-card" hidden>
-    <p class="ch-eyebrow">Запись из scam_base</p>
+    <div id="ch-live-banner" class="ch-live-banner" hidden></div>
+    <p class="ch-eyebrow" id="ch-eyebrow">Проверка Telegram‑канала</p>
     <h1 class="ch-title" id="ch-heading">—</h1>
+    <p class="ch-meta" id="ch-subhead" hidden></p>
     <p class="ch-merged" id="ch-merged-note" hidden></p>
 
-    <section class="ch-block" aria-labelledby="ch-status-h">
-      <h2 id="ch-status-h" class="ch-h2">Статус</h2>
+    <section class="ch-block" aria-labelledby="ch-s1-h">
+      <h2 id="ch-s1-h" class="ch-h2">Базовая информация</h2>
+      <div id="ch-s1" class="ch-body"></div>
+    </section>
+
+    <section class="ch-block" aria-labelledby="ch-s2-h">
+      <h2 id="ch-s2-h" class="ch-h2">Контент и поведение</h2>
+      <div id="ch-s2" class="ch-body"></div>
+    </section>
+
+    <section class="ch-block" aria-labelledby="ch-s3-h">
+      <h2 id="ch-s3-h" class="ch-h2">Внешние источники и жалобы</h2>
+      <div id="ch-s3" class="ch-body"></div>
+    </section>
+
+    <section class="ch-block" aria-labelledby="ch-s4-h">
+      <h2 id="ch-s4-h" class="ch-h2">Связи и риск‑факторы</h2>
+      <div id="ch-s4" class="ch-body"></div>
+    </section>
+
+    <section class="ch-block" aria-labelledby="ch-s5-h">
+      <h2 id="ch-s5-h" class="ch-h2">Итоговый вывод</h2>
+      <p class="ch-status-wrap"><span id="ch-conclusion-status" class="mon-status watch">—</span></p>
+      <div id="ch-conclusion-reasons" class="ch-body"></div>
+    </section>
+
+    <section class="ch-block" aria-labelledby="ch-db-h" id="ch-db-section" hidden>
+      <h2 id="ch-db-h" class="ch-h2">Запись в scam_base (детали)</h2>
       <p class="ch-status-wrap"><span id="ch-status" class="mon-status watch">—</span></p>
-    </section>
-
-    <section class="ch-block" aria-labelledby="ch-ri-h">
-      <h2 id="ch-ri-h" class="ch-h2">Индекс риска</h2>
       <p class="ch-risk-index" id="ch-risk-index">—</p>
-    </section>
-
-    <section class="ch-block" aria-labelledby="ch-risk-h">
-      <h2 id="ch-risk-h" class="ch-h2">Признаки риска</h2>
       <div id="ch-risk" class="ch-body"></div>
-    </section>
-
-    <section class="ch-block" aria-labelledby="ch-source-h">
-      <h2 id="ch-source-h" class="ch-h2">Источник</h2>
+      <p class="ch-meta"><strong>Источник</strong></p>
       <p class="ch-meta" id="ch-source-primary">—</p>
       <div id="ch-source-links" class="ch-links"></div>
-    </section>
-
-    <section class="ch-block" aria-labelledby="ch-why-h">
-      <h2 id="ch-why-h" class="ch-h2">Почему этот канал здесь</h2>
-      <p class="ch-meta">Коротко: что именно привело объект в базу и как система трактует его текущий статус.</p>
+      <p class="ch-meta"><strong>Почему объект в базе</strong></p>
       <div class="ch-why-grid">
         <div class="ch-why-card">
           <span class="ch-why-label">Тип объекта</span>
@@ -83,14 +103,11 @@
           <p class="ch-why-value" id="ch-why-status">—</p>
         </div>
       </div>
-    </section>
-
-    <section class="ch-block" aria-labelledby="ch-date-h">
-      <h2 id="ch-date-h" class="ch-h2">Дата добавления</h2>
+      <p class="ch-meta"><strong>Дата добавления</strong></p>
       <p class="ch-body" id="ch-detected">—</p>
     </section>
 
-    <section class="ch-block ch-block--action" aria-labelledby="ch-fp-h">
+    <section class="ch-block ch-block--action" aria-labelledby="ch-fp-h" id="ch-fp-section" hidden>
       <h2 id="ch-fp-h" class="ch-h2">Оспаривание</h2>
       <p class="ch-meta">Если считаете, что канал ошибочно попал в базу, отправьте сигнал модераторам.</p>
       <button type="button" class="ch-false-positive-btn" id="ch-fp-btn">Этот канал честный — сообщить об ошибке</button>
@@ -399,6 +416,106 @@
     return reasons.join(' ');
   }
 
+  function renderBulletList(lines) {
+    var arr = (lines || []).map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
+    if (!arr.length) return '<div class="mon-evidence-empty">Нет данных в этом блоке.</div>';
+    return '<ul class="mon-evidence-list">' + arr.map(function (b) {
+      return '<li>' + esc(b) + '</li>';
+    }).join('') + '</ul>';
+  }
+
+  function renderDbCard(r, data) {
+    if (!r || !r.username) return;
+    document.getElementById('ch-db-section').hidden = false;
+    document.getElementById('ch-fp-section').hidden = false;
+
+    var st = document.getElementById('ch-status');
+    st.textContent = r.status || '—';
+    st.className = 'mon-status ' + statusClass(r.status);
+
+    var ri = document.getElementById('ch-risk-index');
+    var rim = data.risk_index_max != null ? Number(data.risk_index_max) : 100;
+    var riv = data.risk_index != null && data.risk_index !== '' ? Number(data.risk_index) : null;
+    ri.textContent = riv != null && !isNaN(riv)
+      ? ('Индекс риска: ' + riv + '/' + rim)
+      : 'Индекс риска: —';
+
+    document.getElementById('ch-risk').innerHTML = renderRisk(r);
+
+    var sp = (r.source_primary || '').trim() || '—';
+    document.getElementById('ch-source-primary').textContent = 'Поле источника в таблице: ' + sp;
+    document.getElementById('ch-source-links').innerHTML = renderSourceLinks(r);
+    document.getElementById('ch-why-type').textContent = friendlyObjectType(r.object_type);
+    document.getElementById('ch-why-reason').textContent = shortReason(r);
+    document.getElementById('ch-why-status').textContent = confidenceText(r.status);
+
+    document.getElementById('ch-detected').textContent = fmtDateShort(r.detected_at);
+
+    var fpBtn = document.getElementById('ch-fp-btn');
+    var fpMsg = document.getElementById('ch-fp-msg');
+    fpBtn.disabled = false;
+    fpMsg.hidden = true;
+    fpBtn.onclick = function () {
+      fpBtn.disabled = true;
+      fpMsg.hidden = false;
+      fpMsg.textContent = 'Отправка…';
+      fpMsg.className = 'ch-fp-msg';
+      var payload = { channel: (r.username || '').trim() || queryU };
+      fetch('/api/kro/report-false-positive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then(function (res) {
+          return res.json().then(function (j) {
+            if (!res.ok) throw new Error(j.error || 'request_failed');
+            return j;
+          });
+        })
+        .then(function (j) {
+          fpMsg.textContent = j.downgraded
+            ? 'Сигнал записан. После нескольких обращений статус снижен до «под наблюдением», запись помечена как оспариваемая.'
+            : 'Спасибо, сигнал записан. После трёх независимых отметок запись будет понижена до «под наблюдением».';
+          fpMsg.className = 'ch-fp-msg ch-fp-msg--ok';
+          if (j.downgraded) {
+            return fetch('/api/kro/channel-profile?u=' + encodeURIComponent(queryU), { cache: 'no-store' }).then(function (res2) {
+              return res2.json();
+            }).then(function (data2) {
+              var r2 = data2.profile;
+              if (r2 && r2.username) {
+                st.textContent = r2.status || '—';
+                st.className = 'mon-status ' + statusClass(r2.status);
+                var riv2 = data2.risk_index != null ? Number(data2.risk_index) : null;
+                var rim2 = data2.risk_index_max != null ? Number(data2.risk_index_max) : 100;
+                document.getElementById('ch-risk-index').textContent = riv2 != null && !isNaN(riv2)
+                  ? ('Индекс риска: ' + riv2 + '/' + rim2)
+                  : 'Индекс риска: —';
+                document.getElementById('ch-risk').innerHTML = renderRisk(r2);
+              }
+              if (data2.analysis) {
+                document.getElementById('ch-s1').innerHTML = renderBulletList(data2.analysis.basic_info);
+                document.getElementById('ch-s2').innerHTML = renderBulletList(data2.analysis.content_behavior);
+                document.getElementById('ch-s3').innerHTML = renderBulletList(data2.analysis.external_reports);
+                document.getElementById('ch-s4').innerHTML = renderBulletList(data2.analysis.ties_risk_factors);
+                var c2 = data2.analysis.conclusion || {};
+                var st2 = document.getElementById('ch-conclusion-status');
+                st2.textContent = c2.status || '—';
+                st2.className = 'mon-status ' + statusClass(c2.status);
+                document.getElementById('ch-conclusion-reasons').innerHTML = renderBulletList(c2.reasons || []);
+              }
+            });
+          }
+        })
+        .catch(function () {
+          fpMsg.textContent = 'Не удалось отправить. Попробуйте позже.';
+          fpMsg.className = 'ch-fp-msg ch-fp-msg--err';
+        })
+        .finally(function () {
+          fpBtn.disabled = false;
+        });
+    };
+  }
+
   var slug = window.location.pathname.replace(/^\/channel\//, '');
   if (!slug) {
     document.getElementById('ch-loading').hidden = true;
@@ -417,22 +534,61 @@
     }
   } catch (e1) { /* ignore */ }
 
+  function showChError(msg) {
+    document.getElementById('ch-loading').hidden = true;
+    document.getElementById('ch-content').hidden = true;
+    document.getElementById('ch-error').hidden = false;
+    document.getElementById('ch-error-msg').textContent = msg || 'Попробуйте обновить страницу через минуту.';
+  }
+
+  var retryBtn = document.getElementById('ch-retry-btn');
+  if (retryBtn) retryBtn.onclick = function () { window.location.reload(); };
+
   fetch('/api/kro/channel-profile?u=' + encodeURIComponent(queryU), { cache: 'no-store' })
     .then(function (res) {
-      if (res.status === 404) throw new Error('not_found');
       if (!res.ok) throw new Error('http_' + res.status);
       return res.json();
     })
     .then(function (data) {
       var r = data.profile;
-      if (!r || !r.username) throw new Error('not_found');
+      var a = data.analysis;
+      if (!a || typeof a !== 'object') throw new Error('no_analysis');
 
       document.getElementById('ch-loading').hidden = true;
+      document.getElementById('ch-error').hidden = true;
       document.getElementById('ch-content').hidden = false;
 
-      var label = (r.username || '').trim();
-      document.title = label + ' — база KRO';
+      var liveBanner = document.getElementById('ch-live-banner');
+      if (liveBanner) {
+        if (!r || !r.username) {
+          liveBanner.hidden = false;
+          liveBanner.textContent = 'В подтверждённой базе scam_base этой записи не было — ниже результат разовой проверки ленты и данные широкого мониторинга (если строка есть). Это не «пустой ответ», а отчёт по свежему проходу.';
+        } else {
+          liveBanner.hidden = true;
+          liveBanner.textContent = '';
+        }
+      }
+
+      var label = (r && r.username) ? (r.username || '').trim() : ('@' + queryU);
+      document.title = label + ' — отчёт KRO';
       document.getElementById('ch-heading').textContent = label;
+
+      var sub = document.getElementById('ch-subhead');
+      sub.hidden = false;
+      sub.textContent = 'Источники: ' + ((a.sources || []).join(', ') || '—') + ' · сгенерировано: ' + (a.generated_at || '—');
+
+      document.getElementById('ch-s1').innerHTML = renderBulletList(a.basic_info);
+      document.getElementById('ch-s2').innerHTML = renderBulletList(a.content_behavior);
+      document.getElementById('ch-s3').innerHTML = renderBulletList(a.external_reports);
+      document.getElementById('ch-s4').innerHTML = renderBulletList(a.ties_risk_factors);
+      var c = a.conclusion || {};
+      var cst = document.getElementById('ch-conclusion-status');
+      cst.textContent = c.status || '—';
+      cst.className = 'mon-status ' + statusClass(c.status);
+      document.getElementById('ch-conclusion-reasons').innerHTML = renderBulletList(c.reasons || []);
+
+      document.getElementById('ch-db-section').hidden = true;
+      document.getElementById('ch-fp-section').hidden = true;
 
       var oldTg = document.querySelector('.ch-tg-line');
       if (oldTg) oldTg.remove();
@@ -459,84 +615,24 @@
           data.merged_rows + ' совпадений).';
       }
 
-      var st = document.getElementById('ch-status');
-      st.textContent = r.status || '—';
-      st.className = 'mon-status ' + statusClass(r.status);
-
-      var ri = document.getElementById('ch-risk-index');
-      var rim = data.risk_index_max != null ? Number(data.risk_index_max) : 100;
-      var riv = data.risk_index != null && data.risk_index !== '' ? Number(data.risk_index) : null;
-      ri.textContent = riv != null && !isNaN(riv)
-        ? ('Индекс риска: ' + riv + '/' + rim)
-        : 'Индекс риска: —';
-
-      document.getElementById('ch-risk').innerHTML = renderRisk(r);
-
-      var sp = (r.source_primary || '').trim() || '—';
-      document.getElementById('ch-source-primary').textContent = 'Поле источника в таблице: ' + sp;
-      document.getElementById('ch-source-links').innerHTML = renderSourceLinks(r);
-      document.getElementById('ch-why-type').textContent = friendlyObjectType(r.object_type);
-      document.getElementById('ch-why-reason').textContent = shortReason(r);
-      document.getElementById('ch-why-status').textContent = confidenceText(r.status);
-
-      document.getElementById('ch-detected').textContent = fmtDateShort(r.detected_at);
-
-      var fpBtn = document.getElementById('ch-fp-btn');
-      var fpMsg = document.getElementById('ch-fp-msg');
-      fpBtn.disabled = false;
-      fpMsg.hidden = true;
-      fpBtn.onclick = function () {
-        fpBtn.disabled = true;
-        fpMsg.hidden = false;
-        fpMsg.textContent = 'Отправка…';
-        fpMsg.className = 'ch-fp-msg';
-        var payload = { channel: (r.username || '').trim() || queryU };
-        fetch('/api/kro/report-false-positive', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-          .then(function (res) {
-            return res.json().then(function (j) {
-              if (!res.ok) throw new Error(j.error || 'request_failed');
-              return j;
-            });
-          })
-          .then(function (j) {
-            fpMsg.textContent = j.downgraded
-              ? 'Сигнал записан. После нескольких обращений статус снижен до «под наблюдением», запись помечена как оспариваемая.'
-              : 'Спасибо, сигнал записан. После трёх независимых отметок запись будет понижена до «под наблюдением».';
-            fpMsg.className = 'ch-fp-msg ch-fp-msg--ok';
-            if (j.downgraded) {
-              return fetch('/api/kro/channel-profile?u=' + encodeURIComponent(queryU), { cache: 'no-store' }).then(function (res2) {
-                return res2.json();
-              }).then(function (data2) {
-                var r2 = data2.profile;
-                if (r2 && r2.username) {
-                  st.textContent = r2.status || '—';
-                  st.className = 'mon-status ' + statusClass(r2.status);
-                  var riv2 = data2.risk_index != null ? Number(data2.risk_index) : null;
-                  var rim2 = data2.risk_index_max != null ? Number(data2.risk_index_max) : 100;
-                  document.getElementById('ch-risk-index').textContent = riv2 != null && !isNaN(riv2)
-                    ? ('Индекс риска: ' + riv2 + '/' + rim2)
-                    : 'Индекс риска: —';
-                  document.getElementById('ch-risk').innerHTML = renderRisk(r2);
-                }
-              });
-            }
-          })
-          .catch(function () {
-            fpMsg.textContent = 'Не удалось отправить. Попробуйте позже.';
-            fpMsg.className = 'ch-fp-msg ch-fp-msg--err';
-          })
-          .finally(function () {
-            fpBtn.disabled = false;
-          });
-      };
+      if (r && r.username) {
+        document.getElementById('ch-eyebrow').textContent = 'Публичная запись scam_base + отчёт';
+        renderDbCard(r, data);
+      } else {
+        document.getElementById('ch-eyebrow').textContent = 'Отчёт без записи в scam_base (живая проверка/очередь)';
+      }
     })
-    .catch(function () {
-      document.getElementById('ch-loading').hidden = true;
-      document.getElementById('ch-error').hidden = false;
+    .catch(function (err) {
+      var hint = (err && err.message) ? String(err.message) : '';
+      if (hint.indexOf('http_504') !== -1 || hint.indexOf('http_502') !== -1 || hint.indexOf('http_524') !== -1) {
+        showChError('Сервер или сеть оборвали долгий ответ, пока шла проверка канала. Нажмите «Обновить страницу» — запрос выполнится снова (проверка может занять до ~10 минут).');
+      } else if (hint.indexOf('http_') === 0) {
+        showChError('Сервис вернул ошибку (' + hint.replace('http_', '') + '). Обновите страницу чуть позже.');
+      } else if (hint === 'no_analysis') {
+        showChError('Ответ пришёл без блока отчёта — обновите страницу. Если повторится, на главной доступна отдельная кнопка проверки.');
+      } else {
+        showChError('Не удалось связаться с сервером или ответ оборвался. Проверьте соединение и обновите страницу.');
+      }
     });
 })();
 </script>
