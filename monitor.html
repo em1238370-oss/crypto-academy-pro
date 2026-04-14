@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
   <script>
     (function() {
-      var v = '20260414-duoview-motion';
+      var v = '20260414-medvedev-tech-lane';
       var l = document.createElement('link');
       l.rel = 'stylesheet';
       l.href = '/monitor.css?v=' + encodeURIComponent(v);
@@ -131,11 +131,45 @@
           <a class="mon-hero-jump-link" href="#cycle-log">Журнал цикла</a>
           <a class="mon-hero-jump-link" href="#sources">Источники</a>
           <a class="mon-hero-jump-link" href="#history">Архив</a>
+          <a class="mon-hero-jump-link" href="#monitor-tech">Технологии</a>
           <a class="mon-hero-jump-link" href="#mon-how-heading">Метод</a>
           <a class="mon-hero-jump-link" href="#mon-rules-heading">Критерии</a>
         </nav>
       </details>
     </aside>
+  </section>
+
+  <!-- §6 анализа medvedevart: верстка / анимации / сборка — отдельный видимый слой, чтобы правки по плану было легко проверить -->
+  <section class="mon-tech-lane" id="monitor-tech" aria-labelledby="mon-tech-heading">
+    <p class="mon-tech-lane-kicker">Технологии страницы</p>
+    <h2 id="mon-tech-heading" class="mon-tech-lane-title">Верстка · анимации · сборка</h2>
+    <p class="mon-tech-lane-lead">Параметры из вашего файла «Анализ дизайна medvedevart.md» (§4–§6): спокойный темп, токены в CSS, нативный скролл и счётчики.</p>
+    <div class="mon-tech-grid" role="list">
+      <article class="mon-tech-card" role="listitem">
+        <h3 class="mon-tech-card-title">Верстка</h3>
+        <ul class="mon-tech-card-list">
+          <li>Семантика + классы компонентов, не «стена» utility.</li>
+          <li>Токены в <code class="mon-tech-code">:root</code> — <span class="mon-tech-code">--mon-dur-*</span>, <span class="mon-tech-code">--mon-ease-*</span>, отступы.</li>
+          <li>Один HTML-файл + <span class="mon-tech-code">monitor.css</span> — контроль как у executive-лендинга.</li>
+        </ul>
+      </article>
+      <article class="mon-tech-card" role="listitem">
+        <h3 class="mon-tech-card-title">Анимации</h3>
+        <ul class="mon-tech-card-list">
+          <li>Hero и блоки: <strong>§4</strong> — примерно 0,5–0,8&nbsp;с, fade-up 20–40&nbsp;px, <span class="mon-tech-code">cubic-bezier(0.22, 1, 0.36, 1)</span>.</li>
+          <li>Скролл: <span class="mon-tech-code">IntersectionObserver</span> + класс <span class="mon-tech-code">.mon-visible</span>; волна карточек 0,1–0,15&nbsp;с.</li>
+          <li>Счётчики метрик: JS ~1–2&nbsp;с ease-out; при <span class="mon-tech-code">prefers-reduced-motion</span> — без лишнего.</li>
+        </ul>
+      </article>
+      <article class="mon-tech-card" role="listitem">
+        <h3 class="mon-tech-card-title">Сборка</h3>
+        <ul class="mon-tech-card-list">
+          <li>Статическая выдача: без bundler для страницы монитора.</li>
+          <li>Версия стилей в запросе <span class="mon-tech-code">?v=…</span> — смена метки = гарантированное обновление CSS.</li>
+          <li>Плавность скролла: Lenis на десктопе (как на главной), иначе нативно.</li>
+        </ul>
+      </article>
+    </div>
   </section>
 
   <!-- Оффер: тезис + столпы (как блок «Стратегия. Эффективность…») -->
@@ -1746,7 +1780,7 @@
   function countUp(elId, target, suffix, duration) {
     var el = document.getElementById(elId);
     if (!el || isNaN(target) || target <= 0) return;
-    duration = duration || 1750;
+    duration = duration || 1550;
     var start = performance.now();
     function step(now) {
       var t = Math.min((now - start) / duration, 1);
@@ -1762,7 +1796,7 @@
   function countUpPlainNumber(elId, target, duration) {
     var el = document.getElementById(elId);
     if (!el || isNaN(target) || target < 0) return;
-    duration = duration || 1650;
+    duration = duration || 1500;
     if (target === 0) {
       el.textContent = '0';
       return;
@@ -2870,6 +2904,7 @@
 
   function initScrollReveal() {
     var sel = [
+      '.mon-tech-lane',
       '.mon-offer',
       '.mon-section',
       '.mon-tier-slab',

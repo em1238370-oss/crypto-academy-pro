@@ -50,18 +50,18 @@
   --mon-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   /* medvedevart-style motion: спокойный ease-out, длительности 0.5–0.8s, fade-up 20–40px */
   --mon-ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
-  /* Hero §4: 0.4–0.8s — взята середина-верх, без «рывка»; каскад 0.1–0.2s */
-  --mon-dur-hero: 0.66s;
+  /* Hero §4: 0.4–0.8s — середина диапазона medvedevart */
+  --mon-dur-hero: 0.72s;
   --mon-hero-enter: 0.06s;
   --mon-hero-step: 0.12s;
-  /* Скролл-reveal §4: 0.5–0.8s, fade-up 20–40px — длительность ближе к 0.65s */
-  --mon-dur-reveal: 0.68s;
+  /* Скролл-reveal §4: 0.5–0.8s, fade-up 20–40px */
+  --mon-dur-reveal: 0.62s;
   /* Загрузочное окно: строки и снятие оверлея в одном спокойном регистре с §4 */
   --mon-dur-boot-line: 0.58s;
   --mon-dur-boot-fade: 0.92s;
   /* Stagger тегов / волны — вилка 0.1–0.15s из §4 */
-  --mon-stagger-hero: 0.11s;
-  --mon-reveal-y: 28px;
+  --mon-stagger-hero: 0.12s;
+  --mon-reveal-y: 32px;
   /* Лёгкий blur до фокуса (≥769px): слабее, читается как отчёт, не шоу) */
   --mon-reveal-blur: 3px;
   --mon-link-dur: 0.28s;
@@ -964,6 +964,95 @@ code { font-family: var(--mon-font-mono); font-size: 0.88em; color: rgba(255,255
 .mon-hero-jump-link:focus-visible {
   outline: 2px solid rgba(245, 158, 11, 0.55);
   outline-offset: 2px;
+}
+
+/* ── Технологии (§6 анализа medvedevart): явный слой «верстка / анимации / сборка» ── */
+
+.mon-tech-lane {
+  max-width: min(1100px, 100%);
+  margin: 0 auto clamp(20px, 3vw, 32px);
+  padding: clamp(20px, 3vw, 28px) clamp(18px, 3vw, 26px) clamp(22px, 3.2vw, 30px);
+  border-radius: var(--mon-radius);
+  border: 1px solid var(--mon-border-quiet);
+  border-left: 3px solid rgba(245, 158, 11, 0.78);
+  background: linear-gradient(152deg, rgba(18, 20, 26, 0.98) 0%, rgba(10, 11, 15, 0.94) 100%);
+  box-shadow: var(--mon-shadow);
+}
+
+.mon-tech-lane-kicker {
+  font-family: var(--mon-font);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: var(--mon-tracking-kicker);
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+  margin: 0 0 8px;
+}
+
+.mon-tech-lane-title {
+  font-family: var(--mon-font-display);
+  font-size: clamp(20px, 2.5vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+  color: rgba(255, 252, 246, 0.96);
+  margin: 0 0 10px;
+}
+
+.mon-tech-lane-lead {
+  font-size: 14px;
+  line-height: var(--mon-leading-body);
+  color: var(--mon-text-prose);
+  max-width: 42rem;
+  margin: 0 0 20px;
+}
+
+.mon-tech-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 18px;
+}
+
+.mon-tech-card {
+  padding: 16px 16px 18px;
+  border-radius: var(--mon-radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.mon-tech-card-title {
+  font-family: var(--mon-font);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 230, 200, 0.88);
+  margin: 0 0 10px;
+}
+
+.mon-tech-card-list {
+  margin: 0;
+  padding: 0 0 0 1.1em;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.mon-tech-card-list li {
+  margin: 6px 0;
+}
+
+.mon-tech-code {
+  font-family: var(--mon-font-mono);
+  font-size: 0.92em;
+  color: rgba(255, 255, 255, 0.82);
+  word-break: break-word;
+}
+
+@media (max-width: 900px) {
+  .mon-tech-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Оффер (между hero и метриками, как «Стратегия. Эффективность…») ── */
