@@ -17,6 +17,7 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '..', '.env') });
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(cors());
 // Store raw body for NOWPayments webhook signature verification
 app.use('/api/payments/nowpayments/callback', express.raw({ type: 'application/json' }));
@@ -1286,6 +1287,134 @@ function kroGetTelegramFloodState() {
   };
 }
 
+/** Мягкие лимиты deep до FLOOD_WAIT Telegram (in-memory, на процесс). */
+const KRO_DEEP_CLIENT_WINDOW_MS = Math.max(300000, parseInt(process.env.KRO_DEEP_CLIENT_WINDOW_MS || `${2 * 60 * 60 * 1000}`, 10));
+const KRO_DEEP_CLIENT_MAX = Math.max(1, parseInt(process.env.KRO_DEEP_CLIENT_MAX || '4', 10));
+const KRO_DEEP_GLOBAL_WINDOW_MS = Math.max(120000, parseInt(process.env.KRO_DEEP_GLOBAL_WINDOW_MS || `${60 * 60 * 1000}`, 10));
+const KRO_DEEP_GLOBAL_MAX = Math.max(3, parseInt(process.env.KRO_DEEP_GLOBAL_MAX || '24', 10));
+const KRO_DEEP_GLOBAL_SOFT_RATIO = Math.min(0.99, Math.max(0.5, parseFloat(process.env.KRO_DEEP_GLOBAL_SOFT_RATIO || '0.8')));
+const KRO_DEEP_CACHE_TTL_MS = Math.max(300000, parseInt(process.env.KRO_DEEP_CACHE_TTL_MS || `${2 * 60 * 60 * 1000}`, 10));
+
+const kroDeepGlobalRuns = [];
+const kroDeepClientRuns = new Map();
+/** @type {Map<string, { ts: number, once: object, parsedOnce: object, deepStatus: string, deepAvailableAt: string | null }>} */
+const kroDeepChannelCache = new Map();
+
+function kroDeepPruneTimestamps(arr, windowMs) {
+  const cut = Date.now() - windowMs;
+  return arr.filter((t) => t > cut);
+}
+
+function kroDeepGetClientId(req) {
+  const xf = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
+  const ip = xf || req.socket?.remoteAddress || req.ip || '';
+  return ip || 'unknown';
+}
+
+function kroDeepPeekGlobalRuns() {
+  const pruned = kroDeepPruneTimestamps(kroDeepGlobalRuns, KRO_DEEP_GLOBAL_WINDOW_MS);
+  kroDeepGlobalRuns.length = 0;
+  kroDeepGlobalRuns.push(...pruned);
+  return kroDeepGlobalRuns;
+}
+
+function kroDeepPeekClientRuns(clientId) {
+  const id = (clientId || '').toString() || 'unknown';
+  const pruned = kroDeepPruneTimestamps(kroDeepClientRuns.get(id) || [], KRO_DEEP_CLIENT_WINDOW_MS);
+  kroDeepClientRuns.set(id, pruned);
+  return pruned;
+}
+
+function kroDeepGlobalLoadSnapshot() {
+  const runs = kroDeepPeekGlobalRuns();
+  const n = runs.length;
+  const softN = Math.max(1, Math.floor(KRO_DEEP_GLOBAL_MAX * KRO_DEEP_GLOBAL_SOFT_RATIO));
+  const pct = KRO_DEEP_GLOBAL_MAX > 0 ? Math.min(100, Math.round((100 * n) / KRO_DEEP_GLOBAL_MAX)) : 0;
+  return {
+    deep_runs_in_window: n,
+    deep_window_max: KRO_DEEP_GLOBAL_MAX,
+    deep_window_minutes: Math.round(KRO_DEEP_GLOBAL_WINDOW_MS / 60000),
+    deep_global_load_percent: pct,
+    deep_global_load_high: n >= softN,
+  };
+}
+
+function kroDeepAllowNewTelegramDeep(clientId) {
+  kroDeepPeekGlobalRuns();
+  const g = kroDeepGlobalRuns.length;
+  const softCap = Math.max(1, Math.floor(KRO_DEEP_GLOBAL_MAX * KRO_DEEP_GLOBAL_SOFT_RATIO));
+  if (g >= softCap) {
+    const oldest = g ? Math.min(...kroDeepGlobalRuns) : Date.now();
+    const retryMs = Math.max(60000, KRO_DEEP_GLOBAL_WINDOW_MS - (Date.now() - oldest));
+    const mins = Math.max(1, Math.ceil(retryMs / 60000));
+    return {
+      allowed: false,
+      scope: 'global',
+      message_ru:
+        'Сейчас очень много глубоких проверок на сервисе. Чтобы Telegram не ввёл длительную блокировку (FLOOD_WAIT), новые глубокие запросы временно ограничены. Быстрый отчёт доступен; глубокий анализ попробуйте позже (ориентировочно через '
+        + mins
+        + ' мин).',
+      wait_minutes_approx: mins,
+      wait_seconds_approx: Math.ceil(retryMs / 1000),
+    };
+  }
+  const cr = kroDeepPeekClientRuns(clientId);
+  if (cr.length >= KRO_DEEP_CLIENT_MAX) {
+    const oldestC = Math.min(...cr);
+    const retryMs = Math.max(60000, KRO_DEEP_CLIENT_WINDOW_MS - (Date.now() - oldestC));
+    const mins = Math.max(1, Math.ceil(retryMs / 60000));
+    return {
+      allowed: false,
+      scope: 'client',
+      message_ru:
+        'Вы уже запустили несколько глубоких проверок за последнее время. Чтобы не упереться в лимиты Telegram, подождите ещё примерно '
+        + mins
+        + ' мин. Быстрый отчёт выше можно смотреть без ограничений.',
+      wait_minutes_approx: mins,
+      wait_seconds_approx: Math.ceil(retryMs / 1000),
+    };
+  }
+  return { allowed: true };
+}
+
+function kroDeepRecordSuccessfulTelegramDeep(clientId) {
+  const now = Date.now();
+  kroDeepGlobalRuns.push(now);
+  const id = (clientId || '').toString() || 'unknown';
+  const arr = kroDeepClientRuns.get(id) || [];
+  arr.push(now);
+  kroDeepClientRuns.set(id, kroDeepPruneTimestamps(arr, KRO_DEEP_CLIENT_WINDOW_MS));
+}
+
+function kroDeepCacheGet(channelKey) {
+  const k = (channelKey || '').toString().trim();
+  if (!k) return null;
+  const e = kroDeepChannelCache.get(k);
+  if (!e) return null;
+  if (Date.now() - e.ts > KRO_DEEP_CACHE_TTL_MS) {
+    kroDeepChannelCache.delete(k);
+    return null;
+  }
+  return e;
+}
+
+function kroDeepCacheSet(channelKey, payload) {
+  const k = (channelKey || '').toString().trim();
+  if (!k) return;
+  kroDeepChannelCache.set(k, { ts: Date.now(), ...payload });
+}
+
+function kroSyntheticServerDeepThrottleParsed(channelKey, messageRu) {
+  return {
+    found: false,
+    telegram_rate_limited: false,
+    server_deep_throttled: true,
+    username: channelKey ? `@${channelKey}` : null,
+    error: (messageRu || '').toString().trim() || 'Глубокий анализ временно ограничен на сервере.',
+    _check_once_ok: true,
+  };
+}
+
 function kroFormatIsoForMsk(iso) {
   try {
     const d = new Date(iso);
@@ -1322,34 +1451,56 @@ function kroSyntheticFloodParsedForDeepSkip(channelKey) {
   };
 }
 
-/** Для фронта: можно ли сейчас запускать глубокий прогон (Telegram FLOOD_WAIT). */
-function kroBuildChannelProfileDeepGate() {
+/** Для фронта: можно ли сейчас запускать глубокий прогон (наши лимиты + FLOOD_WAIT Telegram). */
+function kroBuildChannelProfileDeepGate(extra) {
+  const load = kroDeepGlobalLoadSnapshot();
+  const ex = extra && typeof extra === 'object' ? extra : null;
   const st = kroGetTelegramFloodState();
-  if (!st.active) {
+  if (st.active) {
+    const sec = Math.max(0, Math.ceil((kroTelegramFloodUntilMs - Date.now()) / 1000));
+    const iso = st.deep_available_at;
+    const msk = iso ? kroFormatIsoForMsk(iso) : '';
+    const mins = Math.max(1, Math.ceil(sec / 60));
     return {
-      can_run_deep: true,
-      telegram_flood_active: false,
-      retry_after_iso: null,
-      retry_after_msk: null,
-      wait_seconds_approx: null,
-      wait_minutes_approx: null,
-      message_ru: null,
+      can_run_deep: false,
+      telegram_flood_active: true,
+      server_throttle_active: false,
+      server_throttle_scope: null,
+      retry_after_iso: iso,
+      retry_after_msk: msk || null,
+      wait_seconds_approx: sec,
+      wait_minutes_approx: mins,
+      message_ru: msk
+        ? `Telegram ограничил количество запросов к каналам. Глубокое чтение ленты сейчас недоступно; ориентировочно снова можно попробовать после ${msk} (через ≈${mins} мин).`
+        : `Telegram ограничил количество запросов к каналам. Подождите около ${mins} мин. и откройте страницу канала снова.`,
+      load,
     };
   }
-  const sec = Math.max(0, Math.ceil((kroTelegramFloodUntilMs - Date.now()) / 1000));
-  const iso = st.deep_available_at;
-  const msk = iso ? kroFormatIsoForMsk(iso) : '';
-  const mins = Math.max(1, Math.ceil(sec / 60));
+  if (ex && ex.server_deep_blocked === true) {
+    return {
+      can_run_deep: false,
+      telegram_flood_active: false,
+      server_throttle_active: true,
+      server_throttle_scope: ex.server_throttle_scope || null,
+      retry_after_iso: null,
+      retry_after_msk: null,
+      wait_seconds_approx: ex.wait_seconds_approx != null ? Number(ex.wait_seconds_approx) : null,
+      wait_minutes_approx: ex.wait_minutes_approx != null ? Number(ex.wait_minutes_approx) : null,
+      message_ru: ex.message_ru || 'Глубокий анализ временно ограничен.',
+      load,
+    };
+  }
   return {
-    can_run_deep: false,
-    telegram_flood_active: true,
-    retry_after_iso: iso,
-    retry_after_msk: msk || null,
-    wait_seconds_approx: sec,
-    wait_minutes_approx: mins,
-    message_ru: msk
-      ? `Telegram ограничил количество запросов к каналам. Глубокое чтение ленты сейчас недоступно; ориентировочно снова можно попробовать после ${msk} (через ≈${mins} мин).`
-      : `Telegram ограничил количество запросов к каналам. Подождите около ${mins} мин. и откройте страницу канала снова.`,
+    can_run_deep: true,
+    telegram_flood_active: false,
+    server_throttle_active: false,
+    server_throttle_scope: null,
+    retry_after_iso: null,
+    retry_after_msk: null,
+    wait_seconds_approx: null,
+    wait_minutes_approx: null,
+    message_ru: null,
+    load,
   };
 }
 
@@ -3257,6 +3408,23 @@ function kroV0MergeDeepRateLimitIntoAnalysis(analysis, deepAvailableAtIso) {
   }
 }
 
+function kroV0MergeServerDeepThrottleIntoAnalysis(analysis, userMessage) {
+  if (!analysis || typeof analysis !== 'object') return;
+  const msg =
+    (userMessage || '').toString().trim() ||
+    'Глубокий анализ сейчас ограничен на сервере, чтобы не исчерпать лимиты Telegram. Ниже — быстрый отчёт; глубокая выборка ленты в этом запросе не выполнялась.';
+  const c = analysis.conclusion && typeof analysis.conclusion === 'object' ? analysis.conclusion : { status: KRO_V0_STATUS.watch, reasons: [] };
+  analysis.conclusion = {
+    ...c,
+    status: KRO_V0_STATUS.watch,
+    reasons: [msg, ...(Array.isArray(c.reasons) ? c.reasons : [])].slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
+  };
+  const src = Array.isArray(analysis.sources) ? analysis.sources : [];
+  if (!src.some((x) => /лимит сервиса/i.test(String(x)))) {
+    analysis.sources = [...src, 'лимит сервиса (глубокие проверки)'];
+  }
+}
+
 /**
  * Канала нет в scam_base: быстрый ответ по отчётам и (опционально) строке channels_watch — текст завязан на канал и факты.
  * @param {object|null} watchRow — последняя видимая строка channels_watch (если уже загружена).
@@ -3562,12 +3730,15 @@ function kroLiveMetricsFromParsed(parsed) {
     complaints_count: Number.isFinite(complaintsNum) ? complaintsNum : null,
     read_only: !!p.read_only,
     telegram_rate_limited: p.telegram_rate_limited === true,
+    server_deep_throttled: p.server_deep_throttled === true,
     flood_wait_seconds: Number.isFinite(Number(p.flood_wait_seconds)) ? Number(p.flood_wait_seconds) : null,
     live_check_error:
       p._check_once_ok === true
         ? p.telegram_rate_limited === true && p.error != null
           ? String(p.error)
-          : null
+          : p.server_deep_throttled === true && p.error != null
+            ? String(p.error)
+            : null
         : p.error != null
           ? String(p.error)
           : null,
@@ -3588,6 +3759,7 @@ function kroChannelProfileLiveMetrics(parsed, opts) {
     complaints_count: null,
     read_only: false,
     telegram_rate_limited: false,
+    server_deep_throttled: false,
     flood_wait_seconds: null,
     live_check_error: null,
   };
@@ -4912,6 +5084,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
   if (!key) {
     return res.status(400).json({ error: 'bad_request', message: 'invalid channel key' });
   }
+  const clientId = kroDeepGetClientId(req);
   try {
     const sheetsClient = await getKroSheetsClient();
     if (!sheetsClient || !kroSheetId) {
@@ -4929,11 +5102,22 @@ app.get('/api/kro/channel-profile', async (req, res) => {
           reasons: ['Проверка отложена: нет доступа к Google Sheets. Попробуйте позже.'],
         },
       };
+      let dgSheets = null;
+      const peekSheets = kroDeepAllowNewTelegramDeep(clientId);
+      if (!peekSheets.allowed) {
+        dgSheets = {
+          server_deep_blocked: true,
+          server_throttle_scope: peekSheets.scope,
+          message_ru: peekSheets.message_ru,
+          wait_minutes_approx: peekSheets.wait_minutes_approx,
+          wait_seconds_approx: peekSheets.wait_seconds_approx,
+        };
+      }
       return res.status(200).json({
         mode: 'fast',
         deep_status: null,
         deep_available_at: null,
-        deep_gate: kroBuildChannelProfileDeepGate(),
+        deep_gate: kroBuildChannelProfileDeepGate(dgSheets),
         profile: null,
         merged_rows: undefined,
         risk_index: null,
@@ -4965,6 +5149,10 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     let parsedOnce = { found: false, _check_once_ok: false };
     let deepStatus = 'not_requested';
     let deepAvailableAt = null;
+    let deepFromCacheHit = false;
+    let deepCacheAgeMs = null;
+    /** @type {{ server_deep_blocked: true, server_throttle_scope: string, message_ru: string, wait_minutes_approx?: number, wait_seconds_approx?: number } | null} */
+    let serverThrottleMeta = null;
 
     if (deepMode) {
       if (floodState.active) {
@@ -4973,21 +5161,51 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         parsedOnce = kroSyntheticFloodParsedForDeepSkip(key);
         once = { ok: true, parsed: parsedOnce, stderr: '' };
       } else {
-        once = kroRunCheckOnce(channelForOnce, { readOnly: true });
-        if (once.stderr) console.error('KRO channel-profile check_once stderr:', once.stderr);
-        parsedOnce = kroNormalizeCheckOnceForAnalysis(once);
-        if (parsedOnce.telegram_rate_limited) {
-          kroRecordTelegramFloodWait(key, parsedOnce.flood_wait_seconds);
-          deepStatus = 'rate_limited';
-          deepAvailableAt = kroGetTelegramFloodState().deep_available_at;
-        } else if (once.ok !== true) {
-          deepStatus = 'failed';
-        } else if (parsedOnce.not_crypto) {
-          deepStatus = 'not_applicable';
-        } else if (parsedOnce.found === true) {
-          deepStatus = 'ok';
+        const fromCache = kroDeepCacheGet(key);
+        if (fromCache) {
+          deepFromCacheHit = true;
+          deepCacheAgeMs = Math.max(0, Date.now() - fromCache.ts);
+          once = fromCache.once;
+          parsedOnce = fromCache.parsedOnce;
+          deepStatus = fromCache.deepStatus;
+          deepAvailableAt = fromCache.deepAvailableAt || null;
         } else {
-          deepStatus = 'incomplete';
+          const allow = kroDeepAllowNewTelegramDeep(clientId);
+          if (!allow.allowed) {
+            deepStatus = 'server_rate_limited';
+            serverThrottleMeta = {
+              server_deep_blocked: true,
+              server_throttle_scope: allow.scope,
+              message_ru: allow.message_ru,
+              wait_minutes_approx: allow.wait_minutes_approx,
+              wait_seconds_approx: allow.wait_seconds_approx,
+            };
+            parsedOnce = kroSyntheticServerDeepThrottleParsed(key, allow.message_ru);
+            once = { ok: true, parsed: parsedOnce, stderr: '' };
+          } else {
+            once = kroRunCheckOnce(channelForOnce, { readOnly: true });
+            if (once.stderr) console.error('KRO channel-profile check_once stderr:', once.stderr);
+            parsedOnce = kroNormalizeCheckOnceForAnalysis(once);
+            if (parsedOnce.telegram_rate_limited) {
+              kroRecordTelegramFloodWait(key, parsedOnce.flood_wait_seconds);
+              deepStatus = 'rate_limited';
+              deepAvailableAt = kroGetTelegramFloodState().deep_available_at;
+            } else {
+              kroDeepRecordSuccessfulTelegramDeep(clientId);
+              if (once.ok !== true) {
+                deepStatus = 'failed';
+              } else if (parsedOnce.not_crypto) {
+                deepStatus = 'not_applicable';
+              } else if (parsedOnce.found === true) {
+                deepStatus = 'ok';
+              } else {
+                deepStatus = 'incomplete';
+              }
+              if (['ok', 'incomplete', 'not_applicable'].includes(deepStatus)) {
+                kroDeepCacheSet(key, { once, parsedOnce, deepStatus, deepAvailableAt });
+              }
+            }
+          }
         }
       }
     }
@@ -4999,21 +5217,42 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       deepAvailableAt,
     });
 
-    const deepRateLimited = deepMode && (deepStatus === 'rate_limited' || deepStatus === 'skipped_flood');
+    const deepTelegramBlocked = deepMode && (deepStatus === 'rate_limited' || deepStatus === 'skipped_flood');
+    const deepServerThrottled = deepMode && deepStatus === 'server_rate_limited';
+    const deepBlocked = deepTelegramBlocked || deepServerThrottled;
+    const deepRateLimited = deepTelegramBlocked;
     const deepAvailableIso =
       deepAvailableAt || (deepRateLimited ? kroGetTelegramFloodState().deep_available_at : null);
+    let deepGatePayload = serverThrottleMeta || null;
+    if (!deepGatePayload && !(deepMode && deepStatus === 'ok')) {
+      const peek = kroDeepAllowNewTelegramDeep(clientId);
+      if (!peek.allowed) {
+        deepGatePayload = {
+          server_deep_blocked: true,
+          server_throttle_scope: peek.scope,
+          message_ru: peek.message_ru,
+          wait_minutes_approx: peek.wait_minutes_approx,
+          wait_seconds_approx: peek.wait_seconds_approx,
+        };
+      }
+    }
+    const serverThrottleMsg = serverThrottleMeta && serverThrottleMeta.message_ru ? serverThrottleMeta.message_ru : '';
 
     const responseMode = deepMode ? 'deep' : 'fast';
 
     if (!matches.length) {
       const watchRowCp0 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
       let analysis;
-      if (deepMode && !deepRateLimited) {
+      if (deepMode && !deepBlocked) {
         analysis = kroV0BuildAnalysisFromLiveParsed(parsedOnce, key);
         kroV0PrependNoScamBaseCardNote(analysis, { fast: false });
-      } else if (deepRateLimited) {
+      } else if (deepTelegramBlocked) {
         analysis = await kroV0BuildFastAnalysisNoLive(sheetsClient, key, decoded, watchRowCp0);
         kroV0MergeDeepRateLimitIntoAnalysis(analysis, deepAvailableIso);
+        kroV0PrependNoScamBaseCardNote(analysis, { fast: true });
+      } else if (deepServerThrottled) {
+        analysis = await kroV0BuildFastAnalysisNoLive(sheetsClient, key, decoded, watchRowCp0);
+        kroV0MergeServerDeepThrottleIntoAnalysis(analysis, serverThrottleMsg);
         kroV0PrependNoScamBaseCardNote(analysis, { fast: true });
       } else {
         analysis = await kroV0BuildFastAnalysisNoLive(sheetsClient, key, decoded, watchRowCp0);
@@ -5027,7 +5266,9 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         mode: responseMode,
         deep_status: deepStatus,
         deep_available_at: deepAvailableIso,
-        deep_gate: kroBuildChannelProfileDeepGate(),
+        deep_cache_hit: deepFromCacheHit,
+        deep_cache_age_ms: deepCacheAgeMs,
+        deep_gate: kroBuildChannelProfileDeepGate(deepGatePayload),
         profile: null,
         merged_rows: undefined,
         risk_index: null,
@@ -5044,7 +5285,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     if (!liveMatches.length) {
       const bestEnr = enrichScamBaseContentAnalysisForMonitor(bestAny);
       let analysis;
-      if (deepMode && !deepRateLimited) {
+      if (deepMode && !deepBlocked) {
         const liveAnalysis = kroV0BuildAnalysisFromLiveParsed(parsedOnce, key);
         analysis = {
           ...liveAnalysis,
@@ -5053,10 +5294,18 @@ app.get('/api/kro/channel-profile', async (req, res) => {
             `Для справки, в «сырой» строке статус выглядит как: «${(bestAny.status || bestAny.verdict || '—')}».`,
           ].concat(liveAnalysis.basic_info || []),
         };
-      } else if (deepRateLimited) {
+      } else if (deepTelegramBlocked) {
         analysis = kroV0BuildAnalysisFromScamBaseProfile(bestEnr, { channel_key: key });
         kroV0PrependFastModeNote(analysis, bestEnr);
         kroV0MergeDeepRateLimitIntoAnalysis(analysis, deepAvailableIso);
+        analysis.basic_info = [
+          `В таблице есть ${matches.length} запис(и) по этому каналу, но в публичном мониторе они скрыты общими правилами.`,
+          `Для справки, в «сырой» строке статус выглядит как: «${(bestAny.status || bestAny.verdict || '—')}».`,
+        ].concat(analysis.basic_info || []);
+      } else if (deepServerThrottled) {
+        analysis = kroV0BuildAnalysisFromScamBaseProfile(bestEnr, { channel_key: key });
+        kroV0PrependFastModeNote(analysis, bestEnr);
+        kroV0MergeServerDeepThrottleIntoAnalysis(analysis, serverThrottleMsg);
         analysis.basic_info = [
           `В таблице есть ${matches.length} запис(и) по этому каналу, но в публичном мониторе они скрыты общими правилами.`,
           `Для справки, в «сырой» строке статус выглядит как: «${(bestAny.status || bestAny.verdict || '—')}».`,
@@ -5075,7 +5324,9 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         mode: responseMode,
         deep_status: deepStatus,
         deep_available_at: deepAvailableIso,
-        deep_gate: kroBuildChannelProfileDeepGate(),
+        deep_cache_hit: deepFromCacheHit,
+        deep_cache_age_ms: deepCacheAgeMs,
+        deep_gate: kroBuildChannelProfileDeepGate(deepGatePayload),
         profile: null,
         merged_rows: matches.length > 1 ? matches.length : undefined,
         risk_index: null,
@@ -5095,7 +5346,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     ).length;
     const profileForAnalysis = enrichScamBaseContentAnalysisForMonitor(profile);
     let analysis;
-    if (deepMode && !deepRateLimited) {
+    if (deepMode && !deepBlocked) {
       analysis = once.ok
         ? kroV0BuildAnalysisFromLiveParsed(parsedOnce, key)
         : kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: key });
@@ -5110,12 +5361,20 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         ].concat(analysis.basic_info || []);
         analysis.sources = Array.from(new Set([...(analysis.sources || []), 'публичная база']));
       }
-    } else if (deepRateLimited) {
+    } else if (deepTelegramBlocked) {
       analysis = kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: key });
       kroV0PrependFastModeNote(analysis, profileForAnalysis);
       kroV0MergeDeepRateLimitIntoAnalysis(analysis, deepAvailableIso);
       analysis.basic_info = [
         `В базе есть ${matches.length} запис(и) по каналу; карточка мониторинга (глубокий прогон сейчас под лимитом Telegram).`,
+        `Последний статус карточки: «${(profile.status || profile.verdict || '—')}» (${profile.detected_at || 'дата не указана'}).`,
+      ].concat(analysis.basic_info || []);
+    } else if (deepServerThrottled) {
+      analysis = kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: key });
+      kroV0PrependFastModeNote(analysis, profileForAnalysis);
+      kroV0MergeServerDeepThrottleIntoAnalysis(analysis, serverThrottleMsg);
+      analysis.basic_info = [
+        `В базе есть ${matches.length} запис(и) по каналу; карточка мониторинга (глубокий прогон сейчас ограничен на сервере).`,
         `Последний статус карточки: «${(profile.status || profile.verdict || '—')}» (${profile.detected_at || 'дата не указана'}).`,
       ].concat(analysis.basic_info || []);
     } else {
@@ -5132,7 +5391,9 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       mode: responseMode,
       deep_status: deepStatus,
       deep_available_at: deepAvailableIso,
-      deep_gate: kroBuildChannelProfileDeepGate(),
+      deep_cache_hit: deepFromCacheHit,
+      deep_cache_age_ms: deepCacheAgeMs,
+      deep_gate: kroBuildChannelProfileDeepGate(deepGatePayload),
       profile,
       merged_rows: matches.length > 1 ? matches.length : undefined,
       risk_index,
@@ -5143,6 +5404,21 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     });
   } catch (e) {
     console.error('KRO channel-profile error:', e);
+    let dgErr = null;
+    try {
+      const peekE = kroDeepAllowNewTelegramDeep(clientId);
+      if (!peekE.allowed) {
+        dgErr = {
+          server_deep_blocked: true,
+          server_throttle_scope: peekE.scope,
+          message_ru: peekE.message_ru,
+          wait_minutes_approx: peekE.wait_minutes_approx,
+          wait_seconds_approx: peekE.wait_seconds_approx,
+        };
+      }
+    } catch {
+      /* ignore */
+    }
     return res.status(200).json({
       profile: null,
       merged_rows: undefined,
@@ -5167,7 +5443,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       mode: 'fast',
       deep_status: null,
       deep_available_at: null,
-      deep_gate: kroBuildChannelProfileDeepGate(),
+      deep_gate: kroBuildChannelProfileDeepGate(dgErr),
       error: 'internal_error',
     });
   }

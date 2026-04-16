@@ -4879,6 +4879,50 @@ a.mon-channel-external:hover {
   margin-bottom: 0;
 }
 
+.ch-deep-flood-banner--server {
+  border-color: rgba(147, 197, 253, 0.35);
+  background: linear-gradient(135deg, rgba(30, 40, 60, 0.55) 0%, rgba(20, 24, 32, 0.75) 100%);
+}
+
+.ch-deep-flood-banner--server strong {
+  color: #bfdbfe;
+}
+
+.ch-deep-soft-banner {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--mon-text);
+  padding: 14px 16px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  background: rgba(120, 90, 20, 0.2);
+}
+
+.ch-deep-soft-banner strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #fde68a;
+}
+
+.ch-deep-soft-banner p {
+  margin: 0;
+}
+
+.ch-deep-spam-warn {
+  margin: 10px 0 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #fecaca;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(80, 20, 20, 0.25);
+}
+
 .ch-deep-results {
   margin-top: 20px;
   padding-top: 20px;

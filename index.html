@@ -1081,15 +1081,23 @@
                    panel.classList.remove('hidden');
                    if (dg.can_run_deep === false) {
                        panel.className = 'kro-inline-deep-panel kro-inline-deep-panel--blocked';
+                       var blockedTitle = dg.server_throttle_active ? 'Глубокий анализ временно ограничен' : 'Глубокий анализ временно недоступен';
                        var sub = dg.message_ru
                            ? '<p class="kro-inline-deep-text">' + esc(dg.message_ru) + '</p>'
                            : '<p class="kro-inline-deep-text">Telegram ограничил запросы. То, что выше — только быстрый отчёт; глубокое чтение ленты станет возможно после снятия лимита.</p>';
-                       panel.innerHTML = '<strong class="kro-inline-deep-title">Глубокий анализ временно недоступен</strong>' + sub +
-                           '<p class="kro-inline-deep-honest">Сейчас показан только базовый быстрый анализ (без полной выборки постов из Telegram). Глубокий прогон для этого канала не выполнялся.</p>';
+                       var honest = dg.server_throttle_active
+                           ? 'Это ограничение сервиса (защита от перегрузки и лимитов Telegram). Глубокий прогон для этого канала в этом ответе не выполнялся.'
+                           : 'Сейчас показан только базовый быстрый анализ (без полной выборки постов из Telegram). Глубокий прогон для этого канала не выполнялся.';
+                       panel.innerHTML = '<strong class="kro-inline-deep-title">' + esc(blockedTitle) + '</strong>' + sub +
+                           '<p class="kro-inline-deep-honest">' + esc(honest) + '</p>';
                    } else {
                        panel.className = 'kro-inline-deep-panel kro-inline-deep-panel--ok';
+                       var loadNote = (dg.load && dg.load.deep_global_load_high)
+                           ? '<p class="kro-inline-deep-text" style="opacity:.9">Сейчас много глубоких проверок — кнопка на странице канала может временно стать недоступной.</p>'
+                           : '';
                        panel.innerHTML = '<strong class="kro-inline-deep-title">Глубокий анализ ленты сейчас можно запустить</strong>' +
                            '<p class="kro-inline-deep-text">Текст выше — быстрый персональный отчёт по базе и мониторингу. Чтобы прочитать ленту канала в Telegram (обычно до 3 минут), откройте страницу канала и нажмите «Глубокий анализ ленты».</p>' +
+                           loadNote +
                            '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta" href="' + esc(chUrl) + '">Открыть страницу канала и запустить глубокий анализ</a></p>';
                    }
                    demo.hidden = false;

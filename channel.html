@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260416-kro-deep-ux">
+  <link rel="stylesheet" href="/monitor.css?v=20260416-kro-deep-throttle">
 </head>
 <body class="mon-page ch-page">
 
@@ -118,6 +118,8 @@
       <h2 id="ch-deep-h" class="ch-h2">Глубокий анализ ленты</h2>
       <p class="ch-meta ch-deep-intro">Отдельный уровень проверки: выборка постов в Telegram, метрики поведения и связей. Базовый отчёт выше остаётся без изменений.</p>
       <div id="ch-deep-flood-banner" class="ch-deep-flood-banner" hidden></div>
+      <div id="ch-deep-soft-banner" class="ch-deep-soft-banner" hidden></div>
+      <p class="ch-deep-spam-warn" id="ch-deep-spam-warn" hidden></p>
       <div id="ch-deep-cta-wrap" class="ch-deep-cta-wrap">
         <button type="button" class="ch-deep-btn" id="ch-deep-btn">Запустить глубокий анализ ленты</button>
         <p class="ch-deep-btn-caption" id="ch-deep-btn-caption">Может занять до 3 минут. Используется живая проверка Telegram.</p>
@@ -780,35 +782,60 @@
 
       var lm = data.live_metrics || {};
       var apiMode = data.mode || 'fast';
+      var dg = data.deep_gate || {};
       var flood = lm.deep_status === 'rate_limited' || lm.deep_status === 'skipped_flood';
+      var serverThrottled = lm.deep_status === 'server_rate_limited';
+      var deepBlockedUi = flood || serverThrottled;
       var waitSec = floodWaitSecondsFromPayload(data);
       var remStr = formatFloodWaitRemainingRu(waitSec);
       var retryStr = formatRetryAfterMskRounded(data.deep_available_at || lm.deep_available_at || '');
 
       var ctaWrap = document.getElementById('ch-deep-cta-wrap');
       var floodBanner = document.getElementById('ch-deep-flood-banner');
-      if (flood) {
+      var softBanner = document.getElementById('ch-deep-soft-banner');
+      if (deepBlockedUi) {
         if (ctaWrap) ctaWrap.hidden = true;
         if (floodBanner) {
           floodBanner.hidden = false;
-          floodBanner.innerHTML =
-            '<strong>Глубокий анализ временно недоступен</strong>' +
-            '<p>Сейчас Telegram ограничил частоту глубоких проверок (FLOOD_WAIT). Базовый анализ уже готов — см. блоки выше.</p>' +
-            (remStr ? '<p>' + esc(remStr) + '</p>' : '') +
-            (retryStr ? '<p>' + esc(retryStr) + '</p>' : '');
+          if (serverThrottled) {
+            floodBanner.className = 'ch-deep-flood-banner ch-deep-flood-banner--server';
+            floodBanner.innerHTML =
+              '<strong>Глубокий анализ временно ограничен</strong>' +
+              '<p>' + esc(dg.message_ru || 'Сейчас глубокие проверки ограничены, чтобы не исчерпать лимиты Telegram. Базовый отчёт выше уже готов.') + '</p>';
+          } else {
+            floodBanner.className = 'ch-deep-flood-banner';
+            floodBanner.innerHTML =
+              '<strong>Глубокий анализ временно недоступен</strong>' +
+              '<p>Сейчас Telegram ограничил частоту глубоких проверок (FLOOD_WAIT). Базовый анализ уже готов — см. блоки выше.</p>' +
+              (remStr ? '<p>' + esc(remStr) + '</p>' : '') +
+              (retryStr ? '<p>' + esc(retryStr) + '</p>' : '');
+          }
         }
+        if (softBanner) { softBanner.hidden = true; softBanner.innerHTML = ''; }
       } else {
         if (ctaWrap) ctaWrap.hidden = false;
         if (floodBanner) {
           floodBanner.hidden = true;
           floodBanner.innerHTML = '';
+          floodBanner.className = 'ch-deep-flood-banner';
+        }
+        if (softBanner) {
+          if (dg.load && dg.load.deep_global_load_high && apiMode !== 'deep') {
+            softBanner.hidden = false;
+            softBanner.innerHTML =
+              '<strong>Сейчас много глубоких проверок</strong>' +
+              '<p>Чтобы реже ловить блокировки от Telegram, мы мягко ограничиваем частоту. Если кнопка глубокого анализа вдруг станет недоступна — подождите немного или начните с самых важных каналов.</p>';
+          } else {
+            softBanner.hidden = true;
+            softBanner.innerHTML = '';
+          }
         }
       }
 
       var liveBanner = document.getElementById('ch-live-banner');
       var deepHint = document.getElementById('ch-deep-hint');
       if (deepHint) {
-        if (flood) {
+        if (deepBlockedUi) {
           deepHint.hidden = true;
           deepHint.textContent = '';
         } else if (apiMode === 'deep' && lm.deep_status === 'ok') {
@@ -820,7 +847,10 @@
         }
       }
       if (liveBanner) {
-        if (flood) {
+        if (serverThrottled) {
+          liveBanner.hidden = false;
+          liveBanner.textContent = (dg.message_ru || 'Глубокий анализ сейчас ограничен на сервисе.').replace(/\s+/g, ' ').trim();
+        } else if (flood) {
           liveBanner.hidden = false;
           liveBanner.textContent =
             'Сейчас Telegram ограничил глубокую проверку. ' +
@@ -865,6 +895,10 @@
         'Режим API: ' + (apiMode === 'deep' ? 'deep' : 'fast'),
       ];
       if (flood && retryStr) subParts.push(retryStr.replace(/\.$/, ''));
+      if (data.deep_cache_hit && data.deep_cache_age_ms != null && apiMode === 'deep') {
+        var cm = Math.max(1, Math.round(Number(data.deep_cache_age_ms) / 60000));
+        subParts.push('глубокий: из кэша (~' + cm + ' мин назад)');
+      }
       sub.textContent = subParts.join(' · ');
 
       var deepResultsEl = document.getElementById('ch-deep-results');
@@ -951,6 +985,25 @@
   var deepBtn = document.getElementById('ch-deep-btn');
   if (deepBtn) {
     deepBtn.onclick = function () {
+      var spamEl = document.getElementById('ch-deep-spam-warn');
+      var now = Date.now();
+      var winMs = 10 * 60 * 1000;
+      var maxClicks = 3;
+      var key = 'kro_deep_clicks_' + queryU;
+      var raw = [];
+      try { raw = JSON.parse(sessionStorage.getItem(key) || '[]'); } catch (e1) { raw = []; }
+      if (!Array.isArray(raw)) raw = [];
+      raw = raw.filter(function (t) { return now - Number(t) < winMs; });
+      if (raw.length >= maxClicks) {
+        if (spamEl) {
+          spamEl.hidden = false;
+          spamEl.textContent = 'Вы уже несколько раз запускали глубокую проверку за последние 10 минут. Telegram режет частые запросы — подождите минут 10–15 или проверьте сначала самые важные каналы.';
+        }
+        return;
+      }
+      if (spamEl) spamEl.hidden = true;
+      raw.push(now);
+      try { sessionStorage.setItem(key, JSON.stringify(raw)); } catch (e2) { /* ignore */ }
       deepBtn.disabled = true;
       loadChannelReport(1, { deep: true });
     };
