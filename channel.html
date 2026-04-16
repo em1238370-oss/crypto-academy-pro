@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260416-kro-flow-ch">
+  <link rel="stylesheet" href="/monitor.css?v=20260416-kro-byo-deep">
 </head>
 <body class="mon-page ch-page">
 
@@ -126,6 +126,21 @@
     <section class="ch-block ch-block--action" aria-labelledby="ch-deep-h">
       <h2 id="ch-deep-h" class="ch-h2">Глубокий анализ ленты</h2>
       <p class="ch-meta ch-deep-intro">Отдельный уровень проверки: выборка постов в Telegram, метрики поведения и связей. Базовый отчёт выше остаётся без изменений.</p>
+      <details class="ch-byotele" id="ch-byotele">
+        <summary class="ch-byotele-summary">Глубокий через ваш Telegram — без очереди сервера</summary>
+        <div class="ch-byotele-body">
+          <p class="ch-meta">Если у сервиса очередь или лимиты, можно прочитать ленту <strong>с вашего аккаунта</strong> (тот же движок Telethon, что и у проверки). Строка сессии (<strong>StringSession</strong>) по сути даёт доступ к аккаунту — подключайте только если осознаёте риск; мы храним её в памяти сервера ограниченное время и не пишем результат в общий кэш глубокого.</p>
+          <p class="ch-meta">Как получить строку: локальный вход (например <code class="ch-byotele-code">login_telegram.py</code> / QR в папке <code class="ch-byotele-code">kro-worker</code>), затем экспорт — <code class="ch-byotele-code">export_telethon_string_session.py</code>. Нужны те же <code class="ch-byotele-code">TELEGRAM_API_ID</code> / <code class="ch-byotele-code">API_HASH</code>, что зарегистрированы у вас на <a href="https://my.telegram.org" target="_blank" rel="noopener noreferrer">my.telegram.org</a> (как у сервера).</p>
+          <label class="ch-byotele-label" for="ch-byotele-input">StringSession</label>
+          <textarea id="ch-byotele-input" class="ch-byotele-input" rows="3" autocomplete="off" spellcheck="false" placeholder="Вставьте строку сессии…"></textarea>
+          <p class="ch-byotele-actions">
+            <button type="button" class="ch-byotele-btn" id="ch-byotele-register">Подключить на сервер (~30 мин)</button>
+            <button type="button" class="ch-byotele-btn ch-byotele-btn--ghost" id="ch-byotele-revoke" hidden>Забыть сессию здесь</button>
+          </p>
+          <p class="ch-byotele-msg" id="ch-byotele-msg" hidden></p>
+          <p class="ch-meta ch-byotele-status" id="ch-byotele-status"></p>
+        </div>
+      </details>
       <div id="ch-deep-flood-banner" class="ch-deep-flood-banner" hidden></div>
       <div id="ch-deep-soft-banner" class="ch-deep-soft-banner" hidden></div>
       <p class="ch-deep-spam-warn" id="ch-deep-spam-warn" hidden></p>
@@ -655,6 +670,109 @@
     }
   } catch (e1) { /* ignore */ }
 
+  try {
+    var _bt = sessionStorage.getItem('kro_byo_token') || '';
+    if (_bt) window.__chByoToken = _bt;
+  } catch (eByo0) { /* ignore */ }
+
+  function updateByoUi() {
+    var st = document.getElementById('ch-byotele-status');
+    var rv = document.getElementById('ch-byotele-revoke');
+    if (window.__chByoToken) {
+      if (st) st.textContent = 'Сейчас глубокий запуск пойдёт через ваш аккаунт Telegram (кнопка ниже).';
+      if (rv) rv.hidden = false;
+    } else {
+      if (st) st.textContent = '';
+      if (rv) rv.hidden = true;
+    }
+  }
+
+  var byoReg = document.getElementById('ch-byotele-register');
+  var byoRev = document.getElementById('ch-byotele-revoke');
+  var byoTa = document.getElementById('ch-byotele-input');
+  var byoMsg = document.getElementById('ch-byotele-msg');
+  if (byoReg && byoTa) {
+    byoReg.onclick = function () {
+      var raw = (byoTa.value || '').trim();
+      if (!raw) {
+        if (byoMsg) {
+          byoMsg.hidden = false;
+          byoMsg.className = 'ch-byotele-msg ch-byotele-msg--err';
+          byoMsg.textContent = 'Вставьте строку сессии.';
+        }
+        return;
+      }
+      byoReg.disabled = true;
+      if (byoMsg) {
+        byoMsg.hidden = false;
+        byoMsg.className = 'ch-byotele-msg';
+        byoMsg.textContent = 'Проверяем сессию в Telegram…';
+      }
+      fetch('/api/kro/byo-deep/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_string: raw }),
+      })
+        .then(function (res) {
+          return res.json().then(function (j) {
+            return { res: res, j: j };
+          });
+        })
+        .then(function (x) {
+          if (!x.res.ok) {
+            var m = (x.j && x.j.message_ru) ? String(x.j.message_ru) : 'Не удалось подключить.';
+            throw new Error(m);
+          }
+          return x.j;
+        })
+        .then(function (j) {
+          var tok = j.byo_token ? String(j.byo_token) : '';
+          if (!tok) throw new Error('Нет токена в ответе.');
+          try {
+            sessionStorage.setItem('kro_byo_token', tok);
+          } catch (eS) { /* ignore */ }
+          window.__chByoToken = tok;
+          if (byoMsg) {
+            byoMsg.className = 'ch-byotele-msg ch-byotele-msg--ok';
+            byoMsg.textContent = j.message_ru || 'Сессия принята. Можно запускать глубокий анализ.';
+          }
+          updateByoUi();
+        })
+        .catch(function (err) {
+          if (byoMsg) {
+            byoMsg.className = 'ch-byotele-msg ch-byotele-msg--err';
+            byoMsg.textContent = (err && err.message) ? String(err.message) : 'Ошибка подключения.';
+          }
+        })
+        .finally(function () {
+          byoReg.disabled = false;
+        });
+    };
+  }
+  if (byoRev) {
+    byoRev.onclick = function () {
+      var t = window.__chByoToken;
+      if (t) {
+        fetch('/api/kro/byo-deep/revoke', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ byo_token: t }),
+        }).catch(function () { /* ignore */ });
+      }
+      try {
+        sessionStorage.removeItem('kro_byo_token');
+      } catch (eR) { /* ignore */ }
+      window.__chByoToken = null;
+      if (byoTa) byoTa.value = '';
+      if (byoMsg) {
+        byoMsg.hidden = true;
+        byoMsg.textContent = '';
+      }
+      updateByoUi();
+    };
+  }
+  updateByoUi();
+
   function showChError(title, paragraphs) {
     document.getElementById('ch-loading').hidden = true;
     document.getElementById('ch-loading-retry').hidden = true;
@@ -779,10 +897,29 @@
     } catch (eSig) { /* ignore */ }
     var q = '/api/kro/channel-profile?u=' + encodeURIComponent(queryU) + (deep ? '&mode=deep' : '');
     if (deep && forceRefresh) q += '&deep_refresh=1';
+    if (deep && window.__chByoToken) {
+      q += '&byo_token=' + encodeURIComponent(window.__chByoToken);
+    }
     fetch(q, fetchOpts)
     .then(function (res) {
-      if (!res.ok) throw new Error('http_' + res.status);
-      return res.json();
+      return res.json().then(function (data) {
+        if (!res.ok) {
+          if (res.status === 400 && data && data.error === 'byo_token_invalid') {
+            try {
+              sessionStorage.removeItem('kro_byo_token');
+            } catch (eInv) { /* ignore */ }
+            window.__chByoToken = null;
+            updateByoUi();
+            if (byoMsg) {
+              byoMsg.hidden = false;
+              byoMsg.className = 'ch-byotele-msg ch-byotele-msg--err';
+              byoMsg.textContent = (data.message_ru || 'Сессия устарела. Подключите снова.').trim();
+            }
+          }
+          throw new Error('http_' + res.status);
+        }
+        return data;
+      });
     })
     .then(function (data) {
       var r = data.profile;
@@ -959,6 +1096,9 @@
             cmHint + ' мин' + (stHint ? ', ' + stHint : '') + ') — можно открыть без нового API'
         );
       }
+      if (data.byo_deep) {
+        subParts.push('глубокий: через ваш аккаунт Telegram (общий кэш сервера не обновляли)');
+      }
       sub.textContent = subParts.join(' · ');
 
       if (deepQueued && apiMode === 'deep') {
@@ -1033,6 +1173,12 @@
             : 'Отчёт без записи в scam_base (быстрый режим)';
       }
 
+      var capEl = document.getElementById('ch-deep-btn-caption');
+      if (capEl) {
+        capEl.textContent = window.__chByoToken
+          ? 'Через ваш аккаунт Telegram. Обычно до ~3 мин.; лимиты Telegram считаются по вашей сессии, не по общей очереди сервера.'
+          : 'Может занять до 3 минут. Используется живая проверка Telegram.';
+      }
       var deepBtnDone = document.getElementById('ch-deep-btn');
       if (deepBtnDone) deepBtnDone.disabled = false;
     })

@@ -1377,6 +1377,67 @@ function kroDeepGetClientId(req) {
   return ip || 'unknown';
 }
 
+/** Глубокий анализ через сессию пользователя (Telethon StringSession): без очереди сервера и без записи в общий deep-кэш. */
+const KRO_BYO_DEEP_ENABLED = (process.env.KRO_BYO_DEEP_ENABLED ?? '1').toString().trim() !== '0';
+const KRO_BYO_SESSION_TTL_MS = Math.max(
+  5 * 60 * 1000,
+  parseInt(process.env.KRO_BYO_SESSION_TTL_MS || `${30 * 60 * 1000}`, 10),
+);
+const KRO_BYO_REGISTER_PER_HOUR = Math.max(3, parseInt(process.env.KRO_BYO_REGISTER_PER_HOUR || '24', 10));
+/** @type {Map<string, { sessionString: string, createdAt: number }>} */
+const kroByoSessionStore = new Map();
+/** @type {Map<string, { windowStart: number, count: number }>} */
+const kroByoRegisterHits = new Map();
+
+function kroByoPruneStore() {
+  const now = Date.now();
+  for (const [k, v] of kroByoSessionStore) {
+    if (now - v.createdAt > KRO_BYO_SESSION_TTL_MS) kroByoSessionStore.delete(k);
+  }
+}
+
+function kroByoGetSession(token) {
+  kroByoPruneStore();
+  const t = (token || '').toString().trim();
+  if (!t.startsWith('kro_byo_')) return null;
+  const row = kroByoSessionStore.get(t);
+  if (!row) return null;
+  if (Date.now() - row.createdAt > KRO_BYO_SESSION_TTL_MS) {
+    kroByoSessionStore.delete(t);
+    return null;
+  }
+  return row;
+}
+
+function kroByoAllowRegister(ip) {
+  const now = Date.now();
+  const hour = 3600000;
+  const id = (ip || 'unknown').toString();
+  let w = kroByoRegisterHits.get(id);
+  if (!w || now - w.windowStart > hour) {
+    kroByoRegisterHits.set(id, { windowStart: now, count: 1 });
+    return true;
+  }
+  if (w.count >= KRO_BYO_REGISTER_PER_HOUR) return false;
+  w.count += 1;
+  return true;
+}
+
+function kroTelethonSpawnEnv(readOnly, sessionString) {
+  const s = (sessionString || '').toString().trim();
+  const base = {
+    ...process.env,
+    ...(readOnly ? { KRO_CHECK_ONCE_NO_WRITE: '1' } : {}),
+  };
+  if (!s) return base;
+  return {
+    ...base,
+    KRO_TELEGRAM_SESSION_STRING: s,
+    TELEGRAM_SESSION_STRING: s,
+    TELEGRAM_SESSION_B64: '',
+  };
+}
+
 function kroDeepPeekGlobalRuns() {
   const pruned = kroDeepPruneTimestamps(kroDeepGlobalRuns, KRO_DEEP_GLOBAL_WINDOW_MS);
   kroDeepGlobalRuns.length = 0;
@@ -3990,6 +4051,7 @@ function kroV0BuildAnalysisFromLiveParsed(parsed, channelKey) {
 
 function kroRunCheckOnce(channel, opts) {
   const readOnly = !!(opts && opts.readOnly);
+  const sessionString = opts && opts.telegramSessionString ? String(opts.telegramSessionString) : '';
   const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
   if (!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath))) {
     return { ok: false, error: 'Живая проверка на сервере не настроена (нет ключей Telegram или скрипта).', parsed: null, stderr: '' };
@@ -3999,10 +4061,7 @@ function kroRunCheckOnce(channel, opts) {
       cwd: join(__dirname, 'kro-worker'),
       timeout: kroCheckOnceTimeoutMs,
       encoding: 'utf8',
-      env: {
-        ...process.env,
-        ...(readOnly ? { KRO_CHECK_ONCE_NO_WRITE: '1' } : {}),
-      },
+      env: kroTelethonSpawnEnv(readOnly, sessionString),
     });
     const stdout = (child.stdout || '').trim();
     const stderr = (child.stderr || '').trim();
@@ -4028,6 +4087,7 @@ function kroRunCheckOnce(channel, opts) {
 
 function kroRunCheckOnceAsync(channel, opts) {
   const readOnly = !!(opts && opts.readOnly);
+  const sessionString = opts && opts.telegramSessionString ? String(opts.telegramSessionString) : '';
   const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
   if (!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath))) {
     return Promise.resolve({
@@ -4040,10 +4100,7 @@ function kroRunCheckOnceAsync(channel, opts) {
   return new Promise((resolve) => {
     const child = spawn('python3', [scriptPath, channel, String(kroCheckOncePeriodDays)], {
       cwd: join(__dirname, 'kro-worker'),
-      env: {
-        ...process.env,
-        ...(readOnly ? { KRO_CHECK_ONCE_NO_WRITE: '1' } : {}),
-      },
+      env: kroTelethonSpawnEnv(readOnly, sessionString),
     });
     let stdout = '';
     let stderr = '';
@@ -5486,9 +5543,88 @@ function parseCycleFreshnessMeta(lastCycleAtRaw) {
   };
 }
 
+/** Регистрация Telethon StringSession для глубокого анализа через аккаунт посетителя (без очереди сервера). */
+app.post('/api/kro/byo-deep/register', express.json({ limit: '120000' }), (req, res) => {
+  if (!KRO_BYO_DEEP_ENABLED) {
+    return res.status(404).json({ error: 'not_found' });
+  }
+  if (!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH)) {
+    return res.status(503).json({ error: 'telegram_not_configured', message_ru: 'Сервер не настроен для Telegram.' });
+  }
+  const raw = (req.body && req.body.session_string ? String(req.body.session_string) : '').trim();
+  if (!raw || raw.length < 72) {
+    return res.status(400).json({
+      error: 'bad_session',
+      message_ru: 'Строка сессии пустая или слишком короткая.',
+    });
+  }
+  if (raw.length > 12000) {
+    return res.status(400).json({ error: 'bad_session', message_ru: 'Строка сессии слишком длинная.' });
+  }
+  const ip = kroDeepGetClientId(req);
+  if (!kroByoAllowRegister(ip)) {
+    return res.status(429).json({
+      error: 'rate_limited',
+      message_ru: 'Слишком много попыток подключения с этого адреса. Попробуйте через час.',
+    });
+  }
+  const scriptPath = join(__dirname, 'kro-worker', 'validate_byo_session_string.py');
+  if (!fs.existsSync(scriptPath)) {
+    return res.status(503).json({ error: 'validator_missing' });
+  }
+  const child = spawnSync('python3', [scriptPath], {
+    cwd: join(__dirname, 'kro-worker'),
+    encoding: 'utf8',
+    timeout: 25000,
+    env: {
+      ...process.env,
+      KRO_BYO_SESSION_STRING: raw,
+      TELEGRAM_SESSION_STRING: raw,
+      TELEGRAM_SESSION_B64: '',
+    },
+  });
+  const stdout = (child.stdout || '').trim();
+  const line = stdout.split('\n').find((l) => l.trim().startsWith('{'));
+  let parsed;
+  try {
+    parsed = line ? JSON.parse(line) : null;
+  } catch {
+    parsed = null;
+  }
+  if (!parsed || parsed.ok !== true) {
+    return res.status(400).json({
+      error: 'session_invalid',
+      message_ru:
+        'Не удалось подтвердить сессию в Telegram (не авторизована, устарела или сеть). Сгенерируйте новую строку сессии и попробуйте снова.',
+      detail: parsed && parsed.error != null ? String(parsed.error) : null,
+    });
+  }
+  kroByoPruneStore();
+  const token = `kro_byo_${crypto.randomBytes(24).toString('hex')}`;
+  kroByoSessionStore.set(token, { sessionString: raw, createdAt: Date.now() });
+  const ttlMin = Math.max(1, Math.round(KRO_BYO_SESSION_TTL_MS / 60000));
+  return res.status(200).json({
+    ok: true,
+    byo_token: token,
+    ttl_minutes: ttlMin,
+    telegram_user: parsed.username || null,
+    message_ru: `Сессия принята примерно на ${ttlMin} мин. Запустите глубокий анализ — запрос пойдёт через ваш аккаунт; общий кэш глубокого на сервере не обновим.`,
+  });
+});
+
+app.post('/api/kro/byo-deep/revoke', express.json({ limit: '8000' }), (req, res) => {
+  if (!KRO_BYO_DEEP_ENABLED) {
+    return res.status(404).json({ error: 'not_found' });
+  }
+  const token = (req.body && req.body.byo_token ? String(req.body.byo_token) : '').trim();
+  if (token) kroByoSessionStore.delete(token);
+  return res.status(200).json({ ok: true });
+});
+
 // GET /api/kro/channel-profile?u=…&mode=fast|deep — карточка scam_base + анализ.
 // По умолчанию mode=fast: без Telethon/check_once, только база, отчёты, channels_watch (быстро, без FLOOD_WAIT).
 // mode=deep: полный check_once; при FLOOD_WAIT — быстрый слой + deep_available_at и live_metrics.deep_status.
+// mode=deep&byo_token=kro_byo_… — тот же check_once, но через StringSession посетителя (без очереди и без записи в общий deep-кэш).
 app.get('/api/kro/channel-profile', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   const rawQ = (req.query.u ?? '').toString().trim();
@@ -5576,12 +5712,51 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     let serverThrottleMeta = null;
     /** @type {{ deep_queued: true, deep_queue_position: number, deep_queue_eta_minutes: number, message_ru: string } | null} */
     let deepQueueGate = null;
+    let byoDeepActive = false;
 
     const deepRefreshRaw = (req.query.deep_refresh ?? req.query.refresh ?? '').toString().trim().toLowerCase();
     const deepRefresh =
       deepRefreshRaw === '1' || deepRefreshRaw === 'true' || deepRefreshRaw === 'yes';
 
     if (deepMode) {
+      const byoTokenRaw =
+        KRO_BYO_DEEP_ENABLED ? (req.query.byo_token ?? '').toString().trim() : '';
+      const byoRow = byoTokenRaw ? kroByoGetSession(byoTokenRaw) : null;
+      if (byoTokenRaw && KRO_BYO_DEEP_ENABLED && !byoRow) {
+        return res.status(400).json({
+          error: 'byo_token_invalid',
+          message_ru:
+            'Сессия «ваш Telegram» недействительна или истекла. Подключите строку сессии снова в блоке ниже на странице.',
+        });
+      }
+      if (byoRow && byoRow.sessionString) {
+        byoDeepActive = true;
+        once = kroRunCheckOnce(channelForOnce, {
+          readOnly: true,
+          telegramSessionString: byoRow.sessionString,
+        });
+        if (once.stderr) console.error('KRO channel-profile BYO check_once stderr:', once.stderr);
+        parsedOnce = kroNormalizeCheckOnceForAnalysis(once);
+        deepFromCacheHit = false;
+        deepCacheStale = false;
+        deepCacheAgeMs = null;
+        if (parsedOnce.telegram_rate_limited) {
+          const sec = Number(parsedOnce.flood_wait_seconds);
+          deepStatus = 'rate_limited';
+          deepAvailableAt =
+            Number.isFinite(sec) && sec > 0 ? new Date(Date.now() + sec * 1000).toISOString() : null;
+        } else {
+          if (once.ok !== true) {
+            deepStatus = 'failed';
+          } else if (parsedOnce.not_crypto) {
+            deepStatus = 'not_applicable';
+          } else if (parsedOnce.found === true) {
+            deepStatus = 'ok';
+          } else {
+            deepStatus = 'incomplete';
+          }
+        }
+      } else {
       const servableCached = deepRefresh ? null : kroDeepCacheServableResolved(key);
       if (floodState.active) {
         if (servableCached) {
@@ -5678,14 +5853,18 @@ app.get('/api/kro/channel-profile', async (req, res) => {
           }
         }
       }
+      }
     }
 
-    const liveMetrics = kroChannelProfileLiveMetrics(parsedOnce, {
+    let liveMetrics = kroChannelProfileLiveMetrics(parsedOnce, {
       mode: deepMode ? 'deep' : 'fast',
       deepRan: deepMode,
       deepStatus,
       deepAvailableAt,
     });
+    if (byoDeepActive) {
+      liveMetrics = { ...liveMetrics, byo_telegram: true };
+    }
 
     const deepTelegramBlocked = deepMode && (deepStatus === 'rate_limited' || deepStatus === 'skipped_flood');
     const deepServerThrottled = deepMode && deepStatus === 'server_rate_limited';
@@ -5700,7 +5879,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     const deepAvailableIso =
       deepAvailableAt || (deepRateLimited ? kroGetTelegramFloodState().deep_available_at : null);
     let deepGatePayload = serverThrottleMeta || deepQueueGate || null;
-    if (!deepGatePayload && !(deepMode && deepStatus === 'ok')) {
+    if (!byoDeepActive && !deepGatePayload && !(deepMode && deepStatus === 'ok')) {
       const peek = kroDeepAllowNewTelegramDeep(clientId);
       if (!peek.allowed) {
         deepGatePayload = {
@@ -5746,6 +5925,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       if (analysis._kro_watch_baked) delete analysis._kro_watch_baked;
       return res.status(200).json({
         mode: responseMode,
+        byo_deep: byoDeepActive,
         deep_status: deepStatus,
         deep_available_at: deepAvailableIso,
         deep_cache_hit: deepFromCacheHit,
@@ -5814,6 +5994,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       if (watchRowCp1) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp1);
       return res.status(200).json({
         mode: responseMode,
+        byo_deep: byoDeepActive,
         deep_status: deepStatus,
         deep_available_at: deepAvailableIso,
         deep_cache_hit: deepFromCacheHit,
@@ -5891,6 +6072,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     if (watchRowCp2) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp2);
     return res.json({
       mode: responseMode,
+      byo_deep: byoDeepActive,
       deep_status: deepStatus,
       deep_available_at: deepAvailableIso,
       deep_cache_hit: deepFromCacheHit,

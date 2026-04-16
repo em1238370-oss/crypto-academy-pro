@@ -4845,6 +4845,120 @@ a.mon-channel-external:hover {
   max-width: 56ch;
 }
 
+/* Глубокий через аккаунт посетителя (BYO Telethon StringSession) */
+.ch-byotele {
+  margin: 14px 0 18px;
+  max-width: 58ch;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0 14px;
+}
+.ch-byotele-summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 0;
+  color: rgba(200, 220, 255, 0.95);
+}
+.ch-byotele-summary::-webkit-details-marker {
+  display: none;
+}
+.ch-byotele-summary::before {
+  content: '+ ';
+  opacity: 0.65;
+  font-weight: 700;
+}
+.ch-byotele[open] .ch-byotele-summary::before {
+  content: '− ';
+}
+.ch-byotele-body {
+  padding-bottom: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.ch-byotele-body .ch-meta {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.ch-byotele-code {
+  font-size: 12px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+}
+.ch-byotele-label {
+  display: block;
+  margin-top: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mon-text-dim);
+}
+.ch-byotele-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--mon-text);
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  resize: vertical;
+  min-height: 4.5rem;
+}
+.ch-byotele-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.ch-byotele-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(147, 197, 253, 0.4);
+  background: rgba(40, 60, 100, 0.45);
+  color: #dbeafe;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ch-byotele-btn:hover:not(:disabled) {
+  border-color: rgba(186, 230, 253, 0.55);
+  color: #f0f9ff;
+}
+.ch-byotele-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.ch-byotele-btn--ghost {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+}
+.ch-byotele-msg {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ch-byotele-msg--ok {
+  color: #a7f3d0;
+}
+.ch-byotele-msg--err {
+  color: #fecaca;
+}
+.ch-byotele-status {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(200, 220, 255, 0.85);
+}
+
 .ch-deep-cta-wrap {
   display: flex;
   flex-direction: column;
