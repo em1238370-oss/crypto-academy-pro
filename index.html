@@ -1081,11 +1081,15 @@
                    panel.classList.remove('hidden');
                    if (dg.can_run_deep === false) {
                        panel.className = 'kro-inline-deep-panel kro-inline-deep-panel--blocked';
-                       var blockedTitle = dg.server_throttle_active ? 'Глубокий анализ временно ограничен' : 'Глубокий анализ временно недоступен';
+                       var blockedTitle = dg.deep_queued
+                           ? 'Глубокий анализ в очереди'
+                           : (dg.server_throttle_active ? 'Глубокий анализ временно ограничен' : 'Глубокий анализ временно недоступен');
                        var sub = dg.message_ru
                            ? '<p class="kro-inline-deep-text">' + esc(dg.message_ru) + '</p>'
                            : '<p class="kro-inline-deep-text">Telegram ограничил запросы. То, что выше — только быстрый отчёт; глубокое чтение ленты станет возможно после снятия лимита.</p>';
-                       var honest = dg.server_throttle_active
+                       var honest = dg.deep_queued
+                           ? 'Запрос поставлен в очередь из‑за высокой нагрузки. Когда обработка завершится, глубокий результат появится на странице канала; сейчас выше — быстрый отчёт.'
+                           : dg.server_throttle_active
                            ? 'Это ограничение сервиса (защита от перегрузки и лимитов Telegram). Глубокий прогон для этого канала в этом ответе не выполнялся.'
                            : 'Сейчас показан только базовый быстрый анализ (без полной выборки постов из Telegram). Глубокий прогон для этого канала не выполнялся.';
                        panel.innerHTML = '<strong class="kro-inline-deep-title">' + esc(blockedTitle) + '</strong>' + sub +
@@ -1175,8 +1179,17 @@
                        ];
                        if (lmFoot.deep_available_at_msk && (lmFoot.deep_status === 'rate_limited' || lmFoot.deep_status === 'skipped_flood')) {
                            footParts.push('глубокий снова ~ после ' + lmFoot.deep_available_at_msk);
+                       } else if (lmFoot.deep_queued === true || lmFoot.deep_status === 'queued') {
+                           var etaQ = lmFoot.deep_queue_eta_minutes != null && !isNaN(Number(lmFoot.deep_queue_eta_minutes))
+                               ? Number(lmFoot.deep_queue_eta_minutes)
+                               : null;
+                           footParts.push('глубокий в очереди' + (etaQ ? ' (~' + etaQ + ' мин)' : ''));
                        } else if (data.mode !== 'deep') {
                            footParts.push('глубокий разбор ленты: /channel/' + encodeURIComponent(queryU) + ' → кнопка «Глубокий анализ ленты»');
+                       }
+                       if (data.deep_cache_hint && data.deep_cache_hint.has_fresh_deep && data.mode !== 'deep') {
+                           var ageF = Math.max(1, Math.round(Number(data.deep_cache_hint.age_ms) / 60000));
+                           footParts.push('в кэше свежий глубокий (~' + ageF + ' мин)');
                        }
                        footEl.textContent = footParts.join(' · ');
                    }

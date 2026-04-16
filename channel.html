@@ -752,6 +752,10 @@
   function loadChannelReport(attemptNum, opts) {
     attemptNum = attemptNum || 1;
     opts = opts || {};
+    if (window.__chDeepQueuePoll) {
+      clearTimeout(window.__chDeepQueuePoll);
+      window.__chDeepQueuePoll = null;
+    }
     var deep = !!opts.deep;
     window.__chAttempt = attemptNum;
     window.__chDeepMode = deep;
@@ -785,7 +789,8 @@
       var dg = data.deep_gate || {};
       var flood = lm.deep_status === 'rate_limited' || lm.deep_status === 'skipped_flood';
       var serverThrottled = lm.deep_status === 'server_rate_limited';
-      var deepBlockedUi = flood || serverThrottled;
+      var deepQueued = lm.deep_status === 'queued' || dg.deep_queued === true;
+      var deepBlockedUi = flood || serverThrottled || deepQueued;
       var waitSec = floodWaitSecondsFromPayload(data);
       var remStr = formatFloodWaitRemainingRu(waitSec);
       var retryStr = formatRetryAfterMskRounded(data.deep_available_at || lm.deep_available_at || '');
@@ -797,7 +802,21 @@
         if (ctaWrap) ctaWrap.hidden = true;
         if (floodBanner) {
           floodBanner.hidden = false;
-          if (serverThrottled) {
+          if (deepQueued) {
+            floodBanner.className = 'ch-deep-flood-banner ch-deep-flood-banner--queue';
+            var qPos = lm.deep_queue_position != null ? Number(lm.deep_queue_position) : (dg.deep_queue_position != null ? Number(dg.deep_queue_position) : null);
+            var qEta = lm.deep_queue_eta_minutes != null ? Number(lm.deep_queue_eta_minutes) : (dg.deep_queue_eta_minutes != null ? Number(dg.deep_queue_eta_minutes) : null);
+            var qExtra = '';
+            if (qPos && qEta) {
+              qExtra = '<p>Позиция в очереди: ~' + esc(String(qPos)) + ', ориентировочно ' + esc(String(qEta)) + ' мин.</p>';
+            } else if (qEta) {
+              qExtra = '<p>Ориентировочное время: ~' + esc(String(qEta)) + ' мин.</p>';
+            }
+            floodBanner.innerHTML =
+              '<strong>Глубокий анализ в очереди</strong>' +
+              '<p>' + esc(dg.message_ru || 'Сейчас много глубоких проверок; ваш запрос обработаем в фоне. Базовый отчёт выше уже готов — страница может обновиться сама.') + '</p>' +
+              qExtra;
+          } else if (serverThrottled) {
             floodBanner.className = 'ch-deep-flood-banner ch-deep-flood-banner--server';
             floodBanner.innerHTML =
               '<strong>Глубокий анализ временно ограничен</strong>' +
@@ -847,7 +866,10 @@
         }
       }
       if (liveBanner) {
-        if (serverThrottled) {
+        if (deepQueued) {
+          liveBanner.hidden = false;
+          liveBanner.textContent = (dg.message_ru || 'Глубокий анализ поставлен в очередь — базовый отчёт уже выше.').replace(/\s+/g, ' ').trim();
+        } else if (serverThrottled) {
           liveBanner.hidden = false;
           liveBanner.textContent = (dg.message_ru || 'Глубокий анализ сейчас ограничен на сервисе.').replace(/\s+/g, ' ').trim();
         } else if (flood) {
@@ -899,7 +921,20 @@
         var cm = Math.max(1, Math.round(Number(data.deep_cache_age_ms) / 60000));
         subParts.push('глубокий: из кэша (~' + cm + ' мин назад)');
       }
+      if (data.deep_cache_hint && data.deep_cache_hint.has_fresh_deep && apiMode === 'fast') {
+        var cmHint = Math.max(1, Math.round(Number(data.deep_cache_hint.age_ms) / 60000));
+        var stHint = (data.deep_cache_hint.cached_deep_status || '').toString().trim();
+        subParts.push('глубокий в кэше (~' + cmHint + ' мин' + (stHint ? ', ' + stHint : '') + ') — повтор не обязателен');
+      }
       sub.textContent = subParts.join(' · ');
+
+      if (deepQueued && apiMode === 'deep') {
+        var pollMs = Math.min(180000, Math.max(45000, (Number(lm.deep_queue_eta_minutes) || 2) * 40000));
+        window.__chDeepQueuePoll = setTimeout(function() {
+          window.__chDeepQueuePoll = null;
+          loadChannelReport(1, { deep: true });
+        }, pollMs);
+      }
 
       var deepResultsEl = document.getElementById('ch-deep-results');
       if (dualDeepOk) {

@@ -4888,6 +4888,15 @@ a.mon-channel-external:hover {
   color: #bfdbfe;
 }
 
+.ch-deep-flood-banner--queue {
+  border-color: rgba(167, 139, 250, 0.38);
+  background: linear-gradient(135deg, rgba(45, 35, 70, 0.55) 0%, rgba(22, 20, 34, 0.78) 100%);
+}
+
+.ch-deep-flood-banner--queue strong {
+  color: #ddd6fe;
+}
+
 .ch-deep-soft-banner {
   font-size: 13px;
   line-height: 1.5;
