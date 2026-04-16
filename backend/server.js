@@ -1256,6 +1256,72 @@ const kroCheckOnceTimeoutMs = Number.isFinite(kroCheckOnceTimeoutMsParsed) && kr
   ? kroCheckOnceTimeoutMsParsed
   : 180000;
 
+/** Лимит Telegram (FLOOD_WAIT) для текущей сессии — глубокий прогон бессмысленен до наступления этого времени. */
+let kroTelegramFloodUntilMs = 0;
+/** @type {{ channel_key: string | null, flood_wait_seconds: number | null, recorded_at: string | null }} */
+let kroTelegramFloodMeta = { channel_key: null, flood_wait_seconds: null, recorded_at: null };
+
+function kroRecordTelegramFloodWait(channelKey, floodWaitSeconds) {
+  const sec = Number(floodWaitSeconds);
+  if (!Number.isFinite(sec) || sec <= 0) return;
+  const until = Date.now() + sec * 1000;
+  if (until > kroTelegramFloodUntilMs) {
+    kroTelegramFloodUntilMs = until;
+    kroTelegramFloodMeta = {
+      channel_key: channelKey || null,
+      flood_wait_seconds: Math.round(sec),
+      recorded_at: new Date().toISOString(),
+    };
+  }
+}
+
+function kroGetTelegramFloodState() {
+  if (Date.now() >= kroTelegramFloodUntilMs) {
+    return { active: false, deep_available_at: null, meta: null };
+  }
+  return {
+    active: true,
+    deep_available_at: new Date(kroTelegramFloodUntilMs).toISOString(),
+    meta: kroTelegramFloodMeta,
+  };
+}
+
+function kroFormatIsoForMsk(iso) {
+  try {
+    const d = new Date(iso);
+    if (!Number.isFinite(d.getTime())) return '';
+    const s = new Intl.DateTimeFormat('ru-RU', {
+      timeZone: 'Europe/Moscow',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(d);
+    return `${s} МСК`;
+  } catch {
+    return '';
+  }
+}
+
+/** Синтетический parsed для live_metrics, когда deep запрошен, но FLOOD_WAIT ещё активен (Python не дергаем). */
+function kroSyntheticFloodParsedForDeepSkip(channelKey) {
+  const st = kroGetTelegramFloodState();
+  const sec = Math.max(0, Math.ceil((kroTelegramFloodUntilMs - Date.now()) / 1000));
+  const iso = st.deep_available_at;
+  const msk = iso ? kroFormatIsoForMsk(iso) : '';
+  return {
+    found: false,
+    telegram_rate_limited: true,
+    flood_wait_seconds: sec,
+    username: channelKey ? `@${channelKey}` : null,
+    error: msk
+      ? `Для живого глубокого анализа сейчас действует лимит Telegram. Повторите полный прогон примерно после ${msk}.`
+      : 'Для живого глубокого анализа сейчас действует лимит Telegram — подождите и повторите запрос.',
+    _check_once_ok: true,
+  };
+}
+
 function getTodayMSK() {
   const d = new Date();
   const msk = new Date(d.toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
@@ -2470,12 +2536,14 @@ function kroV0TrimSentence(s, maxLen) {
 
 /** Подмешивает в уже собранный analysis сигналы широкого мониторинга (без смены схемы). */
 /** Когда в scam_base нет строки — поясняем, что отчёт всё равно строится (живая проверка + мониторинг). */
-function kroV0PrependNoScamBaseCardNote(analysis) {
+function kroV0PrependNoScamBaseCardNote(analysis, opts) {
   if (!analysis || typeof analysis !== 'object') return;
-  const line =
-    'В подтверждённой базе scam_base этой записи не было — ниже разовая проверка ленты Telegram и данные широкого мониторинга (если строка есть).';
+  const fast = opts && opts.fast === true;
+  const line = fast
+    ? 'В подтверждённой базе scam_base этой записи не было — ниже быстрый разбор по открытым отчётам и широкому мониторингу (без выборки ленты Telegram в этом запросе).'
+    : 'В подтверждённой базе scam_base этой записи не было — ниже разовая проверка ленты Telegram и данные широкого мониторинга (если строка есть).';
   const bi = Array.isArray(analysis.basic_info) ? analysis.basic_info : [];
-  if (bi.some((x) => /scam_base.*не было|разовая проверка ленты/i.test(String(x)))) return;
+  if (bi.some((x) => /scam_base.*не было/i.test(String(x)))) return;
   analysis.basic_info = [line, ...bi].slice(0, 5);
 }
 
@@ -2826,6 +2894,16 @@ function kroV0ConclusionFromLiveParsed(parsed) {
       ].slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
     };
   }
+  if (parsed.telegram_rate_limited === true) {
+    const msg =
+      parsed.error != null && String(parsed.error).trim()
+        ? String(parsed.error).trim()
+        : 'Telegram временно ограничил частоту запросов для этого аккаунта (FLOOD_WAIT). Повторите проверку позже — это не бан.';
+    return {
+      status: KRO_V0_STATUS.watch,
+      reasons: [msg].slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
+    };
+  }
   if (parsed.found !== true) {
     const err = normalizeCheckOnceError(parsed.error) || 'Проверка не дала результата.';
     const low = `${err}`.toLowerCase();
@@ -3111,6 +3189,158 @@ function kroV0BuildAnalysisFromScamBaseProfile(profile, extra) {
   };
 }
 
+function kroV0PrependFastModeNote(analysis, profile) {
+  if (!analysis || typeof analysis !== 'object') return;
+  const p = profile && typeof profile === 'object' ? profile : null;
+  const key = (analysis.channel_key || '').toString().trim();
+  const uname =
+    (p?.username || '').toString().trim() || (key ? `@${key}` : 'канал');
+  const st = p ? (p.status || p.verdict || '').toString().trim() : '';
+  const complaints = p && p.complaints != null && p.complaints !== '' ? String(p.complaints).trim() : '';
+  const lossRub = p ? Number(p.total_loss_rub) : NaN;
+  const bits = [];
+  if (st) bits.push(`в карточке статус «${st}»`);
+  if (complaints && complaints !== '—') bits.push(`жалоб по карточке: ${complaints}`);
+  if (Number.isFinite(lossRub) && lossRub > 0) {
+    bits.push(`потери по карточке: ${lossRub.toLocaleString('ru-RU')} ₽`);
+  }
+  const line = bits.length
+    ? `Быстрый режим для ${uname}: ленту Telegram в этом запросе не перечитывали; опираемся на карточку и отчёты (${bits.join('; ')}).`
+    : `Быстрый режим для ${uname}: ленту Telegram в этом запросе не перечитывали — только карточка мониторинга и открытые отчёты, без лимитов FLOOD_WAIT.`;
+  const bi = Array.isArray(analysis.basic_info) ? analysis.basic_info : [];
+  if (bi.some((x) => /^Быстрый режим/i.test(String(x)))) return;
+  analysis.basic_info = [line, ...bi].slice(0, 8);
+}
+
+function kroV0MergeDeepRateLimitIntoAnalysis(analysis, deepAvailableAtIso) {
+  if (!analysis || typeof analysis !== 'object') return;
+  const msk = deepAvailableAtIso ? kroFormatIsoForMsk(deepAvailableAtIso) : '';
+  const msg = msk
+    ? `Запрошен глубокий живой прогон, но Telegram сейчас ограничивает частоту запросов. Полный разбор ленты можно повторить примерно после ${msk}. Ниже — быстрый слой по базе и отчётам; мы не заполняем «глубокий» отчёт пустыми данными.`
+    : 'Запрошен глубокий живой прогон, но сейчас действует лимит Telegram — ниже быстрый слой по базе и отчётам.';
+  const c = analysis.conclusion && typeof analysis.conclusion === 'object' ? analysis.conclusion : { status: KRO_V0_STATUS.watch, reasons: [] };
+  analysis.conclusion = {
+    ...c,
+    status: KRO_V0_STATUS.watch,
+    reasons: [msg, ...(Array.isArray(c.reasons) ? c.reasons : [])].slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
+  };
+  const head =
+    'Глубокий анализ ленты в этом запросе недоступен из‑за лимита Telegram (FLOOD_WAIT). Показан быстрый отчёт — он честный и не подменяет живую выборку постов.';
+  analysis.basic_info = [head, ...(Array.isArray(analysis.basic_info) ? analysis.basic_info : [])].slice(0, 8);
+  const src = Array.isArray(analysis.sources) ? analysis.sources : [];
+  if (!src.some((x) => /живая проверка Telegram/i.test(String(x)))) {
+    analysis.sources = [...src, 'живая проверка Telegram (ограничена лимитом)'];
+  }
+}
+
+/**
+ * Канала нет в scam_base: быстрый ответ по отчётам и (опционально) строке channels_watch — текст завязан на канал и факты.
+ * @param {object|null} watchRow — последняя видимая строка channels_watch (если уже загружена).
+ */
+async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, watchRow) {
+  const displayCh =
+    /^t\.me\//i.test(decodedQuery) || decodedQuery.includes('+') ? decodedQuery : `@${channelKey}`;
+  const reports = client && kroSheetId ? await getAllReportsForChannel(client, displayCh) : [];
+  const nonFp = reports.filter((r) => (r.source || '').toLowerCase() !== 'false_positive');
+  const complaintsSum = nonFp.reduce((s, r) => s + (Number(r.sum) || 0), 0);
+  const sumsPos = nonFp.map((r) => Number(r.sum) || 0).filter((x) => x > 0);
+  const sumMin = sumsPos.length ? Math.min(...sumsPos) : 0;
+  const sumMax = sumsPos.length ? Math.max(...sumsPos) : 0;
+
+  let lead = '';
+  if (!nonFp.length) {
+    lead = `По каналу ${displayCh} в нашей таблице отчётов сопоставленных жалоб не найдено. Прямой разбор ленты Telegram в этом запросе не выполнялся — ниже базовый разбор по широкому мониторингу и открытым данным.`;
+  } else if (nonFp.length === 1) {
+    lead = `По каналу ${displayCh} в отчётах одна запись (без пометки false_positive). Ленту Telegram здесь не читали — вывод опирается только на эту строку и мониторинг.`;
+  } else {
+    lead = `По каналу ${displayCh} в отчётах ${nonFp.length} записей (без пометки false_positive). Ленту Telegram в этом запросе не перечитывали — оценка по суммам и текстам отчётов плюс широкий мониторинг.`;
+  }
+
+  const baseInfo = [lead];
+  baseInfo.push(`Идентификатор: ${displayCh} (нормализованный ключ: ${channelKey}).`);
+
+  let _kro_watch_baked = false;
+  if (watchRow && (watchRow.username || '').toString().trim()) {
+    _kro_watch_baked = true;
+    const st = (watchRow.status || '').toString().trim();
+    const wc = Number(watchRow.complaints) || 0;
+    const lc = (watchRow.last_checked_at || '').toString().trim();
+    const parts = [`В широком мониторинге для ${displayCh}`];
+    if (st) parts.push(`статус «${st}»`);
+    if (wc > 0) parts.push(`в строке учтено жалоб: ${wc}`);
+    if (lc) parts.push(`обновление строки: ${lc}`);
+    baseInfo.push(`${parts.join(': ')}.`);
+  }
+
+  const external = [];
+  if (nonFp.length) {
+    const extParts = [`Для ${displayCh} в листе отчётов: ${nonFp.length} строк.`];
+    if (complaintsSum > 0) {
+      extParts.push(`Суммы по строкам (где указаны), всего ~${complaintsSum.toLocaleString('ru-RU')} усл. ед.`);
+    }
+    if (sumMin > 0 && sumMax > 0 && sumMin !== sumMax) {
+      extParts.push(`Разброс по строкам: от ${sumMin.toLocaleString('ru-RU')} до ${sumMax.toLocaleString('ru-RU')} усл. ед.`);
+    }
+    external.push(extParts.join(' '));
+  } else {
+    external.push(`По ${displayCh} в листе отчётов сейчас нет сопоставленных строк — внешние жалобы в этой выборке не видны.`);
+  }
+
+  const content = [];
+  if (nonFp.length) {
+    const r0 = nonFp[0];
+    const ot = (r0.object_type || '').toString().trim();
+    const src = (r0.source || '').toString().trim();
+    const dt = (r0.date || '').toString().trim();
+    if (ot) content.push(`В первой строке отчётов для этого канала указан тип: «${ot}».`);
+    if (src) content.push(`Источник в той же строке: ${src}.`);
+    if (dt) content.push(`Дата в строке отчёта: ${dt}.`);
+  }
+
+  const ties = [];
+  if (watchRow && (watchRow.reviews_summary || '').toString().trim()) {
+    ties.push(`Репутация/связи (мониторинг): ${kroV0TrimSentence(watchRow.reviews_summary, 200)}`);
+  } else if (watchRow && (watchRow.activity_summary || '').toString().trim()) {
+    ties.push(`Активность по мониторингу: ${kroV0TrimSentence(watchRow.activity_summary, 200)}`);
+  }
+
+  let status = KRO_V0_STATUS.watch;
+  const reasons = [];
+  if (complaintsSum > 0 || nonFp.length >= 2) {
+    status = KRO_V0_STATUS.risk;
+    reasons.push(
+      `Для ${displayCh} по открытым отчётам видны заметные сигналы — осторожность и проверка первоисточников уместны.`,
+    );
+  } else if (nonFp.length === 1) {
+    status = KRO_V0_STATUS.watch;
+    reasons.push(
+      `Для ${displayCh} есть единичная запись в отчётах — полной картины мало; глубокий разбор ленты — кнопкой на странице (mode=deep).`,
+    );
+  } else {
+    status = KRO_V0_STATUS.clean;
+    reasons.push(
+      `Для ${displayCh} в быстром режиме по нашим отчётам сильных маркеров не видно — это не гарантия «идеальной чистоты», лента не пересканировалась.`,
+    );
+  }
+  if (complaintsSum > 0) {
+    reasons.push(`Суммы в строках отчётов (условные ед.) для этого канала: ~${complaintsSum.toLocaleString('ru-RU')}.`);
+  }
+
+  const out = {
+    v: 0,
+    channel_key: channelKey,
+    generated_at: new Date().toISOString(),
+    sources: ['отчёты пользователей', 'широкий мониторинг'],
+    basic_info: baseInfo,
+    content_behavior: content,
+    external_reports: external,
+    ties_risk_factors: ties,
+    conclusion: { status, reasons: reasons.slice(0, KRO_V0_MAX_CONCLUSION_REASONS) },
+  };
+  if (_kro_watch_baked) out._kro_watch_baked = true;
+  return out;
+}
+
 function kroV0BuildAnalysisFromLiveParsed(parsed, channelKey) {
   const p = parsed && typeof parsed === 'object' ? parsed : {};
   const username = (p.username || '').toString().trim();
@@ -3317,7 +3547,44 @@ function kroLiveMetricsFromParsed(parsed) {
     posts_limit_used: Number.isFinite(Number(p.posts_limit_used)) ? Number(p.posts_limit_used) : null,
     complaints_count: Number.isFinite(complaintsNum) ? complaintsNum : null,
     read_only: !!p.read_only,
-    live_check_error: p._check_once_ok === true ? null : (p.error != null ? String(p.error) : null),
+    telegram_rate_limited: p.telegram_rate_limited === true,
+    flood_wait_seconds: Number.isFinite(Number(p.flood_wait_seconds)) ? Number(p.flood_wait_seconds) : null,
+    live_check_error:
+      p._check_once_ok === true
+        ? p.telegram_rate_limited === true && p.error != null
+          ? String(p.error)
+          : null
+        : p.error != null
+          ? String(p.error)
+          : null,
+  };
+}
+
+function kroChannelProfileLiveMetrics(parsed, opts) {
+  const o = opts && typeof opts === 'object' ? opts : {};
+  const p = parsed && typeof parsed === 'object' ? parsed : { found: false, _check_once_ok: false };
+  const base = kroLiveMetricsFromParsed(p);
+  const out = base || {
+    found: false,
+    check_once_ok: false,
+    username: null,
+    analysis_window_days: null,
+    posts_fetched: null,
+    posts_limit_used: null,
+    complaints_count: null,
+    read_only: false,
+    telegram_rate_limited: false,
+    flood_wait_seconds: null,
+    live_check_error: null,
+  };
+  const at = o.deepAvailableAt != null && o.deepAvailableAt !== '' ? String(o.deepAvailableAt) : null;
+  return {
+    ...out,
+    mode: o.mode === 'deep' ? 'deep' : 'fast',
+    deep_ran: o.deepRan === true,
+    deep_status: o.deepStatus != null ? o.deepStatus : null,
+    deep_available_at: at,
+    deep_available_at_msk: at ? kroFormatIsoForMsk(at) || null : null,
   };
 }
 
@@ -4611,7 +4878,9 @@ function parseCycleFreshnessMeta(lastCycleAtRaw) {
   };
 }
 
-// GET /api/kro/channel-profile?u=… — одна запись scam_base (последняя по дате обнаружения при нескольких строках)
+// GET /api/kro/channel-profile?u=…&mode=fast|deep — карточка scam_base + анализ.
+// По умолчанию mode=fast: без Telethon/check_once, только база, отчёты, channels_watch (быстро, без FLOOD_WAIT).
+// mode=deep: полный check_once; при FLOOD_WAIT — быстрый слой + deep_available_at и live_metrics.deep_status.
 app.get('/api/kro/channel-profile', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   const rawQ = (req.query.u ?? '').toString().trim();
@@ -4647,6 +4916,9 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         },
       };
       return res.status(200).json({
+        mode: 'fast',
+        deep_status: null,
+        deep_available_at: null,
         profile: null,
         merged_rows: undefined,
         risk_index: null,
@@ -4656,6 +4928,8 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         live_metrics: null,
       });
     }
+    const modeRaw = (req.query.mode ?? 'fast').toString().trim().toLowerCase();
+    const deepMode = modeRaw === 'deep' || modeRaw === 'full' || modeRaw === 'live';
     const scamResp = await sheetsClient.sheets.spreadsheets.values.get({
       spreadsheetId: kroSheetId,
       range: kroScamBaseRange
@@ -4670,16 +4944,74 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     const channelForOnce = /^t\.me\//i.test(decoded) || decoded.includes('+')
       ? decoded
       : `@${decoded}`;
-    const once = kroRunCheckOnce(channelForOnce, { readOnly: true });
-    if (once.stderr) console.error('KRO channel-profile check_once stderr:', once.stderr);
-    const parsedOnce = kroNormalizeCheckOnceForAnalysis(once);
-    const liveMetrics = kroLiveMetricsFromParsed(parsedOnce);
+
+    const floodState = kroGetTelegramFloodState();
+    let once = { ok: false, parsed: null, error: null, stderr: '' };
+    let parsedOnce = { found: false, _check_once_ok: false };
+    let deepStatus = 'not_requested';
+    let deepAvailableAt = null;
+
+    if (deepMode) {
+      if (floodState.active) {
+        deepStatus = 'skipped_flood';
+        deepAvailableAt = floodState.deep_available_at;
+        parsedOnce = kroSyntheticFloodParsedForDeepSkip(key);
+        once = { ok: true, parsed: parsedOnce, stderr: '' };
+      } else {
+        once = kroRunCheckOnce(channelForOnce, { readOnly: true });
+        if (once.stderr) console.error('KRO channel-profile check_once stderr:', once.stderr);
+        parsedOnce = kroNormalizeCheckOnceForAnalysis(once);
+        if (parsedOnce.telegram_rate_limited) {
+          kroRecordTelegramFloodWait(key, parsedOnce.flood_wait_seconds);
+          deepStatus = 'rate_limited';
+          deepAvailableAt = kroGetTelegramFloodState().deep_available_at;
+        } else if (once.ok !== true) {
+          deepStatus = 'failed';
+        } else if (parsedOnce.not_crypto) {
+          deepStatus = 'not_applicable';
+        } else if (parsedOnce.found === true) {
+          deepStatus = 'ok';
+        } else {
+          deepStatus = 'incomplete';
+        }
+      }
+    }
+
+    const liveMetrics = kroChannelProfileLiveMetrics(parsedOnce, {
+      mode: deepMode ? 'deep' : 'fast',
+      deepRan: deepMode,
+      deepStatus,
+      deepAvailableAt,
+    });
+
+    const deepRateLimited = deepMode && (deepStatus === 'rate_limited' || deepStatus === 'skipped_flood');
+    const deepAvailableIso =
+      deepAvailableAt || (deepRateLimited ? kroGetTelegramFloodState().deep_available_at : null);
+
+    const responseMode = deepMode ? 'deep' : 'fast';
+
     if (!matches.length) {
-      const analysis = kroV0BuildAnalysisFromLiveParsed(parsedOnce, key);
-      kroV0PrependNoScamBaseCardNote(analysis);
       const watchRowCp0 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
-      if (watchRowCp0) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp0);
+      let analysis;
+      if (deepMode && !deepRateLimited) {
+        analysis = kroV0BuildAnalysisFromLiveParsed(parsedOnce, key);
+        kroV0PrependNoScamBaseCardNote(analysis, { fast: false });
+      } else if (deepRateLimited) {
+        analysis = await kroV0BuildFastAnalysisNoLive(sheetsClient, key, decoded, watchRowCp0);
+        kroV0MergeDeepRateLimitIntoAnalysis(analysis, deepAvailableIso);
+        kroV0PrependNoScamBaseCardNote(analysis, { fast: true });
+      } else {
+        analysis = await kroV0BuildFastAnalysisNoLive(sheetsClient, key, decoded, watchRowCp0);
+        kroV0PrependNoScamBaseCardNote(analysis, { fast: true });
+      }
+      if (watchRowCp0 && !analysis._kro_watch_baked) {
+        kroV0EnrichAnalysisWithWatch(analysis, watchRowCp0);
+      }
+      if (analysis._kro_watch_baked) delete analysis._kro_watch_baked;
       return res.status(200).json({
+        mode: responseMode,
+        deep_status: deepStatus,
+        deep_available_at: deepAvailableIso,
         profile: null,
         merged_rows: undefined,
         risk_index: null,
@@ -4694,17 +5026,39 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     );
     const liveMatches = matches.filter((r) => isScamBaseRowInLiveCounterDataset(r));
     if (!liveMatches.length) {
-      const liveAnalysis = kroV0BuildAnalysisFromLiveParsed(parsedOnce, key);
-      const analysis = {
-        ...liveAnalysis,
-        basic_info: [
+      const bestEnr = enrichScamBaseContentAnalysisForMonitor(bestAny);
+      let analysis;
+      if (deepMode && !deepRateLimited) {
+        const liveAnalysis = kroV0BuildAnalysisFromLiveParsed(parsedOnce, key);
+        analysis = {
+          ...liveAnalysis,
+          basic_info: [
+            `В таблице есть ${matches.length} запис(и) по этому каналу, но в публичном мониторе они скрыты общими правилами.`,
+            `Для справки, в «сырой» строке статус выглядит как: «${(bestAny.status || bestAny.verdict || '—')}».`,
+          ].concat(liveAnalysis.basic_info || []),
+        };
+      } else if (deepRateLimited) {
+        analysis = kroV0BuildAnalysisFromScamBaseProfile(bestEnr, { channel_key: key });
+        kroV0PrependFastModeNote(analysis, bestEnr);
+        kroV0MergeDeepRateLimitIntoAnalysis(analysis, deepAvailableIso);
+        analysis.basic_info = [
           `В таблице есть ${matches.length} запис(и) по этому каналу, но в публичном мониторе они скрыты общими правилами.`,
           `Для справки, в «сырой» строке статус выглядит как: «${(bestAny.status || bestAny.verdict || '—')}».`,
-        ].concat(liveAnalysis.basic_info || []),
-      };
+        ].concat(analysis.basic_info || []);
+      } else {
+        analysis = kroV0BuildAnalysisFromScamBaseProfile(bestEnr, { channel_key: key });
+        kroV0PrependFastModeNote(analysis, bestEnr);
+        analysis.basic_info = [
+          `В таблице есть ${matches.length} запис(и) по этому каналу, но в публичном мониторе они скрыты общими правилами.`,
+          `Для справки, в «сырой» строке статус выглядит как: «${(bestAny.status || bestAny.verdict || '—')}».`,
+        ].concat(analysis.basic_info || []);
+      }
       const watchRowCp1 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
       if (watchRowCp1) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp1);
       return res.status(200).json({
+        mode: responseMode,
+        deep_status: deepStatus,
+        deep_available_at: deepAvailableIso,
         profile: null,
         merged_rows: matches.length > 1 ? matches.length : undefined,
         risk_index: null,
@@ -4723,23 +5077,44 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       (r) => (r.source || '').toLowerCase() === 'false_positive'
     ).length;
     const profileForAnalysis = enrichScamBaseContentAnalysisForMonitor(profile);
-    const analysis = once.ok
-      ? kroV0BuildAnalysisFromLiveParsed(parsedOnce, key)
-      : kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: key });
-    if (!once.ok) {
+    let analysis;
+    if (deepMode && !deepRateLimited) {
+      analysis = once.ok
+        ? kroV0BuildAnalysisFromLiveParsed(parsedOnce, key)
+        : kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: key });
+      if (!once.ok) {
+        analysis.basic_info = [
+          'Живой анализ не завершился в этом запросе (лимит времени / ограничения Telegram) — показана последняя карточка мониторинга.',
+        ].concat(analysis.basic_info || []);
+      } else {
+        analysis.basic_info = [
+          `В базе есть ${matches.length} запис(и) по каналу; ниже — свежая живая проверка Telegram за широкое окно.`,
+          `Последний статус карточки: «${(profile.status || profile.verdict || '—')}» (${profile.detected_at || 'дата не указана'}).`,
+        ].concat(analysis.basic_info || []);
+        analysis.sources = Array.from(new Set([...(analysis.sources || []), 'публичная база']));
+      }
+    } else if (deepRateLimited) {
+      analysis = kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: key });
+      kroV0PrependFastModeNote(analysis, profileForAnalysis);
+      kroV0MergeDeepRateLimitIntoAnalysis(analysis, deepAvailableIso);
       analysis.basic_info = [
-        'Живой анализ не завершился в этом запросе (лимит времени / ограничения Telegram) — показана последняя карточка мониторинга.',
-      ].concat(analysis.basic_info || []);
-    } else {
-      analysis.basic_info = [
-        `В базе есть ${matches.length} запис(и) по каналу; ниже — именно свежая живая проверка Telegram за широкое окно.`,
+        `В базе есть ${matches.length} запис(и) по каналу; карточка мониторинга (глубокий прогон сейчас под лимитом Telegram).`,
         `Последний статус карточки: «${(profile.status || profile.verdict || '—')}» (${profile.detected_at || 'дата не указана'}).`,
       ].concat(analysis.basic_info || []);
-      analysis.sources = Array.from(new Set([...(analysis.sources || []), 'публичная база']));
+    } else {
+      analysis = kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: key });
+      kroV0PrependFastModeNote(analysis, profileForAnalysis);
+      analysis.basic_info = [
+        `В базе есть ${matches.length} запис(и) по каналу; карточка мониторинга без новой выборки ленты в этом запросе.`,
+        `Последний статус карточки: «${(profile.status || profile.verdict || '—')}» (${profile.detected_at || 'дата не указана'}).`,
+      ].concat(analysis.basic_info || []);
     }
     const watchRowCp2 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
     if (watchRowCp2) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp2);
     return res.json({
+      mode: responseMode,
+      deep_status: deepStatus,
+      deep_available_at: deepAvailableIso,
       profile,
       merged_rows: matches.length > 1 ? matches.length : undefined,
       risk_index,
@@ -4771,6 +5146,9 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         },
       },
       live_metrics: null,
+      mode: 'fast',
+      deep_status: null,
+      deep_available_at: null,
       error: 'internal_error',
     });
   }

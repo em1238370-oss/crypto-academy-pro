@@ -1104,7 +1104,17 @@
                    if (Array.isArray(c.reasons)) s5lines = s5lines.concat(c.reasons.slice(0, 6));
                    if (s5) s5.innerHTML = homeRenderBullets(s5lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                    if (footEl) {
-                       footEl.textContent = 'Источники: ' + ((a.sources || []).join(', ') || '—') + ' · сгенерировано: ' + (a.generated_at || '—');
+                       var lmFoot = data.live_metrics || {};
+                       var footParts = [
+                           'Источники: ' + ((a.sources || []).join(', ') || '—') + ' · сгенерировано: ' + (a.generated_at || '—'),
+                           'режим: ' + (data.mode === 'deep' ? 'deep' : 'fast'),
+                       ];
+                       if (lmFoot.deep_available_at_msk && (lmFoot.deep_status === 'rate_limited' || lmFoot.deep_status === 'skipped_flood')) {
+                           footParts.push('глубокий снова ~ после ' + lmFoot.deep_available_at_msk);
+                       } else if (data.mode !== 'deep') {
+                           footParts.push('полная лента — страница канала, «Глубокий анализ»');
+                       }
+                       footEl.textContent = footParts.join(' · ');
                    }
                }
                function runHomeChannelCheck(slug) {
@@ -1116,7 +1126,7 @@
                    var fetchOpts = { cache: 'no-store' };
                    try {
                        if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-                           fetchOpts.signal = AbortSignal.timeout(195000);
+                           fetchOpts.signal = AbortSignal.timeout(90000);
                        }
                    } catch (eSig) { /* ignore */ }
                    fetch(base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU), fetchOpts)

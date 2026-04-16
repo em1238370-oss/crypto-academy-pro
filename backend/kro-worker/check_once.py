@@ -23,7 +23,7 @@ from urllib.parse import urlencode
 from urllib.error import URLError, HTTPError
 
 from telethon.tl.functions.messages import ImportChatInviteRequest
-from telethon.errors import ChannelPrivateError, InviteHashExpiredError, UsernameNotOccupiedError
+from telethon.errors import ChannelPrivateError, FloodWaitError, InviteHashExpiredError, UsernameNotOccupiedError
 import kro_telethon_session as _kro_ts
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -580,11 +580,43 @@ def _fetch_tgstat(channel_id_for_api):
     return out_result
 
 
+def _flood_wait_response(exc: BaseException) -> dict | None:
+    """Если Telegram вернул FLOOD_WAIT — отдаём структурированный ответ (не глотать в общий Exception)."""
+    sec = None
+    if isinstance(exc, FloodWaitError):
+        sec = int(getattr(exc, 'seconds', 0) or 0)
+    else:
+        m = re.search(r'wait of (\d+)\s*seconds', str(exc), re.I)
+        if m:
+            sec = int(m.group(1))
+    if sec is None or sec <= 0:
+        return None
+    h, rem = divmod(sec, 3600)
+    mi = rem // 60
+    return {
+        'found': False,
+        'telegram_rate_limited': True,
+        'flood_wait_seconds': sec,
+        'error': (
+            f'Telegram временно ограничил частоту запросов для этого аккаунта (FLOOD_WAIT, часто после ResolveUsername). '
+            f'Повторите проверку примерно через {h} ч. {mi} мин. (~{sec} с). Это не бан.'
+        ),
+    }
+
+
 async def run_check(channel_id, period_days=30):
     client = _kro_ts.build_kro_telegram_client(TELEGRAM_API_ID, TELEGRAM_API_HASH)
     await client.start()
     try:
-        entity = await get_entity(client, channel_id)
+        try:
+            entity = await get_entity(client, channel_id)
+        except FloodWaitError as e:
+            return _flood_wait_response(e)
+        except Exception as e:
+            fw = _flood_wait_response(e)
+            if fw is not None:
+                return fw
+            raise
         if not entity:
             return None
         now = datetime.now(timezone.utc)
@@ -726,6 +758,13 @@ async def run_check(channel_id, period_days=30):
             'sample_posts': sample_posts,
         }
         return result_obj
+    except FloodWaitError as e:
+        return _flood_wait_response(e)
+    except Exception as e:
+        fw = _flood_wait_response(e)
+        if fw is not None:
+            return fw
+        raise
     finally:
         await client.disconnect()
 
@@ -868,6 +907,13 @@ def main():
             out({'found': False, 'error': 'channel not found or inaccessible'})
             return
         if result.get('not_crypto'):
+            out(result)
+            return
+        if result.get('telegram_rate_limited') or result.get('flood_wait_seconds'):
+            read_only = (os.environ.get('KRO_CHECK_ONCE_NO_WRITE') or '').strip().lower() in ('1', 'true', 'yes', 'y', 'on')
+            if read_only:
+                result['read_only'] = True
+            result.pop('_sample_texts', None)
             out(result)
             return
         result = _build_confirmation(result)

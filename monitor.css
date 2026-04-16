@@ -4798,6 +4798,120 @@ a.mon-channel-external:hover {
   background: rgba(80, 120, 220, 0.08);
 }
 
+/* Глубокий анализ: акцентная кнопка (Crypto Academy — тёмный фон + лайм) */
+.ch-deep-intro {
+  max-width: 56ch;
+}
+
+.ch-deep-cta-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.ch-deep-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 26px;
+  border-radius: 14px;
+  border: 1px solid rgba(200, 255, 120, 0.45);
+  background: linear-gradient(145deg, rgba(35, 42, 28, 0.95) 0%, rgba(22, 28, 18, 0.98) 100%);
+  color: #d8f090;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 10px 32px rgba(0, 0, 0, 0.45), 0 0 28px rgba(180, 255, 80, 0.12);
+  transition: color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+}
+
+.ch-deep-btn:hover:not(:disabled) {
+  color: #f0ffbb;
+  border-color: rgba(220, 255, 140, 0.65);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 36px rgba(200, 255, 100, 0.2);
+  transform: translateY(-1px);
+}
+
+.ch-deep-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ch-deep-btn-caption {
+  margin: 0;
+  max-width: 48ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--mon-text-dim);
+}
+
+.ch-deep-flood-banner {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--mon-text);
+  padding: 16px 18px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 200, 120, 0.35);
+  background: linear-gradient(135deg, rgba(60, 42, 20, 0.55) 0%, rgba(28, 22, 16, 0.75) 100%);
+}
+
+.ch-deep-flood-banner strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #ffd9a0;
+}
+
+.ch-deep-flood-banner p {
+  margin: 0 0 8px;
+}
+
+.ch-deep-flood-banner p:last-child {
+  margin-bottom: 0;
+}
+
+.ch-deep-results {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--mon-border-quiet);
+}
+
+.ch-deep-results-title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--mon-text);
+}
+
+.ch-deep-subsec {
+  margin-bottom: 20px;
+}
+
+.ch-deep-subsec .ch-h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mon-text-fade);
+}
+
+.ch-deep-subsec .ch-body {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--mon-text);
+}
+
 .ch-error-actions {
   display: flex;
   flex-wrap: wrap;

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260414-kro-channel-error-retry">
+  <link rel="stylesheet" href="/monitor.css?v=20260416-kro-deep-ux">
 </head>
 <body class="mon-page ch-page">
 
@@ -34,9 +34,9 @@
 <main class="mon-container ch-main">
   <div id="ch-loading" class="ch-state ch-state--loading">
     <h1 class="ch-title ch-title--loading">Готовим отчёт по каналу</h1>
-    <p class="ch-lead ch-lead--loading">Запрашиваем живую проверку Telegram и данные мониторинга. Это не мгновенный поиск по таблице: сервер собирает ленту и метрики — обычно до ~10 минут, на больших каналах иногда дольше.</p>
-    <p class="ch-meta ch-meta--loading">Окно анализа постов на сервере обычно до года (при необходимости администратор может сузить до 30 или 180 дней). Учитывается текст сообщений; медиа без подписи в текст не входят.</p>
-    <p class="ch-meta ch-meta--loading">Если канала не было в публичной базе — это нормально: отчёт всё равно строится из проверки ленты и строк широкого мониторинга.</p>
+    <p class="ch-lead ch-lead--loading" id="ch-loading-lead">Сначала открываем быстрый отчёт по базе и открытым отчётам (обычно секунды). Глубокий разбор ленты в Telegram — отдельная кнопка на странице и до ~3 минут.</p>
+    <p class="ch-meta ch-meta--loading" id="ch-loading-meta1">Быстрый режим не дергает полную выборку постов и почти не упирается в лимиты Telegram.</p>
+    <p class="ch-meta ch-meta--loading" id="ch-loading-meta2">Глубокий режим (mode=deep) читает ленту за широкое окно; при FLOOD_WAIT сервер честно покажет быстрый слой и время, когда можно повторить.</p>
     <p id="ch-loading-retry" class="ch-meta ch-meta--loading" hidden></p>
   </div>
   <div id="ch-error" class="ch-state ch-state--error" hidden>
@@ -114,6 +114,18 @@
       <p class="ch-body" id="ch-detected">—</p>
     </section>
 
+    <section class="ch-block ch-block--action" aria-labelledby="ch-deep-h">
+      <h2 id="ch-deep-h" class="ch-h2">Глубокий анализ ленты</h2>
+      <p class="ch-meta ch-deep-intro">Отдельный уровень проверки: выборка постов в Telegram, метрики поведения и связей. Базовый отчёт выше остаётся без изменений.</p>
+      <div id="ch-deep-flood-banner" class="ch-deep-flood-banner" hidden></div>
+      <div id="ch-deep-cta-wrap" class="ch-deep-cta-wrap">
+        <button type="button" class="ch-deep-btn" id="ch-deep-btn">Запустить глубокий анализ ленты</button>
+        <p class="ch-deep-btn-caption" id="ch-deep-btn-caption">Может занять до 3 минут. Используется живая проверка Telegram.</p>
+      </div>
+      <p class="ch-meta" id="ch-deep-hint" hidden></p>
+      <div id="ch-deep-results" class="ch-deep-results" hidden></div>
+    </section>
+
     <section class="ch-block ch-block--action" aria-labelledby="ch-fp-h" id="ch-fp-section" hidden>
       <h2 id="ch-fp-h" class="ch-h2">Оспаривание</h2>
       <p class="ch-meta">Если считаете, что канал ошибочно попал в базу, отправьте сигнал модераторам.</p>
@@ -128,6 +140,94 @@
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function cloneChannelAnalysis(obj) {
+    try {
+      return JSON.parse(JSON.stringify(obj));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function ruPlural(n, one, few, many) {
+    var n0 = Math.abs(Math.floor(Number(n)) || 0);
+    var mod10 = n0 % 10;
+    var mod100 = n0 % 100;
+    if (mod10 === 1 && mod100 !== 11) return one;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+    return many;
+  }
+
+  /** Округление вверх до минут; русские формулировки «осталось примерно …». */
+  function formatFloodWaitRemainingRu(seconds) {
+    var s = Number(seconds);
+    if (!Number.isFinite(s) || s <= 0) return '';
+    var mins = Math.max(1, Math.ceil(s / 60));
+    if (mins < 60) {
+      return 'Осталось примерно ' + mins + ' ' + ruPlural(mins, 'минута', 'минуты', 'минут') + '.';
+    }
+    var h = Math.floor(mins / 60);
+    var m = mins % 60;
+    var hPart = h + ' ' + ruPlural(h, 'час', 'часа', 'часов');
+    if (m === 0) return 'Осталось примерно ' + hPart + '.';
+    return 'Осталось примерно ' + hPart + ' ' + m + ' ' + ruPlural(m, 'минута', 'минуты', 'минут') + '.';
+  }
+
+  /** «Можно попробовать снова после HH:MM по Москве» — время в Europe/Moscow без секунд. */
+  function formatRetryAfterMskRounded(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (!Number.isFinite(d.getTime())) return '';
+    var hm = new Intl.DateTimeFormat('ru-RU', {
+      timeZone: 'Europe/Moscow',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(d);
+    return 'Можно попробовать снова после ' + hm + ' по Москве.';
+  }
+
+  function floodWaitSecondsFromPayload(data) {
+    var lm = data && data.live_metrics ? data.live_metrics : {};
+    var sec = Number(lm.flood_wait_seconds);
+    if (Number.isFinite(sec) && sec > 0) return sec;
+    var iso = data && data.deep_available_at ? String(data.deep_available_at) : '';
+    if (!iso) return 0;
+    var left = (Date.parse(iso) - Date.now()) / 1000;
+    return Number.isFinite(left) && left > 0 ? left : 0;
+  }
+
+  function applyAnalysisToMainSections(a) {
+    if (!a || typeof a !== 'object') return;
+    document.getElementById('ch-s1').innerHTML = renderBulletList(a.basic_info);
+    document.getElementById('ch-s2').innerHTML = renderBulletList(a.content_behavior);
+    document.getElementById('ch-s3').innerHTML = renderBulletList(a.external_reports);
+    document.getElementById('ch-s4').innerHTML = renderBulletList(a.ties_risk_factors);
+    var c = a.conclusion || {};
+    var cst = document.getElementById('ch-conclusion-status');
+    cst.textContent = c.status || '—';
+    cst.className = 'mon-status ' + statusClass(c.status);
+    document.getElementById('ch-conclusion-reasons').innerHTML = renderBulletList(c.reasons || []);
+  }
+
+  function renderDeepAnalysisBlock(a) {
+    if (!a || typeof a !== 'object') return '';
+    var c = a.conclusion || {};
+    var reasons = (c.reasons || []).map(function (r) { return String(r == null ? '' : r).trim(); }).filter(Boolean);
+    var s5lines = [];
+    if (c.status && String(c.status).trim() && String(c.status).trim() !== '—') {
+      s5lines.push('Итоговый статус (глубокий): ' + c.status);
+    }
+    s5lines = s5lines.concat(reasons.slice(0, 8));
+    return (
+      '<h3 class="ch-deep-results-title">Результат глубокого анализа ленты (Telegram)</h3>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Базовая информация</h3><div class="ch-body">' + renderBulletList(a.basic_info) + '</div></div>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Контент и поведение</h3><div class="ch-body">' + renderBulletList(a.content_behavior) + '</div></div>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Внешние источники и жалобы</h3><div class="ch-body">' + renderBulletList(a.external_reports) + '</div></div>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Связи и риск‑факторы</h3><div class="ch-body">' + renderBulletList(a.ties_risk_factors) + '</div></div>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Итоговый вывод</h3><div class="ch-body">' + renderBulletList(s5lines) + '</div></div>'
+    );
   }
 
   function z2(n) { return (n < 10 ? '0' : '') + n; }
@@ -558,15 +658,27 @@
     }).join('');
   }
 
-  function showChLoading(attemptNum) {
+  function showChLoading(attemptNum, deep) {
     document.getElementById('ch-error').hidden = true;
     document.getElementById('ch-content').hidden = true;
     document.getElementById('ch-loading').hidden = false;
+    var lead = document.getElementById('ch-loading-lead');
+    var m1 = document.getElementById('ch-loading-meta1');
+    var m2 = document.getElementById('ch-loading-meta2');
+    if (deep) {
+      if (lead) lead.textContent = 'Глубокий анализ: сервер читает ленту в Telegram за широкое окно — обычно до ~3 минут.';
+      if (m1) m1.textContent = 'Учитывается текст постов и ответы; медиа без подписи не входят. При лимите Telegram вы увидите быстрый отчёт и время для повтора.';
+      if (m2) m2.hidden = true;
+    } else {
+      if (lead) lead.textContent = 'Сначала открываем быстрый отчёт по базе и открытым отчётам (обычно секунды). Глубокий разбор ленты — кнопкой ниже на странице.';
+      if (m1) m1.textContent = 'Быстрый режим не дергает полную выборку постов и почти не упирается в лимиты Telegram.';
+      if (m2) { m2.hidden = false; m2.textContent = 'Глубокий режим читает ленту за широкое окно; при FLOOD_WAIT сервер покажет быстрый слой и время, когда можно повторить.'; }
+    }
     var lr = document.getElementById('ch-loading-retry');
     if (lr) {
       if (attemptNum > 1) {
         lr.hidden = false;
-        lr.textContent = 'Повторная попытка ' + attemptNum + ': снова запрашиваем отчёт у сервера (ожидание до ~10 минут).';
+        lr.textContent = 'Повторная попытка ' + attemptNum + ': снова запрашиваем отчёт (до ' + (deep ? '~3 мин' : '~2 мин') + ').';
       } else {
         lr.hidden = true;
         lr.textContent = '';
@@ -635,17 +747,22 @@
     };
   }
 
-  function loadChannelReport(attemptNum) {
+  function loadChannelReport(attemptNum, opts) {
     attemptNum = attemptNum || 1;
+    opts = opts || {};
+    var deep = !!opts.deep;
     window.__chAttempt = attemptNum;
-    showChLoading(attemptNum);
+    window.__chDeepMode = deep;
+    showChLoading(attemptNum, deep);
     var fetchOpts = { cache: 'no-store' };
+    var timeoutMs = deep ? 195000 : 90000;
     try {
       if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-        fetchOpts.signal = AbortSignal.timeout(195000);
+        fetchOpts.signal = AbortSignal.timeout(timeoutMs);
       }
     } catch (eSig) { /* ignore */ }
-    fetch('/api/kro/channel-profile?u=' + encodeURIComponent(queryU), fetchOpts)
+    var q = '/api/kro/channel-profile?u=' + encodeURIComponent(queryU) + (deep ? '&mode=deep' : '');
+    fetch(q, fetchOpts)
     .then(function (res) {
       if (!res.ok) throw new Error('http_' + res.status);
       return res.json();
@@ -661,14 +778,76 @@
       document.getElementById('ch-error').hidden = true;
       document.getElementById('ch-content').hidden = false;
 
+      var lm = data.live_metrics || {};
+      var apiMode = data.mode || 'fast';
+      var flood = lm.deep_status === 'rate_limited' || lm.deep_status === 'skipped_flood';
+      var waitSec = floodWaitSecondsFromPayload(data);
+      var remStr = formatFloodWaitRemainingRu(waitSec);
+      var retryStr = formatRetryAfterMskRounded(data.deep_available_at || lm.deep_available_at || '');
+
+      var ctaWrap = document.getElementById('ch-deep-cta-wrap');
+      var floodBanner = document.getElementById('ch-deep-flood-banner');
+      if (flood) {
+        if (ctaWrap) ctaWrap.hidden = true;
+        if (floodBanner) {
+          floodBanner.hidden = false;
+          floodBanner.innerHTML =
+            '<strong>Глубокий анализ временно недоступен</strong>' +
+            '<p>Сейчас Telegram ограничил частоту глубоких проверок (FLOOD_WAIT). Базовый анализ уже готов — см. блоки выше.</p>' +
+            (remStr ? '<p>' + esc(remStr) + '</p>' : '') +
+            (retryStr ? '<p>' + esc(retryStr) + '</p>' : '');
+        }
+      } else {
+        if (ctaWrap) ctaWrap.hidden = false;
+        if (floodBanner) {
+          floodBanner.hidden = true;
+          floodBanner.innerHTML = '';
+        }
+      }
+
       var liveBanner = document.getElementById('ch-live-banner');
-      if (liveBanner) {
-        if (!r || !r.username) {
-          liveBanner.hidden = false;
-          liveBanner.textContent = 'В подтверждённой базе scam_base этой записи не было — ниже результат разовой проверки ленты и данные широкого мониторинга (если строка есть). Это не «пустой ответ», а отчёт по свежему проходу.';
+      var deepHint = document.getElementById('ch-deep-hint');
+      if (deepHint) {
+        if (flood) {
+          deepHint.hidden = true;
+          deepHint.textContent = '';
+        } else if (apiMode === 'deep' && lm.deep_status === 'ok') {
+          deepHint.hidden = false;
+          deepHint.textContent = 'Глубокий отчёт продублирован в блоке ниже; сверху сохранён базовый снимок.';
         } else {
-          liveBanner.hidden = true;
-          liveBanner.textContent = '';
+          deepHint.hidden = true;
+          deepHint.textContent = '';
+        }
+      }
+      if (liveBanner) {
+        if (flood) {
+          liveBanner.hidden = false;
+          liveBanner.textContent =
+            'Сейчас Telegram ограничил глубокую проверку. ' +
+            (remStr ? remStr + ' ' : '') +
+            (retryStr ? retryStr : '').trim();
+        } else if (!r || !r.username) {
+          liveBanner.hidden = false;
+          if (apiMode === 'deep' && lm.deep_status === 'ok') {
+            liveBanner.textContent =
+              'В scam_base записи нет. Сверху — базовый снимок; полный глубокий разбор ленты — в отдельном блоке ниже.';
+          } else {
+            liveBanner.textContent =
+              'В scam_base записи нет — базовый отчёт по отчётам и мониторингу. Глубокий разбор ленты — кнопкой ниже.';
+          }
+        } else {
+          if (apiMode === 'fast') {
+            liveBanner.hidden = false;
+            liveBanner.textContent =
+              'Базовый режим: карточка базы без новой выборки ленты. Глубокий разбор — отдельным блоком ниже.';
+          } else if (apiMode === 'deep' && lm.deep_status === 'ok') {
+            liveBanner.hidden = false;
+            liveBanner.textContent =
+              'Сверху сохранён базовый снимок по карточке; глубокий разбор ленты — в блоке ниже.';
+          } else {
+            liveBanner.hidden = true;
+            liveBanner.textContent = '';
+          }
         }
       }
 
@@ -676,19 +855,37 @@
       document.title = label + ' — отчёт KRO';
       document.getElementById('ch-heading').textContent = label;
 
+      var dualDeepOk = !!(deep && lm.deep_status === 'ok' && window.__chFastPayload && window.__chFastPayload.analysis);
+      var mainA = dualDeepOk ? window.__chFastPayload.analysis : a;
+
       var sub = document.getElementById('ch-subhead');
       sub.hidden = false;
-      sub.textContent = 'Источники: ' + ((a.sources || []).join(', ') || '—') + ' · сгенерировано: ' + (a.generated_at || '—');
+      var subParts = [
+        'Источники: ' + ((mainA.sources || []).join(', ') || '—') + ' · сгенерировано: ' + (mainA.generated_at || '—'),
+        'Режим API: ' + (apiMode === 'deep' ? 'deep' : 'fast'),
+      ];
+      if (flood && retryStr) subParts.push(retryStr.replace(/\.$/, ''));
+      sub.textContent = subParts.join(' · ');
 
-      document.getElementById('ch-s1').innerHTML = renderBulletList(a.basic_info);
-      document.getElementById('ch-s2').innerHTML = renderBulletList(a.content_behavior);
-      document.getElementById('ch-s3').innerHTML = renderBulletList(a.external_reports);
-      document.getElementById('ch-s4').innerHTML = renderBulletList(a.ties_risk_factors);
-      var c = a.conclusion || {};
-      var cst = document.getElementById('ch-conclusion-status');
-      cst.textContent = c.status || '—';
-      cst.className = 'mon-status ' + statusClass(c.status);
-      document.getElementById('ch-conclusion-reasons').innerHTML = renderBulletList(c.reasons || []);
+      var deepResultsEl = document.getElementById('ch-deep-results');
+      if (dualDeepOk) {
+        applyAnalysisToMainSections(window.__chFastPayload.analysis);
+        if (deepResultsEl) {
+          deepResultsEl.innerHTML = renderDeepAnalysisBlock(a);
+          deepResultsEl.hidden = false;
+        }
+      } else {
+        applyAnalysisToMainSections(a);
+        if (deepResultsEl) {
+          deepResultsEl.innerHTML = '';
+          deepResultsEl.hidden = true;
+        }
+      }
+
+      if (!deep) {
+        var cloned = cloneChannelAnalysis(a);
+        if (cloned) window.__chFastPayload = { analysis: cloned };
+      }
 
       document.getElementById('ch-db-section').hidden = true;
       document.getElementById('ch-fp-section').hidden = true;
@@ -719,13 +916,24 @@
       }
 
       if (r && r.username) {
-        document.getElementById('ch-eyebrow').textContent = 'Публичная запись scam_base + отчёт';
+        document.getElementById('ch-eyebrow').textContent = dualDeepOk
+          ? 'Публичная запись scam_base: базовый снимок + глубокий анализ ниже'
+          : 'Публичная запись scam_base + отчёт';
         renderDbCard(r, data);
       } else {
-        document.getElementById('ch-eyebrow').textContent = 'Отчёт без записи в scam_base (живая проверка/очередь)';
+        document.getElementById('ch-eyebrow').textContent = dualDeepOk
+          ? 'Без записи в scam_base: базовый отчёт сверху + глубокий блок ниже'
+          : apiMode === 'deep'
+            ? 'Отчёт без записи в scam_base (глубокая проверка ленты)'
+            : 'Отчёт без записи в scam_base (быстрый режим)';
       }
+
+      var deepBtnDone = document.getElementById('ch-deep-btn');
+      if (deepBtnDone) deepBtnDone.disabled = false;
     })
     .catch(function (err) {
+      var db = document.getElementById('ch-deep-btn');
+      if (db) db.disabled = false;
       var m = mapFetchError(err);
       showChError(m.title, m.paragraphs);
     });
@@ -734,11 +942,19 @@
   var retryBtn = document.getElementById('ch-retry-btn');
   if (retryBtn) {
     retryBtn.onclick = function () {
-      loadChannelReport((window.__chAttempt || 1) + 1);
+      loadChannelReport((window.__chAttempt || 1) + 1, { deep: !!window.__chDeepMode });
     };
   }
   var reloadBtn = document.getElementById('ch-reload-page-btn');
   if (reloadBtn) reloadBtn.onclick = function () { window.location.reload(); };
+
+  var deepBtn = document.getElementById('ch-deep-btn');
+  if (deepBtn) {
+    deepBtn.onclick = function () {
+      deepBtn.disabled = true;
+      loadChannelReport(1, { deep: true });
+    };
+  }
 
   loadChannelReport(1);
 })();
