@@ -4787,6 +4787,48 @@ a.mon-channel-external:hover {
   margin-bottom: 10px;
 }
 
+.ch-flow-simple {
+  margin: 0 0 20px;
+  padding: 14px 16px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  background: linear-gradient(160deg, rgba(40, 32, 58, 0.55) 0%, rgba(14, 16, 22, 0.75) 100%);
+}
+
+.ch-flow-simple-title {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #ddd6fe;
+}
+
+.ch-flow-simple-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--mon-text);
+}
+
+.ch-flow-simple-list li {
+  margin-bottom: 8px;
+}
+
+.ch-flow-simple-list li:last-child {
+  margin-bottom: 0;
+}
+
+.ch-flow-simple-foot {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--mon-border-quiet);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--mon-text-dim);
+}
+
 .ch-live-banner {
   font-size: 14px;
   line-height: 1.55;

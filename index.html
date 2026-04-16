@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260414-home-check-hero-doc">
+   <link rel="stylesheet" href="styles.css?v=20260416-kro-flow-simple">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -246,18 +246,44 @@
                        <p class="kro-feature1-check-kicker">Публичная система мониторинга</p>
                        <h2 class="kro-feature1-check-heading">Проверка Telegram‑канала — здесь же, одним запросом</h2>
                        <p class="kro-feature1-check-lead">Сначала ты получаешь <strong>быстрый отчёт</strong> по нашим данным: база, жалобы людей и широкий мониторинг — персонально под введённый канал. Это обычно секунды и не упирается в лимиты Telegram.</p>
+                       <div class="kro-flow-simple" aria-label="Схема: как работает проверка">
+                           <p class="kro-flow-simple-kicker">Без лишних терминов — если вы уже пострадали, важно не гадать</p>
+                           <p class="kro-flow-simple-title">Три шага</p>
+                           <div class="kro-flow-simple-track">
+                               <div class="kro-flow-step">
+                                   <span class="kro-flow-step-num" aria-hidden="true">1</span>
+                                   <span class="kro-flow-step-label">Быстро</span>
+                                   <span class="kro-flow-step-time">обычно секунды</span>
+                                   <p class="kro-flow-step-text">Сверяем канал с базой и жалобами. Уже видно: есть ли красные флаги в наших данных.</p>
+                               </div>
+                               <span class="kro-flow-arrow" aria-hidden="true"></span>
+                               <div class="kro-flow-step">
+                                   <span class="kro-flow-step-num" aria-hidden="true">2</span>
+                                   <span class="kro-flow-step-label">Глубоко</span>
+                                   <span class="kro-flow-step-time">по желанию, до нескольких минут</span>
+                                   <p class="kro-flow-step-text">На следующей странице — разбор ленты в Telegram (посты, тон, признаки). Это отдельная кнопка.</p>
+                               </div>
+                               <span class="kro-flow-arrow" aria-hidden="true"></span>
+                               <div class="kro-flow-step">
+                                   <span class="kro-flow-step-num" aria-hidden="true">3</span>
+                                   <span class="kro-flow-step-label">Иногда пауза</span>
+                                   <span class="kro-flow-step-time">не ваша вина</span>
+                                   <p class="kro-flow-step-text">Telegram или очередь на сервере могут попросить подождать. Быстрый отчёт уже есть; глубокий догонит или зайдите позже — система подскажет цифрами, когда обновить.</p>
+                               </div>
+                           </div>
+                           <p class="kro-flow-simple-foot">Популярные каналы часто уже в кэше — глубокий отчёт может открыться сразу, без очереди.</p>
+                       </div>
                    </div>
                    <div class="kro-feature1-check-row" id="kro-check-form-row">
                        <label class="kro-report-label" for="kro-check-channel">@username или ссылка на канал <input type="text" id="kro-check-channel" placeholder="@channel или t.me/..." autocomplete="off"></label>
                        <button type="button" class="kro-report-submit" id="kro-check-btn">Запустить проверку</button>
                    </div>
-                   <div class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Как устроена проверка">
-                       <p class="kro-check-user-explainer-title">Коротко: что ты видишь после ввода канала</p>
+                   <div class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Дополнительные пояснения">
+                       <p class="kro-check-user-explainer-title">Если нужно чуть больше деталей</p>
                        <ul class="kro-check-user-explainer-list">
-                           <li><strong>На этой странице</strong> — базовый отчёт: есть ли канал в нашей базе, что в отчётах и в мониторинге, итог по правилам. Ленту постов в Telegram мы здесь целиком не сканируем — поэтому ответ быстрый и стабильный.</li>
-                           <li><strong>Глубокий разбор ленты</strong> (много постов, живые метрики) — отдельно: открой страницу канала на сайте <span class="kro-check-user-explainer-code">/channel/имя</span> и нажми там «Запустить глубокий анализ ленты». Это уже полный прогон через Telegram и может занять до нескольких минут.</li>
-                           <li><strong>Если Telegram «просит подождать»</strong> — это временное ограничение на стороне мессенджера (не бан), мы покажем ориентир по времени. Базовый отчёт при этом уже есть; глубокий можно повторить позже.</li>
-                           <li><strong>Честность</strong>: мы не выдаём «полный разбор постов», если Telegram в этот момент его не отдал — зато не подменяем его пустышкой.</li>
+                           <li><strong>Здесь</strong> — только наши таблицы и мониторинг, без полного чтения ленты. Поэтому ответ почти всегда быстрый.</li>
+                           <li><strong>Глубокий разбор</strong> — на странице <span class="kro-check-user-explainer-code">/channel/имя</span>, кнопка «Глубокий анализ ленты».</li>
+                           <li><strong>Не заставляем сидеть часами</strong>: при очереди покажем позицию и примерное время; если очередь слишком длинная — честно скажем зайти позже. Быстрый отчёт при этом уже у вас.</li>
                        </ul>
                    </div>
                    <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>

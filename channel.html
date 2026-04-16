@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260416-kro-deep-throttle">
+  <link rel="stylesheet" href="/monitor.css?v=20260416-kro-flow-ch">
 </head>
 <body class="mon-page ch-page">
 
@@ -34,9 +34,9 @@
 <main class="mon-container ch-main">
   <div id="ch-loading" class="ch-state ch-state--loading">
     <h1 class="ch-title ch-title--loading">Готовим отчёт по каналу</h1>
-    <p class="ch-lead ch-lead--loading" id="ch-loading-lead">Сначала открываем быстрый отчёт по базе и открытым отчётам (обычно секунды). Глубокий разбор ленты в Telegram — отдельная кнопка на странице и до ~3 минут.</p>
-    <p class="ch-meta ch-meta--loading" id="ch-loading-meta1">Быстрый режим не дергает полную выборку постов и почти не упирается в лимиты Telegram.</p>
-    <p class="ch-meta ch-meta--loading" id="ch-loading-meta2">Глубокий режим (mode=deep) читает ленту за широкое окно; при FLOOD_WAIT сервер честно покажет быстрый слой и время, когда можно повторить.</p>
+    <p class="ch-lead ch-lead--loading" id="ch-loading-lead">Сначала — быстрый отчёт по базе (обычно секунды). Глубокий разбор ленты — отдельная кнопка на странице, до нескольких минут; если нужно подождать, мы покажем, когда обновить.</p>
+    <p class="ch-meta ch-meta--loading" id="ch-loading-meta1">Быстрый слой не читает все посты в Telegram — поэтому почти не зависит от лимитов мессенджера.</p>
+    <p class="ch-meta ch-meta--loading" id="ch-loading-meta2">Глубокий режим читает ленту; при ограничениях Telegram остаётся быстрый отчёт и понятное время для повтора.</p>
     <p id="ch-loading-retry" class="ch-meta ch-meta--loading" hidden></p>
   </div>
   <div id="ch-error" class="ch-state ch-state--error" hidden>
@@ -59,6 +59,15 @@
     <p class="ch-eyebrow" id="ch-eyebrow">Проверка Telegram‑канала</p>
     <h1 class="ch-title" id="ch-heading">—</h1>
     <p class="ch-meta" id="ch-subhead" hidden></p>
+    <aside class="ch-flow-simple" aria-label="Как устроена проверка на этой странице">
+      <p class="ch-flow-simple-title">Как это работает здесь</p>
+      <ol class="ch-flow-simple-list">
+        <li><strong>Сначала</strong> — быстрый отчёт по базе и жалобам (секунды). Уже можно понять, есть ли сигналы в наших данных.</li>
+        <li><strong>Кнопка ниже</strong> — глубокий разбор ленты Telegram (минуты). Иногда очередь или пауза мессенджера — это нормально, не «вас выкинули».</li>
+        <li><strong>Цифры на экране</strong> — когда нажать «Обновить отчёт», если идёт очередь; страница может обновиться сама.</li>
+      </ol>
+      <p class="ch-flow-simple-foot">Если канал недавно уже проверяли — глубокий результат может быть готов сразу.</p>
+    </aside>
     <p class="ch-merged" id="ch-merged-note" hidden></p>
 
     <section class="ch-block" aria-labelledby="ch-s1-h">
