@@ -1081,16 +1081,24 @@
                    panel.classList.remove('hidden');
                    if (dg.can_run_deep === false) {
                        panel.className = 'kro-inline-deep-panel kro-inline-deep-panel--blocked';
+                       var sc = (dg.server_throttle_scope || '').toString();
                        var blockedTitle = dg.deep_queued
                            ? 'Глубокий анализ в очереди'
-                           : (dg.server_throttle_active ? 'Глубокий анализ временно ограничен' : 'Глубокий анализ временно недоступен');
+                           : (sc === 'client_queue_full'
+                               ? 'Лимит каналов в очереди'
+                               : sc === 'eta_too_long'
+                                   ? 'Глубокий анализ отложен'
+                                   : (dg.server_throttle_active ? 'Глубокий анализ временно ограничен' : 'Глубокий анализ временно недоступен'));
                        var sub = dg.message_ru
                            ? '<p class="kro-inline-deep-text">' + esc(dg.message_ru) + '</p>'
                            : '<p class="kro-inline-deep-text">Telegram ограничил запросы. То, что выше — только быстрый отчёт; глубокое чтение ленты станет возможно после снятия лимита.</p>';
+                       if (dg.deep_queued && dg.suggested_refresh_seconds != null && !isNaN(Number(dg.suggested_refresh_seconds))) {
+                           sub += '<p class="kro-inline-deep-text" style="opacity:.95">На странице канала отчёт может обновляться примерно каждые <strong>' + esc(String(dg.suggested_refresh_seconds)) + '</strong> сек.</p>';
+                       }
                        var honest = dg.deep_queued
                            ? 'Запрос поставлен в очередь из‑за высокой нагрузки. Когда обработка завершится, глубокий результат появится на странице канала; сейчас выше — быстрый отчёт.'
                            : dg.server_throttle_active
-                           ? 'Это ограничение сервиса (защита от перегрузки и лимитов Telegram). Глубокий прогон для этого канала в этом ответе не выполнялся.'
+                           ? 'Это ограничение сервиса (очередь, лимиты Telegram или правило «не ждать в онлайне слишком долго»). Глубокий прогон для этого канала в этом ответе не выполнялся.'
                            : 'Сейчас показан только базовый быстрый анализ (без полной выборки постов из Telegram). Глубокий прогон для этого канала не выполнялся.';
                        panel.innerHTML = '<strong class="kro-inline-deep-title">' + esc(blockedTitle) + '</strong>' + sub +
                            '<p class="kro-inline-deep-honest">' + esc(honest) + '</p>';
@@ -1183,7 +1191,12 @@
                            var etaQ = lmFoot.deep_queue_eta_minutes != null && !isNaN(Number(lmFoot.deep_queue_eta_minutes))
                                ? Number(lmFoot.deep_queue_eta_minutes)
                                : null;
-                           footParts.push('глубокий в очереди' + (etaQ ? ' (~' + etaQ + ' мин)' : ''));
+                           var pollS = lmFoot.deep_queue_suggested_poll_seconds != null && !isNaN(Number(lmFoot.deep_queue_suggested_poll_seconds))
+                               ? Number(lmFoot.deep_queue_suggested_poll_seconds)
+                               : null;
+                           footParts.push(
+                               'глубокий в очереди' + (etaQ ? ' (~' + etaQ + ' мин)' : '') + (pollS ? '; обновлять ~каждые ' + pollS + ' сек' : '')
+                           );
                        } else if (data.mode !== 'deep') {
                            footParts.push('глубокий разбор ленты: /channel/' + encodeURIComponent(queryU) + ' → кнопка «Глубокий анализ ленты»');
                        }

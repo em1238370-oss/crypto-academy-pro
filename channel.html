@@ -791,8 +791,11 @@
       var dg = data.deep_gate || {};
       var flood = lm.deep_status === 'rate_limited' || lm.deep_status === 'skipped_flood';
       var serverThrottled = lm.deep_status === 'server_rate_limited';
+      var deepQueueDeferredSt = lm.deep_status === 'queue_deferred';
+      var deepClientQFull = lm.deep_status === 'client_queue_full';
+      var serverThrottleUi = serverThrottled || deepQueueDeferredSt || deepClientQFull;
       var deepQueued = lm.deep_status === 'queued' || dg.deep_queued === true;
-      var deepBlockedUi = flood || serverThrottled || deepQueued;
+      var deepBlockedUi = flood || serverThrottleUi || deepQueued;
       var waitSec = floodWaitSecondsFromPayload(data);
       var remStr = formatFloodWaitRemainingRu(waitSec);
       var retryStr = formatRetryAfterMskRounded(data.deep_available_at || lm.deep_available_at || '');
@@ -814,15 +817,23 @@
             } else if (qEta) {
               qExtra = '<p>Ориентировочное время: ~' + esc(String(qEta)) + ' мин.</p>';
             }
+            var qPoll = dg.suggested_refresh_seconds != null ? Number(dg.suggested_refresh_seconds) : (lm.deep_queue_suggested_poll_seconds != null ? Number(lm.deep_queue_suggested_poll_seconds) : null);
+            var qPollLine = qPoll && qPoll > 0
+              ? '<p>Автообновление отчёта: примерно каждые <strong>' + esc(String(qPoll)) + '</strong> сек. (можно нажать «Обновить отчёт»).</p>'
+              : '';
             floodBanner.innerHTML =
               '<strong>Глубокий анализ в очереди</strong>' +
               '<p>' + esc(dg.message_ru || 'Сейчас много глубоких проверок; ваш запрос обработаем в фоне. Базовый отчёт выше уже готов — страница может обновиться сама.') + '</p>' +
-              qExtra;
-          } else if (serverThrottled) {
+              qExtra +
+              qPollLine;
+          } else if (serverThrottleUi) {
             floodBanner.className = 'ch-deep-flood-banner ch-deep-flood-banner--server';
+            var thrTitle = deepClientQFull
+              ? 'Лимит ваших каналов в очереди'
+              : (deepQueueDeferredSt ? 'Глубокий анализ отложен' : 'Глубокий анализ временно ограничен');
             floodBanner.innerHTML =
-              '<strong>Глубокий анализ временно ограничен</strong>' +
-              '<p>' + esc(dg.message_ru || 'Сейчас глубокие проверки ограничены, чтобы не исчерпать лимиты Telegram. Базовый отчёт выше уже готов.') + '</p>';
+              '<strong>' + esc(thrTitle) + '</strong>' +
+              '<p>' + esc(dg.message_ru || 'Сейчас глубокие проверки ограничены. Базовый отчёт выше уже готов.') + '</p>';
           } else {
             floodBanner.className = 'ch-deep-flood-banner';
             floodBanner.innerHTML =
@@ -870,8 +881,11 @@
       if (liveBanner) {
         if (deepQueued) {
           liveBanner.hidden = false;
-          liveBanner.textContent = (dg.message_ru || 'Глубокий анализ поставлен в очередь — базовый отчёт уже выше.').replace(/\s+/g, ' ').trim();
-        } else if (serverThrottled) {
+          var pollH = dg.suggested_refresh_seconds != null ? Number(dg.suggested_refresh_seconds) : (lm.deep_queue_suggested_poll_seconds != null ? Number(lm.deep_queue_suggested_poll_seconds) : null);
+          var liveQ = (dg.message_ru || 'Глубокий анализ в очереди — базовый отчёт уже выше.').replace(/\s+/g, ' ').trim();
+          if (pollH && pollH > 0) liveQ += ' Обновление примерно каждые ' + pollH + ' сек.';
+          liveBanner.textContent = liveQ;
+        } else if (serverThrottleUi) {
           liveBanner.hidden = false;
           liveBanner.textContent = (dg.message_ru || 'Глубокий анализ сейчас ограничен на сервисе.').replace(/\s+/g, ' ').trim();
         } else if (flood) {
@@ -939,7 +953,10 @@
       sub.textContent = subParts.join(' · ');
 
       if (deepQueued && apiMode === 'deep') {
-        var pollMs = Math.min(180000, Math.max(45000, (Number(lm.deep_queue_eta_minutes) || 2) * 40000));
+        var secPoll = dg.suggested_refresh_seconds != null ? Number(dg.suggested_refresh_seconds) : (lm.deep_queue_suggested_poll_seconds != null ? Number(lm.deep_queue_suggested_poll_seconds) : null);
+        var pollMs = Number.isFinite(secPoll) && secPoll > 0
+          ? Math.min(300000, Math.max(30000, Math.round(secPoll * 1000)))
+          : Math.min(180000, Math.max(45000, (Number(lm.deep_queue_eta_minutes) || 2) * 40000));
         window.__chDeepQueuePoll = setTimeout(function() {
           window.__chDeepQueuePoll = null;
           loadChannelReport(1, { deep: true });

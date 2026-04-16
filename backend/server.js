@@ -1352,6 +1352,10 @@ const KRO_DEEP_CACHE_HARD_EXPIRE_MS = Math.max(
 );
 /** Пауза между задачами очереди deep — снижает пики к Telegram. */
 const KRO_DEEP_QUEUE_INTER_JOB_MS = Math.max(0, parseInt(process.env.KRO_DEEP_QUEUE_INTER_JOB_MS || '2500', 10));
+/** Сколько каналов одного пользователя может одновременно стоять в очереди deep (плюс один в работе у воркера). */
+const KRO_DEEP_CLIENT_MAX_QUEUE = Math.max(1, parseInt(process.env.KRO_DEEP_CLIENT_MAX_QUEUE || '3', 10));
+/** Если расчётный ETA очереди больше — не ставим в очередь, отдаём fast и честное «зайдите позже». */
+const KRO_DEEP_QUEUE_MAX_ETA_MINUTES = Math.max(10, parseInt(process.env.KRO_DEEP_QUEUE_MAX_ETA_MINUTES || '30', 10));
 /** Если задан — POST /api/kro/ops/deep-breathe с Authorization: Bearer <secret> (без секрета маршрут 404). */
 const KRO_DEEP_OPS_SECRET = (process.env.KRO_DEEP_OPS_SECRET || '').toString().trim();
 
@@ -1496,6 +1500,22 @@ function kroDeepCacheHintForKey(channelKey) {
 /** Очередь глубоких проверок при глобальной перегрузке (один воркер, без блокировки event loop). */
 const kroDeepWaitQueue = [];
 let kroDeepQueueWorkerBusy = false;
+/** @type {{ channelKey: string, channelForOnce: string, clientId: string, enqueuedAt: number } | null} */
+let kroDeepQueueActiveJob = null;
+
+function kroDeepComputeQueueEtaMinutes(position) {
+  const pos = Math.max(1, Number(position) || 1);
+  return Math.max(3, pos * 2 + Math.ceil(kroCheckOnceTimeoutMs / 60000 / 4));
+}
+
+function kroDeepClientQueueDepth(clientId) {
+  const cid = (clientId || '').toString() || 'unknown';
+  let n = kroDeepWaitQueue.filter((j) => j.clientId === cid).length;
+  if (kroDeepQueueWorkerBusy && kroDeepQueueActiveJob && kroDeepQueueActiveJob.clientId === cid) {
+    n += 1;
+  }
+  return n;
+}
 
 function kroDeepEnqueue(channelKey, channelForOnce, clientId) {
   const k = (channelKey || '').toString().trim();
@@ -1504,14 +1524,52 @@ function kroDeepEnqueue(channelKey, channelForOnce, clientId) {
   const existing = kroDeepWaitQueue.findIndex((j) => j.channelKey === k);
   if (existing >= 0) {
     const position = existing + 1;
-    const eta = Math.max(2, position * 2 + Math.ceil(kroCheckOnceTimeoutMs / 60000 / 4));
-    return { position, eta_minutes: eta, deduped: true };
+    const eta = kroDeepComputeQueueEtaMinutes(position);
+    const retryAfterMs = Math.min(600000, Math.max(45000, Math.round(eta * 30000)));
+    const suggestedSec = Math.min(600, Math.max(30, Math.round(retryAfterMs / 1000)));
+    return {
+      position,
+      eta_minutes: eta,
+      deduped: true,
+      retry_after_ms: retryAfterMs,
+      suggested_refresh_seconds: suggestedSec,
+    };
+  }
+  const depth = kroDeepClientQueueDepth(clientId);
+  if (depth >= KRO_DEEP_CLIENT_MAX_QUEUE) {
+    return {
+      rejected: true,
+      reject_reason: 'client_queue_full',
+      client_queue_max: KRO_DEEP_CLIENT_MAX_QUEUE,
+      message_ru:
+        `У вас уже ${depth} канал(а) в глубокой очереди или обработке — одновременно не больше ${KRO_DEEP_CLIENT_MAX_QUEUE}. Дождитесь завершения или откройте другой канал позже. Быстрый отчёт выше доступен сразу.`,
+    };
+  }
+  const wouldPosition = kroDeepWaitQueue.length + 1;
+  const wouldEta = kroDeepComputeQueueEtaMinutes(wouldPosition);
+  if (wouldEta > KRO_DEEP_QUEUE_MAX_ETA_MINUTES) {
+    return {
+      rejected: true,
+      reject_reason: 'eta_too_long',
+      eta_minutes: wouldEta,
+      queue_max_eta_minutes: KRO_DEEP_QUEUE_MAX_ETA_MINUTES,
+      message_ru:
+        `Очередь глубокого анализа сейчас очень длинная: до вашего канала ориентировочно ~${wouldEta} мин. Мы не предлагаем ждать в онлайне дольше ~${KRO_DEEP_QUEUE_MAX_ETA_MINUTES} мин — ниже быстрый отчёт. Загляните с глубоким позже (через ${KRO_DEEP_QUEUE_MAX_ETA_MINUTES}–90 мин) или нажмите «Обновить» на странице канала.`,
+    };
   }
   kroDeepWaitQueue.push({ channelKey: k, channelForOnce: cf || k, clientId: cid, enqueuedAt: Date.now() });
   const position = kroDeepWaitQueue.length;
-  const eta = Math.max(3, position * 2 + Math.ceil(kroCheckOnceTimeoutMs / 60000 / 4));
+  const eta = kroDeepComputeQueueEtaMinutes(position);
+  const retryAfterMs = Math.min(600000, Math.max(45000, Math.round(eta * 30000)));
+  const suggestedSec = Math.min(600, Math.max(30, Math.round(retryAfterMs / 1000)));
   kroDeepProcessQueueSoon();
-  return { position, eta_minutes: eta, deduped: false };
+  return {
+    position,
+    eta_minutes: eta,
+    deduped: false,
+    retry_after_ms: retryAfterMs,
+    suggested_refresh_seconds: suggestedSec,
+  };
 }
 
 function kroDeepProcessQueueSoon() {
@@ -1533,8 +1591,10 @@ async function kroDeepDrainQueue() {
   }
   kroDeepQueueWorkerBusy = true;
   const job = kroDeepWaitQueue.shift();
+  kroDeepQueueActiveJob = job || null;
   if (!job) {
     kroDeepQueueWorkerBusy = false;
+    kroDeepQueueActiveJob = null;
     return;
   }
   try {
@@ -1564,6 +1624,7 @@ async function kroDeepDrainQueue() {
   } catch (e) {
     console.error('KRO deep queue job error:', e?.message || e);
   } finally {
+    kroDeepQueueActiveJob = null;
     kroDeepQueueWorkerBusy = false;
     if (kroDeepWaitQueue.length) {
       if (KRO_DEEP_QUEUE_INTER_JOB_MS > 0) {
@@ -1575,16 +1636,31 @@ async function kroDeepDrainQueue() {
   }
 }
 
-function kroSyntheticQueuedParsed(channelKey, position, etaMinutes) {
+function kroSyntheticQueuedParsed(channelKey, position, etaMinutes, suggestedRefreshSeconds) {
   const pos = Math.max(1, Number(position) || 1);
   const eta = Math.max(2, Number(etaMinutes) || 5);
+  const sec = Number(suggestedRefreshSeconds);
+  const pollSec = Number.isFinite(sec) && sec > 0 ? Math.min(600, Math.max(30, Math.round(sec))) : Math.min(300, Math.max(45, Math.ceil(eta * 25)));
   return {
     found: false,
     deep_queued: true,
     deep_queue_position: pos,
     deep_queue_eta_minutes: eta,
+    deep_queue_suggested_poll_seconds: pollSec,
     username: channelKey ? `@${channelKey}` : null,
-    error: `Глубокий анализ поставлен в очередь: позиция ${pos}, ориентировочно ${eta} мин. Обновите страницу позже или подождите — мы обновим кэш автоматически.`,
+    error: `Глубокий анализ в очереди: позиция ${pos}, ориентировочно ${eta} мин. Обновите страницу примерно через ${pollSec} сек. или подождите — страница может обновиться сама.`,
+    _check_once_ok: true,
+  };
+}
+
+function kroSyntheticQueueRejectParsed(channelKey, q) {
+  const msg = (q && q.message_ru) || 'Глубокий анализ сейчас недоступен в очереди.';
+  return {
+    found: false,
+    deep_queue_rejected: true,
+    deep_reject_reason: q && q.reject_reason ? String(q.reject_reason) : 'unknown',
+    username: channelKey ? `@${channelKey}` : null,
+    error: msg,
     _check_once_ok: true,
   };
 }
@@ -1653,6 +1729,7 @@ function kroBuildChannelProfileDeepGate(extra) {
       deep_queued: false,
       deep_queue_position: null,
       deep_queue_eta_minutes: null,
+      suggested_refresh_seconds: null,
       server_throttle_scope: null,
       retry_after_iso: iso,
       retry_after_msk: msk || null,
@@ -1667,6 +1744,7 @@ function kroBuildChannelProfileDeepGate(extra) {
   if (ex && ex.deep_queued === true) {
     const pos = ex.deep_queue_position != null ? Number(ex.deep_queue_position) : null;
     const eta = ex.deep_queue_eta_minutes != null ? Number(ex.deep_queue_eta_minutes) : null;
+    const sref = ex.suggested_refresh_seconds != null ? Number(ex.suggested_refresh_seconds) : null;
     return {
       can_run_deep: false,
       telegram_flood_active: false,
@@ -1674,6 +1752,7 @@ function kroBuildChannelProfileDeepGate(extra) {
       deep_queued: true,
       deep_queue_position: Number.isFinite(pos) ? pos : null,
       deep_queue_eta_minutes: Number.isFinite(eta) ? eta : null,
+      suggested_refresh_seconds: Number.isFinite(sref) ? sref : null,
       server_throttle_scope: null,
       retry_after_iso: null,
       retry_after_msk: null,
@@ -1693,6 +1772,7 @@ function kroBuildChannelProfileDeepGate(extra) {
       deep_queued: false,
       deep_queue_position: null,
       deep_queue_eta_minutes: null,
+      suggested_refresh_seconds: null,
       server_throttle_scope: ex.server_throttle_scope || null,
       retry_after_iso: null,
       retry_after_msk: null,
@@ -1709,6 +1789,7 @@ function kroBuildChannelProfileDeepGate(extra) {
     deep_queued: false,
     deep_queue_position: null,
     deep_queue_eta_minutes: null,
+    suggested_refresh_seconds: null,
     server_throttle_scope: null,
     retry_after_iso: null,
     retry_after_msk: null,
@@ -4055,8 +4136,13 @@ function kroLiveMetricsFromParsed(parsed) {
     telegram_rate_limited: p.telegram_rate_limited === true,
     server_deep_throttled: p.server_deep_throttled === true,
     deep_queued: p.deep_queued === true,
+    deep_queue_rejected: p.deep_queue_rejected === true,
+    deep_reject_reason: (p.deep_reject_reason || '').toString().trim() || null,
     deep_queue_position: Number.isFinite(Number(p.deep_queue_position)) ? Number(p.deep_queue_position) : null,
     deep_queue_eta_minutes: Number.isFinite(Number(p.deep_queue_eta_minutes)) ? Number(p.deep_queue_eta_minutes) : null,
+    deep_queue_suggested_poll_seconds: Number.isFinite(Number(p.deep_queue_suggested_poll_seconds))
+      ? Number(p.deep_queue_suggested_poll_seconds)
+      : null,
     flood_wait_seconds: Number.isFinite(Number(p.flood_wait_seconds)) ? Number(p.flood_wait_seconds) : null,
     live_check_error:
       p._check_once_ok === true
@@ -4064,9 +4150,11 @@ function kroLiveMetricsFromParsed(parsed) {
           ? String(p.error)
           : p.server_deep_throttled === true && p.error != null
             ? String(p.error)
-            : p.deep_queued === true && p.error != null
+            : p.deep_queue_rejected === true && p.error != null
               ? String(p.error)
-              : null
+              : p.deep_queued === true && p.error != null
+                ? String(p.error)
+                : null
         : p.error != null
           ? String(p.error)
           : null,
@@ -4089,8 +4177,11 @@ function kroChannelProfileLiveMetrics(parsed, opts) {
     telegram_rate_limited: false,
     server_deep_throttled: false,
     deep_queued: false,
+    deep_queue_rejected: false,
+    deep_reject_reason: null,
     deep_queue_position: null,
     deep_queue_eta_minutes: null,
+    deep_queue_suggested_poll_seconds: null,
     flood_wait_seconds: null,
     live_check_error: null,
   };
@@ -5520,15 +5611,36 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         if (!allow.allowed) {
           if (allow.scope === 'global') {
             const q = kroDeepEnqueue(key, channelForOnce, clientId);
-            deepStatus = 'queued';
-            parsedOnce = kroSyntheticQueuedParsed(key, q.position, q.eta_minutes);
-            once = { ok: true, parsed: parsedOnce, stderr: '' };
-            deepQueueGate = {
-              deep_queued: true,
-              deep_queue_position: q.position,
-              deep_queue_eta_minutes: q.eta_minutes,
-              message_ru: String(parsedOnce.error || ''),
-            };
+            if (q.rejected) {
+              deepStatus = q.reject_reason === 'client_queue_full' ? 'client_queue_full' : 'queue_deferred';
+              parsedOnce = kroSyntheticQueueRejectParsed(key, q);
+              once = { ok: true, parsed: parsedOnce, stderr: '' };
+              serverThrottleMeta = {
+                server_deep_blocked: true,
+                server_throttle_scope: String(q.reject_reason || 'queue'),
+                message_ru: q.message_ru,
+                wait_minutes_approx:
+                  q.reject_reason === 'eta_too_long' ? KRO_DEEP_QUEUE_MAX_ETA_MINUTES : null,
+                wait_seconds_approx:
+                  q.reject_reason === 'eta_too_long' ? KRO_DEEP_QUEUE_MAX_ETA_MINUTES * 60 : null,
+              };
+            } else {
+              deepStatus = 'queued';
+              parsedOnce = kroSyntheticQueuedParsed(
+                key,
+                q.position,
+                q.eta_minutes,
+                q.suggested_refresh_seconds,
+              );
+              once = { ok: true, parsed: parsedOnce, stderr: '' };
+              deepQueueGate = {
+                deep_queued: true,
+                deep_queue_position: q.position,
+                deep_queue_eta_minutes: q.eta_minutes,
+                suggested_refresh_seconds: q.suggested_refresh_seconds,
+                message_ru: String(parsedOnce.error || ''),
+              };
+            }
           } else {
             deepStatus = 'server_rate_limited';
             serverThrottleMeta = {
@@ -5577,8 +5689,13 @@ app.get('/api/kro/channel-profile', async (req, res) => {
 
     const deepTelegramBlocked = deepMode && (deepStatus === 'rate_limited' || deepStatus === 'skipped_flood');
     const deepServerThrottled = deepMode && deepStatus === 'server_rate_limited';
+    const deepClientQueueFull = deepMode && deepStatus === 'client_queue_full';
+    const deepQueueDeferred = deepMode && deepStatus === 'queue_deferred';
     const deepQueued = deepMode && deepStatus === 'queued';
-    const deepBlocked = deepTelegramBlocked || deepServerThrottled || deepQueued;
+    const deepThrottleLike =
+      deepServerThrottled || deepClientQueueFull || deepQueueDeferred;
+    const deepBlocked =
+      deepTelegramBlocked || deepThrottleLike || deepQueued;
     const deepRateLimited = deepTelegramBlocked;
     const deepAvailableIso =
       deepAvailableAt || (deepRateLimited ? kroGetTelegramFloodState().deep_available_at : null);
@@ -5611,7 +5728,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         analysis = await kroV0BuildFastAnalysisNoLive(sheetsClient, key, decoded, watchRowCp0);
         kroV0MergeDeepRateLimitIntoAnalysis(analysis, deepAvailableIso);
         kroV0PrependNoScamBaseCardNote(analysis, { fast: true });
-      } else if (deepServerThrottled) {
+      } else if (deepThrottleLike) {
         analysis = await kroV0BuildFastAnalysisNoLive(sheetsClient, key, decoded, watchRowCp0);
         kroV0MergeServerDeepThrottleIntoAnalysis(analysis, serverThrottleMsg);
         kroV0PrependNoScamBaseCardNote(analysis, { fast: true });
@@ -5669,7 +5786,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
           `В таблице есть ${matches.length} запис(и) по этому каналу, но в публичном мониторе они скрыты общими правилами.`,
           `Для справки, в «сырой» строке статус выглядит как: «${(bestAny.status || bestAny.verdict || '—')}».`,
         ].concat(analysis.basic_info || []);
-      } else if (deepServerThrottled) {
+      } else if (deepThrottleLike) {
         analysis = kroV0BuildAnalysisFromScamBaseProfile(bestEnr, { channel_key: key });
         kroV0PrependFastModeNote(analysis, bestEnr);
         kroV0MergeServerDeepThrottleIntoAnalysis(analysis, serverThrottleMsg);
@@ -5746,7 +5863,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         `В базе есть ${matches.length} запис(и) по каналу; карточка мониторинга (глубокий прогон сейчас под лимитом Telegram).`,
         `Последний статус карточки: «${(profile.status || profile.verdict || '—')}» (${profile.detected_at || 'дата не указана'}).`,
       ].concat(analysis.basic_info || []);
-    } else if (deepServerThrottled) {
+    } else if (deepThrottleLike) {
       analysis = kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: key });
       kroV0PrependFastModeNote(analysis, profileForAnalysis);
       kroV0MergeServerDeepThrottleIntoAnalysis(analysis, serverThrottleMsg);
