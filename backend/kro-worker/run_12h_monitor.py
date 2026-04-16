@@ -1143,7 +1143,7 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
                     if key in watch_metric_targets and key not in watch_metrics:
                         watch_metrics[key] = await _collect_watch_channel_metrics(client, link or orig)
             else:
-                print('Канал не найден (не пишем в документ): %s' % (orig or link), file=sys.stderr)
+                print('Канал недоступен/не найден (не пишем в документ): %s' % (orig or link), file=sys.stderr)
             await asyncio.sleep(0.5)
         tg_data['watch_metrics'] = watch_metrics
     finally:
@@ -3646,6 +3646,20 @@ def _parse_date_ddmmyyyy(date_str):
         return None
 
 
+def _row_channel_age_days(row):
+    """Взять возраст канала (дни) из строки источника, если поле доступно."""
+    if not isinstance(row, dict):
+        return None
+    raw = row.get('channel_age_days')
+    if raw is None or raw == '':
+        return None
+    try:
+        n = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return None
+    return n if n >= 0 else None
+
+
 def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel_ages_from_tg=None):
     """
     Отбор подтверждённых скам-каналов для записи в scam_base.
@@ -3715,6 +3729,10 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
         if created_dt is None and key in tg_ages:
             created_dt = tg_ages[key]
         age_days = (now - created_dt).days if created_dt is not None else None
+        if age_days is None:
+            age_days = _row_channel_age_days(tg_row)
+            if age_days is not None and created_dt is None:
+                created_dt = now.astimezone(timezone.utc) - timedelta(days=age_days)
 
         # Строим поля канала
         ch_username = ch
@@ -4324,6 +4342,10 @@ def _build_channels_watch_rows(
             parsed = _parse_date_ddmmyyyy((row.get('date') or '').strip())
             if parsed is not None:
                 created_dt = parsed.replace(tzinfo=timezone.utc) if getattr(parsed, 'tzinfo', None) is None else parsed
+        if created_dt is None:
+            age_days_hint = _row_channel_age_days(row)
+            if age_days_hint is not None:
+                created_dt = now.astimezone(timezone.utc) - timedelta(days=age_days_hint)
         if created_dt is None:
             return
         age_days = (now - created_dt).days

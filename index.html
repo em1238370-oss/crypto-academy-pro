@@ -1076,7 +1076,7 @@
                        stEl.className = 'kro-inline-status-pill kro-inline-status-pill--' + statusClass(st);
                    }
                    if (reasonsEl) {
-                       var rs = (c.reasons || []).slice(0, 4).map(function (r) { return String(r == null ? '' : r).trim(); }).filter(Boolean);
+                       var rs = (c.reasons || []).slice(0, 6).map(function (r) { return String(r == null ? '' : r).trim(); }).filter(Boolean);
                        if (!rs.length) rs.push('Вывод сформирован по данным проверки и правилам системы.');
                        reasonsEl.innerHTML = rs.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
                    }
@@ -1101,7 +1101,7 @@
                    if (s4) s4.innerHTML = homeRenderBullets(a.ties_risk_factors) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                    var s5lines = [];
                    if (st && st !== '—') s5lines.push('Итоговый статус: ' + st);
-                   if (Array.isArray(c.reasons)) s5lines = s5lines.concat(c.reasons.slice(0, 4));
+                   if (Array.isArray(c.reasons)) s5lines = s5lines.concat(c.reasons.slice(0, 6));
                    if (s5) s5.innerHTML = homeRenderBullets(s5lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                    if (footEl) {
                        footEl.textContent = 'Источники: ' + ((a.sources || []).join(', ') || '—') + ' · сгенерировано: ' + (a.generated_at || '—');
@@ -1111,11 +1111,12 @@
                    window.__kroHomeLastSlug = slug;
                    var queryU = slugToQueryU(slug);
                    var displayLabel = displayChannelLabel(slug, queryU);
+                   var __kroCheckStarted = Date.now();
                    showCheckBusy(displayLabel);
                    var fetchOpts = { cache: 'no-store' };
                    try {
                        if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-                           fetchOpts.signal = AbortSignal.timeout(660000);
+                           fetchOpts.signal = AbortSignal.timeout(195000);
                        }
                    } catch (eSig) { /* ignore */ }
                    fetch(base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU), fetchOpts)
@@ -1125,15 +1126,24 @@
                        })
                        .then(function (data) {
                            if (!data.analysis || typeof data.analysis !== 'object') throw new Error('no_analysis');
-                           hideCheckBusy();
-                           fillInlineReport(data, queryU, displayLabel);
-                           if (inlineReport) {
-                               inlineReport.classList.remove('hidden');
-                               inlineReport.hidden = false;
+                           var finish = function () {
+                               hideCheckBusy();
+                               fillInlineReport(data, queryU, displayLabel);
+                               if (inlineReport) {
+                                   inlineReport.classList.remove('hidden');
+                                   inlineReport.hidden = false;
+                               }
+                               try {
+                                   if (inlineReport) inlineReport.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                               } catch (eScroll) { /* ignore */ }
+                           };
+                           var elapsed = Date.now() - __kroCheckStarted;
+                           var minBusyMs = 2800;
+                           if (elapsed < minBusyMs) {
+                               setTimeout(finish, minBusyMs - elapsed);
+                           } else {
+                               finish();
                            }
-                           try {
-                               if (inlineReport) inlineReport.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                           } catch (eScroll) { /* ignore */ }
                        })
                        .catch(function (err) {
                            hideCheckBusy();

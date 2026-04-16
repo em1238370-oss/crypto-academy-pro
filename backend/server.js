@@ -1244,12 +1244,12 @@ const kroMetaRange = process.env.KRO_META_RANGE || 'kro_meta!A:B';
 const kroCheckQueueRange = process.env.KRO_CHECK_QUEUE_RANGE || '';
 /** Окно истории постов для живой проверки (check_once): только 30, 180 или 365. По умолчанию год — главный сценарий «полная проверка канала». */
 const kroCheckOncePeriodDaysParsed = parseInt(process.env.KRO_CHECK_ONCE_PERIOD_DAYS || '365', 10);
-const kroCheckOncePeriodDays = [30, 180, 365].includes(kroCheckOncePeriodDaysParsed) ? kroCheckOncePeriodDaysParsed : 30;
+const kroCheckOncePeriodDays = [30, 180, 365].includes(kroCheckOncePeriodDaysParsed) ? kroCheckOncePeriodDaysParsed : 365;
 const kroCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_CHECK_ONCE_TIMEOUT_MS || '', 10);
-/** Полная выборка Telegram может занять минуты — не обрывать раньше 2 мин и позже 20 мин. */
-const kroCheckOnceTimeoutMs = Number.isFinite(kroCheckOnceTimeoutMsParsed) && kroCheckOnceTimeoutMsParsed >= 120000 && kroCheckOnceTimeoutMsParsed <= 1200000
+/** Дефолт deep-check: реальный прогон до 3 минут, чтобы не было «мгновенного шаблона». */
+const kroCheckOnceTimeoutMs = Number.isFinite(kroCheckOnceTimeoutMsParsed) && kroCheckOnceTimeoutMsParsed >= 120000 && kroCheckOnceTimeoutMsParsed <= 180000
   ? kroCheckOnceTimeoutMsParsed
-  : 600000;
+  : 180000;
 
 function getTodayMSK() {
   const d = new Date();
@@ -2705,6 +2705,36 @@ const KRO_V0_STATUS = {
   clean: 'на текущий момент нарушений не видно',
 };
 
+/** Сколько пунктов в conclusion.reasons отдаём в отчёт (схема та же — массив строк). */
+const KRO_V0_MAX_CONCLUSION_REASONS = 6;
+
+function kroLiveParsedWindowPosts(p) {
+  const winD = Number(p && p.analysis_window_days);
+  const postsN = Number(p && p.posts_fetched);
+  return {
+    winD: Number.isFinite(winD) && winD > 0 ? winD : null,
+    postsN: Number.isFinite(postsN) && postsN >= 0 ? postsN : null,
+  };
+}
+
+/** Когда вывод по «живой» ленте статистически тонкий — просим не путать с полной гарантией. */
+function kroLiveSampleLimitedDetail(p) {
+  const { winD, postsN } = kroLiveParsedWindowPosts(p);
+  if (postsN == null || !Number.isFinite(Number(p.posts_fetched))) {
+    return { limited: true, detail: 'объём текстовой выборки в ответе не определён — трактуем вывод осторожно' };
+  }
+  if (postsN < 18) {
+    return { limited: true, detail: `мало постов с текстом (~${postsN})` };
+  }
+  if (winD != null && winD >= 90 && postsN < 42) {
+    return {
+      limited: true,
+      detail: `за длинный период (~${winD} дн.) относительно мало текстовых постов (~${postsN}) — канал редко пишет или много сообщений без текста в подписи`,
+    };
+  }
+  return { limited: false, detail: '' };
+}
+
 function kroV0CleanEvidenceQuotes(evidence) {
   const parts = (evidence || '')
     .toString()
@@ -2787,7 +2817,8 @@ function kroV0ConclusionFromLiveParsed(parsed) {
       status: KRO_V0_STATUS.clean,
       reasons: [
         'По выборке постов канал не похож на крипто‑тему: мы такие каналы в этой проверке не классифицируем как «скам».',
-      ],
+        'Это не «всё отлично» — просто другой предмет проверки: правила крипто‑скама здесь почти не применимы, смотрите сами тематику.',
+      ].slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
     };
   }
   if (parsed.found !== true) {
@@ -2814,11 +2845,21 @@ function kroV0ConclusionFromLiveParsed(parsed) {
     if (parsed.complaints != null) reasons.push(`В отчётах учтено жалоб: ${parsed.complaints}.`);
     if (parsed.total_loss) reasons.push(`По жалобам указана сумма: ${parsed.total_loss}.`);
     if (parsed.risk_score != null) reasons.push(`По последним постам сводная оценка риска: ${parsed.risk_score} из 100.`);
-    return { status: KRO_V0_STATUS.scam, reasons: reasons.slice(0, 4) };
+    return { status: KRO_V0_STATUS.scam, reasons: reasons.slice(0, KRO_V0_MAX_CONCLUSION_REASONS) };
   }
   const rl = (parsed.risk_level || '').toString().trim();
+  const { winD, postsN } = kroLiveParsedWindowPosts(parsed);
+  const lim = kroLiveSampleLimitedDetail(parsed);
   if (rl === 'в риске') {
     const reasons = [];
+    if (winD != null && postsN != null) {
+      reasons.push(`Опирались на ~${postsN} постов с текстом за окно до ${winD} дн. (медиа без подписи не входят).`);
+    }
+    if (lim.limited) {
+      reasons.push(
+        `Ограничение выборки: ${lim.detail}. Вывод сильнее опирается на жалобы и явные маркеры, чем на «тон» при малой ленте.`,
+      );
+    }
     if (parsed.complaints != null) {
       reasons.push(`В отчётах людей уже ${parsed.complaints} жалоб(а), плюс в ленте есть сигналы/VIP.`);
     }
@@ -2827,10 +2868,13 @@ function kroV0ConclusionFromLiveParsed(parsed) {
     }
     if (parsed.only_profits_flag) reasons.push('Почти только «профиты», про минусы почти не говорят.');
     if (parsed.has_signal_offer) reasons.push('Есть явные призывы к сделкам «купи/продай» или похожий оффер.');
-    return { status: KRO_V0_STATUS.risk, reasons: reasons.slice(0, 4) };
+    return { status: KRO_V0_STATUS.risk, reasons: reasons.slice(0, KRO_V0_MAX_CONCLUSION_REASONS) };
   }
   if (rl === 'поведенческий риск') {
     const reasons = [];
+    if (winD != null && postsN != null) {
+      reasons.push(`Считали метрики по ~${postsN} текстовым постам, окно до ${winD} дн.`);
+    }
     if (parsed.fomo_pct != null) reasons.push(`Сильное «успей/последний шанс»: примерно в ${parsed.fomo_pct}% постов выборки.`);
     if (Array.isArray(parsed.shame_phrases_detected) && parsed.shame_phrases_detected.length) {
       reasons.push('Есть «стыдящие» обращения к аудитории.');
@@ -2839,10 +2883,18 @@ function kroV0ConclusionFromLiveParsed(parsed) {
     if (Array.isArray(parsed.risk_evidence) && parsed.risk_evidence.length) {
       reasons.push('Плюс типичные маркеры давления в текстах.');
     }
-    return { status: KRO_V0_STATUS.risk, reasons: reasons.slice(0, 4) };
+    return { status: KRO_V0_STATUS.risk, reasons: reasons.slice(0, KRO_V0_MAX_CONCLUSION_REASONS) };
   }
   if (rl === 'под наблюдением') {
     const reasons = [];
+    if (winD != null && postsN != null) {
+      reasons.push(`Лента: ~${postsN} постов с текстом, окно до ${winD} дн.; часть метрик — по последним 7 дням.`);
+    }
+    if (lim.limited) {
+      reasons.push(
+        `Честно про данные: ${lim.detail}. Статус «под наблюдением» здесь — про отдельные сигналы, а не про «всё идеально проверено годами».`,
+      );
+    }
     if (parsed.complaints === 1) reasons.push('Жалоба пока одна — это зона внимания, а не «жёсткий» уровень.');
     if (parsed.has_signal_offer) reasons.push('В постах есть признаки сигнального предложения.');
     if (parsed.vip_price && String(parsed.vip_price).trim() && String(parsed.vip_price).trim() !== '—') {
@@ -2852,26 +2904,93 @@ function kroV0ConclusionFromLiveParsed(parsed) {
       const hv = kroV0HumanVerdictLabel(parsed.risk_verdict);
       if (hv) reasons.push(`Автоматическая оценка по постам: ${hv}.`);
     }
+    const fomoW = Number(parsed.fomo_pct);
+    if (Number.isFinite(fomoW) && fomoW > 0 && fomoW < 25) {
+      reasons.push(`Слабый фон: «срочность» встречается примерно в ${fomoW}% постов — до отдельного уровня риска не дотягивает само по себе.`);
+    }
     if (!reasons.length) reasons.push('Есть отдельные тревожные признаки, но без набора для более жёсткого вывода.');
-    return { status: KRO_V0_STATUS.watch, reasons: reasons.slice(0, 4) };
+    return { status: KRO_V0_STATUS.watch, reasons: reasons.slice(0, KRO_V0_MAX_CONCLUSION_REASONS) };
   }
   if (rl === 'нет риска') {
     const reasons = [];
+    if (winD != null && postsN != null) {
+      reasons.push(
+        `По тексту ленты прошли автоматические правила на ~${postsN} сообщениях с текстом за окно до ${winD} дн. (голос/видео без подписи не читаем).`,
+      );
+    } else if (postsN != null) {
+      reasons.push(`В выборке около ${postsN} постов с текстом; границы окна по дням в ответе не переданы — смотрим на метрики и жалобы как есть.`);
+    }
+    if (lim.limited) {
+      reasons.push(
+        `Ограничение видимости: ${lim.detail}. Серьёзных красных флагов по правилам не найдено, но это не равно «гарантированно безопасно» — вывод узкий и честный.`,
+      );
+    }
+    const cRaw = parsed.complaints;
+    const cNum = cRaw != null && cRaw !== '' ? Number(cRaw) : NaN;
+    if (!Number.isFinite(cNum)) {
+      reasons.push(
+        'Жалобы из отчётов: не удалось сопоставить канал или данные не пришли — про «ноль жалоб» не заявляем, смотрите блок про отчёты ниже.',
+      );
+    } else if (cNum === 0) {
+      reasons.push(
+        'В учтённых отчётах людей по этому каналу сейчас 0 жалоб на потери/скам в рамках наших правил сопоставления (это не весь интернет целиком).',
+      );
+    } else {
+      reasons.push(
+        `В отчётах указано жалоб: ${cNum} — формула всё равно даёт «нет риска», потому что нет связки с жёстким поведенческим набором; детали в разделе про жалобы.`,
+      );
+    }
+    const calmBits = [];
+    if (!parsed.has_signal_offer) {
+      calmBits.push('нет выделенных «сигнальных» призывов в духе «купи/продай по нашей подписке» в фокусе проверок');
+    }
+    if (!parsed.only_profits_flag) {
+      calmBits.push('нет картины «почти только скрины профита, про минусы почти не говорят»');
+    }
+    if (calmBits.length) {
+      reasons.push(`Спокойные сигналы по тексту: ${calmBits.join('; ')}.`);
+    }
+    const weakBits = [];
+    const fomoN = Number(parsed.fomo_pct);
+    if (Number.isFinite(fomoN) && fomoN > 0 && fomoN < 22) {
+      weakBits.push(`редкие «срочные» формулировки (~${fomoN}% постов)`);
+    }
+    const adsN = Number(parsed.ads_ratio);
+    if (Number.isFinite(adsN) && adsN >= 12 && adsN < 55) {
+      weakBits.push(`часть постов похожа на рекламу/продажу (~${adsN}% в окне)`);
+    }
+    if (weakBits.length) {
+      reasons.push(`Слабые отметины (сами по себе не переводят в риск): ${weakBits.join(', ')}.`);
+    }
+    if (parsed.risk_score != null) reasons.push(`Сводный балл по постам: ${parsed.risk_score} из 100.`);
     if (parsed.risk_verdict) {
       const hv = kroV0HumanVerdictLabel(parsed.risk_verdict);
       if (hv) reasons.push(`Автоматическая оценка по постам: ${hv}.`);
     }
-    if (parsed.risk_score != null) reasons.push(`Сводный балл по постам: ${parsed.risk_score} из 100.`);
-    reasons.push('По выбранным правилам нет картины «давление + жалобы» или сильного поведенческого давления.');
-    return { status: KRO_V0_STATUS.clean, reasons: reasons.slice(0, 4) };
+    reasons.push(
+      'Итог по правилам: нет картины «давление + жалобы» или сильного поведенческого склона — поэтому статус ближе к спокойному, без «всё идеально в жизни».',
+    );
+    return { status: KRO_V0_STATUS.clean, reasons: reasons.filter(Boolean).slice(0, KRO_V0_MAX_CONCLUSION_REASONS) };
   }
   const reasons = [];
+  if (winD != null && postsN != null) {
+    reasons.push(`Выборка: ~${postsN} текстовых постов, окно до ${winD} дн.`);
+  }
+  if (lim.limited) {
+    reasons.push(`Данных по ленте мало или выборка узкая (${lim.detail}) — статус осторожный, пока картина не разъединилась по правилам.`);
+  }
   if (parsed.risk_score != null) reasons.push(`Сводный балл по постам: ${parsed.risk_score} из 100.`);
   if (parsed.risk_verdict) {
     const hv = kroV0HumanVerdictLabel(parsed.risk_verdict);
     if (hv) reasons.push(`Автоматическая оценка по постам: ${hv}.`);
   }
-  return { status: KRO_V0_STATUS.watch, reasons: reasons.slice(0, 4) };
+  if (Array.isArray(parsed.risk_evidence) && parsed.risk_evidence.length) {
+    reasons.push(`Автоматика отметила маркеры: ${parsed.risk_evidence.slice(0, 3).join('; ')}.`);
+  }
+  if (!reasons.length) {
+    reasons.push('Правила не свели канал к одному из жёстких уровней — оставляем в зоне внимания до большей ясности.');
+  }
+  return { status: KRO_V0_STATUS.watch, reasons: reasons.slice(0, KRO_V0_MAX_CONCLUSION_REASONS) };
 }
 
 function kroV0BuildAnalysisFromScamBaseProfile(profile, extra) {
@@ -2882,6 +3001,8 @@ function kroV0BuildAnalysisFromScamBaseProfile(profile, extra) {
     status: kroV0MapScamBaseStatusToConclusion(r?.status, r?.verdict, lossRub),
     reasons: [],
   };
+  const cardSpeedNote =
+    'Этот ответ из карточки в базе: в этом запросе Telegram не грузили заново, поэтому он может прийти быстро — это не «пустой» ответ, а уже накопленная сводка циклами мониторинга.';
   if (r?._schema === 'v2') {
     if (Number.isFinite(lossRub) && lossRub > 0) {
       conclusion.reasons.push(`В карточке указаны потери по жалобам: ${lossRub.toLocaleString('ru-RU')} ₽.`);
@@ -2897,12 +3018,23 @@ function kroV0BuildAnalysisFromScamBaseProfile(profile, extra) {
     if (r?.complaints != null) conclusion.reasons.push(`Жалоб в карточке: ${r.complaints}.`);
     if (r?.total_loss) conclusion.reasons.push(`Потери в карточке: ${r.total_loss}.`);
   }
-  conclusion.reasons = conclusion.reasons.filter(Boolean).slice(0, 4);
+  const tailClean =
+    conclusion.status === KRO_V0_STATUS.clean &&
+    (r?.complaints == null || Number(r.complaints) === 0) &&
+    !(Number.isFinite(lossRub) && lossRub > 0)
+      ? [
+          'По карточке нет зафиксированных жалоб на потери — плюс к спокойствию, но не замена собственной осторожности и чтения условий.',
+        ]
+      : [];
+  conclusion.reasons = [cardSpeedNote, ...conclusion.reasons, ...tailClean].filter(Boolean).slice(0, KRO_V0_MAX_CONCLUSION_REASONS);
 
   const riskBullets = kroV0RiskBulletsFromScamBaseRow(r);
   const baseInfo = [];
   baseInfo.push(`Канал: ${username || '—'}`);
   baseInfo.push('Карточка из мониторинга: сводка по циклам (не один день), метрики по тексту ленты; медиа без подписи в текст не входят.');
+  baseInfo.push(
+    'Важно: в этом HTTP‑запросе лента не перечитывалась в реальном времени — если нужна именно «свежая лента сейчас», запускайте проверку для канала, которого ещё нет в базе, или смотрите дату последнего цикла в карточке.',
+  );
   if (r?.link) baseInfo.push(`Открыть в Telegram: ${r.link}`);
   if (r?._schema === 'v2') {
     if (r.detected_at) baseInfo.push(`В учёте с: ${r.detected_at}`);
@@ -2956,10 +3088,10 @@ function kroV0BuildAnalysisFromScamBaseProfile(profile, extra) {
     network.push('Явной «карты связей» в карточке нет.');
   }
 
-  while (baseInfo.length > 5) baseInfo.pop();
-  while (content.length > 3) content.pop();
-  while (external.length > 2) external.pop();
-  while (network.length > 2) network.pop();
+  while (baseInfo.length > 6) baseInfo.pop();
+  while (content.length > 4) content.pop();
+  while (external.length > 3) external.pop();
+  while (network.length > 3) network.pop();
 
   return {
     v: 0,
@@ -2983,6 +3115,7 @@ function kroV0BuildAnalysisFromLiveParsed(parsed, channelKey) {
   baseInfo.push(`Канал: ${username || (channelKey ? `@${channelKey}` : '—')}`);
   const winD = Number(p.analysis_window_days);
   const postsN = Number(p.posts_fetched);
+  const limLive = kroLiveSampleLimitedDetail(p);
   const limitsNote = ' Учитываем текст постов и ответы; голос, видео и вложения без подписи не входят.';
   if (Number.isFinite(winD) && winD > 0 && Number.isFinite(postsN) && postsN >= 0) {
     baseInfo.push(
@@ -2991,6 +3124,11 @@ function kroV0BuildAnalysisFromLiveParsed(parsed, channelKey) {
   } else {
     baseInfo.push(
       `Поведение за период (не один пост): выборка за несколько недель и отдельно последние 7 дней для части метрик.${limitsNote}`,
+    );
+  }
+  if (p.found === true && limLive.limited) {
+    baseInfo.push(
+      `Ограничение данных: ${limLive.detail}. Ниже — что всё равно удалось проверить по тексту и отчётам; вывод узкий и честный, без имитации «полного года каждого слова».`,
     );
   }
   if (p.title) baseInfo.push(`Название в Telegram: ${p.title}`);
@@ -3006,27 +3144,61 @@ function kroV0BuildAnalysisFromLiveParsed(parsed, channelKey) {
   if (p.read_only) baseInfo.push('Для страницы отчёта в таблицы ничего не записывали.');
 
   const content = [];
+  if (p.found === true && !p.not_crypto) {
+    const calm = [];
+    if (!p.has_signal_offer) calm.push('нет выделенных «сигнальных» призывов в критериях проверки');
+    if (!p.only_profits_flag) calm.push('нет картины «одни профиты без минусов»');
+    const c0 = p.complaints != null && p.complaints !== '' ? Number(p.complaints) : NaN;
+    if (Number.isFinite(c0) && c0 === 0) calm.push('0 жалоб в сопоставленных отчётах');
+    if (calm.length) {
+      content.push(`Спокойнее по автоматическим правилам: ${calm.join('; ')}.`);
+    }
+    const weak = [];
+    const fomoV = Number(p.fomo_pct);
+    if (Number.isFinite(fomoV) && fomoV > 0 && fomoV < 24) {
+      weak.push(`редкие «срочные» формулировки (~${fomoV}% постов)`);
+    }
+    const adsV = Number(p.ads_ratio);
+    if (Number.isFinite(adsV) && adsV >= 10 && adsV < 58) {
+      weak.push(`доля «продающего» тона ~${adsV}% в окне`);
+    }
+    if (p.has_signal_offer && weak.length < 2) {
+      weak.push('есть маркеры сигнального оффера — смотрите сами условия');
+    }
+    if (weak.length) {
+      content.push(`Слабые отметины (сами по себе не равны скаму): ${weak.join(', ')}.`);
+    }
+  }
   const behaviorBits = [];
   if (p.ads_per_week != null) behaviorBits.push(`за 7 дней много «продающих» постов (~${p.ads_per_week})`);
   if (p.ads_ratio != null) behaviorBits.push(`в выборке окна «продажа» ~${p.ads_ratio}%`);
   if (p.fomo_pct != null) behaviorBits.push(`«успей/последний шанс» ~${p.fomo_pct}% постов`);
-  if (behaviorBits.length) content.push(`Поведение: ${behaviorBits.join(', ')}.`);
+  if (behaviorBits.length) content.push(`Поведение (метрики): ${behaviorBits.join(', ')}.`);
   if (p.bot_pct != null && p.bot_pct !== '') {
     content.push(`Ответы под постами часто одинаковые: ${p.bot_pct}.`);
   }
   if (p.only_profits_flag) content.push('Почти только «профиты», про минусы почти не говорят.');
-  if (Array.isArray(p.sample_posts) && p.sample_posts.length && content.length < 3) {
+  if (Array.isArray(p.sample_posts) && p.sample_posts.length && content.length < 5) {
     const s0 = String(p.sample_posts[0] || '');
     content.push(`Пример из ленты: «${s0.slice(0, 100)}${s0.length > 100 ? '…' : ''}»`);
   }
-  while (content.length > 3) content.pop();
+  while (content.length > 5) content.pop();
 
   const external = [];
   const jc = [];
-  if (p.complaints != null) jc.push(`жалоб: ${p.complaints}`);
+  if (p.complaints != null && p.complaints !== '') jc.push(`жалоб: ${p.complaints}`);
   if (p.total_loss) jc.push(`сумма: ${p.total_loss}`);
   if (jc.length) external.push(`От людей в отчётах: ${jc.join(', ')}.`);
-  else external.push('Жалоб в отчётах пока не видно — или они не подтянулись.');
+  else {
+    external.push(
+      'Жалоб в отчётах по этому каналу в сопоставленной базе не видно — либо их нет, либо канал не сопоставился с отчётами, либо данные не подтянулись.',
+    );
+  }
+  if (p.complaints != null && p.complaints !== '' && Number(p.complaints) === 0) {
+    external.push(
+      'Ноль жалоб в наших отчётах — это плюс к спокойствию, но не доказательство «всё чисто везде»; жалобы могут быть вне нашей выборки.',
+    );
+  }
 
   const network = [];
   const promos = [];
@@ -3044,11 +3216,11 @@ function kroV0BuildAnalysisFromLiveParsed(parsed, channelKey) {
   ) {
     network.push('По открытой статистике — нетипичные скачки роста или охвата (дополнительный сигнал).');
   }
-  if (!network.length) network.push('Связи с другими каналами по данным не выделены.');
-  while (network.length > 2) network.pop();
+  if (!network.length) network.push('Продвижение других каналов в тексте выборки явно не выделено.');
+  while (network.length > 3) network.pop();
 
-  while (baseInfo.length > 5) baseInfo.pop();
-  while (external.length > 2) external.pop();
+  while (baseInfo.length > 6) baseInfo.pop();
+  while (external.length > 3) external.pop();
 
   return {
     v: 0,
@@ -3114,6 +3286,7 @@ function kroLiveMetricsFromParsed(parsed) {
     username: (p.username || '').toString().trim() || null,
     analysis_window_days: Number.isFinite(Number(p.analysis_window_days)) ? Number(p.analysis_window_days) : null,
     posts_fetched: Number.isFinite(Number(p.posts_fetched)) ? Number(p.posts_fetched) : null,
+    posts_limit_used: Number.isFinite(Number(p.posts_limit_used)) ? Number(p.posts_limit_used) : null,
     complaints_count: Number.isFinite(complaintsNum) ? complaintsNum : null,
     read_only: !!p.read_only,
   };
@@ -4465,12 +4638,13 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       .filter((r) => r.username && r.username !== 'username')
       .map(enrichScamBaseContentAnalysisForMonitor);
     const matches = scamRows.filter((r) => channelMatchKey(r.username) === key);
+    const channelForOnce = /^t\.me\//i.test(decoded) || decoded.includes('+')
+      ? decoded
+      : `@${decoded}`;
+    const once = kroRunCheckOnce(channelForOnce, { readOnly: true });
+    if (once.stderr) console.error('KRO channel-profile check_once stderr:', once.stderr);
+    const liveMetrics = kroLiveMetricsFromParsed(once.parsed);
     if (!matches.length) {
-      const channelForOnce = /^t\.me\//i.test(decoded) || decoded.includes('+')
-        ? decoded
-        : `@${decoded}`;
-      const once = kroRunCheckOnce(channelForOnce, { readOnly: true });
-      if (once.stderr) console.error('KRO channel-profile check_once stderr:', once.stderr);
       const analysis = kroV0BuildAnalysisFromLiveParsed(once.parsed, key);
       kroV0PrependNoScamBaseCardNote(analysis);
       const watchRowCp0 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
@@ -4482,7 +4656,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         risk_index_max: 100,
         false_positive_count: 0,
         analysis,
-        live_metrics: kroLiveMetricsFromParsed(once.parsed),
+        live_metrics: liveMetrics,
       });
     }
     const bestAny = matches.reduce((best, cur) =>
@@ -4490,16 +4664,11 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     );
     const liveMatches = matches.filter((r) => isScamBaseRowInLiveCounterDataset(r));
     if (!liveMatches.length) {
-      const channelForOnce = /^t\.me\//i.test(decoded) || decoded.includes('+')
-        ? decoded
-        : `@${decoded}`;
-      const once = kroRunCheckOnce(channelForOnce, { readOnly: true });
-      if (once.stderr) console.error('KRO channel-profile check_once stderr:', once.stderr);
       const liveAnalysis = kroV0BuildAnalysisFromLiveParsed(once.parsed, key);
       const analysis = {
         ...liveAnalysis,
         basic_info: [
-          `В таблице есть ${matches.length} запис(и) по этому каналу, но в публичном мониторе они скрыты общими правилами — ниже показана быстрая проверка по постам.`,
+          `В таблице есть ${matches.length} запис(и) по этому каналу, но в публичном мониторе они скрыты общими правилами.`,
           `Для справки, в «сырой» строке статус выглядит как: «${(bestAny.status || bestAny.verdict || '—')}».`,
         ].concat(liveAnalysis.basic_info || []),
       };
@@ -4512,7 +4681,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         risk_index_max: 100,
         false_positive_count: 0,
         analysis,
-        live_metrics: kroLiveMetricsFromParsed(once.parsed),
+        live_metrics: liveMetrics,
       });
     }
     const profile = liveMatches.reduce((best, cur) =>
@@ -4524,7 +4693,20 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       (r) => (r.source || '').toLowerCase() === 'false_positive'
     ).length;
     const profileForAnalysis = enrichScamBaseContentAnalysisForMonitor(profile);
-    const analysis = kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: key });
+    const analysis = once.ok
+      ? kroV0BuildAnalysisFromLiveParsed(once.parsed, key)
+      : kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: key });
+    if (!once.ok) {
+      analysis.basic_info = [
+        'Живой анализ не завершился в этом запросе (лимит времени / ограничения Telegram) — показана последняя карточка мониторинга.',
+      ].concat(analysis.basic_info || []);
+    } else {
+      analysis.basic_info = [
+        `В базе есть ${matches.length} запис(и) по каналу; ниже — именно свежая живая проверка Telegram за широкое окно.`,
+        `Последний статус карточки: «${(profile.status || profile.verdict || '—')}» (${profile.detected_at || 'дата не указана'}).`,
+      ].concat(analysis.basic_info || []);
+      analysis.sources = Array.from(new Set([...(analysis.sources || []), 'публичная база']));
+    }
     const watchRowCp2 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
     if (watchRowCp2) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp2);
     return res.json({
@@ -4534,7 +4716,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       risk_index_max: 100,
       false_positive_count,
       analysis,
-      live_metrics: null,
+      live_metrics: liveMetrics,
     });
   } catch (e) {
     console.error('KRO channel-profile error:', e);

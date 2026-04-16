@@ -41,6 +41,26 @@ KRO_SCAM_BASE_RANGE = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:H')
 SCAM_BASE_SHEET_NAME = KRO_SCAM_BASE_RANGE.split('!')[0] if '!' in KRO_SCAM_BASE_RANGE else 'scam_base'
 KRO_REPORTS_RANGE = os.environ.get('KRO_REPORTS_RANGE', 'A2:F')
 KRO_UNCONFIRMED_RANGE = os.environ.get('KRO_UNCONFIRMED_RANGE', '')
+
+
+def _check_once_max_messages(period_days):
+    """
+    Лимит глубины чтения Telegram-постов для run_check.
+    Дефолт: глубокая выборка, но с предохранителем по времени/объёму.
+    """
+    raw = (os.environ.get('KRO_CHECK_ONCE_MAX_MESSAGES') or '').strip()
+    if raw:
+        try:
+            n = int(raw)
+            if n >= 200:
+                return min(n, 12000)
+        except ValueError:
+            pass
+    if period_days >= 365:
+        return 4000
+    if period_days >= 180:
+        return 2500
+    return 1200
 UNCONFIRMED_SHEET_NAME = KRO_UNCONFIRMED_RANGE.split('!')[0] if '!' in KRO_UNCONFIRMED_RANGE else ''
 
 RISK_KEYWORDS = [
@@ -575,25 +595,15 @@ async def run_check(channel_id, period_days=30):
         now = datetime.now(timezone.utc)
         min_date = now - timedelta(days=period_days)
 
-        if period_days <= 30:
-            raw = await client.get_messages(entity, limit=150)
-            messages = []
-            for m in raw:
-                if not m or not m.date:
-                    continue
-                md = m.date.replace(tzinfo=timezone.utc) if getattr(m.date, 'tzinfo', None) is None else m.date
-                if md >= min_date:
-                    messages.append(m)
-        else:
-            max_count = 500 if period_days <= 180 else 1000
-            messages = []
-            async for m in client.iter_messages(entity, limit=max_count):
-                if not m or not m.date:
-                    continue
-                md = m.date.replace(tzinfo=timezone.utc) if getattr(m.date, 'tzinfo', None) is None else m.date
-                if md < min_date:
-                    break
-                messages.append(m)
+        max_count = _check_once_max_messages(period_days)
+        messages = []
+        async for m in client.iter_messages(entity, limit=max_count):
+            if not m or not m.date:
+                continue
+            md = m.date.replace(tzinfo=timezone.utc) if getattr(m.date, 'tzinfo', None) is None else m.date
+            if md < min_date:
+                break
+            messages.append(m)
 
         texts = []
         messages_with_dates = []
@@ -698,6 +708,7 @@ async def run_check(channel_id, period_days=30):
             'title': getattr(entity, 'title', None) or '',
             'analysis_window_days': period_days,
             'posts_fetched': len(messages),
+            'posts_limit_used': max_count,
             'risk_score': risk_score,
             'ads_per_week': ads_week,
             'bot_pct': bot_pct,
