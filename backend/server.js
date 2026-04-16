@@ -3273,6 +3273,28 @@ function kroRunCheckOnce(channel, opts) {
   }
 }
 
+/**
+ * Единый объект для отчёта: при сбое check_once не теряем причину (иначе в UI «пустой шаблон»).
+ */
+function kroNormalizeCheckOnceForAnalysis(once) {
+  const o = once && typeof once === 'object' ? once : { ok: false, parsed: null, error: 'Нет ответа проверки' };
+  if (o.ok === true && o.parsed && typeof o.parsed === 'object') {
+    return { ...o.parsed, _check_once_ok: true };
+  }
+  const base = o.parsed && typeof o.parsed === 'object' ? { ...o.parsed } : {};
+  const errRaw = base.error != null && String(base.error).trim() !== '' ? base.error : o.error;
+  const err =
+    normalizeCheckOnceError(errRaw) ||
+    (typeof errRaw === 'string' && errRaw.trim() ? errRaw.trim() : '') ||
+    'Живая проверка на сервере не завершилась (нет данных от скрипта Telegram).';
+  return {
+    ...base,
+    found: false,
+    error: err,
+    _check_once_ok: false,
+  };
+}
+
 /** Для UI главной страницы: период и объём выборки без парсинга текста basic_info. */
 function kroLiveMetricsFromParsed(parsed) {
   if (!parsed || typeof parsed !== 'object') return null;
@@ -3283,12 +3305,14 @@ function kroLiveMetricsFromParsed(parsed) {
     : Number(complaintsRaw);
   return {
     found: p.found === true,
+    check_once_ok: p._check_once_ok === true,
     username: (p.username || '').toString().trim() || null,
     analysis_window_days: Number.isFinite(Number(p.analysis_window_days)) ? Number(p.analysis_window_days) : null,
     posts_fetched: Number.isFinite(Number(p.posts_fetched)) ? Number(p.posts_fetched) : null,
     posts_limit_used: Number.isFinite(Number(p.posts_limit_used)) ? Number(p.posts_limit_used) : null,
     complaints_count: Number.isFinite(complaintsNum) ? complaintsNum : null,
     read_only: !!p.read_only,
+    live_check_error: p._check_once_ok === true ? null : (p.error != null ? String(p.error) : null),
   };
 }
 
@@ -4643,9 +4667,10 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       : `@${decoded}`;
     const once = kroRunCheckOnce(channelForOnce, { readOnly: true });
     if (once.stderr) console.error('KRO channel-profile check_once stderr:', once.stderr);
-    const liveMetrics = kroLiveMetricsFromParsed(once.parsed);
+    const parsedOnce = kroNormalizeCheckOnceForAnalysis(once);
+    const liveMetrics = kroLiveMetricsFromParsed(parsedOnce);
     if (!matches.length) {
-      const analysis = kroV0BuildAnalysisFromLiveParsed(once.parsed, key);
+      const analysis = kroV0BuildAnalysisFromLiveParsed(parsedOnce, key);
       kroV0PrependNoScamBaseCardNote(analysis);
       const watchRowCp0 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
       if (watchRowCp0) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp0);
@@ -4664,7 +4689,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     );
     const liveMatches = matches.filter((r) => isScamBaseRowInLiveCounterDataset(r));
     if (!liveMatches.length) {
-      const liveAnalysis = kroV0BuildAnalysisFromLiveParsed(once.parsed, key);
+      const liveAnalysis = kroV0BuildAnalysisFromLiveParsed(parsedOnce, key);
       const analysis = {
         ...liveAnalysis,
         basic_info: [
@@ -4694,7 +4719,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     ).length;
     const profileForAnalysis = enrichScamBaseContentAnalysisForMonitor(profile);
     const analysis = once.ok
-      ? kroV0BuildAnalysisFromLiveParsed(once.parsed, key)
+      ? kroV0BuildAnalysisFromLiveParsed(parsedOnce, key)
       : kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: key });
     if (!once.ok) {
       analysis.basic_info = [
