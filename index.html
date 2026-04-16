@@ -910,9 +910,19 @@
            var checkProgress = document.getElementById('kro-check-progress');
            var checkProgressTitle = document.getElementById('kro-check-progress-title');
            var inlineReport = document.getElementById('kro-inline-report');
+           var kroF1Wrap = document.getElementById('kro-f1-cta-check-wrap');
+           /** Без класса kro-f1-show-check блок #kro-feature1-check остаётся с opacity:0 — отчёт заполняется, но не виден. */
+           function ensureKroCheckPanelVisible() {
+               if (kroF1Wrap) kroF1Wrap.classList.add('kro-f1-show-check');
+           }
            if (checkBtn && checkInput && checkResult) {
                function normChannel(s) {
-                   var t = (s || '').trim().replace(/\s/g, '');
+                   var raw = (s || '').trim();
+                   if (!raw) return '';
+                   var t = raw;
+                   var urlMatch = raw.match(/https?:\/\/t\.me\/[^\s<>"']+/i) || raw.match(/\bt\.me\/[^\s<>"']+/i);
+                   if (urlMatch) t = urlMatch[0];
+                   t = t.replace(/\s/g, '');
                    if (!t) return '';
                    var lower = t.toLowerCase();
                    if (lower.indexOf('t.me/') !== -1) {
@@ -1118,6 +1128,7 @@
                    }
                }
                function runHomeChannelCheck(slug) {
+                   ensureKroCheckPanelVisible();
                    window.__kroHomeLastSlug = slug;
                    var queryU = slugToQueryU(slug);
                    var displayLabel = displayChannelLabel(slug, queryU);
@@ -1206,7 +1217,11 @@
                    }
                    checkResult.classList.add('hidden');
                    checkResult.innerHTML = '';
+                   ensureKroCheckPanelVisible();
                    runHomeChannelCheck(slug);
+               });
+               checkInput.addEventListener('focus', function () {
+                   ensureKroCheckPanelVisible();
                });
                var resetInline = document.getElementById('kro-inline-reset');
                if (resetInline) {
@@ -1448,10 +1463,18 @@
        (function() {
            var btn = document.getElementById('kro-f1-cta-btn');
            var wrap = document.getElementById('kro-f1-cta-check-wrap');
+           function showCheckFromHash() {
+               if (wrap && (window.location.hash === '#kro-feature1-check' || window.location.hash === '#checkers')) {
+                   wrap.classList.add('kro-f1-show-check');
+               }
+           }
+           showCheckFromHash();
+           window.addEventListener('hashchange', showCheckFromHash);
            if (btn && wrap) {
                btn.addEventListener('click', function() {
                    wrap.classList.add('kro-f1-show-check');
-                   wrap.querySelector('#kro-feature1-check').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                   var ch = wrap.querySelector('#kro-feature1-check');
+                   if (ch) ch.scrollIntoView({ behavior: 'smooth', block: 'center' });
                });
            }
        })();
