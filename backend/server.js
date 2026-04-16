@@ -1248,6 +1248,57 @@ const kroChannelsWatchRange = process.env.KRO_CHANNELS_WATCH_RANGE || 'channels_
 const kroChannelsNetworkRange = process.env.KRO_CHANNELS_NETWORK_RANGE || 'channels_network!A2:G';
 const kroMetaRange = process.env.KRO_META_RANGE || 'kro_meta!A:B';
 const kroCheckQueueRange = process.env.KRO_CHECK_QUEUE_RANGE || '';
+/** Короткий снимок строк Sheets в памяти — меньше таймаутов на Render и быстрее ответ при серии запросов. */
+const KRO_SHEETS_SNAPSHOT_CACHE_MS = Math.max(3000, parseInt(process.env.KRO_SHEETS_SNAPSHOT_CACHE_MS || '40000', 10));
+let kroScamBaseValuesCache = { ts: 0, values: /** @type {string[][] | null} */ (null) };
+let kroReportsRowsCache = { ts: 0, rows: /** @type {string[][] | null} */ (null) };
+let kroChannelsWatchRawCache = { ts: 0, raw: /** @type {string[][] | null} */ (null) };
+
+async function kroFetchScamBaseValuesCached(client) {
+  if (!client || !kroSheetId) return [];
+  const now = Date.now();
+  if (kroScamBaseValuesCache.values && now - kroScamBaseValuesCache.ts < KRO_SHEETS_SNAPSHOT_CACHE_MS) {
+    return kroScamBaseValuesCache.values;
+  }
+  const scamResp = await client.sheets.spreadsheets.values.get({
+    spreadsheetId: kroSheetId,
+    range: kroScamBaseRange,
+  });
+  const values = scamResp.data.values || [];
+  kroScamBaseValuesCache = { ts: now, values };
+  return values;
+}
+
+async function kroFetchReportsRowsCached(client) {
+  if (!client || !kroSheetId) return [];
+  const now = Date.now();
+  if (kroReportsRowsCache.rows && now - kroReportsRowsCache.ts < KRO_SHEETS_SNAPSHOT_CACHE_MS) {
+    return kroReportsRowsCache.rows;
+  }
+  const response = await client.sheets.spreadsheets.values.get({
+    spreadsheetId: kroSheetId,
+    range: 'A2:I',
+  });
+  const rows = response.data.values || [];
+  kroReportsRowsCache = { ts: now, rows };
+  return rows;
+}
+
+async function kroFetchChannelsWatchRawCached(client) {
+  if (!client || !kroSheetId || !kroChannelsWatchRange) return [];
+  const now = Date.now();
+  if (kroChannelsWatchRawCache.raw && now - kroChannelsWatchRawCache.ts < KRO_SHEETS_SNAPSHOT_CACHE_MS) {
+    return kroChannelsWatchRawCache.raw;
+  }
+  const resp = await client.sheets.spreadsheets.values.get({
+    spreadsheetId: kroSheetId,
+    range: kroChannelsWatchRange,
+  });
+  const raw = resp.data.values || [];
+  kroChannelsWatchRawCache = { ts: now, raw };
+  return raw;
+}
+
 /** Окно истории постов для живой проверки (check_once): только 30, 180 или 365. По умолчанию год — главный сценарий «полная проверка канала». */
 const kroCheckOncePeriodDaysParsed = parseInt(process.env.KRO_CHECK_ONCE_PERIOD_DAYS || '365', 10);
 const kroCheckOncePeriodDays = [30, 180, 365].includes(kroCheckOncePeriodDaysParsed) ? kroCheckOncePeriodDaysParsed : 365;
@@ -2848,11 +2899,7 @@ function kroWatchRowFreshnessMs(w) {
 async function fetchLatestChannelsWatchRowForKey(client, key) {
   if (!client || !kroSheetId || !key || !kroChannelsWatchRange) return null;
   try {
-    const resp = await client.sheets.spreadsheets.values.get({
-      spreadsheetId: kroSheetId,
-      range: kroChannelsWatchRange,
-    });
-    const raw = resp.data.values || [];
+    const raw = await kroFetchChannelsWatchRawCached(client);
     let best = null;
     let bestMs = -1;
     for (const row of raw) {
@@ -3620,7 +3667,16 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
   const sumMin = sumsPos.length ? Math.min(...sumsPos) : 0;
   const sumMax = sumsPos.length ? Math.max(...sumsPos) : 0;
 
+  const tmeS = channelKey ? `https://t.me/s/${channelKey}` : '';
   const baseInfo = [];
+  baseInfo.push(
+    `Объект: ${displayCh}. Быстрый режим: сверка с листом жалоб/отчётов KRO и (если есть) строкой широкого мониторинга; публичной карточки scam_base в мониторинге для этого канала нет.`,
+  );
+  if (tmeS) {
+    baseInfo.push(
+      `Публичная лента канала в браузере (без входа в Telegram): ${tmeS} — можно вручную просмотреть последние посты; в этом запросе текст ленты сервером не выгружался.`,
+    );
+  }
 
   let _kro_watch_baked = false;
   if (watchRow && (watchRow.username || '').toString().trim()) {
@@ -3633,6 +3689,10 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
     if (wc > 0) parts.push(`в строке учтено жалоб: ${wc}`);
     if (lc) parts.push(`обновление строки: ${lc}`);
     baseInfo.push(`${parts.join(': ')}.`);
+  } else {
+    baseInfo.push(
+      `Строка в channels_watch для ${displayCh} в выборке мониторинга не найдена или скрыта правилами видимости — сигналов цикла мониторинга в этом отчёте нет.`,
+    );
   }
 
   const external = [];
@@ -3646,7 +3706,9 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
     }
     external.push(extParts.join(' '));
   } else {
-    external.push(`По ${displayCh} в листе отчётов сейчас нет сопоставленных строк — внешние жалобы в этой выборке не видны.`);
+    external.push(
+      `По идентификатору ${displayCh} в нашем листе жалоб/отчётов нет строк с тем же ключом канала — автоматически сопоставить внешние жалобы не удалось. Это не доказательство «нет жалоб в интернете», только «в таблице KRO сейчас пусто».`,
+    );
   }
 
   const content = [];
@@ -3659,6 +3721,12 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
     if (src) content.push(`Источник в той же строке: ${src}.`);
     if (dt) content.push(`Дата в строке отчёта: ${dt}.`);
   }
+  content.push(
+    'Поведение в ленте (частота рекламы, «сигнальные» призывы, разбор текстов постов): в быстром режиме не считалось — нет выборки сообщений через Telegram API.',
+  );
+  content.push(
+    'Чтобы получить метрики по постам и честный разбор ленты, откройте страницу канала на сайте и нажмите «Глубокий анализ ленты» (обычно до нескольких минут; возможны лимиты Telegram).',
+  );
 
   const ties = [];
   if (watchRow && (watchRow.reviews_summary || '').toString().trim()) {
@@ -3666,6 +3734,9 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
   } else if (watchRow && (watchRow.activity_summary || '').toString().trim()) {
     ties.push(`Активность по мониторингу: ${kroV0TrimSentence(watchRow.activity_summary, 200)}`);
   }
+  ties.push(
+    'Сеть ссылок, скрытые связи и риск-факторы без карточки в базе и без глубокой выборки постов автоматически не строим — данных для честного графа связей недостаточно.',
+  );
 
   let status = KRO_V0_STATUS.watch;
   const reasons = [];
@@ -3680,9 +3751,12 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
       `Для ${displayCh} есть единичная запись в отчётах — полной картины мало; глубокий разбор ленты — кнопкой на странице (mode=deep).`,
     );
   } else {
-    status = KRO_V0_STATUS.clean;
+    status = KRO_V0_STATUS.watch;
     reasons.push(
-      `Для ${displayCh} в быстром режиме по нашим отчётам сильных маркеров не видно — это не гарантия «идеальной чистоты», лента не пересканировалась.`,
+      `Для ${displayCh} в быстром режиме нет сопоставимых жалоб в таблице KRO и мало контекста из мониторинга. Статус «нарушений не видно» здесь не ставим: данные не позволяют считать канал проверенным — ленту не сканировали.`,
+    );
+    reasons.push(
+      'Итог: недостаточно оснований для вывода о безопасности; при необходимости запустите глубокий анализ или проверьте канал вручную.',
     );
   }
   if (complaintsSum > 0) {
@@ -3694,10 +3768,10 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
     channel_key: channelKey,
     generated_at: new Date().toISOString(),
     sources: ['отчёты пользователей', 'широкий мониторинг'],
-    basic_info: baseInfo,
-    content_behavior: content,
+    basic_info: baseInfo.slice(0, 8),
+    content_behavior: content.slice(0, 8),
     external_reports: external,
-    ties_risk_factors: ties,
+    ties_risk_factors: ties.slice(0, 6),
     conclusion: { status, reasons: reasons.slice(0, KRO_V0_MAX_CONCLUSION_REASONS) },
   };
   if (_kro_watch_baked) out._kro_watch_baked = true;
@@ -5388,11 +5462,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     }
     const modeRaw = (req.query.mode ?? 'fast').toString().trim().toLowerCase();
     const deepMode = modeRaw === 'deep' || modeRaw === 'full' || modeRaw === 'live';
-    const scamResp = await sheetsClient.sheets.spreadsheets.values.get({
-      spreadsheetId: kroSheetId,
-      range: kroScamBaseRange
-    });
-    const scamRawRows = scamResp.data.values || [];
+    const scamRawRows = await kroFetchScamBaseValuesCached(sheetsClient);
     const scamRows = scamRawRows
       .slice(1)
       .map(parseScamBaseRow)
@@ -5807,6 +5877,12 @@ app.post('/api/kro/ops/deep-breathe', express.json({ limit: '4000' }), (req, res
     kroDeepClientRuns.clear();
     out.limits_reset = true;
   }
+  if (scope === 'all') {
+    kroScamBaseValuesCache = { ts: 0, values: null };
+    kroReportsRowsCache = { ts: 0, rows: null };
+    kroChannelsWatchRawCache = { ts: 0, raw: null };
+    out.sheets_snapshot_cache_cleared = true;
+  }
   return res.json(out);
 });
 
@@ -5918,11 +5994,7 @@ app.post('/api/update', express.json(), handleKroUpdate);
 async function getAllReportsForChannel(client, channel) {
   if (!client || !kroSheetId) return [];
   try {
-    const response = await client.sheets.spreadsheets.values.get({
-      spreadsheetId: kroSheetId,
-      range: 'A2:I'
-    });
-    const rows = response.data.values || [];
+    const rows = await kroFetchReportsRowsCached(client);
     const key = channelMatchKey(channel);
     if (!key) return [];
     return rows.filter(r => channelMatchKey((r[1] || '').toString()) === key).map(r => ({
