@@ -856,7 +856,8 @@ def main():
         out({
             'found': False,
             'error': (
-                'Нет сохранённой Telegram-сессии: задайте KRO_TELEGRAM_SESSION_STRING (StringSession) '
+                'Нет сохранённой Telegram-сессии: задайте KRO_TELEGRAM_SESSION_STRING (StringSession), '
+                'или TELEGRAM_SESSION_B64 (base64 файла kro_worker.session, как на старом проде), '
                 'или положите kro_worker.session рядом с check_once. Локально: node scripts/kro-login.js'
             ),
         })

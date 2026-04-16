@@ -3,7 +3,9 @@
 #
 # Обязательные секреты (Environment) для живой проверки каналов:
 #   TELEGRAM_API_ID, TELEGRAM_API_HASH,
-#   KRO_TELEGRAM_SESSION_STRING (StringSession из backend/kro-worker/convert_session.py)
+#   и ОДИН из вариантов сессии:
+#   - KRO_TELEGRAM_SESSION_STRING (StringSession из convert_session.py), или
+#   - TELEGRAM_SESSION_B64 (base64 от бинарного kro_worker.session — совместимо со старым продом)
 # Плюс существующие: KRO_SHEET_ID, KRO_GOOGLE_CREDENTIALS_JSON, и т.д.
 
 services:
