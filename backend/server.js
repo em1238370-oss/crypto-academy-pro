@@ -1294,6 +1294,17 @@ const KRO_DEEP_GLOBAL_WINDOW_MS = Math.max(120000, parseInt(process.env.KRO_DEEP
 const KRO_DEEP_GLOBAL_MAX = Math.max(3, parseInt(process.env.KRO_DEEP_GLOBAL_MAX || '24', 10));
 const KRO_DEEP_GLOBAL_SOFT_RATIO = Math.min(0.99, Math.max(0.5, parseFloat(process.env.KRO_DEEP_GLOBAL_SOFT_RATIO || '0.8')));
 const KRO_DEEP_CACHE_TTL_MS = Math.max(300000, parseInt(process.env.KRO_DEEP_CACHE_TTL_MS || `${2 * 60 * 60 * 1000}`, 10));
+/** После «мягкого» TTL кэш всё ещё отдаём как stale (без нового API), пока не истёк жёсткий срок. */
+const KRO_DEEP_CACHE_HARD_EXPIRE_MS = Math.max(
+  KRO_DEEP_CACHE_TTL_MS,
+  parseInt(process.env.KRO_DEEP_CACHE_HARD_EXPIRE_MS || `${7 * 24 * 60 * 60 * 1000}`, 10),
+);
+/** Пауза между задачами очереди deep — снижает пики к Telegram. */
+const KRO_DEEP_QUEUE_INTER_JOB_MS = Math.max(0, parseInt(process.env.KRO_DEEP_QUEUE_INTER_JOB_MS || '2500', 10));
+/** Если задан — POST /api/kro/ops/deep-breathe с Authorization: Bearer <secret> (без секрета маршрут 404). */
+const KRO_DEEP_OPS_SECRET = (process.env.KRO_DEEP_OPS_SECRET || '').toString().trim();
+
+const KRO_DEEP_CACHE_SERVABLE = new Set(['ok', 'incomplete', 'not_applicable']);
 
 const kroDeepGlobalRuns = [];
 const kroDeepClientRuns = new Map();
@@ -1386,16 +1397,31 @@ function kroDeepRecordSuccessfulTelegramDeep(clientId) {
   kroDeepClientRuns.set(id, kroDeepPruneTimestamps(arr, KRO_DEEP_CLIENT_WINDOW_MS));
 }
 
-function kroDeepCacheGet(channelKey) {
+function kroDeepCacheResolve(channelKey) {
   const k = (channelKey || '').toString().trim();
   if (!k) return null;
   const e = kroDeepChannelCache.get(k);
   if (!e) return null;
-  if (Date.now() - e.ts > KRO_DEEP_CACHE_TTL_MS) {
+  const age = Date.now() - e.ts;
+  if (age > KRO_DEEP_CACHE_HARD_EXPIRE_MS) {
     kroDeepChannelCache.delete(k);
     return null;
   }
-  return e;
+  return { k, entry: e, fresh: age <= KRO_DEEP_CACHE_TTL_MS, age_ms: age };
+}
+
+/** Только «свежий» слой кэша (как раньше): для мест, где stale не подходит. */
+function kroDeepCacheGet(channelKey) {
+  const r = kroDeepCacheResolve(channelKey);
+  if (!r || !r.fresh) return null;
+  return r.entry;
+}
+
+function kroDeepCacheServableResolved(channelKey) {
+  const r = kroDeepCacheResolve(channelKey);
+  if (!r) return null;
+  if (!KRO_DEEP_CACHE_SERVABLE.has(String(r.entry.deepStatus || ''))) return null;
+  return r;
 }
 
 function kroDeepCacheSet(channelKey, payload) {
@@ -1404,14 +1430,15 @@ function kroDeepCacheSet(channelKey, payload) {
   kroDeepChannelCache.set(k, { ts: Date.now(), ...payload });
 }
 
-/** Подсказка для UI: в кэше уже есть свежий deep по этому каналу (для fast и deep). */
+/** Подсказка для UI: в кэше уже есть пригодный deep (свежий или stale). */
 function kroDeepCacheHintForKey(channelKey) {
-  const c = kroDeepCacheGet(channelKey);
-  if (!c) return null;
+  const r = kroDeepCacheServableResolved(channelKey);
+  if (!r) return null;
   return {
-    has_fresh_deep: true,
-    age_ms: Math.max(0, Date.now() - c.ts),
-    cached_deep_status: c.deepStatus || null,
+    has_fresh_deep: r.fresh,
+    has_stale_deep: !r.fresh,
+    age_ms: r.age_ms,
+    cached_deep_status: r.entry.deepStatus || null,
   };
 }
 
@@ -1488,7 +1515,11 @@ async function kroDeepDrainQueue() {
   } finally {
     kroDeepQueueWorkerBusy = false;
     if (kroDeepWaitQueue.length) {
-      setImmediate(() => kroDeepProcessQueueSoon());
+      if (KRO_DEEP_QUEUE_INTER_JOB_MS > 0) {
+        setTimeout(() => kroDeepProcessQueueSoon(), KRO_DEEP_QUEUE_INTER_JOB_MS);
+      } else {
+        setImmediate(() => kroDeepProcessQueueSoon());
+      }
     }
   }
 }
@@ -5378,75 +5409,89 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     let deepStatus = 'not_requested';
     let deepAvailableAt = null;
     let deepFromCacheHit = false;
+    let deepCacheStale = false;
     let deepCacheAgeMs = null;
     /** @type {{ server_deep_blocked: true, server_throttle_scope: string, message_ru: string, wait_minutes_approx?: number, wait_seconds_approx?: number } | null} */
     let serverThrottleMeta = null;
     /** @type {{ deep_queued: true, deep_queue_position: number, deep_queue_eta_minutes: number, message_ru: string } | null} */
     let deepQueueGate = null;
 
+    const deepRefreshRaw = (req.query.deep_refresh ?? req.query.refresh ?? '').toString().trim().toLowerCase();
+    const deepRefresh =
+      deepRefreshRaw === '1' || deepRefreshRaw === 'true' || deepRefreshRaw === 'yes';
+
     if (deepMode) {
+      const servableCached = deepRefresh ? null : kroDeepCacheServableResolved(key);
       if (floodState.active) {
-        deepStatus = 'skipped_flood';
-        deepAvailableAt = floodState.deep_available_at;
-        parsedOnce = kroSyntheticFloodParsedForDeepSkip(key);
-        once = { ok: true, parsed: parsedOnce, stderr: '' };
-      } else {
-        const fromCache = kroDeepCacheGet(key);
-        if (fromCache) {
+        if (servableCached) {
           deepFromCacheHit = true;
-          deepCacheAgeMs = Math.max(0, Date.now() - fromCache.ts);
-          once = fromCache.once;
-          parsedOnce = fromCache.parsedOnce;
-          deepStatus = fromCache.deepStatus;
-          deepAvailableAt = fromCache.deepAvailableAt || null;
+          deepCacheStale = !servableCached.fresh;
+          deepCacheAgeMs = servableCached.age_ms;
+          once = servableCached.entry.once;
+          parsedOnce = servableCached.entry.parsedOnce;
+          deepStatus = servableCached.entry.deepStatus;
+          deepAvailableAt = servableCached.entry.deepAvailableAt || null;
         } else {
-          const allow = kroDeepAllowNewTelegramDeep(clientId);
-          if (!allow.allowed) {
-            if (allow.scope === 'global') {
-              const q = kroDeepEnqueue(key, channelForOnce, clientId);
-              deepStatus = 'queued';
-              parsedOnce = kroSyntheticQueuedParsed(key, q.position, q.eta_minutes);
-              once = { ok: true, parsed: parsedOnce, stderr: '' };
-              deepQueueGate = {
-                deep_queued: true,
-                deep_queue_position: q.position,
-                deep_queue_eta_minutes: q.eta_minutes,
-                message_ru: String(parsedOnce.error || ''),
-              };
-            } else {
-              deepStatus = 'server_rate_limited';
-              serverThrottleMeta = {
-                server_deep_blocked: true,
-                server_throttle_scope: allow.scope,
-                message_ru: allow.message_ru,
-                wait_minutes_approx: allow.wait_minutes_approx,
-                wait_seconds_approx: allow.wait_seconds_approx,
-              };
-              parsedOnce = kroSyntheticServerDeepThrottleParsed(key, allow.message_ru);
-              once = { ok: true, parsed: parsedOnce, stderr: '' };
-            }
+          deepStatus = 'skipped_flood';
+          deepAvailableAt = floodState.deep_available_at;
+          parsedOnce = kroSyntheticFloodParsedForDeepSkip(key);
+          once = { ok: true, parsed: parsedOnce, stderr: '' };
+        }
+      } else if (servableCached) {
+        deepFromCacheHit = true;
+        deepCacheStale = !servableCached.fresh;
+        deepCacheAgeMs = servableCached.age_ms;
+        once = servableCached.entry.once;
+        parsedOnce = servableCached.entry.parsedOnce;
+        deepStatus = servableCached.entry.deepStatus;
+        deepAvailableAt = servableCached.entry.deepAvailableAt || null;
+      } else {
+        const allow = kroDeepAllowNewTelegramDeep(clientId);
+        if (!allow.allowed) {
+          if (allow.scope === 'global') {
+            const q = kroDeepEnqueue(key, channelForOnce, clientId);
+            deepStatus = 'queued';
+            parsedOnce = kroSyntheticQueuedParsed(key, q.position, q.eta_minutes);
+            once = { ok: true, parsed: parsedOnce, stderr: '' };
+            deepQueueGate = {
+              deep_queued: true,
+              deep_queue_position: q.position,
+              deep_queue_eta_minutes: q.eta_minutes,
+              message_ru: String(parsedOnce.error || ''),
+            };
           } else {
-            once = kroRunCheckOnce(channelForOnce, { readOnly: true });
-            if (once.stderr) console.error('KRO channel-profile check_once stderr:', once.stderr);
-            parsedOnce = kroNormalizeCheckOnceForAnalysis(once);
-            if (parsedOnce.telegram_rate_limited) {
-              kroRecordTelegramFloodWait(key, parsedOnce.flood_wait_seconds);
-              deepStatus = 'rate_limited';
-              deepAvailableAt = kroGetTelegramFloodState().deep_available_at;
+            deepStatus = 'server_rate_limited';
+            serverThrottleMeta = {
+              server_deep_blocked: true,
+              server_throttle_scope: allow.scope,
+              message_ru: allow.message_ru,
+              wait_minutes_approx: allow.wait_minutes_approx,
+              wait_seconds_approx: allow.wait_seconds_approx,
+            };
+            parsedOnce = kroSyntheticServerDeepThrottleParsed(key, allow.message_ru);
+            once = { ok: true, parsed: parsedOnce, stderr: '' };
+          }
+        } else {
+          once = kroRunCheckOnce(channelForOnce, { readOnly: true });
+          if (once.stderr) console.error('KRO channel-profile check_once stderr:', once.stderr);
+          parsedOnce = kroNormalizeCheckOnceForAnalysis(once);
+          if (parsedOnce.telegram_rate_limited) {
+            kroRecordTelegramFloodWait(key, parsedOnce.flood_wait_seconds);
+            deepStatus = 'rate_limited';
+            deepAvailableAt = kroGetTelegramFloodState().deep_available_at;
+          } else {
+            kroDeepRecordSuccessfulTelegramDeep(clientId);
+            if (once.ok !== true) {
+              deepStatus = 'failed';
+            } else if (parsedOnce.not_crypto) {
+              deepStatus = 'not_applicable';
+            } else if (parsedOnce.found === true) {
+              deepStatus = 'ok';
             } else {
-              kroDeepRecordSuccessfulTelegramDeep(clientId);
-              if (once.ok !== true) {
-                deepStatus = 'failed';
-              } else if (parsedOnce.not_crypto) {
-                deepStatus = 'not_applicable';
-              } else if (parsedOnce.found === true) {
-                deepStatus = 'ok';
-              } else {
-                deepStatus = 'incomplete';
-              }
-              if (['ok', 'incomplete', 'not_applicable'].includes(deepStatus)) {
-                kroDeepCacheSet(key, { once, parsedOnce, deepStatus, deepAvailableAt });
-              }
+              deepStatus = 'incomplete';
+            }
+            if (['ok', 'incomplete', 'not_applicable'].includes(deepStatus)) {
+              kroDeepCacheSet(key, { once, parsedOnce, deepStatus, deepAvailableAt });
             }
           }
         }
@@ -5517,6 +5562,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         deep_status: deepStatus,
         deep_available_at: deepAvailableIso,
         deep_cache_hit: deepFromCacheHit,
+        deep_cache_stale: deepCacheStale,
         deep_cache_age_ms: deepCacheAgeMs,
         deep_cache_hint,
         deep_gate: kroBuildChannelProfileDeepGate(deepGatePayload),
@@ -5584,6 +5630,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         deep_status: deepStatus,
         deep_available_at: deepAvailableIso,
         deep_cache_hit: deepFromCacheHit,
+        deep_cache_stale: deepCacheStale,
         deep_cache_age_ms: deepCacheAgeMs,
         deep_cache_hint,
         deep_gate: kroBuildChannelProfileDeepGate(deepGatePayload),
@@ -5660,6 +5707,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       deep_status: deepStatus,
       deep_available_at: deepAvailableIso,
       deep_cache_hit: deepFromCacheHit,
+      deep_cache_stale: deepCacheStale,
       deep_cache_age_ms: deepCacheAgeMs,
       deep_cache_hint,
       deep_gate: kroBuildChannelProfileDeepGate(deepGatePayload),
@@ -5717,6 +5765,49 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       error: 'internal_error',
     });
   }
+});
+
+// Сброс in-memory deep (кэш / очередь / счётчики лимитов). Только с KRO_DEEP_OPS_SECRET; не трогает FLOOD_WAIT Telegram.
+app.post('/api/kro/ops/deep-breathe', express.json({ limit: '4000' }), (req, res) => {
+  if (!KRO_DEEP_OPS_SECRET) {
+    return res.status(404).json({ error: 'not_found' });
+  }
+  const auth = (req.headers.authorization || '').toString();
+  const bearer = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  const qSec = (req.query.secret || '').toString();
+  if (bearer !== KRO_DEEP_OPS_SECRET && qSec !== KRO_DEEP_OPS_SECRET) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const scope = ((body.scope ?? req.query.scope) || 'cache').toString().trim().toLowerCase();
+  if (!['cache', 'queue', 'limits', 'all'].includes(scope)) {
+    return res.status(400).json({ error: 'bad_scope', message: 'scope must be cache, queue, limits, or all' });
+  }
+  const nCache = kroDeepChannelCache.size;
+  const nQueue = kroDeepWaitQueue.length;
+  const out = {
+    ok: true,
+    scope,
+    cache_entries_before: nCache,
+    queue_jobs_before: nQueue,
+    cache_cleared: false,
+    queue_cleared: false,
+    limits_reset: false,
+  };
+  if (scope === 'cache' || scope === 'all') {
+    kroDeepChannelCache.clear();
+    out.cache_cleared = true;
+  }
+  if (scope === 'queue' || scope === 'all') {
+    kroDeepWaitQueue.length = 0;
+    out.queue_cleared = true;
+  }
+  if (scope === 'limits' || scope === 'all') {
+    kroDeepGlobalRuns.length = 0;
+    kroDeepClientRuns.clear();
+    out.limits_reset = true;
+  }
+  return res.json(out);
 });
 
 // POST /api/kro/update и /api/update — принять JSON для сайта (12:00 и 00:00 MSK), записать в kro-12h-stats.json

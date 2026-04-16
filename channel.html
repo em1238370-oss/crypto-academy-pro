@@ -757,6 +757,7 @@
       window.__chDeepQueuePoll = null;
     }
     var deep = !!opts.deep;
+    var forceRefresh = !!opts.forceRefresh;
     window.__chAttempt = attemptNum;
     window.__chDeepMode = deep;
     showChLoading(attemptNum, deep);
@@ -768,6 +769,7 @@
       }
     } catch (eSig) { /* ignore */ }
     var q = '/api/kro/channel-profile?u=' + encodeURIComponent(queryU) + (deep ? '&mode=deep' : '');
+    if (deep && forceRefresh) q += '&deep_refresh=1';
     fetch(q, fetchOpts)
     .then(function (res) {
       if (!res.ok) throw new Error('http_' + res.status);
@@ -919,12 +921,20 @@
       if (flood && retryStr) subParts.push(retryStr.replace(/\.$/, ''));
       if (data.deep_cache_hit && data.deep_cache_age_ms != null && apiMode === 'deep') {
         var cm = Math.max(1, Math.round(Number(data.deep_cache_age_ms) / 60000));
-        subParts.push('глубокий: из кэша (~' + cm + ' мин назад)');
+        if (data.deep_cache_stale) {
+          subParts.push('глубокий: из кэша (~' + cm + ' мин назад), данные не свежие — без нового запроса к Telegram');
+        } else {
+          subParts.push('глубокий: из кэша (~' + cm + ' мин назад)');
+        }
       }
-      if (data.deep_cache_hint && data.deep_cache_hint.has_fresh_deep && apiMode === 'fast') {
+      if (data.deep_cache_hint && (data.deep_cache_hint.has_fresh_deep || data.deep_cache_hint.has_stale_deep) && apiMode === 'fast') {
         var cmHint = Math.max(1, Math.round(Number(data.deep_cache_hint.age_ms) / 60000));
         var stHint = (data.deep_cache_hint.cached_deep_status || '').toString().trim();
-        subParts.push('глубокий в кэше (~' + cmHint + ' мин' + (stHint ? ', ' + stHint : '') + ') — повтор не обязателен');
+        var staleHint = data.deep_cache_hint.has_stale_deep && !data.deep_cache_hint.has_fresh_deep;
+        subParts.push(
+          (staleHint ? 'глубокий в кэше (устарел, ~' : 'глубокий в кэше (~') +
+            cmHint + ' мин' + (stHint ? ', ' + stHint : '') + ') — можно открыть без нового API'
+        );
       }
       sub.textContent = subParts.join(' · ');
 
@@ -1011,7 +1021,8 @@
   var retryBtn = document.getElementById('ch-retry-btn');
   if (retryBtn) {
     retryBtn.onclick = function () {
-      loadChannelReport((window.__chAttempt || 1) + 1, { deep: !!window.__chDeepMode });
+      var isDeep = !!window.__chDeepMode;
+      loadChannelReport((window.__chAttempt || 1) + 1, { deep: isDeep, forceRefresh: isDeep });
     };
   }
   var reloadBtn = document.getElementById('ch-reload-page-btn');

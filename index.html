@@ -1187,9 +1187,13 @@
                        } else if (data.mode !== 'deep') {
                            footParts.push('глубокий разбор ленты: /channel/' + encodeURIComponent(queryU) + ' → кнопка «Глубокий анализ ленты»');
                        }
-                       if (data.deep_cache_hint && data.deep_cache_hint.has_fresh_deep && data.mode !== 'deep') {
+                       if (data.deep_cache_hint && (data.deep_cache_hint.has_fresh_deep || data.deep_cache_hint.has_stale_deep) && data.mode !== 'deep') {
                            var ageF = Math.max(1, Math.round(Number(data.deep_cache_hint.age_ms) / 60000));
-                           footParts.push('в кэше свежий глубокий (~' + ageF + ' мин)');
+                           footParts.push(
+                               data.deep_cache_hint.has_stale_deep && !data.deep_cache_hint.has_fresh_deep
+                                   ? 'в кэше глубокий (~' + ageF + ' мин), не самый свежий'
+                                   : 'в кэше свежий глубокий (~' + ageF + ' мин)'
+                           );
                        }
                        footEl.textContent = footParts.join(' · ');
                    }
