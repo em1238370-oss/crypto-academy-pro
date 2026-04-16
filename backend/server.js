@@ -1322,6 +1322,37 @@ function kroSyntheticFloodParsedForDeepSkip(channelKey) {
   };
 }
 
+/** Для фронта: можно ли сейчас запускать глубокий прогон (Telegram FLOOD_WAIT). */
+function kroBuildChannelProfileDeepGate() {
+  const st = kroGetTelegramFloodState();
+  if (!st.active) {
+    return {
+      can_run_deep: true,
+      telegram_flood_active: false,
+      retry_after_iso: null,
+      retry_after_msk: null,
+      wait_seconds_approx: null,
+      wait_minutes_approx: null,
+      message_ru: null,
+    };
+  }
+  const sec = Math.max(0, Math.ceil((kroTelegramFloodUntilMs - Date.now()) / 1000));
+  const iso = st.deep_available_at;
+  const msk = iso ? kroFormatIsoForMsk(iso) : '';
+  const mins = Math.max(1, Math.ceil(sec / 60));
+  return {
+    can_run_deep: false,
+    telegram_flood_active: true,
+    retry_after_iso: iso,
+    retry_after_msk: msk || null,
+    wait_seconds_approx: sec,
+    wait_minutes_approx: mins,
+    message_ru: msk
+      ? `Telegram ограничил количество запросов к каналам. Глубокое чтение ленты сейчас недоступно; ориентировочно снова можно попробовать после ${msk} (через ≈${mins} мин).`
+      : `Telegram ограничил количество запросов к каналам. Подождите около ${mins} мин. и откройте страницу канала снова.`,
+  };
+}
+
 function getTodayMSK() {
   const d = new Date();
   const msk = new Date(d.toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
@@ -4919,6 +4950,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         mode: 'fast',
         deep_status: null,
         deep_available_at: null,
+        deep_gate: kroBuildChannelProfileDeepGate(),
         profile: null,
         merged_rows: undefined,
         risk_index: null,
@@ -5012,6 +5044,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         mode: responseMode,
         deep_status: deepStatus,
         deep_available_at: deepAvailableIso,
+        deep_gate: kroBuildChannelProfileDeepGate(),
         profile: null,
         merged_rows: undefined,
         risk_index: null,
@@ -5059,6 +5092,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         mode: responseMode,
         deep_status: deepStatus,
         deep_available_at: deepAvailableIso,
+        deep_gate: kroBuildChannelProfileDeepGate(),
         profile: null,
         merged_rows: matches.length > 1 ? matches.length : undefined,
         risk_index: null,
@@ -5115,6 +5149,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       mode: responseMode,
       deep_status: deepStatus,
       deep_available_at: deepAvailableIso,
+      deep_gate: kroBuildChannelProfileDeepGate(),
       profile,
       merged_rows: matches.length > 1 ? matches.length : undefined,
       risk_index,
@@ -5149,6 +5184,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       mode: 'fast',
       deep_status: null,
       deep_available_at: null,
+      deep_gate: kroBuildChannelProfileDeepGate(),
       error: 'internal_error',
     });
   }

@@ -296,6 +296,8 @@
                                <section class="kro-inline-sec" id="kro-inline-sec5"><h4 class="kro-inline-sec-h">Итоговый вывод</h4><div id="kro-inline-s5" class="kro-inline-sec-body"></div></section>
                            </div>
                            <p class="kro-inline-foot" id="kro-inline-foot"></p>
+                           <div class="kro-inline-deep-panel hidden" id="kro-inline-deep-panel" hidden></div>
+                           <p class="kro-inline-deep-demo hidden" id="kro-inline-deep-demo" hidden></p>
                            <div class="kro-inline-actions">
                                <button type="button" class="kro-report-submit" id="kro-inline-reset">Проверить другой канал</button>
                            </div>
@@ -1059,6 +1061,41 @@
                    checkBtn.disabled = false;
                    checkInput.disabled = false;
                }
+               function fillInlineDeepPanel(data, queryU) {
+                   var panel = document.getElementById('kro-inline-deep-panel');
+                   var demo = document.getElementById('kro-inline-deep-demo');
+                   if (!panel || !demo) return;
+                   var dg = data.deep_gate;
+                   if (!dg || typeof dg !== 'object') {
+                       panel.hidden = true;
+                       panel.classList.add('hidden');
+                       panel.innerHTML = '';
+                       demo.hidden = true;
+                       demo.classList.add('hidden');
+                       demo.innerHTML = '';
+                       return;
+                   }
+                   var chUrl = base + '/channel/' + encodeURIComponent(queryU);
+                   var demoUrl = base + '/channel/telegram';
+                   panel.hidden = false;
+                   panel.classList.remove('hidden');
+                   if (dg.can_run_deep === false) {
+                       panel.className = 'kro-inline-deep-panel kro-inline-deep-panel--blocked';
+                       var sub = dg.message_ru
+                           ? '<p class="kro-inline-deep-text">' + esc(dg.message_ru) + '</p>'
+                           : '<p class="kro-inline-deep-text">Telegram ограничил запросы. То, что выше — только быстрый отчёт; глубокое чтение ленты станет возможно после снятия лимита.</p>';
+                       panel.innerHTML = '<strong class="kro-inline-deep-title">Глубокий анализ временно недоступен</strong>' + sub +
+                           '<p class="kro-inline-deep-honest">Сейчас показан только базовый быстрый анализ (без полной выборки постов из Telegram). Глубокий прогон для этого канала не выполнялся.</p>';
+                   } else {
+                       panel.className = 'kro-inline-deep-panel kro-inline-deep-panel--ok';
+                       panel.innerHTML = '<strong class="kro-inline-deep-title">Глубокий анализ ленты сейчас можно запустить</strong>' +
+                           '<p class="kro-inline-deep-text">Текст выше — быстрый персональный отчёт по базе и мониторингу. Чтобы прочитать ленту канала в Telegram (обычно до 3 минут), откройте страницу канала и нажмите «Глубокий анализ ленты».</p>' +
+                           '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta" href="' + esc(chUrl) + '">Открыть страницу канала и запустить глубокий анализ</a></p>';
+                   }
+                   demo.hidden = false;
+                   demo.classList.remove('hidden');
+                   demo.innerHTML = '<a class="kro-inline-deep-demo-link" href="' + esc(demoUrl) + '">Пример: как выглядит страница с глубоким отчётом (канал Telegram)</a>';
+               }
                function fillInlineReport(data, queryU, displayLabel) {
                    var a = data.analysis || {};
                    var c = a.conclusion || {};
@@ -1135,6 +1172,7 @@
                        }
                        footEl.textContent = footParts.join(' · ');
                    }
+                   fillInlineDeepPanel(data, queryU);
                }
                function runHomeChannelCheck(slug) {
                    ensureKroCheckPanelVisible();
@@ -1238,6 +1276,18 @@
                        if (inlineReport) {
                            inlineReport.classList.add('hidden');
                            inlineReport.hidden = true;
+                       }
+                       var dp = document.getElementById('kro-inline-deep-panel');
+                       var dd = document.getElementById('kro-inline-deep-demo');
+                       if (dp) {
+                           dp.hidden = true;
+                           dp.classList.add('hidden');
+                           dp.innerHTML = '';
+                       }
+                       if (dd) {
+                           dd.hidden = true;
+                           dd.classList.add('hidden');
+                           dd.innerHTML = '';
                        }
                        checkResult.classList.add('hidden');
                        checkResult.innerHTML = '';
