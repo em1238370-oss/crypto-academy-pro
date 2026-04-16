@@ -2566,16 +2566,9 @@ function kroV0TrimSentence(s, maxLen) {
 }
 
 /** Подмешивает в уже собранный analysis сигналы широкого мониторинга (без смены схемы). */
-/** Когда в scam_base нет строки — поясняем, что отчёт всё равно строится (живая проверка + мониторинг). */
-function kroV0PrependNoScamBaseCardNote(analysis, opts) {
-  if (!analysis || typeof analysis !== 'object') return;
-  const fast = opts && opts.fast === true;
-  const line = fast
-    ? 'В подтверждённой базе scam_base этой записи не было — ниже быстрый разбор по открытым отчётам и широкому мониторингу (без выборки ленты Telegram в этом запросе).'
-    : 'В подтверждённой базе scam_base этой записи не было — ниже разовая проверка ленты Telegram и данные широкого мониторинга (если строка есть).';
-  const bi = Array.isArray(analysis.basic_info) ? analysis.basic_info : [];
-  if (bi.some((x) => /scam_base.*не было/i.test(String(x)))) return;
-  analysis.basic_info = [line, ...bi].slice(0, 5);
+/** Раньше добавляли пояснение про отсутствие строки в scam_base — убрано из UI как служебный шум. */
+function kroV0PrependNoScamBaseCardNote(_analysis, _opts) {
+  /* no-op */
 }
 
 function kroV0EnrichAnalysisWithWatch(analysis, watch) {
@@ -3278,17 +3271,7 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
   const sumMin = sumsPos.length ? Math.min(...sumsPos) : 0;
   const sumMax = sumsPos.length ? Math.max(...sumsPos) : 0;
 
-  let lead = '';
-  if (!nonFp.length) {
-    lead = `По каналу ${displayCh} в нашей таблице отчётов сопоставленных жалоб не найдено. Прямой разбор ленты Telegram в этом запросе не выполнялся — ниже базовый разбор по широкому мониторингу и открытым данным.`;
-  } else if (nonFp.length === 1) {
-    lead = `По каналу ${displayCh} в отчётах одна запись (без пометки false_positive). Ленту Telegram здесь не читали — вывод опирается только на эту строку и мониторинг.`;
-  } else {
-    lead = `По каналу ${displayCh} в отчётах ${nonFp.length} записей (без пометки false_positive). Ленту Telegram в этом запросе не перечитывали — оценка по суммам и текстам отчётов плюс широкий мониторинг.`;
-  }
-
-  const baseInfo = [lead];
-  baseInfo.push(`Идентификатор: ${displayCh} (нормализованный ключ: ${channelKey}).`);
+  const baseInfo = [];
 
   let _kro_watch_baked = false;
   if (watchRow && (watchRow.username || '').toString().trim()) {
