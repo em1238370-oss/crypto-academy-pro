@@ -15,6 +15,25 @@ from pathlib import Path
 _SCRIPT_DIR = Path(__file__).resolve().parent
 
 
+def has_configured_session() -> bool:
+    """
+    True, если check_once / worker смогут авторизоваться без интерактива:
+    StringSession в env, явный путь к .session, или файл рядом со скриптом.
+    """
+    if (os.environ.get('KRO_TELEGRAM_SESSION_STRING') or os.environ.get('TELEGRAM_SESSION_STRING') or '').strip():
+        return True
+    explicit = (os.environ.get('TELEGRAM_SESSION_PATH') or '').strip()
+    if explicit:
+        p = Path(explicit)
+        if not str(p).endswith('.session'):
+            p = p.with_suffix('.session')
+        return p.is_file()
+    name = (os.environ.get('TELEGRAM_SESSION_NAME') or 'kro_worker').strip()
+    if (_SCRIPT_DIR / name).with_suffix('.session').is_file():
+        return True
+    return Path(name + '.session').is_file()
+
+
 def build_kro_telegram_client(api_id: int, api_hash: str):
     """
     Возвращает TelegramClient (ещё не connect).

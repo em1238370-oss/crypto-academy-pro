@@ -1,8 +1,12 @@
-# Проверка любого канала: Node (API) + Python 3 + Telethon (живая проверка)
+# Проверка любого канала: Node (API) + Python 3 + Telethon (живая проверка check_once).
+# На Render выберите Environment: Docker и этот Dockerfile (или подключите render.yaml).
 FROM node:20-bookworm
 
-# Python 3 и pip для kro-worker/check_once.py
-RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 python3-pip \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 COPY . .
@@ -10,8 +14,9 @@ COPY . .
 WORKDIR /app/backend
 RUN npm ci 2>/dev/null || npm install --production
 
-# Зависимости для живой проверки каналов (Telethon)
-RUN pip3 install --break-system-packages -r kro-worker/requirements.txt 2>/dev/null || pip3 install -r kro-worker/requirements.txt
+# Telethon и зависимости kro-worker (обязательно для /api/kro/channel-profile).
+RUN pip3 install --no-cache-dir --break-system-packages -r kro-worker/requirements.txt \
+  || pip3 install --no-cache-dir -r kro-worker/requirements.txt
 
 WORKDIR /app/backend
 EXPOSE 4000

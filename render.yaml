@@ -1,0 +1,20 @@
+# Render Blueprint: Node API + Python 3 + Telethon (см. корневой Dockerfile).
+# Подключите репозиторий как Blueprint или вручную создайте Web Service с Docker.
+#
+# Обязательные секреты (Environment) для живой проверки каналов:
+#   TELEGRAM_API_ID, TELEGRAM_API_HASH,
+#   KRO_TELEGRAM_SESSION_STRING (StringSession из backend/kro-worker/convert_session.py)
+# Плюс существующие: KRO_SHEET_ID, KRO_GOOGLE_CREDENTIALS_JSON, и т.д.
+
+services:
+  - type: web
+    name: crypto-academy-pro
+    runtime: docker
+    region: frankfurt
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production

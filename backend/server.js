@@ -22,6 +22,11 @@ app.use(cors());
 app.use('/api/payments/nowpayments/callback', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
+app.get('/api/health', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ ok: true, service: 'crypto-academy-pro' });
+});
+
 // Disable strict CSP headers that block inline scripts
 app.use((req, res, next) => {
   // Remove CSP header if set by Express middleware

@@ -22,9 +22,9 @@ from urllib.request import urlopen, Request
 from urllib.parse import urlencode
 from urllib.error import URLError, HTTPError
 
-from telethon import TelegramClient
 from telethon.tl.functions.messages import ImportChatInviteRequest
 from telethon.errors import ChannelPrivateError, InviteHashExpiredError, UsernameNotOccupiedError
+import kro_telethon_session as _kro_ts
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -34,7 +34,6 @@ import kro_false_positive_guards as _kro_fp_guards
 _raw_id = (os.environ.get('TELEGRAM_API_ID') or '').strip()
 TELEGRAM_API_ID = int(_raw_id) if _raw_id.isdigit() else 0
 TELEGRAM_API_HASH = (os.environ.get('TELEGRAM_API_HASH') or '').strip()
-TELEGRAM_SESSION_NAME = os.environ.get('TELEGRAM_SESSION_NAME', 'kro_worker')
 
 KRO_SHEET_ID = os.environ.get('KRO_SHEET_ID', '')
 KRO_SCAM_BASE_RANGE = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:H')
@@ -582,11 +581,7 @@ def _fetch_tgstat(channel_id_for_api):
 
 
 async def run_check(channel_id, period_days=30):
-    client = TelegramClient(
-        TELEGRAM_SESSION_NAME,
-        TELEGRAM_API_ID,
-        TELEGRAM_API_HASH
-    )
+    client = _kro_ts.build_kro_telegram_client(TELEGRAM_API_ID, TELEGRAM_API_HASH)
     await client.start()
     try:
         entity = await get_entity(client, channel_id)
@@ -857,11 +852,13 @@ def main():
     if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
         out({'found': False, 'error': 'telegram not configured'})
         return
-    session_file = TELEGRAM_SESSION_NAME + '.session'
-    if not os.path.isfile(session_file):
+    if not _kro_ts.has_configured_session():
         out({
             'found': False,
-            'error': 'Сначала один раз войдите в Telegram. В терминале из папки проекта выполните: node scripts/kro-login.js'
+            'error': (
+                'Нет сохранённой Telegram-сессии: задайте KRO_TELEGRAM_SESSION_STRING (StringSession) '
+                'или положите kro_worker.session рядом с check_once. Локально: node scripts/kro-login.js'
+            ),
         })
         return
     try:
