@@ -34,7 +34,7 @@
 <main class="mon-container ch-main">
   <div id="ch-loading" class="ch-state ch-state--loading">
     <h1 class="ch-title ch-title--loading">Готовим отчёт по каналу</h1>
-    <p class="ch-lead ch-lead--loading" id="ch-loading-lead">Сначала — быстрый отчёт по базе (обычно секунды). Глубокий разбор ленты — отдельная кнопка на странице, до нескольких минут; если нужно подождать, мы покажем, когда обновить.</p>
+    <p class="ch-lead ch-lead--loading" id="ch-loading-lead">Сначала вы получаете быстрый правдивый отчёт за секунды. Глубокий анализ ленты (до 6 месяцев истории) запускается отдельно и обычно занимает до 3 минут.</p>
     <p class="ch-meta ch-meta--loading" id="ch-loading-meta1">Быстрый слой не читает все посты в Telegram — поэтому почти не зависит от лимитов мессенджера.</p>
     <p class="ch-meta ch-meta--loading" id="ch-loading-meta2">Глубокий режим читает ленту; при ограничениях Telegram остаётся быстрый отчёт и понятное время для повтора.</p>
     <p id="ch-loading-retry" class="ch-meta ch-meta--loading" hidden></p>
@@ -829,13 +829,13 @@
     var m1 = document.getElementById('ch-loading-meta1');
     var m2 = document.getElementById('ch-loading-meta2');
     if (deep) {
-      if (lead) lead.textContent = 'Глубокий анализ: сервер читает ленту в Telegram за широкое окно — обычно до ~3 минут.';
-      if (m1) m1.textContent = 'Учитывается текст постов и ответы; медиа без подписи не входят. При лимите Telegram вы увидите быстрый отчёт и время для повтора.';
+      if (lead) lead.textContent = 'Глубокий анализ: читаем ленту Telegram за окно до 6 месяцев — обычно до ~3 минут.';
+      if (m1) m1.textContent = 'Учитывается текст постов и ответы; медиа без подписи не входят. Если сработал лимит Telegram, вы уже видите быстрый отчёт и время повтора.';
       if (m2) m2.hidden = true;
     } else {
-      if (lead) lead.textContent = 'Сначала открываем быстрый отчёт по базе и открытым отчётам (обычно секунды). Глубокий разбор ленты — кнопкой ниже на странице.';
+      if (lead) lead.textContent = 'Сначала открываем быстрый отчёт по базе и мониторингу (обычно секунды). Глубокий разбор ленты до 6 месяцев — кнопкой ниже.';
       if (m1) m1.textContent = 'Быстрый режим не дергает полную выборку постов и почти не упирается в лимиты Telegram.';
-      if (m2) { m2.hidden = false; m2.textContent = 'Глубокий режим читает ленту за широкое окно; при FLOOD_WAIT сервер покажет быстрый слой и время, когда можно повторить.'; }
+      if (m2) { m2.hidden = false; m2.textContent = 'Глубокий режим читает ленту до 6 месяцев; при FLOOD_WAIT сервер покажет быстрый слой и время, когда можно повторить.'; }
     }
     var lr = document.getElementById('ch-loading-retry');
     if (lr) {

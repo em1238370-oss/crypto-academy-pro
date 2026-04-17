@@ -1299,9 +1299,9 @@ async function kroFetchChannelsWatchRawCached(client) {
   return raw;
 }
 
-/** Окно истории постов для живой проверки (check_once): только 30, 180 или 365. По умолчанию год — главный сценарий «полная проверка канала». */
-const kroCheckOncePeriodDaysParsed = parseInt(process.env.KRO_CHECK_ONCE_PERIOD_DAYS || '365', 10);
-const kroCheckOncePeriodDays = [30, 180, 365].includes(kroCheckOncePeriodDaysParsed) ? kroCheckOncePeriodDaysParsed : 365;
+/** Окно истории постов для живой проверки (check_once): только 30, 180 или 365. По умолчанию — 6 месяцев (180 дн.). */
+const kroCheckOncePeriodDaysParsed = parseInt(process.env.KRO_CHECK_ONCE_PERIOD_DAYS || '180', 10);
+const kroCheckOncePeriodDays = [30, 180, 365].includes(kroCheckOncePeriodDaysParsed) ? kroCheckOncePeriodDaysParsed : 180;
 const kroCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_CHECK_ONCE_TIMEOUT_MS || '', 10);
 /** Дефолт deep-check: реальный прогон до 3 минут, чтобы не было «мгновенного шаблона». */
 const kroCheckOnceTimeoutMs = Number.isFinite(kroCheckOnceTimeoutMsParsed) && kroCheckOnceTimeoutMsParsed >= 120000 && kroCheckOnceTimeoutMsParsed <= 180000
