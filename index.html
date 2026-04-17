@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260417-kro-home-deep-gold">
+   <link rel="stylesheet" href="styles.css?v=20260417-kro-home-deep-gold-fast">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -1090,13 +1090,21 @@
                    var hint = (err && err.message) ? String(err.message) : '';
                    var en = (err && err.name) ? String(err.name) : '';
                    if (en === 'AbortError' || /AbortError/i.test(hint)) {
-                       return { title: 'Запрос прервался по времени', paragraphs: ['Проверка на сервере могла ещё идти. Подождите 1–2 минуты и нажмите «Повторить».'] };
+                       return {
+                           title: 'Быстрая проверка не уложилась в время ответа',
+                           paragraphs: [
+                               'Таблицы на сервере иногда отвечают дольше минуты — браузер оборвал ожидание. Нажмите «Повторить» или откройте страницу канала: там тот же отчёт, иногда из кэша быстрее.',
+                           ],
+                       };
                    }
                    if (hint.indexOf('http_504') !== -1 || hint.indexOf('http_502') !== -1 || hint.indexOf('http_524') !== -1) {
-                       return { title: 'Сервер или прокси не дождались конца проверки', paragraphs: ['Попробуйте «Повторить» — если анализ уже завершился, ответ придёт быстрее.'] };
+                       return {
+                           title: 'Сервер не успел отдать ответ целиком',
+                           paragraphs: ['Нажмите «Повторить». Если проверка уже собралась на сервере, ответ придёт сразу.'],
+                       };
                    }
                    if (hint.indexOf('http_408') !== -1 || /timeout/i.test(hint)) {
-                       return { title: 'Таймаут', paragraphs: ['Нажмите «Повторить» и оставьте вкладку открытой.'] };
+                       return { title: 'Таймаут соединения', paragraphs: ['Нажмите «Повторить» или откройте канал по ссылке «страница канала» в блоке ниже (когда отчёт уже показывался).'] };
                    }
                    if (hint.indexOf('http_') === 0) {
                        var code = hint.replace('http_', '');
@@ -1115,7 +1123,12 @@
                    if (/Failed to fetch|NetworkError|network/i.test(hint)) {
                        return { title: 'Нет связи с сервером', paragraphs: ['Проверьте интернет и нажмите «Повторить».'] };
                    }
-                   return { title: 'Не удалось получить отчёт', paragraphs: ['Подождите немного и нажмите «Повторить».'] };
+                   return {
+                       title: 'Не удалось получить отчёт',
+                       paragraphs: [
+                           'Попробуйте «Повторить». Если снова пусто — откройте тот же канал через страницу /channel/…: там тот же быстрый анализ и глубокий режим.',
+                       ],
+                   };
                }
                var __kroProgressTimer = null;
                var __kroProgressPhase = 0;
@@ -1380,7 +1393,7 @@
                    var fetchOpts = { cache: 'no-store' };
                    try {
                        if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-                           fetchOpts.signal = AbortSignal.timeout(90000);
+                           fetchOpts.signal = AbortSignal.timeout(120000);
                        }
                    } catch (eSig) { /* ignore */ }
                    fetch(base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU), fetchOpts)

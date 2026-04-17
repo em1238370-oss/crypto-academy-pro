@@ -3785,8 +3785,8 @@ function kroV0PrependFastModeNote(analysis, profile) {
     bits.push(`потери по карточке: ${lossRub.toLocaleString('ru-RU')} ₽`);
   }
   const line = bits.length
-    ? `Быстрый режим для ${uname}: ленту Telegram в этом запросе не перечитывали; опираемся на карточку и отчёты (${bits.join('; ')}).`
-    : `Быстрый режим для ${uname}: ленту Telegram в этом запросе не перечитывали — только карточка мониторинга и открытые отчёты, без лимитов FLOOD_WAIT.`;
+    ? `${uname}: быстрый слой — карточка и отчёты (${bits.join('; ')}); ленту в Telegram здесь не перечитывали.`
+    : `${uname}: быстрый слой — карточка и отчёты, ленту в Telegram здесь не перечитывали (без FLOOD_WAIT).`;
   const bi = Array.isArray(analysis.basic_info) ? analysis.basic_info : [];
   if (bi.some((x) => /^Быстрый режим/i.test(String(x)))) return;
   analysis.basic_info = [line, ...bi].slice(0, 8);
@@ -3864,12 +3864,10 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
   const tmeS = channelKey ? `https://t.me/s/${channelKey}` : '';
   const baseInfo = [];
   baseInfo.push(
-    `Объект: ${displayCh}. Быстрый режим: сверка с листом жалоб/отчётов KRO и (если есть) строкой широкого мониторинга; публичной карточки scam_base в мониторинге для этого канала нет.`,
+    `Канал ${displayCh}: быстрый разбор по жалобам/отчётам KRO и по строке широкого мониторинга (если она есть). Отдельной публичной карточки в базе по этому нику нет — так бывает часто; это не «ошибка ввода».`,
   );
   if (tmeS) {
-    baseInfo.push(
-      `Публичная лента канала в браузере (без входа в Telegram): ${tmeS} — можно вручную просмотреть последние посты; в этом запросе текст ленты сервером не выгружался.`,
-    );
+    baseInfo.push(`Лента в браузере (без входа в Telegram): ${tmeS} — глазами по постам; текст ленты в этот запрос не подгружали.`);
   }
 
   let _kro_watch_baked = false;
@@ -3878,30 +3876,30 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
     const st = (watchRow.status || '').toString().trim();
     const wc = Number(watchRow.complaints) || 0;
     const lc = (watchRow.last_checked_at || '').toString().trim();
-    const parts = [`В широком мониторинге для ${displayCh}`];
+    const parts = [`Мониторинг: ${displayCh}`];
     if (st) parts.push(`статус «${st}»`);
-    if (wc > 0) parts.push(`в строке учтено жалоб: ${wc}`);
-    if (lc) parts.push(`обновление строки: ${lc}`);
-    baseInfo.push(`${parts.join(': ')}.`);
+    if (wc > 0) parts.push(`жалоб в строке: ${wc}`);
+    if (lc) parts.push(`обновлено ${lc}`);
+    baseInfo.push(parts.join(' · ') + '.');
   } else {
     baseInfo.push(
-      `Строка в channels_watch для ${displayCh} в выборке мониторинга не найдена или скрыта правилами видимости — сигналов цикла мониторинга в этом отчёте нет.`,
+      `По мониторингу для ${displayCh} в этой выборке нет видимой строки — ориентируемся на отчёты и на ручной просмотр по ссылке выше.`,
     );
   }
 
   const external = [];
   if (nonFp.length) {
-    const extParts = [`Для ${displayCh} в листе отчётов: ${nonFp.length} строк.`];
+    const extParts = [`Отчёты по каналу: ${nonFp.length} строк.`];
     if (complaintsSum > 0) {
-      extParts.push(`Суммы по строкам (где указаны), всего ~${complaintsSum.toLocaleString('ru-RU')} усл. ед.`);
+      extParts.push(`суммы по строкам ~${complaintsSum.toLocaleString('ru-RU')} усл. ед.`);
     }
     if (sumMin > 0 && sumMax > 0 && sumMin !== sumMax) {
-      extParts.push(`Разброс по строкам: от ${sumMin.toLocaleString('ru-RU')} до ${sumMax.toLocaleString('ru-RU')} усл. ед.`);
+      extParts.push(`разброс ${sumMin.toLocaleString('ru-RU')}–${sumMax.toLocaleString('ru-RU')} усл. ед.`);
     }
     external.push(extParts.join(' '));
   } else {
     external.push(
-      `По идентификатору ${displayCh} в нашем листе жалоб/отчётов нет строк с тем же ключом канала — автоматически сопоставить внешние жалобы не удалось. Это не доказательство «нет жалоб в интернете», только «в таблице KRO сейчас пусто».`,
+      `В открытых отчётах KRO по ключу ${displayCh} сейчас нет строк — внешние жалобы сюда не подтянулись. Это не значит «в интернете тихо», только что в нашей таблице пусто.`,
     );
   }
 
@@ -3911,25 +3909,24 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
     const ot = (r0.object_type || '').toString().trim();
     const src = (r0.source || '').toString().trim();
     const dt = (r0.date || '').toString().trim();
-    if (ot) content.push(`В первой строке отчётов для этого канала указан тип: «${ot}».`);
-    if (src) content.push(`Источник в той же строке: ${src}.`);
-    if (dt) content.push(`Дата в строке отчёта: ${dt}.`);
+    const bits = [];
+    if (ot) bits.push(`тип в строке: «${ot}»`);
+    if (src) bits.push(`источник: ${src}`);
+    if (dt) bits.push(`дата: ${dt}`);
+    if (bits.length) content.push(bits.join(' · ') + '.');
   }
   content.push(
-    'Поведение в ленте (частота рекламы, «сигнальные» призывы, разбор текстов постов): в быстром режиме не считалось — нет выборки сообщений через Telegram API.',
-  );
-  content.push(
-    'Чтобы получить метрики по постам и честный разбор ленты, откройте страницу канала на сайте и нажмите «Глубокий анализ ленты» (обычно до нескольких минут; возможны лимиты Telegram).',
+    'Реклама в ленте, «сигнальные» формулировки и разбор текстов постов — только после глубокого режима (страница канала → кнопка).',
   );
 
   const ties = [];
   if (watchRow && (watchRow.reviews_summary || '').toString().trim()) {
-    ties.push(`Репутация/связи (мониторинг): ${kroV0TrimSentence(watchRow.reviews_summary, 200)}`);
+    ties.push(`Связи/репутация (мониторинг): ${kroV0TrimSentence(watchRow.reviews_summary, 200)}`);
   } else if (watchRow && (watchRow.activity_summary || '').toString().trim()) {
-    ties.push(`Активность по мониторингу: ${kroV0TrimSentence(watchRow.activity_summary, 200)}`);
+    ties.push(`Активность (мониторинг): ${kroV0TrimSentence(watchRow.activity_summary, 200)}`);
   }
   ties.push(
-    'Сеть ссылок, скрытые связи и риск-факторы без карточки в базе и без глубокой выборки постов автоматически не строим — данных для честного графа связей недостаточно.',
+    'Автоматический «граф связей» без карточки в базе и без выборки постов не строим — так честнее.',
   );
 
   let status = KRO_V0_STATUS.watch;
@@ -3937,24 +3934,21 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
   if (complaintsSum > 0 || nonFp.length >= 2) {
     status = KRO_V0_STATUS.risk;
     reasons.push(
-      `Для ${displayCh} по открытым отчётам видны заметные сигналы — осторожность и проверка первоисточников уместны.`,
+      `По ${displayCh} в открытых отчётах есть заметные сигналы — осторожность и проверка первоисточников уместны.`,
     );
   } else if (nonFp.length === 1) {
     status = KRO_V0_STATUS.watch;
     reasons.push(
-      `Для ${displayCh} есть единичная запись в отчётах — полной картины мало; глубокий разбор ленты — кнопкой на странице (mode=deep).`,
+      `Одна строка в отчётах — картина неполная; для ленты откройте страницу канала и глубокий анализ.`,
     );
   } else {
     status = KRO_V0_STATUS.watch;
     reasons.push(
-      `Для ${displayCh} в быстром режиме нет сопоставимых жалоб в таблице KRO и мало контекста из мониторинга. Статус «нарушений не видно» здесь не ставим: данные не позволяют считать канал проверенным — ленту не сканировали.`,
-    );
-    reasons.push(
-      'Итог: недостаточно оснований для вывода о безопасности; при необходимости запустите глубокий анализ или проверьте канал вручную.',
+      `По ${displayCh} в быстром слое мало фактов: жалоб в таблице нет, ленту не сканировали. Это не «зелёный свет», а «мало данных» — при сомнениях смотрите ленту или глубокий режим.`,
     );
   }
   if (complaintsSum > 0) {
-    reasons.push(`Суммы в строках отчётов (условные ед.) для этого канала: ~${complaintsSum.toLocaleString('ru-RU')}.`);
+    reasons.push(`Суммы в отчётах (усл. ед.): ~${complaintsSum.toLocaleString('ru-RU')}.`);
   }
 
   const out = {
@@ -3962,10 +3956,10 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
     channel_key: channelKey,
     generated_at: new Date().toISOString(),
     sources: ['отчёты пользователей', 'широкий мониторинг'],
-    basic_info: baseInfo.slice(0, 8),
-    content_behavior: content.slice(0, 8),
+    basic_info: baseInfo.slice(0, 5),
+    content_behavior: content.slice(0, 4),
     external_reports: external,
-    ties_risk_factors: ties.slice(0, 6),
+    ties_risk_factors: ties.slice(0, 4),
     conclusion: { status, reasons: reasons.slice(0, KRO_V0_MAX_CONCLUSION_REASONS) },
   };
   if (_kro_watch_baked) out._kro_watch_baked = true;
