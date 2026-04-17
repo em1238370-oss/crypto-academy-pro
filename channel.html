@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260417-ch-deep-incomplete-banner">
+  <link rel="stylesheet" href="/monitor.css?v=20260417-ch-fast-7m-retry">
 </head>
 <body class="mon-page ch-page">
 
@@ -1141,11 +1141,11 @@
       if (chMain) chMain.classList.remove('ch-main--byo-landing');
       if (window.__chByoToken) {
         if (lead) lead.textContent = 'Глубокий анализ через ваш Telegram: читаем ленту…';
-        if (m1) m1.textContent = 'Собираем текст постов и ответы за окно до 6 месяцев; обычно до ~3 минут. Лимиты Telegram считаются по вашей сессии.';
+        if (m1) m1.textContent = 'Собираем текст постов и ответы за окно до 6 месяцев; обычно минуты, на тяжёлом канале до ~30 мин. Лимиты Telegram — по вашей сессии.';
         if (m2) m2.hidden = true;
       } else {
-        if (lead) lead.textContent = 'Глубокий анализ: читаем ленту Telegram за окно до 6 месяцев — обычно до ~3 минут.';
-        if (m1) m1.textContent = 'Учитывается текст постов и ответы; медиа без подписи не входят. Если сработал лимит Telegram, вы уже видите быстрый отчёт и время повтора.';
+        if (lead) lead.textContent = 'Глубокий анализ: читаем ленту Telegram за окно до 6 месяцев.';
+        if (m1) m1.textContent = 'Обычно минуты; на тяжёлом канале до ~30 мин ожидания. Учитываются текст постов и ответы; медиа без подписи не входят. При FLOOD_WAIT — быстрый отчёт и время повтора.';
         if (m2) m2.hidden = true;
       }
     } else if (byoParallel) {
@@ -1161,7 +1161,7 @@
     if (lr) {
       if (attemptNum > 1) {
         lr.hidden = false;
-        lr.textContent = 'Повторная попытка ' + attemptNum + ': снова запрашиваем отчёт (до ' + (deep ? '~3 мин' : '~2 мин') + ').';
+        lr.textContent = 'Повторная попытка ' + attemptNum + ': снова запрашиваем отчёт (до ' + (deep ? '~30 мин' : '~7 мин') + ').';
       } else if (!deep) {
         lr.hidden = true;
         lr.textContent = '';
@@ -1264,7 +1264,8 @@
     window.__chAttempt = attemptNum;
     window.__chDeepMode = deep;
     var fetchOpts = { cache: 'no-store' };
-    var timeoutMs = deep ? 1800000 : 165000;
+    /* Быстрый режим: до 7 мин (согласовано с главной и сервером); глубокий — до 30 мин. 165 с раньше резало долгие ответы Render/Sheets. */
+    var timeoutMs = deep ? 1800000 : 420000;
     window.__chChannelFetchTimeoutMs = timeoutMs;
     showChLoading(attemptNum, deep);
     try {
@@ -1611,12 +1612,25 @@
       var capEl = document.getElementById('ch-deep-btn-caption');
       if (capEl) {
         capEl.textContent = window.__chByoToken
-          ? 'Через ваш аккаунт Telegram. Обычно до ~3 мин.; лимиты Telegram считаются по вашей сессии, не по общей очереди сервера.'
-          : 'Может занять до 3 минут. Используется живая проверка Telegram.';
+          ? 'Через ваш аккаунт Telegram. Обычно минуты; на тяжёлом канале до ~30 мин. Лимиты — по вашей сессии.'
+          : 'Обычно минуты; на тяжёлом канале до ~30 мин. Живая проверка Telegram.';
       }
       chApplyServerDeepButtonState();
     })
     .catch(function (err) {
+      var hint = (err && err.message) ? String(err.message) : '';
+      var transientFast =
+        !deep &&
+        attemptNum === 1 &&
+        (chIsClientTimeoutLike(err) ||
+          hint === 'bad_json' ||
+          /http_502|http_503|http_504|http_524/.test(hint));
+      if (transientFast) {
+        setTimeout(function () {
+          loadChannelReport(2, opts);
+        }, 2000);
+        return;
+      }
       showChContentWithFastAfterDeepError(err, opts);
     });
   }

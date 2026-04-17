@@ -6927,19 +6927,44 @@ try {
   console.warn('⚠️  Could not load SSL certificates, starting HTTP server:', error.message);
 }
 
+/** Node 18+ по умолчанию режет запрос через ~5 мин (requestTimeout) — ломает home quick до 7 мин и deep до 30 мин. */
+const HTTP_REQUEST_TIMEOUT_MS = (() => {
+  const raw = parseInt(process.env.HTTP_REQUEST_TIMEOUT_MS || '1900000', 10);
+  return Number.isFinite(raw) && raw >= 0 ? raw : 1900000;
+})();
+
+function applyLongRequestTimeouts(server) {
+  if (!server || typeof server !== 'object') return;
+  try {
+    if (typeof server.requestTimeout !== 'undefined') {
+      server.requestTimeout = HTTP_REQUEST_TIMEOUT_MS === 0 ? 0 : HTTP_REQUEST_TIMEOUT_MS;
+    }
+    if (HTTP_REQUEST_TIMEOUT_MS > 0 && typeof server.headersTimeout !== 'undefined') {
+      server.headersTimeout = Math.min(2147483647, HTTP_REQUEST_TIMEOUT_MS + 120000);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 // Start both HTTP and HTTPS servers
-app.listen(PORT, '0.0.0.0', () => {
+const httpSrv = app.listen(PORT, '0.0.0.0', () => {
   resetKroLiveCounterCache();
   console.log('[KRO] live-counter cache reset on HTTP server listen (start / post-deploy process)');
   console.log(`✅ HTTP Backend listening on port ${PORT}`);
   console.log(`🌐 Access via: http://localhost:${PORT} or http://192.168.1.142:${PORT}`);
+  if (HTTP_REQUEST_TIMEOUT_MS > 0) {
+    console.log(`⏱ HTTP requestTimeout=${HTTP_REQUEST_TIMEOUT_MS} ms (KRO Telethon до 30 мин)`);
+  }
 });
+applyLongRequestTimeouts(httpSrv);
 
 if (httpsOptions) {
-  https.createServer(httpsOptions, app).listen(4443, '0.0.0.0', () => {
+  const httpsSrv = https.createServer(httpsOptions, app).listen(4443, '0.0.0.0', () => {
     resetKroLiveCounterCache();
     console.log('[KRO] live-counter cache reset on HTTPS server listen');
     console.log(`✅ HTTPS Backend listening on port 4443`);
     console.log(`🔒 Access via: https://localhost:4443 or https://192.168.1.142:4443`);
   });
+  applyLongRequestTimeouts(httpsSrv);
 }
