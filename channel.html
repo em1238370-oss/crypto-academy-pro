@@ -7,8 +7,8 @@
   <meta name="description" content="Структурированный отчёт по каналу: база, поведение, внешние сигналы, связи и итоговый вывод.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260417-kro-byo-hardening">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/monitor.css?v=20260417-channel-gold-byo">
 </head>
 <body class="mon-page ch-page">
 
@@ -54,17 +54,26 @@
       <a class="mon-nav-link" href="/monitor#data-scam">К монитору</a>
     </p>
   </div>
-  <article id="ch-content" class="ch-card" hidden>
-    <div id="ch-live-banner" class="ch-live-banner" hidden></div>
-    <p class="ch-eyebrow" id="ch-eyebrow">Проверка Telegram‑канала</p>
-    <h1 class="ch-title" id="ch-heading">—</h1>
-    <p class="ch-meta" id="ch-subhead" hidden></p>
-    <p class="ch-meta ch-what-analyzed" id="ch-what-analyzed" hidden></p>
-    <aside class="ch-flow-simple" aria-label="Как устроена проверка на этой странице">
+  <article id="ch-content" class="ch-card ch-report" hidden>
+    <header class="ch-report-hero">
+      <div id="ch-live-banner" class="ch-live-banner" hidden></div>
+      <p class="ch-report-path" aria-hidden="true">KRO / мониторинг / отчёт по каналу</p>
+      <p class="ch-eyebrow" id="ch-eyebrow">Проверка Telegram‑канала</p>
+      <h1 class="ch-title ch-report-title" id="ch-heading">—</h1>
+      <p class="ch-meta" id="ch-subhead" hidden></p>
+      <p class="ch-meta ch-what-analyzed" id="ch-what-analyzed" hidden></p>
+    </header>
+    <aside class="ch-flow-simple ch-report-prologue mon-surface mon-surface--pad" aria-label="Как устроена проверка на этой странице">
       <p class="ch-flow-simple-title">Как это работает</p>
       <p class="ch-flow-simple-foot">Сразу показываем быстрый правдивый отчёт по базе и мониторингу (секунды). Глубокий анализ ленты запускается отдельно, обычно до 3 минут; если есть лимит Telegram, покажем время повтора и не оставим вас «в пустоте».</p>
     </aside>
     <p class="ch-merged" id="ch-merged-note" hidden></p>
+
+    <div class="ch-report-sections">
+    <header class="ch-report-tier-head">
+      <p class="mon-chapter-kicker ch-report-tier-kicker">01 · Основной разбор</p>
+      <p class="ch-report-tier-lead">Пять блоков отчёта — в том же порядке, что и на главной проверке: от фактов к выводу.</p>
+    </header>
 
     <section class="ch-block" aria-labelledby="ch-s1-h">
       <h2 id="ch-s1-h" class="ch-h2">Базовая информация</h2>
@@ -91,6 +100,11 @@
       <p class="ch-status-wrap"><span id="ch-conclusion-status" class="mon-status watch">—</span></p>
       <div id="ch-conclusion-reasons" class="ch-body"></div>
     </section>
+
+    <header class="ch-report-tier-head ch-report-tier-head--secondary">
+      <p class="mon-chapter-kicker ch-report-tier-kicker">02 · База и глубина</p>
+      <p class="ch-report-tier-lead">Запись в базе (если есть), затем глубокий анализ ленты и оспаривание.</p>
+    </header>
 
     <section class="ch-block" aria-labelledby="ch-db-h" id="ch-db-section" hidden>
       <h2 id="ch-db-h" class="ch-h2">Запись в scam_base (детали)</h2>
@@ -165,6 +179,7 @@
       <button type="button" class="ch-false-positive-btn" id="ch-fp-btn">Этот канал честный — сообщить об ошибке</button>
       <p class="ch-fp-msg" id="ch-fp-msg" hidden></p>
     </section>
+    </div>
   </article>
 </main>
 
