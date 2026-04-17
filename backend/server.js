@@ -1318,10 +1318,16 @@ async function kroFetchChannelsWatchRawCached(client) {
 const kroCheckOncePeriodDaysParsed = parseInt(process.env.KRO_CHECK_ONCE_PERIOD_DAYS || '180', 10);
 const kroCheckOncePeriodDays = [30, 180, 365].includes(kroCheckOncePeriodDaysParsed) ? kroCheckOncePeriodDaysParsed : 180;
 const kroCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_CHECK_ONCE_TIMEOUT_MS || '', 10);
-/** Дефолт deep-check: реальный прогон до 3 минут, чтобы не было «мгновенного шаблона». */
-const kroCheckOnceTimeoutMs = Number.isFinite(kroCheckOnceTimeoutMsParsed) && kroCheckOnceTimeoutMsParsed >= 120000 && kroCheckOnceTimeoutMsParsed <= 180000
+/** Дефолт check_once без явного timeoutMs: до 3 мин (быстрые сценарии). */
+const kroCheckOnceTimeoutMs = Number.isFinite(kroCheckOnceTimeoutMsParsed) && kroCheckOnceTimeoutMsParsed >= 120000 && kroCheckOnceTimeoutMsParsed <= 1800000
   ? kroCheckOnceTimeoutMsParsed
   : 180000;
+/** Глубокий анализ ленты: верхняя граница ~30 мин, горизонт до 6 мес. (periodDays 180 в вызове). */
+const kroDeepCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_DEEP_CHECK_ONCE_TIMEOUT_MS || '1800000', 10);
+const kroDeepCheckOnceTimeoutMs =
+  Number.isFinite(kroDeepCheckOnceTimeoutMsParsed) && kroDeepCheckOnceTimeoutMsParsed >= 120000 && kroDeepCheckOnceTimeoutMsParsed <= 1800000
+    ? kroDeepCheckOnceTimeoutMsParsed
+    : 1800000;
 
 /** Лимит Telegram (FLOOD_WAIT) для текущей сессии — глубокий прогон бессмысленен до наступления этого времени. */
 let kroTelegramFloodUntilMs = 0;
@@ -3592,11 +3598,11 @@ function kroV0ConclusionFromLiveParsed(parsed) {
     const cNum = cRaw != null && cRaw !== '' ? Number(cRaw) : NaN;
     if (!Number.isFinite(cNum)) {
       reasons.push(
-        'Жалобы из отчётов: не удалось сопоставить канал или данные не пришли — про «ноль жалоб» не заявляем, смотрите блок про отчёты ниже.',
+        'Жалобы в отчётах: не удалось получить цифру по каналу в этом ответе — про «ноль жалоб» не заявляем, смотрите блок про жалобы ниже.',
       );
     } else if (cNum === 0) {
       reasons.push(
-        'В учтённых отчётах людей по этому каналу сейчас 0 жалоб на потери/скам в рамках наших правил сопоставления (это не весь интернет целиком).',
+        'В учтённых обращениях людей по этому каналу сейчас 0 жалоб на потери/скам — это только то, что пришло в сервис, не «весь интернет».',
       );
     } else {
       reasons.push(
@@ -3997,7 +4003,7 @@ function kroV0BuildAnalysisFromLiveParsed(parsed, channelKey) {
   } else if (hv) {
     baseInfo.push(`Предварительно по ленте: ${hv}.`);
   }
-  if (p.read_only) baseInfo.push('Для страницы отчёта в таблицы ничего не записывали.');
+  if (p.read_only) baseInfo.push('Это отчёт для просмотра: мы никуда у вас ничего не записываем.');
 
   const content = [];
   if (p.found === true && !p.not_crypto) {
@@ -4005,7 +4011,7 @@ function kroV0BuildAnalysisFromLiveParsed(parsed, channelKey) {
     if (!p.has_signal_offer) calm.push('нет выделенных «сигнальных» призывов в критериях проверки');
     if (!p.only_profits_flag) calm.push('нет картины «одни профиты без минусов»');
     const c0 = p.complaints != null && p.complaints !== '' ? Number(p.complaints) : NaN;
-    if (Number.isFinite(c0) && c0 === 0) calm.push('0 жалоб в сопоставленных отчётах');
+    if (Number.isFinite(c0) && c0 === 0) calm.push('0 жалоб в учтённых обращениях');
     if (calm.length) {
       content.push(`Спокойнее по автоматическим правилам: ${calm.join('; ')}.`);
     }
@@ -4047,7 +4053,7 @@ function kroV0BuildAnalysisFromLiveParsed(parsed, channelKey) {
   if (jc.length) external.push(`От людей в отчётах: ${jc.join(', ')}.`);
   else {
     external.push(
-      'Жалоб в отчётах по этому каналу в сопоставленной базе не видно — либо их нет, либо канал не сопоставился с отчётами, либо данные не подтянулись.',
+      'По открытым жалобам в сервисе для этого канала в этом ответе цифра не подтянулась — либо обращений не было, либо они ещё не учтены здесь.',
     );
   }
   if (p.complaints != null && p.complaints !== '' && Number(p.complaints) === 0) {
@@ -4128,7 +4134,7 @@ function kroRunCheckOnce(channel, opts) {
   const periodDays = allowedPeriods.includes(periodOpt) ? periodOpt : kroCheckOncePeriodDays;
   const timeoutOpt = opts && Number(opts.timeoutMs);
   const timeoutMs =
-    Number.isFinite(timeoutOpt) && timeoutOpt >= 60000 && timeoutOpt <= 180000 ? timeoutOpt : kroCheckOnceTimeoutMs;
+    Number.isFinite(timeoutOpt) && timeoutOpt >= 60000 && timeoutOpt <= 1800000 ? timeoutOpt : kroCheckOnceTimeoutMs;
   const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
   if (!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath))) {
     return { ok: false, error: 'Живая проверка на сервере не настроена (нет ключей Telegram или скрипта).', parsed: null, stderr: '' };
@@ -4140,6 +4146,16 @@ function kroRunCheckOnce(channel, opts) {
       encoding: 'utf8',
       env: kroTelethonSpawnEnv(readOnly, sessionString),
     });
+    if (child.error && child.error.code === 'ETIMEDOUT') {
+      const min = Math.max(1, Math.round(timeoutMs / 60000));
+      return {
+        ok: false,
+        timedOut: true,
+        error: `Чтение ленты остановлено по лимиту времени (~${min} мин.) — для очень больших каналов показываем сокращённый или базовый отчёт, без бесконечного ожидания.`,
+        parsed: null,
+        stderr: (child.stderr || '').trim(),
+      };
+    }
     const stdout = (child.stdout || '').trim();
     const stderr = (child.stderr || '').trim();
     const line = stdout.split('\n').find((l) => l.trim().startsWith('{'));
@@ -4170,7 +4186,7 @@ function kroRunCheckOnceAsync(channel, opts) {
   const periodDays = allowedPeriods.includes(periodOpt) ? periodOpt : kroCheckOncePeriodDays;
   const timeoutOpt = opts && Number(opts.timeoutMs);
   const timeoutMs =
-    Number.isFinite(timeoutOpt) && timeoutOpt >= 60000 && timeoutOpt <= 180000 ? timeoutOpt : kroCheckOnceTimeoutMs;
+    Number.isFinite(timeoutOpt) && timeoutOpt >= 60000 && timeoutOpt <= 1800000 ? timeoutOpt : kroCheckOnceTimeoutMs;
   const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
   if (!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath))) {
     return Promise.resolve({
@@ -4187,6 +4203,7 @@ function kroRunCheckOnceAsync(channel, opts) {
     });
     let stdout = '';
     let stderr = '';
+    let killedByTimeout = false;
     child.stdout.on('data', (d) => {
       stdout += d.toString();
     });
@@ -4194,6 +4211,7 @@ function kroRunCheckOnceAsync(channel, opts) {
       stderr += d.toString();
     });
     const t = setTimeout(() => {
+      killedByTimeout = true;
       try {
         child.kill('SIGKILL');
       } catch {
@@ -4208,6 +4226,17 @@ function kroRunCheckOnceAsync(channel, opts) {
       clearTimeout(t);
       stdout = (stdout || '').trim();
       stderr = (stderr || '').trim();
+      if (killedByTimeout) {
+        const min = Math.max(1, Math.round(timeoutMs / 60000));
+        resolve({
+          ok: false,
+          timedOut: true,
+          error: `Чтение ленты остановлено по лимиту времени (~${min} мин.) — для очень больших каналов показываем сокращённый или базовый отчёт.`,
+          parsed: null,
+          stderr,
+        });
+        return;
+      }
       const line = stdout.split('\n').find((l) => l.trim().startsWith('{'));
       if (!line) {
         resolve({
@@ -4253,6 +4282,7 @@ function kroNormalizeCheckOnceForAnalysis(once) {
     found: false,
     error: err,
     _check_once_ok: false,
+    check_once_timed_out: o.timedOut === true,
   };
 }
 
@@ -4284,6 +4314,7 @@ function kroLiveMetricsFromParsed(parsed) {
       ? Number(p.deep_queue_suggested_poll_seconds)
       : null,
     flood_wait_seconds: Number.isFinite(Number(p.flood_wait_seconds)) ? Number(p.flood_wait_seconds) : null,
+    deep_timed_out: p.check_once_timed_out === true,
     live_check_error:
       p._check_once_ok === true
         ? p.telegram_rate_limited === true && p.error != null
@@ -4323,6 +4354,7 @@ function kroChannelProfileLiveMetrics(parsed, opts) {
     deep_queue_eta_minutes: null,
     deep_queue_suggested_poll_seconds: null,
     flood_wait_seconds: null,
+    deep_timed_out: false,
     live_check_error: null,
   };
   const at = o.deepAvailableAt != null && o.deepAvailableAt !== '' ? String(o.deepAvailableAt) : null;
@@ -4333,6 +4365,7 @@ function kroChannelProfileLiveMetrics(parsed, opts) {
     deep_status: o.deepStatus != null ? o.deepStatus : null,
     deep_available_at: at,
     deep_available_at_msk: at ? kroFormatIsoForMsk(at) || null : null,
+    deep_max_wait_minutes: o.mode === 'deep' ? 30 : null,
   };
 }
 
@@ -4891,7 +4924,7 @@ app.get('/api/kro/check', async (req, res) => {
         channel_key: channelMatchKey(channel) || channel,
         generated_at: new Date().toISOString(),
         sources: ['настройки сервера'],
-        basic_info: ['Сейчас не подключена таблица с базой — сравнить канал с карточками нельзя.'],
+        basic_info: ['Сводка мониторинга временно недоступна — персональную сверку по каналу сейчас не собрать.'],
         content_behavior: [],
         external_reports: [],
         ties_risk_factors: [],
@@ -4915,7 +4948,7 @@ app.get('/api/kro/check', async (req, res) => {
           channel_key: channelMatchKey(channel) || channel,
           generated_at: new Date().toISOString(),
           sources: ['настройки сервера'],
-          basic_info: ['Не удалось подключиться к таблице (нет доступа к Google).'],
+          basic_info: ['Не удалось подключиться к источнику данных (нет доступа к Google).'],
           content_behavior: [],
           external_reports: [],
           ties_risk_factors: [],
@@ -5817,6 +5850,8 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         once = kroRunCheckOnce(channelForOnce, {
           readOnly: true,
           telegramSessionString: byoRow.sessionString,
+          periodDays: 180,
+          timeoutMs: kroDeepCheckOnceTimeoutMs,
         });
         if (once.stderr) console.error('KRO channel-profile BYO check_once stderr:', once.stderr);
         parsedOnce = kroNormalizeCheckOnceForAnalysis(once);
@@ -5912,7 +5947,11 @@ app.get('/api/kro/channel-profile', async (req, res) => {
             once = { ok: true, parsed: parsedOnce, stderr: '' };
           }
         } else {
-          once = kroRunCheckOnce(channelForOnce, { readOnly: true });
+          once = kroRunCheckOnce(channelForOnce, {
+            readOnly: true,
+            periodDays: 180,
+            timeoutMs: kroDeepCheckOnceTimeoutMs,
+          });
           if (once.stderr) console.error('KRO channel-profile check_once stderr:', once.stderr);
           parsedOnce = kroNormalizeCheckOnceForAnalysis(once);
           if (parsedOnce.telegram_rate_limited) {
@@ -6019,6 +6058,11 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       if (deepMode && !deepBlocked) {
         analysis = kroV0BuildAnalysisFromLiveParsed(parsedOnce, key);
         kroV0PrependNoScamBaseCardNote(analysis, { fast: false });
+        if (once.ok !== true && parsedOnce && parsedOnce.check_once_timed_out === true) {
+          analysis.basic_info = [
+            'Глубокий разбор ленты не уложился в лимит времени (~30 мин.) — ниже то, что удалось собрать по жалобам и мониторингу; полный охват за полгода в этом запросе не гарантирован.',
+          ].concat(analysis.basic_info || []);
+        }
       } else if (deepTelegramBlocked) {
         analysis = await kroV0BuildFastAnalysisNoLive(sheetsClient, key, decoded, watchRowCp0);
         kroV0MergeDeepRateLimitIntoAnalysis(analysis, deepAvailableIso);
@@ -6068,12 +6112,19 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       let analysis;
       if (deepMode && !deepBlocked) {
         const liveAnalysis = kroV0BuildAnalysisFromLiveParsed(parsedOnce, key);
+        const deepHead =
+          once.ok !== true && parsedOnce && parsedOnce.check_once_timed_out === true
+            ? [
+                `По этому каналу в мониторинге несколько совпадений (${matches.length}); глубокий разбор ленты уперся в лимит времени (~30 мин.) — ниже сокращённый отчёт и сводка.`,
+                `Ориентир по статусу в мониторинге: «${(bestAny.status || bestAny.verdict || '—')}».`,
+              ]
+            : [
+                `По этому каналу в мониторинге несколько совпадений (${matches.length}); в публичной сводке показываем одну логику по правилам видимости.`,
+                `Ориентир по внутреннему статусу: «${(bestAny.status || bestAny.verdict || '—')}».`,
+              ];
         analysis = {
           ...liveAnalysis,
-          basic_info: [
-            `По этому каналу в мониторинге несколько совпадений (${matches.length}); в публичной сводке показываем одну логику по правилам видимости.`,
-            `Ориентир по внутреннему статусу: «${(bestAny.status || bestAny.verdict || '—')}».`,
-          ].concat(liveAnalysis.basic_info || []),
+          basic_info: deepHead.concat(liveAnalysis.basic_info || []),
         };
       } else if (deepTelegramBlocked) {
         analysis = kroV0BuildAnalysisFromScamBaseProfile(bestEnr, { channel_key: key });
@@ -6144,8 +6195,11 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         ? kroV0BuildAnalysisFromLiveParsed(parsedOnce, key)
         : kroV0BuildAnalysisFromScamBaseProfile(profileForAnalysis, { channel_key: key });
       if (!once.ok) {
+        const timed = parsedOnce && parsedOnce.check_once_timed_out === true;
         analysis.basic_info = [
-          'Живой анализ не завершился в этом запросе (лимит времени / ограничения Telegram) — показана последняя сводка мониторинга.',
+          timed
+            ? 'Глубокий разбор ленты остановлен по лимиту времени (~30 мин.) — показана сводка мониторинга и жалоб; ниже то, что успели оценить без полной выборки постов.'
+            : 'Живой анализ не завершился в этом запросе (лимит времени / ограничения Telegram) — показана последняя сводка мониторинга.',
         ].concat(analysis.basic_info || []);
       } else {
         analysis.basic_info = [

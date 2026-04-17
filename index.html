@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260417-kro-home-check-timer">
+   <link rel="stylesheet" href="styles.css?v=20260417-kro-deep-30m-timer">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -302,7 +302,7 @@
                            <div class="kro-check-progress-main">
                                <p class="kro-check-progress-title" id="kro-check-progress-title"></p>
                                <div class="kro-check-elapsed-row" aria-live="polite">
-                                   <span class="kro-check-elapsed-label">Проверка канала · прошло</span>
+                                   <span class="kro-check-elapsed-label" id="kro-check-timer-caption">Идёт проверка канала · прошло</span>
                                    <span class="kro-check-elapsed-digits" id="kro-check-elapsed">0:00</span>
                                </div>
                                <div class="kro-check-pipeline" id="kro-check-pipeline" aria-hidden="true">
@@ -1210,9 +1210,11 @@
                    if (checkProgress) {
                        checkProgress.classList.remove('hidden');
                        checkProgress.hidden = false;
+                       var cap = document.getElementById('kro-check-timer-caption');
+                       if (cap) cap.textContent = 'Идёт проверка канала · прошло';
                        if (checkProgressTitle) {
                            checkProgressTitle.textContent =
-                               'Идёт проверка канала ' + displayLabel + ' — не страницы «сервиса», а именно этого канала (жалобы, мониторинг, лента).';
+                               'Идёт проверка канала ' + displayLabel + ' — жалобы, мониторинг и при возможности лента (до ~3 мес.); затем вывод ниже.';
                        }
                        __kroSetProgressSteps(0);
                        __kroElapsedTimer = setInterval(function () {

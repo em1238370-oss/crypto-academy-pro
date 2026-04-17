@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260417-ch-loading-timer">
+  <link rel="stylesheet" href="/monitor.css?v=20260417-ch-deep-30m">
 </head>
 <body class="mon-page ch-page">
 
@@ -35,7 +35,7 @@
   <div id="ch-loading" class="ch-state ch-state--loading">
     <h1 class="ch-title ch-title--loading" id="ch-loading-title">Готовим отчёт по каналу</h1>
     <p class="ch-meta ch-meta--loading ch-loading-elapsed-wrap" id="ch-loading-elapsed-wrap">
-      <span class="ch-loading-elapsed-label">Проверка канала · прошло</span>
+      <span class="ch-loading-elapsed-label" id="ch-loading-timer-caption">Идёт проверка канала · прошло</span>
       <strong class="ch-loading-elapsed-digits" id="ch-loading-elapsed">0:00</strong>
     </p>
     <p class="ch-lead ch-lead--loading" id="ch-loading-lead">Сначала вы получаете быстрый правдивый отчёт за секунды. Глубокий анализ ленты (до 6 месяцев истории) запускается отдельно и обычно занимает до 3 минут.</p>
@@ -74,7 +74,7 @@
     <p class="ch-meta ch-what-analyzed" id="ch-what-analyzed" hidden></p>
     <aside class="ch-flow-simple" aria-label="Как устроена проверка на этой странице">
       <p class="ch-flow-simple-title">Как это работает</p>
-      <p class="ch-flow-simple-foot">Проверяется тот канал, который вы указали. Сразу — быстрый отчёт (секунды). Глубокий анализ ленты — отдельно: через сервер (при нагрузке бывает очередь; число ~30 мин — ориентир ожидания в очереди, а не таймер «обрубить работу через 30 мин») или через ваш Telegram (BYO) без общей очереди. Сам прогон ленты чаще всего до ~3 мин; иногда дольше — пока не готов ответ или сработал лимит Telegram.</p>
+      <p class="ch-flow-simple-foot">Проверяется тот канал, который вы указали. Сразу — быстрый отчёт (секунды). Глубокий анализ ленты — отдельно: до ~6 месяцев истории, на сервере верхний предел ожидания ответа ~30 минут (часто быстрее); можно через ваш Telegram (BYO). Пока идёт запрос — сверху таймер и короткий статус.</p>
     </aside>
     <p class="ch-merged" id="ch-merged-note" hidden></p>
 
@@ -1001,11 +1001,11 @@
         var att = window.__chAttempt > 1 ? 'Повтор ' + window.__chAttempt + '. ' : '';
         lr.textContent =
           att +
-          'Ожидание глубокого ответа: прошло ' +
+          'Глубокий анализ (до ~6 мес. ленты, максимум ~30 мин ожидания): прошло ' +
           sec +
-          ' с · до обрыва по таймауту страницы ~' +
+          ' с · до лимита страницы ~' +
           left +
-          ' с. Быстрый отчёт уже загружен — если ответ не придёт, снова покажем его вместо пустой страницы.';
+          ' с. Быстрый отчёт уже был — если ответ не придёт, снова покажем его.';
       }
     }
     tick();
@@ -1071,7 +1071,7 @@
       liveBanner.className = 'ch-live-banner ch-live-banner--deep-timeout';
       var partA =
         'Глубокий запрос не вернулся вовремя для этой страницы (обрыв по таймауту браузера или сети до ~' +
-        Math.round((window.__chChannelFetchTimeoutMs || 210000) / 1000) +
+        Math.round((window.__chChannelFetchTimeoutMs || 1800000) / 1000) +
         ' с). Это не «пустая страница»: ниже снова показан быстрый отчёт по базе и мониторингу — он уже был до запуска глубокого.';
       var partB =
         streak >= 2
@@ -1167,9 +1167,13 @@
     if (titleEl && queryU) {
       titleEl.textContent = 'Проверяем канал @' + String(queryU).replace(/^@+/, '');
     }
+    var capEl = document.getElementById('ch-loading-timer-caption');
+    if (capEl) {
+      capEl.textContent = deep ? 'Готовим подробный анализ ленты · прошло' : 'Идёт проверка канала · прошло';
+    }
     chStartLoadingElapsedClock();
     if (deep) {
-      chStartDeepWaitClock(window.__chChannelFetchTimeoutMs || 210000);
+      chStartDeepWaitClock(window.__chChannelFetchTimeoutMs || 1800000);
     }
   }
 
@@ -1256,7 +1260,7 @@
     window.__chAttempt = attemptNum;
     window.__chDeepMode = deep;
     var fetchOpts = { cache: 'no-store' };
-    var timeoutMs = deep ? 210000 : 165000;
+    var timeoutMs = deep ? 1800000 : 165000;
     window.__chChannelFetchTimeoutMs = timeoutMs;
     showChLoading(attemptNum, deep);
     try {
