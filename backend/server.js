@@ -1827,30 +1827,8 @@ function kroBuildChannelProfileDeepGate(extra) {
   const load = kroDeepGlobalLoadSnapshot();
   const ex = extra && typeof extra === 'object' ? extra : null;
   const st = kroGetTelegramFloodState();
-  if (st.active) {
-    const sec = Math.max(0, Math.ceil((kroTelegramFloodUntilMs - Date.now()) / 1000));
-    const iso = st.deep_available_at;
-    const msk = iso ? kroFormatIsoForMsk(iso) : '';
-    const mins = Math.max(1, Math.ceil(sec / 60));
-    return {
-      can_run_deep: false,
-      telegram_flood_active: true,
-      server_throttle_active: false,
-      deep_queued: false,
-      deep_queue_position: null,
-      deep_queue_eta_minutes: null,
-      suggested_refresh_seconds: null,
-      server_throttle_scope: null,
-      retry_after_iso: iso,
-      retry_after_msk: msk || null,
-      wait_seconds_approx: sec,
-      wait_minutes_approx: mins,
-      message_ru: msk
-        ? `Telegram ограничил количество запросов к каналам. Глубокое чтение ленты сейчас недоступно; ориентировочно снова можно попробовать после ${msk} (через ≈${mins} мин).`
-        : `Telegram ограничил количество запросов к каналам. Подождите около ${mins} мин. и откройте страницу канала снова.`,
-      load,
-    };
-  }
+  // Очередь / прогон именно для этого канала важнее глобального FLOOD: иначе fast channel-profile
+  // терял deep_queued в JSON, хотя канал реально в kroDeepWaitQueue или в kroDeepQueueActiveJob.
   if (ex && ex.deep_queued === true) {
     const pos = ex.deep_queue_position != null ? Number(ex.deep_queue_position) : null;
     const eta = ex.deep_queue_eta_minutes != null ? Number(ex.deep_queue_eta_minutes) : null;
@@ -1872,6 +1850,30 @@ function kroBuildChannelProfileDeepGate(extra) {
       message_ru:
         (ex.message_ru || '').toString().trim() ||
         'Глубокий анализ поставлен в очередь из‑за высокой нагрузки; быстрый отчёт доступен сразу.',
+      load,
+    };
+  }
+  if (st.active) {
+    const sec = Math.max(0, Math.ceil((kroTelegramFloodUntilMs - Date.now()) / 1000));
+    const iso = st.deep_available_at;
+    const msk = iso ? kroFormatIsoForMsk(iso) : '';
+    const mins = Math.max(1, Math.ceil(sec / 60));
+    return {
+      can_run_deep: false,
+      telegram_flood_active: true,
+      server_throttle_active: false,
+      deep_queued: false,
+      deep_queue_position: null,
+      deep_queue_eta_minutes: null,
+      suggested_refresh_seconds: null,
+      server_throttle_scope: null,
+      retry_after_iso: iso,
+      retry_after_msk: msk || null,
+      wait_seconds_approx: sec,
+      wait_minutes_approx: mins,
+      message_ru: msk
+        ? `Telegram ограничил количество запросов к каналам. Глубокое чтение ленты сейчас недоступно; ориентировочно снова можно попробовать после ${msk} (через ≈${mins} мин).`
+        : `Telegram ограничил количество запросов к каналам. Подождите около ${mins} мин. и откройте страницу канала снова.`,
       load,
     };
   }
