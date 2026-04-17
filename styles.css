@@ -2729,6 +2729,20 @@ body.kro-hero-scrolled .kro-floating-nav {
    color: #fcd34d;
    border-bottom-color: rgba(252, 211, 77, 0.7);
 }
+.kro-inline-deep-byotele-note {
+   margin: 10px 0 0 0;
+   font-size: 0.875rem;
+   line-height: 1.5;
+   color: rgba(220, 226, 255, 0.92);
+}
+.kro-inline-deep-cta--secondary {
+   color: rgba(147, 197, 253, 0.95);
+   border-bottom-color: rgba(147, 197, 253, 0.5);
+}
+.kro-inline-deep-cta--secondary:hover {
+   color: #bfdbfe;
+   border-bottom-color: rgba(191, 219, 254, 0.8);
+}
 .kro-inline-deep-demo {
    margin: 12px 0 0 0;
    font-size: 0.8125rem;
@@ -3016,38 +3030,29 @@ body.kro-hero-scrolled .kro-floating-nav {
    display: grid;
    grid-template-columns: 1fr;
    grid-template-rows: 1fr;
-   align-items: start;
    max-width: calc(640px + 4cm);
    margin: 0 auto 44px;
-   min-height: 0;
-   position: relative;
+   min-height: 200px;
 }
 .kro-f1-cta-check-wrap > .kro-f1-cta-block,
 .kro-f1-cta-check-wrap > .kro-feature1-check {
    grid-area: 1 / 1;
 }
 .kro-f1-cta-check-wrap > .kro-f1-cta-block {
-   position: relative;
    transition: opacity 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .kro-f1-cta-check-wrap > .kro-feature1-check.kro-f1-check-reveal {
-   position: absolute;
-   inset: 0;
    opacity: 0;
    transform: translateY(20px);
    pointer-events: none;
    transition: opacity 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .kro-f1-cta-check-wrap.kro-f1-show-check > .kro-f1-cta-block {
-   position: absolute;
-   inset: 0;
    opacity: 0;
    transform: translateY(-12px);
    pointer-events: none;
 }
 .kro-f1-cta-check-wrap.kro-f1-show-check > .kro-feature1-check.kro-f1-check-reveal {
-   position: relative;
-   inset: auto;
    opacity: 1;
    transform: translateY(0);
    pointer-events: auto;
@@ -3065,15 +3070,9 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-f1-cta-block {
    max-width: 100%;
    width: 100%;
-   height: auto;
-   min-height: 0;
    margin: 0 auto;
-   padding: 28px 24px 30px;
+   padding: 40px 28px 44px;
    border-radius: 24px;
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-   justify-content: flex-start;
    text-align: center;
    background: linear-gradient(165deg, rgba(32, 26, 28, 0.95) 0%, rgba(24, 20, 22, 0.98) 100%);
    border: 1px solid rgba(255, 255, 255, 0.1);
@@ -3095,7 +3094,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-f1-cta-sub {
    font-size: clamp(14px, 1.8vw, 16px);
    color: rgba(255, 255, 255, 0.75);
-   margin: 0 0 16px;
+   margin: 0 0 24px;
    line-height: 1.4;
 }
 

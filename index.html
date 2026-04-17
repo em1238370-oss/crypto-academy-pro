@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260416-kro-reality-check">
+   <link rel="stylesheet" href="styles.css?v=20260417-kro-byo-cta-main">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -286,6 +286,14 @@
                    <div class="kro-feature1-check-row" id="kro-check-form-row">
                        <label class="kro-report-label" for="kro-check-channel">@username или ссылка на канал <input type="text" id="kro-check-channel" placeholder="@channel или t.me/..." autocomplete="off"></label>
                        <button type="button" class="kro-report-submit" id="kro-check-btn">Запустить проверку</button>
+                   </div>
+                   <div class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Дополнительные пояснения">
+                       <p class="kro-check-user-explainer-title">Если нужно чуть больше деталей</p>
+                       <ul class="kro-check-user-explainer-list">
+                           <li><strong>Здесь</strong> — только наши таблицы и мониторинг, без полного чтения ленты. Поэтому ответ почти всегда быстрый.</li>
+                           <li><strong>Глубокий разбор</strong> — на странице <span class="kro-check-user-explainer-code">/channel/имя</span>, кнопка «Глубокий анализ ленты».</li>
+                           <li><strong>Не заставляем сидеть часами</strong>: при очереди покажем позицию и примерное время; если очередь слишком длинная — честно скажем зайти позже. Быстрый отчёт при этом уже у вас.</li>
+                       </ul>
                    </div>
                    <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
                    <div class="kro-check-progress hidden" id="kro-check-progress" aria-busy="true" aria-live="polite" hidden>
@@ -1106,6 +1114,8 @@
                    var demoUrl = base + '/channel/telegram';
                    panel.hidden = false;
                    panel.classList.remove('hidden');
+                   var byoteleNote = '<p class="kro-inline-deep-byotele-note">Не хотите ждать серверную очередь? На странице канала есть кнопка <strong>«Глубокий через ваш Telegram (BYO)»</strong>.</p>' +
+                       '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta kro-inline-deep-cta--secondary" href="' + esc(chUrl) + '#ch-byotele">Открыть BYO через Telegram</a></p>';
                    if (dg.can_run_deep === false) {
                        panel.className = 'kro-inline-deep-panel kro-inline-deep-panel--blocked';
                        var sc = (dg.server_throttle_scope || '').toString();
@@ -1128,7 +1138,8 @@
                            ? 'Это ограничение сервиса (очередь, лимиты Telegram или правило «не ждать в онлайне слишком долго»). Глубокий прогон для этого канала в этом ответе не выполнялся.'
                            : 'Сейчас показан только базовый быстрый анализ (без полной выборки постов из Telegram). Глубокий прогон для этого канала не выполнялся.';
                        panel.innerHTML = '<strong class="kro-inline-deep-title">' + esc(blockedTitle) + '</strong>' + sub +
-                           '<p class="kro-inline-deep-honest">' + esc(honest) + '</p>';
+                           '<p class="kro-inline-deep-honest">' + esc(honest) + '</p>' +
+                           byoteleNote;
                    } else {
                        panel.className = 'kro-inline-deep-panel kro-inline-deep-panel--ok';
                        var loadNote = (dg.load && dg.load.deep_global_load_high)
@@ -1137,7 +1148,8 @@
                        panel.innerHTML = '<strong class="kro-inline-deep-title">Глубокий анализ ленты сейчас можно запустить</strong>' +
                            '<p class="kro-inline-deep-text">Текст выше — быстрый персональный отчёт по базе и мониторингу. Чтобы прочитать ленту канала в Telegram (обычно до 3 минут), откройте страницу канала и нажмите «Глубокий анализ ленты».</p>' +
                            loadNote +
-                           '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta" href="' + esc(chUrl) + '">Открыть страницу канала и запустить глубокий анализ</a></p>';
+                           '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta" href="' + esc(chUrl) + '">Открыть страницу канала и запустить глубокий анализ</a></p>' +
+                           byoteleNote;
                    }
                    demo.hidden = false;
                    demo.classList.remove('hidden');
@@ -1266,13 +1278,9 @@
                                    inlineReport.classList.remove('hidden');
                                    inlineReport.hidden = false;
                                }
-                              try {
-                                 if (inlineReport && window.kroSmoothScrollToElement) {
-                                     window.kroSmoothScrollToElement(inlineReport, { offset: 20, duration: 1400 });
-                                  } else if (inlineReport) {
-                                      inlineReport.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                                  }
-                              } catch (eScroll) { /* ignore */ }
+                               try {
+                                   if (inlineReport) inlineReport.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                               } catch (eScroll) { /* ignore */ }
                            };
                            var elapsed = Date.now() - __kroCheckStarted;
                            var minBusyMs = 2800;
@@ -1587,68 +1595,6 @@
            else initMathSlider();
        })();
    </script>
-  <script>
-      (function () {
-          var prefersReduced = false;
-          try {
-              prefersReduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-          } catch (eMedia) { /* ignore */ }
-
-        function easeInOutSine(t) {
-            return -(Math.cos(Math.PI * t) - 1) / 2;
-          }
-
-          function clampDuration(distance, customDuration) {
-              if (typeof customDuration === 'number' && customDuration > 0) return customDuration;
-            return Math.max(950, Math.min(2200, Math.abs(distance) * 1.2));
-          }
-
-          window.kroSmoothScrollToElement = function (element, options) {
-              if (!element) return;
-              var opts = options || {};
-              var offset = typeof opts.offset === 'number' ? opts.offset : 12;
-              var targetY = Math.max(0, window.pageYOffset + element.getBoundingClientRect().top - offset);
-
-              if (prefersReduced || !window.requestAnimationFrame) {
-                  window.scrollTo(0, targetY);
-                  return;
-              }
-
-              var startY = window.pageYOffset;
-              var delta = targetY - startY;
-              var duration = clampDuration(delta, opts.duration);
-              var startAt = 0;
-
-              function step(timestamp) {
-                  if (!startAt) startAt = timestamp;
-                  var progress = Math.min((timestamp - startAt) / duration, 1);
-                var eased = easeInOutSine(progress);
-                  window.scrollTo(0, startY + delta * eased);
-                  if (progress < 1) window.requestAnimationFrame(step);
-              }
-
-              window.requestAnimationFrame(step);
-          };
-
-          document.addEventListener('click', function (event) {
-              var link = event.target && event.target.closest ? event.target.closest('a[href^="#"]') : null;
-              if (!link) return;
-              var href = link.getAttribute('href');
-              if (!href || href === '#') return;
-
-              var targetId = href.slice(1);
-              var target = document.getElementById(decodeURIComponent(targetId));
-              if (!target) return;
-
-              event.preventDefault();
-              if (window.location.hash !== href) {
-                  history.pushState(null, '', href);
-                  window.dispatchEvent(new Event('hashchange'));
-              }
-              window.kroSmoothScrollToElement(target, { offset: 12 });
-          });
-      })();
-  </script>
    <script>
        (function() {
            var btn = document.getElementById('kro-f1-cta-btn');
@@ -1664,11 +1610,7 @@
                btn.addEventListener('click', function() {
                    wrap.classList.add('kro-f1-show-check');
                    var ch = wrap.querySelector('#kro-feature1-check');
-                  if (ch && window.kroSmoothScrollToElement) {
-                      window.kroSmoothScrollToElement(ch, { offset: 12, duration: 1550 });
-                   } else if (ch) {
-                       ch.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                   }
+                   if (ch) ch.scrollIntoView({ behavior: 'smooth', block: 'center' });
                });
            }
        })();
