@@ -59,14 +59,10 @@
     <p class="ch-eyebrow" id="ch-eyebrow">Проверка Telegram‑канала</p>
     <h1 class="ch-title" id="ch-heading">—</h1>
     <p class="ch-meta" id="ch-subhead" hidden></p>
+    <p class="ch-meta ch-what-analyzed" id="ch-what-analyzed" hidden></p>
     <aside class="ch-flow-simple" aria-label="Как устроена проверка на этой странице">
-      <p class="ch-flow-simple-title">Как это работает здесь</p>
-      <ol class="ch-flow-simple-list">
-        <li><strong>Сначала</strong> — быстрый отчёт по базе и жалобам (секунды). Уже можно понять, есть ли сигналы в наших данных.</li>
-        <li><strong>Кнопка ниже</strong> — глубокий разбор ленты Telegram (минуты). Иногда очередь или пауза мессенджера — это нормально, не «вас выкинули».</li>
-        <li><strong>Цифры на экране</strong> — когда нажать «Обновить отчёт», если идёт очередь; страница может обновиться сама.</li>
-      </ol>
-      <p class="ch-flow-simple-foot">Если канал недавно уже проверяли — глубокий результат может быть готов сразу.</p>
+      <p class="ch-flow-simple-title">Как это работает</p>
+      <p class="ch-flow-simple-foot">Сразу показываем быстрый правдивый отчёт по базе и мониторингу (секунды). Глубокий анализ ленты запускается отдельно, обычно до 3 минут; если есть лимит Telegram, покажем время повтора и не оставим вас «в пустоте».</p>
     </aside>
     <p class="ch-merged" id="ch-merged-note" hidden></p>
 
@@ -1134,6 +1130,24 @@
         subParts.push('глубокий: через ваш аккаунт Telegram (общий кэш сервера не обновляли)');
       }
       sub.textContent = subParts.join(' · ');
+      var whatEl = document.getElementById('ch-what-analyzed');
+      if (whatEl) {
+        var scope = [];
+        scope.push('Проверяли канал: @' + queryU + '.');
+        if (apiMode === 'deep' && lm.deep_status === 'ok') {
+          scope.push(data.byo_deep
+            ? 'Глубоко: лента Telegram до 6 месяцев через ваш аккаунт.'
+            : 'Глубоко: лента Telegram до 6 месяцев через сервер.');
+        } else if (apiMode === 'deep' && (lm.deep_status === 'queued' || lm.deep_status === 'queue_deferred' || lm.deep_status === 'client_queue_full')) {
+          scope.push('Сейчас показан быстрый слой (база и мониторинг), глубокий запуск в очереди/ограничен.');
+        } else if (apiMode === 'deep' && (lm.deep_status === 'rate_limited' || lm.deep_status === 'skipped_flood')) {
+          scope.push('Сейчас показан быстрый слой; Telegram временно ограничил глубокий запуск.');
+        } else {
+          scope.push('Сейчас показан быстрый слой: база, жалобы и широкий мониторинг.');
+        }
+        whatEl.hidden = false;
+        whatEl.textContent = scope.join(' ');
+      }
 
       if (deepQueued && apiMode === 'deep') {
         var secPoll = dg.suggested_refresh_seconds != null ? Number(dg.suggested_refresh_seconds) : (lm.deep_queue_suggested_poll_seconds != null ? Number(lm.deep_queue_suggested_poll_seconds) : null);

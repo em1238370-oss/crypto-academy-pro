@@ -1353,9 +1353,9 @@ const KRO_DEEP_CACHE_HARD_EXPIRE_MS = Math.max(
 /** Пауза между задачами очереди deep — снижает пики к Telegram. */
 const KRO_DEEP_QUEUE_INTER_JOB_MS = Math.max(0, parseInt(process.env.KRO_DEEP_QUEUE_INTER_JOB_MS || '2500', 10));
 /** Сколько каналов одного пользователя может одновременно стоять в очереди deep (плюс один в работе у воркера). */
-const KRO_DEEP_CLIENT_MAX_QUEUE = Math.max(1, parseInt(process.env.KRO_DEEP_CLIENT_MAX_QUEUE || '3', 10));
+const KRO_DEEP_CLIENT_MAX_QUEUE = Math.max(1, parseInt(process.env.KRO_DEEP_CLIENT_MAX_QUEUE || '2', 10));
 /** Если расчётный ETA очереди больше — не ставим в очередь, отдаём fast и честное «зайдите позже». */
-const KRO_DEEP_QUEUE_MAX_ETA_MINUTES = Math.max(10, parseInt(process.env.KRO_DEEP_QUEUE_MAX_ETA_MINUTES || '30', 10));
+const KRO_DEEP_QUEUE_MAX_ETA_MINUTES = Math.max(10, parseInt(process.env.KRO_DEEP_QUEUE_MAX_ETA_MINUTES || '20', 10));
 /** Если задан — POST /api/kro/ops/deep-breathe с Authorization: Bearer <secret> (без секрета маршрут 404). */
 const KRO_DEEP_OPS_SECRET = (process.env.KRO_DEEP_OPS_SECRET || '').toString().trim();
 
