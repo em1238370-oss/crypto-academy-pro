@@ -5086,6 +5086,205 @@ body.ch-page > main.mon-container {
   background: rgba(38, 34, 22, 0.32);
 }
 
+/* Глубокий блок — тот же визуальный язык, что /monitor: tier, золото, объём */
+.ch-page .ch-deep-shell.ch-block {
+  margin-top: 36px;
+  padding: 26px 22px 26px;
+  border-top: none;
+  border-radius: 16px;
+  border: 1px solid rgba(245, 197, 120, 0.3);
+  background: linear-gradient(165deg, rgba(44, 36, 24, 0.62) 0%, rgba(16, 17, 22, 0.94) 52%, rgba(7, 8, 12, 0.99) 100%);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.45),
+    0 26px 64px rgba(0, 0, 0, 0.5),
+    0 0 80px rgba(245, 158, 11, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.ch-page .ch-deep-shell.ch-block::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(251, 191, 36, 0.15) 18%,
+    rgba(253, 224, 71, 0.65) 50%,
+    rgba(251, 191, 36, 0.15) 82%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ch-page .ch-deep-shell.ch-block::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.85;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(ellipse 72% 55% at 10% 0%, rgba(245, 158, 11, 0.18), transparent 46%),
+    radial-gradient(ellipse 60% 50% at 92% 100%, rgba(251, 191, 36, 0.1), transparent 44%),
+    radial-gradient(ellipse 50% 40% at 50% 120%, rgba(96, 125, 200, 0.06), transparent 50%);
+}
+
+.ch-page .ch-deep-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ch-deep-shell-head {
+  margin: 0 0 4px;
+  padding-bottom: 4px;
+}
+
+.ch-deep-shell-kicker {
+  position: relative;
+  font-family: var(--mon-font);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: var(--mon-tracking-kicker);
+  text-transform: uppercase;
+  color: rgba(253, 224, 138, 0.9);
+  margin: 0 0 12px;
+  padding-left: 14px;
+}
+
+.ch-deep-shell-kicker::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.12em;
+  bottom: 0.12em;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.98), rgba(245, 158, 11, 0.08));
+}
+
+.ch-page .ch-deep-shell .ch-h2--deep-stage {
+  font-family: var(--mon-font-display);
+  font-size: clamp(1.2rem, 2.4vw, 1.55rem);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  text-transform: none;
+  color: rgba(255, 255, 255, 0.97);
+  margin: 0 0 6px;
+  line-height: 1.18;
+  text-shadow: 0 1px 22px rgba(245, 158, 11, 0.12);
+}
+
+.ch-page .ch-deep-shell .ch-deep-intro {
+  color: var(--mon-text-prose-hi);
+  max-width: 56ch;
+}
+
+.ch-page .ch-deep-shell .ch-deep-btn {
+  border-color: var(--mon-amber-border);
+  background: linear-gradient(145deg, rgba(58, 42, 22, 0.96) 0%, rgba(26, 20, 12, 0.99) 100%);
+  color: rgba(255, 248, 230, 0.98);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.38),
+    0 14px 40px rgba(0, 0, 0, 0.48),
+    0 0 40px rgba(245, 158, 11, 0.2);
+}
+
+.ch-page .ch-deep-shell .ch-deep-btn:hover:not(:disabled) {
+  color: #fffbeb;
+  border-color: rgba(253, 224, 127, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.38),
+    0 16px 44px rgba(0, 0, 0, 0.52),
+    0 0 48px rgba(251, 191, 36, 0.28);
+}
+
+.ch-page .ch-deep-shell .ch-deep-btn--secondary {
+  border-color: rgba(253, 224, 127, 0.38);
+  background: linear-gradient(145deg, rgba(32, 30, 26, 0.95) 0%, rgba(14, 16, 22, 0.98) 100%);
+  color: rgba(254, 243, 199, 0.95);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.38),
+    0 12px 34px rgba(0, 0, 0, 0.44),
+    0 0 32px rgba(245, 158, 11, 0.1);
+}
+
+.ch-page .ch-deep-shell .ch-deep-btn--secondary:hover:not(:disabled) {
+  color: #fffbeb;
+  border-color: rgba(253, 224, 127, 0.58);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.38),
+    0 14px 38px rgba(0, 0, 0, 0.48),
+    0 0 40px rgba(245, 158, 11, 0.16);
+}
+
+.ch-page .ch-deep-shell .ch-byotele {
+  border-color: rgba(245, 197, 120, 0.28);
+  background: linear-gradient(180deg, rgba(22, 20, 18, 0.55) 0%, rgba(10, 11, 14, 0.72) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.ch-page .ch-deep-shell .ch-byotele-summary {
+  color: rgba(255, 248, 235, 0.92);
+}
+
+.ch-page .ch-deep-shell .ch-byotele-body {
+  border-top-color: rgba(245, 197, 120, 0.14);
+}
+
+.ch-page .ch-deep-shell .ch-deep-results {
+  margin-top: 22px;
+  padding: 22px 18px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(245, 197, 120, 0.22);
+  background: rgba(6, 7, 10, 0.58);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 14px 44px rgba(0, 0, 0, 0.35);
+}
+
+.ch-page .ch-deep-shell .ch-deep-results-title {
+  font-family: var(--mon-font-display);
+  font-size: clamp(1.05rem, 2vw, 1.28rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(245, 197, 120, 0.2);
+}
+
+.ch-page .ch-deep-shell .ch-deep-subsec {
+  margin-bottom: 14px;
+  padding: 14px 14px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 197, 120, 0.14);
+  background: rgba(255, 255, 255, 0.025);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.ch-page .ch-deep-shell .ch-deep-subsec:last-child {
+  margin-bottom: 0;
+}
+
+.ch-page .ch-deep-shell .ch-deep-subsec .ch-h3 {
+  color: rgba(253, 224, 138, 0.88);
+  letter-spacing: 0.07em;
+}
+
+.ch-page .ch-deep-shell .ch-deep-subsec .ch-body {
+  color: var(--mon-text);
+}
+
 .ch-page .ch-block {
   border-top-color: rgba(245, 197, 120, 0.08);
 }

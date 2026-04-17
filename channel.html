@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260417-channel-deep-fallback">
+  <link rel="stylesheet" href="/monitor.css?v=20260417-deep-monitor-tier">
 </head>
 <body class="mon-page ch-page">
 
@@ -127,8 +127,11 @@
       <p class="ch-body" id="ch-detected">—</p>
     </section>
 
-    <section class="ch-block ch-block--action" aria-labelledby="ch-deep-h">
-      <h2 id="ch-deep-h" class="ch-h2">Глубокий анализ ленты</h2>
+    <section class="ch-block ch-block--action ch-deep-shell" id="ch-deep-section" aria-labelledby="ch-deep-h">
+      <header class="ch-deep-shell-head">
+        <p class="ch-deep-shell-kicker">KRO MONITOR · глубокий слой</p>
+        <h2 id="ch-deep-h" class="ch-h2 ch-h2--deep-stage">Глубокий анализ ленты</h2>
+      </header>
       <p class="ch-meta ch-deep-intro">Выберите режим: обычный deep через сервер или deep через ваш Telegram-аккаунт.</p>
       <div id="ch-deep-cta-wrap" class="ch-deep-cta-wrap">
         <div id="ch-deep-server-wrap">
@@ -877,6 +880,14 @@
       updateByoUi();
     };
   }
+  function scrollToDeepSection() {
+    var shell = document.getElementById('ch-deep-section');
+    if (!shell) return;
+    try {
+      shell.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (eScrollShell) { /* ignore */ }
+  }
+
   var byoQuickBtn = document.getElementById('ch-deep-byo-btn');
   if (byoQuickBtn) {
     byoQuickBtn.onclick = function () {
@@ -895,6 +906,7 @@
       }
       var deepBtnNow = document.getElementById('ch-deep-btn');
       if (deepBtnNow) deepBtnNow.disabled = true;
+      scrollToDeepSection();
       loadChannelReport(1, { deep: true });
     };
   }
@@ -1464,6 +1476,11 @@
             : '';
           deepResultsEl.innerHTML = byoTag + renderDeepAnalysisBlock(a);
           deepResultsEl.hidden = false;
+          setTimeout(function () {
+            try {
+              deepResultsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } catch (eDeepScroll) { /* ignore */ }
+          }, 100);
         }
       } else {
         applyAnalysisToMainSections(a);
@@ -1562,6 +1579,7 @@
       raw.push(now);
       try { sessionStorage.setItem(key, JSON.stringify(raw)); } catch (e2) { /* ignore */ }
       deepBtn.disabled = true;
+      scrollToDeepSection();
       loadChannelReport(1, { deep: true });
     };
   }
