@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260417-ch-deep-30m">
+  <link rel="stylesheet" href="/monitor.css?v=20260417-ch-deep-incomplete-banner">
 </head>
 <body class="mon-page ch-page">
 
@@ -140,7 +140,7 @@
       <div id="ch-deep-cta-wrap" class="ch-deep-cta-wrap">
         <div id="ch-deep-server-wrap">
         <button type="button" class="ch-deep-btn" id="ch-deep-btn">Запустить глубокий анализ (сервер)</button>
-        <p class="ch-deep-btn-caption" id="ch-deep-btn-caption">Обычно до 3 минут. Иногда есть очередь из-за лимитов Telegram.</p>
+        <p class="ch-deep-btn-caption" id="ch-deep-btn-caption">Обычно минуты; на тяжёлом канале до ~30 мин (лимит ожидания). Иногда очередь из‑за лимитов Telegram.</p>
         </div>
         <div id="ch-deep-byo-wrap">
         <button type="button" class="ch-deep-btn ch-deep-btn--secondary" id="ch-deep-byo-btn">Глубокий через ваш Telegram (BYO)</button>
@@ -467,13 +467,13 @@
     if (!r) return bullets;
     if (r.object_type && String(r.object_type).trim() && String(r.object_type).trim() !== '—') {
       var ot = String(r.object_type).trim();
-      if (!/^\d+$/.test(ot)) bullets.push('Тип объекта в базе: ' + ot);
+      if (!/^\d+$/.test(ot)) bullets.push('Тип объекта: ' + ot);
     }
     if (r.complaints != null && r.complaints !== '' && !isNaN(Number(r.complaints)) && Number(r.complaints) > 0) {
       bullets.push('Жалоб по записи: ' + Number(r.complaints));
     }
     var loss = Number(r.total_loss_rub);
-    if (loss > 0) bullets.push('Сумма потерь в строке: ' + loss.toLocaleString('ru-RU') + ' ₽');
+    if (loss > 0) bullets.push('Сумма потерь по записи: ' + loss.toLocaleString('ru-RU') + ' ₽');
     var qs = cleanEvidenceQuotes(r.source_evidence || '');
     for (var q = 0; q < qs.length; q++) {
       bullets.push('Из поля доказательств: «' + qs[q] + '»');
@@ -492,7 +492,7 @@
   function renderRisk(r) {
     var bullets = riskBulletsFromRow(r);
     if (!bullets.length) {
-      return '<div class="mon-evidence-empty">В ячейке нет развёрнутого текста признаков — откройте ссылки источника ниже.</div>';
+      return '<div class="mon-evidence-empty">В записи нет развёрнутого текста признаков — откройте ссылки источника ниже.</div>';
     }
     return '<ul class="mon-evidence-list">' + bullets.map(function (b) {
       return '<li>' + esc(b) + '</li>';
@@ -527,13 +527,13 @@
       parts.push('<a class="mon-external-link mon-source-link" data-lenis-prevent="" href="' + esc(thWeb) + '" target="_blank" rel="noopener noreferrer" title="Лента в браузере (t.me/s)">' +
         esc(hostLabel(thWeb)) + externalIcon() + '</a>');
     }
-    if (!parts.length) return '<span class="mon-text-fallback">Ссылки не извлечены из строки — смотрите таблицу в мониторе.</span>';
+    if (!parts.length) return '<span class="mon-text-fallback">Ссылки не извлечены из записи — откройте раздел «Монитор» при необходимости.</span>';
     return parts.join(' ');
   }
 
   function friendlyObjectType(raw) {
     var v = String(raw || '').trim().toLowerCase();
-    if (!v) return 'Тип не указан в строке базы.';
+    if (!v) return 'Тип не указан.';
     if (v.indexOf('бот') >= 0) return 'Инвест-бот или Telegram-бот';
     if (v.indexOf('обмен') >= 0 || v.indexOf('сайт') >= 0 || v.indexOf('курс') >= 0) return 'Обменник / сайт / внешний сервис';
     if (v.indexOf('сигнал') >= 0) return 'Сигнальный канал';
@@ -558,7 +558,7 @@
     var reasons = [];
     var sp = String((r && r.source_primary) || '').trim();
     var ev = String((r && r.source_evidence) || '').trim();
-    if (sp && sp !== '—') reasons.push('Источник в строке: ' + sp + '.');
+    if (sp && sp !== '—') reasons.push('Источник: ' + sp + '.');
     var links = extractUrls(ev).filter(function (u) {
       return !/t\.me\/|telegram\.me\//i.test(u);
     });
@@ -602,7 +602,7 @@
     document.getElementById('ch-risk').innerHTML = renderRisk(r);
 
     var sp = (r.source_primary || '').trim() || '—';
-    document.getElementById('ch-source-primary').textContent = 'Поле источника в таблице: ' + sp;
+    document.getElementById('ch-source-primary').textContent = 'Указанный источник: ' + sp;
     document.getElementById('ch-source-links').innerHTML = renderSourceLinks(r);
     document.getElementById('ch-why-type').textContent = friendlyObjectType(r.object_type);
     document.getElementById('ch-why-reason').textContent = shortReason(r);
@@ -936,11 +936,15 @@
       window.__chElapsedTick = null;
     }
     var t0 = Date.now();
+    function pad2(n) {
+      n = Math.floor(Number(n)) || 0;
+      return (n < 10 ? '0' : '') + n;
+    }
     function fmt(ms) {
       var s = Math.max(0, Math.floor(ms / 1000));
       var m = Math.floor(s / 60);
       var r = s % 60;
-      return m + ':' + (r < 10 ? '0' : '') + r;
+      return pad2(m) + ':' + pad2(r);
     }
     function tick() {
       if (el) el.textContent = fmt(Date.now() - t0);
@@ -1072,7 +1076,7 @@
       var partA =
         'Глубокий запрос не вернулся вовремя для этой страницы (обрыв по таймауту браузера или сети до ~' +
         Math.round((window.__chChannelFetchTimeoutMs || 1800000) / 1000) +
-        ' с). Это не «пустая страница»: ниже снова показан быстрый отчёт по базе и мониторингу — он уже был до запуска глубокого.';
+        ' с). Это не «пустая страница»: ниже снова показан быстрый отчёт (жалобы и мониторинг) — он уже был до запуска глубокого.';
       var partB =
         streak >= 2
           ? ' Два раза подряд ответ не успел: серверный глубокий для этого канала в таком режиме не обещаем. Используйте BYO (ваш Telegram) или зайдите позже — не жмите перезагрузку по кругу.'
@@ -1149,7 +1153,7 @@
       if (m1) m1.textContent = 'Пока идёт запрос, блоки отчёта сверху могут ещё обновиться — это нормально.';
       if (m2) { m2.hidden = false; m2.textContent = 'После «Подключить» глубокий запустится сам; при необходимости снова откройте блок StringSession кнопкой BYO выше.'; }
     } else {
-      if (lead) lead.textContent = 'Сначала открываем быстрый отчёт по базе и мониторингу (обычно секунды). Глубокий разбор ленты до 6 месяцев — кнопкой ниже.';
+      if (lead) lead.textContent = 'Сначала открываем быстрый отчёт: жалобы, мониторинг и при возможности ленту (обычно секунды). Полный глубокий разбор до 6 месяцев — кнопкой ниже.';
       if (m1) m1.textContent = 'Быстрый режим не дергает полную выборку постов и почти не упирается в лимиты Telegram.';
       if (m2) { m2.hidden = false; m2.textContent = 'Глубокий режим читает ленту до 6 месяцев; при FLOOD_WAIT сервер покажет быстрый слой и время, когда можно повторить.'; }
     }
@@ -1316,7 +1320,7 @@
       chOpenByoPanelAndFocus();
 
       var lm = data.live_metrics || {};
-      if (deep && lm.deep_status === 'ok') chResetDeepTimeoutStreak();
+      if (deep && (lm.deep_status === 'ok' || lm.deep_status === 'incomplete')) chResetDeepTimeoutStreak();
       var apiMode = data.mode || 'fast';
       var dg = data.deep_gate || {};
       var flood = lm.deep_status === 'rate_limited' || lm.deep_status === 'skipped_flood';
@@ -1411,6 +1415,10 @@
           deepHint.textContent = data.byo_deep
             ? 'Глубокий отчёт ниже получен через ваш аккаунт Telegram; сверху сохранён базовый снимок.'
             : 'Глубокий отчёт продублирован в блоке ниже; сверху сохранён базовый снимок.';
+        } else if (apiMode === 'deep' && lm.deep_status === 'incomplete') {
+          deepHint.hidden = false;
+          deepHint.textContent =
+            'За лимит времени не удалось прочитать всю ленту целиком — ниже честно сокращённый вывод по тому, что успели собрать.';
         } else {
           deepHint.hidden = true;
           deepHint.textContent = '';
@@ -1436,22 +1444,29 @@
           liveBanner.hidden = false;
           if (apiMode === 'deep' && lm.deep_status === 'ok') {
             liveBanner.textContent = data.byo_deep
-              ? 'В scam_base записи нет. Глубокий разбор ленты выполнен через ваш аккаунт — блок ниже.'
-              : 'В scam_base записи нет. Сверху — базовый снимок; полный глубокий разбор ленты — в отдельном блоке ниже.';
+              ? 'В публичной базе записи нет. Глубокий разбор ленты выполнен через ваш аккаунт — блок ниже.'
+              : 'В публичной базе записи нет. Сверху — быстрый снимок; полный глубокий разбор — в отдельном блоке ниже.';
+          } else if (apiMode === 'deep' && lm.deep_status === 'incomplete') {
+            liveBanner.textContent =
+              'Глубокий разбор уложился в лимит времени не полностью: ниже — сокращённый отчёт по тому, что успели прочитать в ленте.';
           } else {
             liveBanner.textContent =
-              'В scam_base записи нет — базовый отчёт по отчётам и мониторингу. Глубокий разбор ленты — кнопкой ниже.';
+              'В публичной базе записи нет — ниже быстрый отчёт по жалобам и мониторингу. Полный глубокий разбор ленты — кнопкой ниже.';
           }
         } else {
           if (apiMode === 'fast') {
             liveBanner.hidden = false;
             liveBanner.textContent =
-              'Базовый режим: карточка базы без новой выборки ленты. Глубокий разбор — отдельным блоком ниже.';
+              'Быстрый режим: сводка без полной новой выборки ленты. Глубокий разбор — отдельным блоком ниже.';
+          } else if (apiMode === 'deep' && lm.deep_status === 'incomplete') {
+            liveBanner.hidden = false;
+            liveBanner.textContent =
+              'Глубокий разбор остановлен по лимиту времени раньше, чем охвачена вся лента — ниже сокращённый, но честный вывод.';
           } else if (apiMode === 'deep' && lm.deep_status === 'ok') {
             liveBanner.hidden = false;
             liveBanner.textContent = data.byo_deep
               ? 'Глубокий анализ ленты выполнен через ваш аккаунт Telegram — результат в блоке ниже.'
-              : 'Сверху сохранён базовый снимок по карточке; глубокий разбор ленты — в блоке ниже.';
+              : 'Сверху сохранён быстрый снимок по карточке; глубокий разбор ленты — в блоке ниже.';
           } else {
             liveBanner.hidden = true;
             liveBanner.textContent = '';

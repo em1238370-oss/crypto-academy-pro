@@ -1322,6 +1322,12 @@ const kroCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_CHECK_ONCE_TIMEOUT_
 const kroCheckOnceTimeoutMs = Number.isFinite(kroCheckOnceTimeoutMsParsed) && kroCheckOnceTimeoutMsParsed >= 120000 && kroCheckOnceTimeoutMsParsed <= 1800000
   ? kroCheckOnceTimeoutMsParsed
   : 180000;
+/** Быстрый слой на главной (?home_quick_live=1): чтение ленты до ~7 мин (тяжёлые каналы), окно 90 дн. */
+const kroHomeQuickLiveTimeoutMsParsed = parseInt(process.env.KRO_HOME_QUICK_LIVE_TIMEOUT_MS || '420000', 10);
+const kroHomeQuickLiveTimeoutMs =
+  Number.isFinite(kroHomeQuickLiveTimeoutMsParsed) && kroHomeQuickLiveTimeoutMsParsed >= 120000 && kroHomeQuickLiveTimeoutMsParsed <= 420000
+    ? kroHomeQuickLiveTimeoutMsParsed
+    : 420000;
 /** Глубокий анализ ленты: верхняя граница ~30 мин, горизонт до 6 мес. (periodDays 180 в вызове). */
 const kroDeepCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_DEEP_CHECK_ONCE_TIMEOUT_MS || '1800000', 10);
 const kroDeepCheckOnceTimeoutMs =
@@ -3785,14 +3791,14 @@ function kroV0PrependFastModeNote(analysis, profile) {
   const complaints = p && p.complaints != null && p.complaints !== '' ? String(p.complaints).trim() : '';
   const lossRub = p ? Number(p.total_loss_rub) : NaN;
   const bits = [];
-  if (st) bits.push(`в сводке статус «${st}»`);
-  if (complaints && complaints !== '—') bits.push(`жалоб в сводке: ${complaints}`);
+  if (st) bits.push(`в мониторинге статус «${st}»`);
+  if (complaints && complaints !== '—') bits.push(`жалоб учтено: ${complaints}`);
   if (Number.isFinite(lossRub) && lossRub > 0) {
-    bits.push(`потери по сводке: ${lossRub.toLocaleString('ru-RU')} ₽`);
+    bits.push(`потери по данным мониторинга: ${lossRub.toLocaleString('ru-RU')} ₽`);
   }
   const line = bits.length
-    ? `${uname}: быстрый слой — сводка мониторинга и отчёты (${bits.join('; ')}); ленту в Telegram здесь не перечитывали.`
-    : `${uname}: быстрый слой — сводка мониторинга и отчёты; ленту в Telegram здесь не перечитывали (без FLOOD_WAIT).`;
+    ? `${uname}: быстрый режим — жалобы и мониторинг (${bits.join('; ')}); полную ленту Telegram в этом запросе не перечитывали.`
+    : `${uname}: быстрый режим — жалобы и мониторинг; полную ленту Telegram в этом запросе не перечитывали.`;
   const bi = Array.isArray(analysis.basic_info) ? analysis.basic_info : [];
   if (bi.some((x) => /^Быстрый режим/i.test(String(x)))) return;
   analysis.basic_info = [line, ...bi].slice(0, 8);
@@ -3975,6 +3981,11 @@ function kroV0BuildAnalysisFromLiveParsed(parsed, channelKey) {
 
   const baseInfo = [];
   baseInfo.push(`Канал: ${username || (channelKey ? `@${channelKey}` : '—')}`);
+  if (p.found !== true && !p.not_crypto) {
+    baseInfo.push(
+      'За отведённое время не удалось охватить всю ленту целиком — ниже сокращённый, но честный вывод по доступной выборке.',
+    );
+  }
   const winD = Number(p.analysis_window_days);
   const postsN = Number(p.posts_fetched);
   const limLive = kroLiveSampleLimitedDetail(p);
@@ -5986,7 +5997,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     if (homeQuickLiveWant && !floodState.active) {
       const allowH = kroDeepAllowNewTelegramDeep(clientId);
       if (allowH.allowed) {
-        const tHome = Math.min(kroCheckOnceTimeoutMs, 105000);
+        const tHome = kroHomeQuickLiveTimeoutMs;
         const onceH = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 90, timeoutMs: tHome });
         if (onceH.ok === true && onceH.parsed) {
           const normH = kroNormalizeCheckOnceForAnalysis(onceH);
