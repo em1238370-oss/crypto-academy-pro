@@ -4595,8 +4595,40 @@ a.mon-channel-external:hover {
   }
 }
 
+/* ── Страница /channel/* — тот же ритм, что monitor.html (атмосфера, иерархия, motion §4) ── */
+body.ch-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+body.ch-page > main.mon-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .ch-page .ch-main {
-  padding-top: 28px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 88px);
+  padding-top: 0;
+  padding-bottom: clamp(40px, 8vw, 80px);
+}
+
+.ch-page .ch-state--loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: clamp(32px, 6vw, 72px) 20px;
+  text-align: center;
 }
 
 .ch-state {
@@ -4606,19 +4638,69 @@ a.mon-channel-external:hover {
 }
 
 .ch-state--error {
-  max-width: 980px;
+  flex: 1;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
 
-.ch-state--error .ch-title {
-  color: var(--mon-red);
+/* Полоса статуса на всю ширину вьюпорта — как mon-live-strip на /monitor */
+.ch-page .ch-error-strip {
+  width: 100vw;
+  max-width: 100vw;
+  position: relative;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  margin: 0 0 0;
+}
+
+.ch-error-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: clamp(28px, 5vw, 56px) 0 clamp(40px, 7vw, 80px);
 }
 
 .ch-error-shell {
   width: 100%;
-  max-width: 860px;
+  max-width: min(720px, 100%);
   margin: 0 auto;
+  animation: ch-error-shell-in var(--mon-dur-reveal) var(--mon-ease-soft) both;
+}
+
+@keyframes ch-error-shell-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--mon-reveal-y));
+    filter: blur(var(--mon-reveal-blur));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ch-error-shell {
+    animation: none;
+  }
+}
+
+.ch-state--error .ch-title,
+.ch-state--error .mon-chapter-title {
+  color: #fff;
+}
+
+.ch-state--error .mon-chapter-kicker::before {
+  background: linear-gradient(180deg, rgba(251, 113, 133, 0.95), rgba(184, 74, 74, 0.12));
 }
 
 .ch-error-kicker {
@@ -4630,9 +4712,12 @@ a.mon-channel-external:hover {
 }
 
 .ch-error-body--monitor .ch-lead {
-  font-size: 17px;
-  line-height: 1.45;
-  color: #f2f4ff;
+  font-family: var(--mon-font);
+  font-size: clamp(16px, 1.1vw + 14px, 18px);
+  font-weight: 400;
+  line-height: var(--mon-leading-body);
+  color: var(--mon-text-prose-hi);
+  max-width: var(--mon-prose-max);
 }
 
 .ch-error-body--monitor .ch-lead:last-child {
@@ -4652,6 +4737,7 @@ a.mon-channel-external:hover {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.2);
   color: var(--mon-text-dim);
+  font-family: var(--mon-font);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -5207,7 +5293,8 @@ a.mon-channel-external:hover {
   flex-wrap: wrap;
   gap: 14px 20px;
   align-items: center;
-  margin-top: 20px;
+  justify-content: center;
+  margin-top: 24px;
 }
 
 .ch-retry-btn {
