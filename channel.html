@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260417-ch-monitor-atmos-v2">
+  <link rel="stylesheet" href="/monitor.css?v=20260417-ch-loading-timer">
 </head>
 <body class="mon-page ch-page">
 
@@ -33,7 +33,11 @@
 
 <main class="mon-container ch-main">
   <div id="ch-loading" class="ch-state ch-state--loading">
-    <h1 class="ch-title ch-title--loading">Готовим отчёт по каналу</h1>
+    <h1 class="ch-title ch-title--loading" id="ch-loading-title">Готовим отчёт по каналу</h1>
+    <p class="ch-meta ch-meta--loading ch-loading-elapsed-wrap" id="ch-loading-elapsed-wrap">
+      <span class="ch-loading-elapsed-label">Проверка канала · прошло</span>
+      <strong class="ch-loading-elapsed-digits" id="ch-loading-elapsed">0:00</strong>
+    </p>
     <p class="ch-lead ch-lead--loading" id="ch-loading-lead">Сначала вы получаете быстрый правдивый отчёт за секунды. Глубокий анализ ленты (до 6 месяцев истории) запускается отдельно и обычно занимает до 3 минут.</p>
     <p class="ch-meta ch-meta--loading" id="ch-loading-meta1">Быстрый слой не читает все посты в Telegram — поэтому почти не зависит от лимитов мессенджера.</p>
     <p class="ch-meta ch-meta--loading" id="ch-loading-meta2">Глубокий режим читает ленту; при ограничениях Telegram остаётся быстрый отчёт и понятное время для повтора.</p>
@@ -917,6 +921,32 @@
       clearInterval(window.__chLoadingTick);
       window.__chLoadingTick = null;
     }
+    if (window.__chElapsedTick) {
+      clearInterval(window.__chElapsedTick);
+      window.__chElapsedTick = null;
+    }
+  }
+
+  function chStartLoadingElapsedClock() {
+    var el = document.getElementById('ch-loading-elapsed');
+    var wrap = document.getElementById('ch-loading-elapsed-wrap');
+    if (wrap) wrap.hidden = false;
+    if (window.__chElapsedTick) {
+      clearInterval(window.__chElapsedTick);
+      window.__chElapsedTick = null;
+    }
+    var t0 = Date.now();
+    function fmt(ms) {
+      var s = Math.max(0, Math.floor(ms / 1000));
+      var m = Math.floor(s / 60);
+      var r = s % 60;
+      return m + ':' + (r < 10 ? '0' : '') + r;
+    }
+    function tick() {
+      if (el) el.textContent = fmt(Date.now() - t0);
+    }
+    tick();
+    window.__chElapsedTick = setInterval(tick, 250);
   }
 
   function chDeepTimeoutStorageKey() {
@@ -957,7 +987,10 @@
   }
 
   function chStartDeepWaitClock(timeoutMs) {
-    chClearLoadingTick();
+    if (window.__chLoadingTick) {
+      clearInterval(window.__chLoadingTick);
+      window.__chLoadingTick = null;
+    }
     var t0 = Date.now();
     var lr = document.getElementById('ch-loading-retry');
     function tick() {
@@ -1038,7 +1071,7 @@
       liveBanner.className = 'ch-live-banner ch-live-banner--deep-timeout';
       var partA =
         'Глубокий запрос не вернулся вовремя для этой страницы (обрыв по таймауту браузера или сети до ~' +
-        Math.round((window.__chChannelFetchTimeoutMs || 195000) / 1000) +
+        Math.round((window.__chChannelFetchTimeoutMs || 210000) / 1000) +
         ' с). Это не «пустая страница»: ниже снова показан быстрый отчёт по базе и мониторингу — он уже был до запуска глубокого.';
       var partB =
         streak >= 2
@@ -1130,8 +1163,13 @@
         lr.textContent = '';
       }
     }
+    var titleEl = document.getElementById('ch-loading-title');
+    if (titleEl && queryU) {
+      titleEl.textContent = 'Проверяем канал @' + String(queryU).replace(/^@+/, '');
+    }
+    chStartLoadingElapsedClock();
     if (deep) {
-      chStartDeepWaitClock(window.__chChannelFetchTimeoutMs || 195000);
+      chStartDeepWaitClock(window.__chChannelFetchTimeoutMs || 210000);
     }
   }
 
@@ -1179,6 +1217,15 @@
         ],
       };
     }
+    if (hint === 'bad_json') {
+      return {
+        title: 'Ответ оборвался по дороге',
+        paragraphs: [
+          'Сервер начал отдавать отчёт, но до браузера дошла не вся строка (часто из‑за таймаута сети или прокси). Проверка канала на сервере могла уже завершиться.',
+          'Нажмите «Перезагрузить страницу» один раз: если отчёт готов, он подтянется сразу.',
+        ],
+      };
+    }
     if (/Failed to fetch|NetworkError|network/i.test(hint)) {
       return {
         title: 'Не удалось связаться с сервером',
@@ -1188,10 +1235,10 @@
       };
     }
     return {
-      title: 'Ответ не получен полностью',
+      title: 'Не удалось собрать отчёт в браузере',
       paragraphs: [
         'Сеть или таймаут оборвали запрос до JSON — это не «анализ сломался», а обрыв доставки. Перезагрузите страницу или откройте тот же канал с главной.',
-        'Если вы уже видели быстрый отчёт и жали «глубокий», после обрыва снова покажем быстрый слой — не оставляем пустой экран.',
+        'Если быстрый отчёт уже был на экране и вы жали «глубокий», после обрыва снова покажем быстрый слой — не оставляем пустой экран.',
       ],
     };
   }
@@ -1209,7 +1256,7 @@
     window.__chAttempt = attemptNum;
     window.__chDeepMode = deep;
     var fetchOpts = { cache: 'no-store' };
-    var timeoutMs = deep ? 195000 : 90000;
+    var timeoutMs = deep ? 210000 : 165000;
     window.__chChannelFetchTimeoutMs = timeoutMs;
     showChLoading(attemptNum, deep);
     try {
@@ -1224,7 +1271,13 @@
     }
     fetch(q, fetchOpts)
     .then(function (res) {
-      return res.json().then(function (data) {
+      return res.text().then(function (text) {
+        var data = null;
+        try {
+          data = text ? JSON.parse(text) : null;
+        } catch (eJ) {
+          throw new Error('bad_json');
+        }
         if (!res.ok) {
           if (res.status === 400 && data && data.error === 'byo_token_invalid') {
             try {

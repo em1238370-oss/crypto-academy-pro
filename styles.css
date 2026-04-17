@@ -2219,35 +2219,12 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 .kro-inline-deep-panel {
    margin-top: 18px;
-   padding: 18px 18px 16px;
+   padding: 16px 18px;
    border-radius: 14px;
-   border: 1px solid rgba(245, 197, 120, 0.32);
-   background: linear-gradient(165deg, rgba(44, 36, 24, 0.58) 0%, rgba(18, 16, 22, 0.9) 55%, rgba(12, 11, 16, 0.95) 100%);
+   border: 1px solid rgba(245, 158, 11, 0.35);
+   background: linear-gradient(160deg, rgba(40, 32, 20, 0.55) 0%, rgba(18, 16, 22, 0.85) 100%);
    color: rgba(255, 250, 235, 0.92);
-   box-shadow:
-      0 0 0 1px rgba(0, 0, 0, 0.35),
-      0 18px 48px rgba(0, 0, 0, 0.38),
-      0 0 56px rgba(245, 158, 11, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
-   position: relative;
-   overflow: hidden;
-   isolation: isolate;
-}
-.kro-inline-deep-panel::before {
-   content: '';
-   position: absolute;
-   left: 0;
-   right: 0;
-   top: 0;
-   height: 2px;
-   border-radius: 14px 14px 0 0;
-   background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.55), rgba(253, 224, 71, 0.4), rgba(251, 191, 36, 0.55), transparent);
-   pointer-events: none;
-   z-index: 0;
-}
-.kro-inline-deep-panel > * {
-   position: relative;
-   z-index: 1;
+   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
 }
 .kro-inline-deep-panel--blocked {
    border-color: rgba(139, 92, 246, 0.35);
@@ -2764,6 +2741,130 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 .kro-f1-cta-block:hover {
    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Главная: проверка канала — секундомер, цепочка этапов */
+.kro-check-progress {
+   width: 100%;
+   max-width: 720px;
+   margin: 16px auto 0;
+   padding: 20px 22px;
+   box-sizing: border-box;
+   border-radius: 16px;
+   background: linear-gradient(155deg, rgba(36, 28, 32, 0.92) 0%, rgba(18, 14, 20, 0.96) 100%);
+   border: 1px solid rgba(245, 158, 11, 0.22);
+   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.kro-check-progress-inner {
+   display: flex;
+   gap: 16px;
+   align-items: flex-start;
+   text-align: left;
+}
+.kro-check-progress-spinner {
+   flex-shrink: 0;
+   width: 28px;
+   height: 28px;
+   margin-top: 4px;
+   border-radius: 50%;
+   border: 3px solid rgba(245, 158, 11, 0.25);
+   border-top-color: rgba(251, 191, 36, 0.95);
+   animation: kro-check-spin 0.85s linear infinite;
+}
+@keyframes kro-check-spin {
+   to {
+      transform: rotate(360deg);
+   }
+}
+.kro-check-progress-main {
+   flex: 1;
+   min-width: 0;
+}
+.kro-check-progress-title {
+   margin: 0 0 10px;
+   font-size: clamp(15px, 2vw, 17px);
+   font-weight: 700;
+   color: rgba(255, 250, 245, 0.96);
+   line-height: 1.35;
+}
+.kro-check-elapsed-row {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: baseline;
+   gap: 10px;
+   margin: 0 0 12px;
+}
+.kro-check-elapsed-label {
+   font-size: 13px;
+   color: rgba(255, 255, 255, 0.55);
+   letter-spacing: 0.02em;
+}
+.kro-check-elapsed-digits {
+   font-size: clamp(1.5rem, 4vw, 2rem);
+   font-weight: 700;
+   font-variant-numeric: tabular-nums;
+   letter-spacing: 0.06em;
+   color: rgba(253, 224, 127, 0.98);
+   text-shadow: 0 0 24px rgba(245, 158, 11, 0.35);
+}
+.kro-check-pipeline {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   gap: 6px 8px;
+   margin: 0 0 14px;
+   font-size: 12px;
+   font-weight: 600;
+   letter-spacing: 0.04em;
+   text-transform: uppercase;
+   color: rgba(255, 255, 255, 0.38);
+}
+.kro-check-pipeline-arrow {
+   opacity: 0.45;
+   font-weight: 400;
+}
+.kro-check-pipeline-node {
+   padding: 6px 10px;
+   border-radius: 999px;
+   border: 1px solid rgba(255, 255, 255, 0.1);
+   background: rgba(0, 0, 0, 0.2);
+   transition: border-color 0.35s ease, background 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
+}
+.kro-check-pipeline-node--on {
+   color: rgba(20, 12, 8, 0.95);
+   background: linear-gradient(180deg, rgba(251, 191, 36, 0.95) 0%, rgba(217, 119, 6, 0.88) 100%);
+   border-color: rgba(253, 224, 127, 0.45);
+   box-shadow: 0 4px 16px rgba(245, 158, 11, 0.28);
+}
+.kro-check-progress-human {
+   margin: 0 0 10px;
+   font-size: 14px;
+   line-height: 1.45;
+   color: rgba(255, 245, 235, 0.82);
+}
+.kro-check-progress-note {
+   margin: 0 0 14px;
+   font-size: 12px;
+   line-height: 1.4;
+   color: rgba(255, 255, 255, 0.45);
+}
+.kro-check-progress-track {
+   margin: 0;
+   padding-left: 1.15rem;
+   font-size: 13px;
+   line-height: 1.5;
+   color: rgba(255, 255, 255, 0.55);
+}
+.kro-check-progress-step {
+   margin-bottom: 6px;
+   transition: color 0.3s ease;
+}
+.kro-check-progress-step--active {
+   color: rgba(253, 224, 127, 0.95);
+   font-weight: 600;
+}
+.kro-check-progress-step--done {
+   color: rgba(167, 243, 208, 0.75);
 }
 
 .kro-f1-cta-heading {

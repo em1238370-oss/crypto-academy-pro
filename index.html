@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260417-kro-home-live-copy">
+   <link rel="stylesheet" href="styles.css?v=20260417-kro-home-check-timer">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -301,13 +301,26 @@
                            <span class="kro-check-progress-spinner" aria-hidden="true"></span>
                            <div class="kro-check-progress-main">
                                <p class="kro-check-progress-title" id="kro-check-progress-title"></p>
+                               <div class="kro-check-elapsed-row" aria-live="polite">
+                                   <span class="kro-check-elapsed-label">Проверка канала · прошло</span>
+                                   <span class="kro-check-elapsed-digits" id="kro-check-elapsed">0:00</span>
+                               </div>
+                               <div class="kro-check-pipeline" id="kro-check-pipeline" aria-hidden="true">
+                                   <span class="kro-check-pipeline-node" data-kro-pipe="0">Канал</span>
+                                   <span class="kro-check-pipeline-arrow" aria-hidden="true">→</span>
+                                   <span class="kro-check-pipeline-node" data-kro-pipe="1">Жалобы</span>
+                                   <span class="kro-check-pipeline-arrow" aria-hidden="true">→</span>
+                                   <span class="kro-check-pipeline-node" data-kro-pipe="2">Лента</span>
+                                   <span class="kro-check-pipeline-arrow" aria-hidden="true">→</span>
+                                   <span class="kro-check-pipeline-node" data-kro-pipe="3">Вывод</span>
+                               </div>
                                <p class="kro-check-progress-human" id="kro-check-progress-human"></p>
-                               <p class="kro-check-progress-note" id="kro-check-progress-note">Обычно несколько секунд; если читаем ленту — до пары минут. Не закрывайте вкладку до отчёта ниже.</p>
-                               <ol class="kro-check-progress-track" aria-label="Что делает система сейчас">
-                                   <li class="kro-check-progress-step" id="kro-progress-step-0">Запрос к серверу</li>
-                                   <li class="kro-check-progress-step" id="kro-progress-step-1">Жалобы и мониторинг</li>
-                                   <li class="kro-check-progress-step" id="kro-progress-step-2">Живой срез ленты (если доступен)</li>
-                                   <li class="kro-check-progress-step" id="kro-progress-step-3">Пять разделов отчёта и вывод</li>
+                               <p class="kro-check-progress-note" id="kro-check-progress-note">Смотрим именно этот канал: жалобы, мониторинг и при доступности — публичную ленту (до ~3 мес.). Обычно секунды или до ~2 мин.; не закрывайте вкладку.</p>
+                               <ol class="kro-check-progress-track" aria-label="Этапы проверки канала">
+                                   <li class="kro-check-progress-step" id="kro-progress-step-0">Канал принят, запрос уходит на сервер</li>
+                                   <li class="kro-check-progress-step" id="kro-progress-step-1">Сверяем жалобы и мониторинг по этому каналу</li>
+                                   <li class="kro-check-progress-step" id="kro-progress-step-2">Читаем публичную ленту канала (если Telegram не режет доступ)</li>
+                                   <li class="kro-check-progress-step" id="kro-progress-step-3">Собираем разделы отчёта и итоговый вывод</li>
                                </ol>
                            </div>
                        </div>
@@ -1095,9 +1108,10 @@
                    var en = (err && err.name) ? String(err.name) : '';
                    if (en === 'AbortError' || /AbortError/i.test(hint)) {
                        return {
-                           title: 'Быстрая проверка не уложилась в время ответа',
+                           title: 'Проверка канала не уложилась в лимит времени браузера',
                            paragraphs: [
-                               'Таблицы на сервере иногда отвечают дольше минуты — браузер оборвал ожидание. Нажмите «Повторить» или откройте страницу канала: там тот же отчёт, иногда из кэша быстрее.',
+                               'Сервер мог ещё читать ленту Telegram или собирать отчёт — это иногда до ~2 минут. Браузер оборвал ожидание раньше.',
+                               'Нажмите «Повторить»: если отчёт уже собрался на сервере, он откроется сразу. Либо откройте страницу канала по ссылке из блока ниже.',
                            ],
                        };
                    }
@@ -1122,7 +1136,13 @@
                        return { title: 'Отчёт не сформировался', paragraphs: ['Повторите проверку. Если снова так — напишите нам, пожалуйста.'] };
                    }
                    if (hint === 'bad_json') {
-                       return { title: 'Сервер вернул непонятный ответ', paragraphs: ['Повторите проверку. Если повторится — возможно, обновление сайта: обновите страницу с очисткой кэша (Cmd+Shift+R).'] };
+                       return {
+                           title: 'Ответ оборвался по дороге',
+                           paragraphs: [
+                               'Часть данных не дошла до браузера (обрыв сети, прокси или слишком долгий ответ). Это не значит, что «анализ сломался».',
+                               'Нажмите «Повторить». Если проверка уже завершилась на сервере, отчёт откроется сразу.',
+                           ],
+                       };
                    }
                    if (/Failed to fetch|NetworkError|network/i.test(hint)) {
                        return { title: 'Нет связи с сервером', paragraphs: ['Проверьте интернет и нажмите «Повторить».'] };
@@ -1135,20 +1155,40 @@
                    };
                }
                var __kroProgressTimer = null;
-               var __kroProgressPhase = 0;
+               var __kroElapsedTimer = null;
+               var __kroCheckBusyStartedAt = 0;
+               var __KRO_HOME_FETCH_MS = 210000;
+               function __kroFormatElapsed(ms) {
+                   var s = Math.max(0, Math.floor(ms / 1000));
+                   var m = Math.floor(s / 60);
+                   var r = s % 60;
+                   return m + ':' + (r < 10 ? '0' : '') + r;
+               }
                var __kroProgressHuman = [
-                   'Сервер принимает канал и подтягивает жалобы и сводку мониторинга.',
-                   'При доступе и лимитах Telegram — читаем публичную ленту (окно до ~3 мес.) для живого среза.',
-                   'Если канал есть в широком мониторинге — учитываем статус и сигналы.',
-                   'Собираем разделы отчёта и итог: персонально под ваш ввод.',
+                   'Канал распознан — запрашиваем сводку по жалобам и мониторингу именно для него.',
+                   'Сопоставляем жалобы и сигналы мониторинга с этим каналом.',
+                   'При доступе Telegram читаем публичную ленту (ориентир до ~3 мес.) — это самый долгий шаг.',
+                   'Собираем разделы отчёта и короткий вывод по вашему запросу.',
                ];
+               function __kroProgressIdxFromElapsed(ms) {
+                   if (ms < 12000) return 0;
+                   if (ms < 35000) return 1;
+                   if (ms < 95000) return 2;
+                   return 3;
+               }
                function __kroSetProgressSteps(activeIdx) {
+                   activeIdx = Math.max(0, Math.min(3, activeIdx));
                    for (var si = 0; si < 4; si++) {
                        var el = document.getElementById('kro-progress-step-' + si);
                        if (!el) continue;
                        el.classList.remove('kro-check-progress-step--active', 'kro-check-progress-step--done');
                        if (si < activeIdx) el.classList.add('kro-check-progress-step--done');
                        else if (si === activeIdx) el.classList.add('kro-check-progress-step--active');
+                   }
+                   for (var pi = 0; pi < 4; pi++) {
+                       var pn = document.querySelector('[data-kro-pipe="' + pi + '"]');
+                       if (!pn) continue;
+                       pn.classList.toggle('kro-check-pipeline-node--on', pi <= activeIdx);
                    }
                    var hum = document.getElementById('kro-check-progress-human');
                    if (hum && __kroProgressHuman[activeIdx]) hum.textContent = __kroProgressHuman[activeIdx];
@@ -1160,18 +1200,27 @@
                        clearInterval(__kroProgressTimer);
                        __kroProgressTimer = null;
                    }
-                   __kroProgressPhase = 0;
+                   if (__kroElapsedTimer) {
+                       clearInterval(__kroElapsedTimer);
+                       __kroElapsedTimer = null;
+                   }
+                   __kroCheckBusyStartedAt = Date.now();
+                   var elapsedEl = document.getElementById('kro-check-elapsed');
+                   if (elapsedEl) elapsedEl.textContent = '0:00';
                    if (checkProgress) {
                        checkProgress.classList.remove('hidden');
                        checkProgress.hidden = false;
                        if (checkProgressTitle) {
-                           checkProgressTitle.textContent = 'Проверка ' + displayLabel + ': жалобы, мониторинг и при возможности лента — обычно секунды, иногда до пары минут.';
+                           checkProgressTitle.textContent =
+                               'Идёт проверка канала ' + displayLabel + ' — не страницы «сервиса», а именно этого канала (жалобы, мониторинг, лента).';
                        }
                        __kroSetProgressSteps(0);
-                       __kroProgressTimer = setInterval(function () {
-                           __kroProgressPhase = (__kroProgressPhase + 1) % 4;
-                           __kroSetProgressSteps(__kroProgressPhase);
-                       }, 14000);
+                       __kroElapsedTimer = setInterval(function () {
+                           var ms = Date.now() - __kroCheckBusyStartedAt;
+                           var eEl = document.getElementById('kro-check-elapsed');
+                           if (eEl) eEl.textContent = __kroFormatElapsed(ms);
+                           __kroSetProgressSteps(__kroProgressIdxFromElapsed(ms));
+                       }, 250);
                    }
                    if (inlineReport) {
                        inlineReport.classList.add('hidden');
@@ -1184,6 +1233,10 @@
                    if (__kroProgressTimer) {
                        clearInterval(__kroProgressTimer);
                        __kroProgressTimer = null;
+                   }
+                   if (__kroElapsedTimer) {
+                       clearInterval(__kroElapsedTimer);
+                       __kroElapsedTimer = null;
                    }
                    if (checkProgress) {
                        checkProgress.classList.add('hidden');
@@ -1414,7 +1467,7 @@
                    var fetchOpts = { cache: 'no-store' };
                    try {
                        if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-                           fetchOpts.signal = AbortSignal.timeout(120000);
+                           fetchOpts.signal = AbortSignal.timeout(__KRO_HOME_FETCH_MS);
                        }
                    } catch (eSig) { /* ignore */ }
                    fetch(base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU) + '&home_quick_live=1', fetchOpts)
