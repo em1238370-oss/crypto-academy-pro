@@ -37,6 +37,21 @@ app.use((req, res, next) => {
   next();
 });
 
+// Редирект /channel?u=ник → /channel/ник (хэш #… в HTTP не приходит — для BYO добавляем ?byo=1)
+app.get(['/channel', '/channel/'], (req, res) => {
+  const q = req.query || {};
+  const raw = (q.u != null ? String(q.u) : q.channel != null ? String(q.channel) : '').trim().replace(/^@+/, '');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  if (!raw) {
+    return res.redirect(302, '/');
+  }
+  const slug = encodeURIComponent(raw);
+  const byoOn = String(q.byo ?? '') === '1';
+  const dest = byoOn ? `/channel/${slug}?byo=1` : `/channel/${slug}`;
+  return res.redirect(302, dest);
+});
+
 // Карточка объекта из scam_base (до static — путь /channel/… не является файлом)
 app.get(/^\/channel\/(.+)$/, (req, res, next) => {
   const tail = req.path.replace(/^\/channel\//i, '');

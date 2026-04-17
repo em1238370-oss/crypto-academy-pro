@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260417-channel-gold-subtle">
+  <link rel="stylesheet" href="/monitor.css?v=20260417-channel-gold-byo-deploy">
 </head>
 <body class="mon-page ch-page">
 
@@ -142,17 +142,17 @@
       <details class="ch-byotele" id="ch-byotele">
         <summary class="ch-byotele-summary">Подключить ваш Telegram для BYO deep</summary>
         <div class="ch-byotele-body">
-          <p class="ch-meta">Коротко: вставляете StringSession, жмете «Подключить», после этого deep можно запускать через ваш аккаунт без общей серверной очереди.</p>
+          <p class="ch-meta">Коротко: вставляете StringSession, жмёте «Подключить» — после успешной проверки глубокий анализ <strong>этого канала</strong> запускается автоматически через ваш аккаунт (без общей серверной очереди).</p>
           <ol class="ch-byotele-steps">
             <li>Получите свою <strong>StringSession</strong> (через ваши скрипты входа/экспорта).</li>
-            <li>Вставьте строку ниже и нажмите «Подключить на сервер».</li>
-            <li>Нажмите кнопку «Глубокий через ваш Telegram (BYO)» выше.</li>
+            <li>Вставьте строку в поле ниже и нажмите «Подключить».</li>
+            <li>После подключения мы читаем <strong>текст постов и ответы</strong> в ленте (окно до 6 месяцев) и показываем полный отчёт на этой же странице.</li>
           </ol>
           <p class="ch-meta">Важно: StringSession дает доступ к аккаунту. Используйте только свой аккаунт и только если понимаете риск. Сессия хранится временно в памяти сервера.</p>
           <label class="ch-byotele-label" for="ch-byotele-input">StringSession</label>
           <textarea id="ch-byotele-input" class="ch-byotele-input" rows="3" autocomplete="off" spellcheck="false" placeholder="Вставьте строку сессии…"></textarea>
           <p class="ch-byotele-actions">
-            <button type="button" class="ch-byotele-btn" id="ch-byotele-register">Подключить на сервер (~30 мин)</button>
+            <button type="button" class="ch-byotele-btn" id="ch-byotele-register">Подключить</button>
             <button type="button" class="ch-byotele-btn ch-byotele-btn--ghost" id="ch-byotele-revoke" hidden>Забыть сессию здесь</button>
           </p>
           <p class="ch-byotele-msg" id="ch-byotele-msg" hidden></p>
@@ -671,7 +671,7 @@
   if (!slug) {
     document.getElementById('ch-loading').hidden = true;
     document.getElementById('ch-error-persist').hidden = true;
-    document.getElementById('ch-error-body').innerHTML = '<p class="ch-lead">' + esc('Откройте адрес вида /channel/@username или ссылку на канал.') + '</p>';
+    document.getElementById('ch-error-body').innerHTML = '<p class="ch-lead">' + esc('Откройте адрес вида /channel/@username, /channel?u=ник или ссылку на канал.') + '</p>';
     document.getElementById('ch-error-title').textContent = 'Не указан канал в адресе';
     document.getElementById('ch-error').hidden = false;
     document.getElementById('ch-retry-btn').hidden = true;
@@ -695,21 +695,97 @@
     if (_bt) window.__chByoToken = _bt;
   } catch (eByo0) { /* ignore */ }
 
+  function chWantByoFromUrl() {
+    var h = (window.location.hash || '').replace(/^#/, '').toLowerCase();
+    if (h === 'ch-byotele') return true;
+    try {
+      return new URLSearchParams(window.location.search || '').get('byo') === '1';
+    } catch (eQ) {
+      return false;
+    }
+  }
+
+  function chOpenByoPanelAndFocus() {
+    if (!chWantByoFromUrl()) return;
+    if (window.__chByoPanelOpened) return;
+    window.__chByoPanelOpened = true;
+    var d = document.getElementById('ch-byotele');
+    var ta = document.getElementById('ch-byotele-input');
+    if (d) d.open = true;
+    function doFocus() {
+      if (ta && !ta.disabled) {
+        try {
+          ta.focus();
+        } catch (eF) { /* ignore */ }
+      } else {
+        var bb = document.getElementById('ch-deep-byo-btn');
+        if (bb) {
+          try {
+            bb.focus();
+          } catch (eFb) { /* ignore */ }
+        }
+      }
+      if (d) {
+        try {
+          d.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (eS) { /* ignore */ }
+      }
+    }
+    setTimeout(doFocus, 80);
+    setTimeout(doFocus, 600);
+    try {
+      var u = new URL(window.location.href);
+      if (u.searchParams.get('byo') === '1') {
+        u.searchParams.delete('byo');
+        var qs = u.searchParams.toString();
+        var newSearch = qs ? ('?' + qs) : '';
+        window.history.replaceState(null, '', u.pathname + newSearch + (u.hash || ''));
+      }
+    } catch (eUrl) { /* ignore */ }
+  }
+
   function updateByoUi() {
     var st = document.getElementById('ch-byotele-status');
     var rv = document.getElementById('ch-byotele-revoke');
     var byob = document.getElementById('ch-deep-byo-btn');
     var byoc = document.getElementById('ch-deep-byo-caption');
+    var ta = document.getElementById('ch-byotele-input');
+    var reg = document.getElementById('ch-byotele-register');
     if (window.__chByoToken) {
-      if (st) st.textContent = 'Сейчас глубокий запуск пойдёт через ваш аккаунт Telegram (кнопка ниже).';
+      if (st) {
+        st.textContent = 'Telegram подключён: глубокий анализ будет идти через ваш аккаунт.';
+        st.className = 'ch-meta ch-byotele-status ch-byotele-status--connected';
+      }
       if (rv) rv.hidden = false;
       if (byob) byob.textContent = 'Запустить глубокий через ваш Telegram';
-      if (byoc) byoc.textContent = 'Подключено. Запуск идет через ваш аккаунт, без общей серверной очереди.';
+      if (byoc) byoc.textContent = 'Подключено. Чтение ленты — через ваш аккаунт, без общей серверной очереди.';
+      if (ta) {
+        ta.disabled = true;
+        ta.classList.add('ch-byotele-input--locked');
+        ta.value = '';
+        ta.placeholder = 'Сессия подключена — строка скрыта из соображений безопасности.';
+      }
+      if (reg) {
+        reg.textContent = 'Подключено';
+        reg.disabled = true;
+      }
     } else {
-      if (st) st.textContent = '';
+      if (st) {
+        st.textContent = '';
+        st.className = 'ch-meta ch-byotele-status';
+      }
       if (rv) rv.hidden = true;
       if (byob) byob.textContent = 'Глубокий через ваш Telegram (BYO)';
       if (byoc) byoc.textContent = 'Для продвинутых. Временный доступ через вашу StringSession.';
+      if (ta) {
+        ta.disabled = false;
+        ta.classList.remove('ch-byotele-input--locked');
+        ta.placeholder = 'Вставьте строку сессии…';
+      }
+      if (reg) {
+        reg.textContent = 'Подключить';
+        reg.disabled = false;
+      }
     }
   }
 
@@ -732,7 +808,7 @@
       if (byoMsg) {
         byoMsg.hidden = false;
         byoMsg.className = 'ch-byotele-msg';
-        byoMsg.textContent = 'Проверяем сессию в Telegram…';
+        byoMsg.textContent = 'Подключаем ваш Telegram…';
       }
       fetch('/api/kro/byo-deep/register', {
         method: 'POST',
@@ -760,7 +836,7 @@
           window.__chByoToken = tok;
           if (byoMsg) {
             byoMsg.className = 'ch-byotele-msg ch-byotele-msg--ok';
-            byoMsg.textContent = j.message_ru || 'Сессия принята. Можно запускать глубокий анализ.';
+            byoMsg.textContent = (j.message_ru || '').trim() || 'Сессия принята. Запускаем глубокий анализ ленты через ваш аккаунт…';
           }
           updateByoUi();
         })
@@ -771,7 +847,7 @@
           }
         })
         .finally(function () {
-          byoReg.disabled = false;
+          if (!window.__chByoToken) byoReg.disabled = false;
         });
     };
   }
@@ -821,6 +897,8 @@
   updateByoUi();
 
   function showChError(title, paragraphs) {
+    var chMainErr = document.querySelector('main.ch-main');
+    if (chMainErr) chMainErr.classList.remove('ch-main--byo-landing');
     document.getElementById('ch-loading').hidden = true;
     document.getElementById('ch-loading-retry').hidden = true;
     document.getElementById('ch-content').hidden = true;
@@ -836,15 +914,39 @@
 
   function showChLoading(attemptNum, deep) {
     document.getElementById('ch-error').hidden = true;
-    document.getElementById('ch-content').hidden = true;
+    var chMain = document.querySelector('main.ch-main');
+    var byoParallel = !deep && typeof chWantByoFromUrl === 'function' && chWantByoFromUrl();
+    if (byoParallel) {
+      if (chMain) chMain.classList.add('ch-main--byo-landing');
+      document.getElementById('ch-content').hidden = false;
+      setTimeout(function () {
+        try {
+          chOpenByoPanelAndFocus();
+        } catch (eByoL) { /* ignore */ }
+      }, 0);
+    } else {
+      if (chMain) chMain.classList.remove('ch-main--byo-landing');
+      document.getElementById('ch-content').hidden = true;
+    }
     document.getElementById('ch-loading').hidden = false;
     var lead = document.getElementById('ch-loading-lead');
     var m1 = document.getElementById('ch-loading-meta1');
     var m2 = document.getElementById('ch-loading-meta2');
     if (deep) {
-      if (lead) lead.textContent = 'Глубокий анализ: читаем ленту Telegram за окно до 6 месяцев — обычно до ~3 минут.';
-      if (m1) m1.textContent = 'Учитывается текст постов и ответы; медиа без подписи не входят. Если сработал лимит Telegram, вы уже видите быстрый отчёт и время повтора.';
-      if (m2) m2.hidden = true;
+      if (chMain) chMain.classList.remove('ch-main--byo-landing');
+      if (window.__chByoToken) {
+        if (lead) lead.textContent = 'Глубокий анализ через ваш Telegram: читаем ленту…';
+        if (m1) m1.textContent = 'Собираем текст постов и ответы за окно до 6 месяцев; обычно до ~3 минут. Лимиты Telegram считаются по вашей сессии.';
+        if (m2) m2.hidden = true;
+      } else {
+        if (lead) lead.textContent = 'Глубокий анализ: читаем ленту Telegram за окно до 6 месяцев — обычно до ~3 минут.';
+        if (m1) m1.textContent = 'Учитывается текст постов и ответы; медиа без подписи не входят. Если сработал лимит Telegram, вы уже видите быстрый отчёт и время повтора.';
+        if (m2) m2.hidden = true;
+      }
+    } else if (byoParallel) {
+      if (lead) lead.textContent = 'Подгружаем быстрый отчёт по этому каналу (обычно секунды). Блок ниже — для BYO: можно сразу вставить StringSession, затем запустить глубокий через ваш аккаунт.';
+      if (m1) m1.textContent = 'Пока идёт запрос, блоки отчёта сверху могут ещё обновиться — это нормально.';
+      if (m2) { m2.hidden = false; m2.textContent = 'После «Подключить» глубокий запустится сам; при необходимости снова откройте блок StringSession кнопкой BYO выше.'; }
     } else {
       if (lead) lead.textContent = 'Сначала открываем быстрый отчёт по базе и мониторингу (обычно секунды). Глубокий разбор ленты до 6 месяцев — кнопкой ниже.';
       if (m1) m1.textContent = 'Быстрый режим не дергает полную выборку постов и почти не упирается в лимиты Telegram.';
@@ -978,6 +1080,9 @@
       if (lrOk) { lrOk.hidden = true; lrOk.textContent = ''; }
       document.getElementById('ch-error').hidden = true;
       document.getElementById('ch-content').hidden = false;
+      var chMainOk = document.querySelector('main.ch-main');
+      if (chMainOk) chMainOk.classList.remove('ch-main--byo-landing');
+      chOpenByoPanelAndFocus();
 
       var lm = data.live_metrics || {};
       var apiMode = data.mode || 'fast';
@@ -1071,7 +1176,9 @@
           deepHint.textContent = '';
         } else if (apiMode === 'deep' && lm.deep_status === 'ok') {
           deepHint.hidden = false;
-          deepHint.textContent = 'Глубокий отчёт продублирован в блоке ниже; сверху сохранён базовый снимок.';
+          deepHint.textContent = data.byo_deep
+            ? 'Глубокий отчёт ниже получен через ваш аккаунт Telegram; сверху сохранён базовый снимок.'
+            : 'Глубокий отчёт продублирован в блоке ниже; сверху сохранён базовый снимок.';
         } else {
           deepHint.hidden = true;
           deepHint.textContent = '';
@@ -1096,8 +1203,9 @@
         } else if (!r || !r.username) {
           liveBanner.hidden = false;
           if (apiMode === 'deep' && lm.deep_status === 'ok') {
-            liveBanner.textContent =
-              'В scam_base записи нет. Сверху — базовый снимок; полный глубокий разбор ленты — в отдельном блоке ниже.';
+            liveBanner.textContent = data.byo_deep
+              ? 'В scam_base записи нет. Глубокий разбор ленты выполнен через ваш аккаунт — блок ниже.'
+              : 'В scam_base записи нет. Сверху — базовый снимок; полный глубокий разбор ленты — в отдельном блоке ниже.';
           } else {
             liveBanner.textContent =
               'В scam_base записи нет — базовый отчёт по отчётам и мониторингу. Глубокий разбор ленты — кнопкой ниже.';
@@ -1109,8 +1217,9 @@
               'Базовый режим: карточка базы без новой выборки ленты. Глубокий разбор — отдельным блоком ниже.';
           } else if (apiMode === 'deep' && lm.deep_status === 'ok') {
             liveBanner.hidden = false;
-            liveBanner.textContent =
-              'Сверху сохранён базовый снимок по карточке; глубокий разбор ленты — в блоке ниже.';
+            liveBanner.textContent = data.byo_deep
+              ? 'Глубокий анализ ленты выполнен через ваш аккаунт Telegram — результат в блоке ниже.'
+              : 'Сверху сохранён базовый снимок по карточке; глубокий разбор ленты — в блоке ниже.';
           } else {
             liveBanner.hidden = true;
             liveBanner.textContent = '';
@@ -1187,7 +1296,10 @@
       if (dualDeepOk) {
         applyAnalysisToMainSections(window.__chFastPayload.analysis);
         if (deepResultsEl) {
-          deepResultsEl.innerHTML = renderDeepAnalysisBlock(a);
+          var byoTag = data.byo_deep
+            ? '<p class="ch-deep-byo-report-tag">Глубокий отчёт ниже — через ваш аккаунт Telegram (текст постов и ответы в ленте).</p>'
+            : '';
+          deepResultsEl.innerHTML = byoTag + renderDeepAnalysisBlock(a);
           deepResultsEl.hidden = false;
         }
       } else {

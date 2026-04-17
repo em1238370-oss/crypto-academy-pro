@@ -1101,22 +1101,25 @@
                    var demo = document.getElementById('kro-inline-deep-demo');
                    if (!panel || !demo) return;
                    var dg = data.deep_gate;
-                   if (!dg || typeof dg !== 'object') {
-                       panel.hidden = true;
-                       panel.classList.add('hidden');
-                       panel.innerHTML = '';
-                       demo.hidden = true;
-                       demo.classList.add('hidden');
-                       demo.innerHTML = '';
-                       return;
-                   }
                    var chUrl = base + '/channel/' + encodeURIComponent(queryU);
                    var demoUrl = base + '/channel/telegram';
-                   panel.hidden = false;
-                   panel.classList.remove('hidden');
-                   var byoHref = chUrl + (chUrl.indexOf('?') >= 0 ? '&' : '?') + 'byo=1#ch-byotele';
+                   var byoHref = base + '/channel?u=' + encodeURIComponent(queryU) + '&byo=1#ch-byotele';
                    var byoteleNote = '<p class="kro-inline-deep-byotele-note">Без очереди сервера: откройте страницу <strong>этого же канала</strong> и подключите временный доступ (StringSession).</p>' +
                        '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta kro-inline-deep-cta--secondary" href="' + esc(byoHref) + '">Перейти к этому каналу и подключить Telegram (BYO)</a></p>';
+                   if (!dg || typeof dg !== 'object') {
+                       panel.hidden = false;
+                       panel.classList.remove('hidden');
+                       panel.className = 'kro-inline-deep-panel kro-inline-deep-panel--blocked';
+                       panel.innerHTML = '<strong class="kro-inline-deep-title">Глубокий через ваш Telegram (BYO)</strong>' +
+                           '<p class="kro-inline-deep-text">Если серверный глубокий недоступен или в очереди — откройте страницу канала и подключите StringSession: анализ ленты пойдёт через ваш аккаунт.</p>' +
+                           byoteleNote;
+                       demo.hidden = false;
+                       demo.classList.remove('hidden');
+                       demo.innerHTML = '<a class="kro-inline-deep-demo-link" href="' + esc(demoUrl) + '">Пример: как выглядит страница с глубоким отчётом (канал Telegram)</a>';
+                       return;
+                   }
+                   panel.hidden = false;
+                   panel.classList.remove('hidden');
                    if (dg.can_run_deep === false) {
                        panel.className = 'kro-inline-deep-panel kro-inline-deep-panel--blocked';
                        var sc = (dg.server_throttle_scope || '').toString();

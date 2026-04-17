@@ -4631,6 +4631,32 @@ body.ch-page > main.mon-container {
   text-align: center;
 }
 
+/* BYO с главной (?byo=1): пока грузится fast, карточка канала остаётся на экране — виден блок StringSession */
+.ch-main.ch-main--byo-landing #ch-loading {
+  flex: 0 0 auto;
+  align-self: center;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto 8px;
+  padding: 20px 24px;
+  text-align: left;
+  box-sizing: border-box;
+  background: var(--mon-surface);
+  border: 1px solid var(--mon-border-quiet);
+  border-radius: 16px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+}
+.ch-main.ch-main--byo-landing #ch-loading .ch-title--loading {
+  font-size: clamp(1.1rem, 3vw, 1.35rem);
+  margin-bottom: 8px;
+}
+.ch-main.ch-main--byo-landing #ch-loading .ch-lead--loading,
+.ch-main.ch-main--byo-landing #ch-loading .ch-meta--loading {
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
 .ch-state {
   max-width: 640px;
   margin: 0 auto;
@@ -5145,6 +5171,33 @@ body.ch-page > main.mon-container {
   font-size: 12px;
   resize: vertical;
   min-height: 4.5rem;
+}
+.ch-byotele-input--locked {
+  opacity: 0.55;
+  resize: none;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.22);
+}
+.ch-byotele-status--connected {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(34, 120, 80, 0.22);
+  border: 1px solid rgba(110, 200, 150, 0.35);
+  color: rgba(220, 250, 235, 0.95);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.ch-deep-byo-report-tag {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  background: rgba(40, 70, 120, 0.35);
+  border: 1px solid rgba(147, 197, 253, 0.28);
+  color: rgba(224, 242, 254, 0.95);
 }
 .ch-byotele-actions {
   display: flex;
