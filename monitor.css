@@ -4600,9 +4600,6 @@ body.ch-page {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  /* channel.html подключает Outfit + Inter — приоритет на странице отчёта */
-  --mon-font: 'Inter', 'DM Sans', 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --mon-font-display: 'Outfit', 'Syne', 'DM Sans', 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 body.ch-page > main.mon-container {
@@ -4969,174 +4966,6 @@ body.ch-page > main.mon-container {
   color: var(--mon-text-dim);
 }
 
-/* ── /channel/* отчёт: золотая рамка, герой → пролог → главы (ритм monitor) ── */
-.ch-page .ch-card.ch-report {
-  position: relative;
-  max-width: 760px;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid rgba(245, 197, 120, 0.24);
-  border-radius: 18px;
-  background:
-    linear-gradient(165deg, rgba(52, 42, 22, 0.42) 0%, transparent 46%),
-    var(--mon-surface);
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.38),
-    0 28px 56px rgba(0, 0, 0, 0.4),
-    0 0 52px rgba(245, 180, 60, 0.07);
-}
-
-.ch-page .ch-card.ch-report::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 3px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(251, 191, 36, 0.5),
-    rgba(253, 224, 71, 0.42),
-    rgba(251, 191, 36, 0.5),
-    transparent
-  );
-  pointer-events: none;
-}
-
-.ch-report-hero {
-  padding: 36px 32px 28px;
-  border-bottom: 1px solid rgba(245, 197, 120, 0.14);
-}
-
-.ch-report-path {
-  margin: 0 0 14px;
-  font-family: var(--mon-font-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(253, 224, 127, 0.78);
-}
-
-.ch-page .ch-report-hero .ch-live-banner {
-  border-color: rgba(251, 191, 36, 0.32);
-  background: linear-gradient(135deg, rgba(58, 46, 24, 0.55) 0%, rgba(16, 18, 24, 0.62) 100%);
-}
-
-.ch-page .ch-report .ch-eyebrow {
-  color: rgba(253, 230, 138, 0.82);
-}
-
-.ch-page .ch-report-title {
-  font-size: clamp(1.65rem, 4.2vw, 2.2rem);
-  font-weight: 800;
-  letter-spacing: -0.032em;
-  line-height: 1.16;
-  color: #fff8ed;
-  text-shadow: 0 0 42px rgba(251, 191, 36, 0.22), 0 1px 0 rgba(0, 0, 0, 0.35);
-}
-
-.ch-report-prologue.ch-flow-simple {
-  margin: 20px 32px 0;
-  padding: 16px 18px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(245, 197, 120, 0.3);
-  background: linear-gradient(155deg, rgba(56, 46, 26, 0.72) 0%, rgba(12, 14, 18, 0.88) 100%);
-}
-
-.ch-report-prologue.ch-flow-simple .ch-flow-simple-title {
-  color: rgba(253, 224, 127, 0.96);
-}
-
-.ch-report-prologue.ch-flow-simple .ch-flow-simple-foot {
-  border-top-color: rgba(245, 197, 120, 0.16);
-}
-
-.ch-page .ch-report .ch-merged {
-  margin: 22px 32px 0;
-}
-
-.ch-report-sections {
-  padding: 4px 32px 44px;
-}
-
-.ch-report-tier-head {
-  margin: 28px 0 0;
-  padding: 20px 0 12px;
-  border-top: 1px solid rgba(245, 197, 120, 0.14);
-}
-
-.ch-report-sections > .ch-report-tier-head:first-child {
-  margin-top: 12px;
-  padding-top: 8px;
-  border-top: none;
-}
-
-.ch-report-tier-head--secondary {
-  margin-top: 36px;
-  padding-top: 22px;
-  border-top-color: rgba(245, 197, 120, 0.22);
-}
-
-.ch-page .ch-report .ch-report-tier-kicker {
-  color: rgba(253, 224, 138, 0.9);
-  margin-bottom: 8px;
-}
-
-.ch-page .ch-report .ch-report-tier-kicker::before {
-  background: linear-gradient(180deg, rgba(251, 191, 36, 1), rgba(160, 100, 36, 0.1));
-}
-
-.ch-report-tier-lead {
-  margin: 0;
-  max-width: 58ch;
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--mon-text-dim);
-}
-
-.ch-report-sections > .ch-report-tier-head + .ch-block {
-  margin-top: 10px;
-  padding-top: 18px;
-  border-top-color: rgba(245, 197, 120, 0.14);
-}
-
-.ch-page .ch-report-sections .ch-h2 {
-  color: rgba(252, 250, 247, 0.88);
-  letter-spacing: 0.08em;
-  border-left: 2px solid rgba(251, 191, 36, 0.5);
-  padding-left: 12px;
-  margin-left: 2px;
-}
-
-.ch-page .ch-report .ch-block {
-  border-top-color: rgba(245, 197, 120, 0.11);
-}
-
-.ch-page .ch-report .ch-why-card {
-  border-color: rgba(245, 197, 120, 0.22);
-  background: linear-gradient(145deg, rgba(44, 38, 24, 0.55), rgba(14, 16, 20, 0.58));
-}
-
-.ch-page .ch-report .ch-why-label {
-  color: rgba(253, 224, 138, 0.68);
-}
-
-.ch-page .ch-report .ch-what-analyzed {
-  border-color: rgba(245, 197, 120, 0.28);
-  background: rgba(48, 40, 22, 0.38);
-}
-
-.ch-page .ch-report .ch-false-positive-btn {
-  border-color: rgba(245, 197, 120, 0.38);
-  background: rgba(48, 40, 24, 0.4);
-}
-
-.ch-page .ch-report .ch-false-positive-btn:hover:not(:disabled) {
-  border-color: rgba(253, 224, 127, 0.55);
-  background: rgba(62, 52, 28, 0.48);
-}
-
 .ch-live-banner {
   font-size: 14px;
   line-height: 1.55;
@@ -5160,6 +4989,87 @@ body.ch-page > main.mon-container {
   border: 1px solid rgba(148, 163, 184, 0.35);
   background: rgba(15, 23, 42, 0.35);
   color: rgba(226, 232, 240, 0.95);
+}
+
+/* /channel/* — только лёгкое золото, вёрстка как раньше (одна колонка .ch-card) */
+.ch-page .ch-card {
+  position: relative;
+  border-color: rgba(245, 197, 120, 0.18);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.28),
+    0 24px 48px rgba(0, 0, 0, 0.35),
+    0 0 36px rgba(245, 180, 60, 0.05);
+}
+
+.ch-page .ch-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(251, 191, 36, 0.4),
+    rgba(253, 224, 71, 0.32),
+    rgba(251, 191, 36, 0.4),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.ch-page .ch-eyebrow {
+  color: rgba(253, 224, 138, 0.58);
+}
+
+.ch-page .ch-flow-simple {
+  border-color: rgba(245, 197, 120, 0.24);
+  background: linear-gradient(160deg, rgba(44, 38, 24, 0.45) 0%, rgba(14, 16, 22, 0.78) 100%);
+}
+
+.ch-page .ch-flow-simple-title {
+  color: rgba(253, 224, 127, 0.85);
+}
+
+.ch-page .ch-flow-simple-foot {
+  border-top-color: rgba(245, 197, 120, 0.12);
+}
+
+.ch-page .ch-live-banner {
+  border-color: rgba(251, 191, 36, 0.26);
+  background: linear-gradient(135deg, rgba(48, 40, 26, 0.42) 0%, rgba(14, 16, 22, 0.52) 100%);
+}
+
+.ch-page .ch-what-analyzed {
+  border-color: rgba(245, 197, 120, 0.22);
+  background: rgba(38, 34, 22, 0.32);
+}
+
+.ch-page .ch-block {
+  border-top-color: rgba(245, 197, 120, 0.08);
+}
+
+.ch-page .ch-h2 {
+  color: rgba(250, 250, 249, 0.7);
+}
+
+.ch-page .ch-why-card {
+  border-color: rgba(245, 197, 120, 0.16);
+}
+
+.ch-page .ch-why-label {
+  color: rgba(253, 224, 138, 0.52);
+}
+
+.ch-page .ch-false-positive-btn {
+  border-color: rgba(245, 197, 120, 0.28);
+}
+
+.ch-page .ch-false-positive-btn:hover:not(:disabled) {
+  border-color: rgba(253, 224, 127, 0.45);
+  background: rgba(48, 42, 28, 0.22);
 }
 
 /* Глубокий через аккаунт посетителя (BYO Telethon StringSession) */
@@ -5584,22 +5494,6 @@ body.ch-page > main.mon-container {
   }
   .ch-error-kicker {
     margin-bottom: 10px;
-  }
-  .ch-report-hero {
-    padding: 28px 18px 22px;
-  }
-  .ch-report-prologue.ch-flow-simple {
-    margin-left: 18px;
-    margin-right: 18px;
-  }
-  .ch-page .ch-report .ch-merged {
-    margin-left: 18px;
-    margin-right: 18px;
-  }
-  .ch-report-sections {
-    padding-left: 18px;
-    padding-right: 18px;
-    padding-bottom: 36px;
   }
   .ch-why-grid {
     grid-template-columns: 1fr;
