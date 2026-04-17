@@ -1104,7 +1104,7 @@
                    var chUrl = base + '/channel/' + encodeURIComponent(queryU);
                    var demoUrl = base + '/channel/telegram';
                    var byoHref = base + '/channel?u=' + encodeURIComponent(queryU) + '&byo=1#ch-byotele';
-                   var byoteleNote = '<p class="kro-inline-deep-byotele-note">Если серверный глубокий занят очередью (мы стараемся укладываться примерно в ~30 мин ожидания), подключите <strong>BYO</strong>: тот же канал, StringSession — чтение ленты через ваш аккаунт, без общей очереди.</p>' +
+                   var byoteleNote = '<p class="kro-inline-deep-byotele-note">Серверный глубокий — про тот же канал, что вы ввели. При очереди мы ориентируемся на ожидание до ~30 мин (оценка «когда дойдёт очередь», а не таймер «выключить через 30 мин»). Чтобы не ждать общую очередь — <strong>BYO</strong>: страница этого канала, StringSession, чтение через ваш аккаунт.</p>' +
                        '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta kro-inline-deep-cta--secondary" href="' + esc(byoHref) + '">Перейти к этому каналу и подключить Telegram (BYO)</a></p>';
                    if (!dg || typeof dg !== 'object') {
                        panel.hidden = false;

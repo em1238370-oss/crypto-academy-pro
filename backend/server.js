@@ -1369,7 +1369,10 @@ const KRO_DEEP_CACHE_HARD_EXPIRE_MS = Math.max(
 const KRO_DEEP_QUEUE_INTER_JOB_MS = Math.max(0, parseInt(process.env.KRO_DEEP_QUEUE_INTER_JOB_MS || '1500', 10));
 /** Сколько каналов одного пользователя может одновременно стоять в очереди deep (плюс один в работе у воркера). */
 const KRO_DEEP_CLIENT_MAX_QUEUE = Math.max(1, parseInt(process.env.KRO_DEEP_CLIENT_MAX_QUEUE || '4', 10));
-/** Если расчётный ETA очереди больше — не ставим в очередь, отдаём fast и честное «зайдите позже». */
+/**
+ * Если оценка ожидания в серверной очереди (не длительность самого прогона!) больше этого порога —
+ * не ставим заявку в очередь, отдаём fast и просим зайти позже / BYO. Это не «обрубить анализ через N минут».
+ */
 const KRO_DEEP_QUEUE_MAX_ETA_MINUTES = Math.max(15, parseInt(process.env.KRO_DEEP_QUEUE_MAX_ETA_MINUTES || '30', 10));
 /** Если задан — POST /api/kro/ops/deep-breathe с Authorization: Bearer <secret> (без секрета маршрут 404). */
 const KRO_DEEP_OPS_SECRET = (process.env.KRO_DEEP_OPS_SECRET || '').toString().trim();
