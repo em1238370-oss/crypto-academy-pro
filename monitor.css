@@ -4607,6 +4607,8 @@ a.mon-channel-external:hover {
 
 .ch-state--error {
   max-width: 980px;
+  display: flex;
+  justify-content: center;
 }
 
 .ch-state--error .ch-title {
@@ -4614,6 +4616,7 @@ a.mon-channel-external:hover {
 }
 
 .ch-error-shell {
+  width: 100%;
   max-width: 860px;
   margin: 0 auto;
 }
