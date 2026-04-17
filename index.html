@@ -1104,7 +1104,7 @@
                    var chUrl = base + '/channel/' + encodeURIComponent(queryU);
                    var demoUrl = base + '/channel/telegram';
                    var byoHref = base + '/channel?u=' + encodeURIComponent(queryU) + '&byo=1#ch-byotele';
-                   var byoteleNote = '<p class="kro-inline-deep-byotele-note">Без очереди сервера: откройте страницу <strong>этого же канала</strong> и подключите временный доступ (StringSession).</p>' +
+                   var byoteleNote = '<p class="kro-inline-deep-byotele-note">Если серверный глубокий занят очередью (мы стараемся укладываться примерно в ~30 мин ожидания), подключите <strong>BYO</strong>: тот же канал, StringSession — чтение ленты через ваш аккаунт, без общей очереди.</p>' +
                        '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta kro-inline-deep-cta--secondary" href="' + esc(byoHref) + '">Перейти к этому каналу и подключить Telegram (BYO)</a></p>';
                    if (!dg || typeof dg !== 'object') {
                        panel.hidden = false;
@@ -1137,7 +1137,7 @@
                            sub += '<p class="kro-inline-deep-text" style="opacity:.95">На странице канала отчёт может обновляться примерно каждые <strong>' + esc(String(dg.suggested_refresh_seconds)) + '</strong> сек.</p>';
                        }
                        var honest = dg.deep_queued
-                           ? 'Запрос поставлен в очередь из‑за высокой нагрузки. Когда обработка завершится, глубокий результат появится на странице канала; сейчас выше — быстрый отчёт.'
+                           ? 'Запрос поставлен в серверную очередь из‑за нагрузки (ориентир по времени — в панели выше). Когда дойдёт очередь, глубокий появится на странице канала; чтобы не ждать общую очередь — используйте BYO на странице канала. Сейчас выше — быстрый отчёт.'
                            : dg.server_throttle_active
                            ? 'Это ограничение сервиса (очередь, лимиты Telegram или правило «не ждать в онлайне слишком долго»). Глубокий прогон для этого канала в этом ответе не выполнялся.'
                            : 'Сейчас показан только базовый быстрый анализ (без полной выборки постов из Telegram). Глубокий прогон для этого канала не выполнялся.';

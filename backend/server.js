@@ -1357,8 +1357,8 @@ function kroGetTelegramFloodState() {
 const KRO_DEEP_CLIENT_WINDOW_MS = Math.max(300000, parseInt(process.env.KRO_DEEP_CLIENT_WINDOW_MS || `${2 * 60 * 60 * 1000}`, 10));
 const KRO_DEEP_CLIENT_MAX = Math.max(1, parseInt(process.env.KRO_DEEP_CLIENT_MAX || '4', 10));
 const KRO_DEEP_GLOBAL_WINDOW_MS = Math.max(120000, parseInt(process.env.KRO_DEEP_GLOBAL_WINDOW_MS || `${60 * 60 * 1000}`, 10));
-const KRO_DEEP_GLOBAL_MAX = Math.max(3, parseInt(process.env.KRO_DEEP_GLOBAL_MAX || '24', 10));
-const KRO_DEEP_GLOBAL_SOFT_RATIO = Math.min(0.99, Math.max(0.5, parseFloat(process.env.KRO_DEEP_GLOBAL_SOFT_RATIO || '0.8')));
+const KRO_DEEP_GLOBAL_MAX = Math.max(3, parseInt(process.env.KRO_DEEP_GLOBAL_MAX || '28', 10));
+const KRO_DEEP_GLOBAL_SOFT_RATIO = Math.min(0.99, Math.max(0.5, parseFloat(process.env.KRO_DEEP_GLOBAL_SOFT_RATIO || '0.85')));
 const KRO_DEEP_CACHE_TTL_MS = Math.max(300000, parseInt(process.env.KRO_DEEP_CACHE_TTL_MS || `${2 * 60 * 60 * 1000}`, 10));
 /** После «мягкого» TTL кэш всё ещё отдаём как stale (без нового API), пока не истёк жёсткий срок. */
 const KRO_DEEP_CACHE_HARD_EXPIRE_MS = Math.max(
@@ -1366,11 +1366,11 @@ const KRO_DEEP_CACHE_HARD_EXPIRE_MS = Math.max(
   parseInt(process.env.KRO_DEEP_CACHE_HARD_EXPIRE_MS || `${7 * 24 * 60 * 60 * 1000}`, 10),
 );
 /** Пауза между задачами очереди deep — снижает пики к Telegram. */
-const KRO_DEEP_QUEUE_INTER_JOB_MS = Math.max(0, parseInt(process.env.KRO_DEEP_QUEUE_INTER_JOB_MS || '2500', 10));
+const KRO_DEEP_QUEUE_INTER_JOB_MS = Math.max(0, parseInt(process.env.KRO_DEEP_QUEUE_INTER_JOB_MS || '1500', 10));
 /** Сколько каналов одного пользователя может одновременно стоять в очереди deep (плюс один в работе у воркера). */
-const KRO_DEEP_CLIENT_MAX_QUEUE = Math.max(1, parseInt(process.env.KRO_DEEP_CLIENT_MAX_QUEUE || '2', 10));
+const KRO_DEEP_CLIENT_MAX_QUEUE = Math.max(1, parseInt(process.env.KRO_DEEP_CLIENT_MAX_QUEUE || '4', 10));
 /** Если расчётный ETA очереди больше — не ставим в очередь, отдаём fast и честное «зайдите позже». */
-const KRO_DEEP_QUEUE_MAX_ETA_MINUTES = Math.max(10, parseInt(process.env.KRO_DEEP_QUEUE_MAX_ETA_MINUTES || '20', 10));
+const KRO_DEEP_QUEUE_MAX_ETA_MINUTES = Math.max(15, parseInt(process.env.KRO_DEEP_QUEUE_MAX_ETA_MINUTES || '30', 10));
 /** Если задан — POST /api/kro/ops/deep-breathe с Authorization: Bearer <secret> (без секрета маршрут 404). */
 const KRO_DEEP_OPS_SECRET = (process.env.KRO_DEEP_OPS_SECRET || '').toString().trim();
 
@@ -1581,7 +1581,8 @@ let kroDeepQueueActiveJob = null;
 
 function kroDeepComputeQueueEtaMinutes(position) {
   const pos = Math.max(1, Number(position) || 1);
-  return Math.max(3, pos * 2 + Math.ceil(kroCheckOnceTimeoutMs / 60000 / 4));
+  /** ~2 мин на позицию + доля таймаута check_once; занижать нельзя — люди планируют время. */
+  return Math.max(2, pos * 2 + Math.ceil(kroCheckOnceTimeoutMs / 60000 / 4));
 }
 
 function kroDeepClientQueueDepth(clientId) {
@@ -1618,7 +1619,7 @@ function kroDeepEnqueue(channelKey, channelForOnce, clientId) {
       reject_reason: 'client_queue_full',
       client_queue_max: KRO_DEEP_CLIENT_MAX_QUEUE,
       message_ru:
-        `У вас уже ${depth} канал(а) в глубокой очереди или обработке — одновременно не больше ${KRO_DEEP_CLIENT_MAX_QUEUE}. Дождитесь завершения или откройте другой канал позже. Быстрый отчёт выше доступен сразу.`,
+        `У вас уже ${depth} канал(а) в серверной очереди глубокого анализа или в обработке — одновременно не больше ${KRO_DEEP_CLIENT_MAX_QUEUE}. Дождитесь завершения одного из прогонов либо откройте страницу канала и запустите глубокий через свой Telegram (BYO) — без общей очереди сервера. Быстрый отчёт выше доступен сразу.`,
     };
   }
   const wouldPosition = kroDeepWaitQueue.length + 1;
@@ -1630,7 +1631,7 @@ function kroDeepEnqueue(channelKey, channelForOnce, clientId) {
       eta_minutes: wouldEta,
       queue_max_eta_minutes: KRO_DEEP_QUEUE_MAX_ETA_MINUTES,
       message_ru:
-        `Очередь глубокого анализа сейчас очень длинная: до вашего канала ориентировочно ~${wouldEta} мин. Мы не предлагаем ждать в онлайне дольше ~${KRO_DEEP_QUEUE_MAX_ETA_MINUTES} мин — ниже быстрый отчёт. Загляните с глубоким позже (через ${KRO_DEEP_QUEUE_MAX_ETA_MINUTES}–90 мин) или нажмите «Обновить» на странице канала.`,
+        `Очередь глубокого анализа на сервере сейчас очень длинная: до вашего канала ориентировочно ~${wouldEta} мин. Мы не предлагаем встраиваться в онлайн‑ожидание дольше ~${KRO_DEEP_QUEUE_MAX_ETA_MINUTES} мин — ниже быстрый отчёт. Попробуйте позже или на странице канала подключите глубокий через свой Telegram (BYO), минуя эту очередь.`,
     };
   }
   kroDeepWaitQueue.push({ channelKey: k, channelForOnce: cf || k, clientId: cid, enqueuedAt: Date.now() });
