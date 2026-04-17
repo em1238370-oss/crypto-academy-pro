@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260416-kro-byo-deep">
+  <link rel="stylesheet" href="/monitor.css?v=20260417-kro-byo-visible">
 </head>
 <body class="mon-page ch-page">
 
@@ -123,10 +123,14 @@
       <h2 id="ch-deep-h" class="ch-h2">Глубокий анализ ленты</h2>
       <p class="ch-meta ch-deep-intro">Выберите режим: обычный deep через сервер или deep через ваш Telegram-аккаунт.</p>
       <div id="ch-deep-cta-wrap" class="ch-deep-cta-wrap">
+        <div id="ch-deep-server-wrap">
         <button type="button" class="ch-deep-btn" id="ch-deep-btn">Запустить глубокий анализ (сервер)</button>
         <p class="ch-deep-btn-caption" id="ch-deep-btn-caption">Обычно до 3 минут. Иногда есть очередь из-за лимитов Telegram.</p>
+        </div>
+        <div id="ch-deep-byo-wrap">
         <button type="button" class="ch-deep-btn ch-deep-btn--secondary" id="ch-deep-byo-btn">Глубокий через ваш Telegram (BYO)</button>
         <p class="ch-deep-btn-caption" id="ch-deep-byo-caption">Для продвинутых. Временный доступ через вашу StringSession.</p>
+        </div>
       </div>
       <details class="ch-byotele" id="ch-byotele">
         <summary class="ch-byotele-summary">Подключить ваш Telegram для BYO deep</summary>
@@ -977,10 +981,14 @@
       var retryStr = formatRetryAfterMskRounded(data.deep_available_at || lm.deep_available_at || '');
 
       var ctaWrap = document.getElementById('ch-deep-cta-wrap');
+      var serverWrap = document.getElementById('ch-deep-server-wrap');
+      var byoWrap = document.getElementById('ch-deep-byo-wrap');
       var floodBanner = document.getElementById('ch-deep-flood-banner');
       var softBanner = document.getElementById('ch-deep-soft-banner');
       if (deepBlockedUi) {
-        if (ctaWrap) ctaWrap.hidden = true;
+        if (ctaWrap) ctaWrap.hidden = false;
+        if (serverWrap) serverWrap.hidden = true;
+        if (byoWrap) byoWrap.hidden = false;
         if (floodBanner) {
           floodBanner.hidden = false;
           if (deepQueued) {
@@ -1022,6 +1030,8 @@
         if (softBanner) { softBanner.hidden = true; softBanner.innerHTML = ''; }
       } else {
         if (ctaWrap) ctaWrap.hidden = false;
+        if (serverWrap) serverWrap.hidden = false;
+        if (byoWrap) byoWrap.hidden = false;
         if (floodBanner) {
           floodBanner.hidden = true;
           floodBanner.innerHTML = '';
