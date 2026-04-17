@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260417-channel-readability">
+  <link rel="stylesheet" href="/monitor.css?v=20260417-channel-deep-fallback">
 </head>
 <body class="mon-page ch-page">
 
@@ -53,6 +53,7 @@
         <div class="ch-error-notes" aria-label="Что это значит и что делать дальше">
           <p class="ch-error-note"><strong>Это не поломка.</strong> Канал может быть большим, и первый ответ иногда не успевает вернуться в браузер.</p>
           <p class="ch-error-note"><strong>Проверка не пропадает.</strong> На сервере процесс продолжается; после перезагрузки страница снова запросит готовый отчёт.</p>
+          <p class="ch-error-note">Если вы несколько раз подряд жмёте «глубокий» по очень крупному каналу и снова видите только этот экран — откройте тот же канал с главной (быстрый слой уже есть) или подключите Telegram (BYO). Бесконечные перезагрузки не ускоряют сервер.</p>
         </div>
         <p class="ch-error-persist" id="ch-error-persist">Перезагрузка — тот же сценарий, что «обновить отчёт»: браузер заново открывает страницу канала, и сервер отдаёт результат, если он уже готов. Таймаут в браузере не отменяет проверку на сервере.</p>
         <p class="ch-error-actions">
@@ -787,6 +788,9 @@
         reg.disabled = false;
       }
     }
+    try {
+      if (typeof chApplyServerDeepButtonState === 'function') chApplyServerDeepButtonState();
+    } catch (eChApply) { /* ignore */ }
   }
 
   var byoReg = document.getElementById('ch-byotele-register');
@@ -896,7 +900,158 @@
   }
   updateByoUi();
 
+  function chClearLoadingTick() {
+    if (window.__chLoadingTick) {
+      clearInterval(window.__chLoadingTick);
+      window.__chLoadingTick = null;
+    }
+  }
+
+  function chDeepTimeoutStorageKey() {
+    return 'kro_deep_page_timeout_' + queryU;
+  }
+
+  function chGetDeepTimeoutStreak() {
+    try {
+      var n = parseInt(sessionStorage.getItem(chDeepTimeoutStorageKey()) || '0', 10);
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function chBumpDeepTimeoutStreak() {
+    var n = chGetDeepTimeoutStreak() + 1;
+    try {
+      sessionStorage.setItem(chDeepTimeoutStorageKey(), String(n));
+    } catch (e) { /* ignore */ }
+    return n;
+  }
+
+  function chResetDeepTimeoutStreak() {
+    try {
+      sessionStorage.removeItem(chDeepTimeoutStorageKey());
+    } catch (e) { /* ignore */ }
+  }
+
+  function chIsClientTimeoutLike(err) {
+    var hint = (err && err.message) ? String(err.message) : '';
+    var en = (err && err.name) ? String(err.name) : '';
+    if (en === 'AbortError' || /AbortError/i.test(hint)) return true;
+    if (/timeout/i.test(hint)) return true;
+    if (hint.indexOf('http_504') !== -1 || hint.indexOf('http_502') !== -1 || hint.indexOf('http_524') !== -1) return true;
+    if (/Failed to fetch|NetworkError|network/i.test(hint)) return true;
+    return false;
+  }
+
+  function chStartDeepWaitClock(timeoutMs) {
+    chClearLoadingTick();
+    var t0 = Date.now();
+    var lr = document.getElementById('ch-loading-retry');
+    function tick() {
+      var sec = Math.floor((Date.now() - t0) / 1000);
+      var left = Math.max(0, Math.ceil((timeoutMs - (Date.now() - t0)) / 1000));
+      if (lr) {
+        lr.hidden = false;
+        var att = window.__chAttempt > 1 ? 'Повтор ' + window.__chAttempt + '. ' : '';
+        lr.textContent =
+          att +
+          'Ожидание глубокого ответа: прошло ' +
+          sec +
+          ' с · до обрыва по таймауту страницы ~' +
+          left +
+          ' с. Быстрый отчёт уже загружен — если ответ не придёт, снова покажем его вместо пустой страницы.';
+      }
+    }
+    tick();
+    window.__chLoadingTick = setInterval(tick, 1000);
+  }
+
+  function chApplyServerDeepButtonState() {
+    var deepBtnDone = document.getElementById('ch-deep-btn');
+    if (!deepBtnDone) return;
+    var capEl = document.getElementById('ch-deep-btn-caption');
+    var streak = chGetDeepTimeoutStreak();
+    if (streak >= 2 && !window.__chByoToken) {
+      deepBtnDone.disabled = true;
+      if (capEl) {
+        capEl.textContent =
+          'Два раза подряд глубокий не уложился в лимит времени страницы. Серверную кнопку для этого канала отключили — остаётся быстрый отчёт. Для ленты подключите Telegram (BYO) ниже или зайдите позже.';
+      }
+    } else {
+      deepBtnDone.disabled = false;
+    }
+  }
+
+  /** После обрыва deep: не прятать быстрый отчёт — показать снова + честный статус (и streak в sessionStorage). */
+  function showChContentWithFastAfterDeepError(err, opts) {
+    chClearLoadingTick();
+    if (window.__chDeepQueuePoll) {
+      clearTimeout(window.__chDeepQueuePoll);
+      window.__chDeepQueuePoll = null;
+    }
+    var deep = !!(opts && opts.deep);
+    var fastA = window.__chFastPayload && window.__chFastPayload.analysis;
+    if (!deep || !fastA) {
+      var m = mapFetchError(err);
+      showChError(m.title, m.paragraphs);
+      return;
+    }
+    var streak = chIsClientTimeoutLike(err) ? chBumpDeepTimeoutStreak() : chGetDeepTimeoutStreak();
+    document.getElementById('ch-loading').hidden = true;
+    var lrOk = document.getElementById('ch-loading-retry');
+    if (lrOk) {
+      lrOk.hidden = true;
+      lrOk.textContent = '';
+    }
+    document.getElementById('ch-error').hidden = true;
+    document.getElementById('ch-content').hidden = false;
+    var chMainOk = document.querySelector('main.ch-main');
+    if (chMainOk) chMainOk.classList.remove('ch-main--byo-landing');
+    try {
+      chOpenByoPanelAndFocus();
+    } catch (eByo) { /* ignore */ }
+
+    applyAnalysisToMainSections(fastA);
+
+    var deepResultsEl = document.getElementById('ch-deep-results');
+    if (deepResultsEl) {
+      deepResultsEl.innerHTML = '';
+      deepResultsEl.hidden = true;
+    }
+
+    var liveBanner = document.getElementById('ch-live-banner');
+    if (liveBanner) {
+      liveBanner.hidden = false;
+      liveBanner.className = 'ch-live-banner ch-live-banner--deep-timeout';
+      var partA =
+        'Глубокий запрос не вернулся вовремя для этой страницы (обрыв по таймауту браузера или сети до ~' +
+        Math.round((window.__chChannelFetchTimeoutMs || 195000) / 1000) +
+        ' с). Это не «пустая страница»: ниже снова показан быстрый отчёт по базе и мониторингу — он уже был до запуска глубокого.';
+      var partB =
+        streak >= 2
+          ? ' Два раза подряд ответ не успел: серверный глубокий для этого канала в таком режиме не обещаем. Используйте BYO (ваш Telegram) или зайдите позже — не жмите перезагрузку по кругу.'
+          : ' Один раз можно перезагрузить страницу: если глубокий уже попал в кэш сервера, подтянется готовый снимок. Если снова таймаут — не гоняйте F5, лучше BYO.';
+      liveBanner.textContent = partA + partB;
+    }
+
+    var floodBanner = document.getElementById('ch-deep-flood-banner');
+    if (floodBanner) {
+      floodBanner.hidden = true;
+      floodBanner.innerHTML = '';
+      floodBanner.className = 'ch-deep-flood-banner';
+    }
+    var softBanner = document.getElementById('ch-deep-soft-banner');
+    if (softBanner) {
+      softBanner.hidden = true;
+      softBanner.innerHTML = '';
+    }
+
+    chApplyServerDeepButtonState();
+  }
+
   function showChError(title, paragraphs) {
+    chClearLoadingTick();
     var chMainErr = document.querySelector('main.ch-main');
     if (chMainErr) chMainErr.classList.remove('ch-main--byo-landing');
     document.getElementById('ch-loading').hidden = true;
@@ -913,6 +1068,7 @@
   }
 
   function showChLoading(attemptNum, deep) {
+    chClearLoadingTick();
     document.getElementById('ch-error').hidden = true;
     var chMain = document.querySelector('main.ch-main');
     var byoParallel = !deep && typeof chWantByoFromUrl === 'function' && chWantByoFromUrl();
@@ -957,10 +1113,13 @@
       if (attemptNum > 1) {
         lr.hidden = false;
         lr.textContent = 'Повторная попытка ' + attemptNum + ': снова запрашиваем отчёт (до ' + (deep ? '~3 мин' : '~2 мин') + ').';
-      } else {
+      } else if (!deep) {
         lr.hidden = true;
         lr.textContent = '';
       }
+    }
+    if (deep) {
+      chStartDeepWaitClock(window.__chChannelFetchTimeoutMs || 195000);
     }
   }
 
@@ -1028,6 +1187,7 @@
   function loadChannelReport(attemptNum, opts) {
     attemptNum = attemptNum || 1;
     opts = opts || {};
+    chClearLoadingTick();
     if (window.__chDeepQueuePoll) {
       clearTimeout(window.__chDeepQueuePoll);
       window.__chDeepQueuePoll = null;
@@ -1036,9 +1196,10 @@
     var forceRefresh = !!opts.forceRefresh;
     window.__chAttempt = attemptNum;
     window.__chDeepMode = deep;
-    showChLoading(attemptNum, deep);
     var fetchOpts = { cache: 'no-store' };
     var timeoutMs = deep ? 195000 : 90000;
+    window.__chChannelFetchTimeoutMs = timeoutMs;
+    showChLoading(attemptNum, deep);
     try {
       if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
         fetchOpts.signal = AbortSignal.timeout(timeoutMs);
@@ -1075,6 +1236,7 @@
       var a = data.analysis;
       if (!a || typeof a !== 'object') throw new Error('no_analysis');
 
+      chClearLoadingTick();
       document.getElementById('ch-loading').hidden = true;
       var lrOk = document.getElementById('ch-loading-retry');
       if (lrOk) { lrOk.hidden = true; lrOk.textContent = ''; }
@@ -1085,6 +1247,7 @@
       chOpenByoPanelAndFocus();
 
       var lm = data.live_metrics || {};
+      if (deep && lm.deep_status === 'ok') chResetDeepTimeoutStreak();
       var apiMode = data.mode || 'fast';
       var dg = data.deep_gate || {};
       var flood = lm.deep_status === 'rate_limited' || lm.deep_status === 'skipped_flood';
@@ -1362,14 +1525,10 @@
           ? 'Через ваш аккаунт Telegram. Обычно до ~3 мин.; лимиты Telegram считаются по вашей сессии, не по общей очереди сервера.'
           : 'Может занять до 3 минут. Используется живая проверка Telegram.';
       }
-      var deepBtnDone = document.getElementById('ch-deep-btn');
-      if (deepBtnDone) deepBtnDone.disabled = false;
+      chApplyServerDeepButtonState();
     })
     .catch(function (err) {
-      var db = document.getElementById('ch-deep-btn');
-      if (db) db.disabled = false;
-      var m = mapFetchError(err);
-      showChError(m.title, m.paragraphs);
+      showChContentWithFastAfterDeepError(err, opts);
     });
   }
 

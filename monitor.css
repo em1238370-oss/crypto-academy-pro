@@ -5005,6 +5005,11 @@ body.ch-page > main.mon-container {
   background: rgba(80, 120, 220, 0.08);
 }
 
+.ch-live-banner--deep-timeout {
+  border-color: rgba(251, 146, 60, 0.5);
+  background: linear-gradient(135deg, rgba(90, 40, 18, 0.55) 0%, rgba(18, 20, 32, 0.72) 100%);
+}
+
 /* Глубокий анализ: акцентная кнопка (Crypto Academy — тёмный фон + лайм) */
 .ch-deep-intro {
   max-width: 56ch;
@@ -5069,6 +5074,11 @@ body.ch-page > main.mon-container {
 .ch-page .ch-live-banner {
   border-color: rgba(251, 191, 36, 0.26);
   background: linear-gradient(135deg, rgba(48, 40, 26, 0.42) 0%, rgba(14, 16, 22, 0.52) 100%);
+}
+
+.ch-page .ch-live-banner--deep-timeout {
+  border-color: rgba(251, 146, 60, 0.45);
+  background: linear-gradient(135deg, rgba(72, 38, 16, 0.58) 0%, rgba(10, 12, 20, 0.78) 100%);
 }
 
 .ch-page .ch-what-analyzed {
