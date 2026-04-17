@@ -59,16 +59,16 @@ button:focus-visible {
    --kro-gray-soft: #cccccc;
 }
 
-/* Hero + Footer: утилиты анимации — ритм ближе к sitelove: короткий fade-up, без лишнего scale */
+/* Hero + Footer: утилиты анимации (transition, keyframes) — только главная часть, без Фишки 1 */
 .kro-main {
    --kro-ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
    --kro-ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-   --kro-duration-reveal: 0.68s;
-   --kro-duration-reveal-slow: 0.76s;
+   --kro-duration-reveal: 0.7s;
+   --kro-duration-reveal-slow: 0.85s;
    --kro-duration-hover: 0.25s;
-   --kro-stagger: 0.09s;
-   --kro-reveal-y: 22px;
-   --kro-scroll-in-y: 26px;
+   --kro-stagger: 0.12s;
+   --kro-reveal-y: 44px;
+   --kro-scroll-in-y: 52px;
    /* Типографика (medvedevart): акцент — заголовки, основной текст — тело */
    --kro-font-heading: 'Syne', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
    --kro-font-body: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -94,7 +94,7 @@ button:focus-visible {
 
 /* Hero: карточка — лёгкое появление (keyframes один раз при загрузке) */
 .kro-step1.kro-reveal-visible .kro-step1-inner {
-   animation: kro-hero-card-in 0.64s var(--kro-ease-reveal) forwards;
+   animation: kro-hero-card-in 0.8s var(--kro-ease-reveal) forwards;
 }
 
 @keyframes kro-hero-card-in {
@@ -142,17 +142,16 @@ button:focus-visible {
    position: relative;
    z-index: 1;
    overflow: hidden;
-   background: radial-gradient(ellipse 55% 45% at 70% 80%, rgba(245, 158, 11, 0.10) 0%, transparent 55%),
-               radial-gradient(ellipse 50% 40% at 15% 20%, rgba(184, 74, 74, 0.10) 0%, transparent 55%),
-               radial-gradient(ellipse 80% 60% at 50% 25%, rgba(139, 92, 246, 0.07) 0%, transparent 60%),
-               radial-gradient(ellipse 100% 50% at 50% 100%, rgba(245, 158, 11, 0.06) 0%, transparent 50%),
-               linear-gradient(180deg, #07080d 0%, #0a0c12 60%, #0d0f16 100%);
+   background: radial-gradient(ellipse 60% 50% at 80% 85%, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
+               radial-gradient(ellipse 50% 40% at 15% 25%, rgba(245, 158, 11, 0.03) 0%, transparent 55%),
+               radial-gradient(ellipse 70% 50% at 50% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+               linear-gradient(180deg, var(--kro-bg) 0%, rgba(15, 18, 24, 0.98) 100%);
    transition: opacity var(--kro-duration-reveal) var(--kro-ease-out), transform var(--kro-duration-reveal) var(--kro-ease-out);
 }
 
 body.kro-hero-scrolled .kro-step1 {
-   opacity: 0.72;
-   transform: translateY(-20px);
+   opacity: 0.65;
+   transform: translateY(-32px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -201,13 +200,13 @@ body.kro-hero-scrolled .kro-step1 {
    .kro-tag:hover {
       transform: none;
    }
-   .kro-step1-cta::after {
-      animation: none;
-   }
    .kro-step1-cta:hover,
    .kro-step1-cta:active {
       transform: none;
-      filter: none;
+      box-shadow: 0 0 0 rgba(245, 158, 11, 0);
+   }
+   .kro-step1-cta:hover::before {
+      transform: none;
    }
    .kro-main .news-footer.kro-footer .news-footer-cta:hover,
    .kro-main .news-footer.kro-footer .news-footer-cta:active {
@@ -436,11 +435,10 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-step1-cta-note {
    font-family: var(--kro-font-body);
    font-size: 12px;
-   color: rgba(255, 255, 255, 0.38);
-   line-height: 1.55;
+   color: rgba(255, 255, 255, 0.45);
+   line-height: 1.45;
    max-width: 240px;
    margin: 0;
-   letter-spacing: 0.02em;
 }
 
 .kro-cta-note-mobile {
@@ -457,30 +455,6 @@ body.kro-hero-scrolled .kro-floating-nav {
    color: rgba(255, 255, 255, 0.55);
    margin: 0 0 16px;
    line-height: 1.45;
-   display: flex;
-   align-items: center;
-   gap: 10px;
-}
-
-.kro-step1-role::before {
-   content: '';
-   display: inline-block;
-   width: 9px;
-   height: 9px;
-   border-radius: 50%;
-   background: #e05555;
-   box-shadow: 0 0 0 3px rgba(224, 85, 85, 0.2), 0 0 12px rgba(224, 85, 85, 0.7);
-   flex-shrink: 0;
-   animation: kro-role-dot-pulse 2s ease-in-out infinite;
-}
-
-@keyframes kro-role-dot-pulse {
-   0%, 100% { box-shadow: 0 0 0 3px rgba(224, 85, 85, 0.2), 0 0 12px rgba(224, 85, 85, 0.7); transform: scale(1); }
-   50% { box-shadow: 0 0 0 6px rgba(224, 85, 85, 0.1), 0 0 20px rgba(224, 85, 85, 0.4); transform: scale(0.85); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-   .kro-step1-role::before { animation: none; }
 }
 
 .kro-step1-cta-secondary {
@@ -535,7 +509,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-step1.kro-reveal .kro-tag {
-   transform: translateY(8px);
+   transform: translateY(12px);
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-role {
@@ -547,79 +521,79 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-step1.kro-reveal-visible .kro-step1-title {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.08s;
+   transition-delay: 0.1s;
 }
 
 .kro-step1.kro-reveal-visible .kro-hero-cases {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.16s;
+   transition-delay: 0.2s;
 }
 
 .kro-step1.kro-reveal-visible .kro-hero-live-stats {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.24s;
+   transition-delay: 0.3s;
 }
 
 .kro-step1.kro-reveal-visible .kro-hero-primary-cta {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.32s;
+   transition-delay: 0.38s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-subtitle {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.4s;
+   transition-delay: 0.48s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-tags {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.48s;
+   transition-delay: 0.58s;
 }
 
 .kro-step1.kro-reveal-visible .kro-tag:nth-child(1) {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.48s;
+   transition-delay: 0.58s;
 }
 
 .kro-step1.kro-reveal-visible .kro-tag:nth-child(2) {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.56s;
+   transition-delay: 0.68s;
 }
 
 .kro-step1.kro-reveal-visible .kro-tag:nth-child(3) {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.64s;
+   transition-delay: 0.78s;
 }
 
 .kro-step1.kro-reveal-visible .kro-tag:nth-child(4) {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.72s;
+   transition-delay: 0.88s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-cta {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.8s;
+   transition-delay: 1s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-cta-note {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.88s;
+   transition-delay: 1.12s;
 }
 
 .kro-step1.kro-reveal-visible .kro-step1-cta-secondary {
    opacity: 1;
    transform: translateY(0);
-   transition-delay: 0.96s;
+   transition-delay: 1.24s;
 }
 
 @media (min-width: 900px) {
@@ -648,7 +622,7 @@ body.kro-hero-scrolled .kro-floating-nav {
       border-left: 1px solid rgba(255, 255, 255, 0.12);
    }
    .kro-step1-cta-note {
-      max-width: 240px;
+      max-width: 260px;
    }
    .kro-step1 {
       text-align: left;
@@ -665,45 +639,52 @@ body.kro-hero-scrolled .kro-floating-nav {
    transition: transform 0.12s ease-out;
 }
 
+/* Янтарный блик с «дыханием» (медленная пульсация атмосферы) */
 .kro-step1-bg::before {
    content: '';
    position: absolute;
    inset: 0;
-   background: radial-gradient(ellipse 50% 38% at 50% 45%, rgba(245, 158, 11, 0.13) 0%, transparent 55%),
-               radial-gradient(ellipse 30% 20% at 80% 20%, rgba(184, 74, 74, 0.10) 0%, transparent 50%);
+   background: radial-gradient(ellipse 42% 32% at 50% 42%, rgba(245, 158, 11, 0.07) 0%, transparent 55%);
    pointer-events: none;
-   animation: kro-hero-breathe 14s ease-in-out infinite;
+   animation: kro-hero-breathe 20s ease-in-out infinite;
 }
 
 @keyframes kro-hero-breathe {
-   0%, 100% { opacity: 0.7; transform: scale(1); }
-   50% { opacity: 1; transform: scale(1.04); }
+   0%, 100% { opacity: 0.8; }
+   50% { opacity: 1; }
 }
 
-/* Виньетка + сетка точек Hero + noise (sitelove) */
+.kro-step1-bg::after {
+   content: '';
+   position: absolute;
+   inset: 0;
+   background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.2) 100%);
+   pointer-events: none;
+}
+
+/* Виньетка + сетка точек Hero */
 .kro-step1-bg::after {
    content: '';
    position: absolute;
    inset: 0;
    background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.2) 100%),
                radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.018) 1px, transparent 0),
-               radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.012) 1px, transparent 0),
-               url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-   background-size: 100% 100%, 32px 32px, 24px 24px, 200px 200px;
-   background-position: 0 0, 0 0, 0 0, 0 0;
+               radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.012) 1px, transparent 0);
+   background-size: 100% 100%, 32px 32px, 24px 24px;
+   background-position: 0 0, 0 0, 0 0;
    pointer-events: none;
 }
 
 /* Hero-заголовок: Syne — нежнее */
 .kro-step1-title {
    font-family: var(--kro-font-heading);
-   font-size: clamp(52px, 12vw, 96px);
-   font-weight: 800;
-   line-height: 1.04;
-   letter-spacing: -0.03em;
+   font-size: clamp(48px, 11vw, 88px);
+   font-weight: 700;
+   line-height: 1.06;
+   letter-spacing: -0.02em;
    margin-bottom: 26px;
-   color: rgba(255, 255, 255, 0.97);
-   text-shadow: 0 0 80px rgba(245, 158, 11, 0.12), 0 2px 4px rgba(0, 0, 0, 0.3);
+   color: rgba(255, 255, 255, 0.94);
+   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* Hero: реальные случаи (top3 из live-counter) + счётчик + главный CTA */
@@ -740,27 +721,15 @@ body.kro-hero-scrolled .kro-floating-nav {
    padding: 16px 18px;
    border-radius: 14px;
    border: 1px solid rgba(255, 255, 255, 0.1);
-   background: rgba(0, 0, 0, 0.35);
-   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-   transition: border-color 0.25s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, background 0.25s ease;
-   position: relative;
-   overflow: hidden;
-}
-
-.kro-hero-case-card::before {
-   content: '';
-   position: absolute;
-   top: 0; left: 0; right: 0;
-   height: 3px;
-   background: linear-gradient(90deg, #e05555 0%, rgba(224, 85, 85, 0.0) 100%);
-   border-radius: 14px 14px 0 0;
+   background: rgba(0, 0, 0, 0.25);
+   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .kro-hero-case-card:hover {
-   border-color: rgba(224, 85, 85, 0.35);
-   transform: translateY(-5px);
-   background: rgba(0, 0, 0, 0.45);
-   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(224, 85, 85, 0.1);
+   border-color: rgba(245, 158, 11, 0.35);
+   transform: translateY(-2px);
+   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
 }
 
 .kro-hero-case-channel {
@@ -942,82 +911,63 @@ body.kro-hero-scrolled .kro-floating-nav {
    display: inline-flex;
    align-items: center;
    justify-content: center;
-   gap: 10px;
-   max-width: 300px;
+   gap: 8px;
+   max-width: 280px;
    font-family: var(--kro-font-body);
-   font-size: clamp(12px, 1.4vw, 14px);
+   font-size: clamp(13px, 1.5vw, 15px);
    font-weight: 600;
-   letter-spacing: 0.1em;
+   letter-spacing: 0.04em;
    text-transform: uppercase;
-   color: rgba(255, 240, 210, 0.88);
-   background: transparent;
-   padding: 16px 32px;
-   border: 1px solid rgba(245, 158, 11, 0.22);
+   color: rgba(255, 230, 200, 0.92);
+   background-color: rgba(245, 158, 11, 0.12);
+   padding: 12px 22px;
+   border: 1px solid rgba(245, 158, 11, 0.35);
    border-radius: 999px;
    text-decoration: none;
-   position: relative;
-   overflow: hidden;
-   box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 24px rgba(0,0,0,0.2);
-   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+   transition: border-color var(--kro-duration-hover) ease, background-color var(--kro-duration-hover) ease, color var(--kro-duration-hover) ease, transform var(--kro-duration-hover) ease, box-shadow var(--kro-duration-hover) ease;
    text-align: center;
-   line-height: 1.4;
-   backdrop-filter: blur(8px);
-   -webkit-backdrop-filter: blur(8px);
+   line-height: 1.35;
+   box-shadow: 0 0 0 rgba(245, 158, 11, 0);
 }
 
 .kro-step1-cta::before {
    content: '';
-   position: absolute;
-   inset: 0;
-   background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245, 158, 11, 0.06) 0%, transparent 70%);
-   border-radius: 999px;
-   pointer-events: none;
-}
-
-.kro-step1-cta::after {
-   content: '';
-   position: absolute;
-   top: 0;
-   left: -120%;
-   width: 45%;
-   height: 100%;
-   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
-   animation: kro-cta-shimmer 4s ease-in-out infinite;
-}
-
-@keyframes kro-cta-shimmer {
-   0%   { left: -120%; }
-   50%  { left: 160%; }
-   100% { left: 160%; }
+   width: 14px;
+   height: 14px;
+   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f5c88c' stroke-width='2'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") no-repeat center;
+   background-size: contain;
+   flex-shrink: 0;
+   transition: transform var(--kro-duration-hover) ease;
 }
 
 .kro-step1-cta:hover {
-   border-color: rgba(245, 158, 11, 0.5);
-   color: rgba(255, 248, 230, 1);
-   transform: translateY(-4px);
-   box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 40px rgba(245, 158, 11, 0.1), inset 0 1px 0 rgba(255,255,255,0.08);
+   border-color: rgba(245, 158, 11, 0.55);
+   background-color: rgba(245, 158, 11, 0.24);
+   color: rgba(255, 248, 235, 1);
+   transform: translateY(-3px) scale(1.05);
+   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.3), 0 0 32px rgba(245, 158, 11, 0.25);
 }
 
 .kro-step1-cta:active {
    transform: scale(0.98);
+   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
 }
 
-@media (prefers-reduced-motion: reduce) {
-   .kro-step1-cta::after { animation: none; }
-   .kro-step1-cta:hover { transform: none; }
+.kro-step1-cta:hover::before {
+   transform: translateX(3px);
 }
 
 .kro-step1-cta:focus-visible {
-   outline: 2px solid rgba(245, 158, 11, 0.42);
+   outline: 2px solid rgba(245, 158, 11, 0.7);
    outline-offset: 3px;
-   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+   box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
 }
 
 /* Scroll reveal: переменные из набора утилит Hero/Footer */
 .kro-reveal {
    opacity: 0;
    transform: translateY(var(--kro-reveal-y));
-   transition: opacity var(--kro-duration-reveal) var(--kro-ease-reveal), transform var(--kro-duration-reveal) var(--kro-ease-reveal);
+   transition: opacity var(--kro-duration-reveal) var(--kro-ease-out), transform var(--kro-duration-reveal) var(--kro-ease-out);
 }
 
 .kro-reveal.kro-reveal-visible {
@@ -1025,19 +975,16 @@ body.kro-hero-scrolled .kro-floating-nav {
    transform: translateY(0);
 }
 
-/* Scroll-in: чистый fade-up (sitelove), без scale — аккуратнее на скролле */
+/* Scroll-in: появление при входе во вьюпорт (keyframes-темп 0.5–0.8 s, fade-up + scale) */
 .kro-scroll-in {
    opacity: 0;
-   transform: translateY(var(--kro-scroll-in-y));
-   filter: none;
-   transition:
-      opacity var(--kro-duration-reveal) var(--kro-ease-reveal),
-      transform var(--kro-duration-reveal) var(--kro-ease-reveal);
+   transform: translateY(var(--kro-scroll-in-y)) scale(0.98);
+   transition: opacity var(--kro-duration-reveal-slow) var(--kro-ease-reveal), transform var(--kro-duration-reveal-slow) var(--kro-ease-reveal);
 }
 
 .kro-scroll-in.kro-scroll-in-visible {
    opacity: 1;
-   transform: translateY(0);
+   transform: translateY(0) scale(1);
 }
 
 /* Футер: каскадное появление (stagger 0.1 s), включая нижнюю полосу */
@@ -1057,7 +1004,6 @@ body.kro-hero-scrolled .kro-floating-nav {
    .kro-scroll-in {
        opacity: 1;
        transform: none;
-       filter: none;
        transition: none;
    }
    .news-footer.kro-scroll-in .kro-footer-reveal,
@@ -1095,51 +1041,23 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 /* Фишка 1: Живой счётчик — карточки метрик, фон с глубиной (отдельный шрифт как на sitelove) */
-.kro-feature1::before {
-   content: '';
-   position: absolute;
-   top: 0;
-   left: 50%;
-   transform: translateX(-50%);
-   width: 60%;
-   height: 1px;
-   background: radial-gradient(ellipse at center, rgba(245, 158, 11, 0.35) 0%, transparent 70%);
-   pointer-events: none;
-   z-index: 2;
-}
-
 .kro-feature1 {
    font-family: 'Plus Jakarta Sans', sans-serif;
    padding: 100px 24px 120px;
    text-align: center;
    position: relative;
-   overflow-x: hidden;
-   overflow-y: visible;
-   isolation: isolate;
+   overflow: hidden;
 }
 
 .kro-feature1-bg {
    position: absolute;
    inset: 0;
    z-index: -1;
-   background: radial-gradient(ellipse 70% 50% at 20% 50%, rgba(139, 92, 246, 0.12) 0%, transparent 55%),
-               radial-gradient(ellipse 60% 50% at 80% 30%, rgba(184, 74, 74, 0.14) 0%, transparent 50%),
-               radial-gradient(ellipse 80% 70% at 50% 60%, rgba(100, 45, 45, 0.20) 0%, transparent 55%),
-               radial-gradient(ellipse 100% 40% at 50% 100%, rgba(245, 158, 11, 0.06) 0%, transparent 50%),
-               linear-gradient(180deg, #0d0a0b 0%, #110d0e 40%, #0e0b0c 100%);
-}
-
-/* Контент поверх локального фона: без отрицательного z-index у bg (на мобильных не «наезжает» слой main / скролл) */
-.kro-feature1 > :not(.kro-feature1-bg) {
-   position: relative;
-   z-index: 1;
-}
-
-/* Не даём общему .kro-reveal гасить всю секцию: иначе LIVE/подзаголовок пропадают при скролле hero→фишка 1; анимируются только дашборд и блоки ниже */
-.kro-feature1.kro-reveal {
-   opacity: 1;
-   transform: none;
-   transition: none;
+   /* Другой тон относительно hero: мягкий красный «денежный» градиент сзади карточек, без точек */
+   background: radial-gradient(ellipse 80% 70% at 50% 45%, rgba(100, 45, 45, 0.22) 0%, transparent 55%),
+               radial-gradient(ellipse 70% 50% at 50% 35%, rgba(72, 48, 42, 0.18) 0%, transparent 55%),
+               radial-gradient(ellipse 100% 80% at 50% 50%, rgba(50, 30, 32, 0.15) 0%, transparent 65%),
+               linear-gradient(180deg, #140e0f 0%, #110d0e 35%, #0e0b0c 100%);
 }
 
 /* Дашборд: LIVE + большая цифра + 3 карточки (тёплый контрастный фон, без сияния) */
@@ -1245,7 +1163,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    align-items: center;
    justify-content: center;
    gap: 6px 10px;
-   margin: 6px auto 24px;
+   margin: -12px auto 28px;
    max-width: 640px;
    font-size: clamp(12px, 1.9vw, 15px);
    line-height: 1.45;
@@ -1321,17 +1239,6 @@ body.kro-hero-scrolled .kro-floating-nav {
 
 .kro-f1-loh-card {
    position: relative;
-   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease, border-color 0.25s ease;
-}
-
-.kro-f1-loh-card:hover {
-   transform: translateY(-8px) scale(1.02);
-   box-shadow: 0 24px 56px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(245, 158, 11, 0.18), 0 0 32px rgba(245, 158, 11, 0.06);
-   border-color: rgba(245, 158, 11, 0.3) !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-   .kro-f1-loh-card:hover { transform: none; box-shadow: none; }
 }
 
 .kro-f1-badge-top3 {
@@ -1525,7 +1432,6 @@ body.kro-hero-scrolled .kro-floating-nav {
    max-width: min(560px, 100%);
    line-height: 1.45;
    text-align: center;
-   white-space: pre-line;
 }
 
 .kro-f1-system-note {
@@ -1594,13 +1500,12 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-f1-shock-total {
-   font-size: clamp(42px, 7vw, 68px);
+   font-size: clamp(36px, 5.5vw, 52px);
    font-weight: 800;
-   color: rgba(255, 255, 255, 0.88);
+   color: var(--kro-accent-muted);
    line-height: 1.1;
    margin: 0;
-   letter-spacing: -0.02em;
-   font-variant-numeric: tabular-nums;
+   text-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
 }
 
 /* Блок 2: Твой тип лоха */
@@ -1611,23 +1516,10 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-f1-loh-title {
    font-size: clamp(18px, 2.5vw, 24px);
    font-weight: 700;
-   color: rgba(255, 255, 255, 0.92);
+   color: rgba(255, 255, 255, 0.95);
    margin-bottom: 20px;
    text-transform: uppercase;
-   letter-spacing: 0.02em;
-   position: relative;
-   padding-bottom: 14px;
-}
-
-.kro-f1-loh-title::after {
-   content: '';
-   position: absolute;
-   left: 0;
-   bottom: 0;
-   width: 32px;
-   height: 2px;
-   border-radius: 2px;
-   background: rgba(255, 255, 255, 0.2);
+   letter-spacing: 0.04em;
 }
 
 .kro-f1-loh-types {
@@ -1643,7 +1535,13 @@ body.kro-hero-scrolled .kro-floating-nav {
    padding: 24px;
    text-align: left;
    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease, border-color 0.25s ease;
+   transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.35s ease, border-color 0.25s ease;
+}
+.kro-f1-loh-card:hover {
+   transform: translateY(-5px) scale(1.02);
+   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+   border-color: rgba(184, 74, 74, 0.35);
+   transition-duration: 0.35s;
 }
 
 .kro-f1-loh-avatar {
@@ -1684,23 +1582,10 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-f1-math-title {
    font-size: clamp(18px, 2.5vw, 24px);
    font-weight: 700;
-   color: rgba(255, 255, 255, 0.92);
+   color: rgba(255, 255, 255, 0.95);
    margin-bottom: 20px;
    text-transform: uppercase;
-   letter-spacing: 0.02em;
-   position: relative;
-   padding-bottom: 14px;
-}
-
-.kro-f1-math-title::after {
-   content: '';
-   position: absolute;
-   left: 0;
-   bottom: 0;
-   width: 32px;
-   height: 2px;
-   border-radius: 2px;
-   background: rgba(255, 255, 255, 0.2);
+   letter-spacing: 0.04em;
 }
 
 .kro-f1-math-slider-wrap {
@@ -1982,11 +1867,12 @@ body.kro-hero-scrolled .kro-floating-nav {
    margin: 0 auto;
    text-align: left;
    position: relative;
-   padding: 40px 36px 44px;
-   border-radius: 28px;
-   background: linear-gradient(160deg, rgba(22, 18, 34, 0.98) 0%, rgba(16, 13, 26, 0.99) 100%);
-   border: 1px solid rgba(139, 92, 246, 0.22);
-   box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05);
+   padding: 32px 28px 36px;
+   border-radius: 26px;
+   background: linear-gradient(165deg, rgba(30, 26, 40, 0.96) 0%, rgba(22, 18, 30, 0.98) 50%, rgba(18, 14, 26, 0.99) 100%);
+   border: 1px solid rgba(139, 92, 246, 0.3);
+   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   transition: box-shadow 0.4s ease, transform 0.35s ease, border-color 0.3s ease;
 }
 .kro-feature1-check::before {
    content: '';
@@ -1998,7 +1884,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 .kro-feature1-check:hover {
    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.07);
-   border-color: rgba(139, 92, 246, 0.38);
+   border-color: rgba(139, 92, 246, 0.45);
    transform: translateY(-2px);
 }
 
@@ -2039,38 +1925,11 @@ body.kro-hero-scrolled .kro-floating-nav {
    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-.kro-feature1-check-hero {
-   margin-bottom: 26px;
-}
-.kro-feature1-check-kicker {
-   margin: 0 0 10px 0;
-   font-size: 0.72rem;
-   font-weight: 700;
-   letter-spacing: 0.14em;
-   text-transform: uppercase;
-   color: rgba(196, 181, 255, 0.88);
-}
-.kro-feature1-check-heading {
-   font-size: clamp(1.35rem, 3.2vw, 1.85rem);
-   font-weight: 800;
-   color: #fff;
-   margin: 0 0 14px 0;
-   line-height: 1.22;
-   letter-spacing: -0.02em;
-   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
-}
-.kro-feature1-check-lead {
-   margin: 0;
-   font-size: 0.98rem;
-   line-height: 1.6;
-   color: rgba(230, 225, 255, 0.88);
-   max-width: 52ch;
-}
 .kro-feature1-check-intro {
    font-size: clamp(1.5rem, 4vw, 2rem);
    font-weight: 700;
    color: #fff;
-   margin: 0 0 24px 0;
+   margin: 0 0 8px 0;
    line-height: 1.2;
    letter-spacing: -0.02em;
    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
@@ -2096,270 +1955,48 @@ body.kro-hero-scrolled .kro-floating-nav {
    line-height: 1.4;
 }
 
-/* Простая схема проверки (пострадавшие / без технического бэкграунда) */
-.kro-flow-simple {
-   margin: 18px 0 20px;
-   padding: 16px 18px 14px;
-   border-radius: 16px;
-   border: 1px solid rgba(139, 92, 246, 0.28);
-   background: linear-gradient(165deg, rgba(45, 35, 75, 0.45) 0%, rgba(12, 14, 22, 0.72) 100%);
-   box-sizing: border-box;
-}
-.kro-flow-simple-kicker {
-   margin: 0 0 8px;
-   font-size: 12px;
-   line-height: 1.45;
-   color: rgba(255, 255, 255, 0.62);
-}
-.kro-flow-simple-title {
-   margin: 0 0 14px;
-   font-size: 11px;
-   font-weight: 800;
-   letter-spacing: 0.08em;
-   text-transform: uppercase;
-   color: rgba(221, 214, 254, 0.95);
-}
-.kro-flow-simple-track {
-   display: flex;
-   align-items: stretch;
-   gap: 6px;
-   flex-wrap: wrap;
-   justify-content: space-between;
-}
-.kro-flow-step {
-   flex: 1 1 160px;
-   min-width: 140px;
-   padding: 12px 12px 14px;
-   border-radius: 12px;
-   background: rgba(0, 0, 0, 0.32);
-   border: 1px solid rgba(255, 255, 255, 0.07);
-   display: grid;
-   grid-template-columns: auto 1fr;
-   grid-template-rows: auto auto auto;
-   column-gap: 10px;
-   row-gap: 2px;
-}
-.kro-flow-step-num {
-   grid-row: 1 / span 2;
-   align-self: start;
-   width: 28px;
-   height: 28px;
-   border-radius: 9px;
-   background: rgba(139, 92, 246, 0.35);
-   color: #e9d5ff;
-   font-weight: 800;
-   font-size: 14px;
-   display: flex;
-   align-items: center;
-   justify-content: center;
-}
-.kro-flow-step-label {
-   font-weight: 700;
-   font-size: 15px;
-   color: rgba(255, 255, 255, 0.94);
-}
-.kro-flow-step-time {
-   font-size: 11px;
-   color: rgba(167, 243, 208, 0.85);
-   font-weight: 600;
-}
-.kro-flow-step-text {
-   grid-column: 1 / -1;
-   margin: 8px 0 0;
-   font-size: 12px;
-   line-height: 1.5;
-   color: rgba(255, 255, 255, 0.72);
-}
-.kro-flow-arrow {
-   flex: 0 0 auto;
-   align-self: center;
-   width: 22px;
-   text-align: center;
-   font-size: 18px;
-   font-weight: 600;
-   color: rgba(167, 139, 250, 0.75);
-   line-height: 1;
-}
-.kro-flow-arrow::before {
-   content: '→';
-}
-.kro-flow-simple-foot {
-   margin: 14px 0 0;
-   padding-top: 12px;
-   border-top: 1px solid rgba(255, 255, 255, 0.08);
-   font-size: 12px;
-   line-height: 1.5;
-   color: rgba(255, 255, 255, 0.58);
-}
-@media (max-width: 720px) {
-   .kro-flow-arrow {
-      width: 100%;
-      padding: 4px 0;
-      transform: rotate(90deg);
-   }
-   .kro-flow-simple-track {
-      flex-direction: column;
-   }
-}
-
-.kro-reality-check {
-   margin-top: 14px;
-   border-radius: 12px;
-   border: 1px solid rgba(255, 255, 255, 0.09);
-   background: rgba(0, 0, 0, 0.22);
-   overflow: hidden;
-}
-.kro-reality-check-summary {
-   list-style: none;
-   cursor: pointer;
-   padding: 12px 16px;
-   font-size: 12px;
-   font-weight: 700;
-   letter-spacing: 0.04em;
-   color: rgba(253, 224, 200, 0.92);
-   user-select: none;
-}
-.kro-reality-check-summary::-webkit-details-marker {
-   display: none;
-}
-.kro-reality-check-summary::after {
-   content: ' +';
-   opacity: 0.65;
-   font-weight: 600;
-}
-.kro-reality-check[open] .kro-reality-check-summary::after {
-   content: ' −';
-}
-.kro-reality-check-body {
-   padding: 0 16px 14px;
-   border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-.kro-reality-check-body p {
-   margin: 10px 0 0;
-   font-size: 12px;
-   line-height: 1.55;
-   color: rgba(255, 255, 255, 0.7);
-}
-.kro-reality-check-body p:first-child {
-   margin-top: 12px;
-}
-.kro-reality-check-body strong {
-   color: rgba(255, 255, 255, 0.88);
-   font-weight: 700;
-}
-
-/* Пояснение для пользователя: fast vs deep, лимиты Telegram */
-.kro-check-user-explainer {
-   margin: 16px 0 0;
-   padding: 14px 18px;
-   border-radius: 14px;
-   border: 1px solid rgba(255, 255, 255, 0.1);
-   background: rgba(0, 0, 0, 0.28);
-   max-width: 100%;
-   box-sizing: border-box;
-}
-.kro-check-user-explainer-title {
-   margin: 0 0 10px;
-   font-size: 12px;
-   font-weight: 700;
-   letter-spacing: 0.06em;
-   text-transform: uppercase;
-   color: rgba(255, 255, 255, 0.72);
-}
-.kro-check-user-explainer-list {
-   margin: 0;
-   padding-left: 1.15rem;
-   font-size: 13px;
-   line-height: 1.55;
-   color: rgba(255, 255, 255, 0.78);
-}
-.kro-check-user-explainer-list li {
-   margin-bottom: 10px;
-}
-.kro-check-user-explainer-list li:last-child {
-   margin-bottom: 0;
-}
-.kro-check-user-explainer-code {
-   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-   font-size: 12px;
-   color: rgba(196, 210, 255, 0.95);
-}
-
 .kro-feature1-check-row {
    display: flex;
-   gap: 0;
-   align-items: stretch;
-   background: rgba(0, 0, 0, 0.35);
-   border: 1px solid rgba(255, 255, 255, 0.08);
-   border-radius: 16px;
-   overflow: hidden;
-   transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.kro-feature1-check-row:focus-within {
-   border-color: rgba(139, 92, 246, 0.5);
-   box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.08);
+   flex-direction: column;
+   gap: 12px;
+   width: 100%;
 }
 
 .kro-feature1-check-row .kro-report-label {
-   flex: 1;
+   width: 100%;
    min-width: 0;
-   margin: 0;
-   display: flex;
-   flex-direction: column;
-   gap: 14px;
-   justify-content: center;
-   padding: 12px 8px 12px 18px;
 }
 
-#kro-check-channel {
-   flex: 1;
+.kro-feature1-check-row .kro-report-label input {
    width: 100%;
    box-sizing: border-box;
-   background: transparent;
-   border: none;
-   outline: none;
-   padding: 18px 22px;
-   font-family: var(--kro-font-body);
-   font-size: 15px;
-   color: rgba(255, 255, 255, 0.88);
-   letter-spacing: 0.01em;
+   border-radius: 999px;
+   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-#kro-check-channel::placeholder {
-   color: rgba(255, 255, 255, 0.22);
-   font-style: italic;
-}
-
-#kro-check-btn {
-   width: auto;
+.kro-feature1-check-row .kro-report-submit {
+   width: 100%;
    margin-top: 0;
-   box-sizing: border-box;
-   background: rgba(139, 92, 246, 0.15);
-   border: none;
-   border-left: 1px solid rgba(139, 92, 246, 0.25);
-   border-radius: 0 16px 16px 0;
-   color: rgba(200, 180, 255, 0.9);
-   font-family: var(--kro-font-body);
-   font-size: 13px;
-   font-weight: 700;
-   letter-spacing: 0.08em;
-   text-transform: uppercase;
-   padding: 18px 28px;
-   cursor: pointer;
-   white-space: nowrap;
-   transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
-   box-shadow: none;
+   border-radius: 999px;
+   transition: transform 0.2s ease, box-shadow 0.25s ease, background-color 0.2s ease, border-color 0.2s ease;
+   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
-
-#kro-check-btn:hover {
-   background: rgba(139, 92, 246, 0.28);
-   color: rgba(220, 210, 255, 1);
-   border-color: rgba(139, 92, 246, 0.4);
+.kro-feature1-check-row .kro-report-submit:hover {
+   transform: translateY(var(--kro-btn-hover-y)) scale(1.02);
+   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
-
-#kro-check-btn:active {
-   transform: scale(0.98);
+.kro-feature1-check-row .kro-report-submit:active {
+   transform: translateY(0) scale(var(--kro-btn-active-scale));
+   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   border-radius: 999px;
+}
+.kro-feature1-check-row .kro-report-submit:focus {
+   border-radius: 999px;
+}
+.kro-feature1-check-row .kro-report-label input:focus {
+   outline: none;
+   border-color: rgba(139, 92, 246, 0.5);
+   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.4);
 }
 .kro-period-prompt {
    color: #fff;
@@ -2426,334 +2063,6 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-check-result .kro-verdict {
    margin: 8px 0 0;
    font-size: 13px;
-}
-
-/* Главная: проверка канала на месте (без /channel) */
-.kro-check-progress {
-   margin-top: 20px;
-   padding: 22px 22px 24px;
-   border-radius: 16px;
-   border: 1px solid rgba(245, 158, 11, 0.28);
-   background: linear-gradient(165deg, rgba(38, 32, 28, 0.92) 0%, rgba(18, 16, 14, 0.96) 100%);
-   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-.kro-check-progress-inner {
-   display: flex;
-   flex-wrap: nowrap;
-   align-items: flex-start;
-   gap: 16px 18px;
-}
-.kro-check-progress-main {
-   flex: 1;
-   min-width: 0;
-}
-.kro-check-progress-human {
-   margin: 10px 0 0 0;
-   font-size: 0.9rem;
-   line-height: 1.55;
-   color: rgba(255, 245, 230, 0.88);
-   font-weight: 500;
-}
-.kro-check-progress-track {
-   margin: 16px 0 0 0;
-   padding: 0 0 0 1.15rem;
-   font-size: 0.82rem;
-   line-height: 1.45;
-   color: rgba(255, 255, 255, 0.72);
-   counter-reset: kroprog;
-}
-.kro-check-progress-step {
-   margin: 0 0 6px 0;
-   padding-left: 0.15rem;
-   transition: color 0.35s ease, font-weight 0.35s ease;
-}
-.kro-check-progress-step--done {
-   color: rgba(167, 243, 208, 0.85);
-}
-.kro-check-progress-step--active {
-   color: rgba(253, 230, 138, 0.98);
-   font-weight: 700;
-}
-.kro-check-progress-spinner {
-   width: 22px;
-   height: 22px;
-   border-radius: 50%;
-   border: 2px solid rgba(255, 255, 255, 0.15);
-   border-top-color: rgba(245, 158, 11, 0.95);
-   flex-shrink: 0;
-   margin-top: 3px;
-   animation: kroCheckSpin 0.85s linear infinite;
-}
-@keyframes kroCheckSpin {
-   to { transform: rotate(360deg); }
-}
-.kro-check-progress-title {
-   margin: 0;
-   font-size: clamp(0.95rem, 1.4vw, 1.08rem);
-   font-weight: 700;
-   color: rgba(255, 248, 240, 0.98);
-   line-height: 1.5;
-   width: 100%;
-}
-.kro-check-progress-note {
-   width: 100%;
-   margin: 12px 0 0;
-   padding-left: 0;
-   font-size: 0.8125rem;
-   color: var(--kro-gray-mid);
-   line-height: 1.45;
-}
-.kro-check-retry {
-   margin-top: 14px;
-}
-.kro-inline-report {
-   margin-top: 22px;
-}
-.kro-inline-report-card--document {
-   padding: 32px 32px 36px;
-   border-radius: 22px;
-   border: 1px solid rgba(139, 92, 246, 0.2);
-   background: linear-gradient(165deg, rgba(24, 20, 36, 0.98) 0%, rgba(14, 12, 22, 0.99) 100%);
-   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-.kro-inline-report-card--document .kro-inline-report-title {
-   font-size: clamp(1.35rem, 3vw, 1.75rem);
-   letter-spacing: -0.02em;
-}
-.kro-inline-report-card--document .kro-inline-report-meta {
-   font-size: 0.95rem;
-   margin-bottom: 18px;
-}
-.kro-inline-report-card--document .kro-inline-sec-h {
-   font-size: 0.78rem;
-   letter-spacing: 0.06em;
-}
-.kro-inline-report-card--document .kro-inline-sec-body {
-   font-size: 0.95rem;
-}
-.kro-inline-report-card {
-   margin-top: 0;
-}
-.kro-inline-report-eyebrow {
-   font-size: 0.6875rem;
-   text-transform: uppercase;
-   letter-spacing: 0.1em;
-   color: var(--kro-gray-mid);
-   margin: 0 0 8px 0;
-}
-.kro-inline-report-title {
-   font-size: clamp(1.2rem, 2.6vw, 1.55rem);
-   font-weight: 700;
-   color: #fff;
-   margin: 0 0 10px 0;
-   letter-spacing: -0.02em;
-}
-.kro-inline-report-meta {
-   font-size: 0.875rem;
-   color: var(--kro-gray-soft);
-   line-height: 1.5;
-   margin: 0 0 18px 0;
-}
-.kro-inline-report-summary {
-   display: flex;
-   flex-wrap: wrap;
-   gap: 14px 22px;
-   margin-bottom: 18px;
-   padding: 14px 16px;
-   border-radius: 12px;
-   background: rgba(0, 0, 0, 0.22);
-   border: 1px solid rgba(255, 255, 255, 0.06);
-}
-.kro-inline-summary-item {
-   display: flex;
-   flex-direction: column;
-   gap: 6px;
-   min-width: 140px;
-}
-.kro-inline-summary-label {
-   font-size: 0.65rem;
-   text-transform: uppercase;
-   letter-spacing: 0.08em;
-   color: var(--kro-gray-mid);
-}
-.kro-inline-summary-value {
-   font-size: 0.9375rem;
-   font-weight: 600;
-   color: #fff;
-}
-.kro-inline-status-pill {
-   display: inline-flex;
-   align-items: center;
-   width: fit-content;
-   max-width: 100%;
-   padding: 6px 12px;
-   border-radius: 999px;
-   font-size: 0.8125rem;
-   font-weight: 600;
-   line-height: 1.3;
-}
-.kro-inline-status-pill--scam {
-   background: rgba(184, 74, 74, 0.22);
-   border: 1px solid rgba(184, 74, 74, 0.45);
-   color: #fecaca;
-}
-.kro-inline-status-pill--risk {
-   background: rgba(245, 158, 11, 0.16);
-   border: 1px solid rgba(245, 158, 11, 0.42);
-   color: #fde68a;
-}
-.kro-inline-status-pill--clean {
-   background: rgba(34, 197, 94, 0.14);
-   border: 1px solid rgba(34, 197, 94, 0.35);
-   color: #bbf7d0;
-}
-.kro-inline-status-pill--watch {
-   background: rgba(148, 163, 184, 0.12);
-   border: 1px solid rgba(148, 163, 184, 0.28);
-   color: #e2e8f0;
-}
-.kro-inline-reasons-title {
-   font-size: 0.8125rem;
-   font-weight: 700;
-   text-transform: uppercase;
-   letter-spacing: 0.06em;
-   color: var(--kro-gray-mid);
-   margin: 0 0 8px 0;
-}
-.kro-inline-reasons {
-   margin: 0 0 22px 0;
-   padding-left: 1.1rem;
-   color: rgba(255, 255, 255, 0.88);
-   line-height: 1.55;
-   font-size: 0.9375rem;
-}
-.kro-inline-reasons li {
-   margin-bottom: 6px;
-}
-.kro-inline-sections {
-   display: flex;
-   flex-direction: column;
-   gap: 16px;
-}
-.kro-inline-sec {
-   padding: 14px 16px 16px;
-   border-radius: 12px;
-   background: rgba(255, 255, 255, 0.025);
-   border: 1px solid rgba(255, 255, 255, 0.06);
-}
-.kro-inline-sec-h {
-   font-size: 0.8125rem;
-   font-weight: 700;
-   text-transform: uppercase;
-   letter-spacing: 0.05em;
-   color: rgba(255, 255, 255, 0.72);
-   margin: 0 0 10px 0;
-}
-.kro-inline-sec-body {
-   font-size: 0.875rem;
-   line-height: 1.55;
-   color: rgba(255, 255, 255, 0.82);
-}
-.kro-inline-bullets {
-   margin: 0;
-   padding-left: 1.1rem;
-}
-.kro-inline-bullets li {
-   margin-bottom: 5px;
-}
-.kro-inline-sec-skip {
-   margin: 0;
-   font-size: 0.8125rem;
-   color: var(--kro-gray-mid);
-   font-style: italic;
-}
-.kro-inline-foot {
-   margin: 18px 0 0 0;
-   font-size: 0.75rem;
-   color: var(--kro-gray-mid);
-   line-height: 1.45;
-}
-.kro-inline-actions {
-   margin-top: 18px;
-}
-
-.kro-inline-deep-panel {
-   margin-top: 20px;
-   padding: 16px 18px;
-   border-radius: 14px;
-   border: 1px solid rgba(255, 255, 255, 0.1);
-   font-size: 0.875rem;
-   line-height: 1.55;
-}
-.kro-inline-deep-panel--ok {
-   background: rgba(34, 197, 94, 0.08);
-   border-color: rgba(34, 197, 94, 0.25);
-}
-.kro-inline-deep-panel--blocked {
-   background: rgba(245, 158, 11, 0.1);
-   border-color: rgba(245, 158, 11, 0.35);
-}
-.kro-inline-deep-title {
-   display: block;
-   font-size: 0.9375rem;
-   font-weight: 700;
-   color: #fff;
-   margin: 0 0 10px 0;
-}
-.kro-inline-deep-panel--blocked .kro-inline-deep-title {
-   color: rgba(253, 230, 138, 0.95);
-}
-.kro-inline-deep-text {
-   margin: 0 0 10px 0;
-   color: rgba(255, 255, 255, 0.88);
-}
-.kro-inline-deep-honest {
-   margin: 0;
-   font-size: 0.8125rem;
-   color: var(--kro-gray-mid);
-   line-height: 1.5;
-}
-.kro-inline-deep-actions {
-   margin: 14px 0 0 0;
-}
-.kro-inline-deep-cta {
-   display: inline-flex;
-   align-items: center;
-   font-weight: 600;
-   color: var(--kro-accent);
-   text-decoration: none;
-   border-bottom: 1px solid rgba(245, 158, 11, 0.45);
-   padding-bottom: 1px;
-}
-.kro-inline-deep-cta:hover {
-   color: #fcd34d;
-   border-bottom-color: rgba(252, 211, 77, 0.7);
-}
-.kro-inline-deep-byotele-note {
-   margin: 10px 0 0 0;
-   font-size: 0.875rem;
-   line-height: 1.5;
-   color: rgba(220, 226, 255, 0.92);
-}
-.kro-inline-deep-cta--secondary {
-   color: rgba(147, 197, 253, 0.95);
-   border-bottom-color: rgba(147, 197, 253, 0.5);
-}
-.kro-inline-deep-cta--secondary:hover {
-   color: #bfdbfe;
-   border-bottom-color: rgba(191, 219, 254, 0.8);
-}
-.kro-inline-deep-demo {
-   margin: 12px 0 0 0;
-   font-size: 0.8125rem;
-}
-.kro-inline-deep-demo-link {
-   color: rgba(147, 197, 253, 0.95);
-   text-decoration: underline;
-   text-underline-offset: 3px;
-}
-.kro-inline-deep-demo-link:hover {
-   color: #bfdbfe;
 }
 
 /* Карточка результата — DuoView + скрин: подъём, мягкое свечение, тёплый фон */
@@ -3030,29 +2339,38 @@ body.kro-hero-scrolled .kro-floating-nav {
    display: grid;
    grid-template-columns: 1fr;
    grid-template-rows: 1fr;
+   align-items: start;
    max-width: calc(640px + 4cm);
    margin: 0 auto 44px;
-   min-height: 200px;
+   min-height: 0;
+   position: relative;
 }
 .kro-f1-cta-check-wrap > .kro-f1-cta-block,
 .kro-f1-cta-check-wrap > .kro-feature1-check {
    grid-area: 1 / 1;
 }
 .kro-f1-cta-check-wrap > .kro-f1-cta-block {
+   position: relative;
    transition: opacity 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .kro-f1-cta-check-wrap > .kro-feature1-check.kro-f1-check-reveal {
+   position: absolute;
+   inset: 0;
    opacity: 0;
    transform: translateY(20px);
    pointer-events: none;
    transition: opacity 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .kro-f1-cta-check-wrap.kro-f1-show-check > .kro-f1-cta-block {
+   position: absolute;
+   inset: 0;
    opacity: 0;
    transform: translateY(-12px);
    pointer-events: none;
 }
 .kro-f1-cta-check-wrap.kro-f1-show-check > .kro-feature1-check.kro-f1-check-reveal {
+   position: relative;
+   inset: auto;
    opacity: 1;
    transform: translateY(0);
    pointer-events: auto;
@@ -3070,9 +2388,15 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-f1-cta-block {
    max-width: 100%;
    width: 100%;
+   height: auto;
+   min-height: 0;
    margin: 0 auto;
-   padding: 40px 28px 44px;
+   padding: 28px 24px 30px;
    border-radius: 24px;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: flex-start;
    text-align: center;
    background: linear-gradient(165deg, rgba(32, 26, 28, 0.95) 0%, rgba(24, 20, 22, 0.98) 100%);
    border: 1px solid rgba(255, 255, 255, 0.1);
@@ -3094,7 +2418,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-f1-cta-sub {
    font-size: clamp(14px, 1.8vw, 16px);
    color: rgba(255, 255, 255, 0.75);
-   margin: 0 0 24px;
+   margin: 0 0 16px;
    line-height: 1.4;
 }
 
@@ -3268,12 +2592,6 @@ body.kro-hero-scrolled .kro-floating-nav {
       max-width: 100%;
       box-sizing: border-box;
    }
-   .kro-check-progress-inner {
-      flex-wrap: wrap;
-   }
-   .kro-inline-report-card--document {
-      padding: 24px 18px 28px;
-   }
    .kro-result-grid {
       grid-template-columns: 1fr;
    }
@@ -3281,7 +2599,7 @@ body.kro-hero-scrolled .kro-floating-nav {
       font-size: 0.75rem;
       padding: 10px 12px;
    }
-   #kro-check-channel {
+   .kro-feature1-check-row .kro-report-label input {
       width: 100%;
       box-sizing: border-box;
    }
@@ -3345,8 +2663,6 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 .kro-main .page {
    padding-top: 0;
-   position: relative;
-   z-index: 1;
 }
 
 /* Футер главной: активная нижняя часть — та же атмосфера, что и Hero (премиум, ритм, акценты) */
@@ -3568,7 +2884,7 @@ body.kro-hero-scrolled .kro-floating-nav {
       gap: 16px;
    }
    .kro-step1-cta-note {
-      max-width: 240px;
+      max-width: 280px;
       margin-left: auto;
       margin-right: auto;
    }
@@ -7402,5 +6718,49 @@ button:not(.chat-button):not(.send-button):focus {
    margin: 12px 0 0;
    letter-spacing: 0.06em;
    font-weight: 400;
+}
+
+/* Hotfix: compact guru CTA and remove extra explainer */
+.kro-check-user-explainer {
+   display: none !important;
+}
+
+.kro-f1-cta-check-wrap {
+   align-items: start !important;
+   min-height: 0 !important;
+   position: relative !important;
+}
+
+.kro-f1-cta-check-wrap > .kro-f1-cta-block {
+   position: relative !important;
+}
+
+.kro-f1-cta-check-wrap > .kro-feature1-check.kro-f1-check-reveal {
+   position: absolute !important;
+   inset: 0 !important;
+}
+
+.kro-f1-cta-check-wrap.kro-f1-show-check > .kro-f1-cta-block {
+   position: absolute !important;
+   inset: 0 !important;
+}
+
+.kro-f1-cta-check-wrap.kro-f1-show-check > .kro-feature1-check.kro-f1-check-reveal {
+   position: relative !important;
+   inset: auto !important;
+}
+
+.kro-f1-cta-block {
+   min-height: 0 !important;
+   height: auto !important;
+   padding: 28px 24px 30px !important;
+   display: flex !important;
+   flex-direction: column !important;
+   align-items: center !important;
+   justify-content: flex-start !important;
+}
+
+.kro-f1-cta-sub {
+   margin: 0 0 16px !important;
 }
 

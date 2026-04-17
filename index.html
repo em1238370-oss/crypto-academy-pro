@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260417-kro-byo-cta-main">
+  <link rel="stylesheet" href="styles.css?v=20260417-kro-cta-cleanup-v2">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -286,14 +286,6 @@
                    <div class="kro-feature1-check-row" id="kro-check-form-row">
                        <label class="kro-report-label" for="kro-check-channel">@username или ссылка на канал <input type="text" id="kro-check-channel" placeholder="@channel или t.me/..." autocomplete="off"></label>
                        <button type="button" class="kro-report-submit" id="kro-check-btn">Запустить проверку</button>
-                   </div>
-                   <div class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Дополнительные пояснения">
-                       <p class="kro-check-user-explainer-title">Если нужно чуть больше деталей</p>
-                       <ul class="kro-check-user-explainer-list">
-                           <li><strong>Здесь</strong> — только наши таблицы и мониторинг, без полного чтения ленты. Поэтому ответ почти всегда быстрый.</li>
-                           <li><strong>Глубокий разбор</strong> — на странице <span class="kro-check-user-explainer-code">/channel/имя</span>, кнопка «Глубокий анализ ленты».</li>
-                           <li><strong>Не заставляем сидеть часами</strong>: при очереди покажем позицию и примерное время; если очередь слишком длинная — честно скажем зайти позже. Быстрый отчёт при этом уже у вас.</li>
-                       </ul>
                    </div>
                    <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
                    <div class="kro-check-progress hidden" id="kro-check-progress" aria-busy="true" aria-live="polite" hidden>
@@ -1145,7 +1137,7 @@
                        var loadNote = (dg.load && dg.load.deep_global_load_high)
                            ? '<p class="kro-inline-deep-text" style="opacity:.9">Сейчас много глубоких проверок — кнопка на странице канала может временно стать недоступной.</p>'
                            : '';
-                       panel.innerHTML = '<strong class="kro-inline-deep-title">Глубокий анализ ленты сейчас можно запустить</strong>' +
+                      panel.innerHTML = '<strong class="kro-inline-deep-title">Быстрый отчёт готов</strong>' +
                            '<p class="kro-inline-deep-text">Текст выше — быстрый персональный отчёт по базе и мониторингу. Чтобы прочитать ленту канала в Telegram (обычно до 3 минут), откройте страницу канала и нажмите «Глубокий анализ ленты».</p>' +
                            loadNote +
                            '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta" href="' + esc(chUrl) + '">Открыть страницу канала и запустить глубокий анализ</a></p>' +
