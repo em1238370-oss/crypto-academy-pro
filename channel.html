@@ -40,19 +40,26 @@
     <p id="ch-loading-retry" class="ch-meta ch-meta--loading" hidden></p>
   </div>
   <div id="ch-error" class="ch-state ch-state--error" hidden>
-    <h1 class="ch-title" id="ch-error-title">Не удалось дождаться отчёта</h1>
-    <div id="ch-error-body" class="ch-error-body"></div>
-    <p class="ch-error-persist" id="ch-error-persist">Это не тупик: каждый раз по кнопке ниже страница снова запрашивает у сервера готовый отчёт. Проверка канала на сервере не «отменяется» из‑за ошибки в браузере — если связь оборвалась по таймауту, через пару минут повтор часто уже показывает v0‑отчёт.</p>
-    <p class="ch-error-actions">
-      <button type="button" class="ch-retry-btn ch-retry-btn--primary" id="ch-retry-btn">Обновить отчёт</button>
-    </p>
-    <p class="ch-error-secondary-actions">
-      <button type="button" class="ch-retry-link" id="ch-reload-page-btn">Полностью перезагрузить страницу</button>
-      <span class="ch-error-action-sep" aria-hidden="true">·</span>
-      <a class="mon-nav-link" href="/">Главная</a>
-      <span class="ch-error-action-sep" aria-hidden="true">·</span>
-      <a class="mon-nav-link" href="/monitor#data-scam">К монитору</a>
-    </p>
+    <section class="ch-error-shell" aria-labelledby="ch-error-title">
+      <p class="ch-error-kicker">Мониторинг проверки канала</p>
+      <h1 class="ch-title" id="ch-error-title">Не удалось дождаться отчёта</h1>
+      <div id="ch-error-body" class="ch-error-body"></div>
+      <div class="ch-error-notes" aria-label="Что это значит и что делать дальше">
+        <p class="ch-error-note"><strong>Это не поломка.</strong> Канал может быть большим, и первый ответ иногда не успевает вернуться в браузер.</p>
+        <p class="ch-error-note"><strong>Проверка не пропадает.</strong> На сервере процесс продолжается; повторный запрос часто открывает уже готовый отчёт.</p>
+      </div>
+      <p class="ch-error-persist" id="ch-error-persist">Это не тупик: каждый раз по кнопке ниже страница снова запрашивает у сервера готовый отчёт. Проверка канала на сервере не «отменяется» из‑за ошибки в браузере — если связь оборвалась по таймауту, через пару минут повтор часто уже показывает v0‑отчёт.</p>
+      <p class="ch-error-actions">
+        <button type="button" class="ch-retry-btn ch-retry-btn--primary" id="ch-retry-btn">Обновить отчёт</button>
+      </p>
+      <p class="ch-error-secondary-actions">
+        <button type="button" class="ch-retry-link" id="ch-reload-page-btn">Полностью перезагрузить страницу</button>
+        <span class="ch-error-action-sep" aria-hidden="true">·</span>
+        <a class="mon-nav-link" href="/">Главная</a>
+        <span class="ch-error-action-sep" aria-hidden="true">·</span>
+        <a class="mon-nav-link" href="/monitor#data-scam">К монитору</a>
+      </p>
+    </section>
   </div>
   <article id="ch-content" class="ch-card" hidden>
     <div id="ch-live-banner" class="ch-live-banner" hidden></div>
