@@ -7,8 +7,8 @@
   <meta name="description" content="Структурированный отчёт по каналу: база, поведение, внешние сигналы, связи и итоговый вывод.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260417-channel-monitor-atmosphere">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/monitor.css?v=20260417-kro-byo-flow">
 </head>
 <body class="mon-page ch-page">
 
@@ -40,26 +40,19 @@
     <p id="ch-loading-retry" class="ch-meta ch-meta--loading" hidden></p>
   </div>
   <div id="ch-error" class="ch-state ch-state--error" hidden>
-    <p class="ch-error-strip mon-live-strip mon-live-strip--error" role="status">
-      <span class="mon-live-strip-inner">Ожидание ответа · крупные каналы обрабатываются дольше · это нормально для мониторинга</span>
+    <h1 class="ch-title" id="ch-error-title">Не удалось дождаться отчёта</h1>
+    <div id="ch-error-body" class="ch-error-body"></div>
+    <p class="ch-error-persist" id="ch-error-persist">Это не тупик: каждый раз по кнопке ниже страница снова запрашивает у сервера готовый отчёт. Проверка канала на сервере не «отменяется» из‑за ошибки в браузере — если связь оборвалась по таймауту, через пару минут повтор часто уже показывает v0‑отчёт.</p>
+    <p class="ch-error-actions">
+      <button type="button" class="ch-retry-btn ch-retry-btn--primary" id="ch-retry-btn">Обновить отчёт</button>
     </p>
-    <div class="ch-error-stage">
-      <section class="ch-error-shell mon-surface mon-surface--pad" aria-labelledby="ch-error-title">
-        <header class="mon-chapter-head ch-error-head">
-          <p class="mon-chapter-kicker ch-error-kicker">Мониторинг проверки канала</p>
-          <h1 class="mon-chapter-title ch-title" id="ch-error-title">Не удалось дождаться отчёта</h1>
-        </header>
-        <div id="ch-error-body" class="ch-error-body ch-error-body--monitor"></div>
-        <div class="ch-error-notes" aria-label="Что это значит и что делать дальше">
-          <p class="ch-error-note"><strong>Это не поломка.</strong> Канал может быть большим, и первый ответ иногда не успевает вернуться в браузер.</p>
-          <p class="ch-error-note"><strong>Проверка не пропадает.</strong> На сервере процесс продолжается; после перезагрузки страница снова запросит готовый отчёт.</p>
-        </div>
-        <p class="ch-error-persist" id="ch-error-persist">Перезагрузка — тот же сценарий, что «обновить отчёт»: браузер заново открывает страницу канала, и сервер отдаёт результат, если он уже готов. Таймаут в браузере не отменяет проверку на сервере.</p>
-        <p class="ch-error-actions">
-          <button type="button" class="ch-retry-btn ch-retry-btn--primary" id="ch-retry-btn">Перезагрузить страницу</button>
-        </p>
-      </section>
-    </div>
+    <p class="ch-error-secondary-actions">
+      <button type="button" class="ch-retry-link" id="ch-reload-page-btn">Полностью перезагрузить страницу</button>
+      <span class="ch-error-action-sep" aria-hidden="true">·</span>
+      <a class="mon-nav-link" href="/">Главная</a>
+      <span class="ch-error-action-sep" aria-hidden="true">·</span>
+      <a class="mon-nav-link" href="/monitor#data-scam">К монитору</a>
+    </p>
   </div>
   <article id="ch-content" class="ch-card" hidden>
     <div id="ch-live-banner" class="ch-live-banner" hidden></div>
@@ -177,10 +170,6 @@
 
 <script>
 (function () {
-  try {
-    document.body.classList.add('mon-page-ready');
-  } catch (eReady) { /* ignore */ }
-
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -683,8 +672,10 @@
   queryU = queryU.replace(/^@+/, '').replace(/^(%40)+/gi, '').trim();
   try {
     var canonPath = '/channel/' + encodeURIComponent(queryU);
+    var tailSearch = (window.location.search || '').toString();
+    var tailHash = (window.location.hash || '').toString();
     if (queryU && window.location.pathname !== canonPath) {
-      window.history.replaceState(null, '', canonPath);
+      window.history.replaceState(null, '', canonPath + tailSearch + tailHash);
     }
   } catch (e1) { /* ignore */ }
 
@@ -692,6 +683,37 @@
     var _bt = sessionStorage.getItem('kro_byo_token') || '';
     if (_bt) window.__chByoToken = _bt;
   } catch (eByo0) { /* ignore */ }
+
+  function chWantByoFromUrl() {
+    var h = (window.location.hash || '').replace(/^#/, '');
+    if (h === 'ch-byotele') return true;
+    try {
+      return new URLSearchParams(window.location.search || '').get('byo') === '1';
+    } catch (eQ) {
+      return false;
+    }
+  }
+
+  function chOpenByoPanelAndFocus() {
+    if (!chWantByoFromUrl()) return;
+    var d = document.getElementById('ch-byotele');
+    var ta = document.getElementById('ch-byotele-input');
+    if (d) d.open = true;
+    function doFocus() {
+      if (ta) {
+        try {
+          ta.focus();
+        } catch (eF) { /* ignore */ }
+      }
+      if (d) {
+        try {
+          d.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (eS) { /* ignore */ }
+      }
+    }
+    setTimeout(doFocus, 80);
+    setTimeout(doFocus, 600);
+  }
 
   function updateByoUi() {
     var st = document.getElementById('ch-byotele-status');
@@ -761,6 +783,11 @@
             byoMsg.textContent = j.message_ru || 'Сессия принята. Можно запускать глубокий анализ.';
           }
           updateByoUi();
+          setTimeout(function () {
+            var deepBtnNow = document.getElementById('ch-deep-btn');
+            if (deepBtnNow) deepBtnNow.disabled = true;
+            loadChannelReport(1, { deep: true });
+          }, 250);
         })
         .catch(function (err) {
           if (byoMsg) {
@@ -826,7 +853,7 @@
     document.getElementById('ch-error-persist').hidden = false;
     document.getElementById('ch-retry-btn').hidden = false;
     document.getElementById('ch-error-title').textContent = title || 'Не удалось дождаться отчёта';
-    var ps = (paragraphs && paragraphs.length) ? paragraphs : ['Нажмите «Перезагрузить страницу» ниже — страница откроется заново и снова запросит отчёт у сервера.'];
+    var ps = (paragraphs && paragraphs.length) ? paragraphs : ['Нажмите «Обновить отчёт» ниже — это новый запрос к серверу.'];
     document.getElementById('ch-error-body').innerHTML = ps.map(function (p) {
       return '<p class="ch-lead">' + esc(p) + '</p>';
     }).join('');
@@ -867,7 +894,7 @@
       return {
         title: 'Запрос прервался по времени',
         paragraphs: [
-          'Браузер или сервер закрыли соединение до готового отчёта (например, из‑за лимита длины запроса). Нажмите «Перезагрузить страницу» — пойдёт новый запрос; если проверка уже завершилась на сервере, отчёт может открыться быстрее.',
+          'Браузер или сервер закрыли соединение до готового отчёта (например, из‑за лимита длины запроса). Нажмите «Обновить отчёт» — пойдёт новый запрос; если проверка уже завершилась на сервере, отчёт может открыться быстрее.',
         ],
       };
     }
@@ -876,7 +903,7 @@
         title: 'Проверка длилась дольше, чем успела дойти страница',
         paragraphs: [
           'Канал может быть большим: сбор ленты и метрик — до ~10 минут, а прокси или хостинг иногда обрывают ответ раньше.',
-          'Нажмите «Перезагрузить страницу» — уйдёт новый запрос. Если проверка на сервере уже завершилась, отчёт откроется быстрее; если ещё нет — подождите пару минут и попробуйте снова.',
+          'Нажмите «Обновить отчёт» — уйдёт новый запрос. Если проверка на сервере уже завершилась, отчёт откроется быстрее; если ещё нет — подождите пару минут и попробуйте снова.',
         ],
       };
     }
@@ -884,7 +911,7 @@
       return {
         title: 'Запрос прервался по времени',
         paragraphs: [
-          'Соединение закрыли до готового отчёта. Нажмите «Перезагрузить страницу» — это снова запрос к серверу, не то же сообщение по кругу.',
+          'Соединение закрыли до готового отчёта. Нажмите «Обновить отчёт» — это снова запрос к серверу, не то же сообщение по кругу.',
         ],
       };
     }
@@ -892,7 +919,7 @@
       return {
         title: 'Сервис ответил ошибкой',
         paragraphs: [
-          'Код ответа: ' + hint.replace('http_', '') + '. Через пару минут нажмите «Перезагрузить страницу» или запустите проверку с главной.',
+          'Код ответа: ' + hint.replace('http_', '') + '. Через пару минут нажмите «Обновить отчёт» или запустите проверку с главной.',
         ],
       };
     }
@@ -900,7 +927,7 @@
       return {
         title: 'В ответе нет блока отчёта',
         paragraphs: [
-          'Так быть не должно. Нажмите «Перезагрузить страницу». Если повторится — откройте проверку с главной страницы.',
+          'Так быть не должно. Нажмите «Обновить отчёт». Если повторится — откройте проверку с главной страницы.',
         ],
       };
     }
@@ -908,14 +935,14 @@
       return {
         title: 'Не удалось связаться с сервером',
         paragraphs: [
-          'Часто это обрыв сети или блокировка. Проверьте соединение и нажмите «Перезагрузить страницу» — запрос уйдёт заново.',
+          'Часто это обрыв сети или блокировка. Проверьте соединение и нажмите «Обновить отчёт» — запрос уйдёт заново.',
         ],
       };
     }
     return {
       title: 'Канал может быть большим — проверка заняла больше времени, чем ожидалось',
       paragraphs: [
-        'Это не значит, что «всё сломалось»: первый ответ мог просто не успеть. Подождите 2–5 минут и нажмите «Перезагрузить страницу».',
+        'Это не значит, что «всё сломалось»: первый ответ мог просто не успеть. Подождите 2–5 минут и нажмите «Обновить отчёт».',
         'Если несколько раз подряд одно и то же — возможно, упираемся в лимит времени на один запрос у хостинга; попробуйте позже или с главной.',
       ],
     };
@@ -976,6 +1003,7 @@
       if (lrOk) { lrOk.hidden = true; lrOk.textContent = ''; }
       document.getElementById('ch-error').hidden = true;
       document.getElementById('ch-content').hidden = false;
+      chOpenByoPanelAndFocus();
 
       var lm = data.live_metrics || {};
       var apiMode = data.mode || 'fast';
@@ -1014,7 +1042,7 @@
             }
             var qPoll = dg.suggested_refresh_seconds != null ? Number(dg.suggested_refresh_seconds) : (lm.deep_queue_suggested_poll_seconds != null ? Number(lm.deep_queue_suggested_poll_seconds) : null);
             var qPollLine = qPoll && qPoll > 0
-              ? '<p>Автообновление отчёта: примерно каждые <strong>' + esc(String(qPoll)) + '</strong> сек. (можно перезагрузить страницу).</p>'
+              ? '<p>Автообновление отчёта: примерно каждые <strong>' + esc(String(qPoll)) + '</strong> сек. (можно нажать «Обновить отчёт»).</p>'
               : '';
             floodBanner.innerHTML =
               '<strong>Глубокий анализ в очереди</strong>' +
@@ -1262,9 +1290,12 @@
   var retryBtn = document.getElementById('ch-retry-btn');
   if (retryBtn) {
     retryBtn.onclick = function () {
-      window.location.reload();
+      var isDeep = !!window.__chDeepMode;
+      loadChannelReport((window.__chAttempt || 1) + 1, { deep: isDeep, forceRefresh: isDeep });
     };
   }
+  var reloadBtn = document.getElementById('ch-reload-page-btn');
+  if (reloadBtn) reloadBtn.onclick = function () { window.location.reload(); };
 
   var deepBtn = document.getElementById('ch-deep-btn');
   if (deepBtn) {
