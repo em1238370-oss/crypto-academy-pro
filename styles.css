@@ -2859,6 +2859,131 @@ body.kro-hero-scrolled .kro-floating-nav {
    display: none !important;
 }
 
+/* Главная: явный статус глубокого (очередь / кэш / BYO) — заметная обратная связь */
+.kro-inline-deep-status {
+   margin: 14px 0 18px;
+   padding: 14px 16px;
+   border-radius: 14px;
+   border: 1px solid rgba(255, 255, 255, 0.14);
+   background: rgba(0, 0, 0, 0.28);
+   font-size: 14px;
+   line-height: 1.55;
+   color: rgba(255, 255, 255, 0.92);
+}
+.kro-inline-deep-status-line {
+   margin: 0;
+}
+.kro-inline-deep-status-line + .kro-inline-deep-status-line {
+   margin-top: 8px;
+}
+.kro-inline-deep-status--neutral {
+   border-color: rgba(147, 197, 253, 0.28);
+   background: rgba(30, 58, 120, 0.35);
+}
+.kro-inline-deep-status--ready {
+   border-color: rgba(110, 200, 150, 0.4);
+   background: rgba(34, 90, 65, 0.32);
+}
+.kro-inline-deep-status--stale {
+   border-color: rgba(245, 158, 11, 0.35);
+   background: rgba(120, 80, 20, 0.25);
+}
+.kro-inline-deep-status--queue {
+   border-color: rgba(251, 191, 36, 0.45);
+   background: rgba(120, 85, 15, 0.35);
+}
+.kro-inline-deep-status--blocked {
+   border-color: rgba(248, 113, 113, 0.4);
+   background: rgba(120, 40, 40, 0.28);
+}
+.kro-inline-deep-panel {
+   margin-top: 20px;
+   padding: 16px 18px;
+   border-radius: 14px;
+   border: 1px solid rgba(255, 255, 255, 0.12);
+   background: rgba(0, 0, 0, 0.32);
+   font-size: 14px;
+   line-height: 1.55;
+   color: rgba(255, 255, 255, 0.9);
+}
+.kro-inline-deep-panel--ok {
+   border-color: rgba(74, 222, 128, 0.35);
+   background: rgba(20, 80, 55, 0.22);
+}
+.kro-inline-deep-panel--blocked {
+   border-color: rgba(251, 146, 60, 0.4);
+   background: rgba(90, 50, 20, 0.25);
+}
+.kro-inline-deep-title {
+   display: block;
+   font-size: 15px;
+   font-weight: 700;
+   margin-bottom: 10px;
+   color: rgba(255, 250, 235, 0.98);
+}
+.kro-inline-deep-text,
+.kro-inline-deep-honest,
+.kro-inline-deep-byotele-note {
+   margin: 0 0 10px;
+   color: rgba(255, 255, 255, 0.82);
+}
+.kro-inline-deep-honest {
+   font-size: 13px;
+   opacity: 0.95;
+}
+.kro-inline-deep-actions {
+   margin-top: 12px;
+}
+.kro-inline-deep-cta,
+.kro-inline-deep-cta--secondary {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   padding: 12px 18px;
+   border-radius: 999px;
+   font-weight: 600;
+   font-size: 13px;
+   text-decoration: none;
+   transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.kro-inline-deep-cta {
+   background: linear-gradient(180deg, rgba(34, 197, 94, 0.35) 0%, rgba(22, 163, 74, 0.2) 100%);
+   border: 1px solid rgba(74, 222, 128, 0.5);
+   color: #ecfdf5;
+   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+.kro-inline-deep-cta--secondary {
+   background: linear-gradient(180deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.12) 100%);
+   border: 1px solid rgba(147, 197, 253, 0.45);
+   color: #e0f2fe;
+   margin-left: 0;
+   margin-top: 8px;
+}
+.kro-inline-deep-cta:hover {
+   transform: translateY(-1px);
+}
+.kro-inline-deep-demo {
+   margin-top: 12px;
+   font-size: 13px;
+}
+.kro-inline-deep-demo-link {
+   color: rgba(186, 230, 253, 0.95);
+}
+.kro-inline-deep-queue-pill {
+   margin: 0 0 12px;
+   padding: 10px 12px;
+   border-radius: 10px;
+   background: rgba(251, 191, 36, 0.18);
+   border: 1px solid rgba(251, 191, 36, 0.4);
+   font-size: 13px;
+   color: rgba(255, 247, 220, 0.98);
+}
+.kro-inline-deep-queue-pill--run {
+   background: rgba(59, 130, 246, 0.22);
+   border-color: rgba(147, 197, 253, 0.45);
+   color: rgba(224, 242, 254, 0.98);
+}
+
 @media (max-width: 600px) {
    .kro-feature1-dashboard {
       padding: 24px 20px 28px;

@@ -1597,6 +1597,36 @@ function kroDeepClientQueueDepth(clientId) {
   return n;
 }
 
+/** Для mode=fast на главной: канал уже в серверной очереди deep или для него идёт check_once. */
+function kroDeepPendingGateForChannelKey(channelKey) {
+  const k = (channelKey || '').toString().trim();
+  if (!k) return null;
+  if (kroDeepQueueActiveJob && kroDeepQueueActiveJob.channelKey === k) {
+    const runMin = Math.max(2, Math.ceil(kroCheckOnceTimeoutMs / 60000));
+    return {
+      deep_queued: true,
+      deep_queue_running: true,
+      deep_queue_position: 1,
+      deep_queue_eta_minutes: runMin,
+      suggested_refresh_seconds: 45,
+      message_ru: `Глубокий анализ @${k} сейчас выполняется на сервере (чтение ленты Telegram). Обычно до ~${runMin} мин — откройте страницу канала и при необходимости обновите её.`,
+    };
+  }
+  const idx = kroDeepWaitQueue.findIndex((j) => j.channelKey === k);
+  if (idx < 0) return null;
+  const position = idx + 1;
+  const eta = kroDeepComputeQueueEtaMinutes(position);
+  const retryAfterMs = Math.min(600000, Math.max(45000, Math.round(eta * 30000)));
+  const suggestedSec = Math.min(600, Math.max(30, Math.round(retryAfterMs / 1000)));
+  return {
+    deep_queued: true,
+    deep_queue_position: position,
+    deep_queue_eta_minutes: eta,
+    suggested_refresh_seconds: suggestedSec,
+    message_ru: `Глубокий анализ @${k} в серверной очереди: позиция ~${position}, ориентировочно ~${eta} мин до начала чтения ленты.`,
+  };
+}
+
 function kroDeepEnqueue(channelKey, channelForOnce, clientId) {
   const k = (channelKey || '').toString().trim();
   const cf = (channelForOnce || '').toString().trim();
@@ -1838,6 +1868,7 @@ function kroBuildChannelProfileDeepGate(extra) {
       retry_after_msk: null,
       wait_seconds_approx: Number.isFinite(eta) ? Math.max(60, eta * 60) : null,
       wait_minutes_approx: Number.isFinite(eta) ? eta : null,
+      deep_queue_running: ex.deep_queue_running === true,
       message_ru:
         (ex.message_ru || '').toString().trim() ||
         'Глубокий анализ поставлен в очередь из‑за высокой нагрузки; быстрый отчёт доступен сразу.',
@@ -5897,7 +5928,12 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     const deepRateLimited = deepTelegramBlocked;
     const deepAvailableIso =
       deepAvailableAt || (deepRateLimited ? kroGetTelegramFloodState().deep_available_at : null);
-    let deepGatePayload = serverThrottleMeta || deepQueueGate || null;
+    let deepGatePayload = deepQueueGate || null;
+    if (!byoDeepActive && !deepGatePayload) {
+      const pendingCh = kroDeepPendingGateForChannelKey(key);
+      if (pendingCh) deepGatePayload = pendingCh;
+    }
+    if (!deepGatePayload) deepGatePayload = serverThrottleMeta || null;
     if (!byoDeepActive && !deepGatePayload && !(deepMode && deepStatus === 'ok')) {
       const peek = kroDeepAllowNewTelegramDeep(clientId);
       if (!peek.allowed) {

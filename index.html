@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260417-readability-check-hero">
+   <link rel="stylesheet" href="styles.css?v=20260417-kro-home-deep-readability">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -321,6 +321,7 @@
                                <div class="kro-inline-summary-item"><span class="kro-inline-summary-label">Уровень риска</span><span id="kro-inline-status" class="kro-inline-status-pill">—</span></div>
                                <div class="kro-inline-summary-item" id="kro-inline-riskidx-wrap" hidden><span class="kro-inline-summary-label">Индекс в базе</span><span id="kro-inline-riskidx" class="kro-inline-summary-value">—</span></div>
                            </div>
+                           <div class="kro-inline-deep-status hidden" id="kro-inline-deep-status" hidden aria-live="polite"></div>
                            <p class="kro-inline-reasons-title">Почему такой вывод</p>
                            <ul class="kro-inline-reasons" id="kro-inline-reasons"></ul>
                            <div class="kro-inline-sections">
@@ -1015,6 +1016,72 @@
                        return '<li>' + esc(b) + '</li>';
                    }).join('') + '</ul>';
                }
+               function fillInlineDeepStatus(data, queryU) {
+                   var el = document.getElementById('kro-inline-deep-status');
+                   if (!el) return;
+                   var dg = data && data.deep_gate && typeof data.deep_gate === 'object' ? data.deep_gate : {};
+                   var hint =
+                       data && data.deep_cache_hint && typeof data.deep_cache_hint === 'object' && data.deep_cache_hint !== null
+                           ? data.deep_cache_hint
+                           : {};
+                   var parts = [];
+                   var klass = 'kro-inline-deep-status kro-inline-deep-status--neutral';
+                   if (hint.has_fresh_deep) {
+                       var ageMin = hint.age_ms != null ? Math.max(1, Math.round(Number(hint.age_ms) / 60000)) : null;
+                       parts.push('Глубокий отчёт по этому каналу уже в кэше сервера' + (ageMin ? ' (обновлялся ~' + ageMin + ' мин назад)' : '') + '. Откройте страницу канала — там блок с разбором ленты.');
+                       klass = 'kro-inline-deep-status kro-inline-deep-status--ready';
+                   } else if (hint.has_stale_deep && !hint.has_fresh_deep) {
+                       var ageM2 = hint.age_ms != null ? Math.max(1, Math.round(Number(hint.age_ms) / 60000)) : null;
+                       parts.push('В кэше есть устаревший глубокий снимок' + (ageM2 ? ' (~' + ageM2 + ' мин назад)' : '') + ' — новый можно запустить со страницы канала.');
+                       klass = 'kro-inline-deep-status kro-inline-deep-status--stale';
+                   }
+                   if (dg.deep_queued === true) {
+                       if (dg.deep_queue_running === true) {
+                           parts.push('Серверный глубокий уже выполняется для этого канала (чтение ленты). Обычно до ~3 мин — откройте страницу канала и обновите при необходимости.');
+                       } else {
+                           var pos = dg.deep_queue_position != null ? Number(dg.deep_queue_position) : null;
+                           var eta = dg.deep_queue_eta_minutes != null ? Number(dg.deep_queue_eta_minutes) : null;
+                           var ql = 'Этот канал в серверной очереди на глубокий анализ.';
+                           if (pos != null && !isNaN(pos)) ql += ' Место: ~' + pos + '.';
+                           if (eta != null && !isNaN(eta)) ql += ' Ориентировочно ~' + eta + ' мин.';
+                           parts.push(ql);
+                       }
+                       klass = 'kro-inline-deep-status kro-inline-deep-status--queue';
+                   } else if (dg.can_run_deep === false && dg.deep_queued !== true) {
+                       if (dg.telegram_flood_active === true) {
+                           parts.push('Глубокий сейчас ограничен Telegram. Ниже — подробности; можно BYO на странице канала.');
+                           klass = 'kro-inline-deep-status kro-inline-deep-status--blocked';
+                       } else if (dg.server_throttle_active === true || (dg.message_ru && String(dg.message_ru).trim())) {
+                           parts.push('Серверный глубокий сейчас недоступен или отложен — см. блок ниже; альтернатива: BYO на странице канала.');
+                           klass = 'kro-inline-deep-status kro-inline-deep-status--blocked';
+                       }
+                   } else if (data.mode !== 'deep' && dg.can_run_deep !== false) {
+                       parts.push('Это быстрый отчёт по «' + queryU + '». Глубокий разбор ленты Telegram — в цветном блоке ниже (страница канала или BYO).');
+                       klass = 'kro-inline-deep-status kro-inline-deep-status--neutral';
+                   }
+                   if (!parts.length) {
+                       parts.push('Быстрый отчёт готов. Глубокий анализ — в блоке ниже.');
+                   }
+                   el.hidden = false;
+                   el.classList.remove('hidden');
+                   el.className = klass;
+                   el.innerHTML = parts.map(function (t) {
+                       return '<p class="kro-inline-deep-status-line">' + esc(t) + '</p>';
+                   }).join('');
+               }
+               function kroMakeDeepQueuePill(dg) {
+                   if (!dg || dg.deep_queued !== true) return '';
+                   if (dg.deep_queue_running === true) {
+                       return '<p class="kro-inline-deep-queue-pill kro-inline-deep-queue-pill--run">▶ Сейчас на сервере читают ленту <strong>этого</strong> канала (обычно до ~3 мин).</p>';
+                   }
+                   var pos = dg.deep_queue_position != null ? Number(dg.deep_queue_position) : null;
+                   var eta = dg.deep_queue_eta_minutes != null ? Number(dg.deep_queue_eta_minutes) : null;
+                   var t = '<p class="kro-inline-deep-queue-pill">Очередь глубокого для этого канала.';
+                   if (pos != null && !isNaN(pos)) t += ' Место: <strong>~' + esc(String(pos)) + '</strong>.';
+                   if (eta != null && !isNaN(eta)) t += ' Ожидание: <strong>~' + esc(String(eta)) + ' мин</strong>.';
+                   t += '</p>';
+                   return t;
+               }
                function mapHomeFetchError(err) {
                    var hint = (err && err.message) ? String(err.message) : '';
                    var en = (err && err.name) ? String(err.name) : '';
@@ -1032,6 +1099,9 @@
                    }
                    if (hint === 'no_analysis') {
                        return { title: 'Отчёт не сформировался', paragraphs: ['Повторите проверку. Если снова так — напишите нам, пожалуйста.'] };
+                   }
+                   if (hint === 'bad_json') {
+                       return { title: 'Сервер вернул непонятный ответ', paragraphs: ['Повторите проверку. Если повторится — возможно, обновление сайта: обновите страницу с очисткой кэша (Cmd+Shift+R).'] };
                    }
                    if (/Failed to fetch|NetworkError|network/i.test(hint)) {
                        return { title: 'Нет связи с сервером', paragraphs: ['Проверьте интернет и нажмите «Повторить».'] };
@@ -1141,7 +1211,7 @@
                            : dg.server_throttle_active
                            ? 'Это ограничение сервиса (очередь, лимиты Telegram или правило «не ждать в онлайне слишком долго»). Глубокий прогон для этого канала в этом ответе не выполнялся.'
                            : 'Сейчас показан только базовый быстрый анализ (без полной выборки постов из Telegram). Глубокий прогон для этого канала не выполнялся.';
-                       panel.innerHTML = '<strong class="kro-inline-deep-title">' + esc(blockedTitle) + '</strong>' + sub +
+                       panel.innerHTML = kroMakeDeepQueuePill(dg) + '<strong class="kro-inline-deep-title">' + esc(blockedTitle) + '</strong>' + sub +
                            '<p class="kro-inline-deep-honest">' + esc(honest) + '</p>' +
                            byoteleNote;
                    } else {
@@ -1149,7 +1219,7 @@
                        var loadNote = (dg.load && dg.load.deep_global_load_high)
                            ? '<p class="kro-inline-deep-text" style="opacity:.9">Сейчас много глубоких проверок — кнопка на странице канала может временно стать недоступной.</p>'
                            : '';
-                       panel.innerHTML = '<strong class="kro-inline-deep-title">Глубокий анализ ленты сейчас можно запустить</strong>' +
+                       panel.innerHTML = kroMakeDeepQueuePill(dg) + '<strong class="kro-inline-deep-title">Глубокий анализ ленты сейчас можно запустить</strong>' +
                            '<p class="kro-inline-deep-text">Текст выше — быстрый персональный отчёт по базе и мониторингу. Чтобы прочитать ленту канала в Telegram (обычно до 3 минут), откройте страницу канала и нажмите «Глубокий анализ ленты».</p>' +
                            loadNote +
                            '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta" href="' + esc(chUrl) + '">Открыть страницу канала и запустить глубокий анализ</a></p>' +
@@ -1253,6 +1323,7 @@
                        }
                        footEl.textContent = footParts.join(' · ');
                    }
+                   fillInlineDeepStatus(data, queryU);
                    fillInlineDeepPanel(data, queryU);
                }
                function runHomeChannelCheck(slug) {
@@ -1270,11 +1341,19 @@
                    } catch (eSig) { /* ignore */ }
                    fetch(base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU), fetchOpts)
                        .then(function (res) {
-                           if (!res.ok) throw new Error('http_' + res.status);
-                           return res.json();
+                           return res.text().then(function (text) {
+                               var data = null;
+                               try {
+                                   data = text ? JSON.parse(text) : null;
+                               } catch (eJ) {
+                                   throw new Error('bad_json');
+                               }
+                               if (!res.ok) throw new Error('http_' + res.status);
+                               return data;
+                           });
                        })
                        .then(function (data) {
-                           if (!data.analysis || typeof data.analysis !== 'object') throw new Error('no_analysis');
+                           if (!data || !data.analysis || typeof data.analysis !== 'object') throw new Error('no_analysis');
                            var finish = function () {
                                hideCheckBusy();
                                fillInlineReport(data, queryU, displayLabel);
@@ -1369,6 +1448,12 @@
                            dd.hidden = true;
                            dd.classList.add('hidden');
                            dd.innerHTML = '';
+                       }
+                       var ds = document.getElementById('kro-inline-deep-status');
+                       if (ds) {
+                           ds.hidden = true;
+                           ds.classList.add('hidden');
+                           ds.innerHTML = '';
                        }
                        checkResult.classList.add('hidden');
                        checkResult.innerHTML = '';
