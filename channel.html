@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260417-kro-byo-flow">
+  <link rel="stylesheet" href="/monitor.css?v=20260417-kro-byo-hardening">
 </head>
 <body class="mon-page ch-page">
 
@@ -685,7 +685,7 @@
   } catch (eByo0) { /* ignore */ }
 
   function chWantByoFromUrl() {
-    var h = (window.location.hash || '').replace(/^#/, '');
+    var h = (window.location.hash || '').replace(/^#/, '').toLowerCase();
     if (h === 'ch-byotele') return true;
     try {
       return new URLSearchParams(window.location.search || '').get('byo') === '1';
@@ -696,6 +696,8 @@
 
   function chOpenByoPanelAndFocus() {
     if (!chWantByoFromUrl()) return;
+    if (window.__chByoPanelOpened) return;
+    window.__chByoPanelOpened = true;
     var d = document.getElementById('ch-byotele');
     var ta = document.getElementById('ch-byotele-input');
     if (d) d.open = true;
@@ -713,6 +715,15 @@
     }
     setTimeout(doFocus, 80);
     setTimeout(doFocus, 600);
+    try {
+      var u = new URL(window.location.href);
+      if (u.searchParams.get('byo') === '1') {
+        u.searchParams.delete('byo');
+        var qs = u.searchParams.toString();
+        var newSearch = qs ? ('?' + qs) : '';
+        window.history.replaceState(null, '', u.pathname + newSearch + (u.hash || ''));
+      }
+    } catch (eUrl) { /* ignore */ }
   }
 
   function updateByoUi() {
@@ -760,7 +771,13 @@
         body: JSON.stringify({ session_string: raw }),
       })
         .then(function (res) {
-          return res.json().then(function (j) {
+          return res.text().then(function (text) {
+            var j = null;
+            try {
+              j = text ? JSON.parse(text) : null;
+            } catch (eParse) {
+              j = null;
+            }
             return { res: res, j: j };
           });
         })
@@ -955,6 +972,8 @@
       clearTimeout(window.__chDeepQueuePoll);
       window.__chDeepQueuePoll = null;
     }
+    window.__chLoadSeq = (window.__chLoadSeq || 0) + 1;
+    var mySeq = window.__chLoadSeq;
     var deep = !!opts.deep;
     var forceRefresh = !!opts.forceRefresh;
     window.__chAttempt = attemptNum;
@@ -974,7 +993,13 @@
     }
     fetch(q, fetchOpts)
     .then(function (res) {
-      return res.json().then(function (data) {
+      return res.text().then(function (text) {
+        var data = null;
+        try {
+          data = text ? JSON.parse(text) : null;
+        } catch (eJson) {
+          data = null;
+        }
         if (!res.ok) {
           if (res.status === 400 && data && data.error === 'byo_token_invalid') {
             try {
@@ -990,10 +1015,13 @@
           }
           throw new Error('http_' + res.status);
         }
+        if (!data || typeof data !== 'object') throw new Error('no_analysis');
         return data;
       });
     })
     .then(function (data) {
+      if (mySeq !== window.__chLoadSeq) return;
+      if (!data || typeof data !== 'object') return;
       var r = data.profile;
       var a = data.analysis;
       if (!a || typeof a !== 'object') throw new Error('no_analysis');
@@ -1280,6 +1308,7 @@
       if (deepBtnDone) deepBtnDone.disabled = false;
     })
     .catch(function (err) {
+      if (mySeq !== window.__chLoadSeq) return;
       var db = document.getElementById('ch-deep-btn');
       if (db) db.disabled = false;
       var m = mapFetchError(err);
