@@ -1267,8 +1267,8 @@
                                    inlineReport.hidden = false;
                                }
                               try {
-                                  if (inlineReport && window.kroSmoothScrollToElement) {
-                                      window.kroSmoothScrollToElement(inlineReport, { offset: 20, duration: 700 });
+                                 if (inlineReport && window.kroSmoothScrollToElement) {
+                                     window.kroSmoothScrollToElement(inlineReport, { offset: 20, duration: 980 });
                                   } else if (inlineReport) {
                                       inlineReport.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                                   }
@@ -1594,13 +1594,14 @@
               prefersReduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
           } catch (eMedia) { /* ignore */ }
 
-          function easeOutCubic(t) {
-              return 1 - Math.pow(1 - t, 3);
+         function easeInOutQuint(t) {
+             if (t < 0.5) return 16 * t * t * t * t * t;
+             return 1 - Math.pow(-2 * t + 2, 5) / 2;
           }
 
           function clampDuration(distance, customDuration) {
               if (typeof customDuration === 'number' && customDuration > 0) return customDuration;
-              return Math.max(450, Math.min(1100, Math.abs(distance) * 0.55));
+             return Math.max(700, Math.min(1600, Math.abs(distance) * 0.9));
           }
 
           window.kroSmoothScrollToElement = function (element, options) {
@@ -1622,7 +1623,7 @@
               function step(timestamp) {
                   if (!startAt) startAt = timestamp;
                   var progress = Math.min((timestamp - startAt) / duration, 1);
-                  var eased = easeOutCubic(progress);
+                 var eased = easeInOutQuint(progress);
                   window.scrollTo(0, startY + delta * eased);
                   if (progress < 1) window.requestAnimationFrame(step);
               }
@@ -1665,7 +1666,7 @@
                    wrap.classList.add('kro-f1-show-check');
                    var ch = wrap.querySelector('#kro-feature1-check');
                    if (ch && window.kroSmoothScrollToElement) {
-                       window.kroSmoothScrollToElement(ch, { offset: 12, duration: 750 });
+                       window.kroSmoothScrollToElement(ch, { offset: 12, duration: 1050 });
                    } else if (ch) {
                        ch.scrollIntoView({ behavior: 'smooth', block: 'center' });
                    }
