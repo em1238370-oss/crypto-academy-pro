@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260417-kro-home-deep-gold-fast">
+   <link rel="stylesheet" href="styles.css?v=20260417-kro-home-live-copy">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -245,7 +245,7 @@
                    <div class="kro-feature1-check-hero">
                        <p class="kro-feature1-check-kicker">Публичная система мониторинга</p>
                        <h2 class="kro-feature1-check-heading">Проверка Telegram‑канала — здесь же, одним запросом</h2>
-                       <p class="kro-feature1-check-lead">Сначала ты получаешь <strong>быстрый отчёт</strong> по нашим данным: база, жалобы людей и широкий мониторинг — персонально под введённый канал. Это обычно секунды и не упирается в лимиты Telegram.</p>
+                       <p class="kro-feature1-check-lead">Вставляешь канал — получаешь <strong>живой разбор</strong>: жалобы людей, сводка мониторинга и (когда доступно) срез публичной ленты до ~3 мес. Обычно секунды — иногда до пары минут, если лента тяжёлая.</p>
                        <div class="kro-flow-simple" aria-label="Схема: как работает проверка">
                            <p class="kro-flow-simple-kicker">Без лишних терминов — если вы уже пострадали, важно не гадать</p>
                            <p class="kro-flow-simple-title">Три шага</p>
@@ -254,14 +254,14 @@
                                    <span class="kro-flow-step-num" aria-hidden="true">1</span>
                                    <span class="kro-flow-step-label">Быстро</span>
                                    <span class="kro-flow-step-time">обычно секунды</span>
-                                   <p class="kro-flow-step-text">Сверяем канал с базой и жалобами. Уже видно: есть ли красные флаги в наших данных.</p>
+                                   <p class="kro-flow-step-text">Сверяем канал с жалобами и мониторингом. Уже видно: есть ли красные флаги.</p>
                                </div>
                                <span class="kro-flow-arrow" aria-hidden="true"></span>
                                <div class="kro-flow-step">
                                    <span class="kro-flow-step-num" aria-hidden="true">2</span>
                                    <span class="kro-flow-step-label">Глубоко</span>
-                                   <span class="kro-flow-step-time">по желанию, до нескольких минут</span>
-                                   <p class="kro-flow-step-text">На следующей странице — разбор ленты в Telegram (посты, тон, признаки). Это отдельная кнопка.</p>
+                                   <span class="kro-flow-step-time">до ~30 мин на тяжёлый канал</span>
+                                   <p class="kro-flow-step-text">На странице канала — полный глубокий разбор ленты до 6 месяцев (отдельная кнопка; BYO — если не хотите ждать общую очередь).</p>
                                </div>
                                <span class="kro-flow-arrow" aria-hidden="true"></span>
                                <div class="kro-flow-step">
@@ -290,7 +290,7 @@
                    <div class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Дополнительные пояснения">
                        <p class="kro-check-user-explainer-title">Если нужно чуть больше деталей</p>
                        <ul class="kro-check-user-explainer-list">
-                           <li><strong>Здесь</strong> — только наши таблицы и мониторинг, без полного чтения ленты. Поэтому ответ почти всегда быстрый.</li>
+                           <li><strong>Здесь</strong> — жалобы, мониторинг и при возможности живой срез ленты (до ~3 мес.), без «канцелярских» отписок.</li>
                            <li><strong>Глубокий разбор</strong> — на странице <span class="kro-check-user-explainer-code">/channel/имя</span>, кнопка «Глубокий анализ ленты».</li>
                            <li><strong>Не заставляем сидеть часами</strong>: при очереди покажем позицию и примерное время; если очередь слишком длинная — честно скажем зайти позже. Быстрый отчёт при этом уже у вас.</li>
                        </ul>
@@ -302,11 +302,11 @@
                            <div class="kro-check-progress-main">
                                <p class="kro-check-progress-title" id="kro-check-progress-title"></p>
                                <p class="kro-check-progress-human" id="kro-check-progress-human"></p>
-                               <p class="kro-check-progress-note" id="kro-check-progress-note">Быстрая проверка обычно несколько секунд. Не закрывайте вкладку до появления отчёта ниже.</p>
+                               <p class="kro-check-progress-note" id="kro-check-progress-note">Обычно несколько секунд; если читаем ленту — до пары минут. Не закрывайте вкладку до отчёта ниже.</p>
                                <ol class="kro-check-progress-track" aria-label="Что делает система сейчас">
                                    <li class="kro-check-progress-step" id="kro-progress-step-0">Запрос к серверу</li>
-                                   <li class="kro-check-progress-step" id="kro-progress-step-1">Сводка по базе и отчётам</li>
-                                   <li class="kro-check-progress-step" id="kro-progress-step-2">Строки широкого мониторинга</li>
+                                   <li class="kro-check-progress-step" id="kro-progress-step-1">Жалобы и мониторинг</li>
+                                   <li class="kro-check-progress-step" id="kro-progress-step-2">Живой срез ленты (если доступен)</li>
                                    <li class="kro-check-progress-step" id="kro-progress-step-3">Пять разделов отчёта и вывод</li>
                                </ol>
                            </div>
@@ -320,7 +320,7 @@
                            <p class="kro-inline-done-banner hidden" id="kro-inline-done-banner" hidden role="status"></p>
                            <div class="kro-inline-report-summary">
                                <div class="kro-inline-summary-item"><span class="kro-inline-summary-label">Уровень риска</span><span id="kro-inline-status" class="kro-inline-status-pill">—</span></div>
-                               <div class="kro-inline-summary-item" id="kro-inline-riskidx-wrap" hidden><span class="kro-inline-summary-label">Индекс в базе</span><span id="kro-inline-riskidx" class="kro-inline-summary-value">—</span></div>
+                               <div class="kro-inline-summary-item" id="kro-inline-riskidx-wrap" hidden><span class="kro-inline-summary-label">Индекс в сводке</span><span id="kro-inline-riskidx" class="kro-inline-summary-value">—</span></div>
                            </div>
                            <div class="kro-inline-deep-status hidden" id="kro-inline-deep-status" hidden aria-live="polite"></div>
                            <p class="kro-inline-reasons-title">Почему такой вывод</p>
@@ -1060,7 +1060,11 @@
                            klass = 'kro-inline-deep-status kro-inline-deep-status--blocked';
                        }
                    } else if (data.mode !== 'deep' && dg.can_run_deep !== false) {
-                       parts.push('Это быстрый отчёт по «' + queryU + '». Глубокий разбор ленты Telegram — в цветном блоке ниже (страница канала или BYO).');
+                       parts.push(
+                           'Быстрый отчёт по «' +
+                               queryU +
+                               '». Полный глубокий — до 6 мес. ленты на странице канала (на тяжёлых каналах до ~30 мин); BYO — без общей очереди.'
+                       );
                        klass = 'kro-inline-deep-status kro-inline-deep-status--neutral';
                    }
                    if (!parts.length) {
@@ -1133,10 +1137,10 @@
                var __kroProgressTimer = null;
                var __kroProgressPhase = 0;
                var __kroProgressHuman = [
-                   'Сервер принимает канал и смотрит наши таблицы — без полного чтения ленты Telegram на этом шаге.',
-                   'Сопоставляем канал с базой, листом жалоб и данными мониторинга.',
-                   'Если канал есть в широком мониторинге — учитываем статус и сигналы из строки.',
-                   'Собираем пять блоков отчёта и итог: это быстрый, но персональный слой под твой ввод.',
+                   'Сервер принимает канал и подтягивает жалобы и сводку мониторинга.',
+                   'При доступе и лимитах Telegram — читаем публичную ленту (окно до ~3 мес.) для живого среза.',
+                   'Если канал есть в широком мониторинге — учитываем статус и сигналы.',
+                   'Собираем разделы отчёта и итог: персонально под ваш ввод.',
                ];
                function __kroSetProgressSteps(activeIdx) {
                    for (var si = 0; si < 4; si++) {
@@ -1161,7 +1165,7 @@
                        checkProgress.classList.remove('hidden');
                        checkProgress.hidden = false;
                        if (checkProgressTitle) {
-                           checkProgressTitle.textContent = 'Быстрая проверка ' + displayLabel + ': база, жалобы и мониторинг — обычно несколько секунд.';
+                           checkProgressTitle.textContent = 'Проверка ' + displayLabel + ': жалобы, мониторинг и при возможности лента — обычно секунды, иногда до пары минут.';
                        }
                        __kroSetProgressSteps(0);
                        __kroProgressTimer = setInterval(function () {
@@ -1199,7 +1203,7 @@
                    var chUrl = base + '/channel/' + encodeURIComponent(queryU);
                    var demoUrl = base + '/channel/telegram';
                    var byoHref = base + '/channel?u=' + encodeURIComponent(queryU) + '&byo=1#ch-byotele';
-                   var byoteleNote = '<p class="kro-inline-deep-byotele-note">Серверный глубокий — про тот же канал, что вы ввели. При очереди мы ориентируемся на ожидание до ~30 мин (оценка «когда дойдёт очередь», а не таймер «выключить через 30 мин»). Чтобы не ждать общую очередь — <strong>BYO</strong>: страница этого канала, StringSession, чтение через ваш аккаунт.</p>' +
+                   var byoteleNote = '<p class="kro-inline-deep-byotele-note">Полный глубокий на странице канала: до <strong>6 месяцев</strong> ленты; на тяжёлом канале допустимо до <strong>~30 минут</strong> ожидания. Серверный глубокий — про тот же канал. Чтобы не ждать общую очередь — <strong>BYO</strong>: StringSession, чтение через ваш аккаунт.</p>' +
                        '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta kro-inline-deep-cta--secondary" href="' + esc(byoHref) + '">Перейти к этому каналу и подключить Telegram (BYO)</a></p>';
                    if (!dg || typeof dg !== 'object') {
                        panel.hidden = false;
@@ -1245,7 +1249,7 @@
                            ? '<p class="kro-inline-deep-text" style="opacity:.9">Сейчас много глубоких проверок — кнопка на странице канала может временно стать недоступной.</p>'
                            : '';
                        panel.innerHTML = kroMakeDeepQueuePill(dg) + '<strong class="kro-inline-deep-title">Глубокий анализ ленты сейчас можно запустить</strong>' +
-                           '<p class="kro-inline-deep-text">Текст выше — быстрый персональный отчёт по базе и мониторингу. Чтобы прочитать ленту канала в Telegram (обычно до 3 минут), откройте страницу канала и нажмите «Глубокий анализ ленты».</p>' +
+                           '<p class="kro-inline-deep-text">Текст выше — быстрый персональный отчёт (жалобы, мониторинг, при возможности срез ленты). Полный разбор до 6 мес. — на странице канала, кнопка «Глубокий анализ ленты» (на тяжёлых каналах до ~30 мин).</p>' +
                            loadNote +
                            '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta" href="' + esc(chUrl) + '">Открыть страницу канала и запустить глубокий анализ</a></p>' +
                            byoteleNote;
@@ -1269,18 +1273,25 @@
                        var footEl = document.getElementById('kro-inline-foot');
                        var rw = document.getElementById('kro-inline-riskidx-wrap');
                        var riv = document.getElementById('kro-inline-riskidx');
-                       if (eyebrow) eyebrow.textContent = profile && profile.username ? 'Подтверждённая база + сводка мониторинга' : 'Живая проверка и данные мониторинга';
+                       if (eyebrow) eyebrow.textContent = profile && profile.username ? 'Канал в мониторинге + жалобы' : 'Живая проверка канала';
                        if (titleEl) titleEl.textContent = (profile && profile.username) ? String(profile.username).trim() : displayLabel;
                        var metaParts = [];
                        if (lm.analysis_window_days != null && !isNaN(Number(lm.analysis_window_days))) {
                            metaParts.push('Период: до ' + lm.analysis_window_days + ' дн.');
                        } else if (!profile) {
-                           metaParts.push('Период: до 1 года (на сервере задаётся окном выборки)');
+                           metaParts.push(
+                               lm.home_quick_live
+                                   ? 'живой срез ленты + жалобы и мониторинг'
+                                   : 'жалобы и мониторинг (ленту в этом запросе не читали)'
+                           );
+                       }
+                       if (lm.home_quick_live === true) {
+                           metaParts.push('публичная лента: до ~3 мес.');
                        }
                        if (lm.posts_fetched != null && !isNaN(Number(lm.posts_fetched))) {
                            metaParts.push('Сообщений с текстом: ~' + lm.posts_fetched);
                        } else if (profile) {
-                           metaParts.push('Оценка по карточке в базе и циклам мониторинга');
+                           metaParts.push('Оценка по сводке мониторинга и циклам');
                        }
                        if (lm.complaints_count != null && !isNaN(Number(lm.complaints_count)) && Number(lm.complaints_count) >= 0) {
                            metaParts.push('Жалоб в отчётах: ' + lm.complaints_count);
@@ -1338,7 +1349,17 @@
                                    'глубокий в очереди' + (etaQ ? ' (~' + etaQ + ' мин)' : '') + (pollS ? '; обновлять ~каждые ' + pollS + ' сек' : '')
                                );
                            } else if (data.mode !== 'deep') {
-                               footParts.push('глубокий разбор ленты: /channel/' + encodeURIComponent(queryU) + ' → кнопка «Глубокий анализ ленты»');
+                               footParts.push('глубокий разбор ленты: /channel/' + encodeURIComponent(queryU) + ' → кнопка «Глубокий анализ ленты» (до 6 мес.; на тяжёлых каналах до ~30 мин)');
+                           }
+                           if (lmFoot.home_quick_live === true) {
+                               var wn = lmFoot.home_quick_window_days != null ? Number(lmFoot.home_quick_window_days) : 90;
+                               var postsL = lmFoot.posts_fetched != null ? Number(lmFoot.posts_fetched) : null;
+                               footParts.push(
+                                   'на главной добавлен живой срез ленты ~' +
+                                       (isFinite(wn) ? wn : 90) +
+                                       ' дн.' +
+                                       (postsL != null && !isNaN(postsL) ? ' · постов с текстом: ~' + postsL : '')
+                               );
                            }
                            if (data.deep_cache_hint && (data.deep_cache_hint.has_fresh_deep || data.deep_cache_hint.has_stale_deep) && data.mode !== 'deep') {
                                var ageF = Math.max(1, Math.round(Number(data.deep_cache_hint.age_ms) / 60000));
@@ -1396,7 +1417,7 @@
                            fetchOpts.signal = AbortSignal.timeout(120000);
                        }
                    } catch (eSig) { /* ignore */ }
-                   fetch(base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU), fetchOpts)
+                   fetch(base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU) + '&home_quick_live=1', fetchOpts)
                        .then(function (res) {
                            return res.text().then(function (text) {
                                var data = null;

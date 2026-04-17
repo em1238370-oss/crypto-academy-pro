@@ -59,6 +59,8 @@ def _check_once_max_messages(period_days):
         return 4000
     if period_days >= 180:
         return 2500
+    if period_days >= 90:
+        return 2000
     return 1200
 UNCONFIRMED_SHEET_NAME = KRO_UNCONFIRMED_RANGE.split('!')[0] if '!' in KRO_UNCONFIRMED_RANGE else ''
 
@@ -886,7 +888,7 @@ def main():
     period_days = 30
     if len(sys.argv) > 2:
         raw = (sys.argv[2] or '').strip()
-        if raw in ('30', '180', '365'):
+        if raw in ('30', '90', '180', '365'):
             period_days = int(raw)
     if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
         out({'found': False, 'error': 'telegram not configured'})
