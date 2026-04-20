@@ -98,7 +98,7 @@ def main() -> int:
     print('channels_watch %s: rows=%d' % (watch_rng, wn))
     print('channels_network %s: rows=%d' % (network_rng, nn))
     print('kro_history %s: data rows=%d (row 1 = заголовок)' % (history_clear_rng, hn))
-    print('kro_meta: будет записан сброс в %s!A1:B12' % meta_sheet)
+    print('kro_meta: будет записан сброс в %s!A1:B12; очистка прогресса %s!A14:B21' % (meta_sheet, meta_sheet))
 
     if args.dry_run:
         print('dry-run: изменений нет.')
@@ -127,6 +127,12 @@ def main() -> int:
         range='%s!A1:B12' % meta_sheet,
         valueInputOption='RAW',
         body={'values': meta_rows},
+    ).execute()
+
+    sheets.spreadsheets().values().clear(
+        spreadsheetId=sheet_id,
+        range='%s!A14:B21' % meta_sheet,
+        body={},
     ).execute()
 
     print('OK: watch + network + history очищены; kro_meta сброшена.')

@@ -1365,6 +1365,56 @@ def write_kro_meta_to_sheet(
         return False
 
 
+# Строки kro_meta A14:B21 — прогресс цикла для /monitor (не перезаписываются write_kro_meta_to_sheet A1:B13).
+KRO_MONITOR_PROGRESS_ROW_START = 14
+KRO_MONITOR_PROGRESS_KEYS = [
+    'monitor_run_status',
+    'monitor_run_started_at',
+    'monitor_current_phase',
+    'monitor_current_channel',
+    'monitor_current_detail',
+    'monitor_filters_summary',
+    'monitor_result_targets',
+    'monitor_progress_updated_at',
+]
+
+KRO_MONITOR_FILTERS_SUMMARY_TEXT = (
+    'Каналы: TGStat (новые), Telega.io, поиск и чаты Telegram; сайты-разоблачители (в reports). '
+    'Фильтры: валидная ссылка t.me, исключения официальных/биржевых сервисов, анти-гемблинг; '
+    'в scam_base попадают объекты с маркером разоблачительного сайта и сигналами жалоб, затем строгий Telethon-gate. '
+    'Широкий обзор без обязательной записи в scam_base — channels_watch (в т.ч. каналы без признаков скама).'
+)
+
+KRO_MONITOR_RESULT_TARGETS_TEXT = (
+    'kro_meta — сводка цикла; scam_base — подтверждённые риски; kro_history — история; '
+    'channels_watch / channels_network — наблюдение и связи; лист reports — сырые находки и жалобы.'
+)
+
+
+def flush_monitor_progress_to_sheet(sheets_client, sheet_id, meta_sheet_name, state):
+    """Пишет блок прогресса мониторинга (фиксированные ключи A14:B21)."""
+    if not sheets_client or not sheet_id or not meta_sheet_name:
+        return False
+    try:
+        now_iso = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        row_map = {k: '' for k in KRO_MONITOR_PROGRESS_KEYS}
+        row_map.update(state or {})
+        row_map['monitor_progress_updated_at'] = now_iso
+        last_row = KRO_MONITOR_PROGRESS_ROW_START + len(KRO_MONITOR_PROGRESS_KEYS) - 1
+        body = [[k, str(row_map.get(k, '') or '')] for k in KRO_MONITOR_PROGRESS_KEYS]
+        rng = '%s!A%d:B%d' % (meta_sheet_name, KRO_MONITOR_PROGRESS_ROW_START, last_row)
+        sheets_client.spreadsheets().values().update(
+            spreadsheetId=sheet_id,
+            range=rng,
+            valueInputOption='RAW',
+            body={'values': body},
+        ).execute()
+        return True
+    except Exception as e:
+        print('flush_monitor_progress_to_sheet failed: %s' % e, file=sys.stderr)
+        return False
+
+
 def build_kro_quality_metrics(sheets_client, sheet_id):
     """
     Метрики для блока «Качество данных» на /monitor.
@@ -3393,7 +3443,7 @@ async def analyze_channel_content(username, client=None, link=None, telethon_dee
     return analysis
 
 
-async def _analyze_confirmed_channels_content(confirmed_objects):
+async def _analyze_confirmed_channels_content(confirmed_objects, progress_cb=None):
     """Обогатить confirmed_objects content_analysis и собрать граф связей каналов."""
     if not confirmed_objects:
         return [], []
@@ -3462,8 +3512,19 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
         if nk:
             known_keys.add(nk)
     try:
-        for obj in confirmed_objects:
+        n_conf = len(confirmed_objects or [])
+        for i, obj in enumerate(confirmed_objects):
             nk = _norm_ch_key(obj.get('username') or obj.get('link') or '')
+            if progress_cb and (i % 2 == 0 or i == n_conf - 1):
+                un = (obj.get('username') or '').strip() or (obj.get('link') or '')[:48]
+                try:
+                    progress_cb(
+                        monitor_current_phase='Анализ контента и рисков (Telegram / публичная страница)',
+                        monitor_current_channel=un,
+                        monitor_current_detail='%d / %d подтверждённых кандидатов' % (i + 1, n_conf),
+                    )
+                except Exception:
+                    pass
             analysis = await analyze_channel_content(
                 obj.get('username') or '',
                 client=client,
@@ -3560,7 +3621,7 @@ async def _analyze_confirmed_channels_content(confirmed_objects):
     return enriched, network_rows
 
 
-async def _filter_confirmed_by_strict_telethon_gate(confirmed_objects):
+async def _filter_confirmed_by_strict_telethon_gate(confirmed_objects, progress_cb=None):
     """
     Step 2 ТЗ: перед записью в scam_base — строгий Telethon-gate для t.me-каналов
     (тот же критерий, что kro-cleanup-scam-base при Telethon).
@@ -3600,9 +3661,20 @@ async def _filter_confirmed_by_strict_telethon_gate(confirmed_objects):
 
     passed = []
     reason_counts = {}
+    n_gate = len(confirmed_objects or [])
     try:
-        for obj in confirmed_objects:
+        for i, obj in enumerate(confirmed_objects):
             o = dict(obj)
+            if progress_cb and _looks_like_telegram_channel_ref(o.get('username', ''), o.get('link', '')):
+                if i % 2 == 0 or i == n_gate - 1:
+                    try:
+                        progress_cb(
+                            monitor_current_phase='Проверка канала перед записью в scam_base (Telethon)',
+                            monitor_current_channel=str(o.get('username') or '').strip() or '—',
+                            monitor_current_detail='telethon gate %d / %d' % (i + 1, n_gate),
+                        )
+                    except Exception:
+                        pass
             if not _looks_like_telegram_channel_ref(o.get('username', ''), o.get('link', '')):
                 passed.append(o)
                 continue
@@ -3632,9 +3704,13 @@ async def _filter_confirmed_by_strict_telethon_gate(confirmed_objects):
     return passed, len(passed), reason_counts
 
 
-async def _run_analyze_then_strict_telethon_gate(confirmed_objects):
-    enriched, network_rows = await _analyze_confirmed_channels_content(confirmed_objects)
-    gated, after_n, gate_reasons = await _filter_confirmed_by_strict_telethon_gate(enriched)
+async def _run_analyze_then_strict_telethon_gate(confirmed_objects, progress_cb=None):
+    enriched, network_rows = await _analyze_confirmed_channels_content(
+        confirmed_objects, progress_cb=progress_cb
+    )
+    gated, after_n, gate_reasons = await _filter_confirmed_by_strict_telethon_gate(
+        enriched, progress_cb=progress_cb
+    )
     return gated, network_rows, after_n, gate_reasons
 
 
@@ -7082,6 +7158,17 @@ def _run_publish_only():
     sent = _send_to_site(payload)
     if not sent:
         raise RuntimeError('MODE=publish: не удалось отправить данные цикла на сайт.')
+    meta_sn = (os.environ.get('KRO_META_RANGE', 'kro_meta!A:B').split('!')[0] or 'kro_meta').strip()
+    if sheets_client and sheet_id:
+        flush_monitor_progress_to_sheet(sheets_client, sheet_id, meta_sn, {
+            'monitor_run_status': 'idle',
+            'monitor_run_started_at': '',
+            'monitor_current_phase': 'Режим publish: сводка из JSON записана в Sheets (полный цикл не выполнялся).',
+            'monitor_current_channel': '',
+            'monitor_current_detail': '',
+            'monitor_filters_summary': KRO_MONITOR_FILTERS_SUMMARY_TEXT,
+            'monitor_result_targets': KRO_MONITOR_RESULT_TARGETS_TEXT,
+        })
 
 
 def _check_and_promote_from_reports(sheets_client, sheet_id, scam_base_range, all_reports):
@@ -7273,6 +7360,33 @@ def main():
     p_end_hm = '11:55' if now_msk_dt.hour < 12 else '23:55'
     _append_live_log_events(['%s %s — Начат сбор данных за период %s–%s.' % (date_str_0, p_start_hm, p_start_hm, p_end_hm)])
 
+    sheet_id = os.environ.get('KRO_SHEET_ID', '').strip()
+    client = get_sheets_client()
+    meta_sheet_name = (os.environ.get('KRO_META_RANGE', 'kro_meta!A:B').split('!')[0] or 'kro_meta').strip()
+    _prog_start = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    _monitor_prog = {
+        'monitor_run_status': 'running',
+        'monitor_run_started_at': _prog_start,
+        'monitor_current_phase': 'Сбор данных запущен (CI): TGStat → Telega → Telegram → веб-источники',
+        'monitor_current_channel': '',
+        'monitor_current_detail': 'Период %s–%s MSK · прогресс пишется в kro_meta' % (p_start_hm, p_end_hm),
+        'monitor_filters_summary': KRO_MONITOR_FILTERS_SUMMARY_TEXT,
+        'monitor_result_targets': KRO_MONITOR_RESULT_TARGETS_TEXT,
+    }
+
+    def _monitor_prog_flush(**kw):
+        if kw:
+            _monitor_prog.update(kw)
+        if client and sheet_id:
+            flush_monitor_progress_to_sheet(client, sheet_id, meta_sheet_name, _monitor_prog)
+
+    if client and sheet_id:
+        try:
+            ensure_sheet_exists(client, sheet_id, meta_sheet_name, row_count=40, column_count=2)
+        except Exception:
+            pass
+        _monitor_prog_flush()
+
     # 1) TGStat new channels
     unavailable_sources = []
     try:
@@ -7287,6 +7401,10 @@ def main():
         print('TGStat watch fetch failed: %s' % e, file=sys.stderr)
         tgstat_watch_channels = []
     time.sleep(REQUEST_DELAY)
+    _monitor_prog_flush(
+        monitor_current_phase='TGStat: новые каналы и watch-лист загружены → каталог Telega',
+        monitor_current_detail='Далее: Telegram (чаты, поиск, верификация ссылок)',
+    )
 
     # 2) Telega catalog
     try:
@@ -7315,9 +7433,12 @@ def main():
     victims_12h = tg_data.get('victims_12h', 0)
     channel_sum_pairs = tg_data.get('channel_sum_pairs', [])
 
+    _monitor_prog_flush(
+        monitor_current_phase='Telegram: чаты жалоб, поиск и проверка ссылок t.me завершены',
+        monitor_current_detail='Далее: веб-скрапер разоблачительных сайтов → reports',
+    )
+
     # 4) Web scraper: собираем данные с сайтов-разоблачителей раз в 12 ч
-    sheet_id = os.environ.get('KRO_SHEET_ID', '').strip()
-    client = get_sheets_client()
     web_findings = []
     web_source_statuses = []
     if _WEB_SCRAPER_AVAILABLE and client and sheet_id:
@@ -7340,6 +7461,11 @@ def main():
 
     web_findings_count = len(web_findings or [])
 
+    _monitor_prog_flush(
+        monitor_current_phase='Веб-скрапер разоблачительных сайтов (при необходимости запись в reports)',
+        monitor_current_detail='Далее: органический цикл и чтение листа жалоб',
+    )
+
     # 4b) Органический рост (годовой темп): 5–10 новых доменов kurs.expert → поиск → scam_base;
     #     оставшиеся слоты (всего ≤10) — кандидаты @*bot* из текстов скам-каналов → check_queue.
     organic_cw = '%s_%s' % (date_str_0, 'am' if now_msk_dt.hour < 12 else 'pm')
@@ -7360,6 +7486,11 @@ def main():
     # 5) Read sheet reports: окно цикла (~сутки) для сводки; все строки — для scam_base / промо (см. KRO_REPORTS_FULL_AGGREGATION)
     sheet_reports = read_reports_last_12h(client, sheet_id) if client and sheet_id else []
     sheet_reports_all = read_reports_all_for_scam_counts(client, sheet_id) if client and sheet_id else []
+
+    _monitor_prog_flush(
+        monitor_current_phase='Агрегация жалоб: reports + Telegram + веб за цикл',
+        monitor_current_detail='Готовится таблица рисков и отбор в scam_base / watch',
+    )
 
     # Таблица жалоб в JSON отчёта: по-прежнему «цикл» + Telegram за проход
     agg_complaints = defaultdict(_empty_agg_complaint_bucket)
@@ -7460,13 +7591,19 @@ def main():
     scam_base_range = os.environ.get('KRO_SCAM_BASE_RANGE', 'scam_base!A2:N')
     _check_and_promote_from_reports(client, sheet_id, scam_base_range, sheet_reports_all)
 
+    _monitor_prog_flush(
+        monitor_current_phase='Отбор подтверждённых кандидатов → анализ контента и Telethon-gate',
+        monitor_current_detail='Результаты пойдут в scam_base, channels_watch, kro_meta',
+    )
+
     # --- CONFIRMED PIPELINE: строгий 3-критерийный отбор для сайта и scam_base ---
     cycle_window = '%s_%s' % (report_date_str, 'am' if now_msk_dt.hour < 12 else 'pm')
     _kro_cycle_analytics_reset()
     confirmed_objects = _collect_confirmed_objects(new_tgstat, agg_complaints_total, cycle_window, channel_ages_from_tg)
     confirmed_before_gate = len(confirmed_objects)
+    _prog_cb = _monitor_prog_flush if (client and sheet_id) else None
     confirmed_objects, channels_network_rows, confirmed_after_telethon_gate, telethon_gate_reasons = asyncio.run(
-        _run_analyze_then_strict_telethon_gate(confirmed_objects)
+        _run_analyze_then_strict_telethon_gate(confirmed_objects, progress_cb=_prog_cb)
     )
     telethon_gate_rejected = max(0, confirmed_before_gate - confirmed_after_telethon_gate)
     if telethon_gate_reasons:
@@ -7511,6 +7648,10 @@ def main():
         known_scam_keys=known_watch_keys,
     )
     if client and sheet_id:
+        _monitor_prog_flush(
+            monitor_current_phase='Запись широкого мониторинга: channels_watch, channels_network',
+            monitor_current_detail='В watch попадают каналы наблюдения, не только scam_base',
+        )
         _write_channels_watch_to_sheet(channels_watch_rows, client, sheet_id)
         _write_channels_network_to_sheet(channels_network_rows, client, sheet_id)
         _enqueue_channels_for_check([row[1] for row in channels_network_rows], client, sheet_id)
@@ -7800,6 +7941,12 @@ def main():
                 % (now_msk_dt.strftime('%d.%m.%Y %H:%M'), suspicious_zero_streak, repeated_channels, repeated_types)
             )
         _append_live_log_events(events)
+        _monitor_prog_flush(
+            monitor_run_status='idle',
+            monitor_current_phase='Цикл suspicious_zero: данные не опубликованы — проверьте логи GitHub Actions и источники.',
+            monitor_current_channel='',
+            monitor_current_detail=warning[:450],
+        )
         return
 
     _write_json_file(OUTPUT_JSON, out)
@@ -7842,6 +7989,13 @@ def main():
         out.get('new_in_cycle', 0),
         site_new_scams,
     ), flush=True)
+
+    _monitor_prog_flush(
+        monitor_run_status='idle',
+        monitor_current_phase='Цикл завершён. Следующий автозапуск по расписанию GitHub Actions (~12 ч).',
+        monitor_current_channel='',
+        monitor_current_detail='Записано: kro_meta, kro_history, scam_base (при отборе), channels_watch; сайт обновлён.',
+    )
 
 
 if __name__ == '__main__':

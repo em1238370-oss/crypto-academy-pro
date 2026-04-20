@@ -2486,6 +2486,11 @@ function parseKroCycleMetaRows(rows) {
     const sc = parseInt(String(rawScan).replace(/\s/g, ''), 10);
     if (Number.isFinite(sc) && sc >= 0) channels_scanned_in_cycle = sc;
   }
+  const strMeta = (k) => {
+    const v = values[k];
+    if (v == null) return '';
+    return String(v).trim();
+  };
   return {
     last_cycle_at,
     new_in_cycle,
@@ -2499,6 +2504,14 @@ function parseKroCycleMetaRows(rows) {
     channels_network_edges,
     min_source_weight_policy,
     young_with_complaints_in_base,
+    monitor_run_status: strMeta('monitor_run_status'),
+    monitor_run_started_at: strMeta('monitor_run_started_at'),
+    monitor_current_phase: strMeta('monitor_current_phase'),
+    monitor_current_channel: strMeta('monitor_current_channel'),
+    monitor_current_detail: strMeta('monitor_current_detail'),
+    monitor_filters_summary: strMeta('monitor_filters_summary'),
+    monitor_result_targets: strMeta('monitor_result_targets'),
+    monitor_progress_updated_at: strMeta('monitor_progress_updated_at'),
   };
 }
 
@@ -2515,6 +2528,14 @@ const KRO_META_EMPTY = {
   channels_network_edges: 0,
   min_source_weight_policy: null,
   young_with_complaints_in_base: 0,
+  monitor_run_status: '',
+  monitor_run_started_at: '',
+  monitor_current_phase: '',
+  monitor_current_channel: '',
+  monitor_current_detail: '',
+  monitor_filters_summary: '',
+  monitor_result_targets: '',
+  monitor_progress_updated_at: '',
 };
 
 async function readKroCycleMetaFromSheets(sheetsClient) {

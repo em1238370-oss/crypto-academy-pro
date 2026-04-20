@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
   <script>
     (function() {
-      var v = '20260417-monitor-fetch-hardening';
+      var v = '20260417-monitor-pipeline-ui';
       var l = document.createElement('link');
       l.rel = 'stylesheet';
       l.href = '/monitor.css?v=' + encodeURIComponent(v);
@@ -86,6 +86,30 @@
 <p class="mon-live-strip" id="mon-live-strip" role="status" aria-live="polite">
   <span class="mon-live-strip-inner">Система работает · цикл в таблице (kro_meta): <span id="mon-live-strip-time">—</span><span id="mon-cycle-warning"></span> · ответ API: <span id="mon-api-refresh-time">—</span></span>
 </p>
+
+<section class="mon-pipeline-state mon-pipeline-state--idle" id="mon-pipeline-state" aria-labelledby="mon-pipeline-title">
+  <div class="mon-pipeline-inner">
+    <header class="mon-pipeline-header">
+      <div class="mon-pipeline-header-text">
+        <h2 class="mon-pipeline-title" id="mon-pipeline-title">Что делает мониторинг сейчас</h2>
+        <p class="mon-pipeline-sub">Прогресс цикла в листе <strong>kro_meta</strong> (строки прогресса) обновляет воркер в GitHub Actions между опросами сайт подтягивает то же самое.</p>
+      </div>
+    </header>
+    <div class="mon-pipeline-row mon-pipeline-row--status">
+      <span class="mon-pipeline-badge" id="mon-pipeline-status-badge">—</span>
+      <span class="mon-pipeline-meta" id="mon-pipeline-updated">прогресс в таблице: —</span>
+    </div>
+    <p class="mon-pipeline-phase" id="mon-pipeline-phase">—</p>
+    <div class="mon-pipeline-row mon-pipeline-row--channel">
+      <span class="mon-pipeline-label">Канал в работе</span>
+      <code class="mon-pipeline-channel" id="mon-pipeline-channel">—</code>
+    </div>
+    <p class="mon-pipeline-detail" id="mon-pipeline-detail"></p>
+    <p class="mon-pipeline-filters" id="mon-pipeline-filters"></p>
+    <p class="mon-pipeline-targets" id="mon-pipeline-targets"></p>
+    <p class="mon-pipeline-hint" id="mon-pipeline-hint"></p>
+  </div>
+</section>
 
 <main class="mon-container">
 
@@ -814,6 +838,7 @@
 
   var CYCLE_MS = 12 * 3600 * 1000;
   var REFRESH_INTERVAL = 5 * 60;
+  var REFRESH_INTERVAL_RUNNING = 45;
   var countdown = REFRESH_INTERVAL;
   var requestPending = false;
   var monitorLoadInFlight = 0;
@@ -1904,6 +1929,90 @@
     }, 2000);
   }
 
+  function renderMonitorPipelineState(meta) {
+    meta = meta || {};
+    var st = (meta.monitor_run_status || '').toLowerCase();
+    var sec = document.getElementById('mon-pipeline-state');
+    var badge = document.getElementById('mon-pipeline-status-badge');
+    if (!sec || !badge) return;
+
+    sec.classList.remove('mon-pipeline-state--running', 'mon-pipeline-state--idle', 'mon-pipeline-state--error');
+    if (st === 'running') {
+      sec.classList.add('mon-pipeline-state--running');
+      badge.textContent = 'Цикл запущен (running) — воркер пишет прогресс в Sheets';
+    } else if (st === 'error') {
+      sec.classList.add('mon-pipeline-state--error');
+      badge.textContent = 'Ошибка воркера (error) — см. логи GitHub Actions';
+    } else {
+      sec.classList.add('mon-pipeline-state--idle');
+      badge.textContent = 'Активного цикла нет (idle) — следующий по cron workflow';
+    }
+
+    var phase = (meta.monitor_current_phase || '').trim();
+    setText('mon-pipeline-phase', phase || '—');
+
+    var ch = (meta.monitor_current_channel || '').trim();
+    setText('mon-pipeline-channel', ch || '—');
+
+    var det = (meta.monitor_current_detail || '').trim();
+    var detEl = document.getElementById('mon-pipeline-detail');
+    if (detEl) detEl.textContent = det;
+
+    var filt = (meta.monitor_filters_summary || '').trim();
+    var filtEl = document.getElementById('mon-pipeline-filters');
+    if (filtEl) {
+      filtEl.textContent = filt ? ('Отбор и фильтры: ' + filt) : '';
+    }
+
+    var tgt = (meta.monitor_result_targets || '').trim();
+    var tgtEl = document.getElementById('mon-pipeline-targets');
+    if (tgtEl) {
+      tgtEl.textContent = tgt ? ('Куда пишутся результаты: ' + tgt) : '';
+    }
+
+    var pu = (meta.monitor_progress_updated_at || '').trim();
+    var updEl = document.getElementById('mon-pipeline-updated');
+    if (updEl) {
+      var puDt = pu ? new Date(pu) : null;
+      updEl.textContent =
+        puDt && Number.isFinite(puDt.getTime())
+          ? 'прогресс в таблице: ' + formatMonLocalDateTime(puDt)
+          : 'прогресс в таблице: —';
+    }
+
+    var started = (meta.monitor_run_started_at || '').trim();
+    var hintEl = document.getElementById('mon-pipeline-hint');
+    if (hintEl) {
+      if (st === 'running' && started) {
+        var sd = new Date(started);
+        hintEl.textContent =
+          'Старт этого прогона: ' +
+          (Number.isFinite(sd.getTime()) ? formatMonLocalDateTime(sd) : started) +
+          '. Пока running, страница опрашивает API чаще (~' +
+          REFRESH_INTERVAL_RUNNING +
+          ' с). Раздел «Широкий мониторинг» / channels_watch — каналы под наблюдением, в том числе без признаков скама.';
+      } else if (st === 'running') {
+        hintEl.textContent =
+          'Пока running, опрос API ~' +
+          REFRESH_INTERVAL_RUNNING +
+          ' с. channels_watch — широкий список, не только «плохие».';
+      } else {
+        hintEl.textContent =
+          'Между запусками здесь последний зафиксированный статус. Подтверждённые риски — в scam_base и кейсах; широкий охват — в таблице channels_watch.';
+      }
+    }
+
+    var fastPoll = st === 'running';
+    var nextSec = fastPoll ? REFRESH_INTERVAL_RUNNING : 5 * 60;
+    if (typeof window.__monAdaptiveInterval !== 'number') window.__monAdaptiveInterval = 5 * 60;
+    if (nextSec !== window.__monAdaptiveInterval) {
+      window.__monAdaptiveInterval = nextSec;
+      REFRESH_INTERVAL = nextSec;
+      countdown = Math.min(countdown, REFRESH_INTERVAL);
+      startCountdown();
+    }
+  }
+
   function renderStatus(meta, scamBase, statusSummary, channelsTotalConfirmed, confirmedSummary) {
     var lastMs = parseLastCycleAt(meta.last_cycle_at);
     var cycleDt = fmtMoscowPlainFromRaw(meta.last_cycle_at);
@@ -2752,6 +2861,7 @@
 
         var chTotalApi = data.channels_total;
         renderStatus(meta, scamBase, data.status_summary || {}, chTotalApi, data.confirmed_status_summary);
+        renderMonitorPipelineState(meta);
         renderMetricTables(meta, typeof chTotalApi === 'number' ? chTotalApi : (scamBase || []).length, data.confirmed_status_summary, data.rollup_12h || {});
         renderCycleLog(meta, scamBase);
         renderRecentCases(data.recent_cases || []);
