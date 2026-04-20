@@ -63,12 +63,12 @@ button:focus-visible {
 .kro-main {
    --kro-ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
    --kro-ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-   --kro-duration-reveal: 0.7s;
-   --kro-duration-reveal-slow: 0.85s;
+   --kro-duration-reveal: 1.35s;
+   --kro-duration-reveal-slow: 1.75s;
    --kro-duration-hover: 0.25s;
-   --kro-stagger: 0.12s;
+   --kro-stagger: 0.18s;
    --kro-reveal-y: 44px;
-   --kro-scroll-in-y: 52px;
+   --kro-scroll-in-y: 40px;
    /* Типографика (medvedevart): акцент — заголовки, основной текст — тело */
    --kro-font-heading: 'Syne', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
    --kro-font-body: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -94,7 +94,7 @@ button:focus-visible {
 
 /* Hero: карточка — лёгкое появление (keyframes один раз при загрузке) */
 .kro-step1.kro-reveal-visible .kro-step1-inner {
-   animation: kro-hero-card-in 0.8s var(--kro-ease-reveal) forwards;
+   animation: kro-hero-card-in 1.35s var(--kro-ease-reveal) forwards;
 }
 
 @keyframes kro-hero-card-in {
@@ -2032,7 +2032,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    justify-content: space-between;
    transform-origin: 50% 0;
    transform: rotateX(0deg) translateZ(0);
-   transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+   transition: transform 1.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .kro-feature1-check .kro-flow-step {
    flex: 1 1 160px;
@@ -2140,19 +2140,19 @@ body.kro-hero-scrolled .kro-floating-nav {
       transform: rotateX(5deg) translateZ(0);
    }
    .kro-f1-cta-check-wrap.kro-f1-show-check .kro-feature1-check .kro-flow-simple-track > .kro-flow-step:nth-child(1) {
-      animation: kro-flow-step-bob 5.5s ease-in-out infinite;
+      animation: kro-flow-step-bob 18s ease-in-out infinite;
       animation-delay: 0s;
    }
    .kro-f1-cta-check-wrap.kro-f1-show-check .kro-feature1-check .kro-flow-simple-track > .kro-flow-step:nth-child(3) {
-      animation: kro-flow-step-bob 5.5s ease-in-out infinite;
-      animation-delay: 0.12s;
+      animation: kro-flow-step-bob 18s ease-in-out infinite;
+      animation-delay: 0.4s;
    }
    .kro-f1-cta-check-wrap.kro-f1-show-check .kro-feature1-check .kro-flow-simple-track > .kro-flow-step:nth-child(5) {
-      animation: kro-flow-step-bob 5.5s ease-in-out infinite;
-      animation-delay: 0.24s;
+      animation: kro-flow-step-bob 18s ease-in-out infinite;
+      animation-delay: 0.8s;
    }
    .kro-f1-cta-check-wrap.kro-f1-show-check.kro-scroll-in-visible .kro-feature1-check {
-      animation: kro-check-soft-glow 14s ease-in-out infinite;
+      animation: kro-check-soft-glow 36s ease-in-out infinite;
    }
 }
 @keyframes kro-flow-step-bob {
@@ -2161,7 +2161,7 @@ body.kro-hero-scrolled .kro-floating-nav {
       transform: translateY(0) translateZ(0);
    }
    50% {
-      transform: translateY(-5px) translateZ(12px);
+      transform: translateY(-6px) translateZ(14px);
    }
 }
 @keyframes kro-check-soft-glow {

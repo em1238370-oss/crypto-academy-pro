@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
   <script>
     (function() {
-      var v = '20260417-monitor-pipeline-ui';
+      var v = '20260420-monitor-explainer';
       var l = document.createElement('link');
       l.rel = 'stylesheet';
       l.href = '/monitor.css?v=' + encodeURIComponent(v);
@@ -89,19 +89,19 @@
 
 <section class="mon-pipeline-state mon-pipeline-state--idle" id="mon-pipeline-state" aria-labelledby="mon-pipeline-title">
   <div class="mon-pipeline-inner">
-    <header class="mon-pipeline-header">
-      <div class="mon-pipeline-header-text">
-        <h2 class="mon-pipeline-title" id="mon-pipeline-title">Что делает мониторинг сейчас</h2>
-        <p class="mon-pipeline-sub">Прогресс цикла в листе <strong>kro_meta</strong> (строки прогресса) обновляет воркер в GitHub Actions между опросами сайт подтягивает то же самое.</p>
-      </div>
+    <header class="mon-pipeline-header-text">
+      <h2 class="mon-pipeline-title" id="mon-pipeline-title">Живая система: где цикл и что означают цифры</h2>
+      <p class="mon-pipeline-sub">Полный поиск запускается в <strong>GitHub Actions</strong> (не на странице). Пока идёт прогон, воркер пишет фазу и канал в лист <strong>kro_meta</strong> (блок прогресса); сайт только читает таблицу.</p>
     </header>
+    <p class="mon-pipeline-schedule" id="mon-pipeline-schedule"></p>
+    <p class="mon-pipeline-last-cycle-stats" id="mon-pipeline-last-cycle-stats"></p>
     <div class="mon-pipeline-row mon-pipeline-row--status">
       <span class="mon-pipeline-badge" id="mon-pipeline-status-badge">—</span>
       <span class="mon-pipeline-meta" id="mon-pipeline-updated">прогресс в таблице: —</span>
     </div>
     <p class="mon-pipeline-phase" id="mon-pipeline-phase">—</p>
     <div class="mon-pipeline-row mon-pipeline-row--channel">
-      <span class="mon-pipeline-label">Канал в работе</span>
+      <span class="mon-pipeline-label">Канал в работе (если цикл идёт)</span>
       <code class="mon-pipeline-channel" id="mon-pipeline-channel">—</code>
     </div>
     <p class="mon-pipeline-detail" id="mon-pipeline-detail"></p>
@@ -1934,72 +1934,89 @@
     var st = (meta.monitor_run_status || '').toLowerCase();
     var sec = document.getElementById('mon-pipeline-state');
     var badge = document.getElementById('mon-pipeline-status-badge');
-    if (!sec || !badge) return;
-
-    sec.classList.remove('mon-pipeline-state--running', 'mon-pipeline-state--idle', 'mon-pipeline-state--error');
-    if (st === 'running') {
-      sec.classList.add('mon-pipeline-state--running');
-      badge.textContent = 'Цикл запущен (running) — воркер пишет прогресс в Sheets';
-    } else if (st === 'error') {
-      sec.classList.add('mon-pipeline-state--error');
-      badge.textContent = 'Ошибка воркера (error) — см. логи GitHub Actions';
-    } else {
-      sec.classList.add('mon-pipeline-state--idle');
-      badge.textContent = 'Активного цикла нет (idle) — следующий по cron workflow';
-    }
-
-    var phase = (meta.monitor_current_phase || '').trim();
-    setText('mon-pipeline-phase', phase || '—');
-
-    var ch = (meta.monitor_current_channel || '').trim();
-    setText('mon-pipeline-channel', ch || '—');
-
-    var det = (meta.monitor_current_detail || '').trim();
-    var detEl = document.getElementById('mon-pipeline-detail');
-    if (detEl) detEl.textContent = det;
-
-    var filt = (meta.monitor_filters_summary || '').trim();
-    var filtEl = document.getElementById('mon-pipeline-filters');
-    if (filtEl) {
-      filtEl.textContent = filt ? ('Отбор и фильтры: ' + filt) : '';
-    }
-
-    var tgt = (meta.monitor_result_targets || '').trim();
-    var tgtEl = document.getElementById('mon-pipeline-targets');
-    if (tgtEl) {
-      tgtEl.textContent = tgt ? ('Куда пишутся результаты: ' + tgt) : '';
-    }
-
-    var pu = (meta.monitor_progress_updated_at || '').trim();
-    var updEl = document.getElementById('mon-pipeline-updated');
-    if (updEl) {
-      var puDt = pu ? new Date(pu) : null;
-      updEl.textContent =
-        puDt && Number.isFinite(puDt.getTime())
-          ? 'прогресс в таблице: ' + formatMonLocalDateTime(puDt)
-          : 'прогресс в таблице: —';
-    }
-
-    var started = (meta.monitor_run_started_at || '').trim();
-    var hintEl = document.getElementById('mon-pipeline-hint');
-    if (hintEl) {
-      if (st === 'running' && started) {
-        var sd = new Date(started);
-        hintEl.textContent =
-          'Старт этого прогона: ' +
-          (Number.isFinite(sd.getTime()) ? formatMonLocalDateTime(sd) : started) +
-          '. Пока running, страница опрашивает API чаще (~' +
-          REFRESH_INTERVAL_RUNNING +
-          ' с). Раздел «Широкий мониторинг» / channels_watch — каналы под наблюдением, в том числе без признаков скама.';
-      } else if (st === 'running') {
-        hintEl.textContent =
-          'Пока running, опрос API ~' +
-          REFRESH_INTERVAL_RUNNING +
-          ' с. channels_watch — широкий список, не только «плохие».';
+    if (sec && badge) {
+      sec.classList.remove('mon-pipeline-state--running', 'mon-pipeline-state--idle', 'mon-pipeline-state--error');
+      if (st === 'running') {
+        sec.classList.add('mon-pipeline-state--running');
+        badge.textContent = 'Цикл запущен (running) — воркер пишет прогресс в Sheets';
+      } else if (st === 'error') {
+        sec.classList.add('mon-pipeline-state--error');
+        badge.textContent = 'Ошибка воркера (error) — см. логи GitHub Actions';
       } else {
-        hintEl.textContent =
-          'Между запусками здесь последний зафиксированный статус. Подтверждённые риски — в scam_base и кейсах; широкий охват — в таблице channels_watch.';
+        sec.classList.add('mon-pipeline-state--idle');
+        badge.textContent = 'Активного цикла нет (idle) — следующий по cron workflow';
       }
+
+      var phase = (meta.monitor_current_phase || '').trim();
+      setText('mon-pipeline-phase', phase || '—');
+
+      var ch = (meta.monitor_current_channel || '').trim();
+      setText('mon-pipeline-channel', ch || '—');
+
+      var det = (meta.monitor_current_detail || '').trim();
+      var detEl = document.getElementById('mon-pipeline-detail');
+      if (detEl) detEl.textContent = det;
+
+      var filt = (meta.monitor_filters_summary || '').trim();
+      var filtEl = document.getElementById('mon-pipeline-filters');
+      if (filtEl) {
+        filtEl.textContent = filt ? ('Отбор и фильтры: ' + filt) : '';
+      }
+
+      var tgt = (meta.monitor_result_targets || '').trim();
+      var tgtEl = document.getElementById('mon-pipeline-targets');
+      if (tgtEl) {
+        tgtEl.textContent = tgt ? ('Куда пишутся результаты: ' + tgt) : '';
+      }
+
+      var pu = (meta.monitor_progress_updated_at || '').trim();
+      var updEl = document.getElementById('mon-pipeline-updated');
+      if (updEl) {
+        var puDt = pu ? new Date(pu) : null;
+        updEl.textContent =
+          puDt && Number.isFinite(puDt.getTime())
+            ? 'прогресс в таблице: ' + formatMonLocalDateTime(puDt)
+            : 'прогресс в таблице: —';
+      }
+
+      var started = (meta.monitor_run_started_at || '').trim();
+      var hintEl = document.getElementById('mon-pipeline-hint');
+      if (hintEl) {
+        if (st === 'running' && started) {
+          var sd = new Date(started);
+          hintEl.textContent =
+            'Старт этого прогона: ' +
+            (Number.isFinite(sd.getTime()) ? formatMonLocalDateTime(sd) : started) +
+            '. Пока running, страница опрашивает API чаще (~' +
+            REFRESH_INTERVAL_RUNNING +
+            ' с). Раздел «Широкий мониторинг» / channels_watch — каналы под наблюдением, в том числе без признаков скама.';
+        } else if (st === 'running') {
+          hintEl.textContent =
+            'Пока running, опрос API ~' +
+            REFRESH_INTERVAL_RUNNING +
+            ' с. channels_watch — широкий список, не только «плохие».';
+        } else {
+          hintEl.textContent =
+            'Между запусками здесь последний зафиксированный статус. Подтверждённые риски — в scam_base и кейсах; широкий охват — в таблице channels_watch. Цель «≥6 каналов в сутки» логичнее мерить по широкому мониторингу и сырым находкам, а не только по числу новых строк в scam_base — туда попадает меньше объектов из‑за строгих фильтров.';
+        }
+      }
+    }
+
+    var schedEl = document.getElementById('mon-pipeline-schedule');
+    if (schedEl) {
+      schedEl.textContent =
+        'Расписание: workflow «KRO 12h Monitor» в GitHub — полный цикл примерно в 12:00 и 00:00 МСК (дважды за сутки, чаще чем «раз в 24 часа»). Пока нет run — статус idle; во время run обновляйте страницу или дождитесь автоопроса.';
+    }
+    var countsEl = document.getElementById('mon-pipeline-last-cycle-stats');
+    if (countsEl) {
+      var nic = Number(meta.new_in_cycle || 0);
+      var wn = Number(meta.channels_scanned_in_cycle || 0);
+      countsEl.textContent =
+        'Последний записанный цикл в kro_meta: новых подтверждённых записей в scam_base — ' +
+        nic +
+        '; строк широкого мониторинга (channels_watch) — ' +
+        wn +
+        '. Если смотрите только «новых за цикл» как маленькую цифру — сравните со вторым числом: система может активно собирать каналы, но в scam_base попадут не все.';
     }
 
     var fastPoll = st === 'running';
