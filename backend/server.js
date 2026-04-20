@@ -5500,6 +5500,12 @@ app.get('/api/kro/live-counter', async (req, res) => {
   }
 });
 
+/** Лёгкая проверка «Render жив» без чтения Sheets (отладка /monitor). */
+app.get('/api/kro/monitor-ping', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.json({ ok: true, t: new Date().toISOString() });
+});
+
 // GET /api/kro/monitor-data — full data for the /monitor dashboard
 // Returns: scam_base, channels_watch, channels_network, kro_meta, kro_history
 app.get('/api/kro/monitor-data', async (req, res) => {

@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
   <script>
     (function() {
-      var v = '20260417-monitor-fetch-timeout';
+      var v = '20260417-monitor-fetch-hardening';
       var l = document.createElement('link');
       l.rel = 'stylesheet';
       l.href = '/monitor.css?v=' + encodeURIComponent(v);
@@ -816,6 +816,7 @@
   var REFRESH_INTERVAL = 5 * 60;
   var countdown = REFRESH_INTERVAL;
   var requestPending = false;
+  var monitorLoadInFlight = 0;
   var countdownTimer;
   /** Таймаут fetch: иначе зависший запрос оставляет requestPending=true и поллинг замирает навсегда. */
   var MONITOR_FETCH_TIMEOUT_MS = 120000;
@@ -847,7 +848,10 @@
     var msg = err && err.message ? String(err.message) : '';
     if (nm === 'TimeoutError' || nm === 'AbortError') return true;
     if (/timeout|aborted/i.test(msg)) return true;
-    if (/^HTTP 502|^HTTP 503|^HTTP 504|^HTTP 524/.test(msg)) return true;
+    if (/^HTTP 429|^HTTP 502|^HTTP 503|^HTTP 504|^HTTP 524/.test(msg)) return true;
+    if (nm === 'TypeError' && /fetch|network|load|failed|rejected/i.test(msg)) return true;
+    if (/failed to fetch|networkerror|load failed|econn|etimedout|enetunreach/i.test(msg)) return true;
+    if (nm === 'SyntaxError' && /json|unexpected token/i.test(msg)) return true;
     return false;
   }
 
@@ -861,21 +865,40 @@
         ' с). Нажмите «Обновить» или проверьте сеть.'
       );
     }
+    if (nm === 'TypeError' && /fetch|failed|network/i.test(msg)) {
+      return 'Нет соединения с сервером или запрос заблокирован. Проверьте сеть и VPN, затем «Обновить».';
+    }
+    if (nm === 'SyntaxError' && /json|unexpected token/i.test(msg)) {
+      return 'Сервер вернул не JSON (возможна ошибка прокси или страницы входа). Попробуйте «Обновить».';
+    }
     return msg || 'Неизвестная ошибка';
   }
 
   function fetchMonitorDataJson() {
     var url = '/api/kro/monitor-data?t=' + Date.now();
     var opt = { cache: 'no-store', headers: { 'Cache-Control': 'no-store' } };
+    var clearTimer = null;
     try {
       if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
         opt.signal = AbortSignal.timeout(MONITOR_FETCH_TIMEOUT_MS);
+      } else if (typeof AbortController !== 'undefined') {
+        var ac = new AbortController();
+        opt.signal = ac.signal;
+        clearTimer = setTimeout(function () {
+          try {
+            ac.abort();
+          } catch (eAbort) { /* ignore */ }
+        }, MONITOR_FETCH_TIMEOUT_MS);
       }
     } catch (eSig) { /* ignore */ }
-    return fetch(url, opt).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    });
+    return fetch(url, opt)
+      .finally(function () {
+        if (clearTimer) clearTimeout(clearTimer);
+      })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      });
   }
 
   // ── HELPERS ───────────────────────────────────────────────
@@ -2677,7 +2700,8 @@
   // ── MAIN LOAD ─────────────────────────────────────────────
 
   function loadData(force) {
-    if (requestPending && !force) return;
+    if (monitorLoadInFlight > 0 && !force) return;
+    monitorLoadInFlight++;
     requestPending = true;
     countdown = REFRESH_INTERVAL;
 
@@ -2715,6 +2739,12 @@
 
     dataChain
       .then(function (data) {
+        if (!data || typeof data !== 'object') {
+          throw new Error('Некорректный ответ API');
+        }
+        if (data.error && !data.meta) {
+          throw new Error(typeof data.error === 'string' ? data.error : 'Ошибка API');
+        }
         var meta = data.meta || {};
         var scamBase = data.scam_base || [];
         var networkRows = data.channels_network || [];
@@ -2760,7 +2790,8 @@
         requestAnimationFrame(unveilMonRevealInViewport);
       })
       .finally(function () {
-        requestPending = false;
+        monitorLoadInFlight = Math.max(0, monitorLoadInFlight - 1);
+        requestPending = monitorLoadInFlight > 0;
       });
   }
 
