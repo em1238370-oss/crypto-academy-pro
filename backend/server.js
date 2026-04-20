@@ -5605,6 +5605,8 @@ app.get('/api/kro/monitor-data', async (req, res) => {
       }));
 
     return res.json({
+      /** Время ответа API (страница опрашивается); не путать с last_cycle_at из kro_meta. */
+      api_refreshed_at: new Date().toISOString(),
       scam_base: scamRows,
       /** Алиас для отладки и клиентов, ожидающих поле `rows` (то же, что scam_base после фильтров). */
       rows: scamRows,

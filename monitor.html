@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/scripts/vendor/lenis-1.3.17.css?v=1">
   <script>
     (function() {
-      var v = '20260414-monitor-typography-dm';
+      var v = '20260417-monitor-fetch-timeout';
       var l = document.createElement('link');
       l.rel = 'stylesheet';
       l.href = '/monitor.css?v=' + encodeURIComponent(v);
@@ -84,7 +84,7 @@
 </header>
 
 <p class="mon-live-strip" id="mon-live-strip" role="status" aria-live="polite">
-  <span class="mon-live-strip-inner">Система работает · время после цикла <span id="mon-live-strip-time">—</span><span id="mon-cycle-warning"></span></span>
+  <span class="mon-live-strip-inner">Система работает · цикл в таблице (kro_meta): <span id="mon-live-strip-time">—</span><span id="mon-cycle-warning"></span> · ответ API: <span id="mon-api-refresh-time">—</span></span>
 </p>
 
 <main class="mon-container">
@@ -815,7 +815,66 @@
   var countdown = REFRESH_INTERVAL;
   var requestPending = false;
   var countdownTimer;
+  /** Таймаут fetch: иначе зависший запрос оставляет requestPending=true и поллинг замирает навсегда. */
+  var MONITOR_FETCH_TIMEOUT_MS = 120000;
 
+  function formatMonLocalDateTime(d) {
+    if (!d || !Number.isFinite(d.getTime())) return '—';
+    return d.toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  }
+
+  function setMonApiRefreshFromPayload(iso) {
+    var el = document.getElementById('mon-api-refresh-time');
+    if (!el) return;
+    if (!iso) {
+      el.textContent = formatMonLocalDateTime(new Date());
+      return;
+    }
+    el.textContent = formatMonLocalDateTime(new Date(iso));
+  }
+
+  function monitorFetchTransientError(err) {
+    var nm = err && err.name ? String(err.name) : '';
+    var msg = err && err.message ? String(err.message) : '';
+    if (nm === 'TimeoutError' || nm === 'AbortError') return true;
+    if (/timeout|aborted/i.test(msg)) return true;
+    if (/^HTTP 502|^HTTP 503|^HTTP 504|^HTTP 524/.test(msg)) return true;
+    return false;
+  }
+
+  function monitorErrorUserText(err) {
+    var nm = err && err.name ? String(err.name) : '';
+    var msg = err && err.message ? String(err.message) : '';
+    if (nm === 'TimeoutError' || nm === 'AbortError' || /timeout|aborted/i.test(msg)) {
+      return (
+        'Превышено время ожидания ответа (~' +
+        Math.round(MONITOR_FETCH_TIMEOUT_MS / 1000) +
+        ' с). Нажмите «Обновить» или проверьте сеть.'
+      );
+    }
+    return msg || 'Неизвестная ошибка';
+  }
+
+  function fetchMonitorDataJson() {
+    var url = '/api/kro/monitor-data?t=' + Date.now();
+    var opt = { cache: 'no-store', headers: { 'Cache-Control': 'no-store' } };
+    try {
+      if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+        opt.signal = AbortSignal.timeout(MONITOR_FETCH_TIMEOUT_MS);
+      }
+    } catch (eSig) { /* ignore */ }
+    return fetch(url, opt).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+  }
 
   // ── HELPERS ───────────────────────────────────────────────
 
@@ -2627,6 +2686,7 @@
     window.__monMetricCountPending = null;
 
     setText('mon-live-strip-time', 'загрузка');
+    setText('mon-api-refresh-time', '…');
 
     // Reset loading states
     setHTML('s2-log', '<div class="mon-loading mon-spinner">Загружаю данные цикла</div>');
@@ -2639,58 +2699,67 @@
     setHTML('s6-history-wrap', '<div class="mon-loading">Загружаю историю…</div>');
     setHTML('mon-metrics-tables', '<div class="mon-metrics-digest-placeholder mon-loading mon-spinner">Загружаю сводки цикла, базы и качества данных…</div>');
 
-    fetch('/api/kro/monitor-data?t=' + Date.now(), {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-store' }
-    })
-    .then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function(data) {
-      var meta      = data.meta || {};
-      var scamBase  = data.scam_base || [];
-      var networkRows = data.channels_network || [];
-      var history   = data.history || [];
-
-      var chTotalApi = data.channels_total;
-      renderStatus(meta, scamBase, data.status_summary || {}, chTotalApi, data.confirmed_status_summary);
-      renderMetricTables(meta, typeof chTotalApi === 'number' ? chTotalApi : (scamBase || []).length, data.confirmed_status_summary, data.rollup_12h || {});
-      renderCycleLog(meta, scamBase);
-      renderRecentCases(data.recent_cases || []);
-      renderFindings12h(data.findings_12h || [], scamBase);
-      renderScamBase(scamBase, {
-        tableCaption: 'Подтверждённые записи scam_base после фильтров сайта: одна строка на канал или домен (актуальная запись по дате обнаружения). Сортировка — по колонке «Дата», новее сверху. Символ «—» в ячейке: в источнике нет значения. Поле поиска выше отфильтровывает строки на этой странице.'
-      });
-      renderChannelsWatch(data.channels_watch || []);
-      renderChannelNetworks(networkRows);
-      renderSources(meta.sources_checked || []);
-      renderHistory(history);
-      requestAnimationFrame(function() {
-        unveilMonRevealInViewport();
-        requestAnimationFrame(unveilMonRevealInViewport);
-      });
-      setTimeout(unveilMonRevealInViewport, 80);
-      setTimeout(unveilMonRevealInViewport, 400);
-      requestPending = false;
-    })
-    .catch(function(err) {
-      setText('mon-live-strip-time', 'данные не загружены');
-      var strip = document.getElementById('mon-live-strip');
-      if (strip) strip.classList.add('mon-live-strip--error');
-      var msg = '<div class="mon-error">Ошибка загрузки данных: ' + esc(err.message) + '</div>';
-      setHTML('s2-log', msg);
-      setHTML('s2-findings-12h-wrap', msg);
-      setHTML('s3-table-wrap', msg);
-      setHTML('s4-watch-wrap', msg);
-      setHTML('s4-network-wrap', msg);
-      setHTML('s2-cases', msg);
-      setHTML('s5-sources', msg);
-      setHTML('s6-history-wrap', msg);
-      setHTML('mon-metrics-tables', msg);
-      requestAnimationFrame(unveilMonRevealInViewport);
-      requestPending = false;
+    var dataChain = fetchMonitorDataJson().catch(function (err) {
+      if (monitorFetchTransientError(err)) {
+        setText('mon-api-refresh-time', 'повтор запроса…');
+        return new Promise(function (resolve) {
+          setTimeout(resolve, 2000);
+        }).then(function () {
+          return fetchMonitorDataJson();
+        });
+      }
+      throw err;
     });
+
+    dataChain
+      .then(function (data) {
+        var meta = data.meta || {};
+        var scamBase = data.scam_base || [];
+        var networkRows = data.channels_network || [];
+        var history = data.history || [];
+
+        var chTotalApi = data.channels_total;
+        renderStatus(meta, scamBase, data.status_summary || {}, chTotalApi, data.confirmed_status_summary);
+        renderMetricTables(meta, typeof chTotalApi === 'number' ? chTotalApi : (scamBase || []).length, data.confirmed_status_summary, data.rollup_12h || {});
+        renderCycleLog(meta, scamBase);
+        renderRecentCases(data.recent_cases || []);
+        renderFindings12h(data.findings_12h || [], scamBase);
+        renderScamBase(scamBase, {
+          tableCaption: 'Подтверждённые записи scam_base после фильтров сайта: одна строка на канал или домен (актуальная запись по дате обнаружения). Сортировка — по колонке «Дата», новее сверху. Символ «—» в ячейке: в источнике нет значения. Поле поиска выше отфильтровывает строки на этой странице.'
+        });
+        renderChannelsWatch(data.channels_watch || []);
+        renderChannelNetworks(networkRows);
+        renderSources(meta.sources_checked || []);
+        renderHistory(history);
+        setMonApiRefreshFromPayload(data.api_refreshed_at);
+        requestAnimationFrame(function () {
+          unveilMonRevealInViewport();
+          requestAnimationFrame(unveilMonRevealInViewport);
+        });
+        setTimeout(unveilMonRevealInViewport, 80);
+        setTimeout(unveilMonRevealInViewport, 400);
+      })
+      .catch(function (err) {
+        setText('mon-live-strip-time', 'данные не загружены');
+        setText('mon-api-refresh-time', 'ошибка');
+        var strip = document.getElementById('mon-live-strip');
+        if (strip) strip.classList.add('mon-live-strip--error');
+        var userMsg = monitorErrorUserText(err);
+        var msg = '<div class="mon-error">Ошибка загрузки: ' + esc(userMsg) + '</div>';
+        setHTML('s2-log', msg);
+        setHTML('s2-findings-12h-wrap', msg);
+        setHTML('s3-table-wrap', msg);
+        setHTML('s4-watch-wrap', msg);
+        setHTML('s4-network-wrap', msg);
+        setHTML('s2-cases', msg);
+        setHTML('s5-sources', msg);
+        setHTML('s6-history-wrap', msg);
+        setHTML('mon-metrics-tables', msg);
+        requestAnimationFrame(unveilMonRevealInViewport);
+      })
+      .finally(function () {
+        requestPending = false;
+      });
   }
 
   // ── COUNTDOWN TIMER ───────────────────────────────────────
