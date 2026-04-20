@@ -810,6 +810,8 @@
 (function() {
   'use strict';
 
+  // Операции: сводки цикла (kro_meta в Sheets) обновляет CI — workflow .github/workflows/kro-monitor.yml; сайт только читает API.
+
   var CYCLE_MS = 12 * 3600 * 1000;
   var REFRESH_INTERVAL = 5 * 60;
   var countdown = REFRESH_INTERVAL;
