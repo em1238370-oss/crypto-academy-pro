@@ -1396,6 +1396,33 @@ const kroDeepClientRuns = new Map();
 /** @type {Map<string, { ts: number, once: object, parsedOnce: object, deepStatus: string, deepAvailableAt: string | null }>} */
 const kroDeepChannelCache = new Map();
 
+const KRO_FAST_CONTENT_CACHE_TTL_MS = Math.max(10 * 60 * 1000, parseInt(process.env.KRO_FAST_CONTENT_CACHE_TTL_MS || `${90 * 60 * 1000}`, 10));
+/** @type {Map<string, { ts: number, homeQuickParsed: object | null, homeQuickPublicSnapshot: object | null }>} */
+const kroFastContentCache = new Map();
+
+function kroFastContentCacheGet(channelKey) {
+  const k = (channelKey || '').toString().trim();
+  if (!k) return null;
+  const row = kroFastContentCache.get(k);
+  if (!row) return null;
+  const age = Date.now() - row.ts;
+  if (age > KRO_FAST_CONTENT_CACHE_TTL_MS) {
+    kroFastContentCache.delete(k);
+    return null;
+  }
+  return { ...row, age_ms: age };
+}
+
+function kroFastContentCacheSet(channelKey, payload) {
+  const k = (channelKey || '').toString().trim();
+  if (!k || !payload || typeof payload !== 'object') return;
+  kroFastContentCache.set(k, {
+    ts: Date.now(),
+    homeQuickParsed: payload.homeQuickParsed || null,
+    homeQuickPublicSnapshot: payload.homeQuickPublicSnapshot || null,
+  });
+}
+
 function kroDeepPruneTimestamps(arr, windowMs) {
   const cut = Date.now() - windowMs;
   return arr.filter((t) => t > cut);
@@ -6306,14 +6333,27 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       }
     }
     // Fast: сначала прямой LIVE через Telegram, затем альтернативное чтение текстов из публичной ленты.
-    const hasHomeQuickLive = homeQuickParsed && homeQuickParsed._check_once_ok === true;
+    let hasHomeQuickLive = homeQuickParsed && homeQuickParsed._check_once_ok === true;
     if (homeQuickLiveWant && !hasHomeQuickLive) {
       homeQuickPublicSnapshot = await kroFetchTelegramPublicSnapshot(channelForOnce);
       if (homeQuickHasPublicMessageProof(homeQuickPublicSnapshot)) {
         homeQuickLiveState = 'ok_public_content';
       }
     }
-    const hasHomeQuickPublicContent = homeQuickHasPublicMessageProof(homeQuickPublicSnapshot);
+    let hasHomeQuickPublicContent = homeQuickHasPublicMessageProof(homeQuickPublicSnapshot);
+
+    // Если онлайн-чтение сейчас не удалось, используем последний успешный контент этого канала как анти-422 слой.
+    if (homeQuickLiveWant && !hasHomeQuickLive && !hasHomeQuickPublicContent) {
+      const cachedFast = kroFastContentCacheGet(key);
+      if (cachedFast && (cachedFast.homeQuickParsed || cachedFast.homeQuickPublicSnapshot)) {
+        homeQuickParsed = cachedFast.homeQuickParsed || null;
+        homeQuickPublicSnapshot = cachedFast.homeQuickPublicSnapshot || null;
+        hasHomeQuickLive = !!(homeQuickParsed && homeQuickParsed._check_once_ok === true);
+        hasHomeQuickPublicContent = homeQuickHasPublicMessageProof(homeQuickPublicSnapshot);
+        homeQuickLiveState = 'cached_content';
+        homeQuickLiveAttempt = `${homeQuickLiveAttempt || 'none'}+cache`;
+      }
+    }
 
     // Жёсткий fast-режим: без чтения текстов постов отчёт не формируется.
     if (homeQuickLiveWant && !hasHomeQuickLive && !hasHomeQuickPublicContent) {
@@ -6346,6 +6386,13 @@ app.get('/api/kro/channel-profile', async (req, res) => {
           home_quick_public_content: false,
           check_once_ok: false,
         },
+      });
+    }
+
+    if (homeQuickLiveWant && (hasHomeQuickLive || hasHomeQuickPublicContent)) {
+      kroFastContentCacheSet(key, {
+        homeQuickParsed: hasHomeQuickLive ? homeQuickParsed : null,
+        homeQuickPublicSnapshot: hasHomeQuickPublicContent ? homeQuickPublicSnapshot : null,
       });
     }
 
