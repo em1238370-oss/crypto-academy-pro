@@ -1411,16 +1411,25 @@
                                footParts.push('глубокий разбор ленты: /channel/' + encodeURIComponent(queryU) + ' → кнопка «Глубокий анализ ленты» (до 6 мес.; на тяжёлых каналах до ~30 мин)');
                            }
                            if (lmFoot.home_quick_live === true) {
-                               var wn = lmFoot.home_quick_window_days != null ? Number(lmFoot.home_quick_window_days) : 90;
-                               var postsL = lmFoot.posts_fetched != null ? Number(lmFoot.posts_fetched) : null;
-                               footParts.push(
-                                   'на главной добавлен живой срез ленты ~' +
-                                       (isFinite(wn) ? wn : 90) +
-                                       ' дн.' +
-                                       (postsL != null && !isNaN(postsL) ? ' · постов с текстом: ~' + postsL : '')
-                               );
-                           }
-                           if (data.deep_cache_hint && (data.deep_cache_hint.has_fresh_deep || data.deep_cache_hint.has_stale_deep) && data.mode !== 'deep') {
+                              var wn = lmFoot.home_quick_window_days != null ? Number(lmFoot.home_quick_window_days) : 90;
+                              var postsL = lmFoot.posts_fetched != null ? Number(lmFoot.posts_fetched) : null;
+                              footParts.push(
+                                  'на главной добавлен живой срез ленты ~' +
+                                      (isFinite(wn) ? wn : 90) +
+                                      ' дн.' +
+                                      (postsL != null && !isNaN(postsL) ? ' · постов с текстом: ~' + postsL : '')
+                              );
+                          } else if (lmFoot.home_quick_live_state) {
+                              var qst = String(lmFoot.home_quick_live_state);
+                              if (qst === 'timeout') {
+                                  footParts.push('живой срез ленты не успел уложиться в лимит ожидания браузера; выше показана сводка и жалобы');
+                              } else if (qst === 'rate_limited' || qst === 'skipped_flood') {
+                                  footParts.push('живой срез ленты сейчас ограничен Telegram (лимиты/FLOOD_WAIT); выше показана сводка и жалобы');
+                              } else if (qst === 'failed') {
+                                  footParts.push('живой срез ленты сейчас недоступен из-за временной ошибки; выше показана сводка и жалобы');
+                              }
+                          }
+                          if (data.deep_cache_hint && (data.deep_cache_hint.has_fresh_deep || data.deep_cache_hint.has_stale_deep) && data.mode !== 'deep') {
                                var ageF = Math.max(1, Math.round(Number(data.deep_cache_hint.age_ms) / 60000));
                                footParts.push(
                                    data.deep_cache_hint.has_stale_deep && !data.deep_cache_hint.has_fresh_deep

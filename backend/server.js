@@ -6019,25 +6019,34 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     }
 
     let homeQuickParsed = null;
+    let homeQuickLiveState = 'not_requested';
     const homeQuickLiveWant =
       !deepMode &&
       ['1', 'true', 'yes'].includes(String(req.query.home_quick_live ?? '').trim().toLowerCase()) &&
       process.env.KRO_HOME_QUICK_LIVE !== '0';
-    if (homeQuickLiveWant && !floodState.active) {
-      const allowH = kroDeepAllowNewTelegramDeep(clientId);
-      if (allowH.allowed) {
+    if (homeQuickLiveWant) {
+      if (floodState.active) {
+        homeQuickLiveState = 'skipped_flood';
+      } else {
         const tHome = kroHomeQuickLiveTimeoutMs;
         const onceH = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 90, timeoutMs: tHome });
-        if (onceH.ok === true && onceH.parsed) {
-          const normH = kroNormalizeCheckOnceForAnalysis(onceH);
-          if (normH && !normH.telegram_rate_limited && !normH.not_crypto) {
-            homeQuickParsed = normH;
-            try {
-              kroDeepRecordSuccessfulTelegramDeep(clientId);
-            } catch {
-              /* ignore */
-            }
+        const normH = kroNormalizeCheckOnceForAnalysis(onceH);
+        if (normH && normH._check_once_ok === true && !normH.telegram_rate_limited && !normH.not_crypto) {
+          homeQuickParsed = normH;
+          homeQuickLiveState = 'ok';
+          try {
+            kroDeepRecordSuccessfulTelegramDeep(clientId);
+          } catch {
+            /* ignore */
           }
+        } else if (normH && normH.telegram_rate_limited) {
+          homeQuickLiveState = 'rate_limited';
+        } else if (normH && normH.not_crypto) {
+          homeQuickLiveState = 'not_crypto';
+        } else if (normH && normH.check_once_timed_out === true) {
+          homeQuickLiveState = 'timeout';
+        } else {
+          homeQuickLiveState = 'failed';
         }
       }
     }
@@ -6054,6 +6063,9 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     }
     if (homeQuickParsed && homeQuickParsed._check_once_ok === true) {
       liveMetrics = { ...liveMetrics, home_quick_live: true, home_quick_window_days: 90 };
+    }
+    if (homeQuickLiveWant) {
+      liveMetrics = { ...liveMetrics, home_quick_live_state: homeQuickLiveState };
     }
 
     const deepTelegramBlocked = deepMode && (deepStatus === 'rate_limited' || deepStatus === 'skipped_flood');
