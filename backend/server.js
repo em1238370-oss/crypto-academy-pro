@@ -6699,6 +6699,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
   } catch (e) {
     console.error('KRO channel-profile error:', e);
     let dgErr = null;
+    let degradedAnalysis = null;
     try {
       const peekE = kroDeepAllowNewTelegramDeep(clientId);
       if (!peekE.allowed) {
@@ -6713,13 +6714,28 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     } catch {
       /* ignore */
     }
+    try {
+      const fallbackClient = await getKroSheetsClient();
+      degradedAnalysis = await kroV0BuildFastAnalysisNoLive(fallbackClient, key, decoded, null);
+      degradedAnalysis.basic_info = [
+        'Технический сбой в live-пайплайне: показан поверхностный отчёт по доступным данным (мониторинг/жалобы).',
+      ].concat(Array.isArray(degradedAnalysis.basic_info) ? degradedAnalysis.basic_info : []);
+      if (!degradedAnalysis.conclusion || typeof degradedAnalysis.conclusion !== 'object') {
+        degradedAnalysis.conclusion = { status: KRO_V0_STATUS.watch, reasons: [] };
+      }
+      degradedAnalysis.conclusion.reasons = [
+        'Живое чтение ленты в этом запросе не завершилось, поэтому вывод ограничен поверхностными источниками.',
+      ].concat(Array.isArray(degradedAnalysis.conclusion.reasons) ? degradedAnalysis.conclusion.reasons : []);
+    } catch {
+      degradedAnalysis = null;
+    }
     return res.status(200).json({
       profile: null,
       merged_rows: undefined,
       risk_index: null,
       risk_index_max: 100,
       false_positive_count: 0,
-      analysis: {
+      analysis: degradedAnalysis || {
         v: 0,
         channel_key: key,
         generated_at: new Date().toISOString(),
@@ -6733,7 +6749,18 @@ app.get('/api/kro/channel-profile', async (req, res) => {
           reasons: ['Сервис не смог собрать данные — попробуйте обновить страницу позже.'],
         },
       },
-      live_metrics: null,
+      live_metrics: {
+        mode: 'fast',
+        home_quick_live: false,
+        fast_degraded: true,
+        internal_error_fallback: true,
+      },
+      live_evidence: {
+        live_pass: false,
+        mode: 'unavailable',
+        reason: 'Живой анализ в этом запросе не завершился из-за внутренней ошибки сервиса.',
+        sample_posts: [],
+      },
       mode: 'fast',
       deep_status: null,
       deep_available_at: null,
