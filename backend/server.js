@@ -4478,23 +4478,28 @@ function kroBuildLiveEvidence(parsed, quickState, publicSnap) {
       generated_at: p.generated_at || null,
     };
   }
-  if (publicSnap) {
-    return {
-      live_pass: false,
-      mode: 'public_snapshot',
-      reason: 'Живой проход в Telegram‑ленту не выполнен; сделан поверхностный публичный срез страницы канала.',
-      analysis_window_days: null,
-      posts_fetched: null,
-      sample_posts: Array.isArray(publicSnap.snippets) ? publicSnap.snippets.slice(0, 3) : [],
-      generated_at: publicSnap.fetched_at || null,
-    };
+  if (publicSnap && Array.isArray(publicSnap.snippets)) {
+    const sample = publicSnap.snippets.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 3);
+    if (sample.length >= 3) {
+      return {
+        live_pass: true,
+        mode: 'public_content_fallback',
+        reason: 'Прямой LIVE-проход не завершился, но тексты сообщений прочитаны через публичную ленту канала как альтернативный путь.',
+        analysis_window_days: null,
+        posts_fetched: sample.length,
+        sample_posts: sample,
+        generated_at: publicSnap.fetched_at || null,
+      };
+    }
   }
   const st = String(quickState || '').trim() || 'failed';
   const why = st === 'rate_limited' || st === 'skipped_flood'
     ? 'Живой проход в Telegram‑ленту не выполнен из-за лимитов Telegram/FLOOD_WAIT.'
     : st === 'timeout'
       ? 'Живой проход в Telegram‑ленту не выполнен: проверка не уложилась в лимит времени.'
-      : 'Живой проход в Telegram‑ленту не выполнен из-за временной ошибки сервиса.';
+      : st === 'content_unavailable'
+        ? 'Чтение сообщений не подтверждено: ни основной, ни альтернативный путь не дал достаточной выборки постов.'
+        : 'Живой проход в Telegram‑ленту не выполнен из-за временной ошибки сервиса.';
   return {
     live_pass: false,
     mode: 'unavailable',
@@ -6161,11 +6166,24 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       }
     }
 
+    const homeQuickHasMessageProof = (p) => {
+      if (!p || typeof p !== 'object') return false;
+      const postsFetched = Number(p.posts_fetched);
+      const hasPostsCount = Number.isFinite(postsFetched) && postsFetched >= 3;
+      const hasSamplePosts = Array.isArray(p.sample_posts) && p.sample_posts.some((x) => String(x || '').trim().length > 0);
+      return p.found === true && hasPostsCount && hasSamplePosts;
+    };
+    const homeQuickHasPublicMessageProof = (snap) => {
+      if (!snap || typeof snap !== 'object') return false;
+      const snippets = Array.isArray(snap.snippets)
+        ? snap.snippets.map((x) => String(x || '').trim()).filter(Boolean)
+        : [];
+      return snippets.length >= 3;
+    };
     let homeQuickParsed = null;
     let homeQuickPublicSnapshot = null;
     let homeQuickLiveState = 'not_requested';
-    const homeQuickLiveWant =
-      !deepMode && process.env.KRO_HOME_QUICK_LIVE !== '0';
+    const homeQuickLiveWant = !deepMode;
     if (homeQuickLiveWant) {
       if (floodState.active) {
         homeQuickLiveState = 'skipped_flood';
@@ -6174,12 +6192,16 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         const onceH = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 90, timeoutMs: tHome });
         const normH = kroNormalizeCheckOnceForAnalysis(onceH);
         if (normH && normH._check_once_ok === true && !normH.telegram_rate_limited && !normH.not_crypto) {
-          homeQuickParsed = normH;
-          homeQuickLiveState = 'ok';
-          try {
-            kroDeepRecordSuccessfulTelegramDeep(clientId);
-          } catch {
-            /* ignore */
+          if (homeQuickHasMessageProof(normH)) {
+            homeQuickParsed = normH;
+            homeQuickLiveState = 'ok';
+            try {
+              kroDeepRecordSuccessfulTelegramDeep(clientId);
+            } catch {
+              /* ignore */
+            }
+          } else {
+            homeQuickLiveState = 'content_unavailable';
           }
         } else if (normH && normH.telegram_rate_limited) {
           homeQuickLiveState = 'rate_limited';
@@ -6192,13 +6214,47 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         }
       }
     }
-    // Fast-режим: пытаемся дойти до смысла за ~7 минут даже при сбоях Telegram.
-    // Порядок: LIVE check_once -> публичная лента t.me/s -> сводка reports/monitoring.
-    if (homeQuickLiveWant && !(homeQuickParsed && homeQuickParsed._check_once_ok === true)) {
+    // Fast: сначала прямой LIVE через Telegram, затем альтернативное чтение текстов из публичной ленты.
+    const hasHomeQuickLive = homeQuickParsed && homeQuickParsed._check_once_ok === true;
+    if (homeQuickLiveWant && !hasHomeQuickLive) {
       homeQuickPublicSnapshot = await kroFetchTelegramPublicSnapshot(channelForOnce);
-      if (homeQuickPublicSnapshot) {
-        homeQuickLiveState = 'public_snapshot';
+      if (homeQuickHasPublicMessageProof(homeQuickPublicSnapshot)) {
+        homeQuickLiveState = 'ok_public_content';
       }
+    }
+    const hasHomeQuickPublicContent = homeQuickHasPublicMessageProof(homeQuickPublicSnapshot);
+
+    // Жёсткий fast-режим: без чтения текстов постов отчёт не формируется.
+    if (homeQuickLiveWant && !hasHomeQuickLive && !hasHomeQuickPublicContent) {
+      const evidenceFail = kroBuildLiveEvidence(null, homeQuickLiveState, null);
+      const msgByState = {
+        rate_limited:
+          'Живой анализ не выполнен из-за лимита Telegram/FLOOD_WAIT. Повторите позже — нужен реальный вход в ленту.',
+        skipped_flood:
+          'Живой анализ отложен из-за активного FLOOD_WAIT Telegram. Без LIVE отчёт не формируется.',
+        timeout:
+          'Живой анализ не уложился в лимит времени (~7 мин). Без чтения сообщений отчёт не формируется.',
+        not_crypto:
+          'Живой анализ не выполнен: канал не прошёл крипто-проверку в Telegram-проходе.',
+        content_unavailable:
+          'Живой проход не дал подтверждённого чтения текстов постов. Альтернативное чтение тоже не дало выборку сообщений.',
+        failed:
+          'Не удалось прочитать сообщения канала ни основным, ни альтернативным путём. Без чтения сообщений fast-отчёт бессмысленен.',
+      };
+      const st = String(homeQuickLiveState || 'failed');
+      const msg = msgByState[st] || msgByState.failed;
+      return res.status(422).json({
+        error: 'live_analysis_required',
+        message_ru: msg,
+        live_required: true,
+        live_evidence: evidenceFail,
+        live_metrics: {
+          home_quick_live: false,
+          home_quick_live_state: st,
+          home_quick_public_content: false,
+          check_once_ok: false,
+        },
+      });
     }
 
     const parsedForLiveMetrics =
@@ -6219,10 +6275,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       liveMetrics = {
         ...liveMetrics,
         home_quick_live_state: homeQuickLiveState,
-        home_quick_public_snapshot: homeQuickPublicSnapshot ? true : false,
-        home_quick_snapshot_posts: homeQuickPublicSnapshot && Array.isArray(homeQuickPublicSnapshot.snippets)
-          ? homeQuickPublicSnapshot.snippets.length
-          : null,
+        home_quick_public_content: homeQuickHasPublicMessageProof(homeQuickPublicSnapshot),
       };
     }
     const liveEvidence = kroBuildLiveEvidence(
@@ -6378,6 +6431,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       const watchRowCp1 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
       if (watchRowCp1) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp1);
       if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
+      if (homeQuickPublicSnapshot) kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, homeQuickPublicSnapshot);
       return res.status(200).json({
         mode: responseMode,
         byo_deep: byoDeepActive,
