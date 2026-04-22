@@ -6136,6 +6136,20 @@ app.get('/api/kro/analyze-channel/result', async (req, res) => {
 
     const queueRow = kroCheckQueueStatusByRows(queueRows, key, requestId);
     if (queueRow) {
+      const requestedMs = Date.parse(String(queueRow.requested_at || ''));
+      const pendingTooLong =
+        queueRow.status === 'pending' &&
+        Number.isFinite(requestedMs) &&
+        (Date.now() - requestedMs > 15 * 60 * 1000);
+      if (pendingTooLong) {
+        return res.status(200).json({
+          queue_status: 'failed',
+          request_id: queueRow.request_id,
+          username: queueRow.username,
+          message:
+            'Очередь не обработана вовремя (более 15 минут). Проверьте выполнение GitHub Actions и секреты воркера.',
+        });
+      }
       return res.status(200).json({
         queue_status: queueRow.status || 'pending',
         request_id: queueRow.request_id,
