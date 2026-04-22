@@ -4456,6 +4456,56 @@ function kroLiveMetricsFromParsed(parsed) {
   };
 }
 
+
+function kroBuildLiveEvidence(parsed, quickState, publicSnap) {
+  const p = parsed && typeof parsed === 'object' ? parsed : null;
+  if (
+    p &&
+    p._check_once_ok === true &&
+    p.telegram_rate_limited !== true &&
+    p.not_crypto !== true
+  ) {
+    const sample = Array.isArray(p.sample_posts)
+      ? p.sample_posts.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 3)
+      : [];
+    return {
+      live_pass: true,
+      mode: 'telegram_live',
+      reason: null,
+      analysis_window_days: Number.isFinite(Number(p.analysis_window_days)) ? Number(p.analysis_window_days) : null,
+      posts_fetched: Number.isFinite(Number(p.posts_fetched)) ? Number(p.posts_fetched) : null,
+      sample_posts: sample,
+      generated_at: p.generated_at || null,
+    };
+  }
+  if (publicSnap) {
+    return {
+      live_pass: false,
+      mode: 'public_snapshot',
+      reason: 'Живой проход в Telegram‑ленту не выполнен; сделан поверхностный публичный срез страницы канала.',
+      analysis_window_days: null,
+      posts_fetched: null,
+      sample_posts: Array.isArray(publicSnap.snippets) ? publicSnap.snippets.slice(0, 3) : [],
+      generated_at: publicSnap.fetched_at || null,
+    };
+  }
+  const st = String(quickState || '').trim() || 'failed';
+  const why = st === 'rate_limited' || st === 'skipped_flood'
+    ? 'Живой проход в Telegram‑ленту не выполнен из-за лимитов Telegram/FLOOD_WAIT.'
+    : st === 'timeout'
+      ? 'Живой проход в Telegram‑ленту не выполнен: проверка не уложилась в лимит времени.'
+      : 'Живой проход в Telegram‑ленту не выполнен из-за временной ошибки сервиса.';
+  return {
+    live_pass: false,
+    mode: 'unavailable',
+    reason: why,
+    analysis_window_days: null,
+    posts_fetched: null,
+    sample_posts: [],
+    generated_at: null,
+  };
+}
+
 function kroChannelProfileLiveMetrics(parsed, opts) {
   const o = opts && typeof opts === 'object' ? opts : {};
   const p = parsed && typeof parsed === 'object' ? parsed : { found: false, _check_once_ok: false };
@@ -5933,6 +5983,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         false_positive_count: 0,
         analysis,
         live_metrics: null,
+        live_evidence: null,
       });
     }
     const modeRaw = (req.query.mode ?? 'fast').toString().trim().toLowerCase();
@@ -6174,6 +6225,11 @@ app.get('/api/kro/channel-profile', async (req, res) => {
           : null,
       };
     }
+    const liveEvidence = kroBuildLiveEvidence(
+      parsedForLiveMetrics,
+      homeQuickLiveWant ? homeQuickLiveState : null,
+      homeQuickPublicSnapshot,
+    );
 
     const deepTelegramBlocked = deepMode && (deepStatus === 'rate_limited' || deepStatus === 'skipped_flood');
     const deepServerThrottled = deepMode && deepStatus === 'server_rate_limited';
@@ -6261,6 +6317,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         false_positive_count: 0,
         analysis,
         live_metrics: liveMetrics,
+        live_evidence: liveEvidence,
       });
     }
     const bestAny = matches.reduce((best, cur) =>
@@ -6339,6 +6396,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         false_positive_count: 0,
         analysis,
         live_metrics: liveMetrics,
+        live_evidence: liveEvidence,
       });
     }
     const profile = liveMatches.reduce((best, cur) =>
@@ -6421,6 +6479,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       false_positive_count,
       analysis,
       live_metrics: liveMetrics,
+      live_evidence: liveEvidence,
     });
   } catch (e) {
     console.error('KRO channel-profile error:', e);

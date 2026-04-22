@@ -1324,6 +1324,7 @@
                        var c = a.conclusion || {};
                        var profile = data.profile;
                        var lm = data.live_metrics || {};
+                       var le = data.live_evidence && typeof data.live_evidence === 'object' ? data.live_evidence : null;
                        var eyebrow = document.getElementById('kro-inline-eyebrow');
                        var titleEl = document.getElementById('kro-inline-title');
                        var metaEl = document.getElementById('kro-inline-meta');
@@ -1355,7 +1356,21 @@
                        if (lm.complaints_count != null && !isNaN(Number(lm.complaints_count)) && Number(lm.complaints_count) >= 0) {
                            metaParts.push('Жалоб в отчётах: ' + lm.complaints_count);
                        }
-                       if (metaEl) metaEl.textContent = metaParts.join(' · ');
+                       if (metaEl) {
+                           var liveBadge = '';
+                           if (le && le.live_pass === true) {
+                               var pN = le.posts_fetched != null && !isNaN(Number(le.posts_fetched)) ? Number(le.posts_fetched) : null;
+                               var wN = le.analysis_window_days != null && !isNaN(Number(le.analysis_window_days)) ? Number(le.analysis_window_days) : null;
+                               liveBadge = 'LIVE: реальный вход в ленту Telegram' +
+                                   (pN != null ? ' (~' + pN + ' постов)' : '') +
+                                   (wN != null ? ', окно до ' + wN + ' дн.' : '');
+                           } else if (le) {
+                               liveBadge = 'НЕ LIVE: поверхностный режим (' + (le.mode || 'unknown') + ')';
+                           }
+                           var allMeta = metaParts.slice();
+                           if (liveBadge) allMeta.unshift(liveBadge);
+                           metaEl.textContent = allMeta.join(' · ');
+                       }
                        var st = c.status || '—';
                        if (stEl) {
                            stEl.textContent = st;
@@ -1363,6 +1378,16 @@
                        }
                        if (reasonsEl) {
                            var rs = (c.reasons || []).slice(0, 6).map(function (r) { return String(r == null ? '' : r).trim(); }).filter(Boolean);
+                           if (le && le.live_pass !== true) {
+                               rs.unshift('⚠ ЖИВОЙ АНАЛИЗ ЛЕНТЫ НЕ ВЫПОЛНЕН. ' + String(le.reason || 'Сделан только поверхностный режим.'));
+                           } else if (le && le.live_pass === true) {
+                               var samp = Array.isArray(le.sample_posts) ? le.sample_posts.filter(Boolean).slice(0, 2) : [];
+                               if (samp.length) {
+                                   rs.unshift('✅ LIVE‑доказательство: прочитаны свежие посты, например: «' + samp[0].slice(0, 120) + (samp[0].length > 120 ? '…' : '') + '»');
+                               } else {
+                                   rs.unshift('✅ LIVE‑доказательство: сервер прошёл живую ленту Telegram в этом запросе.');
+                               }
+                           }
                            if (!rs.length) rs.push('Вывод сформирован по данным проверки и правилам системы.');
                            reasonsEl.innerHTML = rs.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
                        }
@@ -1456,7 +1481,11 @@
                            doneBanner.className = 'kro-inline-done-banner';
                            var _t0 = typeof checkStartedAt === 'number' && checkStartedAt > 0 ? checkStartedAt : Date.now();
                            var _doneMs = Math.max(0, Date.now() - _t0);
+                           var livePrefix = '';
+                           if (le && le.live_pass === true) livePrefix = '[LIVE] ';
+                           else if (le && le.live_pass !== true) livePrefix = '[НЕ LIVE] ';
                            doneBanner.textContent =
+                               livePrefix +
                                'Готово за ' +
                                __kroFormatElapsed(_doneMs) +
                                ': быстрый отчёт по ' +
