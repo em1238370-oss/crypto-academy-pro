@@ -331,6 +331,7 @@
                            <h3 class="kro-inline-report-title" id="kro-inline-title">—</h3>
                            <p class="kro-inline-report-meta" id="kro-inline-meta"></p>
                            <p class="kro-inline-done-banner hidden" id="kro-inline-done-banner" hidden role="status"></p>
+                           <div class="kro-inline-live-gate hidden" id="kro-inline-live-gate" hidden aria-live="polite"></div>
                            <div class="kro-inline-report-summary">
                                <div class="kro-inline-summary-item"><span class="kro-inline-summary-label">Уровень риска</span><span id="kro-inline-status" class="kro-inline-status-pill">—</span></div>
                                <div class="kro-inline-summary-item" id="kro-inline-riskidx-wrap" hidden><span class="kro-inline-summary-label">Сводный индекс риска</span><span id="kro-inline-riskidx" class="kro-inline-summary-value">—</span></div>
@@ -1319,6 +1320,7 @@
                }
                function fillInlineReport(data, queryU, displayLabel, checkStartedAt) {
                    var doneBanner = document.getElementById('kro-inline-done-banner');
+                  var liveGateEl = document.getElementById('kro-inline-live-gate');
                    try {
                        var a = data.analysis || {};
                        var c = a.conclusion || {};
@@ -1376,6 +1378,37 @@
                            stEl.textContent = st;
                            stEl.className = 'kro-inline-status-pill kro-inline-status-pill--' + statusClass(st);
                        }
+                       if (liveGateEl) {
+                           var lgTitle = '';
+                           var lgBody = '';
+                           var lgCls = 'kro-inline-live-gate';
+                           if (le && le.live_pass === true) {
+                               lgCls += ' kro-inline-live-gate--live';
+                               lgTitle = 'LIVE: канал прочитан в Telegram прямо сейчас';
+                               var lPosts = le.posts_fetched != null && !isNaN(Number(le.posts_fetched)) ? Number(le.posts_fetched) : null;
+                               var lWin = le.analysis_window_days != null && !isNaN(Number(le.analysis_window_days)) ? Number(le.analysis_window_days) : null;
+                               var lSample = Array.isArray(le.sample_posts) ? le.sample_posts.filter(Boolean).slice(0, 2) : [];
+                               lgBody = 'Сервер реально заходил в ленту канала и читал живые сообщения' +
+                                   (lPosts != null ? ' (~' + lPosts + ' постов с текстом)' : '') +
+                                   (lWin != null ? ', окно до ' + lWin + ' дн.' : '') + '.';
+                               if (lSample.length) {
+                                   lgBody += ' Пример: «' + lSample[0].slice(0, 140) + (lSample[0].length > 140 ? '…' : '') + '».';
+                               }
+                           } else {
+                               lgCls += ' kro-inline-live-gate--not-live';
+                               lgTitle = 'НЕ LIVE: живая лента не прочитана';
+                               lgBody = (le && le.reason)
+                                   ? String(le.reason)
+                                   : 'В этом ответе выполнен только поверхностный режим без живого чтения ленты Telegram.';
+                           }
+                           liveGateEl.className = lgCls;
+                           liveGateEl.innerHTML =
+                               '<p class="kro-inline-live-gate-title">' + esc(lgTitle) + '</p>' +
+                               '<p class="kro-inline-live-gate-text">' + esc(lgBody) + '</p>';
+                           liveGateEl.hidden = false;
+                           liveGateEl.classList.remove('hidden');
+                       }
+                       
                        if (reasonsEl) {
                            var rs = (c.reasons || []).slice(0, 6).map(function (r) { return String(r == null ? '' : r).trim(); }).filter(Boolean);
                            if (le && le.live_pass !== true) {
@@ -1684,6 +1717,13 @@
                            db.hidden = true;
                            db.classList.add('hidden');
                            db.textContent = '';
+                       }
+                       var lg = document.getElementById('kro-inline-live-gate');
+                       if (lg) {
+                           lg.hidden = true;
+                           lg.classList.add('hidden');
+                           lg.textContent = '';
+                           lg.className = 'kro-inline-live-gate hidden';
                        }
                        checkResult.classList.add('hidden');
                        checkResult.innerHTML = '';
