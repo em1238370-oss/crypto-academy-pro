@@ -1329,12 +1329,12 @@ const kroCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_CHECK_ONCE_TIMEOUT_
 const kroCheckOnceTimeoutMs = Number.isFinite(kroCheckOnceTimeoutMsParsed) && kroCheckOnceTimeoutMsParsed >= 120000 && kroCheckOnceTimeoutMsParsed <= 1800000
   ? kroCheckOnceTimeoutMsParsed
   : 180000;
-/** Быстрый слой на главной (?home_quick_live=1): чтение ленты до ~7 мин (тяжёлые каналы), окно 90 дн. */
-const kroHomeQuickLiveTimeoutMsParsed = parseInt(process.env.KRO_HOME_QUICK_LIVE_TIMEOUT_MS || '420000', 10);
+/** Быстрый слой на главной (?home_quick_live=1): верхняя граница чтения ленты (по умолчанию 45 с). */
+const kroHomeQuickLiveTimeoutMsParsed = parseInt(process.env.KRO_HOME_QUICK_LIVE_TIMEOUT_MS || '45000', 10);
 const kroHomeQuickLiveTimeoutMs =
-  Number.isFinite(kroHomeQuickLiveTimeoutMsParsed) && kroHomeQuickLiveTimeoutMsParsed >= 120000 && kroHomeQuickLiveTimeoutMsParsed <= 420000
+  Number.isFinite(kroHomeQuickLiveTimeoutMsParsed) && kroHomeQuickLiveTimeoutMsParsed >= 15000 && kroHomeQuickLiveTimeoutMsParsed <= 120000
     ? kroHomeQuickLiveTimeoutMsParsed
-    : 420000;
+    : 45000;
 /** Глубокий анализ ленты: верхняя граница ~30 мин, горизонт до 6 мес. (periodDays 180 в вызове). */
 const kroDeepCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_DEEP_CHECK_ONCE_TIMEOUT_MS || '1800000', 10);
 const kroDeepCheckOnceTimeoutMs =
@@ -4173,7 +4173,7 @@ function kroRunCheckOnce(channel, opts) {
   const periodDays = allowedPeriods.includes(periodOpt) ? periodOpt : kroCheckOncePeriodDays;
   const timeoutOpt = opts && Number(opts.timeoutMs);
   const timeoutMs =
-    Number.isFinite(timeoutOpt) && timeoutOpt >= 60000 && timeoutOpt <= 1800000 ? timeoutOpt : kroCheckOnceTimeoutMs;
+    Number.isFinite(timeoutOpt) && timeoutOpt >= 5000 && timeoutOpt <= 1800000 ? timeoutOpt : kroCheckOnceTimeoutMs;
   const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
   if (!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath))) {
     return { ok: false, error: 'Живая проверка на сервере не настроена (нет ключей Telegram или скрипта).', parsed: null, stderr: '' };
@@ -4186,11 +4186,11 @@ function kroRunCheckOnce(channel, opts) {
       env: kroTelethonSpawnEnv(readOnly, sessionString),
     });
     if (child.error && child.error.code === 'ETIMEDOUT') {
-      const min = Math.max(1, Math.round(timeoutMs / 60000));
+      const sec = Math.max(1, Math.round(timeoutMs / 1000));
       return {
         ok: false,
         timedOut: true,
-        error: `Чтение ленты остановлено по лимиту времени (~${min} мин.) — для очень больших каналов показываем сокращённый или базовый отчёт, без бесконечного ожидания.`,
+        error: `Чтение ленты остановлено по лимиту времени (${sec} с).`,
         parsed: null,
         stderr: (child.stderr || '').trim(),
       };
@@ -4225,7 +4225,7 @@ function kroRunCheckOnceAsync(channel, opts) {
   const periodDays = allowedPeriods.includes(periodOpt) ? periodOpt : kroCheckOncePeriodDays;
   const timeoutOpt = opts && Number(opts.timeoutMs);
   const timeoutMs =
-    Number.isFinite(timeoutOpt) && timeoutOpt >= 60000 && timeoutOpt <= 1800000 ? timeoutOpt : kroCheckOnceTimeoutMs;
+    Number.isFinite(timeoutOpt) && timeoutOpt >= 5000 && timeoutOpt <= 1800000 ? timeoutOpt : kroCheckOnceTimeoutMs;
   const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
   if (!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath))) {
     return Promise.resolve({
@@ -4266,11 +4266,11 @@ function kroRunCheckOnceAsync(channel, opts) {
       stdout = (stdout || '').trim();
       stderr = (stderr || '').trim();
       if (killedByTimeout) {
-        const min = Math.max(1, Math.round(timeoutMs / 60000));
+        const sec = Math.max(1, Math.round(timeoutMs / 1000));
         resolve({
           ok: false,
           timedOut: true,
-          error: `Чтение ленты остановлено по лимиту времени (~${min} мин.) — для очень больших каналов показываем сокращённый или базовый отчёт.`,
+          error: `Чтение ленты остановлено по лимиту времени (${sec} с).`,
           parsed: null,
           stderr,
         });
@@ -4571,9 +4571,11 @@ function kroStripHtmlToText(html) {
     .trim();
 }
 
-async function kroFetchTelegramPublicSnapshot(channelRef) {
+async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
   const slug = kroExtractTelegramPublicSlug(channelRef);
   if (!slug) return null;
+  const optObj = opts && typeof opts === 'object' ? opts : {};
+  const budgetMs = Math.min(30000, Math.max(3000, Number(optObj.timeoutMs) || 15000));
   const parseHtml = (html) => {
     if (!html || html.length < 100) return null;
     const titleM = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) || html.match(/<title>([^<]+)<\/title>/i);
@@ -4604,9 +4606,13 @@ async function kroFetchTelegramPublicSnapshot(channelRef) {
     `https://t.me/s/${encodeURIComponent(slug)}`,
     `https://r.jina.ai/http://t.me/s/${encodeURIComponent(slug)}`,
   ];
+  const deadline = Date.now() + budgetMs;
   for (const url of urls) {
+    const remaining = deadline - Date.now();
+    if (remaining < 600) break;
     const ctl = new AbortController();
-    const t = setTimeout(() => ctl.abort(), 25000);
+    const perUrlMs = Math.min(remaining, Math.max(2000, Math.floor(budgetMs / urls.length)));
+    const t = setTimeout(() => ctl.abort(), perUrlMs);
     try {
       const r = await fetch(url, {
         signal: ctl.signal,
@@ -5929,6 +5935,102 @@ app.post('/api/kro/byo-deep/revoke', express.json({ limit: '8000' }), (req, res)
   return res.status(200).json({ ok: true });
 });
 
+const anthropicApiKey = (process.env.ANTHROPIC_API_KEY || '').trim();
+
+function kroExtractJsonObjectFromText(text) {
+  const s = String(text || '');
+  const start = s.indexOf('{');
+  const end = s.lastIndexOf('}');
+  if (start === -1 || end <= start) return null;
+  try {
+    return JSON.parse(s.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+}
+
+async function kroFetchSiteMentionsByUsername(usernameKey, budgetMs) {
+  const slug = String(usernameKey || '').replace(/^@+/, '').trim();
+  if (!slug) return [];
+  const baseBudget = Math.min(10000, Math.max(1000, Number(budgetMs) || 4000));
+  const q = encodeURIComponent(slug);
+  const urls = [`https://vklader.com/?s=${q}`, `https://forteck.net/?s=${q}`];
+  const out = [];
+  let left = baseBudget;
+  for (const url of urls) {
+    if (left < 400) break;
+    const ctl = new AbortController();
+    const slice = Math.min(3500, left);
+    const t = setTimeout(() => ctl.abort(), slice);
+    const t0 = Date.now();
+    try {
+      const r = await fetch(url, {
+        signal: ctl.signal,
+        headers: { 'user-agent': 'Mozilla/5.0 (compatible; KRO-Site/1.0)', accept: 'text/html,text/plain,*/*' },
+      });
+      const txt = await r.text();
+      out.push({ url, ok: r.ok, preview: (txt || '').slice(0, 1200) });
+    } catch (e) {
+      out.push({ url, ok: false, error: (e && e.message) ? String(e.message).slice(0, 120) : 'fetch_error' });
+    } finally {
+      clearTimeout(t);
+      left -= Date.now() - t0;
+    }
+  }
+  return out;
+}
+
+function kroMapRuRiskLabelToConclusion(ru) {
+  const s = String(ru || '').toLowerCase();
+  if (s.includes('опасн') || s.includes('скам')) return KRO_V0_STATUS.scam;
+  if (s.includes('чист') || s.includes('безопас')) return KRO_V0_STATUS.clean;
+  if (s.includes('подозр') || s.includes('риск')) return KRO_V0_STATUS.risk;
+  return KRO_V0_STATUS.watch;
+}
+
+async function kroAnalyzeChannelWithClaudeFast(payload, timeoutMs) {
+  if (!anthropicApiKey) return null;
+  const budget = Math.min(25000, Math.max(2000, Number(timeoutMs) || 8000));
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), budget);
+  const prompt = [
+    'Ты аналитик по crypto Telegram-каналам. По JSON ниже о канале дай краткий вывод по признакам мошенничества.',
+    'Ответь ТОЛЬКО одним JSON-объектом без markdown и без пояснений вне JSON. Поля:',
+    '{"risk_index":0-100,"status_ru":"ОПАСНО|ПОДОЗРИТЕЛЬНО|БЕЗОПАСНО|ПОД НАБЛЮДЕНИЕМ",',
+    '"flags":[{"code":"","title":"","explanation":""}],',
+    '"citations":["короткие выписки из данных"],',
+    '"basic_info_lines":["2-4 строки фактов"],',
+    '"conclusion_reasons":["1-3 причины вывода"]}',
+    '',
+    'Данные:',
+    JSON.stringify(payload).slice(0, 28000),
+  ].join('\n');
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      signal: ctl.signal,
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': anthropicApiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: process.env.KRO_CLAUDE_MODEL || 'claude-3-5-haiku-20241022',
+        max_tokens: 1200,
+        temperature: 0.2,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    const j = await r.json();
+    const txt = (j && j.content && j.content[0] && j.content[0].text) ? String(j.content[0].text) : '';
+    return kroExtractJsonObjectFromText(txt);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 function kroCheckQueueRequestId(channelKey) {
   return `krochk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}_${channelKey}`;
 }
@@ -6063,34 +6165,349 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     return res.status(400).json({ error: 'bad_request', message_ru: 'Передайте username канала (t.me/username или @username).' });
   }
 
+  const queueMode = ['1', 'true', 'yes'].includes(String((req.body && req.body.sheet_queue) || '').toLowerCase());
+  if (queueMode) {
+    try {
+      const client = await getKroSheetsClient();
+      if (!client || !kroSheetId) {
+        return res.status(503).json({ error: 'sheets_unavailable', message_ru: 'Google Sheets недоступен.' });
+      }
+      const requestId = kroCheckQueueRequestId(key);
+      const username = `@${key}`;
+      const nowIso = new Date().toISOString();
+      await client.sheets.spreadsheets.values.append({
+        spreadsheetId: kroSheetId,
+        range: kroCheckQueueRange,
+        valueInputOption: 'RAW',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: {
+          values: [[requestId, username, nowIso, 'pending', '', '', '']],
+        },
+      });
+      return res.status(202).json({
+        queued: true,
+        queue_status: 'pending',
+        request_id: requestId,
+        username,
+        message: 'Задача поставлена в очередь, анализ запущен.',
+      });
+    } catch (e) {
+      console.error('KRO analyze-channel queue error:', e);
+      return res.status(500).json({ error: 'internal_error', message_ru: 'Не удалось поставить задачу в очередь анализа.' });
+    }
+  }
+
+  const t0 = Date.now();
+  const deadline = t0 + 45000;
+  const channelDisplay = normalized.startsWith('@') ? normalized : `@${key}`;
+  const channelForOnce = normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${normalized}`;
+  const minPublicSnippets = 2;
+  const minTelethonPosts = 1;
+
+  const buildExternalDisclaimer = () =>
+    'Анализ по внешним источникам, живая лента недоступна.';
+
   try {
-    const client = await getKroSheetsClient();
-    if (!client || !kroSheetId) {
+    const sheetsClient = await getKroSheetsClient();
+    if (!sheetsClient || !kroSheetId) {
       return res.status(503).json({ error: 'sheets_unavailable', message_ru: 'Google Sheets недоступен.' });
     }
-    const requestId = kroCheckQueueRequestId(key);
-    const username = `@${key}`;
-    const nowIso = new Date().toISOString();
-    await client.sheets.spreadsheets.values.append({
-      spreadsheetId: kroSheetId,
-      range: kroCheckQueueRange,
-      valueInputOption: 'RAW',
-      insertDataOption: 'INSERT_ROWS',
-      requestBody: {
-        values: [[requestId, username, nowIso, 'pending', '', '', '']],
-      },
-    });
 
-    return res.status(202).json({
-      queued: true,
-      queue_status: 'pending',
-      request_id: requestId,
-      username,
-      message: 'Задача поставлена в очередь, анализ запущен.',
+    const rawRows = await kroFetchScamBaseValuesCached(sheetsClient);
+    const scamRows = rawRows
+      .slice(1)
+      .map(parseScamBaseRow)
+      .filter((r) => r.username && channelMatchKey(r.username) === key)
+      .map(enrichScamBaseContentAnalysisForMonitor);
+    let latestProfile = null;
+    if (scamRows.length) {
+      latestProfile = scamRows.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
+    }
+    const watchRow = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
+    const displayCh = (latestProfile && latestProfile.username) ? latestProfile.username : channelDisplay;
+    const reports = await getAllReportsForChannel(sheetsClient, displayCh);
+
+    const pubBudget = Math.min(15000, Math.max(0, deadline - Date.now() - 500));
+    const publicSnap =
+      pubBudget > 1200 ? await kroFetchTelegramPublicSnapshot(channelForOnce, { timeoutMs: pubBudget }) : null;
+
+    if (publicSnap && Array.isArray(publicSnap.snippets) && publicSnap.snippets.length >= minPublicSnippets) {
+      const signal = kroCollectSuspiciousFlagsFromTexts(publicSnap.snippets);
+      const risk = Number.isFinite(signal.risk) ? signal.risk : 15;
+      const statusObj = kroMapRiskToUiStatus(risk);
+      let conclusionStatus = KRO_V0_STATUS.clean;
+      if (risk >= 70) conclusionStatus = KRO_V0_STATUS.scam;
+      else if (risk >= 40) conclusionStatus = KRO_V0_STATUS.risk;
+      else conclusionStatus = KRO_V0_STATUS.clean;
+      let analysis = {
+        v: 0,
+        channel_key: key,
+        generated_at: new Date().toISOString(),
+        sources: ['публичная лента t.me/s', 'жалобы и мониторинг'],
+        basic_info: [
+          `Канал: ${channelDisplay}`,
+          `Публичный срез: ${publicSnap.snippets.length} фрагментов постов (лимит чтения до 15 с).`,
+        ],
+        content_behavior: signal.examples.length ? signal.examples : publicSnap.snippets.slice(0, 4),
+        external_reports: reports.length
+          ? [`Отчёты пользователей: ${reports.length} записей в базе.`]
+          : ['В принятых жалобах по этому каналу записей нет.'],
+        ties_risk_factors: signal.flags.length
+          ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
+          : ['Явных маркеров риска в выборке не выделено.'],
+        conclusion: {
+          status: conclusionStatus,
+          reasons: [`Поверхностный анализ по публичным фрагментам: ${statusObj.status}.`],
+        },
+      };
+      if (latestProfile) {
+        const merged = kroV0BuildAnalysisFromScamBaseProfile(latestProfile, { channel_key: key });
+        analysis.basic_info = [...analysis.basic_info, ...(merged.basic_info || []).slice(0, 2)].slice(0, 6);
+        analysis.external_reports = [...(merged.external_reports || []), ...analysis.external_reports].slice(0, 4);
+      }
+      if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
+
+      const postsRead = publicSnap.snippets.length;
+      return res.status(200).json({
+        queue_status: 'done_sync',
+        analysis,
+        status: statusObj.status,
+        status_code: statusObj.code,
+        risk_index: Math.max(0, Math.min(100, Math.round(risk))),
+        risk_index_max: 100,
+        posts_read: postsRead,
+        period_days: 7,
+        read_path: 'public_snapshot',
+        flags: signal.flags,
+        citations: signal.examples.slice(0, 5),
+        live_evidence: {
+          live_pass: true,
+          mode: 'public_snapshot',
+          reason: `Прочитано фрагментов публичной ленты: ${postsRead} (лимит 15 с).`,
+          sample_posts: publicSnap.snippets.slice(0, 3),
+          posts_fetched: postsRead,
+          analysis_window_days: 7,
+        },
+        live_metrics: {
+          posts_fetched: postsRead,
+          analysis_window_days: 7,
+          home_quick_live: true,
+          complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
+        },
+        analysis_basis: {
+          label: 'Публичная лента t.me/s + данные сервиса',
+          sources_used: ['t.me/s', 'scam_base', 'channels_watch', 'reports'],
+          read_path: 'public_snapshot',
+          posts_read: postsRead,
+          elapsed_ms: Date.now() - t0,
+        },
+        message: `Готово за ${Math.round((Date.now() - t0) / 1000)} с: публичный срез + база.`,
+      });
+    }
+
+    const telBudget = Math.min(20000, Math.max(0, deadline - Date.now() - 800));
+    if (telBudget >= 5000) {
+      const once = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 30, timeoutMs: telBudget });
+      const parsed = kroNormalizeCheckOnceForAnalysis(once);
+      const postsRead = Number(parsed.posts_fetched || 0);
+      const sample = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
+      const enough =
+        parsed._check_once_ok === true &&
+        parsed.found === true &&
+        postsRead >= minTelethonPosts &&
+        sample.length >= 1;
+      if (enough) {
+        const analysis = kroV0BuildAnalysisFromLiveParsed(parsed, key);
+        if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
+        const rawRisk = Number(parsed.risk_score);
+        const signal = kroCollectSuspiciousFlagsFromTexts(sample);
+        const risk = Number.isFinite(rawRisk) ? rawRisk : signal.risk;
+        const statusObj = kroMapRiskToUiStatus(risk);
+        return res.status(200).json({
+          queue_status: 'done_sync',
+          analysis,
+          status: statusObj.status,
+          status_code: statusObj.code,
+          risk_index: Number.isFinite(risk) ? Math.max(0, Math.min(100, Math.round(risk))) : null,
+          risk_index_max: 100,
+          posts_read: postsRead,
+          period_days: Number(parsed.analysis_window_days || 30),
+          read_path: 'telethon',
+          flags: signal.flags,
+          citations: signal.examples.length ? signal.examples : sample.slice(0, 5),
+          live_evidence: {
+            live_pass: true,
+            mode: 'telethon',
+            reason: `Telethon: прочитано постов ${postsRead} (лимит ${Math.round(telBudget / 1000)} с).`,
+            sample_posts: sample.slice(0, 3),
+            posts_fetched: postsRead,
+            analysis_window_days: Number(parsed.analysis_window_days || 30),
+          },
+          live_metrics: {
+            posts_fetched: postsRead,
+            analysis_window_days: Number(parsed.analysis_window_days || 30),
+            home_quick_live: true,
+            complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
+          },
+          analysis_basis: {
+            label: 'Telethon + данные сервиса',
+            sources_used: ['telethon', 'scam_base', 'channels_watch', 'reports'],
+            read_path: 'telethon',
+            posts_read: postsRead,
+            elapsed_ms: Date.now() - t0,
+          },
+          message: `Готово за ${Math.round((Date.now() - t0) / 1000)} с: Telethon + база.`,
+        });
+      }
+    }
+
+    let analysis;
+    if (latestProfile) {
+      analysis = kroV0BuildAnalysisFromScamBaseProfile(latestProfile, { channel_key: key });
+    } else {
+      analysis = {
+        v: 0,
+        channel_key: key,
+        generated_at: new Date().toISOString(),
+        sources: ['жалобы и мониторинг'],
+        basic_info: [`Канал: ${channelDisplay}`, 'В scam_base записей по этому username нет.'],
+        content_behavior: [],
+        external_reports: [],
+        ties_risk_factors: [],
+        conclusion: {
+          status: KRO_V0_STATUS.watch,
+          reasons: ['Мало данных: лента не прочитана, в базе канала нет.'],
+        },
+      };
+    }
+    if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
+    if (reports.length) {
+      const lines = reports.slice(0, 6).map((r) => {
+        const d = (r.date || '').trim();
+        const desc = (r.description || '').trim().slice(0, 160);
+        return d ? `${d}: ${desc}` : desc;
+      });
+      analysis.external_reports = [...lines, ...(analysis.external_reports || [])].slice(0, 5);
+    }
+
+    analysis.basic_info = [buildExternalDisclaimer(), ...(analysis.basic_info || [])].slice(0, 7);
+    analysis.sources = ['внешние источники (без живой ленты)', ...(analysis.sources || [])].slice(0, 5);
+
+    const siteBudget = Math.max(1500, deadline - Date.now() - 2500);
+    const siteMentions = await kroFetchSiteMentionsByUsername(key, siteBudget);
+    const claudePayload = {
+      channel: channelDisplay,
+      scam_base: latestProfile
+        ? {
+            status: latestProfile.status,
+            verdict: latestProfile.verdict,
+            risk_score: latestProfile.risk_score,
+            complaints: latestProfile.complaints,
+            source_primary: latestProfile.source_primary,
+          }
+        : null,
+      channels_watch: watchRow
+        ? {
+            status: watchRow.status,
+            activity_summary: watchRow.activity_summary,
+            reviews_summary: watchRow.reviews_summary,
+            status_reason: watchRow.status_reason,
+          }
+        : null,
+      reports: reports.slice(0, 18).map((r) => ({
+        date: r.date,
+        description: (r.description || '').slice(0, 400),
+        status: r.status,
+        source: r.source,
+      })),
+      site_mentions: siteMentions,
+      partial_public_snippets: publicSnap && Array.isArray(publicSnap.snippets) ? publicSnap.snippets.slice(0, 3) : [],
+    };
+
+    const claudeRemain = Math.max(1500, deadline - Date.now() - 400);
+    const claudeJson = await kroAnalyzeChannelWithClaudeFast(claudePayload, claudeRemain);
+    let riskIndex = latestProfile ? computeKroRiskIndex(latestProfile, reports) : 18;
+    let flagsOut = [];
+    let citationsOut = [];
+    if (claudeJson && typeof claudeJson === 'object') {
+      const ri = Number(claudeJson.risk_index);
+      if (Number.isFinite(ri)) riskIndex = Math.max(0, Math.min(100, Math.round(ri)));
+      if (Array.isArray(claudeJson.flags)) flagsOut = claudeJson.flags.filter((x) => x && typeof x === 'object');
+      if (Array.isArray(claudeJson.citations)) citationsOut = claudeJson.citations.map((x) => String(x || '').trim()).filter(Boolean);
+      if (Array.isArray(claudeJson.basic_info_lines)) {
+        const extra = claudeJson.basic_info_lines.map((x) => String(x || '').trim()).filter(Boolean);
+        analysis.basic_info = [...(analysis.basic_info || []), ...extra].slice(0, 8);
+      }
+      if (Array.isArray(claudeJson.conclusion_reasons) && claudeJson.conclusion_reasons.length) {
+        analysis.conclusion = analysis.conclusion || { status: KRO_V0_STATUS.watch, reasons: [] };
+        analysis.conclusion.reasons = [
+          ...(claudeJson.conclusion_reasons || []).map((x) => String(x || '').trim()).filter(Boolean),
+          ...(analysis.conclusion.reasons || []),
+        ].slice(0, KRO_V0_MAX_CONCLUSION_REASONS);
+      }
+      analysis.conclusion.status = kroMapRuRiskLabelToConclusion(claudeJson.status_ru);
+      if (citationsOut.length) {
+        analysis.content_behavior = [...citationsOut.slice(0, 4), ...(analysis.content_behavior || [])].slice(0, 6);
+      }
+      if (flagsOut.length) {
+        analysis.ties_risk_factors = [
+          ...flagsOut.map((f) => `${f.title || f.code || 'флаг'}: ${f.explanation || ''}`.trim()),
+          ...(analysis.ties_risk_factors || []),
+        ].slice(0, 6);
+      }
+    } else if (!anthropicApiKey) {
+      analysis.basic_info.push('Claude API не настроен (ANTHROPIC_API_KEY) — показан только слой базы и мониторинга.');
+    }
+
+    if (!claudeJson || typeof claudeJson !== 'object') {
+      if (riskIndex >= 70) analysis.conclusion.status = KRO_V0_STATUS.scam;
+      else if (riskIndex >= 40) analysis.conclusion.status = KRO_V0_STATUS.risk;
+      else if (riskIndex < 20 && latestProfile) analysis.conclusion.status = KRO_V0_STATUS.clean;
+    }
+
+    const statusObj = kroMapRiskToUiStatus(riskIndex);
+
+    return res.status(200).json({
+      queue_status: 'done_sync',
+      analysis,
+      status: statusObj.status,
+      status_code: statusObj.code,
+      risk_index: riskIndex,
+      risk_index_max: 100,
+      posts_read: 0,
+      period_days: null,
+      read_path: 'external_sources',
+      flags: flagsOut,
+      citations: citationsOut,
+      live_evidence: {
+        live_pass: false,
+        mode: 'external_sources',
+        reason:
+          'Живая лента t.me/Telethon за отведённые 45 с не дала достаточно постов; вывод по scam_base, мониторингу, жалобам и (если доступен) Claude.',
+        sample_posts: publicSnap && publicSnap.snippets ? publicSnap.snippets.slice(0, 2) : [],
+        posts_fetched: 0,
+        analysis_window_days: null,
+      },
+      live_metrics: {
+        posts_fetched: 0,
+        analysis_window_days: null,
+        home_quick_live: false,
+        complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
+      },
+      analysis_basis: {
+        label: buildExternalDisclaimer(),
+        sources_used: anthropicApiKey
+          ? ['scam_base', 'channels_watch', 'reports', 'site_search', 'claude']
+          : ['scam_base', 'channels_watch', 'reports', 'site_search'],
+        read_path: 'external_sources',
+        posts_read: 0,
+        elapsed_ms: Date.now() - t0,
+      },
+      message: `Готово за ${Math.round((Date.now() - t0) / 1000)} с: внешние источники (лента недоступна).`,
     });
   } catch (e) {
-    console.error('KRO analyze-channel queue error:', e);
-    return res.status(500).json({ error: 'internal_error', message_ru: 'Не удалось поставить задачу в очередь анализа.' });
+    console.error('KRO analyze-channel sync error:', e);
+    return res.status(500).json({ error: 'internal_error', message_ru: 'Не удалось выполнить быстрый анализ канала.' });
   }
 });
 

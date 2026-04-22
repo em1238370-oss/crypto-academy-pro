@@ -1158,8 +1158,9 @@
                }
                var __kroProgressTimer = null;
                var __kroElapsedTimer = null;
+               var __kroExternalNoteTimer = null;
                var __kroCheckBusyStartedAt = 0;
-               var __KRO_HOME_FETCH_MS = 450000;
+               var __KRO_HOME_FETCH_MS = 50000;
                function __kroPad2(n) {
                    n = Math.floor(Number(n)) || 0;
                    return (n < 10 ? '0' : '') + n;
@@ -1171,15 +1172,15 @@
                    return __kroPad2(m) + ':' + __kroPad2(r);
                }
                var __kroProgressHuman = [
-                   'Канал распознан — запрашиваем сводку по жалобам и мониторингу именно для него.',
-                   'Сопоставляем жалобы и сигналы мониторинга с этим каналом.',
-                   'При доступе Telegram читаем публичную ленту (ориентир до ~3 мес.) — это самый долгий шаг.',
-                   'Собираем разделы отчёта и короткий вывод по вашему запросу.',
+                   'Канал распознан — подтягиваем scam_base, мониторинг и жалобы.',
+                   'Читаем публичную ленту t.me/s (лимит до 15 секунд).',
+                   'Если лента пуста — пробуем Telethon (до 20 секунд).',
+                   'Собираем отчёт; если постов нет — Claude и другие источники (всего до ~45 с).',
                ];
                function __kroProgressIdxFromElapsed(ms) {
-                   if (ms < 12000) return 0;
-                   if (ms < 35000) return 1;
-                   if (ms < 95000) return 2;
+                   if (ms < 8000) return 0;
+                   if (ms < 18000) return 1;
+                   if (ms < 38000) return 2;
                    return 3;
                }
                function __kroSetProgressSteps(activeIdx) {
@@ -1210,6 +1211,10 @@
                        clearInterval(__kroElapsedTimer);
                        __kroElapsedTimer = null;
                    }
+                   if (__kroExternalNoteTimer) {
+                       clearTimeout(__kroExternalNoteTimer);
+                       __kroExternalNoteTimer = null;
+                   }
                    __kroCheckBusyStartedAt = Date.now();
                    var elapsedEl = document.getElementById('kro-check-elapsed');
                    if (elapsedEl) elapsedEl.textContent = '0:00';
@@ -1220,8 +1225,15 @@
                        if (cap) cap.textContent = 'Идёт проверка канала · прошло';
                        if (checkProgressTitle) {
                            checkProgressTitle.textContent =
-                               'Проверяем канал ' + displayLabel + ' — жалобы, мониторинг и при доступности публичная лента (до ~3 мес.); затем вывод ниже.';
+                               'Проверяем ' + displayLabel + ': публичная лента до 15 с, Telethon до 20 с, полный ответ не дольше ~45 с.';
                        }
+                       __kroExternalNoteTimer = setTimeout(function () {
+                           var note = document.getElementById('kro-check-progress-note');
+                           if (note) {
+                               note.textContent =
+                                   'Telegram лента недоступна или ещё читается — при необходимости анализируем по другим источникам (база, жалобы, Claude)…';
+                           }
+                       }, 30000);
                        __kroSetProgressSteps(0);
                        __kroElapsedTimer = setInterval(function () {
                            var ms = Date.now() - __kroCheckBusyStartedAt;
@@ -1245,6 +1257,10 @@
                    if (__kroElapsedTimer) {
                        clearInterval(__kroElapsedTimer);
                        __kroElapsedTimer = null;
+                   }
+                   if (__kroExternalNoteTimer) {
+                       clearTimeout(__kroExternalNoteTimer);
+                       __kroExternalNoteTimer = null;
                    }
                    if (checkProgress) {
                        checkProgress.classList.add('hidden');
@@ -1319,7 +1335,7 @@
                    demo.classList.remove('hidden');
                    demo.innerHTML = '<a class="kro-inline-deep-demo-link" href="' + esc(demoUrl) + '">Пример: как выглядит страница с глубоким отчётом (канал Telegram)</a>';
                }
-              var KRO_FAST_BUILD_MARKER = 'fast-build-2026-04-22-v3';
+              var KRO_FAST_BUILD_MARKER = 'fast-build-2026-04-22-v4';
               function fillInlineReport(data, queryU, displayLabel, checkStartedAt) {
                    var doneBanner = document.getElementById('kro-inline-done-banner');
                   var liveGateEl = document.getElementById('kro-inline-live-gate');
@@ -1592,6 +1608,13 @@
                           inlineReport.classList.remove('hidden');
                           inlineReport.hidden = false;
                       }
+                      var wrapScroll = document.getElementById('kro-f1-cta-check-wrap');
+                      try {
+                          if (wrapScroll) wrapScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      } catch (eW) { /* ignore */ }
+                      try {
+                          if (inlineReport) inlineReport.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                      } catch (eScroll) { /* ignore */ }
                   };
 
                   var pollResult = function (requestId, attempt) {
@@ -1637,27 +1660,54 @@
                           });
                   };
 
-                  fetch(base + '/api/kro/analyze-channel', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      cache: 'no-store',
-                      body: JSON.stringify({ username: queryU })
-                  })
-                      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+                  var fetchOpts = { method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store', body: JSON.stringify({ username: queryU }) };
+                  try {
+                      if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+                          fetchOpts.signal = AbortSignal.timeout(__KRO_HOME_FETCH_MS);
+                      }
+                  } catch (eSig) { /* ignore */ }
+
+                  fetch(base + '/api/kro/analyze-channel', fetchOpts)
+                      .then(function (res) {
+                          return res.text().then(function (text) {
+                              var data = null;
+                              try {
+                                  data = text ? JSON.parse(text) : null;
+                              } catch (eJ) {
+                                  throw new Error('bad_json');
+                              }
+                              return { ok: res.ok, status: res.status, data: data };
+                          });
+                      })
                       .then(function (pack) {
-                          if (!pack.ok || !pack.data || !pack.data.request_id) {
-                              throw new Error((pack.data && (pack.data.message_ru || pack.data.message || pack.data.error)) || 'queue_failed');
+                          if (pack.status === 202 && pack.data && pack.data.request_id) {
+                              checkResult.textContent = pack.data.message || 'Задача в очереди GitHub Actions…';
+                              checkResult.className = 'kro-check-result';
+                              checkResult.classList.remove('hidden');
+                              pollResult(pack.data.request_id, 0);
+                              return;
                           }
-                          checkResult.textContent = pack.data.message || 'Задача поставлена в очередь, ждём результат…';
-                          checkResult.className = 'kro-check-result';
-                          checkResult.classList.remove('hidden');
-                          pollResult(pack.data.request_id, 0);
+                          if (!pack.ok || !pack.data || !pack.data.analysis) {
+                              var srvMsg = '';
+                              if (pack.data && typeof pack.data === 'object') {
+                                  if (pack.data.message_ru) srvMsg = String(pack.data.message_ru).trim();
+                                  else if (pack.data.message) srvMsg = String(pack.data.message).trim();
+                                  else if (pack.data.error) srvMsg = String(pack.data.error).trim();
+                              }
+                              var httpErr = new Error('http_' + pack.status);
+                              httpErr.serverMessage = srvMsg;
+                              throw httpErr;
+                          }
+                          renderHomeCheckSuccess(pack.data);
                       })
                       .catch(function (err) {
                           window.__kroHomeCheckT0 = null;
                           hideCheckBusy();
-                          var msg = (err && err.message) ? String(err.message) : 'Ошибка постановки задачи в очередь.';
-                          checkResult.innerHTML = '<span class="kro-check-result-block">' + esc(msg) + '</span>' +
+                          var m = mapHomeFetchError(err);
+                          checkResult.innerHTML = '<span class="kro-check-result-block">' + esc(m.title) + '</span>' +
+                              m.paragraphs.map(function (p) {
+                                  return '<span class="kro-check-result-block">' + esc(p) + '</span>';
+                              }).join('') +
                               '<button type="button" class="kro-report-submit kro-check-retry" id="kro-check-retry">Повторить</button>';
                           checkResult.classList.remove('hidden');
                           checkResult.className = 'kro-check-result';
