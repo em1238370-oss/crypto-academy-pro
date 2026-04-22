@@ -4311,6 +4311,12 @@ async function kroFetchTelegramPublicSnapshot(channelRef) {
 function kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, snap) {
   if (!analysis || !snap) return;
   const base = Array.isArray(analysis.basic_info) ? analysis.basic_info : [];
+  const contentBase = Array.isArray(analysis.content_behavior) ? analysis.content_behavior : [];
+  const extBase = Array.isArray(analysis.external_reports) ? analysis.external_reports : [];
+  const tiesBase = Array.isArray(analysis.ties_risk_factors) ? analysis.ties_risk_factors : [];
+  const c = analysis.conclusion && typeof analysis.conclusion === 'object'
+    ? analysis.conclusion
+    : { status: KRO_V0_STATUS.watch, reasons: [] };
   const lines = [];
   lines.push(
     `Живой поверхностный вход в канал t.me/${snap.slug}: получили публичную страницу канала (без deep‑разбора ленты).`
@@ -4322,6 +4328,56 @@ function kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, snap) {
     lines.push(`Последние публичные сообщения: ${snap.snippets.length} фрагм. (поверхностный срез).`);
   }
   analysis.basic_info = [...lines, ...base].slice(0, 12);
+
+  const snippets = Array.isArray(snap.snippets)
+    ? snap.snippets.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 5)
+    : [];
+  const joined = snippets.join(' ').toLowerCase();
+  const freqSignals = ['ежеднев', 'каждый день', 'каждый час', 'daily', 'signal', 'сигнал'];
+  const promoSignals = ['vip', 'вип', 'подписк', 'доступ', 'платн', 'оплат', 'курс', 'обучен'];
+  const pressureSignals = ['срочно', 'успей', 'последний шанс', 'last chance', 'ограничен', 'limited'];
+
+  const contentLines = [];
+  if (snippets.length) {
+    contentLines.push(`По текстам последних постов видно тематику канала: ${snippets.slice(0, 2).map((x) => `«${x.slice(0, 90)}${x.length > 90 ? '…' : ''}»`).join('; ')}.`);
+  }
+  if (freqSignals.some((k) => joined.includes(k))) {
+    contentLines.push('В сообщениях есть признаки регулярной сигнальной/торговой подачи контента.');
+  }
+  if (promoSignals.some((k) => joined.includes(k))) {
+    contentLines.push('В текстах встречаются коммерческие маркеры (VIP/подписка/платный доступ).');
+  }
+  if (pressureSignals.some((k) => joined.includes(k))) {
+    contentLines.push('Есть элементы давления/FOMO в формулировках постов (срочность, ограниченность).');
+  }
+  if (!contentLines.length && snippets.length) {
+    contentLines.push('Снята базовая выборка текстов сообщений; выраженных агрессивных маркеров в этих фрагментах не найдено.');
+  }
+  analysis.content_behavior = [...contentLines, ...contentBase].slice(0, 8);
+
+  const extLines = [];
+  if (snap.subscribers) extLines.push(`Публичная оценка аудитории: ~${snap.subscribers} подписчиков.`);
+  if (snap.fetch_attempt != null) extLines.push(`Публичная лента прочитана со стабилизацией запроса (попытка ${snap.fetch_attempt}).`);
+  analysis.external_reports = [...extLines, ...extBase].slice(0, 6);
+
+  const linkSignals = (joined.match(/(?:t\.me\/|@)[a-z0-9_]{4,32}/gi) || []).slice(0, 4);
+  if (linkSignals.length) {
+    analysis.ties_risk_factors = [
+      `В текстах есть упоминания других Telegram-каналов/ников: ${linkSignals.join(', ')}.`,
+      ...tiesBase,
+    ].slice(0, 6);
+  }
+
+  const reasons = Array.isArray(c.reasons) ? c.reasons : [];
+  if (snippets.length) {
+    reasons.unshift('Вывод опирается на реально прочитанные публичные тексты постов этого канала.');
+  }
+  analysis.conclusion = {
+    ...c,
+    status: c.status || KRO_V0_STATUS.watch,
+    reasons: reasons.slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
+  };
+
   const src = Array.isArray(analysis.sources) ? analysis.sources : [];
   if (!src.some((x) => /публичн.*telegram/i.test(String(x)))) {
     analysis.sources = ['публичная страница Telegram (быстрый срез)', ...src];
