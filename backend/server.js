@@ -4158,6 +4158,98 @@ function kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeParsed, channelKe
   }
 }
 
+
+function kroExtractTelegramPublicSlug(channelRef) {
+  const raw = String(channelRef || '').trim();
+  if (!raw) return '';
+  const mUrl = raw.match(/(?:https?:\/\/)?t\.me\/(?:s\/)?([^\/?#\s]+)/i);
+  if (mUrl && mUrl[1]) return String(mUrl[1]).replace(/^@+/, '').trim();
+  return raw.replace(/^@+/, '').replace(/^t\.me\//i, '').replace(/^s\//i, '').trim();
+}
+
+function kroStripHtmlToText(html) {
+  const s = String(html || '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>');
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+async function kroFetchTelegramPublicSnapshot(channelRef) {
+  const slug = kroExtractTelegramPublicSlug(channelRef);
+  if (!slug) return null;
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 20000);
+  try {
+    const r = await fetch(`https://t.me/s/${encodeURIComponent(slug)}`, {
+      signal: ctl.signal,
+      headers: {
+        'user-agent': 'Mozilla/5.0 (compatible; KRO-Monitor/1.0; +https://crypto-academy-pro.onrender.com)',
+      },
+    });
+    if (!r.ok) return null;
+    const html = await r.text();
+    if (!html || html.length < 100) return null;
+
+    const titleM = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) ||
+      html.match(/<title>([^<]+)<\/title>/i);
+    const title = titleM ? kroStripHtmlToText(titleM[1]).slice(0, 120) : '';
+
+    const descrM = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
+    const descr = descrM ? kroStripHtmlToText(descrM[1]).slice(0, 220) : '';
+
+    const subM = html.match(/([\d\s.,]{2,})\s*(subscribers?|подписчик\w*)/i);
+    const subscribers = subM ? kroStripHtmlToText(subM[1]).replace(/\s+/g, ' ').trim() : '';
+
+    const postMatches = [...html.matchAll(/<div class="tgme_widget_message_text[^"]*">([\s\S]*?)<\/div>/gi)];
+    const snippets = postMatches
+      .slice(0, 3)
+      .map((m) => kroStripHtmlToText(m[1]))
+      .filter(Boolean)
+      .map((x) => (x.length > 220 ? `${x.slice(0, 217)}...` : x));
+
+    if (!title && !descr && !subscribers && !snippets.length) return null;
+    return {
+      slug,
+      title,
+      description: descr,
+      subscribers,
+      snippets,
+      fetched_at: new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, snap) {
+  if (!analysis || !snap) return;
+  const base = Array.isArray(analysis.basic_info) ? analysis.basic_info : [];
+  const lines = [];
+  lines.push(
+    `Живой поверхностный вход в канал t.me/${snap.slug}: получили публичную страницу канала (без deep‑разбора ленты).`
+  );
+  if (snap.title) lines.push(`Название канала: ${snap.title}.`);
+  if (snap.subscribers) lines.push(`Подписчики (публично): ~${snap.subscribers}.`);
+  if (snap.description) lines.push(`Описание: ${snap.description}`);
+  if (snap.snippets && snap.snippets.length) {
+    lines.push(`Последние публичные сообщения: ${snap.snippets.length} фрагм. (поверхностный срез).`);
+  }
+  analysis.basic_info = [...lines, ...base].slice(0, 12);
+  const src = Array.isArray(analysis.sources) ? analysis.sources : [];
+  if (!src.some((x) => /публичн.*telegram/i.test(String(x)))) {
+    analysis.sources = ['публичная страница Telegram (быстрый срез)', ...src];
+  }
+}
+
 function kroRunCheckOnce(channel, opts) {
   const readOnly = !!(opts && opts.readOnly);
   const sessionString = opts && opts.telegramSessionString ? String(opts.telegramSessionString) : '';
@@ -6019,6 +6111,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     }
 
     let homeQuickParsed = null;
+    let homeQuickPublicSnapshot = null;
     let homeQuickLiveState = 'not_requested';
     const homeQuickLiveWant =
       !deepMode &&
@@ -6050,6 +6143,13 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         }
       }
     }
+    if (homeQuickLiveWant && !homeQuickParsed) {
+      homeQuickPublicSnapshot = await kroFetchTelegramPublicSnapshot(channelForOnce);
+      if (homeQuickPublicSnapshot) {
+        homeQuickLiveState = "public_snapshot";
+      }
+    }
+
     const parsedForLiveMetrics =
       homeQuickParsed && homeQuickParsed._check_once_ok === true ? homeQuickParsed : parsedOnce;
     let liveMetrics = kroChannelProfileLiveMetrics(parsedForLiveMetrics, {
@@ -6065,7 +6165,14 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       liveMetrics = { ...liveMetrics, home_quick_live: true, home_quick_window_days: 90 };
     }
     if (homeQuickLiveWant) {
-      liveMetrics = { ...liveMetrics, home_quick_live_state: homeQuickLiveState };
+      liveMetrics = {
+        ...liveMetrics,
+        home_quick_live_state: homeQuickLiveState,
+        home_quick_public_snapshot: homeQuickPublicSnapshot ? true : false,
+        home_quick_snapshot_posts: homeQuickPublicSnapshot && Array.isArray(homeQuickPublicSnapshot.snippets)
+          ? homeQuickPublicSnapshot.snippets.length
+          : null,
+      };
     }
 
     const deepTelegramBlocked = deepMode && (deepStatus === 'rate_limited' || deepStatus === 'skipped_flood');
@@ -6136,6 +6243,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       }
       if (analysis._kro_watch_baked) delete analysis._kro_watch_baked;
       if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
+      if (homeQuickPublicSnapshot) kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, homeQuickPublicSnapshot);
       return res.status(200).json({
         mode: responseMode,
         byo_deep: byoDeepActive,
@@ -6213,6 +6321,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       const watchRowCp1 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
       if (watchRowCp1) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp1);
       if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
+      if (homeQuickPublicSnapshot) kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, homeQuickPublicSnapshot);
       return res.status(200).json({
         mode: responseMode,
         byo_deep: byoDeepActive,
