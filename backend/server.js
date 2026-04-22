@@ -6162,12 +6162,9 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     }
 
     let homeQuickParsed = null;
-    let homeQuickPublicSnapshot = null;
     let homeQuickLiveState = 'not_requested';
     const homeQuickLiveWant =
-      !deepMode &&
-      ['1', 'true', 'yes'].includes(String(req.query.home_quick_live ?? '').trim().toLowerCase()) &&
-      process.env.KRO_HOME_QUICK_LIVE !== '0';
+      !deepMode && process.env.KRO_HOME_QUICK_LIVE !== '0';
     if (homeQuickLiveWant) {
       if (floodState.active) {
         homeQuickLiveState = 'skipped_flood';
@@ -6194,19 +6191,12 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         }
       }
     }
-    if (homeQuickLiveWant && !homeQuickParsed) {
-      homeQuickPublicSnapshot = await kroFetchTelegramPublicSnapshot(channelForOnce);
-      if (homeQuickPublicSnapshot) {
-        homeQuickLiveState = "public_snapshot";
-      }
-    }
-
     // Жёсткий режим для главной: только LIVE-проход; иначе ошибка без отчёта.
     if (homeQuickLiveWant && !(homeQuickParsed && homeQuickParsed._check_once_ok === true)) {
       const evidenceFail = kroBuildLiveEvidence(null, homeQuickLiveState, null);
       const msgByState = {
         public_snapshot:
-          'Живой анализ не выполнен: получен только публичный срез страницы канала. Для этого сценария отчёт без LIVE не выдаётся.',
+          'Живой анализ не выполнен: публика без реального чтения ленты недопустима в строгом режиме.',
         rate_limited:
           'Живой анализ не выполнен из-за лимита Telegram/FLOOD_WAIT. Повторите позже — отчёт будет только после реального чтения ленты.',
         skipped_flood:
@@ -6251,16 +6241,12 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       liveMetrics = {
         ...liveMetrics,
         home_quick_live_state: homeQuickLiveState,
-        home_quick_public_snapshot: homeQuickPublicSnapshot ? true : false,
-        home_quick_snapshot_posts: homeQuickPublicSnapshot && Array.isArray(homeQuickPublicSnapshot.snippets)
-          ? homeQuickPublicSnapshot.snippets.length
-          : null,
       };
     }
     const liveEvidence = kroBuildLiveEvidence(
       parsedForLiveMetrics,
       homeQuickLiveWant ? homeQuickLiveState : null,
-      homeQuickPublicSnapshot,
+      null,
     );
 
     const deepTelegramBlocked = deepMode && (deepStatus === 'rate_limited' || deepStatus === 'skipped_flood');
@@ -6331,7 +6317,6 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       }
       if (analysis._kro_watch_baked) delete analysis._kro_watch_baked;
       if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
-      if (homeQuickPublicSnapshot) kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, homeQuickPublicSnapshot);
       return res.status(200).json({
         mode: responseMode,
         byo_deep: byoDeepActive,
@@ -6410,7 +6395,6 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       const watchRowCp1 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
       if (watchRowCp1) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp1);
       if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
-      if (homeQuickPublicSnapshot) kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, homeQuickPublicSnapshot);
       return res.status(200).json({
         mode: responseMode,
         byo_deep: byoDeepActive,
