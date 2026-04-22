@@ -97,7 +97,6 @@ app.use(
 );
 
 const mistralKey = process.env.MISTRAL_API_KEY;
-const anthropicKey = process.env.ANTHROPIC_API_KEY;
 const cryptocloudApiKey = process.env.CRYPTOCLOUD_API_KEY;
 const cryptocloudShopId = process.env.CRYPTOCLOUD_SHOP_ID;
 const cloudpaymentsPublicId = process.env.CLOUDPAYMENTS_PUBLIC_ID;
@@ -121,9 +120,6 @@ const theNewsApiKey = process.env.THENEWSAPI_KEY;
 
 if (!mistralKey) {
  console.warn('⚠️  MISTRAL_API_KEY is not set. AI responses will fail until it is provided.');
-}
-if (!anthropicKey) {
- console.warn('⚠️  ANTHROPIC_API_KEY is not set. Claude channel analysis will fallback to rule-based output.');
 }
 if (!cryptocloudApiKey || !cryptocloudShopId) {
  console.warn('⚠️  CryptoCloud is not fully configured. Crypto payments will not work until CRYPTOCLOUD_API_KEY and CRYPTOCLOUD_SHOP_ID are set.');
@@ -1405,33 +1401,6 @@ const kroDeepGlobalRuns = [];
 const kroDeepClientRuns = new Map();
 /** @type {Map<string, { ts: number, once: object, parsedOnce: object, deepStatus: string, deepAvailableAt: string | null }>} */
 const kroDeepChannelCache = new Map();
-
-const KRO_FAST_CONTENT_CACHE_TTL_MS = Math.max(10 * 60 * 1000, parseInt(process.env.KRO_FAST_CONTENT_CACHE_TTL_MS || `${90 * 60 * 1000}`, 10));
-/** @type {Map<string, { ts: number, homeQuickParsed: object | null, homeQuickPublicSnapshot: object | null }>} */
-const kroFastContentCache = new Map();
-
-function kroFastContentCacheGet(channelKey) {
-  const k = (channelKey || '').toString().trim();
-  if (!k) return null;
-  const row = kroFastContentCache.get(k);
-  if (!row) return null;
-  const age = Date.now() - row.ts;
-  if (age > KRO_FAST_CONTENT_CACHE_TTL_MS) {
-    kroFastContentCache.delete(k);
-    return null;
-  }
-  return { ...row, age_ms: age };
-}
-
-function kroFastContentCacheSet(channelKey, payload) {
-  const k = (channelKey || '').toString().trim();
-  if (!k || !payload || typeof payload !== 'object') return;
-  kroFastContentCache.set(k, {
-    ts: Date.now(),
-    homeQuickParsed: payload.homeQuickParsed || null,
-    homeQuickPublicSnapshot: payload.homeQuickPublicSnapshot || null,
-  });
-}
 
 function kroDeepPruneTimestamps(arr, windowMs) {
   const cut = Date.now() - windowMs;
@@ -4195,211 +4164,11 @@ function kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeParsed, channelKe
   }
 }
 
-
-function kroExtractTelegramPublicSlug(channelRef) {
-  const raw = String(channelRef || '').trim();
-  if (!raw) return '';
-  const mUrl = raw.match(/(?:https?:\/\/)?t\.me\/(?:s\/)?([^\/?#\s]+)/i);
-  if (mUrl && mUrl[1]) return String(mUrl[1]).replace(/^@+/, '').trim();
-  return raw.replace(/^@+/, '').replace(/^t\.me\//i, '').replace(/^s\//i, '').trim();
-}
-
-function kroStripHtmlToText(html) {
-  const s = String(html || '')
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/<\/p>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>');
-  return s.replace(/\s+/g, ' ').trim();
-}
-
-async function kroFetchTelegramPublicSnapshot(channelRef) {
-  const slug = kroExtractTelegramPublicSlug(channelRef);
-  if (!slug) return null;
-
-  const parseHtml = (html) => {
-    if (!html || html.length < 100) return null;
-
-    const titleM = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) ||
-      html.match(/<title>([^<]+)<\/title>/i);
-    const title = titleM ? kroStripHtmlToText(titleM[1]).slice(0, 120) : '';
-
-    const descrM = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
-    const descr = descrM ? kroStripHtmlToText(descrM[1]).slice(0, 220) : '';
-
-    const subM = html.match(/([\d\s.,]{2,})\s*(subscribers?|подписчик\w*)/i);
-    const subscribers = subM ? kroStripHtmlToText(subM[1]).replace(/\s+/g, ' ').trim() : '';
-
-    const textSelectors = [
-      /<div class="tgme_widget_message_text[^"]*">([\s\S]*?)<\/div>/gi,
-      /<div class="tgme_widget_message_text js-message_text[^"]*">([\s\S]*?)<\/div>/gi,
-      /<div class="js-message_text[^"]*">([\s\S]*?)<\/div>/gi,
-    ];
-    let rawBlocks = [];
-    for (const rx of textSelectors) {
-      const arr = [...html.matchAll(rx)];
-      if (arr.length) {
-        rawBlocks = arr.map((m) => m[1]);
-        break;
-      }
-    }
-
-    const snippets = rawBlocks
-      .slice(0, 8)
-      .map((x) => kroStripHtmlToText(x))
-      .filter(Boolean)
-      .filter((x, i, a) => a.indexOf(x) === i)
-      .slice(0, 5)
-      .map((x) => (x.length > 260 ? `${x.slice(0, 257)}...` : x));
-
-    if (!title && !descr && !subscribers && !snippets.length) return null;
-    return { title, description: descr, subscribers, snippets };
-  };
-
-  const parseTextMirror = (text) => {
-    if (!text || text.length < 60) return null;
-    const lines = text
-      .split('\n')
-      .map((x) => String(x || '').trim())
-      .filter(Boolean);
-    if (!lines.length) return null;
-    const snippets = lines
-      .filter((x) => x.length >= 20 && !/^https?:\/\//i.test(x))
-      .filter((x, i, a) => a.indexOf(x) === i)
-      .slice(0, 5)
-      .map((x) => (x.length > 260 ? `${x.slice(0, 257)}...` : x));
-    if (!snippets.length) return null;
-    return { title: '', description: '', subscribers: '', snippets };
-  };
-
-  const urls = [
-    `https://t.me/s/${encodeURIComponent(slug)}`,
-    `https://t.me/${encodeURIComponent(slug)}?embed=1&mode=tme`,
-    `https://r.jina.ai/http://t.me/s/${encodeURIComponent(slug)}`,
-    `https://r.jina.ai/http://t.me/${encodeURIComponent(slug)}?embed=1&mode=tme`,
-  ];
-
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    for (const url of urls) {
-      const ctl = new AbortController();
-      const t = setTimeout(() => ctl.abort(), 45000);
-      try {
-        const r = await fetch(url, {
-          signal: ctl.signal,
-          headers: {
-            'user-agent': 'Mozilla/5.0 (compatible; KRO-Monitor/1.0; +https://crypto-academy-pro.onrender.com)',
-            accept: 'text/html,application/xhtml+xml',
-          },
-        });
-        if (!r.ok) continue;
-        const body = await r.text();
-        const parsed = url.includes('r.jina.ai') ? parseTextMirror(body) : parseHtml(body);
-        if (parsed) {
-          return {
-            slug,
-            ...parsed,
-            fetched_at: new Date().toISOString(),
-            fetch_attempt: attempt + 1,
-          };
-        }
-      } catch {
-        /* retry next source */
-      } finally {
-        clearTimeout(t);
-      }
-    }
-    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 900 + attempt * 900));
-  }
-
-  return null;
-}
-
-function kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, snap) {
-  if (!analysis || !snap) return;
-  const base = Array.isArray(analysis.basic_info) ? analysis.basic_info : [];
-  const contentBase = Array.isArray(analysis.content_behavior) ? analysis.content_behavior : [];
-  const extBase = Array.isArray(analysis.external_reports) ? analysis.external_reports : [];
-  const tiesBase = Array.isArray(analysis.ties_risk_factors) ? analysis.ties_risk_factors : [];
-  const c = analysis.conclusion && typeof analysis.conclusion === 'object'
-    ? analysis.conclusion
-    : { status: KRO_V0_STATUS.watch, reasons: [] };
-  const lines = [];
-  lines.push(
-    `Живой поверхностный вход в канал t.me/${snap.slug}: получили публичную страницу канала (без deep‑разбора ленты).`
-  );
-  if (snap.title) lines.push(`Название канала: ${snap.title}.`);
-  if (snap.subscribers) lines.push(`Подписчики (публично): ~${snap.subscribers}.`);
-  if (snap.description) lines.push(`Описание: ${snap.description}`);
-  if (snap.snippets && snap.snippets.length) {
-    lines.push(`Последние публичные сообщения: ${snap.snippets.length} фрагм. (поверхностный срез).`);
-  }
-  analysis.basic_info = [...lines, ...base].slice(0, 12);
-
-  const snippets = Array.isArray(snap.snippets)
-    ? snap.snippets.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 5)
-    : [];
-  const joined = snippets.join(' ').toLowerCase();
-  const freqSignals = ['ежеднев', 'каждый день', 'каждый час', 'daily', 'signal', 'сигнал'];
-  const promoSignals = ['vip', 'вип', 'подписк', 'доступ', 'платн', 'оплат', 'курс', 'обучен'];
-  const pressureSignals = ['срочно', 'успей', 'последний шанс', 'last chance', 'ограничен', 'limited'];
-
-  const contentLines = [];
-  if (snippets.length) {
-    contentLines.push(`По текстам последних постов видно тематику канала: ${snippets.slice(0, 2).map((x) => `«${x.slice(0, 90)}${x.length > 90 ? '…' : ''}»`).join('; ')}.`);
-  }
-  if (freqSignals.some((k) => joined.includes(k))) {
-    contentLines.push('В сообщениях есть признаки регулярной сигнальной/торговой подачи контента.');
-  }
-  if (promoSignals.some((k) => joined.includes(k))) {
-    contentLines.push('В текстах встречаются коммерческие маркеры (VIP/подписка/платный доступ).');
-  }
-  if (pressureSignals.some((k) => joined.includes(k))) {
-    contentLines.push('Есть элементы давления/FOMO в формулировках постов (срочность, ограниченность).');
-  }
-  if (!contentLines.length && snippets.length) {
-    contentLines.push('Снята базовая выборка текстов сообщений; выраженных агрессивных маркеров в этих фрагментах не найдено.');
-  }
-  analysis.content_behavior = [...contentLines, ...contentBase].slice(0, 8);
-
-  const extLines = [];
-  if (snap.subscribers) extLines.push(`Публичная оценка аудитории: ~${snap.subscribers} подписчиков.`);
-  if (snap.fetch_attempt != null) extLines.push(`Публичная лента прочитана со стабилизацией запроса (попытка ${snap.fetch_attempt}).`);
-  analysis.external_reports = [...extLines, ...extBase].slice(0, 6);
-
-  const linkSignals = (joined.match(/(?:t\.me\/|@)[a-z0-9_]{4,32}/gi) || []).slice(0, 4);
-  if (linkSignals.length) {
-    analysis.ties_risk_factors = [
-      `В текстах есть упоминания других Telegram-каналов/ников: ${linkSignals.join(', ')}.`,
-      ...tiesBase,
-    ].slice(0, 6);
-  }
-
-  const reasons = Array.isArray(c.reasons) ? c.reasons : [];
-  if (snippets.length) {
-    reasons.unshift('Вывод опирается на реально прочитанные публичные тексты постов этого канала.');
-  }
-  analysis.conclusion = {
-    ...c,
-    status: c.status || KRO_V0_STATUS.watch,
-    reasons: reasons.slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
-  };
-
-  const src = Array.isArray(analysis.sources) ? analysis.sources : [];
-  if (!src.some((x) => /публичн.*telegram/i.test(String(x)))) {
-    analysis.sources = ['публичная страница Telegram (быстрый срез)', ...src];
-  }
-}
-
 function kroRunCheckOnce(channel, opts) {
   const readOnly = !!(opts && opts.readOnly);
   const sessionString = opts && opts.telegramSessionString ? String(opts.telegramSessionString) : '';
   const periodOpt = opts && Number(opts.periodDays);
-  const allowedPeriods = [7, 30, 90, 180, 365];
+  const allowedPeriods = [30, 90, 180, 365];
   const periodDays = allowedPeriods.includes(periodOpt) ? periodOpt : kroCheckOncePeriodDays;
   const timeoutOpt = opts && Number(opts.timeoutMs);
   const timeoutMs =
@@ -4451,7 +4220,7 @@ function kroRunCheckOnceAsync(channel, opts) {
   const readOnly = !!(opts && opts.readOnly);
   const sessionString = opts && opts.telegramSessionString ? String(opts.telegramSessionString) : '';
   const periodOpt = opts && Number(opts.periodDays);
-  const allowedPeriods = [7, 30, 90, 180, 365];
+  const allowedPeriods = [30, 90, 180, 365];
   const periodDays = allowedPeriods.includes(periodOpt) ? periodOpt : kroCheckOncePeriodDays;
   const timeoutOpt = opts && Number(opts.timeoutMs);
   const timeoutMs =
@@ -4598,61 +4367,6 @@ function kroLiveMetricsFromParsed(parsed) {
         : p.error != null
           ? String(p.error)
           : null,
-  };
-}
-
-
-function kroBuildLiveEvidence(parsed, quickState, publicSnap) {
-  const p = parsed && typeof parsed === 'object' ? parsed : null;
-  if (
-    p &&
-    p._check_once_ok === true &&
-    p.telegram_rate_limited !== true &&
-    p.not_crypto !== true
-  ) {
-    const sample = Array.isArray(p.sample_posts)
-      ? p.sample_posts.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 3)
-      : [];
-    return {
-      live_pass: true,
-      mode: 'telegram_live',
-      reason: null,
-      analysis_window_days: Number.isFinite(Number(p.analysis_window_days)) ? Number(p.analysis_window_days) : null,
-      posts_fetched: Number.isFinite(Number(p.posts_fetched)) ? Number(p.posts_fetched) : null,
-      sample_posts: sample,
-      generated_at: p.generated_at || null,
-    };
-  }
-  if (publicSnap && Array.isArray(publicSnap.snippets)) {
-    const sample = publicSnap.snippets.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 3);
-    if (sample.length >= 1) {
-      return {
-        live_pass: true,
-        mode: 'public_content_fallback',
-        reason: 'Прямой LIVE-проход не завершился, но тексты сообщений прочитаны через публичную ленту канала как альтернативный путь.',
-        analysis_window_days: null,
-        posts_fetched: sample.length,
-        sample_posts: sample,
-        generated_at: publicSnap.fetched_at || null,
-      };
-    }
-  }
-  const st = String(quickState || '').trim() || 'failed';
-  const why = st === 'rate_limited' || st === 'skipped_flood'
-    ? 'Живой проход в Telegram‑ленту не выполнен из-за лимитов Telegram/FLOOD_WAIT.'
-    : st === 'timeout'
-      ? 'Живой проход в Telegram‑ленту не выполнен: проверка не уложилась в лимит времени.'
-      : st === 'content_unavailable'
-        ? 'Чтение сообщений не подтверждено: ни основной, ни альтернативный путь не дал достаточной выборки постов.'
-        : 'Живой проход в Telegram‑ленту не выполнен из-за временной ошибки сервиса.';
-  return {
-    live_pass: false,
-    mode: 'unavailable',
-    reason: why,
-    analysis_window_days: null,
-    posts_fetched: null,
-    sample_posts: [],
-    generated_at: null,
   };
 }
 
@@ -4831,6 +4545,151 @@ function channelMatchKey(channel) {
   if (s.startsWith('t.me/+')) return s;
   if (s.startsWith('t.me/')) return s.slice(6);
   return s.startsWith('@') ? s.slice(1) : s;
+}
+
+function kroExtractTelegramPublicSlug(channelRef) {
+  const raw = String(channelRef || '').trim();
+  if (!raw) return '';
+  const m = raw.match(/(?:https?:\/\/)?t\.me\/(?:s\/)?([^/?#\s]+)/i);
+  if (m && m[1]) return String(m[1]).replace(/^@+/, '').trim().toLowerCase();
+  return raw.replace(/^@+/, '').replace(/^t\.me\//i, '').replace(/^s\//i, '').trim().toLowerCase();
+}
+
+function kroStripHtmlToText(html) {
+  return String(html || '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function kroFetchTelegramPublicSnapshot(channelRef) {
+  const slug = kroExtractTelegramPublicSlug(channelRef);
+  if (!slug) return null;
+  const parseHtml = (html) => {
+    if (!html || html.length < 100) return null;
+    const titleM = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) || html.match(/<title>([^<]+)<\/title>/i);
+    const title = titleM ? kroStripHtmlToText(titleM[1]).slice(0, 120) : '';
+    const textRegexes = [
+      /<div class="tgme_widget_message_text[^"]*">([\s\S]*?)<\/div>/gi,
+      /<div class="js-message_text[^"]*">([\s\S]*?)<\/div>/gi,
+    ];
+    let blocks = [];
+    for (const rx of textRegexes) {
+      const arr = [...html.matchAll(rx)];
+      if (arr.length) {
+        blocks = arr.map((x) => x[1]);
+        break;
+      }
+    }
+    const snippets = blocks
+      .map((x) => kroStripHtmlToText(x))
+      .filter(Boolean)
+      .filter((x, i, a) => a.indexOf(x) === i)
+      .slice(0, 8)
+      .map((x) => (x.length > 260 ? `${x.slice(0, 257)}...` : x));
+    if (!snippets.length) return null;
+    return { slug, title, snippets, fetched_at: new Date().toISOString() };
+  };
+
+  const urls = [
+    `https://t.me/s/${encodeURIComponent(slug)}`,
+    `https://r.jina.ai/http://t.me/s/${encodeURIComponent(slug)}`,
+  ];
+  for (const url of urls) {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 25000);
+    try {
+      const r = await fetch(url, {
+        signal: ctl.signal,
+        headers: {
+          'user-agent': 'Mozilla/5.0 (compatible; KRO-Analyze/1.0)',
+          accept: 'text/html,application/xhtml+xml,text/plain',
+        },
+      });
+      if (!r.ok) continue;
+      const body = await r.text();
+      const parsed = parseHtml(body) || {
+        slug,
+        title: '',
+        snippets: body
+          .split('\n')
+          .map((x) => String(x || '').trim())
+          .filter((x) => x.length >= 25 && !/^https?:\/\//i.test(x))
+          .slice(0, 8),
+        fetched_at: new Date().toISOString(),
+      };
+      if (parsed.snippets && parsed.snippets.length) return parsed;
+    } catch {
+      /* try next source */
+    } finally {
+      clearTimeout(t);
+    }
+  }
+  return null;
+}
+
+function kroCollectSuspiciousFlagsFromTexts(texts) {
+  const joined = texts.join(' \n ').toLowerCase();
+  const rules = [
+    { code: 'guarantee', title: 'Гарантированная прибыль', kws: ['100%', 'без риска', 'гарант', 'точно заработа'], weight: 24, explanation: 'Обещания безрисковой прибыли.' },
+    { code: 'vip_paid', title: 'Платный VIP/доступ', kws: ['vip', 'вип', 'платн', 'подписк', 'доступ в канал'], weight: 16, explanation: 'Монетизация через закрытый доступ.' },
+    { code: 'signal_push', title: 'Агрессивные сигналы', kws: ['сигнал', 'buy', 'sell', 'лонг', 'шорт'], weight: 15, explanation: 'Призывы к сделкам без объяснения рисков.' },
+    { code: 'fomo', title: 'Давление и срочность', kws: ['срочно', 'успей', 'последний шанс', 'limited'], weight: 14, explanation: 'Формулировки подталкивают к импульсивным действиям.' },
+    { code: 'x_promises', title: 'Обещания иксов', kws: ['x2', 'x5', 'x10', 'икс', 'памп'], weight: 18, explanation: 'Заявления о кратном росте без обоснования.' },
+  ];
+  const flags = [];
+  for (const rule of rules) {
+    if (rule.kws.some((kw) => joined.includes(kw))) {
+      flags.push({ code: rule.code, title: rule.title, explanation: rule.explanation, weight: rule.weight });
+    }
+  }
+  let risk = flags.reduce((sum, x) => sum + x.weight, 0);
+  const examples = [];
+  for (const text of texts) {
+    const low = String(text || '').toLowerCase();
+    if (rules.some((r) => r.kws.some((kw) => low.includes(kw)))) {
+      examples.push(String(text).slice(0, 240));
+    }
+    if (examples.length >= 5) break;
+  }
+  if (!examples.length && texts.length) examples.push(String(texts[0]).slice(0, 240));
+  if (examples.length === 0) risk = null;
+  return { flags, examples, risk };
+}
+
+function kroMapRiskToUiStatus(risk) {
+  if (!Number.isFinite(risk)) return { status: 'НЕДОСТУПЕН', code: 'UNAVAILABLE' };
+  if (risk >= 70) return { status: 'ОПАСНО', code: 'DANGER' };
+  if (risk >= 40) return { status: 'ПОДОЗРИТЕЛЬНО', code: 'SUSPICIOUS' };
+  return { status: 'БЕЗОПАСНО', code: 'SAFE' };
+}
+
+function kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, snap) {
+  if (!analysis || !snap || !Array.isArray(snap.snippets) || !snap.snippets.length) return;
+  const current = Array.isArray(analysis.content_behavior) ? analysis.content_behavior : [];
+  analysis.content_behavior = [
+    `Быстрый публичный срез ленты t.me/${snap.slug}: прочитано фрагментов постов ${snap.snippets.length}.`,
+    `Пример: «${String(snap.snippets[0] || '').slice(0, 180)}».`,
+    ...current,
+  ].slice(0, 8);
+  const src = Array.isArray(analysis.sources) ? analysis.sources : [];
+  analysis.sources = ['публичная лента Telegram', ...src];
+  if (!analysis.conclusion || typeof analysis.conclusion !== 'object') {
+    analysis.conclusion = { status: KRO_V0_STATUS.watch, reasons: [] };
+  }
+  const reasons = Array.isArray(analysis.conclusion.reasons) ? analysis.conclusion.reasons : [];
+  analysis.conclusion.reasons = [
+    'Вывод дополнен реальными фрагментами постов публичной ленты канала.',
+    ...reasons,
+  ].slice(0, KRO_V0_MAX_CONCLUSION_REASONS);
 }
 
 /** Единый список с backend/kro-worker/kro_permanent_blocklist.json (не дублировать в коде). */
@@ -6069,148 +5928,7 @@ app.post('/api/kro/byo-deep/revoke', express.json({ limit: '8000' }), (req, res)
   return res.status(200).json({ ok: true });
 });
 
-
-function kroAnalyzeFlagsFromTexts(texts) {
-  const source = Array.isArray(texts) ? texts.map((x) => String(x || '')).filter(Boolean) : [];
-  const joined = source.join('\n').toLowerCase();
-  const rules = [
-    { code: 'guarantee', title: 'Гарантии прибыли', kws: ['100%', 'без риска', 'гарант', 'точный профит'], weight: 24, explanation: 'Обещания гарантированного результата без оговорки о рисках.' },
-    { code: 'vip', title: 'Платный VIP-доступ', kws: ['vip', 'вип', 'подписк', 'платн', 'закрытый канал'], weight: 16, explanation: 'Упор на закрытый доступ и монетизацию сигналов.' },
-    { code: 'signal', title: 'Сигнальная подача', kws: ['сигнал', 'long', 'short', 'лонг', 'шорт', 'buy', 'sell'], weight: 14, explanation: 'Призывы к сделкам, часто без объяснения стратегии и рисков.' },
-    { code: 'fomo', title: 'Давление/FOMO', kws: ['срочно', 'успей', 'последний шанс', 'limited'], weight: 14, explanation: 'Текст подталкивает к импульсивному решению.' },
-    { code: 'x_promises', title: 'Обещание иксов', kws: ['x2', 'x5', 'x10', 'икс', 'памп'], weight: 18, explanation: 'Завышенные ожидания доходности.' },
-  ];
-  const flags = [];
-  for (const rule of rules) {
-    if (rule.kws.some((kw) => joined.includes(kw))) {
-      flags.push({ code: rule.code, title: rule.title, explanation: rule.explanation, weight: rule.weight });
-    }
-  }
-  const examples = [];
-  for (const txt of source) {
-    const low = txt.toLowerCase();
-    if (rules.some((r) => r.kws.some((kw) => low.includes(kw)))) examples.push(txt.slice(0, 240));
-    if (examples.length >= 5) break;
-  }
-  const risk = flags.reduce((acc, x) => acc + Number(x.weight || 0), 0);
-  return { flags, examples, risk };
-}
-
-function kroRiskToCheckStatus(risk) {
-  if (!Number.isFinite(risk)) return { status: 'НЕДОСТУПЕН', status_code: 'UNAVAILABLE' };
-  if (risk >= 70) return { status: 'ОПАСНО', status_code: 'DANGER' };
-  if (risk >= 40) return { status: 'ПОДОЗРИТЕЛЬНО', status_code: 'SUSPICIOUS' };
-  return { status: 'БЕЗОПАСНО', status_code: 'SAFE' };
-}
-
-async function kroFetchSiteMentionsByUsername(username) {
-  const q = String(username || '').replace(/^@+/, '').trim();
-  if (!q) return [];
-  const sources = [
-    { source: 'vklader', url: `https://vklader.com/?s=${encodeURIComponent(q)}` },
-    { source: 'forteck', url: `https://forteck.net/?s=${encodeURIComponent(q)}` },
-  ];
-  const out = [];
-  for (const src of sources) {
-    const ctl = new AbortController();
-    const t = setTimeout(() => ctl.abort(), 18000);
-    try {
-      const r = await fetch(src.url, {
-        signal: ctl.signal,
-        headers: {
-          'user-agent': 'Mozilla/5.0 (compatible; KRO-Analyze/1.0)',
-          accept: 'text/html,text/plain',
-        },
-      });
-      if (!r.ok) {
-        out.push({ source: src.source, url: src.url, ok: false, status: r.status, mentions: 0, snippets: [] });
-        continue;
-      }
-      const body = await r.text();
-      const low = body.toLowerCase();
-      const needle = q.toLowerCase();
-      let mentions = 0;
-      let i = 0;
-      while (true) {
-        const n = low.indexOf(needle, i);
-        if (n < 0) break;
-        mentions += 1;
-        i = n + needle.length;
-      }
-      const snippets = [];
-      let from = 0;
-      while (snippets.length < 3) {
-        const n = low.indexOf(needle, from);
-        if (n < 0) break;
-        const l = Math.max(0, n - 70);
-        const rgt = Math.min(body.length, n + needle.length + 120);
-        const sn = body.slice(l, rgt).replace(/\s+/g, ' ').replace(/<[^>]+>/g, ' ').trim();
-        if (sn) snippets.push(sn.slice(0, 220));
-        from = n + needle.length;
-      }
-      out.push({ source: src.source, url: src.url, ok: true, status: r.status, mentions, snippets });
-    } catch (e) {
-      out.push({ source: src.source, url: src.url, ok: false, error: String(e && e.message ? e.message : e || 'fetch_failed'), mentions: 0, snippets: [] });
-    } finally {
-      clearTimeout(t);
-    }
-  }
-  return out;
-}
-
-function kroExtractJsonObjectFromText(text) {
-  const raw = String(text || '').trim();
-  if (!raw) return null;
-  const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = fence ? fence[1].trim() : raw;
-  try {
-    return JSON.parse(candidate);
-  } catch {
-    const first = candidate.indexOf('{');
-    const last = candidate.lastIndexOf('}');
-    if (first >= 0 && last > first) {
-      try {
-        return JSON.parse(candidate.slice(first, last + 1));
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  }
-}
-
-async function kroAnalyzeChannelWithClaude(payload) {
-  if (!anthropicKey) return null;
-  const prompt = [
-    'Ты антифрод-аналитик Telegram-каналов.',
-    'Проанализируй канал строго по переданным данным.',
-    'Верни только JSON без markdown с полями:',
-    '{"status":"ОПАСНО|ПОДОЗРИТЕЛЬНО|БЕЗОПАСНО|НЕДОСТУПЕН","risk_index":0-100,"red_flags":["..."],"citations":["..."],"explanation":"..."}',
-    'Если данных мало, ставь НЕДОСТУПЕН и объясни почему.',
-    '',
-    `ДАННЫЕ: ${JSON.stringify(payload)}`,
-  ].join('\n');
-
-  const resp = await axios.post('https://api.anthropic.com/v1/messages', {
-    model: process.env.KRO_ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest',
-    max_tokens: 1200,
-    temperature: 0,
-    messages: [{ role: 'user', content: prompt }],
-  }, {
-    timeout: 35000,
-    headers: {
-      'x-api-key': anthropicKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-  });
-
-  const content = Array.isArray(resp?.data?.content) ? resp.data.content : [];
-  const text = content.map((c) => (c && c.type === 'text' ? c.text : '')).join('\n').trim();
-  return kroExtractJsonObjectFromText(text);
-}
-
-app.post('/api/kro/analyze-channel', express.json({ limit: '40000' }), async (req, res) => {
+app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   const rawInput = String((req.body && (req.body.username || req.body.channel || req.body.url)) || '').trim();
   const normalized = normalizeChannel(rawInput);
@@ -6219,141 +5937,136 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '40000' }), async (re
     return res.status(400).json({ error: 'bad_request', message_ru: 'Передайте username канала (t.me/username или @username).' });
   }
 
-  const channelDisplay = normalized.startsWith('@') ? normalized : `@${key}`;
+  const startedAt = Date.now();
+  const deadlineAt = startedAt + 7 * 60 * 1000;
   const progress = [];
   const addProgress = (step) => progress.push({ step, at: new Date().toISOString() });
+  const channelForOnce = normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${normalized}`;
+  const channelDisplay = normalized.startsWith('@') ? normalized : `@${key}`;
+  const minPosts = 3;
 
   try {
-    addProgress('Собираю внутренние данные по каналу...');
     const sheetsClient = await getKroSheetsClient();
-    if (!sheetsClient || !kroSheetId) {
-      return res.status(503).json({ error: 'data_source_unavailable', message_ru: 'Нет доступа к данным для анализа.' });
+    addProgress('Проверка канала в scam_base...');
+    if (sheetsClient && kroSheetId) {
+      const rawRows = await kroFetchScamBaseValuesCached(sheetsClient);
+      const rows = rawRows
+        .slice(1)
+        .map(parseScamBaseRow)
+        .filter((r) => r.username && channelMatchKey(r.username) === key)
+        .map(enrichScamBaseContentAnalysisForMonitor);
+      if (rows.length) {
+        const latest = rows.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
+        const reports = await getAllReportsForChannel(sheetsClient, latest.username);
+        const riskIndex = computeKroRiskIndex(latest, reports);
+        const analysis = kroV0BuildAnalysisFromScamBaseProfile(latest, { channel_key: key });
+        const statusObj = kroMapRiskToUiStatus(riskIndex);
+        const examples = Array.isArray(analysis.content_behavior) ? analysis.content_behavior.slice(0, 5) : [];
+        return res.status(200).json({
+          channel: channelDisplay,
+          read_source: 'scam_base',
+          status: statusObj.status,
+          status_code: statusObj.code,
+          risk_index: riskIndex,
+          posts_read: null,
+          period_days: null,
+          suspicious_examples: examples,
+          flags: [
+            { code: 'cached_match', title: 'Канал уже в мониторинге', explanation: 'Использован готовый подтвержденный результат из базы.' },
+          ],
+          progress,
+          message: `Готово: найден готовый результат в scam_base для ${channelDisplay}.`,
+        });
+      }
     }
 
-    const scamRawRows = await kroFetchScamBaseValuesCached(sheetsClient);
-    const scamRows = scamRawRows
-      .slice(1)
-      .map(parseScamBaseRow)
-      .filter((r) => r.username && channelMatchKey(r.username) === key)
-      .map(enrichScamBaseContentAnalysisForMonitor);
-    const scamLatest = scamRows.length
-      ? scamRows.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b))
-      : null;
-
-    const watchRow = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
-    const reports = await getAllReportsForChannel(sheetsClient, channelDisplay);
-
-    addProgress('Проверяю внешние источники (vklader/forteck)...');
-    const siteMentions = await kroFetchSiteMentionsByUsername(key);
-
-    const hasAnyData = !!(
-      scamLatest ||
-      watchRow ||
-      (Array.isArray(reports) && reports.length) ||
-      siteMentions.some((x) => x && ((x.mentions || 0) > 0 || (Array.isArray(x.snippets) && x.snippets.length)))
-    );
-
-    if (!hasAnyData) {
+    addProgress('Читаю публичную ленту t.me/s...');
+    const publicSnap = await kroFetchTelegramPublicSnapshot(channelForOnce);
+    if (publicSnap && Array.isArray(publicSnap.snippets) && publicSnap.snippets.length >= minPosts) {
+      const signal = kroCollectSuspiciousFlagsFromTexts(publicSnap.snippets);
+      const risk = Number.isFinite(signal.risk) ? signal.risk : 15;
+      const statusObj = kroMapRiskToUiStatus(risk);
       return res.status(200).json({
         channel: channelDisplay,
-        status: 'НЕДОСТУПЕН',
-        status_code: 'UNAVAILABLE',
-        risk_index: null,
-        suspicious_examples: [],
-        flags: [],
-        analysis_basis: {
-          read_method: 'claude_from_meta_sources',
-          sources_used: ['scam_base', 'channels_watch', 'reports', 'vklader', 'forteck'],
-        },
-        telethon_runtime: {
-          configured_session: !!(process.env.KRO_TELEGRAM_SESSION_STRING || process.env.TELEGRAM_SESSION_STRING || process.env.TELEGRAM_SESSION_B64 || process.env.TELEGRAM_SESSION_PATH),
-          api_keys_present: !!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH),
-        },
+        read_source: 'public_snapshot',
+        status: statusObj.status,
+        status_code: statusObj.code,
+        risk_index: Math.max(0, Math.min(100, Math.round(risk))),
+        posts_read: publicSnap.snippets.length,
+        period_days: 7,
+        suspicious_examples: signal.examples,
+        flags: signal.flags,
         progress,
-        message: 'Недостаточно данных для анализа (нет записей в базе и внешних упоминаний).',
+        message: `Готово: проанализировано ${publicSnap.snippets.length} публичных постов ${channelDisplay}.`,
       });
     }
 
-    const payloadForClaude = {
-      channel: channelDisplay,
-      scam_base: scamLatest ? {
-        status: scamLatest.status || scamLatest.verdict || null,
-        complaints: scamLatest.complaints ?? null,
-        total_loss_rub: Number(scamLatest.total_loss_rub || 0) || 0,
-        source_primary: scamLatest.source_primary || null,
-        content_analysis: scamLatest.content_analysis || null,
-      } : null,
-      channels_watch: watchRow ? {
-        status: watchRow.status || null,
-        activity_summary: watchRow.activity_summary || null,
-        reviews_summary: watchRow.reviews_summary || null,
-        complaints: watchRow.complaints ?? null,
-      } : null,
-      reports: (reports || []).slice(0, 20).map((r) => ({
-        source: r.source || '',
-        text: r.text || r.description || r.message || '',
-        loss: r.total_loss || r.loss || '',
-        created_at: r.created_at || r.timestamp || '',
-      })),
-      site_mentions: siteMentions,
-    };
-
-    addProgress('Запрашиваю анализ Claude API...');
-    let claude;
-    try {
-      claude = await kroAnalyzeChannelWithClaude(payloadForClaude);
-    } catch (e) {
-      claude = null;
-      progress.push({ step: `Claude недоступен: ${String(e?.message || e)}`, at: new Date().toISOString() });
+    addProgress('Пробую чтение через Telethon...');
+    const msLeft = Math.max(0, deadlineAt - Date.now());
+    if (msLeft < 60000) {
+      return res.status(200).json({
+        channel: channelDisplay,
+        read_source: 'none',
+        status: 'НЕДОСТУПЕН',
+        status_code: 'UNAVAILABLE',
+        risk_index: null,
+        posts_read: 0,
+        period_days: null,
+        suspicious_examples: [],
+        flags: [],
+        progress,
+        message: 'Канал недоступен для анализа: не хватило времени на чтение ленты в пределах 7 минут.',
+      });
     }
-
-    const fallbackRisk = scamLatest ? computeKroRiskIndex(scamLatest, reports || []) : null;
-    const mapped = Number.isFinite(fallbackRisk)
-      ? (fallbackRisk >= 70 ? { status: 'ОПАСНО', status_code: 'DANGER' }
-        : fallbackRisk >= 40 ? { status: 'ПОДОЗРИТЕЛЬНО', status_code: 'SUSPICIOUS' }
-        : { status: 'БЕЗОПАСНО', status_code: 'SAFE' })
-      : { status: 'ПОДОЗРИТЕЛЬНО', status_code: 'SUSPICIOUS' };
-
-    const status = claude && typeof claude.status === 'string' ? claude.status : mapped.status;
-    const riskIndex = claude && Number.isFinite(Number(claude.risk_index))
-      ? Math.max(0, Math.min(100, Math.round(Number(claude.risk_index))))
-      : (Number.isFinite(fallbackRisk) ? Math.max(0, Math.min(100, Math.round(fallbackRisk))) : null);
-    const statusCode = status === 'ОПАСНО'
-      ? 'DANGER'
-      : status === 'ПОДОЗРИТЕЛЬНО'
-        ? 'SUSPICIOUS'
-        : status === 'БЕЗОПАСНО'
-          ? 'SAFE'
-          : 'UNAVAILABLE';
+    const once = kroRunCheckOnce(channelForOnce, {
+      readOnly: true,
+      periodDays: 90,
+      timeoutMs: Math.min(msLeft, 6 * 60 * 1000),
+    });
+    const parsed = kroNormalizeCheckOnceForAnalysis(once);
+    const sample = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
+    const enough = parsed._check_once_ok === true && parsed.found === true && Number(parsed.posts_fetched || 0) >= minPosts && sample.length >= 1;
+    if (enough) {
+      const rawRisk = Number(parsed.risk_score);
+      const signal = kroCollectSuspiciousFlagsFromTexts(sample);
+      const risk = Number.isFinite(rawRisk) ? rawRisk : signal.risk;
+      const statusObj = kroMapRiskToUiStatus(risk);
+      return res.status(200).json({
+        channel: channelDisplay,
+        read_source: 'telethon',
+        status: statusObj.status,
+        status_code: statusObj.code,
+        risk_index: Number.isFinite(risk) ? Math.max(0, Math.min(100, Math.round(risk))) : null,
+        posts_read: Number(parsed.posts_fetched || sample.length || 0),
+        period_days: Number(parsed.analysis_window_days || 90),
+        suspicious_examples: signal.examples.length ? signal.examples : sample.slice(0, 5),
+        flags: signal.flags,
+        progress,
+        message: `Готово: через Telethon прочитано ${Number(parsed.posts_fetched || sample.length || 0)} постов ${channelDisplay}.`,
+      });
+    }
 
     return res.status(200).json({
       channel: channelDisplay,
-      status,
-      status_code: statusCode,
-      risk_index: riskIndex,
-      suspicious_examples: Array.isArray(claude?.citations) ? claude.citations.slice(0, 5) : [],
-      flags: Array.isArray(claude?.red_flags)
-        ? claude.red_flags.slice(0, 8).map((x) => ({ title: String(x), explanation: 'Определено Claude по собранным данным.' }))
-        : [],
-      explanation: claude?.explanation || 'Анализ собран по внутренним и внешним мета-источникам.',
-      analysis_basis: {
-        read_method: 'claude_from_meta_sources',
-        sources_used: ['scam_base', 'channels_watch', 'reports', 'vklader', 'forteck'],
-      },
-      input_data_snapshot: payloadForClaude,
-      telethon_runtime: {
-        configured_session: !!(process.env.KRO_TELEGRAM_SESSION_STRING || process.env.TELEGRAM_SESSION_STRING || process.env.TELEGRAM_SESSION_B64 || process.env.TELEGRAM_SESSION_PATH),
-        api_keys_present: !!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH),
-      },
+      read_source: 'none',
+      status: 'НЕДОСТУПЕН',
+      status_code: 'UNAVAILABLE',
+      risk_index: null,
+      posts_read: Number(parsed.posts_fetched || 0),
+      period_days: Number(parsed.analysis_window_days || 0) || null,
+      suspicious_examples: [],
+      flags: [],
       progress,
-      message: 'Анализ выполнен через Claude API по доступным данным (без прямого чтения t.me с Render).',
+      message: 'Канал недоступен для анализа: не удалось прочитать минимум 3 реальных поста.',
     });
   } catch (e) {
     console.error('KRO analyze-channel error:', e);
-    return res.status(500).json({ error: 'internal_error', message_ru: 'Внутренняя ошибка при анализе канала.' });
+    return res.status(500).json({
+      error: 'internal_error',
+      message_ru: 'Внутренняя ошибка при анализе канала.',
+    });
   }
 });
-
 
 // GET /api/kro/channel-profile?u=…&mode=fast|deep — карточка scam_base + анализ.
 // По умолчанию mode=fast: без Telethon/check_once, только база, отчёты, channels_watch (быстро, без FLOOD_WAIT).
@@ -6419,7 +6132,6 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         false_positive_count: 0,
         analysis,
         live_metrics: null,
-        live_evidence: null,
       });
     }
     const modeRaw = (req.query.mode ?? 'fast').toString().trim().toLowerCase();
@@ -6448,22 +6160,22 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     /** @type {{ deep_queued: true, deep_queue_position: number, deep_queue_eta_minutes: number, message_ru: string } | null} */
     let deepQueueGate = null;
     let byoDeepActive = false;
-    const byoTokenRaw =
-      KRO_BYO_DEEP_ENABLED ? (req.query.byo_token ?? '').toString().trim() : '';
-    const byoRow = byoTokenRaw ? kroByoGetSession(byoTokenRaw) : null;
-    if (byoTokenRaw && KRO_BYO_DEEP_ENABLED && !byoRow) {
-      return res.status(400).json({
-        error: 'byo_token_invalid',
-        message_ru:
-          'Сессия «ваш Telegram» недействительна или истекла. Подключите строку сессии снова в блоке ниже на странице.',
-      });
-    }
 
     const deepRefreshRaw = (req.query.deep_refresh ?? req.query.refresh ?? '').toString().trim().toLowerCase();
     const deepRefresh =
       deepRefreshRaw === '1' || deepRefreshRaw === 'true' || deepRefreshRaw === 'yes';
 
     if (deepMode) {
+      const byoTokenRaw =
+        KRO_BYO_DEEP_ENABLED ? (req.query.byo_token ?? '').toString().trim() : '';
+      const byoRow = byoTokenRaw ? kroByoGetSession(byoTokenRaw) : null;
+      if (byoTokenRaw && KRO_BYO_DEEP_ENABLED && !byoRow) {
+        return res.status(400).json({
+          error: 'byo_token_invalid',
+          message_ru:
+            'Сессия «ваш Telegram» недействительна или истекла. Подключите строку сессии снова в блоке ниже на странице.',
+        });
+      }
       if (byoRow && byoRow.sessionString) {
         byoDeepActive = true;
         once = kroRunCheckOnce(channelForOnce, {
@@ -6597,179 +6309,29 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       }
     }
 
-    const homeQuickHasMessageProof = (p) => {
-      if (!p || typeof p !== 'object') return false;
-      const postsFetched = Number(p.posts_fetched);
-      const hasPostsCount = Number.isFinite(postsFetched) && postsFetched >= 3;
-      const hasSamplePosts = Array.isArray(p.sample_posts) && p.sample_posts.some((x) => String(x || '').trim().length > 0);
-      return p.found === true && hasPostsCount && hasSamplePosts;
-    };
-    const homeQuickHasPublicMessageProof = (snap) => {
-      if (!snap || typeof snap !== 'object') return false;
-      const snippets = Array.isArray(snap.snippets)
-        ? snap.snippets.map((x) => String(x || '').trim()).filter(Boolean)
-        : [];
-      return snippets.length >= 1;
-    };
-    const homeQuickAcceptParsed = (norm) => {
-      if (!(norm && norm._check_once_ok === true && !norm.telegram_rate_limited && !norm.not_crypto)) return false;
-      if (!homeQuickHasMessageProof(norm)) return false;
-      homeQuickParsed = norm;
-      homeQuickLiveState = 'ok';
-      try {
-        kroDeepRecordSuccessfulTelegramDeep(clientId);
-      } catch {
-        /* ignore */
-      }
-      return true;
-    };
     let homeQuickParsed = null;
-    let homeQuickPublicSnapshot = null;
-    let homeQuickLiveState = 'not_requested';
-    let homeQuickLiveAttempt = 'none';
-    const homeQuickLiveWant = !deepMode;
-    if (homeQuickLiveWant) {
-      if (floodState.active && !(byoRow && byoRow.sessionString)) {
-        homeQuickLiveState = 'skipped_flood';
-      } else {
+    const homeQuickLiveWant =
+      !deepMode &&
+      ['1', 'true', 'yes'].includes(String(req.query.home_quick_live ?? '').trim().toLowerCase()) &&
+      process.env.KRO_HOME_QUICK_LIVE !== '0';
+    if (homeQuickLiveWant && !floodState.active) {
+      const allowH = kroDeepAllowNewTelegramDeep(clientId);
+      if (allowH.allowed) {
         const tHome = kroHomeQuickLiveTimeoutMs;
-        homeQuickLiveAttempt = 'primary_90d';
-        const onceH = kroRunCheckOnce(channelForOnce, { readOnly: true, telegramSessionString: byoRow && byoRow.sessionString ? byoRow.sessionString : '', periodDays: 90, timeoutMs: tHome });
-        const normH = kroNormalizeCheckOnceForAnalysis(onceH);
-        if (homeQuickAcceptParsed(normH)) {
-          /* accepted above */
-        } else if (normH && normH.telegram_rate_limited) {
-          homeQuickLiveState = 'rate_limited';
-        } else if (normH && normH.not_crypto) {
-          homeQuickLiveState = 'not_crypto';
-        } else if (normH && normH.check_once_timed_out === true) {
-          homeQuickLiveState = 'timeout';
-        } else {
-          homeQuickLiveState = 'content_unavailable';
-        }
-
-        if (!homeQuickParsed && !['rate_limited', 'skipped_flood', 'not_crypto'].includes(homeQuickLiveState)) {
-          const tRetry = Math.min(240000, Math.max(90000, Math.floor(tHome * 0.6)));
-          homeQuickLiveAttempt = 'retry_30d';
-          const onceRetry = kroRunCheckOnce(channelForOnce, { readOnly: true, telegramSessionString: byoRow && byoRow.sessionString ? byoRow.sessionString : '', periodDays: 30, timeoutMs: tRetry });
-          const normRetry = kroNormalizeCheckOnceForAnalysis(onceRetry);
-          if (homeQuickAcceptParsed(normRetry)) {
-            homeQuickLiveAttempt = 'retry_30d_ok';
-          } else if (normRetry && normRetry.telegram_rate_limited) {
-            homeQuickLiveState = 'rate_limited';
-          } else if (normRetry && normRetry.not_crypto) {
-            homeQuickLiveState = 'not_crypto';
-          } else if (normRetry && normRetry.check_once_timed_out === true) {
-            homeQuickLiveState = 'timeout';
-          } else {
-            homeQuickLiveState = 'failed';
-          }
-        }
-
-        if (!homeQuickParsed && !['rate_limited', 'skipped_flood', 'not_crypto'].includes(homeQuickLiveState)) {
-          const tRetryShort = Math.min(120000, Math.max(60000, Math.floor(tHome * 0.35)));
-          homeQuickLiveAttempt = 'retry_7d';
-          const onceRetryShort = kroRunCheckOnce(channelForOnce, { readOnly: true, telegramSessionString: byoRow && byoRow.sessionString ? byoRow.sessionString : '', periodDays: 7, timeoutMs: tRetryShort });
-          const normRetryShort = kroNormalizeCheckOnceForAnalysis(onceRetryShort);
-          if (homeQuickAcceptParsed(normRetryShort)) {
-            homeQuickLiveAttempt = 'retry_7d_ok';
-          } else if (normRetryShort && normRetryShort.telegram_rate_limited) {
-            homeQuickLiveState = 'rate_limited';
-          } else if (normRetryShort && normRetryShort.not_crypto) {
-            homeQuickLiveState = 'not_crypto';
-          } else if (normRetryShort && normRetryShort.check_once_timed_out === true) {
-            homeQuickLiveState = 'timeout';
-          } else {
-            homeQuickLiveState = 'failed';
+        const onceH = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 90, timeoutMs: tHome });
+        if (onceH.ok === true && onceH.parsed) {
+          const normH = kroNormalizeCheckOnceForAnalysis(onceH);
+          if (normH && !normH.telegram_rate_limited && !normH.not_crypto) {
+            homeQuickParsed = normH;
+            try {
+              kroDeepRecordSuccessfulTelegramDeep(clientId);
+            } catch {
+              /* ignore */
+            }
           }
         }
       }
     }
-    // Fast: сначала прямой LIVE через Telegram, затем альтернативное чтение текстов из публичной ленты.
-    let hasHomeQuickLive = homeQuickParsed && homeQuickParsed._check_once_ok === true;
-    if (homeQuickLiveWant && !hasHomeQuickLive) {
-      homeQuickPublicSnapshot = await kroFetchTelegramPublicSnapshot(channelForOnce);
-      if (homeQuickHasPublicMessageProof(homeQuickPublicSnapshot)) {
-        homeQuickLiveState = 'ok_public_content';
-      }
-    }
-    let hasHomeQuickPublicContent = homeQuickHasPublicMessageProof(homeQuickPublicSnapshot);
-
-    // Если онлайн-чтение сейчас не удалось, используем последний успешный контент этого канала как анти-422 слой.
-    if (homeQuickLiveWant && !hasHomeQuickLive && !hasHomeQuickPublicContent) {
-      const cachedFast = kroFastContentCacheGet(key);
-      if (cachedFast && (cachedFast.homeQuickParsed || cachedFast.homeQuickPublicSnapshot)) {
-        homeQuickParsed = cachedFast.homeQuickParsed || null;
-        homeQuickPublicSnapshot = cachedFast.homeQuickPublicSnapshot || null;
-        hasHomeQuickLive = !!(homeQuickParsed && homeQuickParsed._check_once_ok === true);
-        hasHomeQuickPublicContent = homeQuickHasPublicMessageProof(homeQuickPublicSnapshot);
-        homeQuickLiveState = 'cached_content';
-        homeQuickLiveAttempt = `${homeQuickLiveAttempt || 'none'}+cache`;
-      }
-    }
-
-    // Если чтение сообщений не удалось, возвращаем базовый отчёт вместо блокирующего 422.
-    if (homeQuickLiveWant && !hasHomeQuickLive && !hasHomeQuickPublicContent) {
-      const evidenceFail = kroBuildLiveEvidence(null, homeQuickLiveState, null);
-      const msgByState = {
-        rate_limited:
-          'Живой анализ не выполнен из-за лимита Telegram/FLOOD_WAIT. Показан базовый отчёт без чтения ленты.',
-        skipped_flood:
-          'Живой анализ отложен из-за активного FLOOD_WAIT Telegram. Показан базовый отчёт без чтения ленты.',
-        timeout:
-          'Живой анализ не уложился в лимит времени (~7 мин). Показан базовый отчёт без чтения ленты.',
-        not_crypto:
-          'Живой анализ не выполнен: канал не прошёл крипто-проверку в Telegram-проходе. Показан базовый отчёт.',
-        content_unavailable:
-          'Живой проход не дал подтверждённого чтения текстов постов. Показан базовый отчёт по доступным источникам.',
-        failed:
-          'Не удалось прочитать сообщения канала ни основным, ни альтернативным путём. Показан базовый отчёт по доступным источникам.',
-      };
-      const st = String(homeQuickLiveState || 'failed');
-      const msg = msgByState[st] || msgByState.failed;
-      const watchRowFallback = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
-      let analysisFallback = await kroV0BuildFastAnalysisNoLive(sheetsClient, key, decoded, watchRowFallback);
-      analysisFallback.basic_info = [msg].concat(Array.isArray(analysisFallback.basic_info) ? analysisFallback.basic_info : []);
-      if (watchRowFallback && !analysisFallback._kro_watch_baked) {
-        kroV0EnrichAnalysisWithWatch(analysisFallback, watchRowFallback);
-      }
-      if (analysisFallback._kro_watch_baked) delete analysisFallback._kro_watch_baked;
-      return res.status(200).json({
-        mode: responseMode,
-        byo_deep: byoDeepActive,
-        deep_status: deepStatus,
-        deep_available_at: deepAvailableIso,
-        deep_cache_hit: deepFromCacheHit,
-        deep_cache_stale: deepCacheStale,
-        deep_cache_age_ms: deepCacheAgeMs,
-        deep_cache_hint,
-        deep_gate: kroBuildChannelProfileDeepGate(deepGatePayload),
-        profile: null,
-        merged_rows: matches.length > 1 ? matches.length : undefined,
-        risk_index: null,
-        risk_index_max: 100,
-        false_positive_count: 0,
-        analysis: analysisFallback,
-        live_evidence: evidenceFail,
-        live_metrics: {
-          ...liveMetrics,
-          home_quick_live: false,
-          home_quick_live_state: st,
-          home_quick_live_attempt: homeQuickLiveAttempt,
-          home_quick_public_content: false,
-          check_once_ok: false,
-          fast_degraded: true,
-        },
-      });
-    }
-
-    if (homeQuickLiveWant && (hasHomeQuickLive || hasHomeQuickPublicContent)) {
-      kroFastContentCacheSet(key, {
-        homeQuickParsed: hasHomeQuickLive ? homeQuickParsed : null,
-        homeQuickPublicSnapshot: hasHomeQuickPublicContent ? homeQuickPublicSnapshot : null,
-      });
-    }
-
     const parsedForLiveMetrics =
       homeQuickParsed && homeQuickParsed._check_once_ok === true ? homeQuickParsed : parsedOnce;
     let liveMetrics = kroChannelProfileLiveMetrics(parsedForLiveMetrics, {
@@ -6778,25 +6340,12 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       deepStatus,
       deepAvailableAt,
     });
-    if ((byoRow && byoRow.sessionString) || byoDeepActive) {
+    if (byoDeepActive) {
       liveMetrics = { ...liveMetrics, byo_telegram: true };
     }
     if (homeQuickParsed && homeQuickParsed._check_once_ok === true) {
       liveMetrics = { ...liveMetrics, home_quick_live: true, home_quick_window_days: 90 };
     }
-    if (homeQuickLiveWant) {
-      liveMetrics = {
-        ...liveMetrics,
-        home_quick_live_state: homeQuickLiveState,
-        home_quick_live_attempt: homeQuickLiveAttempt,
-        home_quick_public_content: homeQuickHasPublicMessageProof(homeQuickPublicSnapshot),
-      };
-    }
-    const liveEvidence = kroBuildLiveEvidence(
-      parsedForLiveMetrics,
-      homeQuickLiveWant ? homeQuickLiveState : null,
-      homeQuickPublicSnapshot,
-    );
 
     const deepTelegramBlocked = deepMode && (deepStatus === 'rate_limited' || deepStatus === 'skipped_flood');
     const deepServerThrottled = deepMode && deepStatus === 'server_rate_limited';
@@ -6866,7 +6415,6 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       }
       if (analysis._kro_watch_baked) delete analysis._kro_watch_baked;
       if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
-      if (homeQuickPublicSnapshot) kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, homeQuickPublicSnapshot);
       return res.status(200).json({
         mode: responseMode,
         byo_deep: byoDeepActive,
@@ -6884,7 +6432,6 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         false_positive_count: 0,
         analysis,
         live_metrics: liveMetrics,
-        live_evidence: liveEvidence,
       });
     }
     const bestAny = matches.reduce((best, cur) =>
@@ -6945,7 +6492,6 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       const watchRowCp1 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
       if (watchRowCp1) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp1);
       if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
-      if (homeQuickPublicSnapshot) kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, homeQuickPublicSnapshot);
       return res.status(200).json({
         mode: responseMode,
         byo_deep: byoDeepActive,
@@ -6963,7 +6509,6 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         false_positive_count: 0,
         analysis,
         live_metrics: liveMetrics,
-        live_evidence: liveEvidence,
       });
     }
     const profile = liveMatches.reduce((best, cur) =>
@@ -7029,7 +6574,6 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     const watchRowCp2 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
     if (watchRowCp2) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp2);
     if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
-    if (homeQuickPublicSnapshot) kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, homeQuickPublicSnapshot);
     return res.json({
       mode: responseMode,
       byo_deep: byoDeepActive,
@@ -7047,12 +6591,12 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       false_positive_count,
       analysis,
       live_metrics: liveMetrics,
-      live_evidence: liveEvidence,
     });
   } catch (e) {
     console.error('KRO channel-profile error:', e);
     let dgErr = null;
     let degradedAnalysis = null;
+    let degradedPublicSnapshot = null;
     try {
       const peekE = kroDeepAllowNewTelegramDeep(clientId);
       if (!peekE.allowed) {
@@ -7070,17 +6614,25 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     try {
       const fallbackClient = await getKroSheetsClient();
       degradedAnalysis = await kroV0BuildFastAnalysisNoLive(fallbackClient, key, decoded, null);
-      degradedAnalysis.basic_info = [
-        'Технический сбой в live-пайплайне: показан поверхностный отчёт по доступным данным (мониторинг/жалобы).',
-      ].concat(Array.isArray(degradedAnalysis.basic_info) ? degradedAnalysis.basic_info : []);
-      if (!degradedAnalysis.conclusion || typeof degradedAnalysis.conclusion !== 'object') {
-        degradedAnalysis.conclusion = { status: KRO_V0_STATUS.watch, reasons: [] };
+      degradedPublicSnapshot = await kroFetchTelegramPublicSnapshot(channelForOnce);
+      if (degradedPublicSnapshot) {
+        kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(degradedAnalysis, degradedPublicSnapshot);
+      } else {
+        degradedAnalysis.basic_info = [
+          'Технический сбой в live-пайплайне: показан поверхностный отчёт по доступным данным (мониторинг/жалобы).',
+        ].concat(Array.isArray(degradedAnalysis.basic_info) ? degradedAnalysis.basic_info : []);
       }
-      degradedAnalysis.conclusion.reasons = [
-        'Живое чтение ленты в этом запросе не завершилось, поэтому вывод ограничен поверхностными источниками.',
-      ].concat(Array.isArray(degradedAnalysis.conclusion.reasons) ? degradedAnalysis.conclusion.reasons : []);
+      degradedAnalysis.conclusion = degradedAnalysis.conclusion && typeof degradedAnalysis.conclusion === 'object'
+        ? degradedAnalysis.conclusion
+        : { status: KRO_V0_STATUS.watch, reasons: [] };
+      if (!degradedPublicSnapshot) {
+        degradedAnalysis.conclusion.reasons = [
+          'Живое чтение ленты в этом запросе не завершилось, поэтому вывод ограничен поверхностными источниками.',
+        ].concat(Array.isArray(degradedAnalysis.conclusion.reasons) ? degradedAnalysis.conclusion.reasons : []);
+      }
     } catch {
       degradedAnalysis = null;
+      degradedPublicSnapshot = null;
     }
     return res.status(200).json({
       profile: null,
@@ -7104,16 +6656,15 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       },
       live_metrics: {
         mode: 'fast',
-        home_quick_live: false,
+        home_quick_live: !!(degradedPublicSnapshot && Array.isArray(degradedPublicSnapshot.snippets) && degradedPublicSnapshot.snippets.length),
         fast_degraded: true,
         internal_error_fallback: true,
       },
-      live_evidence: {
-        live_pass: false,
-        mode: 'unavailable',
-        reason: 'Живой анализ в этом запросе не завершился из-за внутренней ошибки сервиса.',
-        sample_posts: [],
-      },
+      live_evidence: kroBuildLiveEvidence(
+        null,
+        degradedPublicSnapshot ? 'ok_public_content' : 'failed',
+        degradedPublicSnapshot,
+      ),
       mode: 'fast',
       deep_status: null,
       deep_available_at: null,

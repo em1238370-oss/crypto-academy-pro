@@ -1595,8 +1595,56 @@
                            fetchOpts.signal = AbortSignal.timeout(__KRO_HOME_FETCH_MS);
                        }
                    } catch (eSig) { /* ignore */ }
-                  var renderHomeCheckSuccess = function (data) {
-                      if (!data || !data.analysis || typeof data.analysis !== 'object') throw new Error('no_analysis');
+                 var renderHomeCheckSuccess = function (data) {
+                     if (!data || typeof data !== 'object') throw new Error('no_analysis');
+                     if (!data.analysis || typeof data.analysis !== 'object') {
+                         var stMap = {
+                             DANGER: 'подтверждённый скам',
+                             SUSPICIOUS: 'в риске',
+                             SAFE: 'без нарушений',
+                             UNAVAILABLE: 'под наблюдением'
+                         };
+                         var flagLines = Array.isArray(data.flags)
+                             ? data.flags.map(function (f) {
+                                 if (!f || typeof f !== 'object') return '';
+                                 var t = f.title ? String(f.title) : '';
+                                 var e = f.explanation ? String(f.explanation) : '';
+                                 return (t && e) ? (t + ': ' + e) : (t || e);
+                             }).filter(Boolean)
+                             : [];
+                         var examples = Array.isArray(data.suspicious_examples)
+                             ? data.suspicious_examples.map(function (x) { return String(x || '').trim(); }).filter(Boolean)
+                             : [];
+                         var reason = data.explanation ? String(data.explanation) : (data.message ? String(data.message) : '');
+                         data.analysis = {
+                             v: 0,
+                             channel_key: queryU,
+                             generated_at: new Date().toISOString(),
+                             sources: (data.analysis_basis && Array.isArray(data.analysis_basis.sources_used))
+                                 ? data.analysis_basis.sources_used
+                                 : ['анализ канала'],
+                             basic_info: [
+                                 'Путь анализа: ' + (data.read_source ? String(data.read_source) : 'claude_from_meta_sources') + '.',
+                                 (data.posts_read != null ? ('Постов прочитано: ' + String(data.posts_read) + '.') : 'Посты напрямую не читались в этом запросе.'),
+                                 (data.period_days != null ? ('Период: ' + String(data.period_days) + ' дн.') : 'Период: по доступным данным.'),
+                             ],
+                             content_behavior: examples.length ? examples : ['Нет цитат в ответе анализа.'],
+                             external_reports: reason ? [reason] : ['Claude вернул краткий вывод без отдельного пояснения.'],
+                             ties_risk_factors: flagLines.length ? flagLines : ['Явные флаги не выделены.'],
+                             conclusion: {
+                                 status: stMap[String(data.status_code || '').toUpperCase()] || 'под наблюдением',
+                                 reasons: [data.message || 'Анализ выполнен на главной странице.'],
+                             },
+                         };
+                         data.risk_index = (typeof data.risk_index === 'number') ? data.risk_index : null;
+                         data.risk_index_max = 100;
+                         data.live_evidence = {
+                             live_pass: !!(data.posts_read && Number(data.posts_read) > 0),
+                             mode: data.read_source ? String(data.read_source) : 'meta_sources',
+                             reason: data.message ? String(data.message) : '',
+                             sample_posts: examples.slice(0, 3),
+                         };
+                     }
                       window.__kroHomeCheckT0 = null;
                       hideCheckBusy();
                       ensureKroCheckPanelVisible();
@@ -1613,7 +1661,12 @@
                           if (inlineReport) inlineReport.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                       } catch (eScroll) { /* ignore */ }
                   };
-                  fetch(base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU) + '&home_quick_live=1', fetchOpts)
+                 fetch(base + '/api/kro/analyze-channel', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     cache: 'no-store',
+                     body: JSON.stringify({ username: queryU })
+                 })
                        .then(function (res) {
                            return res.text().then(function (text) {
                                var data = null;
@@ -1658,7 +1711,12 @@
                                return;
                            }
                            if (hint === 'http_422' && err && err.serverCode === 'live_analysis_required') {
-                               fetch(base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU) + '&mode=fast', fetchOpts)
+                               fetch(base + '/api/kro/analyze-channel', {
+                                   method: 'POST',
+                                   headers: { 'Content-Type': 'application/json' },
+                                   cache: 'no-store',
+                                   body: JSON.stringify({ username: queryU })
+                               })
                                    .then(function (res2) { return res2.json(); })
                                    .then(function (data2) { renderHomeCheckSuccess(data2); })
                                    .catch(function () {
