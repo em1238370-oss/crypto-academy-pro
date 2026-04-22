@@ -4224,9 +4224,26 @@ async function kroFetchTelegramPublicSnapshot(channelRef) {
     return { title, description: descr, subscribers, snippets };
   };
 
+  const parseTextMirror = (text) => {
+    if (!text || text.length < 60) return null;
+    const lines = text
+      .split('\n')
+      .map((x) => String(x || '').trim())
+      .filter(Boolean);
+    if (!lines.length) return null;
+    const snippets = lines
+      .filter((x) => x.length >= 20 && !/^https?:\/\//i.test(x))
+      .filter((x, i, a) => a.indexOf(x) === i)
+      .slice(0, 5)
+      .map((x) => (x.length > 260 ? `${x.slice(0, 257)}...` : x));
+    if (!snippets.length) return null;
+    return { title: '', description: '', subscribers: '', snippets };
+  };
+
   const urls = [
     `https://t.me/s/${encodeURIComponent(slug)}`,
     `https://t.me/${encodeURIComponent(slug)}?embed=1&mode=tme`,
+    `https://r.jina.ai/http://t.me/s/${encodeURIComponent(slug)}`,
   ];
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -4242,8 +4259,8 @@ async function kroFetchTelegramPublicSnapshot(channelRef) {
           },
         });
         if (!r.ok) continue;
-        const html = await r.text();
-        const parsed = parseHtml(html);
+        const body = await r.text();
+        const parsed = url.includes('r.jina.ai') ? parseTextMirror(body) : parseHtml(body);
         if (parsed) {
           return {
             slug,
@@ -6232,7 +6249,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     let homeQuickLiveAttempt = 'none';
     const homeQuickLiveWant = !deepMode;
     if (homeQuickLiveWant) {
-      if (floodState.active) {
+      if (floodState.active && !(byoRow && byoRow.sessionString)) {
         homeQuickLiveState = 'skipped_flood';
       } else {
         const tHome = kroHomeQuickLiveTimeoutMs;
