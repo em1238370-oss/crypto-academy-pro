@@ -70,12 +70,18 @@ app.get('/monitor', (req, res) => {
   res.sendFile('monitor.html', { root: join(__dirname, '..') });
 });
 
+app.get('/check', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.sendFile('check.html', { root: join(__dirname, '..') });
+});
+
 // Serve static files from parent directory (HTML, CSS, JS)
 app.use(
   express.static(join(__dirname, '..'), {
     setHeaders(res, filePath) {
       const name = basename(filePath);
-      if (name === 'index.html' || name === 'monitor.html' || name === 'channel.html') {
+      if (name === 'index.html' || name === 'monitor.html' || name === 'channel.html' || name === 'check.html') {
         res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         res.setHeader('Pragma', 'no-cache');
       }
@@ -6056,6 +6062,158 @@ app.post('/api/kro/byo-deep/revoke', express.json({ limit: '8000' }), (req, res)
   const token = (req.body && req.body.byo_token ? String(req.body.byo_token) : '').trim();
   if (token) kroByoSessionStore.delete(token);
   return res.status(200).json({ ok: true });
+});
+
+
+function kroAnalyzeFlagsFromTexts(texts) {
+  const source = Array.isArray(texts) ? texts.map((x) => String(x || '')).filter(Boolean) : [];
+  const joined = source.join('\n').toLowerCase();
+  const rules = [
+    { code: 'guarantee', title: 'Гарантии прибыли', kws: ['100%', 'без риска', 'гарант', 'точный профит'], weight: 24, explanation: 'Обещания гарантированного результата без оговорки о рисках.' },
+    { code: 'vip', title: 'Платный VIP-доступ', kws: ['vip', 'вип', 'подписк', 'платн', 'закрытый канал'], weight: 16, explanation: 'Упор на закрытый доступ и монетизацию сигналов.' },
+    { code: 'signal', title: 'Сигнальная подача', kws: ['сигнал', 'long', 'short', 'лонг', 'шорт', 'buy', 'sell'], weight: 14, explanation: 'Призывы к сделкам, часто без объяснения стратегии и рисков.' },
+    { code: 'fomo', title: 'Давление/FOMO', kws: ['срочно', 'успей', 'последний шанс', 'limited'], weight: 14, explanation: 'Текст подталкивает к импульсивному решению.' },
+    { code: 'x_promises', title: 'Обещание иксов', kws: ['x2', 'x5', 'x10', 'икс', 'памп'], weight: 18, explanation: 'Завышенные ожидания доходности.' },
+  ];
+  const flags = [];
+  for (const rule of rules) {
+    if (rule.kws.some((kw) => joined.includes(kw))) {
+      flags.push({ code: rule.code, title: rule.title, explanation: rule.explanation, weight: rule.weight });
+    }
+  }
+  const examples = [];
+  for (const txt of source) {
+    const low = txt.toLowerCase();
+    if (rules.some((r) => r.kws.some((kw) => low.includes(kw)))) examples.push(txt.slice(0, 240));
+    if (examples.length >= 5) break;
+  }
+  const risk = flags.reduce((acc, x) => acc + Number(x.weight || 0), 0);
+  return { flags, examples, risk };
+}
+
+function kroRiskToCheckStatus(risk) {
+  if (!Number.isFinite(risk)) return { status: 'НЕДОСТУПЕН', status_code: 'UNAVAILABLE' };
+  if (risk >= 70) return { status: 'ОПАСНО', status_code: 'DANGER' };
+  if (risk >= 40) return { status: 'ПОДОЗРИТЕЛЬНО', status_code: 'SUSPICIOUS' };
+  return { status: 'БЕЗОПАСНО', status_code: 'SAFE' };
+}
+
+app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  const raw = String((req.body && (req.body.username || req.body.channel || req.body.url)) || '').trim();
+  const normalized = normalizeChannel(raw);
+  const key = channelMatchKey(normalized);
+  if (!key) {
+    return res.status(400).json({ error: 'bad_request', message_ru: 'Передайте username канала: @username или t.me/username.' });
+  }
+
+  const minPosts = 3;
+  const deadlineMs = Date.now() + 7 * 60 * 1000;
+  const channelForRead = normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${normalized}`;
+  const channelLabel = normalized.startsWith('@') ? normalized : `@${key}`;
+  const progress = [];
+  const addStep = (step) => progress.push({ step, at: new Date().toISOString() });
+
+  try {
+    addStep('Проверяю готовый результат в scam_base...');
+    const sheetsClient = await getKroSheetsClient();
+    if (sheetsClient && kroSheetId) {
+      const scamRawRows = await kroFetchScamBaseValuesCached(sheetsClient);
+      const matches = scamRawRows
+        .slice(1)
+        .map(parseScamBaseRow)
+        .filter((r) => r.username && channelMatchKey(r.username) === key)
+        .map(enrichScamBaseContentAnalysisForMonitor);
+      if (matches.length) {
+        const latest = matches.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
+        const reports = await getAllReportsForChannel(sheetsClient, latest.username);
+        const riskIndex = computeKroRiskIndex(latest, reports);
+        const analysis = kroV0BuildAnalysisFromScamBaseProfile(latest, { channel_key: key });
+        const st = kroRiskToCheckStatus(riskIndex);
+        return res.status(200).json({
+          channel: channelLabel,
+          read_source: 'scam_base',
+          status: st.status,
+          status_code: st.status_code,
+          risk_index: riskIndex,
+          posts_read: null,
+          period_days: null,
+          suspicious_examples: Array.isArray(analysis.content_behavior) ? analysis.content_behavior.slice(0, 5) : [],
+          flags: [{ code: 'cached', title: 'Готовый результат', explanation: 'Канал уже присутствует в подтвержденной базе мониторинга.' }],
+          progress,
+          message: `Готово: найден готовый результат по ${channelLabel}.`,
+        });
+      }
+    }
+
+    addStep('Читаю публичную ленту t.me/s...');
+    const publicSnapshot = await kroFetchTelegramPublicSnapshot(channelForRead);
+    if (publicSnapshot && Array.isArray(publicSnapshot.snippets) && publicSnapshot.snippets.length >= minPosts) {
+      const f = kroAnalyzeFlagsFromTexts(publicSnapshot.snippets);
+      const risk = Math.max(0, Math.min(100, Math.round(f.risk || 15)));
+      const st = kroRiskToCheckStatus(risk);
+      return res.status(200).json({
+        channel: channelLabel,
+        read_source: 'public_snapshot',
+        status: st.status,
+        status_code: st.status_code,
+        risk_index: risk,
+        posts_read: publicSnapshot.snippets.length,
+        period_days: 7,
+        suspicious_examples: f.examples.length ? f.examples : publicSnapshot.snippets.slice(0, 5),
+        flags: f.flags,
+        progress,
+        message: `Готово: прочитано ${publicSnapshot.snippets.length} постов из публичной ленты ${channelLabel}.`,
+      });
+    }
+
+    addStep('Пробую Telethon-чтение канала...');
+    const timeoutLeft = Math.max(0, deadlineMs - Date.now());
+    const once = kroRunCheckOnce(channelForRead, {
+      readOnly: true,
+      periodDays: 90,
+      timeoutMs: Math.min(Math.max(timeoutLeft - 5000, 60000), 6 * 60 * 1000),
+    });
+    const parsed = kroNormalizeCheckOnceForAnalysis(once);
+    const samplePosts = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
+    const enoughPosts = parsed._check_once_ok === true && parsed.found === true && Number(parsed.posts_fetched || 0) >= minPosts && samplePosts.length >= 1;
+    if (enoughPosts) {
+      const f = kroAnalyzeFlagsFromTexts(samplePosts);
+      const risk = Number.isFinite(Number(parsed.risk_score)) ? Number(parsed.risk_score) : f.risk;
+      const riskIndex = Number.isFinite(risk) ? Math.max(0, Math.min(100, Math.round(risk))) : null;
+      const st = kroRiskToCheckStatus(riskIndex);
+      return res.status(200).json({
+        channel: channelLabel,
+        read_source: 'telethon',
+        status: st.status,
+        status_code: st.status_code,
+        risk_index: riskIndex,
+        posts_read: Number(parsed.posts_fetched || samplePosts.length),
+        period_days: Number(parsed.analysis_window_days || 90),
+        suspicious_examples: f.examples.length ? f.examples : samplePosts.slice(0, 5),
+        flags: f.flags,
+        progress,
+        message: `Готово: через Telethon проанализировано ${Number(parsed.posts_fetched || samplePosts.length)} постов.`,
+      });
+    }
+
+    return res.status(200).json({
+      channel: channelLabel,
+      read_source: 'none',
+      status: 'НЕДОСТУПЕН',
+      status_code: 'UNAVAILABLE',
+      risk_index: null,
+      posts_read: Number(parsed.posts_fetched || 0),
+      period_days: Number(parsed.analysis_window_days || 0) || null,
+      suspicious_examples: [],
+      flags: [],
+      progress,
+      message: 'Канал недоступен для анализа: не удалось прочитать минимум 3 реальных поста.',
+    });
+  } catch (e) {
+    console.error('KRO analyze-channel error:', e);
+    return res.status(500).json({ error: 'internal_error', message_ru: 'Внутренняя ошибка анализа канала.' });
+  }
 });
 
 // GET /api/kro/channel-profile?u=…&mode=fast|deep — карточка scam_base + анализ.

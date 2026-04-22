@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KRO Check</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --card: #121a31;
+      --muted: #93a0c1;
+      --text: #eef2ff;
+      --accent: #6ea8fe;
+      --danger: #ff6b6b;
+      --warn: #ffd166;
+      --safe: #5dd39e;
+      --disabled: #7f8aa8;
+      --border: #263252;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(1200px 700px at 50% -50%, #1a2750, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .wrap { width: min(900px, 100%); }
+    .card {
+      background: color-mix(in srgb, var(--card) 94%, #fff 6%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+    h1 { margin: 0 0 10px; font-size: 30px; text-align: center; }
+    .sub { margin: 0 0 18px; text-align: center; color: var(--muted); }
+    .controls { display: flex; gap: 10px; }
+    input {
+      flex: 1;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #0e1630;
+      color: var(--text);
+      padding: 14px 16px;
+      font-size: 18px;
+    }
+    button {
+      border: 0;
+      border-radius: 12px;
+      background: var(--accent);
+      color: #06132c;
+      padding: 14px 20px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:disabled { cursor: not-allowed; background: #5279bb; opacity: 0.6; }
+    .progress {
+      margin-top: 14px;
+      font-size: 15px;
+      color: var(--muted);
+      min-height: 24px;
+    }
+    .result { margin-top: 18px; display: none; }
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #081020;
+    }
+    .danger { background: var(--danger); }
+    .warn { background: var(--warn); }
+    .safe { background: var(--safe); }
+    .disabled { background: var(--disabled); color: #0f1b3a; }
+    .grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin: 8px 0 12px;
+    }
+    .tile {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: #0d1630;
+    }
+    .tile b { display: block; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+    ul { margin: 8px 0 0; padding-left: 18px; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Проверка Telegram-канала</h1>
+      <p class="sub">Вставьте `t.me/username` или `@username` и получите быстрый анализ.</p>
+      <div class="controls">
+        <input id="channelInput" placeholder="@username или https://t.me/username" />
+        <button id="analyzeBtn">Проверить</button>
+      </div>
+      <div id="progress" class="progress"></div>
+      <section id="result" class="result"></section>
+    </section>
+  </main>
+  <script>
+    const inputEl = document.getElementById('channelInput');
+    const btnEl = document.getElementById('analyzeBtn');
+    const progressEl = document.getElementById('progress');
+    const resultEl = document.getElementById('result');
+
+    const PROGRESS_STEPS = [
+      'Читаю сообщения канала...',
+      'Анализирую посты...',
+      'Проверяю источники...',
+      'Формирую итоговый вывод...'
+    ];
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function badgeClass(statusCode) {
+      if (statusCode === 'DANGER') return 'danger';
+      if (statusCode === 'SUSPICIOUS') return 'warn';
+      if (statusCode === 'SAFE') return 'safe';
+      return 'disabled';
+    }
+
+    function renderResult(data) {
+      const flags = Array.isArray(data.flags) ? data.flags : [];
+      const examples = Array.isArray(data.suspicious_examples) ? data.suspicious_examples : [];
+      resultEl.style.display = 'block';
+      resultEl.innerHTML = `
+        <div class="badge ${badgeClass(data.status_code)}">${escapeHtml(data.status || 'НЕДОСТУПЕН')}</div>
+        <div class="grid">
+          <div class="tile"><b>Канал</b>${escapeHtml(data.channel || '—')}</div>
+          <div class="tile"><b>Индекс риска</b>${data.risk_index == null ? '—' : `${data.risk_index}/100`}</div>
+          <div class="tile"><b>Постов прочитано</b>${data.posts_read == null ? '—' : data.posts_read}</div>
+          <div class="tile"><b>Период</b>${data.period_days == null ? '—' : `${data.period_days} дн.`}</div>
+        </div>
+        <div><b>Примеры подозрительных фраз:</b></div>
+        <ul>${examples.length ? examples.map(x => `<li>${escapeHtml(x)}</li>`).join('') : '<li>Явных примеров не найдено.</li>'}</ul>
+        <div style="margin-top:10px;"><b>Найденные флаги:</b></div>
+        <ul>${flags.length ? flags.map(x => `<li>${escapeHtml(x.title)} — ${escapeHtml(x.explanation)}</li>`).join('') : '<li>Флаги не обнаружены.</li>'}</ul>
+      `;
+    }
+
+    btnEl.addEventListener('click', async () => {
+      const username = inputEl.value.trim();
+      if (!username) {
+        progressEl.textContent = 'Введите ссылку или username канала.';
+        return;
+      }
+      btnEl.disabled = true;
+      resultEl.style.display = 'none';
+      resultEl.innerHTML = '';
+      let idx = 0;
+      progressEl.textContent = PROGRESS_STEPS[idx];
+      const timer = setInterval(() => {
+        idx = Math.min(idx + 1, PROGRESS_STEPS.length - 1);
+        progressEl.textContent = PROGRESS_STEPS[idx];
+      }, 2500);
+      try {
+        const r = await fetch('/api/kro/analyze-channel', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ username })
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          progressEl.textContent = data?.message_ru || data?.error || 'Ошибка сервиса.';
+          return;
+        }
+        progressEl.textContent = data.message || 'Проверка завершена.';
+        renderResult(data);
+      } catch (e) {
+        progressEl.textContent = 'Не удалось выполнить запрос. Проверьте соединение.';
+      } finally {
+        clearInterval(timer);
+        btnEl.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
