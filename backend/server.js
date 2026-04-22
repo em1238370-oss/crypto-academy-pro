@@ -6355,36 +6355,57 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       }
     }
 
-    // Жёсткий fast-режим: без чтения текстов постов отчёт не формируется.
+    // Если чтение сообщений не удалось, возвращаем базовый отчёт вместо блокирующего 422.
     if (homeQuickLiveWant && !hasHomeQuickLive && !hasHomeQuickPublicContent) {
       const evidenceFail = kroBuildLiveEvidence(null, homeQuickLiveState, null);
       const msgByState = {
         rate_limited:
-          'Живой анализ не выполнен из-за лимита Telegram/FLOOD_WAIT. Повторите позже — нужен реальный вход в ленту.',
+          'Живой анализ не выполнен из-за лимита Telegram/FLOOD_WAIT. Показан базовый отчёт без чтения ленты.',
         skipped_flood:
-          'Живой анализ отложен из-за активного FLOOD_WAIT Telegram. Без LIVE отчёт не формируется.',
+          'Живой анализ отложен из-за активного FLOOD_WAIT Telegram. Показан базовый отчёт без чтения ленты.',
         timeout:
-          'Живой анализ не уложился в лимит времени (~7 мин). Без чтения сообщений отчёт не формируется.',
+          'Живой анализ не уложился в лимит времени (~7 мин). Показан базовый отчёт без чтения ленты.',
         not_crypto:
-          'Живой анализ не выполнен: канал не прошёл крипто-проверку в Telegram-проходе.',
+          'Живой анализ не выполнен: канал не прошёл крипто-проверку в Telegram-проходе. Показан базовый отчёт.',
         content_unavailable:
-          'Живой проход не дал подтверждённого чтения текстов постов. Альтернативное чтение тоже не дало выборку сообщений.',
+          'Живой проход не дал подтверждённого чтения текстов постов. Показан базовый отчёт по доступным источникам.',
         failed:
-          'Не удалось прочитать сообщения канала ни основным, ни альтернативным путём. Без чтения сообщений fast-отчёт бессмысленен.',
+          'Не удалось прочитать сообщения канала ни основным, ни альтернативным путём. Показан базовый отчёт по доступным источникам.',
       };
       const st = String(homeQuickLiveState || 'failed');
       const msg = msgByState[st] || msgByState.failed;
-      return res.status(422).json({
-        error: 'live_analysis_required',
-        message_ru: msg,
-        live_required: true,
+      const watchRowFallback = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
+      let analysisFallback = await kroV0BuildFastAnalysisNoLive(sheetsClient, key, decoded, watchRowFallback);
+      analysisFallback.basic_info = [msg].concat(Array.isArray(analysisFallback.basic_info) ? analysisFallback.basic_info : []);
+      if (watchRowFallback && !analysisFallback._kro_watch_baked) {
+        kroV0EnrichAnalysisWithWatch(analysisFallback, watchRowFallback);
+      }
+      if (analysisFallback._kro_watch_baked) delete analysisFallback._kro_watch_baked;
+      return res.status(200).json({
+        mode: responseMode,
+        byo_deep: byoDeepActive,
+        deep_status: deepStatus,
+        deep_available_at: deepAvailableIso,
+        deep_cache_hit: deepFromCacheHit,
+        deep_cache_stale: deepCacheStale,
+        deep_cache_age_ms: deepCacheAgeMs,
+        deep_cache_hint,
+        deep_gate: kroBuildChannelProfileDeepGate(deepGatePayload),
+        profile: null,
+        merged_rows: matches.length > 1 ? matches.length : undefined,
+        risk_index: null,
+        risk_index_max: 100,
+        false_positive_count: 0,
+        analysis: analysisFallback,
         live_evidence: evidenceFail,
         live_metrics: {
+          ...liveMetrics,
           home_quick_live: false,
           home_quick_live_state: st,
           home_quick_live_attempt: homeQuickLiveAttempt,
           home_quick_public_content: false,
           check_once_ok: false,
+          fast_degraded: true,
         },
       });
     }
