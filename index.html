@@ -1595,7 +1595,25 @@
                            fetchOpts.signal = AbortSignal.timeout(__KRO_HOME_FETCH_MS);
                        }
                    } catch (eSig) { /* ignore */ }
-                   fetch(base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU) + '&home_quick_live=1', fetchOpts)
+                  var renderHomeCheckSuccess = function (data) {
+                      if (!data || !data.analysis || typeof data.analysis !== 'object') throw new Error('no_analysis');
+                      window.__kroHomeCheckT0 = null;
+                      hideCheckBusy();
+                      ensureKroCheckPanelVisible();
+                      fillInlineReport(data, queryU, displayLabel, __kroCheckStarted);
+                      if (inlineReport) {
+                          inlineReport.classList.remove('hidden');
+                          inlineReport.hidden = false;
+                      }
+                      var wrapScroll = document.getElementById('kro-f1-cta-check-wrap');
+                      try {
+                          if (wrapScroll) wrapScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      } catch (eW) { /* ignore */ }
+                      try {
+                          if (inlineReport) inlineReport.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                      } catch (eScroll) { /* ignore */ }
+                  };
+                  fetch(base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU) + '&home_quick_live=1', fetchOpts)
                        .then(function (res) {
                            return res.text().then(function (text) {
                                var data = null;
@@ -1611,33 +1629,16 @@
                                        else if (data.message) srvMsg = String(data.message).trim();
                                        else if (data.error) srvMsg = String(data.error).trim();
                                    }
-                                   var httpErr = new Error('http_' + res.status);
+                                  var httpErr = new Error('http_' + res.status);
                                    httpErr.serverMessage = srvMsg;
+                                  httpErr.serverCode = data && data.error ? String(data.error) : '';
                                    throw httpErr;
                                }
                                return data;
                            });
                        })
                        .then(function (data) {
-                           if (!data || !data.analysis || typeof data.analysis !== 'object') throw new Error('no_analysis');
-                           var finish = function () {
-                               window.__kroHomeCheckT0 = null;
-                               hideCheckBusy();
-                               ensureKroCheckPanelVisible();
-                               fillInlineReport(data, queryU, displayLabel, __kroCheckStarted);
-                               if (inlineReport) {
-                                   inlineReport.classList.remove('hidden');
-                                   inlineReport.hidden = false;
-                               }
-                               var wrapScroll = document.getElementById('kro-f1-cta-check-wrap');
-                               try {
-                                   if (wrapScroll) wrapScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                               } catch (eW) { /* ignore */ }
-                               try {
-                                   if (inlineReport) inlineReport.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                               } catch (eScroll) { /* ignore */ }
-                           };
-                           finish();
+                          renderHomeCheckSuccess(data);
                        })
                        .catch(function (err) {
                            var hint = (err && err.message) ? String(err.message) : '';
@@ -1654,6 +1655,23 @@
                                setTimeout(function () {
                                    runHomeChannelCheck(slug, retryAttempt + 1);
                                }, 2000);
+                               return;
+                           }
+                           if (hint === 'http_422' && err && err.serverCode === 'live_analysis_required') {
+                               fetch(base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU) + '&mode=fast', fetchOpts)
+                                   .then(function (res2) { return res2.json(); })
+                                   .then(function (data2) { renderHomeCheckSuccess(data2); })
+                                   .catch(function () {
+                                       window.__kroHomeCheckT0 = null;
+                                       hideCheckBusy();
+                                       var m2 = mapHomeFetchError(err);
+                                       checkResult.innerHTML = '<span class="kro-check-result-block">' + esc(m2.title) + '</span>' +
+                                           m2.paragraphs.map(function (p) {
+                                               return '<span class="kro-check-result-block">' + esc(p) + '</span>';
+                                           }).join('') +
+                                           '<button type="button" class="kro-report-submit kro-check-retry" id="kro-check-retry">Повторить</button>';
+                                       checkResult.classList.remove('hidden');
+                                   });
                                return;
                            }
                            window.__kroHomeCheckT0 = null;
