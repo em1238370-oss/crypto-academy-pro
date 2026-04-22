@@ -4184,17 +4184,8 @@ function kroStripHtmlToText(html) {
 async function kroFetchTelegramPublicSnapshot(channelRef) {
   const slug = kroExtractTelegramPublicSlug(channelRef);
   if (!slug) return null;
-  const ctl = new AbortController();
-  const t = setTimeout(() => ctl.abort(), 20000);
-  try {
-    const r = await fetch(`https://t.me/s/${encodeURIComponent(slug)}`, {
-      signal: ctl.signal,
-      headers: {
-        'user-agent': 'Mozilla/5.0 (compatible; KRO-Monitor/1.0; +https://crypto-academy-pro.onrender.com)',
-      },
-    });
-    if (!r.ok) return null;
-    const html = await r.text();
+
+  const parseHtml = (html) => {
     if (!html || html.length < 100) return null;
 
     const titleM = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) ||
@@ -4207,27 +4198,70 @@ async function kroFetchTelegramPublicSnapshot(channelRef) {
     const subM = html.match(/([\d\s.,]{2,})\s*(subscribers?|подписчик\w*)/i);
     const subscribers = subM ? kroStripHtmlToText(subM[1]).replace(/\s+/g, ' ').trim() : '';
 
-    const postMatches = [...html.matchAll(/<div class="tgme_widget_message_text[^"]*">([\s\S]*?)<\/div>/gi)];
-    const snippets = postMatches
-      .slice(0, 3)
-      .map((m) => kroStripHtmlToText(m[1]))
+    const textSelectors = [
+      /<div class="tgme_widget_message_text[^"]*">([\s\S]*?)<\/div>/gi,
+      /<div class="tgme_widget_message_text js-message_text[^"]*">([\s\S]*?)<\/div>/gi,
+      /<div class="js-message_text[^"]*">([\s\S]*?)<\/div>/gi,
+    ];
+    let rawBlocks = [];
+    for (const rx of textSelectors) {
+      const arr = [...html.matchAll(rx)];
+      if (arr.length) {
+        rawBlocks = arr.map((m) => m[1]);
+        break;
+      }
+    }
+
+    const snippets = rawBlocks
+      .slice(0, 8)
+      .map((x) => kroStripHtmlToText(x))
       .filter(Boolean)
-      .map((x) => (x.length > 220 ? `${x.slice(0, 217)}...` : x));
+      .filter((x, i, a) => a.indexOf(x) === i)
+      .slice(0, 5)
+      .map((x) => (x.length > 260 ? `${x.slice(0, 257)}...` : x));
 
     if (!title && !descr && !subscribers && !snippets.length) return null;
-    return {
-      slug,
-      title,
-      description: descr,
-      subscribers,
-      snippets,
-      fetched_at: new Date().toISOString(),
-    };
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(t);
+    return { title, description: descr, subscribers, snippets };
+  };
+
+  const urls = [
+    `https://t.me/s/${encodeURIComponent(slug)}`,
+    `https://t.me/${encodeURIComponent(slug)}?embed=1&mode=tme`,
+  ];
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    for (const url of urls) {
+      const ctl = new AbortController();
+      const t = setTimeout(() => ctl.abort(), 22000);
+      try {
+        const r = await fetch(url, {
+          signal: ctl.signal,
+          headers: {
+            'user-agent': 'Mozilla/5.0 (compatible; KRO-Monitor/1.0; +https://crypto-academy-pro.onrender.com)',
+            accept: 'text/html,application/xhtml+xml',
+          },
+        });
+        if (!r.ok) continue;
+        const html = await r.text();
+        const parsed = parseHtml(html);
+        if (parsed) {
+          return {
+            slug,
+            ...parsed,
+            fetched_at: new Date().toISOString(),
+            fetch_attempt: attempt + 1,
+          };
+        }
+      } catch {
+        /* retry next source */
+      } finally {
+        clearTimeout(t);
+      }
+    }
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 600 + attempt * 500));
   }
+
+  return null;
 }
 
 function kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, snap) {
@@ -4480,7 +4514,7 @@ function kroBuildLiveEvidence(parsed, quickState, publicSnap) {
   }
   if (publicSnap && Array.isArray(publicSnap.snippets)) {
     const sample = publicSnap.snippets.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 3);
-    if (sample.length >= 3) {
+    if (sample.length >= 2) {
       return {
         live_pass: true,
         mode: 'public_content_fallback',
@@ -6178,7 +6212,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       const snippets = Array.isArray(snap.snippets)
         ? snap.snippets.map((x) => String(x || '').trim()).filter(Boolean)
         : [];
-      return snippets.length >= 3;
+      return snippets.length >= 2;
     };
     const homeQuickAcceptParsed = (norm) => {
       if (!(norm && norm._check_once_ok === true && !norm.telegram_rate_limited && !norm.not_crypto)) return false;
