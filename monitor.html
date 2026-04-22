@@ -1929,7 +1929,19 @@
     }, 2000);
   }
 
-  function renderMonitorPipelineState(meta) {
+  function pickLatestWatchDetectedAt(channelsWatch) {
+    var rows = Array.isArray(channelsWatch) ? channelsWatch : [];
+    var maxMs = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var raw = rows[i] && rows[i].detected_at ? String(rows[i].detected_at) : '';
+      if (!raw) continue;
+      var ms = Date.parse(raw);
+      if (Number.isFinite(ms) && ms > maxMs) maxMs = ms;
+    }
+    return maxMs > 0 ? new Date(maxMs).toISOString() : '';
+  }
+
+  function renderMonitorPipelineState(meta, channelsWatch) {
     meta = meta || {};
     var st = (meta.monitor_run_status || '').toLowerCase();
     var sec = document.getElementById('mon-pipeline-state');
@@ -2011,11 +2023,15 @@
     if (countsEl) {
       var nic = Number(meta.new_in_cycle || 0);
       var wn = Number(meta.channels_scanned_in_cycle || 0);
+      var watchLastIso = pickLatestWatchDetectedAt(channelsWatch);
+      var watchLastText = watchLastIso ? formatMonLocalDateTime(new Date(watchLastIso)) : '—';
       countsEl.textContent =
         'Последний записанный цикл в kro_meta: новых подтверждённых записей в scam_base — ' +
         nic +
         '; строк широкого мониторинга (channels_watch) — ' +
         wn +
+        '; последняя находка в watch по detected_at — ' +
+        watchLastText +
         '. Если смотрите только «новых за цикл» как маленькую цифру — сравните со вторым числом: система может активно собирать каналы, но в scam_base попадут не все.';
     }
 
@@ -2878,7 +2894,7 @@
 
         var chTotalApi = data.channels_total;
         renderStatus(meta, scamBase, data.status_summary || {}, chTotalApi, data.confirmed_status_summary);
-        renderMonitorPipelineState(meta);
+        renderMonitorPipelineState(meta, data.channels_watch || []);
         renderMetricTables(meta, typeof chTotalApi === 'number' ? chTotalApi : (scamBase || []).length, data.confirmed_status_summary, data.rollup_12h || {});
         renderCycleLog(meta, scamBase);
         renderRecentCases(data.recent_cases || []);
