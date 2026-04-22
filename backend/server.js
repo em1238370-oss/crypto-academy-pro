@@ -6180,29 +6180,33 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         : [];
       return snippets.length >= 3;
     };
+    const homeQuickAcceptParsed = (norm) => {
+      if (!(norm && norm._check_once_ok === true && !norm.telegram_rate_limited && !norm.not_crypto)) return false;
+      if (!homeQuickHasMessageProof(norm)) return false;
+      homeQuickParsed = norm;
+      homeQuickLiveState = 'ok';
+      try {
+        kroDeepRecordSuccessfulTelegramDeep(clientId);
+      } catch {
+        /* ignore */
+      }
+      return true;
+    };
     let homeQuickParsed = null;
     let homeQuickPublicSnapshot = null;
     let homeQuickLiveState = 'not_requested';
+    let homeQuickLiveAttempt = 'none';
     const homeQuickLiveWant = !deepMode;
     if (homeQuickLiveWant) {
       if (floodState.active) {
         homeQuickLiveState = 'skipped_flood';
       } else {
         const tHome = kroHomeQuickLiveTimeoutMs;
+        homeQuickLiveAttempt = 'primary_90d';
         const onceH = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 90, timeoutMs: tHome });
         const normH = kroNormalizeCheckOnceForAnalysis(onceH);
-        if (normH && normH._check_once_ok === true && !normH.telegram_rate_limited && !normH.not_crypto) {
-          if (homeQuickHasMessageProof(normH)) {
-            homeQuickParsed = normH;
-            homeQuickLiveState = 'ok';
-            try {
-              kroDeepRecordSuccessfulTelegramDeep(clientId);
-            } catch {
-              /* ignore */
-            }
-          } else {
-            homeQuickLiveState = 'content_unavailable';
-          }
+        if (homeQuickAcceptParsed(normH)) {
+          /* accepted above */
         } else if (normH && normH.telegram_rate_limited) {
           homeQuickLiveState = 'rate_limited';
         } else if (normH && normH.not_crypto) {
@@ -6210,7 +6214,25 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         } else if (normH && normH.check_once_timed_out === true) {
           homeQuickLiveState = 'timeout';
         } else {
-          homeQuickLiveState = 'failed';
+          homeQuickLiveState = 'content_unavailable';
+        }
+
+        if (!homeQuickParsed && !['rate_limited', 'skipped_flood', 'not_crypto'].includes(homeQuickLiveState)) {
+          const tRetry = Math.min(240000, Math.max(90000, Math.floor(tHome * 0.6)));
+          homeQuickLiveAttempt = 'retry_30d';
+          const onceRetry = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 30, timeoutMs: tRetry });
+          const normRetry = kroNormalizeCheckOnceForAnalysis(onceRetry);
+          if (homeQuickAcceptParsed(normRetry)) {
+            homeQuickLiveAttempt = 'retry_30d_ok';
+          } else if (normRetry && normRetry.telegram_rate_limited) {
+            homeQuickLiveState = 'rate_limited';
+          } else if (normRetry && normRetry.not_crypto) {
+            homeQuickLiveState = 'not_crypto';
+          } else if (normRetry && normRetry.check_once_timed_out === true) {
+            homeQuickLiveState = 'timeout';
+          } else {
+            homeQuickLiveState = 'failed';
+          }
         }
       }
     }
@@ -6251,6 +6273,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         live_metrics: {
           home_quick_live: false,
           home_quick_live_state: st,
+          home_quick_live_attempt: homeQuickLiveAttempt,
           home_quick_public_content: false,
           check_once_ok: false,
         },
@@ -6275,6 +6298,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       liveMetrics = {
         ...liveMetrics,
         home_quick_live_state: homeQuickLiveState,
+        home_quick_live_attempt: homeQuickLiveAttempt,
         home_quick_public_content: homeQuickHasPublicMessageProof(homeQuickPublicSnapshot),
       };
     }
