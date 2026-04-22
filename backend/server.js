@@ -6100,121 +6100,173 @@ function kroRiskToCheckStatus(risk) {
 
 app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-  const raw = String((req.body && (req.body.username || req.body.channel || req.body.url)) || '').trim();
-  const normalized = normalizeChannel(raw);
+  const rawInput = String((req.body && (req.body.username || req.body.channel || req.body.url)) || '').trim();
+  const normalized = normalizeChannel(rawInput);
   const key = channelMatchKey(normalized);
   if (!key) {
-    return res.status(400).json({ error: 'bad_request', message_ru: 'Передайте username канала: @username или t.me/username.' });
+    return res.status(400).json({ error: 'bad_request', message_ru: 'Передайте username канала (t.me/username или @username).' });
   }
 
-  const minPosts = 3;
-  const deadlineMs = Date.now() + 7 * 60 * 1000;
-  const channelForRead = normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${normalized}`;
-  const channelLabel = normalized.startsWith('@') ? normalized : `@${key}`;
+  const startedAt = Date.now();
+  const deadlineAt = startedAt + 7 * 60 * 1000;
   const progress = [];
-  const addStep = (step) => progress.push({ step, at: new Date().toISOString() });
+  const addProgress = (step) => progress.push({ step, at: new Date().toISOString() });
+  const channelForOnce = normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${normalized}`;
+  const channelDisplay = normalized.startsWith('@') ? normalized : `@${key}`;
+  const minPosts = 3;
+
+  const buildUnavailable = (message, postsRead = 0, periodDays = null, readSource = 'none') => ({
+    channel: channelDisplay,
+    read_source: readSource,
+    status: 'НЕДОСТУПЕН',
+    status_code: 'UNAVAILABLE',
+    risk_index: null,
+    posts_read: postsRead,
+    period_days: periodDays,
+    suspicious_examples: [],
+    flags: [],
+    progress,
+    message,
+  });
 
   try {
-    addStep('Проверяю готовый результат в scam_base...');
+    const msBudgetLeft = () => Math.max(0, deadlineAt - Date.now());
+
+    let postsTexts = [];
+    let postsRead = 0;
+    let periodDays = null;
+    let readSource = 'none';
+    let baseRisk = null;
+
+    addProgress('Читаю сообщения канала через Telethon (90 дней)...');
+    let parsed = null;
+    {
+      const left = msBudgetLeft();
+      if (left >= 60000) {
+        const once90 = kroRunCheckOnce(channelForOnce, {
+          readOnly: true,
+          periodDays: 90,
+          timeoutMs: Math.min(left, 4 * 60 * 1000),
+        });
+        const p90 = kroNormalizeCheckOnceForAnalysis(once90);
+        const sample90 = Array.isArray(p90.sample_posts) ? p90.sample_posts.map((x) => String(x || '').trim()).filter(Boolean) : [];
+        if (p90._check_once_ok === true && p90.found === true && Number(p90.posts_fetched || 0) >= minPosts && sample90.length >= 1) {
+          parsed = p90;
+          postsTexts = sample90;
+          postsRead = Number(p90.posts_fetched || sample90.length || 0);
+          periodDays = Number(p90.analysis_window_days || 90);
+          readSource = 'telethon_90d';
+          baseRisk = Number.isFinite(Number(p90.risk_score)) ? Number(p90.risk_score) : null;
+        }
+      }
+    }
+
+    if (!postsTexts.length) {
+      addProgress('Читаю сообщения канала через Telethon (30 дней)...');
+      const left = msBudgetLeft();
+      if (left >= 60000) {
+        const once30 = kroRunCheckOnce(channelForOnce, {
+          readOnly: true,
+          periodDays: 30,
+          timeoutMs: Math.min(left, 2 * 60 * 1000),
+        });
+        const p30 = kroNormalizeCheckOnceForAnalysis(once30);
+        const sample30 = Array.isArray(p30.sample_posts) ? p30.sample_posts.map((x) => String(x || '').trim()).filter(Boolean) : [];
+        if (p30._check_once_ok === true && p30.found === true && Number(p30.posts_fetched || 0) >= minPosts && sample30.length >= 1) {
+          parsed = p30;
+          postsTexts = sample30;
+          postsRead = Number(p30.posts_fetched || sample30.length || 0);
+          periodDays = Number(p30.analysis_window_days || 30);
+          readSource = 'telethon_30d';
+          baseRisk = Number.isFinite(Number(p30.risk_score)) ? Number(p30.risk_score) : null;
+        }
+      }
+    }
+
+    if (!postsTexts.length) {
+      addProgress('Читаю публичную ленту t.me/s...');
+      const publicSnap = await kroFetchTelegramPublicSnapshot(channelForOnce);
+      if (publicSnap && Array.isArray(publicSnap.snippets) && publicSnap.snippets.length >= minPosts) {
+        postsTexts = publicSnap.snippets.map((x) => String(x || '').trim()).filter(Boolean);
+        postsRead = postsTexts.length;
+        periodDays = 7;
+        readSource = 'public_tme_s';
+      }
+    }
+
+    if (!postsTexts.length) {
+      return res.status(200).json(
+        buildUnavailable('Канал недоступен для анализа: не удалось прочитать ни одного реального поста (Telethon и t.me/s).')
+      );
+    }
+
+    const signal = kroCollectSuspiciousFlagsFromTexts(postsTexts);
+    let risk = Number.isFinite(baseRisk) ? baseRisk : signal.risk;
+
+    // Дополнительный слой: scam_base только после живого чтения постов.
+    let scamBaseLayer = null;
+    addProgress('Проверяю дополнительный слой scam_base...');
     const sheetsClient = await getKroSheetsClient();
     if (sheetsClient && kroSheetId) {
-      const scamRawRows = await kroFetchScamBaseValuesCached(sheetsClient);
-      const matches = scamRawRows
+      const rawRows = await kroFetchScamBaseValuesCached(sheetsClient);
+      const rows = rawRows
         .slice(1)
         .map(parseScamBaseRow)
         .filter((r) => r.username && channelMatchKey(r.username) === key)
         .map(enrichScamBaseContentAnalysisForMonitor);
-      if (matches.length) {
-        const latest = matches.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
+      if (rows.length) {
+        const latest = rows.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
         const reports = await getAllReportsForChannel(sheetsClient, latest.username);
-        const riskIndex = computeKroRiskIndex(latest, reports);
-        const analysis = kroV0BuildAnalysisFromScamBaseProfile(latest, { channel_key: key });
-        const st = kroRiskToCheckStatus(riskIndex);
-        return res.status(200).json({
-          channel: channelLabel,
-          read_source: 'scam_base',
-          status: st.status,
-          status_code: st.status_code,
-          risk_index: riskIndex,
-          posts_read: null,
-          period_days: null,
-          suspicious_examples: Array.isArray(analysis.content_behavior) ? analysis.content_behavior.slice(0, 5) : [],
-          flags: [{ code: 'cached', title: 'Готовый результат', explanation: 'Канал уже присутствует в подтвержденной базе мониторинга.' }],
-          progress,
-          message: `Готово: найден готовый результат по ${channelLabel}.`,
-        });
+        const riskIndexDb = computeKroRiskIndex(latest, reports);
+        const statusBlob = (latest.status || latest.verdict || '').toString().trim() || '—';
+        scamBaseLayer = {
+          found: true,
+          status: statusBlob,
+          risk_index: Number.isFinite(riskIndexDb) ? riskIndexDb : null,
+          complaints: latest.complaints != null ? latest.complaints : null,
+          total_loss_rub: Number(latest.total_loss_rub || 0) || 0,
+        };
+        signal.flags = [
+          {
+            code: 'scam_base_context',
+            title: 'Доп. слой из scam_base',
+            explanation: `Канал есть в базе: статус «${statusBlob}», жалоб: ${latest.complaints != null ? latest.complaints : '—'}.`,
+          },
+          ...(Array.isArray(signal.flags) ? signal.flags : []),
+        ];
+        if (Number.isFinite(riskIndexDb)) {
+          risk = Number.isFinite(risk) ? Math.round((risk * 0.7) + (riskIndexDb * 0.3)) : riskIndexDb;
+        }
       }
     }
 
-    addStep('Читаю публичную ленту t.me/s...');
-    const publicSnapshot = await kroFetchTelegramPublicSnapshot(channelForRead);
-    if (publicSnapshot && Array.isArray(publicSnapshot.snippets) && publicSnapshot.snippets.length >= minPosts) {
-      const f = kroAnalyzeFlagsFromTexts(publicSnapshot.snippets);
-      const risk = Math.max(0, Math.min(100, Math.round(f.risk || 15)));
-      const st = kroRiskToCheckStatus(risk);
-      return res.status(200).json({
-        channel: channelLabel,
-        read_source: 'public_snapshot',
-        status: st.status,
-        status_code: st.status_code,
-        risk_index: risk,
-        posts_read: publicSnapshot.snippets.length,
-        period_days: 7,
-        suspicious_examples: f.examples.length ? f.examples : publicSnapshot.snippets.slice(0, 5),
-        flags: f.flags,
-        progress,
-        message: `Готово: прочитано ${publicSnapshot.snippets.length} постов из публичной ленты ${channelLabel}.`,
-      });
-    }
-
-    addStep('Пробую Telethon-чтение канала...');
-    const timeoutLeft = Math.max(0, deadlineMs - Date.now());
-    const once = kroRunCheckOnce(channelForRead, {
-      readOnly: true,
-      periodDays: 90,
-      timeoutMs: Math.min(Math.max(timeoutLeft - 5000, 60000), 6 * 60 * 1000),
-    });
-    const parsed = kroNormalizeCheckOnceForAnalysis(once);
-    const samplePosts = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
-    const enoughPosts = parsed._check_once_ok === true && parsed.found === true && Number(parsed.posts_fetched || 0) >= minPosts && samplePosts.length >= 1;
-    if (enoughPosts) {
-      const f = kroAnalyzeFlagsFromTexts(samplePosts);
-      const risk = Number.isFinite(Number(parsed.risk_score)) ? Number(parsed.risk_score) : f.risk;
-      const riskIndex = Number.isFinite(risk) ? Math.max(0, Math.min(100, Math.round(risk))) : null;
-      const st = kroRiskToCheckStatus(riskIndex);
-      return res.status(200).json({
-        channel: channelLabel,
-        read_source: 'telethon',
-        status: st.status,
-        status_code: st.status_code,
-        risk_index: riskIndex,
-        posts_read: Number(parsed.posts_fetched || samplePosts.length),
-        period_days: Number(parsed.analysis_window_days || 90),
-        suspicious_examples: f.examples.length ? f.examples : samplePosts.slice(0, 5),
-        flags: f.flags,
-        progress,
-        message: `Готово: через Telethon проанализировано ${Number(parsed.posts_fetched || samplePosts.length)} постов.`,
-      });
-    }
+    const riskIndex = Number.isFinite(risk) ? Math.max(0, Math.min(100, Math.round(risk))) : null;
+    const statusObj = kroMapRiskToUiStatus(riskIndex);
+    const examples = signal.examples.length ? signal.examples : postsTexts.slice(0, 5);
 
     return res.status(200).json({
-      channel: channelLabel,
-      read_source: 'none',
-      status: 'НЕДОСТУПЕН',
-      status_code: 'UNAVAILABLE',
-      risk_index: null,
-      posts_read: Number(parsed.posts_fetched || 0),
-      period_days: Number(parsed.analysis_window_days || 0) || null,
-      suspicious_examples: [],
-      flags: [],
+      channel: channelDisplay,
+      read_source: readSource,
+      status: statusObj.status,
+      status_code: statusObj.code,
+      risk_index: riskIndex,
+      posts_read: postsRead,
+      period_days: periodDays,
+      suspicious_examples: examples,
+      flags: signal.flags,
+      scam_base_layer: scamBaseLayer,
       progress,
-      message: 'Канал недоступен для анализа: не удалось прочитать минимум 3 реальных поста.',
+      message: `Готово: прочитано ${postsRead} постов (${periodDays != null ? `${periodDays} дн.` : 'окно не определено'}) через ${readSource}.`,
     });
   } catch (e) {
     console.error('KRO analyze-channel error:', e);
-    return res.status(500).json({ error: 'internal_error', message_ru: 'Внутренняя ошибка анализа канала.' });
+    return res.status(500).json({
+      error: 'internal_error',
+      message_ru: 'Внутренняя ошибка при анализе канала.',
+    });
   }
 });
+
 
 // GET /api/kro/channel-profile?u=…&mode=fast|deep — карточка scam_base + анализ.
 // По умолчанию mode=fast: без Telethon/check_once, только база, отчёты, channels_watch (быстро, без FLOOD_WAIT).
