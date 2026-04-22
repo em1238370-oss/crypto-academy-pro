@@ -4514,7 +4514,7 @@ function kroBuildLiveEvidence(parsed, quickState, publicSnap) {
   }
   if (publicSnap && Array.isArray(publicSnap.snippets)) {
     const sample = publicSnap.snippets.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 3);
-    if (sample.length >= 2) {
+    if (sample.length >= 1) {
       return {
         live_pass: true,
         mode: 'public_content_fallback',
@@ -6212,7 +6212,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       const snippets = Array.isArray(snap.snippets)
         ? snap.snippets.map((x) => String(x || '').trim()).filter(Boolean)
         : [];
-      return snippets.length >= 2;
+      return snippets.length >= 1;
     };
     const homeQuickAcceptParsed = (norm) => {
       if (!(norm && norm._check_once_ok === true && !norm.telegram_rate_limited && !norm.not_crypto)) return false;
@@ -6263,6 +6263,24 @@ app.get('/api/kro/channel-profile', async (req, res) => {
           } else if (normRetry && normRetry.not_crypto) {
             homeQuickLiveState = 'not_crypto';
           } else if (normRetry && normRetry.check_once_timed_out === true) {
+            homeQuickLiveState = 'timeout';
+          } else {
+            homeQuickLiveState = 'failed';
+          }
+        }
+
+        if (!homeQuickParsed && !['rate_limited', 'skipped_flood', 'not_crypto'].includes(homeQuickLiveState)) {
+          const tRetryShort = Math.min(120000, Math.max(60000, Math.floor(tHome * 0.35)));
+          homeQuickLiveAttempt = 'retry_30d_short';
+          const onceRetryShort = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 30, timeoutMs: tRetryShort });
+          const normRetryShort = kroNormalizeCheckOnceForAnalysis(onceRetryShort);
+          if (homeQuickAcceptParsed(normRetryShort)) {
+            homeQuickLiveAttempt = 'retry_30d_short_ok';
+          } else if (normRetryShort && normRetryShort.telegram_rate_limited) {
+            homeQuickLiveState = 'rate_limited';
+          } else if (normRetryShort && normRetryShort.not_crypto) {
+            homeQuickLiveState = 'not_crypto';
+          } else if (normRetryShort && normRetryShort.check_once_timed_out === true) {
             homeQuickLiveState = 'timeout';
           } else {
             homeQuickLiveState = 'failed';
