@@ -2339,6 +2339,27 @@ body.kro-hero-scrolled .kro-floating-nav {
    margin: 0;
    padding-left: 1.2rem;
 }
+
+.kro-inline-analysis-path {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.42);
+}
+.kro-inline-analysis-path-title {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(191, 219, 254, 0.96);
+}
+.kro-inline-analysis-path-list {
+  margin: 0;
+  padding-left: 1.05rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: rgba(226, 232, 240, 0.92);
+}
 .kro-inline-foot {
    font-size: 0.8125rem;
    color: rgba(255, 255, 255, 0.62);
