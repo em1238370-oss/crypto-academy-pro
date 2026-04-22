@@ -989,7 +989,7 @@ def main():
     period_days = 30
     if len(sys.argv) > 2:
         raw = (sys.argv[2] or '').strip()
-        if raw in ('30', '90', '180', '365'):
+        if raw in ('7', '30', '90', '180', '365'):
             period_days = int(raw)
     if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
         out({'found': False, 'error': 'telegram not configured'})

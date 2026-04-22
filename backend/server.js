@@ -4288,7 +4288,7 @@ function kroRunCheckOnce(channel, opts) {
   const readOnly = !!(opts && opts.readOnly);
   const sessionString = opts && opts.telegramSessionString ? String(opts.telegramSessionString) : '';
   const periodOpt = opts && Number(opts.periodDays);
-  const allowedPeriods = [30, 90, 180, 365];
+  const allowedPeriods = [7, 30, 90, 180, 365];
   const periodDays = allowedPeriods.includes(periodOpt) ? periodOpt : kroCheckOncePeriodDays;
   const timeoutOpt = opts && Number(opts.timeoutMs);
   const timeoutMs =
@@ -4340,7 +4340,7 @@ function kroRunCheckOnceAsync(channel, opts) {
   const readOnly = !!(opts && opts.readOnly);
   const sessionString = opts && opts.telegramSessionString ? String(opts.telegramSessionString) : '';
   const periodOpt = opts && Number(opts.periodDays);
-  const allowedPeriods = [30, 90, 180, 365];
+  const allowedPeriods = [7, 30, 90, 180, 365];
   const periodDays = allowedPeriods.includes(periodOpt) ? periodOpt : kroCheckOncePeriodDays;
   const timeoutOpt = opts && Number(opts.timeoutMs);
   const timeoutMs =
@@ -6051,22 +6051,22 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     /** @type {{ deep_queued: true, deep_queue_position: number, deep_queue_eta_minutes: number, message_ru: string } | null} */
     let deepQueueGate = null;
     let byoDeepActive = false;
+    const byoTokenRaw =
+      KRO_BYO_DEEP_ENABLED ? (req.query.byo_token ?? '').toString().trim() : '';
+    const byoRow = byoTokenRaw ? kroByoGetSession(byoTokenRaw) : null;
+    if (byoTokenRaw && KRO_BYO_DEEP_ENABLED && !byoRow) {
+      return res.status(400).json({
+        error: 'byo_token_invalid',
+        message_ru:
+          'Сессия «ваш Telegram» недействительна или истекла. Подключите строку сессии снова в блоке ниже на странице.',
+      });
+    }
 
     const deepRefreshRaw = (req.query.deep_refresh ?? req.query.refresh ?? '').toString().trim().toLowerCase();
     const deepRefresh =
       deepRefreshRaw === '1' || deepRefreshRaw === 'true' || deepRefreshRaw === 'yes';
 
     if (deepMode) {
-      const byoTokenRaw =
-        KRO_BYO_DEEP_ENABLED ? (req.query.byo_token ?? '').toString().trim() : '';
-      const byoRow = byoTokenRaw ? kroByoGetSession(byoTokenRaw) : null;
-      if (byoTokenRaw && KRO_BYO_DEEP_ENABLED && !byoRow) {
-        return res.status(400).json({
-          error: 'byo_token_invalid',
-          message_ru:
-            'Сессия «ваш Telegram» недействительна или истекла. Подключите строку сессии снова в блоке ниже на странице.',
-        });
-      }
       if (byoRow && byoRow.sessionString) {
         byoDeepActive = true;
         once = kroRunCheckOnce(channelForOnce, {
@@ -6237,7 +6237,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       } else {
         const tHome = kroHomeQuickLiveTimeoutMs;
         homeQuickLiveAttempt = 'primary_90d';
-        const onceH = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 90, timeoutMs: tHome });
+        const onceH = kroRunCheckOnce(channelForOnce, { readOnly: true, telegramSessionString: byoRow && byoRow.sessionString ? byoRow.sessionString : '', periodDays: 90, timeoutMs: tHome });
         const normH = kroNormalizeCheckOnceForAnalysis(onceH);
         if (homeQuickAcceptParsed(normH)) {
           /* accepted above */
@@ -6254,7 +6254,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         if (!homeQuickParsed && !['rate_limited', 'skipped_flood', 'not_crypto'].includes(homeQuickLiveState)) {
           const tRetry = Math.min(240000, Math.max(90000, Math.floor(tHome * 0.6)));
           homeQuickLiveAttempt = 'retry_30d';
-          const onceRetry = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 30, timeoutMs: tRetry });
+          const onceRetry = kroRunCheckOnce(channelForOnce, { readOnly: true, telegramSessionString: byoRow && byoRow.sessionString ? byoRow.sessionString : '', periodDays: 30, timeoutMs: tRetry });
           const normRetry = kroNormalizeCheckOnceForAnalysis(onceRetry);
           if (homeQuickAcceptParsed(normRetry)) {
             homeQuickLiveAttempt = 'retry_30d_ok';
@@ -6271,11 +6271,11 @@ app.get('/api/kro/channel-profile', async (req, res) => {
 
         if (!homeQuickParsed && !['rate_limited', 'skipped_flood', 'not_crypto'].includes(homeQuickLiveState)) {
           const tRetryShort = Math.min(120000, Math.max(60000, Math.floor(tHome * 0.35)));
-          homeQuickLiveAttempt = 'retry_30d_short';
-          const onceRetryShort = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 30, timeoutMs: tRetryShort });
+          homeQuickLiveAttempt = 'retry_7d';
+          const onceRetryShort = kroRunCheckOnce(channelForOnce, { readOnly: true, telegramSessionString: byoRow && byoRow.sessionString ? byoRow.sessionString : '', periodDays: 7, timeoutMs: tRetryShort });
           const normRetryShort = kroNormalizeCheckOnceForAnalysis(onceRetryShort);
           if (homeQuickAcceptParsed(normRetryShort)) {
-            homeQuickLiveAttempt = 'retry_30d_short_ok';
+            homeQuickLiveAttempt = 'retry_7d_ok';
           } else if (normRetryShort && normRetryShort.telegram_rate_limited) {
             homeQuickLiveState = 'rate_limited';
           } else if (normRetryShort && normRetryShort.not_crypto) {
@@ -6340,7 +6340,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       deepStatus,
       deepAvailableAt,
     });
-    if (byoDeepActive) {
+    if ((byoRow && byoRow.sessionString) || byoDeepActive) {
       liveMetrics = { ...liveMetrics, byo_telegram: true };
     }
     if (homeQuickParsed && homeQuickParsed._check_once_ok === true) {
