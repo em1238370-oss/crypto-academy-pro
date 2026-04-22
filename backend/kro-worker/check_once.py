@@ -62,6 +62,107 @@ def _check_once_max_messages(period_days):
     if period_days >= 90:
         return 2000
     return 1200
+
+
+def _check_once_read_attempts():
+    raw = (os.environ.get('KRO_CHECK_ONCE_READ_ATTEMPTS') or '').strip()
+    if raw:
+        try:
+            n = int(raw)
+            return max(1, min(n, 5))
+        except ValueError:
+            pass
+    return 3
+
+
+def _check_once_min_text_posts():
+    raw = (os.environ.get('KRO_CHECK_ONCE_MIN_TEXT_POSTS') or '').strip()
+    if raw:
+        try:
+            n = int(raw)
+            return max(1, min(n, 20))
+        except ValueError:
+            pass
+    return 3
+
+
+def _has_enough_texts(messages, min_text_posts):
+    count = 0
+    for m in messages:
+        if m and getattr(m, 'text', None):
+            count += 1
+            if count >= min_text_posts:
+                return True
+    return False
+
+
+async def _read_messages_iter(client, entity, min_date, max_count):
+    items = []
+    async for m in client.iter_messages(entity, limit=max_count):
+        if not m or not m.date:
+            continue
+        md = m.date.replace(tzinfo=timezone.utc) if getattr(m.date, 'tzinfo', None) is None else m.date
+        if md < min_date:
+            break
+        items.append(m)
+    return items
+
+
+async def _read_messages_paginated(client, entity, min_date, max_count):
+    items = []
+    offset_id = 0
+    batch = min(100, max(20, max_count // 10))
+    while len(items) < max_count:
+        need = min(batch, max_count - len(items))
+        chunk = await client.get_messages(entity, limit=need, offset_id=offset_id)
+        if not chunk:
+            break
+        stop = False
+        for m in chunk:
+            if not m or not m.date:
+                continue
+            md = m.date.replace(tzinfo=timezone.utc) if getattr(m.date, 'tzinfo', None) is None else m.date
+            if md < min_date:
+                stop = True
+                break
+            items.append(m)
+        if stop:
+            break
+        last = chunk[-1]
+        offset_id = getattr(last, 'id', 0) or 0
+        if offset_id <= 0:
+            break
+        await asyncio.sleep(0.15)
+    return items
+
+
+async def _collect_messages_robust(client, entity, min_date, max_count, min_text_posts):
+    attempts = _check_once_read_attempts()
+    errors = []
+    for attempt in range(attempts):
+        try:
+            msgs = await _read_messages_iter(client, entity, min_date, max_count)
+            if _has_enough_texts(msgs, min_text_posts):
+                return msgs, 'telegram_iter_messages', attempt + 1, errors
+            # Fallback to paginated reads when iter result is too thin.
+            paged = await _read_messages_paginated(client, entity, min_date, max_count)
+            if _has_enough_texts(paged, min_text_posts):
+                return paged, 'telegram_get_messages_paged', attempt + 1, errors
+            if len(paged) > len(msgs):
+                msgs = paged
+            errors.append(f'not_enough_text_posts:{attempt + 1}')
+            if attempt < attempts - 1:
+                await asyncio.sleep(0.6 + attempt * 0.4)
+            else:
+                return msgs, 'telegram_partial', attempt + 1, errors
+        except FloodWaitError:
+            raise
+        except Exception as e:
+            errors.append(f'{type(e).__name__}:{str(e)[:120]}')
+            if attempt >= attempts - 1:
+                break
+            await asyncio.sleep(0.8 + attempt * 0.5)
+    return [], 'telegram_failed', attempts, errors
 UNCONFIRMED_SHEET_NAME = KRO_UNCONFIRMED_RANGE.split('!')[0] if '!' in KRO_UNCONFIRMED_RANGE else ''
 
 RISK_KEYWORDS = [
@@ -625,14 +726,10 @@ async def run_check(channel_id, period_days=30):
         min_date = now - timedelta(days=period_days)
 
         max_count = _check_once_max_messages(period_days)
-        messages = []
-        async for m in client.iter_messages(entity, limit=max_count):
-            if not m or not m.date:
-                continue
-            md = m.date.replace(tzinfo=timezone.utc) if getattr(m.date, 'tzinfo', None) is None else m.date
-            if md < min_date:
-                break
-            messages.append(m)
+        min_text_posts = _check_once_min_text_posts()
+        messages, read_path, read_attempts_used, read_errors = await _collect_messages_robust(
+            client, entity, min_date, max_count, min_text_posts
+        )
 
         texts = []
         messages_with_dates = []
@@ -738,6 +835,10 @@ async def run_check(channel_id, period_days=30):
             'analysis_window_days': period_days,
             'posts_fetched': len(messages),
             'posts_limit_used': max_count,
+            'read_path': read_path,
+            'read_attempts_used': read_attempts_used,
+            'read_min_text_posts_required': min_text_posts,
+            'read_errors': read_errors[:5],
             'risk_score': risk_score,
             'ads_per_week': ads_week,
             'bot_pct': bot_pct,
