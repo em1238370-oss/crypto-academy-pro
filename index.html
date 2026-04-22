@@ -1573,78 +1573,17 @@
                        }
                    } catch (eDeep) { /* ignore */ }
                }
-               function runHomeChannelCheck(slug, retryAttempt) {
-                   retryAttempt = retryAttempt || 0;
-                   ensureKroCheckPanelVisible();
-                   window.__kroHomeLastSlug = slug;
-                   var queryU = slugToQueryU(slug);
-                   var displayLabel = displayChannelLabel(slug, queryU);
-                   var __kroCheckStarted;
-                   if (retryAttempt === 0) {
-                       window.__kroHomeCheckT0 = Date.now();
-                       __kroCheckStarted = window.__kroHomeCheckT0;
-                       showCheckBusy(displayLabel);
-                   } else {
-                       __kroCheckStarted = window.__kroHomeCheckT0 || Date.now();
-                       var noteR = document.getElementById('kro-check-progress-note');
-                       if (noteR) noteR.textContent = 'Повторяем запрос к серверу автоматически…';
-                   }
-                   var fetchOpts = { cache: 'no-store' };
-                   try {
-                       if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-                           fetchOpts.signal = AbortSignal.timeout(__KRO_HOME_FETCH_MS);
-                       }
-                   } catch (eSig) { /* ignore */ }
-                 var renderHomeCheckSuccess = function (data) {
-                     if (!data || typeof data !== 'object') throw new Error('no_analysis');
-                     if (!data.analysis || typeof data.analysis !== 'object') {
-                         var stMap = {
-                             DANGER: 'подтверждённый скам',
-                             SUSPICIOUS: 'в риске',
-                             SAFE: 'без нарушений',
-                             UNAVAILABLE: 'под наблюдением'
-                         };
-                         var flagLines = Array.isArray(data.flags)
-                             ? data.flags.map(function (f) {
-                                 if (!f || typeof f !== 'object') return '';
-                                 var t = f.title ? String(f.title) : '';
-                                 var e = f.explanation ? String(f.explanation) : '';
-                                 return (t && e) ? (t + ': ' + e) : (t || e);
-                             }).filter(Boolean)
-                             : [];
-                         var examples = Array.isArray(data.suspicious_examples)
-                             ? data.suspicious_examples.map(function (x) { return String(x || '').trim(); }).filter(Boolean)
-                             : [];
-                         var reason = data.explanation ? String(data.explanation) : (data.message ? String(data.message) : '');
-                         data.analysis = {
-                             v: 0,
-                             channel_key: queryU,
-                             generated_at: new Date().toISOString(),
-                             sources: (data.analysis_basis && Array.isArray(data.analysis_basis.sources_used))
-                                 ? data.analysis_basis.sources_used
-                                 : ['анализ канала'],
-                             basic_info: [
-                                 'Путь анализа: ' + (data.read_source ? String(data.read_source) : 'claude_from_meta_sources') + '.',
-                                 (data.posts_read != null ? ('Постов прочитано: ' + String(data.posts_read) + '.') : 'Посты напрямую не читались в этом запросе.'),
-                                 (data.period_days != null ? ('Период: ' + String(data.period_days) + ' дн.') : 'Период: по доступным данным.'),
-                             ],
-                             content_behavior: examples.length ? examples : ['Нет цитат в ответе анализа.'],
-                             external_reports: reason ? [reason] : ['Claude вернул краткий вывод без отдельного пояснения.'],
-                             ties_risk_factors: flagLines.length ? flagLines : ['Явные флаги не выделены.'],
-                             conclusion: {
-                                 status: stMap[String(data.status_code || '').toUpperCase()] || 'под наблюдением',
-                                 reasons: [data.message || 'Анализ выполнен на главной странице.'],
-                             },
-                         };
-                         data.risk_index = (typeof data.risk_index === 'number') ? data.risk_index : null;
-                         data.risk_index_max = 100;
-                         data.live_evidence = {
-                             live_pass: !!(data.posts_read && Number(data.posts_read) > 0),
-                             mode: data.read_source ? String(data.read_source) : 'meta_sources',
-                             reason: data.message ? String(data.message) : '',
-                             sample_posts: examples.slice(0, 3),
-                         };
-                     }
+              function runHomeChannelCheck(slug) {
+                  ensureKroCheckPanelVisible();
+                  window.__kroHomeLastSlug = slug;
+                  var queryU = slugToQueryU(slug);
+                  var displayLabel = displayChannelLabel(slug, queryU);
+                  window.__kroHomeCheckT0 = Date.now();
+                  var __kroCheckStarted = window.__kroHomeCheckT0;
+                  showCheckBusy(displayLabel);
+
+                  var renderHomeCheckSuccess = function (data) {
+                      if (!data || typeof data !== 'object' || !data.analysis || typeof data.analysis !== 'object') throw new Error('no_analysis');
                       window.__kroHomeCheckT0 = null;
                       hideCheckBusy();
                       ensureKroCheckPanelVisible();
@@ -1653,99 +1592,79 @@
                           inlineReport.classList.remove('hidden');
                           inlineReport.hidden = false;
                       }
-                      var wrapScroll = document.getElementById('kro-f1-cta-check-wrap');
-                      try {
-                          if (wrapScroll) wrapScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      } catch (eW) { /* ignore */ }
-                      try {
-                          if (inlineReport) inlineReport.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                      } catch (eScroll) { /* ignore */ }
                   };
-                 fetch(base + '/api/kro/analyze-channel', {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     cache: 'no-store',
-                     body: JSON.stringify({ username: queryU })
-                 })
-                       .then(function (res) {
-                           return res.text().then(function (text) {
-                               var data = null;
-                               try {
-                                   data = text ? JSON.parse(text) : null;
-                               } catch (eJ) {
-                                   throw new Error('bad_json');
-                               }
-                               if (!res.ok) {
-                                   var srvMsg = '';
-                                   if (data && typeof data === 'object') {
-                                       if (data.message_ru) srvMsg = String(data.message_ru).trim();
-                                       else if (data.message) srvMsg = String(data.message).trim();
-                                       else if (data.error) srvMsg = String(data.error).trim();
-                                   }
-                                  var httpErr = new Error('http_' + res.status);
-                                   httpErr.serverMessage = srvMsg;
-                                  httpErr.serverCode = data && data.error ? String(data.error) : '';
-                                   throw httpErr;
-                               }
-                               return data;
-                           });
-                       })
-                       .then(function (data) {
-                          renderHomeCheckSuccess(data);
-                       })
-                       .catch(function (err) {
-                           var hint = (err && err.message) ? String(err.message) : '';
-                           var en = (err && err.name) ? String(err.name) : '';
-                           var retryable =
-                               retryAttempt < 1 &&
-                               (en === 'AbortError' ||
-                                   /AbortError/i.test(hint) ||
-                                   /timeout/i.test(hint) ||
-                                   /Failed to fetch|NetworkError|network/i.test(hint) ||
-                                   /http_502|http_503|http_504|http_524/.test(hint) ||
-                                   hint === 'bad_json');
-                           if (retryable) {
-                               setTimeout(function () {
-                                   runHomeChannelCheck(slug, retryAttempt + 1);
-                               }, 2000);
-                               return;
-                           }
-                           if (hint === 'http_422' && err && err.serverCode === 'live_analysis_required') {
-                               fetch(base + '/api/kro/analyze-channel', {
-                                   method: 'POST',
-                                   headers: { 'Content-Type': 'application/json' },
-                                   cache: 'no-store',
-                                   body: JSON.stringify({ username: queryU })
-                               })
-                                   .then(function (res2) { return res2.json(); })
-                                   .then(function (data2) { renderHomeCheckSuccess(data2); })
-                                   .catch(function () {
-                                       window.__kroHomeCheckT0 = null;
-                                       hideCheckBusy();
-                                       var m2 = mapHomeFetchError(err);
-                                       checkResult.innerHTML = '<span class="kro-check-result-block">' + esc(m2.title) + '</span>' +
-                                           m2.paragraphs.map(function (p) {
-                                               return '<span class="kro-check-result-block">' + esc(p) + '</span>';
-                                           }).join('') +
-                                           '<button type="button" class="kro-report-submit kro-check-retry" id="kro-check-retry">Повторить</button>';
-                                       checkResult.classList.remove('hidden');
-                                   });
-                               return;
-                           }
-                           window.__kroHomeCheckT0 = null;
-                           hideCheckBusy();
-                           var m = mapHomeFetchError(err);
-                           checkResult.innerHTML = '<span class="kro-check-result-block">' + esc(m.title) + '</span>' +
-                               m.paragraphs.map(function (p) {
-                                   return '<span class="kro-check-result-block">' + esc(p) + '</span>';
-                               }).join('') +
-                               '<button type="button" class="kro-report-submit kro-check-retry" id="kro-check-retry">Повторить</button>';
-                           checkResult.classList.remove('hidden');
-                           checkResult.className = 'kro-check-result';
-                           var rb = document.getElementById('kro-check-retry');
-                           if (rb) rb.onclick = function () { runHomeChannelCheck(window.__kroHomeLastSlug || slug, 0); };
-                       });
-               }
+
+                  var pollResult = function (requestId, attempt) {
+                      attempt = attempt || 0;
+                      if (attempt > 120) {
+                          window.__kroHomeCheckT0 = null;
+                          hideCheckBusy();
+                          checkResult.innerHTML = '<span class="kro-check-result-block">Проверка заняла слишком много времени. Нажмите «Повторить».</span>' +
+                              '<button type="button" class="kro-report-submit kro-check-retry" id="kro-check-retry">Повторить</button>';
+                          checkResult.classList.remove('hidden');
+                          var rbT = document.getElementById('kro-check-retry');
+                          if (rbT) rbT.onclick = function () { runHomeChannelCheck(window.__kroHomeLastSlug || slug); };
+                          return;
+                      }
+                      fetch(base + '/api/kro/analyze-channel/result?request_id=' + encodeURIComponent(requestId), { cache: 'no-store' })
+                          .then(function (res) { return res.json(); })
+                          .then(function (row) {
+                              var note = document.getElementById('kro-check-progress-note');
+                              var qs = (row && row.queue_status) ? String(row.queue_status) : '';
+                              if (note) {
+                                  if (qs === 'running') note.textContent = 'Воркер читает посты канала через Telethon…';
+                                  else if (qs === 'pending') note.textContent = 'Задача в очереди GitHub Actions…';
+                                  else if (qs === 'done') note.textContent = 'Результат получен, показываем отчёт…';
+                              }
+                              if (qs === 'done') {
+                                  renderHomeCheckSuccess(row);
+                                  return;
+                              }
+                              if (qs === 'failed') {
+                                  window.__kroHomeCheckT0 = null;
+                                  hideCheckBusy();
+                                  checkResult.innerHTML = '<span class="kro-check-result-block">' + esc(row.message || 'Проверка завершилась ошибкой.') + '</span>' +
+                                      '<button type="button" class="kro-report-submit kro-check-retry" id="kro-check-retry">Повторить</button>';
+                                  checkResult.classList.remove('hidden');
+                                  var rbF = document.getElementById('kro-check-retry');
+                                  if (rbF) rbF.onclick = function () { runHomeChannelCheck(window.__kroHomeLastSlug || slug); };
+                                  return;
+                              }
+                              setTimeout(function () { pollResult(requestId, attempt + 1); }, 5000);
+                          })
+                          .catch(function () {
+                              setTimeout(function () { pollResult(requestId, attempt + 1); }, 5000);
+                          });
+                  };
+
+                  fetch(base + '/api/kro/analyze-channel', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      cache: 'no-store',
+                      body: JSON.stringify({ username: queryU })
+                  })
+                      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+                      .then(function (pack) {
+                          if (!pack.ok || !pack.data || !pack.data.request_id) {
+                              throw new Error((pack.data && (pack.data.message_ru || pack.data.message || pack.data.error)) || 'queue_failed');
+                          }
+                          checkResult.textContent = pack.data.message || 'Задача поставлена в очередь, ждём результат…';
+                          checkResult.className = 'kro-check-result';
+                          checkResult.classList.remove('hidden');
+                          pollResult(pack.data.request_id, 0);
+                      })
+                      .catch(function (err) {
+                          window.__kroHomeCheckT0 = null;
+                          hideCheckBusy();
+                          var msg = (err && err.message) ? String(err.message) : 'Ошибка постановки задачи в очередь.';
+                          checkResult.innerHTML = '<span class="kro-check-result-block">' + esc(msg) + '</span>' +
+                              '<button type="button" class="kro-report-submit kro-check-retry" id="kro-check-retry">Повторить</button>';
+                          checkResult.classList.remove('hidden');
+                          checkResult.className = 'kro-check-result';
+                          var rb = document.getElementById('kro-check-retry');
+                          if (rb) rb.onclick = function () { runHomeChannelCheck(window.__kroHomeLastSlug || slug); };
+                      });
+              }
                checkBtn.addEventListener('click', function () {
                    var raw = checkInput.value;
                    if (raw && String(raw).trim()) ensureKroCheckPanelVisible();

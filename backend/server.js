@@ -1268,7 +1268,8 @@ const kroScamBaseRange = `${kroScamBaseSheet}!A:N`;
 const kroChannelsWatchRange = process.env.KRO_CHANNELS_WATCH_RANGE || 'channels_watch!A2:P';
 const kroChannelsNetworkRange = process.env.KRO_CHANNELS_NETWORK_RANGE || 'channels_network!A2:G';
 const kroMetaRange = process.env.KRO_META_RANGE || 'kro_meta!A:B';
-const kroCheckQueueRange = process.env.KRO_CHECK_QUEUE_RANGE || '';
+const kroCheckQueueRange = process.env.KRO_CHECK_QUEUE_RANGE || 'kro_check_queue!A2:G';
+const kroCheckResultsRange = process.env.KRO_CHECK_RESULTS_RANGE || 'kro_check_results!A2:I';
 /** Короткий снимок строк Sheets в памяти — меньше таймаутов на Render и быстрее ответ при серии запросов. */
 const KRO_SHEETS_SNAPSHOT_CACHE_MS = Math.max(3000, parseInt(process.env.KRO_SHEETS_SNAPSHOT_CACHE_MS || '40000', 10));
 let kroScamBaseValuesCache = { ts: 0, values: /** @type {string[][] | null} */ (null) };
@@ -5928,6 +5929,131 @@ app.post('/api/kro/byo-deep/revoke', express.json({ limit: '8000' }), (req, res)
   return res.status(200).json({ ok: true });
 });
 
+function kroCheckQueueRequestId(channelKey) {
+  return `krochk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}_${channelKey}`;
+}
+
+function kroCheckQueueStatusByRows(rows, usernameKey, requestId) {
+  let latest = null;
+  for (const r of rows || []) {
+    const rid = String((r[0] || '')).trim();
+    const uname = String((r[1] || '')).trim();
+    const ts = String((r[2] || '')).trim();
+    const st = String((r[3] || '')).trim().toLowerCase();
+    if (!rid || !uname) continue;
+    if (requestId && rid !== requestId) continue;
+    if (!requestId && channelMatchKey(uname) !== usernameKey) continue;
+    if (!latest || Date.parse(ts) >= Date.parse(latest.requested_at || '1970-01-01T00:00:00Z')) {
+      latest = {
+        request_id: rid,
+        username: uname,
+        requested_at: ts || null,
+        status: st || 'pending',
+        started_at: String((r[4] || '')).trim() || null,
+        finished_at: String((r[5] || '')).trim() || null,
+        error: String((r[6] || '')).trim() || null,
+      };
+    }
+  }
+  return latest;
+}
+
+function kroCheckResultByRows(rows, usernameKey, requestId) {
+  let latest = null;
+  for (const r of rows || []) {
+    const rid = String((r[0] || '')).trim();
+    const uname = String((r[1] || '')).trim();
+    const ts = String((r[2] || '')).trim();
+    const st = String((r[3] || '')).trim().toLowerCase();
+    if (!rid || !uname) continue;
+    if (requestId && rid !== requestId) continue;
+    if (!requestId && channelMatchKey(uname) !== usernameKey) continue;
+    if (!latest || Date.parse(ts) >= Date.parse(latest.created_at || '1970-01-01T00:00:00Z')) {
+      let payload = null;
+      const raw = String((r[8] || '')).trim();
+      if (raw) {
+        try { payload = JSON.parse(raw); } catch { payload = null; }
+      }
+      latest = {
+        request_id: rid,
+        username: uname,
+        created_at: ts || null,
+        status: st || 'done',
+        posts_read: Number(r[4] || 0) || 0,
+        period_days: Number(r[5] || 0) || null,
+        read_path: String((r[6] || '')).trim() || null,
+        risk_index: Number.isFinite(Number(r[7])) ? Number(r[7]) : null,
+        payload,
+      };
+    }
+  }
+  return latest;
+}
+
+function kroBuildAnalyzeDoneResponse(doneRow, key) {
+  const parsed = doneRow && doneRow.payload && typeof doneRow.payload === 'object' ? doneRow.payload : null;
+  const postsRead = Number(doneRow && doneRow.posts_read || (parsed && parsed.posts_fetched) || 0) || 0;
+  const periodDays = Number(doneRow && doneRow.period_days || (parsed && parsed.analysis_window_days) || 0) || null;
+  const readPath = (doneRow && doneRow.read_path) || (parsed && parsed.read_path) || null;
+
+  if (!parsed || parsed.found !== true || postsRead <= 0) {
+    return {
+      queue_status: 'done',
+      request_id: doneRow && doneRow.request_id ? doneRow.request_id : null,
+      posts_read: postsRead,
+      period_days: periodDays,
+      read_path: readPath,
+      status: 'НЕДОСТУПЕН',
+      status_code: 'UNAVAILABLE',
+      risk_index: null,
+      analysis: {
+        v: 0,
+        channel_key: key,
+        generated_at: new Date().toISOString(),
+        sources: ['kro_check_results'],
+        basic_info: ['Живое чтение постов не подтверждено: posts_read == 0.'],
+        content_behavior: [],
+        external_reports: [],
+        ties_risk_factors: [],
+        conclusion: { status: KRO_V0_STATUS.watch, reasons: ['Не удалось прочитать посты канала.'] },
+      },
+      live_evidence: { live_pass: false, mode: readPath || 'queue', reason: 'Посты не прочитаны.', sample_posts: [] },
+      message: 'Анализ завершён без прочитанных постов: статус НЕДОСТУПЕН.',
+    };
+  }
+
+  const analysis = kroV0BuildAnalysisFromLiveParsed(parsed, key);
+  const conclusion = analysis && analysis.conclusion ? analysis.conclusion : { status: KRO_V0_STATUS.watch };
+  const statusMap = {
+    [KRO_V0_STATUS.scam]: { status: 'ОПАСНО', status_code: 'DANGER' },
+    [KRO_V0_STATUS.risk]: { status: 'ПОДОЗРИТЕЛЬНО', status_code: 'SUSPICIOUS' },
+    [KRO_V0_STATUS.clean]: { status: 'БЕЗОПАСНО', status_code: 'SAFE' },
+    [KRO_V0_STATUS.watch]: { status: 'ПОДОЗРИТЕЛЬНО', status_code: 'SUSPICIOUS' },
+  };
+  const mapped = statusMap[conclusion.status] || statusMap[KRO_V0_STATUS.watch];
+  const risk = Number.isFinite(Number(doneRow.risk_index)) ? Number(doneRow.risk_index)
+    : (Number.isFinite(Number(parsed.risk_score)) ? Number(parsed.risk_score) : null);
+
+  return {
+    queue_status: 'done',
+    request_id: doneRow.request_id,
+    posts_read: postsRead,
+    period_days: periodDays,
+    read_path: readPath,
+    status: mapped.status,
+    status_code: mapped.status_code,
+    risk_index: risk,
+    analysis,
+    live_evidence: {
+      live_pass: true,
+      mode: readPath || 'telethon',
+      reason: `Прочитано постов: ${postsRead}.`,
+      sample_posts: Array.isArray(parsed.sample_posts) ? parsed.sample_posts.slice(0, 3) : [],
+    },
+    message: 'Анализ готов: данные получены из GitHub Actions очереди.',
+  };
+}
+
 app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   const rawInput = String((req.body && (req.body.username || req.body.channel || req.body.url)) || '').trim();
@@ -5937,136 +6063,101 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     return res.status(400).json({ error: 'bad_request', message_ru: 'Передайте username канала (t.me/username или @username).' });
   }
 
-  const startedAt = Date.now();
-  const deadlineAt = startedAt + 7 * 60 * 1000;
-  const progress = [];
-  const addProgress = (step) => progress.push({ step, at: new Date().toISOString() });
-  const channelForOnce = normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${normalized}`;
-  const channelDisplay = normalized.startsWith('@') ? normalized : `@${key}`;
-  const minPosts = 3;
+  try {
+    const client = await getKroSheetsClient();
+    if (!client || !kroSheetId) {
+      return res.status(503).json({ error: 'sheets_unavailable', message_ru: 'Google Sheets недоступен.' });
+    }
+    const requestId = kroCheckQueueRequestId(key);
+    const username = `@${key}`;
+    const nowIso = new Date().toISOString();
+    await client.sheets.spreadsheets.values.append({
+      spreadsheetId: kroSheetId,
+      range: kroCheckQueueRange,
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: {
+        values: [[requestId, username, nowIso, 'pending', '', '', '']],
+      },
+    });
+
+    return res.status(202).json({
+      queued: true,
+      queue_status: 'pending',
+      request_id: requestId,
+      username,
+      message: 'Задача поставлена в очередь, анализ запущен.',
+    });
+  } catch (e) {
+    console.error('KRO analyze-channel queue error:', e);
+    return res.status(500).json({ error: 'internal_error', message_ru: 'Не удалось поставить задачу в очередь анализа.' });
+  }
+});
+
+app.get('/api/kro/analyze-channel/result', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  const qRaw = String((req.query.username || req.query.u || '')).trim();
+  const requestId = String((req.query.request_id || '')).trim();
+  const key = qRaw ? channelMatchKey(normalizeChannel(qRaw)) : '';
+  if (!requestId && !key) {
+    return res.status(400).json({ error: 'bad_request', message_ru: 'Нужен username или request_id.' });
+  }
 
   try {
-    const sheetsClient = await getKroSheetsClient();
-    addProgress('Проверка канала в scam_base...');
-    if (sheetsClient && kroSheetId) {
-      const rawRows = await kroFetchScamBaseValuesCached(sheetsClient);
-      const rows = rawRows
-        .slice(1)
-        .map(parseScamBaseRow)
-        .filter((r) => r.username && channelMatchKey(r.username) === key)
-        .map(enrichScamBaseContentAnalysisForMonitor);
-      if (rows.length) {
-        const latest = rows.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
-        const reports = await getAllReportsForChannel(sheetsClient, latest.username);
-        const riskIndex = computeKroRiskIndex(latest, reports);
-        const analysis = kroV0BuildAnalysisFromScamBaseProfile(latest, { channel_key: key });
-        const statusObj = kroMapRiskToUiStatus(riskIndex);
-        const examples = Array.isArray(analysis.content_behavior) ? analysis.content_behavior.slice(0, 5) : [];
-        return res.status(200).json({
-          channel: channelDisplay,
-          read_source: 'scam_base',
-          status: statusObj.status,
-          status_code: statusObj.code,
-          risk_index: riskIndex,
-          posts_read: null,
-          period_days: null,
-          suspicious_examples: examples,
-          flags: [
-            { code: 'cached_match', title: 'Канал уже в мониторинге', explanation: 'Использован готовый подтвержденный результат из базы.' },
-          ],
-          progress,
-          message: `Готово: найден готовый результат в scam_base для ${channelDisplay}.`,
-        });
-      }
+    const client = await getKroSheetsClient();
+    if (!client || !kroSheetId) {
+      return res.status(503).json({ error: 'sheets_unavailable', message_ru: 'Google Sheets недоступен.' });
     }
 
-    addProgress('Читаю публичную ленту t.me/s...');
-    const publicSnap = await kroFetchTelegramPublicSnapshot(channelForOnce);
-    if (publicSnap && Array.isArray(publicSnap.snippets) && publicSnap.snippets.length >= minPosts) {
-      const signal = kroCollectSuspiciousFlagsFromTexts(publicSnap.snippets);
-      const risk = Number.isFinite(signal.risk) ? signal.risk : 15;
-      const statusObj = kroMapRiskToUiStatus(risk);
-      return res.status(200).json({
-        channel: channelDisplay,
-        read_source: 'public_snapshot',
-        status: statusObj.status,
-        status_code: statusObj.code,
-        risk_index: Math.max(0, Math.min(100, Math.round(risk))),
-        posts_read: publicSnap.snippets.length,
-        period_days: 7,
-        suspicious_examples: signal.examples,
-        flags: signal.flags,
-        progress,
-        message: `Готово: проанализировано ${publicSnap.snippets.length} публичных постов ${channelDisplay}.`,
-      });
-    }
+    const [queueResp, resultsResp] = await Promise.all([
+      client.sheets.spreadsheets.values.get({ spreadsheetId: kroSheetId, range: kroCheckQueueRange }),
+      client.sheets.spreadsheets.values.get({ spreadsheetId: kroSheetId, range: kroCheckResultsRange }),
+    ]);
 
-    addProgress('Пробую чтение через Telethon...');
-    const msLeft = Math.max(0, deadlineAt - Date.now());
-    if (msLeft < 60000) {
+    const queueRows = queueResp.data.values || [];
+    const resultsRows = resultsResp.data.values || [];
+
+    const doneRow = kroCheckResultByRows(resultsRows, key, requestId);
+    if (doneRow && doneRow.status === 'done') {
+      return res.status(200).json(kroBuildAnalyzeDoneResponse(doneRow, key || channelMatchKey(doneRow.username)));
+    }
+    if (doneRow && doneRow.status === 'failed') {
       return res.status(200).json({
-        channel: channelDisplay,
-        read_source: 'none',
+        queue_status: 'failed',
+        request_id: doneRow.request_id,
         status: 'НЕДОСТУПЕН',
         status_code: 'UNAVAILABLE',
-        risk_index: null,
-        posts_read: 0,
-        period_days: null,
-        suspicious_examples: [],
-        flags: [],
-        progress,
-        message: 'Канал недоступен для анализа: не хватило времени на чтение ленты в пределах 7 минут.',
+        posts_read: Number(doneRow.posts_read || 0) || 0,
+        period_days: doneRow.period_days,
+        read_path: doneRow.read_path,
+        message: (doneRow.payload && doneRow.payload.error) ? String(doneRow.payload.error) : 'Проверка завершилась ошибкой.',
       });
     }
-    const once = kroRunCheckOnce(channelForOnce, {
-      readOnly: true,
-      periodDays: 90,
-      timeoutMs: Math.min(msLeft, 6 * 60 * 1000),
-    });
-    const parsed = kroNormalizeCheckOnceForAnalysis(once);
-    const sample = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
-    const enough = parsed._check_once_ok === true && parsed.found === true && Number(parsed.posts_fetched || 0) >= minPosts && sample.length >= 1;
-    if (enough) {
-      const rawRisk = Number(parsed.risk_score);
-      const signal = kroCollectSuspiciousFlagsFromTexts(sample);
-      const risk = Number.isFinite(rawRisk) ? rawRisk : signal.risk;
-      const statusObj = kroMapRiskToUiStatus(risk);
+
+    const queueRow = kroCheckQueueStatusByRows(queueRows, key, requestId);
+    if (queueRow) {
       return res.status(200).json({
-        channel: channelDisplay,
-        read_source: 'telethon',
-        status: statusObj.status,
-        status_code: statusObj.code,
-        risk_index: Number.isFinite(risk) ? Math.max(0, Math.min(100, Math.round(risk))) : null,
-        posts_read: Number(parsed.posts_fetched || sample.length || 0),
-        period_days: Number(parsed.analysis_window_days || 90),
-        suspicious_examples: signal.examples.length ? signal.examples : sample.slice(0, 5),
-        flags: signal.flags,
-        progress,
-        message: `Готово: через Telethon прочитано ${Number(parsed.posts_fetched || sample.length || 0)} постов ${channelDisplay}.`,
+        queue_status: queueRow.status || 'pending',
+        request_id: queueRow.request_id,
+        username: queueRow.username,
+        started_at: queueRow.started_at,
+        finished_at: queueRow.finished_at,
+        message: queueRow.status === 'running'
+          ? 'Анализ в процессе: воркер читает посты канала.'
+          : 'Задача в очереди на анализ.',
       });
     }
 
     return res.status(200).json({
-      channel: channelDisplay,
-      read_source: 'none',
-      status: 'НЕДОСТУПЕН',
-      status_code: 'UNAVAILABLE',
-      risk_index: null,
-      posts_read: Number(parsed.posts_fetched || 0),
-      period_days: Number(parsed.analysis_window_days || 0) || null,
-      suspicious_examples: [],
-      flags: [],
-      progress,
-      message: 'Канал недоступен для анализа: не удалось прочитать минимум 3 реальных поста.',
+      queue_status: 'not_found',
+      message: 'Результат ещё не найден. Проверьте позже.',
     });
   } catch (e) {
-    console.error('KRO analyze-channel error:', e);
-    return res.status(500).json({
-      error: 'internal_error',
-      message_ru: 'Внутренняя ошибка при анализе канала.',
-    });
+    console.error('KRO analyze-channel result error:', e);
+    return res.status(500).json({ error: 'internal_error', message_ru: 'Не удалось получить статус анализа.' });
   }
 });
+
 
 // GET /api/kro/channel-profile?u=…&mode=fast|deep — карточка scam_base + анализ.
 // По умолчанию mode=fast: без Telethon/check_once, только база, отчёты, channels_watch (быстро, без FLOOD_WAIT).
