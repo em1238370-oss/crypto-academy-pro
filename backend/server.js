@@ -97,6 +97,7 @@ app.use(
 );
 
 const mistralKey = process.env.MISTRAL_API_KEY;
+const anthropicKey = process.env.ANTHROPIC_API_KEY;
 const cryptocloudApiKey = process.env.CRYPTOCLOUD_API_KEY;
 const cryptocloudShopId = process.env.CRYPTOCLOUD_SHOP_ID;
 const cloudpaymentsPublicId = process.env.CLOUDPAYMENTS_PUBLIC_ID;
@@ -120,6 +121,9 @@ const theNewsApiKey = process.env.THENEWSAPI_KEY;
 
 if (!mistralKey) {
  console.warn('⚠️  MISTRAL_API_KEY is not set. AI responses will fail until it is provided.');
+}
+if (!anthropicKey) {
+ console.warn('⚠️  ANTHROPIC_API_KEY is not set. Claude channel analysis will fallback to rule-based output.');
 }
 if (!cryptocloudApiKey || !cryptocloudShopId) {
  console.warn('⚠️  CryptoCloud is not fully configured. Crypto payments will not work until CRYPTOCLOUD_API_KEY and CRYPTOCLOUD_SHOP_ID are set.');
@@ -4277,12 +4281,13 @@ async function kroFetchTelegramPublicSnapshot(channelRef) {
     `https://t.me/s/${encodeURIComponent(slug)}`,
     `https://t.me/${encodeURIComponent(slug)}?embed=1&mode=tme`,
     `https://r.jina.ai/http://t.me/s/${encodeURIComponent(slug)}`,
+    `https://r.jina.ai/http://t.me/${encodeURIComponent(slug)}?embed=1&mode=tme`,
   ];
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
     for (const url of urls) {
       const ctl = new AbortController();
-      const t = setTimeout(() => ctl.abort(), 22000);
+      const t = setTimeout(() => ctl.abort(), 45000);
       try {
         const r = await fetch(url, {
           signal: ctl.signal,
@@ -4308,7 +4313,7 @@ async function kroFetchTelegramPublicSnapshot(channelRef) {
         clearTimeout(t);
       }
     }
-    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 600 + attempt * 500));
+    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 900 + attempt * 900));
   }
 
   return null;
@@ -6098,7 +6103,114 @@ function kroRiskToCheckStatus(risk) {
   return { status: 'БЕЗОПАСНО', status_code: 'SAFE' };
 }
 
-app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (req, res) => {
+async function kroFetchSiteMentionsByUsername(username) {
+  const q = String(username || '').replace(/^@+/, '').trim();
+  if (!q) return [];
+  const sources = [
+    { source: 'vklader', url: `https://vklader.com/?s=${encodeURIComponent(q)}` },
+    { source: 'forteck', url: `https://forteck.net/?s=${encodeURIComponent(q)}` },
+  ];
+  const out = [];
+  for (const src of sources) {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 18000);
+    try {
+      const r = await fetch(src.url, {
+        signal: ctl.signal,
+        headers: {
+          'user-agent': 'Mozilla/5.0 (compatible; KRO-Analyze/1.0)',
+          accept: 'text/html,text/plain',
+        },
+      });
+      if (!r.ok) {
+        out.push({ source: src.source, url: src.url, ok: false, status: r.status, mentions: 0, snippets: [] });
+        continue;
+      }
+      const body = await r.text();
+      const low = body.toLowerCase();
+      const needle = q.toLowerCase();
+      let mentions = 0;
+      let i = 0;
+      while (true) {
+        const n = low.indexOf(needle, i);
+        if (n < 0) break;
+        mentions += 1;
+        i = n + needle.length;
+      }
+      const snippets = [];
+      let from = 0;
+      while (snippets.length < 3) {
+        const n = low.indexOf(needle, from);
+        if (n < 0) break;
+        const l = Math.max(0, n - 70);
+        const rgt = Math.min(body.length, n + needle.length + 120);
+        const sn = body.slice(l, rgt).replace(/\s+/g, ' ').replace(/<[^>]+>/g, ' ').trim();
+        if (sn) snippets.push(sn.slice(0, 220));
+        from = n + needle.length;
+      }
+      out.push({ source: src.source, url: src.url, ok: true, status: r.status, mentions, snippets });
+    } catch (e) {
+      out.push({ source: src.source, url: src.url, ok: false, error: String(e && e.message ? e.message : e || 'fetch_failed'), mentions: 0, snippets: [] });
+    } finally {
+      clearTimeout(t);
+    }
+  }
+  return out;
+}
+
+function kroExtractJsonObjectFromText(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return null;
+  const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fence ? fence[1].trim() : raw;
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    const first = candidate.indexOf('{');
+    const last = candidate.lastIndexOf('}');
+    if (first >= 0 && last > first) {
+      try {
+        return JSON.parse(candidate.slice(first, last + 1));
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
+async function kroAnalyzeChannelWithClaude(payload) {
+  if (!anthropicKey) return null;
+  const prompt = [
+    'Ты антифрод-аналитик Telegram-каналов.',
+    'Проанализируй канал строго по переданным данным.',
+    'Верни только JSON без markdown с полями:',
+    '{"status":"ОПАСНО|ПОДОЗРИТЕЛЬНО|БЕЗОПАСНО|НЕДОСТУПЕН","risk_index":0-100,"red_flags":["..."],"citations":["..."],"explanation":"..."}',
+    'Если данных мало, ставь НЕДОСТУПЕН и объясни почему.',
+    '',
+    `ДАННЫЕ: ${JSON.stringify(payload)}`,
+  ].join('\n');
+
+  const resp = await axios.post('https://api.anthropic.com/v1/messages', {
+    model: process.env.KRO_ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest',
+    max_tokens: 1200,
+    temperature: 0,
+    messages: [{ role: 'user', content: prompt }],
+  }, {
+    timeout: 35000,
+    headers: {
+      'x-api-key': anthropicKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+  });
+
+  const content = Array.isArray(resp?.data?.content) ? resp.data.content : [];
+  const text = content.map((c) => (c && c.type === 'text' ? c.text : '')).join('\n').trim();
+  return kroExtractJsonObjectFromText(text);
+}
+
+app.post('/api/kro/analyze-channel', express.json({ limit: '40000' }), async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   const rawInput = String((req.body && (req.body.username || req.body.channel || req.body.url)) || '').trim();
   const normalized = normalizeChannel(rawInput);
@@ -6107,163 +6219,138 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     return res.status(400).json({ error: 'bad_request', message_ru: 'Передайте username канала (t.me/username или @username).' });
   }
 
-  const startedAt = Date.now();
-  const deadlineAt = startedAt + 7 * 60 * 1000;
+  const channelDisplay = normalized.startsWith('@') ? normalized : `@${key}`;
   const progress = [];
   const addProgress = (step) => progress.push({ step, at: new Date().toISOString() });
-  const channelForOnce = normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${normalized}`;
-  const channelDisplay = normalized.startsWith('@') ? normalized : `@${key}`;
-  const minPosts = 3;
-
-  const buildUnavailable = (message, postsRead = 0, periodDays = null, readSource = 'none') => ({
-    channel: channelDisplay,
-    read_source: readSource,
-    status: 'НЕДОСТУПЕН',
-    status_code: 'UNAVAILABLE',
-    risk_index: null,
-    posts_read: postsRead,
-    period_days: periodDays,
-    suspicious_examples: [],
-    flags: [],
-    progress,
-    message,
-  });
 
   try {
-    const msBudgetLeft = () => Math.max(0, deadlineAt - Date.now());
-
-    let postsTexts = [];
-    let postsRead = 0;
-    let periodDays = null;
-    let readSource = 'none';
-    let baseRisk = null;
-
-    addProgress('Читаю сообщения канала через Telethon (90 дней)...');
-    let parsed = null;
-    {
-      const left = msBudgetLeft();
-      if (left >= 60000) {
-        const once90 = kroRunCheckOnce(channelForOnce, {
-          readOnly: true,
-          periodDays: 90,
-          timeoutMs: Math.min(left, 4 * 60 * 1000),
-        });
-        const p90 = kroNormalizeCheckOnceForAnalysis(once90);
-        const sample90 = Array.isArray(p90.sample_posts) ? p90.sample_posts.map((x) => String(x || '').trim()).filter(Boolean) : [];
-        if (p90._check_once_ok === true && p90.found === true && Number(p90.posts_fetched || 0) >= minPosts && sample90.length >= 1) {
-          parsed = p90;
-          postsTexts = sample90;
-          postsRead = Number(p90.posts_fetched || sample90.length || 0);
-          periodDays = Number(p90.analysis_window_days || 90);
-          readSource = 'telethon_90d';
-          baseRisk = Number.isFinite(Number(p90.risk_score)) ? Number(p90.risk_score) : null;
-        }
-      }
-    }
-
-    if (!postsTexts.length) {
-      addProgress('Читаю сообщения канала через Telethon (30 дней)...');
-      const left = msBudgetLeft();
-      if (left >= 60000) {
-        const once30 = kroRunCheckOnce(channelForOnce, {
-          readOnly: true,
-          periodDays: 30,
-          timeoutMs: Math.min(left, 2 * 60 * 1000),
-        });
-        const p30 = kroNormalizeCheckOnceForAnalysis(once30);
-        const sample30 = Array.isArray(p30.sample_posts) ? p30.sample_posts.map((x) => String(x || '').trim()).filter(Boolean) : [];
-        if (p30._check_once_ok === true && p30.found === true && Number(p30.posts_fetched || 0) >= minPosts && sample30.length >= 1) {
-          parsed = p30;
-          postsTexts = sample30;
-          postsRead = Number(p30.posts_fetched || sample30.length || 0);
-          periodDays = Number(p30.analysis_window_days || 30);
-          readSource = 'telethon_30d';
-          baseRisk = Number.isFinite(Number(p30.risk_score)) ? Number(p30.risk_score) : null;
-        }
-      }
-    }
-
-    if (!postsTexts.length) {
-      addProgress('Читаю публичную ленту t.me/s...');
-      const publicSnap = await kroFetchTelegramPublicSnapshot(channelForOnce);
-      if (publicSnap && Array.isArray(publicSnap.snippets) && publicSnap.snippets.length >= minPosts) {
-        postsTexts = publicSnap.snippets.map((x) => String(x || '').trim()).filter(Boolean);
-        postsRead = postsTexts.length;
-        periodDays = 7;
-        readSource = 'public_tme_s';
-      }
-    }
-
-    if (!postsTexts.length) {
-      return res.status(200).json(
-        buildUnavailable('Канал недоступен для анализа: не удалось прочитать ни одного реального поста (Telethon и t.me/s).')
-      );
-    }
-
-    const signal = kroCollectSuspiciousFlagsFromTexts(postsTexts);
-    let risk = Number.isFinite(baseRisk) ? baseRisk : signal.risk;
-
-    // Дополнительный слой: scam_base только после живого чтения постов.
-    let scamBaseLayer = null;
-    addProgress('Проверяю дополнительный слой scam_base...');
+    addProgress('Собираю внутренние данные по каналу...');
     const sheetsClient = await getKroSheetsClient();
-    if (sheetsClient && kroSheetId) {
-      const rawRows = await kroFetchScamBaseValuesCached(sheetsClient);
-      const rows = rawRows
-        .slice(1)
-        .map(parseScamBaseRow)
-        .filter((r) => r.username && channelMatchKey(r.username) === key)
-        .map(enrichScamBaseContentAnalysisForMonitor);
-      if (rows.length) {
-        const latest = rows.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
-        const reports = await getAllReportsForChannel(sheetsClient, latest.username);
-        const riskIndexDb = computeKroRiskIndex(latest, reports);
-        const statusBlob = (latest.status || latest.verdict || '').toString().trim() || '—';
-        scamBaseLayer = {
-          found: true,
-          status: statusBlob,
-          risk_index: Number.isFinite(riskIndexDb) ? riskIndexDb : null,
-          complaints: latest.complaints != null ? latest.complaints : null,
-          total_loss_rub: Number(latest.total_loss_rub || 0) || 0,
-        };
-        signal.flags = [
-          {
-            code: 'scam_base_context',
-            title: 'Доп. слой из scam_base',
-            explanation: `Канал есть в базе: статус «${statusBlob}», жалоб: ${latest.complaints != null ? latest.complaints : '—'}.`,
-          },
-          ...(Array.isArray(signal.flags) ? signal.flags : []),
-        ];
-        if (Number.isFinite(riskIndexDb)) {
-          risk = Number.isFinite(risk) ? Math.round((risk * 0.7) + (riskIndexDb * 0.3)) : riskIndexDb;
-        }
-      }
+    if (!sheetsClient || !kroSheetId) {
+      return res.status(503).json({ error: 'data_source_unavailable', message_ru: 'Нет доступа к данным для анализа.' });
     }
 
-    const riskIndex = Number.isFinite(risk) ? Math.max(0, Math.min(100, Math.round(risk))) : null;
-    const statusObj = kroMapRiskToUiStatus(riskIndex);
-    const examples = signal.examples.length ? signal.examples : postsTexts.slice(0, 5);
+    const scamRawRows = await kroFetchScamBaseValuesCached(sheetsClient);
+    const scamRows = scamRawRows
+      .slice(1)
+      .map(parseScamBaseRow)
+      .filter((r) => r.username && channelMatchKey(r.username) === key)
+      .map(enrichScamBaseContentAnalysisForMonitor);
+    const scamLatest = scamRows.length
+      ? scamRows.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b))
+      : null;
+
+    const watchRow = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
+    const reports = await getAllReportsForChannel(sheetsClient, channelDisplay);
+
+    addProgress('Проверяю внешние источники (vklader/forteck)...');
+    const siteMentions = await kroFetchSiteMentionsByUsername(key);
+
+    const hasAnyData = !!(
+      scamLatest ||
+      watchRow ||
+      (Array.isArray(reports) && reports.length) ||
+      siteMentions.some((x) => x && ((x.mentions || 0) > 0 || (Array.isArray(x.snippets) && x.snippets.length)))
+    );
+
+    if (!hasAnyData) {
+      return res.status(200).json({
+        channel: channelDisplay,
+        status: 'НЕДОСТУПЕН',
+        status_code: 'UNAVAILABLE',
+        risk_index: null,
+        suspicious_examples: [],
+        flags: [],
+        analysis_basis: {
+          read_method: 'claude_from_meta_sources',
+          sources_used: ['scam_base', 'channels_watch', 'reports', 'vklader', 'forteck'],
+        },
+        telethon_runtime: {
+          configured_session: !!(process.env.KRO_TELEGRAM_SESSION_STRING || process.env.TELEGRAM_SESSION_STRING || process.env.TELEGRAM_SESSION_B64 || process.env.TELEGRAM_SESSION_PATH),
+          api_keys_present: !!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH),
+        },
+        progress,
+        message: 'Недостаточно данных для анализа (нет записей в базе и внешних упоминаний).',
+      });
+    }
+
+    const payloadForClaude = {
+      channel: channelDisplay,
+      scam_base: scamLatest ? {
+        status: scamLatest.status || scamLatest.verdict || null,
+        complaints: scamLatest.complaints ?? null,
+        total_loss_rub: Number(scamLatest.total_loss_rub || 0) || 0,
+        source_primary: scamLatest.source_primary || null,
+        content_analysis: scamLatest.content_analysis || null,
+      } : null,
+      channels_watch: watchRow ? {
+        status: watchRow.status || null,
+        activity_summary: watchRow.activity_summary || null,
+        reviews_summary: watchRow.reviews_summary || null,
+        complaints: watchRow.complaints ?? null,
+      } : null,
+      reports: (reports || []).slice(0, 20).map((r) => ({
+        source: r.source || '',
+        text: r.text || r.description || r.message || '',
+        loss: r.total_loss || r.loss || '',
+        created_at: r.created_at || r.timestamp || '',
+      })),
+      site_mentions: siteMentions,
+    };
+
+    addProgress('Запрашиваю анализ Claude API...');
+    let claude;
+    try {
+      claude = await kroAnalyzeChannelWithClaude(payloadForClaude);
+    } catch (e) {
+      claude = null;
+      progress.push({ step: `Claude недоступен: ${String(e?.message || e)}`, at: new Date().toISOString() });
+    }
+
+    const fallbackRisk = scamLatest ? computeKroRiskIndex(scamLatest, reports || []) : null;
+    const mapped = Number.isFinite(fallbackRisk)
+      ? (fallbackRisk >= 70 ? { status: 'ОПАСНО', status_code: 'DANGER' }
+        : fallbackRisk >= 40 ? { status: 'ПОДОЗРИТЕЛЬНО', status_code: 'SUSPICIOUS' }
+        : { status: 'БЕЗОПАСНО', status_code: 'SAFE' })
+      : { status: 'ПОДОЗРИТЕЛЬНО', status_code: 'SUSPICIOUS' };
+
+    const status = claude && typeof claude.status === 'string' ? claude.status : mapped.status;
+    const riskIndex = claude && Number.isFinite(Number(claude.risk_index))
+      ? Math.max(0, Math.min(100, Math.round(Number(claude.risk_index))))
+      : (Number.isFinite(fallbackRisk) ? Math.max(0, Math.min(100, Math.round(fallbackRisk))) : null);
+    const statusCode = status === 'ОПАСНО'
+      ? 'DANGER'
+      : status === 'ПОДОЗРИТЕЛЬНО'
+        ? 'SUSPICIOUS'
+        : status === 'БЕЗОПАСНО'
+          ? 'SAFE'
+          : 'UNAVAILABLE';
 
     return res.status(200).json({
       channel: channelDisplay,
-      read_source: readSource,
-      status: statusObj.status,
-      status_code: statusObj.code,
+      status,
+      status_code: statusCode,
       risk_index: riskIndex,
-      posts_read: postsRead,
-      period_days: periodDays,
-      suspicious_examples: examples,
-      flags: signal.flags,
-      scam_base_layer: scamBaseLayer,
+      suspicious_examples: Array.isArray(claude?.citations) ? claude.citations.slice(0, 5) : [],
+      flags: Array.isArray(claude?.red_flags)
+        ? claude.red_flags.slice(0, 8).map((x) => ({ title: String(x), explanation: 'Определено Claude по собранным данным.' }))
+        : [],
+      explanation: claude?.explanation || 'Анализ собран по внутренним и внешним мета-источникам.',
+      analysis_basis: {
+        read_method: 'claude_from_meta_sources',
+        sources_used: ['scam_base', 'channels_watch', 'reports', 'vklader', 'forteck'],
+      },
+      input_data_snapshot: payloadForClaude,
+      telethon_runtime: {
+        configured_session: !!(process.env.KRO_TELEGRAM_SESSION_STRING || process.env.TELEGRAM_SESSION_STRING || process.env.TELEGRAM_SESSION_B64 || process.env.TELEGRAM_SESSION_PATH),
+        api_keys_present: !!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH),
+      },
       progress,
-      message: `Готово: прочитано ${postsRead} постов (${periodDays != null ? `${periodDays} дн.` : 'окно не определено'}) через ${readSource}.`,
+      message: 'Анализ выполнен через Claude API по доступным данным (без прямого чтения t.me с Render).',
     });
   } catch (e) {
     console.error('KRO analyze-channel error:', e);
-    return res.status(500).json({
-      error: 'internal_error',
-      message_ru: 'Внутренняя ошибка при анализе канала.',
-    });
+    return res.status(500).json({ error: 'internal_error', message_ru: 'Внутренняя ошибка при анализе канала.' });
   }
 });
 
