@@ -6201,6 +6201,38 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       }
     }
 
+    // Жёсткий режим для главной: только LIVE-проход; иначе ошибка без отчёта.
+    if (homeQuickLiveWant && !(homeQuickParsed && homeQuickParsed._check_once_ok === true)) {
+      const evidenceFail = kroBuildLiveEvidence(null, homeQuickLiveState, null);
+      const msgByState = {
+        public_snapshot:
+          'Живой анализ не выполнен: получен только публичный срез страницы канала. Для этого сценария отчёт без LIVE не выдаётся.',
+        rate_limited:
+          'Живой анализ не выполнен из-за лимита Telegram/FLOOD_WAIT. Повторите позже — отчёт будет только после реального чтения ленты.',
+        skipped_flood:
+          'Живой анализ отложен из-за активного FLOOD_WAIT Telegram. Без LIVE отчёт не формируется.',
+        timeout:
+          'Живой анализ не уложился в лимит времени. Без LIVE-прохода отчёт не формируется.',
+        not_crypto:
+          'Живой анализ не выполнен: канал не прошёл крипто-проверку в Telegram-проходе. Без LIVE отчёт не формируется.',
+        failed:
+          'Живой анализ не выполнен из-за технической ошибки. Без LIVE-прохода отчёт не формируется.',
+      };
+      const st = String(homeQuickLiveState || 'failed');
+      const msg = msgByState[st] || msgByState.failed;
+      return res.status(422).json({
+        error: 'live_analysis_required',
+        message_ru: msg,
+        live_required: true,
+        live_evidence: evidenceFail,
+        live_metrics: {
+          home_quick_live: false,
+          home_quick_live_state: st,
+          check_once_ok: false,
+        },
+      });
+    }
+
     const parsedForLiveMetrics =
       homeQuickParsed && homeQuickParsed._check_once_ok === true ? homeQuickParsed : parsedOnce;
     let liveMetrics = kroChannelProfileLiveMetrics(parsedForLiveMetrics, {
