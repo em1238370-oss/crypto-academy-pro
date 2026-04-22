@@ -3783,15 +3783,16 @@ def _collect_confirmed_objects(new_tgstat, agg_complaints, cycle_window, channel
         # Данные TGStat/Telega нужны до порога жалоб: маркер разоблачителя может быть в source_url строки поиска
         tg_row = tgstat_by_key.get(key)
 
-        # Порог: А — один след разоблачительского сайта; Б — ≥2 жалоб в агрегате
+        # Порог: А — один след разоблачительского сайта; Б — иначе минимум 2 жалобы в агрегате.
         complaint_count = complaint_data.get('complaints') or 0
         whistle = _complaint_bucket_has_whistleblower_evidence(complaint_data, tg_row)
-        # В scam_base только при маркере сайта-разоблачителя в агрегате (не «только form+web»).
-        if not whistle:
+        has_min_evidence = whistle or complaint_count >= 2
+        if not has_min_evidence:
             _kro_cycle_analytics_inc('collect_reject_no_whistleblower_external')
+            _kro_cycle_analytics_inc('collect_reject_low_complaints')
             print(
-                'confirmed-filter: %s — нет URL/маркера разоблачителя (vklader, stop-scam1, …); '
-                'остаётся в reports до внешнего подтверждения.' % ch,
+                'confirmed-filter: %s — нет маркера разоблачителя и недостаточно жалоб (%s < 2); '
+                'остаётся в reports до накопления сигналов.' % (ch, complaint_count),
                 file=sys.stderr,
             )
             continue
