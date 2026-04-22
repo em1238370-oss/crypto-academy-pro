@@ -1319,7 +1319,8 @@
                    demo.classList.remove('hidden');
                    demo.innerHTML = '<a class="kro-inline-deep-demo-link" href="' + esc(demoUrl) + '">Пример: как выглядит страница с глубоким отчётом (канал Telegram)</a>';
                }
-               function fillInlineReport(data, queryU, displayLabel, checkStartedAt) {
+              var KRO_FAST_BUILD_MARKER = 'fast-build-2026-04-22-v3';
+              function fillInlineReport(data, queryU, displayLabel, checkStartedAt) {
                    var doneBanner = document.getElementById('kro-inline-done-banner');
                   var liveGateEl = document.getElementById('kro-inline-live-gate');
                   var analysisPathEl = document.getElementById('kro-inline-analysis-path');
@@ -1372,7 +1373,8 @@
                                liveBadge = 'НЕ LIVE: поверхностный режим (' + (le.mode || 'unknown') + ')';
                            }
                            var allMeta = metaParts.slice();
-                           if (liveBadge) allMeta.unshift(liveBadge);
+                          if (liveBadge) allMeta.unshift(liveBadge);
+                          allMeta.push('версия: ' + KRO_FAST_BUILD_MARKER);
                            metaEl.textContent = allMeta.join(' · ');
                        }
                        var st = c.status || '—';
@@ -1419,10 +1421,10 @@
                                pathTitle += 'LIVE Telegram';
                                pathItems.push('1) Прямой вход в Telegram-ленту выполнен');
                                pathItems.push('2) Прочитаны сообщения и собраны выводы по содержанию');
-                           } else if (pathMode === 'public_snapshot') {
-                               pathTitle += 'публичный fallback';
+                          } else if (pathMode === 'public_snapshot' || pathMode === 'public_content_fallback') {
+                              pathTitle += 'публичный fallback';
                                pathItems.push('1) LIVE не дал результат в лимит времени');
-                               pathItems.push('2) Снят публичный срез t.me/s и объединён с жалобами/мониторингом');
+                              pathItems.push('2) Прочитан публичный текст ленты (t.me/s/зеркало) и объединён с мониторингом');
                            } else {
                                pathTitle += 'ограниченный режим';
                                pathItems.push('1) LIVE вход не завершён');
@@ -1478,9 +1480,10 @@
                        if (s5) s5.innerHTML = homeRenderBullets(s5lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        if (footEl) {
                            var lmFoot = data.live_metrics || {};
-                           var footParts = [
+                          var footParts = [
                                'Источники: ' + ((a.sources || []).join(', ') || '—') + ' · сгенерировано: ' + (a.generated_at || '—'),
                                'режим: ' + (data.mode === 'deep' ? 'deep' : 'fast'),
+                              'маркер сборки: ' + KRO_FAST_BUILD_MARKER,
                            ];
                            if (lmFoot.deep_available_at_msk && (lmFoot.deep_status === 'rate_limited' || lmFoot.deep_status === 'skipped_flood')) {
                                footParts.push('глубокий снова ~ после ' + lmFoot.deep_available_at_msk);
