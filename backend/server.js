@@ -4576,6 +4576,8 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
   if (!slug) return null;
   const optObj = opts && typeof opts === 'object' ? opts : {};
   const budgetMs = Math.min(30000, Math.max(3000, Number(optObj.timeoutMs) || 15000));
+  const logLabel = optObj.logLabel ? String(optObj.logLabel) : '';
+  const logPrefix = logLabel ? `[KRO public-snapshot ${logLabel}]` : '[KRO public-snapshot]';
   const parseHtml = (html) => {
     if (!html || html.length < 100) return null;
     const titleM = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) || html.match(/<title>([^<]+)<\/title>/i);
@@ -4613,6 +4615,7 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
     const ctl = new AbortController();
     const perUrlMs = Math.min(remaining, Math.max(2000, Math.floor(budgetMs / urls.length)));
     const t = setTimeout(() => ctl.abort(), perUrlMs);
+    console.log(`${logPrefix} try url=${url} budget_ms=${perUrlMs}`);
     try {
       const r = await fetch(url, {
         signal: ctl.signal,
@@ -4621,8 +4624,12 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
           accept: 'text/html,application/xhtml+xml,text/plain',
         },
       });
-      if (!r.ok) continue;
+      if (!r.ok) {
+        console.log(`${logPrefix} url=${url} http_status=${r.status} ok=false`);
+        continue;
+      }
       const body = await r.text();
+      const htmlLen = body ? body.length : 0;
       const parsed = parseHtml(body) || {
         slug,
         title: '',
@@ -4633,13 +4640,19 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
           .slice(0, 8),
         fetched_at: new Date().toISOString(),
       };
+      const snippetCount = parsed && Array.isArray(parsed.snippets) ? parsed.snippets.length : 0;
+      console.log(
+        `${logPrefix} url=${url} ok=true html_len=${htmlLen} snippets=${snippetCount} sample=${JSON.stringify((parsed && parsed.snippets && parsed.snippets[0]) ? parsed.snippets[0].slice(0, 180) : '')}`,
+      );
       if (parsed.snippets && parsed.snippets.length) return parsed;
-    } catch {
+    } catch (e) {
+      console.warn(`${logPrefix} url=${url} error=${e && e.message ? String(e.message) : 'fetch_failed'}`);
       /* try next source */
     } finally {
       clearTimeout(t);
     }
   }
+  console.log(`${logPrefix} no_snippets_found slug=${slug}`);
   return null;
 }
 
@@ -5989,7 +6002,10 @@ function kroMapRuRiskLabelToConclusion(ru) {
 }
 
 async function kroAnalyzeChannelWithClaudeFast(payload, timeoutMs) {
-  if (!anthropicApiKey) return null;
+  if (!anthropicApiKey) {
+    console.warn('[KRO claude] ANTHROPIC_API_KEY is empty; skipping Claude analysis');
+    return null;
+  }
   const budget = Math.min(25000, Math.max(2000, Number(timeoutMs) || 8000));
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), budget);
@@ -6005,6 +6021,9 @@ async function kroAnalyzeChannelWithClaudeFast(payload, timeoutMs) {
     'Данные:',
     JSON.stringify(payload).slice(0, 28000),
   ].join('\n');
+  console.log(
+    `[KRO claude] request budget_ms=${budget} payload=${JSON.stringify(payload).slice(0, 4000)}`,
+  );
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -6022,9 +6041,15 @@ async function kroAnalyzeChannelWithClaudeFast(payload, timeoutMs) {
       }),
     });
     const j = await r.json();
+    console.log(
+      `[KRO claude] response http_status=${r.status} body=${JSON.stringify(j).slice(0, 4000)}`,
+    );
     const txt = (j && j.content && j.content[0] && j.content[0].text) ? String(j.content[0].text) : '';
-    return kroExtractJsonObjectFromText(txt);
-  } catch {
+    const parsed = kroExtractJsonObjectFromText(txt);
+    console.log(`[KRO claude] parsed_json=${JSON.stringify(parsed).slice(0, 2000)}`);
+    return parsed;
+  } catch (e) {
+    console.warn(`[KRO claude] error=${e && e.message ? String(e.message) : 'request_failed'}`);
     return null;
   } finally {
     clearTimeout(t);
@@ -6203,6 +6228,8 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
   const channelForOnce = normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${normalized}`;
   const minPublicSnippets = 2;
   const minTelethonPosts = 1;
+  const analyzeLogId = `${key}:${Date.now().toString(36)}`;
+  console.log(`[KRO analyze-channel ${analyzeLogId}] start channel=${channelDisplay}`);
 
   const buildExternalDisclaimer = () =>
     'Анализ по внешним источникам, живая лента недоступна.';
@@ -6229,7 +6256,10 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
 
     const pubBudget = Math.min(15000, Math.max(0, deadline - Date.now() - 500));
     const publicSnap =
-      pubBudget > 1200 ? await kroFetchTelegramPublicSnapshot(channelForOnce, { timeoutMs: pubBudget }) : null;
+      pubBudget > 1200 ? await kroFetchTelegramPublicSnapshot(channelForOnce, { timeoutMs: pubBudget, logLabel: analyzeLogId }) : null;
+    console.log(
+      `[KRO analyze-channel ${analyzeLogId}] public_snapshot result snippets=${publicSnap && Array.isArray(publicSnap.snippets) ? publicSnap.snippets.length : 0}`,
+    );
 
     if (publicSnap && Array.isArray(publicSnap.snippets) && publicSnap.snippets.length >= minPublicSnippets) {
       const signal = kroCollectSuspiciousFlagsFromTexts(publicSnap.snippets);
@@ -6268,6 +6298,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
 
       const postsRead = publicSnap.snippets.length;
+      console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=public_snapshot posts_read=${postsRead}`);
       return res.status(200).json({
         queue_status: 'done_sync',
         analysis,
@@ -6311,6 +6342,9 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       const parsed = kroNormalizeCheckOnceForAnalysis(once);
       const postsRead = Number(parsed.posts_fetched || 0);
       const sample = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
+      console.log(
+        `[KRO analyze-channel ${analyzeLogId}] telethon ok=${parsed._check_once_ok === true} found=${parsed.found === true} posts_read=${postsRead} error=${JSON.stringify(parsed.error || '')} sample=${JSON.stringify(sample[0] ? sample[0].slice(0, 180) : '')}`,
+      );
       const enough =
         parsed._check_once_ok === true &&
         parsed.found === true &&
@@ -6323,6 +6357,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         const signal = kroCollectSuspiciousFlagsFromTexts(sample);
         const risk = Number.isFinite(rawRisk) ? rawRisk : signal.risk;
         const statusObj = kroMapRiskToUiStatus(risk);
+        console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=telethon posts_read=${postsRead}`);
         return res.status(200).json({
           queue_status: 'done_sync',
           analysis,
@@ -6423,9 +6458,15 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       site_mentions: siteMentions,
       partial_public_snippets: publicSnap && Array.isArray(publicSnap.snippets) ? publicSnap.snippets.slice(0, 3) : [],
     };
+    console.log(
+      `[KRO analyze-channel ${analyzeLogId}] claude_payload=${JSON.stringify(claudePayload).slice(0, 4000)}`,
+    );
 
     const claudeRemain = Math.max(1500, deadline - Date.now() - 400);
     const claudeJson = await kroAnalyzeChannelWithClaudeFast(claudePayload, claudeRemain);
+    console.log(
+      `[KRO analyze-channel ${analyzeLogId}] claude_result=${JSON.stringify(claudeJson).slice(0, 2000)}`,
+    );
     let riskIndex = latestProfile ? computeKroRiskIndex(latestProfile, reports) : 18;
     let flagsOut = [];
     let citationsOut = [];
@@ -6457,6 +6498,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       }
     } else if (!anthropicApiKey) {
       analysis.basic_info.push('Claude API не настроен (ANTHROPIC_API_KEY) — показан только слой базы и мониторинга.');
+      console.warn(`[KRO analyze-channel ${analyzeLogId}] claude_skipped_no_api_key fallback=base_watch_reports_only`);
     }
 
     if (!claudeJson || typeof claudeJson !== 'object') {
@@ -6506,7 +6548,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       message: `Готово за ${Math.round((Date.now() - t0) / 1000)} с: внешние источники (лента недоступна).`,
     });
   } catch (e) {
-    console.error('KRO analyze-channel sync error:', e);
+    console.error(`KRO analyze-channel sync error [${analyzeLogId}]:`, e);
     return res.status(500).json({ error: 'internal_error', message_ru: 'Не удалось выполнить быстрый анализ канала.' });
   }
 });
