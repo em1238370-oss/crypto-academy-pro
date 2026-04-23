@@ -1021,6 +1021,7 @@
                function statusClass(s) {
                    var v = (s || '').toLowerCase();
                    if (v.indexOf('подтвержд') !== -1 && v.indexOf('скам') !== -1) return 'scam';
+                   if (v.indexOf('недоступ') !== -1 || v.indexOf('не выполнен') !== -1) return 'watch';
                    if (v.indexOf('без нарушений') !== -1) return 'clean';
                    if (v.indexOf('в риске') !== -1 || (v.indexOf('риск') !== -1 && v.indexOf('наблю') === -1)) return 'risk';
                    return 'watch';
@@ -1288,6 +1289,8 @@
                        var profile = data.profile;
                        var lm = data.live_metrics || {};
                        var le = data.live_evidence && typeof data.live_evidence === 'object' ? data.live_evidence : null;
+                       var ab = data.analysis_basis && typeof data.analysis_basis === 'object' ? data.analysis_basis : null;
+                       var citations = Array.isArray(data.citations) ? data.citations.map(function (x) { return String(x || '').trim(); }).filter(Boolean) : [];
                        var eyebrow = document.getElementById('kro-inline-eyebrow');
                        var titleEl = document.getElementById('kro-inline-title');
                        var metaEl = document.getElementById('kro-inline-meta');
@@ -1334,7 +1337,8 @@
                          if (liveBadge) allMeta.unshift(liveBadge);
                            metaEl.textContent = allMeta.join(' · ');
                        }
-                       var st = c.status || '—';
+                       var st = c.status || data.status || '—';
+                       if (le && le.live_pass !== true && data.status) st = String(data.status);
                        if (stEl) {
                            stEl.textContent = st;
                            stEl.className = 'kro-inline-status-pill kro-inline-status-pill--' + statusClass(st);
@@ -1377,7 +1381,7 @@
                       }
 
                        if (reasonsEl) {
-                           var rs = (c.reasons || []).slice(0, 6).map(function (r) { return String(r == null ? '' : r).trim(); }).filter(Boolean);
+                           var rs = (c.reasons || []).slice(0, 4).map(function (r) { return String(r == null ? '' : r).trim(); }).filter(Boolean);
                            if (le && le.live_pass !== true) {
                                rs.unshift('⚠ ЖИВОЙ АНАЛИЗ ЛЕНТЫ НЕ ВЫПОЛНЕН. ' + String(le.reason || 'Сделан только поверхностный режим.'));
                            } else if (le && le.live_pass === true) {
@@ -1388,13 +1392,14 @@
                                    rs.unshift('✅ LIVE‑доказательство: сервер прошёл живую ленту Telegram в этом запросе.');
                                }
                            }
+                           if (ab && ab.label) rs.push(String(ab.label));
                            if (!rs.length) rs.push('Вывод сформирован по данным проверки и правилам системы.');
                            reasonsEl.innerHTML = rs.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
                        }
                        if (rw && riv) {
                            var ridx = data.risk_index;
-                           if (profile && ridx != null && ridx !== '' && !isNaN(Number(ridx))) {
-                               var mx = data.risk_index_max != null ? Number(data.risk_index_max) : 100;
+                           if (ridx != null && ridx !== '' && !isNaN(Number(ridx))) {
+                               var mx = data.risk_index_max != null ? Number(data.risk_index_max) : 10;
                                riv.textContent = Number(ridx) + '/' + mx;
                                rw.hidden = false;
                            } else {
@@ -1406,22 +1411,54 @@
                        var s3 = document.getElementById('kro-inline-s3');
                        var s4 = document.getElementById('kro-inline-s4');
                        var s5 = document.getElementById('kro-inline-s5');
-                       if (s1) s1.innerHTML = homeRenderBullets(a.basic_info) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
-                       if (s2) s2.innerHTML = homeRenderBullets(a.content_behavior) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                       var s1lines = Array.isArray(a.basic_info) ? a.basic_info.slice() : [];
+                       if (ab && ab.posts_read != null && !isNaN(Number(ab.posts_read))) {
+                           s1lines.push('Основа fast-вывода: прочитано сообщений канала — ' + Number(ab.posts_read) + '.');
+                       }
+                       if (s1) s1.innerHTML = homeRenderBullets(s1lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                       var s2lines = Array.isArray(a.content_behavior) ? a.content_behavior.slice() : [];
+                       if (citations.length) {
+                           var extraQuotes = citations.map(function (x) { return 'Цитата из ленты: «' + String(x).slice(0, 220) + '»'; });
+                           s2lines = s2lines.concat(extraQuotes);
+                       }
+                       if (s2) s2.innerHTML = homeRenderBullets(s2lines.slice(0, 10)) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        if (s3) s3.innerHTML = homeRenderBullets(a.external_reports) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        if (s4) s4.innerHTML = homeRenderBullets(a.ties_risk_factors) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        var s5lines = [];
                        if (st && st !== '—') s5lines.push('Итоговый статус: ' + st);
-                       if (Array.isArray(c.reasons)) s5lines = s5lines.concat(c.reasons.slice(0, 6));
+                       if (ridx != null && ridx !== '' && !isNaN(Number(ridx))) {
+                           var mx2 = data.risk_index_max != null ? Number(data.risk_index_max) : 10;
+                           s5lines.push('Риск по fast-анализу: ' + Number(ridx) + '/' + mx2 + '.');
+                       }
+                       if (data.message) s5lines.push(String(data.message));
+                       if (Array.isArray(c.reasons)) s5lines = s5lines.concat(c.reasons.slice(0, 2));
                        if (s5) s5.innerHTML = homeRenderBullets(s5lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
-                      if (footEl) {
-                          footEl.hidden = true;
-                          footEl.textContent = '';
-                      }
                        if (doneBanner) {
-                          doneBanner.hidden = true;
-                          doneBanner.classList.add('hidden');
-                          doneBanner.textContent = '';
+                          var summaryText = data.message || (ab && ab.label ? String(ab.label) : '');
+                          if (summaryText) {
+                              doneBanner.hidden = false;
+                              doneBanner.classList.remove('hidden');
+                              doneBanner.className = 'kro-inline-done-banner';
+                              doneBanner.textContent = summaryText;
+                          } else {
+                              doneBanner.hidden = true;
+                              doneBanner.classList.add('hidden');
+                              doneBanner.textContent = '';
+                          }
+                      }
+                      if (footEl) {
+                          var footParts = [];
+                          if (ab && ab.label) footParts.push(String(ab.label));
+                          if (ab && Array.isArray(ab.sources_used) && ab.sources_used.length) {
+                              footParts.push('Источники fast-оценки: ' + ab.sources_used.join(', '));
+                          }
+                          if (footParts.length) {
+                              footEl.hidden = false;
+                              footEl.textContent = footParts.join(' · ');
+                          } else {
+                              footEl.hidden = true;
+                              footEl.textContent = '';
+                          }
                        }
                    } catch (eFill) {
                        if (typeof console !== 'undefined' && console.error) console.error('fillInlineReport', eFill);
