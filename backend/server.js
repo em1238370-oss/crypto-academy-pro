@@ -4571,6 +4571,95 @@ function kroStripHtmlToText(html) {
     .trim();
 }
 
+function kroNormalizePublicSnapshotLine(text, slug) {
+  let s = kroStripHtmlToText(text)
+    .replace(/^\s*<title>\s*/i, '')
+    .replace(/\s*<\/title>\s*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const low = s.toLowerCase();
+  const slugLow = String(slug || '').toLowerCase();
+  const boilerplate = [
+    'telegram: view @',
+    'view in telegram',
+    'preview channel',
+    'open a channel via telegram app',
+    'send message',
+    'join channel',
+    'telegram apps are open',
+    'if you have telegram',
+  ];
+  if (!s || s.length < 20) return '';
+  if (boilerplate.some((x) => low.includes(x))) return '';
+  if (slugLow && (low === `telegram: view @${slugLow}` || low === `@${slugLow}`)) return '';
+  if (/^(telegram|view|preview)\b/i.test(s) && s.length < 80) return '';
+  return s;
+}
+
+function kroFilterPublicSnapshotSnippets(lines, slug) {
+  return (Array.isArray(lines) ? lines : [])
+    .map((x) => kroNormalizePublicSnapshotLine(x, slug))
+    .filter(Boolean)
+    .filter((x, i, a) => a.indexOf(x) === i)
+    .slice(0, 8)
+    .map((x) => (x.length > 260 ? `${x.slice(0, 257)}...` : x));
+}
+
+function kroAssessPublicSnapshotTexts(texts) {
+  const joined = (Array.isArray(texts) ? texts : []).join(' \n ').toLowerCase();
+  const hasRiskManagement = [
+    'риск-менедж',
+    'risk management',
+    'стоп',
+    'стоп-лосс',
+    'stop loss',
+    'риск на сделку',
+    'тейк',
+    'take profit',
+    'безубыт',
+    'инвалидац',
+    'risk/reward',
+  ].some((kw) => joined.includes(kw));
+  const hasEducation = [
+    'разбор',
+    'обзор',
+    'сценар',
+    'почему',
+    'логик',
+    'контекст',
+    'уровн',
+    'структур',
+    'тезис',
+    'сетап',
+  ].some((kw) => joined.includes(kw));
+  const hasDisclaimer = [
+    'не финансов',
+    'не является инвестиционной рекомендацией',
+    'dyor',
+    'nfa',
+    'not financial advice',
+  ].some((kw) => joined.includes(kw));
+  const positives = [];
+  const cautions = [];
+  const reasons = [];
+  if (hasRiskManagement) {
+    positives.push('В доступных фрагментах есть признаки риск-менеджмента: упоминаются стопы, риск на сделку или сценарии отмены идеи.');
+    reasons.push('В текстах есть явные элементы риск-менеджмента, а не только призыв «заходить».');
+  } else {
+    cautions.push('В доступных фрагментах не видно явных правил риск-менеджмента (стоп, риск на сделку, invalidation).');
+  }
+  if (hasEducation) {
+    positives.push('Посты больше похожи на разборы и объяснения, а не только на короткие сигналы.');
+    reasons.push('В ленте заметны объяснения логики и контекста, а не только результат.');
+  } else {
+    cautions.push('В срезе мало объяснений логики входа или сценариев — это ослабляет уверенность в качестве аналитики.');
+  }
+  if (hasDisclaimer) {
+    positives.push('Есть оговорки про риски или non-financial-advice; это не гарантия качества, но снижает агрессивность подачи.');
+  }
+  return { positives, cautions, reasons, hasRiskManagement, hasEducation, hasDisclaimer };
+}
+
 async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
   const slug = kroExtractTelegramPublicSlug(channelRef);
   if (!slug) return null;
@@ -4594,12 +4683,10 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
         break;
       }
     }
-    const snippets = blocks
-      .map((x) => kroStripHtmlToText(x))
-      .filter(Boolean)
-      .filter((x, i, a) => a.indexOf(x) === i)
-      .slice(0, 8)
-      .map((x) => (x.length > 260 ? `${x.slice(0, 257)}...` : x));
+    const snippets = kroFilterPublicSnapshotSnippets(
+      blocks.map((x) => kroStripHtmlToText(x)),
+      slug,
+    );
     if (!snippets.length) return null;
     return { slug, title, snippets, fetched_at: new Date().toISOString() };
   };
@@ -4633,11 +4720,13 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
       const parsed = parseHtml(body) || {
         slug,
         title: '',
-        snippets: body
-          .split('\n')
-          .map((x) => String(x || '').trim())
-          .filter((x) => x.length >= 25 && !/^https?:\/\//i.test(x))
-          .slice(0, 8),
+        snippets: kroFilterPublicSnapshotSnippets(
+          body
+            .split('\n')
+            .map((x) => String(x || '').trim())
+            .filter((x) => x.length >= 25 && !/^https?:\/\//i.test(x)),
+          slug,
+        ),
         fetched_at: new Date().toISOString(),
       };
       const snippetCount = parsed && Array.isArray(parsed.snippets) ? parsed.snippets.length : 0;
@@ -6263,6 +6352,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
 
     if (publicSnap && Array.isArray(publicSnap.snippets) && publicSnap.snippets.length >= minPublicSnippets) {
       const signal = kroCollectSuspiciousFlagsFromTexts(publicSnap.snippets);
+      const contentAssess = kroAssessPublicSnapshotTexts(publicSnap.snippets);
       const risk = Number.isFinite(signal.risk) ? signal.risk : 15;
       const statusObj = kroMapRiskToUiStatus(risk);
       let conclusionStatus = KRO_V0_STATUS.clean;
@@ -6277,17 +6367,31 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         basic_info: [
           `Канал: ${channelDisplay}`,
           `Публичный срез: ${publicSnap.snippets.length} фрагментов постов (лимит чтения до 15 с).`,
+          publicSnap.title ? `Название по публичной странице: ${publicSnap.title}.` : '',
         ],
-        content_behavior: signal.examples.length ? signal.examples : publicSnap.snippets.slice(0, 4),
+        content_behavior: [
+          ...contentAssess.positives,
+          ...(signal.examples.length
+            ? signal.examples.map((x) => `Пример из ленты: «${String(x).slice(0, 220)}»`)
+            : publicSnap.snippets.slice(0, 3).map((x) => `Пример из ленты: «${String(x).slice(0, 220)}»`)),
+        ].filter(Boolean).slice(0, 5),
         external_reports: reports.length
           ? [`Отчёты пользователей: ${reports.length} записей в базе.`]
           : ['В принятых жалобах по этому каналу записей нет.'],
         ties_risk_factors: signal.flags.length
           ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
-          : ['Явных маркеров риска в выборке не выделено.'],
+          : contentAssess.cautions.length
+            ? contentAssess.cautions.slice(0, 2)
+            : ['В доступных фрагментах не видно типичных красных флагов: обещаний гарантированной прибыли, жёсткого FOMO или платного VIP.'],
         conclusion: {
           status: conclusionStatus,
-          reasons: [`Поверхностный анализ по публичным фрагментам: ${statusObj.status}.`],
+          reasons: [
+            `Поверхностный анализ по публичным фрагментам: ${statusObj.status}.`,
+            ...contentAssess.reasons,
+            !signal.flags.length
+              ? 'В доступных фрагментах не видно типовых агрессивных маркеров: «гарантированная прибыль», FOMO, платный VIP или «иксы без обоснования».'
+              : '',
+          ].filter(Boolean).slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
         },
       };
       if (latestProfile) {
@@ -6310,7 +6414,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         period_days: 7,
         read_path: 'public_snapshot',
         flags: signal.flags,
-        citations: signal.examples.slice(0, 5),
+        citations: (signal.examples.length ? signal.examples : publicSnap.snippets).slice(0, 5),
         live_evidence: {
           live_pass: true,
           mode: 'public_snapshot',
