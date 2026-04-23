@@ -1032,66 +1032,13 @@
                        return '<li>' + esc(b) + '</li>';
                    }).join('') + '</ul>';
                }
-               function fillInlineDeepStatus(data, queryU) {
-                   var el = document.getElementById('kro-inline-deep-status');
-                   if (!el) return;
-                   var dg =
-                       data && data.deep_gate != null && typeof data.deep_gate === 'object' && !Array.isArray(data.deep_gate)
-                           ? data.deep_gate
-                           : {};
-                   var hint =
-                       data && data.deep_cache_hint && typeof data.deep_cache_hint === 'object' && data.deep_cache_hint !== null
-                           ? data.deep_cache_hint
-                           : {};
-                   var parts = [];
-                   var klass = 'kro-inline-deep-status kro-inline-deep-status--neutral';
-                   if (hint.has_fresh_deep) {
-                       var ageMin = hint.age_ms != null ? Math.max(1, Math.round(Number(hint.age_ms) / 60000)) : null;
-                       parts.push('Глубокий отчёт по этому каналу уже в кэше сервера' + (ageMin ? ' (обновлялся ~' + ageMin + ' мин назад)' : '') + '. Откройте страницу канала — там блок с разбором ленты.');
-                       klass = 'kro-inline-deep-status kro-inline-deep-status--ready';
-                   } else if (hint.has_stale_deep && !hint.has_fresh_deep) {
-                       var ageM2 = hint.age_ms != null ? Math.max(1, Math.round(Number(hint.age_ms) / 60000)) : null;
-                       parts.push('В кэше есть устаревший глубокий снимок' + (ageM2 ? ' (~' + ageM2 + ' мин назад)' : '') + ' — новый можно запустить со страницы канала.');
-                       klass = 'kro-inline-deep-status kro-inline-deep-status--stale';
-                   }
-                   if (dg.deep_queued === true) {
-                       if (dg.deep_queue_running === true) {
-                           parts.push('Серверный глубокий уже выполняется для этого канала (чтение ленты). Обычно до ~3 мин — откройте страницу канала и обновите при необходимости.');
-                       } else {
-                           var pos = dg.deep_queue_position != null ? Number(dg.deep_queue_position) : null;
-                           var eta = dg.deep_queue_eta_minutes != null ? Number(dg.deep_queue_eta_minutes) : null;
-                           var ql = 'Этот канал в серверной очереди на глубокий анализ.';
-                           if (pos != null && !isNaN(pos)) ql += ' Место: ~' + pos + '.';
-                           if (eta != null && !isNaN(eta)) ql += ' Ориентировочно ~' + eta + ' мин.';
-                           parts.push(ql);
-                       }
-                       klass = 'kro-inline-deep-status kro-inline-deep-status--queue';
-                   } else if (dg.can_run_deep === false && dg.deep_queued !== true) {
-                       if (dg.telegram_flood_active === true) {
-                           parts.push('Глубокий сейчас ограничен Telegram. Ниже — подробности; можно BYO на странице канала.');
-                           klass = 'kro-inline-deep-status kro-inline-deep-status--blocked';
-                       } else if (dg.server_throttle_active === true || (dg.message_ru && String(dg.message_ru).trim())) {
-                           parts.push('Серверный глубокий сейчас недоступен или отложен — см. блок ниже; альтернатива: BYO на странице канала.');
-                           klass = 'kro-inline-deep-status kro-inline-deep-status--blocked';
-                       }
-                   } else if (data.mode !== 'deep' && dg.can_run_deep !== false) {
-                       parts.push(
-                           'Быстрый отчёт по «' +
-                               queryU +
-                               '». Полный глубокий — до 6 мес. ленты на странице канала (на тяжёлых каналах до ~30 мин); BYO — без общей очереди.'
-                       );
-                       klass = 'kro-inline-deep-status kro-inline-deep-status--neutral';
-                   }
-                   if (!parts.length) {
-                       parts.push('Быстрый отчёт готов. Глубокий анализ — в блоке ниже.');
-                   }
-                   el.hidden = false;
-                   el.classList.remove('hidden');
-                   el.className = klass;
-                   el.innerHTML = parts.map(function (t) {
-                       return '<p class="kro-inline-deep-status-line">' + esc(t) + '</p>';
-                   }).join('');
-               }
+              function fillInlineDeepStatus() {
+                  var el = document.getElementById('kro-inline-deep-status');
+                  if (!el) return;
+                  el.hidden = true;
+                  el.classList.add('hidden');
+                  el.innerHTML = '';
+              }
                function kroMakeDeepQueuePill(dg) {
                    if (!dg || dg.deep_queued !== true) return '';
                    if (dg.deep_queue_running === true) {
@@ -1278,20 +1225,19 @@
                            ? data.deep_gate
                            : null;
                    var chUrl = base + '/channel/' + encodeURIComponent(queryU);
-                   var demoUrl = base + '/channel/telegram';
                    var byoHref = base + '/channel?u=' + encodeURIComponent(queryU) + '&byo=1#ch-byotele';
                    var byoteleNote = '<p class="kro-inline-deep-byotele-note">Полный глубокий на странице канала: до <strong>6 месяцев</strong> ленты; на тяжёлом канале допустимо до <strong>~30 минут</strong> ожидания. Серверный глубокий — про тот же канал. Чтобы не ждать общую очередь — <strong>BYO</strong>: StringSession, чтение через ваш аккаунт.</p>' +
                        '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta kro-inline-deep-cta--secondary" href="' + esc(byoHref) + '">Перейти к этому каналу и подключить Telegram (BYO)</a></p>';
-                   if (!dg || typeof dg !== 'object') {
+                  demo.hidden = true;
+                  demo.classList.add('hidden');
+                  demo.innerHTML = '';
+                  if (!dg || typeof dg !== 'object') {
                        panel.hidden = false;
                        panel.classList.remove('hidden');
                        panel.className = 'kro-inline-deep-panel kro-inline-deep-panel--blocked';
                        panel.innerHTML = '<strong class="kro-inline-deep-title">Глубокий через ваш Telegram (BYO)</strong>' +
                            '<p class="kro-inline-deep-text">Если серверный глубокий недоступен или в очереди — откройте страницу канала и подключите StringSession: анализ ленты пойдёт через ваш аккаунт.</p>' +
                            byoteleNote;
-                       demo.hidden = false;
-                       demo.classList.remove('hidden');
-                       demo.innerHTML = '<a class="kro-inline-deep-demo-link" href="' + esc(demoUrl) + '">Пример: как выглядит страница с глубоким отчётом (канал Telegram)</a>';
                        return;
                    }
                    panel.hidden = false;
@@ -1331,11 +1277,7 @@
                            '<p class="kro-inline-deep-actions"><a class="kro-inline-deep-cta" href="' + esc(chUrl) + '">Открыть страницу канала и запустить глубокий анализ</a></p>' +
                            byoteleNote;
                    }
-                   demo.hidden = false;
-                   demo.classList.remove('hidden');
-                   demo.innerHTML = '<a class="kro-inline-deep-demo-link" href="' + esc(demoUrl) + '">Пример: как выглядит страница с глубоким отчётом (канал Telegram)</a>';
                }
-              var KRO_FAST_BUILD_MARKER = 'fast-build-2026-04-22-v4';
               function fillInlineReport(data, queryU, displayLabel, checkStartedAt) {
                    var doneBanner = document.getElementById('kro-inline-done-banner');
                   var liveGateEl = document.getElementById('kro-inline-live-gate');
@@ -1389,8 +1331,7 @@
                                liveBadge = 'НЕ LIVE: поверхностный режим (' + (le.mode || 'unknown') + ')';
                            }
                            var allMeta = metaParts.slice();
-                          if (liveBadge) allMeta.unshift(liveBadge);
-                          allMeta.push('версия: ' + KRO_FAST_BUILD_MARKER);
+                         if (liveBadge) allMeta.unshift(liveBadge);
                            metaEl.textContent = allMeta.join(' · ');
                        }
                        var st = c.status || '—';
@@ -1429,32 +1370,11 @@
                            liveGateEl.classList.remove('hidden');
                        }
                        
-                       if (analysisPathEl) {
-                           var pathMode = le && le.mode ? String(le.mode) : 'unknown';
-                           var pathTitle = 'Путь анализа: ';
-                           var pathItems = [];
-                           if (pathMode === 'telegram_live') {
-                               pathTitle += 'LIVE Telegram';
-                               pathItems.push('1) Прямой вход в Telegram-ленту выполнен');
-                               pathItems.push('2) Прочитаны сообщения и собраны выводы по содержанию');
-                          } else if (pathMode === 'public_snapshot' || pathMode === 'public_content_fallback') {
-                              pathTitle += 'публичный fallback';
-                               pathItems.push('1) LIVE не дал результат в лимит времени');
-                              pathItems.push('2) Прочитан публичный текст ленты (t.me/s/зеркало) и объединён с мониторингом');
-                           } else {
-                               pathTitle += 'ограниченный режим';
-                               pathItems.push('1) LIVE вход не завершён');
-                               pathItems.push('2) Использованы доступные данные мониторинга/жалоб');
-                           }
-                           if (a && Array.isArray(a.sources) && a.sources.length) {
-                               pathItems.push('Источники: ' + a.sources.slice(0, 4).join(', '));
-                           }
-                           analysisPathEl.innerHTML =
-                               '<p class="kro-inline-analysis-path-title">' + esc(pathTitle) + '</p>' +
-                               '<ul class="kro-inline-analysis-path-list">' + pathItems.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>';
-                           analysisPathEl.hidden = false;
-                           analysisPathEl.classList.remove('hidden');
-                       }
+                      if (analysisPathEl) {
+                          analysisPathEl.hidden = true;
+                          analysisPathEl.classList.add('hidden');
+                          analysisPathEl.innerHTML = '';
+                      }
 
                        if (reasonsEl) {
                            var rs = (c.reasons || []).slice(0, 6).map(function (r) { return String(r == null ? '' : r).trim(); }).filter(Boolean);
@@ -1494,84 +1414,14 @@
                        if (st && st !== '—') s5lines.push('Итоговый статус: ' + st);
                        if (Array.isArray(c.reasons)) s5lines = s5lines.concat(c.reasons.slice(0, 6));
                        if (s5) s5.innerHTML = homeRenderBullets(s5lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
-                       if (footEl) {
-                           var lmFoot = data.live_metrics || {};
-                          var footParts = [
-                               'Источники: ' + ((a.sources || []).join(', ') || '—') + ' · сгенерировано: ' + (a.generated_at || '—'),
-                               'режим: ' + (data.mode === 'deep' ? 'deep' : 'fast'),
-                              'маркер сборки: ' + KRO_FAST_BUILD_MARKER,
-                           ];
-                           if (lmFoot.deep_available_at_msk && (lmFoot.deep_status === 'rate_limited' || lmFoot.deep_status === 'skipped_flood')) {
-                               footParts.push('глубокий снова ~ после ' + lmFoot.deep_available_at_msk);
-                           } else if (lmFoot.deep_queued === true || lmFoot.deep_status === 'queued') {
-                               var etaQ = lmFoot.deep_queue_eta_minutes != null && !isNaN(Number(lmFoot.deep_queue_eta_minutes))
-                                   ? Number(lmFoot.deep_queue_eta_minutes)
-                                   : null;
-                               var pollS = lmFoot.deep_queue_suggested_poll_seconds != null && !isNaN(Number(lmFoot.deep_queue_suggested_poll_seconds))
-                                   ? Number(lmFoot.deep_queue_suggested_poll_seconds)
-                                   : null;
-                               footParts.push(
-                                   'глубокий в очереди' + (etaQ ? ' (~' + etaQ + ' мин)' : '') + (pollS ? '; обновлять ~каждые ' + pollS + ' сек' : '')
-                               );
-                           } else if (data.mode !== 'deep') {
-                               footParts.push('глубокий разбор ленты: /channel/' + encodeURIComponent(queryU) + ' → кнопка «Глубокий анализ ленты» (до 6 мес.; на тяжёлых каналах до ~30 мин)');
-                           }
-                           if (lmFoot.home_quick_live === true) {
-                              var wn = lmFoot.home_quick_window_days != null ? Number(lmFoot.home_quick_window_days) : 90;
-                              var postsL = lmFoot.posts_fetched != null ? Number(lmFoot.posts_fetched) : null;
-                              footParts.push(
-                                  'на главной добавлен живой срез ленты ~' +
-                                      (isFinite(wn) ? wn : 90) +
-                                      ' дн.' +
-                                      (postsL != null && !isNaN(postsL) ? ' · постов с текстом: ~' + postsL : '')
-                              );
-                          } else if (lmFoot.home_quick_live_state) {
-                              var qst = String(lmFoot.home_quick_live_state);
-                              if (qst === 'timeout') {
-                                  footParts.push('живой срез ленты не успел уложиться в лимит ожидания браузера; выше показана сводка и жалобы');
-                              } else if (qst === 'rate_limited' || qst === 'skipped_flood') {
-                                  footParts.push('живой срез ленты сейчас ограничен Telegram (лимиты/FLOOD_WAIT); выше показана сводка и жалобы');
-                              } else if (qst === 'failed') {
-                                  footParts.push('живой срез ленты сейчас недоступен из-за временной ошибки; выше показана сводка и жалобы');
-                              }
-                          }
-                          if (data.deep_cache_hint && (data.deep_cache_hint.has_fresh_deep || data.deep_cache_hint.has_stale_deep) && data.mode !== 'deep') {
-                               var ageF = Math.max(1, Math.round(Number(data.deep_cache_hint.age_ms) / 60000));
-                               footParts.push(
-                                   data.deep_cache_hint.has_stale_deep && !data.deep_cache_hint.has_fresh_deep
-                                       ? 'в кэше глубокий (~' + ageF + ' мин), не самый свежий'
-                                       : 'в кэше свежий глубокий (~' + ageF + ' мин)'
-                               );
-                           }
-                           var dgFoot = data.deep_gate && typeof data.deep_gate === 'object' && !Array.isArray(data.deep_gate) ? data.deep_gate : null;
-                           if (dgFoot && dgFoot.deep_queued === true && data.mode !== 'deep') {
-                               var posF = dgFoot.deep_queue_position != null ? Number(dgFoot.deep_queue_position) : null;
-                               var etaF = dgFoot.deep_queue_eta_minutes != null ? Number(dgFoot.deep_queue_eta_minutes) : null;
-                               var runF = dgFoot.deep_queue_running === true;
-                               footParts.push(
-                                   runF
-                                       ? 'серверный глубокий для этого канала выполняется сейчас'
-                                       : 'серверная очередь глубокого' + (posF != null && !isNaN(posF) ? ': место ~' + posF : '') + (etaF != null && !isNaN(etaF) ? ', ожидание ~' + etaF + ' мин' : '')
-                               );
-                           }
-                           footEl.textContent = footParts.join(' · ');
-                       }
+                      if (footEl) {
+                          footEl.hidden = true;
+                          footEl.textContent = '';
+                      }
                        if (doneBanner) {
-                           doneBanner.hidden = false;
-                           doneBanner.classList.remove('hidden');
-                           doneBanner.className = 'kro-inline-done-banner';
-                           var _t0 = typeof checkStartedAt === 'number' && checkStartedAt > 0 ? checkStartedAt : Date.now();
-                           var _doneMs = Math.max(0, Date.now() - _t0);
-                           var livePrefix = '';
-                           if (le && le.live_pass === true) livePrefix = '[LIVE] ';
-                           else if (le && le.live_pass !== true) livePrefix = '[НЕ LIVE] ';
-                           doneBanner.textContent =
-                               livePrefix +
-                               'Готово за ' +
-                               __kroFormatElapsed(_doneMs) +
-                               ': быстрый отчёт по ' +
-                               displayLabel +
-                               ' — блок ниже можно листать.';
+                          doneBanner.hidden = true;
+                          doneBanner.classList.add('hidden');
+                          doneBanner.textContent = '';
                        }
                    } catch (eFill) {
                        if (typeof console !== 'undefined' && console.error) console.error('fillInlineReport', eFill);
