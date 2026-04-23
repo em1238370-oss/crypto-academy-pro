@@ -6370,8 +6370,9 @@ function kroBuildAnalyzeDoneResponse(doneRow, key) {
   const postsRead = Number(doneRow && doneRow.posts_read || (parsed && parsed.posts_fetched) || 0) || 0;
   const periodDays = Number(doneRow && doneRow.period_days || (parsed && parsed.analysis_window_days) || 0) || null;
   const readPath = (doneRow && doneRow.read_path) || (parsed && parsed.read_path) || null;
+  const minReadablePosts = 5;
 
-  if (!parsed || parsed.found !== true || postsRead <= 0) {
+  if (!parsed || parsed.found !== true || postsRead < minReadablePosts) {
     return {
       queue_status: 'done',
       request_id: doneRow && doneRow.request_id ? doneRow.request_id : null,
@@ -6386,14 +6387,14 @@ function kroBuildAnalyzeDoneResponse(doneRow, key) {
         channel_key: key,
         generated_at: new Date().toISOString(),
         sources: ['kro_check_results'],
-        basic_info: ['Живое чтение постов не подтверждено: posts_read == 0.'],
+        basic_info: [`Живое чтение не дало достаточно текста для анализа: нужно минимум ${minReadablePosts} нормальных сообщений.`],
         content_behavior: [],
         external_reports: [],
         ties_risk_factors: [],
-        conclusion: { status: KRO_V0_STATUS.watch, reasons: ['Не удалось прочитать посты канала.'] },
+        conclusion: { status: KRO_V0_STATUS.watch, reasons: [`Удалось прочитать только ${postsRead} сообщений; этого мало для fast-оценки.`] },
       },
-      live_evidence: { live_pass: false, mode: readPath || 'queue', reason: 'Посты не прочитаны.', sample_posts: [] },
-      message: 'Анализ завершён без прочитанных постов: статус НЕДОСТУПЕН.',
+      live_evidence: { live_pass: false, mode: readPath || 'queue', reason: `Для fast-анализа нужно минимум ${minReadablePosts} нормальных текстовых сообщений.`, sample_posts: [] },
+      message: `Анализ завершён без достаточной выборки: прочитано ${postsRead}, нужно минимум ${minReadablePosts}.`,
     };
   }
 
@@ -6474,8 +6475,9 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
   const deadline = t0 + 45000;
   const channelDisplay = normalized.startsWith('@') ? normalized : `@${key}`;
   const channelForOnce = normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${normalized}`;
-  const minPublicSnippets = 2;
-  const minTelethonPosts = 1;
+  const minReadablePosts = 5;
+  const minPublicSnippets = minReadablePosts;
+  const minTelethonPosts = minReadablePosts;
   const analyzeLogId = `${key}:${Date.now().toString(36)}`;
   console.log(`[KRO analyze-channel ${analyzeLogId}] start channel=${channelDisplay}`);
 
@@ -6707,7 +6709,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       conclusion: {
         status: 'живой анализ не выполнен',
         reasons: [
-          'Fast-вывод по критериям не построен, потому что не удалось прочитать текст сообщений канала.',
+          `Fast-вывод по критериям не построен, потому что не удалось прочитать минимум ${minReadablePosts} нормальных сообщений канала.`,
         ],
       },
     };
@@ -6804,7 +6806,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         live_pass: false,
         mode: 'external_sources',
         reason:
-          'Живая лента t.me/Telethon за отведённые 45 с не дала текста сообщений. Поэтому критерии fast-анализа и риск-индекс не построены.',
+          `Живая лента за отведённые 45 с не дала минимум ${minReadablePosts} нормальных текстовых сообщений. Поэтому критерии fast-анализа и риск-индекс не построены.`,
         sample_posts: publicSnap && publicSnap.snippets ? publicSnap.snippets.slice(0, 2) : [],
         posts_fetched: 0,
         analysis_window_days: null,
@@ -6824,7 +6826,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         posts_read: 0,
         elapsed_ms: Date.now() - t0,
       },
-      message: `${channelDisplay} — живой анализ не выполнен: текст сообщений не прочитан, поэтому оценка канала не строится.`,
+      message: `${channelDisplay} — живой анализ не выполнен: удалось прочитать меньше ${minReadablePosts} нормальных сообщений, поэтому оценка канала не строится.`,
     });
   } catch (e) {
     console.error(`KRO analyze-channel sync error [${analyzeLogId}]:`, e);
