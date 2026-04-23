@@ -4669,15 +4669,15 @@ function kroBuildFastChannelTopicSummary(texts) {
   const promoHits = ['vip', 'вип', 'подписк', 'доступ', 'ссылка', 'реферал', 'реклама', 'биржа', 'регистр']
     .filter((kw) => joined.includes(kw)).length;
   if (educationHits >= signalHits && educationHits >= promoHits && educationHits > 0) {
-    return 'Канал в доступной выборке больше похож на разборы рынка и объяснение идей.';
+    return 'Похоже на канал с разборами рынка и объяснением идей, а не только с короткими командами.';
   }
   if (signalHits > educationHits && signalHits >= promoHits && signalHits > 0) {
-    return 'Канал в доступной выборке в основном публикует торговые идеи и точки входа.';
+    return 'Похоже на канал, который в основном публикует торговые идеи, точки входа и сопровождение сделок.';
   }
   if (promoHits > 0 && promoHits >= signalHits && promoHits >= educationHits) {
-    return 'Канал в доступной выборке заметно продвигает услуги, доступы или внешние ссылки.';
+    return 'Похоже на канал с заметной коммерческой подачей: продвижением услуг, доступов или внешних ссылок.';
   }
-  return 'По доступным постам это канал с короткими комментариями по рынку без ярко выраженного одного формата.';
+  return 'По доступным постам это канал с короткими комментариями по рынку без одного ярко выраженного формата.';
 }
 
 function kroBuildFastCriteriaFromTexts(texts, opts = null) {
@@ -4707,7 +4707,7 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
   const criteria = [];
   criteria.push({
     key: 'vip',
-    label: 'VIP / платные сигналы',
+    label: 'Платный доступ и сигналы',
     status: hasVip ? 'yes' : 'no',
     explanation: hasVip
       ? `Нашли упоминания платного доступа или закрытого формата. Пример: «${firstMatch(vipKeywords).slice(0, 150)}${firstMatch(vipKeywords).length > 150 ? '…' : ''}».`
@@ -4715,7 +4715,7 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
   });
   criteria.push({
     key: 'fomo',
-    label: 'FOMO / обещания',
+    label: 'Давление и обещания прибыли',
     status: hasFomo ? 'yes' : 'no',
     explanation: hasFomo
       ? `Есть формулировки давления или обещаний результата. Пример: «${firstMatch(fomoKeywords).slice(0, 150)}${firstMatch(fomoKeywords).length > 150 ? '…' : ''}».`
@@ -4763,7 +4763,7 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
 
   const summaryMain =
     score10 >= 8
-      ? 'Канал выглядит агрессивным: в текстах много сигналов давления или продажи, а защиты пользователя мало.'
+      ? 'Канал выглядит агрессивным: в текстах много давления, продажи или сигналов, а защиты пользователя мало.'
       : score10 >= 5
         ? 'Канал требует осторожности: в нём есть полезный контент, но часть признаков выглядит рискованно или слабо объяснена.'
         : 'Канал выглядит спокойнее среднего: в доступных текстах больше разборов и меньше агрессивных обещаний.';
@@ -4793,13 +4793,13 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
 
 function kroFormatFastCriteriaLines(criteria) {
   const icon = (status) => {
-    if (status === 'yes') return 'ДА';
-    if (status === 'partial') return 'ЧАСТИЧНО';
-    return 'НЕТ';
+    if (status === 'yes') return 'есть';
+    if (status === 'partial') return 'частично';
+    return 'не найдено';
   };
   return (Array.isArray(criteria) ? criteria : []).map((item) => {
     const it = item && typeof item === 'object' ? item : {};
-    return `${it.label || 'Критерий'}: ${icon(it.status)} — ${it.explanation || ''}`.trim();
+    return `${it.label || 'Критерий'}: ${icon(it.status)}. ${it.explanation || ''}`.trim();
   });
 }
 
@@ -6522,8 +6522,8 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         sources: ['публичная лента t.me/s'],
         basic_info: [
           `Канал: ${channelDisplay}`,
-          fastHuman.topicLine,
-          `Быстрый проход прочитал ${publicSnap.snippets.length} текстовых фрагментов ленты за лимит до 15 с.`,
+          `Чем занимается канал: ${fastHuman.topicLine}`,
+          `Что увидели в быстром проходе: прочитано ${publicSnap.snippets.length} текстовых фрагментов ленты за лимит до 15 секунд.`,
           publicSnap.title ? `Название по публичной странице: ${publicSnap.title}.` : '',
         ],
         content_behavior: [
@@ -6532,13 +6532,13 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         ].filter(Boolean).slice(0, 8),
         external_reports: reports.length
           ? [
-              `Во внешнем контексте сервиса есть ${reports.length} записей по этому каналу. Они показаны как дополнительный фон и не меняют fast-оценку без текста ленты.`,
+              `Во внешнем контексте сервиса есть ${reports.length} записей по этому каналу. Это дополнительный фон, а не основа fast-оценки.`,
               ...reports.slice(0, 2).map((r) => {
                 const desc = String(r.description || '').trim();
                 return desc ? `Пример из жалоб/отчётов: ${desc.slice(0, 180)}${desc.length > 180 ? '…' : ''}` : '';
               }).filter(Boolean),
             ].slice(0, 3)
-          : ['В жалобах сервиса по этому каналу сейчас нет записей; это дополнительный контекст, а не основание fast-вывода.'],
+          : ['Во внешнем контексте сервиса по этому каналу сейчас нет жалоб; это дополнительный контекст и не влияет на fast-оценку по тексту ленты.'],
         ties_risk_factors: signal.flags.length
           ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
           : ['По тексту канала не видно типичных агрессивных маркеров: обещаний гарантированной прибыли, жёсткого FOMO или продажи VIP-доступа.'],
@@ -6586,13 +6586,13 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
         },
         analysis_basis: {
-          label: 'Fast-оценка построена по тексту публичной ленты канала.',
+          label: 'Лёгкий вывод построен по тексту публичной ленты канала.',
           sources_used: ['t.me/s'],
           read_path: 'public_snapshot',
           posts_read: postsRead,
           elapsed_ms: Date.now() - t0,
         },
-        message: `Готово за ${Math.round((Date.now() - t0) / 1000)} с: лёгкий анализ построен по тексту канала (${postsRead} фрагментов).`,
+        message: `${channelDisplay} — риск ${risk}/10. ${fastHuman.summaryLine}`,
       });
     }
 
@@ -6624,8 +6624,8 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         const statusObj = kroMapFastRisk10ToUiStatus(risk);
         analysis.basic_info = [
           `Канал: ${channelDisplay}`,
-          fastHuman.topicLine,
-          `Telethon прочитал ${postsRead} сообщений с текстом за окно до ${Number(parsed.analysis_window_days || 30)} дн.`,
+          `Чем занимается канал: ${fastHuman.topicLine}`,
+          `Что увидели в быстром проходе: прочитано ${postsRead} сообщений с текстом за окно до ${Number(parsed.analysis_window_days || 30)} дней.`,
           ...(Array.isArray(analysis.basic_info) ? analysis.basic_info.slice(1, 3) : []),
         ].filter(Boolean).slice(0, 6);
         analysis.content_behavior = [
@@ -6640,7 +6640,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
                 return desc ? `Пример из жалоб/отчётов: ${desc.slice(0, 180)}${desc.length > 180 ? '…' : ''}` : '';
               }).filter(Boolean),
             ].slice(0, 3)
-          : ['Во внешнем контексте сервиса по этому каналу нет жалоб; fast-оценка всё равно построена по тексту прочитанных постов.'];
+          : ['Во внешнем контексте сервиса по этому каналу нет жалоб; fast-оценка всё равно построена по тексту прочитанных сообщений.'];
         analysis.ties_risk_factors = signal.flags.length
           ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
           : ['По прочитанным сообщениям не видно типичных агрессивных маркеров: гарантированной прибыли, жёсткого FOMO или платного VIP.'];
@@ -6681,13 +6681,13 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
             complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
           },
           analysis_basis: {
-            label: 'Fast-оценка построена по тексту сообщений, прочитанных через Telethon.',
+            label: 'Лёгкий вывод построен по тексту сообщений канала.',
             sources_used: ['telethon'],
             read_path: 'telethon',
             posts_read: postsRead,
             elapsed_ms: Date.now() - t0,
           },
-          message: `Готово за ${Math.round((Date.now() - t0) / 1000)} с: лёгкий анализ построен по тексту сообщений канала (${postsRead} постов).`,
+          message: `${channelDisplay} — риск ${risk}/10. ${fastHuman.summaryLine}`,
         });
       }
     }
@@ -6824,7 +6824,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         posts_read: 0,
         elapsed_ms: Date.now() - t0,
       },
-      message: `Готово за ${Math.round((Date.now() - t0) / 1000)} с: живой анализ не выполнен, показан только внешний контекст без оценки канала.`,
+      message: `${channelDisplay} — живой анализ не выполнен: текст сообщений не прочитан, поэтому оценка канала не строится.`,
     });
   } catch (e) {
     console.error(`KRO analyze-channel sync error [${analyzeLogId}]:`, e);

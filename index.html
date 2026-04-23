@@ -1392,7 +1392,6 @@
                                    rs.unshift('✅ LIVE‑доказательство: сервер прошёл живую ленту Telegram в этом запросе.');
                                }
                            }
-                           if (ab && ab.label) rs.push(String(ab.label));
                            if (!rs.length) rs.push('Вывод сформирован по данным проверки и правилам системы.');
                            reasonsEl.innerHTML = rs.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
                        }
@@ -1434,7 +1433,7 @@
                        if (Array.isArray(c.reasons)) s5lines = s5lines.concat(c.reasons.slice(0, 2));
                        if (s5) s5.innerHTML = homeRenderBullets(s5lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        if (doneBanner) {
-                          var summaryText = data.message || (ab && ab.label ? String(ab.label) : '');
+                          var summaryText = data.message || '';
                           if (summaryText) {
                               doneBanner.hidden = false;
                               doneBanner.classList.remove('hidden');
@@ -1448,9 +1447,9 @@
                       }
                       if (footEl) {
                           var footParts = [];
-                          if (ab && ab.label) footParts.push(String(ab.label));
+                          if (ab && ab.label) footParts.push('Основа вывода: ' + String(ab.label));
                           if (ab && Array.isArray(ab.sources_used) && ab.sources_used.length) {
-                              footParts.push('Источники fast-оценки: ' + ab.sources_used.join(', '));
+                              footParts.push('Что использовали: ' + ab.sources_used.join(', '));
                           }
                           if (footParts.length) {
                               footEl.hidden = false;
