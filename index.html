@@ -1515,14 +1515,14 @@
                           if (rbT) rbT.onclick = function () { runHomeChannelCheck(window.__kroHomeLastSlug || slug); };
                           return;
                       }
-                      fetch(base + '/api/kro/analyze-channel/result?request_id=' + encodeURIComponent(requestId), { cache: 'no-store' })
+                      fetch(base + '/api/kro/check-result/' + encodeURIComponent(requestId), { cache: 'no-store' })
                           .then(function (res) { return res.json(); })
                           .then(function (row) {
                               var note = document.getElementById('kro-check-progress-note');
-                              var qs = (row && row.queue_status) ? String(row.queue_status) : '';
+                              var qs = (row && (row.queue_status || row.status)) ? String(row.queue_status || row.status) : '';
                               if (note) {
-                                  if (qs === 'running') note.textContent = 'Воркер читает посты канала через Telethon…';
-                                  else if (qs === 'pending') note.textContent = 'Задача в очереди GitHub Actions…';
+                                  if (qs === 'running') note.textContent = 'Анализируем канал... обычно 1-3 минуты.';
+                                  else if (qs === 'pending') note.textContent = 'Запрос поставлен в очередь на живой анализ канала...';
                                   else if (qs === 'done') note.textContent = 'Результат получен, показываем отчёт…';
                               }
                               if (qs === 'done') {
@@ -1566,11 +1566,12 @@
                           });
                       })
                       .then(function (pack) {
-                          if (pack.status === 202 && pack.data && pack.data.request_id) {
-                              checkResult.textContent = pack.data.message || 'Задача в очереди GitHub Actions…';
+                          if (pack.status === 202 && pack.data && (pack.data.request_id || pack.data.id)) {
+                              var rid = pack.data.request_id || pack.data.id;
+                              checkResult.textContent = pack.data.message || 'Анализируем канал... обычно 1-3 минуты.';
                               checkResult.className = 'kro-check-result';
                               checkResult.classList.remove('hidden');
-                              pollResult(pack.data.request_id, 0);
+                              pollResult(rid, 0);
                               return;
                           }
                           if (!pack.ok || !pack.data || !pack.data.analysis) {
