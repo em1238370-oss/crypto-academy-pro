@@ -4820,6 +4820,75 @@ function kroMapFastRisk10ToUiStatus(score10) {
   return { status: 'БЕЗОПАСНО', code: 'SAFE' };
 }
 
+function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
+  const p = payload && typeof payload === 'object' ? payload : {};
+  const meta = opts && typeof opts === 'object' ? opts : {};
+  const risk = Number(fastHuman && fastHuman.score10);
+  let verdict = 'БЕЗОПАСНЫЙ';
+  let verdictColor = 'green';
+  if (Number.isFinite(risk) && risk >= 9) {
+    verdict = 'ОПАСНЫЙ';
+    verdictColor = 'red';
+  } else if (Number.isFinite(risk) && risk >= 5) {
+    verdict = 'ПОДОЗРИТЕЛЬНЫЙ';
+    verdictColor = 'orange';
+  }
+
+  const postsRead = Number(meta.postsRead || p.posts_fetched || 0) || 0;
+  const periodDays = Number(meta.periodDays || p.analysis_window_days || 0) || null;
+  const facts = [];
+  const ageDays = Number(p.channel_age_days);
+  if (Number.isFinite(ageDays) && ageDays > 0) {
+    facts.push(`Канал существует ${Math.round(ageDays)} дней — ${ageDays < 90 ? 'очень молодой, это повышает осторожность' : 'не выглядит совсем новым'}.`);
+  }
+  const promoted = Number(p.promoted_channels_count);
+  if (Number.isFinite(promoted) && promoted > 0) {
+    facts.push(`Рекламирует ${Math.round(promoted)} других каналов — это может быть признаком сетки продвижения.`);
+  }
+  if (p.has_signal_offer === true) {
+    facts.push('Предлагает сигналы или торговые идеи — важно смотреть, есть ли стопы и объяснение риска.');
+  }
+  if (p.only_profits_flag === true) {
+    facts.push('В текстах заметен перекос в сторону “профитов” — про убытки и риски говорится слабее.');
+  }
+  const fomoPct = Number(p.fomo_pct);
+  if (Number.isFinite(fomoPct) && fomoPct >= 20) {
+    facts.push(`Встречается давление и срочность примерно в ${Math.round(fomoPct)}% постов — это тревожный сигнал.`);
+  }
+  for (const line of (fastHuman && Array.isArray(fastHuman.criteria) ? fastHuman.criteria : [])) {
+    if (facts.length >= 3) break;
+    if (!line || typeof line !== 'object') continue;
+    if (line.key === 'risk' && line.status === 'no') facts.push('Риск-менеджмент явно не найден — нет понятных стопов или условий отмены идеи.');
+    if (line.key === 'logic' && line.status !== 'yes') facts.push('Логика идей объяснена слабо — есть риск слепого копирования.');
+    if (line.key === 'vip' && line.status === 'no') facts.push('Платный VIP или закрытый доступ в прочитанных постах не найден.');
+  }
+  while (facts.length < 3) {
+    const fallback = [
+      'Оценка построена только по прочитанным постам, а не по внешним догадкам.',
+      'Система проверила сигналы, обещания прибыли, риск-менеджмент, логику и рекламу.',
+      'Если канал начнёт чаще продавать доступ или обещать прибыль, риск должен вырасти.',
+    ][facts.length] || 'Данных достаточно для короткого вывода по ленте.';
+    facts.push(fallback);
+  }
+
+  const sample = Array.isArray(p.sample_posts) ? p.sample_posts.map((x) => String(x || '').trim()).filter(Boolean) : [];
+  const quotes = sample.slice(0, 5);
+  const readSummary = `Прочитано ${postsRead} постов за ${periodDays || 90} дней.`;
+  const simpleConclusion = fastHuman && fastHuman.summaryLine
+    ? fastHuman.summaryLine
+    : `${verdict}: вывод построен по тексту прочитанных сообщений канала.`;
+
+  return {
+    verdict,
+    verdict_color: verdictColor,
+    risk_text: Number.isFinite(risk) ? `Риск ${risk}/10` : '',
+    facts: facts.slice(0, 3),
+    read_summary: readSummary,
+    quotes,
+    simple_conclusion: simpleConclusion,
+  };
+}
+
 async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
   const slug = kroExtractTelegramPublicSlug(channelRef);
   if (!slug) return null;
@@ -6368,6 +6437,7 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
     adsRatio: payload.ads_ratio,
   });
   const risk = fastHuman.score10;
+  const userReport = kroBuildUserFacingLiveReport(payload, fastHuman, { postsRead, periodDays });
   analysis.basic_info = [
     `Канал: @${key}`,
     `Чем занимается канал: ${fastHuman.topicLine}`,
@@ -6394,7 +6464,8 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
     status_code: ui.code,
     risk_index: risk,
     risk_index_max: 10,
-    citations: fastHuman.citations.slice(0, 3),
+    citations: userReport.quotes,
+    user_report: userReport,
     analysis,
     live_evidence: {
       live_pass: true,

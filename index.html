@@ -1020,6 +1020,9 @@
                }
                function statusClass(s) {
                    var v = (s || '').toLowerCase();
+                   if (v.indexOf('опасн') !== -1) return 'scam';
+                   if (v.indexOf('подозр') !== -1) return 'risk';
+                   if (v.indexOf('безопас') !== -1) return 'clean';
                    if (v.indexOf('подтвержд') !== -1 && v.indexOf('скам') !== -1) return 'scam';
                    if (v.indexOf('недоступ') !== -1 || v.indexOf('не выполнен') !== -1) return 'watch';
                    if (v.indexOf('без нарушений') !== -1) return 'clean';
@@ -1290,6 +1293,7 @@
                        var lm = data.live_metrics || {};
                        var le = data.live_evidence && typeof data.live_evidence === 'object' ? data.live_evidence : null;
                        var ab = data.analysis_basis && typeof data.analysis_basis === 'object' ? data.analysis_basis : null;
+                       var ur = data.user_report && typeof data.user_report === 'object' ? data.user_report : null;
                        var citations = Array.isArray(data.citations) ? data.citations.map(function (x) { return String(x || '').trim(); }).filter(Boolean) : [];
                        var eyebrow = document.getElementById('kro-inline-eyebrow');
                        var titleEl = document.getElementById('kro-inline-title');
@@ -1337,7 +1341,7 @@
                          if (liveBadge) allMeta.unshift(liveBadge);
                            metaEl.textContent = allMeta.join(' · ');
                        }
-                       var st = c.status || data.status || '—';
+                       var st = (ur && ur.verdict) ? String(ur.verdict) : (c.status || data.status || '—');
                        if (le && le.live_pass !== true && data.status) st = String(data.status);
                        if (stEl) {
                            stEl.textContent = st;
@@ -1410,6 +1414,32 @@
                        var s3 = document.getElementById('kro-inline-s3');
                        var s4 = document.getElementById('kro-inline-s4');
                        var s5 = document.getElementById('kro-inline-s5');
+                       var h1 = document.querySelector('#kro-inline-sec1 .kro-inline-sec-h');
+                       var h2 = document.querySelector('#kro-inline-sec2 .kro-inline-sec-h');
+                       var h3 = document.querySelector('#kro-inline-sec3 .kro-inline-sec-h');
+                       var h4 = document.querySelector('#kro-inline-sec4 .kro-inline-sec-h');
+                       var h5 = document.querySelector('#kro-inline-sec5 .kro-inline-sec-h');
+                       if (ur) {
+                           if (h1) h1.textContent = 'Главный вывод';
+                           if (h2) h2.textContent = 'Три главных факта';
+                           if (h3) h3.textContent = 'Что система прочитала';
+                           if (h4) h4.textContent = 'Примеры реальных постов';
+                           if (h5) h5.textContent = 'Вывод простыми словами';
+                           if (s1) s1.innerHTML = homeRenderBullets([
+                               (ur.verdict || st || '').toString().toUpperCase(),
+                               ur.risk_text || ''
+                           ]) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                           if (s2) s2.innerHTML = homeRenderBullets(Array.isArray(ur.facts) ? ur.facts : []) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                           if (s3) s3.innerHTML = homeRenderBullets([ur.read_summary || 'Данные о прочитанных постах не пришли.']) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                           var quoteLines = Array.isArray(ur.quotes) ? ur.quotes.map(function (x) { return '«' + String(x).slice(0, 260) + '»'; }) : [];
+                           if (s4) s4.innerHTML = homeRenderBullets(quoteLines) || '<p class="kro-inline-sec-skip">Нет цитат.</p>';
+                           if (s5) s5.innerHTML = homeRenderBullets([ur.simple_conclusion || data.message || 'Вывод построен по прочитанным постам канала.']) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                       } else {
+                       if (h1) h1.textContent = 'Базовая информация';
+                       if (h2) h2.textContent = 'Контент и поведение';
+                       if (h3) h3.textContent = 'Внешние источники и жалобы';
+                       if (h4) h4.textContent = 'Связи и риск‑факторы';
+                       if (h5) h5.textContent = 'Итоговый вывод';
                        var s1lines = Array.isArray(a.basic_info) ? a.basic_info.slice() : [];
                        if (ab && ab.posts_read != null && !isNaN(Number(ab.posts_read))) {
                            s1lines.push('Основа fast-вывода: прочитано сообщений канала — ' + Number(ab.posts_read) + '.');
@@ -1432,8 +1462,9 @@
                        if (data.message) s5lines.push(String(data.message));
                        if (Array.isArray(c.reasons)) s5lines = s5lines.concat(c.reasons.slice(0, 2));
                        if (s5) s5.innerHTML = homeRenderBullets(s5lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                       }
                        if (doneBanner) {
-                          var summaryText = data.message || '';
+                          var summaryText = (ur && ur.simple_conclusion) ? ur.simple_conclusion : (data.message || '');
                           if (summaryText) {
                               doneBanner.hidden = false;
                               doneBanner.classList.remove('hidden');
