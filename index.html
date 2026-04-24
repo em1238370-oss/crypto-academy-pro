@@ -1426,14 +1426,14 @@
                            if (h4) h4.textContent = 'Примеры реальных постов';
                            if (h5) h5.textContent = 'Вывод простыми словами';
                            if (s1) s1.innerHTML = homeRenderBullets([
-                               (ur.verdict || st || '').toString().toUpperCase(),
+                               ur.headline || (ur.verdict || st || '').toString().toUpperCase(),
                                ur.risk_text || ''
                            ]) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
-                           if (s2) s2.innerHTML = homeRenderBullets(Array.isArray(ur.facts) ? ur.facts : []) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                           if (s2) s2.innerHTML = homeRenderBullets([ur.intro || 'Вот что важно:', ...(Array.isArray(ur.facts) ? ur.facts : [])]) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                            if (s3) s3.innerHTML = homeRenderBullets([ur.read_summary || 'Данные о прочитанных постах не пришли.']) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                            var quoteLines = Array.isArray(ur.quotes) ? ur.quotes.map(function (x) { return '«' + String(x).slice(0, 260) + '»'; }) : [];
                            if (s4) s4.innerHTML = homeRenderBullets(quoteLines) || '<p class="kro-inline-sec-skip">Нет цитат.</p>';
-                           if (s5) s5.innerHTML = homeRenderBullets([ur.simple_conclusion || data.message || 'Вывод построен по прочитанным постам канала.']) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                           if (s5) s5.innerHTML = homeRenderBullets([ur.simple_conclusion || data.message || 'Вывод построен по прочитанным постам канала.', ur.final_advice || '']) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        } else {
                        if (h1) h1.textContent = 'Базовая информация';
                        if (h2) h2.textContent = 'Контент и поведение';

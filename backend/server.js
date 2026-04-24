@@ -4824,18 +4824,27 @@ function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
   const p = payload && typeof payload === 'object' ? payload : {};
   const meta = opts && typeof opts === 'object' ? opts : {};
   const risk = Number(fastHuman && fastHuman.score10);
+  const postsRead = Number(meta.postsRead || p.posts_fetched || 0) || 0;
+  const periodDays = Number(meta.periodDays || p.analysis_window_days || 0) || null;
   let verdict = 'БЕЗОПАСНЫЙ';
   let verdictColor = 'green';
+  let headline = 'Пока всё чисто. Но крипта это всегда риск.';
+  let intro = `Мы прочитали ${postsRead || 'несколько'} постов этого канала. Явных признаков мошенничества не нашли.`;
+  let finalAdvice = 'Даже честные каналы могут ошибаться. Никогда не вкладывай больше, чем готов потерять полностью.';
   if (Number.isFinite(risk) && risk >= 9) {
     verdict = 'ОПАСНЫЙ';
     verdictColor = 'red';
+    headline = 'Осторожно. Этот канал похож на мошенников.';
+    intro = `Мы прочитали ${postsRead || 'несколько'} постов этого канала. Вот что нас насторожило:`;
+    finalAdvice = 'Если тебе уже написали с этого канала и предлагают вложить деньги — не торопись. Возьми паузу 24 часа.';
   } else if (Number.isFinite(risk) && risk >= 5) {
     verdict = 'ПОДОЗРИТЕЛЬНЫЙ';
     verdictColor = 'orange';
+    headline = 'Будь осторожнее. В канале есть тревожные признаки.';
+    intro = `Мы прочитали ${postsRead || 'несколько'} постов этого канала. Не всё выглядит плохо, но есть вещи, из-за которых лучше не спешить с деньгами:`;
+    finalAdvice = 'Не принимай решение сразу. Сохрани ссылку, перечитай посты завтра и не отправляй деньги под давлением.';
   }
 
-  const postsRead = Number(meta.postsRead || p.posts_fetched || 0) || 0;
-  const periodDays = Number(meta.periodDays || p.analysis_window_days || 0) || null;
   const facts = [];
   const ageDays = Number(p.channel_age_days);
   if (Number.isFinite(ageDays) && ageDays > 0) {
@@ -4846,10 +4855,10 @@ function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
     facts.push(`Рекламирует ${Math.round(promoted)} других каналов — это может быть признаком сетки продвижения.`);
   }
   if (p.has_signal_offer === true) {
-    facts.push('Предлагает сигналы или торговые идеи — важно смотреть, есть ли стопы и объяснение риска.');
+    facts.push('В постах есть торговые идеи или сигналы. Это не всегда плохо, но без объяснения риска люди часто копируют сделки вслепую.');
   }
   if (p.only_profits_flag === true) {
-    facts.push('В текстах заметен перекос в сторону “профитов” — про убытки и риски говорится слабее.');
+    facts.push('Канал чаще показывает удачные сделки, чем убытки. Так легко создать ощущение, что заработать проще, чем на самом деле.');
   }
   const fomoPct = Number(p.fomo_pct);
   if (Number.isFinite(fomoPct) && fomoPct >= 20) {
@@ -4858,15 +4867,15 @@ function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
   for (const line of (fastHuman && Array.isArray(fastHuman.criteria) ? fastHuman.criteria : [])) {
     if (facts.length >= 3) break;
     if (!line || typeof line !== 'object') continue;
-    if (line.key === 'risk' && line.status === 'no') facts.push('Риск-менеджмент явно не найден — нет понятных стопов или условий отмены идеи.');
-    if (line.key === 'logic' && line.status !== 'yes') facts.push('Логика идей объяснена слабо — есть риск слепого копирования.');
-    if (line.key === 'vip' && line.status === 'no') facts.push('Платный VIP или закрытый доступ в прочитанных постах не найден.');
+    if (line.key === 'risk' && line.status === 'no') facts.push('Мы не увидели понятных стопов или правил риска. Это значит, что человек может войти в сделку и не понимать, где остановиться.');
+    if (line.key === 'logic' && line.status !== 'yes') facts.push('Логика идей объяснена слабо. Когда канал просто говорит “делай так”, риск для новичка выше.');
+    if (line.key === 'vip' && line.status === 'no') facts.push('В прочитанных постах не видно продажи платного VIP или закрытого доступа. Это хороший знак.');
   }
   while (facts.length < 3) {
     const fallback = [
-      'Оценка построена только по прочитанным постам, а не по внешним догадкам.',
-      'Система проверила сигналы, обещания прибыли, риск-менеджмент, логику и рекламу.',
-      'Если канал начнёт чаще продавать доступ или обещать прибыль, риск должен вырасти.',
+      'Мы смотрели именно тексты постов: что канал обещает, что продаёт и как говорит о рисках.',
+      'В прочитанных постах не видно грубого давления вроде “заработаешь точно” или “срочно входи сейчас”.',
+      'Если канал начнёт продавить платный доступ, обещать быстрые иксы или скрывать убытки, риск станет выше.',
     ][facts.length] || 'Данных достаточно для короткого вывода по ленте.';
     facts.push(fallback);
   }
@@ -4876,16 +4885,19 @@ function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
   const readSummary = `Прочитано ${postsRead} постов за ${periodDays || 90} дней.`;
   const simpleConclusion = fastHuman && fastHuman.summaryLine
     ? fastHuman.summaryLine
-    : `${verdict}: вывод построен по тексту прочитанных сообщений канала.`;
+    : 'Вывод построен по тексту прочитанных сообщений канала.';
 
   return {
     verdict,
     verdict_color: verdictColor,
+    headline,
+    intro,
     risk_text: Number.isFinite(risk) ? `Риск ${risk}/10` : '',
     facts: facts.slice(0, 3),
     read_summary: readSummary,
     quotes,
     simple_conclusion: simpleConclusion,
+    final_advice: finalAdvice,
   };
 }
 
