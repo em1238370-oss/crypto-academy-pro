@@ -6552,7 +6552,7 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
   const postsRead = Number(payload.posts_fetched || 0) || 0;
   const periodDays = Number(payload.analysis_window_days || 0) || null;
   const readPath = String(payload.read_path || 'telethon').trim() || 'telethon';
-  if (payload.found !== true || postsRead < 5) {
+  if (payload.found !== true || postsRead < 1) {
     return {
       queue_status: 'done',
       request_id: requestId,
@@ -6567,19 +6567,19 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
         channel_key: key,
         generated_at: new Date().toISOString(),
         sources: ['GitHub Actions Telethon'],
-        basic_info: [`Удалось прочитать только ${postsRead} сообщений; для быстрого вывода этого мало.`],
+        basic_info: ['Не удалось прочитать текстовые сообщения ленты в этом запуске.'],
         content_behavior: [],
         external_reports: [],
         ties_risk_factors: [],
-        conclusion: { status: 'живой анализ не выполнен', reasons: ['Нужно минимум 5 нормальных текстовых сообщений.'] },
+        conclusion: { status: 'живой анализ не выполнен', reasons: ['Нужно хотя бы 1 нормальное текстовое сообщение.'] },
       },
       live_evidence: {
         live_pass: false,
         mode: readPath,
-        reason: `Удалось прочитать только ${postsRead} сообщений; нужно минимум 5.`,
+        reason: 'Посты в этом запуске не прочитаны.',
         sample_posts: [],
       },
-      message: `Анализ завершён, но данных мало: прочитано ${postsRead}, нужно минимум 5 сообщений.`,
+      message: 'Анализ завершён без ленты: посты в этом запуске не прочитаны.',
     };
   }
   const analysis = kroV0BuildAnalysisFromLiveParsed(payload, key);
@@ -6603,6 +6603,7 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
     `Канал: @${key}`,
     `Чем занимается канал: ${fastHuman.topicLine}`,
     `Что увидели в быстром проходе: прочитано ${postsRead} сообщений с текстом за окно до ${periodDays || 30} дней.`,
+    postsRead < 5 ? 'Постов немного, поэтому вывод предварительный и может уточниться после дочитывания ленты.' : '',
   ].filter(Boolean);
   analysis.content_behavior = [
     ...kroFormatFastCriteriaLines(fastHuman.criteria),
@@ -6660,7 +6661,9 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
       read_path: readPath,
       posts_read: postsRead,
     },
-    message: `Анализ канала завершён: прочитано ${postsRead} сообщений, обычно это занимает до 7 минут.`,
+    message: postsRead < 5
+      ? `Предварительный анализ ленты: прочитано ${postsRead} сообщений. Когда дочитаем больше постов, отчёт уточнится.`
+      : `Анализ канала завершён: прочитано ${postsRead} сообщений, обычно это занимает до 7 минут.`,
   };
 }
 
@@ -6723,67 +6726,17 @@ function kroCheckResultByRows(rows, usernameKey, requestId) {
 
 function kroBuildAnalyzeDoneResponse(doneRow, key) {
   const parsed = doneRow && doneRow.payload && typeof doneRow.payload === 'object' ? doneRow.payload : null;
-  const postsRead = Number(doneRow && doneRow.posts_read || (parsed && parsed.posts_fetched) || 0) || 0;
-  const periodDays = Number(doneRow && doneRow.period_days || (parsed && parsed.analysis_window_days) || 0) || null;
-  const readPath = (doneRow && doneRow.read_path) || (parsed && parsed.read_path) || null;
-  const minReadablePosts = 5;
-
-  if (!parsed || parsed.found !== true || postsRead < minReadablePosts) {
-    return {
-      queue_status: 'done',
-      request_id: doneRow && doneRow.request_id ? doneRow.request_id : null,
-      posts_read: postsRead,
-      period_days: periodDays,
-      read_path: readPath,
-      status: 'НЕДОСТУПЕН',
-      status_code: 'UNAVAILABLE',
-      risk_index: null,
-      analysis: {
-        v: 0,
-        channel_key: key,
-        generated_at: new Date().toISOString(),
-        sources: ['kro_check_results'],
-        basic_info: [`Живое чтение не дало достаточно текста для анализа: нужно минимум ${minReadablePosts} нормальных сообщений.`],
-        content_behavior: [],
-        external_reports: [],
-        ties_risk_factors: [],
-        conclusion: { status: KRO_V0_STATUS.watch, reasons: [`Удалось прочитать только ${postsRead} сообщений; этого мало для fast-оценки.`] },
-      },
-      live_evidence: { live_pass: false, mode: readPath || 'queue', reason: `Для fast-анализа нужно минимум ${minReadablePosts} нормальных текстовых сообщений.`, sample_posts: [] },
-      message: `Анализ завершён без достаточной выборки: прочитано ${postsRead}, нужно минимум ${minReadablePosts}.`,
-    };
+  const base = parsed && typeof parsed === 'object' ? { ...parsed } : {};
+  if (!Number.isFinite(Number(base.posts_fetched))) {
+    base.posts_fetched = Number(doneRow && doneRow.posts_read || 0) || 0;
   }
-
-  const analysis = kroV0BuildAnalysisFromLiveParsed(parsed, key);
-  const conclusion = analysis && analysis.conclusion ? analysis.conclusion : { status: KRO_V0_STATUS.watch };
-  const statusMap = {
-    [KRO_V0_STATUS.scam]: { status: 'ОПАСНО', status_code: 'DANGER' },
-    [KRO_V0_STATUS.risk]: { status: 'ПОДОЗРИТЕЛЬНО', status_code: 'SUSPICIOUS' },
-    [KRO_V0_STATUS.clean]: { status: 'БЕЗОПАСНО', status_code: 'SAFE' },
-    [KRO_V0_STATUS.watch]: { status: 'ПОДОЗРИТЕЛЬНО', status_code: 'SUSPICIOUS' },
-  };
-  const mapped = statusMap[conclusion.status] || statusMap[KRO_V0_STATUS.watch];
-  const risk = Number.isFinite(Number(doneRow.risk_index)) ? Number(doneRow.risk_index)
-    : (Number.isFinite(Number(parsed.risk_score)) ? Number(parsed.risk_score) : null);
-
-  return {
-    queue_status: 'done',
-    request_id: doneRow.request_id,
-    posts_read: postsRead,
-    period_days: periodDays,
-    read_path: readPath,
-    status: mapped.status,
-    status_code: mapped.status_code,
-    risk_index: risk,
-    analysis,
-    live_evidence: {
-      live_pass: true,
-      mode: readPath || 'telethon',
-      reason: `Прочитано постов: ${postsRead}.`,
-      sample_posts: Array.isArray(parsed.sample_posts) ? parsed.sample_posts.slice(0, 3) : [],
-    },
-    message: 'Анализ готов: данные получены из GitHub Actions очереди.',
-  };
+  if (!Number.isFinite(Number(base.analysis_window_days))) {
+    base.analysis_window_days = Number(doneRow && doneRow.period_days || 0) || null;
+  }
+  if (!base.read_path && doneRow && doneRow.read_path) {
+    base.read_path = doneRow.read_path;
+  }
+  return kroBuildAnalyzeResponseFromParsed(base, key, doneRow && doneRow.request_id ? doneRow.request_id : null);
 }
 
 async function kroBuildCheckResultTimeoutFallback(client, row) {
