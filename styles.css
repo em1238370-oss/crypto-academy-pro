@@ -8043,3 +8043,35 @@ button:not(.chat-button):not(.send-button):focus {
    }
 }
 
+/*
+  Desktop resilience: some desktop setups force reduced motion globally.
+  Keep motion alive for the channel-check progress module on desktop,
+  so users can see timer feedback and live activity.
+*/
+@media (pointer: fine) and (min-width: 980px) {
+   .kro-check-progress-spinner {
+      animation: kro-check-spin 0.85s linear infinite !important;
+   }
+
+   .kro-check-elapsed-clock::before {
+      animation: kro-check-timer-aurora 7s linear infinite !important;
+   }
+
+   .kro-check-elapsed-clock::after {
+      animation: kro-check-timer-shimmer 3.2s ease-in-out infinite !important;
+   }
+
+   .kro-check-progress .kro-check-elapsed-digits {
+      animation: kro-check-timer-digit-breathe 2.6s ease-in-out infinite !important;
+   }
+
+   .kro-check-mascot-lane-glow {
+      animation: kro-check-lane-glow 2.8s ease-in-out infinite !important;
+   }
+
+   .kro-check-mascot {
+      animation: kro-check-mascot-run 2.8s ease-in-out infinite !important;
+      transform: translateX(4px) translateY(0) scaleX(1) !important;
+   }
+}
+
