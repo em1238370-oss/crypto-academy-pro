@@ -195,6 +195,17 @@ MARKET_DOWNTURN_KEYWORDS = ['рынок падает', 'падение рынк�
 RISK_MANAGEMENT_KEYWORDS = ['стоп', 'stop', 'sl', 'stop-loss', 'риск', 'риск-менедж', 'не более', 'фиксирую убыток']
 LOGIC_KEYWORDS = ['почему', 'логика', 'аргумент', 'обосн', 'сценарий', 'план', 'потому что', 'зона интереса']
 
+# Подсчёт вхождений подстрок (язык канала): «прибыль/икс/стоп/гарантия/vip…»
+PROFIT_LANG_NEEDLES = [
+    'прибыл', 'профит', 'profit', 'заработ', 'доход', 'икс', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', 'x9', 'x10',
+    'x20', 'x50', 'x100', 'в плюс', 'плюс',
+]
+LOSS_LANG_NEEDLES = [
+    'убыт', 'минус', 'потер', 'стоп', 'stop', 'лосс', 'loss', 'просад', 'слив', 'ликвида',
+]
+GUARANTEE_LANG_NEEDLES = ['гарант', '100%', 'без риска', 'безриск', 'безрисков', 'точно заработа', 'без потерь']
+PAID_LANG_NEEDLES = ['vip', 'вип', 'платн', 'подписк', 'доступ', 'закрытый канал', 'закрытую группу', 'клуб', 'курсы', 'тариф']
+
 # -----------------------------------------------------------------------
 # 3-уровневая система риска
 # -----------------------------------------------------------------------
@@ -637,6 +648,46 @@ def _contains_any_keyword(text, keywords):
     return any(kw in low for kw in keywords)
 
 
+def _count_needle_hits(haystack, needles):
+    """Сколько раз встречаются подстроки (без регистра)."""
+    h = (haystack or '').lower()
+    total = 0
+    for n in needles or []:
+        if not n:
+            continue
+        total += h.count(n.lower())
+    return total
+
+
+def _build_language_word_hits(texts):
+    """Суммарные вхождения «языка прибыли/убытка/гарантий/платного» по всем постам."""
+    joined = ' \n '.join((t or '') for t in (texts or []))
+    return {
+        'profit_hits': _count_needle_hits(joined, PROFIT_LANG_NEEDLES),
+        'loss_hits': _count_needle_hits(joined, LOSS_LANG_NEEDLES),
+        'guarantee_hits': _count_needle_hits(joined, GUARANTEE_LANG_NEEDLES),
+        'paid_hits': _count_needle_hits(joined, PAID_LANG_NEEDLES),
+    }
+
+
+def _first_impression_snippets_from_messages(messages, limit=3):
+    """
+    Что видит человек в ленте «сверху» в Telegram: свежие посты.
+    Telethon iter_messages отдаёт от новых к старым — берём первые с текстом.
+    """
+    out = []
+    for m in messages or []:
+        if not m or not getattr(m, 'text', None):
+            continue
+        sn = (m.text or '').strip().replace('\n', ' ')
+        if len(sn) < 8:
+            continue
+        out.append(sn[:320])
+        if len(out) >= limit:
+            break
+    return out
+
+
 def _count_posts_by_keywords(texts, keywords):
     count = 0
     for t in texts or []:
@@ -726,6 +777,7 @@ def _sales_pressure_score(texts):
 
 def _build_deep_channel_metrics(texts, messages_with_dates):
     early_texts, recent_texts = _split_time_buckets(messages_with_dates)
+    word_hits = _build_language_word_hits(texts)
     profits_count = _count_posts_by_keywords(texts, PROFIT_KEYWORDS)
     losses_count = _count_posts_by_keywords(texts, LOSS_KEYWORDS)
     urgency_count = _count_posts_by_keywords(texts, URGENCY_KEYWORDS)
@@ -739,6 +791,10 @@ def _build_deep_channel_metrics(texts, messages_with_dates):
     return {
         'profits_posts_count': profits_count,
         'losses_posts_count': losses_count,
+        'profit_word_hits': word_hits.get('profit_hits', 0),
+        'loss_word_hits': word_hits.get('loss_hits', 0),
+        'guarantee_word_hits': word_hits.get('guarantee_hits', 0),
+        'paid_word_hits': word_hits.get('paid_hits', 0),
         'urgency_posts_count': urgency_count,
         'paid_access_mentions_count': paid_count,
         'guarantee_mentions_count': guarantee_count,
@@ -858,12 +914,21 @@ def _build_scam_similarity_label(deep_metrics):
     score = min(100, score)
     known_scams = _load_known_scam_usernames()
     exemplar = '@ton618_crypto' if '@ton618_crypto' in known_scams else (known_scams[0] if known_scams else '')
-    if exemplar and score >= 60:
-        label = f'Этот канал ведёт себя похоже на {exemplar} который подтверждён как скам.'
-    elif score >= 45:
-        label = 'Поведение канала частично похоже на шаблоны известных скам-каналов из нашей базы.'
+    # Сравнение с базой — только как «узор поведения», не обвинение. Нужны тяжёлые маркеры в тексте.
+    toxic_cluster = (
+        (dm.get('urgency_posts_count') or 0) >= 2
+        or (dm.get('guarantee_mentions_count') or 0) >= 1
+        or (dm.get('guarantee_word_hits') or 0) >= 2
+    )
+    if exemplar and score >= 60 and toxic_cluster:
+        label = (
+            f'По сочетанию формулировок (давление, гарантии, перекос к «плюсу») узор близок к каналам из базы, '
+            f'например {exemplar} — но это не приговор: смотри цитаты и сверяй сам.'
+        )
+    elif score >= 45 and toxic_cluster:
+        label = 'Есть отдельные сходства с шаблонами спорных каналов из базы; решает только содержание постов, не один признак.'
     else:
-        label = 'Явного совпадения с шаблонами известных скам-каналов не видно.'
+        label = 'По текстам нет устойчивого совпадения с шаблонами мошеннических каналов из базы — без тяжёлых формулировок не сравниваем.'
     return {
         'score': score,
         'exemplar_channel': exemplar,
@@ -1016,6 +1081,8 @@ async def run_check(channel_id, period_days=30):
             if snippet:
                 sample_posts.append(snippet)
         deep_metrics = _build_deep_channel_metrics(texts, messages_with_dates)
+        language_word_hits = _build_language_word_hits(texts)
+        first_impression_posts = _first_impression_snippets_from_messages(messages, 3)
         scam_similarity = _build_scam_similarity_label(deep_metrics)
         for q in (deep_metrics.get('urgency_quotes') or [])[:2]:
             if len(sample_posts) >= 7:
@@ -1054,6 +1121,8 @@ async def run_check(channel_id, period_days=30):
             'has_signal_offer': has_signal_offer,
             '_sample_texts': texts[:20],
             'sample_posts': sample_posts,
+            'language_word_hits': language_word_hits,
+            'first_impression_posts': first_impression_posts,
             'deep_metrics': deep_metrics,
             'scam_similarity': scam_similarity,
         }

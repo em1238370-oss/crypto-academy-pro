@@ -1020,6 +1020,7 @@
                }
                function statusClass(s) {
                    var v = (s || '').toLowerCase();
+                   if (v.indexOf('добросовест') !== -1) return 'clean';
                    if (v.indexOf('опасн') !== -1) return 'scam';
                    if (v.indexOf('подозр') !== -1) return 'risk';
                    if (v.indexOf('безопас') !== -1) return 'clean';
@@ -1028,6 +1029,12 @@
                    if (v.indexOf('без нарушений') !== -1) return 'clean';
                    if (v.indexOf('в риске') !== -1 || (v.indexOf('риск') !== -1 && v.indexOf('наблю') === -1)) return 'risk';
                    return 'watch';
+               }
+               function kroInlineHonestClass(ur) {
+                   var t = ur && ur.tier != null ? String(ur.tier) : '';
+                   if (t === 'calm') return 'kro-inline-honest kro-inline-honest--calm';
+                   if (t === 'danger') return 'kro-inline-honest kro-inline-honest--alert';
+                   return 'kro-inline-honest kro-inline-honest--watch';
                }
                function homeRenderBullets(lines) {
                    var arr = (lines || []).map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
@@ -1420,20 +1427,46 @@
                        var h4 = document.querySelector('#kro-inline-sec4 .kro-inline-sec-h');
                        var h5 = document.querySelector('#kro-inline-sec5 .kro-inline-sec-h');
                        if (ur) {
+                           var det = ur.detective && typeof ur.detective === 'object' ? ur.detective : null;
                            if (h1) h1.textContent = 'Главный вывод';
-                           if (h2) h2.textContent = 'Три главных факта';
-                           if (h3) h3.textContent = 'Что система прочитала';
-                           if (h4) h4.textContent = 'Примеры реальных постов';
-                           if (h5) h5.textContent = 'Вывод простыми словами';
-                           if (s1) s1.innerHTML = homeRenderBullets([
-                               ur.headline || (ur.verdict || st || '').toString().toUpperCase(),
-                               ur.risk_text || ''
-                           ]) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
-                           if (s2) s2.innerHTML = homeRenderBullets([ur.intro || 'Вот что важно:', ...(Array.isArray(ur.facts) ? ur.facts : [])]) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
-                           if (s3) s3.innerHTML = homeRenderBullets([ur.read_summary || 'Данные о прочитанных постах не пришли.']) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                           if (h2) h2.textContent = det ? 'Акт 1 — первое впечатление' : 'Три главных факта';
+                           if (h3) h3.textContent = det ? 'Акт 2 — глубже по ленте' : 'Что система прочитала';
+                           if (h4) h4.textContent = det ? 'Смыслы и цитаты' : 'Примеры реальных постов';
+                           if (h5) h5.textContent = det ? 'Акт 3 — вывод и вопрос' : 'Вывод простыми словами';
+                           if (s1) {
+                               var s1h = '';
+                               if (ur.honest_assessment) {
+                                   s1h = '<p class="' + kroInlineHonestClass(ur) + '">' + esc(ur.honest_assessment) + '</p>';
+                               }
+                               var s1b = [];
+                               if (ur.headline) s1b.push(ur.headline);
+                               if (ur.risk_text) s1b.push(ur.risk_text);
+                               s1h += (homeRenderBullets(s1b) || '');
+                               s1.innerHTML = s1h || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                           }
+                       if (det) {
+                           var a1b = [det.act1_lead || ''];
+                           a1b = a1b.concat((Array.isArray(det.act1_first_posts) ? det.act1_first_posts : []).map(function (x) { return 'Свежий фрагмент: «' + String(x).slice(0, 300) + '»'; }));
+                           if (s2) s2.innerHTML = homeRenderBullets(a1b.filter(function (l) { return l && l.trim().length; })) || '<p class="kro-inline-sec-skip">Нет.</p>';
+                           var a2b = [det.act2_lead || '', ur.language_story || ''];
+                           a2b = a2b.concat(Array.isArray(det.act2_patterns) ? det.act2_patterns : (Array.isArray(ur.facts) ? ur.facts : []));
+                           if (s3) s3.innerHTML = homeRenderBullets(a2b.filter(function (l) { return l && l.trim().length; })) || '<p class="kro-inline-sec-skip">Нет.</p>';
                            var quoteLines = Array.isArray(ur.quotes) ? ur.quotes.map(function (x) { return '«' + String(x).slice(0, 260) + '»'; }) : [];
                            if (s4) s4.innerHTML = homeRenderBullets(quoteLines) || '<p class="kro-inline-sec-skip">Нет цитат.</p>';
+                           var a3lines = (Array.isArray(det.act3_conclusion) ? det.act3_conclusion : []).map(function (x) { return String(x || ''); });
+                           a3lines.push(ur.simple_conclusion || (data && data.message) || 'Вывод сформирован по тексту постов.');
+                           if (det.sharp_question) a3lines.push('Вопрос к тебе: ' + String(det.sharp_question));
+                           if (ur.final_advice) a3lines.push(ur.final_advice);
+                           if (s5) s5.innerHTML = homeRenderBullets(a3lines.filter(Boolean)) || '<p class="kro-inline-sec-skip">Нет.</p>';
+                       } else {
+                           if (s2) s2.innerHTML = homeRenderBullets(
+                               [ur.intro || 'Вот что важно:'].concat(Array.isArray(ur.facts) ? ur.facts : []),
+                           ) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                           if (s3) s3.innerHTML = homeRenderBullets([ur.read_summary || 'Данные о прочитанных постах не пришли.']) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                           var quoteLines0 = Array.isArray(ur.quotes) ? ur.quotes.map(function (x) { return '«' + String(x).slice(0, 260) + '»'; }) : [];
+                           if (s4) s4.innerHTML = homeRenderBullets(quoteLines0) || '<p class="kro-inline-sec-skip">Нет цитат.</p>';
                            if (s5) s5.innerHTML = homeRenderBullets([ur.simple_conclusion || data.message || 'Вывод построен по прочитанным постам канала.', ur.final_advice || '']) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                       }
                        } else {
                        if (h1) h1.textContent = 'Базовая информация';
                        if (h2) h2.textContent = 'Контент и поведение';

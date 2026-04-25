@@ -4750,11 +4750,11 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
   });
 
   let score10 = 3;
-  if (hasVip) score10 += 3;
+  if (hasVip) score10 += 2;
   if (hasFomo) score10 += 2;
   if (!hasRiskManagement) score10 += 2;
   if (!hasLogic) score10 += 1;
-  if (adsState === 'high') score10 += 2;
+  if (adsState === 'high') score10 += 1;
   else if (adsState === 'partial') score10 += 1;
   if (hasSignals) score10 += 1;
   if (onlyProfits) score10 += 1;
@@ -4764,15 +4764,15 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
 
   const summaryMain =
     score10 >= 8
-      ? 'Канал выглядит агрессивным: в текстах много давления, продажи или сигналов, а защиты пользователя мало.'
+      ? 'По прочитанным текстам канал смотрится тревожно: видно много сигнальных формулировок, давления на оплату или слабое объяснение риска.'
       : score10 >= 5
-        ? 'Канал требует осторожности: в нём есть полезный контент, но часть признаков выглядит рискованно или слабо объяснена.'
-        : 'Канал выглядит спокойнее среднего: в доступных текстах больше разборов и меньше агрессивных обещаний.';
+        ? 'По смыслу в постах — есть вопросы: местами полезно, местами рискованно или плохо проговорен риск. Один молодой возраст или ссылки ничего сами не доказывают.'
+        : 'По прочитанным фрагментам канал смотрится ровно: в текстах мало «гарантий», навязчивой продажи и жёсткого FOMO.';
   const summaryTail = !hasRiskManagement
-    ? 'Главный минус — в срезе не видно внятного риск-менеджмента.'
+    ? 'Важно: в срезе плохо читается риск-менеджмент (стопы, размер риска) — это риск для копипаста сигналов, а не «приговор мошеннику».'
     : hasAdsWords || adsState !== 'low'
-      ? 'Главное замечание — присутствует коммерческая подача, поэтому не стоит копировать идеи без своей проверки.'
-      : 'Главный плюс — в доступных фрагментах не видно жёсткого FOMO, VIP-продаж и обещаний лёгкой прибыли.';
+      ? 'Есть реклама, партнёрки или платный доступ в тексте — нормально у многих каналов, но важно, как оформлен риск и нет ли навязчивых гарантий прибыли.'
+      : 'Реклама и пуш продажи не доминируют; по этому срезу нет смысла раздувать страх — смотри конкретные фразы ниже.';
 
   return {
     criteria,
@@ -4828,12 +4828,73 @@ function kroDeepMetric(payload, field) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function kroCriteriaStatus(fastHuman, key) {
+  const c = fastHuman && Array.isArray(fastHuman.criteria)
+    ? fastHuman.criteria.find((x) => x && x.key === key)
+    : null;
+  return c && c.status ? c.status : 'no';
+}
+
+function kroWordHitsFromPayload(p) {
+  const dm = p && p.deep_metrics && typeof p.deep_metrics === 'object' ? p.deep_metrics : {};
+  const wh = p && p.language_word_hits && typeof p.language_word_hits === 'object' ? p.language_word_hits : {};
+  return {
+    profit_hits: Number(wh.profit_hits != null ? wh.profit_hits : dm.profit_word_hits) || 0,
+    loss_hits: Number(wh.loss_hits != null ? wh.loss_hits : dm.loss_word_hits) || 0,
+    guarantee_hits: Number(wh.guarantee_hits != null ? wh.guarantee_hits : dm.guarantee_word_hits) || 0,
+    paid_hits: Number(wh.paid_hits != null ? wh.paid_hits : dm.paid_word_hits) || 0,
+  };
+}
+
+/**
+ * «Тяжёлые» сигналы в тексте постов — без них не поднимаем к красной зоне и не обвиняем в мошенничестве.
+ */
+function kroHasStrongPostEvidence(p, fastHuman) {
+  const dm = p && p.deep_metrics && typeof p.deep_metrics === 'object' ? p.deep_metrics : {};
+  const wh = kroWordHitsFromPayload(p);
+  if (kroCriteriaStatus(fastHuman, 'fomo') === 'yes') return true;
+  if ((Number(dm.urgency_posts_count) || 0) >= 2) return true;
+  if ((Number(dm.guarantee_mentions_count) || 0) >= 2) return true;
+  if (wh.guarantee_hits >= 3) return true;
+  if (kroCriteriaStatus(fastHuman, 'vip') === 'yes'
+    && (wh.guarantee_hits >= 1
+      || kroCriteriaStatus(fastHuman, 'fomo') === 'yes'
+      || (Number(dm.paid_access_mentions_count) || 0) >= 4)) return true;
+  const pr = wh.profit_hits;
+  const lo = wh.loss_hits;
+  const pf = p.only_profits_flag === true;
+  if (pf && pr >= 12 && lo <= 3 && (p.posts_fetched || 0) >= 25) return true;
+  return false;
+}
+
+function kroMapRiskDisplayToUiStatus(risk, hasEvidence) {
+  const n = Number(risk);
+  if (!Number.isFinite(n)) return { status: 'НЕДОСТУПЕН', code: 'UNAVAILABLE' };
+  if (n < 4) return { status: 'ДОБРОСОВЕСТНО', code: 'SAFE' };
+  if (n < 7) return { status: 'ПОДОЗРИТЕЛЬНО', code: 'SUSPICIOUS' };
+  if (n >= 7 && hasEvidence) return { status: 'ОПАСНО', code: 'DANGER' };
+  return { status: 'ПОДОЗРИТЕЛЬНО', code: 'SUSPICIOUS' };
+}
+
+function kroConclusionStatusFromEvidence(risk, hasEvidence, opts) {
+  const n = Number(risk);
+  const o = opts && typeof opts === 'object' ? opts : {};
+  if (o.forceScam === true && hasEvidence) return KRO_V0_STATUS.scam;
+  if (!Number.isFinite(n)) return KRO_V0_STATUS.watch;
+  if (n < 4) return KRO_V0_STATUS.clean;
+  if (n < 7) return KRO_V0_STATUS.watch;
+  if (n >= 7 && hasEvidence) return KRO_V0_STATUS.risk;
+  return KRO_V0_STATUS.watch;
+}
+
 function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
   const p = payload && typeof payload === 'object' ? payload : {};
   const meta = opts && typeof opts === 'object' ? opts : {};
   const risk = Number(fastHuman && fastHuman.score10);
   const postsRead = Number(meta.postsRead || p.posts_fetched || 0) || 0;
   const periodDays = Number(meta.periodDays || p.analysis_window_days || 0) || null;
+  const hasEvidence = meta.hasPostEvidence === true;
+  const wh = kroWordHitsFromPayload(p);
   const profitsCount = kroDeepMetric(p, 'profits_posts_count');
   const lossesCount = kroDeepMetric(p, 'losses_posts_count');
   const urgencyCount = kroDeepMetric(p, 'urgency_posts_count');
@@ -4847,72 +4908,67 @@ function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
   const scamSimilarity = p.scam_similarity && typeof p.scam_similarity === 'object' ? p.scam_similarity : null;
   const paidPhaseRaw = String((p.deep_metrics && p.deep_metrics.paid_access_start_phase) || '').toLowerCase();
   const paidPhase = paidPhaseRaw === 'early'
-    ? 'в начале жизни канала'
+    ? 'сильнее в ранних постах'
     : (paidPhaseRaw === 'late'
-      ? 'заметно позже, не сразу'
-      : (paidPhaseRaw === 'middle' ? 'в середине периода' : 'по текущей выборке это не видно'));
-  let verdict = 'БЕЗОПАСНЫЙ';
-  let verdictColor = 'green';
-  let headline = 'Пока всё чисто. Но крипта это всегда риск.';
-  let intro = `Мы прочитали ${postsRead || 'несколько'} постов этого канала. Явных признаков мошенничества не нашли.`;
-  let finalAdvice = 'Даже честные каналы могут ошибаться. Никогда не вкладывай больше, чем готов потерять полностью.';
-  if (Number.isFinite(risk) && risk >= 9) {
-    verdict = 'ОПАСНЫЙ';
+      ? 'сильнее во второй половине ленты'
+      : (paidPhaseRaw === 'middle' ? 'середина ленты' : 'в этой выборке не выделяется — решают отдельные фразы'));
+  const ui = kroMapRiskDisplayToUiStatus(risk, hasEvidence);
+  const ageDays = Number(p.channel_age_days);
+  const promoted = Number(p.promoted_channels_count);
+  const firstIm = Array.isArray(p.first_impression_posts)
+    ? p.first_impression_posts.map((x) => String(x || '').trim()).filter(Boolean)
+    : [];
+
+  let tier = 'watch';
+  let verdictColor = 'amber';
+  if (Number.isFinite(risk) && risk < 4) {
+    tier = 'calm';
+    verdictColor = 'green';
+  } else if (Number.isFinite(risk) && risk >= 7 && hasEvidence) {
+    tier = 'danger';
     verdictColor = 'red';
-    headline = 'Осторожно. Этот канал похож на мошенников.';
-    intro = `Мы прочитали ${postsRead || 'несколько'} постов этого канала. Вот что нас насторожило:`;
-    finalAdvice = 'Если тебе уже написали с этого канала и предлагают вложить деньги — не торопись. Возьми паузу 24 часа.';
-  } else if (Number.isFinite(risk) && risk >= 5) {
-    verdict = 'ПОДОЗРИТЕЛЬНЫЙ';
-    verdictColor = 'orange';
-    headline = 'Будь осторожнее. В канале есть тревожные признаки.';
-    intro = `Мы прочитали ${postsRead || 'несколько'} постов этого канала. Не всё выглядит плохо, но есть вещи, из-за которых лучше не спешить с деньгами:`;
-    finalAdvice = 'Не принимай решение сразу. Сохрани ссылку, перечитай посты завтра и не отправляй деньги под давлением.';
   }
 
-  const facts = [];
-  const ageDays = Number(p.channel_age_days);
-  if (Number.isFinite(ageDays) && ageDays > 0) {
-    facts.push(`Канал существует ${Math.round(ageDays)} дней — ${ageDays < 90 ? 'очень молодой, это повышает осторожность' : 'не выглядит совсем новым'}.`);
+  const languageStory = `По смыслу: в ${postsRead} прочитанных постов в тексте на «плюс», иксы и идею заработка — ориентировочно ${wh.profit_hits} вхождений, про убыток, стоп, минусы — ${wh.loss_hits} вхождений; «гарантия/100%/без риска» — ${wh.guarantee_hits} вхождений; про оплату, подписку, доступ — ${wh.paid_hits} вхождений. Это счётчики слов, а не оценка личности автора. ${profitsCount} постов содержат «прибыль» по ключам, ${lossesCount} — «убыток» (по посту целиком).${lossesCount >= 4 ? ' Автор несколько раз отмечал минусы — с мошеннической схемой сокрытия убытков обычно плохо сочетается.' : ''}`;
+
+  const act1Intro = 'Мы зашли в канал. Вот что видит любой подписчик, если открыть ленту (свежие посты сверху):';
+  const act2Intro = `Мы просмотрели смысл в ${postsRead} постов за ${periodDays || 90} дн. (это ориентир, не обещание, что взяли “всё 2000”): как меняется тон, где появляются к продаже и “гарантии”, как про убытки.`;
+  const act2PatternLines = [
+    `Тон “продаж/давления” по оценке: вначале — ${earlySales}/100, сейчас — ${recentSales}/100.`
+      + (recentSales > (earlySales + 12) ? ' Тон в свежей части заметно резче, чем в ранних постах — по текстам, не по “возрасту” канала.' : ' Резкого “переключения” на продавилово по счётчику нет, но важны конкретные фразы.'),
+    `Перекос “в тело поста про прибыль” vs “пост про убыток” — ${profitsCount} к ${lossesCount}.${p.only_profits_flag && lossesCount < 2 ? ' Это повод внимательно смотреть, правда ли показывают слабые сделки — сами “иксы” не доказательство.' : ' У честного автора “минусы” встречаются чаще, чем у рекламы; но сам баланс зависит от ниши.'}`,
+    `В метриках: постов с давлением/срочностью (по ключу) — ${urgencyCount}; обсуждений просадки/рынка “вниз” — ${marketDownCount}.`,
+    `Смысл про стоп/риск в постах: ~${riskMgmtCount} “риск-менедж” поста; с объяснением логики/плана — ${logicCount}.${(Number.isFinite(promoted) && promoted > 0) ? ` Ссылки на ${Math.round(promoted)} другие каналы — сами по себе не подтверждение и не опровергают, это просто соседние площадки в тексте.` : ''}${Number.isFinite(ageDays) && ageDays > 0 ? ` Срок жизни канала ~${Math.round(ageDays)} дн. — нейтральный факт, не “скам”.` : ''}`,
+    hasEvidence && scamSimilarity && scamSimilarity.label
+      ? `Сравнение с базой (узор, не клеймо): ${String(scamSimilarity.label)}`
+      : (scamSimilarity && scamSimilarity.label ? `Совпадения с “шаблоном” (если всплывают, без тяжёлых фраз): ${String(scamSimilarity.label)}` : ''),
+  ].filter(Boolean);
+
+  const honestByTier = tier === 'calm'
+    ? 'Канал выглядит добросовестно. Явных “гарантий прибыли” и сильного давления в этой выборке нет. Памятка: риск всё равно в рынке, не в “нашем слове”.'
+    : (tier === 'danger'
+      ? 'В тексте есть сочетание: давление, гарантия результата или ярко выраженный перекос “только плюс”. Это именно смысловые, а не косвенные признаки. Не путай с “молодым” каналом или “рекламирует соседей” — сами по себе это ничего не делают.'
+      : (Number.isFinite(risk) && risk >= 7 && !hasEvidence
+        ? `Балл риска ${Math.round(risk)}/10 вытекает в основном из стиля, рекламы, сигналов и “дыр” риск-менеджмента в срезанной выборке, но в тексте не всплыла связка “гарантия+давление” или “стопов нет+только плюс”. Красного ярлыка не вешаем.`
+        : 'Есть вопросы по смыслу. Не спеши с деньгами — сверяй: как показывают плохие сделки, говорит ли кто-то про риск.'));
+
+  let sharpQuestion = 'Если вынесешь в сторону имя, аватар и “сколько дней” — останется в этом тексте доверие, которого ты требуешь от денег?';
+  if (p.only_profits_flag && lossesCount <= 1 && postsRead > 20) {
+    sharpQuestion = `Слов про прирост/«иксы» встретили сильно больше, а явных “минусов/стопов” мало. На твоей практике так ведёт реальный трейдер или прежде всего лента для подписок?`;
+  } else if (wh.loss_hits >= 6) {
+    sharpQuestion = 'Автор публично ссылается на плохие сделки и риск. Готов ли проверить его “на бумажке” без крупного депозита, потому что сам видишь, что “не только плюс”?';
+  } else if (kroCriteriaStatus(fastHuman, 'fomo') === 'yes' || (Number(wh.guarantee_hits) || 0) >= 2) {
+    sharpQuestion = 'Если убрать слова “срочно/гарантия/100%” — остались бы в постах цифры, по которым ты вошёл бы в сделку сам, без FOMO?';
   }
-  const promoted = Number(p.promoted_channels_count);
-  if (Number.isFinite(promoted) && promoted > 0) {
-    facts.push(`Рекламирует ${Math.round(promoted)} других каналов — это может быть признаком сетки продвижения.`);
-  }
-  if (p.has_signal_offer === true) {
-    facts.push('В постах есть торговые идеи или сигналы. Это не всегда плохо, но без объяснения риска люди часто копируют сделки вслепую.');
-  }
-  if (p.only_profits_flag === true) {
-    facts.push(`В выборке перекос в сторону прибыли: постов про прибыль ${profitsCount}, про убытки ${lossesCount}. Это красный флаг, если минусы почти не показывают.`);
-  }
-  const fomoPct = Number(p.fomo_pct);
-  if (Number.isFinite(fomoPct) && fomoPct >= 20) {
-    facts.push(`Встречается давление и срочность примерно в ${Math.round(fomoPct)}% постов — это тревожный сигнал.`);
-  }
-  if (urgencyCount > 0 && facts.length < 3) {
-    facts.push(`Найдено ${urgencyCount} постов с давлением на срочность («только сегодня», «не упусти», «осталось мест»).`);
-  }
-  if (logicCount > 0 && facts.length < 3) {
-    facts.push(`Есть ${logicCount} постов с объяснением логики входа. Это лучше, чем просто отчёты о результате без причин.`);
-  }
-  if (riskMgmtCount <= 1 && facts.length < 3) {
-    facts.push('Риск-менеджмент почти не встречается: стопы и ограничения риска объясняются редко.');
-  }
-  for (const line of (fastHuman && Array.isArray(fastHuman.criteria) ? fastHuman.criteria : [])) {
-    if (facts.length >= 3) break;
-    if (!line || typeof line !== 'object') continue;
-    if (line.key === 'risk' && line.status === 'no') facts.push('Мы не увидели понятных стопов или правил риска. Это значит, что человек может войти в сделку и не понимать, где остановиться.');
-    if (line.key === 'logic' && line.status !== 'yes') facts.push('Логика идей объяснена слабо. Когда канал просто говорит “делай так”, риск для новичка выше.');
-    if (line.key === 'vip' && line.status === 'no') facts.push('В прочитанных постах не видно продажи платного VIP или закрытого доступа. Это хороший знак.');
-  }
-  while (facts.length < 3) {
-    const fallback = [
-      'Мы смотрели именно тексты постов: что канал обещает, что продаёт и как говорит о рисках.',
-      'В прочитанных постах не видно грубого давления вроде “заработаешь точно” или “срочно входи сейчас”.',
-      'Если канал начнёт продавить платный доступ, обещать быстрые иксы или скрывать убытки, риск станет выше.',
-    ][facts.length] || 'Данных достаточно для короткого вывода по ленте.';
-    facts.push(fallback);
-  }
+
+  const headline = tier === 'calm'
+    ? 'По тексту ленты: без “гарантийного” пласта'
+    : (tier === 'danger'
+      ? 'По смыслу: есть тяжёлые сигналы'
+      : 'По смыслу: есть вопросы, но без “автомошенника”');
+
+  const act3Body = [honestByTier, hasEvidence ? '' : 'Система нарочно не раздувает страх, если “грязь” в постах не подтвердилась. Базовое правило: “молодой/рекламирует/много цифр” ≠ скам.'].filter((x) => x && x.trim().length);
+  const simpleConclusion = [fastHuman && fastHuman.summaryLine, act3Body.join(' ')].filter(Boolean).join(' ');
 
   const sample = Array.isArray(p.sample_posts) ? p.sample_posts.map((x) => String(x || '').trim()).filter(Boolean) : [];
   const deepQuotes = [];
@@ -4923,42 +4979,54 @@ function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
       const t = String(q || '').trim();
       if (!t) continue;
       if (!deepQuotes.includes(t)) deepQuotes.push(t);
-      if (deepQuotes.length >= 5) break;
+      if (deepQuotes.length >= 4) break;
     }
-    if (deepQuotes.length >= 5) break;
   }
   const quotes = (deepQuotes.length ? deepQuotes : sample).slice(0, 5);
-  const readSummary = [
-    `Прочитано ${postsRead} постов за ${periodDays || 90} дней.`,
-    `Постов про прибыль: ${profitsCount}. Про убытки: ${lossesCount}.`,
-    `Упоминаний «VIP/платный доступ/подписка»: ${paidCount}. Упоминаний «гарантия/100%/без риска»: ${guaranteeCount}.`,
-    `Рынок и просадки обсуждаются в ${marketDownCount} постах.`,
-  ].join(' ');
-  const simpleConclusion = fastHuman && fastHuman.summaryLine
-    ? `${fastHuman.summaryLine} Продажный тон: в начале ${earlySales}/100, сейчас ${recentSales}/100. Платный доступ стал активно продвигаться ${paidPhase}.`
-    : `Вывод построен по тексту прочитанных сообщений канала. Продажный тон: в начале ${earlySales}/100, сейчас ${recentSales}/100.`;
+  const readSummary = `Прочитано с текстом ${postsRead} постов за ${periodDays || 90} дн. В словестный слой: «+»-лексика — ${wh.profit_hits} вхождений, «-»-лексика (убыт/стоп/миус) — ${wh.loss_hits} вхождений, «гарантия/100%» — ${wh.guarantee_hits}, “оплата/подписка/доступ” — ${wh.paid_hits}.`;
 
-  if (scamSimilarity && scamSimilarity.label) {
-    finalAdvice = `${finalAdvice} ${String(scamSimilarity.label)}`.trim();
-  }
-  if (Number(p.channel_age_days) > 0 && Number(p.channel_age_days) < 90 && paidCount >= 3) {
-    finalAdvice = 'Подожди 3 месяца. Если канал честный — он никуда не денется. Если исчезнет — ты сохранил деньги.';
-  } else if (riskMgmtCount <= 1) {
-    finalAdvice = 'Попроси автора показать свои убыточные сделки и правила риска. Честный трейдер не боится этого вопроса.';
+  let finalAdvice = '';
+  if (Number.isFinite(risk) && risk < 4) {
+    finalAdvice = 'Сохрани отчёт. Если пойдёшь в подписку, начни с суммы, которой не боишься; правило не про “трусости”, а про цифру.';
+  } else if (tier === 'watch') {
+    finalAdvice = 'Отложи “да/нет” на 24–48 ч., пересмотри 5–7 постов, которые мы цитировали, и сравни с нормой для обучающей/трейд-недели.';
+  } else {
+    finalAdvice = 'Если канал пишет с гарантией прибыли или “входи сейчас” — поставь “стоп-разговор” по деньгам до снятия этих смыслов.';
   }
 
   return {
-    verdict,
+    report_version: 'detective_v1',
+    verdict: ui.status,
+    verdict_code: ui.code,
     verdict_color: verdictColor,
+    tier,
+    has_post_evidence: hasEvidence,
     headline,
-    intro,
-    risk_text: Number.isFinite(risk) ? `Риск ${risk}/10` : '',
-    facts: facts.slice(0, 3),
+    intro: 'Мы ведём отчёт как дело: “что видит человек” → “что видно, когда вылезаешь из пары постов” → “чем закончим”.',
+    risk_text: Number.isFinite(risk) ? `Смысловой индекс: ${Math.round(risk)}/10` : '',
+    honest_assessment: honestByTier,
+    language_story: languageStory,
+    detective: {
+      act1_title: 'Акт 1 — первое впечатление',
+      act1_lead: act1Intro,
+      act1_first_posts: firstIm.slice(0, 3),
+      act2_title: 'Акт 2 — что всплывает глубже',
+      act2_lead: act2Intro,
+      act2_patterns: act2PatternLines,
+      act3_title: 'Акт 3 — вывод по факту',
+      act3_conclusion: act3Body,
+      sharp_question: sharpQuestion,
+    },
+    facts: act2PatternLines.slice(0, 3),
     read_summary: readSummary,
     quotes,
     simple_conclusion: simpleConclusion,
     final_advice: finalAdvice,
     numbers: {
+      profit_word_hits: wh.profit_hits,
+      loss_word_hits: wh.loss_hits,
+      guarantee_word_hits: wh.guarantee_hits,
+      paid_word_hits: wh.paid_hits,
       profits_posts_count: profitsCount,
       losses_posts_count: lossesCount,
       urgency_posts_count: urgencyCount,
@@ -6515,14 +6583,22 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
     };
   }
   const analysis = kroV0BuildAnalysisFromLiveParsed(payload, key);
-  const fastHuman = kroBuildFastCriteriaFromTexts(Array.isArray(payload.sample_posts) ? payload.sample_posts : [], {
+  const textsForFast = Array.isArray(payload._sample_texts) && payload._sample_texts.length
+    ? payload._sample_texts.map((x) => String(x || ''))
+    : (Array.isArray(payload.sample_posts) ? payload.sample_posts.map((x) => String(x || '')) : []);
+  const fastHuman = kroBuildFastCriteriaFromTexts(textsForFast, {
     hasSignalOffer: payload.has_signal_offer === true,
     onlyProfitsFlag: payload.only_profits_flag === true,
     fomoPct: payload.fomo_pct,
     adsRatio: payload.ads_ratio,
   });
   const risk = fastHuman.score10;
-  const userReport = kroBuildUserFacingLiveReport(payload, fastHuman, { postsRead, periodDays });
+  const hasEvidence = kroHasStrongPostEvidence(payload, fastHuman);
+  const userReport = kroBuildUserFacingLiveReport(payload, fastHuman, {
+    postsRead,
+    periodDays,
+    hasPostEvidence: hasEvidence,
+  });
   analysis.basic_info = [
     `Канал: @${key}`,
     `Чем занимается канал: ${fastHuman.topicLine}`,
@@ -6540,11 +6616,15 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
   if (userReport.scam_similarity && userReport.scam_similarity.label) {
     analysis.ties_risk_factors.push(String(userReport.scam_similarity.label));
   }
+  const forceScam = String(payload.risk_verdict || '').toLowerCase() === 'scam' && hasEvidence;
   analysis.conclusion = {
-    status: kroMapFastRisk10ToConclusion(risk, { forceScam: String(payload.risk_verdict || '').toLowerCase() === 'scam' }),
-    reasons: [`Риск ${risk}/10: ${fastHuman.summaryLine}`, ...fastHuman.reasons].slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
+    status: kroConclusionStatusFromEvidence(risk, hasEvidence, { forceScam }),
+    reasons: [
+      `Смысловой индекс ${Math.round(risk)}/10 (по срезу). Сильных сигналов в формулировках: ${hasEvidence ? 'да' : 'нет'}. ${fastHuman.summaryLine}`,
+      ...fastHuman.reasons,
+    ].slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
   };
-  const ui = kroMapFastRisk10ToUiStatus(risk);
+  const ui = kroMapRiskDisplayToUiStatus(risk, hasEvidence);
   return {
     queue_status: 'done',
     request_id: requestId,
@@ -6555,6 +6635,7 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
     status_code: ui.code,
     risk_index: risk,
     risk_index_max: 10,
+    risk_has_post_evidence: hasEvidence,
     citations: userReport.quotes,
     user_report: userReport,
     analysis,
@@ -6562,7 +6643,9 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
       live_pass: true,
       mode: readPath,
       reason: `Прочитано ${postsRead} сообщений с текстом.`,
-      sample_posts: fastHuman.citations.slice(0, 3),
+      sample_posts: (Array.isArray(payload.first_impression_posts) && payload.first_impression_posts.length
+        ? payload.first_impression_posts
+        : fastHuman.citations).slice(0, 3).map((x) => String(x || '').trim()).filter(Boolean),
       posts_fetched: postsRead,
       analysis_window_days: periodDays,
     },
