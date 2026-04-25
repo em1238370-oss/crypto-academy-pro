@@ -1575,6 +1575,7 @@
               function runHomeChannelCheck(slug) {
                   ensureKroCheckPanelVisible();
                   window.__kroHomeLastSlug = slug;
+                  window.__kroHomeInterimShown = false;
                   var queryU = slugToQueryU(slug);
                   var displayLabel = displayChannelLabel(slug, queryU);
                   window.__kroHomeCheckT0 = Date.now();
@@ -1600,25 +1601,37 @@
                       } catch (eScroll) { /* ignore */ }
                   };
 
+                  var renderInterimPreviewInline = function (data, reasonText) {
+                      if (!data || typeof data !== 'object' || !data.analysis || typeof data.analysis !== 'object') return false;
+                      var arr = Array.isArray(data.analysis.basic_info) ? data.analysis.basic_info : [];
+                      data.analysis.basic_info = [
+                          'Анализ постов ещё выполняется — вот что известно уже сейчас.',
+                          reasonText || 'Промежуточный отчёт построен по scam_base/channels_watch/жалобам.',
+                      ].concat(arr).slice(0, 8);
+                      data.queue_status = 'interim_preview';
+                      data.message = 'Анализ постов ещё выполняется — вот что известно уже сейчас.';
+                      ensureKroCheckPanelVisible();
+                      fillInlineReport(data, queryU, displayLabel, __kroCheckStarted);
+                      if (inlineReport) {
+                          inlineReport.classList.remove('hidden');
+                          inlineReport.hidden = false;
+                      }
+                      checkResult.innerHTML = '<span class="kro-check-result-block">Показываем промежуточный отчёт по доступным данным, пока читаются посты канала.</span>';
+                      checkResult.className = 'kro-check-result';
+                      checkResult.classList.remove('hidden');
+                      return true;
+                  };
+
                   var renderInterimFallback = function (reasonText) {
                       var fbUrl = base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU) + '&mode=fast';
                       fetch(fbUrl, { cache: 'no-store' })
                           .then(function (res) { return res.json(); })
                           .then(function (data) {
-                              if (!data || typeof data !== 'object' || !data.analysis || typeof data.analysis !== 'object') {
-                                  throw new Error('fallback_no_analysis');
+                              if (!renderInterimPreviewInline(data, reasonText)) throw new Error('fallback_no_analysis');
+                              if (reasonText && /7 минут|не вернул/i.test(String(reasonText))) {
+                                  window.__kroHomeCheckT0 = null;
+                                  hideCheckBusy();
                               }
-                              var arr = Array.isArray(data.analysis.basic_info) ? data.analysis.basic_info : [];
-                              data.analysis.basic_info = [
-                                  'Анализ постов ещё выполняется — вот что известно уже сейчас.',
-                                  reasonText || 'Промежуточный отчёт построен по scam_base/channels_watch/жалобам.',
-                              ].concat(arr).slice(0, 8);
-                              data.queue_status = 'done_fallback';
-                              data.message = 'Анализ постов ещё выполняется — вот что известно уже сейчас.';
-                              renderHomeCheckSuccess(data);
-                              checkResult.innerHTML = '<span class="kro-check-result-block">Анализ постов ещё выполняется — вот что известно уже сейчас.</span>';
-                              checkResult.className = 'kro-check-result';
-                              checkResult.classList.remove('hidden');
                           })
                           .catch(function () {
                               window.__kroHomeCheckT0 = null;
@@ -1646,6 +1659,10 @@
                               if (note) {
                                   if (qs === 'running' || qs === 'pending') note.textContent = __kroProgressNoteByElapsed(Date.now() - __kroCheckStarted);
                                   else if (qs === 'done') note.textContent = 'Результат получен, показываем отчёт…';
+                              }
+                              if ((qs === 'pending' || qs === 'running') && elapsedMs >= 30000 && !window.__kroHomeInterimShown) {
+                                  window.__kroHomeInterimShown = true;
+                                  renderInterimFallback('Пока посты читаются, показываем поверхностный разбор из доступной базы.');
                               }
                               if (qs === 'done') {
                                   renderHomeCheckSuccess(row);
@@ -1701,6 +1718,7 @@
                       .then(function (pack) {
                           if (pack.status === 202 && pack.data && (pack.data.request_id || pack.data.id)) {
                               var rid = pack.data.request_id || pack.data.id;
+                              window.__kroHomeInterimShown = false;
                              checkResult.textContent = pack.data.message || 'Анализируем канал... обычно до 7 минут.';
                               checkResult.className = 'kro-check-result';
                               checkResult.classList.remove('hidden');
