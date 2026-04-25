@@ -1575,7 +1575,6 @@
               function runHomeChannelCheck(slug) {
                   ensureKroCheckPanelVisible();
                   window.__kroHomeLastSlug = slug;
-                  window.__kroHomeInterimShown = false;
                   var queryU = slugToQueryU(slug);
                   var displayLabel = displayChannelLabel(slug, queryU);
                   window.__kroHomeCheckT0 = Date.now();
@@ -1601,55 +1600,14 @@
                       } catch (eScroll) { /* ignore */ }
                   };
 
-                  var renderInterimPreviewInline = function (data, reasonText) {
-                      if (!data || typeof data !== 'object' || !data.analysis || typeof data.analysis !== 'object') return false;
-                      var arr = Array.isArray(data.analysis.basic_info) ? data.analysis.basic_info : [];
-                      data.analysis.basic_info = [
-                          'Анализ постов ещё выполняется — вот что известно уже сейчас.',
-                          reasonText || 'Промежуточный отчёт построен по scam_base/channels_watch/жалобам.',
-                      ].concat(arr).slice(0, 8);
-                      data.queue_status = 'interim_preview';
-                      data.message = 'Анализ постов ещё выполняется — вот что известно уже сейчас.';
-                      ensureKroCheckPanelVisible();
-                      fillInlineReport(data, queryU, displayLabel, __kroCheckStarted);
-                      if (inlineReport) {
-                          inlineReport.classList.remove('hidden');
-                          inlineReport.hidden = false;
-                      }
-                      checkResult.innerHTML = '<span class="kro-check-result-block">Показываем промежуточный отчёт по доступным данным, пока читаются посты канала.</span>';
-                      checkResult.className = 'kro-check-result';
-                      checkResult.classList.remove('hidden');
-                      return true;
-                  };
-
-                  var renderInterimFallback = function (reasonText) {
-                      var fbUrl = base + '/api/kro/channel-profile?u=' + encodeURIComponent(queryU) + '&mode=fast';
-                      fetch(fbUrl, { cache: 'no-store' })
-                          .then(function (res) { return res.json(); })
-                          .then(function (data) {
-                              if (!renderInterimPreviewInline(data, reasonText)) throw new Error('fallback_no_analysis');
-                              if (reasonText && /7 минут|не вернул/i.test(String(reasonText))) {
-                                  window.__kroHomeCheckT0 = null;
-                                  hideCheckBusy();
-                              }
-                          })
-                          .catch(function () {
-                              window.__kroHomeCheckT0 = null;
-                              hideCheckBusy();
-                              checkResult.innerHTML = '<span class="kro-check-result-block">Анализ постов ещё выполняется, но промежуточный отчёт пока не загрузился. Нажмите «Повторить».</span>' +
-                                  '<button type="button" class="kro-report-submit kro-check-retry" id="kro-check-retry">Повторить</button>';
-                              checkResult.classList.remove('hidden');
-                              var rbX = document.getElementById('kro-check-retry');
-                              if (rbX) rbX.onclick = function () { runHomeChannelCheck(window.__kroHomeLastSlug || slug); };
-                          });
-                  };
-
                   var pollResult = function (requestId, attempt) {
                       attempt = attempt || 0;
                       var elapsedMs = Date.now() - __kroCheckStarted;
                       if (elapsedMs >= __KRO_HOME_MAX_WAIT_MS) {
-                          renderInterimFallback('GitHub Actions не вернул посты за 7 минут.');
-                          return;
+                          var noteTimeout = document.getElementById('kro-check-progress-note');
+                          if (noteTimeout) {
+                              noteTimeout.textContent = 'Живой анализ ленты задерживается, продолжаем ждать чтение Telegram...';
+                          }
                       }
                       fetch(base + '/api/kro/check-result/' + encodeURIComponent(requestId), { cache: 'no-store' })
                           .then(function (res) { return res.json(); })
@@ -1660,19 +1618,8 @@
                                   if (qs === 'running' || qs === 'pending') note.textContent = __kroProgressNoteByElapsed(Date.now() - __kroCheckStarted);
                                   else if (qs === 'done') note.textContent = 'Результат получен, показываем отчёт…';
                               }
-                              if ((qs === 'pending' || qs === 'running') && elapsedMs >= 30000 && !window.__kroHomeInterimShown) {
-                                  window.__kroHomeInterimShown = true;
-                                  renderInterimFallback('Пока посты читаются, показываем поверхностный разбор из доступной базы.');
-                              }
                               if (qs === 'done') {
                                   renderHomeCheckSuccess(row);
-                                  return;
-                              }
-                              if (qs === 'done_fallback') {
-                                  renderHomeCheckSuccess(row);
-                                  checkResult.innerHTML = '<span class="kro-check-result-block">' + esc(row.message || 'Анализ постов ещё выполняется — вот что известно уже сейчас.') + '</span>';
-                                  checkResult.className = 'kro-check-result';
-                                  checkResult.classList.remove('hidden');
                                   return;
                               }
                               if (qs === 'failed') {
@@ -1718,7 +1665,6 @@
                       .then(function (pack) {
                           if (pack.status === 202 && pack.data && (pack.data.request_id || pack.data.id)) {
                               var rid = pack.data.request_id || pack.data.id;
-                              window.__kroHomeInterimShown = false;
                              checkResult.textContent = pack.data.message || 'Анализируем канал... обычно до 7 минут.';
                               checkResult.className = 'kro-check-result';
                               checkResult.classList.remove('hidden');

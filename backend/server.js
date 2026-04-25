@@ -6739,68 +6739,6 @@ function kroBuildAnalyzeDoneResponse(doneRow, key) {
   return kroBuildAnalyzeResponseFromParsed(base, key, doneRow && doneRow.request_id ? doneRow.request_id : null);
 }
 
-async function kroBuildCheckResultTimeoutFallback(client, row) {
-  const usernameRaw = String((row && row.username) || '').trim();
-  const key = channelMatchKey(usernameRaw);
-  const decoded = usernameRaw.replace(/^@+/, '').trim();
-  const watchRow = key ? await fetchLatestChannelsWatchRowForKey(client, key) : null;
-  let analysis = await kroV0BuildFastAnalysisNoLive(client, key || decoded, decoded || usernameRaw, watchRow);
-  if (!analysis || typeof analysis !== 'object') {
-    analysis = {
-      v: 0,
-      channel_key: key || decoded || null,
-      generated_at: new Date().toISOString(),
-      sources: ['scam_base', 'channels_watch'],
-      basic_info: [],
-      content_behavior: [],
-      external_reports: [],
-      ties_risk_factors: [],
-      conclusion: { status: KRO_V0_STATUS.watch, reasons: [] },
-    };
-  }
-  analysis.basic_info = [
-    'Анализ постов ещё выполняется — вот что известно уже сейчас (по scam_base/channels_watch/жалобам).',
-    ...(Array.isArray(analysis.basic_info) ? analysis.basic_info : []),
-  ].slice(0, 8);
-  const conclusion = analysis && analysis.conclusion ? analysis.conclusion : { status: KRO_V0_STATUS.watch };
-  const statusMap = {
-    [KRO_V0_STATUS.scam]: { status: 'ОПАСНО', status_code: 'DANGER' },
-    [KRO_V0_STATUS.risk]: { status: 'ПОДОЗРИТЕЛЬНО', status_code: 'SUSPICIOUS' },
-    [KRO_V0_STATUS.clean]: { status: 'БЕЗОПАСНО', status_code: 'SAFE' },
-    [KRO_V0_STATUS.watch]: { status: 'ПОД НАБЛЮДЕНИЕМ', status_code: 'WATCH' },
-  };
-  const mapped = statusMap[conclusion.status] || statusMap[KRO_V0_STATUS.watch];
-  return {
-    id: row && row.id ? row.id : null,
-    request_id: row && row.id ? row.id : null,
-    queue_status: 'done_fallback',
-    status: mapped.status,
-    status_code: mapped.status_code,
-    risk_index: null,
-    risk_index_max: 10,
-    posts_read: 0,
-    period_days: null,
-    read_path: 'external_sources_timeout_fallback',
-    interim: true,
-    analysis,
-    live_evidence: {
-      live_pass: false,
-      mode: 'external_sources',
-      reason: 'GitHub Actions ещё не вернул чтение постов; показан промежуточный отчёт по внешним данным.',
-      sample_posts: [],
-      posts_fetched: 0,
-      analysis_window_days: null,
-    },
-    analysis_basis: {
-      label: 'Промежуточный отчёт: только scam_base/channels_watch/жалобы.',
-      sources_used: ['scam_base', 'channels_watch', 'reports'],
-      read_path: 'external_sources_timeout_fallback',
-      posts_read: 0,
-    },
-    message: 'Анализ постов ещё выполняется — вот что известно уже сейчас.',
-  };
-}
-
 app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   const rawInput = String((req.body && (req.body.username || req.body.channel || req.body.url)) || '').trim();
@@ -7301,24 +7239,18 @@ app.get('/api/kro/check-result/:id', async (req, res) => {
     if (!row) {
       return res.status(404).json({ error: 'not_found', message: 'Запрос не найден.' });
     }
-    const createdMs = Date.parse(String((row && row.created_at) || ''));
-    const isOver7m = Number.isFinite(createdMs) && (Date.now() - createdMs >= 7 * 60 * 1000);
-    if ((row.status === 'pending' || row.status === 'running') && isOver7m) {
-      const timeoutFallback = await kroBuildCheckResultTimeoutFallback(client, row);
-      return res.status(200).json(timeoutFallback);
-    }
     if (row.status === 'pending') {
       return res.status(200).json({
         id: row.id,
         status: 'pending',
-        message: 'Анализируем канал... обычно до 7 минут.',
+        message: 'Ждём живое чтение ленты Telegram...',
       });
     }
     if (row.status === 'running') {
       return res.status(200).json({
         id: row.id,
         status: 'running',
-        message: 'Воркер читает посты канала через Telegram.',
+        message: 'Воркер читает посты канала через Telegram (LIVE).',
       });
     }
     if (row.status === 'failed') {
