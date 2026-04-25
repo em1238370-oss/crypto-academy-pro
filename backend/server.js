@@ -6577,7 +6577,7 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
       read_path: readPath,
       posts_read: postsRead,
     },
-    message: `Анализ канала завершён: прочитано ${postsRead} сообщений, обычно это занимает 1-3 минуты.`,
+    message: `Анализ канала завершён: прочитано ${postsRead} сообщений, обычно это занимает до 7 минут.`,
   };
 }
 
@@ -6734,7 +6734,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       request_id: requestId,
       username,
       status: 'pending',
-      message: 'Анализируем канал... обычно 1-3 минуты.',
+      message: 'Анализируем канал... обычно до 7 минут.',
     });
   } catch (e) {
     console.error('KRO analyze-channel queue error:', e);
@@ -7207,7 +7207,7 @@ app.get('/api/kro/check-result/:id', async (req, res) => {
       return res.status(200).json({
         id: row.id,
         status: 'pending',
-        message: 'Анализируем канал... обычно 1-3 минуты.',
+        message: 'Анализируем канал... обычно до 7 минут.',
       });
     }
     if (row.status === 'running') {

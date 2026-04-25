@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from google.oauth2 import service_account
@@ -35,13 +36,13 @@ def get_sheets_client():
     return build("sheets", "v4", credentials=creds, cache_discovery=False)
 
 
-def run_check_once(username):
+def run_check_once(username, period_days=90, timeout_seconds=420):
     proc = subprocess.run(
-        [sys.executable, str(SCRIPT_DIR / "check_once.py"), username, "90"],
+        [sys.executable, str(SCRIPT_DIR / "check_once.py"), username, str(int(period_days))],
         cwd=str(SCRIPT_DIR),
         capture_output=True,
         text=True,
-        timeout=8 * 60,
+        timeout=max(30, int(timeout_seconds)),
         env={**os.environ},
     )
     for line in (proc.stdout or "").splitlines():
@@ -104,13 +105,32 @@ def main():
     created_at = (row[4] if len(row) > 4 else "").strip()
     update_row(svc, row_number, [request_id, username, "running", "", created_at])
 
-    try:
-      parsed = run_check_once(username)
-    except Exception as exc:
-      parsed = {"error": str(exc)[:400]}
+    deadline = time.time() + 420  # быстрый анализ на главной: не дольше 7 минут
+    parsed = None
+    attempts = [90, 30, 7]
+    errors = []
+    for idx, period_days in enumerate(attempts):
+        remain = int(deadline - time.time())
+        if remain < 30:
+            break
+        try:
+            candidate = run_check_once(username, period_days=period_days, timeout_seconds=remain)
+        except Exception as exc:
+            errors.append(f"{period_days}d:{str(exc)[:180]}")
+            continue
+        if candidate and isinstance(candidate, dict):
+            candidate["queue_period_days_attempted"] = period_days
+            parsed = candidate
+            posts = int(candidate.get("posts_fetched") or 0)
+            if candidate.get("found") is True and posts >= 5:
+                break
+        if idx < len(attempts) - 1:
+            continue
 
     if not parsed:
         parsed = {"error": "check_once returned no JSON payload"}
+    if errors:
+        parsed["queue_attempt_errors"] = errors[:5]
 
     status = "done" if parsed.get("found") is True and int(parsed.get("posts_fetched") or 0) > 0 else "failed"
     update_row(
