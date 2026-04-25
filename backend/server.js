@@ -4681,6 +4681,35 @@ function kroBuildFastChannelTopicSummary(texts) {
   return 'По доступным постам это канал с короткими комментариями по рынку без одного ярко выраженного формата.';
 }
 
+function kroPickFastCitations(texts, buckets, limit = 3) {
+  const src = Array.isArray(texts) ? texts.map((x) => String(x || '').trim()).filter((x) => x.length >= 24) : [];
+  const out = [];
+  const seen = new Set();
+  const addByKeywords = (keywords) => {
+    for (const t of src) {
+      const low = t.toLowerCase();
+      if (!keywords.some((kw) => low.includes(kw))) continue;
+      if (seen.has(t)) continue;
+      seen.add(t);
+      out.push(t);
+      if (out.length >= limit) return true;
+    }
+    return false;
+  };
+  for (const kws of buckets || []) {
+    if (addByKeywords(kws)) break;
+  }
+  if (out.length < limit) {
+    for (const t of src) {
+      if (seen.has(t)) continue;
+      seen.add(t);
+      out.push(t);
+      if (out.length >= limit) break;
+    }
+  }
+  return out.slice(0, limit);
+}
+
 function kroBuildFastCriteriaFromTexts(texts, opts = null) {
   const rawTexts = Array.isArray(texts) ? texts.map((x) => String(x || '').trim()).filter(Boolean) : [];
   const joined = rawTexts.join(' \n ').toLowerCase();
@@ -4761,6 +4790,11 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
   if (hasRiskManagement) score10 -= 1;
   if (hasLogic) score10 -= 1;
   score10 = Math.max(1, Math.min(10, score10));
+  let channelType = 'серый';
+  if (score10 >= 8) channelType = 'скамоподобный';
+  else if (hasVip && hasFomo) channelType = 'агрессивный';
+  else if (hasLogic && hasRiskManagement && !hasVip && adsState === 'low' && score10 <= 4) channelType = 'обучающий';
+  else if (hasRiskManagement && !hasFomo && score10 <= 4) channelType = 'аккуратный';
 
   const summaryMain =
     score10 >= 8
@@ -4777,9 +4811,14 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
   return {
     criteria,
     score10,
+    channelType,
     summaryLine: `${summaryMain} ${summaryTail}`.trim(),
     topicLine: kroBuildFastChannelTopicSummary(rawTexts),
-    citations: rawTexts.slice(0, 3),
+    citations: kroPickFastCitations(
+      rawTexts,
+      [vipKeywords, fomoKeywords, ['стоп', 'риск', 'stop', 'sl'], ['почему', 'логика', 'сценар', 'обосн']],
+      3,
+    ),
     reasons: [
       summaryMain,
       hasRiskManagement
@@ -6582,6 +6621,48 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
       message: 'Анализ завершён без ленты: посты в этом запуске не прочитаны.',
     };
   }
+  if (postsRead < 5) {
+    const samplePosts = (Array.isArray(payload.sample_posts) ? payload.sample_posts : [])
+      .map((x) => String(x || '').trim())
+      .filter(Boolean)
+      .slice(0, 3);
+    return {
+      queue_status: 'done',
+      request_id: requestId,
+      posts_read: postsRead,
+      period_days: periodDays,
+      read_path: readPath,
+      status: 'НЕДОСТУПЕН',
+      status_code: 'UNAVAILABLE',
+      risk_index: null,
+      risk_index_max: 10,
+      analysis: {
+        v: 0,
+        channel_key: key,
+        generated_at: new Date().toISOString(),
+        sources: ['GitHub Actions Telethon'],
+        basic_info: [
+          `Прочитано только ${postsRead} текстовых постов за свежий fast-период.`,
+          'Для честной fast-оценки нужно минимум 5 нормальных текстовых сообщений.',
+        ],
+        content_behavior: [],
+        external_reports: [],
+        ties_risk_factors: [],
+        conclusion: {
+          status: 'мало данных',
+          reasons: ['Fast-оценка (1-10) и тип канала не выставлены, потому что постов меньше 5.'],
+        },
+      },
+      citations: samplePosts,
+      live_evidence: {
+        live_pass: true,
+        mode: readPath,
+        reason: `Прочитано ${postsRead} сообщений с текстом; этого мало для оценки риска.`,
+        sample_posts: samplePosts,
+      },
+      message: `Мало данных для fast-оценки: прочитано ${postsRead} постов из нужных минимум 5.`,
+    };
+  }
   const analysis = kroV0BuildAnalysisFromLiveParsed(payload, key);
   const textsForFast = Array.isArray(payload._sample_texts) && payload._sample_texts.length
     ? payload._sample_texts.map((x) => String(x || ''))
@@ -6601,9 +6682,9 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
   });
   analysis.basic_info = [
     `Канал: @${key}`,
+    `Тип по fast-срезу: ${fastHuman.channelType || 'серый'}.`,
     `Чем занимается канал: ${fastHuman.topicLine}`,
     `Что увидели в быстром проходе: прочитано ${postsRead} сообщений с текстом за окно до ${periodDays || 30} дней.`,
-    postsRead < 5 ? 'Постов немного, поэтому вывод предварительный и может уточниться после дочитывания ленты.' : '',
   ].filter(Boolean);
   analysis.content_behavior = [
     ...kroFormatFastCriteriaLines(fastHuman.criteria),
@@ -6661,9 +6742,7 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
       read_path: readPath,
       posts_read: postsRead,
     },
-    message: postsRead < 5
-      ? `Предварительный анализ ленты: прочитано ${postsRead} сообщений. Когда дочитаем больше постов, отчёт уточнится.`
-      : `Анализ канала завершён: прочитано ${postsRead} сообщений, обычно это занимает до 7 минут.`,
+    message: `Риск ${Math.round(risk)}/10. Тип канала: ${fastHuman.channelType || 'серый'}. Быстрый вывод построен по свежим постам.`,
   };
 }
 

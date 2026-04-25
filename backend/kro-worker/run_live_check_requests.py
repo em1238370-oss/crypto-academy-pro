@@ -36,14 +36,18 @@ def get_sheets_client():
     return build("sheets", "v4", credentials=creds, cache_discovery=False)
 
 
-def run_check_once(username, period_days=90, timeout_seconds=420):
+def run_check_once(username, period_days=30, timeout_seconds=420):
+    env = {**os.environ}
+    # Fast-режим: читаем только свежие посты и ограниченный объём.
+    env["KRO_CHECK_ONCE_MAX_MESSAGES"] = str(int(env.get("KRO_FAST_MAX_MESSAGES", "50") or "50"))
+    env["KRO_CHECK_ONCE_MIN_TEXT_POSTS"] = str(int(env.get("KRO_FAST_MIN_TEXT_POSTS", "5") or "5"))
     proc = subprocess.run(
         [sys.executable, str(SCRIPT_DIR / "check_once.py"), username, str(int(period_days))],
         cwd=str(SCRIPT_DIR),
         capture_output=True,
         text=True,
         timeout=max(30, int(timeout_seconds)),
-        env={**os.environ},
+        env=env,
     )
     for line in (proc.stdout or "").splitlines():
         line = line.strip()
@@ -107,7 +111,8 @@ def main():
 
     deadline = time.time() + 420  # быстрый анализ на главной: не дольше 7 минут
     parsed = None
-    attempts = [90, 30, 7]
+    # Fast-слой: только свежий период 7-30 дней.
+    attempts = [30, 14, 7]
     errors = []
     for idx, period_days in enumerate(attempts):
         remain = int(deadline - time.time())
