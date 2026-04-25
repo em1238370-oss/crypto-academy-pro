@@ -2944,63 +2944,116 @@ body.kro-hero-scrolled .kro-floating-nav {
    text-shadow: 0 0 24px rgba(245, 158, 11, 0.35);
 }
 .kro-check-pipeline {
+   position: relative;
    display: flex;
    flex-wrap: wrap;
    align-items: center;
-   gap: 6px 8px;
-   margin: 0 0 14px;
-   font-size: 12px;
-   font-weight: 600;
-   letter-spacing: 0.04em;
+   gap: 8px 10px;
+   margin: 0 0 16px;
+   padding: 10px 12px;
+   border-radius: 14px;
+   font-size: 11px;
+   font-weight: 700;
+   letter-spacing: 0.08em;
    text-transform: uppercase;
-   color: rgba(255, 255, 255, 0.38);
+   color: rgba(255, 255, 255, 0.44);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.015) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.07);
+   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 22px rgba(0, 0, 0, 0.2);
 }
 .kro-check-pipeline-arrow {
-   opacity: 0.45;
-   font-weight: 400;
+   opacity: 0.55;
+   font-weight: 500;
+   color: rgba(255, 255, 255, 0.45);
 }
 .kro-check-pipeline-node {
-   padding: 6px 10px;
+   position: relative;
+   padding: 7px 12px;
    border-radius: 999px;
-   border: 1px solid rgba(255, 255, 255, 0.1);
-   background: rgba(0, 0, 0, 0.2);
-   transition: border-color 0.35s ease, background 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
+   border: 1px solid rgba(255, 255, 255, 0.12);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.065) 0%, rgba(255, 255, 255, 0.02) 100%);
+   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+   transition: border-color 0.28s ease, background 0.28s ease, color 0.28s ease, box-shadow 0.28s ease, transform 0.28s ease;
+}
+.kro-check-pipeline-node::before {
+   content: "";
+   width: 6px;
+   height: 6px;
+   margin-right: 7px;
+   border-radius: 999px;
+   display: inline-block;
+   vertical-align: 1px;
+   background: rgba(255, 255, 255, 0.28);
+   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
 .kro-check-pipeline-node--on {
-   color: rgba(20, 12, 8, 0.95);
-   background: linear-gradient(180deg, rgba(251, 191, 36, 0.95) 0%, rgba(217, 119, 6, 0.88) 100%);
-   border-color: rgba(253, 224, 127, 0.45);
-   box-shadow: 0 4px 16px rgba(245, 158, 11, 0.28);
+   color: rgba(38, 22, 5, 0.94);
+   transform: translateY(-1px);
+   background: linear-gradient(180deg, rgba(253, 224, 127, 0.96) 0%, rgba(245, 158, 11, 0.88) 100%);
+   border-color: rgba(253, 224, 127, 0.55);
+   box-shadow: 0 6px 18px rgba(245, 158, 11, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.kro-check-pipeline-node--on::before {
+   background: rgba(38, 22, 5, 0.75);
+   box-shadow: 0 0 0 1px rgba(38, 22, 5, 0.35) inset, 0 0 14px rgba(245, 158, 11, 0.42);
 }
 .kro-check-progress-human {
-   margin: 0 0 10px;
-   font-size: 14px;
-   line-height: 1.45;
-   color: rgba(255, 245, 235, 0.82);
+   margin: 0 0 8px;
+   font-size: 15px;
+   line-height: 1.42;
+   color: rgba(255, 248, 238, 0.9);
+   font-weight: 500;
 }
 .kro-check-progress-note {
    margin: 0 0 14px;
    font-size: 12px;
-   line-height: 1.4;
-   color: rgba(255, 255, 255, 0.45);
+   line-height: 1.45;
+   color: rgba(255, 255, 255, 0.53);
 }
 .kro-check-progress-track {
    margin: 0;
-   padding-left: 1.15rem;
+   padding: 10px 12px;
+   list-style: none;
+   border-radius: 12px;
+   border: 1px solid rgba(255, 255, 255, 0.07);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.038) 0%, rgba(255, 255, 255, 0.014) 100%);
    font-size: 13px;
    line-height: 1.5;
-   color: rgba(255, 255, 255, 0.55);
+   color: rgba(255, 255, 255, 0.58);
+   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 .kro-check-progress-step {
-   margin-bottom: 6px;
-   transition: color 0.3s ease;
+   position: relative;
+   margin: 0;
+   padding: 6px 0 6px 18px;
+   transition: color 0.25s ease;
+}
+.kro-check-progress-step::before {
+   content: "";
+   position: absolute;
+   left: 0;
+   top: 13px;
+   width: 7px;
+   height: 7px;
+   border-radius: 999px;
+   background: rgba(255, 255, 255, 0.35);
+}
+.kro-check-progress-step + .kro-check-progress-step {
+   border-top: 1px dashed rgba(255, 255, 255, 0.06);
 }
 .kro-check-progress-step--active {
    color: rgba(253, 224, 127, 0.95);
    font-weight: 600;
 }
+.kro-check-progress-step--active::before {
+   background: rgba(253, 224, 127, 0.95);
+   box-shadow: 0 0 18px rgba(245, 158, 11, 0.4);
+}
 .kro-check-progress-step--done {
    color: rgba(167, 243, 208, 0.75);
+}
+.kro-check-progress-step--done::before {
+   background: rgba(167, 243, 208, 0.85);
 }
 
 .kro-f1-cta-heading {
