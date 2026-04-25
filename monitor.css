@@ -5806,3 +5806,55 @@ body.ch-page > main.mon-container {
   .mon-table-search { flex-direction: column; align-items: stretch; }
   .mon-search-count { margin-left: 0; }
 }
+
+/* Desktop resilience: keep monitor animations visible on desktop even when OS sets reduced motion. */
+@media (pointer: fine) and (min-width: 980px) {
+  html {
+    scroll-behavior: smooth !important;
+  }
+
+  .mon-bg-atmosphere {
+    animation: monBgAtmosphere 18s ease-in-out infinite !important;
+  }
+
+  .mon-topbar {
+    transition:
+      opacity 0.78s var(--mon-ease-soft),
+      transform 0.78s var(--mon-ease-soft) !important;
+  }
+
+  .mon-page-ready .mon-hero-copy .mon-hero-tags .mon-hero-tag {
+    animation: monHeroTagChip var(--mon-dur-reveal) var(--mon-ease-soft) both !important;
+  }
+
+  .mon-route-map .mon-route-map-list > .mon-route-map-row {
+    animation: monRouteMapRowIn var(--mon-dur-reveal) var(--mon-ease-soft) forwards !important;
+  }
+
+  .mon-reveal {
+    opacity: 0 !important;
+    transform: perspective(var(--mon-depth-perspective)) translate3d(0, var(--mon-reveal-y), 0) rotateX(var(--mon-depth-tilt)) !important;
+    filter: none !important;
+    transition:
+      opacity var(--mon-dur-reveal) var(--mon-ease-soft),
+      transform var(--mon-dur-reveal) var(--mon-ease-soft),
+      filter var(--mon-dur-reveal) var(--mon-ease-soft) !important;
+  }
+
+  .mon-reveal.mon-visible {
+    opacity: 1 !important;
+    transform: perspective(var(--mon-depth-perspective)) translate3d(0, 0, 0) rotateX(0) scale(1) !important;
+    filter: none !important;
+  }
+
+  .mon-offer.mon-reveal .mon-offer-kicker,
+  .mon-offer.mon-reveal .mon-offer-title,
+  .mon-offer.mon-reveal .mon-offer-lead,
+  .mon-offer.mon-reveal .mon-pillar,
+  .mon-offer.mon-reveal .mon-offer-focus,
+  .mon-offer.mon-reveal .mon-offer-cta-row {
+    animation: monRevealChild var(--mon-dur-reveal) var(--mon-ease-soft) both !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

@@ -843,6 +843,15 @@
   var requestPending = false;
   var monitorLoadInFlight = 0;
   var countdownTimer;
+  function monShouldReduceMotion() {
+    try {
+      var prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var forceDesktopMotion = window.matchMedia('(pointer: fine) and (min-width: 980px)').matches;
+      return prefersReduce && !forceDesktopMotion;
+    } catch (e) {
+      return false;
+    }
+  }
   /** Таймаут fetch: иначе зависший запрос оставляет requestPending=true и поллинг замирает навсегда. */
   var MONITOR_FETCH_TIMEOUT_MS = 120000;
 
@@ -2067,7 +2076,7 @@
     }
 
     var totalSrc = (meta.sources_checked || []).length;
-    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var reduceMotion = monShouldReduceMotion();
     if (reduceMotion) {
       window.__monMetricCountPending = null;
       if (window.__monMetricFallbackT) {
@@ -3090,7 +3099,7 @@
   }
 
   function initLivePassObserver() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (monShouldReduceMotion()) return;
     var sel = [
       '.mon-offer',
       '.mon-section',
@@ -3168,7 +3177,7 @@
   function initHeroScrollFade() {
     var hero = document.querySelector('.mon-hero');
     if (!hero || !window.IntersectionObserver) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (monShouldReduceMotion()) return;
     var io = new IntersectionObserver(function(entries) {
       entries.forEach(function(e) {
         document.body.classList.toggle('mon-hero-offscreen', !e.isIntersecting);
@@ -3179,7 +3188,7 @@
 
   /** Лёгкий parallax сетки фона (не трогаем слой с keyframes — mon-bg-atmosphere) */
   function initBgParallax() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (monShouldReduceMotion()) return;
     var grid = document.querySelector('.mon-bg-dot-grid');
     if (!grid) return;
     var ticking = false;
@@ -3352,7 +3361,7 @@
 
         applyHashAndExpand();
 
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        if (monShouldReduceMotion()) {
           var offR = headerOffset();
           var LR = window.__monLenis;
           if (LR && typeof LR.scrollTo === 'function') {
@@ -3405,7 +3414,7 @@
       if (sec.classList.contains('mon-offer--keywords-underline')) return;
       if (!wordsRowFullyInViewport()) return;
       sec.classList.add('mon-offer--keywords-underline');
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (monShouldReduceMotion()) {
         sec.classList.add('mon-offer--keywords-underline--instant');
       }
     }
@@ -3454,7 +3463,7 @@
     if (refreshBtn) refreshBtn.addEventListener('click', function() { loadData(true); });
     window.loadData = loadData;
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (monShouldReduceMotion()) {
       document.body.classList.add('mon-page-ready');
       var ov = document.getElementById('mon-boot-overlay');
       if (ov) ov.style.display = 'none';
