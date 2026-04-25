@@ -1336,6 +1336,12 @@ const kroHomeQuickLiveTimeoutMs =
   Number.isFinite(kroHomeQuickLiveTimeoutMsParsed) && kroHomeQuickLiveTimeoutMsParsed >= 15000 && kroHomeQuickLiveTimeoutMsParsed <= 120000
     ? kroHomeQuickLiveTimeoutMsParsed
     : 45000;
+/** Fast на главной: жёсткий end-to-end лимит выполнения и ожидания (по умолчанию 7 минут). */
+const kroAnalyzeFastMaxMsParsed = parseInt(process.env.KRO_ANALYZE_FAST_MAX_MS || '420000', 10);
+const KRO_ANALYZE_FAST_MAX_MS =
+  Number.isFinite(kroAnalyzeFastMaxMsParsed) && kroAnalyzeFastMaxMsParsed >= 60000 && kroAnalyzeFastMaxMsParsed <= 1800000
+    ? kroAnalyzeFastMaxMsParsed
+    : 420000;
 /** Глубокий анализ ленты: верхняя граница ~30 мин, горизонт до 6 мес. (periodDays 180 в вызове). */
 const kroDeepCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_DEEP_CHECK_ONCE_TIMEOUT_MS || '1800000', 10);
 const kroDeepCheckOnceTimeoutMs =
@@ -6818,6 +6824,30 @@ function kroBuildAnalyzeDoneResponse(doneRow, key) {
   return kroBuildAnalyzeResponseFromParsed(base, key, doneRow && doneRow.request_id ? doneRow.request_id : null);
 }
 
+function kroBuildAnalyzeFastTimeoutResponse(requestId, username, elapsedMs) {
+  const hardLimitSec = Math.round(KRO_ANALYZE_FAST_MAX_MS / 1000);
+  const elapsedSec = Math.max(0, Math.round(Number(elapsedMs || 0) / 1000));
+  const u = String(username || '').trim();
+  return {
+    queue_status: 'failed',
+    request_id: requestId || null,
+    username: u || null,
+    status: 'НЕДОСТУПЕН',
+    status_code: 'UNAVAILABLE',
+    read_path: 'fast_timeout',
+    posts_read: 0,
+    period_days: null,
+    message:
+      `Fast-лимит времени достигнут (${hardLimitSec} с), запрос остановлен.` +
+      ` Прошло ~${elapsedSec} с, данных для честной быстрой оценки недостаточно.`,
+    message_ru:
+      'Не хватает данных для быстрого анализа (fast до 7 минут). Для глубокого разбора включите режим deep (до ~30 минут).',
+    fast_timeout: true,
+    fast_timeout_limit_seconds: hardLimitSec,
+    elapsed_seconds: elapsedSec,
+  };
+}
+
 app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   const rawInput = String((req.body && (req.body.username || req.body.channel || req.body.url)) || '').trim();
@@ -7242,7 +7272,26 @@ app.get('/api/kro/analyze-channel/result', async (req, res) => {
     const queueRows = queueResp.data.values || [];
     const resultsRows = resultsResp.data.values || [];
 
+    const queueRow = kroCheckQueueStatusByRows(queueRows, key, requestId);
     const doneRow = kroCheckResultByRows(resultsRows, key, requestId);
+    const startedAtRaw =
+      (queueRow && queueRow.requested_at) ||
+      (doneRow && doneRow.created_at) ||
+      '';
+    const startedAtMs = Date.parse(String(startedAtRaw || ''));
+    const elapsedMs = Number.isFinite(startedAtMs) ? (Date.now() - startedAtMs) : null;
+    const fastTimedOut = Number.isFinite(elapsedMs) && elapsedMs > KRO_ANALYZE_FAST_MAX_MS;
+    if (fastTimedOut) {
+      const user = (queueRow && queueRow.username) || (doneRow && doneRow.username) || (key ? `@${key}` : '');
+      return res.status(200).json(
+        kroBuildAnalyzeFastTimeoutResponse(
+          requestId || (queueRow && queueRow.request_id) || (doneRow && doneRow.request_id) || null,
+          user,
+          elapsedMs,
+        ),
+      );
+    }
+
     if (doneRow && doneRow.status === 'done') {
       return res.status(200).json(kroBuildAnalyzeDoneResponse(doneRow, key || channelMatchKey(doneRow.username)));
     }
@@ -7259,7 +7308,6 @@ app.get('/api/kro/analyze-channel/result', async (req, res) => {
       });
     }
 
-    const queueRow = kroCheckQueueStatusByRows(queueRows, key, requestId);
     if (queueRow) {
       const requestedMs = Date.parse(String(queueRow.requested_at || ''));
       const pendingTooLong =
@@ -7317,6 +7365,13 @@ app.get('/api/kro/check-result/:id', async (req, res) => {
     const row = kroCheckRequestRowById(rows, requestId);
     if (!row) {
       return res.status(404).json({ error: 'not_found', message: 'Запрос не найден.' });
+    }
+    const reqTsMs = Date.parse(String(row.created_at || ''));
+    const fastTimedOut = Number.isFinite(reqTsMs) && (Date.now() - reqTsMs > KRO_ANALYZE_FAST_MAX_MS);
+    if (fastTimedOut) {
+      return res.status(200).json(
+        kroBuildAnalyzeFastTimeoutResponse(row.id, row.username, Date.now() - reqTsMs),
+      );
     }
     if (row.status === 'pending') {
       return res.status(200).json({
