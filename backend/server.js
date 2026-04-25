@@ -6896,6 +6896,9 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     return res.status(400).json({ error: 'bad_request', message_ru: 'Передайте username канала (t.me/username или @username).' });
   }
 
+  let queuedRequestId = null;
+  let queuedUsername = `@${key}`;
+  let queueAppendOk = false;
   try {
     const client = await getKroSheetsClient();
     if (!client || !kroSheetId) {
@@ -6903,6 +6906,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     }
     const requestId = kroCheckQueueRequestId(key);
     const username = `@${key}`;
+    queuedUsername = username;
     const nowIso = new Date().toISOString();
     await client.sheets.spreadsheets.values.append({
       spreadsheetId: kroSheetId,
@@ -6913,16 +6917,11 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         values: [[requestId, username, 'pending', '', nowIso]],
       },
     });
-    return res.status(202).json({
-      id: requestId,
-      request_id: requestId,
-      username,
-      status: 'pending',
-      message: 'Анализируем канал... обычно до 7 минут.',
-    });
+    queuedRequestId = requestId;
+    queueAppendOk = true;
   } catch (e) {
     console.error('KRO analyze-channel queue error:', e);
-    return res.status(500).json({ error: 'internal_error', message_ru: 'Не удалось поставить задачу в очередь анализа.' });
+    // Не прерываем fast: пользователь должен получить лучший доступный результат даже если deep-очередь недоступна.
   }
 
   const t0 = Date.now();
@@ -6933,6 +6932,15 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
   const minPublicSnippets = minReadablePosts;
   const minTelethonPosts = minReadablePosts;
   const analyzeLogId = `${key}:${Date.now().toString(36)}`;
+  const withQueueMeta = (payload) => ({
+    ...payload,
+    request_id: queuedRequestId,
+    deep_pending: queueAppendOk,
+    deep_status: queueAppendOk ? 'pending' : 'queue_unavailable',
+    deep_note: queueAppendOk
+      ? 'Глубокий анализ запущен параллельно через очередь.'
+      : 'Очередь deep сейчас недоступна; показан только быстрый результат.',
+  });
   console.log(`[KRO analyze-channel ${analyzeLogId}] start channel=${channelDisplay}`);
 
   const buildExternalDisclaimer = () =>
@@ -7015,7 +7023,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
 
       const postsRead = publicSnap.snippets.length;
       console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=public_snapshot posts_read=${postsRead}`);
-      return res.status(200).json({
+      return res.status(200).json(withQueueMeta({
         queue_status: 'done_sync',
         analysis,
         status: statusObj.status,
@@ -7049,7 +7057,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           elapsed_ms: Date.now() - t0,
         },
         message: `${channelDisplay} — риск ${risk}/10. ${fastHuman.summaryLine}`,
-      });
+      }));
     }
 
     const telBudget = Math.min(20000, Math.max(0, deadline - Date.now() - 800));
@@ -7110,7 +7118,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           ].filter(Boolean).slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
         };
         console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=telethon posts_read=${postsRead}`);
-        return res.status(200).json({
+        return res.status(200).json(withQueueMeta({
           queue_status: 'done_sync',
           analysis,
           status: statusObj.status,
@@ -7144,7 +7152,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
             elapsed_ms: Date.now() - t0,
           },
           message: `${channelDisplay} — риск ${risk}/10. ${fastHuman.summaryLine}`,
-        });
+        }));
       }
     }
 
@@ -7244,7 +7252,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       console.warn(`[KRO analyze-channel ${analyzeLogId}] claude_skipped_no_api_key fallback=base_watch_reports_only`);
     }
 
-    return res.status(200).json({
+    return res.status(200).json(withQueueMeta({
       queue_status: 'done_sync',
       analysis,
       status: 'НЕДОСТУПЕН',
@@ -7281,10 +7289,15 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         elapsed_ms: Date.now() - t0,
       },
       message: `${channelDisplay} — живой анализ не выполнен: удалось прочитать меньше ${minReadablePosts} нормальных сообщений, поэтому оценка канала не строится.`,
-    });
+    }));
   } catch (e) {
     console.error(`KRO analyze-channel sync error [${analyzeLogId}]:`, e);
-    return res.status(500).json({ error: 'internal_error', message_ru: 'Не удалось выполнить быстрый анализ канала.' });
+    return res.status(500).json(withQueueMeta({
+      error: 'internal_error',
+      message_ru: 'Не удалось выполнить быстрый анализ канала.',
+      message: 'Быстрый анализ временно недоступен, попробуйте ещё раз.',
+      queue_status: 'failed',
+    }));
   }
 });
 

@@ -1573,11 +1573,55 @@
               function runHomeChannelCheck(slug) {
                   ensureKroCheckPanelVisible();
                   window.__kroHomeLastSlug = slug;
+                  if (window.__kroDeepUpgradeTimer) {
+                      clearTimeout(window.__kroDeepUpgradeTimer);
+                      window.__kroDeepUpgradeTimer = null;
+                  }
                   var queryU = slugToQueryU(slug);
                   var displayLabel = displayChannelLabel(slug, queryU);
                   window.__kroHomeCheckT0 = Date.now();
                   var __kroCheckStarted = window.__kroHomeCheckT0;
                   showCheckBusy(displayLabel);
+
+                  var startDeepUpgradePoll = function (requestId, minPostsSeen) {
+                      if (!requestId) return;
+                      var startedAt = Date.now();
+                      var deepPoll = function () {
+                          fetch(base + '/api/kro/check-result/' + encodeURIComponent(requestId), { cache: 'no-store' })
+                              .then(function (res) { return res.json(); })
+                              .then(function (row) {
+                                  var st = row && row.status ? String(row.status) : '';
+                                  if (st === 'done' && row && row.analysis) {
+                                      var nextPosts = Number(row.posts_read || 0) || 0;
+                                      if (nextPosts > (Number(minPostsSeen || 0) || 0)) {
+                                          fillInlineReport(row, queryU, displayLabel, __kroCheckStarted);
+                                          var b = document.getElementById('kro-inline-done-banner');
+                                          if (b) {
+                                              b.hidden = false;
+                                              b.classList.remove('hidden');
+                                              b.className = 'kro-inline-done-banner';
+                                              b.textContent = 'Глубокий анализ догружен автоматически и обновил этот отчёт.';
+                                          }
+                                      }
+                                      window.__kroDeepUpgradeTimer = null;
+                                      return;
+                                  }
+                                  if (st === 'failed' || (Date.now() - startedAt) > 20 * 60 * 1000) {
+                                      window.__kroDeepUpgradeTimer = null;
+                                      return;
+                                  }
+                                  window.__kroDeepUpgradeTimer = setTimeout(deepPoll, 20000);
+                              })
+                              .catch(function () {
+                                  if ((Date.now() - startedAt) > 20 * 60 * 1000) {
+                                      window.__kroDeepUpgradeTimer = null;
+                                      return;
+                                  }
+                                  window.__kroDeepUpgradeTimer = setTimeout(deepPoll, 25000);
+                              });
+                      };
+                      window.__kroDeepUpgradeTimer = setTimeout(deepPoll, 20000);
+                  };
 
                   var renderHomeCheckSuccess = function (data) {
                       if (!data || typeof data !== 'object' || !data.analysis || typeof data.analysis !== 'object') throw new Error('no_analysis');
@@ -1596,6 +1640,13 @@
                       try {
                           if (inlineReport) inlineReport.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                       } catch (eScroll) { /* ignore */ }
+                      if (data && data.deep_pending === true && (data.request_id || data.id)) {
+                          var noteDeep = document.getElementById('kro-check-progress-note');
+                          if (noteDeep) {
+                              noteDeep.textContent = 'Быстрый анализ показан. Глубокий анализ уже запущен и подгрузится автоматически.';
+                          }
+                          startDeepUpgradePoll(data.request_id || data.id, Number(data.posts_read || 0) || 0);
+                      }
                   };
 
                   var pollResult = function (requestId, attempt) {
@@ -1617,6 +1668,23 @@
                                   else if (qs === 'done') note.textContent = 'Результат получен, показываем отчёт…';
                               }
                               if (qs === 'done') {
+                                  var leDone = row && row.live_evidence && typeof row.live_evidence === 'object' ? row.live_evidence : null;
+                                  if (leDone && leDone.live_pass !== true) {
+                                      window.__kroHomeCheckT0 = null;
+                                      hideCheckBusy();
+                                      checkResult.innerHTML = '<span class="kro-check-result-block">Живой анализ ленты не получен в этом запуске. Поверхностный отчёт скрыт по вашим настройкам.</span>' +
+                                          '<span class="kro-check-result-block">Нажмите «Повторить», чтобы заново запустить LIVE‑чтение Telegram.</span>' +
+                                          '<button type="button" class="kro-report-submit kro-check-retry" id="kro-check-retry">Повторить</button>';
+                                      checkResult.className = 'kro-check-result';
+                                      checkResult.classList.remove('hidden');
+                                      if (inlineReport) {
+                                          inlineReport.classList.add('hidden');
+                                          inlineReport.hidden = true;
+                                      }
+                                      var rbLive = document.getElementById('kro-check-retry');
+                                      if (rbLive) rbLive.onclick = function () { runHomeChannelCheck(window.__kroHomeLastSlug || slug); };
+                                      return;
+                                  }
                                   renderHomeCheckSuccess(row);
                                   return;
                               }
@@ -1679,6 +1747,20 @@
                               var httpErr = new Error('http_' + pack.status);
                               httpErr.serverMessage = srvMsg;
                               throw httpErr;
+                          }
+                          var leDirect = pack.data && pack.data.live_evidence && typeof pack.data.live_evidence === 'object'
+                              ? pack.data.live_evidence
+                              : null;
+                          if (leDirect && leDirect.live_pass !== true) {
+                              window.__kroHomeCheckT0 = null;
+                              hideCheckBusy();
+                              checkResult.innerHTML = '<span class="kro-check-result-block">Живой анализ ленты не получен в этом запуске. Поверхностный отчёт скрыт по вашим настройкам.</span>' +
+                                  '<button type="button" class="kro-report-submit kro-check-retry" id="kro-check-retry">Повторить</button>';
+                              checkResult.classList.remove('hidden');
+                              checkResult.className = 'kro-check-result';
+                              var rbDirect = document.getElementById('kro-check-retry');
+                              if (rbDirect) rbDirect.onclick = function () { runHomeChannelCheck(window.__kroHomeLastSlug || slug); };
+                              return;
                           }
                           renderHomeCheckSuccess(pack.data);
                       })
