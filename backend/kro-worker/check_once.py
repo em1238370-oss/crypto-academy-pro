@@ -187,6 +187,13 @@ SHAME_PHRASES = [
 
 # Критерий 9: слова убытков (если постов много и нет таких — only_profits_flag)
 LOSS_KEYWORDS = ['убыток', 'слив', 'потеря', 'минус', 'просадка', 'loss', 'drawdown']
+PROFIT_KEYWORDS = ['прибыл', 'профит', 'tp', 'take profit', 'закрыл в плюс', 'в плюс', 'profit', '+%']
+PAID_ACCESS_KEYWORDS = ['vip', 'вип', 'платн', 'подписк', 'закрытый канал', 'доступ в канал', 'доступ в клуб']
+GUARANTEE_KEYWORDS = ['гарантия', 'гарантир', '100%', 'без риска', 'без потерь', 'точно заработа', 'безубыточно']
+URGENCY_KEYWORDS = ['только сегодня', 'осталось мест', 'не упусти', 'успей', 'срочно', 'последний шанс', 'только до']
+MARKET_DOWNTURN_KEYWORDS = ['рынок падает', 'падение рынка', 'коррекция', 'слили', 'пролив', 'медвеж', 'просадка рынка']
+RISK_MANAGEMENT_KEYWORDS = ['стоп', 'stop', 'sl', 'stop-loss', 'риск', 'риск-менедж', 'не более', 'фиксирую убыток']
+LOGIC_KEYWORDS = ['почему', 'логика', 'аргумент', 'обосн', 'сценарий', 'план', 'потому что', 'зона интереса']
 
 # -----------------------------------------------------------------------
 # 3-уровневая система риска
@@ -625,6 +632,133 @@ def _extract_promoted_channels(texts):
     return lst, len(lst)
 
 
+def _contains_any_keyword(text, keywords):
+    low = (text or '').lower()
+    return any(kw in low for kw in keywords)
+
+
+def _count_posts_by_keywords(texts, keywords):
+    count = 0
+    for t in texts or []:
+        if _contains_any_keyword(t, keywords):
+            count += 1
+    return count
+
+
+def _pick_quotes_by_keywords(texts, keywords, limit=3):
+    quotes = []
+    for t in texts or []:
+        if not _contains_any_keyword(t, keywords):
+            continue
+        sn = (t or '').strip().replace('\n', ' ')
+        if not sn:
+            continue
+        quotes.append(sn[:220])
+        if len(quotes) >= limit:
+            break
+    return quotes
+
+
+def _split_time_buckets(messages_with_dates):
+    dated = []
+    for text, msg_date in messages_with_dates or []:
+        if not text:
+            continue
+        dt = msg_date
+        if dt is not None and getattr(dt, 'tzinfo', None) is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        dated.append((text, dt))
+    if len(dated) < 6:
+        texts = [t for t, _ in dated]
+        return texts, texts
+    dated = sorted(dated, key=lambda x: x[1] or datetime.min.replace(tzinfo=timezone.utc))
+    n = len(dated)
+    early = [t for t, _ in dated[:max(3, n // 3)]]
+    recent = [t for t, _ in dated[-max(3, n // 3):]]
+    return early, recent
+
+
+def _infer_paid_access_start_phase(messages_with_dates):
+    if not messages_with_dates:
+        return 'unknown'
+    dated = []
+    for text, msg_date in messages_with_dates:
+        if not text:
+            continue
+        dt = msg_date
+        if dt is not None and getattr(dt, 'tzinfo', None) is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        dated.append((text, dt))
+    if len(dated) < 6:
+        return 'unknown'
+    dated = sorted(dated, key=lambda x: x[1] or datetime.min.replace(tzinfo=timezone.utc))
+    first_idx = None
+    for idx, (text, _) in enumerate(dated):
+        if _contains_any_keyword(text, PAID_ACCESS_KEYWORDS):
+            first_idx = idx
+            break
+    if first_idx is None:
+        return 'not_seen'
+    ratio = first_idx / max(1, len(dated))
+    if ratio <= 0.33:
+        return 'early'
+    if ratio >= 0.66:
+        return 'late'
+    return 'middle'
+
+
+def _sales_pressure_score(texts):
+    if not texts:
+        return 0
+    total = 0
+    for t in texts:
+        low = (t or '').lower()
+        score = 0
+        if any(k in low for k in URGENCY_KEYWORDS):
+            score += 1
+        if any(k in low for k in PAID_ACCESS_KEYWORDS):
+            score += 1
+        if any(k in low for k in GUARANTEE_KEYWORDS):
+            score += 1
+        total += score
+    return round((total / max(1, len(texts))) * 100)
+
+
+def _build_deep_channel_metrics(texts, messages_with_dates):
+    early_texts, recent_texts = _split_time_buckets(messages_with_dates)
+    profits_count = _count_posts_by_keywords(texts, PROFIT_KEYWORDS)
+    losses_count = _count_posts_by_keywords(texts, LOSS_KEYWORDS)
+    urgency_count = _count_posts_by_keywords(texts, URGENCY_KEYWORDS)
+    paid_count = _count_posts_by_keywords(texts, PAID_ACCESS_KEYWORDS)
+    guarantee_count = _count_posts_by_keywords(texts, GUARANTEE_KEYWORDS)
+    market_drop_count = _count_posts_by_keywords(texts, MARKET_DOWNTURN_KEYWORDS)
+    risk_mgmt_count = _count_posts_by_keywords(texts, RISK_MANAGEMENT_KEYWORDS)
+    logic_count = _count_posts_by_keywords(texts, LOGIC_KEYWORDS)
+    early_sales = _sales_pressure_score(early_texts)
+    recent_sales = _sales_pressure_score(recent_texts)
+    return {
+        'profits_posts_count': profits_count,
+        'losses_posts_count': losses_count,
+        'urgency_posts_count': urgency_count,
+        'paid_access_mentions_count': paid_count,
+        'guarantee_mentions_count': guarantee_count,
+        'market_downturn_posts_count': market_drop_count,
+        'risk_management_posts_count': risk_mgmt_count,
+        'logic_explained_posts_count': logic_count,
+        'paid_access_start_phase': _infer_paid_access_start_phase(messages_with_dates),
+        'sales_tone_early_score': early_sales,
+        'sales_tone_recent_score': recent_sales,
+        'sales_tone_became_more_aggressive': recent_sales > (early_sales + 15),
+        'profit_vs_loss_quotes': (
+            _pick_quotes_by_keywords(texts, PROFIT_KEYWORDS, limit=2)
+            + _pick_quotes_by_keywords(texts, LOSS_KEYWORDS, limit=2)
+        )[:4],
+        'urgency_quotes': _pick_quotes_by_keywords(texts, URGENCY_KEYWORDS, limit=3),
+        'paid_access_quotes': _pick_quotes_by_keywords(texts, PAID_ACCESS_KEYWORDS, limit=3),
+        'guarantee_quotes': _pick_quotes_by_keywords(texts, GUARANTEE_KEYWORDS, limit=3),
+    }
+
+
 def _bot_ratio_from_pct(bot_pct_str):
     """Из строки "N%" или "—" извлечь число 0–100."""
     if not bot_pct_str or bot_pct_str.strip() == '—':
@@ -681,6 +815,60 @@ def _fetch_tgstat(channel_id_for_api):
     except (URLError, HTTPError, ValueError, KeyError, OSError):
         pass
     return out_result
+
+
+def _load_known_scam_usernames(limit_rows=400):
+    client = _get_sheets_client()
+    if not client:
+        return []
+    try:
+        response = client.spreadsheets().values().get(
+            spreadsheetId=KRO_SHEET_ID,
+            range=f'{SCAM_BASE_SHEET_NAME}!A2:A{limit_rows + 1}'
+        ).execute()
+    except Exception:
+        return []
+    out = []
+    seen = set()
+    for row in response.get('values', []):
+        raw = str(row[0] if row else '').strip()
+        if not raw:
+            continue
+        key = _normalize_channel_key(raw)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append('@' + key)
+    return out
+
+
+def _build_scam_similarity_label(deep_metrics):
+    dm = deep_metrics or {}
+    score = 0
+    if (dm.get('profits_posts_count') or 0) >= 6 and (dm.get('losses_posts_count') or 0) <= 1:
+        score += 30
+    if (dm.get('urgency_posts_count') or 0) >= 3:
+        score += 20
+    if (dm.get('paid_access_mentions_count') or 0) >= 3:
+        score += 20
+    if (dm.get('guarantee_mentions_count') or 0) >= 2:
+        score += 20
+    if (dm.get('risk_management_posts_count') or 0) <= 1:
+        score += 10
+    score = min(100, score)
+    known_scams = _load_known_scam_usernames()
+    exemplar = '@ton618_crypto' if '@ton618_crypto' in known_scams else (known_scams[0] if known_scams else '')
+    if exemplar and score >= 60:
+        label = f'Этот канал ведёт себя похоже на {exemplar} который подтверждён как скам.'
+    elif score >= 45:
+        label = 'Поведение канала частично похоже на шаблоны известных скам-каналов из нашей базы.'
+    else:
+        label = 'Явного совпадения с шаблонами известных скам-каналов не видно.'
+    return {
+        'score': score,
+        'exemplar_channel': exemplar,
+        'label': label,
+    }
 
 
 def _flood_wait_response(exc: BaseException) -> dict | None:
@@ -827,6 +1015,13 @@ async def run_check(channel_id, period_days=30):
             snippet = (t or '').strip().replace('\n', ' ')[:200]
             if snippet:
                 sample_posts.append(snippet)
+        deep_metrics = _build_deep_channel_metrics(texts, messages_with_dates)
+        scam_similarity = _build_scam_similarity_label(deep_metrics)
+        for q in (deep_metrics.get('urgency_quotes') or [])[:2]:
+            if len(sample_posts) >= 7:
+                break
+            if q and q not in sample_posts:
+                sample_posts.append(q)
 
         result_obj = {
             'found': True,
@@ -859,6 +1054,8 @@ async def run_check(channel_id, period_days=30):
             'has_signal_offer': has_signal_offer,
             '_sample_texts': texts[:20],
             'sample_posts': sample_posts,
+            'deep_metrics': deep_metrics,
+            'scam_similarity': scam_similarity,
         }
         return result_obj
     except FloodWaitError as e:

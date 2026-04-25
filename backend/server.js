@@ -4820,12 +4820,37 @@ function kroMapFastRisk10ToUiStatus(score10) {
   return { status: 'БЕЗОПАСНО', code: 'SAFE' };
 }
 
+function kroDeepMetric(payload, field) {
+  const dm = payload && payload.deep_metrics && typeof payload.deep_metrics === 'object'
+    ? payload.deep_metrics
+    : {};
+  const n = Number(dm[field]);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
   const p = payload && typeof payload === 'object' ? payload : {};
   const meta = opts && typeof opts === 'object' ? opts : {};
   const risk = Number(fastHuman && fastHuman.score10);
   const postsRead = Number(meta.postsRead || p.posts_fetched || 0) || 0;
   const periodDays = Number(meta.periodDays || p.analysis_window_days || 0) || null;
+  const profitsCount = kroDeepMetric(p, 'profits_posts_count');
+  const lossesCount = kroDeepMetric(p, 'losses_posts_count');
+  const urgencyCount = kroDeepMetric(p, 'urgency_posts_count');
+  const paidCount = kroDeepMetric(p, 'paid_access_mentions_count');
+  const guaranteeCount = kroDeepMetric(p, 'guarantee_mentions_count');
+  const marketDownCount = kroDeepMetric(p, 'market_downturn_posts_count');
+  const riskMgmtCount = kroDeepMetric(p, 'risk_management_posts_count');
+  const logicCount = kroDeepMetric(p, 'logic_explained_posts_count');
+  const earlySales = kroDeepMetric(p, 'sales_tone_early_score');
+  const recentSales = kroDeepMetric(p, 'sales_tone_recent_score');
+  const scamSimilarity = p.scam_similarity && typeof p.scam_similarity === 'object' ? p.scam_similarity : null;
+  const paidPhaseRaw = String((p.deep_metrics && p.deep_metrics.paid_access_start_phase) || '').toLowerCase();
+  const paidPhase = paidPhaseRaw === 'early'
+    ? 'в начале жизни канала'
+    : (paidPhaseRaw === 'late'
+      ? 'заметно позже, не сразу'
+      : (paidPhaseRaw === 'middle' ? 'в середине периода' : 'по текущей выборке это не видно'));
   let verdict = 'БЕЗОПАСНЫЙ';
   let verdictColor = 'green';
   let headline = 'Пока всё чисто. Но крипта это всегда риск.';
@@ -4858,11 +4883,20 @@ function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
     facts.push('В постах есть торговые идеи или сигналы. Это не всегда плохо, но без объяснения риска люди часто копируют сделки вслепую.');
   }
   if (p.only_profits_flag === true) {
-    facts.push('Канал чаще показывает удачные сделки, чем убытки. Так легко создать ощущение, что заработать проще, чем на самом деле.');
+    facts.push(`В выборке перекос в сторону прибыли: постов про прибыль ${profitsCount}, про убытки ${lossesCount}. Это красный флаг, если минусы почти не показывают.`);
   }
   const fomoPct = Number(p.fomo_pct);
   if (Number.isFinite(fomoPct) && fomoPct >= 20) {
     facts.push(`Встречается давление и срочность примерно в ${Math.round(fomoPct)}% постов — это тревожный сигнал.`);
+  }
+  if (urgencyCount > 0 && facts.length < 3) {
+    facts.push(`Найдено ${urgencyCount} постов с давлением на срочность («только сегодня», «не упусти», «осталось мест»).`);
+  }
+  if (logicCount > 0 && facts.length < 3) {
+    facts.push(`Есть ${logicCount} постов с объяснением логики входа. Это лучше, чем просто отчёты о результате без причин.`);
+  }
+  if (riskMgmtCount <= 1 && facts.length < 3) {
+    facts.push('Риск-менеджмент почти не встречается: стопы и ограничения риска объясняются редко.');
   }
   for (const line of (fastHuman && Array.isArray(fastHuman.criteria) ? fastHuman.criteria : [])) {
     if (facts.length >= 3) break;
@@ -4881,11 +4915,37 @@ function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
   }
 
   const sample = Array.isArray(p.sample_posts) ? p.sample_posts.map((x) => String(x || '').trim()).filter(Boolean) : [];
-  const quotes = sample.slice(0, 5);
-  const readSummary = `Прочитано ${postsRead} постов за ${periodDays || 90} дней.`;
+  const deepQuotes = [];
+  const dm = p.deep_metrics && typeof p.deep_metrics === 'object' ? p.deep_metrics : {};
+  for (const field of ['urgency_quotes', 'paid_access_quotes', 'guarantee_quotes', 'profit_vs_loss_quotes']) {
+    const arr = Array.isArray(dm[field]) ? dm[field] : [];
+    for (const q of arr) {
+      const t = String(q || '').trim();
+      if (!t) continue;
+      if (!deepQuotes.includes(t)) deepQuotes.push(t);
+      if (deepQuotes.length >= 5) break;
+    }
+    if (deepQuotes.length >= 5) break;
+  }
+  const quotes = (deepQuotes.length ? deepQuotes : sample).slice(0, 5);
+  const readSummary = [
+    `Прочитано ${postsRead} постов за ${periodDays || 90} дней.`,
+    `Постов про прибыль: ${profitsCount}. Про убытки: ${lossesCount}.`,
+    `Упоминаний «VIP/платный доступ/подписка»: ${paidCount}. Упоминаний «гарантия/100%/без риска»: ${guaranteeCount}.`,
+    `Рынок и просадки обсуждаются в ${marketDownCount} постах.`,
+  ].join(' ');
   const simpleConclusion = fastHuman && fastHuman.summaryLine
-    ? fastHuman.summaryLine
-    : 'Вывод построен по тексту прочитанных сообщений канала.';
+    ? `${fastHuman.summaryLine} Продажный тон: в начале ${earlySales}/100, сейчас ${recentSales}/100. Платный доступ стал активно продвигаться ${paidPhase}.`
+    : `Вывод построен по тексту прочитанных сообщений канала. Продажный тон: в начале ${earlySales}/100, сейчас ${recentSales}/100.`;
+
+  if (scamSimilarity && scamSimilarity.label) {
+    finalAdvice = `${finalAdvice} ${String(scamSimilarity.label)}`.trim();
+  }
+  if (Number(p.channel_age_days) > 0 && Number(p.channel_age_days) < 90 && paidCount >= 3) {
+    finalAdvice = 'Подожди 3 месяца. Если канал честный — он никуда не денется. Если исчезнет — ты сохранил деньги.';
+  } else if (riskMgmtCount <= 1) {
+    finalAdvice = 'Попроси автора показать свои убыточные сделки и правила риска. Честный трейдер не боится этого вопроса.';
+  }
 
   return {
     verdict,
@@ -4898,6 +4958,19 @@ function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
     quotes,
     simple_conclusion: simpleConclusion,
     final_advice: finalAdvice,
+    numbers: {
+      profits_posts_count: profitsCount,
+      losses_posts_count: lossesCount,
+      urgency_posts_count: urgencyCount,
+      paid_access_mentions_count: paidCount,
+      guarantee_mentions_count: guaranteeCount,
+    },
+    time_analysis: {
+      paid_access_start_phase: paidPhase,
+      sales_tone_early_score: earlySales,
+      sales_tone_recent_score: recentSales,
+    },
+    scam_similarity: scamSimilarity,
   };
 }
 
@@ -6457,10 +6530,16 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
   ].filter(Boolean);
   analysis.content_behavior = [
     ...kroFormatFastCriteriaLines(fastHuman.criteria),
+    `Постов про прибыль: ${userReport.numbers && userReport.numbers.profits_posts_count != null ? userReport.numbers.profits_posts_count : 0}; про убытки: ${userReport.numbers && userReport.numbers.losses_posts_count != null ? userReport.numbers.losses_posts_count : 0}.`,
+    `Упоминаний VIP/платного доступа: ${userReport.numbers && userReport.numbers.paid_access_mentions_count != null ? userReport.numbers.paid_access_mentions_count : 0}; гарантий/100%/без риска: ${userReport.numbers && userReport.numbers.guarantee_mentions_count != null ? userReport.numbers.guarantee_mentions_count : 0}.`,
+    `Динамика продажного тона: было ${userReport.time_analysis && userReport.time_analysis.sales_tone_early_score != null ? userReport.time_analysis.sales_tone_early_score : 0}/100, стало ${userReport.time_analysis && userReport.time_analysis.sales_tone_recent_score != null ? userReport.time_analysis.sales_tone_recent_score : 0}/100.`,
     ...fastHuman.citations.map((x) => `Пример из ленты: «${String(x).slice(0, 220)}»`),
   ].slice(0, 8);
   analysis.external_reports = ['Результат построен только по прочитанным сообщениям канала через Telethon из GitHub Actions.'];
   analysis.ties_risk_factors = ['Внешние базы не использовались как основа статуса — только текст канала.'];
+  if (userReport.scam_similarity && userReport.scam_similarity.label) {
+    analysis.ties_risk_factors.push(String(userReport.scam_similarity.label));
+  }
   analysis.conclusion = {
     status: kroMapFastRisk10ToConclusion(risk, { forceScam: String(payload.risk_verdict || '').toLowerCase() === 'scam' }),
     reasons: [`Риск ${risk}/10: ${fastHuman.summaryLine}`, ...fastHuman.reasons].slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
