@@ -7967,8 +7967,32 @@ button:not(.chat-button):not(.send-button):focus {
    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
 }
 
-.kro-check-mascot-shape {
-   fill: url(#kro-check-mascot-grad);
+.kro-check-coin-core {
+   fill: url(#kro-check-btc-grad);
+}
+
+.kro-check-coin-ring {
+   fill: none;
+   stroke: rgba(255, 243, 200, 0.78);
+   stroke-width: 1.2;
+}
+
+.kro-check-coin-symbol {
+   fill: rgba(49, 28, 4, 0.92);
+   font-size: 13px;
+   font-weight: 800;
+   text-anchor: middle;
+   dominant-baseline: middle;
+   font-family: "Manrope", "Inter", sans-serif;
+}
+
+.kro-check-eth-shape {
+   fill: url(#kro-check-eth-grad);
+   opacity: 0.95;
+}
+
+.kro-check-eth-shape--low {
+   opacity: 0.7;
 }
 
 @keyframes kro-check-timer-aurora {
@@ -8013,19 +8037,13 @@ button:not(.chat-button):not(.send-button):focus {
 
 @keyframes kro-check-mascot-run {
    0% {
-      transform: translateX(4px) translateY(0) scaleX(1);
-   }
-   48% {
-      transform: translateX(calc(100% - 44px)) translateY(-1px) scaleX(1);
+      transform: translateX(4px) translateY(0);
    }
    50% {
-      transform: translateX(calc(100% - 44px)) translateY(0) scaleX(-1);
-   }
-   98% {
-      transform: translateX(4px) translateY(-1px) scaleX(-1);
+      transform: translateX(calc(100% - 52px)) translateY(-1px);
    }
    100% {
-      transform: translateX(4px) translateY(0) scaleX(1);
+      transform: translateX(4px) translateY(0);
    }
 }
 
@@ -8074,7 +8092,7 @@ button:not(.chat-button):not(.send-button):focus {
 
    .kro-check-mascot {
       animation: kro-check-mascot-run 4.8s ease-in-out infinite !important;
-      transform: translateX(4px) translateY(0) scaleX(1) !important;
+      transform: translateX(4px) translateY(0) !important;
    }
 }
 
