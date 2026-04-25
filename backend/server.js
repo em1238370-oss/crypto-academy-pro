@@ -6821,7 +6821,46 @@ function kroBuildAnalyzeDoneResponse(doneRow, key) {
   if (!base.read_path && doneRow && doneRow.read_path) {
     base.read_path = doneRow.read_path;
   }
-  return kroBuildAnalyzeResponseFromParsed(base, key, doneRow && doneRow.request_id ? doneRow.request_id : null);
+  const response = kroBuildAnalyzeResponseFromParsed(base, key, doneRow && doneRow.request_id ? doneRow.request_id : null);
+  const readPath = String((response && response.read_path) || '').trim().toLowerCase();
+  const postsRead = Number(response && response.posts_read);
+  const livePass = response && response.live_evidence && response.live_evidence.live_pass === true;
+  const livePathAllowed =
+    readPath === 'telethon' ||
+    readPath === 'public_snapshot' ||
+    readPath === 'public_content_fallback';
+  const liveEnough = Number.isFinite(postsRead) && postsRead >= 5;
+  // Принцип для главной: без живого чтения постов не выдаём «успешный быстрый анализ».
+  if (!livePass || !livePathAllowed || !liveEnough) {
+    return {
+      queue_status: 'failed',
+      request_id: response && response.request_id ? response.request_id : (doneRow && doneRow.request_id ? doneRow.request_id : null),
+      status: 'НЕДОСТУПЕН',
+      status_code: 'UNAVAILABLE',
+      posts_read: Number.isFinite(postsRead) ? postsRead : 0,
+      period_days: response && response.period_days != null ? response.period_days : null,
+      read_path: readPath || 'unknown',
+      fast_live_required: true,
+      message:
+        'Живой анализ канала не получился в этом запуске. Для честного вывода нужно минимум 5 текстовых постов. ' +
+        'Попробуйте снова или запустите deep-разбор на странице канала.',
+      message_ru:
+        'Не удалось выполнить живой анализ канала. Для быстрого вывода нужно минимум 5 текстовых постов; иначе используйте deep (до ~30 минут).',
+      live_evidence: {
+        live_pass: false,
+        mode: readPath || 'unknown',
+        reason:
+          Number.isFinite(postsRead) && postsRead > 0
+            ? `Прочитано ${postsRead} постов, этого недостаточно для живого fast-вывода.`
+            : 'Посты канала не прочитаны в живом режиме.',
+        sample_posts:
+          response && response.live_evidence && Array.isArray(response.live_evidence.sample_posts)
+            ? response.live_evidence.sample_posts.slice(0, 2)
+            : [],
+      },
+    };
+  }
+  return response;
 }
 
 function kroBuildAnalyzeFastTimeoutResponse(requestId, username, elapsedMs) {
