@@ -302,8 +302,32 @@
                            <div class="kro-check-progress-main">
                                <p class="kro-check-progress-title" id="kro-check-progress-title"></p>
                                <div class="kro-check-elapsed-row" aria-live="polite">
-                                   <span class="kro-check-elapsed-label" id="kro-check-timer-caption">Идёт проверка канала · прошло</span>
-                                   <span class="kro-check-elapsed-digits" id="kro-check-elapsed">0:00</span>
+                                   <div class="kro-check-elapsed-showcase">
+                                       <span class="kro-check-elapsed-label" id="kro-check-timer-caption">Идёт проверка канала · прошло</span>
+                                       <div class="kro-check-elapsed-clock">
+                                           <span class="kro-check-elapsed-digits" id="kro-check-elapsed">0:00</span>
+                                           <div class="kro-check-mascot-lane" aria-hidden="true">
+                                               <span class="kro-check-mascot-lane-glow"></span>
+                                               <span class="kro-check-mascot">
+                                                   <svg class="kro-check-mascot-svg" width="40" height="24" viewBox="0 0 52 28" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+                                                       <defs>
+                                                           <linearGradient id="kro-check-mascot-grad" x1="0" y1="0" x2="52" y2="28" gradientUnits="userSpaceOnUse">
+                                                               <stop stop-color="#fde68a" />
+                                                               <stop offset="1" stop-color="#d97706" />
+                                                           </linearGradient>
+                                                       </defs>
+                                                       <g class="kro-check-mascot-shape">
+                                                           <ellipse cx="22" cy="18" rx="14" ry="7.5" />
+                                                           <circle cx="36" cy="14" r="7" />
+                                                           <path d="M31 7.5 33 3l4 4.5-3.2 2.2L31 7.5z" />
+                                                           <path d="M40 8l3.5-3 2.2 5.8-3.8 1.4L40 8z" />
+                                                           <path d="M6 17.5c3.5-5.5 7-2 9.5 2.2-5.5 1.8-9.5-1.8-9.5-2.2z" />
+                                                       </g>
+                                                   </svg>
+                                               </span>
+                                           </div>
+                                       </div>
+                                   </div>
                                </div>
                                <div class="kro-check-pipeline" id="kro-check-pipeline" aria-hidden="true">
                                    <span class="kro-check-pipeline-node" data-kro-pipe="0">Канал</span>
