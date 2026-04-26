@@ -84,20 +84,45 @@ USER_AGENT_CHROME = (
 )
 REQUEST_DELAY = 3
 HOURS_12 = 12
-DAYS_14 = 14   # критерий: канал младше 14 дней
+DAYS_14 = 14   # критерий: канал младше 14 дней (скoring); TGStat «новые» см. KRO_TGSTAT_NEW_MAX_AGE_DAYS
+
+
+def _kro_broad_discovery_enabled():
+    v = (os.environ.get('KRO_BROAD_DISCOVERY') or '1').strip().lower()
+    return v not in ('0', 'false', 'no', 'off')
 VIP_MIN = 10000   # порог VIP/рекламы, ₽
 GROWTH_MIN = 500  # порог роста подписчиков/сутки
 SEARCH_QUERY_VARIANTS = {
-    'сигналы/сделки': ['crypto signals', 'сигналы криптовалюта', 'long short crypto'],
-    'доход/чудеса': ['profit crypto vip', 'заработок крипта', 'без риска крипта'],
-    'VIP/приват': ['VIP crypto signals', 'закрытый канал крипта', 'private crypto signals'],
-    'азарт/риск': ['плечо крипта сигнал', 'отбить убыток крипта', 'high risk crypto signal'],
+    'сигналы/сделки': [
+        'crypto signals', 'сигналы криптовалюта', 'long short crypto',
+        'bitcoin signals telegram', 'altcoin signals channel',
+    ],
+    'доход/чудеса': [
+        'profit crypto vip', 'заработок крипта', 'без риска крипта',
+        'крипто сигналы телеграм', 'заработок на крипте канал',
+    ],
+    'VIP/приват': [
+        'VIP crypto signals', 'закрытый канал крипта', 'private crypto signals',
+        'premium crypto signals telegram', 'закрытая группа крипто сигналы',
+    ],
+    'азарт/риск': [
+        'плечо крипта сигнал', 'отбить убыток крипта', 'high risk crypto signal',
+        'futures signals telegram', 'маржинальная торговля сигналы',
+    ],
+    'defi/nft/airdrop': [
+        'defi telegram signals', 'nft crypto telegram channel', 'airdrop crypto telegram',
+    ],
+    'обучение': [
+        'крипто курс телеграм', 'обучение трейдингу telegram channel', 'крипто наставник канал',
+    ],
 }
 TGSTAT_SEARCH_URL = 'https://tgstat.ru/search?query=%s&sort=date'
 TELEGA_CATALOG_URL = 'https://telega.io/catalog/cryptocurrencies'
 WEB_SEARCH_URLS = [
     'https://duckduckgo.com/html/?q=telegram+crypto+signals+vip',
     'https://duckduckgo.com/html/?q=best+telegram+crypto+signals',
+    'https://duckduckgo.com/html/?q=crypto+scam+telegram+channel+review',
+    'https://duckduckgo.com/html/?q=VIP+crypto+signals+telegram+отзывы',
 ]
 
 # Итоговые правила для документа Source & Data (ТЗ раздел 8):
@@ -341,6 +366,7 @@ STRONG_CRYPTO_SIGNAL = (
     'сигнал', 'сигналы', 'крипто', 'crypto', 'bitcoin', 'btc', 'eth',
     'трейдинг', 'trading', 'trader', 'trade', 'криптовалюта', 'фьючерс', 'биржа', 'pump', 'скам',
     'chart', 'график', 'анализ', 'analysis', 'прогноз', 'forecast',
+    'defi', 'nft', 'airdrop', 'staking', 'альткоин', 'altcoin', 'usdt', 'ton', 'sol',
 )
 # Торговый/сигнальный контекст (лонг-шорт или явные сигналы, или нейтральный трейдинг-контент)
 SIGNAL_DIRECTION = (
@@ -365,13 +391,15 @@ def _is_crypto_signal_channel(title, username):
     has_strong = any(kw in text for kw in STRONG_CRYPTO_SIGNAL)
     if not has_strong:
         return False
-    has_signal_direction = any(kw in text for kw in SIGNAL_DIRECTION)
-    if not has_signal_direction:
-        return False
     if any(n in text for n in NOT_CRYPTO_SIGNAL):
         explicit_crypto = ('крипто', 'crypto', 'bitcoin', 'btc', 'eth', 'сигнал', 'криптовалюта')
         if not any(e in text for e in explicit_crypto):
             return False
+    if _kro_broad_discovery_enabled():
+        return True
+    has_signal_direction = any(kw in text for kw in SIGNAL_DIRECTION)
+    if not has_signal_direction:
+        return False
     return True
 
 # --- TGStat search: именно каналы с крипто-сигналами ---
@@ -384,10 +412,21 @@ def fetch_tgstat_new_channels():
     seen = set()
     out = []
     now = datetime.now(timezone.utc)
-    cutoff_14d = now - timedelta(days=DAYS_14)
+    try:
+        max_age_days = int((os.environ.get('KRO_TGSTAT_NEW_MAX_AGE_DAYS') or '21').strip() or '21')
+    except ValueError:
+        max_age_days = 21
+    max_age_days = max(7, min(45, max_age_days))
+    cutoff_new = now - timedelta(days=max_age_days)
+    tgstat_limit = 80
+    try:
+        tgstat_limit = int((os.environ.get('KRO_TGSTAT_SEARCH_LIMIT') or '80').strip() or '80')
+    except ValueError:
+        tgstat_limit = 80
+    tgstat_limit = max(20, min(120, tgstat_limit))
     for group, queries in SEARCH_QUERY_VARIANTS.items():
         for query in queries:
-            items = search_channels(query, country='ru', limit=50)
+            items = search_channels(query, country='ru', limit=tgstat_limit)
             source_url = TGSTAT_SEARCH_URL % quote(query)
             for x in items:
                 created_at = x.get('created_at')
@@ -395,7 +434,7 @@ def fetch_tgstat_new_channels():
                     continue
                 try:
                     created_dt = datetime.fromtimestamp(created_at, tz=timezone.utc)
-                    if created_dt < cutoff_14d:
+                    if created_dt < cutoff_new:
                         continue
                 except (TypeError, OSError):
                     continue
@@ -421,7 +460,13 @@ def fetch_tgstat_new_channels():
                     'evidence_links': [source_url, x.get('link') or ('https://t.me/' + (ch or '').lstrip('@'))],
                 })
     out.sort(key=lambda r: r.get('date', ''), reverse=True)
-    return out[:50]
+    cap_new = 100
+    try:
+        cap_new = int((os.environ.get('KRO_TGSTAT_NEW_CAP') or '100').strip() or '100')
+    except ValueError:
+        cap_new = 100
+    cap_new = max(30, min(200, cap_new))
+    return out[:cap_new]
 
 
 def fetch_tgstat_watch_channels():
@@ -434,9 +479,15 @@ def fetch_tgstat_watch_channels():
     out = []
     now = datetime.now(timezone.utc)
     cutoff_watch = now - timedelta(days=WATCH_MIN_AGE_DAYS)
+    tgstat_limit_w = 80
+    try:
+        tgstat_limit_w = int((os.environ.get('KRO_TGSTAT_SEARCH_LIMIT') or '80').strip() or '80')
+    except ValueError:
+        tgstat_limit_w = 80
+    tgstat_limit_w = max(20, min(120, tgstat_limit_w))
     for group, queries in SEARCH_QUERY_VARIANTS.items():
         for query in queries:
-            items = search_channels(query, country='ru', limit=50)
+            items = search_channels(query, country='ru', limit=tgstat_limit_w)
             source_url = TGSTAT_SEARCH_URL % quote(query)
             for x in items:
                 created_at = x.get('created_at')
@@ -470,7 +521,7 @@ def fetch_tgstat_watch_channels():
                     'evidence_links': [source_url, x.get('link') or ('https://t.me/' + (ch or '').lstrip('@'))],
                 })
     out.sort(key=lambda r: r.get('date', ''), reverse=True)
-    return out[:80]
+    return out[:120]
 
 
 # --- Telega.io catalog ---
@@ -614,7 +665,21 @@ _TELEGRAM_SEARCH_QUERIES = [
     'private crypto signals vip',
     'криптовалюта сигналы заработок',
     'crypto vip сигналы торговля',
+    'bitcoin trading signals telegram',
+    'altcoin signals channel',
+    'defi nft crypto telegram',
+    'крипто обучение сигналы',
+    'фьючерсы крипто сигналы',
 ]
+
+
+def _telegram_search_request_limit():
+    try:
+        v = int((os.environ.get('KRO_TELEGRAM_SEARCH_LIMIT') or '80').strip() or '80')
+    except ValueError:
+        v = 80
+    return max(20, min(100, v))
+
 
 # Каналы-исключения: известные анти-скам проекты, биржи, агрегаторы
 # и служебные username. Они никогда не должны попадать в scam_base,
@@ -738,7 +803,7 @@ async def _search_new_channels_via_telegram(client, days_max=30):
 
     for query in _TELEGRAM_SEARCH_QUERIES:
         try:
-            result = await client(SearchRequest(q=query, limit=50))
+            result = await client(SearchRequest(q=query, limit=_telegram_search_request_limit()))
             for chat in (getattr(result, 'chats', None) or []):
                 username = (getattr(chat, 'username', None) or '').strip().lower()
                 if not username:
@@ -755,10 +820,12 @@ async def _search_new_channels_via_telegram(client, days_max=30):
                 if created < cutoff:
                     continue
                 title = (getattr(chat, 'title', None) or '').strip()
-                if (
-                    (not _has_signal_keywords(title) and not _has_signal_keywords('@' + username))
-                    or (not _has_crypto_context(title) and not _has_crypto_context('@' + username))
-                ):
+                sig_ok = _has_signal_keywords(title) or _has_signal_keywords('@' + username)
+                cry_ok = _has_crypto_context(title) or _has_crypto_context('@' + username)
+                if _kro_broad_discovery_enabled():
+                    if not (sig_ok or cry_ok):
+                        continue
+                elif not sig_ok or not cry_ok:
                     continue
                 seen.add(username)
                 ages[username] = created
@@ -824,7 +891,7 @@ async def _search_watch_channels_via_telegram(client, days_min=30):
 
     for query in _TELEGRAM_SEARCH_QUERIES:
         try:
-            result = await client(SearchRequest(q=query, limit=50))
+            result = await client(SearchRequest(q=query, limit=_telegram_search_request_limit()))
             for chat in (getattr(result, 'chats', None) or []):
                 username = (getattr(chat, 'username', None) or '').strip().lower()
                 if not username:
@@ -839,10 +906,12 @@ async def _search_watch_channels_via_telegram(client, days_min=30):
                 if created > cutoff:
                     continue
                 title = (getattr(chat, 'title', None) or '').strip()
-                if (
-                    (not _has_signal_keywords(title) and not _has_signal_keywords('@' + username))
-                    or (not _has_crypto_context(title) and not _has_crypto_context('@' + username))
-                ):
+                sig_ok = _has_signal_keywords(title) or _has_signal_keywords('@' + username)
+                cry_ok = _has_crypto_context(title) or _has_crypto_context('@' + username)
+                if _kro_broad_discovery_enabled():
+                    if not (sig_ok or cry_ok):
+                        continue
+                elif not sig_ok or not cry_ok:
                     continue
                 seen.add(username)
                 ages[username] = created
@@ -1099,7 +1168,7 @@ async def fetch_telegram_complaints_12h_and_verify_channels(new_tgstat, telega_c
         to_verify = []
         watch_metric_targets = set()
         try:
-            _young_subs_thr = int((os.environ.get('KRO_YOUNG_SIGNAL_WATCH_MIN_SUBS') or '100').strip() or '100')
+            _young_subs_thr = int((os.environ.get('KRO_YOUNG_SIGNAL_WATCH_MIN_SUBS') or '50').strip() or '50')
         except ValueError:
             _young_subs_thr = 100
         _young_subs_thr = max(1, min(_young_subs_thr, 500_000_000))
@@ -3467,7 +3536,7 @@ async def _analyze_confirmed_channels_content(confirmed_objects, progress_cb=Non
             client = None
 
     try:
-        n_deep = int(os.environ.get('KRO_TELETHON_DEEP_PER_CYCLE', '10') or '10')
+        n_deep = int(os.environ.get('KRO_TELETHON_DEEP_PER_CYCLE', '18') or '18')
     except ValueError:
         n_deep = 10
     n_deep = max(0, min(50, n_deep))
@@ -4392,7 +4461,7 @@ def _build_channels_watch_rows(
     complaints_map = {}
     candidates = {}
     try:
-        young_subs_min = int((os.environ.get('KRO_YOUNG_SIGNAL_WATCH_MIN_SUBS') or '100').strip() or '100')
+        young_subs_min = int((os.environ.get('KRO_YOUNG_SIGNAL_WATCH_MIN_SUBS') or '50').strip() or '50')
     except ValueError:
         young_subs_min = 100
     young_subs_min = max(1, min(young_subs_min, 500_000_000))
@@ -4987,9 +5056,9 @@ def _run_organic_growth_cycle(client, sheet_id, cycle_window_label):
         return {'exchangers': 0, 'bots_queued': 0}
 
     try:
-        max_total = int(os.environ.get('KRO_ORGANIC_MAX_PER_CYCLE', '10') or '10')
+        max_total = int(os.environ.get('KRO_ORGANIC_MAX_PER_CYCLE', '16') or '16')
     except ValueError:
-        max_total = 10
+        max_total = 16
     max_total = max(1, min(25, max_total))
     try:
         kmin = int(os.environ.get('KRO_ORGANIC_KURS_MIN', '5') or '5')

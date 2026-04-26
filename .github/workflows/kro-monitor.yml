@@ -107,16 +107,25 @@ jobs:
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION_NAME: kro_worker
           KRO_TELEGRAM_SESSION_STRING: ${{ secrets.KRO_TELEGRAM_SESSION_STRING }}
+          # Расширенный охват: мягче веб/DDG и TGStat (откл: KRO_BROAD_DISCOVERY=0)
+          KRO_BROAD_DISCOVERY: '1'
+          KRO_TGSTAT_NEW_MAX_AGE_DAYS: '21'
+          KRO_TGSTAT_SEARCH_LIMIT: '90'
+          KRO_TGSTAT_NEW_CAP: '120'
+          KRO_TELETHON_DEEP_PER_CYCLE: '20'
+          KRO_TELEGRAM_SEARCH_LIMIT: '85'
+          KRO_ORGANIC_MAX_PER_CYCLE: '18'
           # Поиск DDG+Bing + extra-источники каждый цикл (web_scraper._scrape_victim_queries и др.)
           KRO_WEB_EXTRA_SOURCES: '1'
-          # Шире поиск по умолчанию (лимиты можно снизить при шуме)
-          KRO_WEB_SEARCH_MAX_LINKS: '24'
-          KRO_WEB_PORTAL_ARTICLE_LIMIT: '32'
-          KRO_WEB_VKLADER_BLACKLIST_LINKS: '40'
-          KRO_WEB_VKLADER_PROVERKA_LINKS: '24'
-          KRO_WEB_VICTIM_MAX_PER_QUERY: '8'
-          KRO_WEB_SEED_USERNAMES: '30'
-          KRO_WEB_ENRICH_MAX_LINKS: '3'
+          KRO_WEB_FETCH_TIMEOUT_GHA: '18'
+          # Шире поиск (при шуме снизить)
+          KRO_WEB_SEARCH_MAX_LINKS: '48'
+          KRO_WEB_PORTAL_ARTICLE_LIMIT: '48'
+          KRO_WEB_VKLADER_BLACKLIST_LINKS: '56'
+          KRO_WEB_VKLADER_PROVERKA_LINKS: '36'
+          KRO_WEB_VICTIM_MAX_PER_QUERY: '14'
+          KRO_WEB_SEED_USERNAMES: '56'
+          KRO_WEB_ENRICH_MAX_LINKS: '8'
           # Явный лист жалоб: чтение A2:I и append в тот же лист после очистки (остался только заголовок)
           KRO_REPORTS_SHEET: reports
           # Не чистить scam_base HTTP-gate с раннера GitHub (t.me часто блокирует CI → лист обнулялся).

@@ -16,9 +16,11 @@ KRO Web Scraper: собирает упоминания скам-каналов �
 Возвращаемые данные пишутся в лист reports Google Sheets с пометкой source='web'.
 
 Охват поиска (без правки кода): переменные окружения
-  KRO_WEB_VICTIM_MAX_PER_QUERY — находок с одного DDG-запроса (по умол. 7);
-  KRO_WEB_SEARCH_MAX_LINKS — ссылок с одного запроса (22);
-  KRO_WEB_PORTAL_ARTICLE_LIMIT — статей с хаба blacklist-telegram (28);
+  KRO_BROAD_DISCOVERY=1 (дефолт) — шире DDG/web-search; мягче отсев страниц и фактов скама для source=web-search.
+    Выключить строгость: KRO_BROAD_DISCOVERY=0. Строгий anchor при обогащении: KRO_WEB_ENRICHMENT_STRICT_ANCHOR=1.
+  KRO_WEB_VICTIM_MAX_PER_QUERY — находок с одного DDG-запроса (дефолт 12);
+  KRO_WEB_SEARCH_MAX_LINKS — ссылок с одного запроса;
+  KRO_WEB_PORTAL_ARTICLE_LIMIT — статей с хаба blacklist-telegram;
   KRO_WEB_VKLADER_BLACKLIST_LINKS / KRO_WEB_VKLADER_PROVERKA_LINKS — лимиты vklader;
   KRO_WEB_SEED_USERNAMES — сколько каналов обогащать вторым кругом;
   KRO_WEB_ENRICH_MAX_LINKS — DDG-страниц на seed;
@@ -507,8 +509,14 @@ def _env_int(name: str, default: int, *, lo: int = 1, hi: int = 200) -> int:
         return default
 
 
+def _kro_broad_discovery_enabled() -> bool:
+    """Расширенный охват (веб + DDG): мягче страницы и факты; выкл: KRO_BROAD_DISCOVERY=0."""
+    v = (os.environ.get('KRO_BROAD_DISCOVERY') or '1').strip().lower()
+    return v not in ('0', 'false', 'no', 'off')
+
+
 # Сколько новых каналов максимум с одного поискового запроса (жертва / DDG).
-_VICTIM_QUERY_LIMIT_PER_QUERY = _env_int('KRO_WEB_VICTIM_MAX_PER_QUERY', 7)
+_VICTIM_QUERY_LIMIT_PER_QUERY = _env_int('KRO_WEB_VICTIM_MAX_PER_QUERY', 12, hi=400)
 
 # Запросы, которыми реально пользуются пострадавшие и люди перед входом в канал/сервис.
 _VICTIM_SCAM_CHANNEL_QUERIES = [
@@ -528,6 +536,12 @@ _VICTIM_SCAM_CHANNEL_QUERIES = [
     'фьючерсы крипта телеграм сигналы мошенники',
     'крипто трейдер телеграм гарантия прибыли развод',
     'private channel crypto signals telegram отзывы',
+    'defi nft telegram channel отзывы',
+    'airdrop crypto telegram мошенники',
+    'фьючерсы сигналы телеграм VIP',
+    'крипто инвестиции телеграм канал развод',
+    'staking telegram crypto отзывы обман',
+    'binance signals telegram channel review scam',
 ]
 
 _VICTIM_EXCHANGER_QUERIES = [
@@ -535,12 +549,16 @@ _VICTIM_EXCHANGER_QUERIES = [
     'телеграм обменник криптовалюта развод',
     'P2P обменник крипта мошенники',
     'обменник USDT заблокировал вывод',
+    'scam crypto exchanger telegram',
+    'обменник крипта отзывы обман телеграм',
 ]
 
 _VICTIM_INVEST_BOT_QUERIES = [
     'инвест бот телеграм процент в день',
     'торговый бот крипта автоматический заработок развод',
     'бот трейдинг телеграм депозит не выводит',
+    'crypto trading bot telegram scam',
+    'арбитраж бот крипта развод',
 ]
 
 
@@ -638,6 +656,12 @@ def _victim_query_page_is_crypto_relevant(page, url, query, object_type):
         return any(h in low for h in ('обменник', 'exchange', 'usdt', 'p2p', 'крипт', 'crypto'))
     if object_type == 'инвест-бот':
         return any(h in low for h in ('бот', 'bot', 'депозит', 'крипт', 'crypto', 'трейдинг'))
+    if _kro_broad_discovery_enabled():
+        broad = _VICTIM_CRYPTO_STRICT_HINTS + (
+            'telegram', 'телеграм', 't.me', 'канал', 'channel', 'signals', 'сигнал',
+            'форекс', 'forex', 'инвест', 'invest', 'nft', 'defi', 'airdrop', 'staking',
+        )
+        return any(h in low for h in broad)
     return any(h in low for h in _VICTIM_CRYPTO_STRICT_HINTS)
 
 
@@ -663,7 +687,7 @@ def _scrape_victim_queries():
             total_queries += 1
             per_query_count = 0
             per_query_seen = set()
-            urls = _search_urls_for_query(query, max_links=_env_int('KRO_WEB_SEARCH_MAX_LINKS', 22))
+            urls = _search_urls_for_query(query, max_links=_env_int('KRO_WEB_SEARCH_MAX_LINKS', 36, hi=120))
             for url in urls:
                 page = _fetch(url)
                 if not page:
@@ -675,7 +699,9 @@ def _scrape_victim_queries():
                     url,
                     'web-search',
                     max_channels=1,
-                    signal_trading_anchor_required=(object_type == 'сигнал-канал'),
+                    signal_trading_anchor_required=(
+                        (object_type == 'сигнал-канал') and not _kro_broad_discovery_enabled()
+                    ),
                 )
                 for f in findings:
                     ch = (f.get('channel') or '').strip().lower()
@@ -919,7 +945,8 @@ def _build_findings_from_page(
     title = (_extract_title_from_html(page) or '').strip()
     blob = _blob_lower(title, clean_for_channels, url)
     if _web_reject_generic_earn_or_news_without_trading(blob):
-        return []
+        if not (_kro_broad_discovery_enabled() and source_name == 'web-search'):
+            return []
     req_sig = bool(signal_trading_anchor_required)
     if (os.environ.get('KRO_WEB_ARTICLE_REQUIRE_SIGNAL_ANCHOR') or '').strip().lower() in (
         '1', 'true', 'yes', 'on',
@@ -960,7 +987,8 @@ def _build_findings_from_page(
     if not _has_crypto_context(clean_for_channels, url):
         return []
     if not _has_concrete_scam_facts(desc_snippet or clean_for_channels):
-        return []
+        if not (_kro_broad_discovery_enabled() and source_name == 'web-search'):
+            return []
 
     sum_rub = _extract_loss_amount(clean_for_channels)
 
@@ -1810,11 +1838,15 @@ def scrape_all():
         (r.get('channel') or '').strip()
         for r in results
         if _is_seed_telegram_ref(r.get('channel'))
-    })[: _env_int('KRO_WEB_SEED_USERNAMES', 28)]
+    })[: _env_int('KRO_WEB_SEED_USERNAMES', 48, hi=500)]
     _enrich_anchor_strict = (os.environ.get('KRO_WEB_ENRICHMENT_STRICT_ANCHOR') or '1').strip().lower() not in (
         '0', 'false', 'no', 'off',
     )
-    _enrich_max = _env_int('KRO_WEB_ENRICH_MAX_LINKS', 3)
+    if _kro_broad_discovery_enabled():
+        _enrich_anchor_strict = (os.environ.get('KRO_WEB_ENRICHMENT_STRICT_ANCHOR') or '0').strip().lower() in (
+            '1', 'true', 'yes', 'on',
+        )
+    _enrich_max = _env_int('KRO_WEB_ENRICH_MAX_LINKS', 6, hi=40)
     for channel in seed_usernames:
         uname = (channel or '').strip().lstrip('@').lower()
         if _TELEGRAM_SLUG_PATH_RE.match(uname):
