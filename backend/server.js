@@ -6074,7 +6074,8 @@ app.get('/api/kro/live-counter', async (req, res) => {
       const channelsTodayVal = channelsScanned > 0 ? channelsScanned : newInCycle;
       const reportsFormCount = await countReportsFormRows(sheetsClient);
       // Главная — большая цифра: только new_in_cycle из kro_meta (не окно 12 ч по дате обнаружения в scam_base).
-      const caption12 = `Потери за 12 ч: ${roll12.lossesSum.toLocaleString('ru-RU')} ₽ · в базе: ${scamBaseCounter.channels_total}.`;
+      const watchMon = watchSummary.visible_total;
+      const caption12 = `Потери за 12 ч: ${roll12.lossesSum.toLocaleString('ru-RU')} ₽ · подтверждённая база: ${scamBaseCounter.channels_total} · широкий мониторинг: ${watchMon}.`;
       const totalLostAllTime = scamBaseCounter.losses_12h;
       const shockTextLive =
         buildKroDocumentedShockText(totalLostAllTime, scamBaseCounter.channels_total) || KRO_PENDING_REPORT_TEXT;

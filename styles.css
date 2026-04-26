@@ -1157,6 +1157,17 @@ body.kro-hero-scrolled .kro-floating-nav {
    margin-top: 10px;
 }
 
+.kro-feature1-hero-monitor {
+   display: block;
+   max-width: 520px;
+   margin: 14px auto 0;
+   padding: 0 12px;
+   font-size: clamp(12px, 1.85vw, 15px);
+   line-height: 1.45;
+   color: rgba(255, 255, 255, 0.62);
+   text-align: center;
+}
+
 .kro-feature1-status-summary {
    display: flex;
    flex-wrap: wrap;
@@ -8172,4 +8183,3 @@ button:not(.chat-button):not(.send-button):focus {
       animation: kro-check-btc-coin-spin 1.6s ease-in-out infinite !important;
    }
 }
-
