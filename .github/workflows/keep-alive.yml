@@ -21,6 +21,35 @@ jobs:
 
       - name: Ping API
         run: |
-          RESULT=$(curl -s --max-time 30 https://crypto-academy-pro.onrender.com/api/kro/live-counter)
-          LAST_CYCLE=$(echo "$RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('last_cycle_at','n/a'))" 2>/dev/null || echo "parse error")
-          echo "last_cycle_at: $LAST_CYCLE"
+          curl -sS --max-time 30 "https://crypto-academy-pro.onrender.com/api/kro/live-counter?fresh=1" -o /tmp/kro-live-counter.json
+          LAST_CYCLE=$(python3 -c "import json; d=json.load(open('/tmp/kro-live-counter.json')); print(d.get('last_cycle_at') or d.get('lastValidUpdatedAt') or 'n/a')" 2>/dev/null || echo "parse error")
+          echo "last_cycle_at / lastValidUpdatedAt: $LAST_CYCLE"
+          python3 - <<'PY'
+          import json, os, sys
+          from datetime import datetime, timezone
+          max_h = float(os.environ.get('KRO_KEEPALIVE_MAX_CYCLE_AGE_H', '22'))
+          try:
+              with open('/tmp/kro-live-counter.json') as f:
+                  d = json.load(f)
+          except Exception as e:
+              print('Could not parse live-counter JSON:', e)
+              sys.exit(1)
+          raw = d.get('lastValidUpdatedAt') or d.get('last_cycle_at') or d.get('updatedAt')
+          if not raw or raw == 'n/a':
+              print('::warning::live-counter has no cycle timestamp')
+              sys.exit(0)
+          try:
+              ts = datetime.fromisoformat(str(raw).replace('Z', '+00:00'))
+              if ts.tzinfo is None:
+                  ts = ts.replace(tzinfo=timezone.utc)
+          except Exception:
+              print('::warning::Unparseable timestamp:', raw)
+              sys.exit(0)
+          age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600.0
+          print(f'Cycle age hours: {age_h:.2f} (max allowed {max_h})')
+          if age_h > max_h:
+              print(f'::error::KRO cycle stale: {age_h:.1f}h > {max_h}h — check GitHub Actions "KRO 12h Monitor" and kro_meta in Sheets')
+              sys.exit(1)
+          PY
+        env:
+          KRO_KEEPALIVE_MAX_CYCLE_AGE_H: '22'

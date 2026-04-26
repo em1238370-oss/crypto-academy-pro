@@ -2411,6 +2411,43 @@ function coerceKroMetaLastCycleAtToIso(raw) {
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
 }
 
+/**
+ * Если цикл давно не обновлял kro_meta — честное предупреждение на главной (siteNotice),
+ * чтобы не спорить с ощущением «всё застыло» из‑за путаницы метрик или упавшего workflow.
+ */
+function kroBuildStaleCycleSiteNotice(metaLastCycleRaw, displayUpdatedAtStr, scamBaseUpdatedAtStr, warnHours) {
+  const wh = Number(warnHours);
+  if (!Number.isFinite(wh) || wh <= 0) return null;
+  const fromMeta = coerceKroMetaLastCycleAtToIso(metaLastCycleRaw);
+  let iso = fromMeta;
+  if (!iso && displayUpdatedAtStr) {
+    const p = Date.parse(String(displayUpdatedAtStr));
+    if (Number.isFinite(p)) iso = new Date(p).toISOString();
+  }
+  if (!iso && scamBaseUpdatedAtStr) {
+    const p = Date.parse(String(scamBaseUpdatedAtStr));
+    if (Number.isFinite(p)) iso = new Date(p).toISOString();
+  }
+  if (!iso) {
+    const rawMeta = metaLastCycleRaw != null ? String(metaLastCycleRaw).trim() : '';
+    if (rawMeta) {
+      return (
+        'Дата last_cycle_at в kro_meta не распознана (ожидается ISO или ДД.ММ.ГГГГ ЧЧ:ММ MSK). ' +
+        'Проверьте ячейку и workflow «KRO 12h Monitor».'
+      );
+    }
+    return null;
+  }
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return null;
+  const ageH = (Date.now() - ms) / 3600000;
+  if (ageH <= wh) return null;
+  return (
+    `Мониторинг не отчитывался ${ageH.toFixed(1)} ч (норма: каждые ~12 ч, порог предупреждения ${wh} ч). ` +
+    'Проверьте workflow «KRO 12h Monitor», при необходимости «KRO Monitor Watchdog» и лист kro_meta в Google Sheets.'
+  );
+}
+
 function parseKroCycleMetaRows(rows) {
   const values = {};
   for (const row of rows || []) {
@@ -6079,6 +6116,13 @@ app.get('/api/kro/live-counter', async (req, res) => {
       const totalLostAllTime = scamBaseCounter.losses_12h;
       const shockTextLive =
         buildKroDocumentedShockText(totalLostAllTime, scamBaseCounter.channels_total) || KRO_PENDING_REPORT_TEXT;
+      const staleWarnHours = Number(process.env.KRO_STALE_CYCLE_WARN_HOURS || 20);
+      const cycleStaleNotice = kroBuildStaleCycleSiteNotice(
+        cycleMeta.last_cycle_at,
+        displayUpdatedAt,
+        scamBaseCounter.updatedAt,
+        staleWarnHours
+      );
       const payload = {
         channelsToday: channelsTodayVal,
         new_in_cycle_meta: newInCycle,
@@ -6105,7 +6149,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
         watch_status_summary: watchSummary.status_summary,
         publishStatus: scamBaseCounter.isHonestZero && roll12.uniqueChannels === 0 ? 'honest_zero' : scamBaseCounter.publishStatus,
         isHonestZero: scamBaseCounter.isHonestZero && roll12.uniqueChannels === 0,
-        siteNotice: null,
+        siteNotice: cycleStaleNotice,
         lastValidUpdatedAt: displayUpdatedAt,
         updatedAt: displayUpdatedAt,
         last_cycle_at: cycleMeta.last_cycle_at,
