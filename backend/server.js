@@ -1336,6 +1336,12 @@ const kroHomeQuickLiveTimeoutMs =
   Number.isFinite(kroHomeQuickLiveTimeoutMsParsed) && kroHomeQuickLiveTimeoutMsParsed >= 15000 && kroHomeQuickLiveTimeoutMsParsed <= 120000
     ? kroHomeQuickLiveTimeoutMsParsed
     : 45000;
+/** POST /api/kro/analyze-channel: бюджет времени на public snapshot + check_once + вспомогательные шаги (дефолт 90 с). */
+const kroAnalyzeChannelSyncMsParsed = parseInt(process.env.KRO_ANALYZE_CHANNEL_SYNC_MS || '', 10);
+const KRO_ANALYZE_CHANNEL_SYNC_MS =
+  Number.isFinite(kroAnalyzeChannelSyncMsParsed) && kroAnalyzeChannelSyncMsParsed >= 30000 && kroAnalyzeChannelSyncMsParsed <= 180000
+    ? kroAnalyzeChannelSyncMsParsed
+    : 90000;
 /** Fast на главной: жёсткий end-to-end лимит выполнения и ожидания (по умолчанию 7 минут). */
 const kroAnalyzeFastMaxMsParsed = parseInt(process.env.KRO_ANALYZE_FAST_MAX_MS || '420000', 10);
 const KRO_ANALYZE_FAST_MAX_MS =
@@ -4746,7 +4752,7 @@ function kroFilterPublicSnapshotSnippets(lines, slug) {
     .map((x) => kroNormalizePublicSnapshotLine(x, slug))
     .filter(Boolean)
     .filter((x, i, a) => a.indexOf(x) === i)
-    .slice(0, 8)
+    .slice(0, 14)
     .map((x) => (x.length > 260 ? `${x.slice(0, 257)}...` : x));
 }
 
@@ -7006,6 +7012,7 @@ function kroBuildAnalyzeDoneResponse(doneRow, key) {
   const livePass = response && response.live_evidence && response.live_evidence.live_pass === true;
   const livePathAllowed =
     readPath === 'telethon' ||
+    readPath === 'telethon+public_snapshot' ||
     readPath === 'public_snapshot' ||
     readPath === 'public_content_fallback';
   const liveEnough = Number.isFinite(postsRead) && postsRead >= 5;
@@ -7104,11 +7111,16 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
   }
 
   const t0 = Date.now();
-  const deadline = t0 + 45000;
+  const deadline = t0 + KRO_ANALYZE_CHANNEL_SYNC_MS;
   const channelDisplay = normalized.startsWith('@') ? normalized : `@${key}`;
-  const channelForOnce = normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${normalized}`;
+  const channelForOnce = (() => {
+    const k = String(key || '');
+    if (k.startsWith('t.me/')) return normalized.startsWith('t.me/') ? normalized : k;
+    if (/^joinchat\//i.test(k)) return `t.me/${k}`;
+    return normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${k}`;
+  })();
   const minReadablePosts = 5;
-  const minPublicSnippets = minReadablePosts;
+  const minPublicSnippets = 4;
   const minTelethonPosts = minReadablePosts;
   const analyzeLogId = `${key}:${Date.now().toString(36)}`;
   const withQueueMeta = (payload) => ({
@@ -7145,7 +7157,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     const displayCh = (latestProfile && latestProfile.username) ? latestProfile.username : channelDisplay;
     const reports = await getAllReportsForChannel(sheetsClient, displayCh);
 
-    const pubBudget = Math.min(15000, Math.max(0, deadline - Date.now() - 500));
+    const pubBudget = Math.min(28000, Math.max(0, deadline - Date.now() - 400));
     const publicSnap =
       pubBudget > 1200 ? await kroFetchTelegramPublicSnapshot(channelForOnce, { timeoutMs: pubBudget, logLabel: analyzeLogId }) : null;
     console.log(
@@ -7239,36 +7251,65 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       }));
     }
 
-    const telBudget = Math.min(20000, Math.max(0, deadline - Date.now() - 800));
+    const telBudget = Math.min(150000, Math.max(0, deadline - Date.now() - 600));
     if (telBudget >= 5000) {
       const once = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 30, timeoutMs: telBudget });
       const parsed = kroNormalizeCheckOnceForAnalysis(once);
-      const postsRead = Number(parsed.posts_fetched || 0);
-      const sample = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
+      let postsRead = Number(parsed.posts_fetched || 0);
+      let sample = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
       console.log(
         `[KRO analyze-channel ${analyzeLogId}] telethon ok=${parsed._check_once_ok === true} found=${parsed.found === true} posts_read=${postsRead} error=${JSON.stringify(parsed.error || '')} sample=${JSON.stringify(sample[0] ? sample[0].slice(0, 180) : '')}`,
       );
-      const enough =
+      let enough =
         parsed._check_once_ok === true &&
         parsed.found === true &&
         postsRead >= minTelethonPosts &&
         sample.length >= 1;
+      let parsedForFast = parsed;
+      let sampleForFast = sample;
+      if (
+        !enough &&
+        parsed._check_once_ok === true &&
+        parsed.found === true &&
+        publicSnap &&
+        Array.isArray(publicSnap.snippets) &&
+        publicSnap.snippets.length
+      ) {
+        const seen = new Set(sample.map((x) => String(x || '').trim()).filter(Boolean));
+        const merged = sample.map((x) => String(x || ''));
+        for (const snip of publicSnap.snippets) {
+          const t = String(snip || '').trim();
+          if (t && !seen.has(t)) {
+            seen.add(t);
+            merged.push(t);
+          }
+        }
+        if (merged.length >= minTelethonPosts) {
+          sampleForFast = merged.filter(Boolean);
+          postsRead = sampleForFast.length;
+          parsedForFast = { ...parsed, posts_fetched: postsRead, sample_posts: sampleForFast };
+          enough = true;
+          console.log(
+            `[KRO analyze-channel ${analyzeLogId}] telethon+public_merge posts_read=${postsRead} (добавлены фрагменты t.me/s)`,
+          );
+        }
+      }
       if (enough) {
-        const analysis = kroV0BuildAnalysisFromLiveParsed(parsed, key);
+        const analysis = kroV0BuildAnalysisFromLiveParsed(parsedForFast, key);
         if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
-        const signal = kroCollectSuspiciousFlagsFromTexts(sample);
-        const fastHuman = kroBuildFastCriteriaFromTexts(sample, {
-          hasSignalOffer: parsed.has_signal_offer === true,
-          onlyProfitsFlag: parsed.only_profits_flag === true,
-          fomoPct: parsed.fomo_pct,
-          adsRatio: parsed.ads_ratio,
+        const signal = kroCollectSuspiciousFlagsFromTexts(sampleForFast);
+        const fastHuman = kroBuildFastCriteriaFromTexts(sampleForFast, {
+          hasSignalOffer: parsedForFast.has_signal_offer === true,
+          onlyProfitsFlag: parsedForFast.only_profits_flag === true,
+          fomoPct: parsedForFast.fomo_pct,
+          adsRatio: parsedForFast.ads_ratio,
         });
         const risk = fastHuman.score10;
         const statusObj = kroMapFastRisk10ToUiStatus(risk);
         analysis.basic_info = [
           `Канал: ${channelDisplay}`,
           `Чем занимается канал: ${fastHuman.topicLine}`,
-          `Что увидели в быстром проходе: прочитано ${postsRead} сообщений с текстом за окно до ${Number(parsed.analysis_window_days || 30)} дней.`,
+          `Что увидели в быстром проходе: прочитано ${postsRead} сообщений с текстом за окно до ${Number(parsedForFast.analysis_window_days || 30)} дней.`,
           ...(Array.isArray(analysis.basic_info) ? analysis.basic_info.slice(1, 3) : []),
         ].filter(Boolean).slice(0, 6);
         analysis.content_behavior = [
@@ -7289,14 +7330,15 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           : ['По прочитанным сообщениям не видно типичных агрессивных маркеров: гарантированной прибыли, жёсткого FOMO или платного VIP.'];
         analysis.conclusion = {
           status: kroMapFastRisk10ToConclusion(risk, {
-            forceScam: String(parsed.risk_verdict || '').toLowerCase() === 'scam',
+            forceScam: String(parsedForFast.risk_verdict || '').toLowerCase() === 'scam',
           }),
           reasons: [
             `Риск ${risk}/10: ${fastHuman.summaryLine}`,
             ...fastHuman.reasons,
           ].filter(Boolean).slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
         };
-        console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=telethon posts_read=${postsRead}`);
+        const readPathOut = sampleForFast.length > (Array.isArray(parsed.sample_posts) ? parsed.sample_posts.length : 0) ? 'telethon+public_snapshot' : 'telethon';
+        console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=${readPathOut} posts_read=${postsRead}`);
         return res.status(200).json(withQueueMeta({
           queue_status: 'done_sync',
           analysis,
@@ -7305,28 +7347,31 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           risk_index: risk,
           risk_index_max: 10,
           posts_read: postsRead,
-          period_days: Number(parsed.analysis_window_days || 30),
-          read_path: 'telethon',
+          period_days: Number(parsedForFast.analysis_window_days || 30),
+          read_path: readPathOut,
           flags: signal.flags,
           citations: fastHuman.citations.slice(0, 3),
           live_evidence: {
             live_pass: true,
-            mode: 'telethon',
-            reason: `Telethon: прочитано постов ${postsRead} (лимит ${Math.round(telBudget / 1000)} с).`,
-            sample_posts: sample.slice(0, 3),
+            mode: readPathOut,
+            reason: `Telethon + при необходимости публичный срез: всего фрагментов с текстом ${postsRead} (лимит Telethon ~${Math.round(telBudget / 1000)} с).`,
+            sample_posts: sampleForFast.slice(0, 3),
             posts_fetched: postsRead,
-            analysis_window_days: Number(parsed.analysis_window_days || 30),
+            analysis_window_days: Number(parsedForFast.analysis_window_days || 30),
           },
           live_metrics: {
             posts_fetched: postsRead,
-            analysis_window_days: Number(parsed.analysis_window_days || 30),
+            analysis_window_days: Number(parsedForFast.analysis_window_days || 30),
             home_quick_live: true,
             complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
           },
           analysis_basis: {
-            label: 'Лёгкий вывод построен по тексту сообщений канала.',
-            sources_used: ['telethon'],
-            read_path: 'telethon',
+            label:
+              readPathOut === 'telethon+public_snapshot'
+                ? 'Вывод по тексту Telethon и дополнен публичными фрагментами t.me/s, если не хватало объёма.'
+                : 'Лёгкий вывод построен по тексту сообщений канала.',
+            sources_used: readPathOut === 'telethon+public_snapshot' ? ['telethon', 't.me/s'] : ['telethon'],
+            read_path: readPathOut,
             posts_read: postsRead,
             elapsed_ms: Date.now() - t0,
           },
@@ -7447,7 +7492,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         live_pass: false,
         mode: 'external_sources',
         reason:
-          `Живая лента за отведённые 45 с не дала минимум ${minReadablePosts} нормальных текстовых сообщений. Поэтому критерии fast-анализа и риск-индекс не построены.`,
+          `Живая лента за отведённые ~${Math.round(KRO_ANALYZE_CHANNEL_SYNC_MS / 1000)} с не дала минимум ${minReadablePosts} нормальных текстовых сообщений. Поэтому критерии fast-анализа и риск-индекс не построены.`,
         sample_posts: publicSnap && publicSnap.snippets ? publicSnap.snippets.slice(0, 2) : [],
         posts_fetched: 0,
         analysis_window_days: null,
