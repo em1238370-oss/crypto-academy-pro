@@ -2448,6 +2448,72 @@ function kroBuildStaleCycleSiteNotice(metaLastCycleRaw, displayUpdatedAtStr, sca
   );
 }
 
+/**
+ * Минимум каналов за 12ч цикл: строго больше пяти ⇒ min=6.
+ * either — ок, если new_in_cycle >= min ИЛИ channels_scanned_in_cycle >= min (реалистично при строгой базе).
+ * new_in_base | scanned | both — см. KRO_CYCLE_VOLUME_METRIC.
+ */
+function kroEvalCycleVolume(newInCycle, channelsScanned, minRequired, metricRaw) {
+  const min = Math.max(0, Math.floor(Number(minRequired) || 0));
+  const nic = Math.max(0, Math.floor(Number(newInCycle) || 0));
+  const scan = Math.max(0, Math.floor(Number(channelsScanned) || 0));
+  const m = String(metricRaw || 'either').trim().toLowerCase();
+  if (min <= 0) {
+    return {
+      ok: true,
+      actual: Math.max(nic, scan),
+      new_in_base: nic,
+      scanned: scan,
+      min: 0,
+      metric: m,
+    };
+  }
+  let ok = true;
+  let actual = Math.max(nic, scan);
+  if (m === 'new_in_base') {
+    actual = nic;
+    ok = nic >= min;
+  } else if (m === 'scanned') {
+    actual = scan;
+    ok = scan >= min;
+  } else if (m === 'both') {
+    ok = nic >= min && scan >= min;
+    actual = nic;
+  } else {
+    ok = nic >= min || scan >= min;
+    actual = Math.max(nic, scan);
+  }
+  return { ok, actual, new_in_base: nic, scanned: scan, min, metric: m };
+}
+
+function kroReadMinChannelsPerCycleFromEnv() {
+  const raw = process.env.KRO_MIN_CHANNELS_FOUND_PER_CYCLE;
+  if (raw === undefined || raw === '') return 6;
+  const n = parseInt(String(raw).replace(/\s/g, ''), 10);
+  if (!Number.isFinite(n) || n < 0) return 6;
+  return n;
+}
+
+function kroBuildCycleVolumeNotice(vol) {
+  if (!vol || vol.min <= 0 || vol.ok) return null;
+  const nic = vol.new_in_base;
+  const scan = vol.scanned;
+  let modeRu =
+    'нужно минимум ' +
+    vol.min +
+    ' по правилу проекта: хотя бы одна метрика — новые в базу (new_in_cycle) или просмотрено за цикл (channels_scanned_in_cycle)';
+  if (vol.metric === 'new_in_base') {
+    modeRu = `нужно минимум ${vol.min} новых в подтверждённую базу за цикл (new_in_cycle)`;
+  } else if (vol.metric === 'scanned') {
+    modeRu = `нужно минимум ${vol.min} каналов, просмотренных за цикл (channels_scanned_in_cycle)`;
+  } else if (vol.metric === 'both') {
+    modeRu = `нужно минимум ${vol.min} и по new_in_cycle, и по channels_scanned_in_cycle`;
+  }
+  return (
+    `За последний 12‑часовой цикл недостаточно находок: ${modeRu}. Сейчас: новых в базу — ${nic}, просмотрено — ${scan}. Проверьте «KRO 12h Monitor» и воркер.`
+  );
+}
+
 function parseKroCycleMetaRows(rows) {
   const values = {};
   for (const row of rows || []) {
@@ -6123,10 +6189,21 @@ app.get('/api/kro/live-counter', async (req, res) => {
         scamBaseCounter.updatedAt,
         staleWarnHours
       );
+      const volMin = kroReadMinChannelsPerCycleFromEnv();
+      const volMetric = (process.env.KRO_CYCLE_VOLUME_METRIC || 'either').trim().toLowerCase();
+      const cycleVol = kroEvalCycleVolume(newInCycle, channelsScanned, volMin, volMetric);
+      const cycleVolumeNotice = kroBuildCycleVolumeNotice(cycleVol);
+      const siteNotices = [cycleStaleNotice, cycleVolumeNotice].filter(Boolean);
       const payload = {
         channelsToday: channelsTodayVal,
         new_in_cycle_meta: newInCycle,
         channels_scanned_in_cycle: channelsScanned,
+        cycle_volume_ok: cycleVol.min > 0 ? cycleVol.ok : true,
+        cycle_volume_actual: cycleVol.actual,
+        cycle_volume_required_min: cycleVol.min,
+        cycle_volume_metric: cycleVol.metric,
+        cycle_volume_new_in_base: cycleVol.new_in_base,
+        cycle_volume_scanned: cycleVol.scanned,
         channelsTotal: scamBaseCounter.channels_total,
         totalLost: totalLostAllTime,
         telegramCount: roll12.telegramCount,
@@ -6149,7 +6226,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
         watch_status_summary: watchSummary.status_summary,
         publishStatus: scamBaseCounter.isHonestZero && roll12.uniqueChannels === 0 ? 'honest_zero' : scamBaseCounter.publishStatus,
         isHonestZero: scamBaseCounter.isHonestZero && roll12.uniqueChannels === 0,
-        siteNotice: cycleStaleNotice,
+        siteNotice: siteNotices.length ? siteNotices.join('\n\n') : null,
         lastValidUpdatedAt: displayUpdatedAt,
         updatedAt: displayUpdatedAt,
         last_cycle_at: cycleMeta.last_cycle_at,
@@ -6322,7 +6399,24 @@ app.get('/api/kro/monitor-data', async (req, res) => {
     const metaRows = metaResp.status === 'fulfilled' ? (metaResp.value.data.values || []) : [];
     const metaBase = parseKroCycleMetaRows(metaRows);
     const freshness = parseCycleFreshnessMeta(metaBase.last_cycle_at);
-    const meta = { ...metaBase, ...freshness };
+    const volMinM = kroReadMinChannelsPerCycleFromEnv();
+    const volMetricM = (process.env.KRO_CYCLE_VOLUME_METRIC || 'either').trim().toLowerCase();
+    const cycleVolM = kroEvalCycleVolume(
+      metaBase.new_in_cycle,
+      metaBase.channels_scanned_in_cycle,
+      volMinM,
+      volMetricM
+    );
+    const meta = {
+      ...metaBase,
+      ...freshness,
+      cycle_volume_ok: cycleVolM.min > 0 ? cycleVolM.ok : true,
+      cycle_volume_actual: cycleVolM.actual,
+      cycle_volume_required_min: cycleVolM.min,
+      cycle_volume_metric: cycleVolM.metric,
+      cycle_volume_new_in_base: cycleVolM.new_in_base,
+      cycle_volume_scanned: cycleVolM.scanned,
+    };
 
     // kro_history rows (skip header row if present)
     const histRawRows = historyResp.status === 'fulfilled' ? (historyResp.value.data.values || []) : [];

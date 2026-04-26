@@ -837,6 +837,10 @@
                if (scannedInCycle > 0) monLine += ' · просмотрено в последнем цикле: ' + scannedInCycle;
                if (newToBase > 0) monLine += ' · новых в подтверждённую базу за цикл: ' + newToBase;
                else if (scannedInCycle > 0) monLine += ' · новых строк в подтверждённую базу за цикл: 0 (отбор строгий)';
+               if (data.cycle_volume_ok === false) {
+                   var vmin = data.cycle_volume_required_min != null ? data.cycle_volume_required_min : 6;
+                   monLine += ' · требование цикла: минимум ' + vmin + ' находок (сейчас ниже — см. уведомление выше/внизу)';
+               }
                if ((el = document.getElementById('kro-feature1-hero-monitor'))) el.textContent = monLine;
                var ssAll = data.status_summary_all_time || {};
                if ((el = document.getElementById('kro-stat-at-risk'))) el.textContent = ssAll.at_risk != null ? String(ssAll.at_risk) : '—';

@@ -2018,7 +2018,7 @@
             ' с. channels_watch — широкий список, не только «плохие».';
         } else {
           hintEl.textContent =
-            'Между запусками здесь последний зафиксированный статус. Подтверждённые риски — в scam_base и кейсах; широкий охват — в таблице channels_watch. Цель «≥6 каналов в сутки» логичнее мерить по широкому мониторингу и сырым находкам, а не только по числу новых строк в scam_base — туда попадает меньше объектов из‑за строгих фильтров.';
+            'Между запусками здесь последний зафиксированный статус. Подтверждённые риски — в scam_base и кейсах; широкий охват — в таблице channels_watch. Правило проекта: за каждый 12‑часовой цикл нужно строго больше пяти находок (минимум 6) — по умолчанию в API/CI это режим «either»: либо new_in_cycle, либо channels_scanned_in_cycle ≥ 6; иначе предупреждение на главной и красный мониторинг.';
         }
       }
     }
@@ -2034,14 +2034,22 @@
       var wn = Number(meta.channels_scanned_in_cycle || 0);
       var watchLastIso = pickLatestWatchDetectedAt(channelsWatch);
       var watchLastText = watchLastIso ? formatMonLocalDateTime(new Date(watchLastIso)) : '—';
+      var volMin = meta.cycle_volume_required_min != null ? Number(meta.cycle_volume_required_min) : 6;
+      var volOk = meta.cycle_volume_ok !== false;
+      var volM = (meta.cycle_volume_metric || 'either') + '';
       countsEl.textContent =
         'Последний записанный цикл в kro_meta: новых подтверждённых записей в scam_base — ' +
         nic +
-        '; строк широкого мониторинга (channels_watch) — ' +
+        '; просмотрено каналов за цикл (channels_scanned_in_cycle) — ' +
         wn +
         '; последняя находка в watch по detected_at — ' +
         watchLastText +
-        '. Если смотрите только «новых за цикл» как маленькую цифру — сравните со вторым числом: система может активно собирать каналы, но в scam_base попадут не все.';
+        '. Порог объёма: минимум ' +
+        volMin +
+        ' (' +
+        volM +
+        ') — ' +
+        (volOk ? 'выполнено.' : 'НЕ выполнено: проверьте воркер и логи «KRO 12h Monitor».');
     }
 
     var fastPoll = st === 'running';
@@ -2070,9 +2078,13 @@
     var strip = document.getElementById('mon-live-strip');
     if (strip) strip.classList.remove('mon-live-strip--error');
     var stale = Boolean(meta && meta.cycle_stale);
-    if (stale) {
+    var volBad = Boolean(meta && meta.cycle_volume_ok === false);
+    var warnParts = [];
+    if (stale) warnParts.push('данные могут быть устаревшими');
+    if (volBad) warnParts.push('объём находок за цикл ниже минимума (>5 при стандартном пороге 6)');
+    if (stale || volBad) {
       if (strip) strip.classList.add('mon-live-strip--error');
-      setText('mon-cycle-warning', ' · данные могут быть устаревшими');
+      setText('mon-cycle-warning', warnParts.length ? ' · ' + warnParts.join(' · ') : '');
     }
 
     var totalSrc = (meta.sources_checked || []).length;
@@ -2172,8 +2184,25 @@
       sumRow(
         'Найдено в последнем цикле',
         newC,
-        'Это новые объекты, которые система нашла в последнем запуске.',
+        'Новые строки в подтверждённую базу (scam_base) за последний запуск — kro_meta.new_in_cycle. Порог «>5» по проекту задаётся вместе с channels_scanned_in_cycle (см. режим either в KRO_CYCLE_VOLUME_METRIC).',
         'kro_meta.new_in_cycle'
+      ) +
+      sumRow(
+        'Просмотрено каналов за цикл',
+        Number(meta.channels_scanned_in_cycle || 0),
+        'Сколько каналов обработал монитор в этом цикле (channels_scanned_in_cycle). При режиме either достаточно ≥6 здесь или в new_in_cycle.',
+        'kro_meta.channels_scanned_in_cycle'
+      ) +
+      sumRow(
+        'Порог объёма цикла (правило проекта)',
+        (meta.cycle_volume_ok === false ? 'НЕ выполнено' : 'OK') +
+          ' (min ' +
+          (meta.cycle_volume_required_min != null ? meta.cycle_volume_required_min : 6) +
+          ', ' +
+          (meta.cycle_volume_metric || 'either') +
+          ')',
+        'Строго больше пяти каналов за 12 ч ⇒ минимум 6 по выбранной метрике. Настройка: KRO_MIN_CHANNELS_FOUND_PER_CYCLE, KRO_CYCLE_VOLUME_METRIC на Render / в GitHub vars.',
+        'cycle_volume_*'
       ) +
       (isFinite(r12l)
         ? sumRow(

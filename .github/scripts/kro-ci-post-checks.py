@@ -103,7 +103,9 @@ def main() -> int:
     root = _workspace()
     try:
         verify_main = _load_verify_main()
-        verify_main()
+        vcode = verify_main()
+        if vcode != 0:
+            return vcode
     except Exception as e:
         print(f"::warning::Проверка last_cycle_at: сбой ({e})", file=sys.stderr)
 

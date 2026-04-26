@@ -162,6 +162,9 @@ jobs:
           PREVIOUS_LAST_CYCLE_AT: ${{ steps.pre_cycle.outputs.previous }}
           GOOGLE_APPLICATION_CREDENTIALS: backend/kro-worker/credentials.json
           KRO_SCAM_BASE_RANGE: scam_base!A2:N
+          # Минимум находок за цикл (строго >5 ⇒ 6). either = new_in_cycle ≥ min ИЛИ channels_scanned_in_cycle ≥ min
+          KRO_MIN_CHANNELS_FOUND_PER_CYCLE: '6'
+          KRO_CYCLE_VOLUME_METRIC: 'either'
         run: python3 "${GITHUB_WORKSPACE}/.github/scripts/kro-ci-post-checks.py"
 
       - name: KRO monitor rollout note

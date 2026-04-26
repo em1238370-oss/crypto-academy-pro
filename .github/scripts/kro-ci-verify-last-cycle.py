@@ -160,6 +160,56 @@ def main() -> int:
 
     if ok:
         print("Проверка last_cycle_at: OK")
+
+    # --- Минимум находок за цикл (строго >5 по умолчанию => 6): KRO_MIN_CHANNELS_FOUND_PER_CYCLE, KRO_CYCLE_VOLUME_METRIC ---
+    skip_vol = os.environ.get("KRO_CI_SKIP_CYCLE_VOLUME", "").strip().lower() in ("1", "true", "yes")
+    raw_min = os.environ.get("KRO_MIN_CHANNELS_FOUND_PER_CYCLE", "").strip()
+    if raw_min == "":
+        min_req = 6
+    else:
+        try:
+            min_req = int(str(raw_min).replace(" ", ""), 10)
+        except ValueError:
+            min_req = 6
+    metric = (os.environ.get("KRO_CYCLE_VOLUME_METRIC") or "either").strip().lower()
+
+    def _parse_int_cell(v) -> int:
+        try:
+            return int(str(v or 0).replace(" ", "").split(".")[0], 10)
+        except ValueError:
+            return 0
+
+    nic = _parse_int_cell(kv.get("new_in_cycle"))
+    scan = _parse_int_cell(kv.get("channels_scanned_in_cycle"))
+
+    if skip_vol or min_req <= 0:
+        print("Проверка объёма цикла: пропущена (KRO_CI_SKIP_CYCLE_VOLUME или MIN=0)")
+        return 0
+
+    vol_ok = True
+    if metric == "new_in_base":
+        vol_ok = nic >= min_req
+    elif metric == "scanned":
+        vol_ok = scan >= min_req
+    elif metric == "both":
+        vol_ok = nic >= min_req and scan >= min_req
+    else:
+        vol_ok = nic >= min_req or scan >= min_req
+
+    print(
+        f"KRO cycle volume: new_in_cycle={nic}, channels_scanned_in_cycle={scan}, "
+        f"min_required={min_req}, metric={metric}, ok={vol_ok}"
+    )
+    if not vol_ok:
+        print(
+            f"::error::Цикл: слишком мало находок (нужно ≥{min_req} по правилу «{metric}»). "
+            f"new_in_cycle={nic}, channels_scanned_in_cycle={scan}. "
+            "Усильте сбор или временно задайте KRO_CI_SKIP_CYCLE_VOLUME=1 / KRO_MIN_CHANNELS_FOUND_PER_CYCLE=0.",
+            file=sys.stderr,
+        )
+        return 1
+
+    print("Проверка объёма цикла: OK")
     return 0
 
 
