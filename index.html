@@ -244,7 +244,7 @@
                </div>
                <div class="kro-feature1-check kro-f1-check-reveal" id="kro-feature1-check">
                    <div class="kro-feature1-check-hero">
-                       <p class="kro-feature1-check-kicker">Публичная система мониторинга</p>
+                       <p class="kro-feature1-check-kicker">Проверь гуру · публичный мониторинг и живой разбор</p>
                        <h2 class="kro-feature1-check-heading">Проверка Telegram‑канала — здесь же, одним запросом</h2>
                        <p class="kro-feature1-check-lead">Вставляешь канал — получаешь <strong>живой разбор</strong>: жалобы, сигналы мониторинга и (когда доступно) срез публичной ленты до ~3 мес. Обычно секунды; на тяжёлой ленте допустимо до ~7 мин — таймер сверху показывает реальное время.</p>
                        <div class="kro-flow-simple" aria-label="Схема: как работает проверка">
@@ -284,9 +284,9 @@
                            </details>
                        </div>
                    </div>
-                   <div class="kro-feature1-check-row" id="kro-check-form-row">
+                   <div class="kro-feature1-check-row" id="kro-check-form-row" aria-busy="false">
                        <label class="kro-report-label" for="kro-check-channel">@username или ссылка на канал <input type="text" id="kro-check-channel" placeholder="@channel или t.me/..." autocomplete="off"></label>
-                       <button type="button" class="kro-report-submit" id="kro-check-btn">Запустить проверку</button>
+                       <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить гуру</button>
                    </div>
                    <div class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Дополнительные пояснения">
                        <p class="kro-check-user-explainer-title">Если нужно чуть больше деталей</p>
@@ -1248,6 +1248,8 @@
                        inlineReport.classList.add('hidden');
                        inlineReport.hidden = true;
                    }
+                   var formRowBusy = document.getElementById('kro-check-form-row');
+                   if (formRowBusy) formRowBusy.setAttribute('aria-busy', 'true');
                    checkBtn.disabled = true;
                    checkInput.disabled = true;
                }
@@ -1268,6 +1270,8 @@
                        checkProgress.classList.add('hidden');
                        checkProgress.hidden = true;
                    }
+                   var formRowIdle = document.getElementById('kro-check-form-row');
+                   if (formRowIdle) formRowIdle.setAttribute('aria-busy', 'false');
                    checkBtn.disabled = false;
                    checkInput.disabled = false;
                }
@@ -1583,6 +1587,24 @@
                        }
                    } catch (eDeep) { /* ignore */ }
                }
+               function renderInterimFallback(msg) {
+                   window.__kroHomeCheckT0 = null;
+                   hideCheckBusy();
+                   var m = String(msg == null ? '' : msg).trim() || 'Не удалось получить статус проверки.';
+                   checkResult.innerHTML =
+                       '<span class="kro-check-result-block">' + esc(m) + '</span>' +
+                       '<span class="kro-check-result-block">Нажмите «Повторить»: если отчёт уже собран на сервере, он откроется сразу.</span>' +
+                       '<button type="button" class="kro-report-submit kro-check-retry" id="kro-check-retry">Повторить</button>';
+                   checkResult.classList.remove('hidden');
+                   checkResult.className = 'kro-check-result';
+                   var rbIf = document.getElementById('kro-check-retry');
+                   if (rbIf) {
+                       rbIf.onclick = function () {
+                           var s = window.__kroHomeLastSlug;
+                           if (s) runHomeChannelCheck(s);
+                       };
+                   }
+               }
               function runHomeChannelCheck(slug) {
                   ensureKroCheckPanelVisible();
                   window.__kroHomeLastSlug = slug;
@@ -1744,9 +1766,10 @@
                       .then(function (pack) {
                           if (pack.status === 202 && pack.data && (pack.data.request_id || pack.data.id)) {
                               var rid = pack.data.request_id || pack.data.id;
-                             checkResult.textContent = pack.data.message || 'Анализируем канал... обычно до 7 минут.';
-                              checkResult.className = 'kro-check-result';
-                              checkResult.classList.remove('hidden');
+                              var qMsg = pack.data.message_ru || pack.data.message;
+                              if (checkProgressTitle && qMsg && String(qMsg).trim()) {
+                                  checkProgressTitle.textContent = String(qMsg).trim();
+                              }
                               pollResult(rid, 0);
                               return;
                           }
