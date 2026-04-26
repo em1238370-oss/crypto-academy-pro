@@ -6887,6 +6887,10 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
     ].slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
   };
   const ui = kroMapRiskDisplayToUiStatus(risk, hasEvidence);
+  const textsForFlags = textsForFast.some((x) => String(x || '').trim())
+    ? textsForFast
+    : (Array.isArray(payload.sample_posts) ? payload.sample_posts.map((x) => String(x || '')) : []);
+  const signalFast = kroCollectSuspiciousFlagsFromTexts(textsForFlags);
   return {
     queue_status: 'done',
     request_id: requestId,
@@ -6898,6 +6902,7 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
     risk_index: risk,
     risk_index_max: 10,
     risk_has_post_evidence: hasEvidence,
+    flags: Array.isArray(signalFast.flags) ? signalFast.flags : [],
     citations: userReport.quotes,
     user_report: userReport,
     analysis,

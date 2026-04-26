@@ -360,8 +360,25 @@
                                <div class="kro-inline-summary-item"><span class="kro-inline-summary-label">Уровень риска</span><span id="kro-inline-status" class="kro-inline-status-pill">—</span></div>
                                <div class="kro-inline-summary-item" id="kro-inline-riskidx-wrap" hidden><span class="kro-inline-summary-label">Сводный индекс риска</span><span id="kro-inline-riskidx" class="kro-inline-summary-value">—</span></div>
                            </div>
+                           <div class="kro-inline-findings-wrap hidden" id="kro-inline-findings-wrap" hidden>
+                               <h4 class="kro-inline-findings-heading" id="kro-inline-findings-heading">Находки</h4>
+                               <p class="kro-inline-findings-lead" id="kro-inline-findings-lead"></p>
+                               <div class="kro-inline-findings-table-scroll">
+                                   <table class="kro-inline-findings-table" id="kro-inline-findings-table" aria-describedby="kro-inline-findings-lead">
+                                       <thead>
+                                           <tr>
+                                               <th scope="col">Тип</th>
+                                               <th scope="col">Что заметили</th>
+                                               <th scope="col">Фрагмент</th>
+                                               <th scope="col"><span class="kro-sr-only">Подробнее</span></th>
+                                           </tr>
+                                       </thead>
+                                       <tbody id="kro-inline-findings-tbody"></tbody>
+                                   </table>
+                               </div>
+                           </div>
                            <div class="kro-inline-deep-status hidden" id="kro-inline-deep-status" hidden aria-live="polite"></div>
-                           <p class="kro-inline-reasons-title">Почему такой вывод</p>
+                           <p class="kro-inline-reasons-title" id="kro-inline-reasons-title">Почему такой вывод</p>
                            <ul class="kro-inline-reasons" id="kro-inline-reasons"></ul>
                            <div class="kro-inline-sections">
                                <section class="kro-inline-sec" id="kro-inline-sec1"><h4 class="kro-inline-sec-h">Базовая информация</h4><div id="kro-inline-s1" class="kro-inline-sec-body"></div></section>
@@ -373,6 +390,21 @@
                            <p class="kro-inline-foot" id="kro-inline-foot"></p>
                            <div class="kro-inline-deep-panel hidden" id="kro-inline-deep-panel" hidden></div>
                            <p class="kro-inline-deep-demo hidden" id="kro-inline-deep-demo" hidden></p>
+                           <div class="kro-inline-tg-modal hidden" id="kro-inline-tg-modal" hidden role="dialog" aria-modal="true" aria-labelledby="kro-inline-tg-modal-kicker">
+                               <div class="kro-inline-tg-modal-backdrop" tabindex="-1"></div>
+                               <div class="kro-inline-tg-modal-sheet">
+                                   <button type="button" class="kro-inline-tg-modal-close" aria-label="Закрыть">×</button>
+                                   <p class="kro-inline-tg-modal-kicker" id="kro-inline-tg-modal-kicker"></p>
+                                   <p class="kro-inline-tg-modal-channel" id="kro-inline-tg-modal-channel"></p>
+                                   <div class="kro-inline-tg-phone">
+                                       <div class="kro-inline-tg-bubble-out">
+                                           <p class="kro-inline-tg-bubble-text" id="kro-inline-tg-bubble-text"></p>
+                                           <span class="kro-inline-tg-bubble-cap">фрагмент публичного поста</span>
+                                       </div>
+                                   </div>
+                                   <div class="kro-inline-tg-modal-why" id="kro-inline-tg-modal-why"></div>
+                               </div>
+                           </div>
                            <div class="kro-inline-actions">
                                <button type="button" class="kro-report-submit" id="kro-inline-reset">Проверить другой канал</button>
                            </div>
@@ -1098,6 +1130,218 @@
                    t += '</p>';
                    return t;
                }
+               function kroStrHash(s) {
+                   var t = String(s || '');
+                   var h = 0;
+                   for (var i = 0; i < t.length; i++) h = ((h << 5) - h) + t.charCodeAt(i) | 0;
+                   return Math.abs(h);
+               }
+               function kroPickVariant(arr, seed) {
+                   var a = arr || [];
+                   if (!a.length) return '';
+                   return a[seed % a.length];
+               }
+               function kroSeverityFromFlagCode(code) {
+                   var c = String(code || '').toLowerCase();
+                   if (c === 'guarantee' || c === 'x_promises') return 'high';
+                   if (c === 'vip_paid' || c === 'signal_push' || c === 'fomo') return 'med';
+                   if (c === 'info' || c === 'neutral') return 'neutral';
+                   return 'med';
+               }
+               function kroFindingChipClass(sev) {
+                   if (sev === 'high') return 'kro-finding-chip kro-finding-chip--high';
+                   if (sev === 'med') return 'kro-finding-chip kro-finding-chip--med';
+                   if (sev === 'watch' || sev === 'info') return 'kro-finding-chip kro-finding-chip--info';
+                   return 'kro-finding-chip kro-finding-chip--neutral';
+               }
+               function kroFindingChipLabel(sev) {
+                   if (sev === 'high') return 'Сильный сигнал';
+                   if (sev === 'med') return 'Риск / тон';
+                   if (sev === 'watch' || sev === 'info') return 'Контекст';
+                   return 'Цитата';
+               }
+               function kroBuildFindingsRows(data) {
+                   var rows = [];
+                   var seen = {};
+                   var le = data.live_evidence && typeof data.live_evidence === 'object' ? data.live_evidence : null;
+                   var samples = le && Array.isArray(le.sample_posts) ? le.sample_posts.map(function (x) { return String(x || '').trim(); }).filter(Boolean) : [];
+                   var citations = Array.isArray(data.citations) ? data.citations.map(function (x) { return String(x || '').trim(); }).filter(Boolean) : [];
+                   var flags = Array.isArray(data.flags) ? data.flags : [];
+                   var a = data.analysis || {};
+                   var cb = Array.isArray(a.content_behavior) ? a.content_behavior : [];
+                   var quotesFromContent = [];
+                   for (var ci = 0; ci < cb.length; ci++) {
+                       var line = String(cb[ci] || '');
+                       var m = line.match(/«([^»]{12,})»/);
+                       if (m) quotesFromContent.push(m[1]);
+                   }
+                   var pool = samples.slice();
+                   for (var cj = 0; cj < citations.length; cj++) pool.push(citations[cj]);
+                   for (var qi = 0; qi < quotesFromContent.length; qi++) pool.push(quotesFromContent[qi]);
+                   var poolIx = 0;
+                   function takeSnippet() {
+                       if (poolIx < pool.length) return pool[poolIx++];
+                       return '';
+                   }
+                   function addRow(sev, label, explain, snippet) {
+                       var lab = String(label || '').trim();
+                       if (!lab) return;
+                       var sn = String(snippet || '').trim();
+                       var k = lab + '|' + sn.slice(0, 48);
+                       if (seen[k]) return;
+                       seen[k] = true;
+                       rows.push({ severity: sev, label: lab, explain: String(explain || '').trim(), snippet: sn });
+                   }
+                   for (var fi = 0; fi < flags.length; fi++) {
+                       var f = flags[fi] || {};
+                       var title = String(f.title || f.code || 'Маркер в тексте').trim();
+                       var expl = String(f.explanation || '').trim();
+                       var code = String(f.code || '').toLowerCase();
+                       var sn = takeSnippet();
+                       if (!sn && samples.length) sn = samples[fi % samples.length];
+                       if (!sn && pool.length) sn = pool[Math.min(fi, pool.length - 1)];
+                       addRow(
+                           kroSeverityFromFlagCode(code),
+                           title,
+                           expl || 'Совпадение с типичными формулировками, которые нередко встречаются в навязчивом крипто-продвижении.',
+                           sn,
+                       );
+                   }
+                   var ties = Array.isArray(a.ties_risk_factors) ? a.ties_risk_factors : [];
+                   for (var ti = 0; ti < ties.length && rows.length < 16; ti++) {
+                       var rawT = String(ties[ti] || '').trim();
+                       if (rawT.length < 10) continue;
+                       var colon = rawT.indexOf(':');
+                       var lab = colon > 0 ? rawT.slice(0, colon).trim() : 'Фактор';
+                       var rest = colon > 0 ? rawT.slice(colon + 1).trim() : rawT;
+                       var sn2 = takeSnippet();
+                       if (!sn2 && samples.length) sn2 = samples[ti % samples.length];
+                       addRow(colon > 0 ? 'watch' : 'info', lab, rest, sn2);
+                   }
+                   if (rows.length < 3) {
+                       for (var pi = poolIx; pi < pool.length && rows.length < 8; pi++) {
+                           addRow(
+                               'neutral',
+                               'Фрагмент из ленты',
+                               'Дословный отрывок из публичных постов в момент проверки — он попал в выборку сервера.',
+                               pool[pi],
+                           );
+                       }
+                   }
+                   return rows.slice(0, 14);
+               }
+               function kroClipSnippet(s, n) {
+                   var t = String(s || '').replace(/\s+/g, ' ').trim();
+                   if (t.length <= n) return t;
+                   return t.slice(0, n - 1) + '…';
+               }
+               function kroRenderFindingsBlock(data, displayLabel) {
+                   var wrap = document.getElementById('kro-inline-findings-wrap');
+                   var theadHint = document.getElementById('kro-inline-findings-heading');
+                   var lead = document.getElementById('kro-inline-findings-lead');
+                   var tbody = document.getElementById('kro-inline-findings-tbody');
+                   if (!wrap || !tbody) return;
+                   var rows = kroBuildFindingsRows(data);
+                   window.__kroFindingsLastRows = rows;
+                   window.__kroFindingsChannelLabel = String(displayLabel || '');
+                   if (!rows.length) {
+                       wrap.classList.add('hidden');
+                       wrap.hidden = true;
+                       tbody.innerHTML = '';
+                       return;
+                   }
+                   var seed = kroStrHash(String(displayLabel || '') + String((data && data.channel_key) || ''));
+                   if (theadHint) {
+                       theadHint.textContent = kroPickVariant([
+                           'Что нашли в ленте и базе',
+                           'Находки по этому каналу',
+                           'Сводная таблица: маркеры и цитаты',
+                           'Разбор по фактам — строка за строкой',
+                       ], seed);
+                   }
+                   if (lead) {
+                       lead.textContent = kroPickVariant([
+                           'Нажмите «Как в Telegram» — откроется фрагмент поста и пояснение, почему это важно для оценки.',
+                           'Строки с цитатами привязаны к реальным постам из выборки. Подсказка откроется в отдельном окне.',
+                           'Каждая строка — наблюдение системы; там, где есть текст, он из публичной ленты при проверке.',
+                       ], seed + 2);
+                   }
+                   tbody.innerHTML = rows
+                       .map(function (row, idx) {
+                           var chip = '<span class="' + kroFindingChipClass(row.severity) + '">' + esc(kroFindingChipLabel(row.severity)) + '</span>';
+                           var sn = row.snippet ? kroClipSnippet(row.snippet, 86) : '—';
+                           return (
+                               '<tr class="kro-finding-row">' +
+                               '<td data-label="Тип">' + chip + '</td>' +
+                               '<td data-label="Что заметили">' + esc(row.label) + '</td>' +
+                               '<td data-label="Фрагмент"><span class="kro-finding-snippet-preview">' + esc(sn) + '</span></td>' +
+                               '<td data-label="Подробнее"><button type="button" class="kro-finding-explain-btn" data-finding-idx="' +
+                               idx +
+                               '">Как в Telegram</button></td>' +
+                               '</tr>'
+                           );
+                       })
+                       .join('');
+                   wrap.classList.remove('hidden');
+                   wrap.hidden = false;
+               }
+               function kroCloseFindingModal() {
+                   var mod = document.getElementById('kro-inline-tg-modal');
+                   if (!mod) return;
+                   mod.classList.add('hidden');
+                   mod.hidden = true;
+                   document.body.classList.remove('kro-modal-open');
+               }
+               function kroOpenFindingModal(row) {
+                   var mod = document.getElementById('kro-inline-tg-modal');
+                   if (!mod || !row) return;
+                   var kick = document.getElementById('kro-inline-tg-modal-kicker');
+                   var ch = document.getElementById('kro-inline-tg-modal-channel');
+                   var bub = document.getElementById('kro-inline-tg-bubble-text');
+                   var why = document.getElementById('kro-inline-tg-modal-why');
+                   var label = window.__kroFindingsChannelLabel || '';
+                   if (kick) kick.textContent = row.label;
+                   if (ch) ch.textContent = label ? 'Канал: ' + label : '';
+                   if (bub) bub.textContent = row.snippet ? String(row.snippet) : 'Фрагмент не сохранился в ответе — откройте канал и сравните формулировки вручную.';
+                   if (why) {
+                       var w = row.explain ? String(row.explain) : '';
+                       why.innerHTML =
+                           '<p class="kro-inline-tg-why-title">Почему это учитываем</p>' +
+                           '<p class="kro-inline-tg-why-body">' +
+                           esc(w || 'Это элемент слоя быстрой оценки: отдельные посты не дают 100% картины, но помогают увидеть тон и повторяющиеся шаблоны.') +
+                           '</p>';
+                   }
+                   mod.classList.remove('hidden');
+                   mod.hidden = false;
+                   document.body.classList.add('kro-modal-open');
+                   try {
+                       var closer = mod.querySelector('.kro-inline-tg-modal-close');
+                       if (closer) closer.focus();
+                   } catch (eFoc) { /* ignore */ }
+               }
+               function kroEnsureFindingsModalWired() {
+                   if (window.__kroFindingsModalWired) return;
+                   window.__kroFindingsModalWired = true;
+                   var host = document.getElementById('kro-inline-report');
+                   if (!host) return;
+                   host.addEventListener('click', function (ev) {
+                       var t = ev.target;
+                       var btn = t && t.closest ? t.closest('.kro-finding-explain-btn') : null;
+                       if (btn) {
+                           var idx = parseInt(btn.getAttribute('data-finding-idx'), 10);
+                           var row = window.__kroFindingsLastRows && window.__kroFindingsLastRows[idx];
+                           if (row) kroOpenFindingModal(row);
+                           return;
+                       }
+                       if (t.closest && t.closest('.kro-inline-tg-modal-backdrop')) kroCloseFindingModal();
+                       if (t.closest && t.closest('.kro-inline-tg-modal-close')) kroCloseFindingModal();
+                   });
+                   document.addEventListener('keydown', function (ev) {
+                       if (ev.key !== 'Escape') return;
+                       var mod = document.getElementById('kro-inline-tg-modal');
+                       if (mod && !mod.hidden) kroCloseFindingModal();
+                   });
+               }
                function mapHomeFetchError(err) {
                    var hint = (err && err.message) ? String(err.message) : '';
                    var en = (err && err.name) ? String(err.name) : '';
@@ -1248,6 +1492,7 @@
                        inlineReport.classList.add('hidden');
                        inlineReport.hidden = true;
                    }
+                   kroCloseFindingModal();
                    var formRowBusy = document.getElementById('kro-check-form-row');
                    if (formRowBusy) formRowBusy.setAttribute('aria-busy', 'true');
                    checkBtn.disabled = true;
@@ -1342,6 +1587,7 @@
                   var liveGateEl = document.getElementById('kro-inline-live-gate');
                   var analysisPathEl = document.getElementById('kro-inline-analysis-path');
                    try {
+                       kroEnsureFindingsModalWired();
                        var a = data.analysis || {};
                        var c = a.conclusion || {};
                        var profile = data.profile;
@@ -1350,15 +1596,33 @@
                        var ab = data.analysis_basis && typeof data.analysis_basis === 'object' ? data.analysis_basis : null;
                        var ur = data.user_report && typeof data.user_report === 'object' ? data.user_report : null;
                        var citations = Array.isArray(data.citations) ? data.citations.map(function (x) { return String(x || '').trim(); }).filter(Boolean) : [];
+                       var __kSeed = kroStrHash(String(displayLabel || '') + String((data && data.channel_key) || ''));
                        var eyebrow = document.getElementById('kro-inline-eyebrow');
                        var titleEl = document.getElementById('kro-inline-title');
                        var metaEl = document.getElementById('kro-inline-meta');
                        var stEl = document.getElementById('kro-inline-status');
                        var reasonsEl = document.getElementById('kro-inline-reasons');
+                       var reasonsTitleEl = document.getElementById('kro-inline-reasons-title');
                        var footEl = document.getElementById('kro-inline-foot');
                        var rw = document.getElementById('kro-inline-riskidx-wrap');
                        var riv = document.getElementById('kro-inline-riskidx');
-                       if (eyebrow) eyebrow.textContent = profile && profile.username ? 'Проверка канала: жалобы и мониторинг' : 'Живая проверка канала';
+                       if (eyebrow) {
+                           if (profile && profile.username) {
+                               eyebrow.textContent = kroPickVariant([
+                                   'Сводка: база + мониторинг по этому каналу',
+                                   'Проверка по нашим данным и циклам мониторинга',
+                                   'Канал уже в поле зрения системы — ниже факты',
+                               ], __kSeed);
+                           } else {
+                               eyebrow.textContent = kroPickVariant([
+                                   'Разбор канала: факты из ленты и базы',
+                                   'Снимок проверки — что увидели в Telegram',
+                                   'Канал под лупой: жалобы, лента, вывод',
+                                   'Результат запроса — без лишней «воды»',
+                                   'Честная сводка: что нашлось по каналу',
+                               ], __kSeed);
+                           }
+                       }
                        if (titleEl) titleEl.textContent = (profile && profile.username) ? String(profile.username).trim() : displayLabel;
                        var metaParts = [];
                        if (lm.analysis_window_days != null && !isNaN(Number(lm.analysis_window_days))) {
@@ -1366,8 +1630,16 @@
                        } else if (!profile) {
                            metaParts.push(
                                lm.home_quick_live
-                                   ? 'живой срез ленты, жалобы и сигналы мониторинга'
-                                   : 'жалобы и мониторинг; лента в этом запросе не читалась'
+                                   ? kroPickVariant([
+                                       'живой срез ленты, жалобы и сигналы мониторинга',
+                                       'лента + внутренние жалобы + снимок мониторинга',
+                                       'читаем публичные посты и сверяем с базой',
+                                   ], __kSeed + 3)
+                                   : kroPickVariant([
+                                       'жалобы и мониторинг; лента в этом запросе не читалась',
+                                       'в этом ответе — контекст сервиса без живой ленты',
+                                       'без чтения постов: только карточка и внешние сигналы',
+                                   ], __kSeed + 3)
                            );
                        }
                        if (lm.home_quick_live === true) {
@@ -1386,11 +1658,22 @@
                            if (le && le.live_pass === true) {
                                var pN = le.posts_fetched != null && !isNaN(Number(le.posts_fetched)) ? Number(le.posts_fetched) : null;
                                var wN = le.analysis_window_days != null && !isNaN(Number(le.analysis_window_days)) ? Number(le.analysis_window_days) : null;
-                               liveBadge = 'LIVE: реальный вход в ленту Telegram' +
+                               liveBadge =
+                                   kroPickVariant([
+                                       'LIVE: чтение ленты в Telegram',
+                                       'LIVE: заход в канал выполнен',
+                                       'LIVE: посты взяты из реальной ленты',
+                                   ], __kSeed) +
                                    (pN != null ? ' (~' + pN + ' постов)' : '') +
                                    (wN != null ? ', окно до ' + wN + ' дн.' : '');
                            } else if (le) {
-                               liveBadge = 'НЕ LIVE: поверхностный режим (' + (le.mode || 'unknown') + ')';
+                               liveBadge =
+                                   'НЕ LIVE: ' +
+                                   kroPickVariant([
+                                       'поверхностный режим (' + (le.mode || 'unknown') + ')',
+                                       'без полного чтения ленты (' + (le.mode || 'unknown') + ')',
+                                       'лента не пройдена в этом запуске (' + (le.mode || 'unknown') + ')',
+                                   ], __kSeed + 5);
                            }
                            var allMeta = metaParts.slice();
                          if (liveBadge) allMeta.unshift(liveBadge);
@@ -1408,22 +1691,50 @@
                            var lgCls = 'kro-inline-live-gate';
                            if (le && le.live_pass === true) {
                                lgCls += ' kro-inline-live-gate--live';
-                               lgTitle = 'LIVE: канал прочитан в Telegram прямо сейчас';
+                               lgTitle = kroPickVariant([
+                                   'Лента Telegram реально прочитана',
+                                   'Живые посты канала попали в отчёт',
+                                   'Есть прямой заход в публичную ленту',
+                               ], __kSeed + 7);
                                var lPosts = le.posts_fetched != null && !isNaN(Number(le.posts_fetched)) ? Number(le.posts_fetched) : null;
                                var lWin = le.analysis_window_days != null && !isNaN(Number(le.analysis_window_days)) ? Number(le.analysis_window_days) : null;
                                var lSample = Array.isArray(le.sample_posts) ? le.sample_posts.filter(Boolean).slice(0, 2) : [];
-                               lgBody = 'Сервер реально заходил в ленту канала и читал живые сообщения' +
-                                   (lPosts != null ? ' (~' + lPosts + ' постов с текстом)' : '') +
-                                   (lWin != null ? ', окно до ' + lWin + ' дн.' : '') + '.';
+                               lgBody = kroPickVariant([
+                                   'Сервер заходил в ленту и вытащил текст постов для разбора',
+                                   'Мы читали публичные сообщения этого канала в момент проверки',
+                                   'Ниже выводы опираются на реальные фрагменты ленты, не на догадки',
+                               ], __kSeed + 8);
+                               if (lPosts != null || lWin != null) {
+                                   lgBody += ' —';
+                                   if (lPosts != null) lgBody += ' ~' + lPosts + ' постов с текстом';
+                                   if (lWin != null) lgBody += (lPosts != null ? ', ' : ' ') + 'окно до ' + lWin + ' дн.';
+                                   lgBody += '.';
+                               } else {
+                                   lgBody += '.';
+                               }
                                if (lSample.length) {
-                                   lgBody += ' Пример: «' + lSample[0].slice(0, 140) + (lSample[0].length > 140 ? '…' : '') + '».';
+                                   lgBody +=
+                                       ' ' +
+                                       kroPickVariant(['Удержали пример:', 'Цепляющий фрагмент:', 'Строка из ленты:'], __kSeed + 9) +
+                                       ' «' +
+                                       lSample[0].slice(0, 140) +
+                                       (lSample[0].length > 140 ? '…' : '') +
+                                       '».';
                                }
                            } else {
                                lgCls += ' kro-inline-live-gate--not-live';
-                               lgTitle = 'НЕ LIVE: живая лента не прочитана';
+                               lgTitle = kroPickVariant([
+                                   'Без живой ленты в этом ответе',
+                                   'Живая лента сейчас недоступна',
+                                   'Посты канала здесь не читались',
+                               ], __kSeed + 7);
                                lgBody = (le && le.reason)
                                    ? String(le.reason)
-                                   : 'В этом ответе выполнен только поверхностный режим без живого чтения ленты Telegram.';
+                                   : kroPickVariant([
+                                       'Сработал запасной режим: жалобы и карточка есть, но текст постов не подтянут.',
+                                       'Telegram или таймаут не дали прочитать ленту — смотрите таблицу находок и блок ниже.',
+                                       'Для честного разбора по тексту нужен успешный заход в канал; здесь его не было.',
+                                   ], __kSeed + 8);
                            }
                            liveGateEl.className = lgCls;
                            liveGateEl.innerHTML =
@@ -1439,6 +1750,16 @@
                           analysisPathEl.innerHTML = '';
                       }
 
+                       kroRenderFindingsBlock(data, displayLabel);
+
+                       if (reasonsTitleEl) {
+                           reasonsTitleEl.textContent = kroPickVariant([
+                               'Почему система так решила',
+                               'Логика вывода — коротко',
+                               'Из чего сложился статус',
+                               'Ключевые аргументы проверки',
+                           ], __kSeed + 11);
+                       }
                        if (reasonsEl) {
                            var rs = (c.reasons || []).slice(0, 4).map(function (r) { return String(r == null ? '' : r).trim(); }).filter(Boolean);
                            if (le && le.live_pass !== true) {
@@ -1451,7 +1772,15 @@
                                    rs.unshift('✅ LIVE‑доказательство: сервер прошёл живую ленту Telegram в этом запросе.');
                                }
                            }
-                           if (!rs.length) rs.push('Вывод сформирован по данным проверки и правилам системы.');
+                           if (!rs.length) {
+                               rs.push(
+                                   kroPickVariant([
+                                       'Вывод собран из правил сервиса и доступных данных по этому каналу.',
+                                       'Мы сопоставили сигналы мониторинга с тем, что удалось прочитать.',
+                                       'Итог — не «мнение», а сочетание фактов из базы и ленты.',
+                                   ], __kSeed + 13),
+                               );
+                           }
                            reasonsEl.innerHTML = rs.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
                        }
                        if (rw && riv) {
@@ -1902,6 +2231,14 @@
                            lg.textContent = '';
                            lg.className = 'kro-inline-live-gate hidden';
                        }
+                       var fw = document.getElementById('kro-inline-findings-wrap');
+                       var ft = document.getElementById('kro-inline-findings-tbody');
+                       if (fw) {
+                           fw.hidden = true;
+                           fw.classList.add('hidden');
+                       }
+                       if (ft) ft.innerHTML = '';
+                       kroCloseFindingModal();
                        checkResult.classList.add('hidden');
                        checkResult.innerHTML = '';
                        checkInput.value = '';
