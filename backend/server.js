@@ -3952,8 +3952,8 @@ function kroV0MergeDeepRateLimitIntoAnalysis(analysis, deepAvailableAtIso) {
   if (!analysis || typeof analysis !== 'object') return;
   const msk = deepAvailableAtIso ? kroFormatIsoForMsk(deepAvailableAtIso) : '';
   const msg = msk
-    ? `Запрошен глубокий живой прогон, но Telegram сейчас ограничивает частоту запросов. Полный разбор ленты можно повторить примерно после ${msk}. Ниже — быстрый слой по жалобам и мониторингу; мы не заполняем «глубокий» отчёт пустыми данными.`
-    : 'Запрошен глубокий живой прогон, но сейчас действует лимит Telegram — ниже быстрый слой по жалобам и мониторингу.';
+    ? `Запрошен полный разбор ленты, но Telegram сейчас ограничивает частоту запросов. Повторить можно примерно после ${msk}. Ниже — краткий отчёт по жалобам и мониторингу без полной выборки постов.`
+    : 'Запрошен полный разбор ленты, но сейчас действует лимит Telegram — ниже краткий отчёт по жалобам и мониторингу.';
   const c = analysis.conclusion && typeof analysis.conclusion === 'object' ? analysis.conclusion : { status: KRO_V0_STATUS.watch, reasons: [] };
   analysis.conclusion = {
     ...c,
@@ -3961,11 +3961,11 @@ function kroV0MergeDeepRateLimitIntoAnalysis(analysis, deepAvailableAtIso) {
     reasons: [msg, ...(Array.isArray(c.reasons) ? c.reasons : [])].slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
   };
   const head =
-    'Глубокий анализ ленты в этом запросе недоступен из‑за лимита Telegram (FLOOD_WAIT). Показан быстрый отчёт — без подмены живой выборки постов.';
+    'Полный разбор ленты в этом запросе недоступен из‑за лимита Telegram. Показан краткий отчёт без полной выборки постов.';
   analysis.basic_info = [head, ...(Array.isArray(analysis.basic_info) ? analysis.basic_info : [])].slice(0, 8);
   const src = Array.isArray(analysis.sources) ? analysis.sources : [];
-  if (!src.some((x) => /живая проверка Telegram/i.test(String(x)))) {
-    analysis.sources = [...src, 'живая проверка Telegram (ограничена лимитом)'];
+  if (!src.some((x) => /лимит.*telegram|telegram.*лимит/i.test(String(x)))) {
+    analysis.sources = [...src, 'Telegram: лимит запросов'];
   }
 }
 
@@ -3999,7 +3999,7 @@ function kroV0MergeQueuedDeepIntoAnalysis(analysis, userMessage) {
   };
   const src = Array.isArray(analysis.sources) ? analysis.sources : [];
   if (!src.some((x) => /в очереди/i.test(String(x)))) {
-    analysis.sources = [...src, 'живая проверка Telegram (в очереди)'];
+    analysis.sources = [...src, 'проверка Telegram (в очереди)'];
   }
 }
 
@@ -4264,7 +4264,7 @@ function kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeParsed, channelKe
   }
   if (!live || typeof live !== 'object') return;
   const head =
-    'Живой срез публичной ленты (до ~3 мес.): по тексту постов и ответам из Telegram — рядом с жалобами и мониторингом.';
+    'Добавлен текст из открытой ленты (до ~3 мес.) рядом с жалобами и мониторингом.';
   const biLive = Array.isArray(live.basic_info) ? live.basic_info.slice(0, 4) : [];
   const cbLive = Array.isArray(live.content_behavior) ? live.content_behavior.slice(0, 3) : [];
   analysis.basic_info = [head, ...biLive, ...(Array.isArray(analysis.basic_info) ? analysis.basic_info : [])].slice(
@@ -4276,8 +4276,8 @@ function kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeParsed, channelKe
     10,
   );
   const src = Array.isArray(analysis.sources) ? analysis.sources : [];
-  if (!src.some((s) => /живая проверк/i.test(String(s)))) {
-    analysis.sources = ['живая проверка Telegram', ...src];
+  if (!src.some((s) => String(s).toLowerCase().includes('telegram'))) {
+    analysis.sources = ['проверка через Telegram', ...src];
   }
 }
 
@@ -4858,19 +4858,19 @@ function kroAssessPublicSnapshotTexts(texts) {
   const cautions = [];
   const reasons = [];
   if (hasRiskManagement) {
-    positives.push('В доступных фрагментах есть признаки риск-менеджмента: упоминаются стопы, риск на сделку или сценарии отмены идеи.');
-    reasons.push('В текстах есть явные элементы риск-менеджмента, а не только призыв «заходить».');
+    positives.push('В тексте есть стопы, риск на сделку или условия отмены идеи.');
+    reasons.push('Есть элементы риск-менеджмента, а не только призыв «заходить».');
   } else {
-    cautions.push('В доступных фрагментах не видно явных правил риск-менеджмента (стоп, риск на сделку, invalidation).');
+    cautions.push('Не видно явных правил риска: стоп, доля на сделку, когда идея считается ошибочной.');
   }
   if (hasEducation) {
-    positives.push('Посты больше похожи на разборы и объяснения, а не только на короткие сигналы.');
-    reasons.push('В ленте заметны объяснения логики и контекста, а не только результат.');
+    positives.push('Посты больше похожи на разборы и объяснения, чем на короткие сигналы.');
+    reasons.push('Заметны объяснения логики, а не только результат.');
   } else {
-    cautions.push('В срезе мало объяснений логики входа или сценариев — это ослабляет уверенность в качестве аналитики.');
+    cautions.push('Мало объяснений, зачем именно такой вход или сценарий.');
   }
   if (hasDisclaimer) {
-    positives.push('Есть оговорки про риски или non-financial-advice; это не гарантия качества, но снижает агрессивность подачи.');
+    positives.push('Есть оговорки про риск или что это не инвестсовет — само по себе не гарантия качества, но тон мягче.');
   }
   return { positives, cautions, reasons, hasRiskManagement, hasEducation, hasDisclaimer };
 }
@@ -4892,7 +4892,7 @@ function kroBuildFastChannelTopicSummary(texts) {
   if (promoHits > 0 && promoHits >= signalHits && promoHits >= educationHits) {
     return 'Похоже на канал с заметной коммерческой подачей: продвижением услуг, доступов или внешних ссылок.';
   }
-  return 'По доступным постам это канал с короткими комментариями по рынку без одного ярко выраженного формата.';
+  return 'По этой выборке канал без одного ярко выраженного формата — в основном короткие комментарии.';
 }
 
 function kroPickFastCitations(texts, buckets, limit = 3) {
@@ -4954,42 +4954,42 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
     label: 'Платный доступ и сигналы',
     status: hasVip ? 'yes' : 'no',
     explanation: hasVip
-      ? `Нашли упоминания платного доступа или закрытого формата. Пример: «${firstMatch(vipKeywords).slice(0, 150)}${firstMatch(vipKeywords).length > 150 ? '…' : ''}».`
-      : 'В доступных фрагментах не видно предложений купить VIP, подписку или закрытый доступ.',
+      ? `Заметны платный формат или закрытый клуб. Фрагмент: «${firstMatch(vipKeywords).slice(0, 150)}${firstMatch(vipKeywords).length > 150 ? '…' : ''}».`
+      : 'В этой выборке не видно призывов купить VIP, подписку или закрытый доступ.',
   });
   criteria.push({
     key: 'fomo',
     label: 'Давление и обещания прибыли',
     status: hasFomo ? 'yes' : 'no',
     explanation: hasFomo
-      ? `Есть формулировки давления или обещаний результата. Пример: «${firstMatch(fomoKeywords).slice(0, 150)}${firstMatch(fomoKeywords).length > 150 ? '…' : ''}».`
-      : 'В доступных фрагментах не видно обещаний “гарантированной прибыли”, жёсткого давления или “иксов без объяснения”.',
+      ? `Есть нажим или обещания результата. Пример: «${firstMatch(fomoKeywords).slice(0, 150)}${firstMatch(fomoKeywords).length > 150 ? '…' : ''}».`
+      : 'Нет явных «гарантий прибыли», жёсткого нажима и обещаний «икс» без объяснений.',
   });
   criteria.push({
     key: 'risk',
-    label: 'Риск-менеджмент',
+    label: 'Про риск в постах',
     status: hasRiskManagement ? 'yes' : 'no',
     explanation: hasRiskManagement
-      ? 'В текстах есть правила риска: упоминаются стопы, риск на сделку, тейк или условия отмены идеи.'
-      : 'В доступных фрагментах не видно явных правил риска: стопов, риска на сделку или условий отмены идеи.',
+      ? 'Встречаются стопы, риск на сделку, тейк или условия отмены идеи.'
+      : 'Почти не видно правил риска: стопы, доля на сделку, когда идея считается ошибочной.',
   });
   criteria.push({
     key: 'logic',
-    label: 'Логика и объяснения',
+    label: 'Объясняют ли смысл',
     status: hasLogic ? 'yes' : 'partial',
     explanation: hasLogic
-      ? 'Автор не только даёт тезис, но и объясняет логику, сценарий или контекст идеи.'
-      : 'В срезе мало объяснений, почему именно такая идея или сценарий; больше коротких тезисов, чем развёрнутой логики.',
+      ? 'Автор не только даёт тезис, но и объясняет логику или сценарий.'
+      : 'Мало объяснений, почему именно такой сценарий; больше коротких фраз.',
   });
   criteria.push({
     key: 'ads',
-    label: 'Реклама / продвижение',
+    label: 'Реклама и ссылки',
     status: adsState === 'high' ? 'yes' : adsState === 'partial' ? 'partial' : 'no',
     explanation: adsState === 'high'
-      ? `В доступных текстах заметна коммерческая подача: реклама, ссылки или продажа доступа${Number.isFinite(adsRatio) ? ` (~${adsRatio}% выборки)` : ''}.`
+      ? `Заметна реклама, ссылки или продажа доступа${Number.isFinite(adsRatio) ? ` (ориентир ~${adsRatio}% выборки)` : ''}.`
       : adsState === 'partial'
-        ? `Коммерческие элементы встречаются, но не доминируют${Number.isFinite(adsRatio) ? ` (~${adsRatio}% выборки)` : ''}.`
-        : 'В доступных фрагментах реклама и продажа доступа не выглядят доминирующей целью канала.',
+        ? `Реклама и ссылки есть, но не на каждом шагу${Number.isFinite(adsRatio) ? ` (~${adsRatio}% выборки)` : ''}.`
+        : 'Реклама и продажа доступа не выглядят главной темой этой выборки.',
   });
 
   let score10 = 3;
@@ -5004,23 +5004,26 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
   if (hasRiskManagement) score10 -= 1;
   if (hasLogic) score10 -= 1;
   score10 = Math.max(1, Math.min(10, score10));
-  let channelType = 'серый';
-  if (score10 >= 8) channelType = 'скамоподобный';
-  else if (hasVip && hasFomo) channelType = 'агрессивный';
-  else if (hasLogic && hasRiskManagement && !hasVip && adsState === 'low' && score10 <= 4) channelType = 'обучающий';
-  else if (hasRiskManagement && !hasFomo && score10 <= 4) channelType = 'аккуратный';
+  let channelType = 'смешанная картина по тексту';
+  if (score10 >= 8) channelType = 'по тексту много тревожного';
+  else if (hasVip && hasFomo) channelType = 'заметны платный доступ и нажим';
+  else if (hasLogic && hasRiskManagement && !hasVip && adsState === 'low' && score10 <= 4) {
+    channelType = 'больше разборов, меньше навязчивой продажи';
+  } else if (hasRiskManagement && !hasFomo && score10 <= 4) {
+    channelType = 'есть правила риска, мало агрессии в подаче';
+  }
 
   const summaryMain =
     score10 >= 8
-      ? 'По прочитанным текстам канал смотрится тревожно: видно много сигнальных формулировок, давления на оплату или слабое объяснение риска.'
+      ? 'По этим постам насторожительно: давление, платный доступ или слабо проговорён риск.'
       : score10 >= 5
-        ? 'По смыслу в постах — есть вопросы: местами полезно, местами рискованно или плохо проговорен риск. Один молодой возраст или ссылки ничего сами не доказывают.'
-        : 'По прочитанным фрагментам канал смотрится ровно: в текстах мало «гарантий», навязчивой продажи и жёсткого FOMO.';
+        ? 'Картина смешанная: полезное рядом с резкими формулировками или слабым объяснением риска.'
+        : 'По этой выборке спокойнее: мало «гарантий» и грубого нажима.';
   const summaryTail = !hasRiskManagement
-    ? 'Важно: в срезе плохо читается риск-менеджмент (стопы, размер риска) — это риск для копипаста сигналов, а не «приговор мошеннику».'
+    ? 'Правила риска в тексте почти не видны — повторять сделки вслепую опасно.'
     : hasAdsWords || adsState !== 'low'
-      ? 'Есть реклама, партнёрки или платный доступ в тексте — нормально у многих каналов, но важно, как оформлен риск и нет ли навязчивых гарантий прибыли.'
-      : 'Реклама и пуш продажи не доминируют; по этому срезу нет смысла раздувать страх — смотри конкретные фразы ниже.';
+      ? 'Реклама или партнёрки есть — это часто нормально, смотрите, нет ли обещаний лёгких денег.'
+      : 'Навязчивой рекламы в этой выборке мало.';
 
   return {
     criteria,
@@ -5036,24 +5039,26 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
     reasons: [
       summaryMain,
       hasRiskManagement
-        ? 'В текстах есть хотя бы базовые признаки риск-менеджмента или ограничений по сделке.'
-        : 'В текстах не видно явных ограничителей риска, поэтому копировать сделки без своей проверки опасно.',
+        ? 'В тексте есть хотя бы намёки на риск-менеджмент.'
+        : 'Явных ограничителей риска не видно — копировать сделки без своей проверки рискованно.',
       hasLogic
-        ? 'Автор хотя бы местами объясняет, почему рассматривает идею, а не только выдаёт команды.'
-        : 'Объяснений логики мало, поэтому доверять выводам канала “как есть” не стоит.',
+        ? 'Автор местами объясняет логику, а не только даёт команды.'
+        : 'Мало объяснений — доверять каждому тезису «как есть» не стоит.',
     ].filter(Boolean),
   };
 }
 
 function kroFormatFastCriteriaLines(criteria) {
-  const icon = (status) => {
-    if (status === 'yes') return 'есть';
+  const word = (status) => {
+    if (status === 'yes') return 'да';
     if (status === 'partial') return 'частично';
-    return 'не найдено';
+    return 'нет';
   };
   return (Array.isArray(criteria) ? criteria : []).map((item) => {
     const it = item && typeof item === 'object' ? item : {};
-    return `${it.label || 'Критерий'}: ${icon(it.status)}. ${it.explanation || ''}`.trim();
+    const lab = it.label || 'Пункт';
+    const exp = String(it.explanation || '').trim();
+    return exp ? `${lab} — ${word(it.status)}. ${exp}` : `${lab} — ${word(it.status)}.`;
   });
 }
 
@@ -5067,10 +5072,10 @@ function kroMapFastRisk10ToConclusion(score10, opts = null) {
 
 function kroMapFastRisk10ToUiStatus(score10) {
   const n = Number(score10);
-  if (!Number.isFinite(n)) return { status: 'НЕДОСТУПЕН', code: 'UNAVAILABLE' };
-  if (n >= 9) return { status: 'ОПАСНО', code: 'DANGER' };
-  if (n >= 5) return { status: 'ПОДОЗРИТЕЛЬНО', code: 'SUSPICIOUS' };
-  return { status: 'БЕЗОПАСНО', code: 'SAFE' };
+  if (!Number.isFinite(n)) return { status: 'Оценка не готова', code: 'UNAVAILABLE' };
+  if (n >= 9) return { status: 'Много тревожного в формулировках', code: 'DANGER' };
+  if (n >= 5) return { status: 'Есть поводы насторожиться', code: 'SUSPICIOUS' };
+  return { status: 'По тексту спокойнее', code: 'SAFE' };
 }
 
 function kroDeepMetric(payload, field) {
@@ -5122,11 +5127,11 @@ function kroHasStrongPostEvidence(p, fastHuman) {
 
 function kroMapRiskDisplayToUiStatus(risk, hasEvidence) {
   const n = Number(risk);
-  if (!Number.isFinite(n)) return { status: 'НЕДОСТУПЕН', code: 'UNAVAILABLE' };
-  if (n < 4) return { status: 'ДОБРОСОВЕСТНО', code: 'SAFE' };
-  if (n < 7) return { status: 'ПОДОЗРИТЕЛЬНО', code: 'SUSPICIOUS' };
-  if (n >= 7 && hasEvidence) return { status: 'ОПАСНО', code: 'DANGER' };
-  return { status: 'ПОДОЗРИТЕЛЬНО', code: 'SUSPICIOUS' };
+  if (!Number.isFinite(n)) return { status: 'Оценка не готова', code: 'UNAVAILABLE' };
+  if (n < 4) return { status: 'Риск по тексту ниже', code: 'SAFE' };
+  if (n < 7) return { status: 'Есть поводы насторожиться', code: 'SUSPICIOUS' };
+  if (n >= 7 && hasEvidence) return { status: 'Много тревожного в формулировках', code: 'DANGER' };
+  return { status: 'Есть поводы насторожиться', code: 'SUSPICIOUS' };
 }
 
 function kroConclusionStatusFromEvidence(risk, hasEvidence, opts) {
@@ -5211,7 +5216,7 @@ function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
   } else if (wh.loss_hits >= 6) {
     sharpQuestion = 'Автор публично ссылается на плохие сделки и риск. Готов ли проверить его “на бумажке” без крупного депозита, потому что сам видишь, что “не только плюс”?';
   } else if (kroCriteriaStatus(fastHuman, 'fomo') === 'yes' || (Number(wh.guarantee_hits) || 0) >= 2) {
-    sharpQuestion = 'Если убрать слова “срочно/гарантия/100%” — остались бы в постах цифры, по которым ты вошёл бы в сделку сам, без FOMO?';
+    sharpQuestion = 'Если убрать слова «срочно», «гарантия», «100%» — остались бы в постах цифры, по которым ты вошёл бы в сделку сам, без нажима «успей»?';
   }
 
   const headline = tier === 'calm'
@@ -5414,17 +5419,17 @@ function kroCollectSuspiciousFlagsFromTexts(texts) {
 }
 
 function kroMapRiskToUiStatus(risk) {
-  if (!Number.isFinite(risk)) return { status: 'НЕДОСТУПЕН', code: 'UNAVAILABLE' };
-  if (risk >= 70) return { status: 'ОПАСНО', code: 'DANGER' };
-  if (risk >= 40) return { status: 'ПОДОЗРИТЕЛЬНО', code: 'SUSPICIOUS' };
-  return { status: 'БЕЗОПАСНО', code: 'SAFE' };
+  if (!Number.isFinite(risk)) return { status: 'Оценка не готова', code: 'UNAVAILABLE' };
+  if (risk >= 70) return { status: 'Много тревожного в формулировках', code: 'DANGER' };
+  if (risk >= 40) return { status: 'Есть поводы насторожиться', code: 'SUSPICIOUS' };
+  return { status: 'По тексту спокойнее', code: 'SAFE' };
 }
 
 function kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, snap) {
   if (!analysis || !snap || !Array.isArray(snap.snippets) || !snap.snippets.length) return;
   const current = Array.isArray(analysis.content_behavior) ? analysis.content_behavior : [];
   analysis.content_behavior = [
-    `Быстрый публичный срез ленты t.me/${snap.slug}: прочитано фрагментов постов ${snap.snippets.length}.`,
+    `Короткая выборка с открытой страницы t.me/${snap.slug}: ${snap.snippets.length} фрагментов.`,
     `Пример: «${String(snap.snippets[0] || '').slice(0, 180)}».`,
     ...current,
   ].slice(0, 8);
@@ -6852,7 +6857,7 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
       posts_read: postsRead,
       period_days: periodDays,
       read_path: readPath,
-      status: 'НЕДОСТУПЕН',
+      status: 'Оценка не готова',
       status_code: 'UNAVAILABLE',
       risk_index: null,
       analysis: {
@@ -6860,11 +6865,11 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
         channel_key: key,
         generated_at: new Date().toISOString(),
         sources: ['GitHub Actions Telethon'],
-        basic_info: ['Не удалось прочитать текстовые сообщения ленты в этом запуске.'],
+        basic_info: ['Не удалось прочитать текст постов в этом запуске.'],
         content_behavior: [],
         external_reports: [],
         ties_risk_factors: [],
-        conclusion: { status: 'живой анализ не выполнен', reasons: ['Нужно хотя бы 1 нормальное текстовое сообщение.'] },
+        conclusion: { status: 'анализ ленты не выполнен', reasons: ['Нужно хотя бы одно нормальное текстовое сообщение.'] },
       },
       live_evidence: {
         live_pass: false,
@@ -6886,7 +6891,7 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
       posts_read: postsRead,
       period_days: periodDays,
       read_path: readPath,
-      status: 'НЕДОСТУПЕН',
+      status: 'Оценка не готова',
       status_code: 'UNAVAILABLE',
       risk_index: null,
       risk_index_max: 10,
@@ -6896,15 +6901,15 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
         generated_at: new Date().toISOString(),
         sources: ['GitHub Actions Telethon'],
         basic_info: [
-          `Прочитано только ${postsRead} текстовых постов за свежий fast-период.`,
-          'Для честной fast-оценки нужно минимум 5 нормальных текстовых сообщений.',
+          `Успели прочитать только ${postsRead} постов с текстом.`,
+          'Для нормальной оценки нужно хотя бы пять осмысленных сообщений.',
         ],
         content_behavior: [],
         external_reports: [],
         ties_risk_factors: [],
         conclusion: {
           status: 'мало данных',
-          reasons: ['Fast-оценка (1-10) и тип канала не выставлены, потому что постов меньше 5.'],
+          reasons: ['Шкалу риска и тип канала не ставим: слишком мало текста в выборке.'],
         },
       },
       citations: samplePosts,
@@ -6914,7 +6919,7 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
         reason: `Прочитано ${postsRead} сообщений с текстом; этого мало для оценки риска.`,
         sample_posts: samplePosts,
       },
-      message: `Мало данных для fast-оценки: прочитано ${postsRead} постов из нужных минимум 5.`,
+      message: `Мало текста для оценки: прочитано ${postsRead} постов, нужно минимум пять.`,
     };
   }
   const analysis = kroV0BuildAnalysisFromLiveParsed(payload, key);
@@ -6936,19 +6941,19 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
   });
   analysis.basic_info = [
     `Канал: @${key}`,
-    `Тип по fast-срезу: ${fastHuman.channelType || 'серый'}.`,
+    `Кратко по выборке: ${fastHuman.channelType || 'смешанная картина по тексту'}.`,
     `Чем занимается канал: ${fastHuman.topicLine}`,
-    `Что увидели в быстром проходе: прочитано ${postsRead} сообщений с текстом за окно до ${periodDays || 30} дней.`,
+    `Прочитано ${postsRead} сообщений с текстом за период до ${periodDays || 30} дней.`,
   ].filter(Boolean);
   analysis.content_behavior = [
     ...kroFormatFastCriteriaLines(fastHuman.criteria),
     `Постов про прибыль: ${userReport.numbers && userReport.numbers.profits_posts_count != null ? userReport.numbers.profits_posts_count : 0}; про убытки: ${userReport.numbers && userReport.numbers.losses_posts_count != null ? userReport.numbers.losses_posts_count : 0}.`,
-    `Упоминаний VIP/платного доступа: ${userReport.numbers && userReport.numbers.paid_access_mentions_count != null ? userReport.numbers.paid_access_mentions_count : 0}; гарантий/100%/без риска: ${userReport.numbers && userReport.numbers.guarantee_mentions_count != null ? userReport.numbers.guarantee_mentions_count : 0}.`,
-    `Динамика продажного тона: было ${userReport.time_analysis && userReport.time_analysis.sales_tone_early_score != null ? userReport.time_analysis.sales_tone_early_score : 0}/100, стало ${userReport.time_analysis && userReport.time_analysis.sales_tone_recent_score != null ? userReport.time_analysis.sales_tone_recent_score : 0}/100.`,
+    `Упоминаний платного доступа: ${userReport.numbers && userReport.numbers.paid_access_mentions_count != null ? userReport.numbers.paid_access_mentions_count : 0}; гарантий и «без риска»: ${userReport.numbers && userReport.numbers.guarantee_mentions_count != null ? userReport.numbers.guarantee_mentions_count : 0}.`,
+    `Тон «продажи» в начале и сейчас: ${userReport.time_analysis && userReport.time_analysis.sales_tone_early_score != null ? userReport.time_analysis.sales_tone_early_score : 0} и ${userReport.time_analysis && userReport.time_analysis.sales_tone_recent_score != null ? userReport.time_analysis.sales_tone_recent_score : 0} из 100.`,
     ...fastHuman.citations.map((x) => `Пример из ленты: «${String(x).slice(0, 220)}»`),
   ].slice(0, 8);
-  analysis.external_reports = ['Результат построен только по прочитанным сообщениям канала через Telethon из GitHub Actions.'];
-  analysis.ties_risk_factors = ['Внешние базы не использовались как основа статуса — только текст канала.'];
+  analysis.external_reports = ['Вывод только по тексту постов канала, собранному при проверке.'];
+  analysis.ties_risk_factors = ['Жалобы и внешние базы в основу статуса здесь не входили — только текст канала.'];
   if (userReport.scam_similarity && userReport.scam_similarity.label) {
     analysis.ties_risk_factors.push(String(userReport.scam_similarity.label));
   }
@@ -6956,7 +6961,7 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
   analysis.conclusion = {
     status: kroConclusionStatusFromEvidence(risk, hasEvidence, { forceScam }),
     reasons: [
-      `Смысловой индекс ${Math.round(risk)}/10 (по срезу). Сильных сигналов в формулировках: ${hasEvidence ? 'да' : 'нет'}. ${fastHuman.summaryLine}`,
+      `Оценка по тексту ${Math.round(risk)}/10. Явных красных флагов в формулировках: ${hasEvidence ? 'есть' : 'нет'}. ${fastHuman.summaryLine}`,
       ...fastHuman.reasons,
     ].slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
   };
@@ -6996,12 +7001,12 @@ function kroBuildAnalyzeResponseFromParsed(parsed, key, requestId) {
       home_quick_live: true,
     },
     analysis_basis: {
-      label: 'Лёгкий вывод построен по тексту сообщений канала из GitHub Actions.',
+      label: 'Вывод по тексту постов, собранных при проверке (Telethon).',
       sources_used: ['telethon', 'github_actions'],
       read_path: readPath,
       posts_read: postsRead,
     },
-    message: `Риск ${Math.round(risk)}/10. Тип канала: ${fastHuman.channelType || 'серый'}. Быстрый вывод построен по свежим постам.`,
+    message: `Оценка ${Math.round(risk)}/10. ${fastHuman.channelType || 'Смешанная картина по тексту'}. Итог по свежим постам.`,
   };
 }
 
@@ -7089,24 +7094,24 @@ function kroBuildAnalyzeDoneResponse(doneRow, key) {
     return {
       queue_status: 'failed',
       request_id: response && response.request_id ? response.request_id : (doneRow && doneRow.request_id ? doneRow.request_id : null),
-      status: 'НЕДОСТУПЕН',
+      status: 'Оценка не готова',
       status_code: 'UNAVAILABLE',
       posts_read: Number.isFinite(postsRead) ? postsRead : 0,
       period_days: response && response.period_days != null ? response.period_days : null,
       read_path: readPath || 'unknown',
       fast_live_required: true,
       message:
-        'Живой анализ канала не получился в этом запуске. Для честного вывода нужно минимум 5 текстовых постов. ' +
-        'Попробуйте снова или запустите deep-разбор на странице канала.',
+        'Ленту в этом запуске разобрать не удалось. Нужно хотя бы пять постов с нормальным текстом. ' +
+        'Повторите запрос или запустите полный разбор на странице канала.',
       message_ru:
-        'Не удалось выполнить живой анализ канала. Для быстрого вывода нужно минимум 5 текстовых постов; иначе используйте deep (до ~30 минут).',
+        'Не удалось прочитать ленту как нужно. Для короткого отчёта нужно минимум пять текстовых постов; иначе — полный разбор (до ~30 минут).',
       live_evidence: {
         live_pass: false,
         mode: readPath || 'unknown',
         reason:
           Number.isFinite(postsRead) && postsRead > 0
-            ? `Прочитано ${postsRead} постов, этого недостаточно для живого fast-вывода.`
-            : 'Посты канала не прочитаны в живом режиме.',
+            ? `Прочитано ${postsRead} постов — для краткой оценки этого мало.`
+            : 'Посты канала в этот раз не прочитаны.',
         sample_posts:
           response && response.live_evidence && Array.isArray(response.live_evidence.sample_posts)
             ? response.live_evidence.sample_posts.slice(0, 2)
@@ -7125,16 +7130,16 @@ function kroBuildAnalyzeFastTimeoutResponse(requestId, username, elapsedMs) {
     queue_status: 'failed',
     request_id: requestId || null,
     username: u || null,
-    status: 'НЕДОСТУПЕН',
+    status: 'Оценка не готова',
     status_code: 'UNAVAILABLE',
     read_path: 'fast_timeout',
     posts_read: 0,
     period_days: null,
     message:
-      `Fast-лимит времени достигнут (${hardLimitSec} с), запрос остановлен.` +
-      ` Прошло ~${elapsedSec} с, данных для честной быстрой оценки недостаточно.`,
+      `Сработал лимит времени (${hardLimitSec} с), запрос остановлен.` +
+      ` Прошло около ${elapsedSec} с — для короткой оценки данных не хватило.`,
     message_ru:
-      'Не хватает данных для быстрого анализа (fast до 7 минут). Для глубокого разбора включите режим deep (до ~30 минут).',
+      'Не хватило времени на быстрый разбор (до 7 минут). Для глубокого варианта откройте страницу канала (до ~30 минут).',
     fast_timeout: true,
     fast_timeout_limit_seconds: hardLimitSec,
     elapsed_seconds: elapsedSec,
@@ -7246,8 +7251,8 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         basic_info: [
           `Канал: ${channelDisplay}`,
           `Чем занимается канал: ${fastHuman.topicLine}`,
-          `Что увидели в быстром проходе: прочитано ${publicSnap.snippets.length} текстовых фрагментов ленты за лимит до 15 секунд.`,
-          publicSnap.title ? `Название по публичной странице: ${publicSnap.title}.` : '',
+          `Прочитано ${publicSnap.snippets.length} коротких фрагментов с открытой страницы (до 15 секунд).`,
+          publicSnap.title ? `Название на странице: ${publicSnap.title}.` : '',
         ],
         content_behavior: [
           ...kroFormatFastCriteriaLines(fastHuman.criteria),
@@ -7255,16 +7260,16 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         ].filter(Boolean).slice(0, 8),
         external_reports: reports.length
           ? [
-              `Во внешнем контексте сервиса есть ${reports.length} записей по этому каналу. Это дополнительный фон, а не основа fast-оценки.`,
+              `В сервисе есть ${reports.length} записей по каналу — это фон, основа вывода всё равно текст ленты.`,
               ...reports.slice(0, 2).map((r) => {
                 const desc = String(r.description || '').trim();
-                return desc ? `Пример из жалоб/отчётов: ${desc.slice(0, 180)}${desc.length > 180 ? '…' : ''}` : '';
+                return desc ? `Из жалоб: ${desc.slice(0, 180)}${desc.length > 180 ? '…' : ''}` : '';
               }).filter(Boolean),
             ].slice(0, 3)
-          : ['Во внешнем контексте сервиса по этому каналу сейчас нет жалоб; это дополнительный контекст и не влияет на fast-оценку по тексту ленты.'],
+          : ['Жалоб по каналу в базе сейчас нет — на оценку по тексту это почти не влияет.'],
         ties_risk_factors: signal.flags.length
           ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
-          : ['По тексту канала не видно типичных агрессивных маркеров: обещаний гарантированной прибыли, жёсткого FOMO или продажи VIP-доступа.'],
+          : ['По тексту не видно явных «гарантий прибыли», жёсткой суеты и продажи закрытого VIP.'],
         conclusion: {
           status: conclusionStatus,
           reasons: [
@@ -7309,13 +7314,13 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
         },
         analysis_basis: {
-          label: 'Лёгкий вывод построен по тексту публичной ленты канала.',
+          label: 'Вывод по коротким фрагментам с открытой страницы канала.',
           sources_used: ['t.me/s'],
           read_path: 'public_snapshot',
           posts_read: postsRead,
           elapsed_ms: Date.now() - t0,
         },
-        message: `${channelDisplay} — риск ${risk}/10. ${fastHuman.summaryLine}`,
+        message: `${channelDisplay}: оценка ${risk}/10. ${fastHuman.summaryLine}`,
       }));
     }
 
@@ -7377,7 +7382,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         analysis.basic_info = [
           `Канал: ${channelDisplay}`,
           `Чем занимается канал: ${fastHuman.topicLine}`,
-          `Что увидели в быстром проходе: прочитано ${postsRead} сообщений с текстом за окно до ${Number(parsedForFast.analysis_window_days || 30)} дней.`,
+          `Прочитано ${postsRead} сообщений с текстом за период до ${Number(parsedForFast.analysis_window_days || 30)} дней.`,
           ...(Array.isArray(analysis.basic_info) ? analysis.basic_info.slice(1, 3) : []),
         ].filter(Boolean).slice(0, 6);
         analysis.content_behavior = [
@@ -7386,16 +7391,16 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         ].filter(Boolean).slice(0, 8);
         analysis.external_reports = reports.length
           ? [
-              `Во внешнем контексте сервиса есть ${reports.length} записей по каналу; они используются только как дополнительный фон к тексту ленты.`,
+              `В сервисе ${reports.length} записей по каналу — как дополнение к тексту ленты.`,
               ...reports.slice(0, 2).map((r) => {
                 const desc = String(r.description || '').trim();
-                return desc ? `Пример из жалоб/отчётов: ${desc.slice(0, 180)}${desc.length > 180 ? '…' : ''}` : '';
+                return desc ? `Из жалоб: ${desc.slice(0, 180)}${desc.length > 180 ? '…' : ''}` : '';
               }).filter(Boolean),
             ].slice(0, 3)
-          : ['Во внешнем контексте сервиса по этому каналу нет жалоб; fast-оценка всё равно построена по тексту прочитанных сообщений.'];
+          : ['Жалоб по каналу в базе нет — оценка всё равно по тексту постов.'];
         analysis.ties_risk_factors = signal.flags.length
           ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
-          : ['По прочитанным сообщениям не видно типичных агрессивных маркеров: гарантированной прибыли, жёсткого FOMO или платного VIP.'];
+          : ['По сообщениям не видно явных «гарантий», жёсткой суеты и платного VIP.'];
         analysis.conclusion = {
           status: kroMapFastRisk10ToConclusion(risk, {
             forceScam: String(parsedForFast.risk_verdict || '').toLowerCase() === 'scam',
@@ -7422,7 +7427,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           live_evidence: {
             live_pass: true,
             mode: readPathOut,
-            reason: `Telethon + при необходимости публичный срез: всего фрагментов с текстом ${postsRead} (лимит Telethon ~${Math.round(telBudget / 1000)} с).`,
+            reason: `Считано ${postsRead} фрагментов с текстом (чтение в Telegram, до ~${Math.round(telBudget / 1000)} с).`,
             sample_posts: sampleForFast.slice(0, 3),
             posts_fetched: postsRead,
             analysis_window_days: Number(parsedForFast.analysis_window_days || 30),
@@ -7436,14 +7441,14 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           analysis_basis: {
             label:
               readPathOut === 'telethon+public_snapshot'
-                ? 'Вывод по тексту Telethon и дополнен публичными фрагментами t.me/s, если не хватало объёма.'
-                : 'Лёгкий вывод построен по тексту сообщений канала.',
+                ? 'Вывод по тексту из Telegram; при нехватке объёма добавлены фрагменты с открытой страницы.'
+                : 'Вывод по тексту сообщений из Telegram.',
             sources_used: readPathOut === 'telethon+public_snapshot' ? ['telethon', 't.me/s'] : ['telethon'],
             read_path: readPathOut,
             posts_read: postsRead,
             elapsed_ms: Date.now() - t0,
           },
-          message: `${channelDisplay} — риск ${risk}/10. ${fastHuman.summaryLine}`,
+          message: `${channelDisplay}: оценка ${risk}/10. ${fastHuman.summaryLine}`,
         }));
       }
     }
@@ -7452,18 +7457,18 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       v: 0,
       channel_key: key,
       generated_at: new Date().toISOString(),
-      sources: ['внешние источники (без живой ленты)'],
+      sources: ['внешние источники без полного чтения ленты'],
       basic_info: [
         `Канал: ${channelDisplay}`,
-        'Живой текст сообщений в этом запросе не прочитан, поэтому лёгкий анализ канала не строится.',
+        'Текст постов в этом запросе не прочитан, краткий разбор канала не строим.',
       ],
       content_behavior: [],
       external_reports: [],
       ties_risk_factors: [],
       conclusion: {
-        status: 'живой анализ не выполнен',
+        status: 'анализ ленты не выполнен',
         reasons: [
-          `Fast-вывод по критериям не построен, потому что не удалось прочитать минимум ${minReadablePosts} нормальных сообщений канала.`,
+          `Краткий вывод не собрали: не удалось прочитать минимум ${minReadablePosts} нормальных сообщений канала.`,
         ],
       },
     };
@@ -7540,14 +7545,14 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         ].slice(0, 6);
       }
     } else if (!anthropicApiKey) {
-      analysis.basic_info.push('Claude API не настроен (ANTHROPIC_API_KEY) — ниже показан только внешний контекст, без fast-вывода по каналу.');
+      analysis.basic_info.push('Дополнительный ИИ-разбор выключен (нет ключа API) — ниже только внешний контекст, без разбора текста канала.');
       console.warn(`[KRO analyze-channel ${analyzeLogId}] claude_skipped_no_api_key fallback=base_watch_reports_only`);
     }
 
     return res.status(200).json(withQueueMeta({
       queue_status: 'done_sync',
       analysis,
-      status: 'НЕДОСТУПЕН',
+      status: 'Оценка не готова',
       status_code: 'UNAVAILABLE',
       risk_index: null,
       risk_index_max: 10,
@@ -7560,7 +7565,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         live_pass: false,
         mode: 'external_sources',
         reason:
-          `Живая лента за отведённые ~${Math.round(KRO_ANALYZE_CHANNEL_SYNC_MS / 1000)} с не дала минимум ${minReadablePosts} нормальных текстовых сообщений. Поэтому критерии fast-анализа и риск-индекс не построены.`,
+          `За ~${Math.round(KRO_ANALYZE_CHANNEL_SYNC_MS / 1000)} с не набрали минимум ${minReadablePosts} нормальных постов — шкалу риска по тексту не считаем.`,
         sample_posts: publicSnap && publicSnap.snippets ? publicSnap.snippets.slice(0, 2) : [],
         posts_fetched: 0,
         analysis_window_days: null,
@@ -7572,7 +7577,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
       },
       analysis_basis: {
-        label: 'Живой анализ невозможен: посты канала не прочитаны.',
+        label: 'Посты канала не прочитаны — числовую оценку по тексту не делаем.',
         sources_used: anthropicApiKey
           ? ['scam_base', 'channels_watch', 'reports', 'site_search', 'claude']
           : ['scam_base', 'channels_watch', 'reports', 'site_search'],
@@ -7580,7 +7585,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         posts_read: 0,
         elapsed_ms: Date.now() - t0,
       },
-      message: `${channelDisplay} — живой анализ не выполнен: удалось прочитать меньше ${minReadablePosts} нормальных сообщений, поэтому оценка канала не строится.`,
+      message: `${channelDisplay}: ленту разобрать не удалось (меньше ${minReadablePosts} нормальных сообщений), итоговую оценку по тексту не ставим.`,
     }));
   } catch (e) {
     console.error(`KRO analyze-channel sync error [${analyzeLogId}]:`, e);
@@ -7643,7 +7648,7 @@ app.get('/api/kro/analyze-channel/result', async (req, res) => {
       return res.status(200).json({
         queue_status: 'failed',
         request_id: doneRow.request_id,
-        status: 'НЕДОСТУПЕН',
+        status: 'Оценка не готова',
         status_code: 'UNAVAILABLE',
         posts_read: Number(doneRow.posts_read || 0) || 0,
         period_days: doneRow.period_days,
@@ -8222,11 +8227,11 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         analysis.basic_info = [
           timed
             ? 'Глубокий разбор ленты остановлен по лимиту времени (~30 мин.) — показана сводка мониторинга и жалоб; ниже то, что успели оценить без полной выборки постов.'
-            : 'Живой анализ не завершился в этом запросе (лимит времени / ограничения Telegram) — показана последняя сводка мониторинга.',
+            : 'Разбор ленты в этом запросе не закончился (время или ограничения Telegram) — показана сводка мониторинга.',
         ].concat(analysis.basic_info || []);
       } else {
         analysis.basic_info = [
-          `По каналу в мониторинге ${matches.length} совпадений; ниже — свежая живая проверка Telegram за широкое окно.`,
+          `По каналу в мониторинге ${matches.length} совпадений; ниже — свежая проверка ленты в Telegram за широкое окно.`,
           `Последний статус в сводке: «${(profile.status || profile.verdict || '—')}» (${profile.detected_at || 'дата не указана'}).`,
         ].concat(analysis.basic_info || []);
         analysis.sources = Array.from(new Set([...(analysis.sources || []), 'мониторинг каналов']));

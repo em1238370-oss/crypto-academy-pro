@@ -112,7 +112,7 @@
        <section class="kro-feature1 kro-reveal" id="feature1" aria-labelledby="kro-feature1-heading">
            <div class="kro-feature1-bg" aria-hidden="true"></div>
            <div class="kro-f1-badges-row" aria-hidden="true">
-               <span class="kro-f1-badge">LIVE</span>
+               <span class="kro-f1-badge">Данные обновляются</span>
                <span class="kro-f1-badge-sep" aria-hidden="true">·</span>
                <span class="kro-f1-badge">Обновление каждые 12 ч</span>
            </div>
@@ -341,15 +341,15 @@
                    </div>
                    <div class="kro-inline-report hidden" id="kro-inline-report" aria-live="polite" hidden>
                        <div class="kro-result-card kro-inline-report-card kro-inline-report-card--document">
-                           <p class="kro-inline-report-eyebrow" id="kro-inline-eyebrow">Отчёт по каналу</p>
+                           <p class="kro-inline-report-eyebrow" id="kro-inline-eyebrow">Проверка канала</p>
                            <h3 class="kro-inline-report-title" id="kro-inline-title">—</h3>
                            <p class="kro-inline-report-meta" id="kro-inline-meta"></p>
                            <p class="kro-inline-done-banner hidden" id="kro-inline-done-banner" hidden role="status"></p>
                            <div class="kro-inline-live-gate hidden" id="kro-inline-live-gate" hidden aria-live="polite"></div>
                            <div class="kro-inline-analysis-path hidden" id="kro-inline-analysis-path" hidden></div>
                            <div class="kro-inline-report-summary">
-                               <div class="kro-inline-summary-item"><span class="kro-inline-summary-label">Уровень риска</span><span id="kro-inline-status" class="kro-inline-status-pill">—</span></div>
-                               <div class="kro-inline-summary-item" id="kro-inline-riskidx-wrap" hidden><span class="kro-inline-summary-label">Сводный индекс риска</span><span id="kro-inline-riskidx" class="kro-inline-summary-value">—</span></div>
+                               <div class="kro-inline-summary-item"><span class="kro-inline-summary-label">Краткий итог</span><span id="kro-inline-status" class="kro-inline-status-pill">—</span></div>
+                               <div class="kro-inline-summary-item" id="kro-inline-riskidx-wrap" hidden><span class="kro-inline-summary-label">Оценка по шкале</span><span id="kro-inline-riskidx" class="kro-inline-summary-value">—</span></div>
                            </div>
                            <div class="kro-inline-findings-wrap hidden" id="kro-inline-findings-wrap" hidden>
                                <h4 class="kro-inline-findings-heading" id="kro-inline-findings-heading">Находки</h4>
@@ -358,10 +358,10 @@
                                    <table class="kro-inline-findings-table" id="kro-inline-findings-table" aria-describedby="kro-inline-findings-lead">
                                        <thead>
                                            <tr>
-                                               <th scope="col">Тип</th>
-                                               <th scope="col">Что заметили</th>
-                                               <th scope="col">Фрагмент</th>
-                                               <th scope="col"><span class="kro-sr-only">Подробнее</span></th>
+                                               <th scope="col">Важность</th>
+                                               <th scope="col">Суть</th>
+                                               <th scope="col">Цитата из поста</th>
+                                               <th scope="col"><span class="kro-sr-only">Открыть</span></th>
                                            </tr>
                                        </thead>
                                        <tbody id="kro-inline-findings-tbody"></tbody>
@@ -369,14 +369,14 @@
                                </div>
                            </div>
                            <div class="kro-inline-deep-status hidden" id="kro-inline-deep-status" hidden aria-live="polite"></div>
-                           <p class="kro-inline-reasons-title" id="kro-inline-reasons-title">Почему такой вывод</p>
+                           <p class="kro-inline-reasons-title" id="kro-inline-reasons-title">Откуда взялся итог</p>
                            <ul class="kro-inline-reasons" id="kro-inline-reasons"></ul>
                            <div class="kro-inline-sections">
-                               <section class="kro-inline-sec" id="kro-inline-sec1"><h4 class="kro-inline-sec-h">Базовая информация</h4><div id="kro-inline-s1" class="kro-inline-sec-body"></div></section>
-                               <section class="kro-inline-sec" id="kro-inline-sec2"><h4 class="kro-inline-sec-h">Контент и поведение</h4><div id="kro-inline-s2" class="kro-inline-sec-body"></div></section>
-                               <section class="kro-inline-sec" id="kro-inline-sec3"><h4 class="kro-inline-sec-h">Внешние источники и жалобы</h4><div id="kro-inline-s3" class="kro-inline-sec-body"></div></section>
-                               <section class="kro-inline-sec" id="kro-inline-sec4"><h4 class="kro-inline-sec-h">Связи и риск‑факторы</h4><div id="kro-inline-s4" class="kro-inline-sec-body"></div></section>
-                               <section class="kro-inline-sec" id="kro-inline-sec5"><h4 class="kro-inline-sec-h">Итоговый вывод</h4><div id="kro-inline-s5" class="kro-inline-sec-body"></div></section>
+                               <section class="kro-inline-sec" id="kro-inline-sec1"><h4 class="kro-inline-sec-h">О канале</h4><div id="kro-inline-s1" class="kro-inline-sec-body"></div></section>
+                               <section class="kro-inline-sec" id="kro-inline-sec2"><h4 class="kro-inline-sec-h">Что в постах</h4><div id="kro-inline-s2" class="kro-inline-sec-body"></div></section>
+                               <section class="kro-inline-sec" id="kro-inline-sec3"><h4 class="kro-inline-sec-h">Жалобы и база</h4><div id="kro-inline-s3" class="kro-inline-sec-body"></div></section>
+                               <section class="kro-inline-sec" id="kro-inline-sec4"><h4 class="kro-inline-sec-h">На что обратили внимание</h4><div id="kro-inline-s4" class="kro-inline-sec-body"></div></section>
+                               <section class="kro-inline-sec" id="kro-inline-sec5"><h4 class="kro-inline-sec-h">Вывод простыми словами</h4><div id="kro-inline-s5" class="kro-inline-sec-body"></div></section>
                            </div>
                            <p class="kro-inline-foot" id="kro-inline-foot"></p>
                            <div class="kro-inline-deep-panel hidden" id="kro-inline-deep-panel" hidden></div>
@@ -390,7 +390,7 @@
                                    <div class="kro-inline-tg-phone">
                                        <div class="kro-inline-tg-bubble-out">
                                            <p class="kro-inline-tg-bubble-text" id="kro-inline-tg-bubble-text"></p>
-                                           <span class="kro-inline-tg-bubble-cap">фрагмент публичного поста</span>
+                                           <span class="kro-inline-tg-bubble-cap">текст из открытой ленты канала</span>
                                        </div>
                                    </div>
                                    <div class="kro-inline-tg-modal-why" id="kro-inline-tg-modal-why"></div>
@@ -1111,7 +1111,7 @@
                function kroMakeDeepQueuePill(dg) {
                    if (!dg || dg.deep_queued !== true) return '';
                    if (dg.deep_queue_running === true) {
-                       return '<p class="kro-inline-deep-queue-pill kro-inline-deep-queue-pill--run">▶ Сейчас на сервере читают ленту <strong>этого</strong> канала (обычно до ~3 мин).</p>';
+                       return '<p class="kro-inline-deep-queue-pill kro-inline-deep-queue-pill--run">Сейчас на сервере читают ленту <strong>этого</strong> канала (обычно до трёх минут).</p>';
                    }
                    var pos = dg.deep_queue_position != null ? Number(dg.deep_queue_position) : null;
                    var eta = dg.deep_queue_eta_minutes != null ? Number(dg.deep_queue_eta_minutes) : null;
@@ -1146,10 +1146,36 @@
                    return 'kro-finding-chip kro-finding-chip--neutral';
                }
                function kroFindingChipLabel(sev) {
-                   if (sev === 'high') return 'Сильный сигнал';
-                   if (sev === 'med') return 'Риск / тон';
+                   if (sev === 'high') return 'Важно';
+                   if (sev === 'med') return 'На заметку';
                    if (sev === 'watch' || sev === 'info') return 'Контекст';
-                   return 'Цитата';
+                   return 'Из ленты';
+               }
+               /** Короткая подпись внизу отчёта без технических имён источников. */
+               function kroHumanizeAnalysisFoot(ab) {
+                   if (!ab) return '';
+                   var parts = [];
+                   if (ab.label) {
+                       var lab = String(ab.label);
+                       if (lab.length > 160) lab = lab.slice(0, 157) + '…';
+                       parts.push(lab);
+                   }
+                   if (ab.sources_used && ab.sources_used.length) {
+                       var map = {
+                           telethon: 'чтение в Telegram',
+                           't.me/s': 'открытая лента',
+                           public_snapshot: 'открытая лента',
+                           github_actions: 'очередь проверок',
+                           scam_base: 'наша база жалоб',
+                           channels_watch: 'мониторинг',
+                           reports: 'жалобы пользователей',
+                           site_search: 'поиск по сайту',
+                           claude: 'дополнительный разбор',
+                       };
+                       var hum = ab.sources_used.map(function (s) { return map[s] || s; }).join(', ');
+                       parts.push('Откуда взялись данные: ' + hum);
+                   }
+                   return parts.join('. ');
                }
                /** Убираем из UI обрывки HTML/JS с t.me (мета-теги, postMessage и т.д.). */
                function kroSanitizeChannelSnippet(s) {
@@ -1286,17 +1312,17 @@
                    var seed = kroStrHash(String(displayLabel || '') + String((data && data.channel_key) || ''));
                    if (theadHint) {
                        theadHint.textContent = kroPickVariant([
-                           'Что нашли в ленте и базе',
-                           'Находки по этому каналу',
-                           'Сводная таблица: маркеры и цитаты',
-                           'Разбор по фактам — строка за строкой',
+                           'Что заметили по каналу',
+                           'Кратко: факты и цитаты',
+                           'Таблица с выдержками из постов',
+                           'Строка за строкой — что нашли',
                        ], seed);
                    }
                    if (lead) {
                        lead.textContent = kroPickVariant([
-                           'Нажмите «Как в Telegram» — откроется фрагмент поста и пояснение, почему это важно для оценки.',
-                           'Строки с цитатами привязаны к реальным постам из выборки. Подсказка откроется в отдельном окне.',
-                           'Каждая строка — наблюдение системы; там, где есть текст, он из публичной ленты при проверке.',
+                           'Нажмите «Подробнее» — откроется цитата и короткое пояснение.',
+                           'Цитаты из реальных постов в момент проверки. Пояснение — во всплывающем окне.',
+                           'Каждая строка — наблюдение по тексту канала.',
                        ], seed + 2);
                    }
                    tbody.innerHTML = rows
@@ -1305,12 +1331,12 @@
                            var sn = row.snippet ? kroClipSnippet(row.snippet, 86) : '—';
                            return (
                                '<tr class="kro-finding-row">' +
-                               '<td data-label="Тип">' + chip + '</td>' +
-                               '<td data-label="Что заметили">' + esc(row.label) + '</td>' +
-                               '<td data-label="Фрагмент"><span class="kro-finding-snippet-preview">' + esc(sn) + '</span></td>' +
-                               '<td data-label="Подробнее"><button type="button" class="kro-finding-explain-btn" data-finding-idx="' +
+                               '<td data-label="Важность">' + chip + '</td>' +
+                               '<td data-label="Суть">' + esc(row.label) + '</td>' +
+                               '<td data-label="Цитата"><span class="kro-finding-snippet-preview">' + esc(sn) + '</span></td>' +
+                               '<td data-label="Ещё"><button type="button" class="kro-finding-explain-btn" data-finding-idx="' +
                                idx +
-                               '">Как в Telegram</button></td>' +
+                               '">Подробнее</button></td>' +
                                '</tr>'
                            );
                        })
@@ -1337,14 +1363,14 @@
                    if (ch) ch.textContent = label ? 'Канал: ' + label : '';
                    if (bub) {
                        var cleanB = row.snippet ? kroSanitizeChannelSnippet(String(row.snippet)) : '';
-                       bub.textContent = cleanB || 'Текст поста в ответе не пришёл или был отфильтрован (технический мусор страницы). Откройте канал в Telegram и сверьте формулировки.';
+                       bub.textContent = cleanB || 'Фрагмент поста сюда не попал. Откройте канал в Telegram и сверьте текст сами.';
                    }
                    if (why) {
                        var w = row.explain ? String(row.explain) : '';
                        why.innerHTML =
-                           '<p class="kro-inline-tg-why-title">Почему это учитываем</p>' +
+                           '<p class="kro-inline-tg-why-title">Зачем это в отчёте</p>' +
                            '<p class="kro-inline-tg-why-body">' +
-                           esc(w || 'Это элемент слоя быстрой оценки: отдельные посты не дают 100% картины, но помогают увидеть тон и повторяющиеся шаблоны.') +
+                           esc(w || 'Один пост не решает всё, но по нескольким строкам видно тон канала и повторяющиеся приёмы.') +
                            '</p>';
                    }
                    mod.classList.remove('hidden');
@@ -1645,17 +1671,15 @@
                        if (eyebrow) {
                            if (profile && profile.username) {
                                eyebrow.textContent = kroPickVariant([
-                                   'Сводка: база + мониторинг по этому каналу',
-                                   'Проверка по нашим данным и циклам мониторинга',
-                                   'Канал уже в поле зрения системы — ниже факты',
+                                   'Что известно по этому каналу в нашей базе',
+                                   'Сводка по данным сервиса и мониторингу',
+                                   'Канал уже проверяли — ниже факты',
                                ], __kSeed);
                            } else {
                                eyebrow.textContent = kroPickVariant([
-                                   'Разбор канала: факты из ленты и базы',
-                                   'Снимок проверки — что увидели в Telegram',
-                                   'Канал под лупой: жалобы, лента, вывод',
-                                   'Результат запроса — без лишней «воды»',
-                                   'Честная сводка: что нашлось по каналу',
+                                   'Что удалось собрать по каналу',
+                                   'Краткий разбор: посты, жалобы, вывод',
+                                   'Без лишних слов — что нашли',
                                ], __kSeed);
                            }
                        }
@@ -1667,14 +1691,14 @@
                            metaParts.push(
                                lm.home_quick_live
                                    ? kroPickVariant([
-                                       'живой срез ленты, жалобы и сигналы мониторинга',
-                                       'лента + внутренние жалобы + снимок мониторинга',
-                                       'читаем публичные посты и сверяем с базой',
+                                       'читали посты, сверяли с жалобами и мониторингом',
+                                       'текст из ленты плюс наша база',
+                                       'публичные посты и внутренние данные',
                                    ], __kSeed + 3)
                                    : kroPickVariant([
-                                       'жалобы и мониторинг; лента в этом запросе не читалась',
-                                       'в этом ответе — контекст сервиса без живой ленты',
-                                       'без чтения постов: только карточка и внешние сигналы',
+                                       'жалобы и мониторинг; посты в этом ответе не разбирали',
+                                       'карточка канала без полного разбора ленты',
+                                       'только то, что уже есть в сервисе',
                                    ], __kSeed + 3)
                            );
                        }
@@ -1696,20 +1720,18 @@
                                var wN = le.analysis_window_days != null && !isNaN(Number(le.analysis_window_days)) ? Number(le.analysis_window_days) : null;
                                liveBadge =
                                    kroPickVariant([
-                                       'LIVE: чтение ленты в Telegram',
-                                       'LIVE: заход в канал выполнен',
-                                       'LIVE: посты взяты из реальной ленты',
+                                       'Ленту канала прочитали',
+                                       'Есть выборка постов из канала',
+                                       'Текст постов взят из Telegram',
                                    ], __kSeed) +
-                                   (pN != null ? ' (~' + pN + ' постов)' : '') +
-                                   (wN != null ? ', окно до ' + wN + ' дн.' : '');
+                                   (pN != null ? ' (около ' + pN + ' сообщений)' : '') +
+                                   (wN != null ? ', до ' + wN + ' дн.' : '');
                            } else if (le) {
-                               liveBadge =
-                                   'НЕ LIVE: ' +
-                                   kroPickVariant([
-                                       'поверхностный режим (' + (le.mode || 'unknown') + ')',
-                                       'без полного чтения ленты (' + (le.mode || 'unknown') + ')',
-                                       'лента не пройдена в этом запуске (' + (le.mode || 'unknown') + ')',
-                                   ], __kSeed + 5);
+                               liveBadge = kroPickVariant([
+                                   'Посты в этом ответе почти не трогали — упрощённый режим',
+                                   'Полный разбор ленты здесь не делали',
+                                   'Только карточка и сигналы без свежих цитат',
+                               ], __kSeed + 5);
                            }
                            var allMeta = metaParts.slice();
                          if (liveBadge) allMeta.unshift(liveBadge);
@@ -1728,17 +1750,17 @@
                            if (le && le.live_pass === true) {
                                lgCls += ' kro-inline-live-gate--live';
                                lgTitle = kroPickVariant([
-                                   'Лента Telegram реально прочитана',
-                                   'Живые посты канала попали в отчёт',
-                                   'Есть прямой заход в публичную ленту',
+                                   'Посты из канала попали в отчёт',
+                                   'Ленту успели прочитать',
+                                   'Есть свежий текст из Telegram',
                                ], __kSeed + 7);
                                var lPosts = le.posts_fetched != null && !isNaN(Number(le.posts_fetched)) ? Number(le.posts_fetched) : null;
                                var lWin = le.analysis_window_days != null && !isNaN(Number(le.analysis_window_days)) ? Number(le.analysis_window_days) : null;
                                var lSample = Array.isArray(le.sample_posts) ? le.sample_posts.filter(Boolean).slice(0, 2) : [];
                                lgBody = kroPickVariant([
-                                   'Сервер заходил в ленту и вытащил текст постов для разбора',
-                                   'Мы читали публичные сообщения этого канала в момент проверки',
-                                   'Ниже выводы опираются на реальные фрагменты ленты, не на догадки',
+                                   'Сервер взял текст из открытых постов и опирается на него',
+                                   'Публичные сообщения канала читали в момент проверки',
+                                   'Выводы ниже — по реальным фразам из ленты',
                                ], __kSeed + 8);
                                if (lPosts != null || lWin != null) {
                                    lgBody += ' —';
@@ -1760,16 +1782,16 @@
                            } else {
                                lgCls += ' kro-inline-live-gate--not-live';
                                lgTitle = kroPickVariant([
-                                   'Без живой ленты в этом ответе',
-                                   'Живая лента сейчас недоступна',
-                                   'Посты канала здесь не читались',
+                                   'Посты в этом ответе почти не смотрели',
+                                   'Свежий текст ленты сюда не попал',
+                                   'Разбор только по карточке и базе',
                                ], __kSeed + 7);
                                lgBody = (le && le.reason)
                                    ? String(le.reason)
                                    : kroPickVariant([
-                                       'Сработал запасной режим: жалобы и карточка есть, но текст постов не подтянут.',
-                                       'Telegram или таймаут не дали прочитать ленту — смотрите таблицу находок и блок ниже.',
-                                       'Для честного разбора по тексту нужен успешный заход в канал; здесь его не было.',
+                                       'Жалобы и карточка есть, а цитаты из ленты не подтянулись.',
+                                       'Не удалось вовремя прочитать ленту — смотрите таблицу и блоки ниже.',
+                                       'Чтобы судить по формулировкам в постах, нужна удачная загрузка канала; здесь её не было.',
                                    ], __kSeed + 8);
                            }
                            liveGateEl.className = lgCls;
@@ -1790,30 +1812,29 @@
 
                        if (reasonsTitleEl) {
                            reasonsTitleEl.textContent = kroPickVariant([
-                               'Почему система так решила',
-                               'Логика вывода — коротко',
-                               'Из чего сложился статус',
-                               'Ключевые аргументы проверки',
+                               'Откуда взялся итог',
+                               'Коротко, почему такой вывод',
+                               'На что опираемся',
                            ], __kSeed + 11);
                        }
                        if (reasonsEl) {
                            var rs = (c.reasons || []).slice(0, 4).map(function (r) { return String(r == null ? '' : r).trim(); }).filter(Boolean);
                            if (le && le.live_pass !== true) {
-                               rs.unshift('⚠ ЖИВОЙ АНАЛИЗ ЛЕНТЫ НЕ ВЫПОЛНЕН. ' + String(le.reason || 'Сделан только поверхностный режим.'));
+                               rs.unshift('Ленту подробно не разбирали. ' + String(le.reason || 'Режим упрощённый.'));
                            } else if (le && le.live_pass === true) {
                                var samp = Array.isArray(le.sample_posts) ? le.sample_posts.filter(Boolean).slice(0, 2) : [];
                                if (samp.length) {
-                                   rs.unshift('✅ LIVE‑доказательство: прочитаны свежие посты, например: «' + samp[0].slice(0, 120) + (samp[0].length > 120 ? '…' : '') + '»');
+                                   rs.unshift('Есть цитата из поста: «' + samp[0].slice(0, 120) + (samp[0].length > 120 ? '…' : '') + '»');
                                } else {
-                                   rs.unshift('✅ LIVE‑доказательство: сервер прошёл живую ленту Telegram в этом запросе.');
+                                   rs.unshift('Текст постов из канала в этот раз удалось загрузить.');
                                }
                            }
                            if (!rs.length) {
                                rs.push(
                                    kroPickVariant([
-                                       'Вывод собран из правил сервиса и доступных данных по этому каналу.',
-                                       'Мы сопоставили сигналы мониторинга с тем, что удалось прочитать.',
-                                       'Итог — не «мнение», а сочетание фактов из базы и ленты.',
+                                       'Итог из правил сервиса и того, что есть по каналу.',
+                                       'Сверили мониторинг и доступные данные.',
+                                       'Это не «мнение», а сочетание фактов из базы и ленты.',
                                    ], __kSeed + 13),
                                );
                            }
@@ -1841,11 +1862,11 @@
                        var h5 = document.querySelector('#kro-inline-sec5 .kro-inline-sec-h');
                        if (ur) {
                            var det = ur.detective && typeof ur.detective === 'object' ? ur.detective : null;
-                           if (h1) h1.textContent = 'Главный вывод';
-                           if (h2) h2.textContent = det ? 'Акт 1 — первое впечатление' : 'Три главных факта';
-                           if (h3) h3.textContent = det ? 'Акт 2 — глубже по ленте' : 'Что система прочитала';
-                           if (h4) h4.textContent = det ? 'Смыслы и цитаты' : 'Примеры реальных постов';
-                           if (h5) h5.textContent = det ? 'Акт 3 — вывод и вопрос' : 'Вывод простыми словами';
+                           if (h1) h1.textContent = 'Суть';
+                           if (h2) h2.textContent = det ? 'Первое, что бросилось в глаза' : 'Три важных факта';
+                           if (h3) h3.textContent = det ? 'Что ещё видно в ленте' : 'Что прочитали в постах';
+                           if (h4) h4.textContent = det ? 'Цитаты' : 'Примеры из постов';
+                           if (h5) h5.textContent = det ? 'Итог и вопрос' : 'Вывод простыми словами';
                            if (s1) {
                                var s1h = '';
                                if (ur.honest_assessment) {
@@ -1881,14 +1902,14 @@
                            if (s5) s5.innerHTML = homeRenderBullets([ur.simple_conclusion || data.message || 'Вывод построен по прочитанным постам канала.', ur.final_advice || '']) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        }
                        } else {
-                       if (h1) h1.textContent = 'Базовая информация';
-                       if (h2) h2.textContent = 'Контент и поведение';
-                       if (h3) h3.textContent = 'Внешние источники и жалобы';
-                       if (h4) h4.textContent = 'Связи и риск‑факторы';
-                       if (h5) h5.textContent = 'Итоговый вывод';
+                       if (h1) h1.textContent = 'О канале';
+                       if (h2) h2.textContent = 'Что в постах';
+                       if (h3) h3.textContent = 'Жалобы и база';
+                       if (h4) h4.textContent = 'На что обратили внимание';
+                       if (h5) h5.textContent = 'Вывод простыми словами';
                        var s1lines = Array.isArray(a.basic_info) ? a.basic_info.slice() : [];
                        if (ab && ab.posts_read != null && !isNaN(Number(ab.posts_read))) {
-                           s1lines.push('Основа fast-вывода: прочитано сообщений канала — ' + Number(ab.posts_read) + '.');
+                           s1lines.push('По выборке прочитано сообщений: ' + Number(ab.posts_read) + '.');
                        }
                        if (s1) s1.innerHTML = homeRenderBullets(s1lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        var s2lines = Array.isArray(a.content_behavior) ? a.content_behavior.slice() : [];
@@ -1903,7 +1924,7 @@
                        if (st && st !== '—') s5lines.push('Итоговый статус: ' + st);
                        if (ridx != null && ridx !== '' && !isNaN(Number(ridx))) {
                            var mx2 = data.risk_index_max != null ? Number(data.risk_index_max) : 10;
-                           s5lines.push('Риск по fast-анализу: ' + Number(ridx) + '/' + mx2 + '.');
+                           s5lines.push('Оценка по быстрому разбору: ' + Number(ridx) + ' из ' + mx2 + '.');
                        }
                        if (data.message) s5lines.push(String(data.message));
                        if (Array.isArray(c.reasons)) s5lines = s5lines.concat(c.reasons.slice(0, 2));
@@ -1923,14 +1944,10 @@
                           }
                       }
                       if (footEl) {
-                          var footParts = [];
-                          if (ab && ab.label) footParts.push('Основа вывода: ' + String(ab.label));
-                          if (ab && Array.isArray(ab.sources_used) && ab.sources_used.length) {
-                              footParts.push('Что использовали: ' + ab.sources_used.join(', '));
-                          }
-                          if (footParts.length) {
+                          var footText = kroHumanizeAnalysisFoot(ab);
+                          if (footText) {
                               footEl.hidden = false;
-                              footEl.textContent = footParts.join(' · ');
+                              footEl.textContent = footText;
                           } else {
                               footEl.hidden = true;
                               footEl.textContent = '';
@@ -2055,7 +2072,7 @@
                       if (elapsedMs >= __KRO_HOME_MAX_WAIT_MS) {
                           var noteTimeout = document.getElementById('kro-check-progress-note');
                           if (noteTimeout) {
-                              noteTimeout.textContent = 'Живой анализ ленты задерживается, продолжаем ждать чтение Telegram...';
+                              noteTimeout.textContent = 'Разбор ленты задерживается, ждём ответ Telegram...';
                           }
                       }
                       fetch(base + '/api/kro/check-result/' + encodeURIComponent(requestId), { cache: 'no-store' })
