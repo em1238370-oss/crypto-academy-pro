@@ -2068,12 +2068,13 @@
                                   else if (qs === 'done') note.textContent = 'Результат получен, показываем отчёт…';
                               }
                               if (qs === 'done') {
-                                  var leDone = row && row.live_evidence && typeof row.live_evidence === 'object' ? row.live_evidence : null;
-                                  if (leDone && leDone.live_pass !== true) {
+                                  if (row && row.analysis && typeof row.analysis === 'object') {
+                                      renderHomeCheckSuccess(row);
+                                  } else {
                                       window.__kroHomeCheckT0 = null;
                                       hideCheckBusy();
-                                      checkResult.innerHTML = '<span class="kro-check-result-block">Живой анализ ленты не получен в этом запуске. Поверхностный отчёт скрыт по вашим настройкам.</span>' +
-                                          '<span class="kro-check-result-block">Нажмите «Повторить», чтобы заново запустить LIVE‑чтение Telegram.</span>' +
+                                      var missMsg = (row && (row.message_ru || row.message)) || 'Готового отчёта в ответе нет. Нажмите «Повторить» или попробуйте позже.';
+                                      checkResult.innerHTML = '<span class="kro-check-result-block">' + esc(missMsg) + '</span>' +
                                           '<button type="button" class="kro-report-submit kro-check-retry" id="kro-check-retry">Повторить</button>';
                                       checkResult.className = 'kro-check-result';
                                       checkResult.classList.remove('hidden');
@@ -2081,11 +2082,9 @@
                                           inlineReport.classList.add('hidden');
                                           inlineReport.hidden = true;
                                       }
-                                      var rbLive = document.getElementById('kro-check-retry');
-                                      if (rbLive) rbLive.onclick = function () { runHomeChannelCheck(window.__kroHomeLastSlug || slug); };
-                                      return;
+                                      var rbMiss = document.getElementById('kro-check-retry');
+                                      if (rbMiss) rbMiss.onclick = function () { runHomeChannelCheck(window.__kroHomeLastSlug || slug); };
                                   }
-                                  renderHomeCheckSuccess(row);
                                   return;
                               }
                               if (qs === 'failed') {
@@ -2148,20 +2147,6 @@
                               var httpErr = new Error('http_' + pack.status);
                               httpErr.serverMessage = srvMsg;
                               throw httpErr;
-                          }
-                          var leDirect = pack.data && pack.data.live_evidence && typeof pack.data.live_evidence === 'object'
-                              ? pack.data.live_evidence
-                              : null;
-                          if (leDirect && leDirect.live_pass !== true) {
-                              window.__kroHomeCheckT0 = null;
-                              hideCheckBusy();
-                              checkResult.innerHTML = '<span class="kro-check-result-block">Живой анализ ленты не получен в этом запуске. Поверхностный отчёт скрыт по вашим настройкам.</span>' +
-                                  '<button type="button" class="kro-report-submit kro-check-retry" id="kro-check-retry">Повторить</button>';
-                              checkResult.classList.remove('hidden');
-                              checkResult.className = 'kro-check-result';
-                              var rbDirect = document.getElementById('kro-check-retry');
-                              if (rbDirect) rbDirect.onclick = function () { runHomeChannelCheck(window.__kroHomeLastSlug || slug); };
-                              return;
                           }
                           renderHomeCheckSuccess(pack.data);
                       })
