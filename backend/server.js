@@ -4612,11 +4612,41 @@ function scamBaseDisplayLinkForPromote(channelValue, explicitOt) {
   };
 }
 
+/**
+ * Разбор https://t.me/… / telegram.me в форму, совместимую с normalizeChannel / check_once.
+ * Возвращает null если URL не про Telegram (тогда вызывающий может взять hostname как сайт).
+ * Пустая строка — только домен без пути (невалидный ввод канала).
+ */
+function kroTelegramRefFromHttpUrl(urlString) {
+  try {
+    const u = new URL(String(urlString || '').trim());
+    const host = (u.hostname || '').toLowerCase().replace(/\.$/, '');
+    if (host !== 't.me' && host !== 'telegram.me' && host !== 'telegram.dog') return null;
+    let path = (u.pathname || '/').replace(/^\/+/, '').trim();
+    path = path.split('?')[0].split('#')[0];
+    if (!path) return '';
+    const parts = path.split('/').filter(Boolean);
+    if (!parts.length) return '';
+    if (parts[0].startsWith('+')) return `t.me/${parts[0]}`;
+    if (parts[0] === 'joinchat' && parts[1]) return `t.me/joinchat/${parts[1]}`;
+    if (parts[0] === 's' && parts[1]) {
+      const slug = parts[1];
+      return slug.startsWith('@') ? slug : `@${slug}`;
+    }
+    const slug = parts[0];
+    return slug.startsWith('@') ? slug : `@${slug}`;
+  } catch {
+    return null;
+  }
+}
+
 function normalizeChannel(channel) {
   const s = (channel || '').toString().trim().replace(/\s/g, '');
   if (!s) return '';
   const lower = s.toLowerCase();
   if (lower.startsWith('http://') || lower.startsWith('https://')) {
+    const tgRef = kroTelegramRefFromHttpUrl(lower);
+    if (tgRef !== null) return tgRef;
     try {
       const u = new URL(lower);
       if (u.hostname) return u.hostname.toLowerCase();
@@ -4645,6 +4675,11 @@ function channelMatchKey(channel) {
   const s = (channel || '').toString().trim().toLowerCase().replace(/\s/g, '');
   if (!s) return '';
   if (s.startsWith('http://') || s.startsWith('https://')) {
+    const tgRef = kroTelegramRefFromHttpUrl(s);
+    if (tgRef !== null) {
+      if (!tgRef) return '';
+      return channelMatchKey(tgRef);
+    }
     try {
       const u = new URL(s);
       if (u.hostname) return u.hostname.toLowerCase();
@@ -7679,9 +7714,12 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       .filter((r) => r.username && r.username !== 'username')
       .map(enrichScamBaseContentAnalysisForMonitor);
     const matches = scamRows.filter((r) => channelMatchKey(r.username) === key);
-    const channelForOnce = /^t\.me\//i.test(decoded) || decoded.includes('+')
-      ? decoded
-      : `@${decoded}`;
+    const channelForOnce = (() => {
+      const k = String(key || '');
+      if (k.startsWith('t.me/')) return k;
+      if (/^joinchat\//i.test(k)) return `t.me/${k}`;
+      return `@${k}`;
+    })();
 
     const floodState = kroGetTelegramFloodState();
     let once = { ok: false, parsed: null, error: null, stderr: '' };
