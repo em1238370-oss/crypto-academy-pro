@@ -273,15 +273,6 @@
                                </div>
                            </div>
                            <p class="kro-flow-simple-foot">Популярные каналы часто уже в кэше — глубокий отчёт может открыться сразу, без очереди.</p>
-                           <details class="kro-reality-check">
-                               <summary class="kro-reality-check-summary">Идеальный мир и реальные ограничения — открыть пояснение</summary>
-                               <div class="kro-reality-check-body">
-                                   <p><strong>Как хотелось бы.</strong> Чтобы у каждого посетителя глубокий анализ шёл мгновенно и без очереди, сколько угодно раз подряд.</p>
-                                   <p><strong>Как устроен Telegram.</strong> Наш сервис ходит в каналы через <strong>ограниченный технический доступ</strong> (одна сессия на стороне сервера), а не «отдельно от каждого браузера». Если не сдерживать частоту тяжёлых запросов, мессенджер включает защиту (FLOOD_WAIT) — и пострадать могут <strong>все</strong> пользователи сразу.</p>
-                                   <p><strong>Зачем лимиты «на человека».</strong> Это не наказание: лимит на IP/сеанс уменьшает шанс, что один человек выжмет весь ресурс и удлинит очередь остальным. Быстрый отчёт при этом доступен почти всегда.</p>
-                                   <p><strong>Идея «пусть каждый зайдёт со своим Telegram».</strong> В теории это размазало бы нагрузку по разным аккаунтам. На практике это другой продукт: пользователь должен <strong>доверить</strong> сервису доступ к аккаунту (или ставить отдельное приложение у себя), нужны жёсткие правила безопасности, шифрование, понятный отзыв доступа и юридическая ясность. Мы так не обещаем «по щелчку» — пока работаем честно в рамках одного серверного доступа: кэш, очередь, цифры «когда обновить».</p>
-                               </div>
-                           </details>
                        </div>
                    </div>
                    <div class="kro-feature1-check-row" id="kro-check-form-row" aria-busy="false">
@@ -1160,12 +1151,51 @@
                    if (sev === 'watch' || sev === 'info') return 'Контекст';
                    return 'Цитата';
                }
+               /** Убираем из UI обрывки HTML/JS с t.me (мета-теги, postMessage и т.д.). */
+               function kroSanitizeChannelSnippet(s) {
+                   var t = String(s || '').trim();
+                   if (!t) return '';
+                   var low = t.toLowerCase();
+                   if (low.indexOf('content=') !== -1) {
+                       var cm = t.match(/content\s*=\s*["']([^"']+)["']/i);
+                       if (cm && cm[1]) {
+                           t = cm[1].replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&').trim();
+                           low = t.toLowerCase();
+                       }
+                   }
+                   var junk = [
+                       'window.',
+                       'document.',
+                       'postmessage',
+                       'json.stringify',
+                       'matchmedia',
+                       'try{if',
+                       'web.telegram.org',
+                       'prefers-color-scheme',
+                       '<meta',
+                       'http-equiv',
+                       'charset=',
+                       'viewport',
+                       'telegram.org/js',
+                   ];
+                   for (var ji = 0; ji < junk.length; ji++) {
+                       if (low.indexOf(junk[ji]) !== -1) return '';
+                   }
+                   if (/^</.test(t)) return '';
+                   var letters = (t.match(/[a-zа-яёії]/gi) || []).length;
+                   if (t.length >= 40 && letters / t.length < 0.2 && /[{}\[\];]/.test(t)) return '';
+                   return t;
+               }
                function kroBuildFindingsRows(data) {
                    var rows = [];
                    var seen = {};
                    var le = data.live_evidence && typeof data.live_evidence === 'object' ? data.live_evidence : null;
-                   var samples = le && Array.isArray(le.sample_posts) ? le.sample_posts.map(function (x) { return String(x || '').trim(); }).filter(Boolean) : [];
-                   var citations = Array.isArray(data.citations) ? data.citations.map(function (x) { return String(x || '').trim(); }).filter(Boolean) : [];
+                   var samples = le && Array.isArray(le.sample_posts)
+                       ? le.sample_posts.map(function (x) { return kroSanitizeChannelSnippet(String(x || '').trim()); }).filter(Boolean)
+                       : [];
+                   var citations = Array.isArray(data.citations)
+                       ? data.citations.map(function (x) { return kroSanitizeChannelSnippet(String(x || '').trim()); }).filter(Boolean)
+                       : [];
                    var flags = Array.isArray(data.flags) ? data.flags : [];
                    var a = data.analysis || {};
                    var cb = Array.isArray(a.content_behavior) ? a.content_behavior : [];
@@ -1173,7 +1203,10 @@
                    for (var ci = 0; ci < cb.length; ci++) {
                        var line = String(cb[ci] || '');
                        var m = line.match(/«([^»]{12,})»/);
-                       if (m) quotesFromContent.push(m[1]);
+                       if (m) {
+                           var qq = kroSanitizeChannelSnippet(m[1]);
+                           if (qq) quotesFromContent.push(qq);
+                       }
                    }
                    var pool = samples.slice();
                    for (var cj = 0; cj < citations.length; cj++) pool.push(citations[cj]);
@@ -1186,7 +1219,7 @@
                    function addRow(sev, label, explain, snippet) {
                        var lab = String(label || '').trim();
                        if (!lab) return;
-                       var sn = String(snippet || '').trim();
+                       var sn = kroSanitizeChannelSnippet(String(snippet || '').trim());
                        var k = lab + '|' + sn.slice(0, 48);
                        if (seen[k]) return;
                        seen[k] = true;
@@ -1302,7 +1335,10 @@
                    var label = window.__kroFindingsChannelLabel || '';
                    if (kick) kick.textContent = row.label;
                    if (ch) ch.textContent = label ? 'Канал: ' + label : '';
-                   if (bub) bub.textContent = row.snippet ? String(row.snippet) : 'Фрагмент не сохранился в ответе — откройте канал и сравните формулировки вручную.';
+                   if (bub) {
+                       var cleanB = row.snippet ? kroSanitizeChannelSnippet(String(row.snippet)) : '';
+                       bub.textContent = cleanB || 'Текст поста в ответе не пришёл или был отфильтрован (технический мусор страницы). Откройте канал в Telegram и сверьте формулировки.';
+                   }
                    if (why) {
                        var w = row.explain ? String(row.explain) : '';
                        why.innerHTML =

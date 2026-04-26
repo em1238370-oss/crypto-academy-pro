@@ -4722,12 +4722,76 @@ function kroStripHtmlToText(html) {
     .trim();
 }
 
+/** Строка похожа на скрипт, мета-тег или обрывок вёрстки — не показывать как «пост канала». */
+function kroIsGarbagePublicSnapshotLine(s) {
+  const t = String(s || '').trim();
+  if (!t) return true;
+  const low = t.toLowerCase();
+  const junkHints = [
+    'window.',
+    'window[',
+    'document.',
+    'postmessage',
+    'json.stringify',
+    'matchmedia',
+    'prefers-color-scheme',
+    'try{if(',
+    'catch(',
+    'function(',
+    '=>',
+    'addeventlistener',
+    'web.telegram.org',
+    'telegram.org/js',
+    'web_app_open',
+    'eventtype:',
+    'viewport',
+    'http-equiv',
+    'charset=',
+    'application/ld+json',
+    '<script',
+    '</script',
+    'nonce=',
+    'telegram-web-app',
+    'data-telegram',
+  ];
+  if (junkHints.some((h) => low.includes(h))) return true;
+  if (/^\s*</.test(t) || /\b<meta\s/i.test(low)) return true;
+  if (/\bmeta\s+name\s*=\s*["']?twitter/i.test(low)) return true;
+  if (/\b(property|name)\s*=\s*["']og:/i.test(low)) return true;
+  if (/^["']?twitter:description/i.test(low)) return true;
+  const letters = (t.match(/[a-zа-яёії]/gi) || []).length;
+  const alnum = (t.match(/[0-9a-zа-яёії]/gi) || []).length;
+  if (t.length >= 35 && alnum > 0 && letters / t.length < 0.22 && /[{}\[\];]|&&|\|\|/.test(t)) return true;
+  return false;
+}
+
+/** Достаём человекочитаемое описание канала из meta (не сырой тег). */
+function kroExtractPublicChannelDescriptionFromHtml(html) {
+  const raw = String(html || '');
+  const patterns = [
+    /<meta\s+property="og:description"\s+content="([^"]*)"/i,
+    /<meta\s+property='og:description'\s+content='([^']*)'/i,
+    /<meta\s+name="twitter:description"\s+content="([^"]*)"/i,
+    /<meta\s+name='twitter:description'\s+content='([^']*)'/i,
+    /<meta\s+name="description"\s+content="([^"]*)"/i,
+  ];
+  for (const rx of patterns) {
+    const m = raw.match(rx);
+    if (!m || !m[1]) continue;
+    let t = m[1].replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+    t = kroStripHtmlToText(t).trim();
+    if (t.length >= 24 && !kroIsGarbagePublicSnapshotLine(t)) return t;
+  }
+  return '';
+}
+
 function kroNormalizePublicSnapshotLine(text, slug) {
   let s = kroStripHtmlToText(text)
     .replace(/^\s*<title>\s*/i, '')
     .replace(/\s*<\/title>\s*$/i, '')
     .replace(/\s+/g, ' ')
     .trim();
+  if (kroIsGarbagePublicSnapshotLine(s)) return '';
   const low = s.toLowerCase();
   const slugLow = String(slug || '').toLowerCase();
   const boilerplate = [
@@ -5243,8 +5307,9 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
     const titleM = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) || html.match(/<title>([^<]+)<\/title>/i);
     const title = titleM ? kroStripHtmlToText(titleM[1]).slice(0, 120) : '';
     const textRegexes = [
-      /<div class="tgme_widget_message_text[^"]*">([\s\S]*?)<\/div>/gi,
-      /<div class="js-message_text[^"]*">([\s\S]*?)<\/div>/gi,
+      /<div[^>]*class="[^"]*tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/gi,
+      /<div[^>]*class="[^"]*js-message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/gi,
+      /<div[^>]*class="[^"]*message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/gi,
     ];
     let blocks = [];
     for (const rx of textRegexes) {
@@ -5254,10 +5319,14 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
         break;
       }
     }
-    const snippets = kroFilterPublicSnapshotSnippets(
+    let snippets = kroFilterPublicSnapshotSnippets(
       blocks.map((x) => kroStripHtmlToText(x)),
       slug,
     );
+    if (!snippets.length) {
+      const desc = kroExtractPublicChannelDescriptionFromHtml(html);
+      if (desc) snippets = kroFilterPublicSnapshotSnippets([desc], slug);
+    }
     if (!snippets.length) return null;
     return { slug, title, snippets, fetched_at: new Date().toISOString() };
   };
@@ -5288,23 +5357,22 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
       }
       const body = await r.text();
       const htmlLen = body ? body.length : 0;
-      const parsed = parseHtml(body) || {
-        slug,
-        title: '',
-        snippets: kroFilterPublicSnapshotSnippets(
-          body
-            .split('\n')
-            .map((x) => String(x || '').trim())
-            .filter((x) => x.length >= 25 && !/^https?:\/\//i.test(x)),
-          slug,
-        ),
-        fetched_at: new Date().toISOString(),
-      };
+      let parsed = parseHtml(body);
+      if (!parsed || !parsed.snippets || !parsed.snippets.length) {
+        const descOnly = kroExtractPublicChannelDescriptionFromHtml(body);
+        if (descOnly) {
+          const sn = kroFilterPublicSnapshotSnippets([descOnly], slug);
+          if (sn.length) parsed = { slug, title: '', snippets: sn, fetched_at: new Date().toISOString() };
+        }
+      }
+      if (!parsed || !parsed.snippets || !parsed.snippets.length) {
+        parsed = null;
+      }
       const snippetCount = parsed && Array.isArray(parsed.snippets) ? parsed.snippets.length : 0;
       console.log(
         `${logPrefix} url=${url} ok=true html_len=${htmlLen} snippets=${snippetCount} sample=${JSON.stringify((parsed && parsed.snippets && parsed.snippets[0]) ? parsed.snippets[0].slice(0, 180) : '')}`,
       );
-      if (parsed.snippets && parsed.snippets.length) return parsed;
+      if (parsed && parsed.snippets && parsed.snippets.length) return parsed;
     } catch (e) {
       console.warn(`${logPrefix} url=${url} error=${e && e.message ? String(e.message) : 'fetch_failed'}`);
       /* try next source */
