@@ -1256,15 +1256,17 @@
                        var title = String(f.title || f.code || 'Маркер в тексте').trim();
                        var expl = String(f.explanation || '').trim();
                        var code = String(f.code || '').toLowerCase();
-                       var sn = takeSnippet();
-                       if (!sn && samples.length) sn = samples[fi % samples.length];
-                       if (!sn && pool.length) sn = pool[Math.min(fi, pool.length - 1)];
-                       addRow(
-                           kroSeverityFromFlagCode(code),
-                           title,
-                           expl || 'Совпадение с типичными формулировками, которые нередко встречаются в навязчивом крипто-продвижении.',
-                           sn,
-                       );
+                       var sn = kroSanitizeChannelSnippet(String(f.evidence_snippet || '').trim());
+                       if (!sn) {
+                           sn = takeSnippet();
+                           if (!sn && samples.length) sn = samples[fi % samples.length];
+                           if (!sn && pool.length) sn = pool[Math.min(fi, pool.length - 1)];
+                       }
+                       if (!expl) {
+                           expl =
+                               'Автоматическая метка по типичным формулировкам в криптоканалах. Откройте пост в Telegram целиком: есть ли честное описание риска и сценария, или только призыв действовать быстро и переводить деньги.';
+                       }
+                       addRow(kroSeverityFromFlagCode(code), title, expl, sn);
                    }
                    var ties = Array.isArray(a.ties_risk_factors) ? a.ties_risk_factors : [];
                    for (var ti = 0; ti < ties.length && rows.length < 16; ti++) {
@@ -1282,7 +1284,8 @@
                            addRow(
                                'neutral',
                                'Фрагмент из ленты',
-                               'Дословный отрывок из публичных постов в момент проверки — он попал в выборку сервера.',
+                               'Дословный отрывок из публичных постов на момент проверки. Строка не обязана быть «плохой» — мы показываем, как канал реально пишет.\n\n'
+                                   + 'Нажмите «Подробнее» и оцените сами: тон спокойный или давит на эмоции, есть ли конкретика (уровни, риск, условия ошибки) или одни лозунги.',
                                pool[pi],
                            );
                        }
@@ -1312,17 +1315,17 @@
                    var seed = kroStrHash(String(displayLabel || '') + String((data && data.channel_key) || ''));
                    if (theadHint) {
                        theadHint.textContent = kroPickVariant([
-                           'Что заметили по каналу',
-                           'Кратко: факты и цитаты',
-                           'Таблица с выдержками из постов',
                            'Строка за строкой — что нашли',
+                           'Что заметили по каналу',
+                           'Цитаты и смысл формулировок',
+                           'Разбор фраз из ленты',
                        ], seed);
                    }
                    if (lead) {
                        lead.textContent = kroPickVariant([
-                           'Нажмите «Подробнее» — откроется цитата и короткое пояснение.',
-                           'Цитаты из реальных постов в момент проверки. Пояснение — во всплывающем окне.',
-                           'Каждая строка — наблюдение по тексту канала.',
+                           'Каждая строка — реальная цитата и пояснение: не «просто посмотрите смс», а что в формулировке может быть важно и к чему это подталкивает. Нажмите «Подробнее».',
+                           'Мы выделяем фразы, которые часто совпадают с рискованной подачей (срочность, гарантии, «иксы») или показываем нейтральный фрагмент для контекста. В окне — цитата и разбор простыми словами.',
+                           'Цитаты из постов на момент проверки. «Подробнее» открывает полный фрагмент в пределах выборки и зачем эта строка попала в отчёт.',
                        ], seed + 2);
                    }
                    tbody.innerHTML = rows
@@ -1366,12 +1369,21 @@
                        bub.textContent = cleanB || 'Фрагмент поста сюда не попал. Откройте канал в Telegram и сверьте текст сами.';
                    }
                    if (why) {
-                       var w = row.explain ? String(row.explain) : '';
-                       why.innerHTML =
-                           '<p class="kro-inline-tg-why-title">Зачем это в отчёте</p>' +
-                           '<p class="kro-inline-tg-why-body">' +
-                           esc(w || 'Один пост не решает всё, но по нескольким строкам видно тон канала и повторяющиеся приёмы.') +
-                           '</p>';
+                       var w = row.explain ? String(row.explain).trim() : '';
+                       var parts = w
+                           ? w.split(/\n\n+/).map(function (x) { return x.trim(); }).filter(Boolean)
+                           : [];
+                       if (!parts.length) {
+                           parts.push(
+                               'Один пост не решает всё; несколько таких строк помогают уловить повторяющийся тон канала и типичные приёмы формулировок.',
+                           );
+                       }
+                       var bodyHtml = parts
+                           .map(function (p) {
+                               return '<p class="kro-inline-tg-why-body">' + esc(p) + '</p>';
+                           })
+                           .join('');
+                       why.innerHTML = '<p class="kro-inline-tg-why-title">Разбор этой цитаты</p>' + bodyHtml;
                    }
                    mod.classList.remove('hidden');
                    mod.hidden = false;

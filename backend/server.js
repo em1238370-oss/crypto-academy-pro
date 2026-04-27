@@ -5389,20 +5389,81 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
   return null;
 }
 
+function kroFirstSnippetForSuspiciousRule(texts, rule) {
+  const src = Array.isArray(texts) ? texts : [];
+  for (const raw of src) {
+    const s = String(raw || '').trim();
+    if (s.length < 6) continue;
+    const low = s.toLowerCase();
+    const kw = rule.kws.find((k) => low.includes(k));
+    if (!kw) continue;
+    const clipped = s.length > 480 ? `${s.slice(0, 477)}…` : s;
+    return { snippet: clipped, keyword: kw };
+  }
+  return null;
+}
+
 function kroCollectSuspiciousFlagsFromTexts(texts) {
   const joined = texts.join(' \n ').toLowerCase();
   const rules = [
-    { code: 'guarantee', title: 'Гарантированная прибыль', kws: ['100%', 'без риска', 'гарант', 'точно заработа'], weight: 24, explanation: 'Обещания безрисковой прибыли.' },
-    { code: 'vip_paid', title: 'Платный VIP/доступ', kws: ['vip', 'вип', 'платн', 'подписк', 'доступ в канал'], weight: 16, explanation: 'Монетизация через закрытый доступ.' },
-    { code: 'signal_push', title: 'Агрессивные сигналы', kws: ['сигнал', 'buy', 'sell', 'лонг', 'шорт'], weight: 15, explanation: 'Призывы к сделкам без объяснения рисков.' },
-    { code: 'fomo', title: 'Давление и срочность', kws: ['срочно', 'успей', 'последний шанс', 'limited'], weight: 14, explanation: 'Формулировки подталкивают к импульсивным действиям.' },
-    { code: 'x_promises', title: 'Обещания иксов', kws: ['x2', 'x5', 'x10', 'икс', 'памп'], weight: 18, explanation: 'Заявления о кратном росте без обоснования.' },
+    {
+      code: 'guarantee',
+      title: 'Обещания прибыли «без риска»',
+      kws: ['100%', 'без риска', 'гарант', 'точно заработа'],
+      weight: 24,
+      explanation:
+        'На честном рынке никто не может гарантировать доход: формулировки вроде «без риска», «точно окупится», «100%» часто говорят не о математике, а о том, что вам хотят продать доступ, курс или «вход в сделку».\n\n'
+        + 'Смысл такого сообщения для читателя: снять осторожность и ускорить перевод денег. Имеет смысл остановиться и спросить себя: где здесь конкретно описан риск (стоп, размер позиции), а не только обещание результата.',
+    },
+    {
+      code: 'vip_paid',
+      title: 'Платный доступ и закрытый формат',
+      kws: ['vip', 'вип', 'платн', 'подписк', 'доступ в канал'],
+      weight: 16,
+      explanation:
+        'Платный VIP, подписка или «закрытый клуб» сами по себе не преступление, но в паре с обещаниями лёгких денег это типичная воронка: сначала интерес, потом оплата за «секрет», «сигналы» или «личное сопровождение».\n\n'
+        + 'О чём это для вас: автор переводит разговор из «посмотри идею» в «заплати, чтобы узнать». Проверьте, есть ли в бесплатной части нормальное объяснение риска — или только реклама закрытки.',
+    },
+    {
+      code: 'signal_push',
+      title: 'Призывы к сделке без контекста',
+      kws: ['сигнал', 'buy', 'sell', 'лонг', 'шорт'],
+      weight: 15,
+      explanation:
+        'Короткие команды «лонг», «шорт», «сигнал», buy/sell без сценария и риска учат копировать сделки вслепую: вы не знаете, где выход, что считается ошибкой и какой размер позиции адекватен.\n\n'
+        + 'Смысл для читателя: быстро нажать кнопку у биржи. Полезный контент обычно объясняет логику и условия, при которых идея перестаёт работать — не только «куда нажать».',
+    },
+    {
+      code: 'fomo',
+      title: 'Срочность и страх упустить',
+      kws: ['срочно', 'успей', 'последний шанс', 'limited'],
+      weight: 14,
+      explanation:
+        'Фразы «успей», «последний шанс», «только сегодня», limited создают давление: решение принимают на эмоциях, а не после проверки.\n\n'
+        + 'Это не всегда мошенничество, но почти всегда повод остановиться. Смысл послания: «не думай долго» — а с деньгами как раз лучше думать спокойно и заранее.',
+    },
+    {
+      code: 'x_promises',
+      title: 'Обещания «иксов» и пампа',
+      kws: ['x2', 'x5', 'x10', 'икс', 'памп'],
+      weight: 18,
+      explanation:
+        'Обещания «x2», «x10», «памп» без разбора актива и условий — это картинка «лёгких денег». На практике резкий рост редко бывает без огромной волатильности и риска вылететь в ноль.\n\n'
+        + 'Для вас это сигнал: вас готовят к азарту, а не к осознанному риску. Спросите себя, есть ли в посте хоть одно честное «можем и не дойти до цели».',
+    },
   ];
   const flags = [];
   for (const rule of rules) {
-    if (rule.kws.some((kw) => joined.includes(kw))) {
-      flags.push({ code: rule.code, title: rule.title, explanation: rule.explanation, weight: rule.weight });
-    }
+    if (!rule.kws.some((kw) => joined.includes(kw))) continue;
+    const ev = kroFirstSnippetForSuspiciousRule(texts, rule);
+    flags.push({
+      code: rule.code,
+      title: rule.title,
+      explanation: rule.explanation,
+      weight: rule.weight,
+      evidence_snippet: ev ? ev.snippet : '',
+      matched_keyword: ev ? ev.keyword : '',
+    });
   }
   let risk = flags.reduce((sum, x) => sum + x.weight, 0);
   const examples = [];
