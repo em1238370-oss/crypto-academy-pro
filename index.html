@@ -1282,6 +1282,16 @@
                    var pool = samples.slice();
                    for (var cj = 0; cj < citations.length; cj++) pool.push(citations[cj]);
                    for (var qi = 0; qi < quotesFromContent.length; qi++) pool.push(quotesFromContent[qi]);
+                   var uniquePool = [];
+                   var poolSeen = {};
+                   for (var upi = 0; upi < pool.length; upi++) {
+                       var pt = String(pool[upi] || '').replace(/\s+/g, ' ').trim();
+                       var pk = pt.slice(0, 140).toLowerCase();
+                       if (!pt || poolSeen[pk]) continue;
+                       poolSeen[pk] = true;
+                       uniquePool.push(pt);
+                   }
+                   pool = uniquePool;
                    var poolIx = 0;
                    function takeSnippet() {
                        if (poolIx < pool.length) return pool[poolIx++];
