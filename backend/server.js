@@ -5346,7 +5346,9 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
   const slug = kroExtractTelegramPublicSlug(channelRef);
   if (!slug) return null;
   const optObj = opts && typeof opts === 'object' ? opts : {};
-  const budgetMs = Math.min(30000, Math.max(3000, Number(optObj.timeoutMs) || 15000));
+  const budgetMs = Math.min(45000, Math.max(3000, Number(optObj.timeoutMs) || 15000));
+  const maxPages = Math.min(5, Math.max(1, Number(optObj.maxPages) || 4));
+  const maxSnippets = Math.min(80, Math.max(8, Number(optObj.maxSnippets) || 60));
   const logLabel = optObj.logLabel ? String(optObj.logLabel) : '';
   const logPrefix = logLabel ? `[KRO public-snapshot ${logLabel}]` : '[KRO public-snapshot]';
   const parseHtml = (html) => {
@@ -5374,55 +5376,97 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
       const desc = kroExtractPublicChannelDescriptionFromHtml(html);
       if (desc) snippets = kroFilterPublicSnapshotSnippets([desc], slug);
     }
+    const messageIds = [];
+    const idRegexes = [
+      /data-post=["'][^"']+\/(\d+)["']/gi,
+      /href=["'][^"']+\/(\d+)(?:\?[^"']*)?["']/gi,
+    ];
+    for (const rx of idRegexes) {
+      for (const m of html.matchAll(rx)) {
+        const id = Number(m && m[1]);
+        if (Number.isFinite(id) && id > 0 && !messageIds.includes(id)) messageIds.push(id);
+      }
+    }
     if (!snippets.length) return null;
-    return { slug, title, snippets, fetched_at: new Date().toISOString() };
+    return { slug, title, snippets, message_ids: messageIds, fetched_at: new Date().toISOString() };
   };
 
-  const urls = [
-    `https://t.me/s/${encodeURIComponent(slug)}`,
-    `https://r.jina.ai/http://t.me/s/${encodeURIComponent(slug)}`,
+  const sources = [
+    {
+      name: 't.me/s',
+      buildUrl: (before) => `https://t.me/s/${encodeURIComponent(slug)}${before ? `?before=${before}` : ''}`,
+    },
+    {
+      name: 'r.jina.ai',
+      buildUrl: (before) => `https://r.jina.ai/http://t.me/s/${encodeURIComponent(slug)}${before ? `?before=${before}` : ''}`,
+    },
   ];
   const deadline = Date.now() + budgetMs;
-  for (const url of urls) {
-    const remaining = deadline - Date.now();
-    if (remaining < 600) break;
-    const ctl = new AbortController();
-    const perUrlMs = Math.min(remaining, Math.max(2000, Math.floor(budgetMs / urls.length)));
-    const t = setTimeout(() => ctl.abort(), perUrlMs);
-    console.log(`${logPrefix} try url=${url} budget_ms=${perUrlMs}`);
-    try {
-      const r = await fetch(url, {
-        signal: ctl.signal,
-        headers: {
-          'user-agent': 'Mozilla/5.0 (compatible; KRO-Analyze/1.0)',
-          accept: 'text/html,application/xhtml+xml,text/plain',
-        },
-      });
-      if (!r.ok) {
-        console.log(`${logPrefix} url=${url} http_status=${r.status} ok=false`);
-        continue;
-      }
-      const body = await r.text();
-      const htmlLen = body ? body.length : 0;
-      let parsed = parseHtml(body);
-      if (!parsed || !parsed.snippets || !parsed.snippets.length) {
-        const descOnly = kroExtractPublicChannelDescriptionFromHtml(body);
-        if (descOnly) {
-          const sn = kroFilterPublicSnapshotSnippets([descOnly], slug);
-          if (sn.length) parsed = { slug, title: '', snippets: sn, fetched_at: new Date().toISOString() };
+  for (const source of sources) {
+    const snippets = [];
+    const seen = new Set();
+    let title = '';
+    let before = null;
+    let pagesFetched = 0;
+    for (let page = 0; page < maxPages && snippets.length < maxSnippets; page += 1) {
+      const remaining = deadline - Date.now();
+      if (remaining < 900) break;
+      const url = source.buildUrl(before);
+      const ctl = new AbortController();
+      const perUrlMs = Math.min(remaining, Math.max(1800, Math.floor(budgetMs / Math.max(2, maxPages))));
+      const t = setTimeout(() => ctl.abort(), perUrlMs);
+      console.log(`${logPrefix} try source=${source.name} page=${page + 1} budget_ms=${perUrlMs}`);
+      try {
+        const r = await fetch(url, {
+          signal: ctl.signal,
+          headers: {
+            'user-agent': 'Mozilla/5.0 (compatible; KRO-Analyze/1.0)',
+            accept: 'text/html,application/xhtml+xml,text/plain',
+          },
+        });
+        if (!r.ok) {
+          console.log(`${logPrefix} source=${source.name} page=${page + 1} http_status=${r.status} ok=false`);
+          break;
         }
+        const body = await r.text();
+        const htmlLen = body ? body.length : 0;
+        let parsed = parseHtml(body);
+        if (!parsed || !parsed.snippets || !parsed.snippets.length) parsed = null;
+        const pageSnippets = parsed && Array.isArray(parsed.snippets) ? parsed.snippets : [];
+        let added = 0;
+        for (const snip of pageSnippets) {
+          const clean = String(snip || '').replace(/\s+/g, ' ').trim();
+          const key = clean.toLowerCase();
+          if (!clean || seen.has(key)) continue;
+          seen.add(key);
+          snippets.push(clean);
+          added += 1;
+          if (snippets.length >= maxSnippets) break;
+        }
+        if (parsed && parsed.title && !title) title = parsed.title;
+        pagesFetched += 1;
+        console.log(`${logPrefix} source=${source.name} page=${page + 1} ok=true html_len=${htmlLen} snippets_total=${snippets.length} added=${added}`);
+        const ids = parsed && Array.isArray(parsed.message_ids) ? parsed.message_ids.filter((x) => Number.isFinite(Number(x))).map(Number) : [];
+        if (!ids.length || added === 0) break;
+        const nextBefore = Math.min(...ids);
+        if (!Number.isFinite(nextBefore) || nextBefore <= 1 || nextBefore === before) break;
+        before = nextBefore;
+      } catch (e) {
+        console.warn(`${logPrefix} source=${source.name} page=${page + 1} error=${e && e.message ? String(e.message) : 'fetch_failed'}`);
+        break;
+      } finally {
+        clearTimeout(t);
       }
-      if (!parsed || !parsed.snippets || !parsed.snippets.length) {
-        parsed = null;
-      }
-      const snippetCount = parsed && Array.isArray(parsed.snippets) ? parsed.snippets.length : 0;
-      console.log(`${logPrefix} url=${url} ok=true html_len=${htmlLen} snippets=${snippetCount}`);
-      if (parsed && parsed.snippets && parsed.snippets.length) return parsed;
-    } catch (e) {
-      console.warn(`${logPrefix} url=${url} error=${e && e.message ? String(e.message) : 'fetch_failed'}`);
-      /* try next source */
-    } finally {
-      clearTimeout(t);
+    }
+    if (snippets.length) {
+      return {
+        slug,
+        title,
+        snippets: snippets.slice(0, maxSnippets),
+        pages_fetched: pagesFetched,
+        source: source.name,
+        fetched_at: new Date().toISOString(),
+      };
     }
   }
   console.log(`${logPrefix} no_snippets_found slug=${slug}`);
@@ -7353,7 +7397,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         basic_info: [
           `Канал: ${channelDisplay}`,
           `Чем занимается канал: ${fastHuman.topicLine}`,
-          `Прочитано ${publicSnap.snippets.length} коротких фрагментов с открытой страницы. Красный вердикт ставим только при прямых опасных цитатах.`,
+          `Прочитано ${publicSnap.snippets.length} фрагментов с открытой ленты${publicSnap.pages_fetched ? ` (${publicSnap.pages_fetched} стр.)` : ''}. Это экономит ручной просмотр канала; красный вердикт ставим только при прямых опасных цитатах.`,
           publicSnap.title ? `Название на странице: ${publicSnap.title}.` : '',
         ],
         content_behavior: [
@@ -7400,26 +7444,26 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         risk_index: risk,
         risk_index_max: 10,
         posts_read: postsRead,
-        period_days: 7,
+        period_days: null,
         read_path: 'public_snapshot',
         flags: signal.flags,
         citations: fastHuman.citations.slice(0, 3),
         live_evidence: {
           live_pass: true,
           mode: 'public_snapshot',
-          reason: `Прочитано фрагментов публичной ленты: ${postsRead} (лимит 15 с).`,
+          reason: `Прочитано фрагментов публичной ленты: ${postsRead}${publicSnap.pages_fetched ? `, страниц: ${publicSnap.pages_fetched}` : ''}.`,
           sample_posts: publicSnap.snippets.slice(0, 3),
           posts_fetched: postsRead,
-          analysis_window_days: 7,
+          analysis_window_days: null,
         },
         live_metrics: {
           posts_fetched: postsRead,
-          analysis_window_days: 7,
+          analysis_window_days: null,
           home_quick_live: true,
           complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
         },
         analysis_basis: {
-          label: 'Вывод по коротким фрагментам с открытой страницы канала.',
+          label: 'Вывод по фрагментам открытой ленты канала; показываем цитаты и ограничения выборки.',
           sources_used: ['t.me/s'],
           read_path: 'public_snapshot',
           posts_read: postsRead,
