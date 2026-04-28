@@ -1091,6 +1091,32 @@
                    if (/^t\.me\//i.test(String(slug))) return String(slug);
                    return '@' + queryU;
                }
+               function resetInlineReportContent() {
+                   var ids = [
+                       'kro-inline-eyebrow', 'kro-inline-title', 'kro-inline-meta', 'kro-inline-status',
+                       'kro-inline-reasons', 'kro-inline-foot', 'kro-inline-riskidx',
+                       'kro-inline-s1', 'kro-inline-s2', 'kro-inline-s3', 'kro-inline-s4', 'kro-inline-s5',
+                       'kro-inline-live-gate', 'kro-inline-analysis-path',
+                       'kro-inline-findings-heading', 'kro-inline-findings-lead', 'kro-inline-findings-tbody'
+                   ];
+                   ids.forEach(function (id) {
+                       var el = document.getElementById(id);
+                       if (!el) return;
+                       if (id === 'kro-inline-status') el.className = 'kro-inline-status-pill';
+                       if (id === 'kro-inline-live-gate') el.className = 'kro-inline-live-gate hidden';
+                       el.textContent = '';
+                       el.innerHTML = '';
+                   });
+                   var hideIds = ['kro-inline-riskidx-wrap', 'kro-inline-findings-wrap', 'kro-inline-deep-panel', 'kro-inline-deep-demo', 'kro-inline-deep-status', 'kro-inline-done-banner'];
+                   hideIds.forEach(function (id) {
+                       var el = document.getElementById(id);
+                       if (!el) return;
+                       el.hidden = true;
+                       el.classList.add('hidden');
+                   });
+                   window.__kroFindingsLastRows = [];
+                   kroCloseFindingModal();
+               }
                function esc(s) {
                    return String(s == null ? '' : s)
                        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -2028,6 +2054,35 @@
                        };
                    }
                }
+               function clearInlineReportState() {
+                   var ids = [
+                       'kro-inline-title', 'kro-inline-meta', 'kro-inline-status', 'kro-inline-reasons',
+                       'kro-inline-foot', 'kro-inline-riskidx', 'kro-inline-s1', 'kro-inline-s2',
+                       'kro-inline-s3', 'kro-inline-s4', 'kro-inline-s5', 'kro-inline-live-gate',
+                       'kro-inline-analysis-path', 'kro-inline-findings-tbody', 'kro-inline-deep-panel',
+                       'kro-inline-deep-demo', 'kro-inline-deep-status', 'kro-inline-done-banner'
+                   ];
+                   ids.forEach(function (id) {
+                       var el = document.getElementById(id);
+                       if (!el) return;
+                       el.innerHTML = '';
+                       if (id === 'kro-inline-status') el.textContent = '—';
+                       if (id === 'kro-inline-riskidx') el.textContent = '—';
+                   });
+                   ['kro-inline-live-gate', 'kro-inline-analysis-path', 'kro-inline-findings-wrap', 'kro-inline-deep-panel', 'kro-inline-deep-demo', 'kro-inline-deep-status', 'kro-inline-done-banner'].forEach(function (id) {
+                       var el = document.getElementById(id);
+                       if (!el) return;
+                       el.hidden = true;
+                       el.classList.add('hidden');
+                   });
+                   if (inlineReport) {
+                       inlineReport.classList.add('hidden');
+                       inlineReport.hidden = true;
+                   }
+                   window.__kroFindingsLastRows = [];
+                   window.__kroFindingsChannelLabel = '';
+                   kroCloseFindingModal();
+               }
               function runHomeChannelCheck(slug) {
                   ensureKroCheckPanelVisible();
                   window.__kroHomeLastSlug = slug;
@@ -2039,6 +2094,7 @@
                   }
                   var queryU = slugToQueryU(slug);
                   var displayLabel = displayChannelLabel(slug, queryU);
+                  clearInlineReportState();
                   window.__kroHomeCheckT0 = Date.now();
                   var __kroCheckStarted = window.__kroHomeCheckT0;
                   showCheckBusy(displayLabel);
@@ -2085,8 +2141,15 @@
                       window.__kroDeepUpgradeTimer = setTimeout(deepPoll, 20000);
                   };
 
+                  var responseMatchesCurrent = function (data) {
+                      var got = data && data.analysis && data.analysis.channel_key ? String(data.analysis.channel_key).toLowerCase() : '';
+                      var want = String(queryU || '').replace(/^@+/, '').toLowerCase();
+                      return !got || !want || got === want;
+                  };
+
                   var renderHomeCheckSuccess = function (data) {
                       if (requestToken !== window.__kroHomeRequestToken) return;
+                      if (!responseMatchesCurrent(data)) return;
                       if (!data || typeof data !== 'object' || !data.analysis || typeof data.analysis !== 'object') throw new Error('no_analysis');
                       window.__kroHomeCheckT0 = null;
                       hideCheckBusy();
