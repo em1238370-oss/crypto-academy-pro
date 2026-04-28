@@ -1032,6 +1032,7 @@
            var checkProgressTitle = document.getElementById('kro-check-progress-title');
            var inlineReport = document.getElementById('kro-inline-report');
            var kroF1Wrap = document.getElementById('kro-f1-cta-check-wrap');
+           var __kroHomeRunSeq = 0;
            /** Без класса kro-f1-show-check блок #kro-feature1-check остаётся с opacity:0 — отчёт заполняется, но не виден. */
            function ensureKroCheckPanelVisible() {
                if (kroF1Wrap) kroF1Wrap.classList.add('kro-f1-show-check');
@@ -1040,28 +1041,46 @@
                function normChannel(s) {
                    var raw = (s || '').trim();
                    if (!raw) return '';
-                   var t = raw;
-                   var urlMatch = raw.match(/https?:\/\/t\.me\/[^\s<>"']+/i) || raw.match(/\bt\.me\/[^\s<>"']+/i);
+                   var t = raw.replace(/\s/g, '');
+                   var tgResolve = t.match(/^tg:\/\/resolve\?(.+)$/i);
+                   if (tgResolve) {
+                       try {
+                           var params = new URLSearchParams(tgResolve[1]);
+                           var domain = String(params.get('domain') || '').replace(/^@+/, '').trim();
+                           return domain ? '@' + domain : '';
+                       } catch (e) { return ''; }
+                   }
+                   var urlMatch = t.match(/https?:\/\/(?:t\.me|telegram\.me|telegram\.dog)\/[^\s<>"']+/i) ||
+                       t.match(/\b(?:t\.me|telegram\.me|telegram\.dog)\/[^\s<>"']+/i);
                    if (urlMatch) t = urlMatch[0];
-                   t = t.replace(/\s/g, '');
                    if (!t) return '';
-                   var lower = t.toLowerCase();
-                   if (lower.indexOf('t.me/') !== -1) {
-                       var path = t.replace(/^https?:\/\/t\.me\//i, '').replace(/^t\.me\//i, '').trim();
-                       if (path.indexOf('+') === 0) return 't.me/' + path;
-                       return path ? (path.charAt(0) === '@' ? path : '@' + path) : '';
+                   if (/^(?:https?:\/\/)?(?:t\.me|telegram\.me|telegram\.dog)\//i.test(t)) {
+                       var path = t
+                           .replace(/^https?:\/\/(?:t\.me|telegram\.me|telegram\.dog)\//i, '')
+                           .replace(/^(?:t\.me|telegram\.me|telegram\.dog)\//i, '')
+                           .trim();
+                       path = path.split(/[?#]/)[0];
+                       var parts = path.split('/').filter(Boolean);
+                       if (!parts.length) return '';
+                       if (parts[0] === 's' && parts[1]) return '@' + parts[1].replace(/^@+/, '');
+                       if (parts[0] === 'joinchat' && parts[1]) return 't.me/joinchat/' + parts[1];
+                       if (parts[0].indexOf('+') === 0) return 't.me/' + parts[0];
+                       return '@' + parts[0].replace(/^@+/, '');
                    }
                    return t.charAt(0) === '@' ? t : '@' + t;
                }
                function channelPathSlug(channel) {
-                   var c = (channel || '').trim();
+                   var c = (channel || '').trim().split(/[?#]/)[0];
                    if (!c) return '';
                    if (/^t\.me\//i.test(c)) return c;
-                   return c.replace(/^@+/, '');
+                   return c.replace(/^@+/, '').split('/')[0];
                }
                function isNonTelegramHttp(s) {
-                   var t = (s || '').trim();
-                   return (t.indexOf('http://') === 0 || t.indexOf('https://') === 0) && t.toLowerCase().indexOf('t.me') === -1;
+                   var t = (s || '').trim().toLowerCase();
+                   return (t.indexOf('http://') === 0 || t.indexOf('https://') === 0) &&
+                       t.indexOf('t.me') === -1 &&
+                       t.indexOf('telegram.me') === -1 &&
+                       t.indexOf('telegram.dog') === -1;
                }
                function slugToQueryU(slug) {
                    var q = slug;
@@ -2012,6 +2031,8 @@
               function runHomeChannelCheck(slug) {
                   ensureKroCheckPanelVisible();
                   window.__kroHomeLastSlug = slug;
+                  window.__kroHomeRequestToken = (Date.now().toString(36) + Math.random().toString(36).slice(2));
+                  var requestToken = window.__kroHomeRequestToken;
                   if (window.__kroDeepUpgradeTimer) {
                       clearTimeout(window.__kroDeepUpgradeTimer);
                       window.__kroDeepUpgradeTimer = null;
@@ -2022,13 +2043,15 @@
                   var __kroCheckStarted = window.__kroHomeCheckT0;
                   showCheckBusy(displayLabel);
 
-                  var startDeepUpgradePoll = function (requestId, minPostsSeen) {
+                  var startDeepUpgradePoll = function (requestId, minPostsSeen, token) {
                       if (!requestId) return;
                       var startedAt = Date.now();
                       var deepPoll = function () {
+                          if (token !== window.__kroHomeRequestToken) return;
                           fetch(base + '/api/kro/check-result/' + encodeURIComponent(requestId), { cache: 'no-store' })
                               .then(function (res) { return res.json(); })
                               .then(function (row) {
+                                  if (token !== window.__kroHomeRequestToken) return;
                                   var st = row && row.status ? String(row.status) : '';
                                   if (st === 'done' && row && row.analysis) {
                                       var nextPosts = Number(row.posts_read || 0) || 0;
@@ -2063,6 +2086,7 @@
                   };
 
                   var renderHomeCheckSuccess = function (data) {
+                      if (requestToken !== window.__kroHomeRequestToken) return;
                       if (!data || typeof data !== 'object' || !data.analysis || typeof data.analysis !== 'object') throw new Error('no_analysis');
                       window.__kroHomeCheckT0 = null;
                       hideCheckBusy();
@@ -2084,11 +2108,12 @@
                           if (noteDeep) {
                               noteDeep.textContent = 'Быстрый анализ показан. Глубокий анализ уже запущен и подгрузится автоматически.';
                           }
-                          startDeepUpgradePoll(data.request_id || data.id, Number(data.posts_read || 0) || 0);
+                          startDeepUpgradePoll(data.request_id || data.id, Number(data.posts_read || 0) || 0, requestToken);
                       }
                   };
 
                   var pollResult = function (requestId, attempt) {
+                      if (requestToken !== window.__kroHomeRequestToken) return;
                       attempt = attempt || 0;
                       var elapsedMs = Date.now() - __kroCheckStarted;
                       if (elapsedMs >= __KRO_HOME_MAX_WAIT_MS) {
@@ -2100,6 +2125,7 @@
                       fetch(base + '/api/kro/check-result/' + encodeURIComponent(requestId), { cache: 'no-store' })
                           .then(function (res) { return res.json(); })
                           .then(function (row) {
+                              if (requestToken !== window.__kroHomeRequestToken) return;
                               var note = document.getElementById('kro-check-progress-note');
                               var qs = (row && (row.queue_status || row.status)) ? String(row.queue_status || row.status) : '';
                               if (note) {
@@ -2167,6 +2193,7 @@
                           });
                       })
                       .then(function (pack) {
+                          if (requestToken !== window.__kroHomeRequestToken) return;
                           if (pack.status === 202 && pack.data && (pack.data.request_id || pack.data.id)) {
                               var rid = pack.data.request_id || pack.data.id;
                               var qMsg = pack.data.message_ru || pack.data.message;
@@ -2190,6 +2217,7 @@
                           renderHomeCheckSuccess(pack.data);
                       })
                       .catch(function (err) {
+                          if (requestToken !== window.__kroHomeRequestToken) return;
                           window.__kroHomeCheckT0 = null;
                           hideCheckBusy();
                           var m = mapHomeFetchError(err);
