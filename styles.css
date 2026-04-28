@@ -2110,6 +2110,111 @@ body.kro-hero-scrolled .kro-floating-nav {
    line-height: 1.45;
 }
 
+.kro-feature1-check .kro-product-why,
+.kro-feature1-check .kro-transparency-card {
+   margin: 10px 0 18px;
+   padding: 20px;
+   border-radius: 20px;
+   border: 1px solid rgba(251, 191, 36, 0.16);
+   background: linear-gradient(165deg, rgba(251, 191, 36, 0.08) 0%, rgba(18, 16, 28, 0.52) 100%);
+   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.kro-product-why-kicker,
+.kro-transparency-kicker {
+   margin: 0 0 8px;
+   font-size: 0.7rem;
+   font-weight: 800;
+   letter-spacing: 0.11em;
+   text-transform: uppercase;
+   color: rgba(251, 191, 36, 0.92);
+}
+
+.kro-product-why-title,
+.kro-transparency-title {
+   margin: 0 0 8px;
+   font-family: var(--kro-font-heading);
+   font-size: clamp(1.05rem, 2vw, 1.45rem);
+   line-height: 1.18;
+   color: #fff;
+}
+
+.kro-product-why-text,
+.kro-transparency-text {
+   margin: 0;
+   color: rgba(255, 255, 255, 0.74);
+   font-size: 0.95rem;
+   line-height: 1.55;
+}
+
+.kro-product-features {
+   display: grid;
+   grid-template-columns: repeat(3, minmax(0, 1fr));
+   gap: 12px;
+   margin: 14px 0 0;
+}
+
+.kro-product-feature {
+   padding: 14px;
+   border-radius: 16px;
+   border: 1px solid rgba(255, 255, 255, 0.1);
+   background: rgba(255, 255, 255, 0.055);
+}
+
+.kro-product-feature strong {
+   display: block;
+   margin-bottom: 6px;
+   color: #fff;
+   font-size: 0.92rem;
+}
+
+.kro-product-feature span {
+   display: block;
+   color: rgba(255, 255, 255, 0.68);
+   font-size: 0.82rem;
+   line-height: 1.45;
+}
+
+.kro-alert-rules {
+   display: grid;
+   grid-template-columns: repeat(2, minmax(0, 1fr));
+   gap: 8px;
+   margin: 14px 0 0;
+   padding: 0;
+   list-style: none;
+}
+
+.kro-alert-rules li {
+   padding: 10px 12px;
+   border-radius: 14px;
+   background: rgba(0, 0, 0, 0.2);
+   color: rgba(255, 255, 255, 0.78);
+   font-size: 0.83rem;
+   line-height: 1.35;
+}
+
+.kro-transparency-example {
+   margin-top: 14px;
+   padding: 14px 16px;
+   border-left: 3px solid rgba(251, 191, 36, 0.72);
+   border-radius: 14px;
+   background: rgba(0, 0, 0, 0.22);
+   color: rgba(255, 255, 255, 0.82);
+   font-size: 0.9rem;
+   line-height: 1.55;
+}
+
+.kro-transparency-example strong {
+   color: #fff;
+}
+
+@media (max-width: 760px) {
+   .kro-product-features,
+   .kro-alert-rules {
+      grid-template-columns: 1fr;
+   }
+}
+
 /* Лёгкий 3D + движение (sitelove-like); на десктопе scroll-in теперь подхватывается и через Lenis */
 .kro-feature1-check .kro-flow-step:hover {
    border-color: rgba(255, 255, 255, 0.18);
