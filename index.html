@@ -1349,9 +1349,11 @@
                    if (!mod) return;
                    mod.classList.add('hidden');
                    mod.hidden = true;
-                   document.body.classList.remove('kro-modal-open');
+                  mod.style.left = '';
+                  mod.style.top = '';
+                  mod.style.width = '';
                }
-               function kroOpenFindingModal(row) {
+              function kroOpenFindingModal(row, triggerEl) {
                    var mod = document.getElementById('kro-inline-tg-modal');
                    if (!mod || !row) return;
                   var sheet = mod.querySelector('.kro-inline-tg-modal-sheet');
@@ -1376,9 +1378,26 @@
                    }
                    mod.classList.remove('hidden');
                    mod.hidden = false;
-                   document.body.classList.add('kro-modal-open');
                   mod.scrollTop = 0;
                   if (sheet) sheet.scrollTop = 0;
+                  try {
+                      var vw = window.innerWidth || document.documentElement.clientWidth || 0;
+                      var vh = window.innerHeight || document.documentElement.clientHeight || 0;
+                      var modalW = Math.min(700, Math.max(320, vw - 24));
+                      var left = Math.round((vw - modalW) / 2);
+                      var top = 18;
+                      if (triggerEl && triggerEl.getBoundingClientRect) {
+                          var r = triggerEl.getBoundingClientRect();
+                          left = Math.round(r.left + (r.width / 2) - (modalW / 2));
+                          left = Math.max(12, Math.min(left, Math.max(12, vw - modalW - 12)));
+                          top = Math.round(r.top - 16);
+                          if (top < 12) top = Math.round(r.bottom + 10);
+                          top = Math.max(10, Math.min(top, Math.max(10, vh - 120)));
+                      }
+                      mod.style.width = String(modalW) + 'px';
+                      mod.style.left = String(left) + 'px';
+                      mod.style.top = String(top) + 'px';
+                  } catch (ePos) { /* ignore */ }
                    try {
                        var closer = mod.querySelector('.kro-inline-tg-modal-close');
                       if (closer) closer.focus({ preventScroll: true });
@@ -1395,7 +1414,7 @@
                        if (btn) {
                            var idx = parseInt(btn.getAttribute('data-finding-idx'), 10);
                            var row = window.__kroFindingsLastRows && window.__kroFindingsLastRows[idx];
-                           if (row) kroOpenFindingModal(row);
+                          if (row) kroOpenFindingModal(row, btn);
                            return;
                        }
                        if (t.closest && t.closest('.kro-inline-tg-modal-backdrop')) kroCloseFindingModal();
