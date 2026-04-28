@@ -5509,7 +5509,7 @@ function kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, snap) {
 /** Единый список с backend/kro-worker/kro_permanent_blocklist.json (не дублировать в коде). */
 let KRO_PERMANENT_BLOCKLIST;
 try {
-  const raw = JSON.parse(readFileSync(join(__dirname, 'kro-worker', 'kro_permanent_blocklist.json'), 'utf8'));
+  const raw = JSON.parse(fs.readFileSync(join(__dirname, 'kro-worker', 'kro_permanent_blocklist.json'), 'utf8'));
   KRO_PERMANENT_BLOCKLIST = new Set(
     (Array.isArray(raw) ? raw : []).map((u) => channelMatchKey(String(u))).filter(Boolean)
   );
@@ -9027,14 +9027,21 @@ const PORT = process.env.PORT || 4000;
 let httpsOptions = null;
 const keyPath = join(__dirname, '..', 'key.pem');
 const certPath = join(__dirname, '..', 'cert.pem');
+const HTTPS_ENABLED = process.env.DISABLE_HTTPS !== '1' && process.env.HTTPS_ENABLED !== '0';
+const HTTPS_PORT = (() => {
+  const raw = parseInt(process.env.HTTPS_PORT || '4443', 10);
+  return Number.isFinite(raw) && raw > 0 ? raw : 4443;
+})();
 
 try {
-  if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+  if (HTTPS_ENABLED && fs.existsSync(keyPath) && fs.existsSync(certPath)) {
     httpsOptions = {
       key: fs.readFileSync(keyPath),
       cert: fs.readFileSync(certPath)
     };
     console.log('✅ SSL certificates found, starting HTTPS server');
+  } else if (!HTTPS_ENABLED) {
+    console.log('ℹ️  HTTPS disabled by environment; starting HTTP server only');
   }
 } catch (error) {
   console.warn('⚠️  Could not load SSL certificates, starting HTTP server:', error.message);
@@ -9073,11 +9080,15 @@ const httpSrv = app.listen(PORT, '0.0.0.0', () => {
 applyLongRequestTimeouts(httpSrv);
 
 if (httpsOptions) {
-  const httpsSrv = https.createServer(httpsOptions, app).listen(4443, '0.0.0.0', () => {
+  const httpsSrv = https.createServer(httpsOptions, app);
+  httpsSrv.on('error', (error) => {
+    console.warn(`⚠️  HTTPS server not started on port ${HTTPS_PORT}: ${error.message}`);
+  });
+  httpsSrv.listen(HTTPS_PORT, '0.0.0.0', () => {
     resetKroLiveCounterCache();
     console.log('[KRO] live-counter cache reset on HTTPS server listen');
-    console.log(`✅ HTTPS Backend listening on port 4443`);
-    console.log(`🔒 Access via: https://localhost:4443 or https://192.168.1.142:4443`);
+    console.log(`✅ HTTPS Backend listening on port ${HTTPS_PORT}`);
+    console.log(`🔒 Access via: https://localhost:${HTTPS_PORT} or https://192.168.1.142:${HTTPS_PORT}`);
   });
   applyLongRequestTimeouts(httpsSrv);
 }
