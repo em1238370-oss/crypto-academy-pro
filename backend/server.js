@@ -5416,9 +5416,7 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
         parsed = null;
       }
       const snippetCount = parsed && Array.isArray(parsed.snippets) ? parsed.snippets.length : 0;
-      console.log(
-        `${logPrefix} url=${url} ok=true html_len=${htmlLen} snippets=${snippetCount} sample=${JSON.stringify((parsed && parsed.snippets && parsed.snippets[0]) ? parsed.snippets[0].slice(0, 180) : '')}`,
-      );
+      console.log(`${logPrefix} url=${url} ok=true html_len=${htmlLen} snippets=${snippetCount}`);
       if (parsed && parsed.snippets && parsed.snippets.length) return parsed;
     } catch (e) {
       console.warn(`${logPrefix} url=${url} error=${e && e.message ? String(e.message) : 'fetch_failed'}`);
@@ -6894,9 +6892,7 @@ async function kroAnalyzeChannelWithClaudeFast(payload, timeoutMs) {
     '',
     'Важное правило: если sample_posts/partial_public_snippets меньше 5 или нет прямых цитат с гарантией прибыли, срочностью, платным VIP/закрытым доступом или обещанием x2/x10, не ставь ОПАСНО и не выдумывай схему. Пиши ПОД НАБЛЮДЕНИЕМ и объясняй, что данных мало.',
   ].join('\n');
-  console.log(
-    `[KRO claude] request budget_ms=${budget} payload=${JSON.stringify(payload).slice(0, 4000)}`,
-  );
+  console.log(`[KRO claude] request budget_ms=${budget}`);
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -6914,12 +6910,10 @@ async function kroAnalyzeChannelWithClaudeFast(payload, timeoutMs) {
       }),
     });
     const j = await r.json();
-    console.log(
-      `[KRO claude] response http_status=${r.status} body=${JSON.stringify(j).slice(0, 4000)}`,
-    );
+    console.log(`[KRO claude] response http_status=${r.status}`);
     const txt = (j && j.content && j.content[0] && j.content[0].text) ? String(j.content[0].text) : '';
     const parsed = kroExtractJsonObjectFromText(txt);
-    console.log(`[KRO claude] parsed_json=${JSON.stringify(parsed).slice(0, 2000)}`);
+    console.log(`[KRO claude] parsed=${parsed && typeof parsed === 'object' ? 'yes' : 'no'}`);
     return parsed;
   } catch (e) {
     console.warn(`[KRO claude] error=${e && e.message ? String(e.message) : 'request_failed'}`);
@@ -7442,7 +7436,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       let postsRead = Number(parsed.posts_fetched || 0);
       let sample = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
       console.log(
-        `[KRO analyze-channel ${analyzeLogId}] telethon ok=${parsed._check_once_ok === true} found=${parsed.found === true} posts_read=${postsRead} error=${JSON.stringify(parsed.error || '')} sample=${JSON.stringify(sample[0] ? sample[0].slice(0, 180) : '')}`,
+        `[KRO analyze-channel ${analyzeLogId}] telethon ok=${parsed._check_once_ok === true} found=${parsed.found === true} posts_read=${postsRead} error_code=${parsed.error ? 'present' : 'none'}`,
       );
       let enough =
         parsed._check_once_ok === true &&
@@ -7624,15 +7618,11 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       site_mentions: siteMentions,
       partial_public_snippets: publicSnap && Array.isArray(publicSnap.snippets) ? publicSnap.snippets.slice(0, 3) : [],
     };
-    console.log(
-      `[KRO analyze-channel ${analyzeLogId}] claude_payload=${JSON.stringify(claudePayload).slice(0, 4000)}`,
-    );
+    console.log(`[KRO analyze-channel ${analyzeLogId}] claude_payload prepared`);
 
     const claudeRemain = Math.max(1500, deadline - Date.now() - 400);
     const claudeJson = await kroAnalyzeChannelWithClaudeFast(claudePayload, claudeRemain);
-    console.log(
-      `[KRO analyze-channel ${analyzeLogId}] claude_result=${JSON.stringify(claudeJson).slice(0, 2000)}`,
-    );
+    console.log(`[KRO analyze-channel ${analyzeLogId}] claude_result=${claudeJson && typeof claudeJson === 'object' ? 'parsed' : 'empty'}`);
     if (claudeJson && typeof claudeJson === 'object') {
       if (Array.isArray(claudeJson.basic_info_lines)) {
         const extra = claudeJson.basic_info_lines.map((x) => String(x || '').trim()).filter(Boolean);
