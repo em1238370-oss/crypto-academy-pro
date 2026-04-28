@@ -7222,7 +7222,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
   try {
     const client = await getKroSheetsClient();
     if (!client || !kroSheetId) {
-      return res.status(503).json({ error: 'sheets_unavailable', message_ru: 'Google Sheets недоступен.' });
+      throw new Error('Google Sheets client unavailable');
     }
     const requestId = kroCheckQueueRequestId(key);
     const username = `@${key}`;
@@ -7272,24 +7272,27 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     'Анализ по внешним источникам, живая лента недоступна.';
 
   try {
-    const sheetsClient = await getKroSheetsClient();
-    if (!sheetsClient || !kroSheetId) {
-      return res.status(503).json({ error: 'sheets_unavailable', message_ru: 'Google Sheets недоступен.' });
-    }
-
-    const rawRows = await kroFetchScamBaseValuesCached(sheetsClient);
-    const scamRows = rawRows
-      .slice(1)
-      .map(parseScamBaseRow)
-      .filter((r) => r.username && channelMatchKey(r.username) === key)
-      .map(enrichScamBaseContentAnalysisForMonitor);
     let latestProfile = null;
-    if (scamRows.length) {
-      latestProfile = scamRows.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
+    let watchRow = null;
+    let reports = [];
+    let displayCh = channelDisplay;
+    const sheetsClient = await getKroSheetsClient();
+    if (sheetsClient && kroSheetId) {
+      const rawRows = await kroFetchScamBaseValuesCached(sheetsClient);
+      const scamRows = rawRows
+        .slice(1)
+        .map(parseScamBaseRow)
+        .filter((r) => r.username && channelMatchKey(r.username) === key)
+        .map(enrichScamBaseContentAnalysisForMonitor);
+      if (scamRows.length) {
+        latestProfile = scamRows.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
+      }
+      watchRow = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
+      displayCh = (latestProfile && latestProfile.username) ? latestProfile.username : channelDisplay;
+      reports = await getAllReportsForChannel(sheetsClient, displayCh);
+    } else {
+      console.warn(`[KRO analyze-channel ${analyzeLogId}] Google Sheets unavailable; continuing with live public analysis only`);
     }
-    const watchRow = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
-    const displayCh = (latestProfile && latestProfile.username) ? latestProfile.username : channelDisplay;
-    const reports = await getAllReportsForChannel(sheetsClient, displayCh);
 
     const pubBudget = Math.min(28000, Math.max(0, deadline - Date.now() - 400));
     const publicSnap =
