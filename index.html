@@ -1111,6 +1111,7 @@
                            return domain ? '@' + domain : '';
                        } catch (e) { return ''; }
                    }
+                   if (/^tg:\/\/join\?/i.test(t)) return '';
                    var urlMatch = t.match(/https?:\/\/(?:t\.me|telegram\.me|telegram\.dog)\/[^\s<>"']+/i) ||
                        t.match(/\b(?:t\.me|telegram\.me|telegram\.dog)\/[^\s<>"']+/i);
                    if (urlMatch) t = urlMatch[0];
@@ -1124,8 +1125,7 @@
                        var parts = path.split('/').filter(Boolean);
                        if (!parts.length) return '';
                        if (parts[0] === 's' && parts[1]) return '@' + parts[1].replace(/^@+/, '');
-                       if (parts[0] === 'joinchat' && parts[1]) return 't.me/joinchat/' + parts[1];
-                       if (parts[0].indexOf('+') === 0) return 't.me/' + parts[0];
+                       if (parts[0] === 'joinchat' || parts[0] === 'c' || parts[0].indexOf('+') === 0) return '';
                        return '@' + parts[0].replace(/^@+/, '');
                    }
                    return t.charAt(0) === '@' ? t : '@' + t;

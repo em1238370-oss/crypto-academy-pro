@@ -4635,6 +4635,7 @@ function kroTelegramRefFromHttpUrl(urlString) {
     if (!parts.length) return '';
     if (parts[0].startsWith('+')) return `t.me/${parts[0]}`;
     if (parts[0] === 'joinchat' && parts[1]) return `t.me/joinchat/${parts[1]}`;
+    if (parts[0] === 'c' && parts[1]) return `t.me/c/${parts[1]}`;
     if (parts[0] === 's' && parts[1]) {
       const slug = parts[1];
       return slug.startsWith('@') ? slug : `@${slug}`;
@@ -4722,16 +4723,37 @@ function channelMatchKey(channel) {
   if (looksLikeSiteHostname(s)) return s.replace(/\.$/, '');
   if (s.startsWith('telegram.me/') || s.startsWith('telegram.dog/')) return channelMatchKey(normalizeChannel(channel));
   if (s.startsWith('t.me/+')) return s;
+  if (s.startsWith('t.me/joinchat/')) return s;
+  if (s.startsWith('t.me/c/')) return s.split(/[?#]/)[0];
   if (s.startsWith('t.me/')) return s.slice(6).split(/[?#/]/)[0];
   return s.startsWith('@') ? s.slice(1) : s;
+}
+
+function kroUnsupportedTelegramAnalysisReason(normalized, key) {
+  const ref = String(normalized || '').trim().toLowerCase();
+  const k = String(key || '').trim().toLowerCase();
+  if (!k) return 'Передайте публичный username канала: @name или https://t.me/name.';
+  if (ref.startsWith('t.me/+') || k.startsWith('t.me/+') || ref.startsWith('t.me/joinchat/') || k.startsWith('t.me/joinchat/')) {
+    return 'Это invite/private ссылка. Публичный быстрый анализ читает только открытые каналы с username, например https://t.me/channelname.';
+  }
+  if (ref.startsWith('t.me/c/') || k.startsWith('t.me/c/')) {
+    return 'Это внутренняя ссылка Telegram на приватный канал/пост. Без публичного username нельзя честно прочитать ленту и подтвердить, что анализ относится именно к этому каналу.';
+  }
+  if (!/^[a-z0-9_]{3,64}$/i.test(k)) {
+    return 'Не удалось распознать публичный username канала. Вставьте @username или ссылку вида https://t.me/username.';
+  }
+  return '';
 }
 
 function kroExtractTelegramPublicSlug(channelRef) {
   const raw = String(channelRef || '').trim();
   if (!raw) return '';
+  if (/^(?:https?:\/\/)?t\.me\/(?:\+|joinchat\/|c\/)/i.test(raw)) return '';
   const m = raw.match(/(?:https?:\/\/)?t\.me\/(?:s\/)?([^/?#\s]+)/i);
   if (m && m[1]) return String(m[1]).replace(/^@+/, '').trim().toLowerCase();
-  return raw.replace(/^@+/, '').replace(/^t\.me\//i, '').replace(/^s\//i, '').trim().toLowerCase();
+  const slug = raw.replace(/^@+/, '').replace(/^t\.me\//i, '').replace(/^s\//i, '').trim().toLowerCase();
+  if (!/^[a-z0-9_]{3,64}$/i.test(slug)) return '';
+  return slug;
 }
 
 function kroStripHtmlToText(html) {
@@ -7295,6 +7317,13 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
   const key = channelMatchKey(normalized);
   if (!key) {
     return res.status(400).json({ error: 'bad_request', message_ru: 'Передайте username канала (t.me/username или @username).' });
+  }
+  const unsupportedPublicReason = kroUnsupportedTelegramAnalysisReason(normalized, key);
+  if (unsupportedPublicReason) {
+    return res.status(400).json({
+      error: 'unsupported_telegram_link',
+      message_ru: unsupportedPublicReason,
+    });
   }
 
   let queuedRequestId = null;
