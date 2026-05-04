@@ -5582,6 +5582,85 @@ function kroCollectSuspiciousFlagsFromTexts(texts) {
   return { flags, examples, risk };
 }
 
+function kroBuildManipulationAnalysis(texts) {
+  const src = Array.isArray(texts) ? texts.map((x) => String(x || '').trim()).filter(Boolean) : [];
+  const rules = [
+    {
+      code: 'fomo_pressure',
+      title: 'Давление и срочность (FOMO)',
+      danger_level: 'MEDIUM',
+      weight: 18,
+      kws: ['последний шанс', 'только сегодня', 'не упусти', 'срочно', 'успей', 'limited time'],
+      explanation: 'Срочность подталкивает принять решение до проверки фактов. В скам-схемах это используют, чтобы человек не успел спокойно сравнить риски и источники.',
+    },
+    {
+      code: 'profit_promise',
+      title: 'Обещание прибыли',
+      danger_level: 'HIGH',
+      weight: 28,
+      kws: ['гарантированная прибыль', 'без риска', 'стабильный доход', 'гарант', '100% profit', 'risk free'],
+      explanation: 'На рынке нельзя честно гарантировать доход без риска. Такие формулировки часто снимают осторожность перед оплатой VIP, переводом депозита или входом в сделку.',
+    },
+    {
+      code: 'percent_distortion',
+      title: 'Манипуляция процентами',
+      danger_level: 'MEDIUM',
+      weight: 16,
+      kws: ['+1000%', '+500%', '+300%', '+200%', '1000%', '500%', '300%', '200%', 'x10', 'x5', 'икс'],
+      explanation: 'Большой процент без абсолютной суммы может вводить в заблуждение: +1000% с $2 выглядит громко, но фактическая прибыль мала. Важно смотреть сумму, риск и размер позиции.',
+    },
+    {
+      code: 'small_risk_hook',
+      title: 'Психология “малого риска”',
+      danger_level: 'MEDIUM',
+      weight: 14,
+      kws: ['маленькой суммы', 'маленькая сумма', 'всего $1', 'всего $5', 'всего $10', 'попробуй с', 'начни с малого'],
+      explanation: 'Фраза про маленький вход снижает психологический барьер. Человек легче вовлекается, а дальше ему проще продать VIP, депозит или “долив”.',
+    },
+    {
+      code: 'vip_private',
+      title: 'VIP / закрытые группы',
+      danger_level: 'MEDIUM',
+      weight: 16,
+      kws: ['вступи в приват', 'приват', 'закрытая группа', 'закрытый клуб', 'эксклюзивный доступ', 'vip', 'вип'],
+      explanation: 'Закрытый доступ создаёт ощущение элитности и дефицита. Сам по себе VIP не доказывает скам, но в сочетании с гарантиями и давлением становится сильным сигналом.',
+    },
+    {
+      code: 'social_proof',
+      title: 'Социальное доказательство без проверки',
+      danger_level: 'LOW',
+      weight: 10,
+      kws: ['отзывы', 'скрины прибыли', 'скрин прибыли', 'результаты учеников', 'наши ученики', 'proof', 'testimonial'],
+      explanation: 'Скрины и отзывы легко вырвать из контекста или подделать. Для доверия нужны проверяемые сделки, убытки, условия входа/выхода и независимые жалобы.',
+    },
+  ];
+  const found = [];
+  for (const rule of rules) {
+    const ev = kroFirstSnippetForSuspiciousRule(src, rule);
+    if (!ev) continue;
+    found.push({
+      code: rule.code,
+      title: rule.title,
+      danger_level: rule.danger_level,
+      explanation: rule.explanation,
+      evidence_snippet: ev.snippet,
+      matched_keyword: ev.keyword,
+      weight: rule.weight,
+    });
+  }
+  const score = Math.max(0, Math.min(100, found.reduce((sum, x) => sum + (Number(x.weight) || 0), 0)));
+  const dangerLevel = score >= 70 ? 'HIGH' : score >= 35 ? 'MEDIUM' : 'LOW';
+  const summary = found.length
+    ? `Обнаружены манипуляции: ${found.map((x) => x.title).join('; ')}. Это не приговор, а список психологических приёмов, которые стоит проверить до денег.`
+    : 'В прочитанной выборке не найдено явных психологических манипуляций вроде срочности, гарантий прибыли, VIP-давления или фейкового соцдоказательства.';
+  return {
+    score_100: score,
+    danger_level: dangerLevel,
+    manipulations: found,
+    summary,
+  };
+}
+
 function kroMapRiskToUiStatus(risk) {
   if (!Number.isFinite(risk)) return { status: 'Оценка не готова', code: 'UNAVAILABLE' };
   if (risk >= 70) return { status: 'Много тревожного в формулировках', code: 'DANGER' };
@@ -7413,6 +7492,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
 
     if (publicSnap && Array.isArray(publicSnap.snippets) && publicSnap.snippets.length >= minPublicSnippets) {
       const signal = kroCollectSuspiciousFlagsFromTexts(publicSnap.snippets);
+      const manipulation = kroBuildManipulationAnalysis(publicSnap.snippets);
       const fastHuman = kroBuildFastCriteriaFromTexts(publicSnap.snippets, {});
       const risk = fastHuman.score10;
       const hasStrongEvidence = signal.flags.some((f) => ['guarantee', 'fomo', 'x_promises'].includes(String(f.code || '')));
@@ -7442,7 +7522,9 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
               }).filter(Boolean),
             ].slice(0, 3)
           : ['Жалоб по каналу в базе сейчас нет — на оценку по тексту это почти не влияет.'],
-        ties_risk_factors: signal.flags.length
+        ties_risk_factors: manipulation.manipulations.length
+          ? manipulation.manipulations.map((m) => `${m.title}: ${m.explanation} Факт: «${String(m.evidence_snippet || '').slice(0, 220)}»`)
+          : signal.flags.length
           ? signal.flags.map((f) => `${f.title}: фрагмент «${String(f.evidence_snippet || '').slice(0, 220)}»`)
           : ['По прочитанному тексту не видно прямых цитат с гарантиями прибыли, срочностью или обещаниями иксов.'],
         conclusion: {
@@ -7472,6 +7554,10 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         status_code: statusObj.code,
         risk_index: risk,
         risk_index_max: 10,
+        manipulation_score: manipulation.score_100,
+        manipulation_score_max: 100,
+        manipulation_danger_level: manipulation.danger_level,
+        manipulation_analysis: manipulation,
         posts_read: postsRead,
         period_days: null,
         read_path: 'public_snapshot',
@@ -7549,6 +7635,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         const analysis = kroV0BuildAnalysisFromLiveParsed(parsedForFast, key);
         if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
         const signal = kroCollectSuspiciousFlagsFromTexts(sampleForFast);
+        const manipulation = kroBuildManipulationAnalysis(sampleForFast);
         const fastHuman = kroBuildFastCriteriaFromTexts(sampleForFast, {
           hasSignalOffer: parsedForFast.has_signal_offer === true,
           onlyProfitsFlag: parsedForFast.only_profits_flag === true,
@@ -7577,9 +7664,11 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
               }).filter(Boolean),
             ].slice(0, 3)
           : ['Жалоб по каналу в базе нет — оценка всё равно по тексту постов.'];
-        analysis.ties_risk_factors = signal.flags.length
-          ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
-          : ['По сообщениям не видно явных «гарантий», жёсткой суеты и платного VIP.'];
+        analysis.ties_risk_factors = manipulation.manipulations.length
+          ? manipulation.manipulations.map((m) => `${m.title}: ${m.explanation} Факт: «${String(m.evidence_snippet || '').slice(0, 220)}»`)
+          : signal.flags.length
+            ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
+            : ['По сообщениям не видно явных «гарантий», жёсткой суеты и платного VIP.'];
         analysis.conclusion = {
           status: kroConclusionStatusFromEvidence(risk, hasStrongEvidence, {
             forceScam: String(parsedForFast.risk_verdict || '').toLowerCase() === 'scam',
@@ -7598,6 +7687,10 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           status_code: statusObj.code,
           risk_index: risk,
           risk_index_max: 10,
+          manipulation_score: manipulation.score_100,
+          manipulation_score_max: 100,
+          manipulation_danger_level: manipulation.danger_level,
+          manipulation_analysis: manipulation,
           posts_read: postsRead,
           period_days: Number(parsedForFast.analysis_window_days || 30),
           read_path: readPathOut,

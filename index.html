@@ -1257,8 +1257,9 @@
                }
                function kroSeverityFromFlagCode(code) {
                    var c = String(code || '').toLowerCase();
-                   if (c === 'guarantee' || c === 'x_promises') return 'high';
+                   if (c === 'guarantee' || c === 'x_promises' || c === 'profit_promises' || c === 'percentage_distortion') return 'high';
                    if (c === 'vip_paid' || c === 'signal_push' || c === 'fomo') return 'med';
+                   if (c === 'small_entry' || c === 'social_proof') return 'watch';
                    if (c === 'info' || c === 'neutral') return 'neutral';
                    return 'med';
                }
@@ -1346,6 +1347,9 @@
                        ? data.citations.map(function (x) { return kroSanitizeChannelSnippet(String(x || '').trim()); }).filter(Boolean)
                        : [];
                    var flags = Array.isArray(data.flags) ? data.flags : [];
+                   var manipulation = data.manipulation_analysis && typeof data.manipulation_analysis === 'object'
+                       ? data.manipulation_analysis
+                       : null;
                    var a = data.analysis || {};
                    var cb = Array.isArray(a.content_behavior) ? a.content_behavior : [];
                    var quotesFromContent = [];
@@ -1383,6 +1387,17 @@
                        if (seen[k]) return;
                        seen[k] = true;
                        rows.push({ severity: sev, label: lab, explain: String(explain || '').trim(), snippet: sn });
+                   }
+                   if (manipulation && Array.isArray(manipulation.manipulations)) {
+                       for (var mi = 0; mi < manipulation.manipulations.length && rows.length < 16; mi++) {
+                           var mnp = manipulation.manipulations[mi] || {};
+                           addRow(
+                               kroSeverityFromFlagCode(mnp.code),
+                               mnp.title || 'Манипуляция',
+                               mnp.explanation || 'Психологический приём, который может подтолкнуть к оплате или депозиту без спокойной проверки.',
+                               mnp.evidence_snippet || ''
+                           );
+                       }
                    }
                    for (var fi = 0; fi < flags.length; fi++) {
                        var f = flags[fi] || {};
