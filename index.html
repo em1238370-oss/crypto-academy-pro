@@ -114,10 +114,27 @@
            <div class="kro-f1-badges-row" aria-hidden="true">
                <span class="kro-f1-badge">Данные обновляются</span>
                <span class="kro-f1-badge-sep" aria-hidden="true">·</span>
-               <span class="kro-f1-badge">Обновление каждые 12 ч</span>
+               <span class="kro-f1-badge">Циклы: 00:00 и 12:00 МСК</span>
            </div>
            <div class="kro-feature1-dashboard">
-               <p class="kro-feature1-date" id="kro-feature1-date">Последнее подтверждённое обновление: <span id="kro-live-datetime">—</span></p>
+               <p class="kro-feature1-date" id="kro-feature1-date">Последний цикл мониторинга: <span id="kro-live-datetime">—</span></p>
+               <div class="kro-monitor-cycle" aria-label="Как работает мониторинг">
+                   <div class="kro-monitor-cycle-item">
+                       <span class="kro-monitor-cycle-label">Расписание</span>
+                       <strong>00:00 / 12:00 МСК</strong>
+                       <p>Каждый цикл заново собирает сигналы, жалобы и публичные следы по каналам.</p>
+                   </div>
+                   <div class="kro-monitor-cycle-item">
+                       <span class="kro-monitor-cycle-label">Что мониторим</span>
+                       <strong>Telegram signal-каналы</strong>
+                       <p>TGStat, Telegram search, web-источники и отчёты пользователей — с нашими фильтрами качества.</p>
+                   </div>
+                   <div class="kro-monitor-cycle-item">
+                       <span class="kro-monitor-cycle-label">Почему можно доверять</span>
+                       <strong>не “угадываем”, а показываем факты</strong>
+                       <p>В отчёте видно, какие сообщения прочитаны, какие фразы сработали и почему риск вырос.</p>
+                   </div>
+               </div>
                <div class="kro-feature1-hero-number">
                    <span class="kro-feature1-hero-value" id="kro-stat-channels-today">—</span>
                   <span class="kro-feature1-hero-label" id="kro-feature1-hero-label">всего в подтверждённой базе</span>
@@ -144,7 +161,7 @@
                    <span class="kro-feature1-stat-label">Курсы / сайты за 12 ч</span>
                </div>
                </div>
-               <p class="kro-feature1-dashboard-sub kro-scroll-in">Цифры обновляются автоматически</p>
+               <p class="kro-feature1-dashboard-sub kro-scroll-in">Мониторинг обновляется автоматически в 00:00 и 12:00 МСК. Если источник недоступен, система показывает это в логах и не делает вид, что каналов просто нет.</p>
                <p class="kro-f1-source-doc-wrap kro-scroll-in" id="kro-f1-source-doc-wrap">
                    <a href="https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit" id="kro-f1-source-doc-link" target="_blank" rel="noopener" class="kro-f1-source-doc-link">Источники и методология (Sources and Data)</a>
                </p>
