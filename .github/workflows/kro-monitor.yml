@@ -107,6 +107,7 @@ jobs:
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION_NAME: kro_worker
           KRO_TELEGRAM_SESSION_STRING: ${{ secrets.KRO_TELEGRAM_SESSION_STRING }}
+          TGSTAT_API_KEY: ${{ secrets.TGSTAT_API_KEY }}
           # Расширенный охват: мягче веб/DDG и TGStat (откл: KRO_BROAD_DISCOVERY=0)
           KRO_BROAD_DISCOVERY: '1'
           KRO_TGSTAT_NEW_MAX_AGE_DAYS: '21'

@@ -117,6 +117,7 @@ def search_channels(query, country='ru', limit=100):
     Returns list of dicts: username, link, title, participants_count, created_at (unix ts), or [] on error.
     """
     if not TGSTAT_API_KEY:
+        print('TGStat search disabled: TGSTAT_API_KEY is not set', file=__import__('sys').stderr)
         return []
     params = {'q': query, 'country': country, 'limit': min(100, max(1, limit)), 'peer_type': 'channel'}
     try:
