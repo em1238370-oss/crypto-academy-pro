@@ -114,10 +114,27 @@
            <div class="kro-f1-badges-row" aria-hidden="true">
                <span class="kro-f1-badge">Данные обновляются</span>
                <span class="kro-f1-badge-sep" aria-hidden="true">·</span>
-               <span class="kro-f1-badge">Обновление каждые 12 ч</span>
+               <span class="kro-f1-badge">Циклы: 00:00 и 12:00 МСК</span>
            </div>
            <div class="kro-feature1-dashboard">
-               <p class="kro-feature1-date" id="kro-feature1-date">Последнее подтверждённое обновление: <span id="kro-live-datetime">—</span></p>
+               <p class="kro-feature1-date" id="kro-feature1-date">Последний цикл мониторинга: <span id="kro-live-datetime">—</span></p>
+               <div class="kro-monitor-cycle" aria-label="Как работает мониторинг">
+                   <div class="kro-monitor-cycle-item">
+                       <span class="kro-monitor-cycle-label">Расписание</span>
+                       <strong>00:00 / 12:00 МСК</strong>
+                       <p>Каждый цикл заново собирает сигналы, жалобы и публичные следы по каналам.</p>
+                   </div>
+                   <div class="kro-monitor-cycle-item">
+                       <span class="kro-monitor-cycle-label">Что мониторим</span>
+                       <strong>Telegram signal-каналы</strong>
+                       <p>TGStat, Telegram search, web-источники и отчёты пользователей — с нашими фильтрами качества.</p>
+                   </div>
+                   <div class="kro-monitor-cycle-item">
+                       <span class="kro-monitor-cycle-label">Почему можно доверять</span>
+                       <strong>не “угадываем”, а показываем факты</strong>
+                       <p>В отчёте видно, какие сообщения прочитаны, какие фразы сработали и почему риск вырос.</p>
+                   </div>
+               </div>
                <div class="kro-feature1-hero-number">
                    <span class="kro-feature1-hero-value" id="kro-stat-channels-today">—</span>
                   <span class="kro-feature1-hero-label" id="kro-feature1-hero-label">всего в подтверждённой базе</span>
@@ -144,12 +161,73 @@
                    <span class="kro-feature1-stat-label">Курсы / сайты за 12 ч</span>
                </div>
                </div>
-               <p class="kro-feature1-dashboard-sub kro-scroll-in">Цифры обновляются автоматически</p>
+               <p class="kro-feature1-dashboard-sub kro-scroll-in">Мониторинг обновляется автоматически в 00:00 и 12:00 МСК. Если источник недоступен, система показывает это в логах и не делает вид, что каналов просто нет.</p>
                <p class="kro-f1-source-doc-wrap kro-scroll-in" id="kro-f1-source-doc-wrap">
                    <a href="https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit" id="kro-f1-source-doc-link" target="_blank" rel="noopener" class="kro-f1-source-doc-link">Источники и методология (Sources and Data)</a>
                </p>
                <p class="kro-f1-metrics-sub kro-scroll-in kro-feature1-source-caption" id="kro-f1-source-caption"></p>
                <p class="kro-f1-system-note kro-scroll-in" id="kro-f1-system-note" hidden></p>
+           </div>
+           <div class="kro-guru-system kro-scroll-in" aria-labelledby="kro-guru-system-heading">
+               <div class="kro-guru-system-head">
+                   <p class="kro-guru-system-kicker">Проверь своего гуру</p>
+                   <h2 class="kro-guru-system-title" id="kro-guru-system-heading">Не просто “проверка канала”, а быстрый прозрачный разбор вместо часа ручного чтения</h2>
+                   <p class="kro-guru-system-lead"><strong>Почему это нужно:</strong> вручную человек может сам листать канал, искать старые посты, сравнивать стиль и вспоминать жалобы. Но обычно это делают слишком поздно: когда уже купили VIP, внесли депозит или поверили “гарантированной прибыли”. Сервис экономит время и показывает не только оценку, а <strong>почему</strong> система так решила: какие сообщения прочитаны, какие фразы найдены, что изменилось и насколько вывод уверенный.</p>
+               </div>
+               <div class="kro-guru-system-grid" aria-label="Ключевые функции проверки гуру">
+                   <article class="kro-guru-system-card">
+                       <span class="kro-guru-system-tag">01 · Personal monitoring</span>
+                       <h3>Следишь за своими каналами</h3>
+                       <p>Пользователь добавляет канал или список каналов. Система смотрит именно их: последние сообщения, жалобы, историю и риск-сигналы.</p>
+                       <p class="kro-guru-system-proof">Факт в отчёте: канал, источник данных, сколько сообщений реально прочитано.</p>
+                   </article>
+                   <article class="kro-guru-system-card">
+                       <span class="kro-guru-system-tag">02 · Risk alerts</span>
+                       <h3>Сигнал до ловушки</h3>
+                       <p>Отмечаем гарантии прибыли, FOMO, срочность, резкую смену стиля, жалобы, удалённые/исчезающие следы и рост давления.</p>
+                       <p class="kro-guru-system-proof">Факт в отчёте: “что произошло” + цитата из текста.</p>
+                   </article>
+                   <article class="kro-guru-system-card">
+                       <span class="kro-guru-system-tag">03 · Explainability</span>
+                       <h3>Почему это опасно</h3>
+                       <p>Каждый риск объясняется человеческим языком: какая формулировка сработала, где цитата и как это связано со скам-поведением.</p>
+                       <p class="kro-guru-system-proof">Пример: “гарантированная прибыль” снижает осторожность и часто используется перед продажей доступа.</p>
+                   </article>
+                   <article class="kro-guru-system-card">
+                       <span class="kro-guru-system-tag">04 · Confidence Score</span>
+                       <h3>Не притворяемся оракулом</h3>
+                       <p>Если данных мало, мы так и пишем. Красный ярлык появляется только при прямых опасных цитатах, жалобах или сильных совпадениях.</p>
+                       <p class="kro-guru-system-proof">Факт в отчёте: уровень уверенности, объём выборки, ограничения анализа.</p>
+                   </article>
+               </div>
+               <div class="kro-guru-transparency" aria-label="Как выглядит прозрачный анализ">
+                   <div class="kro-guru-dashboard-card">
+                       <span class="kro-guru-dashboard-label">Personal Risk Dashboard</span>
+                       <div class="kro-guru-risk-row">
+                           <span>Мои каналы</span>
+                           <strong>12</strong>
+                       </div>
+                       <div class="kro-guru-risk-row kro-guru-risk-row--med">
+                           <span>MEDIUM risk</span>
+                           <strong>3</strong>
+                       </div>
+                       <div class="kro-guru-risk-row kro-guru-risk-row--high">
+                           <span>HIGH risk</span>
+                           <strong>1</strong>
+                       </div>
+                       <p>Видно, где риск растёт, а где канал стабилен. Это контроль, а не страшилка.</p>
+                   </div>
+                   <div class="kro-guru-explain-card">
+                       <span class="kro-guru-dashboard-label">Risk Alerts · пример предупреждения</span>
+                       <h3>Risk Alert · Confidence 72%</h3>
+                       <ul class="kro-guru-explain-list">
+                           <li><strong>Что произошло:</strong> в постах появилась фраза “гарантированная прибыль”.</li>
+                           <li><strong>Почему опасно:</strong> такие обещания часто снимают осторожность перед оплатой VIP или переводом депозита.</li>
+                           <li><strong>Динамика:</strong> раньше канал писал обзоры рынка, теперь чаще давит срочностью и обещаниями результата.</li>
+                           <li><strong>История изменений:</strong> отчёт показывает дату появления сигнала и как менялся риск.</li>
+                       </ul>
+                   </div>
+               </div>
            </div>
            <div class="kro-f1-blocks kro-f1-content-card">
                <!-- Блок 1: Шок-цифры -->
@@ -1032,6 +1110,7 @@
            var checkProgressTitle = document.getElementById('kro-check-progress-title');
            var inlineReport = document.getElementById('kro-inline-report');
            var kroF1Wrap = document.getElementById('kro-f1-cta-check-wrap');
+           var __kroHomeRunSeq = 0;
            /** Без класса kro-f1-show-check блок #kro-feature1-check остаётся с opacity:0 — отчёт заполняется, но не виден. */
            function ensureKroCheckPanelVisible() {
                if (kroF1Wrap) kroF1Wrap.classList.add('kro-f1-show-check');
@@ -1040,28 +1119,46 @@
                function normChannel(s) {
                    var raw = (s || '').trim();
                    if (!raw) return '';
-                   var t = raw;
-                   var urlMatch = raw.match(/https?:\/\/t\.me\/[^\s<>"']+/i) || raw.match(/\bt\.me\/[^\s<>"']+/i);
+                   var t = raw.replace(/\s/g, '');
+                   var tgResolve = t.match(/^tg:\/\/resolve\?(.+)$/i);
+                   if (tgResolve) {
+                       try {
+                           var params = new URLSearchParams(tgResolve[1]);
+                           var domain = String(params.get('domain') || '').replace(/^@+/, '').trim();
+                           return domain ? '@' + domain : '';
+                       } catch (e) { return ''; }
+                   }
+                   if (/^tg:\/\/join\?/i.test(t)) return '';
+                   var urlMatch = t.match(/https?:\/\/(?:t\.me|telegram\.me|telegram\.dog)\/[^\s<>"']+/i) ||
+                       t.match(/\b(?:t\.me|telegram\.me|telegram\.dog)\/[^\s<>"']+/i);
                    if (urlMatch) t = urlMatch[0];
-                   t = t.replace(/\s/g, '');
                    if (!t) return '';
-                   var lower = t.toLowerCase();
-                   if (lower.indexOf('t.me/') !== -1) {
-                       var path = t.replace(/^https?:\/\/t\.me\//i, '').replace(/^t\.me\//i, '').trim();
-                       if (path.indexOf('+') === 0) return 't.me/' + path;
-                       return path ? (path.charAt(0) === '@' ? path : '@' + path) : '';
+                   if (/^(?:https?:\/\/)?(?:t\.me|telegram\.me|telegram\.dog)\//i.test(t)) {
+                       var path = t
+                           .replace(/^https?:\/\/(?:t\.me|telegram\.me|telegram\.dog)\//i, '')
+                           .replace(/^(?:t\.me|telegram\.me|telegram\.dog)\//i, '')
+                           .trim();
+                       path = path.split(/[?#]/)[0];
+                       var parts = path.split('/').filter(Boolean);
+                       if (!parts.length) return '';
+                       if (parts[0] === 's' && parts[1]) return '@' + parts[1].replace(/^@+/, '');
+                       if (parts[0] === 'joinchat' || parts[0] === 'c' || parts[0].indexOf('+') === 0) return '';
+                       return '@' + parts[0].replace(/^@+/, '');
                    }
                    return t.charAt(0) === '@' ? t : '@' + t;
                }
                function channelPathSlug(channel) {
-                   var c = (channel || '').trim();
+                   var c = (channel || '').trim().split(/[?#]/)[0];
                    if (!c) return '';
                    if (/^t\.me\//i.test(c)) return c;
-                   return c.replace(/^@+/, '');
+                   return c.replace(/^@+/, '').split('/')[0];
                }
                function isNonTelegramHttp(s) {
-                   var t = (s || '').trim();
-                   return (t.indexOf('http://') === 0 || t.indexOf('https://') === 0) && t.toLowerCase().indexOf('t.me') === -1;
+                   var t = (s || '').trim().toLowerCase();
+                   return (t.indexOf('http://') === 0 || t.indexOf('https://') === 0) &&
+                       t.indexOf('t.me') === -1 &&
+                       t.indexOf('telegram.me') === -1 &&
+                       t.indexOf('telegram.dog') === -1;
                }
                function slugToQueryU(slug) {
                    var q = slug;
@@ -1071,6 +1168,32 @@
                function displayChannelLabel(slug, queryU) {
                    if (/^t\.me\//i.test(String(slug))) return String(slug);
                    return '@' + queryU;
+               }
+               function resetInlineReportContent() {
+                   var ids = [
+                       'kro-inline-eyebrow', 'kro-inline-title', 'kro-inline-meta', 'kro-inline-status',
+                       'kro-inline-reasons', 'kro-inline-foot', 'kro-inline-riskidx',
+                       'kro-inline-s1', 'kro-inline-s2', 'kro-inline-s3', 'kro-inline-s4', 'kro-inline-s5',
+                       'kro-inline-live-gate', 'kro-inline-analysis-path',
+                       'kro-inline-findings-heading', 'kro-inline-findings-lead', 'kro-inline-findings-tbody'
+                   ];
+                   ids.forEach(function (id) {
+                       var el = document.getElementById(id);
+                       if (!el) return;
+                       if (id === 'kro-inline-status') el.className = 'kro-inline-status-pill';
+                       if (id === 'kro-inline-live-gate') el.className = 'kro-inline-live-gate hidden';
+                       el.textContent = '';
+                       el.innerHTML = '';
+                   });
+                   var hideIds = ['kro-inline-riskidx-wrap', 'kro-inline-findings-wrap', 'kro-inline-deep-panel', 'kro-inline-deep-demo', 'kro-inline-deep-status', 'kro-inline-done-banner'];
+                   hideIds.forEach(function (id) {
+                       var el = document.getElementById(id);
+                       if (!el) return;
+                       el.hidden = true;
+                       el.classList.add('hidden');
+                   });
+                   window.__kroFindingsLastRows = [];
+                   kroCloseFindingModal();
                }
                function esc(s) {
                    return String(s == null ? '' : s)
@@ -1134,8 +1257,9 @@
                }
                function kroSeverityFromFlagCode(code) {
                    var c = String(code || '').toLowerCase();
-                   if (c === 'guarantee' || c === 'x_promises') return 'high';
+                   if (c === 'guarantee' || c === 'x_promises' || c === 'profit_promises' || c === 'percentage_distortion') return 'high';
                    if (c === 'vip_paid' || c === 'signal_push' || c === 'fomo') return 'med';
+                   if (c === 'small_entry' || c === 'social_proof') return 'watch';
                    if (c === 'info' || c === 'neutral') return 'neutral';
                    return 'med';
                }
@@ -1223,6 +1347,9 @@
                        ? data.citations.map(function (x) { return kroSanitizeChannelSnippet(String(x || '').trim()); }).filter(Boolean)
                        : [];
                    var flags = Array.isArray(data.flags) ? data.flags : [];
+                   var manipulation = data.manipulation_analysis && typeof data.manipulation_analysis === 'object'
+                       ? data.manipulation_analysis
+                       : null;
                    var a = data.analysis || {};
                    var cb = Array.isArray(a.content_behavior) ? a.content_behavior : [];
                    var quotesFromContent = [];
@@ -1237,6 +1364,16 @@
                    var pool = samples.slice();
                    for (var cj = 0; cj < citations.length; cj++) pool.push(citations[cj]);
                    for (var qi = 0; qi < quotesFromContent.length; qi++) pool.push(quotesFromContent[qi]);
+                   var uniquePool = [];
+                   var poolSeen = {};
+                   for (var upi = 0; upi < pool.length; upi++) {
+                       var pt = String(pool[upi] || '').replace(/\s+/g, ' ').trim();
+                       var pk = pt.slice(0, 140).toLowerCase();
+                       if (!pt || poolSeen[pk]) continue;
+                       poolSeen[pk] = true;
+                       uniquePool.push(pt);
+                   }
+                   pool = uniquePool;
                    var poolIx = 0;
                    function takeSnippet() {
                        if (poolIx < pool.length) return pool[poolIx++];
@@ -1250,6 +1387,17 @@
                        if (seen[k]) return;
                        seen[k] = true;
                        rows.push({ severity: sev, label: lab, explain: String(explain || '').trim(), snippet: sn });
+                   }
+                   if (manipulation && Array.isArray(manipulation.manipulations)) {
+                       for (var mi = 0; mi < manipulation.manipulations.length && rows.length < 16; mi++) {
+                           var mnp = manipulation.manipulations[mi] || {};
+                           addRow(
+                               kroSeverityFromFlagCode(mnp.code),
+                               mnp.title || 'Манипуляция',
+                               mnp.explanation || 'Психологический приём, который может подтолкнуть к оплате или депозиту без спокойной проверки.',
+                               mnp.evidence_snippet || ''
+                           );
+                       }
                    }
                    for (var fi = 0; fi < flags.length; fi++) {
                        var f = flags[fi] || {};
@@ -2009,26 +2157,60 @@
                        };
                    }
                }
+               function clearInlineReportState() {
+                   var ids = [
+                       'kro-inline-title', 'kro-inline-meta', 'kro-inline-status', 'kro-inline-reasons',
+                       'kro-inline-foot', 'kro-inline-riskidx', 'kro-inline-s1', 'kro-inline-s2',
+                       'kro-inline-s3', 'kro-inline-s4', 'kro-inline-s5', 'kro-inline-live-gate',
+                       'kro-inline-analysis-path', 'kro-inline-findings-tbody', 'kro-inline-deep-panel',
+                       'kro-inline-deep-demo', 'kro-inline-deep-status', 'kro-inline-done-banner'
+                   ];
+                   ids.forEach(function (id) {
+                       var el = document.getElementById(id);
+                       if (!el) return;
+                       el.innerHTML = '';
+                       if (id === 'kro-inline-status') el.textContent = '—';
+                       if (id === 'kro-inline-riskidx') el.textContent = '—';
+                   });
+                   ['kro-inline-live-gate', 'kro-inline-analysis-path', 'kro-inline-findings-wrap', 'kro-inline-deep-panel', 'kro-inline-deep-demo', 'kro-inline-deep-status', 'kro-inline-done-banner'].forEach(function (id) {
+                       var el = document.getElementById(id);
+                       if (!el) return;
+                       el.hidden = true;
+                       el.classList.add('hidden');
+                   });
+                   if (inlineReport) {
+                       inlineReport.classList.add('hidden');
+                       inlineReport.hidden = true;
+                   }
+                   window.__kroFindingsLastRows = [];
+                   window.__kroFindingsChannelLabel = '';
+                   kroCloseFindingModal();
+               }
               function runHomeChannelCheck(slug) {
                   ensureKroCheckPanelVisible();
                   window.__kroHomeLastSlug = slug;
+                  window.__kroHomeRequestToken = (Date.now().toString(36) + Math.random().toString(36).slice(2));
+                  var requestToken = window.__kroHomeRequestToken;
                   if (window.__kroDeepUpgradeTimer) {
                       clearTimeout(window.__kroDeepUpgradeTimer);
                       window.__kroDeepUpgradeTimer = null;
                   }
                   var queryU = slugToQueryU(slug);
                   var displayLabel = displayChannelLabel(slug, queryU);
+                  clearInlineReportState();
                   window.__kroHomeCheckT0 = Date.now();
                   var __kroCheckStarted = window.__kroHomeCheckT0;
                   showCheckBusy(displayLabel);
 
-                  var startDeepUpgradePoll = function (requestId, minPostsSeen) {
+                  var startDeepUpgradePoll = function (requestId, minPostsSeen, token) {
                       if (!requestId) return;
                       var startedAt = Date.now();
                       var deepPoll = function () {
+                          if (token !== window.__kroHomeRequestToken) return;
                           fetch(base + '/api/kro/check-result/' + encodeURIComponent(requestId), { cache: 'no-store' })
                               .then(function (res) { return res.json(); })
                               .then(function (row) {
+                                  if (token !== window.__kroHomeRequestToken) return;
                                   var st = row && row.status ? String(row.status) : '';
                                   if (st === 'done' && row && row.analysis) {
                                       var nextPosts = Number(row.posts_read || 0) || 0;
@@ -2062,7 +2244,15 @@
                       window.__kroDeepUpgradeTimer = setTimeout(deepPoll, 20000);
                   };
 
+                  var responseMatchesCurrent = function (data) {
+                      var got = data && data.analysis && data.analysis.channel_key ? String(data.analysis.channel_key).toLowerCase() : '';
+                      var want = String(queryU || '').replace(/^@+/, '').toLowerCase();
+                      return !got || !want || got === want;
+                  };
+
                   var renderHomeCheckSuccess = function (data) {
+                      if (requestToken !== window.__kroHomeRequestToken) return;
+                      if (!responseMatchesCurrent(data)) return;
                       if (!data || typeof data !== 'object' || !data.analysis || typeof data.analysis !== 'object') throw new Error('no_analysis');
                       window.__kroHomeCheckT0 = null;
                       hideCheckBusy();
@@ -2084,11 +2274,12 @@
                           if (noteDeep) {
                               noteDeep.textContent = 'Быстрый анализ показан. Глубокий анализ уже запущен и подгрузится автоматически.';
                           }
-                          startDeepUpgradePoll(data.request_id || data.id, Number(data.posts_read || 0) || 0);
+                          startDeepUpgradePoll(data.request_id || data.id, Number(data.posts_read || 0) || 0, requestToken);
                       }
                   };
 
                   var pollResult = function (requestId, attempt) {
+                      if (requestToken !== window.__kroHomeRequestToken) return;
                       attempt = attempt || 0;
                       var elapsedMs = Date.now() - __kroCheckStarted;
                       if (elapsedMs >= __KRO_HOME_MAX_WAIT_MS) {
@@ -2100,6 +2291,7 @@
                       fetch(base + '/api/kro/check-result/' + encodeURIComponent(requestId), { cache: 'no-store' })
                           .then(function (res) { return res.json(); })
                           .then(function (row) {
+                              if (requestToken !== window.__kroHomeRequestToken) return;
                               var note = document.getElementById('kro-check-progress-note');
                               var qs = (row && (row.queue_status || row.status)) ? String(row.queue_status || row.status) : '';
                               if (note) {
@@ -2167,6 +2359,7 @@
                           });
                       })
                       .then(function (pack) {
+                          if (requestToken !== window.__kroHomeRequestToken) return;
                           if (pack.status === 202 && pack.data && (pack.data.request_id || pack.data.id)) {
                               var rid = pack.data.request_id || pack.data.id;
                               var qMsg = pack.data.message_ru || pack.data.message;
@@ -2190,6 +2383,7 @@
                           renderHomeCheckSuccess(pack.data);
                       })
                       .catch(function (err) {
+                          if (requestToken !== window.__kroHomeRequestToken) return;
                           window.__kroHomeCheckT0 = null;
                           hideCheckBusy();
                           var m = mapHomeFetchError(err);
@@ -2395,8 +2589,12 @@
                    hero.classList.add('kro-reveal-visible');
                    requestAnimationFrame(function() { hero.classList.add('kro-hero-loaded'); });
                }
-               var feature1 = document.getElementById('feature1');
-               if (feature1) feature1.classList.add('kro-reveal-visible');
+              var feature1 = document.getElementById('feature1');
+              if (feature1) {
+                  var featureRect = feature1.getBoundingClientRect();
+                  var vh = window.innerHeight || document.documentElement.clientHeight;
+                  if (featureRect.top < vh * 0.72) feature1.classList.add('kro-reveal-visible');
+              }
                document.querySelectorAll('.kro-reveal').forEach(function(el) { revealObserver.observe(el); });
                if (scrollInObserver) document.querySelectorAll('.kro-scroll-in').forEach(function(el) {
                    scrollInObserver.observe(el);

@@ -33,6 +33,7 @@ import sys
 import json
 import logging
 import socket
+import time
 from datetime import datetime, timezone
 from urllib.parse import urljoin, quote_plus, urlparse
 
@@ -71,6 +72,13 @@ def _fetch_timeout() -> float:
     return float(os.environ.get("KRO_WEB_FETCH_TIMEOUT", "25"))
 
 
+def _fetch_retry_attempts() -> int:
+    try:
+        return max(1, min(4, int(os.environ.get("KRO_WEB_FETCH_RETRIES", "2") or "2")))
+    except ValueError:
+        return 2
+
+
 # Сообщение про пропуск DDG в CI — один раз за процесс
 _DDG_SKIP_IN_CI_LOGGED = False
 _CRYPTO_HINTS = (
@@ -107,27 +115,33 @@ def _fetch(url):
     Falls back to urllib if requests is unavailable.
     Returns decoded text or None on error.
     """
-    # --- requests (preferred: bypasses Cloudflare bot checks better) ---
-    try:
-        import requests
-        sess = requests.Session()
-        sess.headers.update(_HEADERS)
-        resp = sess.get(url, timeout=_fetch_timeout(), allow_redirects=True)
-        resp.raise_for_status()
-        return resp.text
-    except Exception as e:
-        logger.debug('requests fetch failed for %s: %s', url, e)
-    # --- urllib fallback ---
-    try:
-        from urllib.request import urlopen, Request as URequest
-        from urllib.error import URLError, HTTPError
-        req = URequest(url, headers=_HEADERS)
-        with urlopen(req, timeout=_fetch_timeout()) as resp:
-            charset = resp.headers.get_content_charset() or 'utf-8'
-            return resp.read().decode(charset, errors='replace')
-    except Exception as e:
-        logger.warning('web_scraper fetch error %s: %s', url, e)
-        return None
+    attempts = _fetch_retry_attempts()
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        # --- requests (preferred: bypasses Cloudflare bot checks better) ---
+        try:
+            import requests
+            sess = requests.Session()
+            sess.headers.update(_HEADERS)
+            resp = sess.get(url, timeout=_fetch_timeout(), allow_redirects=True)
+            resp.raise_for_status()
+            return resp.text
+        except Exception as e:
+            last_error = e
+            logger.debug('requests fetch failed for %s (attempt %d/%d): %s', url, attempt, attempts, e)
+        # --- urllib fallback ---
+        try:
+            from urllib.request import urlopen, Request as URequest
+            req = URequest(url, headers=_HEADERS)
+            with urlopen(req, timeout=_fetch_timeout()) as resp:
+                charset = resp.headers.get_content_charset() or 'utf-8'
+                return resp.read().decode(charset, errors='replace')
+        except Exception as e:
+            last_error = e
+        if attempt < attempts:
+            time.sleep(min(8, 2 ** (attempt - 1)))
+    logger.warning('web_scraper fetch error %s after %d attempts: %s', url, attempts, last_error)
+    return None
 
 
 def _fetch_with_browser_ua(url: str):

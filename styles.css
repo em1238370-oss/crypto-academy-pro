@@ -357,6 +357,36 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 @media (max-width: 768px) {
+   .kro-main {
+      --kro-duration-reveal: 1.35s;
+      --kro-duration-reveal-slow: 1.55s;
+      --kro-reveal-y: 12px;
+      --kro-scroll-in-y: 10px;
+   }
+
+   body.kro-hero-scrolled .kro-step1 {
+      opacity: 0.82;
+      transform: translateY(-12px);
+   }
+
+   .kro-step1 {
+      transition-duration: 1.15s;
+   }
+
+   .kro-scroll-in {
+      transition-duration: 1.35s !important;
+      transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1) !important;
+   }
+
+   .kro-feature1.kro-reveal .kro-feature1-dashboard,
+   .kro-feature1.kro-reveal .kro-f1-content-card,
+   .kro-feature1.kro-reveal .kro-f1-block,
+   .kro-feature1.kro-reveal .kro-guru-system {
+      transform: translateY(18px) scale(0.995);
+      transition-duration: 1.2s;
+      transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+   }
+
    .kro-floating-nav {
       padding: 10px 12px 10px 14px;
       width: calc(100% - 24px);
@@ -1166,6 +1196,33 @@ body.kro-hero-scrolled .kro-floating-nav {
    line-height: 1.45;
    color: rgba(255, 255, 255, 0.62);
    text-align: center;
+}
+
+.kro-monitor-cycle-card {
+   max-width: 640px;
+   margin: -12px auto 28px;
+   padding: 16px 18px;
+   border-radius: 18px;
+   border: 1px solid rgba(245, 158, 11, 0.22);
+   background: linear-gradient(145deg, rgba(245, 158, 11, 0.1), rgba(255, 255, 255, 0.045));
+   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 30px rgba(0, 0, 0, 0.22);
+   text-align: left;
+}
+
+.kro-monitor-cycle-title {
+   margin: 0 0 8px;
+   font-size: clamp(13px, 2vw, 15px);
+   font-weight: 800;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   color: rgba(255, 235, 190, 0.96);
+}
+
+.kro-monitor-cycle-text {
+   margin: 0;
+   font-size: clamp(12px, 1.85vw, 14px);
+   line-height: 1.55;
+   color: rgba(255, 255, 255, 0.72);
 }
 
 .kro-feature1-status-summary {
@@ -2108,6 +2165,111 @@ body.kro-hero-scrolled .kro-floating-nav {
    font-size: 0.8125rem;
    color: rgba(255, 255, 255, 0.65);
    line-height: 1.45;
+}
+
+.kro-feature1-check .kro-product-why,
+.kro-feature1-check .kro-transparency-card {
+   margin: 10px 0 18px;
+   padding: 20px;
+   border-radius: 20px;
+   border: 1px solid rgba(251, 191, 36, 0.16);
+   background: linear-gradient(165deg, rgba(251, 191, 36, 0.08) 0%, rgba(18, 16, 28, 0.52) 100%);
+   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.kro-product-why-kicker,
+.kro-transparency-kicker {
+   margin: 0 0 8px;
+   font-size: 0.7rem;
+   font-weight: 800;
+   letter-spacing: 0.11em;
+   text-transform: uppercase;
+   color: rgba(251, 191, 36, 0.92);
+}
+
+.kro-product-why-title,
+.kro-transparency-title {
+   margin: 0 0 8px;
+   font-family: var(--kro-font-heading);
+   font-size: clamp(1.05rem, 2vw, 1.45rem);
+   line-height: 1.18;
+   color: #fff;
+}
+
+.kro-product-why-text,
+.kro-transparency-text {
+   margin: 0;
+   color: rgba(255, 255, 255, 0.74);
+   font-size: 0.95rem;
+   line-height: 1.55;
+}
+
+.kro-product-features {
+   display: grid;
+   grid-template-columns: repeat(3, minmax(0, 1fr));
+   gap: 12px;
+   margin: 14px 0 0;
+}
+
+.kro-product-feature {
+   padding: 14px;
+   border-radius: 16px;
+   border: 1px solid rgba(255, 255, 255, 0.1);
+   background: rgba(255, 255, 255, 0.055);
+}
+
+.kro-product-feature strong {
+   display: block;
+   margin-bottom: 6px;
+   color: #fff;
+   font-size: 0.92rem;
+}
+
+.kro-product-feature span {
+   display: block;
+   color: rgba(255, 255, 255, 0.68);
+   font-size: 0.82rem;
+   line-height: 1.45;
+}
+
+.kro-alert-rules {
+   display: grid;
+   grid-template-columns: repeat(2, minmax(0, 1fr));
+   gap: 8px;
+   margin: 14px 0 0;
+   padding: 0;
+   list-style: none;
+}
+
+.kro-alert-rules li {
+   padding: 10px 12px;
+   border-radius: 14px;
+   background: rgba(0, 0, 0, 0.2);
+   color: rgba(255, 255, 255, 0.78);
+   font-size: 0.83rem;
+   line-height: 1.35;
+}
+
+.kro-transparency-example {
+   margin-top: 14px;
+   padding: 14px 16px;
+   border-left: 3px solid rgba(251, 191, 36, 0.72);
+   border-radius: 14px;
+   background: rgba(0, 0, 0, 0.22);
+   color: rgba(255, 255, 255, 0.82);
+   font-size: 0.9rem;
+   line-height: 1.55;
+}
+
+.kro-transparency-example strong {
+   color: #fff;
+}
+
+@media (max-width: 760px) {
+   .kro-product-features,
+   .kro-alert-rules {
+      grid-template-columns: 1fr;
+   }
 }
 
 /* Лёгкий 3D + движение (sitelove-like); на десктопе scroll-in теперь подхватывается и через Lenis */

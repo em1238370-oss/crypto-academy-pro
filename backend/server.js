@@ -4635,6 +4635,7 @@ function kroTelegramRefFromHttpUrl(urlString) {
     if (!parts.length) return '';
     if (parts[0].startsWith('+')) return `t.me/${parts[0]}`;
     if (parts[0] === 'joinchat' && parts[1]) return `t.me/joinchat/${parts[1]}`;
+    if (parts[0] === 'c' && parts[1]) return `t.me/c/${parts[1]}`;
     if (parts[0] === 's' && parts[1]) {
       const slug = parts[1];
       return slug.startsWith('@') ? slug : `@${slug}`;
@@ -4646,12 +4647,35 @@ function kroTelegramRefFromHttpUrl(urlString) {
   }
 }
 
+function kroTelegramRefFromTgUrl(input) {
+  try {
+    const u = new URL(String(input || '').trim());
+    const action = String(u.hostname || '').toLowerCase();
+    if (u.protocol !== 'tg:') return null;
+    if (action === 'resolve') {
+      const domain = String(u.searchParams.get('domain') || '').trim().replace(/^@+/, '');
+      return domain ? `@${domain}` : '';
+    }
+    if (action === 'join') {
+      const invite = String(u.searchParams.get('invite') || '').trim();
+      return invite ? `t.me/+${invite.replace(/^\++/, '')}` : '';
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function normalizeChannel(channel) {
   const s = (channel || '').toString().trim().replace(/\s/g, '');
   if (!s) return '';
   const lower = s.toLowerCase();
+  if (lower.startsWith('tg://')) {
+    const tgRef = kroTelegramRefFromTgUrl(s);
+    if (tgRef !== null) return tgRef;
+  }
   if (lower.startsWith('http://') || lower.startsWith('https://')) {
-    const tgRef = kroTelegramRefFromHttpUrl(lower);
+    const tgRef = kroTelegramRefFromHttpUrl(s);
     if (tgRef !== null) return tgRef;
     try {
       const u = new URL(lower);
@@ -4663,13 +4687,12 @@ function normalizeChannel(channel) {
   if (looksLikeSiteHostname(s)) {
     return lower.replace(/\.$/, '');
   }
-  if (lower.startsWith('https://t.me/') || lower.startsWith('http://t.me/')) {
-    const path = s.replace(/^https?:\/\/t\.me\//i, '').trim();
-    if (path.startsWith('+')) return 't.me/' + path;
-    return path ? (path.startsWith('@') ? path : '@' + path) : '';
+  if (lower.startsWith('t.me/') || lower.startsWith('telegram.me/') || lower.startsWith('telegram.dog/')) {
+    const tgRef = kroTelegramRefFromHttpUrl(`https://${s}`);
+    if (tgRef !== null) return tgRef;
   }
   if (lower.startsWith('t.me/')) {
-    const path = s.replace(/^t\.me\//i, '').trim();
+    const path = s.replace(/^t\.me\//i, '').trim().split(/[?#]/)[0];
     if (path.startsWith('+')) return 't.me/' + path;
     return path ? (path.startsWith('@') ? path : '@' + path) : '';
   }
@@ -4680,8 +4703,12 @@ function normalizeChannel(channel) {
 function channelMatchKey(channel) {
   const s = (channel || '').toString().trim().toLowerCase().replace(/\s/g, '');
   if (!s) return '';
+  if (s.startsWith('tg://')) {
+    const tgRef = kroTelegramRefFromTgUrl(channel);
+    if (tgRef !== null) return channelMatchKey(tgRef);
+  }
   if (s.startsWith('http://') || s.startsWith('https://')) {
-    const tgRef = kroTelegramRefFromHttpUrl(s);
+    const tgRef = kroTelegramRefFromHttpUrl(channel);
     if (tgRef !== null) {
       if (!tgRef) return '';
       return channelMatchKey(tgRef);
@@ -4694,17 +4721,39 @@ function channelMatchKey(channel) {
     }
   }
   if (looksLikeSiteHostname(s)) return s.replace(/\.$/, '');
+  if (s.startsWith('telegram.me/') || s.startsWith('telegram.dog/')) return channelMatchKey(normalizeChannel(channel));
   if (s.startsWith('t.me/+')) return s;
-  if (s.startsWith('t.me/')) return s.slice(6);
+  if (s.startsWith('t.me/joinchat/')) return s;
+  if (s.startsWith('t.me/c/')) return s.split(/[?#]/)[0];
+  if (s.startsWith('t.me/')) return s.slice(6).split(/[?#/]/)[0];
   return s.startsWith('@') ? s.slice(1) : s;
+}
+
+function kroUnsupportedTelegramAnalysisReason(normalized, key) {
+  const ref = String(normalized || '').trim().toLowerCase();
+  const k = String(key || '').trim().toLowerCase();
+  if (!k) return 'Передайте публичный username канала: @name или https://t.me/name.';
+  if (ref.startsWith('t.me/+') || k.startsWith('t.me/+') || ref.startsWith('t.me/joinchat/') || k.startsWith('t.me/joinchat/')) {
+    return 'Это invite/private ссылка. Публичный быстрый анализ читает только открытые каналы с username, например https://t.me/channelname.';
+  }
+  if (ref.startsWith('t.me/c/') || k.startsWith('t.me/c/')) {
+    return 'Это внутренняя ссылка Telegram на приватный канал/пост. Без публичного username нельзя честно прочитать ленту и подтвердить, что анализ относится именно к этому каналу.';
+  }
+  if (!/^[a-z0-9_]{3,64}$/i.test(k)) {
+    return 'Не удалось распознать публичный username канала. Вставьте @username или ссылку вида https://t.me/username.';
+  }
+  return '';
 }
 
 function kroExtractTelegramPublicSlug(channelRef) {
   const raw = String(channelRef || '').trim();
   if (!raw) return '';
+  if (/^(?:https?:\/\/)?t\.me\/(?:\+|joinchat\/|c\/)/i.test(raw)) return '';
   const m = raw.match(/(?:https?:\/\/)?t\.me\/(?:s\/)?([^/?#\s]+)/i);
   if (m && m[1]) return String(m[1]).replace(/^@+/, '').trim().toLowerCase();
-  return raw.replace(/^@+/, '').replace(/^t\.me\//i, '').replace(/^s\//i, '').trim().toLowerCase();
+  const slug = raw.replace(/^@+/, '').replace(/^t\.me\//i, '').replace(/^s\//i, '').trim().toLowerCase();
+  if (!/^[a-z0-9_]{3,64}$/i.test(slug)) return '';
+  return slug;
 }
 
 function kroStripHtmlToText(html) {
@@ -4924,27 +4973,42 @@ function kroPickFastCitations(texts, buckets, limit = 3) {
   return out.slice(0, limit);
 }
 
+function kroEscRegex(text) {
+  return String(text || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function hasKeywordInText(text, keyword) {
+  const source = String(text || '').toLowerCase();
+  const kw = String(keyword || '').toLowerCase();
+  if (!kw) return false;
+  if (/^[a-z0-9]+$/i.test(kw)) {
+    return new RegExp(`(^|[^a-z0-9])${kroEscRegex(kw)}([^a-z0-9]|$)`, 'i').test(source);
+  }
+  return source.includes(kw);
+}
+
 function kroBuildFastCriteriaFromTexts(texts, opts = null) {
   const rawTexts = Array.isArray(texts) ? texts.map((x) => String(x || '').trim()).filter(Boolean) : [];
   const joined = rawTexts.join(' \n ').toLowerCase();
   const meta = opts && typeof opts === 'object' ? opts : {};
   const assess = kroAssessPublicSnapshotTexts(rawTexts);
-  const firstMatch = (kws) => rawTexts.find((t) => kws.some((kw) => t.toLowerCase().includes(kw))) || '';
+  const hasKeyword = (kw) => hasKeywordInText(joined, kw);
+  const firstMatch = (kws) => rawTexts.find((t) => kws.some((kw) => hasKeywordInText(t, kw))) || '';
 
-  const vipKeywords = ['vip', 'вип', 'платн', 'подписк', 'доступ', 'закрыт'];
-  const fomoKeywords = ['100%', 'без риска', 'гарант', 'точно заработа', 'срочно', 'успей', 'последний шанс', 'x2', 'x5', 'x10', 'икс', 'памп'];
-  const promoKeywords = ['реклама', 'партнер', 'партнёр', 'ссылка', 'регистрац', 'реферал', 'биржа', 'обменник', 'доступ в канал'];
+  const vipKeywords = ['вип', 'платн', 'подписк', 'закрыт', 'закрытый клуб', 'доступ в канал'];
+  const fomoKeywords = ['без риска', 'гарант', 'точно заработа', 'срочно', 'успей', 'последний шанс', 'x2', 'x5', 'x10', 'икс', 'памп'];
+  const promoKeywords = ['реклама', 'партнер', 'партнёр', 'реферал', 'обменник', 'доступ в канал'];
 
-  const hasVip = vipKeywords.some((kw) => joined.includes(kw));
-  const hasFomo = fomoKeywords.some((kw) => joined.includes(kw)) || Number(meta.fomoPct || 0) >= 20;
+  const hasVip = vipKeywords.some(hasKeyword);
+  const hasFomo = fomoKeywords.some(hasKeyword) || Number(meta.fomoPct || 0) >= 20;
   const hasRiskManagement = !!assess.hasRiskManagement;
   const hasLogic = !!assess.hasEducation;
   const adsRatio = Number(meta.adsRatio);
-  const hasAdsWords = promoKeywords.some((kw) => joined.includes(kw));
+  const hasAdsWords = promoKeywords.some(hasKeyword);
   const adsState = Number.isFinite(adsRatio)
     ? (adsRatio >= 40 ? 'high' : adsRatio >= 15 ? 'partial' : 'low')
     : (hasAdsWords ? 'partial' : 'low');
-  const hasSignals = meta.hasSignalOffer === true || ['сигнал', 'вход', 'лонг', 'шорт', 'buy', 'sell'].some((kw) => joined.includes(kw));
+  const hasSignals = meta.hasSignalOffer === true || ['сигнал', 'лонг', 'шорт'].some(hasKeyword);
   const onlyProfits = meta.onlyProfitsFlag === true;
 
   /** @type {Array<{key:string,label:string,status:'yes'|'no'|'partial', explanation:string}>} */
@@ -4992,15 +5056,15 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
         : 'Реклама и продажа доступа не выглядят главной темой этой выборки.',
   });
 
-  let score10 = 3;
-  if (hasVip) score10 += 2;
-  if (hasFomo) score10 += 2;
-  if (!hasRiskManagement) score10 += 2;
-  if (!hasLogic) score10 += 1;
+  let score10 = 2;
+  if (hasVip) score10 += 1;
+  if (hasFomo) score10 += 3;
+  if (!hasRiskManagement && hasSignals) score10 += 1;
+  if (!hasLogic && hasSignals) score10 += 1;
   if (adsState === 'high') score10 += 1;
-  else if (adsState === 'partial') score10 += 1;
+  else if (adsState === 'partial' && (hasVip || hasFomo)) score10 += 1;
   if (hasSignals) score10 += 1;
-  if (onlyProfits) score10 += 1;
+  if (onlyProfits) score10 += 2;
   if (hasRiskManagement) score10 -= 1;
   if (hasLogic) score10 -= 1;
   score10 = Math.max(1, Math.min(10, score10));
@@ -5304,7 +5368,9 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
   const slug = kroExtractTelegramPublicSlug(channelRef);
   if (!slug) return null;
   const optObj = opts && typeof opts === 'object' ? opts : {};
-  const budgetMs = Math.min(30000, Math.max(3000, Number(optObj.timeoutMs) || 15000));
+  const budgetMs = Math.min(45000, Math.max(3000, Number(optObj.timeoutMs) || 15000));
+  const maxPages = Math.min(5, Math.max(1, Number(optObj.maxPages) || 4));
+  const maxSnippets = Math.min(80, Math.max(8, Number(optObj.maxSnippets) || 60));
   const logLabel = optObj.logLabel ? String(optObj.logLabel) : '';
   const logPrefix = logLabel ? `[KRO public-snapshot ${logLabel}]` : '[KRO public-snapshot]';
   const parseHtml = (html) => {
@@ -5332,57 +5398,97 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
       const desc = kroExtractPublicChannelDescriptionFromHtml(html);
       if (desc) snippets = kroFilterPublicSnapshotSnippets([desc], slug);
     }
+    const messageIds = [];
+    const idRegexes = [
+      /data-post=["'][^"']+\/(\d+)["']/gi,
+      /href=["'][^"']+\/(\d+)(?:\?[^"']*)?["']/gi,
+    ];
+    for (const rx of idRegexes) {
+      for (const m of html.matchAll(rx)) {
+        const id = Number(m && m[1]);
+        if (Number.isFinite(id) && id > 0 && !messageIds.includes(id)) messageIds.push(id);
+      }
+    }
     if (!snippets.length) return null;
-    return { slug, title, snippets, fetched_at: new Date().toISOString() };
+    return { slug, title, snippets, message_ids: messageIds, fetched_at: new Date().toISOString() };
   };
 
-  const urls = [
-    `https://t.me/s/${encodeURIComponent(slug)}`,
-    `https://r.jina.ai/http://t.me/s/${encodeURIComponent(slug)}`,
+  const sources = [
+    {
+      name: 't.me/s',
+      buildUrl: (before) => `https://t.me/s/${encodeURIComponent(slug)}${before ? `?before=${before}` : ''}`,
+    },
+    {
+      name: 'r.jina.ai',
+      buildUrl: (before) => `https://r.jina.ai/http://t.me/s/${encodeURIComponent(slug)}${before ? `?before=${before}` : ''}`,
+    },
   ];
   const deadline = Date.now() + budgetMs;
-  for (const url of urls) {
-    const remaining = deadline - Date.now();
-    if (remaining < 600) break;
-    const ctl = new AbortController();
-    const perUrlMs = Math.min(remaining, Math.max(2000, Math.floor(budgetMs / urls.length)));
-    const t = setTimeout(() => ctl.abort(), perUrlMs);
-    console.log(`${logPrefix} try url=${url} budget_ms=${perUrlMs}`);
-    try {
-      const r = await fetch(url, {
-        signal: ctl.signal,
-        headers: {
-          'user-agent': 'Mozilla/5.0 (compatible; KRO-Analyze/1.0)',
-          accept: 'text/html,application/xhtml+xml,text/plain',
-        },
-      });
-      if (!r.ok) {
-        console.log(`${logPrefix} url=${url} http_status=${r.status} ok=false`);
-        continue;
-      }
-      const body = await r.text();
-      const htmlLen = body ? body.length : 0;
-      let parsed = parseHtml(body);
-      if (!parsed || !parsed.snippets || !parsed.snippets.length) {
-        const descOnly = kroExtractPublicChannelDescriptionFromHtml(body);
-        if (descOnly) {
-          const sn = kroFilterPublicSnapshotSnippets([descOnly], slug);
-          if (sn.length) parsed = { slug, title: '', snippets: sn, fetched_at: new Date().toISOString() };
+  for (const source of sources) {
+    const snippets = [];
+    const seen = new Set();
+    let title = '';
+    let before = null;
+    let pagesFetched = 0;
+    for (let page = 0; page < maxPages && snippets.length < maxSnippets; page += 1) {
+      const remaining = deadline - Date.now();
+      if (remaining < 900) break;
+      const url = source.buildUrl(before);
+      const ctl = new AbortController();
+      const perUrlMs = Math.min(remaining, Math.max(1800, Math.floor(budgetMs / Math.max(2, maxPages))));
+      const t = setTimeout(() => ctl.abort(), perUrlMs);
+      console.log(`${logPrefix} try source=${source.name} page=${page + 1} budget_ms=${perUrlMs}`);
+      try {
+        const r = await fetch(url, {
+          signal: ctl.signal,
+          headers: {
+            'user-agent': 'Mozilla/5.0 (compatible; KRO-Analyze/1.0)',
+            accept: 'text/html,application/xhtml+xml,text/plain',
+          },
+        });
+        if (!r.ok) {
+          console.log(`${logPrefix} source=${source.name} page=${page + 1} http_status=${r.status} ok=false`);
+          break;
         }
+        const body = await r.text();
+        const htmlLen = body ? body.length : 0;
+        let parsed = parseHtml(body);
+        if (!parsed || !parsed.snippets || !parsed.snippets.length) parsed = null;
+        const pageSnippets = parsed && Array.isArray(parsed.snippets) ? parsed.snippets : [];
+        let added = 0;
+        for (const snip of pageSnippets) {
+          const clean = String(snip || '').replace(/\s+/g, ' ').trim();
+          const key = clean.toLowerCase();
+          if (!clean || seen.has(key)) continue;
+          seen.add(key);
+          snippets.push(clean);
+          added += 1;
+          if (snippets.length >= maxSnippets) break;
+        }
+        if (parsed && parsed.title && !title) title = parsed.title;
+        pagesFetched += 1;
+        console.log(`${logPrefix} source=${source.name} page=${page + 1} ok=true html_len=${htmlLen} snippets_total=${snippets.length} added=${added}`);
+        const ids = parsed && Array.isArray(parsed.message_ids) ? parsed.message_ids.filter((x) => Number.isFinite(Number(x))).map(Number) : [];
+        if (!ids.length || added === 0) break;
+        const nextBefore = Math.min(...ids);
+        if (!Number.isFinite(nextBefore) || nextBefore <= 1 || nextBefore === before) break;
+        before = nextBefore;
+      } catch (e) {
+        console.warn(`${logPrefix} source=${source.name} page=${page + 1} error=${e && e.message ? String(e.message) : 'fetch_failed'}`);
+        break;
+      } finally {
+        clearTimeout(t);
       }
-      if (!parsed || !parsed.snippets || !parsed.snippets.length) {
-        parsed = null;
-      }
-      const snippetCount = parsed && Array.isArray(parsed.snippets) ? parsed.snippets.length : 0;
-      console.log(
-        `${logPrefix} url=${url} ok=true html_len=${htmlLen} snippets=${snippetCount} sample=${JSON.stringify((parsed && parsed.snippets && parsed.snippets[0]) ? parsed.snippets[0].slice(0, 180) : '')}`,
-      );
-      if (parsed && parsed.snippets && parsed.snippets.length) return parsed;
-    } catch (e) {
-      console.warn(`${logPrefix} url=${url} error=${e && e.message ? String(e.message) : 'fetch_failed'}`);
-      /* try next source */
-    } finally {
-      clearTimeout(t);
+    }
+    if (snippets.length) {
+      return {
+        slug,
+        title,
+        snippets: snippets.slice(0, maxSnippets),
+        pages_fetched: pagesFetched,
+        source: source.name,
+        fetched_at: new Date().toISOString(),
+      };
     }
   }
   console.log(`${logPrefix} no_snippets_found slug=${slug}`);
@@ -5394,8 +5500,7 @@ function kroFirstSnippetForSuspiciousRule(texts, rule) {
   for (const raw of src) {
     const s = String(raw || '').trim();
     if (s.length < 6) continue;
-    const low = s.toLowerCase();
-    const kw = rule.kws.find((k) => low.includes(k));
+    const kw = rule.kws.find((k) => hasKeywordInText(s, k));
     if (!kw) continue;
     const clipped = s.length > 480 ? `${s.slice(0, 477)}…` : s;
     return { snippet: clipped, keyword: kw };
@@ -5404,7 +5509,6 @@ function kroFirstSnippetForSuspiciousRule(texts, rule) {
 }
 
 function kroCollectSuspiciousFlagsFromTexts(texts) {
-  const joined = texts.join(' \n ').toLowerCase();
   const rules = [
     {
       code: 'guarantee',
@@ -5418,7 +5522,7 @@ function kroCollectSuspiciousFlagsFromTexts(texts) {
     {
       code: 'vip_paid',
       title: 'Платный доступ и закрытый формат',
-      kws: ['vip', 'вип', 'платн', 'подписк', 'доступ в канал'],
+      kws: ['вип', 'платн', 'подписк', 'доступ в канал'],
       weight: 16,
       explanation:
         'Платный VIP, подписка или «закрытый клуб» сами по себе не преступление, но в паре с обещаниями лёгких денег это типичная воронка: сначала интерес, потом оплата за «секрет», «сигналы» или «личное сопровождение».\n\n'
@@ -5427,19 +5531,19 @@ function kroCollectSuspiciousFlagsFromTexts(texts) {
     {
       code: 'signal_push',
       title: 'Призывы к сделке без контекста',
-      kws: ['сигнал', 'buy', 'sell', 'лонг', 'шорт'],
+      kws: ['сигнал', 'лонг', 'шорт'],
       weight: 15,
       explanation:
-        'Короткие команды «лонг», «шорт», «сигнал», buy/sell без сценария и риска учат копировать сделки вслепую: вы не знаете, где выход, что считается ошибкой и какой размер позиции адекватен.\n\n'
+        'Короткие команды «лонг», «шорт», «сигнал» без сценария и риска учат копировать сделки вслепую: вы не знаете, где выход, что считается ошибкой и какой размер позиции адекватен.\n\n'
         + 'Смысл для читателя: быстро нажать кнопку у биржи. Полезный контент обычно объясняет логику и условия, при которых идея перестаёт работать — не только «куда нажать».',
     },
     {
       code: 'fomo',
       title: 'Срочность и страх упустить',
-      kws: ['срочно', 'успей', 'последний шанс', 'limited'],
+      kws: ['срочно', 'успей', 'последний шанс'],
       weight: 14,
       explanation:
-        'Фразы «успей», «последний шанс», «только сегодня», limited создают давление: решение принимают на эмоциях, а не после проверки.\n\n'
+        'Фразы «успей», «последний шанс», «только сегодня» создают давление: решение принимают на эмоциях, а не после проверки.\n\n'
         + 'Это не всегда мошенничество, но почти всегда повод остановиться. Смысл послания: «не думай долго» — а с деньгами как раз лучше думать спокойно и заранее.',
     },
     {
@@ -5454,8 +5558,8 @@ function kroCollectSuspiciousFlagsFromTexts(texts) {
   ];
   const flags = [];
   for (const rule of rules) {
-    if (!rule.kws.some((kw) => joined.includes(kw))) continue;
     const ev = kroFirstSnippetForSuspiciousRule(texts, rule);
+    if (!ev) continue;
     flags.push({
       code: rule.code,
       title: rule.title,
@@ -5468,8 +5572,7 @@ function kroCollectSuspiciousFlagsFromTexts(texts) {
   let risk = flags.reduce((sum, x) => sum + x.weight, 0);
   const examples = [];
   for (const text of texts) {
-    const low = String(text || '').toLowerCase();
-    if (rules.some((r) => r.kws.some((kw) => low.includes(kw)))) {
+    if (rules.some((r) => r.kws.some((kw) => hasKeywordInText(text, kw)))) {
       examples.push(String(text).slice(0, 240));
     }
     if (examples.length >= 5) break;
@@ -5477,6 +5580,85 @@ function kroCollectSuspiciousFlagsFromTexts(texts) {
   if (!examples.length && texts.length) examples.push(String(texts[0]).slice(0, 240));
   if (examples.length === 0) risk = null;
   return { flags, examples, risk };
+}
+
+function kroBuildManipulationAnalysis(texts) {
+  const src = Array.isArray(texts) ? texts.map((x) => String(x || '').trim()).filter(Boolean) : [];
+  const rules = [
+    {
+      code: 'fomo_pressure',
+      title: 'Давление и срочность (FOMO)',
+      danger_level: 'MEDIUM',
+      weight: 18,
+      kws: ['последний шанс', 'только сегодня', 'не упусти', 'срочно', 'успей', 'limited time'],
+      explanation: 'Срочность подталкивает принять решение до проверки фактов. В скам-схемах это используют, чтобы человек не успел спокойно сравнить риски и источники.',
+    },
+    {
+      code: 'profit_promise',
+      title: 'Обещание прибыли',
+      danger_level: 'HIGH',
+      weight: 28,
+      kws: ['гарантированная прибыль', 'без риска', 'стабильный доход', 'гарант', '100% profit', 'risk free'],
+      explanation: 'На рынке нельзя честно гарантировать доход без риска. Такие формулировки часто снимают осторожность перед оплатой VIP, переводом депозита или входом в сделку.',
+    },
+    {
+      code: 'percent_distortion',
+      title: 'Манипуляция процентами',
+      danger_level: 'MEDIUM',
+      weight: 16,
+      kws: ['+1000%', '+500%', '+300%', '+200%', '1000%', '500%', '300%', '200%', 'x10', 'x5', 'икс'],
+      explanation: 'Большой процент без абсолютной суммы может вводить в заблуждение: +1000% с $2 выглядит громко, но фактическая прибыль мала. Важно смотреть сумму, риск и размер позиции.',
+    },
+    {
+      code: 'small_risk_hook',
+      title: 'Психология “малого риска”',
+      danger_level: 'MEDIUM',
+      weight: 14,
+      kws: ['маленькой суммы', 'маленькая сумма', 'всего $1', 'всего $5', 'всего $10', 'попробуй с', 'начни с малого'],
+      explanation: 'Фраза про маленький вход снижает психологический барьер. Человек легче вовлекается, а дальше ему проще продать VIP, депозит или “долив”.',
+    },
+    {
+      code: 'vip_private',
+      title: 'VIP / закрытые группы',
+      danger_level: 'MEDIUM',
+      weight: 16,
+      kws: ['вступи в приват', 'приват', 'закрытая группа', 'закрытый клуб', 'эксклюзивный доступ', 'vip', 'вип'],
+      explanation: 'Закрытый доступ создаёт ощущение элитности и дефицита. Сам по себе VIP не доказывает скам, но в сочетании с гарантиями и давлением становится сильным сигналом.',
+    },
+    {
+      code: 'social_proof',
+      title: 'Социальное доказательство без проверки',
+      danger_level: 'LOW',
+      weight: 10,
+      kws: ['отзывы', 'скрины прибыли', 'скрин прибыли', 'результаты учеников', 'наши ученики', 'proof', 'testimonial'],
+      explanation: 'Скрины и отзывы легко вырвать из контекста или подделать. Для доверия нужны проверяемые сделки, убытки, условия входа/выхода и независимые жалобы.',
+    },
+  ];
+  const found = [];
+  for (const rule of rules) {
+    const ev = kroFirstSnippetForSuspiciousRule(src, rule);
+    if (!ev) continue;
+    found.push({
+      code: rule.code,
+      title: rule.title,
+      danger_level: rule.danger_level,
+      explanation: rule.explanation,
+      evidence_snippet: ev.snippet,
+      matched_keyword: ev.keyword,
+      weight: rule.weight,
+    });
+  }
+  const score = Math.max(0, Math.min(100, found.reduce((sum, x) => sum + (Number(x.weight) || 0), 0)));
+  const dangerLevel = score >= 70 ? 'HIGH' : score >= 35 ? 'MEDIUM' : 'LOW';
+  const summary = found.length
+    ? `Обнаружены манипуляции: ${found.map((x) => x.title).join('; ')}. Это не приговор, а список психологических приёмов, которые стоит проверить до денег.`
+    : 'В прочитанной выборке не найдено явных психологических манипуляций вроде срочности, гарантий прибыли, VIP-давления или фейкового соцдоказательства.';
+  return {
+    score_100: score,
+    danger_level: dangerLevel,
+    manipulations: found,
+    summary,
+  };
 }
 
 function kroMapRiskToUiStatus(risk) {
@@ -5509,7 +5691,7 @@ function kroV0MergeHomeQuickPublicSnapshotIntoFastAnalysis(analysis, snap) {
 /** Единый список с backend/kro-worker/kro_permanent_blocklist.json (не дублировать в коде). */
 let KRO_PERMANENT_BLOCKLIST;
 try {
-  const raw = JSON.parse(readFileSync(join(__dirname, 'kro-worker', 'kro_permanent_blocklist.json'), 'utf8'));
+  const raw = JSON.parse(fs.readFileSync(join(__dirname, 'kro-worker', 'kro_permanent_blocklist.json'), 'utf8'));
   KRO_PERMANENT_BLOCKLIST = new Set(
     (Array.isArray(raw) ? raw : []).map((u) => channelMatchKey(String(u))).filter(Boolean)
   );
@@ -6841,6 +7023,8 @@ async function kroAnalyzeChannelWithClaudeFast(payload, timeoutMs) {
   const t = setTimeout(() => ctl.abort(), budget);
   const prompt = [
     'Ты аналитик по crypto Telegram-каналам. По JSON ниже о канале дай краткий вывод по признакам мошенничества.',
+    'Жёсткое правило: не придумывай факты и не ставь ОПАСНО/ПОДОЗРИТЕЛЬНО без цитат из posts/partial_public_snippets/reports.',
+    'Если прочитано меньше 5 реальных постов или есть только внешние превью без текста канала — ставь ПОД НАБЛЮДЕНИЕМ и объясняй, что данных мало.',
     'Ответь ТОЛЬКО одним JSON-объектом без markdown и без пояснений вне JSON. Поля:',
     '{"risk_index":0-100,"status_ru":"ОПАСНО|ПОДОЗРИТЕЛЬНО|БЕЗОПАСНО|ПОД НАБЛЮДЕНИЕМ",',
     '"flags":[{"code":"","title":"","explanation":""}],',
@@ -6850,10 +7034,10 @@ async function kroAnalyzeChannelWithClaudeFast(payload, timeoutMs) {
     '',
     'Данные:',
     JSON.stringify(payload).slice(0, 28000),
+    '',
+    'Важное правило: если sample_posts/partial_public_snippets меньше 5 или нет прямых цитат с гарантией прибыли, срочностью, платным VIP/закрытым доступом или обещанием x2/x10, не ставь ОПАСНО и не выдумывай схему. Пиши ПОД НАБЛЮДЕНИЕМ и объясняй, что данных мало.',
   ].join('\n');
-  console.log(
-    `[KRO claude] request budget_ms=${budget} payload=${JSON.stringify(payload).slice(0, 4000)}`,
-  );
+  console.log(`[KRO claude] request budget_ms=${budget}`);
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -6871,12 +7055,10 @@ async function kroAnalyzeChannelWithClaudeFast(payload, timeoutMs) {
       }),
     });
     const j = await r.json();
-    console.log(
-      `[KRO claude] response http_status=${r.status} body=${JSON.stringify(j).slice(0, 4000)}`,
-    );
+    console.log(`[KRO claude] response http_status=${r.status}`);
     const txt = (j && j.content && j.content[0] && j.content[0].text) ? String(j.content[0].text) : '';
     const parsed = kroExtractJsonObjectFromText(txt);
-    console.log(`[KRO claude] parsed_json=${JSON.stringify(parsed).slice(0, 2000)}`);
+    console.log(`[KRO claude] parsed=${parsed && typeof parsed === 'object' ? 'yes' : 'no'}`);
     return parsed;
   } catch (e) {
     console.warn(`[KRO claude] error=${e && e.message ? String(e.message) : 'request_failed'}`);
@@ -7215,6 +7397,13 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
   if (!key) {
     return res.status(400).json({ error: 'bad_request', message_ru: 'Передайте username канала (t.me/username или @username).' });
   }
+  const unsupportedPublicReason = kroUnsupportedTelegramAnalysisReason(normalized, key);
+  if (unsupportedPublicReason) {
+    return res.status(400).json({
+      error: 'unsupported_telegram_link',
+      message_ru: unsupportedPublicReason,
+    });
+  }
 
   let queuedRequestId = null;
   let queuedUsername = `@${key}`;
@@ -7222,7 +7411,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
   try {
     const client = await getKroSheetsClient();
     if (!client || !kroSheetId) {
-      return res.status(503).json({ error: 'sheets_unavailable', message_ru: 'Google Sheets недоступен.' });
+      throw new Error('Google Sheets client unavailable');
     }
     const requestId = kroCheckQueueRequestId(key);
     const username = `@${key}`;
@@ -7272,24 +7461,27 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     'Анализ по внешним источникам, живая лента недоступна.';
 
   try {
-    const sheetsClient = await getKroSheetsClient();
-    if (!sheetsClient || !kroSheetId) {
-      return res.status(503).json({ error: 'sheets_unavailable', message_ru: 'Google Sheets недоступен.' });
-    }
-
-    const rawRows = await kroFetchScamBaseValuesCached(sheetsClient);
-    const scamRows = rawRows
-      .slice(1)
-      .map(parseScamBaseRow)
-      .filter((r) => r.username && channelMatchKey(r.username) === key)
-      .map(enrichScamBaseContentAnalysisForMonitor);
     let latestProfile = null;
-    if (scamRows.length) {
-      latestProfile = scamRows.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
+    let watchRow = null;
+    let reports = [];
+    let displayCh = channelDisplay;
+    const sheetsClient = await getKroSheetsClient();
+    if (sheetsClient && kroSheetId) {
+      const rawRows = await kroFetchScamBaseValuesCached(sheetsClient);
+      const scamRows = rawRows
+        .slice(1)
+        .map(parseScamBaseRow)
+        .filter((r) => r.username && channelMatchKey(r.username) === key)
+        .map(enrichScamBaseContentAnalysisForMonitor);
+      if (scamRows.length) {
+        latestProfile = scamRows.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
+      }
+      watchRow = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
+      displayCh = (latestProfile && latestProfile.username) ? latestProfile.username : channelDisplay;
+      reports = await getAllReportsForChannel(sheetsClient, displayCh);
+    } else {
+      console.warn(`[KRO analyze-channel ${analyzeLogId}] Google Sheets unavailable; continuing with live public analysis only`);
     }
-    const watchRow = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
-    const displayCh = (latestProfile && latestProfile.username) ? latestProfile.username : channelDisplay;
-    const reports = await getAllReportsForChannel(sheetsClient, displayCh);
 
     const pubBudget = Math.min(28000, Math.max(0, deadline - Date.now() - 400));
     const publicSnap =
@@ -7300,10 +7492,12 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
 
     if (publicSnap && Array.isArray(publicSnap.snippets) && publicSnap.snippets.length >= minPublicSnippets) {
       const signal = kroCollectSuspiciousFlagsFromTexts(publicSnap.snippets);
+      const manipulation = kroBuildManipulationAnalysis(publicSnap.snippets);
       const fastHuman = kroBuildFastCriteriaFromTexts(publicSnap.snippets, {});
       const risk = fastHuman.score10;
-      const statusObj = kroMapFastRisk10ToUiStatus(risk);
-      const conclusionStatus = kroMapFastRisk10ToConclusion(risk, {});
+      const hasStrongEvidence = signal.flags.some((f) => ['guarantee', 'fomo', 'x_promises'].includes(String(f.code || '')));
+      const statusObj = kroMapRiskDisplayToUiStatus(risk, hasStrongEvidence);
+      const conclusionStatus = kroConclusionStatusFromEvidence(risk, hasStrongEvidence, {});
       let analysis = {
         v: 0,
         channel_key: key,
@@ -7312,7 +7506,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         basic_info: [
           `Канал: ${channelDisplay}`,
           `Чем занимается канал: ${fastHuman.topicLine}`,
-          `Прочитано ${publicSnap.snippets.length} коротких фрагментов с открытой страницы (до 15 секунд).`,
+          `Прочитано ${publicSnap.snippets.length} фрагментов с открытой ленты${publicSnap.pages_fetched ? ` (${publicSnap.pages_fetched} стр.)` : ''}. Это экономит ручной просмотр канала; красный вердикт ставим только при прямых опасных цитатах.`,
           publicSnap.title ? `Название на странице: ${publicSnap.title}.` : '',
         ],
         content_behavior: [
@@ -7328,13 +7522,18 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
               }).filter(Boolean),
             ].slice(0, 3)
           : ['Жалоб по каналу в базе сейчас нет — на оценку по тексту это почти не влияет.'],
-        ties_risk_factors: signal.flags.length
-          ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
-          : ['По тексту не видно явных «гарантий прибыли», жёсткой суеты и продажи закрытого VIP.'],
+        ties_risk_factors: manipulation.manipulations.length
+          ? manipulation.manipulations.map((m) => `${m.title}: ${m.explanation} Факт: «${String(m.evidence_snippet || '').slice(0, 220)}»`)
+          : signal.flags.length
+          ? signal.flags.map((f) => `${f.title}: фрагмент «${String(f.evidence_snippet || '').slice(0, 220)}»`)
+          : ['По прочитанному тексту не видно прямых цитат с гарантиями прибыли, срочностью или обещаниями иксов.'],
         conclusion: {
           status: conclusionStatus,
           reasons: [
             `Риск ${risk}/10: ${fastHuman.summaryLine}`,
+            hasStrongEvidence
+              ? 'Красный уровень подтверждён прямой цитатой из текста.'
+              : 'Сильный красный ярлык не ставим: в прочитанных фрагментах нет прямых опасных обещаний.',
             ...fastHuman.reasons,
           ].filter(Boolean).slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
         },
@@ -7355,33 +7554,37 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         status_code: statusObj.code,
         risk_index: risk,
         risk_index_max: 10,
+        manipulation_score: manipulation.score_100,
+        manipulation_score_max: 100,
+        manipulation_danger_level: manipulation.danger_level,
+        manipulation_analysis: manipulation,
         posts_read: postsRead,
-        period_days: 7,
+        period_days: null,
         read_path: 'public_snapshot',
         flags: signal.flags,
         citations: fastHuman.citations.slice(0, 3),
         live_evidence: {
           live_pass: true,
           mode: 'public_snapshot',
-          reason: `Прочитано фрагментов публичной ленты: ${postsRead} (лимит 15 с).`,
+          reason: `Прочитано фрагментов публичной ленты: ${postsRead}${publicSnap.pages_fetched ? `, страниц: ${publicSnap.pages_fetched}` : ''}.`,
           sample_posts: publicSnap.snippets.slice(0, 3),
           posts_fetched: postsRead,
-          analysis_window_days: 7,
+          analysis_window_days: null,
         },
         live_metrics: {
           posts_fetched: postsRead,
-          analysis_window_days: 7,
+          analysis_window_days: null,
           home_quick_live: true,
           complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
         },
         analysis_basis: {
-          label: 'Вывод по коротким фрагментам с открытой страницы канала.',
+          label: 'Вывод по фрагментам открытой ленты канала; показываем цитаты и ограничения выборки.',
           sources_used: ['t.me/s'],
           read_path: 'public_snapshot',
           posts_read: postsRead,
           elapsed_ms: Date.now() - t0,
         },
-        message: `${channelDisplay}: оценка ${risk}/10. ${fastHuman.summaryLine}`,
+        message: `${channelDisplay}: оценка ${risk}/10. ${hasStrongEvidence ? fastHuman.summaryLine : 'Вывод ограничен прочитанными цитатами; без прямых обещаний прибыли красный ярлык не ставим.'}`,
       }));
     }
 
@@ -7392,7 +7595,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       let postsRead = Number(parsed.posts_fetched || 0);
       let sample = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
       console.log(
-        `[KRO analyze-channel ${analyzeLogId}] telethon ok=${parsed._check_once_ok === true} found=${parsed.found === true} posts_read=${postsRead} error=${JSON.stringify(parsed.error || '')} sample=${JSON.stringify(sample[0] ? sample[0].slice(0, 180) : '')}`,
+        `[KRO analyze-channel ${analyzeLogId}] telethon ok=${parsed._check_once_ok === true} found=${parsed.found === true} posts_read=${postsRead} error_code=${parsed.error ? 'present' : 'none'}`,
       );
       let enough =
         parsed._check_once_ok === true &&
@@ -7432,6 +7635,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         const analysis = kroV0BuildAnalysisFromLiveParsed(parsedForFast, key);
         if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
         const signal = kroCollectSuspiciousFlagsFromTexts(sampleForFast);
+        const manipulation = kroBuildManipulationAnalysis(sampleForFast);
         const fastHuman = kroBuildFastCriteriaFromTexts(sampleForFast, {
           hasSignalOffer: parsedForFast.has_signal_offer === true,
           onlyProfitsFlag: parsedForFast.only_profits_flag === true,
@@ -7439,7 +7643,8 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           adsRatio: parsedForFast.ads_ratio,
         });
         const risk = fastHuman.score10;
-        const statusObj = kroMapFastRisk10ToUiStatus(risk);
+        const hasStrongEvidence = kroHasStrongPostEvidence(parsedForFast, fastHuman);
+        const statusObj = kroMapRiskDisplayToUiStatus(risk, hasStrongEvidence);
         analysis.basic_info = [
           `Канал: ${channelDisplay}`,
           `Чем занимается канал: ${fastHuman.topicLine}`,
@@ -7459,11 +7664,13 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
               }).filter(Boolean),
             ].slice(0, 3)
           : ['Жалоб по каналу в базе нет — оценка всё равно по тексту постов.'];
-        analysis.ties_risk_factors = signal.flags.length
-          ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
-          : ['По сообщениям не видно явных «гарантий», жёсткой суеты и платного VIP.'];
+        analysis.ties_risk_factors = manipulation.manipulations.length
+          ? manipulation.manipulations.map((m) => `${m.title}: ${m.explanation} Факт: «${String(m.evidence_snippet || '').slice(0, 220)}»`)
+          : signal.flags.length
+            ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
+            : ['По сообщениям не видно явных «гарантий», жёсткой суеты и платного VIP.'];
         analysis.conclusion = {
-          status: kroMapFastRisk10ToConclusion(risk, {
+          status: kroConclusionStatusFromEvidence(risk, hasStrongEvidence, {
             forceScam: String(parsedForFast.risk_verdict || '').toLowerCase() === 'scam',
           }),
           reasons: [
@@ -7480,6 +7687,10 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           status_code: statusObj.code,
           risk_index: risk,
           risk_index_max: 10,
+          manipulation_score: manipulation.score_100,
+          manipulation_score_max: 100,
+          manipulation_danger_level: manipulation.danger_level,
+          manipulation_analysis: manipulation,
           posts_read: postsRead,
           period_days: Number(parsedForFast.analysis_window_days || 30),
           read_path: readPathOut,
@@ -7573,15 +7784,11 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       site_mentions: siteMentions,
       partial_public_snippets: publicSnap && Array.isArray(publicSnap.snippets) ? publicSnap.snippets.slice(0, 3) : [],
     };
-    console.log(
-      `[KRO analyze-channel ${analyzeLogId}] claude_payload=${JSON.stringify(claudePayload).slice(0, 4000)}`,
-    );
+    console.log(`[KRO analyze-channel ${analyzeLogId}] claude_payload prepared`);
 
     const claudeRemain = Math.max(1500, deadline - Date.now() - 400);
     const claudeJson = await kroAnalyzeChannelWithClaudeFast(claudePayload, claudeRemain);
-    console.log(
-      `[KRO analyze-channel ${analyzeLogId}] claude_result=${JSON.stringify(claudeJson).slice(0, 2000)}`,
-    );
+    console.log(`[KRO analyze-channel ${analyzeLogId}] claude_result=${claudeJson && typeof claudeJson === 'object' ? 'parsed' : 'empty'}`);
     if (claudeJson && typeof claudeJson === 'object') {
       if (Array.isArray(claudeJson.basic_info_lines)) {
         const extra = claudeJson.basic_info_lines.map((x) => String(x || '').trim()).filter(Boolean);
@@ -9027,14 +9234,21 @@ const PORT = process.env.PORT || 4000;
 let httpsOptions = null;
 const keyPath = join(__dirname, '..', 'key.pem');
 const certPath = join(__dirname, '..', 'cert.pem');
+const HTTPS_ENABLED = process.env.DISABLE_HTTPS !== '1' && process.env.HTTPS_ENABLED !== '0';
+const HTTPS_PORT = (() => {
+  const raw = parseInt(process.env.HTTPS_PORT || '4443', 10);
+  return Number.isFinite(raw) && raw > 0 ? raw : 4443;
+})();
 
 try {
-  if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+  if (HTTPS_ENABLED && fs.existsSync(keyPath) && fs.existsSync(certPath)) {
     httpsOptions = {
       key: fs.readFileSync(keyPath),
       cert: fs.readFileSync(certPath)
     };
     console.log('✅ SSL certificates found, starting HTTPS server');
+  } else if (!HTTPS_ENABLED) {
+    console.log('ℹ️  HTTPS disabled by environment; starting HTTP server only');
   }
 } catch (error) {
   console.warn('⚠️  Could not load SSL certificates, starting HTTP server:', error.message);
@@ -9073,11 +9287,15 @@ const httpSrv = app.listen(PORT, '0.0.0.0', () => {
 applyLongRequestTimeouts(httpSrv);
 
 if (httpsOptions) {
-  const httpsSrv = https.createServer(httpsOptions, app).listen(4443, '0.0.0.0', () => {
+  const httpsSrv = https.createServer(httpsOptions, app);
+  httpsSrv.on('error', (error) => {
+    console.warn(`⚠️  HTTPS server not started on port ${HTTPS_PORT}: ${error.message}`);
+  });
+  httpsSrv.listen(HTTPS_PORT, '0.0.0.0', () => {
     resetKroLiveCounterCache();
     console.log('[KRO] live-counter cache reset on HTTPS server listen');
-    console.log(`✅ HTTPS Backend listening on port 4443`);
-    console.log(`🔒 Access via: https://localhost:4443 or https://192.168.1.142:4443`);
+    console.log(`✅ HTTPS Backend listening on port ${HTTPS_PORT}`);
+    console.log(`🔒 Access via: https://localhost:${HTTPS_PORT} or https://192.168.1.142:${HTTPS_PORT}`);
   });
   applyLongRequestTimeouts(httpsSrv);
 }

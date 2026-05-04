@@ -405,9 +405,16 @@ def _is_crypto_signal_channel(title, username):
 # --- TGStat search: именно каналы с крипто-сигналами ---
 def fetch_tgstat_new_channels():
     """Широкий поиск TGStat по группам запросов с evidence-полями."""
+    if not (os.environ.get('TGSTAT_API_KEY') or '').strip():
+        print(
+            'TGStat search disabled: TGSTAT_API_KEY is not set, cannot search new crypto signal channels.',
+            file=sys.stderr,
+        )
+        return []
     try:
         from tgstat_client import search_channels
     except ImportError:
+        print('TGStat search disabled: tgstat_client import failed.', file=sys.stderr)
         return []
     seen = set()
     out = []
@@ -471,9 +478,16 @@ def fetch_tgstat_new_channels():
 
 def fetch_tgstat_watch_channels():
     """Широкий поиск TGStat: каналы старше месяца для channels_watch."""
+    if not (os.environ.get('TGSTAT_API_KEY') or '').strip():
+        print(
+            'TGStat watch search disabled: TGSTAT_API_KEY is not set, cannot search crypto signal channels.',
+            file=sys.stderr,
+        )
+        return []
     try:
         from tgstat_client import search_channels
     except ImportError:
+        print('TGStat watch search disabled: tgstat_client import failed.', file=sys.stderr)
         return []
     seen = set()
     out = []
