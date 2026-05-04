@@ -488,6 +488,10 @@ def _home_greedy_early_exit_posts():
         return 20
 
 
+def _home_greedy_keep_sample_texts():
+    return (os.environ.get('KRO_HOME_GREEDY_KEEP_SAMPLE_TEXTS') or '').strip().lower() in ('1', 'true', 'yes', 'y', 'on')
+
+
 def _home_greedy_stable_batches():
     raw = (os.environ.get('KRO_HOME_GREEDY_STABLE_BATCHES') or '2').strip()
     try:
@@ -518,7 +522,7 @@ async def _collect_messages_paginated_until_stable_or_budget(
 ):
     items = []
     offset_id = 0
-    batch = min(100, max(40, max_count // 15))
+    batch = min(100, max(50, max_count // 12))
     prev_sig = ''
     stable = 0
     early_exit = False
@@ -554,28 +558,33 @@ async def _collect_messages_paginated_until_stable_or_budget(
             if stable >= stable_batches_need:
                 early_exit = True
                 last_sig = sig
-                break
-        await asyncio.sleep(0.12)
+                tail_sec = mono_deadline - time.monotonic()
+                deep_enough = len(items) >= max(early_text_posts + 25, int(max_count * 0.62))
+                if tail_sec < 22 or deep_enough:
+                    break
+                stable = 0
+        await asyncio.sleep(0.08)
     return items, 'telegram_home_greedy_paged', early_exit, stable, last_sig
 
 
-async def _collect_reply_snippets_phase(client, entity, messages, mono_deadline, max_total_snippets=80):
+async def _collect_reply_snippets_phase(client, entity, messages, mono_deadline, max_total_snippets=120):
     out = []
     if not messages:
         return out
     t0 = time.monotonic()
     try:
-        for m in messages[: min(40, len(messages))]:
-            if time.monotonic() >= mono_deadline:
+        cap_posts = min(120, len(messages))
+        for m in messages[:cap_posts]:
+            if time.monotonic() >= mono_deadline - 0.35:
                 break
             if not m or not getattr(m, 'replies', None) or not getattr(m.replies, 'replies', 0):
                 continue
             try:
-                replies = await client.get_messages(entity, reply_to=m.id, limit=20)
+                replies = await client.get_messages(entity, reply_to=m.id, limit=28)
             except Exception:
                 continue
             for r in replies or []:
-                if time.monotonic() >= mono_deadline:
+                if time.monotonic() >= mono_deadline - 0.35:
                     break
                 if r and getattr(r, 'text', None) and str(r.text).strip():
                     s = str(r.text).strip().replace('\n', ' ')
@@ -583,8 +592,8 @@ async def _collect_reply_snippets_phase(client, entity, messages, mono_deadline,
                         out.append(s[:400])
                 if len(out) >= max_total_snippets:
                     return out
-            if time.monotonic() - t0 > 0.25:
-                await asyncio.sleep(0.05)
+            if time.monotonic() - t0 > 0.22:
+                await asyncio.sleep(0.04)
     except Exception:
         pass
     return out
@@ -657,9 +666,9 @@ async def run_check_home_greedy(channel_id, period_days=30):
             reply_extra = await _collect_reply_snippets_phase(
                 client,
                 entity,
-                messages[: min(40 if home_meta.get('home_early_exit') else len(messages), len(messages))],
+                messages[: min(120 if home_meta.get('home_early_exit') else len(messages), len(messages))],
                 mono_deadline,
-                max_total_snippets=80 if not home_meta.get('home_early_exit') else 50,
+                max_total_snippets=90 if not home_meta.get('home_early_exit') else 70,
             )
         for rt in reply_extra:
             if rt and rt not in texts:
@@ -736,7 +745,7 @@ async def run_check_home_greedy(channel_id, period_days=30):
             verdict = 'safe'
 
         sample_posts = []
-        cap_snip = min(80, len(texts))
+        cap_snip = min(120, len(texts))
         for t in texts[:cap_snip]:
             snippet = (t or '').strip().replace('\n', ' ')[:220]
             if len(snippet) >= 12:
@@ -782,7 +791,6 @@ async def run_check_home_greedy(channel_id, period_days=30):
             'reach_ratio': reach_ratio,
             'channel_age_days': channel_age_days,
             'has_signal_offer': has_signal_offer,
-            '_sample_texts': texts[: min(120, len(texts))],
             'sample_posts': sample_posts,
             'language_word_hits': language_word_hits,
             'first_impression_posts': first_impression_posts,
@@ -790,6 +798,8 @@ async def run_check_home_greedy(channel_id, period_days=30):
             'scam_similarity': scam_similarity,
             'home_meta': home_meta,
         }
+        if _home_greedy_keep_sample_texts():
+            result_obj['_sample_texts'] = texts[: min(120, len(texts))]
         return result_obj
     except FloodWaitError as e:
         return _flood_wait_response(e)

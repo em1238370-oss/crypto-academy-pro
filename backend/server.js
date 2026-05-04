@@ -7474,6 +7474,27 @@ function kroBuildParsedFromPublicSnapshotOnly(publicSnap, channelDisplay, minPos
   };
 }
 
+/** Дополняет sample_posts из полного _sample_texts (greedy режим отдаёт длинный текст, сниппеты могли обрезаться). */
+function kroHomeGreedyMergeSamplesFromParsed(parsed, minUnique) {
+  const need = Math.max(1, Number(minUnique) || 1);
+  const p = parsed && typeof parsed === 'object' ? parsed : {};
+  let out = Array.isArray(p.sample_posts) ? p.sample_posts.map((x) => String(x || '').trim()).filter(Boolean) : [];
+  if (out.length >= need) return out;
+  const full = Array.isArray(p._sample_texts) ? p._sample_texts : [];
+  const seen = new Set(out.map((x) => x.slice(0, 400)));
+  for (const raw of full) {
+    const s = String(raw || '').trim().replace(/\n/g, ' ');
+    if (s.length < 12) continue;
+    const sn = s.slice(0, 220);
+    const key = sn.slice(0, 400);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(sn);
+    if (out.length >= Math.min(160, need + 80)) break;
+  }
+  return out;
+}
+
 /** Один запуск check_once в режиме home_greedy: жадное чтение ленты по monotonic-бюджету внутри Python. */
 function kroRunHomeGreedyTelethonOnce(channelForOnce, deadline, telethonBudgetMs, logLabel) {
   const t0 = perfNow();
@@ -7482,7 +7503,8 @@ function kroRunHomeGreedyTelethonOnce(channelForOnce, deadline, telethonBudgetMs
     Math.min(Number(telethonBudgetMs) || 0, Math.max(0, deadline - Date.now() - 600)),
   );
   const mono = String(Math.min(7 * 60 * 1000, Math.floor(b)));
-  const spawnTimeout = Math.min(1800000, b + 4000);
+  const spawnSlack = Math.min(120000, Math.max(8000, Math.floor(b * 0.12)));
+  const spawnTimeout = Math.min(1800000, b + spawnSlack);
   const once = kroRunCheckOnce(channelForOnce, {
     readOnly: true,
     periodDays: 30,
@@ -7490,6 +7512,7 @@ function kroRunHomeGreedyTelethonOnce(channelForOnce, deadline, telethonBudgetMs
     checkOnceEnv: {
       KRO_CHECK_ONCE_MODE: 'home_greedy',
       KRO_CHECK_ONCE_MONO_MS: mono,
+      KRO_HOME_GREEDY_KEEP_SAMPLE_TEXTS: '1',
     },
   });
   const parsed = kroNormalizeCheckOnceForAnalysis(once);
@@ -7712,11 +7735,20 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     const reports = await getAllReportsForChannel(sheetsClient, displayCh);
 
     /** Сначала жадный Telethon по monotonic-бюджету в Python; публичный t.me/s — только если мало текста, макс. 60 с. */
-    const telethonReserveMs = Math.min(330000, Math.max(120000, Math.floor(KRO_ANALYZE_CHANNEL_SYNC_MS * 0.75)));
+    const telethonReserveMs = Math.min(330000, Math.max(120000, Math.floor(KRO_ANALYZE_CHANNEL_SYNC_MS * 0.78)));
     const telBest = kroRunHomeGreedyTelethonOnce(channelForOnce, deadline, telethonReserveMs, analyzeLogId);
     const parsed = telBest.parsed;
-    let postsRead = Number(parsed.posts_fetched || 0);
-    let sample = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
+    const telethonOnlySnippetCount = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean).length : 0;
+    const mergedSample = kroHomeGreedyMergeSamplesFromParsed(parsed, minTelethonPosts);
+    let postsRead = mergedSample.length ? mergedSample.length : Number(parsed.posts_fetched || 0);
+    let sample = mergedSample.length ? mergedSample : (Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : []);
+    if (mergedSample.length) {
+      parsed.sample_posts = mergedSample;
+      parsed.posts_fetched = postsRead;
+    }
+    if (parsed && typeof parsed === 'object' && Array.isArray(parsed._sample_texts)) {
+      delete parsed._sample_texts;
+    }
     console.log(
       `[KRO analyze-channel ${analyzeLogId}] telethon home_greedy budget=${telBest.budgetMs}ms wall=${telBest.wallMs}ms ok=${parsed._check_once_ok === true} found=${parsed.found === true} posts_read=${postsRead} error=${JSON.stringify(parsed.error || '')} sample=${JSON.stringify(sample[0] ? sample[0].slice(0, 180) : '')}`,
     );
@@ -7739,11 +7771,6 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         `[KRO analyze-channel ${analyzeLogId}] public_snapshot(after_telethon) snippets=${publicSnap && Array.isArray(publicSnap.snippets) ? publicSnap.snippets.length : 0} budget_ms=${pubBudget}`,
       );
     }
-    let enough =
-      parsed._check_once_ok === true &&
-      parsed.found === true &&
-      postsRead >= minTelethonPosts &&
-      sample.length >= 1;
     let parsedForFast = parsed;
     let sampleForFast = sample;
     if (
@@ -7775,9 +7802,8 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     }
     let readPathOut = 'telethon';
     if (enough) {
-      const telethonSnippetCount = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean).length : 0;
       readPathOut =
-        sampleForFast.length > telethonSnippetCount ? 'telethon+public_snapshot' : 'telethon';
+        sampleForFast.length > telethonOnlySnippetCount ? 'telethon+public_snapshot' : 'telethon';
       console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=${readPathOut} posts_read=${postsRead}`);
       return res.status(200).json(
         kroBuildAnalyzeChannelLiveSuccessBundle({
