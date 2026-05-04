@@ -5143,6 +5143,70 @@ function kroHomeTiesLinesToTrustFlags(ties) {
   });
 }
 
+/** Чек-лист для режима без ленты: жалобы + строки из ties + честные «не смотрели» по остальным пунктам. */
+function kroHomeExternalChecklistRows(ties, complaintsCount) {
+  const rows = [];
+  const comp = Number(complaintsCount);
+  if (Number.isFinite(comp) && comp >= 1) {
+    rows.push({
+      key: 'reports',
+      label: 'Жалобы и заявки в сервисе',
+      status: comp >= 2 ? 'yes' : 'partial',
+      explanation:
+        comp >= 2
+          ? `В сервисе несколько записей по этому каналу (${comp}) — это сигнал внимательнее читать ленту самим.`
+          : 'В сервисе есть хотя бы одна запись по каналу — смотрите блок с жалобами ниже.',
+    });
+  }
+  for (const f of kroHomeTiesLinesToTrustFlags(ties)) {
+    rows.push({
+      key: 'context',
+      label: f.title,
+      status: 'partial',
+      explanation: f.explanation || 'Контекст из сводки по каналу.',
+    });
+  }
+  const padLabels = [
+    ['vip', 'Платный доступ и сигналы'],
+    ['fomo', 'Давление и обещания прибыли'],
+    ['risk', 'Про риск в постах'],
+    ['logic', 'Объясняют ли смысл'],
+    ['ads', 'Реклама и ссылки'],
+  ];
+  let pi = 0;
+  while (rows.length < 5 && pi < padLabels.length) {
+    const [key, label] = padLabels[pi];
+    pi += 1;
+    rows.push({
+      key,
+      label,
+      status: 'no',
+      explanation: 'В этом ответе посты канала не читали — честно не придумываем «да/нет» по тексту.',
+    });
+  }
+  return rows.slice(0, 6);
+}
+  if (status === 'yes') return 'да';
+  if (status === 'partial') return 'частично';
+  return 'нет';
+}
+
+function kroHomeCriteriaToChecklist(criteria) {
+  const arr = Array.isArray(criteria) ? criteria : [];
+  return arr.map((it) => {
+    const row = it && typeof it === 'object' ? it : {};
+    const label = String(row.label || 'Пункт').trim();
+    const verdict = kroHomeCriteriaStatusWordRu(row.status);
+    const expl = kroHomeTrustClip(String(row.explanation || '').trim(), 420);
+    return {
+      key: String(row.key || '').trim() || null,
+      label,
+      verdict_ru: verdict,
+      what_we_saw: expl || 'По этой выборке явных совпадений не нашли.',
+    };
+  });
+}
+
 /**
  * Данные для главной: доказательный формат (цитаты + «почему опасно») + честная уверенность + «как анализируем».
  * Не заменяет юридический вердикт; опирается на выборку постов и эвристики.
@@ -5155,6 +5219,8 @@ function kroHomeBuildTrustReportBundle(opts) {
     livePass,
     postsRead,
     complaintsCount,
+    criteriaRows,
+    voice,
   } = opts || {};
   const r10 = Number(risk10);
   const risk100 = Number.isFinite(r10) ? Math.round(Math.max(0, Math.min(10, r10)) * 10) : null;
@@ -5175,6 +5241,28 @@ function kroHomeBuildTrustReportBundle(opts) {
   });
   const postsN = Number(postsRead) || 0;
   const hasQuotes = patterns.some((p) => p.quote && p.quote.length > 5);
+  const checklist = kroHomeCriteriaToChecklist(criteriaRows);
+  const topicLine = String(voice && voice.topicLine ? voice.topicLine : '').trim();
+  const channelType = String(voice && voice.channelType ? voice.channelType : '').trim();
+  const leadLine = String(voice && voice.leadLine ? voice.leadLine : '').trim();
+  const editorVoice = [];
+  if (livePass && postsN > 0) {
+    editorVoice.push(
+      `Мы честно смотрим на текст: прочитали около ${postsN} постов с формулировками — не «оценка из воздуха», а то, что реально лежит в ленте.`,
+    );
+  } else if (!livePass) {
+    editorVoice.push(
+      'В этом ответе живую ленту почти не трогали — ниже то, что можно сказать по жалобам и внешнему контексту, без выдуманных цитат из постов.',
+    );
+  }
+  if (topicLine) editorVoice.push(`По тону и темам канал выглядит так: ${topicLine}`);
+  if (channelType) editorVoice.push(`Если коротко про «характер» подачи: ${channelType}.`);
+  if (leadLine) editorVoice.push(leadLine);
+  if (checklist.length) {
+    editorVoice.push(
+      'Ниже — все пять базовых пунктов, которые мы сверяем с текстом (платный формат, давление, риск, объяснения, реклама). Так обычно рассуждает человек, который читает ленту, а не робот с одной цифрой.',
+    );
+  }
   let conf = livePass ? 44 : 32;
   if (livePass && postsN >= 25) conf = 58 + Math.min(24, Math.floor(postsN / 5));
   else if (livePass && postsN >= 12) conf = 52 + Math.min(22, postsN);
@@ -5205,11 +5293,13 @@ function kroHomeBuildTrustReportBundle(opts) {
         ? 'Имеет смысл проверить канал через сторонние источники и не спешить с оплатой «закрытого» доступа.'
         : 'Даже при спокойном тексте держите базовую гигиену: сверяйте факты и не гонитесь за «гарантиями».';
   return {
-    v: 1,
+    v: 2,
     risk_score_100: risk100,
     risk_band_en: bandEn,
     confidence_percent: conf,
     confidence_note_ru: confNote,
+    checklist,
+    editor_voice_ru: editorVoice.filter(Boolean).slice(0, 5),
     patterns,
     summary_ru: summaryRu,
     recommendation_ru: rec,
@@ -7563,6 +7653,12 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
             livePass: true,
             postsRead,
             complaintsCount: complaintsFormCount,
+            criteriaRows: fastHuman.criteria,
+            voice: {
+              topicLine: fastHuman.topicLine,
+              channelType: fastHuman.channelType,
+              leadLine: fastHuman.summaryLine,
+            },
           }),
           live_evidence: {
             live_pass: true,
@@ -7711,6 +7807,8 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         livePass: false,
         postsRead: 0,
         complaintsCount: extComplaintsForm,
+        criteriaRows: kroHomeExternalChecklistRows(analysis.ties_risk_factors, extComplaintsForm),
+        voice: {},
       }),
       live_evidence: {
         live_pass: false,

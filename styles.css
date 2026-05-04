@@ -2238,6 +2238,81 @@ body.kro-hero-scrolled .kro-floating-nav {
    line-height: 1.5;
    color: rgba(255, 255, 255, 0.72);
 }
+.kro-inline-trust-voice {
+   margin: 0 0 14px;
+   padding: 12px 14px;
+   border-radius: 12px;
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   background: rgba(255, 255, 255, 0.04);
+}
+.kro-inline-trust-voice-p {
+   margin: 0 0 10px;
+   font-size: 0.86rem;
+   line-height: 1.55;
+   color: rgba(255, 250, 245, 0.9);
+}
+.kro-inline-trust-voice-p:last-child {
+   margin-bottom: 0;
+}
+.kro-inline-trust-checklist-title,
+.kro-inline-trust-patterns-title {
+   margin: 16px 0 8px;
+   font-size: 0.78rem;
+   font-weight: 800;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   color: rgba(253, 224, 127, 0.78);
+}
+.kro-inline-trust-checklist {
+   margin: 0 0 14px;
+   padding: 0;
+   list-style: none;
+}
+.kro-inline-trust-check-item {
+   margin: 0 0 12px;
+   padding: 12px 14px;
+   border-radius: 12px;
+   border: 1px solid rgba(255, 255, 255, 0.07);
+   background: rgba(0, 0, 0, 0.18);
+}
+.kro-inline-trust-check-head {
+   font-weight: 700;
+   font-size: 0.9rem;
+   color: rgba(255, 248, 238, 0.96);
+}
+.kro-inline-trust-verdict {
+   display: inline-block;
+   margin-left: 6px;
+   padding: 2px 10px;
+   border-radius: 999px;
+   font-size: 0.72rem;
+   font-weight: 800;
+   letter-spacing: 0.04em;
+   text-transform: uppercase;
+   vertical-align: middle;
+}
+.kro-inline-trust-verdict--yes {
+   color: #fecaca;
+   border: 1px solid rgba(248, 113, 113, 0.45);
+   background: rgba(248, 113, 113, 0.12);
+}
+.kro-inline-trust-verdict--partial {
+   color: #fef3c7;
+   border: 1px solid rgba(253, 224, 127, 0.35);
+   background: rgba(245, 158, 11, 0.12);
+}
+.kro-inline-trust-verdict--no {
+   color: #d1fae5;
+   border: 1px solid rgba(52, 211, 153, 0.35);
+   background: rgba(16, 185, 129, 0.1);
+}
+.kro-inline-trust-check-body {
+   display: block;
+   margin-top: 8px;
+   font-size: 0.82rem;
+   line-height: 1.5;
+   color: rgba(255, 255, 255, 0.76);
+}
 .kro-inline-trust-patterns {
    margin: 0;
    padding: 0;

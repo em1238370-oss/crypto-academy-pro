@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260504-trust-report-ui">
+   <link rel="stylesheet" href="styles.css?v=20260504-trust-checklist-voice">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -356,6 +356,10 @@
                                <p class="kro-inline-trust-eyebrow" id="kro-inline-trust-eyebrow">Почему этому можно доверять</p>
                                <p class="kro-inline-trust-headline" id="kro-inline-trust-headline"></p>
                                <p class="kro-inline-trust-sub" id="kro-inline-trust-sub"></p>
+                               <div class="kro-inline-trust-voice" id="kro-inline-trust-voice" hidden></div>
+                               <h4 class="kro-inline-trust-checklist-title" id="kro-inline-trust-checklist-title">Что именно смотрим в тексте</h4>
+                               <ul class="kro-inline-trust-checklist" id="kro-inline-trust-checklist"></ul>
+                               <h4 class="kro-inline-trust-patterns-title" id="kro-inline-trust-patterns-title">Что всплыло резче всего</h4>
                                <ol class="kro-inline-trust-patterns" id="kro-inline-trust-patterns"></ol>
                                <div class="kro-inline-trust-foot">
                                    <p class="kro-inline-trust-summary" id="kro-inline-trust-summary"></p>
@@ -1215,6 +1219,12 @@
                    }
                    return parts.join('. ');
                }
+               function kroTrustVerdictClass(verdictRu) {
+                   var v = String(verdictRu || '').trim().toLowerCase();
+                   if (v === 'да') return 'kro-inline-trust-verdict kro-inline-trust-verdict--yes';
+                   if (v === 'частично') return 'kro-inline-trust-verdict kro-inline-trust-verdict--partial';
+                   return 'kro-inline-trust-verdict kro-inline-trust-verdict--no';
+               }
                function kroTrustBandRuFromEn(en) {
                    var e = String(en || '').toLowerCase();
                    if (e === 'high risk') return 'повышенный риск';
@@ -1243,8 +1253,14 @@
                    var r100 = tr.risk_score_100;
                    var bandEn = String(tr.risk_band_en || '').trim();
                    var bandRu = kroTrustBandRuFromEn(bandEn);
+                   var eyeb = document.getElementById('kro-inline-trust-eyebrow');
+                   if (eyeb) eyeb.textContent = 'Разбор «как у человека», не одна цифра';
                    var hl = document.getElementById('kro-inline-trust-headline');
                    var sub = document.getElementById('kro-inline-trust-sub');
+                   var voiceEl = document.getElementById('kro-inline-trust-voice');
+                   var chkTitle = document.getElementById('kro-inline-trust-checklist-title');
+                   var chkUl = document.getElementById('kro-inline-trust-checklist');
+                   var patTitle = document.getElementById('kro-inline-trust-patterns-title');
                    var patOl = document.getElementById('kro-inline-trust-patterns');
                    var sumEl = document.getElementById('kro-inline-trust-summary');
                    var recEl = document.getElementById('kro-inline-trust-rec');
@@ -1262,9 +1278,57 @@
                    if (sub) {
                        sub.textContent =
                            r100 != null && !isNaN(Number(r100))
-                               ? 'Почему: ниже — пункты с примером из текста и коротким «почему это опасно». Уровень по-русски: ' + bandRu + '.'
-                               : 'Почему: живую ленту в этом ответе почти не читали — ниже контекст и замечания без числовой шкалы по постам.';
+                               ? 'Сначала — все базовые пункты по тексту (да / частично / нет). Потом — самые резкие совпадения с типичными приёмами. Уровень по-русски: ' +
+                                 bandRu +
+                                 '.'
+                               : 'Живую ленту здесь почти не читали — ниже честный чек-лист по тому, что всё же удалось увидеть (жалобы, контекст), без выдуманных цитат.';
                    }
+                   if (voiceEl) {
+                       var voiceLines = Array.isArray(tr.editor_voice_ru) ? tr.editor_voice_ru : [];
+                       if (voiceLines.length) {
+                           voiceEl.hidden = false;
+                           voiceEl.classList.remove('hidden');
+                           voiceEl.innerHTML = voiceLines
+                               .map(function (ln) {
+                                   return '<p class="kro-inline-trust-voice-p">' + esc(String(ln || '').trim()) + '</p>';
+                               })
+                               .join('');
+                       } else {
+                           voiceEl.hidden = true;
+                           voiceEl.classList.add('hidden');
+                           voiceEl.innerHTML = '';
+                       }
+                   }
+                   if (chkTitle) chkTitle.textContent = 'Что именно смотрим в тексте';
+                   if (chkUl) {
+                       var chk = Array.isArray(tr.checklist) ? tr.checklist : [];
+                       if (chk.length) {
+                           chkUl.innerHTML = chk
+                               .map(function (row) {
+                                   var lab = esc(String((row && row.label) || 'Пункт'));
+                                   var vd = esc(String((row && row.verdict_ru) || '—'));
+                                   var saw = esc(String((row && row.what_we_saw) || '').trim());
+                                   return (
+                                       '<li class="kro-inline-trust-check-item">' +
+                                       '<span class="kro-inline-trust-check-head">' +
+                                       lab +
+                                       '</span> ' +
+                                       '<span class="' +
+                                       kroTrustVerdictClass((row && row.verdict_ru) || '') +
+                                       '">' +
+                                       vd +
+                                       '</span>' +
+                                       '<span class="kro-inline-trust-check-body">' +
+                                       saw +
+                                       '</span></li>'
+                                   );
+                               })
+                               .join('');
+                       } else {
+                           chkUl.innerHTML = '';
+                       }
+                   }
+                   if (patTitle) patTitle.textContent = 'Что всплыло резче всего';
                    if (patOl) {
                        var pats = Array.isArray(tr.patterns) ? tr.patterns : [];
                        if (!pats.length) {
