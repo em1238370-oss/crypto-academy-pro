@@ -1,6 +1,6 @@
 /**
  * Плавный скролл: Lenis (колёсико + тач) или запасной wheel.
- * Телефон (≤640px): тач чуть медленнее (1.0 vs 1.4) + lerp/syncTouchLerp ближе к дефолтам Lenis — плавнее и спокойнее.
+ * Телефон (≤640px): тач мягче и с меньшей инерцией, чтобы блоки не "прыгали" при прокрутке.
  */
 (function () {
     'use strict';
@@ -8,10 +8,10 @@
     var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var isNarrowPhone =
         typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
-    var touchMultiplier = isNarrowPhone ? 1.0 : 1.4;
-    var lenisLerp = isNarrowPhone ? 0.105 : 0.062;
-    var lenisSyncTouchLerp = isNarrowPhone ? 0.095 : 0.34;
-    var lenisTouchInertia = isNarrowPhone ? 1.42 : 1.58;
+    var touchMultiplier = isNarrowPhone ? 0.72 : 1.4;
+    var lenisLerp = isNarrowPhone ? 0.075 : 0.062;
+    var lenisSyncTouchLerp = isNarrowPhone ? 0.055 : 0.34;
+    var lenisTouchInertia = isNarrowPhone ? 1.22 : 1.58;
 
     function maxScrollY() {
         return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);

@@ -357,6 +357,36 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 @media (max-width: 768px) {
+   .kro-main {
+      --kro-duration-reveal: 1.85s;
+      --kro-duration-reveal-slow: 2.1s;
+      --kro-reveal-y: 22px;
+      --kro-scroll-in-y: 18px;
+   }
+
+   body.kro-hero-scrolled .kro-step1 {
+      opacity: 0.82;
+      transform: translateY(-12px);
+   }
+
+   .kro-step1 {
+      transition-duration: 1.15s;
+   }
+
+   .kro-scroll-in {
+      transition-duration: 1.35s !important;
+      transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1) !important;
+   }
+
+   .kro-feature1.kro-reveal .kro-feature1-dashboard,
+   .kro-feature1.kro-reveal .kro-f1-content-card,
+   .kro-feature1.kro-reveal .kro-f1-block,
+   .kro-feature1.kro-reveal .kro-guru-system {
+      transform: translateY(18px) scale(0.995);
+      transition-duration: 1.2s;
+      transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+   }
+
    .kro-floating-nav {
       padding: 10px 12px 10px 14px;
       width: calc(100% - 24px);

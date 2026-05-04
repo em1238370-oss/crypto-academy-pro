@@ -2574,8 +2574,12 @@
                    hero.classList.add('kro-reveal-visible');
                    requestAnimationFrame(function() { hero.classList.add('kro-hero-loaded'); });
                }
-               var feature1 = document.getElementById('feature1');
-               if (feature1) feature1.classList.add('kro-reveal-visible');
+              var feature1 = document.getElementById('feature1');
+              if (feature1) {
+                  var featureRect = feature1.getBoundingClientRect();
+                  var vh = window.innerHeight || document.documentElement.clientHeight;
+                  if (featureRect.top < vh * 0.72) feature1.classList.add('kro-reveal-visible');
+              }
                document.querySelectorAll('.kro-reveal').forEach(function(el) { revealObserver.observe(el); });
                if (scrollInObserver) document.querySelectorAll('.kro-scroll-in').forEach(function(el) {
                    scrollInObserver.observe(el);
