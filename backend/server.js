@@ -7447,6 +7447,191 @@ function kroBuildAnalyzeFastTimeoutResponse(requestId, username, elapsedMs) {
   };
 }
 
+/** Когда Telethon не дал объёма, но открытая страница t.me/s дала достаточно текста — честный разбор по фрагментам ленты. */
+function kroBuildParsedFromPublicSnapshotOnly(publicSnap, channelDisplay, minPosts) {
+  if (!publicSnap || !Array.isArray(publicSnap.snippets)) return null;
+  const raw = publicSnap.snippets.map((x) => String(x || '').trim()).filter(Boolean);
+  if (raw.length < minPosts) return null;
+  const sample_posts = raw.slice(0, Math.min(120, raw.length));
+  return {
+    found: true,
+    _check_once_ok: true,
+    username: String(channelDisplay || '').trim() || null,
+    posts_fetched: sample_posts.length,
+    sample_posts,
+    analysis_window_days: 30,
+    has_signal_offer: false,
+    only_profits_flag: false,
+    fomo_pct: null,
+    ads_ratio: null,
+    risk_verdict: null,
+  };
+}
+
+/**
+ * До двух проходов Telethon с полным оставшимся бюджетом: первый проход иногда отдаёт мало постов при таймауте/сети,
+ * второй использует оставшееся окно fast (до 7 мин).
+ */
+function kroCollectTelethonBestForHomeAnalyze(channelForOnce, deadline, minPosts) {
+  let best = {
+    parsed: kroNormalizeCheckOnceForAnalysis({ ok: false, parsed: null, error: 'Чтение через Telegram не запускалось.' }),
+    budgetMs: 0,
+    postsRead: 0,
+  };
+  const scoreOf = (p) => {
+    if (!p || typeof p !== 'object') return -1;
+    const n = Number(p.posts_fetched || 0);
+    const ok = p._check_once_ok === true ? 1 : 0;
+    const found = p.found === true ? 1 : 0;
+    return n * 100 + ok * 10 + found;
+  };
+  const consider = (p, bMs) => {
+    if (!p || typeof p !== 'object') return;
+    const n = Number(p.posts_fetched || 0);
+    if (scoreOf(p) > scoreOf(best.parsed)) {
+      best = { parsed: p, budgetMs: bMs, postsRead: n };
+    }
+  };
+  for (let pass = 0; pass < 2; pass += 1) {
+    const b = Math.max(0, deadline - Date.now() - 600);
+    if (b < 5000) break;
+    const once = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 30, timeoutMs: b });
+    const parsed = kroNormalizeCheckOnceForAnalysis(once);
+    consider(parsed, b);
+    const n = Number(parsed.posts_fetched || 0);
+    if (n >= minPosts && parsed._check_once_ok === true && parsed.found === true) break;
+    if (deadline - Date.now() < 12000) break;
+  }
+  return best;
+}
+
+function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
+  const {
+    withQueueMeta,
+    channelDisplay,
+    key,
+    watchRow,
+    reports,
+    parsedForFast,
+    sampleForFast,
+    postsRead,
+    readPathOut,
+    telBudgetMs,
+    t0,
+  } = opts || {};
+  const analysis = kroV0BuildAnalysisFromLiveParsed(parsedForFast, key);
+  if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
+  const signal = kroCollectSuspiciousFlagsFromTexts(sampleForFast);
+  const fastHuman = kroBuildFastCriteriaFromTexts(sampleForFast, {
+    hasSignalOffer: parsedForFast.has_signal_offer === true,
+    onlyProfitsFlag: parsedForFast.only_profits_flag === true,
+    fomoPct: parsedForFast.fomo_pct,
+    adsRatio: parsedForFast.ads_ratio,
+  });
+  const risk = fastHuman.score10;
+  const statusObj = kroMapFastRisk10ToUiStatus(risk);
+  analysis.basic_info = [
+    `Канал: ${channelDisplay}`,
+    `Чем занимается канал: ${fastHuman.topicLine}`,
+    `Прочитано ${postsRead} сообщений с текстом за период до ${Number(parsedForFast.analysis_window_days || 30)} дней.`,
+    ...(Array.isArray(analysis.basic_info) ? analysis.basic_info.slice(1, 3) : []),
+  ].filter(Boolean).slice(0, 6);
+  analysis.content_behavior = [
+    ...kroFormatFastCriteriaLines(fastHuman.criteria),
+    ...fastHuman.citations.map((x) => `Пример из ленты: «${String(x).slice(0, 220)}»`),
+  ].filter(Boolean).slice(0, 8);
+  analysis.external_reports = reports.length
+    ? [
+        `В сервисе ${reports.length} записей по каналу — как дополнение к тексту ленты.`,
+        ...reports.slice(0, 2).map((r) => {
+          const desc = String(r.description || '').trim();
+          return desc ? `Из жалоб: ${desc.slice(0, 180)}${desc.length > 180 ? '…' : ''}` : '';
+        }).filter(Boolean),
+      ].slice(0, 3)
+    : ['Жалоб по каналу в базе нет — оценка всё равно по тексту постов.'];
+  analysis.ties_risk_factors = signal.flags.length
+    ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
+    : ['По сообщениям не видно явных «гарантий», жёсткой суеты и платного VIP.'];
+  analysis.conclusion = {
+    status: kroMapFastRisk10ToConclusion(risk, {
+      forceScam: String(parsedForFast.risk_verdict || '').toLowerCase() === 'scam',
+    }),
+    reasons: [
+      `Риск ${risk}/10: ${fastHuman.summaryLine}`,
+      ...fastHuman.reasons,
+    ].filter(Boolean).slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
+  };
+  const complaintsFormCount = reports.filter((r) => (r.source || '').toLowerCase() === 'form').length;
+  const telSec = Math.max(0, Math.round(Number(telBudgetMs || 0) / 1000));
+  const liveReason =
+    readPathOut === 'public_snapshot'
+      ? `Считано ${postsRead} фрагментов с текстом с открытой страницы канала (t.me/s); API Telegram на сервере в этом запуске не использовали.`
+      : readPathOut === 'telethon+public_snapshot'
+        ? `Считано ${postsRead} фрагментов с текстом: чтение в Telegram до ~${telSec} с плюс открытая страница.`
+        : `Считано ${postsRead} фрагментов с текстом (чтение в Telegram, до ~${telSec} с).`;
+  const basisLabel =
+    readPathOut === 'public_snapshot'
+      ? 'Вывод по тексту с открытой страницы канала (публичные фрагменты ленты).'
+      : readPathOut === 'telethon+public_snapshot'
+        ? 'Вывод по тексту из Telegram; при нехватке объёма добавлены фрагменты с открытой страницы.'
+        : 'Вывод по тексту сообщений из Telegram.';
+  const basisSources =
+    readPathOut === 'public_snapshot'
+      ? ['t.me/s']
+      : readPathOut === 'telethon+public_snapshot'
+        ? ['telethon', 't.me/s']
+        : ['telethon'];
+  return withQueueMeta({
+    queue_status: 'done_sync',
+    analysis,
+    status: statusObj.status,
+    status_code: statusObj.code,
+    risk_index: risk,
+    risk_index_max: 10,
+    posts_read: postsRead,
+    period_days: Number(parsedForFast.analysis_window_days || 30),
+    read_path: readPathOut,
+    flags: signal.flags,
+    citations: fastHuman.citations.slice(0, 3),
+    trust_report: kroHomeBuildTrustReportBundle({
+      risk10: risk,
+      statusCode: statusObj.code,
+      flags: signal.flags,
+      livePass: true,
+      postsRead,
+      complaintsCount: complaintsFormCount,
+      criteriaRows: fastHuman.criteria,
+      voice: {
+        topicLine: fastHuman.topicLine,
+        channelType: fastHuman.channelType,
+        leadLine: fastHuman.summaryLine,
+      },
+    }),
+    live_evidence: {
+      live_pass: true,
+      mode: readPathOut,
+      reason: liveReason,
+      sample_posts: sampleForFast.slice(0, 3),
+      posts_fetched: postsRead,
+      analysis_window_days: Number(parsedForFast.analysis_window_days || 30),
+    },
+    live_metrics: {
+      posts_fetched: postsRead,
+      analysis_window_days: Number(parsedForFast.analysis_window_days || 30),
+      home_quick_live: true,
+      complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
+    },
+    analysis_basis: {
+      label: basisLabel,
+      sources_used: basisSources,
+      read_path: readPathOut,
+      posts_read: postsRead,
+      elapsed_ms: Date.now() - t0,
+    },
+    message: `${channelDisplay}: оценка ${risk}/10. ${fastHuman.summaryLine}`,
+  });
+}
+
 app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   const rawInput = String((req.body && (req.body.username || req.body.channel || req.body.url)) || '').trim();
@@ -7532,8 +7717,9 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     const reports = await getAllReportsForChannel(sheetsClient, displayCh);
 
     const msLeftForWork = Math.max(0, deadline - Date.now() - 400);
-    /** Держим запас под Telethon: публичный снимок не забирает всё окно fast (до 7 мин). */
-    const pubBudget = Math.min(120000, Math.max(1200, msLeftForWork - 200000));
+    /** Резервируем время под Telethon (до ~5 мин), чтобы публичный HTML не «съедал» всё 7‑минутное окно. */
+    const telethonReserveMs = Math.min(300000, Math.max(120000, Math.floor(KRO_ANALYZE_CHANNEL_SYNC_MS * 0.72)));
+    const pubBudget = Math.min(90000, Math.max(1200, msLeftForWork - telethonReserveMs));
     const publicSnap =
       pubBudget > 1200 ? await kroFetchTelegramPublicSnapshot(channelForOnce, { timeoutMs: pubBudget, logLabel: analyzeLogId }) : null;
     console.log(
@@ -7545,148 +7731,93 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       );
     }
 
-    const telBudget = Math.max(0, deadline - Date.now() - 600);
-    if (telBudget >= 5000) {
-      const once = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 30, timeoutMs: telBudget });
-      const parsed = kroNormalizeCheckOnceForAnalysis(once);
-      let postsRead = Number(parsed.posts_fetched || 0);
-      let sample = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
-      console.log(
-        `[KRO analyze-channel ${analyzeLogId}] telethon ok=${parsed._check_once_ok === true} found=${parsed.found === true} posts_read=${postsRead} error=${JSON.stringify(parsed.error || '')} sample=${JSON.stringify(sample[0] ? sample[0].slice(0, 180) : '')}`,
+    const telBest = kroCollectTelethonBestForHomeAnalyze(channelForOnce, deadline, minTelethonPosts);
+    const parsed = telBest.parsed;
+    let postsRead = Number(parsed.posts_fetched || 0);
+    let sample = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
+    console.log(
+      `[KRO analyze-channel ${analyzeLogId}] telethon best_pass=${telBest.budgetMs}ms ok=${parsed._check_once_ok === true} found=${parsed.found === true} posts_read=${postsRead} error=${JSON.stringify(parsed.error || '')} sample=${JSON.stringify(sample[0] ? sample[0].slice(0, 180) : '')}`,
+    );
+    let enough =
+      parsed._check_once_ok === true &&
+      parsed.found === true &&
+      postsRead >= minTelethonPosts &&
+      sample.length >= 1;
+    let parsedForFast = parsed;
+    let sampleForFast = sample;
+    if (
+      !enough &&
+      parsed._check_once_ok === true &&
+      parsed.found === true &&
+      publicSnap &&
+      Array.isArray(publicSnap.snippets) &&
+      publicSnap.snippets.length
+    ) {
+      const seen = new Set(sample.map((x) => String(x || '').trim()).filter(Boolean));
+      const merged = sample.map((x) => String(x || ''));
+      for (const snip of publicSnap.snippets) {
+        const t = String(snip || '').trim();
+        if (t && !seen.has(t)) {
+          seen.add(t);
+          merged.push(t);
+        }
+      }
+      if (merged.length >= minTelethonPosts) {
+        sampleForFast = merged.filter(Boolean);
+        postsRead = sampleForFast.length;
+        parsedForFast = { ...parsed, posts_fetched: postsRead, sample_posts: sampleForFast };
+        enough = true;
+        console.log(
+          `[KRO analyze-channel ${analyzeLogId}] telethon+public_merge posts_read=${postsRead} (добавлены фрагменты t.me/s)`,
+        );
+      }
+    }
+    let readPathOut = 'telethon';
+    if (enough) {
+      const telethonSnippetCount = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean).length : 0;
+      readPathOut =
+        sampleForFast.length > telethonSnippetCount ? 'telethon+public_snapshot' : 'telethon';
+      console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=${readPathOut} posts_read=${postsRead}`);
+      return res.status(200).json(
+        kroBuildAnalyzeChannelLiveSuccessBundle({
+          withQueueMeta,
+          channelDisplay,
+          key,
+          watchRow,
+          reports,
+          parsedForFast,
+          sampleForFast,
+          postsRead,
+          readPathOut,
+          telBudgetMs: telBest.budgetMs,
+          t0,
+        }),
       );
-      let enough =
-        parsed._check_once_ok === true &&
-        parsed.found === true &&
-        postsRead >= minTelethonPosts &&
-        sample.length >= 1;
-      let parsedForFast = parsed;
-      let sampleForFast = sample;
-      if (
-        !enough &&
-        parsed._check_once_ok === true &&
-        parsed.found === true &&
-        publicSnap &&
-        Array.isArray(publicSnap.snippets) &&
-        publicSnap.snippets.length
-      ) {
-        const seen = new Set(sample.map((x) => String(x || '').trim()).filter(Boolean));
-        const merged = sample.map((x) => String(x || ''));
-        for (const snip of publicSnap.snippets) {
-          const t = String(snip || '').trim();
-          if (t && !seen.has(t)) {
-            seen.add(t);
-            merged.push(t);
-          }
-        }
-        if (merged.length >= minTelethonPosts) {
-          sampleForFast = merged.filter(Boolean);
-          postsRead = sampleForFast.length;
-          parsedForFast = { ...parsed, posts_fetched: postsRead, sample_posts: sampleForFast };
-          enough = true;
-          console.log(
-            `[KRO analyze-channel ${analyzeLogId}] telethon+public_merge posts_read=${postsRead} (добавлены фрагменты t.me/s)`,
-          );
-        }
-      }
-      if (enough) {
-        const analysis = kroV0BuildAnalysisFromLiveParsed(parsedForFast, key);
-        if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
-        const signal = kroCollectSuspiciousFlagsFromTexts(sampleForFast);
-        const fastHuman = kroBuildFastCriteriaFromTexts(sampleForFast, {
-          hasSignalOffer: parsedForFast.has_signal_offer === true,
-          onlyProfitsFlag: parsedForFast.only_profits_flag === true,
-          fomoPct: parsedForFast.fomo_pct,
-          adsRatio: parsedForFast.ads_ratio,
-        });
-        const risk = fastHuman.score10;
-        const statusObj = kroMapFastRisk10ToUiStatus(risk);
-        analysis.basic_info = [
-          `Канал: ${channelDisplay}`,
-          `Чем занимается канал: ${fastHuman.topicLine}`,
-          `Прочитано ${postsRead} сообщений с текстом за период до ${Number(parsedForFast.analysis_window_days || 30)} дней.`,
-          ...(Array.isArray(analysis.basic_info) ? analysis.basic_info.slice(1, 3) : []),
-        ].filter(Boolean).slice(0, 6);
-        analysis.content_behavior = [
-          ...kroFormatFastCriteriaLines(fastHuman.criteria),
-          ...fastHuman.citations.map((x) => `Пример из ленты: «${String(x).slice(0, 220)}»`),
-        ].filter(Boolean).slice(0, 8);
-        analysis.external_reports = reports.length
-          ? [
-              `В сервисе ${reports.length} записей по каналу — как дополнение к тексту ленты.`,
-              ...reports.slice(0, 2).map((r) => {
-                const desc = String(r.description || '').trim();
-                return desc ? `Из жалоб: ${desc.slice(0, 180)}${desc.length > 180 ? '…' : ''}` : '';
-              }).filter(Boolean),
-            ].slice(0, 3)
-          : ['Жалоб по каналу в базе нет — оценка всё равно по тексту постов.'];
-        analysis.ties_risk_factors = signal.flags.length
-          ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
-          : ['По сообщениям не видно явных «гарантий», жёсткой суеты и платного VIP.'];
-        analysis.conclusion = {
-          status: kroMapFastRisk10ToConclusion(risk, {
-            forceScam: String(parsedForFast.risk_verdict || '').toLowerCase() === 'scam',
-          }),
-          reasons: [
-            `Риск ${risk}/10: ${fastHuman.summaryLine}`,
-            ...fastHuman.reasons,
-          ].filter(Boolean).slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
-        };
-        const readPathOut = sampleForFast.length > (Array.isArray(parsed.sample_posts) ? parsed.sample_posts.length : 0) ? 'telethon+public_snapshot' : 'telethon';
-        console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=${readPathOut} posts_read=${postsRead}`);
-        const complaintsFormCount = reports.filter((r) => (r.source || '').toLowerCase() === 'form').length;
-        return res.status(200).json(withQueueMeta({
-          queue_status: 'done_sync',
-          analysis,
-          status: statusObj.status,
-          status_code: statusObj.code,
-          risk_index: risk,
-          risk_index_max: 10,
-          posts_read: postsRead,
-          period_days: Number(parsedForFast.analysis_window_days || 30),
-          read_path: readPathOut,
-          flags: signal.flags,
-          citations: fastHuman.citations.slice(0, 3),
-          trust_report: kroHomeBuildTrustReportBundle({
-            risk10: risk,
-            statusCode: statusObj.code,
-            flags: signal.flags,
-            livePass: true,
-            postsRead,
-            complaintsCount: complaintsFormCount,
-            criteriaRows: fastHuman.criteria,
-            voice: {
-              topicLine: fastHuman.topicLine,
-              channelType: fastHuman.channelType,
-              leadLine: fastHuman.summaryLine,
-            },
-          }),
-          live_evidence: {
-            live_pass: true,
-            mode: readPathOut,
-            reason: `Считано ${postsRead} фрагментов с текстом (чтение в Telegram, до ~${Math.round(telBudget / 1000)} с).`,
-            sample_posts: sampleForFast.slice(0, 3),
-            posts_fetched: postsRead,
-            analysis_window_days: Number(parsedForFast.analysis_window_days || 30),
-          },
-          live_metrics: {
-            posts_fetched: postsRead,
-            analysis_window_days: Number(parsedForFast.analysis_window_days || 30),
-            home_quick_live: true,
-            complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
-          },
-          analysis_basis: {
-            label:
-              readPathOut === 'telethon+public_snapshot'
-                ? 'Вывод по тексту из Telegram; при нехватке объёма добавлены фрагменты с открытой страницы.'
-                : 'Вывод по тексту сообщений из Telegram.',
-            sources_used: readPathOut === 'telethon+public_snapshot' ? ['telethon', 't.me/s'] : ['telethon'],
-            read_path: readPathOut,
-            posts_read: postsRead,
-            elapsed_ms: Date.now() - t0,
-          },
-          message: `${channelDisplay}: оценка ${risk}/10. ${fastHuman.summaryLine}`,
-        }));
-      }
+    }
+
+    const pubOnly = kroBuildParsedFromPublicSnapshotOnly(publicSnap, channelDisplay, minReadablePosts);
+    if (pubOnly) {
+      const pPub = pubOnly;
+      const sPub = Array.isArray(pPub.sample_posts) ? pPub.sample_posts.filter(Boolean) : [];
+      const nPub = sPub.length;
+      console.log(
+        `[KRO analyze-channel ${analyzeLogId}] public_snapshot_only posts_read=${nPub} (Telethon не дал ${minReadablePosts} постов)`,
+      );
+      return res.status(200).json(
+        kroBuildAnalyzeChannelLiveSuccessBundle({
+          withQueueMeta,
+          channelDisplay,
+          key,
+          watchRow,
+          reports,
+          parsedForFast: pPub,
+          sampleForFast: sPub,
+          postsRead: nPub,
+          readPathOut: 'public_snapshot',
+          telBudgetMs: telBest.budgetMs,
+          t0,
+        }),
+      );
     }
 
     let analysis = {
