@@ -246,7 +246,7 @@
                    <div class="kro-feature1-check-hero">
                        <p class="kro-feature1-check-kicker">Проверь гуру · публичный мониторинг и живой разбор</p>
                        <h2 class="kro-feature1-check-heading">Проверка Telegram‑канала — здесь же, одним запросом</h2>
-                       <p class="kro-feature1-check-lead">Вставляешь канал — получаешь <strong>живой разбор</strong>: жалобы, сигналы мониторинга и (когда доступно) срез публичной ленты до ~3 мес. Обычно секунды; на тяжёлой ленте допустимо до ~7 мин — таймер сверху показывает реальное время.</p>
+                       <p class="kro-feature1-check-lead">Вставляешь канал — получаешь <strong>живой разбор</strong>: жалобы, сигналы мониторинга и (когда доступно) чтение ленты в Telegram до ~30 дней плюс открытая страница. Сервер использует <strong>всё окно до 7 минут</strong> (не обрывает раньше, если лента тяжёлая); таймер сверху — реальное время.</p>
                        <div class="kro-flow-simple" aria-label="Схема: как работает проверка">
                            <p class="kro-flow-simple-kicker">Без лишних терминов — если вы уже пострадали, важно не гадать</p>
                            <p class="kro-flow-simple-title">Три шага</p>
@@ -276,13 +276,13 @@
                        </div>
                    </div>
                    <div class="kro-feature1-check-row" id="kro-check-form-row" aria-busy="false">
-                       <label class="kro-report-label" for="kro-check-channel">@username или ссылка на канал <input type="text" id="kro-check-channel" placeholder="@channel или t.me/..." autocomplete="off"></label>
+                       <label class="kro-report-label" for="kro-check-channel">@username или ссылка на канал <input type="text" id="kro-check-channel" placeholder="@channel, t.me/… или telegram.me/…" autocomplete="off"></label>
                        <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить гуру</button>
                    </div>
                    <div class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Дополнительные пояснения">
                        <p class="kro-check-user-explainer-title">Если нужно чуть больше деталей</p>
                        <ul class="kro-check-user-explainer-list">
-                           <li><strong>Здесь</strong> — жалобы, мониторинг и при возможности живой срез ленты (до ~3 мес.), без «канцелярских» отписок.</li>
+                           <li><strong>Здесь</strong> — жалобы, мониторинг и при возможности чтение ленты (ориентир до ~30 дней) плюс открытая страница; до 7 минут на запрос, без «канцелярских» отписок.</li>
                            <li><strong>Глубокий разбор</strong> — на странице <span class="kro-check-user-explainer-code">/channel/имя</span>, кнопка «Глубокий анализ ленты».</li>
                            <li><strong>Не заставляем сидеть часами</strong>: при очереди покажем позицию и примерное время; если очередь слишком длинная — честно скажем зайти позже. Быстрый отчёт при этом уже у вас.</li>
                        </ul>
@@ -329,7 +329,7 @@
                                    <span class="kro-check-pipeline-node" data-kro-pipe="3">Вывод</span>
                                </div>
                                <p class="kro-check-progress-human" id="kro-check-progress-human"></p>
-                               <p class="kro-check-progress-note" id="kro-check-progress-note">Смотрим этот канал: жалобы, мониторинг и при доступности публичную ленту (до ~3 мес.). Обычно секунды; на очень тяжёлой ленте до ~7 мин — не закрывайте вкладку, таймер идёт в реальном времени.</p>
+                               <p class="kro-check-progress-note" id="kro-check-progress-note">Смотрим этот канал: жалобы, мониторинг и при доступности чтение ленты в Telegram (до ~30 дней) плюс открытая страница. До 7 минут на один запрос — не закрывайте вкладку, таймер идёт в реальном времени.</p>
                                <ol class="kro-check-progress-track" aria-label="Этапы проверки канала">
                                    <li class="kro-check-progress-step" id="kro-progress-step-0">Канал принят, запрос уходит на сервер</li>
                                    <li class="kro-check-progress-step" id="kro-progress-step-1">Сверяем жалобы и мониторинг по этому каналу</li>
@@ -1041,13 +1041,23 @@
                    var raw = (s || '').trim();
                    if (!raw) return '';
                    var t = raw;
-                   var urlMatch = raw.match(/https?:\/\/t\.me\/[^\s<>"']+/i) || raw.match(/\bt\.me\/[^\s<>"']+/i);
+                   var urlMatch =
+                       raw.match(/https?:\/\/t\.me\/[^\s<>"']+/i) ||
+                       raw.match(/https?:\/\/telegram\.me\/[^\s<>"']+/i) ||
+                       raw.match(/\bt\.me\/[^\s<>"']+/i) ||
+                       raw.match(/\btelegram\.me\/[^\s<>"']+/i);
                    if (urlMatch) t = urlMatch[0];
+                   if (/^telegram\.me\//i.test(t)) t = 'https://' + t;
                    t = t.replace(/\s/g, '');
                    if (!t) return '';
                    var lower = t.toLowerCase();
-                   if (lower.indexOf('t.me/') !== -1) {
-                       var path = t.replace(/^https?:\/\/t\.me\//i, '').replace(/^t\.me\//i, '').trim();
+                   if (lower.indexOf('t.me/') !== -1 || lower.indexOf('telegram.me/') !== -1) {
+                       var path = t
+                           .replace(/^https?:\/\/t\.me\//i, '')
+                           .replace(/^https?:\/\/telegram\.me\//i, '')
+                           .replace(/^t\.me\//i, '')
+                           .replace(/^telegram\.me\//i, '')
+                           .trim();
                        if (path.indexOf('+') === 0) return 't.me/' + path;
                        return path ? (path.charAt(0) === '@' ? path : '@' + path) : '';
                    }
@@ -1061,7 +1071,9 @@
                }
                function isNonTelegramHttp(s) {
                    var t = (s || '').trim();
-                   return (t.indexOf('http://') === 0 || t.indexOf('https://') === 0) && t.toLowerCase().indexOf('t.me') === -1;
+                   var low = t.toLowerCase();
+                   if (t.indexOf('http://') !== 0 && t.indexOf('https://') !== 0) return false;
+                   return low.indexOf('t.me') === -1 && low.indexOf('telegram.me') === -1;
                }
                function slugToQueryU(slug) {
                    var q = slug;
@@ -1433,7 +1445,7 @@
                        return {
                            title: 'Проверка канала не уложилась в лимит времени браузера',
                            paragraphs: [
-                               'Сервер мог ещё читать ленту Telegram или собирать отчёт — это иногда до ~2 минут. Браузер оборвал ожидание раньше.',
+                               'Сервер мог ещё читать ленту Telegram или собирать отчёт — на главной это может занять до ~7 минут. Браузер оборвал ожидание раньше.',
                                'Нажмите «Повторить»: если отчёт уже собрался на сервере, он откроется сразу. Либо откройте страницу канала по ссылке из блока ниже.',
                            ],
                        };
@@ -1502,15 +1514,15 @@
               ];
               function __kroProgressNoteByElapsed(ms) {
                   var s = Math.max(0, Math.floor(ms / 1000));
-                  if (s < 60) return 'Подключаемся к Telegram...';
-                  if (s < 180) return 'Читаем посты канала...';
-                  if (s < 300) return 'Анализируем содержимое...';
+                  if (s < 90) return 'Подключаемся к Telegram...';
+                  if (s < 240) return 'Читаем посты канала...';
+                  if (s < 360) return 'Анализируем содержимое...';
                   return 'Формируем вывод...';
               }
                function __kroProgressIdxFromElapsed(ms) {
-                  if (ms < 60000) return 0;
-                  if (ms < 180000) return 1;
-                  if (ms < 300000) return 2;
+                  if (ms < 90000) return 0;
+                  if (ms < 240000) return 1;
+                  if (ms < 360000) return 2;
                    return 3;
                }
                function __kroSetProgressSteps(activeIdx) {
@@ -1555,7 +1567,7 @@
                        if (cap) cap.textContent = 'Идёт проверка канала · прошло';
                        if (checkProgressTitle) {
                            checkProgressTitle.textContent =
-                               'Проверяем ' + displayLabel + ': максимум 7 минут. Если посты ещё читаются, покажем промежуточный отчёт по базе.';
+                               'Проверяем ' + displayLabel + ': до 7 минут на полный разбор; сервер использует всё доступное время, если лента тяжёлая.';
                        }
                        __kroSetProgressSteps(0);
                        var noteEl = document.getElementById('kro-check-progress-note');
@@ -1725,7 +1737,7 @@
                            );
                        }
                        if (lm.home_quick_live === true) {
-                           metaParts.push('публичная лента: до ~3 мес.');
+                           metaParts.push('живая лента: до ~30 дн. + открытая страница');
                        }
                        if (lm.posts_fetched != null && !isNaN(Number(lm.posts_fetched))) {
                            metaParts.push('Сообщений с текстом: ~' + lm.posts_fetched);
@@ -2213,7 +2225,7 @@
                    }
                    if (!raw || !raw.trim()) {
                        checkResult.innerHTML = '';
-                       checkResult.textContent = 'Введите @username или ссылку на Telegram‑канал (t.me/...).';
+                       checkResult.textContent = 'Введите @username или ссылку на Telegram‑канал (t.me/… или telegram.me/…).';
                        checkResult.classList.remove('hidden');
                        return;
                    }
@@ -2227,7 +2239,7 @@
                    var channel = normChannel(raw);
                    if (!channel) {
                        checkResult.innerHTML = '';
-                       checkResult.textContent = 'Введите @username или ссылку (t.me/канал или t.me/+invite).';
+                       checkResult.textContent = 'Введите @username или ссылку (t.me/канал, telegram.me/канал или t.me/+invite).';
                        checkResult.className = 'kro-check-result';
                        checkResult.classList.remove('hidden');
                        return;

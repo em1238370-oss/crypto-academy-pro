@@ -1336,18 +1336,20 @@ const kroHomeQuickLiveTimeoutMs =
   Number.isFinite(kroHomeQuickLiveTimeoutMsParsed) && kroHomeQuickLiveTimeoutMsParsed >= 15000 && kroHomeQuickLiveTimeoutMsParsed <= 120000
     ? kroHomeQuickLiveTimeoutMsParsed
     : 45000;
-/** POST /api/kro/analyze-channel: бюджет времени на public snapshot + check_once + вспомогательные шаги (дефолт 90 с). */
-const kroAnalyzeChannelSyncMsParsed = parseInt(process.env.KRO_ANALYZE_CHANNEL_SYNC_MS || '', 10);
-const KRO_ANALYZE_CHANNEL_SYNC_MS =
-  Number.isFinite(kroAnalyzeChannelSyncMsParsed) && kroAnalyzeChannelSyncMsParsed >= 30000 && kroAnalyzeChannelSyncMsParsed <= 180000
-    ? kroAnalyzeChannelSyncMsParsed
-    : 90000;
 /** Fast на главной: жёсткий end-to-end лимит выполнения и ожидания (по умолчанию 7 минут). */
 const kroAnalyzeFastMaxMsParsed = parseInt(process.env.KRO_ANALYZE_FAST_MAX_MS || '420000', 10);
 const KRO_ANALYZE_FAST_MAX_MS =
   Number.isFinite(kroAnalyzeFastMaxMsParsed) && kroAnalyzeFastMaxMsParsed >= 60000 && kroAnalyzeFastMaxMsParsed <= 1800000
     ? kroAnalyzeFastMaxMsParsed
     : 420000;
+/** POST /api/kro/analyze-channel: бюджет времени на public snapshot + Telethon + вспомогательные шаги (по умолчанию = окно fast, до 7 мин). */
+const kroAnalyzeChannelSyncMsParsed = parseInt(process.env.KRO_ANALYZE_CHANNEL_SYNC_MS || '', 10);
+const KRO_ANALYZE_CHANNEL_SYNC_MS =
+  Number.isFinite(kroAnalyzeChannelSyncMsParsed) &&
+    kroAnalyzeChannelSyncMsParsed >= 30000 &&
+    kroAnalyzeChannelSyncMsParsed <= KRO_ANALYZE_FAST_MAX_MS
+    ? kroAnalyzeChannelSyncMsParsed
+    : KRO_ANALYZE_FAST_MAX_MS;
 /** Глубокий анализ ленты: верхняя граница ~30 мин, горизонт до 6 мес. (periodDays 180 в вызове). */
 const kroDeepCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_DEEP_CHECK_ONCE_TIMEOUT_MS || '1800000', 10);
 const kroDeepCheckOnceTimeoutMs =
@@ -5304,7 +5306,7 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
   const slug = kroExtractTelegramPublicSlug(channelRef);
   if (!slug) return null;
   const optObj = opts && typeof opts === 'object' ? opts : {};
-  const budgetMs = Math.min(30000, Math.max(3000, Number(optObj.timeoutMs) || 15000));
+  const budgetMs = Math.min(120000, Math.max(3000, Number(optObj.timeoutMs) || 15000));
   const logLabel = optObj.logLabel ? String(optObj.logLabel) : '';
   const logPrefix = logLabel ? `[KRO public-snapshot ${logLabel}]` : '[KRO public-snapshot]';
   const parseHtml = (html) => {
@@ -7291,101 +7293,21 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     const displayCh = (latestProfile && latestProfile.username) ? latestProfile.username : channelDisplay;
     const reports = await getAllReportsForChannel(sheetsClient, displayCh);
 
-    const pubBudget = Math.min(28000, Math.max(0, deadline - Date.now() - 400));
+    const msLeftForWork = Math.max(0, deadline - Date.now() - 400);
+    /** Держим запас под Telethon: публичный снимок не забирает всё окно fast (до 7 мин). */
+    const pubBudget = Math.min(120000, Math.max(1200, msLeftForWork - 200000));
     const publicSnap =
       pubBudget > 1200 ? await kroFetchTelegramPublicSnapshot(channelForOnce, { timeoutMs: pubBudget, logLabel: analyzeLogId }) : null;
     console.log(
       `[KRO analyze-channel ${analyzeLogId}] public_snapshot result snippets=${publicSnap && Array.isArray(publicSnap.snippets) ? publicSnap.snippets.length : 0}`,
     );
-
     if (publicSnap && Array.isArray(publicSnap.snippets) && publicSnap.snippets.length >= minPublicSnippets) {
-      const signal = kroCollectSuspiciousFlagsFromTexts(publicSnap.snippets);
-      const fastHuman = kroBuildFastCriteriaFromTexts(publicSnap.snippets, {});
-      const risk = fastHuman.score10;
-      const statusObj = kroMapFastRisk10ToUiStatus(risk);
-      const conclusionStatus = kroMapFastRisk10ToConclusion(risk, {});
-      let analysis = {
-        v: 0,
-        channel_key: key,
-        generated_at: new Date().toISOString(),
-        sources: ['публичная лента t.me/s'],
-        basic_info: [
-          `Канал: ${channelDisplay}`,
-          `Чем занимается канал: ${fastHuman.topicLine}`,
-          `Прочитано ${publicSnap.snippets.length} коротких фрагментов с открытой страницы (до 15 секунд).`,
-          publicSnap.title ? `Название на странице: ${publicSnap.title}.` : '',
-        ],
-        content_behavior: [
-          ...kroFormatFastCriteriaLines(fastHuman.criteria),
-          ...fastHuman.citations.map((x) => `Пример из ленты: «${String(x).slice(0, 220)}»`),
-        ].filter(Boolean).slice(0, 8),
-        external_reports: reports.length
-          ? [
-              `В сервисе есть ${reports.length} записей по каналу — это фон, основа вывода всё равно текст ленты.`,
-              ...reports.slice(0, 2).map((r) => {
-                const desc = String(r.description || '').trim();
-                return desc ? `Из жалоб: ${desc.slice(0, 180)}${desc.length > 180 ? '…' : ''}` : '';
-              }).filter(Boolean),
-            ].slice(0, 3)
-          : ['Жалоб по каналу в базе сейчас нет — на оценку по тексту это почти не влияет.'],
-        ties_risk_factors: signal.flags.length
-          ? signal.flags.map((f) => `${f.title}: ${f.explanation}`)
-          : ['По тексту не видно явных «гарантий прибыли», жёсткой суеты и продажи закрытого VIP.'],
-        conclusion: {
-          status: conclusionStatus,
-          reasons: [
-            `Риск ${risk}/10: ${fastHuman.summaryLine}`,
-            ...fastHuman.reasons,
-          ].filter(Boolean).slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
-        },
-      };
-      if (latestProfile) {
-        const merged = kroV0BuildAnalysisFromScamBaseProfile(latestProfile, { channel_key: key });
-        analysis.basic_info = [...analysis.basic_info, ...(merged.basic_info || []).slice(0, 2)].filter(Boolean).slice(0, 6);
-        analysis.external_reports = [...analysis.external_reports, ...(merged.external_reports || []).slice(0, 1)].filter(Boolean).slice(0, 4);
-      }
-      if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
-
-      const postsRead = publicSnap.snippets.length;
-      console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=public_snapshot posts_read=${postsRead}`);
-      return res.status(200).json(withQueueMeta({
-        queue_status: 'done_sync',
-        analysis,
-        status: statusObj.status,
-        status_code: statusObj.code,
-        risk_index: risk,
-        risk_index_max: 10,
-        posts_read: postsRead,
-        period_days: 7,
-        read_path: 'public_snapshot',
-        flags: signal.flags,
-        citations: fastHuman.citations.slice(0, 3),
-        live_evidence: {
-          live_pass: true,
-          mode: 'public_snapshot',
-          reason: `Прочитано фрагментов публичной ленты: ${postsRead} (лимит 15 с).`,
-          sample_posts: publicSnap.snippets.slice(0, 3),
-          posts_fetched: postsRead,
-          analysis_window_days: 7,
-        },
-        live_metrics: {
-          posts_fetched: postsRead,
-          analysis_window_days: 7,
-          home_quick_live: true,
-          complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
-        },
-        analysis_basis: {
-          label: 'Вывод по коротким фрагментам с открытой страницы канала.',
-          sources_used: ['t.me/s'],
-          read_path: 'public_snapshot',
-          posts_read: postsRead,
-          elapsed_ms: Date.now() - t0,
-        },
-        message: `${channelDisplay}: оценка ${risk}/10. ${fastHuman.summaryLine}`,
-      }));
+      console.log(
+        `[KRO analyze-channel ${analyzeLogId}] public_snapshot has ${publicSnap.snippets.length} snippets; continuing to Telethon for a fuller home pass`,
+      );
     }
 
-    const telBudget = Math.min(150000, Math.max(0, deadline - Date.now() - 600));
+    const telBudget = Math.max(0, deadline - Date.now() - 600);
     if (telBudget >= 5000) {
       const once = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 30, timeoutMs: telBudget });
       const parsed = kroNormalizeCheckOnceForAnalysis(once);
