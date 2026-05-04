@@ -5,6 +5,7 @@ Requires TGSTAT_API_KEY in env. On failure or missing key, returns None so check
 import os
 import re
 import time
+import sys
 from datetime import datetime, timezone
 
 TGSTAT_API_KEY = (os.environ.get('TGSTAT_API_KEY') or '').strip()
@@ -32,17 +33,23 @@ def _fetch(path, params):
         return None
     params = dict(params)
     params['token'] = TGSTAT_API_KEY
-    try:
-        import urllib.request
-        import urllib.parse
-        url = TGSTAT_BASE + path + '?' + urllib.parse.urlencode(params)
-        req = urllib.request.Request(url, headers={'User-Agent': 'KRO-Checker/1.0'})
-        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
-            data = resp.read().decode('utf-8')
-            import json
-            return json.loads(data)
-    except Exception:
-        return None
+    import urllib.request
+    import urllib.parse
+    import json
+    url = TGSTAT_BASE + path + '?' + urllib.parse.urlencode(params)
+    last_error = None
+    for attempt in range(1, 4):
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'KRO-Checker/1.0'})
+            with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+                data = resp.read().decode('utf-8')
+                return json.loads(data)
+        except Exception as e:
+            last_error = e
+            if attempt < 3:
+                time.sleep(min(8, 2 ** (attempt - 1)))
+    print('TGStat request failed after retries: %s %s' % (path, last_error), file=sys.stderr)
+    return None
 
 
 def fetch_channel_stats(channel_id):
@@ -117,7 +124,7 @@ def search_channels(query, country='ru', limit=100):
     Returns list of dicts: username, link, title, participants_count, created_at (unix ts), or [] on error.
     """
     if not TGSTAT_API_KEY:
-        print('TGStat search disabled: TGSTAT_API_KEY is not set', file=__import__('sys').stderr)
+        print('TGStat search disabled: TGSTAT_API_KEY is not set', file=sys.stderr)
         return []
     params = {'q': query, 'country': country, 'limit': min(100, max(1, limit)), 'peer_type': 'channel'}
     try:

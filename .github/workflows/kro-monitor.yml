@@ -92,6 +92,39 @@ jobs:
           print(f'kro_meta.last_cycle_at(before)={prev or "<empty>"}')
           PY
 
+      - name: KRO monitor environment diagnostics
+        env:
+          TGSTAT_API_KEY: ${{ secrets.TGSTAT_API_KEY }}
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          KRO_TELEGRAM_SESSION_STRING: ${{ secrets.KRO_TELEGRAM_SESSION_STRING }}
+          KRO_SHEET_ID: ${{ secrets.KRO_SHEET_ID }}
+          KRO_SOURCES_DOC_ID: ${{ secrets.KRO_SOURCES_DOC_ID }}
+          KRO_GOOGLE_CREDENTIALS_BASE64: ${{ secrets.KRO_GOOGLE_CREDENTIALS_BASE64 }}
+        run: |
+          python3 - <<'PY'
+          import os
+          names = [
+              'TGSTAT_API_KEY',
+              'TELEGRAM_API_ID',
+              'TELEGRAM_API_HASH',
+              'KRO_TELEGRAM_SESSION_STRING',
+              'KRO_SHEET_ID',
+              'KRO_SOURCES_DOC_ID',
+              'KRO_GOOGLE_CREDENTIALS_BASE64',
+          ]
+          parts = []
+          missing = []
+          for name in names:
+              present = bool((os.environ.get(name) or '').strip())
+              parts.append(f'{name}={"present" if present else "missing"}')
+              if not present:
+                  missing.append(name)
+          print('KRO monitor environment: ' + ', '.join(parts))
+          if 'TGSTAT_API_KEY' in missing:
+              print('::warning::TGSTAT_API_KEY is missing — TGStat channel discovery will return 0; Telegram/web fallbacks still run.')
+          PY
+
       - name: Run 12h monitor
         working-directory: backend/kro-worker
         env:
