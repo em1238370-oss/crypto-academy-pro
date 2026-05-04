@@ -358,10 +358,10 @@ body.kro-hero-scrolled .kro-floating-nav {
 
 @media (max-width: 768px) {
    .kro-main {
-      --kro-duration-reveal: 1.85s;
-      --kro-duration-reveal-slow: 2.1s;
-      --kro-reveal-y: 22px;
-      --kro-scroll-in-y: 18px;
+      --kro-duration-reveal: 1.35s;
+      --kro-duration-reveal-slow: 1.55s;
+      --kro-reveal-y: 12px;
+      --kro-scroll-in-y: 10px;
    }
 
    body.kro-hero-scrolled .kro-step1 {
