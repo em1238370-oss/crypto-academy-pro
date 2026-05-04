@@ -15,8 +15,10 @@ import os
 import re
 import sys
 import json
+import time
 import asyncio
-import os.path
+
+
 from datetime import datetime, timezone, timedelta
 from urllib.request import urlopen, Request
 from urllib.parse import urlencode
@@ -459,6 +461,345 @@ async def get_entity(client, channel_id):
                 except Exception:
                     pass
         raise
+
+
+def _check_once_mode():
+    return (os.environ.get('KRO_CHECK_ONCE_MODE') or '').strip().lower()
+
+
+def _check_once_mono_budget_ms():
+    raw = (os.environ.get('KRO_CHECK_ONCE_MONO_MS') or '').strip()
+    if raw:
+        try:
+            n = int(raw)
+            if n >= 5000:
+                return min(n, 7 * 60 * 1000)
+        except ValueError:
+            pass
+    return None
+
+
+def _home_greedy_early_exit_posts():
+    raw = (os.environ.get('KRO_HOME_GREEDY_EARLY_EXIT_POSTS') or '20').strip()
+    try:
+        n = int(raw)
+        return max(12, min(n, 80))
+    except ValueError:
+        return 20
+
+
+def _home_greedy_stable_batches():
+    raw = (os.environ.get('KRO_HOME_GREEDY_STABLE_BATCHES') or '2').strip()
+    try:
+        n = int(raw)
+        return max(2, min(n, 6))
+    except ValueError:
+        return 2
+
+
+def _topic_signature_from_texts(texts, max_posts=24, sample_chars=400):
+    if not texts:
+        return ''
+    chunk = texts[:max_posts]
+    joined = ' '.join((t or '').lower() for t in chunk)
+    joined = re.sub(r'https?://\S+', ' ', joined)
+    joined = re.sub(r'[^\w\s\u0400-\u04ff]', ' ', joined, flags=re.I)
+    words = [w for w in joined.split() if len(w) >= 4]
+    freq = {}
+    for w in words:
+        freq[w] = freq.get(w, 0) + 1
+    top = sorted(freq.items(), key=lambda kv: (-kv[1], kv[0]))[:18]
+    sig = '|'.join(f'{k}:{v}' for k, v in top)
+    return (sig[:sample_chars] + ('…' if len(sig) > sample_chars else '')).strip()
+
+
+async def _collect_messages_paginated_until_stable_or_budget(
+    client, entity, min_date, max_count, mono_deadline, stable_batches_need=2, early_text_posts=20
+):
+    items = []
+    offset_id = 0
+    batch = min(100, max(40, max_count // 15))
+    prev_sig = ''
+    stable = 0
+    early_exit = False
+    last_sig = ''
+    while len(items) < max_count and time.monotonic() < mono_deadline - 2.5:
+        need = min(batch, max_count - len(items))
+        chunk = await client.get_messages(entity, limit=need, offset_id=offset_id)
+        if not chunk:
+            break
+        stop = False
+        for m in chunk:
+            if not m or not m.date:
+                continue
+            md = m.date.replace(tzinfo=timezone.utc) if getattr(m.date, 'tzinfo', None) is None else m.date
+            if md < min_date:
+                stop = True
+                break
+            items.append(m)
+        if stop:
+            break
+        last = chunk[-1]
+        offset_id = getattr(last, 'id', 0) or 0
+        if offset_id <= 0:
+            break
+        texts_tmp = [m.text for m in items if m and m.text]
+        if len(texts_tmp) >= early_text_posts:
+            sig = _topic_signature_from_texts(texts_tmp)
+            if sig and sig == prev_sig:
+                stable += 1
+            else:
+                stable = 1 if sig else 0
+            prev_sig = sig
+            if stable >= stable_batches_need:
+                early_exit = True
+                last_sig = sig
+                break
+        await asyncio.sleep(0.12)
+    return items, 'telegram_home_greedy_paged', early_exit, stable, last_sig
+
+
+async def _collect_reply_snippets_phase(client, entity, messages, mono_deadline, max_total_snippets=80):
+    out = []
+    if not messages:
+        return out
+    t0 = time.monotonic()
+    try:
+        for m in messages[: min(40, len(messages))]:
+            if time.monotonic() >= mono_deadline:
+                break
+            if not m or not getattr(m, 'replies', None) or not getattr(m.replies, 'replies', 0):
+                continue
+            try:
+                replies = await client.get_messages(entity, reply_to=m.id, limit=20)
+            except Exception:
+                continue
+            for r in replies or []:
+                if time.monotonic() >= mono_deadline:
+                    break
+                if r and getattr(r, 'text', None) and str(r.text).strip():
+                    s = str(r.text).strip().replace('\n', ' ')
+                    if len(s) >= 12:
+                        out.append(s[:400])
+                if len(out) >= max_total_snippets:
+                    return out
+            if time.monotonic() - t0 > 0.25:
+                await asyncio.sleep(0.05)
+    except Exception:
+        pass
+    return out
+
+
+async def run_check_home_greedy(channel_id, period_days=30):
+    mono_deadline = time.monotonic()
+    mb = _check_once_mono_budget_ms()
+    if mb is not None:
+        mono_deadline += mb / 1000.0
+    else:
+        mono_deadline += 330.0
+
+    client = _kro_ts.build_kro_telegram_client(TELEGRAM_API_ID, TELEGRAM_API_HASH)
+    await client.start()
+    home_meta = {
+        'home_read_ms': 0,
+        'home_phase': 'init',
+        'home_early_exit': False,
+        'home_reply_snippets': 0,
+        'home_topic_sig_last': '',
+        'home_stable_batches': 0,
+    }
+    t_wall0 = time.time()
+    try:
+        try:
+            entity = await get_entity(client, channel_id)
+        except FloodWaitError as e:
+            return _flood_wait_response(e)
+        except Exception as e:
+            fw = _flood_wait_response(e)
+            if fw is not None:
+                return fw
+            raise
+        if not entity:
+            return None
+
+        now = datetime.now(timezone.utc)
+        min_date = now - timedelta(days=period_days)
+        max_count = _check_once_max_messages(period_days)
+
+        home_meta['home_phase'] = 'collect_posts'
+        messages, read_path, early_exit, stable_cnt, topic_sig = await _collect_messages_paginated_until_stable_or_budget(
+            client,
+            entity,
+            min_date,
+            max_count,
+            mono_deadline,
+            stable_batches_need=_home_greedy_stable_batches(),
+            early_text_posts=_home_greedy_early_exit_posts(),
+        )
+        read_attempts_used = 1
+        read_errors = []
+        home_meta['home_early_exit'] = bool(early_exit)
+        home_meta['home_stable_batches'] = int(stable_cnt or 0)
+        home_meta['home_topic_sig_last'] = str(topic_sig or '')
+        if early_exit:
+            home_meta['home_phase'] = 'early_exit_stable_topic'
+
+        texts = []
+        messages_with_dates = []
+        for m in messages:
+            if m and m.text:
+                texts.append(m.text)
+                messages_with_dates.append((m.text, m.date))
+
+        reply_extra = []
+        if time.monotonic() < mono_deadline - 2.0:
+            home_meta['home_phase'] = 'reply_snippets' if not home_meta.get('home_early_exit') else 'early_exit_then_replies'
+            reply_extra = await _collect_reply_snippets_phase(
+                client,
+                entity,
+                messages[: min(40 if home_meta.get('home_early_exit') else len(messages), len(messages))],
+                mono_deadline,
+                max_total_snippets=80 if not home_meta.get('home_early_exit') else 50,
+            )
+        for rt in reply_extra:
+            if rt and rt not in texts:
+                texts.append(rt)
+        home_meta['home_reply_snippets'] = len(reply_extra)
+        home_meta['home_read_ms'] = int(max(0, (time.time() - t_wall0) * 1000))
+
+        risk, matches, total, risk_pct = analyze_messages(texts)
+        if total >= 5 and matches == 0:
+            return {
+                'found': False,
+                'not_crypto': True,
+                'username': channel_id,
+                'error': 'Канал не связан с криптой. Мы проверяем только каналы, связанные с криптой/скрипторием. Другие не проверяем.',
+                'home_meta': home_meta,
+            }
+
+        vip = extract_vip_price(texts)
+        ads_week = count_ads_last_7_days(messages_with_dates)
+
+        reply_texts = list(reply_extra)
+        bot_pct = bot_pct_from_reply_texts(reply_texts)
+
+        fomo_pct = _fomo_pct(texts)
+        shame_phrases_detected = _shame_phrases_detected(texts)
+        ads_ratio = _ads_ratio(messages_with_dates)
+        only_profits_flag = _only_profits_flag(texts)
+        promoted_list, promoted_count = _extract_promoted_channels(texts)
+        promoted_sample = promoted_list[:10] if promoted_list else []
+
+        bot_ratio = _bot_ratio_from_pct(bot_pct)
+        review_similarity = bot_ratio
+        complaint_ignore_time = 0
+        network_connections = min(promoted_count * 20, 100)
+
+        channel_id_for_tgstat = getattr(entity, 'username', None) and ('@' + entity.username) or (channel_id if not channel_id.startswith('t.me/+') else None)
+        tgstat = _fetch_tgstat(channel_id_for_tgstat or '') if channel_id_for_tgstat else {}
+        growth_anomaly = tgstat.get('growth_anomaly', 0)
+        dead_ratio = tgstat.get('dead_ratio', 0)
+        subscriber_growth_per_day = tgstat.get('subscriber_growth_per_day', 0)
+        reach_ratio = tgstat.get('reach_ratio', 0.0)
+
+        channel_age_days = None
+        if getattr(entity, 'date', None):
+            try:
+                created = entity.date
+                if created.tzinfo is None:
+                    created = created.replace(tzinfo=timezone.utc)
+                channel_age_days = (datetime.now(timezone.utc) - created).days
+            except Exception:
+                pass
+
+        canonical_channel_id = ('@' + entity.username) if getattr(entity, 'username', None) else channel_id
+        complaints, total_loss = get_complaints_and_loss_for_channel(canonical_channel_id)
+        has_signal_offer = _has_signal_offer(texts)
+
+        risk_score = round(
+            fomo_pct * 0.15 +
+            bot_ratio * 0.20 +
+            ads_ratio * 0.25 +
+            growth_anomaly * 0.15 +
+            review_similarity * 0.10 +
+            network_connections * 0.10 +
+            complaint_ignore_time * 0.05 +
+            dead_ratio * 0.05
+        )
+        risk_score = max(0, min(100, risk_score))
+
+        if risk_score >= 70:
+            verdict = 'scam'
+        elif risk_score >= 35:
+            verdict = 'grey'
+        else:
+            verdict = 'safe'
+
+        sample_posts = []
+        cap_snip = min(80, len(texts))
+        for t in texts[:cap_snip]:
+            snippet = (t or '').strip().replace('\n', ' ')[:220]
+            if len(snippet) >= 12:
+                sample_posts.append(snippet)
+
+        deep_metrics = _build_deep_channel_metrics(texts, messages_with_dates)
+        language_word_hits = _build_language_word_hits(texts)
+        first_impression_posts = _first_impression_snippets_from_messages(messages, 3)
+        scam_similarity = _build_scam_similarity_label(deep_metrics)
+        for q in (deep_metrics.get('urgency_quotes') or [])[:2]:
+            if len(sample_posts) >= 28:
+                break
+            if q and q not in sample_posts:
+                sample_posts.append(q)
+
+        result_obj = {
+            'found': True,
+            'username': canonical_channel_id,
+            'title': getattr(entity, 'title', None) or '',
+            'analysis_window_days': period_days,
+            'posts_fetched': len(texts),
+            'posts_messages_scanned': len(messages),
+            'posts_limit_used': max_count,
+            'read_path': read_path,
+            'read_attempts_used': read_attempts_used,
+            'read_min_text_posts_required': 1,
+            'read_errors': read_errors[:5],
+            'risk_score': risk_score,
+            'ads_per_week': ads_week,
+            'bot_pct': bot_pct,
+            'vip_price': vip,
+            'complaints': complaints,
+            'total_loss': total_loss,
+            'verdict': verdict,
+            'fomo_pct': fomo_pct,
+            'shame_phrases_detected': shame_phrases_detected,
+            'ads_ratio': ads_ratio,
+            'only_profits_flag': only_profits_flag,
+            'promoted_channels_count': promoted_count,
+            'promoted_channels_sample': promoted_sample,
+            'subscriber_growth_per_day': subscriber_growth_per_day,
+            'growth_anomaly': growth_anomaly,
+            'reach_ratio': reach_ratio,
+            'channel_age_days': channel_age_days,
+            'has_signal_offer': has_signal_offer,
+            '_sample_texts': texts[: min(120, len(texts))],
+            'sample_posts': sample_posts,
+            'language_word_hits': language_word_hits,
+            'first_impression_posts': first_impression_posts,
+            'deep_metrics': deep_metrics,
+            'scam_similarity': scam_similarity,
+            'home_meta': home_meta,
+        }
+        return result_obj
+    except FloodWaitError as e:
+        return _flood_wait_response(e)
+    except Exception as e:
+        fw = _flood_wait_response(e)
+        if fw is not None:
+            return fw
+        raise
+    finally:
+        await client.disconnect()
 
 
 def analyze_messages(texts):
@@ -1271,6 +1612,22 @@ def main():
         })
         return
     try:
+        if _check_once_mode() == 'home_greedy':
+            result = asyncio.run(run_check_home_greedy(channel_id, period_days))
+            if result is None:
+                out({'found': False, 'error': 'channel not found or inaccessible'})
+                return
+            if result.get('not_crypto'):
+                out(result)
+                return
+            if result.get('telegram_rate_limited') or result.get('flood_wait_seconds'):
+                result.pop('_sample_texts', None)
+                out(result)
+                return
+            result.pop('_sample_texts', None)
+            out(result)
+            return
+
         result = asyncio.run(run_check(channel_id, period_days))
         if result is None:
             out({'found': False, 'error': 'channel not found or inaccessible'})

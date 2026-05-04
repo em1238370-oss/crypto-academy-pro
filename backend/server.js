@@ -12,6 +12,9 @@ import Stripe from 'stripe';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const perfNow = () => (globalThis.performance && typeof globalThis.performance.now === 'function'
+  ? globalThis.performance.now()
+  : Date.now());
 
 // Load .env from parent directory (project root)
 dotenv.config({ path: join(__dirname, '..', '.env') });
@@ -1475,11 +1478,13 @@ function kroByoAllowRegister(ip) {
   return true;
 }
 
-function kroTelethonSpawnEnv(readOnly, sessionString) {
+function kroTelethonSpawnEnv(readOnly, sessionString, extraEnv) {
   const s = (sessionString || '').toString().trim();
+  const extra = extraEnv && typeof extraEnv === 'object' ? extraEnv : {};
   const base = {
     ...process.env,
     ...(readOnly ? { KRO_CHECK_ONCE_NO_WRITE: '1' } : {}),
+    ...extra,
   };
   if (!s) return base;
   return {
@@ -4292,6 +4297,7 @@ function kroRunCheckOnce(channel, opts) {
   const timeoutOpt = opts && Number(opts.timeoutMs);
   const timeoutMs =
     Number.isFinite(timeoutOpt) && timeoutOpt >= 5000 && timeoutOpt <= 1800000 ? timeoutOpt : kroCheckOnceTimeoutMs;
+  const checkOnceEnv = opts && opts.checkOnceEnv && typeof opts.checkOnceEnv === 'object' ? opts.checkOnceEnv : null;
   const scriptPath = join(__dirname, 'kro-worker', 'check_once.py');
   if (!(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH && fs.existsSync(scriptPath))) {
     return { ok: false, error: 'Живая проверка на сервере не настроена (нет ключей Telegram или скрипта).', parsed: null, stderr: '' };
@@ -4301,7 +4307,7 @@ function kroRunCheckOnce(channel, opts) {
       cwd: join(__dirname, 'kro-worker'),
       timeout: timeoutMs,
       encoding: 'utf8',
-      env: kroTelethonSpawnEnv(readOnly, sessionString),
+      env: kroTelethonSpawnEnv(readOnly, sessionString, checkOnceEnv),
     });
     if (child.error && child.error.code === 'ETIMEDOUT') {
       const sec = Math.max(1, Math.round(timeoutMs / 1000));
@@ -7389,7 +7395,7 @@ function kroBuildAnalyzeDoneResponse(doneRow, key) {
     readPath === 'telethon+public_snapshot' ||
     readPath === 'public_snapshot' ||
     readPath === 'public_content_fallback';
-  const liveEnough = Number.isFinite(postsRead) && postsRead >= 5;
+  const liveEnough = Number.isFinite(postsRead) && postsRead >= 3;
   // Принцип для главной: без живого чтения постов не выдаём «успешный быстрый анализ».
   if (!livePass || !livePathAllowed || !liveEnough) {
     return {
@@ -7468,41 +7474,31 @@ function kroBuildParsedFromPublicSnapshotOnly(publicSnap, channelDisplay, minPos
   };
 }
 
-/**
- * До двух проходов Telethon с полным оставшимся бюджетом: первый проход иногда отдаёт мало постов при таймауте/сети,
- * второй использует оставшееся окно fast (до 7 мин).
- */
-function kroCollectTelethonBestForHomeAnalyze(channelForOnce, deadline, minPosts) {
-  let best = {
-    parsed: kroNormalizeCheckOnceForAnalysis({ ok: false, parsed: null, error: 'Чтение через Telegram не запускалось.' }),
-    budgetMs: 0,
-    postsRead: 0,
-  };
-  const scoreOf = (p) => {
-    if (!p || typeof p !== 'object') return -1;
-    const n = Number(p.posts_fetched || 0);
-    const ok = p._check_once_ok === true ? 1 : 0;
-    const found = p.found === true ? 1 : 0;
-    return n * 100 + ok * 10 + found;
-  };
-  const consider = (p, bMs) => {
-    if (!p || typeof p !== 'object') return;
-    const n = Number(p.posts_fetched || 0);
-    if (scoreOf(p) > scoreOf(best.parsed)) {
-      best = { parsed: p, budgetMs: bMs, postsRead: n };
-    }
-  };
-  for (let pass = 0; pass < 2; pass += 1) {
-    const b = Math.max(0, deadline - Date.now() - 600);
-    if (b < 5000) break;
-    const once = kroRunCheckOnce(channelForOnce, { readOnly: true, periodDays: 30, timeoutMs: b });
-    const parsed = kroNormalizeCheckOnceForAnalysis(once);
-    consider(parsed, b);
-    const n = Number(parsed.posts_fetched || 0);
-    if (n >= minPosts && parsed._check_once_ok === true && parsed.found === true) break;
-    if (deadline - Date.now() < 12000) break;
-  }
-  return best;
+/** Один запуск check_once в режиме home_greedy: жадное чтение ленты по monotonic-бюджету внутри Python. */
+function kroRunHomeGreedyTelethonOnce(channelForOnce, deadline, telethonBudgetMs, logLabel) {
+  const t0 = perfNow();
+  const b = Math.max(
+    5000,
+    Math.min(Number(telethonBudgetMs) || 0, Math.max(0, deadline - Date.now() - 600)),
+  );
+  const mono = String(Math.min(7 * 60 * 1000, Math.floor(b)));
+  const spawnTimeout = Math.min(1800000, b + 4000);
+  const once = kroRunCheckOnce(channelForOnce, {
+    readOnly: true,
+    periodDays: 30,
+    timeoutMs: spawnTimeout,
+    checkOnceEnv: {
+      KRO_CHECK_ONCE_MODE: 'home_greedy',
+      KRO_CHECK_ONCE_MONO_MS: mono,
+    },
+  });
+  const parsed = kroNormalizeCheckOnceForAnalysis(once);
+  const wallMs = Math.round(perfNow() - t0);
+  const pr = Number(parsed.posts_fetched || 0);
+  console.log(
+    `[KRO analyze-channel ${logLabel}] home_greedy wall=${wallMs}ms budget=${b}ms spawn_timeout=${spawnTimeout} ok=${parsed._check_once_ok === true} found=${parsed.found === true} posts_read=${pr}`,
+  );
+  return { parsed, budgetMs: b, wallMs };
 }
 
 function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
@@ -7678,8 +7674,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     if (/^joinchat\//i.test(k)) return `t.me/${k}`;
     return normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${k}`;
   })();
-  const minReadablePosts = 5;
-  const minPublicSnippets = 4;
+  const minReadablePosts = 3;
   const minTelethonPosts = minReadablePosts;
   const analyzeLogId = `${key}:${Date.now().toString(36)}`;
   const withQueueMeta = (payload) => ({
@@ -7716,28 +7711,34 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     const displayCh = (latestProfile && latestProfile.username) ? latestProfile.username : channelDisplay;
     const reports = await getAllReportsForChannel(sheetsClient, displayCh);
 
-    const msLeftForWork = Math.max(0, deadline - Date.now() - 400);
-    /** Резервируем время под Telethon (до ~5 мин), чтобы публичный HTML не «съедал» всё 7‑минутное окно. */
-    const telethonReserveMs = Math.min(300000, Math.max(120000, Math.floor(KRO_ANALYZE_CHANNEL_SYNC_MS * 0.72)));
-    const pubBudget = Math.min(90000, Math.max(1200, msLeftForWork - telethonReserveMs));
-    const publicSnap =
-      pubBudget > 1200 ? await kroFetchTelegramPublicSnapshot(channelForOnce, { timeoutMs: pubBudget, logLabel: analyzeLogId }) : null;
-    console.log(
-      `[KRO analyze-channel ${analyzeLogId}] public_snapshot result snippets=${publicSnap && Array.isArray(publicSnap.snippets) ? publicSnap.snippets.length : 0}`,
-    );
-    if (publicSnap && Array.isArray(publicSnap.snippets) && publicSnap.snippets.length >= minPublicSnippets) {
-      console.log(
-        `[KRO analyze-channel ${analyzeLogId}] public_snapshot has ${publicSnap.snippets.length} snippets; continuing to Telethon for a fuller home pass`,
-      );
-    }
-
-    const telBest = kroCollectTelethonBestForHomeAnalyze(channelForOnce, deadline, minTelethonPosts);
+    /** Сначала жадный Telethon по monotonic-бюджету в Python; публичный t.me/s — только если мало текста, макс. 60 с. */
+    const telethonReserveMs = Math.min(330000, Math.max(120000, Math.floor(KRO_ANALYZE_CHANNEL_SYNC_MS * 0.75)));
+    const telBest = kroRunHomeGreedyTelethonOnce(channelForOnce, deadline, telethonReserveMs, analyzeLogId);
     const parsed = telBest.parsed;
     let postsRead = Number(parsed.posts_fetched || 0);
     let sample = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : [];
     console.log(
-      `[KRO analyze-channel ${analyzeLogId}] telethon best_pass=${telBest.budgetMs}ms ok=${parsed._check_once_ok === true} found=${parsed.found === true} posts_read=${postsRead} error=${JSON.stringify(parsed.error || '')} sample=${JSON.stringify(sample[0] ? sample[0].slice(0, 180) : '')}`,
+      `[KRO analyze-channel ${analyzeLogId}] telethon home_greedy budget=${telBest.budgetMs}ms wall=${telBest.wallMs}ms ok=${parsed._check_once_ok === true} found=${parsed.found === true} posts_read=${postsRead} error=${JSON.stringify(parsed.error || '')} sample=${JSON.stringify(sample[0] ? sample[0].slice(0, 180) : '')}`,
     );
+
+    let publicSnap = null;
+    let enough =
+      parsed._check_once_ok === true &&
+      parsed.found === true &&
+      postsRead >= minTelethonPosts &&
+      sample.length >= 1;
+    if (
+      !enough &&
+      parsed._check_once_ok === true &&
+      parsed.found === true &&
+      deadline - Date.now() > 1500
+    ) {
+      const pubBudget = Math.min(60000, Math.max(1200, deadline - Date.now() - 500));
+      publicSnap = await kroFetchTelegramPublicSnapshot(channelForOnce, { timeoutMs: pubBudget, logLabel: analyzeLogId });
+      console.log(
+        `[KRO analyze-channel ${analyzeLogId}] public_snapshot(after_telethon) snippets=${publicSnap && Array.isArray(publicSnap.snippets) ? publicSnap.snippets.length : 0} budget_ms=${pubBudget}`,
+      );
+    }
     let enough =
       parsed._check_once_ok === true &&
       parsed.found === true &&
