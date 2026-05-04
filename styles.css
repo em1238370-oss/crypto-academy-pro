@@ -2207,6 +2207,183 @@ body.kro-hero-scrolled .kro-floating-nav {
    gap: 12px 20px;
    margin-bottom: 8px;
 }
+
+/* Главная: «золотой стандарт» — цифра + цитаты + уверенность */
+.kro-inline-trust-stack {
+   margin: 14px 0 18px;
+   padding: 16px 18px;
+   border-radius: 14px;
+   border: 1px solid rgba(253, 224, 127, 0.22);
+   background: linear-gradient(145deg, rgba(38, 32, 28, 0.92) 0%, rgba(22, 18, 16, 0.96) 100%);
+   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.kro-inline-trust-eyebrow {
+   margin: 0 0 6px;
+   font-size: 0.65rem;
+   font-weight: 700;
+   letter-spacing: 0.1em;
+   text-transform: uppercase;
+   color: rgba(253, 224, 127, 0.75);
+}
+.kro-inline-trust-headline {
+   margin: 0 0 8px;
+   font-size: clamp(1.05rem, 2.4vw, 1.2rem);
+   font-weight: 700;
+   line-height: 1.35;
+   color: rgba(255, 250, 245, 0.98);
+}
+.kro-inline-trust-sub {
+   margin: 0 0 12px;
+   font-size: 0.875rem;
+   line-height: 1.5;
+   color: rgba(255, 255, 255, 0.72);
+}
+.kro-inline-trust-patterns {
+   margin: 0;
+   padding: 0;
+   list-style: none;
+}
+.kro-inline-trust-pattern {
+   margin: 0 0 14px;
+   padding: 12px 14px;
+   border-radius: 12px;
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   background: rgba(255, 255, 255, 0.035);
+}
+.kro-inline-trust-pattern-title {
+   display: block;
+   font-weight: 700;
+   font-size: 0.9rem;
+   color: rgba(255, 248, 238, 0.95);
+   margin-bottom: 6px;
+}
+.kro-inline-trust-pattern-quote {
+   display: block;
+   font-size: 0.82rem;
+   line-height: 1.45;
+   color: rgba(253, 224, 127, 0.88);
+   font-style: italic;
+   margin-bottom: 8px;
+}
+.kro-inline-trust-pattern-why {
+   display: block;
+   font-size: 0.82rem;
+   line-height: 1.5;
+   color: rgba(255, 255, 255, 0.78);
+}
+.kro-inline-trust-foot {
+   margin-top: 4px;
+   padding-top: 12px;
+   border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+.kro-inline-trust-summary {
+   margin: 0 0 8px;
+   font-size: 0.88rem;
+   line-height: 1.5;
+   color: rgba(255, 255, 255, 0.82);
+}
+.kro-inline-trust-rec {
+   margin: 0 0 12px;
+   font-size: 0.88rem;
+   line-height: 1.5;
+   color: rgba(224, 242, 254, 0.92);
+}
+.kro-inline-trust-conf {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   gap: 10px 12px;
+   margin-bottom: 8px;
+}
+.kro-inline-trust-conf-label {
+   font-size: 0.72rem;
+   font-weight: 700;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   color: rgba(255, 255, 255, 0.55);
+   width: 100%;
+}
+.kro-inline-trust-conf-bar {
+   flex: 1;
+   min-width: 120px;
+   height: 8px;
+   border-radius: 999px;
+   background: rgba(0, 0, 0, 0.35);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   overflow: hidden;
+}
+.kro-inline-trust-conf-fill {
+   display: block;
+   height: 100%;
+   width: 0%;
+   border-radius: 999px;
+   background: linear-gradient(90deg, rgba(96, 165, 250, 0.85), rgba(52, 211, 153, 0.9));
+   transition: width 0.45s ease;
+}
+.kro-inline-trust-conf-num {
+   font-size: 0.95rem;
+   font-weight: 800;
+   font-variant-numeric: tabular-nums;
+   color: rgba(253, 224, 127, 0.95);
+}
+.kro-inline-trust-conf-note {
+   margin: 0;
+   font-size: 0.78rem;
+   line-height: 1.45;
+   color: rgba(255, 255, 255, 0.55);
+}
+
+.kro-inline-deception {
+   margin: 0 0 16px;
+   padding: 14px 16px;
+   border-radius: 12px;
+   border: 1px solid rgba(248, 113, 113, 0.28);
+   background: rgba(248, 113, 113, 0.08);
+}
+.kro-inline-deception-title {
+   margin: 0 0 8px;
+   font-size: 0.95rem;
+   font-weight: 800;
+   color: rgba(254, 226, 226, 0.98);
+}
+.kro-inline-deception-hook {
+   margin: 0 0 10px;
+   font-size: 0.86rem;
+   line-height: 1.5;
+   color: rgba(255, 255, 255, 0.82);
+}
+.kro-inline-deception-bullets {
+   margin: 0;
+   padding-left: 1.15rem;
+   line-height: 1.55;
+   color: rgba(255, 255, 255, 0.84);
+   font-size: 0.86rem;
+}
+
+.kro-inline-how {
+   margin: 0 0 16px;
+   padding: 10px 14px;
+   border-radius: 12px;
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   background: rgba(255, 255, 255, 0.03);
+}
+.kro-inline-how-summary {
+   cursor: pointer;
+   font-weight: 700;
+   font-size: 0.85rem;
+   color: rgba(224, 231, 255, 0.95);
+   list-style: none;
+}
+.kro-inline-how-summary::-webkit-details-marker {
+   display: none;
+}
+.kro-inline-how-list {
+   margin: 10px 0 4px;
+   padding-left: 1.15rem;
+   line-height: 1.55;
+   font-size: 0.82rem;
+   color: rgba(255, 255, 255, 0.72);
+}
 .kro-inline-summary-item {
    display: flex;
    flex-direction: column;
@@ -2976,6 +3153,27 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-check-pipeline-node--on::before {
    background: rgba(38, 22, 5, 0.75);
    box-shadow: 0 0 0 1px rgba(38, 22, 5, 0.35) inset, 0 0 14px rgba(245, 158, 11, 0.42);
+}
+@keyframes kro-pipeline-pulse {
+   0%,
+   100% {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 22px rgba(0, 0, 0, 0.2);
+   }
+   50% {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 28px rgba(245, 158, 11, 0.18);
+      border-color: rgba(253, 224, 127, 0.22);
+   }
+}
+.kro-check-pipeline--pulse {
+   animation: kro-pipeline-pulse 1.8s ease-in-out infinite;
+}
+.kro-check-progress-activity {
+   margin: 0 0 10px;
+   font-size: 13px;
+   line-height: 1.45;
+   font-weight: 600;
+   color: rgba(253, 224, 127, 0.88);
+   min-height: 1.4em;
 }
 .kro-check-progress-human {
    margin: 0 0 8px;

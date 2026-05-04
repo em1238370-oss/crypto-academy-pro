@@ -5080,6 +5080,154 @@ function kroMapFastRisk10ToUiStatus(score10) {
   return { status: 'По тексту спокойнее', code: 'SAFE' };
 }
 
+/** Короткая англ. подпись уровня для блока «как у брокерского отчёта» (0–100). */
+function kroHomeTrustRiskBandEn(statusCode) {
+  const c = String(statusCode || '').toUpperCase();
+  if (c === 'DANGER') return 'High risk';
+  if (c === 'SUSPICIOUS') return 'Elevated risk';
+  if (c === 'SAFE') return 'Lower risk';
+  return 'Uncertain';
+}
+
+function kroHomeTrustClip(s, maxLen) {
+  const t = String(s || '').replace(/\s+/g, ' ').trim();
+  if (!t) return '';
+  return t.length > maxLen ? `${t.slice(0, maxLen - 1)}…` : t;
+}
+
+/** 1–2 строки «как вас могут вести» по сработавшим паттернам (без обвинений вне текста). */
+function kroHomeDeceptionBulletsFromFlags(flags) {
+  const arr = Array.isArray(flags) ? flags : [];
+  const lines = [];
+  const seen = new Set();
+  const push = (s) => {
+    const t = String(s || '').trim();
+    if (!t || seen.has(t)) return;
+    seen.add(t);
+    lines.push(t);
+  };
+  for (const f of arr) {
+    const code = String((f && f.code) || '').toLowerCase();
+    if (code === 'guarantee') {
+      push('Обещают результат «как по заказу» — чтобы вы поверили, что риск уже кто-то другой взял на себя.');
+    } else if (code === 'x_promises') {
+      push('Показывают огромные проценты без контекста объёма и просадок — мозг считает это «почти бесплатными деньгами».');
+    } else if (code === 'fomo') {
+      push('Давят сроком и страхом упустить — чтобы вы решили быстрее, чем успеете проверить факты.');
+    } else if (code === 'vip_paid') {
+      push('Уводят в закрытый формат за деньги — там проще продать следующий шаг без публичной ответственности.');
+    } else if (code === 'signal_push') {
+      push('Подменяют обучение коротким «сделай как я» — вы торгуете вслепую, не понимая сценария выхода.');
+    }
+    if (lines.length >= 4) break;
+  }
+  if (!lines.length) {
+    push('Если в ленте мало явных триггеров, обман чаще прячут в личке, «менеджере» или следующем шаге воронки.');
+  }
+  return lines.slice(0, 4);
+}
+
+/** Строки ties_risk_factors «Заголовок: пояснение» → псевдо-флаги для trust_report (без цитаты). */
+function kroHomeTiesLinesToTrustFlags(ties) {
+  return (Array.isArray(ties) ? ties : []).slice(0, 6).map((line) => {
+    const s = String(line || '').trim();
+    const i = s.indexOf(':');
+    const title = i > 0 ? s.slice(0, i).trim() : 'Замечание';
+    const explanation = i > 0 ? s.slice(i + 1).trim() : s;
+    return {
+      code: 'context',
+      title: title || 'Замечание',
+      explanation: explanation || '',
+      evidence_snippet: '',
+    };
+  });
+}
+
+/**
+ * Данные для главной: доказательный формат (цитаты + «почему опасно») + честная уверенность + «как анализируем».
+ * Не заменяет юридический вердикт; опирается на выборку постов и эвристики.
+ */
+function kroHomeBuildTrustReportBundle(opts) {
+  const {
+    risk10,
+    statusCode,
+    flags,
+    livePass,
+    postsRead,
+    complaintsCount,
+  } = opts || {};
+  const r10 = Number(risk10);
+  const risk100 = Number.isFinite(r10) ? Math.round(Math.max(0, Math.min(10, r10)) * 10) : null;
+  const bandEn = risk100 == null ? 'Limited data' : kroHomeTrustRiskBandEn(statusCode);
+  const flagArr = Array.isArray(flags) ? flags : [];
+  const patterns = flagArr.slice(0, 6).map((f) => {
+    const rawSn = f && f.evidence_snippet ? String(f.evidence_snippet).trim() : '';
+    const quote = rawSn ? `«${kroHomeTrustClip(rawSn, 200)}»` : '';
+    const expl = String((f && f.explanation) || '').trim();
+    const why = expl ? kroHomeTrustClip(expl.split(/\n\n+/)[0], 360) : '';
+    return {
+      title: String((f && f.title) || (f && f.code) || 'Паттерн в тексте').trim(),
+      quote,
+      why_dangerous:
+        why
+        || 'Такие формулировки часто сопровождают давление на быстрое решение и скрытые платежи — без независимой проверки доверять нельзя.',
+    };
+  });
+  const postsN = Number(postsRead) || 0;
+  const hasQuotes = patterns.some((p) => p.quote && p.quote.length > 5);
+  let conf = livePass ? 44 : 32;
+  if (livePass && postsN >= 25) conf = 58 + Math.min(24, Math.floor(postsN / 5));
+  else if (livePass && postsN >= 12) conf = 52 + Math.min(22, postsN);
+  else if (livePass && postsN >= 8) conf = 50 + postsN;
+  else if (livePass && postsN >= 5) conf = 46 + postsN * 2;
+  if (flagArr.length) conf += 4 + flagArr.length * 2;
+  if (hasQuotes) conf += 7;
+  const comp = Number(complaintsCount);
+  if (Number.isFinite(comp) && comp >= 2) conf += 6;
+  if (Number.isFinite(comp) && comp >= 1) conf += 3;
+  conf = Math.round(Math.max(28, Math.min(94, conf)));
+  let confNote =
+    'Уверенность отражает только этот запрос: сколько постов удалось прочитать и сколько совпало с паттернами.';
+  if (conf >= 78) {
+    confNote = 'Уверенность выше: в отчёте есть цитаты из постов и несколько независимых совпадений с типичными приёмами.';
+  } else if (conf >= 58) {
+    confNote = 'Средняя уверенность: часть выводов опирается на ограниченную выборку — это честнее, чем притворяться «100% точностью».';
+  } else if (!livePass) {
+    confNote = 'Ниже обычного: живой текст ленты почти не попал — опираемся на жалобы и внешний контекст, цифра риска по тексту не считается.';
+  }
+  const summaryRu = flagArr.length
+    ? 'В выборке из постов видно несколько типичных для агрессивного продвижения приёмов.'
+    : 'В этой выборке постов сильных «триггерных» формулировок мало — это не гарантия честности, просто сигналов меньше.';
+  const rec =
+    risk100 != null && risk100 >= 70
+      ? 'Не инвестируйте и не переводите деньги без независимой проверки и понятных вам правил риска.'
+      : risk100 != null && risk100 >= 45
+        ? 'Имеет смысл проверить канал через сторонние источники и не спешить с оплатой «закрытого» доступа.'
+        : 'Даже при спокойном тексте держите базовую гигиену: сверяйте факты и не гонитесь за «гарантиями».';
+  return {
+    v: 1,
+    risk_score_100: risk100,
+    risk_band_en: bandEn,
+    confidence_percent: conf,
+    confidence_note_ru: confNote,
+    patterns,
+    summary_ru: summaryRu,
+    recommendation_ru: rec,
+    deception_narrative: {
+      title: 'Как тебя могут пытаться обмануть',
+      hook: flagArr.length
+        ? 'Сочетание приёмов ниже часто используют, чтобы снять критическое мышление и перевести вас к оплате.'
+        : 'Когда в ленте мало «кричащих» фраз, давление часто переносят в личку, «менеджера» или закрытую группу.',
+      bullets: kroHomeDeceptionBulletsFromFlags(flagArr),
+    },
+    how_we_analyze_ru: [
+      'Ищем в тексте постов типичные паттерны: гарантии дохода, «иксы», срочность, платный VIP, голые сигналы без риска.',
+      'Сверяем канал с жалобами и мониторингом в нашей базе.',
+      'Честно показываем, насколько полно удалось прочитать ленту в этом запросе — от этого зависит уверенность в оценке.',
+    ],
+  };
+}
+
 function kroDeepMetric(payload, field) {
   const dm = payload && payload.deep_metrics && typeof payload.deep_metrics === 'object'
     ? payload.deep_metrics
@@ -7395,6 +7543,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         };
         const readPathOut = sampleForFast.length > (Array.isArray(parsed.sample_posts) ? parsed.sample_posts.length : 0) ? 'telethon+public_snapshot' : 'telethon';
         console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=${readPathOut} posts_read=${postsRead}`);
+        const complaintsFormCount = reports.filter((r) => (r.source || '').toLowerCase() === 'form').length;
         return res.status(200).json(withQueueMeta({
           queue_status: 'done_sync',
           analysis,
@@ -7407,6 +7556,14 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           read_path: readPathOut,
           flags: signal.flags,
           citations: fastHuman.citations.slice(0, 3),
+          trust_report: kroHomeBuildTrustReportBundle({
+            risk10: risk,
+            statusCode: statusObj.code,
+            flags: signal.flags,
+            livePass: true,
+            postsRead,
+            complaintsCount: complaintsFormCount,
+          }),
           live_evidence: {
             live_pass: true,
             mode: readPathOut,
@@ -7532,6 +7689,9 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       console.warn(`[KRO analyze-channel ${analyzeLogId}] claude_skipped_no_api_key fallback=base_watch_reports_only`);
     }
 
+    const extComplaintsForm = reports.filter((r) => (r.source || '').toLowerCase() === 'form').length;
+    const pseudoFlags = kroHomeTiesLinesToTrustFlags(analysis.ties_risk_factors);
+
     return res.status(200).json(withQueueMeta({
       queue_status: 'done_sync',
       analysis,
@@ -7544,6 +7704,14 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       read_path: 'external_sources',
       flags: [],
       citations: [],
+      trust_report: kroHomeBuildTrustReportBundle({
+        risk10: null,
+        statusCode: 'UNAVAILABLE',
+        flags: pseudoFlags,
+        livePass: false,
+        postsRead: 0,
+        complaintsCount: extComplaintsForm,
+      }),
       live_evidence: {
         live_pass: false,
         mode: 'external_sources',
