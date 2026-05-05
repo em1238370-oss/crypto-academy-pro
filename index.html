@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260505-home-trust-v3-compact">
+   <link rel="stylesheet" href="styles.css?v=20260505-home-harvest-min-posts">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -1132,6 +1132,7 @@
                }
                function statusClass(s) {
                    var v = (s || '').toLowerCase();
+                   if (v.indexOf('мало текста') !== -1 || v.indexOf('недостаточно данных') !== -1) return 'watch';
                    if (v.indexOf('добросовест') !== -1) return 'clean';
                    if (v.indexOf('опасн') !== -1) return 'scam';
                    if (v.indexOf('подозр') !== -1) return 'risk';
@@ -2057,6 +2058,8 @@
                        }
                        var st = (ur && ur.verdict) ? String(ur.verdict) : (c.status || data.status || '—');
                        if (le && le.live_pass !== true && data.status) st = String(data.status);
+                       var trIns = data.trust_report && data.trust_report.insufficient_feed === true;
+                       if (trIns) st = 'Мало текста в выборке';
                        if (stEl) {
                            stEl.textContent = st;
                            stEl.className = 'kro-inline-status-pill kro-inline-status-pill--' + statusClass(st);
@@ -2066,36 +2069,60 @@
                            var lgBody = '';
                            var lgCls = 'kro-inline-live-gate';
                            if (le && le.live_pass === true) {
-                               lgCls += ' kro-inline-live-gate--live';
-                               lgTitle = kroPickVariant([
-                                   'Посты из канала попали в отчёт',
-                                   'Ленту успели прочитать',
-                                   'Есть свежий текст из Telegram',
-                               ], __kSeed + 7);
-                               var lPosts = le.posts_fetched != null && !isNaN(Number(le.posts_fetched)) ? Number(le.posts_fetched) : null;
-                               var lWin = le.analysis_window_days != null && !isNaN(Number(le.analysis_window_days)) ? Number(le.analysis_window_days) : null;
-                               var lSample = Array.isArray(le.sample_posts) ? le.sample_posts.filter(Boolean).slice(0, 2) : [];
-                               lgBody = kroPickVariant([
-                                   'Сервер взял текст из открытых постов и опирается на него',
-                                   'Публичные сообщения канала читали в момент проверки',
-                                   'Выводы ниже — по реальным фразам из ленты',
-                               ], __kSeed + 8);
-                               if (lPosts != null || lWin != null) {
-                                   lgBody += ' —';
-                                   if (lPosts != null) lgBody += ' ~' + lPosts + ' постов с текстом';
-                                   if (lWin != null) lgBody += (lPosts != null ? ', ' : ' ') + 'окно до ' + lWin + ' дн.';
-                                   lgBody += '.';
-                               } else {
-                                   lgBody += '.';
+                               var tgtMin = 15;
+                               if (lm && lm.target_posts_min != null && !isNaN(Number(lm.target_posts_min))) {
+                                   tgtMin = Math.max(5, Math.min(40, Number(lm.target_posts_min)));
                                }
-                               if (lSample.length) {
-                                   lgBody +=
-                                       ' ' +
-                                       kroPickVariant(['Удержали пример:', 'Цепляющий фрагмент:', 'Строка из ленты:'], __kSeed + 9) +
-                                       ' «' +
-                                       lSample[0].slice(0, 140) +
-                                       (lSample[0].length > 140 ? '…' : '') +
-                                       '».';
+                               var syncMs = lm && lm.sync_budget_ms != null && !isNaN(Number(lm.sync_budget_ms)) ? Number(lm.sync_budget_ms) : 420000;
+                               var syncMin = Math.max(1, Math.round(syncMs / 60000));
+                               var pCnt = le.posts_fetched != null && !isNaN(Number(le.posts_fetched)) ? Number(le.posts_fetched) : null;
+                               var partial = pCnt != null && pCnt < tgtMin;
+                               if (partial) {
+                                   lgCls += ' kro-inline-live-gate--partial';
+                               } else {
+                                   lgCls += ' kro-inline-live-gate--live';
+                               }
+                               if (partial) {
+                                   lgTitle = 'Ленту читали до лимита времени';
+                                   lgBody =
+                                       'Сервер использовал весь отведённый бюджет (~' +
+                                       syncMin +
+                                       ' мин) и собрал ~' +
+                                       pCnt +
+                                       ' постов с текстом (ориентир ' +
+                                       tgtMin +
+                                       '). Если в канале много медиа без подписи, число может быть ниже — это формат канала, а не «анализ за три секунды».';
+                               } else {
+                                   lgTitle = kroPickVariant([
+                                       'Посты из канала попали в отчёт',
+                                       'Ленту успели прочитать',
+                                       'Есть свежий текст из Telegram',
+                                   ], __kSeed + 7);
+                                   var lPosts = le.posts_fetched != null && !isNaN(Number(le.posts_fetched)) ? Number(le.posts_fetched) : null;
+                                   var lWin = le.analysis_window_days != null && !isNaN(Number(le.analysis_window_days)) ? Number(le.analysis_window_days) : null;
+                                   var lSample = Array.isArray(le.sample_posts) ? le.sample_posts.filter(Boolean).slice(0, 2) : [];
+                                   lgBody = kroPickVariant([
+                                       'Сервер взял текст из открытых постов и опирается на него',
+                                       'Публичные сообщения канала читали в момент проверки',
+                                       'Выводы ниже — по реальным фразам из ленты',
+                                   ], __kSeed + 8);
+                                   if (lPosts != null || lWin != null) {
+                                       lgBody += ' —';
+                                       if (lPosts != null) lgBody += ' ~' + lPosts + ' постов с текстом';
+                                       if (lWin != null) lgBody += (lPosts != null ? ', ' : ' ') + 'окно до ' + lWin + ' дн.';
+                                       lgBody += '.';
+                                   } else {
+                                       lgBody += '.';
+                                   }
+                                   if (lSample.length) {
+                                       lgBody +=
+                                           ' ' +
+                                           kroPickVariant(['Удержали пример:', 'Цепляющий фрагмент:', 'Строка из ленты:'], __kSeed + 9) +
+                                           ' «' +
+                                           lSample[0].slice(0, 140) +
+                                           (lSample[0].length > 140 ? '…' : '') +
+                                           '».';
+                                   }
                                }
                            } else {
                                lgCls += ' kro-inline-live-gate--not-live';

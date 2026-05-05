@@ -1368,6 +1368,12 @@ const KRO_HOME_QUICK_MS =
   Number.isFinite(kroHomeQuickMsParsed) && kroHomeQuickMsParsed >= 8000 && kroHomeQuickMsParsed <= 120000
     ? kroHomeQuickMsParsed
     : 30000;
+/** Целевой минимум постов с текстом на главной (Telethon + t.me/s), пока не исчерпан бюджет sync (~7 мин). */
+const kroHomeAnalyzeMinPostsParsed = parseInt(process.env.KRO_HOME_ANALYZE_MIN_POSTS || '', 10);
+const KRO_HOME_ANALYZE_MIN_POSTS =
+  Number.isFinite(kroHomeAnalyzeMinPostsParsed) && kroHomeAnalyzeMinPostsParsed >= 5 && kroHomeAnalyzeMinPostsParsed <= 40
+    ? kroHomeAnalyzeMinPostsParsed
+    : 15;
 /** Глубокий анализ ленты: верхняя граница ~30 мин, горизонт до 6 мес. (periodDays 180 в вызове). */
 const kroDeepCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_DEEP_CHECK_ONCE_TIMEOUT_MS || '1800000', 10);
 const kroDeepCheckOnceTimeoutMs =
@@ -5258,13 +5264,13 @@ function kroHomeBuildTrustReportBundle(opts) {
   const readPath = String(readPathOut || '').trim();
   const feedSample = kroHomeReadPathIsChannelFeedSample(readPath);
   const postsN = Number(postsRead) || 0;
-  const weakFeed = feedSample && postsN > 0 && postsN < 5;
-
   const flagArr = Array.isArray(flags) ? flags : [];
   const hasStrongEvidence = flagArr.some((f) => {
     const sn = f && f.evidence_snippet ? String(f.evidence_snippet).trim() : '';
     return sn.length >= 14;
   });
+  /** Одна короткая строка из ленты — не даём громкую цифру риска без явных цитат-улик. */
+  const weakFeed = feedSample && postsN === 1 && !hasStrongEvidence;
 
   const r10raw = Number(risk10);
   const r10 = Number.isFinite(r10raw) ? Math.max(1, Math.min(10, r10raw)) : null;
@@ -5307,10 +5313,12 @@ function kroHomeBuildTrustReportBundle(opts) {
   const editorVoice = [];
   const prefix = String(editor_voice_prefix_ru || '').trim();
   if (prefix) editorVoice.push(prefix);
-  if (livePass && postsN >= 5) {
+  if (livePass && postsN >= KRO_HOME_ANALYZE_MIN_POSTS) {
     editorVoice.push(`Прочитано ~${postsN} постов с текстом — оценка опирается на выборку, не на одну фразу.`);
-  } else if (livePass && postsN > 0) {
-    editorVoice.push(`В ленту попало мало постов (~${postsN}) — цифру риска по тексту не показываем, только факты и действия.`);
+  } else if (livePass && postsN > 1) {
+    editorVoice.push(`Собрано ~${postsN} постов с текстом (цель — от ${KRO_HOME_ANALYZE_MIN_POSTS}; если меньше — канал редко пишет текстом или много медиа без подписи).`);
+  } else if (livePass && postsN === 1) {
+    editorVoice.push('В выборку попал один пост с текстом — цифру риска по ленте не показываем, только факты и действия.');
   } else if (!livePass) {
     editorVoice.push('Ленту Telegram в этом ответе не читали — блок ниже по базе, жалобам и внешним данным.');
   }
@@ -5332,7 +5340,7 @@ function kroHomeBuildTrustReportBundle(opts) {
 
   let confNote = 'Чем больше постов с текстом и цитат — тем выше уверенность в цифре.';
   if (weakFeed && !hasStrongEvidence) {
-    confNote = 'Мало постов в выборке — цифру риска не ставим; смотрите пункты и «что делать».';
+    confNote = 'Один пост с текстом — цифру риска по ленте не ставим; смотрите чеклист и «что делать».';
   } else if (!livePass) {
     confNote = 'Лента в этом запросе не читалась — уверенность в «риске по постам» ниже; опирайтесь на жалобы и глубокую проверку.';
   } else if (conf >= 68) {
@@ -5358,7 +5366,10 @@ function kroHomeBuildTrustReportBundle(opts) {
   const hasRiskManagement = cr.some((c) => c && c.key === 'risk' && c.status === 'yes');
 
   let headlineRu = 'Недостаточно данных для оценки по ленте';
-  let sublineRu = `В выборку попало мало постов (~${postsN}). Смотрите риски и примеры ниже; для решения о деньгах — глубокая проверка или больше постов.`;
+  let sublineRu =
+    postsN === 1
+      ? 'В выборку попал один короткий пост — цифру риска по ленте не показываем; ниже чеклист и что делать.'
+      : `В выборку почти не попал текст постов (~${postsN}). Смотрите блоки ниже; для денег — глубокая проверка.`;
   let summaryRu = 'По этой выборке нельзя честно свести всё к одной цифре риска.';
   let forYouRu = 'Без нормальной выборки из ленты легко ошибиться с входом — не копируйте сделки вслепую.';
   let rec = 'Не копируйте сделки без своих стопов и размера позиции; откройте канал вручную или запустите глубокий разбор.';
@@ -5675,6 +5686,55 @@ async function kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, min
     if (snap && Array.isArray(snap.snippets) && snap.snippets.length && pushSnips(snap.snippets)) break;
   }
   return out.length ? out : null;
+}
+
+/**
+ * Пока есть время в sync-окне — добираем публичные сниппеты, чтобы приблизиться к targetPosts (не выходим из deadline).
+ */
+async function kroHomeHarvestUntilTargetPosts(opts) {
+  const {
+    channelForOnce,
+    deadline,
+    analyzeLogId,
+    targetPosts,
+    parsed,
+    minReadablePosts,
+    channelDisplay,
+  } = opts || {};
+  let curParsed = parsed && typeof parsed === 'object' ? { ...parsed } : {};
+  const tgt = Math.max(1, Number(targetPosts) || 1);
+  const minR = Math.max(1, Number(minReadablePosts) || 1);
+  let harvestedAgg = null;
+  let iter = 0;
+  while (deadline - Date.now() > 8000 && iter < 28) {
+    iter += 1;
+    const merged = kroHomeGreedyMergeSamplesFromParsed(curParsed, minR);
+    const n = merged.length ? merged.length : (Number(curParsed.posts_fetched || 0) || 0);
+    if (n >= tgt) break;
+    const batchNeed = Math.min(tgt, Math.max(minR, n + 4));
+    const more = await kroHarvestPublicSnippetsUntilEnough(
+      channelForOnce,
+      deadline,
+      batchNeed,
+      `${analyzeLogId}:fill${iter}`,
+    );
+    if (!more || !more.length) break;
+    if (!harvestedAgg) harvestedAgg = [];
+    for (const s of more) {
+      const t = String(s || '').trim();
+      if (!t) continue;
+      if (harvestedAgg.some((x) => x.slice(0, 280) === t.slice(0, 280))) continue;
+      harvestedAgg.push(t);
+      if (harvestedAgg.length >= 220) break;
+    }
+    curParsed = kroMergeSnippetsIntoParsedBase(curParsed, more, channelDisplay || channelForOnce);
+    const merged2 = kroHomeGreedyMergeSamplesFromParsed(curParsed, minR);
+    curParsed = { ...curParsed, sample_posts: merged2, posts_fetched: merged2.length };
+    if (Array.isArray(curParsed._sample_texts)) delete curParsed._sample_texts;
+    const n2 = merged2.length;
+    if (n2 <= n) break;
+  }
+  return { parsed: curParsed, harvestedExtra: harvestedAgg };
 }
 
 async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
@@ -8216,7 +8276,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     const sn = f && f.evidence_snippet ? String(f.evidence_snippet).trim() : '';
     return sn.length >= 14;
   });
-  const weakFeedNoScore = feedSample && postsReadN > 0 && postsReadN < 5 && !strongPostEvidence
+  const weakFeedNoScore = feedSample && postsReadN === 1 && !strongPostEvidence
     && String(parsedForFast.risk_verdict || '').toLowerCase() !== 'scam';
 
   analysis.basic_info = [
@@ -8260,11 +8320,11 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
   };
   if (weakFeedNoScore) {
     risk = null;
-    statusObj = { status: 'Недостаточно данных по ленте', code: 'INSUFFICIENT_FEED' };
+    statusObj = { status: 'Мало текста в выборке', code: 'INSUFFICIENT_FEED' };
     analysis.conclusion = {
       status: KRO_V0_STATUS.watch,
       reasons: [
-        `В выборку попало мало постов с текстом (~${postsReadN}); числовую оценку риска по ленте не ставим — это честнее, чем «угадывать» по одной фразе.`,
+        'В выборку попал один пост с текстом; числовую оценку по ленте не ставим — так честнее, чем «угадывать» по одной строке.',
         ...fastHuman.reasons.slice(0, 2),
       ].filter(Boolean).slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
     };
@@ -8348,6 +8408,8 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       analysis_window_days: Number(parsedForFast.analysis_window_days || 30),
       home_quick_live: homeLivePass,
       complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
+      target_posts_min: KRO_HOME_ANALYZE_MIN_POSTS,
+      sync_budget_ms: KRO_ANALYZE_CHANNEL_SYNC_MS,
     },
     analysis_basis: {
       label: basisLabel,
@@ -8616,6 +8678,41 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           `[KRO analyze-channel ${analyzeLogId}] after_public_harvest snippets=${harvestedSnippets.length} posts_read=${postsRead} enough=${enough}`,
         );
       }
+    }
+
+    if (deadline - Date.now() > 3000 && postsRead < KRO_HOME_ANALYZE_MIN_POSTS) {
+      const fill = await kroHomeHarvestUntilTargetPosts({
+        channelForOnce,
+        deadline,
+        analyzeLogId,
+        targetPosts: KRO_HOME_ANALYZE_MIN_POSTS,
+        parsed,
+        minReadablePosts,
+        channelDisplay,
+      });
+      parsed = fill.parsed;
+      const mergedFill = kroHomeGreedyMergeSamplesFromParsed(parsed, minTelethonPosts);
+      postsRead = mergedFill.length ? mergedFill.length : Number(parsed.posts_fetched || 0);
+      sample = mergedFill.length ? mergedFill : (Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : []);
+      if (mergedFill.length) {
+        parsed.sample_posts = mergedFill;
+        parsed.posts_fetched = postsRead;
+      }
+      if (parsed && typeof parsed === 'object' && Array.isArray(parsed._sample_texts)) {
+        delete parsed._sample_texts;
+      }
+      if (fill.harvestedExtra && fill.harvestedExtra.length) {
+        harvestedSnippets = harvestedSnippets && harvestedSnippets.length
+          ? [...harvestedSnippets, ...fill.harvestedExtra]
+          : fill.harvestedExtra.slice();
+      }
+      enough =
+        postsRead >= minTelethonPosts &&
+        sample.length >= 1 &&
+        (parsed.found === true || (harvestedSnippets && harvestedSnippets.length >= minReadablePosts));
+      console.log(
+        `[KRO analyze-channel ${analyzeLogId}] after_target_fill posts_read=${postsRead} target=${KRO_HOME_ANALYZE_MIN_POSTS} enough=${enough}`,
+      );
     }
 
     let parsedForFast = parsed;
