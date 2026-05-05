@@ -7125,6 +7125,42 @@ async function kroFetchSiteMentionsByUsername(usernameKey, budgetMs) {
   return out;
 }
 
+/** GET https://host/username — быстрая проверка упоминаний (без Telegram). */
+async function kroFetchMentionPathPage(host, slug, timeoutMs) {
+  const cleanHost = String(host || '').replace(/^https?:\/\//i, '').replace(/\/+$/, '').trim();
+  const cleanSlug = String(slug || '').replace(/^@+/, '').replace(/[^\w]/g, '').trim();
+  if (!cleanHost || !cleanSlug) return { url: '', ok: false, preview: '', error: 'bad_url' };
+  const url = `https://${cleanHost}/${encodeURIComponent(cleanSlug)}`;
+  const budget = Math.min(15000, Math.max(800, Number(timeoutMs) || 8000));
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), budget);
+  try {
+    const r = await fetch(url, {
+      signal: ctl.signal,
+      headers: {
+        'user-agent': 'Mozilla/5.0 (compatible; KRO-HomeQuick/1.0)',
+        accept: 'text/html,text/plain,*/*',
+      },
+    });
+    const txt = await r.text();
+    const body = (txt || '').slice(0, 4000);
+    const low = body.toLowerCase();
+    const needle = cleanSlug.toLowerCase();
+    const mentioned = Boolean(needle && low.includes(needle));
+    return { url, ok: r.ok, http_status: r.status, mentioned, preview: body.slice(0, 1200) };
+  } catch (e) {
+    return {
+      url,
+      ok: false,
+      mentioned: false,
+      preview: '',
+      error: (e && e.message) ? String(e.message).slice(0, 120) : 'fetch_error',
+    };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 function kroMapRuRiskLabelToConclusion(ru) {
   const s = String(ru || '').toLowerCase();
   if (s.includes('опасн') || s.includes('скам')) return KRO_V0_STATUS.scam;
@@ -8017,27 +8053,89 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     telBudgetMs,
     t0,
     trustReportExtra,
+    claudeOverlay,
   } = opts || {};
   const analysis = kroV0BuildAnalysisFromLiveParsed(parsedForFast, key);
   if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
-  const signal = kroCollectSuspiciousFlagsFromTexts(sampleForFast);
-  const fastHuman = kroBuildFastCriteriaFromTexts(sampleForFast, {
+  let signal = kroCollectSuspiciousFlagsFromTexts(sampleForFast);
+  let fastHuman = kroBuildFastCriteriaFromTexts(sampleForFast, {
     hasSignalOffer: parsedForFast.has_signal_offer === true,
     onlyProfitsFlag: parsedForFast.only_profits_flag === true,
     fomoPct: parsedForFast.fomo_pct,
     adsRatio: parsedForFast.ads_ratio,
   });
-  const risk = fastHuman.score10;
-  const statusObj = kroMapFastRisk10ToUiStatus(risk);
+  let risk = fastHuman.score10;
+  let statusObj = kroMapFastRisk10ToUiStatus(risk);
+  const co = claudeOverlay && typeof claudeOverlay === 'object' ? claudeOverlay : null;
+  if (readPathOut === 'sheets_sites_claude' && co) {
+    const r100 = Number(co.risk_index);
+    if (Number.isFinite(r100)) {
+      risk = Math.max(0, Math.min(10, Math.round(r100 / 10)));
+      statusObj = kroMapRiskToUiStatus(Number(co.risk_index));
+    }
+    const stRu = String(co.status_ru || '').trim();
+    if (stRu) {
+      analysis.conclusion = analysis.conclusion && typeof analysis.conclusion === 'object' ? analysis.conclusion : { status: KRO_V0_STATUS.watch, reasons: [] };
+      analysis.conclusion.status = kroMapRuRiskLabelToConclusion(stRu);
+    }
+    if (Array.isArray(co.basic_info_lines) && co.basic_info_lines.length) {
+      const extra = co.basic_info_lines.map((x) => String(x || '').trim()).filter(Boolean);
+      analysis.basic_info = [`Канал: ${channelDisplay}`, ...extra].slice(0, 8);
+    }
+    if (Array.isArray(co.conclusion_reasons) && co.conclusion_reasons.length) {
+      analysis.conclusion = analysis.conclusion && typeof analysis.conclusion === 'object' ? analysis.conclusion : { status: KRO_V0_STATUS.watch, reasons: [] };
+      analysis.conclusion.reasons = [
+        ...co.conclusion_reasons.map((x) => String(x || '').trim()).filter(Boolean),
+        ...(analysis.conclusion.reasons || []),
+      ].slice(0, KRO_V0_MAX_CONCLUSION_REASONS);
+    }
+    if (Array.isArray(co.flags) && co.flags.length) {
+      const ties = co.flags.map((f) => `${String(f.title || f.code || 'флаг').trim()}: ${String(f.explanation || '').trim()}`.trim()).filter(Boolean);
+      if (ties.length) analysis.ties_risk_factors = ties.slice(0, 8);
+    }
+    const claudeCites = Array.isArray(co.citations)
+      ? co.citations.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 8)
+      : [];
+    if (claudeCites.length) {
+      const behave = claudeCites.map((x) => `Claude (по данным): «${x.slice(0, 220)}»`);
+      analysis.content_behavior = [...behave, ...(Array.isArray(analysis.content_behavior) ? analysis.content_behavior : [])].slice(0, 10);
+    }
+    const claudeFlagObjs = Array.isArray(co.flags)
+      ? co.flags
+        .filter((f) => f && (f.title || f.code))
+        .map((f) => ({
+          code: String(f.code || 'claude').trim() || 'claude',
+          title: String(f.title || f.code || 'Фактор').trim(),
+          explanation: String(f.explanation || '').trim() || 'По смыслу из ответа модели.',
+          weight: 12,
+          evidence_snippet: '',
+          matched_keyword: '',
+        }))
+        .slice(0, 6)
+      : [];
+    if (claudeFlagObjs.length) {
+      signal = { flags: claudeFlagObjs, examples: claudeCites, risk: null };
+    }
+    fastHuman = {
+      ...fastHuman,
+      summaryLine: stRu || fastHuman.summaryLine,
+      citations: claudeCites.length ? claudeCites : fastHuman.citations,
+    };
+  }
   analysis.basic_info = [
     `Канал: ${channelDisplay}`,
     `Чем занимается канал: ${fastHuman.topicLine}`,
-    readPathOut === 'dataset_evidence'
-      ? `Разобрано ${postsRead} фрагментов текста из базы и жалоб (посты Telegram в этом запуске с сервера не подтянулись).`
-      : `Прочитано ${postsRead} сообщений с текстом за период до ${Number(parsedForFast.analysis_window_days || 30)} дней.`,
+    readPathOut === 'sheets_sites_claude'
+      ? `Быстрый разбор (~30 с): таблицы сервиса + страницы vklader.com и forteck.net + Claude. Посты Telegram не запрашивали.`
+      : readPathOut === 'dataset_evidence'
+        ? `Разобрано ${postsRead} фрагментов текста из базы и жалоб (посты Telegram в этом запуске с сервера не подтянулись).`
+        : `Прочитано ${postsRead} сообщений с текстом за период до ${Number(parsedForFast.analysis_window_days || 30)} дней.`,
     ...(Array.isArray(analysis.basic_info) ? analysis.basic_info.slice(1, 3) : []),
   ].filter(Boolean).slice(0, 6);
-  const citeLab = readPathOut === 'dataset_evidence' ? 'Фрагмент из данных' : 'Пример из ленты';
+  const citeLab =
+    readPathOut === 'dataset_evidence' || readPathOut === 'sheets_sites_claude'
+      ? 'Фрагмент из данных'
+      : 'Пример из ленты';
   analysis.content_behavior = [
     ...kroFormatFastCriteriaLines(fastHuman.criteria),
     ...fastHuman.citations.map((x) => `${citeLab}: «${String(x).slice(0, 220)}»`),
@@ -8066,25 +8164,31 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
   const complaintsFormCount = reports.filter((r) => (r.source || '').toLowerCase() === 'form').length;
   const telSec = Math.max(0, Math.round(Number(telBudgetMs || 0) / 1000));
   const liveReason =
-    readPathOut === 'dataset_evidence'
-      ? `Собрано ${postsRead} фрагментов из базы и жалоб — посты Telegram с сервера в этом запуске не прочитаны (сеть/API).`
-      : readPathOut === 'public_snapshot'
+    readPathOut === 'sheets_sites_claude'
+      ? `За один ответ: scam_base, channels_watch, reports, GET vklader.com/${key} и forteck.net/${key}, затем Claude. Telegram не использовали.`
+      : readPathOut === 'dataset_evidence'
+        ? `Собрано ${postsRead} фрагментов из базы и жалоб — посты Telegram с сервера в этом запуске не прочитаны (сеть/API).`
+        : readPathOut === 'public_snapshot'
         ? `Считано ${postsRead} фрагментов с текстом с открытой страницы канала (t.me/s); API Telegram на сервере в этом запуске не использовали.`
         : readPathOut === 'telethon+public_snapshot'
           ? `Считано ${postsRead} фрагментов с текстом: чтение в Telegram до ~${telSec} с плюс открытая страница.`
           : `Считано ${postsRead} фрагментов с текстом (чтение в Telegram, до ~${telSec} с).`;
   const basisLabel =
-    readPathOut === 'dataset_evidence'
-      ? 'Оценка по реальным строкам из базы и жалоб; лента Telegram в этом запросе недоступна.'
-      : readPathOut === 'public_snapshot'
+    readPathOut === 'sheets_sites_claude'
+      ? 'Оценка по данным из Google Sheets, двух внешних страниц и Claude; лента Telegram не читалась.'
+      : readPathOut === 'dataset_evidence'
+        ? 'Оценка по реальным строкам из базы и жалоб; лента Telegram в этом запросе недоступна.'
+        : readPathOut === 'public_snapshot'
         ? 'Вывод по тексту с открытой страницы канала (публичные фрагменты ленты).'
         : readPathOut === 'telethon+public_snapshot'
           ? 'Вывод по тексту из Telegram; при нехватке объёма добавлены фрагменты с открытой страницы.'
           : 'Вывод по тексту сообщений из Telegram.';
   const basisSources =
-    readPathOut === 'dataset_evidence'
-      ? ['scam_base', 'channels_watch', 'reports']
-      : readPathOut === 'public_snapshot'
+    readPathOut === 'sheets_sites_claude'
+      ? ['scam_base', 'channels_watch', 'reports', 'vklader.com', 'forteck.net', 'claude']
+      : readPathOut === 'dataset_evidence'
+        ? ['scam_base', 'channels_watch', 'reports']
+        : readPathOut === 'public_snapshot'
         ? ['t.me/s']
         : readPathOut === 'telethon+public_snapshot'
           ? ['telethon', 't.me/s']
@@ -8105,7 +8209,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       risk10: risk,
       statusCode: statusObj.code,
       flags: signal.flags,
-      livePass: true,
+      livePass: readPathOut !== 'sheets_sites_claude',
       postsRead,
       complaintsCount: complaintsFormCount,
       criteriaRows: fastHuman.criteria,
@@ -8119,7 +8223,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
         : '',
     }),
     live_evidence: {
-      live_pass: true,
+      live_pass: readPathOut !== 'sheets_sites_claude',
       mode: readPathOut,
       reason: liveReason,
       sample_posts: sampleForFast.slice(0, 3),
@@ -8129,7 +8233,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     live_metrics: {
       posts_fetched: postsRead,
       analysis_window_days: Number(parsedForFast.analysis_window_days || 30),
-      home_quick_live: true,
+      home_quick_live: readPathOut !== 'sheets_sites_claude',
       complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
     },
     analysis_basis: {
@@ -8153,58 +8257,21 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
   }
 
   let queuedRequestId = null;
-  let queuedUsername = `@${key}`;
-  let queueAppendOk = false;
-  try {
-    const client = await getKroSheetsClient();
-    if (!client || !kroSheetId) {
-      return res.status(503).json({ error: 'sheets_unavailable', message_ru: 'Google Sheets недоступен.' });
-    }
-    const requestId = kroCheckQueueRequestId(key);
-    const username = `@${key}`;
-    queuedUsername = username;
-    const nowIso = new Date().toISOString();
-    await client.sheets.spreadsheets.values.append({
-      spreadsheetId: kroSheetId,
-      range: kroCheckRequestsRange,
-      valueInputOption: 'RAW',
-      insertDataOption: 'INSERT_ROWS',
-      requestBody: {
-        values: [[requestId, username, 'pending', '', nowIso]],
-      },
-    });
-    queuedRequestId = requestId;
-    queueAppendOk = true;
-  } catch (e) {
-    console.error('KRO analyze-channel queue error:', e);
-    // Не прерываем fast: пользователь должен получить лучший доступный результат даже если deep-очередь недоступна.
-  }
+  const queueAppendOk = false;
 
   const t0 = Date.now();
-  const deadline = t0 + KRO_ANALYZE_CHANNEL_SYNC_MS;
+  const quickBudgetMs = Math.min(30000, Math.max(8000, parseInt(process.env.KRO_HOME_QUICK_MS || '30000', 10) || 30000));
+  const deadline = t0 + quickBudgetMs;
   const channelDisplay = normalized.startsWith('@') ? normalized : `@${key}`;
-  const channelForOnce = (() => {
-    const k = String(key || '');
-    if (k.startsWith('t.me/')) return normalized.startsWith('t.me/') ? normalized : k;
-    if (/^joinchat\//i.test(k)) return `t.me/${k}`;
-    return normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${k}`;
-  })();
-  const minReadablePosts = 1;
-  const minTelethonPosts = minReadablePosts;
   const analyzeLogId = `${key}:${Date.now().toString(36)}`;
   const withQueueMeta = (payload) => ({
     ...payload,
-    request_id: queuedRequestId,
-    deep_pending: queueAppendOk,
-    deep_status: queueAppendOk ? 'pending' : 'queue_unavailable',
-    deep_note: queueAppendOk
-      ? 'Глубокий анализ запущен параллельно через очередь.'
-      : 'Очередь deep сейчас недоступна; показан только быстрый результат.',
+    request_id: null,
+    deep_pending: false,
+    deep_status: 'off',
+    deep_note: 'Быстрый режим (~30 с): scam_base, channels_watch, reports, vklader.com/username, forteck.net/username и Claude. Без Telegram и без очереди.',
   });
-  console.log(`[KRO analyze-channel ${analyzeLogId}] start channel=${channelDisplay}`);
-
-  const buildExternalDisclaimer = () =>
-    'Анализ по внешним источникам, живая лента недоступна.';
+  console.log(`[KRO analyze-channel ${analyzeLogId}] home_quick_sheets_sites_claude channel=${channelDisplay} budget_ms=${quickBudgetMs}`);
 
   try {
     const sheetsClient = await getKroSheetsClient();
@@ -8226,157 +8293,103 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     const displayCh = (latestProfile && latestProfile.username) ? latestProfile.username : channelDisplay;
     const reports = await getAllReportsForChannel(sheetsClient, displayCh);
 
-    /** Сначала до двух проходов жадного Telethon; затем при необходимости — несколько попыток t.me/s до набора текста. */
-    const telethonReserveMs = Math.min(330000, Math.max(120000, Math.floor(KRO_ANALYZE_CHANNEL_SYNC_MS * 0.78)));
-    const telBest = kroRunHomeGreedyTelethonBestEffort(channelForOnce, deadline, telethonReserveMs, analyzeLogId, minTelethonPosts);
-    let parsed = telBest.parsed;
-    const telethonOnlySnippetCount = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean).length : 0;
-    const mergedSample = kroHomeGreedyMergeSamplesFromParsed(parsed, minTelethonPosts);
-    let postsRead = mergedSample.length ? mergedSample.length : Number(parsed.posts_fetched || 0);
-    let sample = mergedSample.length ? mergedSample : (Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : []);
-    if (mergedSample.length) {
-      parsed.sample_posts = mergedSample;
-      parsed.posts_fetched = postsRead;
-    }
-    if (parsed && typeof parsed === 'object' && Array.isArray(parsed._sample_texts)) {
-      delete parsed._sample_texts;
-    }
+    const perSite = Math.floor(Math.max(2500, deadline - Date.now() - 9000) / 2);
+    const [vkPage, ftPage] = await Promise.all([
+      kroFetchMentionPathPage('vklader.com', key, perSite),
+      kroFetchMentionPathPage('forteck.net', key, perSite),
+    ]);
+
+    const claudePayload = {
+      mode: 'home_quick_sheets_sites',
+      channel: channelDisplay,
+      slug: key,
+      scam_base: latestProfile
+        ? {
+            status: latestProfile.status,
+            verdict: latestProfile.verdict,
+            risk_score: latestProfile.risk_score,
+            complaints: latestProfile.complaints,
+            source_primary: latestProfile.source_primary,
+            quote: latestProfile.quote,
+          }
+        : null,
+      channels_watch: watchRow
+        ? {
+            status: watchRow.status,
+            activity_summary: watchRow.activity_summary,
+            reviews_summary: watchRow.reviews_summary,
+            status_reason: watchRow.status_reason,
+          }
+        : null,
+      reports: reports.slice(0, 24).map((r) => ({
+        date: r.date,
+        description: (r.description || '').slice(0, 400),
+        status: r.status,
+        source: r.source,
+      })),
+      site_pages: [
+        {
+          host: 'vklader.com',
+          url: vkPage.url,
+          http_status: vkPage.http_status,
+          ok: vkPage.ok,
+          mentioned: vkPage.mentioned,
+          preview: String(vkPage.preview || '').slice(0, 2000),
+        },
+        {
+          host: 'forteck.net',
+          url: ftPage.url,
+          http_status: ftPage.http_status,
+          ok: ftPage.ok,
+          mentioned: ftPage.mentioned,
+          preview: String(ftPage.preview || '').slice(0, 2000),
+        },
+      ],
+    };
+
+    const claudeRemain = Math.max(2000, deadline - Date.now() - 300);
+    const claudeJson = await kroAnalyzeChannelWithClaudeFast(claudePayload, claudeRemain);
     console.log(
-      `[KRO analyze-channel ${analyzeLogId}] telethon home_greedy budget=${telBest.budgetMs}ms wall=${telBest.wallMs}ms ok=${parsed._check_once_ok === true} found=${parsed.found === true} posts_read=${postsRead} error=${JSON.stringify(parsed.error || '')} sample=${JSON.stringify(sample[0] ? sample[0].slice(0, 180) : '')}`,
+      `[KRO analyze-channel ${analyzeLogId}] claude_ok=${!!claudeJson} vk_ok=${vkPage.ok} ft_ok=${ftPage.ok}`,
     );
 
-    let harvestedSnippets = null;
-    let enough =
-      parsed._check_once_ok === true &&
-      parsed.found === true &&
-      postsRead >= minTelethonPosts &&
-      sample.length >= 1;
-    const telethonWeak =
-      parsed._check_once_ok !== true ||
-      parsed.found !== true ||
-      parsed.check_once_timed_out === true ||
-      postsRead < minTelethonPosts;
-    if ((telethonWeak || !enough) && deadline - Date.now() > 400) {
-      harvestedSnippets = await kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, minReadablePosts, analyzeLogId);
-      if (harvestedSnippets && harvestedSnippets.length) {
-        parsed = kroMergeSnippetsIntoParsedBase(parsed, harvestedSnippets, channelDisplay);
-        const mergedAfterHarvest = kroHomeGreedyMergeSamplesFromParsed(parsed, minTelethonPosts);
-        postsRead = mergedAfterHarvest.length ? mergedAfterHarvest.length : Number(parsed.posts_fetched || 0);
-        sample = mergedAfterHarvest.length ? mergedAfterHarvest : (Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : []);
-        if (mergedAfterHarvest.length) {
-          parsed.sample_posts = mergedAfterHarvest;
-          parsed.posts_fetched = postsRead;
-        }
-        if (parsed && typeof parsed === 'object' && Array.isArray(parsed._sample_texts)) {
-          delete parsed._sample_texts;
-        }
-        enough =
-          postsRead >= minTelethonPosts &&
-          sample.length >= 1 &&
-          (parsed.found === true || (harvestedSnippets && harvestedSnippets.length >= minReadablePosts));
-        console.log(
-          `[KRO analyze-channel ${analyzeLogId}] after_public_harvest snippets=${harvestedSnippets.length} posts_read=${postsRead} enough=${enough}`,
-        );
-      }
-    }
-
-    let parsedForFast = parsed;
-    let sampleForFast = sample;
-    let readPathOut = 'telethon';
-    if (enough) {
-      const hadTelethonText = telethonOnlySnippetCount > 0;
-      const usedPublicHarvest = !!(harvestedSnippets && harvestedSnippets.length);
-      if (!hadTelethonText && usedPublicHarvest) {
-        readPathOut = 'public_snapshot';
-      } else if (usedPublicHarvest) {
-        readPathOut = 'telethon+public_snapshot';
-      } else {
-        readPathOut = 'telethon';
-      }
-      console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=${readPathOut} posts_read=${postsRead}`);
-      return res.status(200).json(
-        kroBuildAnalyzeChannelLiveSuccessBundle({
-          withQueueMeta,
-          channelDisplay,
-          key,
-          watchRow,
-          reports,
-          parsedForFast,
-          sampleForFast,
-          postsRead,
-          readPathOut,
-          telBudgetMs: telBest.budgetMs,
-          t0,
-        }),
-      );
-    }
-
-    const pubOnly =
-      harvestedSnippets && harvestedSnippets.length >= minReadablePosts
-        ? kroBuildParsedFromPublicSnapshotOnly({ snippets: harvestedSnippets }, channelDisplay, minReadablePosts)
-        : kroBuildParsedFromPublicSnapshotOnly(
-            await kroFetchTelegramPublicSnapshot(channelForOnce, {
-              timeoutMs: Math.min(60000, Math.max(1500, deadline - Date.now() - 400)),
-              logLabel: `${analyzeLogId}:pub_fallback`,
-            }),
-            channelDisplay,
-            minReadablePosts,
-          );
-    if (pubOnly) {
-      const pPub = pubOnly;
-      const sPub = Array.isArray(pPub.sample_posts) ? pPub.sample_posts.filter(Boolean) : [];
-      const nPub = sPub.length;
-      console.log(
-        `[KRO analyze-channel ${analyzeLogId}] public_snapshot_only posts_read=${nPub} (Telethon не дал ${minReadablePosts} постов)`,
-      );
-      return res.status(200).json(
-        kroBuildAnalyzeChannelLiveSuccessBundle({
-          withQueueMeta,
-          channelDisplay,
-          key,
-          watchRow,
-          reports,
-          parsedForFast: pPub,
-          sampleForFast: sPub,
-          postsRead: nPub,
-          readPathOut: 'public_snapshot',
-          telBudgetMs: telBest.budgetMs,
-          t0,
-        }),
-      );
-    }
-
-    const partialSnipsForClaude = harvestedSnippets && harvestedSnippets.length ? harvestedSnippets.slice(0, 3) : [];
     const evidenceSnips = kroBuildEvidenceSnippetsFromDataset({
       latestProfile,
       reports,
       channelDisplay,
     });
-    const parsedDs = kroBuildParsedFromDatasetSnippets(evidenceSnips, channelDisplay);
-    const sampleDs = Array.isArray(parsedDs.sample_posts) ? parsedDs.sample_posts.filter(Boolean) : [];
-    const postsDs = sampleDs.length || Number(parsedDs.posts_fetched || 0) || 0;
-    const dsNote =
-      'Прямое чтение постов Telegram с этого сервера не удалось за отведённое время. Ниже — разбор по реальным фрагментам из нашей базы и жалоб (не выдумываем цитаты из ленты). Когда сеть к Telegram доступна, сравните с живой лентой или запустите глубокий режим на странице канала.';
+    const pathSnips = [];
+    if (vkPage.preview) {
+      pathSnips.push(`[HTML vklader.com/${key}, http ${vkPage.http_status || '—'}] ${String(vkPage.preview).slice(0, 700)}`);
+    }
+    if (ftPage.preview) {
+      pathSnips.push(`[HTML forteck.net/${key}, http ${ftPage.http_status || '—'}] ${String(ftPage.preview).slice(0, 700)}`);
+    }
+    const mergedSnips = [...evidenceSnips, ...pathSnips];
+    const parsedSimple = kroBuildParsedFromDatasetSnippets(mergedSnips, channelDisplay);
+    parsedSimple.read_path = 'sheets_sites_claude';
+    const sampleArr = Array.isArray(parsedSimple.sample_posts) ? parsedSimple.sample_posts.filter(Boolean) : [];
+    const postsN = sampleArr.length || Number(parsedSimple.posts_fetched || 0) || 0;
 
-    console.log(
-      `[KRO analyze-channel ${analyzeLogId}] dataset_evidence_fallback posts=${postsDs} evidence_raw=${evidenceSnips.length}`,
-    );
-    return res.status(200).json(
-      kroBuildAnalyzeChannelLiveSuccessBundle({
-        withQueueMeta,
-        channelDisplay,
-        key,
-        watchRow,
-        reports,
-        parsedForFast: parsedDs,
-        sampleForFast: sampleDs,
-        postsRead: postsDs,
-        readPathOut: 'dataset_evidence',
-        telBudgetMs: telBest.budgetMs,
-        t0,
-        trustReportExtra: { editor_voice_prefix_ru: dsNote },
-      }),
-    );
+    const voicePrefix =
+      `За ~${Math.round(quickBudgetMs / 1000)} с собрали: scam_base, channels_watch, reports, GET https://vklader.com/${key} и https://forteck.net/${key}, затем Claude. Посты Telegram и t.me не читали — только эти источники.`;
+
+    const bundle = kroBuildAnalyzeChannelLiveSuccessBundle({
+      withQueueMeta,
+      channelDisplay,
+      key,
+      watchRow,
+      reports,
+      parsedForFast: parsedSimple,
+      sampleForFast: sampleArr,
+      postsRead: postsN,
+      readPathOut: 'sheets_sites_claude',
+      telBudgetMs: 0,
+      t0,
+      trustReportExtra: { editor_voice_prefix_ru: voicePrefix },
+      claudeOverlay: claudeJson,
+    });
+    return res.status(200).json({ ...bundle, claude_home_quick: claudeJson });
   } catch (e) {
     console.error(`KRO analyze-channel sync error [${analyzeLogId}]:`, e);
     return res.status(500).json(withQueueMeta({
