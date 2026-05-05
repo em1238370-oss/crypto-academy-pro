@@ -5200,6 +5200,8 @@ function kroHomeExternalChecklistRows(ties, complaintsCount) {
   }
   return rows.slice(0, 6);
 }
+
+function kroHomeCriteriaStatusWordRu(status) {
   if (status === 'yes') return 'да';
   if (status === 'partial') return 'частично';
   return 'нет';
