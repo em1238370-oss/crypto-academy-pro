@@ -6655,6 +6655,9 @@ app.get('/api/kro/live-counter', async (req, res) => {
       const cycleVolumeNotice = kroBuildCycleVolumeNotice(cycleVol);
       const siteNotices = [cycleStaleNotice, cycleVolumeNotice].filter(Boolean);
       const payload = {
+        sheets_available: true,
+        live_counter_degraded: false,
+        live_counter_note_ru: null,
         channelsToday: channelsTodayVal,
         new_in_cycle_meta: newInCycle,
         channels_scanned_in_cycle: channelsScanned,
@@ -6709,7 +6712,12 @@ app.get('/api/kro/live-counter', async (req, res) => {
     // Sheets недоступен — честный ноль с пояснением
     const cycleMeta = { last_cycle_at: null, new_in_cycle: 0, sources_checked: [] };
     console.log('KRO META SOURCE: reading from', 'unavailable (no Sheets client)');
+    const degradedNote =
+      'Живой счётчик не подключён к Google Sheets: на Render не задан или неверен KRO_GOOGLE_CREDENTIALS_JSON (или не удалось инициализировать googleapis). Укажите JSON ключа сервисного аккаунта и доступ к таблице KRO_SHEET_ID.';
     return res.json({
+      sheets_available: false,
+      live_counter_degraded: true,
+      live_counter_note_ru: degradedNote,
       channelsToday: 0,
       new_in_cycle_meta: 0,
       channels_scanned_in_cycle: 0,
@@ -6733,7 +6741,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
       watch_status_summary: buildStatusSummary([]),
       publishStatus: 'honest_zero',
       isHonestZero: true,
-      siteNotice: null,
+      siteNotice: degradedNote,
       lastValidUpdatedAt: null,
       updatedAt: null,
       last_cycle_at: cycleMeta.last_cycle_at,
@@ -6750,7 +6758,12 @@ app.get('/api/kro/live-counter', async (req, res) => {
     console.error('KRO live-counter error:', e);
     const cycleMeta = { last_cycle_at: null, new_in_cycle: 0, sources_checked: [] };
     console.log('KRO META SOURCE: reading from', 'unavailable (exception path)');
+    const errNote =
+      'Ошибка при чтении Google Sheets для live-counter. Проверьте логи Render, права сервисного аккаунта на таблицу и корректность KRO_SHEET_ID.';
     res.json({
+      sheets_available: false,
+      live_counter_degraded: true,
+      live_counter_note_ru: errNote,
       channelsToday: 0,
       new_in_cycle_meta: 0,
       channels_scanned_in_cycle: 0,
@@ -6774,7 +6787,7 @@ app.get('/api/kro/live-counter', async (req, res) => {
       watch_status_summary: buildStatusSummary([]),
       publishStatus: 'honest_zero',
       isHonestZero: true,
-      siteNotice: null,
+      siteNotice: errNote,
       lastValidUpdatedAt: null,
       updatedAt: null,
       last_cycle_at: cycleMeta.last_cycle_at,

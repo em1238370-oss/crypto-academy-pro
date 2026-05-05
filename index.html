@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260504-home-fetch-600s">
+   <link rel="stylesheet" href="styles.css?v=20260504-live-counter-degraded">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -870,6 +870,8 @@
            }
            function applyData(data) {
                var el;
+               var degraded = !!(data && (data.live_counter_degraded === true || data.sheets_available === false));
+               var degradedNote = (data && data.live_counter_note_ru) ? String(data.live_counter_note_ru).trim() : '';
               // Крупная цифра на главной: общее число подтверждённых каналов в живой dedup-базе.
                var chTotal = Number(data.channelsTotal);
                if (!isFinite(chTotal)) chTotal = 0;
@@ -969,9 +971,12 @@
                if (docLink && data.sourceCaption) docLink.title = data.sourceCaption;
                if (sourceCaption) sourceCaption.textContent = data.sourceCaption || '';
                if (systemNote) {
-                   if (data.siteNotice) {
+                   var parts = [];
+                   if (data.siteNotice) parts.push(String(data.siteNotice));
+                   if (degraded && degradedNote && parts.indexOf(degradedNote) < 0) parts.push(degradedNote);
+                   if (parts.length) {
                        systemNote.hidden = false;
-                       systemNote.textContent = data.siteNotice;
+                       systemNote.textContent = parts.join('\n\n');
                    } else {
                        systemNote.hidden = true;
                        systemNote.textContent = '';
@@ -997,7 +1002,14 @@
                        return r.json();
                    })
                    .then(applyData)
-                   .catch(function(e) { console.warn('[KRO] live-counter:', e && e.message ? e.message : e); });
+                   .catch(function(e) {
+                       console.warn('[KRO] live-counter:', e && e.message ? e.message : e);
+                       var sn = document.getElementById('kro-f1-system-note');
+                       if (sn) {
+                           sn.hidden = false;
+                           sn.textContent = 'Не удалось загрузить блок статистики (ошибка сети или API). Проверьте консоль браузера и что страница открыта с того же сайта, где развёрнут backend.';
+                       }
+                   });
            }
            function observeFeature1Reveal() {
                var section = document.getElementById('feature1');
