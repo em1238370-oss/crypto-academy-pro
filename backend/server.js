@@ -5564,7 +5564,7 @@ async function kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, min
   };
   for (let pass = 1; pass <= 3; pass++) {
     const remain = deadline - Date.now();
-    if (remain < 1200) break;
+    if (remain < 400) break;
     const pubBudget = Math.min(60000, Math.max(1500, remain - 500));
     const snap = await kroFetchTelegramPublicSnapshot(channelForOnce, {
       timeoutMs: pubBudget,
@@ -7508,10 +7508,20 @@ function kroMergeSnippetsIntoParsedBase(parsedBase, extraSnippets, channelDispla
   return b;
 }
 
-  if (!publicSnap || !Array.isArray(publicSnap.snippets)) return null;
-  const raw = publicSnap.snippets.map((x) => String(x || '').trim()).filter(Boolean);
-  if (raw.length < minPosts) return null;
-  const sample_posts = raw.slice(0, Math.min(120, raw.length));
+/**
+ * Объект parsed только из публичной ленты (t.me/s или предварительно собранные snippets).
+ * Нужен, когда Telethon не дал текста: без этой функции ответ «ленту не прочитали» даже при открытом канале.
+ */
+function kroBuildParsedFromPublicSnapshotOnly(rawSnap, channelDisplay, minPosts) {
+  const need = Math.max(1, Number(minPosts) || 1);
+  const snap = rawSnap && typeof rawSnap === 'object' ? rawSnap : null;
+  if (!snap) return null;
+  let snippets = [];
+  if (Array.isArray(snap.snippets)) {
+    snippets = snap.snippets.map((x) => String(x || '').trim()).filter(Boolean);
+  }
+  if (snippets.length < need) return null;
+  const sample_posts = snippets.slice(0, Math.min(120, snippets.length));
   return {
     found: true,
     _check_once_ok: true,
@@ -7519,6 +7529,7 @@ function kroMergeSnippetsIntoParsedBase(parsedBase, extraSnippets, channelDispla
     posts_fetched: sample_posts.length,
     sample_posts,
     analysis_window_days: 30,
+    read_path: 'public_snapshot',
     has_signal_offer: false,
     only_profits_flag: false,
     fomo_pct: null,
@@ -7858,7 +7869,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       parsed.found !== true ||
       parsed.check_once_timed_out === true ||
       postsRead < minTelethonPosts;
-    if ((telethonWeak || !enough) && deadline - Date.now() > 1200) {
+    if ((telethonWeak || !enough) && deadline - Date.now() > 400) {
       harvestedSnippets = await kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, minReadablePosts, analyzeLogId);
       if (harvestedSnippets && harvestedSnippets.length) {
         parsed = kroMergeSnippetsIntoParsedBase(parsed, harvestedSnippets, channelDisplay);
