@@ -114,7 +114,15 @@ const nowpaymentsIpnSecret = process.env.NOWPAYMENTS_IPN_SECRET;
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
 const stripeMode = process.env.STRIPE_MODE || 'test';
-const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, { apiVersion: '2024-11-20.acacia' }) : null;
+/** Неверный ключ не должен ронять весь процесс при старте (Render exit 1). */
+let stripe = null;
+if (stripeSecretKey) {
+  try {
+    stripe = new Stripe(stripeSecretKey, { apiVersion: '2024-11-20.acacia' });
+  } catch (e) {
+    console.warn('⚠️ Stripe: STRIPE_SECRET_KEY не принят SDK — платежи Stripe отключены до исправления ключа:', e && e.message ? String(e.message) : e);
+  }
+}
 const subscriptionPriceUsd = parseFloat(process.env.SUBSCRIPTION_PRICE_USD ?? '10');
 const subscriptionPeriodDays = parseInt(process.env.SUBSCRIPTION_PERIOD_DAYS ?? '30', 10);
 const appBaseUrl = process.env.APP_BASE_URL ?? 'http://localhost:4000';
