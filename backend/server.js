@@ -8256,8 +8256,6 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     return res.status(400).json({ error: 'bad_request', message_ru: 'Передайте username канала (t.me/username или @username).' });
   }
 
-  let queuedRequestId = null;
-  const queueAppendOk = false;
 
   const t0 = Date.now();
   const quickBudgetMs = Math.min(30000, Math.max(8000, parseInt(process.env.KRO_HOME_QUICK_MS || '30000', 10) || 30000));
