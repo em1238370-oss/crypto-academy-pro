@@ -18,6 +18,7 @@
 ---
 
 ## ✅ Сделано
+- 2026-05-05 — `.cursorrules`: зафиксировано правило — на главной проверке канала приоритет всегда анализ ленты (Telethon + t.me/s в бюджете ~7 мин); упрощённый режим только при `KRO_HOME_ANALYZE_MODE=quick_sheets_only`.
 - 2026-05-05 — Главная `POST /api/kro/analyze-channel`: по умолчанию снова **живое чтение ленты** до `KRO_ANALYZE_CHANNEL_SYNC_MS` (обычно = `KRO_ANALYZE_FAST_MAX_MS`, 7 мин): Telethon + при необходимости `t.me/s`, затем при полном провале — `dataset_evidence`. Быстрый режим без ленты: `KRO_HOME_ANALYZE_MODE=quick_sheets_only` (~`KRO_HOME_QUICK_MS`). Env: `KRO_HOME_ANALYZE_MODE`, `KRO_HOME_QUICK_MS`.
 - 2026-05-04 — `GET /api/kro/live-counter`: в JSON добавлены `sheets_available`, `live_counter_degraded`, `live_counter_note_ru` при недоступности Google Sheets; на главной показывается текст в `#kro-f1-system-note`, при сбое fetch — сообщение в том же блоке. В `kro-live-check.yml` комментарий: GitHub может не соблюдать cron каждые 2 мин для публичных репозиториев.
 - 2026-05-04 — Render: исправлен `SyntaxError: Illegal return statement` в `server.js` (тело `kroHomeCriteriaStatusWordRu` оказалось вне `function` после правок чеклиста).
