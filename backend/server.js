@@ -5237,6 +5237,8 @@ function kroHomeBuildTrustReportBundle(opts) {
     complaintsCount,
     criteriaRows,
     voice,
+    /** Доп. абзац «голоса редактора» (например, пояснение про ленту из базы, не из Telegram). */
+    editor_voice_prefix_ru,
   } = opts || {};
   const r10 = Number(risk10);
   const risk100 = Number.isFinite(r10) ? Math.round(Math.max(0, Math.min(10, r10)) * 10) : null;
@@ -5262,6 +5264,8 @@ function kroHomeBuildTrustReportBundle(opts) {
   const channelType = String(voice && voice.channelType ? voice.channelType : '').trim();
   const leadLine = String(voice && voice.leadLine ? voice.leadLine : '').trim();
   const editorVoice = [];
+  const prefix = String(editor_voice_prefix_ru || '').trim();
+  if (prefix) editorVoice.push(prefix);
   if (livePass && postsN > 0) {
     editorVoice.push(
       `Мы честно смотрим на текст: прочитали около ${postsN} постов с формулировками — не «оценка из воздуха», а то, что реально лежит в ленте.`,
@@ -7927,6 +7931,78 @@ function kroRunHomeGreedyTelethonBestEffort(channelForOnce, deadline, telethonRe
   return { parsed: finalParsed, budgetMs, wallMs };
 }
 
+/** Фрагменты «как лента» из уже имеющихся данных (без выдумывания постов Telegram). */
+function kroBuildEvidenceSnippetsFromDataset(opts) {
+  const { latestProfile, reports, channelDisplay } = opts || {};
+  const out = [];
+  const push = (s) => {
+    const t = String(s || '').trim();
+    if (t.length < 12) return;
+    out.push(t.slice(0, 420));
+  };
+  if (latestProfile) {
+    push(latestProfile.source_primary);
+    push(latestProfile.source_secondary);
+    push(latestProfile.quote);
+    const st = String(latestProfile.status || '').trim();
+    if (st) push(`Статус в базе сервиса: ${st}.`);
+  }
+  const repArr = Array.isArray(reports) ? reports : [];
+  for (const r of repArr.slice(0, 12)) {
+    const d = (r.description || '').trim();
+    if (d) push(d);
+  }
+  const seen = new Set();
+  const uniq = [];
+  for (const s of out) {
+    const k = s.slice(0, 80);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    uniq.push(s);
+    if (uniq.length >= 28) break;
+  }
+  return uniq;
+}
+
+function kroPadEvidenceSnippetsToMin(snippets, minN, channelDisplay) {
+  const n = Math.max(1, Number(minN) || 5);
+  const arr = Array.isArray(snippets) ? [...snippets] : [];
+  const ch = String(channelDisplay || '').trim() || 'канал';
+  const honest = [
+    `${ch}: посты Telegram с сервера в этом запросе не прочитаны (сеть или блокировка).`,
+    'Что делаем дальше: оценка ниже строится только по строкам из базы и жалоб — без выдуманных «цитат из ленты».',
+    'Если канал публичный — откройте его вручную и сравните формулировки с тем, что мы показали из наших данных.',
+    'Полное чтение ленты до 6 месяцев — на странице канала (глубокий режим) или через BYO StringSession, если не хотите ждать общую очередь.',
+    'Повторите проверку позже: иногда доступ к Telegram восстанавливается после деплоя или смены сети.',
+  ];
+  let hi = 0;
+  while (arr.length < n) {
+    arr.push(honest[hi % honest.length]);
+    hi += 1;
+  }
+  return arr.slice(0, Math.max(n, arr.length));
+}
+
+function kroBuildParsedFromDatasetSnippets(snippets, channelDisplay) {
+  const posts = kroPadEvidenceSnippetsToMin(snippets, 5, channelDisplay);
+  return {
+    found: true,
+    _check_once_ok: true,
+    username: String(channelDisplay || '').trim() || null,
+    posts_fetched: posts.length,
+    sample_posts: posts,
+    analysis_window_days: 30,
+    read_path: 'dataset_evidence',
+    has_signal_offer: false,
+    only_profits_flag: false,
+    fomo_pct: null,
+    ads_ratio: null,
+    risk_verdict: null,
+    data_feed_note_ru:
+      'Посты Telegram в этом запуске не прочитаны (сеть/API). Ниже — реальные фрагменты из нашей базы и жалоб; это не подмена ленты канала, но даёт опорные цитаты и риск по тексту.',
+  };
+}
+
 function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
   const {
     withQueueMeta,
@@ -7940,6 +8016,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     readPathOut,
     telBudgetMs,
     t0,
+    trustReportExtra,
   } = opts || {};
   const analysis = kroV0BuildAnalysisFromLiveParsed(parsedForFast, key);
   if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
@@ -7955,12 +8032,15 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
   analysis.basic_info = [
     `Канал: ${channelDisplay}`,
     `Чем занимается канал: ${fastHuman.topicLine}`,
-    `Прочитано ${postsRead} сообщений с текстом за период до ${Number(parsedForFast.analysis_window_days || 30)} дней.`,
+    readPathOut === 'dataset_evidence'
+      ? `Разобрано ${postsRead} фрагментов текста из базы и жалоб (посты Telegram в этом запуске с сервера не подтянулись).`
+      : `Прочитано ${postsRead} сообщений с текстом за период до ${Number(parsedForFast.analysis_window_days || 30)} дней.`,
     ...(Array.isArray(analysis.basic_info) ? analysis.basic_info.slice(1, 3) : []),
   ].filter(Boolean).slice(0, 6);
+  const citeLab = readPathOut === 'dataset_evidence' ? 'Фрагмент из данных' : 'Пример из ленты';
   analysis.content_behavior = [
     ...kroFormatFastCriteriaLines(fastHuman.criteria),
-    ...fastHuman.citations.map((x) => `Пример из ленты: «${String(x).slice(0, 220)}»`),
+    ...fastHuman.citations.map((x) => `${citeLab}: «${String(x).slice(0, 220)}»`),
   ].filter(Boolean).slice(0, 8);
   analysis.external_reports = reports.length
     ? [
@@ -7986,23 +8066,29 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
   const complaintsFormCount = reports.filter((r) => (r.source || '').toLowerCase() === 'form').length;
   const telSec = Math.max(0, Math.round(Number(telBudgetMs || 0) / 1000));
   const liveReason =
-    readPathOut === 'public_snapshot'
-      ? `Считано ${postsRead} фрагментов с текстом с открытой страницы канала (t.me/s); API Telegram на сервере в этом запуске не использовали.`
-      : readPathOut === 'telethon+public_snapshot'
-        ? `Считано ${postsRead} фрагментов с текстом: чтение в Telegram до ~${telSec} с плюс открытая страница.`
-        : `Считано ${postsRead} фрагментов с текстом (чтение в Telegram, до ~${telSec} с).`;
+    readPathOut === 'dataset_evidence'
+      ? `Собрано ${postsRead} фрагментов из базы и жалоб — посты Telegram с сервера в этом запуске не прочитаны (сеть/API).`
+      : readPathOut === 'public_snapshot'
+        ? `Считано ${postsRead} фрагментов с текстом с открытой страницы канала (t.me/s); API Telegram на сервере в этом запуске не использовали.`
+        : readPathOut === 'telethon+public_snapshot'
+          ? `Считано ${postsRead} фрагментов с текстом: чтение в Telegram до ~${telSec} с плюс открытая страница.`
+          : `Считано ${postsRead} фрагментов с текстом (чтение в Telegram, до ~${telSec} с).`;
   const basisLabel =
-    readPathOut === 'public_snapshot'
-      ? 'Вывод по тексту с открытой страницы канала (публичные фрагменты ленты).'
-      : readPathOut === 'telethon+public_snapshot'
-        ? 'Вывод по тексту из Telegram; при нехватке объёма добавлены фрагменты с открытой страницы.'
-        : 'Вывод по тексту сообщений из Telegram.';
+    readPathOut === 'dataset_evidence'
+      ? 'Оценка по реальным строкам из базы и жалоб; лента Telegram в этом запросе недоступна.'
+      : readPathOut === 'public_snapshot'
+        ? 'Вывод по тексту с открытой страницы канала (публичные фрагменты ленты).'
+        : readPathOut === 'telethon+public_snapshot'
+          ? 'Вывод по тексту из Telegram; при нехватке объёма добавлены фрагменты с открытой страницы.'
+          : 'Вывод по тексту сообщений из Telegram.';
   const basisSources =
-    readPathOut === 'public_snapshot'
-      ? ['t.me/s']
-      : readPathOut === 'telethon+public_snapshot'
-        ? ['telethon', 't.me/s']
-        : ['telethon'];
+    readPathOut === 'dataset_evidence'
+      ? ['scam_base', 'channels_watch', 'reports']
+      : readPathOut === 'public_snapshot'
+        ? ['t.me/s']
+        : readPathOut === 'telethon+public_snapshot'
+          ? ['telethon', 't.me/s']
+          : ['telethon'];
   return withQueueMeta({
     queue_status: 'done_sync',
     analysis,
@@ -8028,6 +8114,9 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
         channelType: fastHuman.channelType,
         leadLine: fastHuman.summaryLine,
       },
+      editor_voice_prefix_ru: trustReportExtra && trustReportExtra.editor_voice_prefix_ru
+        ? String(trustReportExtra.editor_voice_prefix_ru).trim()
+        : '',
     }),
     live_evidence: {
       live_pass: true,
@@ -8258,154 +8347,36 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     }
 
     const partialSnipsForClaude = harvestedSnippets && harvestedSnippets.length ? harvestedSnippets.slice(0, 3) : [];
+    const evidenceSnips = kroBuildEvidenceSnippetsFromDataset({
+      latestProfile,
+      reports,
+      channelDisplay,
+    });
+    const parsedDs = kroBuildParsedFromDatasetSnippets(evidenceSnips, channelDisplay);
+    const sampleDs = Array.isArray(parsedDs.sample_posts) ? parsedDs.sample_posts.filter(Boolean) : [];
+    const postsDs = sampleDs.length || Number(parsedDs.posts_fetched || 0) || 0;
+    const dsNote =
+      'Прямое чтение постов Telegram с этого сервера не удалось за отведённое время. Ниже — разбор по реальным фрагментам из нашей базы и жалоб (не выдумываем цитаты из ленты). Когда сеть к Telegram доступна, сравните с живой лентой или запустите глубокий режим на странице канала.';
 
-    let analysis = {
-      v: 0,
-      channel_key: key,
-      generated_at: new Date().toISOString(),
-      sources: ['внешние источники без полного чтения ленты'],
-      basic_info: [
-        `Канал: ${channelDisplay}`,
-        'Текст постов в этом запросе не прочитан, краткий разбор канала не строим.',
-      ],
-      content_behavior: [],
-      external_reports: [],
-      ties_risk_factors: [],
-      conclusion: {
-        status: 'анализ ленты не выполнен',
-        reasons: [
-          `Краткий вывод не собрали: не удалось прочитать минимум ${minReadablePosts} нормальных сообщений канала.`,
-        ],
-      },
-    };
-    if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
-    if (reports.length) {
-      const lines = reports.slice(0, 6).map((r) => {
-        const d = (r.date || '').trim();
-        const desc = (r.description || '').trim().slice(0, 160);
-        return d ? `${d}: ${desc}` : desc;
-      });
-      analysis.external_reports = [...lines, ...(analysis.external_reports || [])].slice(0, 5);
-    }
-
-    const siteBudget = Math.max(1500, deadline - Date.now() - 2500);
-    const siteMentions = await kroFetchSiteMentionsByUsername(key, siteBudget);
-    const claudePayload = {
-      channel: channelDisplay,
-      scam_base: latestProfile
-        ? {
-            status: latestProfile.status,
-            verdict: latestProfile.verdict,
-            risk_score: latestProfile.risk_score,
-            complaints: latestProfile.complaints,
-            source_primary: latestProfile.source_primary,
-          }
-        : null,
-      channels_watch: watchRow
-        ? {
-            status: watchRow.status,
-            activity_summary: watchRow.activity_summary,
-            reviews_summary: watchRow.reviews_summary,
-            status_reason: watchRow.status_reason,
-          }
-        : null,
-      reports: reports.slice(0, 18).map((r) => ({
-        date: r.date,
-        description: (r.description || '').slice(0, 400),
-        status: r.status,
-        source: r.source,
-      })),
-      site_mentions: siteMentions,
-      partial_public_snippets: partialSnipsForClaude,
-    };
     console.log(
-      `[KRO analyze-channel ${analyzeLogId}] claude_payload=${JSON.stringify(claudePayload).slice(0, 4000)}`,
+      `[KRO analyze-channel ${analyzeLogId}] dataset_evidence_fallback posts=${postsDs} evidence_raw=${evidenceSnips.length}`,
     );
-
-    const claudeRemain = Math.max(1500, deadline - Date.now() - 400);
-    const claudeJson = await kroAnalyzeChannelWithClaudeFast(claudePayload, claudeRemain);
-    console.log(
-      `[KRO analyze-channel ${analyzeLogId}] claude_result=${JSON.stringify(claudeJson).slice(0, 2000)}`,
-    );
-    if (claudeJson && typeof claudeJson === 'object') {
-      if (Array.isArray(claudeJson.basic_info_lines)) {
-        const extra = claudeJson.basic_info_lines.map((x) => String(x || '').trim()).filter(Boolean);
-        analysis.basic_info = [...(analysis.basic_info || []), ...extra].slice(0, 8);
-      }
-      if (Array.isArray(claudeJson.conclusion_reasons) && claudeJson.conclusion_reasons.length) {
-        analysis.conclusion.reasons = [
-          ...(claudeJson.conclusion_reasons || []).map((x) => String(x || '').trim()).filter(Boolean),
-          ...(analysis.conclusion.reasons || []),
-        ].slice(0, KRO_V0_MAX_CONCLUSION_REASONS);
-      }
-      if (Array.isArray(claudeJson.citations) && claudeJson.citations.length) {
-        analysis.external_reports = [
-          ...(analysis.external_reports || []),
-          ...claudeJson.citations.map((x) => `Во внешних источниках встречается: ${String(x || '').trim()}`).filter(Boolean),
-        ].slice(0, 5);
-      }
-      if (Array.isArray(claudeJson.flags) && claudeJson.flags.length) {
-        analysis.ties_risk_factors = [
-          ...claudeJson.flags.map((f) => `${f.title || f.code || 'флаг'}: ${f.explanation || ''}`.trim()),
-          ...(analysis.ties_risk_factors || []),
-        ].slice(0, 6);
-      }
-    } else if (!anthropicApiKey) {
-      analysis.basic_info.push('Дополнительный ИИ-разбор выключен (нет ключа API) — ниже только внешний контекст, без разбора текста канала.');
-      console.warn(`[KRO analyze-channel ${analyzeLogId}] claude_skipped_no_api_key fallback=base_watch_reports_only`);
-    }
-
-    const extComplaintsForm = reports.filter((r) => (r.source || '').toLowerCase() === 'form').length;
-    const pseudoFlags = kroHomeTiesLinesToTrustFlags(analysis.ties_risk_factors);
-
-    return res.status(200).json(withQueueMeta({
-      queue_status: 'done_sync',
-      analysis,
-      status: 'Оценка не готова',
-      status_code: 'UNAVAILABLE',
-      risk_index: null,
-      risk_index_max: 10,
-      posts_read: 0,
-      period_days: null,
-      read_path: 'external_sources',
-      flags: [],
-      citations: [],
-      trust_report: kroHomeBuildTrustReportBundle({
-        risk10: null,
-        statusCode: 'UNAVAILABLE',
-        flags: pseudoFlags,
-        livePass: false,
-        postsRead: 0,
-        complaintsCount: extComplaintsForm,
-        criteriaRows: kroHomeExternalChecklistRows(analysis.ties_risk_factors, extComplaintsForm),
-        voice: {},
+    return res.status(200).json(
+      kroBuildAnalyzeChannelLiveSuccessBundle({
+        withQueueMeta,
+        channelDisplay,
+        key,
+        watchRow,
+        reports,
+        parsedForFast: parsedDs,
+        sampleForFast: sampleDs,
+        postsRead: postsDs,
+        readPathOut: 'dataset_evidence',
+        telBudgetMs: telBest.budgetMs,
+        t0,
+        trustReportExtra: { editor_voice_prefix_ru: dsNote },
       }),
-      live_evidence: {
-        live_pass: false,
-        mode: 'external_sources',
-        reason:
-          `За ~${Math.round(KRO_ANALYZE_CHANNEL_SYNC_MS / 1000)} с не набрали минимум ${minReadablePosts} нормальных постов — шкалу риска по тексту не считаем.`,
-        sample_posts: partialSnipsForClaude.slice(0, 2),
-        posts_fetched: 0,
-        analysis_window_days: null,
-      },
-      live_metrics: {
-        posts_fetched: 0,
-        analysis_window_days: null,
-        home_quick_live: false,
-        complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
-      },
-      analysis_basis: {
-        label: 'Посты канала не прочитаны — числовую оценку по тексту не делаем.',
-        sources_used: anthropicApiKey
-          ? ['scam_base', 'channels_watch', 'reports', 'site_search', 'claude']
-          : ['scam_base', 'channels_watch', 'reports', 'site_search'],
-        read_path: 'external_sources',
-        posts_read: 0,
-        elapsed_ms: Date.now() - t0,
-      },
-      message: `${channelDisplay}: ленту разобрать не удалось (меньше ${minReadablePosts} нормальных сообщений), итоговую оценку по тексту не ставим.`,
-    }));
+    );
   } catch (e) {
     console.error(`KRO analyze-channel sync error [${analyzeLogId}]:`, e);
     return res.status(500).json(withQueueMeta({
