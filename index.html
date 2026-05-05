@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260505-home-trust-v5-modes">
+   <link rel="stylesheet" href="styles.css?v=20260506-home-check-js-fix">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -2708,34 +2708,34 @@
                                metaParts.push('Жалобы в сервисе: ' + lm.complaints_count);
                            }
                        } else {
-                       if (lm.analysis_window_days != null && !isNaN(Number(lm.analysis_window_days))) {
-                           metaParts.push('Период: до ' + lm.analysis_window_days + ' дн.');
-                       } else if (!profile) {
-                           metaParts.push(
-                               lm.home_quick_live
-                                   ? kroPickVariant([
-                                       'читали посты, сверяли с жалобами и мониторингом',
-                                       'текст из ленты плюс наша база',
-                                       'публичные посты и внутренние данные',
-                                   ], __kSeed + 3)
-                                   : kroPickVariant([
-                                       'жалобы и мониторинг; посты в этом ответе не разбирали',
-                                       'карточка канала без полного разбора ленты',
-                                       'только то, что уже есть в сервисе',
-                                   ], __kSeed + 3)
-                           );
-                       }
-                       if (lm.home_quick_live === true) {
-                           metaParts.push('живая лента: до ~30 дн. + открытая страница');
-                       }
-                       if (lm.posts_fetched != null && !isNaN(Number(lm.posts_fetched))) {
-                           metaParts.push('Сообщений с текстом: ~' + lm.posts_fetched);
-                       } else if (profile) {
-                           metaParts.push('Оценка по данным мониторинга и циклам проверки');
-                       }
-                       if (lm.complaints_count != null && !isNaN(Number(lm.complaints_count)) && Number(lm.complaints_count) >= 0) {
-                           metaParts.push('Жалоб в отчётах: ' + lm.complaints_count);
-                       }
+                           if (lm.analysis_window_days != null && !isNaN(Number(lm.analysis_window_days))) {
+                               metaParts.push('Период: до ' + lm.analysis_window_days + ' дн.');
+                           } else if (!profile) {
+                               metaParts.push(
+                                   lm.home_quick_live
+                                       ? kroPickVariant([
+                                           'читали посты, сверяли с жалобами и мониторингом',
+                                           'текст из ленты плюс наша база',
+                                           'публичные посты и внутренние данные',
+                                       ], __kSeed + 3)
+                                       : kroPickVariant([
+                                           'жалобы и мониторинг; посты в этом ответе не разбирали',
+                                           'карточка канала без полного разбора ленты',
+                                           'только то, что уже есть в сервисе',
+                                       ], __kSeed + 3)
+                               );
+                           }
+                           if (lm.home_quick_live === true) {
+                               metaParts.push('живая лента: до ~30 дн. + открытая страница');
+                           }
+                           if (lm.posts_fetched != null && !isNaN(Number(lm.posts_fetched))) {
+                               metaParts.push('Сообщений с текстом: ~' + lm.posts_fetched);
+                           } else if (profile) {
+                               metaParts.push('Оценка по данным мониторинга и циклам проверки');
+                           }
+                           if (lm.complaints_count != null && !isNaN(Number(lm.complaints_count)) && Number(lm.complaints_count) >= 0) {
+                               metaParts.push('Жалоб в отчётах: ' + lm.complaints_count);
+                           }
                        }
                        if (metaEl) {
                            var liveBadge = '';
@@ -2990,6 +2990,7 @@
                        if (data.message) s5lines.push(String(data.message));
                        if (Array.isArray(c.reasons)) s5lines = s5lines.concat(c.reasons.slice(0, 2));
                        if (s5) s5.innerHTML = homeRenderBullets(s5lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                       }
                        }
                        if (doneBanner) {
                           var summaryText = (ur && ur.simple_conclusion) ? ur.simple_conclusion : (data.message || '');
