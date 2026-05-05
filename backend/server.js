@@ -5027,7 +5027,7 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
   if (hasRiskManagement) score10 -= 1;
   if (hasLogic) score10 -= 1;
   score10 = Math.max(1, Math.min(10, score10));
-  let channelType = 'смешанная картина по тексту';
+  let channelType = 'в выборке разные сигналы — смотрим по пунктам ниже';
   if (score10 >= 8) channelType = 'по тексту много тревожного';
   else if (hasVip && hasFomo) channelType = 'заметны платный доступ и нажим';
   else if (hasLogic && hasRiskManagement && !hasVip && adsState === 'low' && score10 <= 4) {
@@ -5040,7 +5040,7 @@ function kroBuildFastCriteriaFromTexts(texts, opts = null) {
     score10 >= 8
       ? 'По этим постам насторожительно: давление, платный доступ или слабо проговорён риск.'
       : score10 >= 5
-        ? 'Картина смешанная: полезное рядом с резкими формулировками или слабым объяснением риска.'
+        ? 'Есть и полезное, и резкие формулировки или слабое объяснение риска — не спешите с деньгами.'
         : 'По этой выборке спокойнее: мало «гарантий» и грубого нажима.';
   const summaryTail = !hasRiskManagement
     ? 'Правила риска в тексте почти не видны — повторять сделки вслепую опасно.'
@@ -5101,9 +5101,16 @@ function kroMapFastRisk10ToUiStatus(score10) {
   return { status: 'По тексту спокойнее', code: 'SAFE' };
 }
 
+/** True если выборка из ленты канала (Telethon и/или публичная страница), не только база/сайты. */
+function kroHomeReadPathIsChannelFeedSample(readPathOut) {
+  const p = String(readPathOut || '').trim();
+  return p === 'telethon' || p === 'telethon+public_snapshot' || p === 'public_snapshot';
+}
+
 /** Короткая англ. подпись уровня для блока «как у брокерского отчёта» (0–100). */
 function kroHomeTrustRiskBandEn(statusCode) {
   const c = String(statusCode || '').toUpperCase();
+  if (c === 'INSUFFICIENT_FEED' || c === 'UNAVAILABLE') return 'Limited data';
   if (c === 'DANGER') return 'High risk';
   if (c === 'SUSPICIOUS') return 'Elevated risk';
   if (c === 'SAFE') return 'Lower risk';
@@ -5231,8 +5238,8 @@ function kroHomeCriteriaToChecklist(criteria) {
 }
 
 /**
- * Данные для главной: доказательный формат (цитаты + «почему опасно») + честная уверенность + «как анализируем».
- * Не заменяет юридический вердикт; опирается на выборку постов и эвристики.
+ * Данные для главной: короткий «продуктовый» отчёт (v3): 3 риска, 2 примера, вывод + действие.
+ * Не заменяет юридический вердикт; опирается на выборку и эвристики.
  */
 function kroHomeBuildTrustReportBundle(opts) {
   const {
@@ -5244,103 +5251,177 @@ function kroHomeBuildTrustReportBundle(opts) {
     complaintsCount,
     criteriaRows,
     voice,
+    readPathOut,
     /** Доп. абзац «голоса редактора» (например, пояснение про ленту из базы, не из Telegram). */
     editor_voice_prefix_ru,
   } = opts || {};
-  const r10 = Number(risk10);
-  const risk100 = Number.isFinite(r10) ? Math.round(Math.max(0, Math.min(10, r10)) * 10) : null;
-  const bandEn = risk100 == null ? 'Limited data' : kroHomeTrustRiskBandEn(statusCode);
-  const flagArr = Array.isArray(flags) ? flags : [];
-  const patterns = flagArr.slice(0, 6).map((f) => {
-    const rawSn = f && f.evidence_snippet ? String(f.evidence_snippet).trim() : '';
-    const quote = rawSn ? `«${kroHomeTrustClip(rawSn, 200)}»` : '';
-    const expl = String((f && f.explanation) || '').trim();
-    const why = expl ? kroHomeTrustClip(expl.split(/\n\n+/)[0], 360) : '';
-    return {
-      title: String((f && f.title) || (f && f.code) || 'Паттерн в тексте').trim(),
-      quote,
-      why_dangerous:
-        why
-        || 'Такие формулировки часто сопровождают давление на быстрое решение и скрытые платежи — без независимой проверки доверять нельзя.',
-    };
-  });
+  const readPath = String(readPathOut || '').trim();
+  const feedSample = kroHomeReadPathIsChannelFeedSample(readPath);
   const postsN = Number(postsRead) || 0;
-  const hasQuotes = patterns.some((p) => p.quote && p.quote.length > 5);
-  const checklist = kroHomeCriteriaToChecklist(criteriaRows);
+  const weakFeed = feedSample && postsN > 0 && postsN < 5;
+
+  const flagArr = Array.isArray(flags) ? flags : [];
+  const hasStrongEvidence = flagArr.some((f) => {
+    const sn = f && f.evidence_snippet ? String(f.evidence_snippet).trim() : '';
+    return sn.length >= 14;
+  });
+
+  const r10raw = Number(risk10);
+  const r10 = Number.isFinite(r10raw) ? Math.max(1, Math.min(10, r10raw)) : null;
+  let outStatusCode = String(statusCode || 'UNAVAILABLE').toUpperCase();
+  let outRisk100 = r10 == null ? null : Math.round(r10 * 10);
+
+  if (weakFeed && !hasStrongEvidence) {
+    outStatusCode = 'INSUFFICIENT_FEED';
+    outRisk100 = null;
+  }
+
+  const bandEn = outRisk100 == null ? 'Limited data' : kroHomeTrustRiskBandEn(outStatusCode);
+  const checklistFull = kroHomeCriteriaToChecklist(criteriaRows);
+  const checklist = checklistFull.slice(0, 3).map((row) => ({
+    ...row,
+    what_we_saw: kroHomeTrustClip(String(row.what_we_saw || '').trim(), 200),
+  }));
+
+  const patterns = flagArr
+    .filter((f) => f && (f.evidence_snippet || f.explanation || f.title))
+    .slice(0, 2)
+    .map((f) => {
+      const rawSn = f && f.evidence_snippet ? String(f.evidence_snippet).trim() : '';
+      const quote = rawSn ? `«${kroHomeTrustClip(rawSn, 160)}»` : '';
+      const expl = String((f && f.explanation) || '').trim();
+      const why = expl ? kroHomeTrustClip(expl.split(/\n\n+/)[0], 220) : '';
+      return {
+        title: String((f && f.title) || (f && f.code) || 'Паттерн').trim(),
+        quote,
+        why_dangerous:
+          why
+          || 'Без сценария риска легко принять импульсивное решение.',
+      };
+    });
+
   const topicLine = String(voice && voice.topicLine ? voice.topicLine : '').trim();
   const channelType = String(voice && voice.channelType ? voice.channelType : '').trim();
   const leadLine = String(voice && voice.leadLine ? voice.leadLine : '').trim();
+
   const editorVoice = [];
   const prefix = String(editor_voice_prefix_ru || '').trim();
   if (prefix) editorVoice.push(prefix);
-  if (livePass && postsN > 0) {
-    editorVoice.push(
-      `Мы честно смотрим на текст: прочитали около ${postsN} постов с формулировками — не «оценка из воздуха», а то, что реально лежит в ленте.`,
-    );
+  if (livePass && postsN >= 5) {
+    editorVoice.push(`Прочитано ~${postsN} постов с текстом — оценка опирается на выборку, не на одну фразу.`);
+  } else if (livePass && postsN > 0) {
+    editorVoice.push(`В ленту попало мало постов (~${postsN}) — цифру риска по тексту не показываем, только факты и действия.`);
   } else if (!livePass) {
-    editorVoice.push(
-      'В этом ответе живую ленту почти не трогали — ниже то, что можно сказать по жалобам и внешнему контексту, без выдуманных цитат из постов.',
-    );
+    editorVoice.push('Ленту Telegram в этом ответе не читали — блок ниже по базе, жалобам и внешним данным.');
   }
-  if (topicLine) editorVoice.push(`По тону и темам канал выглядит так: ${topicLine}`);
-  if (channelType) editorVoice.push(`Если коротко про «характер» подачи: ${channelType}.`);
-  if (leadLine) editorVoice.push(leadLine);
-  if (checklist.length) {
-    editorVoice.push(
-      'Ниже — все пять базовых пунктов, которые мы сверяем с текстом (платный формат, давление, риск, объяснения, реклама). Так обычно рассуждает человек, который читает ленту, а не робот с одной цифрой.',
-    );
-  }
-  let conf = livePass ? 44 : 32;
-  if (livePass && postsN >= 25) conf = 58 + Math.min(24, Math.floor(postsN / 5));
-  else if (livePass && postsN >= 12) conf = 52 + Math.min(22, postsN);
-  else if (livePass && postsN >= 8) conf = 50 + postsN;
-  else if (livePass && postsN >= 5) conf = 46 + postsN * 2;
-  if (flagArr.length) conf += 4 + flagArr.length * 2;
-  if (hasQuotes) conf += 7;
+  if (topicLine) editorVoice.push(`Тема по тексту: ${kroHomeTrustClip(topicLine, 180)}`);
+  if (channelType) editorVoice.push(kroHomeTrustClip(channelType, 200));
+
+  let conf = livePass ? 40 : 30;
+  if (livePass && postsN >= 25) conf = 58 + Math.min(22, Math.floor(postsN / 6));
+  else if (livePass && postsN >= 12) conf = 52 + Math.min(18, postsN);
+  else if (livePass && postsN >= 8) conf = 48 + postsN;
+  else if (livePass && postsN >= 5) conf = 44 + postsN * 2;
+  if (flagArr.length) conf += 3 + flagArr.length * 2;
+  if (patterns.some((p) => p.quote && p.quote.length > 5)) conf += 6;
   const comp = Number(complaintsCount);
   if (Number.isFinite(comp) && comp >= 2) conf += 6;
   if (Number.isFinite(comp) && comp >= 1) conf += 3;
-  conf = Math.round(Math.max(28, Math.min(94, conf)));
-  let confNote =
-    'Уверенность отражает только этот запрос: сколько постов удалось прочитать и сколько совпало с паттернами.';
-  if (conf >= 78) {
-    confNote = 'Уверенность выше: в отчёте есть цитаты из постов и несколько независимых совпадений с типичными приёмами.';
-  } else if (conf >= 58) {
-    confNote = 'Средняя уверенность: часть выводов опирается на ограниченную выборку — это честнее, чем притворяться «100% точностью».';
+  if (weakFeed && !hasStrongEvidence) conf = Math.min(conf, 38);
+  conf = Math.round(Math.max(22, Math.min(88, conf)));
+
+  let confNote = 'Чем больше постов с текстом и цитат — тем выше уверенность в цифре.';
+  if (weakFeed && !hasStrongEvidence) {
+    confNote = 'Мало постов в выборке — цифру риска не ставим; смотрите пункты и «что делать».';
   } else if (!livePass) {
-    confNote = 'Ниже обычного: живой текст ленты почти не попал — опираемся на жалобы и внешний контекст, цифра риска по тексту не считается.';
+    confNote = 'Лента в этом запросе не читалась — уверенность в «риске по постам» ниже; опирайтесь на жалобы и глубокую проверку.';
+  } else if (conf >= 68) {
+    confNote = 'Выше обычного: достаточно текста и совпадений с типичными приёмами.';
   }
-  const summaryRu = flagArr.length
-    ? 'В выборке из постов видно несколько типичных для агрессивного продвижения приёмов.'
-    : 'В этой выборке постов сильных «триггерных» формулировок мало — это не гарантия честности, просто сигналов меньше.';
-  const rec =
-    risk100 != null && risk100 >= 70
-      ? 'Не инвестируйте и не переводите деньги без независимой проверки и понятных вам правил риска.'
-      : risk100 != null && risk100 >= 45
-        ? 'Имеет смысл проверить канал через сторонние источники и не спешить с оплатой «закрытого» доступа.'
-        : 'Даже при спокойном тексте держите базовую гигиену: сверяйте факты и не гонитесь за «гарантиями».';
+
+  let riskLabelRu = '—';
+  let riskEmoji = '⚪';
+  if (outRisk100 != null) {
+    if (outRisk100 >= 70) {
+      riskLabelRu = 'ВЫСОКИЙ';
+      riskEmoji = '🔴';
+    } else if (outRisk100 >= 45) {
+      riskLabelRu = 'УМЕРЕННЫЙ';
+      riskEmoji = '🟡';
+    } else {
+      riskLabelRu = 'НИЖЕ СРЕДНЕГО';
+      riskEmoji = '🟢';
+    }
+  }
+
+  const cr = Array.isArray(criteriaRows) ? criteriaRows : [];
+  const hasRiskManagement = cr.some((c) => c && c.key === 'risk' && c.status === 'yes');
+
+  let headlineRu = 'Недостаточно данных для оценки по ленте';
+  let sublineRu = `В выборку попало мало постов (~${postsN}). Смотрите риски и примеры ниже; для решения о деньгах — глубокая проверка или больше постов.`;
+  let summaryRu = 'По этой выборке нельзя честно свести всё к одной цифре риска.';
+  let forYouRu = 'Без нормальной выборки из ленты легко ошибиться с входом — не копируйте сделки вслепую.';
+  let rec = 'Не копируйте сделки без своих стопов и размера позиции; откройте канал вручную или запустите глубокий разбор.';
+
+  if (!weakFeed || hasStrongEvidence) {
+    headlineRu = outRisk100 == null ? 'Оценка по контексту' : `${riskEmoji} Риск: ${riskLabelRu} (${Math.round((outRisk100 || 0) / 10)}/10)`;
+    sublineRu = kroHomeTrustClip(leadLine || (flagArr.length
+      ? 'В тексте есть типичные тревожные приёмы — ниже цитаты и короткие пояснения.'
+      : 'Явных «красных» формулировок в выборке мало — это не гарантия честности, просто сигналов меньше.'), 240);
+    summaryRu = kroHomeTrustClip(
+      flagArr.length
+        ? 'В выборке заметны приёмы, из‑за которых новичку легко потерять деньги.'
+        : 'Сильных триггеров в этой выборке мало — всё равно проверяйте риск сами.',
+      200,
+    );
+    forYouRu = !hasRiskManagement
+      ? 'Нет ясных правил риска в тексте → выше шанс скопировать сделку без сценария выхода.'
+      : 'Даже при спокойном тексте решение о входе остаётся за вами — не подменяйте его чужим «сигналом».';
+    if (outRisk100 != null && outRisk100 >= 70) {
+      forYouRu = 'Высокий риск импульсивного входа и оплаты «закрытого» доступа без понятной ответственности автора.';
+    } else if (outRisk100 != null && outRisk100 >= 45) {
+      forYouRu = 'Есть поводы не спешить: проверьте сценарий риска и не завышайте уверенность в сигналах.';
+    }
+    rec =
+      outRisk100 != null && outRisk100 >= 70
+        ? 'Не переводите деньги и не оплачивайте VIP без независимой проверки и своих стопов.'
+        : outRisk100 != null && outRisk100 >= 45
+          ? 'Не копируйте сделки из канала без своей стратегии, стопов и лимита на сделку.'
+          : 'Держите дисциплину: свой риск на сделку, стоп и понимание, когда идея отменяется.';
+  }
+
+  const deceptionBullets = kroHomeDeceptionBulletsFromFlags(flagArr).slice(0, 2);
+
   return {
-    v: 2,
-    risk_score_100: risk100,
+    v: 3,
+    read_path: readPath || null,
+    insufficient_feed: weakFeed && !hasStrongEvidence,
+    risk_score_100: outRisk100,
     risk_band_en: bandEn,
+    status_code: outStatusCode,
+    risk_label_ru: riskLabelRu,
+    risk_emoji: riskEmoji,
+    headline_ru: headlineRu,
+    subline_ru: sublineRu,
+    for_you_ru: forYouRu,
     confidence_percent: conf,
     confidence_note_ru: confNote,
     checklist,
-    editor_voice_ru: editorVoice.filter(Boolean).slice(0, 5),
+    editor_voice_ru: editorVoice.filter(Boolean).slice(0, 3),
     patterns,
     summary_ru: summaryRu,
     recommendation_ru: rec,
     deception_narrative: {
-      title: 'Как тебя могут пытаться обмануть',
+      title: 'На что обратить внимание',
       hook: flagArr.length
-        ? 'Сочетание приёмов ниже часто используют, чтобы снять критическое мышление и перевести вас к оплате.'
-        : 'Когда в ленте мало «кричащих» фраз, давление часто переносят в личку, «менеджера» или закрытую группу.',
-      bullets: kroHomeDeceptionBulletsFromFlags(flagArr),
+        ? 'Частая схема: срочность + обещание результата → оплата или перевод.'
+        : 'Даже при спокойной ленте нажим часто переносят в личку или закрытую группу.',
+      bullets: deceptionBullets.length ? deceptionBullets : ['Перед оплатой сделайте паузу и проверьте канал вне Telegram.'],
     },
     how_we_analyze_ru: [
-      'Ищем в тексте постов типичные паттерны: гарантии дохода, «иксы», срочность, платный VIP, голые сигналы без риска.',
-      'Сверяем канал с жалобами и мониторингом в нашей базе.',
-      'Честно показываем, насколько полно удалось прочитать ленту в этом запросе — от этого зависит уверенность в оценке.',
+      'Ищем в тексте: гарантии, «иксы», срочность, платный VIP, сигналы без риска.',
+      'Сверяем с жалобами и мониторингом.',
+      'Показываем, сколько постов попало в выборку — без этого цифра риска вводит в заблуждение.',
     ],
   };
 }
@@ -8129,6 +8210,15 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       citations: claudeCites.length ? claudeCites : fastHuman.citations,
     };
   }
+  const feedSample = kroHomeReadPathIsChannelFeedSample(readPathOut);
+  const postsReadN = Number(postsRead) || 0;
+  const strongPostEvidence = (signal.flags || []).some((f) => {
+    const sn = f && f.evidence_snippet ? String(f.evidence_snippet).trim() : '';
+    return sn.length >= 14;
+  });
+  const weakFeedNoScore = feedSample && postsReadN > 0 && postsReadN < 5 && !strongPostEvidence
+    && String(parsedForFast.risk_verdict || '').toLowerCase() !== 'scam';
+
   analysis.basic_info = [
     `Канал: ${channelDisplay}`,
     `Чем занимается канал: ${fastHuman.topicLine}`,
@@ -8168,6 +8258,17 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       ...fastHuman.reasons,
     ].filter(Boolean).slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
   };
+  if (weakFeedNoScore) {
+    risk = null;
+    statusObj = { status: 'Недостаточно данных по ленте', code: 'INSUFFICIENT_FEED' };
+    analysis.conclusion = {
+      status: KRO_V0_STATUS.watch,
+      reasons: [
+        `В выборку попало мало постов с текстом (~${postsReadN}); числовую оценку риска по ленте не ставим — это честнее, чем «угадывать» по одной фразе.`,
+        ...fastHuman.reasons.slice(0, 2),
+      ].filter(Boolean).slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
+    };
+  }
   const complaintsFormCount = reports.filter((r) => (r.source || '').toLowerCase() === 'form').length;
   const telSec = Math.max(0, Math.round(Number(telBudgetMs || 0) / 1000));
   const liveReason =
@@ -8200,6 +8301,10 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
         : readPathOut === 'telethon+public_snapshot'
           ? ['telethon', 't.me/s']
           : ['telethon'];
+  const homeLivePass = kroHomeReadPathIsChannelFeedSample(readPathOut);
+  const riskLine = risk == null || !Number.isFinite(Number(risk))
+    ? 'оценка по шкале не выставлена (мало постов в выборке).'
+    : `оценка ${risk}/10.`;
   return withQueueMeta({
     queue_status: 'done_sync',
     analysis,
@@ -8216,10 +8321,11 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       risk10: risk,
       statusCode: statusObj.code,
       flags: signal.flags,
-      livePass: readPathOut !== 'sheets_sites_claude',
+      livePass: homeLivePass,
       postsRead,
       complaintsCount: complaintsFormCount,
       criteriaRows: fastHuman.criteria,
+      readPathOut,
       voice: {
         topicLine: fastHuman.topicLine,
         channelType: fastHuman.channelType,
@@ -8230,7 +8336,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
         : '',
     }),
     live_evidence: {
-      live_pass: readPathOut !== 'sheets_sites_claude',
+      live_pass: homeLivePass,
       mode: readPathOut,
       reason: liveReason,
       sample_posts: sampleForFast.slice(0, 3),
@@ -8240,7 +8346,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     live_metrics: {
       posts_fetched: postsRead,
       analysis_window_days: Number(parsedForFast.analysis_window_days || 30),
-      home_quick_live: readPathOut !== 'sheets_sites_claude',
+      home_quick_live: homeLivePass,
       complaints_count: reports.filter((r) => (r.source || '').toLowerCase() === 'form').length,
     },
     analysis_basis: {
@@ -8250,7 +8356,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       posts_read: postsRead,
       elapsed_ms: Date.now() - t0,
     },
-    message: `${channelDisplay}: оценка ${risk}/10. ${fastHuman.summaryLine}`,
+    message: `${channelDisplay}: ${riskLine} ${fastHuman.summaryLine}`,
   });
 }
 

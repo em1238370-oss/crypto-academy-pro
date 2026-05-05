@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260505-home-live-first-default">
+   <link rel="stylesheet" href="styles.css?v=20260505-home-trust-v3-compact">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -1247,6 +1247,12 @@
                    if (e === 'limited data') return 'мало данных для цифры';
                    return 'не определено';
                }
+               function kroTrustChecklistEmoji(verdictRu) {
+                   var v = String(verdictRu || '').trim().toLowerCase();
+                   if (v === 'да') return '🔴';
+                   if (v === 'частично') return '🟡';
+                   return '🟢';
+               }
                function kroRenderTrustReportBlock(data) {
                    var tr = data && data.trust_report && typeof data.trust_report === 'object' ? data.trust_report : null;
                    var stack = document.getElementById('kro-inline-trust-stack');
@@ -1264,11 +1270,11 @@
                        if (howList) howList.innerHTML = '';
                        return;
                    }
+                   var isV3 = Number(tr.v) >= 3;
                    var r100 = tr.risk_score_100;
                    var bandEn = String(tr.risk_band_en || '').trim();
                    var bandRu = kroTrustBandRuFromEn(bandEn);
                    var eyeb = document.getElementById('kro-inline-trust-eyebrow');
-                   if (eyeb) eyeb.textContent = 'Разбор «как у человека», не одна цифра';
                    var hl = document.getElementById('kro-inline-trust-headline');
                    var sub = document.getElementById('kro-inline-trust-sub');
                    var voiceEl = document.getElementById('kro-inline-trust-voice');
@@ -1282,20 +1288,27 @@
                    var confFill = document.getElementById('kro-inline-trust-conf-fill');
                    var confNum = document.getElementById('kro-inline-trust-conf-num');
                    var confNote = document.getElementById('kro-inline-trust-conf-note');
-                   if (hl) {
-                       if (r100 != null && !isNaN(Number(r100))) {
-                           hl.textContent = 'Risk score: ' + Number(r100) + ' / 100 (' + bandEn + ')';
-                       } else {
-                           hl.textContent = 'Risk score: — / 100 (' + bandEn + ')';
+                   if (isV3) {
+                       if (eyeb) eyeb.textContent = 'Быстрый вердикт';
+                       if (hl) hl.textContent = String(tr.headline_ru || '').trim() || 'Итог';
+                       if (sub) sub.textContent = String(tr.subline_ru || '').trim() || '';
+                   } else {
+                       if (eyeb) eyeb.textContent = 'Разбор «как у человека», не одна цифра';
+                       if (hl) {
+                           if (r100 != null && !isNaN(Number(r100))) {
+                               hl.textContent = 'Risk score: ' + Number(r100) + ' / 100 (' + bandEn + ')';
+                           } else {
+                               hl.textContent = 'Risk score: — / 100 (' + bandEn + ')';
+                           }
                        }
-                   }
-                   if (sub) {
-                       sub.textContent =
-                           r100 != null && !isNaN(Number(r100))
-                               ? 'Сначала — все базовые пункты по тексту (да / частично / нет). Потом — самые резкие совпадения с типичными приёмами. Уровень по-русски: ' +
-                                 bandRu +
-                                 '.'
-                               : 'Живую ленту здесь почти не читали — ниже честный чек-лист по тому, что всё же удалось увидеть (жалобы, контекст), без выдуманных цитат.';
+                       if (sub) {
+                           sub.textContent =
+                               r100 != null && !isNaN(Number(r100))
+                                   ? 'Сначала — все базовые пункты по тексту (да / частично / нет). Потом — самые резкие совпадения с типичными приёмами. Уровень по-русски: ' +
+                                     bandRu +
+                                     '.'
+                                   : 'Живую ленту здесь почти не читали — ниже честный чек-лист по тому, что всё же удалось увидеть (жалобы, контекст), без выдуманных цитат.';
+                       }
                    }
                    if (voiceEl) {
                        var voiceLines = Array.isArray(tr.editor_voice_ru) ? tr.editor_voice_ru : [];
@@ -1313,18 +1326,21 @@
                            voiceEl.innerHTML = '';
                        }
                    }
-                   if (chkTitle) chkTitle.textContent = 'Что именно смотрим в тексте';
+                   if (chkTitle) chkTitle.textContent = isV3 ? '3 ключевых пункта' : 'Что именно смотрим в тексте';
                    if (chkUl) {
                        var chk = Array.isArray(tr.checklist) ? tr.checklist : [];
                        if (chk.length) {
                            chkUl.innerHTML = chk
                                .map(function (row) {
+                                   var em = kroTrustChecklistEmoji((row && row.verdict_ru) || '');
                                    var lab = esc(String((row && row.label) || 'Пункт'));
                                    var vd = esc(String((row && row.verdict_ru) || '—'));
                                    var saw = esc(String((row && row.what_we_saw) || '').trim());
                                    return (
                                        '<li class="kro-inline-trust-check-item">' +
                                        '<span class="kro-inline-trust-check-head">' +
+                                       em +
+                                       ' ' +
                                        lab +
                                        '</span> ' +
                                        '<span class="' +
@@ -1342,23 +1358,24 @@
                            chkUl.innerHTML = '';
                        }
                    }
-                   if (patTitle) patTitle.textContent = 'Что всплыло резче всего';
+                   if (patTitle) patTitle.textContent = isV3 ? 'Примеры из текста' : 'Что всплыло резче всего';
                    if (patOl) {
                        var pats = Array.isArray(tr.patterns) ? tr.patterns : [];
                        if (!pats.length) {
                            patOl.innerHTML =
                                '<li class="kro-inline-trust-pattern"><span class="kro-inline-trust-pattern-title">Явных триггеров в выборке мало</span>' +
-                               '<span class="kro-inline-trust-pattern-quote">Пример: —</span>' +
-                               '<span class="kro-inline-trust-pattern-why"><strong>Почему это важно:</strong> без цитат из ленты мы не выдумываем «доказательства» — лучше открыть канал самим или запустить глубокий режим.</span></li>';
+                               '<span class="kro-inline-trust-pattern-quote">Цитата: —</span>' +
+                               '<span class="kro-inline-trust-pattern-why"><strong>Зачем смотреть:</strong> без цитат из ленты не выдумываем «доказательства» — откройте канал или глубокий режим.</span></li>';
                        } else {
                            patOl.innerHTML = pats
                                .map(function (p, idx) {
                                    var title = esc(String((p && p.title) || 'Пункт ' + (idx + 1)));
-                                   var quote = String((p && p.quote) || '').trim();
+                                   var quoteRaw = String((p && p.quote) || '').trim();
+                                   var qInner = quoteRaw.replace(/^«+\s*/, '').replace(/\s*»+$/, '').trim();
                                    var why = esc(String((p && p.why_dangerous) || '').trim());
-                                   var quoteHtml = quote
-                                       ? '<span class="kro-inline-trust-pattern-quote">Пример: ' + esc(quote) + '</span>'
-                                       : '<span class="kro-inline-trust-pattern-quote">Пример: — (совпадение по ключевым словам, точная цитата не сохранилась)</span>';
+                                   var quoteHtml = qInner
+                                       ? '<span class="kro-inline-trust-pattern-quote">«' + esc(qInner) + '»</span>'
+                                       : '<span class="kro-inline-trust-pattern-quote">Цитата: —</span>';
                                    return (
                                        '<li class="kro-inline-trust-pattern"><span class="kro-inline-trust-pattern-title">' +
                                        (idx + 1) +
@@ -1366,18 +1383,33 @@
                                        title +
                                        '</span>' +
                                        quoteHtml +
-                                       '<span class="kro-inline-trust-pattern-why"><strong>Почему это опасно:</strong> ' +
-                                       (why || 'Формулировка часто ведёт к поспешным деньгам без понятного сценария риска.') +
+                                       '<span class="kro-inline-trust-pattern-why"><strong>Это значит:</strong> ' +
+                                       (why || 'Формулировка часто ведёт к поспешным деньгам без сценария риска.') +
                                        '</span></li>'
                                    );
                                })
                                .join('');
                        }
                    }
-                   if (sumEl) sumEl.textContent = String(tr.summary_ru || '').trim() || '';
+                   if (sumEl) {
+                       if (isV3) {
+                           var fy = String(tr.for_you_ru || '').trim();
+                           var sm = String(tr.summary_ru || '').trim();
+                           var parts = [];
+                           if (fy) parts.push('<p class="kro-inline-trust-for-you"><strong>Для тебя:</strong> ' + esc(fy) + '</p>');
+                           if (sm) parts.push('<p class="kro-inline-trust-outcome">' + esc(sm) + '</p>');
+                           sumEl.innerHTML = parts.join('') || '';
+                       } else {
+                           sumEl.textContent = String(tr.summary_ru || '').trim() || '';
+                       }
+                   }
                    if (recEl) {
                        var rec = String(tr.recommendation_ru || '').trim();
-                       recEl.innerHTML = rec ? '<strong>Рекомендация:</strong> ' + esc(rec) : '';
+                       if (isV3) {
+                           recEl.innerHTML = rec ? '<p class="kro-inline-trust-action"><strong>Что делать:</strong> ' + esc(rec) + '</p>' : '';
+                       } else {
+                           recEl.innerHTML = rec ? '<strong>Рекомендация:</strong> ' + esc(rec) : '';
+                       }
                    }
                    var cp = tr.confidence_percent;
                    if (confWrap && confFill && confNum && confNote) {

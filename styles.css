@@ -2357,6 +2357,24 @@ body.kro-hero-scrolled .kro-floating-nav {
    line-height: 1.5;
    color: rgba(255, 255, 255, 0.82);
 }
+.kro-inline-trust-for-you,
+.kro-inline-trust-outcome {
+   margin: 0 0 8px;
+   font-size: 0.88rem;
+   line-height: 1.5;
+   color: rgba(255, 255, 255, 0.84);
+}
+.kro-inline-trust-for-you strong,
+.kro-inline-trust-action strong {
+   color: rgba(253, 224, 127, 0.95);
+   font-weight: 800;
+}
+.kro-inline-trust-action {
+   margin: 0 0 10px;
+   font-size: 0.9rem;
+   line-height: 1.5;
+   color: rgba(224, 242, 254, 0.95);
+}
 .kro-inline-trust-rec {
    margin: 0 0 12px;
    font-size: 0.88rem;
