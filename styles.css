@@ -2225,6 +2225,126 @@ body.kro-hero-scrolled .kro-floating-nav {
    text-transform: uppercase;
    color: rgba(253, 224, 127, 0.75);
 }
+.kro-inline-trust-modes {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 8px;
+   margin: 0 0 14px;
+}
+.kro-inline-trust-mode-btn {
+   appearance: none;
+   border: 1px solid rgba(255, 255, 255, 0.12);
+   background: rgba(0, 0, 0, 0.2);
+   color: rgba(255, 250, 245, 0.88);
+   font-size: 0.78rem;
+   font-weight: 600;
+   padding: 8px 14px;
+   border-radius: 999px;
+   cursor: pointer;
+   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.kro-inline-trust-mode-btn:hover {
+   border-color: rgba(253, 224, 127, 0.35);
+   color: rgba(255, 252, 248, 0.98);
+}
+.kro-inline-trust-mode-btn.is-active {
+   border-color: rgba(253, 224, 127, 0.55);
+   background: rgba(253, 224, 127, 0.14);
+   color: rgba(255, 252, 240, 0.98);
+}
+.kro-inline-trust-mode-panel {
+   display: none;
+}
+.kro-inline-trust-mode-panel.is-active {
+   display: block;
+}
+.kro-inline-trust-how-inline {
+   margin: 0 0 14px;
+   padding: 0 2px;
+   font-size: 0.82rem;
+   color: rgba(200, 215, 235, 0.9);
+}
+.kro-inline-trust-how-inline-sum {
+   cursor: pointer;
+   font-weight: 600;
+   color: rgba(253, 224, 127, 0.85);
+   list-style: none;
+}
+.kro-inline-trust-how-inline-sum::-webkit-details-marker {
+   display: none;
+}
+.kro-inline-trust-how-inline-list {
+   margin: 8px 0 0;
+   padding-left: 1.1rem;
+   line-height: 1.5;
+   color: rgba(220, 228, 240, 0.88);
+}
+.kro-inline-trust-dim-title,
+.kro-inline-trust-evidence-title {
+   margin: 0 0 8px;
+   font-size: 0.78rem;
+   font-weight: 700;
+   letter-spacing: 0.06em;
+   text-transform: uppercase;
+   color: rgba(253, 224, 127, 0.72);
+}
+.kro-inline-trust-dimensions {
+   margin: 0 0 16px;
+   padding-left: 1rem;
+   list-style: decimal;
+}
+.kro-inline-trust-dim-li {
+   margin: 0 0 10px;
+   font-size: 0.84rem;
+   line-height: 1.48;
+   color: rgba(255, 250, 245, 0.9);
+}
+.kro-inline-trust-dim-head {
+   display: block;
+   margin-bottom: 4px;
+}
+.kro-inline-trust-dim-note {
+   display: block;
+   font-size: 0.8rem;
+   color: rgba(255, 255, 255, 0.68);
+}
+.kro-inline-trust-evidence-list {
+   margin: 0;
+   padding: 0;
+   list-style: none;
+}
+.kro-inline-trust-ev-li {
+   margin: 0 0 14px;
+   padding: 12px 14px;
+   border-radius: 12px;
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   background: rgba(0, 0, 0, 0.15);
+}
+.kro-inline-trust-ev-title {
+   display: block;
+   font-weight: 700;
+   font-size: 0.86rem;
+   margin-bottom: 6px;
+   color: rgba(255, 250, 245, 0.95);
+}
+.kro-inline-trust-ev-src {
+   margin: 0 0 6px;
+   font-size: 0.78rem;
+   color: rgba(180, 200, 230, 0.9);
+}
+.kro-inline-trust-ev-quote {
+   margin: 0 0 6px;
+   font-size: 0.84rem;
+   line-height: 1.45;
+   font-style: italic;
+   color: rgba(255, 245, 230, 0.92);
+}
+.kro-inline-trust-ev-why {
+   margin: 0;
+   font-size: 0.8rem;
+   line-height: 1.45;
+   color: rgba(255, 255, 255, 0.72);
+}
 .kro-inline-trust-headline {
    margin: 0 0 8px;
    font-size: clamp(1.05rem, 2.4vw, 1.2rem);

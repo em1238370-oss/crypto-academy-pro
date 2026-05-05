@@ -5305,6 +5305,121 @@ function kroHomeCriteriaToChecklist(criteria) {
 }
 
 /**
+ * 5–7 «внутренних» категорий для слоя логики (показываются во вкладке «Доказательства»).
+ */
+function kroHomeBuildAnalysisDimensions(criteriaRows, flagArr, complaintsCount) {
+  const cr = Array.isArray(criteriaRows) ? criteriaRows : [];
+  const g = (k) => cr.find((x) => x && x.key === k);
+  const st = (k) => {
+    const r = g(k);
+    return r && r.status ? r.status : 'no';
+  };
+  const verdictRu = (k) => kroHomeCriteriaStatusWordRu(st(k));
+  const comp = Number(complaintsCount);
+  const flags = Array.isArray(flagArr) ? flagArr : [];
+  const hasCode = (c) => flags.some((f) => String((f && f.code) || '').toLowerCase() === c);
+  const dim = [];
+  dim.push({
+    key: 'pressure',
+    label: 'Давление и срочность',
+    level: st('fomo') === 'yes' ? 'high' : 'low',
+    verdict_ru: verdictRu('fomo'),
+    note_ru: st('fomo') === 'yes'
+      ? 'В тексте есть нажим «успей / сейчас / последний шанс» — типичный разгон эмоций перед решением.'
+      : 'В этой выборке жёсткого нажима по срокам почти не видно.',
+  });
+  dim.push({
+    key: 'profit_promises',
+    label: 'Обещания прибыли',
+    level: hasCode('guarantee') || hasCode('x_promises') ? 'high' : 'low',
+    verdict_ru: hasCode('guarantee') || hasCode('x_promises') ? 'да' : 'нет',
+    note_ru: hasCode('guarantee') || hasCode('x_promises')
+      ? 'Есть формулировки про «гарантии», «иксы» или слишком ровный результат — в реальном рынке так не бывает без оговорок.'
+      : 'Явных «гарантий дохода» и «иксов» в выборке не поймали.',
+  });
+  dim.push({
+    key: 'risk_management',
+    label: 'Управление риском в тексте',
+    level: st('risk') === 'yes' ? 'low' : st('risk') === 'partial' ? 'mid' : 'high',
+    verdict_ru: verdictRu('risk'),
+    note_ru: st('risk') === 'yes'
+      ? 'Встречаются стопы, риск на сделку или сценарий отмены идеи.'
+      : 'Правила риска в постах почти не проговорены — при копировании вы остаетесь без карты.',
+  });
+  dim.push({
+    key: 'signals_copy',
+    label: 'Сигналы и слепое копирование',
+    level: hasCode('signal_push') ? 'high' : 'mid',
+    verdict_ru: hasCode('signal_push') ? 'да' : 'нет',
+    note_ru: hasCode('signal_push')
+      ? 'Есть короткие торговые команды без полного сценария — удобно копировать, но непонятно, где выход.'
+      : 'Жёсткого «сигнал без контекста» в выборке мало; риск копирования всё равно остаётся, если нет своих правил.',
+  });
+  dim.push({
+    key: 'vip_closed',
+    label: 'Платный / закрытый доступ',
+    level: st('vip') === 'yes' ? 'high' : 'low',
+    verdict_ru: verdictRu('vip'),
+    note_ru: st('vip') === 'yes'
+      ? 'Заметен платный или закрытый формат — часто следующий шаг после «бесплатной» ленты.'
+      : 'Прямых призывов к VIP в этой выборке почти нет.',
+  });
+  dim.push({
+    key: 'social_proof',
+    label: 'Социальное давление и «все так делают»',
+    level: st('ads') === 'yes' || st('ads') === 'partial' ? 'mid' : 'low',
+    verdict_ru: verdictRu('ads'),
+    note_ru: st('ads') === 'yes' || st('ads') === 'partial'
+      ? 'Много отсылок к партнёркам, ссылкам и чужим каналам — фон «все уже внутри» усиливается.'
+      : 'Реклама и партнёрки в этой выборке не доминируют.',
+  });
+  dim.push({
+    key: 'complaints',
+    label: 'Жалобы в сервисе',
+    level: Number.isFinite(comp) && comp >= 2 ? 'high' : comp >= 1 ? 'mid' : 'low',
+    verdict_ru: comp >= 2 ? 'да' : comp >= 1 ? 'частично' : 'нет',
+    note_ru: comp >= 2
+      ? 'Несколько жалоб на канал в нашей базе — отдельный сигнал осторожности.'
+      : comp >= 1
+        ? 'Есть хотя бы одна жалоба — имеет смысл прочитать детали в карточке канала.'
+        : 'В открытых жалобах по этому каналу пусто — опора в основном на текст ленты.',
+  });
+  return dim.slice(0, 7);
+}
+
+/**
+ * Элементы для вкладки «Доказательства»: цитаты из флагов + при необходимости жалобы.
+ */
+function kroHomeBuildEvidenceItems(flagArr, complaintsCount) {
+  const out = [];
+  const flags = Array.isArray(flagArr) ? flagArr : [];
+  for (const f of flags) {
+    const title = String((f && f.title) || (f && f.code) || 'Паттерн').trim();
+    const sn = f && f.evidence_snippet ? kroHomeFilterStructuredQuote(String(f.evidence_snippet).trim()) : '';
+    if (!sn) continue;
+    out.push({
+      kind: 'flag',
+      title,
+      quote_ru: sn,
+      source_ru: 'Текст постов в выборке',
+      why_ru: kroHomeTrustClip(String((f && f.explanation) || '').split(/\n\n+/)[0] || 'Совпадение с типичным приёмом в крипто-каналах.', 200),
+    });
+    if (out.length >= 5) break;
+  }
+  const comp = Number(complaintsCount);
+  if (Number.isFinite(comp) && comp >= 1 && out.length < 6) {
+    out.push({
+      kind: 'complaints',
+      title: 'Жалобы пользователей',
+      quote_ru: '',
+      source_ru: 'Лист reports в Google Sheets (сервис)',
+      why_ru: `Зафиксировано жалоб: ${comp}. Откройте карточку канала для формулировок и дат.`,
+    });
+  }
+  return out.slice(0, 6);
+}
+
+/**
  * Главная: компактный «продуктовый» отчёт (v4) — риск, 3 причины, 1 пример, действие, без «процесса».
  */
 function kroHomeThreeRiskBulletsFromCriteria(criteriaRows) {
@@ -5485,10 +5600,46 @@ function kroHomeBuildTrustReportBundle(opts) {
   const deceptionBullets = kroHomeDeceptionBulletsFromFlags(flagArr).slice(0, 1);
 
   const empathIntroRu =
-    'Если вы устали от обещаний и потерь — это нормально. Ниже коротко и по делу: что видим в тексте, один пример и шаг, который защищает капитал. Можно читать в своём темпе; спешить не нужно.';
+    'Если вы устали от обещаний и потерь — это нормально. Сначала короткий вывод; ниже можно открыть «Подробно» или «Доказательства», если нужны детали.';
+
+  const analysisDimensions = kroHomeBuildAnalysisDimensions(criteriaRows, flagArr, complaintsCount);
+  const evidenceItems = kroHomeBuildEvidenceItems(flagArr, complaintsCount);
+
+  const uiModes = {
+    quick: {
+      risk_headline_ru: headlineRu,
+      subline_ru: kroHomeTrustClip(sublineRu, 200),
+      reasons_ru: reasonsRu,
+      for_you_ru: forYouRu,
+      recommendation_ru: rec,
+    },
+    detailed: {
+      empath_intro_ru: empathIntroRu,
+      impact_hook_ru: impactHookRu,
+      editor_voice_ru: editorVoice.filter(Boolean).slice(0, 2),
+      summary_ru: summaryRu,
+      when_ok_ru: whenOkRu,
+      when_dangerous_ru: whenDangerousRu,
+      why_score_ru: whyScoreRu,
+      example_title_ru: exTitle,
+      example_quote_ru: exQuoteInner,
+      example_why_ru: exWhy,
+      patterns,
+      recommendation_ru: rec,
+      how_bullets_ru: [
+        'Ищем в тексте триггеры: гарантии, «иксы», VIP, срочность.',
+        'Смотрим, есть ли риск‑менеджмент и объяснение логики сделки.',
+        'Сверяем с жалобами в сервисе.',
+      ],
+    },
+    evidence: {
+      analysis_dimensions: analysisDimensions,
+      evidence_items: evidenceItems,
+    },
+  };
 
   return {
-    v: 4,
+    v: 5,
     read_path: readPath || null,
     insufficient_feed: weakFeed && !hasStrongEvidence,
     risk_score_100: outRisk100,
@@ -5496,6 +5647,10 @@ function kroHomeBuildTrustReportBundle(opts) {
     status_code: outStatusCode,
     risk_label_ru: riskLabelRu,
     risk_emoji: riskEmoji,
+    ui_modes: uiModes,
+    default_mode: 'quick',
+    analysis_dimensions: analysisDimensions,
+    evidence_items: evidenceItems,
     empath_intro_ru: empathIntroRu,
     headline_ru: headlineRu,
     subline_ru: sublineRu,
