@@ -7,6 +7,15 @@
 #   - KRO_TELEGRAM_SESSION_STRING (StringSession из convert_session.py), или
 #   - TELEGRAM_SESSION_B64 (base64 от бинарного kro_worker.session — совместимо со старым продом)
 # Плюс существующие: KRO_SHEET_ID, KRO_GOOGLE_CREDENTIALS_JSON, и т.д.
+#
+# Очередь kro_check_requests без GitHub Actions (Render Cron каждые ~2 мин):
+#   1) В Web Service задайте KRO_LIVE_QUEUE_CRON_SECRET (длинная случайная строка).
+#   2) Создайте Render Cron Job: Schedule */2 * * * * (UTC), команда например:
+#        curl -fsS -X POST -H "X-KRO-LIVE-QUEUE-SECRET: $KRO_LIVE_QUEUE_CRON_SECRET" \
+#          "https://<ваш-сервис>.onrender.com/api/kro/process-live-queue"
+#      Тот же секрет добавьте в env Cron-сервиса.
+#   3) Проверка Claude (опционально): GET с тем же секретом в query:
+#        /api/kro/internal/claude-ping?secret=...
 
 services:
   - type: web

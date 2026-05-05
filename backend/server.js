@@ -7130,7 +7130,8 @@ function kroMapRuRiskLabelToConclusion(ru) {
 }
 
 async function kroAnalyzeChannelWithClaudeFast(payload, timeoutMs) {
-  if (!anthropicApiKey) {
+  const apiKey = (anthropicApiKey || String(process.env.ANTHROPIC_API_KEY || '').trim());
+  if (!apiKey) {
     console.warn('[KRO claude] ANTHROPIC_API_KEY is empty; skipping Claude analysis');
     return null;
   }
@@ -7158,7 +7159,7 @@ async function kroAnalyzeChannelWithClaudeFast(payload, timeoutMs) {
       signal: ctl.signal,
       headers: {
         'content-type': 'application/json',
-        'x-api-key': anthropicApiKey,
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
@@ -7183,6 +7184,280 @@ async function kroAnalyzeChannelWithClaudeFast(payload, timeoutMs) {
     clearTimeout(t);
   }
 }
+
+/** Секрет для Render Cron: POST /api/kro/process-live-queue (без Telegram, только Sheets + Claude). */
+const kroLiveQueueCronSecret = (process.env.KRO_LIVE_QUEUE_CRON_SECRET || '').trim();
+
+function kroLiveQueueCronAuthorized(req) {
+  if (!kroLiveQueueCronSecret) return false;
+  const hdr = String(req.get('x-kro-live-queue-secret') || req.get('X-KRO-LIVE-QUEUE-SECRET') || '').trim();
+  if (hdr && hdr === kroLiveQueueCronSecret) return true;
+  const q = String((req.query && req.query.secret) || '').trim();
+  return q === kroLiveQueueCronSecret;
+}
+
+function kroPickPendingLiveCheckRequest(rows) {
+  const arr = Array.isArray(rows) ? rows : [];
+  for (let i = 0; i < arr.length; i++) {
+    const row = arr[i];
+    const requestId = String((row[0] || '')).trim();
+    const username = String((row[1] || '')).trim();
+    const status = String((row[2] || '')).trim().toLowerCase();
+    if (!requestId || !username || status !== 'pending') continue;
+    const createdAt = String((row[4] || '')).trim();
+    return { sheetRow: i + 2, requestId, username, createdAt };
+  }
+  return null;
+}
+
+/**
+ * Псевдо-лента для GET /api/kro/check-result/:id без Telethon/t.me: scam_base, channels_watch, reports + Claude.
+ * Внешние HTTP (site_mentions) не вызываем — только Google Sheets и Anthropic.
+ */
+async function kroBuildQueueSheetClaudeParsed(opts) {
+  const {
+    sheetsClient,
+    key,
+    channelDisplay,
+    requestId,
+    claudeBudgetMs,
+  } = opts || {};
+  const rawRows = await kroFetchScamBaseValuesCached(sheetsClient);
+  const scamRows = rawRows
+    .slice(1)
+    .map(parseScamBaseRow)
+    .filter((r) => r.username && channelMatchKey(r.username) === key)
+    .map(enrichScamBaseContentAnalysisForMonitor);
+  let latestProfile = null;
+  if (scamRows.length) {
+    latestProfile = scamRows.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
+  }
+  const watchRow = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
+  const displayCh = (latestProfile && latestProfile.username) ? latestProfile.username : channelDisplay;
+  const reports = await getAllReportsForChannel(sheetsClient, displayCh);
+  const claudePayload = {
+    mode: 'queue_sheets_only',
+    channel: channelDisplay,
+    request_id: requestId,
+    scam_base: latestProfile
+      ? {
+          status: latestProfile.status,
+          verdict: latestProfile.verdict,
+          risk_score: latestProfile.risk_score,
+          complaints: latestProfile.complaints,
+          source_primary: latestProfile.source_primary,
+        }
+      : null,
+    channels_watch: watchRow
+      ? {
+          status: watchRow.status,
+          activity_summary: watchRow.activity_summary,
+          reviews_summary: watchRow.reviews_summary,
+          status_reason: watchRow.status_reason,
+        }
+      : null,
+    reports: reports.slice(0, 18).map((r) => ({
+      date: r.date,
+      description: (r.description || '').slice(0, 400),
+      status: r.status,
+      source: r.source,
+    })),
+    site_mentions: [],
+  };
+  const claudeJson = await kroAnalyzeChannelWithClaudeFast(claudePayload, Math.max(4000, Number(claudeBudgetMs) || 12000));
+  const sampleBits = [];
+  if (latestProfile && latestProfile.source_primary) {
+    sampleBits.push(String(latestProfile.source_primary).trim().slice(0, 220));
+  }
+  for (const r of reports.slice(0, 6)) {
+    const d = (r.description || '').trim();
+    if (d) sampleBits.push(d.slice(0, 220));
+  }
+  if (Array.isArray(claudeJson && claudeJson.citations)) {
+    for (const c of claudeJson.citations) {
+      const t = String(c || '').trim();
+      if (t) sampleBits.push(t.slice(0, 220));
+    }
+  }
+  if (Array.isArray(claudeJson && claudeJson.basic_info_lines)) {
+    for (const line of claudeJson.basic_info_lines) {
+      const t = String(line || '').trim();
+      if (t) sampleBits.push(t.slice(0, 220));
+    }
+  }
+  const seen = new Set();
+  const sample_posts = [];
+  for (const s of sampleBits) {
+    const k = s.slice(0, 120);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    sample_posts.push(s);
+    if (sample_posts.length >= 24) break;
+  }
+  if (sample_posts.length < 5) {
+    while (sample_posts.length < 5) {
+      sample_posts.push(
+        `[без постов ленты Telegram] ${channelDisplay}: только строки из scam_base / channels_watch / reports сервиса и при необходимости Claude.`,
+      );
+    }
+  }
+  const postsRead = sample_posts.length;
+  return {
+    found: true,
+    _check_once_ok: true,
+    read_path: claudeJson ? 'sheets_claude_queue' : 'sheets_only_queue',
+    queue_fill_mode: claudeJson ? 'sheets_plus_claude' : 'sheets_only',
+    username: String(channelDisplay || '').trim() || null,
+    posts_fetched: postsRead,
+    analysis_window_days: 30,
+    sample_posts,
+    claude_queue: claudeJson || null,
+    queue_note_ru:
+      'Лента Telegram на этом сервере недоступна; ответ собран из Google Sheets (scam_base, channels_watch, reports) и при возможности Claude. Это не замена чтению постов в канале.',
+  };
+}
+
+/** Мини-проверка Anthropic (нужен KRO_LIVE_QUEUE_CRON_SECRET в заголовке или ?secret=). */
+app.get('/api/kro/internal/claude-ping', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  if (!kroLiveQueueCronAuthorized(req)) {
+    return res.status(403).json({
+      ok: false,
+      error: 'forbidden',
+      message_ru: 'Нужен заголовок X-KRO-LIVE-QUEUE-SECRET или query ?secret=… как в KRO_LIVE_QUEUE_CRON_SECRET.',
+    });
+  }
+  const apiKey = anthropicApiKey || String(process.env.ANTHROPIC_API_KEY || '').trim();
+  if (!apiKey) {
+    return res.status(200).json({ ok: false, configured: false, message_ru: 'ANTHROPIC_API_KEY не задан.' });
+  }
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 12000);
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      signal: ctl.signal,
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: process.env.KRO_CLAUDE_MODEL || 'claude-3-5-haiku-20241022',
+        max_tokens: 32,
+        temperature: 0,
+        messages: [{ role: 'user', content: 'Ответь одним словом: pong' }],
+      }),
+    });
+    const j = await r.json();
+    const txt = (j && j.content && j.content[0] && j.content[0].text) ? String(j.content[0].text).trim() : '';
+    return res.status(200).json({
+      ok: r.ok,
+      http_status: r.status,
+      model: process.env.KRO_CLAUDE_MODEL || 'claude-3-5-haiku-20241022',
+      reply_preview: txt.slice(0, 120),
+    });
+  } catch (e) {
+    return res.status(200).json({
+      ok: false,
+      error: (e && e.message) ? String(e.message) : 'request_failed',
+    });
+  } finally {
+    clearTimeout(t);
+  }
+});
+
+/**
+ * Одна pending-строка kro_check_requests → done/failed. Для Render Cron: каждые 2 мин POST
+ * с заголовком X-KRO-LIVE-QUEUE-SECRET (значение = KRO_LIVE_QUEUE_CRON_SECRET).
+ */
+app.post('/api/kro/process-live-queue', express.json({ limit: '4000' }), async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  if (!kroLiveQueueCronAuthorized(req)) {
+    return res.status(403).json({
+      ok: false,
+      error: 'forbidden',
+      message_ru: 'Укажите KRO_LIVE_QUEUE_CRON_SECRET на сервере и передайте тот же секрет в X-KRO-LIVE-QUEUE-SECRET.',
+    });
+  }
+  const logId = `liveq:${Date.now().toString(36)}`;
+  try {
+    const sheetsClient = await getKroSheetsClient();
+    if (!sheetsClient || !kroSheetId) {
+      return res.status(503).json({ ok: false, error: 'sheets_unavailable', message_ru: 'Google Sheets недоступен.' });
+    }
+    const resp = await sheetsClient.sheets.spreadsheets.values.get({
+      spreadsheetId: kroSheetId,
+      range: kroCheckRequestsRange,
+    });
+    const rows = resp.data.values || [];
+    const pick = kroPickPendingLiveCheckRequest(rows);
+    if (!pick) {
+      console.log(`[KRO process-live-queue ${logId}] no_pending`);
+      return res.status(200).json({ ok: true, processed: false, reason: 'no_pending' });
+    }
+    const { sheetRow, requestId, username, createdAt } = pick;
+    const key = channelMatchKey(username);
+    const channelDisplay = username.startsWith('@') ? username : `@${key}`;
+    console.log(`[KRO process-live-queue ${logId}] picked row=${sheetRow} id=${requestId} user=${channelDisplay}`);
+
+    const sheetTab = kroCheckRequestsRange.includes('!') ? kroCheckRequestsRange.split('!')[0] : 'kro_check_requests';
+    await sheetsClient.sheets.spreadsheets.values.update({
+      spreadsheetId: kroSheetId,
+      range: `${sheetTab}!A${sheetRow}:E${sheetRow}`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [[requestId, username, 'running', '', createdAt]],
+      },
+    });
+
+    const claudeBudget = Math.min(25000, Math.max(5000, parseInt(process.env.KRO_QUEUE_CLAUDE_BUDGET_MS || '14000', 10) || 14000));
+    let parsed = null;
+    let errText = '';
+    try {
+      parsed = await kroBuildQueueSheetClaudeParsed({
+        sheetsClient,
+        key,
+        channelDisplay,
+        requestId,
+        claudeBudgetMs: claudeBudget,
+      });
+    } catch (e) {
+      errText = (e && e.message) ? String(e.message).slice(0, 400) : 'queue_build_failed';
+      console.error(`[KRO process-live-queue ${logId}] build_error`, e);
+    }
+    if (!parsed || typeof parsed !== 'object') {
+      parsed = {
+        found: false,
+        error: errText || 'queue_build_failed',
+        read_path: 'sheets_queue_failed',
+      };
+    }
+    const status = parsed.found === true && Number(parsed.posts_fetched || 0) >= 1 ? 'done' : 'failed';
+    const resultJson = JSON.stringify(parsed);
+    await sheetsClient.sheets.spreadsheets.values.update({
+      spreadsheetId: kroSheetId,
+      range: `${sheetTab}!A${sheetRow}:E${sheetRow}`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [[requestId, username, status, resultJson, createdAt]],
+      },
+    });
+    console.log(`[KRO process-live-queue ${logId}] done status=${status} posts=${Number(parsed.posts_fetched || 0)}`);
+    return res.status(200).json({
+      ok: true,
+      processed: true,
+      request_id: requestId,
+      username: channelDisplay,
+      sheet_row: sheetRow,
+      result_status: status,
+      read_path: parsed.read_path || null,
+    });
+  } catch (e) {
+    console.error(`[KRO process-live-queue ${logId}] fatal`, e);
+    return res.status(500).json({ ok: false, error: 'internal_error', message_ru: 'Ошибка обработки очереди.' });
+  }
+});
 
 function kroCheckQueueRequestId(channelKey) {
   return `krochk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}_${channelKey}`;
