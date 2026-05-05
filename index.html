@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260505-home-harvest-min-posts">
+   <link rel="stylesheet" href="styles.css?v=20260505-home-trust-v4-decision">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -356,6 +356,7 @@
                                <p class="kro-inline-trust-eyebrow" id="kro-inline-trust-eyebrow">Почему этому можно доверять</p>
                                <p class="kro-inline-trust-headline" id="kro-inline-trust-headline"></p>
                                <p class="kro-inline-trust-sub" id="kro-inline-trust-sub"></p>
+                               <p class="kro-inline-trust-impact" id="kro-inline-trust-impact" hidden></p>
                                <div class="kro-inline-trust-voice" id="kro-inline-trust-voice" hidden></div>
                                <h4 class="kro-inline-trust-checklist-title" id="kro-inline-trust-checklist-title">Что именно смотрим в тексте</h4>
                                <ul class="kro-inline-trust-checklist" id="kro-inline-trust-checklist"></ul>
@@ -363,6 +364,9 @@
                                <ol class="kro-inline-trust-patterns" id="kro-inline-trust-patterns"></ol>
                                <div class="kro-inline-trust-foot">
                                    <p class="kro-inline-trust-summary" id="kro-inline-trust-summary"></p>
+                                   <p class="kro-inline-trust-when" id="kro-inline-trust-when-ok" hidden></p>
+                                   <p class="kro-inline-trust-when kro-inline-trust-when--bad" id="kro-inline-trust-when-bad" hidden></p>
+                                   <p class="kro-inline-trust-why-score" id="kro-inline-trust-why-score" hidden></p>
                                    <p class="kro-inline-trust-rec" id="kro-inline-trust-rec"></p>
                                    <div class="kro-inline-trust-conf" id="kro-inline-trust-conf-wrap" hidden>
                                        <span class="kro-inline-trust-conf-label">Уверенность в выводе</span>
@@ -1271,28 +1275,54 @@
                        if (howList) howList.innerHTML = '';
                        return;
                    }
-                   var isV3 = Number(tr.v) >= 3;
+                   var isV4 = Number(tr.v) >= 4;
+                   var isV3 = Number(tr.v) >= 3 && !isV4;
                    var r100 = tr.risk_score_100;
                    var bandEn = String(tr.risk_band_en || '').trim();
                    var bandRu = kroTrustBandRuFromEn(bandEn);
                    var eyeb = document.getElementById('kro-inline-trust-eyebrow');
                    var hl = document.getElementById('kro-inline-trust-headline');
                    var sub = document.getElementById('kro-inline-trust-sub');
+                   var impactEl = document.getElementById('kro-inline-trust-impact');
                    var voiceEl = document.getElementById('kro-inline-trust-voice');
                    var chkTitle = document.getElementById('kro-inline-trust-checklist-title');
                    var chkUl = document.getElementById('kro-inline-trust-checklist');
                    var patTitle = document.getElementById('kro-inline-trust-patterns-title');
                    var patOl = document.getElementById('kro-inline-trust-patterns');
                    var sumEl = document.getElementById('kro-inline-trust-summary');
+                   var whenOkEl = document.getElementById('kro-inline-trust-when-ok');
+                   var whenBadEl = document.getElementById('kro-inline-trust-when-bad');
+                   var whyScoreEl = document.getElementById('kro-inline-trust-why-score');
                    var recEl = document.getElementById('kro-inline-trust-rec');
                    var confWrap = document.getElementById('kro-inline-trust-conf-wrap');
                    var confFill = document.getElementById('kro-inline-trust-conf-fill');
                    var confNum = document.getElementById('kro-inline-trust-conf-num');
                    var confNote = document.getElementById('kro-inline-trust-conf-note');
-                   if (isV3) {
+                   if (isV4) {
+                       if (eyeb) eyeb.textContent = 'Решение за 5 секунд';
+                       if (hl) hl.textContent = String(tr.headline_ru || '').trim() || 'Итог';
+                       if (sub) sub.textContent = String(tr.subline_ru || '').trim() || '';
+                       if (impactEl) {
+                           var ih = String(tr.impact_hook_ru || '').trim();
+                           if (ih) {
+                               impactEl.textContent = ih;
+                               impactEl.hidden = false;
+                               impactEl.classList.remove('hidden');
+                           } else {
+                               impactEl.textContent = '';
+                               impactEl.hidden = true;
+                               impactEl.classList.add('hidden');
+                           }
+                       }
+                   } else if (isV3) {
                        if (eyeb) eyeb.textContent = 'Быстрый вердикт';
                        if (hl) hl.textContent = String(tr.headline_ru || '').trim() || 'Итог';
                        if (sub) sub.textContent = String(tr.subline_ru || '').trim() || '';
+                       if (impactEl) {
+                           impactEl.textContent = '';
+                           impactEl.hidden = true;
+                           impactEl.classList.add('hidden');
+                       }
                    } else {
                        if (eyeb) eyeb.textContent = 'Разбор «как у человека», не одна цифра';
                        if (hl) {
@@ -1310,10 +1340,15 @@
                                      '.'
                                    : 'Живую ленту здесь почти не читали — ниже честный чек-лист по тому, что всё же удалось увидеть (жалобы, контекст), без выдуманных цитат.';
                        }
+                       if (impactEl) {
+                           impactEl.textContent = '';
+                           impactEl.hidden = true;
+                           impactEl.classList.add('hidden');
+                       }
                    }
                    if (voiceEl) {
                        var voiceLines = Array.isArray(tr.editor_voice_ru) ? tr.editor_voice_ru : [];
-                       if (voiceLines.length) {
+                       if (voiceLines.length && !isV4) {
                            voiceEl.hidden = false;
                            voiceEl.classList.remove('hidden');
                            voiceEl.innerHTML = voiceLines
@@ -1327,42 +1362,87 @@
                            voiceEl.innerHTML = '';
                        }
                    }
-                   if (chkTitle) chkTitle.textContent = isV3 ? '3 ключевых пункта' : 'Что именно смотрим в тексте';
+                   if (chkTitle) {
+                       chkTitle.textContent = isV4 ? 'Почему это риск' : isV3 ? '3 ключевых пункта' : 'Что именно смотрим в тексте';
+                   }
                    if (chkUl) {
-                       var chk = Array.isArray(tr.checklist) ? tr.checklist : [];
-                       if (chk.length) {
-                           chkUl.innerHTML = chk
-                               .map(function (row) {
-                                   var em = kroTrustChecklistEmoji((row && row.verdict_ru) || '');
-                                   var lab = esc(String((row && row.label) || 'Пункт'));
-                                   var vd = esc(String((row && row.verdict_ru) || '—'));
-                                   var saw = esc(String((row && row.what_we_saw) || '').trim());
-                                   return (
-                                       '<li class="kro-inline-trust-check-item">' +
-                                       '<span class="kro-inline-trust-check-head">' +
-                                       em +
-                                       ' ' +
-                                       lab +
-                                       '</span> ' +
-                                       '<span class="' +
-                                       kroTrustVerdictClass((row && row.verdict_ru) || '') +
-                                       '">' +
-                                       vd +
-                                       '</span>' +
-                                       '<span class="kro-inline-trust-check-body">' +
-                                       saw +
-                                       '</span></li>'
-                                   );
+                       if (isV4 && Array.isArray(tr.reasons_ru) && tr.reasons_ru.length) {
+                           chkUl.innerHTML = tr.reasons_ru
+                               .map(function (ln) {
+                                   return '<li class="kro-inline-trust-reason-li"><span class="kro-inline-trust-reason-mark">❗️</span> ' + esc(String(ln || '').trim()) + '</li>';
                                })
                                .join('');
                        } else {
-                           chkUl.innerHTML = '';
+                           var chk = Array.isArray(tr.checklist) ? tr.checklist : [];
+                           if (chk.length) {
+                               chkUl.innerHTML = chk
+                                   .map(function (row) {
+                                       var em = kroTrustChecklistEmoji((row && row.verdict_ru) || '');
+                                       var lab = esc(String((row && row.label) || 'Пункт'));
+                                       var vd = esc(String((row && row.verdict_ru) || '—'));
+                                       var saw = esc(String((row && row.what_we_saw) || '').trim());
+                                       return (
+                                           '<li class="kro-inline-trust-check-item">' +
+                                           '<span class="kro-inline-trust-check-head">' +
+                                           em +
+                                           ' ' +
+                                           lab +
+                                           '</span> ' +
+                                           '<span class="' +
+                                           kroTrustVerdictClass((row && row.verdict_ru) || '') +
+                                           '">' +
+                                           vd +
+                                           '</span>' +
+                                           '<span class="kro-inline-trust-check-body">' +
+                                           saw +
+                                           '</span></li>'
+                                       );
+                                   })
+                                   .join('');
+                           } else {
+                               chkUl.innerHTML = '';
+                           }
                        }
                    }
-                   if (patTitle) patTitle.textContent = isV3 ? 'Примеры из текста' : 'Что всплыло резче всего';
+                   if (patTitle) patTitle.textContent = isV4 ? 'Пример' : isV3 ? 'Примеры из текста' : 'Что всплыло резче всего';
                    if (patOl) {
                        var pats = Array.isArray(tr.patterns) ? tr.patterns : [];
-                       if (!pats.length) {
+                       if (isV4) {
+                           var eq = String(tr.example_quote_ru || '').trim();
+                           var ew = String(tr.example_why_ru || '').trim();
+                           var et = String(tr.example_title_ru || '').trim();
+                           if (eq || ew) {
+                               patOl.innerHTML =
+                                   '<li class="kro-inline-trust-pattern kro-inline-trust-pattern--solo">' +
+                                   (et ? '<span class="kro-inline-trust-pattern-title">' + esc(et) + '</span>' : '') +
+                                   (eq
+                                       ? '<span class="kro-inline-trust-pattern-quote">«' + esc(eq) + '»</span>'
+                                       : '<span class="kro-inline-trust-pattern-quote">Цитата: —</span>') +
+                                   '<span class="kro-inline-trust-pattern-why"><strong>Что не так:</strong> ' +
+                                   esc(ew || 'Нет явного сценария сделки и управления риском в этой строке.') +
+                                   '</span></li>';
+                           } else if (pats.length) {
+                               var p0 = pats[0];
+                               var qRaw = String((p0 && p0.quote) || '').trim();
+                               var qIn = qRaw.replace(/^«+\s*/, '').replace(/\s*»+$/, '').trim();
+                               patOl.innerHTML =
+                                   '<li class="kro-inline-trust-pattern kro-inline-trust-pattern--solo">' +
+                                   '<span class="kro-inline-trust-pattern-title">' +
+                                   esc(String((p0 && p0.title) || 'Пример')) +
+                                   '</span>' +
+                                   (qIn
+                                       ? '<span class="kro-inline-trust-pattern-quote">«' + esc(qIn) + '»</span>'
+                                       : '<span class="kro-inline-trust-pattern-quote">Цитата: —</span>') +
+                                   '<span class="kro-inline-trust-pattern-why"><strong>Что не так:</strong> ' +
+                                   esc(String((p0 && p0.why_dangerous) || '').trim() || 'См. пояснение выше.') +
+                                   '</span></li>';
+                           } else {
+                               patOl.innerHTML =
+                                   '<li class="kro-inline-trust-pattern"><span class="kro-inline-trust-pattern-title">Пример</span>' +
+                                   '<span class="kro-inline-trust-pattern-quote">Цитата: —</span>' +
+                                   '<span class="kro-inline-trust-pattern-why"><strong>Что не так:</strong> без осмысленной цитаты из ленты не подставляем «доказательство».</span></li>';
+                           }
+                       } else if (!pats.length) {
                            patOl.innerHTML =
                                '<li class="kro-inline-trust-pattern"><span class="kro-inline-trust-pattern-title">Явных триггеров в выборке мало</span>' +
                                '<span class="kro-inline-trust-pattern-quote">Цитата: —</span>' +
@@ -1393,28 +1473,71 @@
                        }
                    }
                    if (sumEl) {
-                       if (isV3) {
+                       if (isV4) {
                            var fy = String(tr.for_you_ru || '').trim();
                            var sm = String(tr.summary_ru || '').trim();
                            var parts = [];
-                           if (fy) parts.push('<p class="kro-inline-trust-for-you"><strong>Для тебя:</strong> ' + esc(fy) + '</p>');
+                           if (fy) parts.push('<p class="kro-inline-trust-for-you"><strong>Что это значит для тебя:</strong> ' + esc(fy) + '</p>');
                            if (sm) parts.push('<p class="kro-inline-trust-outcome">' + esc(sm) + '</p>');
                            sumEl.innerHTML = parts.join('') || '';
+                       } else if (isV3) {
+                           var fy3 = String(tr.for_you_ru || '').trim();
+                           var sm3 = String(tr.summary_ru || '').trim();
+                           var parts3 = [];
+                           if (fy3) parts3.push('<p class="kro-inline-trust-for-you"><strong>Для тебя:</strong> ' + esc(fy3) + '</p>');
+                           if (sm3) parts3.push('<p class="kro-inline-trust-outcome">' + esc(sm3) + '</p>');
+                           sumEl.innerHTML = parts3.join('') || '';
                        } else {
                            sumEl.textContent = String(tr.summary_ru || '').trim() || '';
                        }
                    }
+                   if (whenOkEl) {
+                       var wok = String(tr.when_ok_ru || '').trim();
+                       if (isV4 && wok) {
+                           whenOkEl.innerHTML = '<strong>Когда это ок:</strong> ' + esc(wok);
+                           whenOkEl.hidden = false;
+                           whenOkEl.classList.remove('hidden');
+                       } else {
+                           whenOkEl.innerHTML = '';
+                           whenOkEl.hidden = true;
+                           whenOkEl.classList.add('hidden');
+                       }
+                   }
+                   if (whenBadEl) {
+                       var wbd = String(tr.when_dangerous_ru || '').trim();
+                       if (isV4 && wbd) {
+                           whenBadEl.innerHTML = '<strong>Когда опасно:</strong> ' + esc(wbd);
+                           whenBadEl.hidden = false;
+                           whenBadEl.classList.remove('hidden');
+                       } else {
+                           whenBadEl.innerHTML = '';
+                           whenBadEl.hidden = true;
+                           whenBadEl.classList.add('hidden');
+                       }
+                   }
+                   if (whyScoreEl) {
+                       var ws = String(tr.why_score_ru || '').trim();
+                       if (isV4 && ws) {
+                           whyScoreEl.textContent = ws;
+                           whyScoreEl.hidden = false;
+                           whyScoreEl.classList.remove('hidden');
+                       } else {
+                           whyScoreEl.textContent = '';
+                           whyScoreEl.hidden = true;
+                           whyScoreEl.classList.add('hidden');
+                       }
+                   }
                    if (recEl) {
                        var rec = String(tr.recommendation_ru || '').trim();
-                       if (isV3) {
-                           recEl.innerHTML = rec ? '<p class="kro-inline-trust-action"><strong>Что делать:</strong> ' + esc(rec) + '</p>' : '';
+                       if (isV4 || isV3) {
+                           recEl.innerHTML = rec ? '<p class="kro-inline-trust-action"><strong>Действие:</strong> ' + esc(rec) + '</p>' : '';
                        } else {
                            recEl.innerHTML = rec ? '<strong>Рекомендация:</strong> ' + esc(rec) : '';
                        }
                    }
                    var cp = tr.confidence_percent;
                    if (confWrap && confFill && confNum && confNote) {
-                       if (cp != null && !isNaN(Number(cp))) {
+                       if (!isV4 && cp != null && !isNaN(Number(cp))) {
                            var n = Math.max(0, Math.min(100, Math.round(Number(cp))));
                            confWrap.hidden = false;
                            confWrap.classList.remove('hidden');
@@ -1430,7 +1553,7 @@
                    stack.hidden = false;
                    stack.classList.remove('hidden');
                    var dn = tr.deception_narrative && typeof tr.deception_narrative === 'object' ? tr.deception_narrative : null;
-                   if (dec && dn) {
+                   if (dec && dn && !isV4) {
                        var dt = document.getElementById('kro-inline-deception-title');
                        var dh = document.getElementById('kro-inline-deception-hook');
                        var db = document.getElementById('kro-inline-deception-bullets');
@@ -1449,9 +1572,17 @@
                        dec.classList.add('hidden');
                    }
                    if (howList && howWrap) {
-                       var steps = Array.isArray(tr.how_we_analyze_ru) ? tr.how_we_analyze_ru : [];
-                       howList.innerHTML = steps.map(function (x) { return '<li>' + esc(String(x || '').trim()) + '</li>'; }).join('');
-                       howWrap.open = false;
+                       if (isV4) {
+                           howList.innerHTML = '';
+                           howWrap.hidden = true;
+                           howWrap.classList.add('hidden');
+                       } else {
+                           var steps = Array.isArray(tr.how_we_analyze_ru) ? tr.how_we_analyze_ru : [];
+                           howList.innerHTML = steps.map(function (x) { return '<li>' + esc(String(x || '').trim()) + '</li>'; }).join('');
+                           howWrap.hidden = false;
+                           howWrap.classList.remove('hidden');
+                           howWrap.open = false;
+                       }
                    }
                }
                /** Убираем из UI обрывки HTML/JS с t.me (мета-теги, postMessage и т.д.). */
@@ -1977,6 +2108,9 @@
                        var ab = data.analysis_basis && typeof data.analysis_basis === 'object' ? data.analysis_basis : null;
                        var ur = data.user_report && typeof data.user_report === 'object' ? data.user_report : null;
                        var citations = Array.isArray(data.citations) ? data.citations.map(function (x) { return String(x || '').trim(); }).filter(Boolean) : [];
+                       var trInline = data.trust_report && typeof data.trust_report === 'object' ? data.trust_report : null;
+                       var compactFlow = trInline && Number(trInline.v) >= 4;
+                       var ridx = data.risk_index;
                        var __kSeed = kroStrHash(String(displayLabel || '') + String((data && data.channel_key) || ''));
                        var eyebrow = document.getElementById('kro-inline-eyebrow');
                        var titleEl = document.getElementById('kro-inline-title');
@@ -2004,6 +2138,16 @@
                        }
                        if (titleEl) titleEl.textContent = (profile && profile.username) ? String(profile.username).trim() : displayLabel;
                        var metaParts = [];
+                       if (compactFlow) {
+                           if (le && le.live_pass === true) {
+                               metaParts.push('Лента учтена в вердикте выше');
+                           } else if (le) {
+                               metaParts.push('Вердикт выше; лента в этом ответе не участвовала');
+                           }
+                           if (lm.complaints_count != null && !isNaN(Number(lm.complaints_count)) && Number(lm.complaints_count) > 0) {
+                               metaParts.push('Жалобы в сервисе: ' + lm.complaints_count);
+                           }
+                       } else {
                        if (lm.analysis_window_days != null && !isNaN(Number(lm.analysis_window_days))) {
                            metaParts.push('Период: до ' + lm.analysis_window_days + ' дн.');
                        } else if (!profile) {
@@ -2031,6 +2175,7 @@
                        }
                        if (lm.complaints_count != null && !isNaN(Number(lm.complaints_count)) && Number(lm.complaints_count) >= 0) {
                            metaParts.push('Жалоб в отчётах: ' + lm.complaints_count);
+                       }
                        }
                        if (metaEl) {
                            var liveBadge = '';
@@ -2065,6 +2210,11 @@
                            stEl.className = 'kro-inline-status-pill kro-inline-status-pill--' + statusClass(st);
                        }
                        if (liveGateEl) {
+                           if (compactFlow) {
+                               liveGateEl.hidden = true;
+                               liveGateEl.classList.add('hidden');
+                               liveGateEl.innerHTML = '';
+                           } else {
                            var lgTitle = '';
                            var lgBody = '';
                            var lgCls = 'kro-inline-live-gate';
@@ -2146,6 +2296,7 @@
                            liveGateEl.hidden = false;
                            liveGateEl.classList.remove('hidden');
                        }
+                       }
                        
                       if (analysisPathEl) {
                           analysisPathEl.hidden = true;
@@ -2153,9 +2304,12 @@
                           analysisPathEl.innerHTML = '';
                       }
 
-                       kroRenderFindingsBlock(data, displayLabel);
+                       kroRenderFindingsBlock(compactFlow ? { flags: [] } : data, displayLabel);
 
+                       if (!compactFlow) {
                        if (reasonsTitleEl) {
+                           reasonsTitleEl.hidden = false;
+                           reasonsTitleEl.classList.remove('hidden');
                            reasonsTitleEl.textContent = kroPickVariant([
                                'Откуда взялся итог',
                                'Коротко, почему такой вывод',
@@ -2163,6 +2317,8 @@
                            ], __kSeed + 11);
                        }
                        if (reasonsEl) {
+                           reasonsEl.hidden = false;
+                           reasonsEl.classList.remove('hidden');
                            var rs = (c.reasons || []).slice(0, 4).map(function (r) { return String(r == null ? '' : r).trim(); }).filter(Boolean);
                            if (le && le.live_pass !== true) {
                                rs.unshift('Ленту подробно не разбирали. ' + String(le.reason || 'Режим упрощённый.'));
@@ -2186,7 +2342,7 @@
                            reasonsEl.innerHTML = rs.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
                        }
                        if (rw && riv) {
-                           var ridx = data.risk_index;
+                           ridx = data.risk_index;
                            if (ridx != null && ridx !== '' && !isNaN(Number(ridx))) {
                                var mx = data.risk_index_max != null ? Number(data.risk_index_max) : 10;
                                riv.textContent = Number(ridx) + '/' + mx;
@@ -2297,6 +2453,35 @@
                               footEl.hidden = true;
                               footEl.textContent = '';
                           }
+                       } else {
+                           if (reasonsTitleEl) {
+                               reasonsTitleEl.textContent = '';
+                               reasonsTitleEl.hidden = true;
+                               reasonsTitleEl.classList.add('hidden');
+                           }
+                           if (reasonsEl) {
+                               reasonsEl.innerHTML = '';
+                               reasonsEl.hidden = true;
+                               reasonsEl.classList.add('hidden');
+                           }
+                           if (rw && riv) {
+                               riv.textContent = '';
+                               rw.hidden = true;
+                           }
+                           var secWrap = document.querySelector('.kro-inline-sections');
+                           if (secWrap) {
+                               secWrap.hidden = true;
+                               secWrap.classList.add('hidden');
+                           }
+                           if (doneBanner) {
+                               doneBanner.hidden = true;
+                               doneBanner.classList.add('hidden');
+                               doneBanner.textContent = '';
+                           }
+                           if (footEl) {
+                               footEl.hidden = true;
+                               footEl.textContent = '';
+                           }
                        }
                    } catch (eFill) {
                        if (typeof console !== 'undefined' && console.error) console.error('fillInlineReport', eFill);

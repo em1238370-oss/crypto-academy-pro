@@ -2238,6 +2238,49 @@ body.kro-hero-scrolled .kro-floating-nav {
    line-height: 1.5;
    color: rgba(255, 255, 255, 0.72);
 }
+.kro-inline-trust-impact {
+   margin: 0 0 14px;
+   padding: 10px 12px;
+   border-radius: 10px;
+   border-left: 3px solid rgba(253, 186, 116, 0.85);
+   background: rgba(253, 186, 116, 0.08);
+   font-size: 0.86rem;
+   line-height: 1.5;
+   color: rgba(255, 248, 237, 0.95);
+}
+.kro-inline-trust-reason-li {
+   margin: 0 0 10px;
+   padding-left: 4px;
+   font-size: 0.86rem;
+   line-height: 1.5;
+   color: rgba(255, 250, 245, 0.92);
+   list-style: none;
+}
+.kro-inline-trust-reason-mark {
+   margin-right: 6px;
+}
+.kro-inline-trust-pattern--solo {
+   border-radius: 12px;
+   padding: 12px 14px;
+   background: rgba(0, 0, 0, 0.18);
+   border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.kro-inline-trust-when {
+   margin: 0 0 8px;
+   font-size: 0.86rem;
+   line-height: 1.5;
+   color: rgba(255, 255, 255, 0.78);
+}
+.kro-inline-trust-when--bad {
+   color: rgba(254, 202, 202, 0.92);
+}
+.kro-inline-trust-why-score {
+   margin: 0 0 10px;
+   font-size: 0.82rem;
+   line-height: 1.45;
+   color: rgba(200, 220, 255, 0.88);
+   font-style: italic;
+}
 .kro-inline-trust-voice {
    margin: 0 0 14px;
    padding: 12px 14px;
