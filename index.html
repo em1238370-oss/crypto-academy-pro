@@ -458,24 +458,25 @@
                            <p class="kro-inline-deep-demo hidden" id="kro-inline-deep-demo" hidden></p>
                                </div>
                            </details>
-                           <div class="kro-inline-tg-modal hidden" id="kro-inline-tg-modal" hidden role="dialog" aria-modal="true" aria-labelledby="kro-inline-tg-modal-kicker">
-                               <div class="kro-inline-tg-modal-backdrop" tabindex="-1"></div>
-                               <div class="kro-inline-tg-modal-sheet">
-                                   <button type="button" class="kro-inline-tg-modal-close" aria-label="Закрыть">×</button>
-                                   <p class="kro-inline-tg-modal-kicker" id="kro-inline-tg-modal-kicker"></p>
-                                   <p class="kro-inline-tg-modal-channel" id="kro-inline-tg-modal-channel"></p>
-                                   <div class="kro-inline-tg-phone">
-                                       <div class="kro-inline-tg-bubble-out">
-                                           <p class="kro-inline-tg-bubble-text" id="kro-inline-tg-bubble-text"></p>
-                                           <span class="kro-inline-tg-bubble-cap">текст из открытой ленты канала</span>
-                                       </div>
-                                   </div>
-                                   <div class="kro-inline-tg-modal-why" id="kro-inline-tg-modal-why"></div>
-                               </div>
-                           </div>
                            <div class="kro-inline-actions">
                                <button type="button" class="kro-report-submit" id="kro-inline-reset">Проверить другой канал</button>
                            </div>
+                       </div>
+                   </div>
+                   <!-- Вне #kro-inline-report: иначе fixed-окно режется overflow/transform карточки и perspective родителя -->
+                   <div class="kro-inline-tg-modal hidden" id="kro-inline-tg-modal" hidden role="dialog" aria-modal="true" aria-labelledby="kro-inline-tg-modal-kicker">
+                       <div class="kro-inline-tg-modal-backdrop" tabindex="-1"></div>
+                       <div class="kro-inline-tg-modal-sheet">
+                           <button type="button" class="kro-inline-tg-modal-close" aria-label="Закрыть">×</button>
+                           <p class="kro-inline-tg-modal-kicker" id="kro-inline-tg-modal-kicker"></p>
+                           <p class="kro-inline-tg-modal-channel" id="kro-inline-tg-modal-channel"></p>
+                           <div class="kro-inline-tg-phone">
+                               <div class="kro-inline-tg-bubble-out">
+                                   <p class="kro-inline-tg-bubble-text" id="kro-inline-tg-bubble-text"></p>
+                                   <span class="kro-inline-tg-bubble-cap">текст из открытой ленты канала</span>
+                               </div>
+                           </div>
+                           <div class="kro-inline-tg-modal-why" id="kro-inline-tg-modal-why"></div>
                        </div>
                    </div>
                </div>
@@ -2419,15 +2420,14 @@
                function kroEnsureFindingsModalWired() {
                    if (window.__kroFindingsModalWired) return;
                    window.__kroFindingsModalWired = true;
-                   var host = document.getElementById('kro-inline-report');
-                   if (!host) return;
-                   host.addEventListener('click', function (ev) {
+                   document.addEventListener('click', function (ev) {
+                       var rep = document.getElementById('kro-inline-report');
                        var t = ev.target;
                        var btn = t && t.closest ? t.closest('.kro-finding-explain-btn') : null;
-                       if (btn) {
+                       if (btn && rep && rep.contains(btn)) {
                            var idx = parseInt(btn.getAttribute('data-finding-idx'), 10);
                            var row = window.__kroFindingsLastRows && window.__kroFindingsLastRows[idx];
-                          if (row) kroOpenFindingModal(row, btn);
+                           if (row) kroOpenFindingModal(row, btn);
                            return;
                        }
                        if (t.closest && t.closest('.kro-inline-tg-modal-backdrop')) kroCloseFindingModal();
