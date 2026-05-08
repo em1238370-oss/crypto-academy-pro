@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260508-kro-analyze-primary-fix">
+   <link rel="stylesheet" href="styles.css?v=20260508-kro-anchor-screenshots">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -69,7 +69,7 @@
            <a href="#feature4">Фишка 4</a>
            <a href="#feature5">Фишка 5</a>
            <span class="kro-floating-nav-sep" aria-hidden="true"></span>
-           <a href="#checkers" class="kro-floating-nav-cta">Проверь гуру</a>
+           <a href="#kro-check-form-row" class="kro-floating-nav-cta">Проверь гуру</a>
        </div>
    </nav>
    <div class="page" id="top">
@@ -83,17 +83,17 @@
                    <h1 class="kro-step1-title">Крипто: не верь — проверь</h1>
                    <div class="kro-hero-cases" id="kro-hero-cases" aria-label="Реальные случаи из базы">
                        <article class="kro-hero-case-card">
-                           <a class="kro-hero-case-channel" id="kro-hero-case-1-link" href="#kro-feature1-check">—</a>
+                           <a class="kro-hero-case-channel" id="kro-hero-case-1-link" href="#kro-check-form-row">—</a>
                            <span class="kro-hero-case-status" id="kro-hero-case-1-status">—</span>
                            <span class="kro-hero-case-sum" id="kro-hero-case-1-sum">—</span>
                        </article>
                        <article class="kro-hero-case-card">
-                           <a class="kro-hero-case-channel" id="kro-hero-case-2-link" href="#kro-feature1-check">—</a>
+                           <a class="kro-hero-case-channel" id="kro-hero-case-2-link" href="#kro-check-form-row">—</a>
                            <span class="kro-hero-case-status" id="kro-hero-case-2-status">—</span>
                            <span class="kro-hero-case-sum" id="kro-hero-case-2-sum">—</span>
                        </article>
                        <article class="kro-hero-case-card">
-                           <a class="kro-hero-case-channel" id="kro-hero-case-3-link" href="#kro-feature1-check">—</a>
+                           <a class="kro-hero-case-channel" id="kro-hero-case-3-link" href="#kro-check-form-row">—</a>
                            <span class="kro-hero-case-status" id="kro-hero-case-3-status">—</span>
                            <span class="kro-hero-case-sum" id="kro-hero-case-3-sum">—</span>
                        </article>
@@ -102,7 +102,7 @@
                    <p class="kro-step1-subtitle">Ваш гуру уже на Lambo. <span class="kro-step1-subtitle-em">На ваши деньги</span></p>
                </div>
                <div class="kro-step1-right">
-                   <a href="#checkers" class="kro-step1-cta">Проверь своего гуру</a>
+                   <a href="#kro-check-form-row" class="kro-step1-cta">Проверь своего гуру</a>
                    <p class="kro-step1-cta-note"><span class="kro-cta-note-desktop">Сделай сначала ты — прежде чем он твой кошелёк</span><span class="kro-cta-note-mobile">Сделай это ты — прежде чем он с твоим кошельком</span></p>
                </div>
            </div>
@@ -221,7 +221,7 @@
                <!-- Блок 4: Твой выбор прямо сейчас -->
                <div class="kro-f1-block kro-f1-choice-wrap">
                    <div class="kro-f1-choice">
-                       <a href="#checkers" class="kro-f1-choice-btn kro-f1-choice-red">
+                       <a href="#kro-check-form-row" class="kro-f1-choice-btn kro-f1-choice-red">
                            <span class="kro-f1-choice-main">ЛАДНО, ПОЙДУ В СИГНАЛЫ</span>
                            <span class="kro-f1-choice-sub">(95% слив через месяц)</span>
                        </a>
@@ -298,9 +298,9 @@
                        </ul>
                    </div>
                    <div class="kro-check-screenshot-row" id="kro-check-screenshot-row">
-                       <p class="kro-check-screenshot-lead">Скрин постов из канала (узнаём @ или ссылку):</p>
+                       <p class="kro-check-screenshot-lead">Скрины постов из канала — можно выбрать до <strong>25</strong> фото; разбор по очереди до первого найденного @ или t.me.</p>
                        <div class="kro-check-screenshot-actions">
-                           <input type="file" id="kro-check-screenshot" accept="image/*" aria-label="Выберите скриншот постов канала">
+                           <input type="file" id="kro-check-screenshot" multiple accept="image/*" aria-label="Скриншоты постов канала, не более 25 файлов">
                            <button type="button" class="kro-report-submit" id="kro-check-screenshot-btn">Разобрать скрин</button>
                        </div>
                    </div>
@@ -500,15 +500,12 @@
            </div>
        </section>
 
-       <!-- Якорь для кнопки «Проверь своего гуру» (блок чекеров будет ниже) -->
-       <section class="kro-checkers-anchor" id="checkers" aria-hidden="true"></section>
-       
        <footer class="news-footer kro-footer kro-scroll-in" id="kro-footer">
            <div class="kro-footer-bg" aria-hidden="true"></div>
            <p class="news-footer-crafted kro-footer-reveal">С уважением к твоему времени.</p>
            <div class="news-footer-links kro-footer-reveal">
                <a href="#top" class="news-footer-link">Наверх</a>
-               <a href="#checkers" class="news-footer-link">Проверь гуру</a>
+               <a href="#kro-check-form-row" class="news-footer-link">Проверь гуру</a>
            </div>
            <div class="kro-footer-bottom kro-footer-reveal">
                <p class="kro-footer-legal">© 2026 Check your crypto.</p>
@@ -991,14 +988,14 @@
                            linkEl.target = '_blank';
                            linkEl.rel = 'noopener noreferrer';
                        } else {
-                           linkEl.href = '#kro-feature1-check';
+                           linkEl.href = '#kro-check-form-row';
                            linkEl.removeAttribute('target');
                            linkEl.removeAttribute('rel');
                        }
                        linkEl.textContent = rr.channel;
                        linkEl.classList.remove('kro-hero-case-channel--empty');
                    } else {
-                       linkEl.href = '#kro-feature1-check';
+                       linkEl.href = '#kro-check-form-row';
                        linkEl.removeAttribute('target');
                        linkEl.removeAttribute('rel');
                        linkEl.textContent = '—';
@@ -3780,64 +3777,110 @@
                }
                var screenshotInput = document.getElementById('kro-check-screenshot');
                var screenshotBtn = document.getElementById('kro-check-screenshot-btn');
+               var __KRO_SCREENSHOT_MAX_FILES = 25;
                if (screenshotBtn && screenshotInput && checkResult) {
+                   function readKroScreenshotAsDataURL(file) {
+                       return new Promise(function (resolve, reject) {
+                           var reader = new FileReader();
+                           reader.onload = function () { resolve(reader.result); };
+                           reader.onerror = reject;
+                           reader.readAsDataURL(file);
+                       });
+                   }
+                   function pickSlugFromScreenshotExtracted(extracted) {
+                       var filtered = (extracted || []).filter(Boolean);
+                       for (var j = 0; j < filtered.length; j++) {
+                           var line = filtered[j];
+                           if (
+                               (line.indexOf('http://') === 0 || line.indexOf('https://') === 0) &&
+                               line.toLowerCase().indexOf('t.me') === -1
+                           ) {
+                               continue;
+                           }
+                           var channel = normChannel(line);
+                           if (!channel) continue;
+                           var slug2 = channelPathSlug(channel);
+                           if (!slug2) continue;
+                           return { slug2: slug2 };
+                       }
+                       return null;
+                   }
+                   screenshotInput.addEventListener('change', function () {
+                       var n = screenshotInput.files ? screenshotInput.files.length : 0;
+                       if (n > __KRO_SCREENSHOT_MAX_FILES) {
+                           screenshotInput.value = '';
+                           checkResult.innerHTML = '';
+                           checkResult.textContent =
+                               'Можно выбрать не больше ' + __KRO_SCREENSHOT_MAX_FILES + ' изображений за раз.';
+                           checkResult.classList.remove('hidden');
+                           checkResult.className = 'kro-check-result';
+                       }
+                   });
                    screenshotBtn.addEventListener('click', function () {
-                       var file = screenshotInput && screenshotInput.files && screenshotInput.files[0];
-                       if (!file) {
+                       var files = screenshotInput.files ? Array.prototype.slice.call(screenshotInput.files, 0) : [];
+                       if (!files.length) {
                            checkResult.innerHTML = '';
                            checkResult.textContent = 'Выберите изображение (скрин канала).';
                            checkResult.classList.remove('hidden');
                            checkResult.className = 'kro-check-result';
                            return;
                        }
+                       if (files.length > __KRO_SCREENSHOT_MAX_FILES) {
+                           checkResult.innerHTML = '';
+                           checkResult.textContent =
+                               'Можно выбрать не больше ' + __KRO_SCREENSHOT_MAX_FILES + ' изображений за раз.';
+                           checkResult.classList.remove('hidden');
+                           checkResult.className = 'kro-check-result';
+                           return;
+                       }
                        checkResult.innerHTML = '';
-                       checkResult.textContent = 'Загрузка…';
+                       checkResult.textContent =
+                           files.length > 1
+                               ? 'Разбор скринов… (фото ' + files.length + ', по очереди)'
+                               : 'Загрузка…';
                        checkResult.classList.remove('hidden');
-                       var reader = new FileReader();
-                       reader.onload = function () {
-                           var dataUrl = reader.result;
-                           fetch(base + '/api/kro/check-screenshot', {
-                               method: 'POST',
-                               headers: { 'Content-Type': 'application/json' },
-                               body: JSON.stringify({ image: dataUrl })
-                           }).then(function (r) { return r.json(); }).then(function (data) {
-                               var extracted = (data.extracted || []).filter(Boolean);
-                               if (!extracted.length) {
-                                   checkResult.textContent = 'На скрине не найдено ни @ника, ни ссылки на Telegram‑канал.';
-                                   checkResult.className = 'kro-check-result';
-                                   return;
-                               }
-                               var first = extracted[0];
-                               if ((first.indexOf('http://') === 0 || first.indexOf('https://') === 0) && first.toLowerCase().indexOf('t.me') === -1) {
-                                   checkResult.textContent = 'На скрине найден URL сайта, а не Telegram‑канал — для этого блока нужен @username или t.me/....';
-                                   checkResult.className = 'kro-check-result';
-                                   return;
-                               }
-                               var channel = normChannel(first);
-                               if (!channel) {
-                                   checkResult.textContent = 'Не удалось определить канал из скрина.';
-                                   checkResult.className = 'kro-check-result';
-                                   return;
-                               }
-                               var slug2 = channelPathSlug(channel);
-                               if (!slug2) {
-                                   checkResult.textContent = 'Не удалось разобрать канал из скрина.';
-                                   checkResult.className = 'kro-check-result';
-                                   return;
-                               }
-                               checkResult.classList.add('hidden');
-                               checkResult.innerHTML = '';
-                               window.__kroHomeAnalyzePrimaryInput = /^t\.me\//i.test(slug2)
-                                   ? slug2
-                                   : ('@' + String(slug2).replace(/^@+/, ''));
-                               window.__kroHomeChannelHint = '';
-                               runHomeChannelCheck(slug2);
-                           }).catch(function () {
-                               checkResult.textContent = 'Ошибка распознавания скрина.';
+                       checkResult.className = 'kro-check-result';
+                       var scanAt = function (idx) {
+                           if (idx >= files.length) {
+                               checkResult.textContent =
+                                   'На выбранных скринах не найдено ни @ника, ни ссылки на Telegram‑канал.';
                                checkResult.className = 'kro-check-result';
-                           });
+                               return;
+                           }
+                           if (files.length > 1) {
+                               checkResult.textContent = 'Скрин ' + (idx + 1) + ' из ' + files.length + '…';
+                           }
+                           readKroScreenshotAsDataURL(files[idx])
+                               .then(function (dataUrl) {
+                                   return fetch(base + '/api/kro/check-screenshot', {
+                                       method: 'POST',
+                                       headers: { 'Content-Type': 'application/json' },
+                                       body: JSON.stringify({ image: dataUrl }),
+                                   }).then(function (r) {
+                                       return r.json();
+                                   });
+                               })
+                               .then(function (data) {
+                                   var extracted = (data && data.extracted) || [];
+                                   var picked = pickSlugFromScreenshotExtracted(extracted);
+                                   if (picked) {
+                                       checkResult.classList.add('hidden');
+                                       checkResult.innerHTML = '';
+                                       window.__kroHomeAnalyzePrimaryInput = /^t\.me\//i.test(picked.slug2)
+                                           ? picked.slug2
+                                           : '@' + String(picked.slug2).replace(/^@+/, '');
+                                       window.__kroHomeChannelHint = '';
+                                       runHomeChannelCheck(picked.slug2);
+                                       return;
+                                   }
+                                   scanAt(idx + 1);
+                               })
+                               .catch(function () {
+                                   checkResult.textContent = 'Ошибка распознавания скрина.';
+                                   checkResult.className = 'kro-check-result';
+                               });
                        };
-                       reader.readAsDataURL(file);
+                       scanAt(0);
                    });
                }
            }
@@ -4031,17 +4074,47 @@
            var btn = document.getElementById('kro-f1-cta-btn');
            var wrap = document.getElementById('kro-f1-cta-check-wrap');
            function showCheckFromHash() {
-               if (wrap && (window.location.hash === '#kro-feature1-check' || window.location.hash === '#checkers')) {
+               var h = window.location.hash;
+               if (
+                   wrap &&
+                   (h === '#kro-feature1-check' ||
+                       h === '#checkers' ||
+                       h === '#kro-check-form-row')
+               ) {
                    wrap.classList.add('kro-f1-show-check');
+                   if (h === '#kro-check-form-row' || h === '#checkers') {
+                       requestAnimationFrame(function () {
+                           scrollToKroCheckInput();
+                       });
+                   }
+               }
+           }
+           function scrollToKroCheckInput() {
+               var row = document.getElementById('kro-check-form-row');
+               var inp = document.getElementById('kro-check-channel');
+               if (row) {
+                   try {
+                       row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                   } catch (e) {
+                       row.scrollIntoView(true);
+                   }
+               }
+               if (inp) {
+                   setTimeout(function () {
+                       try {
+                           inp.focus({ preventScroll: true });
+                       } catch (e2) {
+                           inp.focus();
+                       }
+                   }, 400);
                }
            }
            showCheckFromHash();
            window.addEventListener('hashchange', showCheckFromHash);
            if (btn && wrap) {
-               btn.addEventListener('click', function() {
+               btn.addEventListener('click', function () {
                    wrap.classList.add('kro-f1-show-check');
-                   var ch = wrap.querySelector('#kro-feature1-check');
-                   if (ch) ch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                   scrollToKroCheckInput();
                });
            }
        })();

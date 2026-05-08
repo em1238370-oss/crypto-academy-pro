@@ -13,7 +13,7 @@
    - https://crypto-academy-pro.onrender.com/
 
 2. **Чекер каналов (Фишка 1, блок «Проверить канал»):**
-   - https://crypto-academy-pro.onrender.com/index.html#checkers
+   - https://crypto-academy-pro.onrender.com/index.html#kro-check-form-row
 
 2. **News:**
    - https://crypto-academy-pro.onrender.com/sub-sites/news/index.html
