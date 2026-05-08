@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260508-sitelove-depth">
+   <link rel="stylesheet" href="styles.css?v=20260508-kro-single-field">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -282,10 +282,9 @@
                            <p class="kro-flow-simple-foot">Популярные каналы часто уже в кэше — глубокий отчёт может открыться сразу, без очереди.</p>
                        </div>
                    </div>
-                   <p class="kro-check-combined-lead" id="kro-check-combined-lead">Укажите <strong>канал в Telegram</strong> и при необходимости <strong>название для поиска на сайтах</strong> в одной связке: первое поле — публичный <strong>@username</strong>, ссылка <span class="kro-check-user-explainer-code">t.me/…</span>, текст для автоподбора ника или <strong>инвайт</strong> приватного канала (<span class="kro-check-user-explainer-code">https://t.me/+…</span>); второе — как канал назван в шапке или как его ищут на vklader / forteck в жалобах (для закрытых каналов особенно полезно).</p>
+                   <p class="kro-check-combined-lead" id="kro-check-combined-lead"><strong>Одно поле:</strong> вставьте <strong>@ник</strong> или ссылку <span class="kro-check-user-explainer-code">t.me/…</span>, <strong>инвайт</strong> закрытого канала (<span class="kro-check-user-explainer-code">https://t.me/+…</span>) или <strong>название канала</strong> как в шапке Telegram — система сама попробует найти ленту и жалобы на сайтах. Можно дописать название через пробел после ссылки или на новой строке.</p>
                    <div class="kro-feature1-check-row" id="kro-check-form-row" aria-busy="false">
-                       <label class="kro-report-label" for="kro-check-channel"><span class="kro-check-field-inline-title">@ник, ссылка или инвайт</span><input type="text" id="kro-check-channel" placeholder="@ник · t.me/… · https://t.me/+…" autocomplete="off" aria-label="Публичный username, ссылка или инвайт"></label>
-                       <label class="kro-report-label kro-report-label-sub" for="kro-check-channel-name-hint"><span class="kro-check-field-inline-title">Название для поиска на сайтах</span><input type="text" id="kro-check-channel-name-hint" placeholder="Необязательно — шапка канала или имя для vklader / forteck" maxlength="160" autocomplete="off" aria-label="Название канала для поиска на сторонних сайтах"></label>
+                       <label class="kro-report-label" for="kro-check-channel"><span class="kro-check-field-inline-title">Канал</span><input type="text" id="kro-check-channel" placeholder="@ник · ссылка · название · https://t.me/+…" maxlength="500" autocomplete="off" aria-label="Telegram-канал: ссылка, ник или название"></label>
                        <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить гуру</button>
                    </div>
                    <div class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Дополнительные пояснения">
@@ -295,7 +294,7 @@
                            <li><strong>Здесь</strong> — жалобы, мониторинг и при возможности чтение ленты (ориентир до ~30 дней) плюс открытая страница; до 7 минут на запрос, без «канцелярских» отписок.</li>
                            <li><strong>Глубокий разбор</strong> — на странице <span class="kro-check-user-explainer-code">/channel/имя</span>, кнопка «Глубокий анализ ленты».</li>
                            <li><strong>Не заставляем сидеть часами</strong>: при очереди покажем позицию и примерное время; если очередь слишком длинная — честно скажем зайти позже. Быстрый отчёт при этом уже у вас.</li>
-                           <li><strong>Приватный канал (t.me/+…):</strong> ленту по инвайту сервер часто не читает — добавьте название во второе поле (см. блок вводов выше) и при необходимости скрины постов ниже.</li>
+                           <li><strong>Приватный канал (t.me/+…):</strong> ленту по инвайту сервер часто не читает — допишите название канала в том же поле после ссылки или на следующей строке; при необходимости приложите скрины постов ниже.</li>
                        </ul>
                    </div>
                    <div class="kro-check-screenshot-row" id="kro-check-screenshot-row">
@@ -1172,6 +1171,51 @@
                    var low = t.toLowerCase();
                    if (t.indexOf('http://') !== 0 && t.indexOf('https://') !== 0) return false;
                    return low.indexOf('t.me') === -1 && low.indexOf('telegram.me') === -1;
+               }
+               /** Две строки: первая — ссылка/ник, остальное — подпись; или одна строка «ссылка название». */
+               function splitKroCheckCombinedInput(raw) {
+                   var full = String(raw || '').trim();
+                   if (!full) return { telegramPart: '', hintPart: '', rawFull: '' };
+                   var lines = full.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+                   if (lines.length >= 2) {
+                       return { telegramPart: lines[0], hintPart: lines.slice(1).join(' '), rawFull: full };
+                   }
+                   var atSplit = full.match(/^(@[A-Za-z0-9_]{4,})([\s\u00A0]+.+)$/);
+                   if (atSplit && !/t\.me\//i.test(full)) {
+                       return { telegramPart: atSplit[1], hintPart: atSplit[2].trim(), rawFull: full };
+                   }
+                   var inviteFull = full.match(/https?:\/\/t\.me\/\+[A-Za-z0-9_-]+/i);
+                   var inviteBare = inviteFull ? null : full.match(/\bt\.me\/\+[A-Za-z0-9_-]+/i);
+                   var inviteMatch = inviteFull || inviteBare;
+                   if (inviteMatch) {
+                       var afterInv = full.slice(inviteMatch.index + inviteMatch[0].length).trim();
+                       var beforeInv = full.slice(0, inviteMatch.index).trim();
+                       var extraInv = afterInv.length >= beforeInv.length ? afterInv : beforeInv;
+                       return { telegramPart: inviteMatch[0], hintPart: extraInv, rawFull: full };
+                   }
+                   var pubUrl =
+                       full.match(/https?:\/\/t\.me\/[^\s]+/i) ||
+                       full.match(/https?:\/\/telegram\.me\/[^\s]+/i) ||
+                       full.match(/\bt\.me\/[^\s]+/i) ||
+                       full.match(/\btelegram\.me\/[^\s]+/i);
+                   if (pubUrl) {
+                       var afterU = full.slice(pubUrl.index + pubUrl[0].length).trim();
+                       var beforeU = full.slice(0, pubUrl.index).trim();
+                       var extraU = afterU.length >= beforeU.length ? afterU : beforeU;
+                       return { telegramPart: pubUrl[0], hintPart: extraU, rawFull: full };
+                   }
+                   return { telegramPart: full, hintPart: '', rawFull: full };
+               }
+               /** Подсказка для поиска на сайтах: не дублируем чистый @username без пробелов. */
+               function kroDeriveChannelNameHintForApi(telegramPart, hintPart) {
+                   var h = String(hintPart || '').trim();
+                   if (h) return h.length > 160 ? h.slice(0, 160) : h;
+                   var tp = String(telegramPart || '').trim();
+                   if (!tp) return '';
+                   var bare = tp.replace(/^@+/, '').replace(/^https?:\/\/t\.me\//i, '').replace(/^t\.me\//i, '');
+                   if (/^\+[A-Za-z0-9_-]+$/.test(bare)) return '';
+                   if (/^[a-zA-Z0-9_]+$/.test(bare) && bare.length >= 3) return '';
+                   return tp.length > 160 ? tp.slice(0, 160) : tp;
                }
                function slugToQueryU(slug) {
                    var q = slug;
@@ -2956,11 +3000,10 @@
                                metaParts.push('Жалоб в отчётах: ' + lm.complaints_count);
                            }
                        }
-                       var hintElMeta = document.getElementById('kro-check-channel-name-hint');
                        var hintSites =
                            (typeof channelNameHintForMeta === 'string' && channelNameHintForMeta.trim())
                                ? channelNameHintForMeta.trim()
-                               : (hintElMeta ? String(hintElMeta.value || '').trim() : '');
+                               : (typeof window.__kroHomeChannelHint === 'string' ? String(window.__kroHomeChannelHint).trim() : '');
                        var turMeta = data.telegram_username_resolve;
                        var slugMeta =
                            turMeta && turMeta.resolved_slug
@@ -3367,6 +3410,8 @@
                   }
                   var queryU = slugToQueryU(slug);
                   var displayLabel = displayChannelLabel(slug, queryU);
+                  var __kroCapturedHint =
+                      typeof window.__kroHomeChannelHint === 'string' ? String(window.__kroHomeChannelHint).trim().slice(0, 160) : '';
                   window.__kroHomeCheckT0 = Date.now();
                   var __kroCheckStarted = window.__kroHomeCheckT0;
                   showCheckBusy(displayLabel);
@@ -3382,7 +3427,7 @@
                                   if (st === 'done' && row && row.analysis) {
                                       var nextPosts = Number(row.posts_read || 0) || 0;
                                       if (nextPosts > (Number(minPostsSeen || 0) || 0)) {
-                                          fillInlineReport(row, queryU, displayLabel, __kroCheckStarted);
+                                          fillInlineReport(row, queryU, displayLabel, __kroCheckStarted, __kroCapturedHint);
                                           var b = document.getElementById('kro-inline-done-banner');
                                           if (b) {
                                               b.hidden = false;
@@ -3437,7 +3482,7 @@
                       ensureKroCheckPanelVisible();
                       var oldHost = document.getElementById('kro-inline-invite-banner-host');
                       if (oldHost && oldHost.parentNode) oldHost.parentNode.removeChild(oldHost);
-                      fillInlineReport(data, queryU, displayLabel, __kroCheckStarted);
+                      fillInlineReport(data, queryU, displayLabel, __kroCheckStarted, __kroCapturedHint);
                       if (inlineReport) {
                           inlineReport.classList.remove('hidden');
                           inlineReport.hidden = false;
@@ -3538,9 +3583,7 @@
                   };
 
                   var postBody = { username: queryU };
-                  var hintInp = document.getElementById('kro-check-channel-name-hint');
-                  var hintVal = hintInp ? String(hintInp.value || '').trim() : '';
-                  if (hintVal) postBody.channel_name_hint = hintVal;
+                  if (__kroCapturedHint) postBody.channel_name_hint = __kroCapturedHint;
                   var fetchOpts = { method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store', body: JSON.stringify(postBody) };
                   try {
                       if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function' && __KRO_HOME_FETCH_MS > 0) {
@@ -3607,7 +3650,7 @@
                    }
                    if (!raw || !raw.trim()) {
                        checkResult.innerHTML = '';
-                       checkResult.textContent = 'Введите @username или ссылку на Telegram‑канал (t.me/… или telegram.me/…).';
+                       checkResult.textContent = 'Введите ссылку на канал, @username или название.';
                        checkResult.classList.remove('hidden');
                        return;
                    }
@@ -3618,10 +3661,12 @@
                        checkResult.classList.remove('hidden');
                        return;
                    }
-                   var channel = normChannel(raw);
+                   var split = splitKroCheckCombinedInput(raw);
+                   window.__kroHomeChannelHint = kroDeriveChannelNameHintForApi(split.telegramPart, split.hintPart);
+                   var channel = normChannel(split.telegramPart);
                    if (!channel) {
                        checkResult.innerHTML = '';
-                       checkResult.textContent = 'Введите @username или ссылку (t.me/канал, telegram.me/канал или t.me/+invite).';
+                       checkResult.textContent = 'Введите @username, ссылку (t.me/…), инвайт или название канала.';
                        checkResult.className = 'kro-check-result';
                        checkResult.classList.remove('hidden');
                        return;
@@ -3708,8 +3753,7 @@
                        checkResult.classList.add('hidden');
                        checkResult.innerHTML = '';
                        checkInput.value = '';
-                       var hintReset = document.getElementById('kro-check-channel-name-hint');
-                       if (hintReset) hintReset.value = '';
+                       window.__kroHomeChannelHint = '';
                        checkInput.focus();
                    });
                }
