@@ -413,6 +413,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    max-width: 1000px;
    margin: 0 auto;
    position: relative;
+   z-index: 1;
    padding: 52px 32px 60px;
    background: rgba(255, 255, 255, 0.04);
    backdrop-filter: blur(20px);
@@ -420,10 +421,12 @@ body.kro-hero-scrolled .kro-floating-nav {
    border-radius: 24px;
    border: 1px solid rgba(255, 255, 255, 0.1);
    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(139, 92, 246, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   animation: kro-float 7s ease-in-out infinite;
    transition: box-shadow var(--kro-duration-hover) ease, border-color var(--kro-duration-hover) ease, transform var(--kro-duration-hover) ease;
 }
 
 .kro-step1-inner:hover {
+   animation-play-state: paused;
    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06);
    border-color: rgba(220, 225, 235, 0.15);
    transform: translateY(-5px);
@@ -691,6 +694,81 @@ body.kro-hero-scrolled .kro-floating-nav {
    pointer-events: none;
 }
 
+/* Лёгкие «искры» и дуга — атмосфера hero без перегруза */
+.kro-hero-float-layer {
+   position: absolute;
+   inset: 0;
+   z-index: 0;
+   pointer-events: none;
+   overflow: hidden;
+}
+
+.kro-hero-spark {
+   position: absolute;
+   border-radius: 50%;
+   filter: blur(46px);
+   opacity: 0.4;
+   animation: kro-hero-spark-drift 22s ease-in-out infinite;
+   will-change: transform, opacity;
+}
+
+.kro-hero-spark--1 {
+   width: min(140px, 28vw);
+   height: min(140px, 28vw);
+   top: 10%;
+   left: 4%;
+   background: radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.55), transparent 68%);
+   animation-delay: 0s;
+}
+
+.kro-hero-spark--2 {
+   width: min(180px, 36vw);
+   height: min(180px, 36vw);
+   bottom: 12%;
+   right: 0;
+   background: radial-gradient(circle at 50% 50%, rgba(240, 188, 60, 0.4), transparent 70%);
+   animation: kro-hero-spark-drift 26s ease-in-out infinite;
+   animation-delay: -7s;
+}
+
+.kro-hero-spark--3 {
+   width: min(100px, 22vw);
+   height: min(100px, 22vw);
+   top: 48%;
+   right: 18%;
+   background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.12), rgba(56, 189, 248, 0.15), transparent 72%);
+   animation: kro-hero-spark-drift 19s ease-in-out infinite;
+   animation-delay: -12s;
+   opacity: 0.32;
+}
+
+.kro-hero-arc {
+   position: absolute;
+   width: min(120%, 1400px);
+   height: min(120%, 1400px);
+   left: 50%;
+   top: -8%;
+   transform: translateX(-50%);
+   border-radius: 50%;
+   border: 1px solid rgba(167, 139, 250, 0.12);
+   box-shadow: 0 0 60px rgba(240, 188, 60, 0.04);
+   animation: kro-hero-arc-breathe 16s ease-in-out infinite;
+   opacity: 0.35;
+   pointer-events: none;
+}
+
+@keyframes kro-hero-spark-drift {
+   0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.32; }
+   25% { transform: translate(18px, -14px) scale(1.08); opacity: 0.48; }
+   50% { transform: translate(-12px, 20px) scale(0.94); opacity: 0.36; }
+   75% { transform: translate(8px, 8px) scale(1.03); opacity: 0.44; }
+}
+
+@keyframes kro-hero-arc-breathe {
+   0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.28; }
+   50% { transform: translateX(-50%) scale(1.03); opacity: 0.42; }
+}
+
 /* Hero-заголовок: Syne — нежнее */
 .kro-step1-title {
    font-family: var(--kro-font-heading);
@@ -701,6 +779,38 @@ body.kro-hero-scrolled .kro-floating-nav {
    margin-bottom: 26px;
    color: rgba(255, 255, 255, 0.94);
    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+   animation: kro-hero-title-glow 7s ease-in-out infinite;
+}
+
+@keyframes kro-hero-title-glow {
+   0%, 100% {
+      text-shadow:
+         0 1px 2px rgba(0, 0, 0, 0.2),
+         0 0 36px rgba(167, 139, 250, 0.1);
+   }
+   50% {
+      text-shadow:
+         0 1px 2px rgba(0, 0, 0, 0.2),
+         0 0 52px rgba(240, 188, 60, 0.14),
+         0 0 80px rgba(167, 139, 250, 0.08);
+   }
+}
+
+#hero.kro-hero-loaded .kro-step1-cta {
+   animation: kro-hero-cta-glow 4.2s ease-in-out infinite;
+}
+
+@keyframes kro-hero-cta-glow {
+   0%, 100% { box-shadow: 0 0 0 rgba(240, 188, 60, 0), 0 0 0 rgba(167, 139, 250, 0); }
+   50% {
+      box-shadow:
+         0 0 32px rgba(167, 139, 250, 0.2),
+         0 0 48px rgba(240, 188, 60, 0.12);
+   }
+}
+
+#hero.kro-hero-loaded .kro-step1-cta:hover {
+   animation-play-state: paused;
 }
 
 /* Hero: реальные случаи (top3 из live-counter) + счётчик + главный CTA */
@@ -4298,6 +4408,14 @@ body.kro-hero-scrolled .kro-floating-nav {
       radial-gradient(ellipse 120% 55% at 50% -15%, var(--kro-light-key-strong) 0%, transparent 52%),
       radial-gradient(ellipse 75% 52% at 12% 28%, rgba(167, 139, 250, 0.09) 0%, transparent 56%),
       radial-gradient(ellipse 100% 80% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.22) 100%);
+   animation: kro-main-ambient-drift 34s ease-in-out infinite;
+   will-change: transform, opacity;
+}
+
+@keyframes kro-main-ambient-drift {
+   0%, 100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+   33% { opacity: 0.94; transform: translate3d(1.2%, -0.6%, 0) scale(1.01); }
+   66% { opacity: 0.97; transform: translate3d(-0.8%, 0.5%, 0) scale(1.012); }
 }
 
 /* Зерно: лёгкая текстура (атмосфера, не копируя medvedevart 1:1) */
@@ -9375,7 +9493,8 @@ body.kro-modal-open {
 .kro-f1-content-card,
 .kro-f1-top3-wrap,
 .kro-f1-cta-block,
-.kro-hero-case-card {
+.kro-hero-case-card,
+.kro-f1-math-slider-wrap {
    opacity: 0;
    transform: translateY(36px);
    transition: opacity 0.88s cubic-bezier(0.22, 1, 0.36, 1),
@@ -9390,7 +9509,8 @@ body.kro-modal-open {
 .kro-f1-content-card.kro-visible,
 .kro-f1-top3-wrap.kro-visible,
 .kro-f1-cta-block.kro-visible,
-.kro-hero-case-card.kro-visible {
+.kro-hero-case-card.kro-visible,
+.kro-f1-math-slider-wrap.kro-visible {
    opacity: 1;
    transform: translateY(0);
 }
@@ -9412,8 +9532,47 @@ body.kro-modal-open {
 
 .kro-f1-content-card { transition-delay: 0.06s; }
 .kro-f1-top3-wrap { transition-delay: 0.05s; }
+.kro-f1-math-slider-wrap { transition-delay: 0.12s; }
 
-/* 3D поворот карточек при hover */
+/* Бейджи строки — каскад после появления Фишки 1 */
+.kro-f1-badges-row .kro-f1-badge {
+   opacity: 0;
+   transform: translateY(14px);
+   transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+               transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kro-feature1.kro-visible .kro-f1-badges-row .kro-f1-badge {
+   opacity: 1;
+   transform: translateY(0);
+}
+
+.kro-feature1.kro-visible .kro-f1-badges-row .kro-f1-badge:nth-child(1) { transition-delay: 0.08s; }
+.kro-feature1.kro-visible .kro-f1-badges-row .kro-f1-badge:nth-child(3) { transition-delay: 0.18s; }
+.kro-feature1.kro-visible .kro-f1-badges-row .kro-f1-badge:nth-child(5) { transition-delay: 0.28s; }
+
+.kro-f1-badges-row .kro-f1-badge-sep {
+   opacity: 0;
+   transition: opacity 0.45s ease;
+}
+
+.kro-feature1.kro-visible .kro-f1-badges-row .kro-f1-badge-sep {
+   opacity: 0.55;
+}
+
+.kro-feature1.kro-visible .kro-f1-badges-row .kro-f1-badge-sep:nth-child(2) { transition-delay: 0.12s; }
+.kro-feature1.kro-visible .kro-f1-badges-row .kro-f1-badge-sep:nth-child(4) { transition-delay: 0.22s; }
+
+/* Слайдер «математика» — чуть сильнее «въезд» */
+.kro-f1-math-slider-wrap.kro-visible .kro-f1-math-slider {
+   animation: kro-math-slider-ready 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes kro-math-slider-ready {
+   from { transform: translateY(16px) scale(0.985); opacity: 0.75; filter: saturate(0.92); }
+   to { transform: translateY(0) scale(1); opacity: 1; filter: saturate(1); }
+}
+
 .kro-f1-loh-card {
    transform-style: preserve-3d;
    perspective: 800px;
@@ -9430,18 +9589,10 @@ body.kro-modal-open {
                0 0 40px rgba(139, 92, 246, 0.06);
 }
 
-/* Плавающий hero — еле заметное покачивание */
-.kro-step1-inner {
-   animation: kro-float 7s ease-in-out infinite;
-}
-
+/* Плавающий hero — еле заметное покачивание (keyframes один раз) */
 @keyframes kro-float {
    0%, 100% { transform: translateY(0px); }
    50%       { transform: translateY(-6px); }
-}
-
-.kro-step1-inner:hover {
-   animation-play-state: paused;
 }
 
 /* Dashboard — пульс живых данных */
@@ -9450,8 +9601,20 @@ body.kro-modal-open {
 }
 
 @keyframes kro-dashboard-breathe {
-   0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 12px 48px rgba(0,0,0,0.5), 0 0 60px rgba(184, 74, 74, 0.07); }
-   50%       { box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 16px 56px rgba(0,0,0,0.55), 0 0 80px rgba(184, 74, 74, 0.13); }
+   0%, 100% {
+      box-shadow:
+         0 0 0 1px rgba(255, 255, 255, 0.045),
+         0 12px 48px rgba(0, 0, 0, 0.5),
+         0 0 64px rgba(167, 139, 250, 0.07),
+         0 0 48px rgba(240, 188, 60, 0.04);
+   }
+   50% {
+      box-shadow:
+         0 0 0 1px rgba(255, 255, 255, 0.07),
+         0 18px 58px rgba(0, 0, 0, 0.55),
+         0 0 88px rgba(167, 139, 250, 0.14),
+         0 0 72px rgba(240, 188, 60, 0.09);
+   }
 }
 
 /* Эмодзи — покачивание при hover */
@@ -9473,7 +9636,15 @@ body.kro-modal-open {
    .kro-f1-content-card,
    .kro-f1-top3-wrap,
    .kro-f1-cta-block,
-   .kro-hero-case-card {
+   .kro-hero-case-card,
+   .kro-f1-math-slider-wrap {
+      opacity: 1;
+      transform: none;
+      transition: none;
+   }
+
+   .kro-f1-badges-row .kro-f1-badge,
+   .kro-f1-badges-row .kro-f1-badge-sep {
       opacity: 1;
       transform: none;
       transition: none;
@@ -9483,4 +9654,11 @@ body.kro-modal-open {
    .kro-feature1-dashboard { animation: none; }
    .kro-f1-loh-card:hover { transform: translateY(-4px); }
    .kro-hero-case-card:hover { transform: none; }
+
+   .kro-step1-title { animation: none; }
+   #hero.kro-hero-loaded .kro-step1-cta { animation: none; }
+   .kro-main::before { animation: none; transform: none; }
+   .kro-hero-spark,
+   .kro-hero-arc { animation: none; }
+   .kro-f1-math-slider-wrap.kro-visible .kro-f1-math-slider { animation: none; }
 }

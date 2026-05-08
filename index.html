@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260508-kro-purple-gold-ui">
+   <link rel="stylesheet" href="styles.css?v=20260508-kro-motion-light">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -77,6 +77,12 @@
        <!-- Шаг 1: Удар правды (Крипта без розовых очков — в духе Artem OSO) -->
        <section class="kro-step1 kro-reveal" id="hero">
            <div class="kro-step1-bg" aria-hidden="true"></div>
+           <div class="kro-hero-float-layer" aria-hidden="true">
+               <span class="kro-hero-spark kro-hero-spark--1"></span>
+               <span class="kro-hero-spark kro-hero-spark--2"></span>
+               <span class="kro-hero-spark kro-hero-spark--3"></span>
+               <span class="kro-hero-arc" aria-hidden="true"></span>
+           </div>
            <div class="kro-step1-inner">
                <div class="kro-step1-left">
                    <p class="kro-step1-role">Безопасность перед входом в канал · без давления</p>
@@ -4377,7 +4383,8 @@
 
       document.querySelectorAll(
          '.kro-feature1, .kro-feature1-dashboard, .kro-feature1-stat, .kro-f1-loh-card, .kro-feature1-check, '
-         + '.kro-f1-content-card, .kro-f1-top3-wrap, .kro-f1-cta-block, .kro-hero-case-card'
+         + '.kro-f1-content-card, .kro-f1-top3-wrap, .kro-f1-cta-block, .kro-hero-case-card, '
+         + '.kro-f1-math-slider-wrap'
       ).forEach(el => observer.observe(el));
    </script>
 </body>
