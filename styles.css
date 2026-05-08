@@ -3047,6 +3047,10 @@ body.kro-hero-scrolled .kro-floating-nav {
    min-width: 0;
 }
 
+.kro-feature1-check-row .kro-report-label--single {
+   margin-bottom: 0;
+}
+
 .kro-feature1-check-row .kro-report-label input {
    width: 100%;
    box-sizing: border-box;

@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260508-kro-single-field">
+   <link rel="stylesheet" href="styles.css?v=20260508-kro-analyze-primary-fix">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -284,13 +284,13 @@
                    </div>
                    <p class="kro-check-combined-lead" id="kro-check-combined-lead"><strong>Одно поле:</strong> вставьте <strong>@ник</strong> или ссылку <span class="kro-check-user-explainer-code">t.me/…</span>, <strong>инвайт</strong> закрытого канала (<span class="kro-check-user-explainer-code">https://t.me/+…</span>) или <strong>название канала</strong> как в шапке Telegram — система сама попробует найти ленту и жалобы на сайтах. Можно дописать название через пробел после ссылки или на новой строке.</p>
                    <div class="kro-feature1-check-row" id="kro-check-form-row" aria-busy="false">
-                       <label class="kro-report-label" for="kro-check-channel"><span class="kro-check-field-inline-title">Канал</span><input type="text" id="kro-check-channel" placeholder="@ник · ссылка · название · https://t.me/+…" maxlength="500" autocomplete="off" aria-label="Telegram-канал: ссылка, ник или название"></label>
+                       <label class="kro-report-label kro-report-label--single" for="kro-check-channel"><input type="text" id="kro-check-channel" placeholder="@ник · ссылка · название канала · https://t.me/+…" maxlength="500" autocomplete="off" aria-label="Telegram: ссылка на канал, @username или название"></label>
                        <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить гуру</button>
                    </div>
                    <div class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Дополнительные пояснения">
                        <p class="kro-check-user-explainer-title">Если нужно чуть больше деталей</p>
                        <ul class="kro-check-user-explainer-list">
-                           <li><strong>Важно:</strong> нужен именно ник из адреса канала (<span class="kro-check-user-explainer-code">t.me/<strong>ник</strong></span>), а не красивое название или ФИО основателя — иначе система обратится не к тому каналу или вообще не найдёт ленту.</li>
+                           <li><strong>Важно:</strong> если знаете адрес канала — лучше вставить <span class="kro-check-user-explainer-code">t.me/<strong>ник</strong></span> или @ник; если есть только название в шапке — вставьте его в это же поле, система попробует сопоставить и найти жалобы.</li>
                            <li><strong>Здесь</strong> — жалобы, мониторинг и при возможности чтение ленты (ориентир до ~30 дней) плюс открытая страница; до 7 минут на запрос, без «канцелярских» отписок.</li>
                            <li><strong>Глубокий разбор</strong> — на странице <span class="kro-check-user-explainer-code">/channel/имя</span>, кнопка «Глубокий анализ ленты».</li>
                            <li><strong>Не заставляем сидеть часами</strong>: при очереди покажем позицию и примерное время; если очередь слишком длинная — честно скажем зайти позже. Быстрый отчёт при этом уже у вас.</li>
@@ -1218,8 +1218,21 @@
                    return tp.length > 160 ? tp.slice(0, 160) : tp;
                }
                function slugToQueryU(slug) {
-                   var q = slug;
-                   try { q = decodeURIComponent(String(slug).replace(/\+/g, ' ')); } catch (e) { q = slug; }
+                   var s = String(slug == null ? '' : slug).trim();
+                   if (!s) return '';
+                   /* Инвайт t.me/+… — нельзя подменять «+» на пробел (ломается хеш). */
+                   if (/t\.me\/\+/i.test(s)) {
+                       return s
+                           .replace(/^https:\/\//i, '')
+                           .replace(/^http:\/\//i, '')
+                           .replace(/^@\s*/i, '');
+                   }
+                   var q = s;
+                   try {
+                       q = decodeURIComponent(s.replace(/\+/g, ' '));
+                   } catch (e) {
+                       q = s;
+                   }
                    return String(q).replace(/^@+/, '').replace(/^(%40)+/gi, '').trim();
                }
                function displayChannelLabel(slug, queryU) {
@@ -3412,6 +3425,12 @@
                   var displayLabel = displayChannelLabel(slug, queryU);
                   var __kroCapturedHint =
                       typeof window.__kroHomeChannelHint === 'string' ? String(window.__kroHomeChannelHint).trim().slice(0, 160) : '';
+                  var __kroApiPrimaryInput = (function () {
+                      var p = typeof window.__kroHomeAnalyzePrimaryInput === 'string' ? window.__kroHomeAnalyzePrimaryInput.trim() : '';
+                      if (p) return p.length > 500 ? p.slice(0, 500) : p;
+                      if (/^t\.me\//i.test(String(slug))) return String(slug);
+                      return '@' + queryU.replace(/^@+/, '');
+                  })();
                   window.__kroHomeCheckT0 = Date.now();
                   var __kroCheckStarted = window.__kroHomeCheckT0;
                   showCheckBusy(displayLabel);
@@ -3582,7 +3601,7 @@
                           });
                   };
 
-                  var postBody = { username: queryU };
+                  var postBody = { username: __kroApiPrimaryInput };
                   if (__kroCapturedHint) postBody.channel_name_hint = __kroCapturedHint;
                   var fetchOpts = { method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store', body: JSON.stringify(postBody) };
                   try {
@@ -3663,6 +3682,7 @@
                    }
                    var split = splitKroCheckCombinedInput(raw);
                    window.__kroHomeChannelHint = kroDeriveChannelNameHintForApi(split.telegramPart, split.hintPart);
+                   window.__kroHomeAnalyzePrimaryInput = String(split.telegramPart || '').trim();
                    var channel = normChannel(split.telegramPart);
                    if (!channel) {
                        checkResult.innerHTML = '';
@@ -3754,6 +3774,7 @@
                        checkResult.innerHTML = '';
                        checkInput.value = '';
                        window.__kroHomeChannelHint = '';
+                       window.__kroHomeAnalyzePrimaryInput = '';
                        checkInput.focus();
                    });
                }
@@ -3806,6 +3827,10 @@
                                }
                                checkResult.classList.add('hidden');
                                checkResult.innerHTML = '';
+                               window.__kroHomeAnalyzePrimaryInput = /^t\.me\//i.test(slug2)
+                                   ? slug2
+                                   : ('@' + String(slug2).replace(/^@+/, ''));
+                               window.__kroHomeChannelHint = '';
                                runHomeChannelCheck(slug2);
                            }).catch(function () {
                                checkResult.textContent = 'Ошибка распознавания скрина.';
