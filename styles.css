@@ -57,6 +57,12 @@ button:focus-visible {
    --kro-cyan-border: rgba(6, 182, 212, 0.4);
    --kro-gray-mid: #888888;
    --kro-gray-soft: #cccccc;
+   /* Свет и обводка в духе лёгкого SaaS (sitelove): тёплый ключ + холодный rim */
+   --kro-light-key: rgba(255, 248, 237, 0.09);
+   --kro-light-key-strong: rgba(255, 245, 228, 0.14);
+   --kro-rim-lavender: rgba(167, 139, 250, 0.22);
+   --kro-rim-cyan: rgba(56, 189, 248, 0.14);
+   --kro-glass-edge: rgba(255, 255, 255, 0.11);
 }
 
 /* Hero + Footer: утилиты анимации (transition, keyframes) — только главная часть, без Фишки 1 */
@@ -634,8 +640,11 @@ body.kro-hero-scrolled .kro-floating-nav {
    position: absolute;
    inset: 0;
    z-index: -1;
-   background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
-               linear-gradient(180deg, var(--kro-bg) 0%, rgba(14, 17, 22, 0.98) 45%, var(--kro-bg-soft) 100%);
+   background:
+      radial-gradient(ellipse 65% 45% at 78% 18%, rgba(167, 139, 250, 0.07) 0%, transparent 58%),
+      radial-gradient(ellipse 55% 38% at 12% 72%, rgba(56, 189, 248, 0.05) 0%, transparent 55%),
+      radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+      linear-gradient(180deg, var(--kro-bg) 0%, rgba(14, 17, 22, 0.98) 45%, var(--kro-bg-soft) 100%);
    transform: translateY(var(--kro-parallax-y, 0));
    transition: transform 0.12s ease-out;
 }
@@ -645,7 +654,9 @@ body.kro-hero-scrolled .kro-floating-nav {
    content: '';
    position: absolute;
    inset: 0;
-   background: radial-gradient(ellipse 42% 32% at 50% 42%, rgba(245, 158, 11, 0.07) 0%, transparent 55%);
+   background:
+      radial-gradient(ellipse 48% 34% at 48% 38%, rgba(245, 158, 11, 0.09) 0%, transparent 56%),
+      radial-gradient(ellipse 60% 45% at 70% 55%, rgba(255, 255, 255, 0.03) 0%, transparent 55%);
    pointer-events: none;
    animation: kro-hero-breathe 20s ease-in-out infinite;
 }
@@ -692,11 +703,12 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-hero-cases {
    display: grid;
    grid-template-columns: 1fr;
-   gap: 12px;
+   gap: 14px;
    width: 100%;
    max-width: 640px;
-   margin: 0 auto 16px;
+   margin: 0 auto 20px;
    text-align: left;
+   perspective: 1100px;
 }
 
 @media (min-width: 720px) {
@@ -719,18 +731,21 @@ body.kro-hero-scrolled .kro-floating-nav {
    flex-direction: column;
    align-items: flex-start;
    gap: 8px;
-   padding: 16px 18px;
-   border-radius: 14px;
-   border: 1px solid rgba(255, 255, 255, 0.1);
-   background: rgba(0, 0, 0, 0.25);
-   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-   transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+   padding: 18px 20px;
+   border-radius: 18px;
+   border: 1px solid rgba(255, 255, 255, 0.11);
+   background: linear-gradient(155deg, rgba(255, 255, 255, 0.07) 0%, rgba(12, 14, 20, 0.55) 42%, rgba(0, 0, 0, 0.28) 100%);
+   backdrop-filter: blur(14px);
+   -webkit-backdrop-filter: blur(14px);
+   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(167, 139, 250, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+   transform-style: preserve-3d;
+   transition: border-color 0.35s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
 }
 
 .kro-hero-case-card:hover {
-   border-color: rgba(245, 158, 11, 0.35);
-   transform: translateY(-2px);
-   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+   border-color: rgba(245, 158, 11, 0.38);
+   transform: translateY(-5px) rotateX(4deg) rotateY(-1deg);
+   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35), 0 0 40px rgba(245, 158, 11, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.11);
 }
 
 .kro-hero-case-channel {
@@ -1044,10 +1059,64 @@ body.kro-hero-scrolled .kro-floating-nav {
 /* Фишка 1: Живой счётчик — карточки метрик, фон с глубиной (отдельный шрифт как на sitelove) */
 .kro-feature1 {
    font-family: 'Plus Jakarta Sans', sans-serif;
-   padding: 100px 24px 120px;
+   padding: clamp(88px, 11vw, 120px) clamp(22px, 4vw, 36px) clamp(110px, 13vw, 150px);
    text-align: center;
    position: relative;
    overflow: hidden;
+}
+
+/* Декоративные «орбы» — лёгкая глубина (как ambient UI на sitelove), без текста */
+.kro-f1-ambient {
+   position: absolute;
+   inset: 0;
+   z-index: 0;
+   pointer-events: none;
+   overflow: hidden;
+}
+.kro-f1-orb {
+   position: absolute;
+   border-radius: 50%;
+   filter: blur(60px);
+   opacity: 0.55;
+   animation: kro-f1-orb-float 22s ease-in-out infinite;
+}
+.kro-f1-orb--a {
+   width: min(420px, 70vw);
+   height: min(420px, 70vw);
+   top: -12%;
+   right: -8%;
+   background: radial-gradient(circle at 40% 40%, rgba(167, 139, 250, 0.35), transparent 70%);
+   animation-delay: 0s;
+}
+.kro-f1-orb--b {
+   width: min(360px, 55vw);
+   height: min(360px, 55vw);
+   bottom: 8%;
+   left: -14%;
+   background: radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.22), transparent 72%);
+   animation-delay: -7s;
+}
+.kro-f1-orb--c {
+   width: min(280px, 45vw);
+   height: min(280px, 45vw);
+   top: 42%;
+   left: 38%;
+   background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.12), transparent 75%);
+   animation-delay: -14s;
+}
+@keyframes kro-f1-orb-float {
+   0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.45; }
+   33% { transform: translate(-12px, 18px) scale(1.05); opacity: 0.58; }
+   66% { transform: translate(16px, -10px) scale(0.98); opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .kro-f1-orb { animation: none; opacity: 0.35; }
+}
+
+.kro-feature1 > *:not(.kro-feature1-bg):not(.kro-f1-ambient) {
+   position: relative;
+   z-index: 1;
 }
 
 .kro-feature1-bg {
@@ -1207,15 +1276,22 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-f1-badge {
    display: inline-flex;
    align-items: center;
-   padding: 6px 12px;
+   padding: 8px 14px;
    font-size: 11px;
    font-weight: 600;
-   letter-spacing: 0.06em;
+   letter-spacing: 0.07em;
    text-transform: uppercase;
-   color: rgba(255, 255, 255, 0.9);
-   background: rgba(255, 255, 255, 0.08);
-   border: 1px solid rgba(255, 255, 255, 0.15);
+   color: rgba(255, 255, 255, 0.94);
    border-radius: 999px;
+   border: 1px solid rgba(255, 255, 255, 0.12);
+   background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(139, 92, 246, 0.08) 45%, rgba(56, 189, 248, 0.05) 100%);
+   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 6px 20px rgba(0, 0, 0, 0.2);
+   transition: transform 0.35s var(--kro-ease-reveal, cubic-bezier(0.22, 1, 0.36, 1)), box-shadow 0.35s ease, border-color 0.3s ease;
+}
+.kro-f1-badge:hover {
+   transform: translateY(-2px);
+   border-color: rgba(167, 139, 250, 0.35);
+   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset, 0 10px 28px rgba(0, 0, 0, 0.28), 0 0 32px rgba(139, 92, 246, 0.08);
 }
 
 /* Мягкая пульсация LIVE-бейджа (оживляет блок без отвлечения) */
@@ -1468,17 +1544,17 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-f1-content-card {
-   padding: 32px 28px 36px;
-   border-radius: 22px;
-   background: linear-gradient(175deg, rgba(28, 24, 32, 0.9) 0%, rgba(20, 18, 26, 0.94) 100%);
-   border: 1px solid rgba(255, 255, 255, 0.1);
-   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-   transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.35s ease, border-color 0.25s ease;
+   padding: 36px 32px 40px;
+   border-radius: 26px;
+   background: linear-gradient(175deg, rgba(32, 28, 38, 0.82) 0%, rgba(18, 16, 24, 0.92) 100%);
+   border: 1px solid rgba(255, 255, 255, 0.11);
+   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(167, 139, 250, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+   transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, border-color 0.3s ease;
 }
 .kro-f1-content-card:hover {
-   transform: translateY(-4px);
-   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-   border-color: rgba(255, 255, 255, 0.14);
+   transform: translateY(-6px);
+   box-shadow: 0 22px 56px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.09), 0 0 48px rgba(139, 92, 246, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+   border-color: rgba(255, 255, 255, 0.16);
 }
 
 /* Блок 1: Шок-цифры — тёплый акцент, без сияния */
@@ -1603,6 +1679,22 @@ body.kro-hero-scrolled .kro-floating-nav {
 
 .kro-f1-math-slider-wrap {
    position: relative;
+}
+
+.kro-f1-math-slider-wrap::before {
+   content: '';
+   position: absolute;
+   inset: -4px;
+   border-radius: 22px;
+   z-index: -1;
+   opacity: 0.42;
+   pointer-events: none;
+   background: linear-gradient(135deg, rgba(167, 139, 250, 0.45), rgba(245, 158, 11, 0.2), rgba(56, 189, 248, 0.35));
+   filter: blur(16px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .kro-f1-math-slider-wrap::before { opacity: 0.22; filter: blur(10px); }
 }
 
 .kro-f1-math-slider {
@@ -4009,14 +4101,17 @@ body.kro-hero-scrolled .kro-floating-nav {
    -moz-osx-font-smoothing: grayscale;
 }
 
-/* Виньетка: затемнение по краям (глубина, премиум) */
+/* Виньетка + мягкий «студийный» свет сверху (воздух, без перебива акцента) */
 .kro-main::before {
    content: '';
    position: fixed;
    inset: 0;
    z-index: 0;
    pointer-events: none;
-   background: radial-gradient(ellipse 100% 80% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.18) 100%);
+   background:
+      radial-gradient(ellipse 120% 55% at 50% -15%, var(--kro-light-key-strong) 0%, transparent 52%),
+      radial-gradient(ellipse 70% 50% at 15% 25%, rgba(139, 92, 246, 0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 100% 80% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.18) 100%);
 }
 
 /* Зерно: лёгкая текстура (атмосфера, не копируя medvedevart 1:1) */
@@ -9084,42 +9179,59 @@ body.kro-modal-open {
    ЖИВЫЕ АНИМАЦИИ — ГЛУБИНА И МЯГКОСТЬ
    ============================================ */
 
-/* Плавное появление секций при скролле */
+/* Плавное появление при скролле — чуть медленнее и «воздушнее» */
 .kro-feature1,
 .kro-f1-loh-card,
 .kro-feature1-stat,
 .kro-feature1-dashboard,
-.kro-feature1-check {
+.kro-feature1-check,
+.kro-f1-content-card,
+.kro-f1-top3-wrap,
+.kro-f1-cta-block,
+.kro-hero-case-card {
    opacity: 0;
-   transform: translateY(32px);
-   transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-               transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+   transform: translateY(36px);
+   transition: opacity 0.88s cubic-bezier(0.22, 1, 0.36, 1),
+               transform 0.88s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .kro-feature1.kro-visible,
 .kro-f1-loh-card.kro-visible,
 .kro-feature1-stat.kro-visible,
 .kro-feature1-dashboard.kro-visible,
-.kro-feature1-check.kro-visible {
+.kro-feature1-check.kro-visible,
+.kro-f1-content-card.kro-visible,
+.kro-f1-top3-wrap.kro-visible,
+.kro-f1-cta-block.kro-visible,
+.kro-hero-case-card.kro-visible {
    opacity: 1;
    transform: translateY(0);
 }
 
 /* Stagger для карточек лох-типов */
 .kro-f1-loh-card:nth-child(1) { transition-delay: 0s; }
-.kro-f1-loh-card:nth-child(2) { transition-delay: 0.12s; }
-.kro-f1-loh-card:nth-child(3) { transition-delay: 0.24s; }
+.kro-f1-loh-card:nth-child(2) { transition-delay: 0.14s; }
+.kro-f1-loh-card:nth-child(3) { transition-delay: 0.28s; }
 
 /* Stagger для стат-карточек */
 .kro-feature1-stat:nth-child(1) { transition-delay: 0s; }
-.kro-feature1-stat:nth-child(2) { transition-delay: 0.1s; }
-.kro-feature1-stat:nth-child(3) { transition-delay: 0.2s; }
+.kro-feature1-stat:nth-child(2) { transition-delay: 0.11s; }
+.kro-feature1-stat:nth-child(3) { transition-delay: 0.22s; }
+
+/* Hero: три кейса из базы — мягкий каскад */
+.kro-hero-case-card:nth-child(1) { transition-delay: 0s; }
+.kro-hero-case-card:nth-child(2) { transition-delay: 0.1s; }
+.kro-hero-case-card:nth-child(3) { transition-delay: 0.2s; }
+
+.kro-f1-content-card { transition-delay: 0.06s; }
+.kro-f1-top3-wrap { transition-delay: 0.05s; }
 
 /* 3D поворот карточек при hover */
 .kro-f1-loh-card {
    transform-style: preserve-3d;
    perspective: 800px;
-   transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+   transition: opacity 0.88s cubic-bezier(0.22, 1, 0.36, 1),
+               transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
                box-shadow 0.4s ease,
                border-color 0.3s ease;
 }
@@ -9170,7 +9282,11 @@ body.kro-modal-open {
    .kro-f1-loh-card,
    .kro-feature1-stat,
    .kro-feature1-dashboard,
-   .kro-feature1-check {
+   .kro-feature1-check,
+   .kro-f1-content-card,
+   .kro-f1-top3-wrap,
+   .kro-f1-cta-block,
+   .kro-hero-case-card {
       opacity: 1;
       transform: none;
       transition: none;
@@ -9179,4 +9295,5 @@ body.kro-modal-open {
    .kro-step1-inner { animation: none; }
    .kro-feature1-dashboard { animation: none; }
    .kro-f1-loh-card:hover { transform: translateY(-4px); }
+   .kro-hero-case-card:hover { transform: none; }
 }

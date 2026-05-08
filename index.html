@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260508-sitelove-air">
+   <link rel="stylesheet" href="styles.css?v=20260508-sitelove-depth">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -111,10 +111,17 @@
        <!-- Фишка 1: Живой счётчик обманов -->
        <section class="kro-feature1 kro-reveal" id="feature1" aria-labelledby="kro-feature1-heading">
            <div class="kro-feature1-bg" aria-hidden="true"></div>
+           <div class="kro-f1-ambient" aria-hidden="true">
+               <span class="kro-f1-orb kro-f1-orb--a"></span>
+               <span class="kro-f1-orb kro-f1-orb--b"></span>
+               <span class="kro-f1-orb kro-f1-orb--c"></span>
+           </div>
            <div class="kro-f1-badges-row" aria-hidden="true">
                <span class="kro-f1-badge">Данные обновляются</span>
                <span class="kro-f1-badge-sep" aria-hidden="true">·</span>
                <span class="kro-f1-badge">Обновление каждые 12 ч</span>
+               <span class="kro-f1-badge-sep" aria-hidden="true">·</span>
+               <span class="kro-f1-badge">Факты · не выдумки из ленты</span>
            </div>
            <div class="kro-feature1-dashboard">
                <p class="kro-feature1-date" id="kro-feature1-date">Последнее подтверждённое обновление: <span id="kro-live-datetime">—</span></p>
@@ -3977,10 +3984,14 @@
                entry.target.classList.add('kro-visible');
             }
          });
-      }, { threshold: 0.12 });
+      }, {
+         rootMargin: '0px 0px -6% 0px',
+         threshold: [0, 0.1, 0.2],
+      });
 
       document.querySelectorAll(
-         '.kro-feature1, .kro-f1-loh-card, .kro-feature1-stat, .kro-feature1-dashboard, .kro-feature1-check'
+         '.kro-feature1, .kro-feature1-dashboard, .kro-feature1-stat, .kro-f1-loh-card, .kro-feature1-check, '
+         + '.kro-f1-content-card, .kro-f1-top3-wrap, .kro-f1-cta-block, .kro-hero-case-card'
       ).forEach(el => observer.observe(el));
    </script>
 </body>
