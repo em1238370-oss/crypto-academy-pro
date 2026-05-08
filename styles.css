@@ -27,21 +27,21 @@ button:focus-visible {
    outline-offset: 3px;
 }
 
-/* ===== Крипта без розовых очков — стилистика medvedevart: премиум, сдержанно, акцент на тексте ===== */
+/* ===== Крипта без розовых очков — в т.ч. «воздух» и мягкость в духе sitelove.io (SaaS, без шума) ===== */
 .kro-main,
 .kro-step1,
 .kro-feature1 {
-   /* Палитра: тёмный фон с лёгким тёплым подтоном (премиум, не холодный) */
-   --kro-bg: #0a0c10;
-   --kro-bg-mid: #0e1116;
-   --kro-bg-soft: #13161c;
+   /* Палитра: чуть светлее базовый тёмный + мягкий холодный подтон (легче для глаза) */
+   --kro-bg: #0c0f16;
+   --kro-bg-mid: #10141d;
+   --kro-bg-soft: #161b26;
    --kro-accent: #f59e0b;
    --kro-accent-hover: #fbbf24;
    --kro-glow: rgba(245, 158, 11, 0.08);
    --kro-glow-soft: rgba(245, 158, 11, 0.04);
-   /* Текст: иерархия как на medvedevart — основной и приглушённый */
-   --kro-text: rgba(255, 255, 255, 0.92);
-   --kro-text-muted: rgba(255, 255, 255, 0.52);
+   /* Текст: основной и приглушённый — muted чуть светлее для читаемости */
+   --kro-text: rgba(255, 255, 255, 0.93);
+   --kro-text-muted: rgba(255, 255, 255, 0.58);
    /* Ритм отступов (8px база) */
    --kro-space-1: 8px;
    --kro-space-2: 16px;
@@ -69,9 +69,9 @@ button:focus-visible {
    --kro-stagger: 0.18s;
    --kro-reveal-y: 44px;
    --kro-scroll-in-y: 40px;
-   /* Типографика (medvedevart): акцент — заголовки, основной текст — тело */
-   --kro-font-heading: 'Syne', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-   --kro-font-body: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   /* Типографика: Plus Jakarta — ближе к лёгкому SaaS (sitelove), Syne/Manrope — характер заголовков */
+   --kro-font-heading: 'Plus Jakarta Sans', 'Syne', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+   --kro-font-body: 'Plus Jakarta Sans', 'Inter', 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    --kro-font-mono: ui-monospace, 'SF Mono', Monaco, 'Cascadia Code', monospace;
 }
 
@@ -142,10 +142,11 @@ button:focus-visible {
    position: relative;
    z-index: 1;
    overflow: hidden;
-   background: radial-gradient(ellipse 60% 50% at 80% 85%, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
-               radial-gradient(ellipse 50% 40% at 15% 25%, rgba(245, 158, 11, 0.03) 0%, transparent 55%),
-               radial-gradient(ellipse 70% 50% at 50% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
-               linear-gradient(180deg, var(--kro-bg) 0%, rgba(15, 18, 24, 0.98) 100%);
+   background: radial-gradient(ellipse 55% 42% at 72% 18%, rgba(139, 92, 246, 0.07) 0%, transparent 58%),
+               radial-gradient(ellipse 60% 50% at 80% 85%, rgba(255, 255, 255, 0.045) 0%, transparent 50%),
+               radial-gradient(ellipse 50% 40% at 15% 25%, rgba(245, 158, 11, 0.035) 0%, transparent 55%),
+               radial-gradient(ellipse 70% 50% at 50% 30%, rgba(255, 255, 255, 0.035) 0%, transparent 50%),
+               linear-gradient(180deg, var(--kro-bg) 0%, rgba(16, 20, 29, 0.98) 100%);
    transition: opacity var(--kro-duration-reveal) var(--kro-ease-out), transform var(--kro-duration-reveal) var(--kro-ease-out);
 }
 
@@ -236,10 +237,10 @@ body.kro-hero-scrolled .kro-step1 {
    justify-content: space-between;
    padding: 12px 24px 12px 24px;
    border-radius: 999px;
-   background: rgba(10, 12, 16, 0.92);
-   backdrop-filter: blur(24px);
-   -webkit-backdrop-filter: blur(24px);
-   border: 1px solid rgba(255, 255, 255, 0.06);
+   background: rgba(14, 17, 24, 0.88);
+   backdrop-filter: blur(28px);
+   -webkit-backdrop-filter: blur(28px);
+   border: 1px solid rgba(255, 255, 255, 0.09);
    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
    opacity: 0;
    visibility: hidden;
@@ -405,12 +406,12 @@ body.kro-hero-scrolled .kro-floating-nav {
    margin: 0 auto;
    position: relative;
    padding: 52px 32px 60px;
-   background: rgba(255, 255, 255, 0.025);
-   backdrop-filter: blur(16px);
-   -webkit-backdrop-filter: blur(16px);
-   border-radius: 20px;
-   border: 1px solid rgba(220, 225, 235, 0.08);
-   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+   background: rgba(255, 255, 255, 0.04);
+   backdrop-filter: blur(20px);
+   -webkit-backdrop-filter: blur(20px);
+   border-radius: 24px;
+   border: 1px solid rgba(255, 255, 255, 0.1);
+   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(139, 92, 246, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.06);
    transition: box-shadow var(--kro-duration-hover) ease, border-color var(--kro-duration-hover) ease, transform var(--kro-duration-hover) ease;
 }
 
@@ -1053,22 +1054,23 @@ body.kro-hero-scrolled .kro-floating-nav {
    position: absolute;
    inset: 0;
    z-index: -1;
-   /* Другой тон относительно hero: мягкий красный «денежный» градиент сзади карточек, без точек */
-   background: radial-gradient(ellipse 80% 70% at 50% 45%, rgba(100, 45, 45, 0.22) 0%, transparent 55%),
-               radial-gradient(ellipse 70% 50% at 50% 35%, rgba(72, 48, 42, 0.18) 0%, transparent 55%),
-               radial-gradient(ellipse 100% 80% at 50% 50%, rgba(50, 30, 32, 0.15) 0%, transparent 65%),
-               linear-gradient(180deg, #140e0f 0%, #110d0e 35%, #0e0b0c 100%);
+   /* Фон Фишки 1: тёплый акцент + лёгкий холодный «воздух» (sitelove-like), без утяжеления */
+   background: radial-gradient(ellipse 70% 55% at 82% 22%, rgba(139, 92, 246, 0.06) 0%, transparent 55%),
+               radial-gradient(ellipse 80% 70% at 50% 45%, rgba(100, 45, 45, 0.18) 0%, transparent 55%),
+               radial-gradient(ellipse 70% 50% at 50% 35%, rgba(72, 48, 42, 0.14) 0%, transparent 55%),
+               radial-gradient(ellipse 100% 80% at 50% 50%, rgba(50, 30, 32, 0.12) 0%, transparent 65%),
+               linear-gradient(180deg, #151011 0%, #12100f 35%, #0f0d0e 100%);
 }
 
 /* Дашборд: LIVE + большая цифра + 3 карточки (тёплый контрастный фон, без сияния) */
 .kro-feature1-dashboard {
    max-width: calc(680px + 4cm);
    margin: 0 auto 48px;
-   padding: 36px 28px 40px;
-   border-radius: 24px;
-   background: linear-gradient(165deg, rgba(32, 26, 28, 0.95) 0%, rgba(24, 20, 22, 0.98) 100%);
-   border: 1px solid rgba(184, 74, 74, 0.2);
-   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+   padding: 38px 30px 42px;
+   border-radius: 28px;
+   background: linear-gradient(165deg, rgba(34, 28, 30, 0.88) 0%, rgba(22, 19, 21, 0.94) 100%);
+   border: 1px solid rgba(184, 74, 74, 0.14);
+   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.055), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .kro-feature1.kro-reveal .kro-feature1-dashboard {
@@ -4003,6 +4005,8 @@ body.kro-hero-scrolled .kro-floating-nav {
    /* Без явного color наследуется чёрный UA — на тёмном фоне текст «пропадает» */
    color: var(--kro-text);
    font-family: var(--kro-font-body);
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
 }
 
 /* Виньетка: затемнение по краям (глубина, премиум) */
@@ -4012,7 +4016,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    inset: 0;
    z-index: 0;
    pointer-events: none;
-   background: radial-gradient(ellipse 100% 80% at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.25) 100%);
+   background: radial-gradient(ellipse 100% 80% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.18) 100%);
 }
 
 /* Зерно: лёгкая текстура (атмосфера, не копируя medvedevart 1:1) */
