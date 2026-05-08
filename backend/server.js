@@ -1368,6 +1368,12 @@ const KRO_HOME_QUICK_MS =
   Number.isFinite(kroHomeQuickMsParsed) && kroHomeQuickMsParsed >= 8000 && kroHomeQuickMsParsed <= 120000
     ? kroHomeQuickMsParsed
     : 30000;
+/** Бюджет HTTP-пробы публичной страницы t.me/s при вводе «название без @» (по умолчанию ~14 с). */
+const kroPlainTitleResolveMsParsed = parseInt(process.env.KRO_PLAIN_TITLE_RESOLVE_MS || '14000', 10);
+const KRO_PLAIN_TITLE_RESOLVE_MS =
+  Number.isFinite(kroPlainTitleResolveMsParsed) && kroPlainTitleResolveMsParsed >= 4000 && kroPlainTitleResolveMsParsed <= 25000
+    ? kroPlainTitleResolveMsParsed
+    : 14000;
 /** Целевой минимум постов с текстом на главной (Telethon + t.me/s), пока не исчерпан бюджет sync (~7 мин). */
 const kroHomeAnalyzeMinPostsParsed = parseInt(process.env.KRO_HOME_ANALYZE_MIN_POSTS || '', 10);
 const KRO_HOME_ANALYZE_MIN_POSTS =
@@ -4772,6 +4778,181 @@ function kroExtractTelegramPublicSlug(channelRef) {
   const m = raw.match(/(?:https?:\/\/)?t\.me\/(?:s\/)?([^/?#\s]+)/i);
   if (m && m[1]) return String(m[1]).replace(/^@+/, '').trim().toLowerCase();
   return raw.replace(/^@+/, '').replace(/^t\.me\//i, '').replace(/^s\//i, '').trim().toLowerCase();
+}
+
+/** Публичный @username Telegram: 5–32 символов, латиница, цифры и _. */
+function kroIsValidTelegramPublicUsernameKey(key) {
+  const s = String(key || '').trim().toLowerCase();
+  return /^[a-z][a-z0-9_]{4,31}$/.test(s);
+}
+
+function kroRawInputLooksLikeExplicitTelegramRef(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return false;
+  if (/^https?:\/\//i.test(s)) return true;
+  if (/t\.me\//i.test(s) || /telegram\.me\//i.test(s)) return true;
+  return false;
+}
+
+const KRO_RU_LAT_LOWER = {
+  щ: 'sch',
+  ё: 'e',
+  й: 'i',
+  ъ: '',
+  ь: '',
+  ы: 'y',
+  э: 'e',
+  ю: 'yu',
+  я: 'ya',
+  ж: 'zh',
+  х: 'h',
+  ц: 'ts',
+  ч: 'ch',
+  ш: 'sh',
+  а: 'a',
+  б: 'b',
+  в: 'v',
+  г: 'g',
+  д: 'd',
+  е: 'e',
+  з: 'z',
+  и: 'i',
+  к: 'k',
+  л: 'l',
+  м: 'm',
+  н: 'n',
+  о: 'o',
+  п: 'p',
+  р: 'r',
+  с: 's',
+  т: 't',
+  у: 'u',
+  ф: 'f',
+};
+
+function kroTransliterateRuToLatinLoose(str) {
+  let out = '';
+  for (const ch of String(str || '')) {
+    const low = ch.toLowerCase();
+    if (KRO_RU_LAT_LOWER[low] !== undefined) {
+      out += KRO_RU_LAT_LOWER[low];
+      continue;
+    }
+    if (/[a-z0-9]/i.test(ch)) {
+      out += ch.toLowerCase();
+      continue;
+    }
+    if (/\s/.test(ch)) {
+      out += ' ';
+      continue;
+    }
+    out += ' ';
+  }
+  return out.replace(/\s+/g, ' ').trim();
+}
+
+function kroSlugifyTelegramUsernameCandidate(rawPhrase) {
+  let t = kroTransliterateRuToLatinLoose(String(rawPhrase || '')).toLowerCase();
+  t = t.replace(/[^a-z0-9_]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+  if (t.length > 32) t = t.slice(0, 32).replace(/_+$/g, '');
+  if (t.length && /^[0-9_]/.test(t)) t = `x_${t}`.replace(/_+/g, '_').slice(0, 32).replace(/_+$/g, '');
+  return t;
+}
+
+function kroCollectTelegramUsernameCandidatesFromPlainTitle(rawInput) {
+  const base = String(rawInput || '').replace(/^@+/u, '').trim();
+  if (!base) return [];
+  const seen = new Set();
+  const out = [];
+  const push = (x) => {
+    const s = String(x || '').trim().toLowerCase();
+    if (!kroIsValidTelegramPublicUsernameKey(s)) return;
+    if (seen.has(s)) return;
+    seen.add(s);
+    out.push(s);
+  };
+  const nospace = base.replace(/\s+/g, '');
+  push(kroSlugifyTelegramUsernameCandidate(nospace));
+  const parts = base.split(/\s+/u).filter(Boolean);
+  if (parts.length > 1) {
+    push(kroSlugifyTelegramUsernameCandidate(parts.join(' ')));
+    push(kroSlugifyTelegramUsernameCandidate(parts.join('_')));
+    const first = kroSlugifyTelegramUsernameCandidate(parts[0]);
+    const last = kroSlugifyTelegramUsernameCandidate(parts[parts.length - 1]);
+    if (first.length >= 5 && last.length >= 5 && first !== last) {
+      const combo = `${first}_${last}`.slice(0, 32).replace(/_+$/g, '');
+      push(combo);
+    }
+  }
+  return out;
+}
+
+function kroShouldAttemptResolvePlainTitleToSlug(rawInput, key) {
+  const raw = String(rawInput || '').trim();
+  if (!raw || kroRawInputLooksLikeExplicitTelegramRef(raw)) return false;
+  const kn = String(key || '').trim().toLowerCase();
+  if (kn.startsWith('t.me/+')) return false;
+  if (/\s/u.test(raw)) return true;
+  if (!kroIsValidTelegramPublicUsernameKey(kn)) return true;
+  return false;
+}
+
+async function kroResolveTelegramPublicSlugFromPlainTitle(rawInput, opts) {
+  const analyzeLogId = opts && opts.analyzeLogId ? String(opts.analyzeLogId) : 'resolve';
+  const budgetMs = Math.min(22000, Math.max(5000, Number(opts && opts.budgetMs) || KRO_PLAIN_TITLE_RESOLVE_MS));
+  const candidates = kroCollectTelegramUsernameCandidatesFromPlainTitle(rawInput);
+  if (!candidates.length) return null;
+  const n = Math.min(8, candidates.length);
+  const per = Math.max(2500, Math.floor(budgetMs / n));
+  const tried = [];
+  for (const slug of candidates.slice(0, 8)) {
+    tried.push(slug);
+    const snap = await kroFetchTelegramPublicSnapshot(`@${slug}`, {
+      timeoutMs: per,
+      logLabel: `${analyzeLogId}:plain_title_probe@${slug}`,
+    });
+    if (snap && Array.isArray(snap.snippets) && snap.snippets.length) {
+      console.log(`[KRO plain-title-resolve ${analyzeLogId}] hit slug=${slug} snippets=${snap.snippets.length}`);
+      return {
+        resolved_slug: slug,
+        input_raw: String(rawInput || '').trim(),
+        tried_slugs: tried,
+        page_title_ru: snap.title ? String(snap.title).slice(0, 140) : null,
+        method: 't_me_s_snapshot_probe',
+      };
+    }
+  }
+  console.log(`[KRO plain-title-resolve ${analyzeLogId}] miss tried=${tried.join(',')}`);
+  return null;
+}
+
+/** Несколько формулировок для site search (?s=): кириллица + латиница после транслитерации. */
+function kroSiteSearchQueriesVariants(opts) {
+  const hintSan = String((opts && opts.hintSan) || '').trim();
+  const slugKey = String((opts && opts.slugKey) || '').trim();
+  const out = [];
+  const add = (x) => {
+    const t = String(x || '').trim();
+    if (t.length >= 3 && !out.includes(t)) out.push(t);
+  };
+  add(hintSan);
+  add(slugKey);
+  const lat = kroTransliterateRuToLatinLoose(hintSan).replace(/\s+/g, ' ').trim();
+  if (lat.length >= 3 && lat.toLowerCase() !== hintSan.toLowerCase()) add(lat);
+  return out.slice(0, 4);
+}
+
+async function kroFetchSiteSearchMentionsMulti(queries, budgetMs) {
+  const qs = [...new Set((queries || []).map((x) => String(x || '').trim()).filter((x) => x.length >= 3))].slice(0, 4);
+  if (!qs.length) return [];
+  const base = Math.min(9000, Math.max(1200, Number(budgetMs) || 3500));
+  const per = Math.max(900, Math.floor(base / qs.length));
+  const merged = [];
+  for (const q of qs) {
+    const chunk = await kroFetchSiteSearchMentionsQuery(q, per);
+    for (const row of chunk) merged.push({ ...row, search_query: q });
+  }
+  return merged;
 }
 
 function kroStripHtmlToText(html) {
@@ -8854,6 +9035,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     t0,
     trustReportExtra,
     claudeOverlay,
+    telegramUsernameResolve,
   } = opts || {};
   const inviteVoiceRu =
     String(key || '').trim().toLowerCase().startsWith('t.me/+') &&
@@ -9095,6 +9277,17 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       elapsed_ms: Date.now() - t0,
     },
     message: `${channelDisplay}: ${riskLine} ${fastHuman.summaryLine}`,
+    ...(telegramUsernameResolve && telegramUsernameResolve.resolved_slug
+      ? {
+          telegram_username_resolve: {
+            resolved_slug: telegramUsernameResolve.resolved_slug,
+            input_raw: telegramUsernameResolve.input_raw || null,
+            tried_slugs: telegramUsernameResolve.tried_slugs || [],
+            page_title_ru: telegramUsernameResolve.page_title_ru || null,
+            method: telegramUsernameResolve.method || null,
+          },
+        }
+      : {}),
   });
 }
 
@@ -9102,7 +9295,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
  * Приватный канал t.me/+… в режиме manual_first: без Telethon, таблицы + vklader/forteck по названию + Claude + честный CTA со скриншотами.
  */
 async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
-  const { t0, key, normalized, analyzeLogId, channelNameHint } = opts;
+  const { t0, key, normalized, analyzeLogId, channelNameHint, telegramUsernameResolve } = opts;
   const inviteUrl = kroTelegramInviteHttpsUrl(normalized, key);
   let hintWorking = kroSanitizeChannelNameHint(channelNameHint || '');
   let inviteOgMeta = null;
@@ -9177,6 +9370,10 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
     (hintRaw && hintRaw.length >= 3)
       ? hintRaw
       : (nameSeg && String(nameSeg).length >= 3 ? String(nameSeg) : '');
+  const searchQueriesList = kroSiteSearchQueriesVariants({
+    hintSan: searchQuery,
+    slugKey: nameSeg && String(nameSeg).length >= 3 ? String(nameSeg) : '',
+  });
 
   async function kroBestMentionFetch(host, segment, budget) {
     const [a, u] = await Promise.all([
@@ -9196,13 +9393,14 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
     : Promise.resolve([emptyPage, emptyPage]);
 
   const searchPromise =
-    searchQuery.length >= 3
-      ? kroFetchSiteSearchMentionsQuery(searchQuery, searchBudget)
+    searchQueriesList.length
+      ? kroFetchSiteSearchMentionsMulti(searchQueriesList, searchBudget)
       : Promise.resolve([]);
 
+  const extHintQuery = searchQueriesList[0] || searchQuery;
   const externalPromise =
-    searchQuery.length >= 3 && (KRO_INVITE_DDG_HTML_SEARCH || KRO_INVITE_GOOGLE_SITE_SEARCH) && deadline - Date.now() > 4200
-      ? kroInviteCollectExternalWebHints(searchQuery, extBudget)
+    extHintQuery.length >= 3 && (KRO_INVITE_DDG_HTML_SEARCH || KRO_INVITE_GOOGLE_SITE_SEARCH) && deadline - Date.now() > 4200
+      ? kroInviteCollectExternalWebHints(extHintQuery, extBudget)
       : Promise.resolve({ items: [], duck_ok: false, google_ok: false });
 
   const [[vkPage, ftPage], siteSearchPages, extWeb] = await Promise.all([
@@ -9276,7 +9474,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
       mentioned: p.mentioned,
       preview: String(p.preview || '').slice(0, 2000),
       kind: p.kind || 'search',
-      query: searchQuery || null,
+      query: p.search_query != null ? p.search_query : searchQuery || null,
     })),
   };
 
@@ -9306,7 +9504,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
     for (const sp of siteSearchPages) {
       if (sp.preview) {
         pathSnips.push(
-          `[HTML ${sp.host} поиск «${searchQuery}», http ${sp.http_status || '—'}] ${String(sp.preview).slice(0, 700)}`,
+          `[HTML ${sp.host} поиск «${sp.search_query != null ? sp.search_query : searchQuery}», http ${sp.http_status || '—'}] ${String(sp.preview).slice(0, 700)}`,
         );
       }
     }
@@ -9329,7 +9527,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
   const postsN = sampleArr.length || Number(parsedSimple.posts_fetched || 0) || 0;
 
   const voicePrefix =
-    `Приватный канал по инвайт-ссылке: ленту Telegram здесь не читаем. За ~${Math.round(quickBudgetMs / 1000)} с: ${inviteTitleSource === 'telegram_invite_html' ? 'название из HTML страницы инвайта (og:title), ' : ''}scam_base${hintRaw ? ' (поиск по названию)' : ''}, объединённые жалобы (reports), GET vklader/forteck${nameSeg ? ` по пути «${nameSeg}»` : ' (без названия — прямой путь не запрашивали)'}${searchQuery.length >= 3 ? `, поиск на сайтах ?s= («${searchQuery.slice(0, 80)}»)` : ''}${(extWeb.items || []).length ? ', доп. веб-поиск (DuckDuckGo/Google по env)' : ''}, затем Claude.`;
+    `Приватный канал по инвайт-ссылке: ленту Telegram здесь не читаем. За ~${Math.round(quickBudgetMs / 1000)} с: ${inviteTitleSource === 'telegram_invite_html' ? 'название из HTML страницы инвайта (og:title), ' : ''}scam_base${hintRaw ? ' (поиск по названию)' : ''}, объединённые жалобы (reports), GET vklader/forteck${nameSeg ? ` по пути «${nameSeg}»` : ' (без названия — прямой путь не запрашивали)'}${searchQueriesList.length ? `, поиск на сайтах ?s= (${searchQueriesList.slice(0, 4).map((q) => `«${String(q).slice(0, 48)}»`).join(', ')})` : ''}${(extWeb.items || []).length ? ', доп. веб-поиск (DuckDuckGo/Google по env)' : ''}, затем Claude.`;
   const trustBundle = kroBuildAnalyzeChannelLiveSuccessBundle({
     withQueueMeta,
     channelDisplay,
@@ -9344,6 +9542,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
     t0,
     trustReportExtra: { editor_voice_prefix_ru: voicePrefix },
     claudeOverlay: claudeJson,
+    telegramUsernameResolve,
   });
 
   const screenshotHelp = {
@@ -9359,7 +9558,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
     invite_description_snippet_ru: inviteOgMeta && inviteOgMeta.description ? inviteOgMeta.description.slice(0, 280) : null,
     invite_page_url: inviteUrl || null,
     reports_sheet_rows: reports.length,
-    site_search_used: searchQuery.length >= 3,
+    site_search_used: searchQueriesList.length > 0,
     external_web_duck_ok: extWeb.duck_ok === true,
     external_web_google_ok: extWeb.google_ok === true,
     snippet_lines_ru: kroBuildComplaintEvidenceSnippetLinesRu({ reports, siteSearchPages, extWeb }),
@@ -9383,7 +9582,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
  * Включить: KRO_HOME_ANALYZE_MODE=quick_sheets_only
  */
 async function kroAnalyzeChannelQuickSheetsSitesHandler(req, res, opts) {
-  const { t0, key, normalized, analyzeLogId, channelNameHint } = opts;
+  const { t0, key, normalized, analyzeLogId, channelNameHint, telegramUsernameResolve } = opts;
   const channelHintSan = kroSanitizeChannelNameHint(channelNameHint || '');
   const quickBudgetMs = KRO_HOME_QUICK_MS;
   const deadline = t0 + quickBudgetMs;
@@ -9422,11 +9621,15 @@ async function kroAnalyzeChannelQuickSheetsSitesHandler(req, res, opts) {
     (channelHintSan && channelHintSan.length >= 3)
       ? channelHintSan
       : (key && String(key).length >= 3 ? String(key) : '');
+  const searchQueriesList = kroSiteSearchQueriesVariants({
+    hintSan: channelHintSan,
+    slugKey: key,
+  });
   const [vkPage, ftPage, siteSearchPages] = await Promise.all([
     kroFetchMentionPathPage('vklader.com', key, perSite),
     kroFetchMentionPathPage('forteck.net', key, perSite),
-    searchQuery.length >= 3
-      ? kroFetchSiteSearchMentionsQuery(searchQuery, searchBudget)
+    searchQueriesList.length
+      ? kroFetchSiteSearchMentionsMulti(searchQueriesList, searchBudget)
       : Promise.resolve([]),
   ]);
 
@@ -9484,7 +9687,7 @@ async function kroAnalyzeChannelQuickSheetsSitesHandler(req, res, opts) {
       mentioned: p.mentioned,
       preview: String(p.preview || '').slice(0, 2000),
       kind: p.kind || 'search',
-      query: searchQuery || null,
+      query: p.search_query != null ? p.search_query : searchQuery || null,
     })),
   };
 
@@ -9510,7 +9713,7 @@ async function kroAnalyzeChannelQuickSheetsSitesHandler(req, res, opts) {
     for (const sp of siteSearchPages) {
       if (sp.preview) {
         pathSnips.push(
-          `[HTML ${sp.host} поиск «${searchQuery}», http ${sp.http_status || '—'}] ${String(sp.preview).slice(0, 700)}`,
+          `[HTML ${sp.host} поиск «${sp.search_query != null ? sp.search_query : searchQuery}», http ${sp.http_status || '—'}] ${String(sp.preview).slice(0, 700)}`,
         );
       }
     }
@@ -9522,7 +9725,7 @@ async function kroAnalyzeChannelQuickSheetsSitesHandler(req, res, opts) {
   const postsN = sampleArr.length || Number(parsedSimple.posts_fetched || 0) || 0;
 
   const voicePrefix =
-    `За ~${Math.round(quickBudgetMs / 1000)} с собрали: scam_base, channels_watch, объединённые reports, GET https://vklader.com/${key} и https://forteck.net/${key}${searchQuery.length >= 3 ? `, поиск на сайтах ?s= («${searchQuery.slice(0, 80)}»)` : ''}, затем Claude. Посты Telegram и t.me не читали — только эти источники.`;
+    `За ~${Math.round(quickBudgetMs / 1000)} с собрали: scam_base, channels_watch, объединённые reports, GET https://vklader.com/${key} и https://forteck.net/${key}${searchQueriesList.length ? `, поиск на сайтах ?s= (${searchQueriesList.slice(0, 4).map((q) => `«${String(q).slice(0, 48)}»`).join(', ')})` : ''}, затем Claude. Посты Telegram и t.me не читали — только эти источники.`;
 
   const bundle = kroBuildAnalyzeChannelLiveSuccessBundle({
     withQueueMeta,
@@ -9538,20 +9741,37 @@ async function kroAnalyzeChannelQuickSheetsSitesHandler(req, res, opts) {
     t0,
     trustReportExtra: { editor_voice_prefix_ru: voicePrefix },
     claudeOverlay: claudeJson,
+    telegramUsernameResolve,
   });
-  return res.status(200).json({ ...bundle, claude_home_quick: claudeJson });
+  return res.status(200).json({
+    ...bundle,
+    claude_home_quick: claudeJson,
+  });
 }
 
 app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   const rawInput = String((req.body && (req.body.username || req.body.channel || req.body.url)) || '').trim();
-  const normalized = normalizeChannel(rawInput);
-  const key = channelMatchKey(normalized);
+  let normalized = normalizeChannel(rawInput);
+  let key = channelMatchKey(normalized);
   if (!key) {
     return res.status(400).json({
       error: 'bad_request',
       message_ru: 'Укажите @username, t.me/username или полную инвайт-ссылку приватного канала (https://t.me/+…).',
     });
+  }
+
+  let telegramUsernameResolve = null;
+  const inviteKeyPre = String(key || '').toLowerCase().startsWith('t.me/+');
+  if (!inviteKeyPre && kroShouldAttemptResolvePlainTitleToSlug(rawInput, key)) {
+    telegramUsernameResolve = await kroResolveTelegramPublicSlugFromPlainTitle(rawInput, {
+      analyzeLogId: `title:${key}`,
+      budgetMs: KRO_PLAIN_TITLE_RESOLVE_MS,
+    });
+    if (telegramUsernameResolve && telegramUsernameResolve.resolved_slug) {
+      normalized = `@${telegramUsernameResolve.resolved_slug}`;
+      key = telegramUsernameResolve.resolved_slug;
+    }
   }
 
   const t0 = Date.now();
@@ -9577,6 +9797,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         normalized,
         analyzeLogId,
         channelNameHint,
+        telegramUsernameResolve,
       });
     } catch (e) {
       console.error(`KRO analyze-channel invite_manual error [${analyzeLogId}]:`, e);
@@ -9591,7 +9812,14 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
 
   if (kroHomeAnalyzeMode === 'quick_sheets_only') {
     try {
-      return await kroAnalyzeChannelQuickSheetsSitesHandler(req, res, { t0, key, normalized, analyzeLogId, channelNameHint });
+      return await kroAnalyzeChannelQuickSheetsSitesHandler(req, res, {
+        t0,
+        key,
+        normalized,
+        analyzeLogId,
+        channelNameHint,
+        telegramUsernameResolve,
+      });
     } catch (e) {
       console.error(`KRO analyze-channel quick error [${analyzeLogId}]:`, e);
       return res.status(500).json({
@@ -9754,6 +9982,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           readPathOut,
           telBudgetMs: telBest.budgetMs,
           t0,
+          telegramUsernameResolve,
         }),
       );
     }
@@ -9787,6 +10016,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           readPathOut: 'public_snapshot',
           telBudgetMs: telBest.budgetMs,
           t0,
+          telegramUsernameResolve,
         }),
       );
     }
@@ -9819,6 +10049,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         telBudgetMs: telBest.budgetMs,
         t0,
         trustReportExtra: { editor_voice_prefix_ru: dsNote },
+        telegramUsernameResolve,
       }),
     );
   } catch (e) {

@@ -2948,6 +2948,11 @@
                                metaParts.push('Жалоб в отчётах: ' + lm.complaints_count);
                            }
                        }
+                       if (data.telegram_username_resolve && data.telegram_username_resolve.resolved_slug) {
+                           metaParts.push(
+                               'Определён публичный адрес: @' + String(data.telegram_username_resolve.resolved_slug || '').replace(/^@+/, '')
+                           );
+                       }
                        if (metaEl) {
                            var liveBadge = '';
                            if (le && le.live_pass === true) {
