@@ -8752,8 +8752,14 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
   const riskLine = risk == null || !Number.isFinite(Number(risk))
     ? 'оценка по шкале не выставлена (мало постов в выборке).'
     : `оценка ${risk}/10.`;
+  const completedIso = new Date().toISOString();
+  analysis.generated_at_iso = completedIso;
+  if (Array.isArray(analysis.basic_info)) {
+    analysis.basic_info.push(`Ответ сформирован на сервере: ${completedIso} (UTC).`);
+  }
   return withQueueMeta({
     queue_status: 'done_sync',
+    analysis_completed_at_iso: completedIso,
     analysis,
     status: statusObj.status,
     status_code: statusObj.code,

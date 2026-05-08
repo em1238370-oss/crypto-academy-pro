@@ -1243,21 +1243,22 @@
                    return 'Из ленты';
                }
                /** Короткая подпись внизу отчёта без технических имён источников. */
-               function kroHumanizeAnalysisFoot(ab) {
-                   if (!ab) return '';
+               function kroHumanizeAnalysisFoot(ab, data) {
+                   if (!ab && !data) return '';
                    var parts = [];
-                   if (ab.label) {
+                   if (ab && ab.label) {
                        var lab = String(ab.label);
                        if (lab.length > 160) lab = lab.slice(0, 157) + '…';
                        parts.push(lab);
                    }
-                   if (ab.sources_used && ab.sources_used.length) {
+                   if (ab && ab.sources_used && ab.sources_used.length) {
                        var map = {
                            telethon: 'чтение в Telegram',
                            't.me/s': 'открытая лента',
                            public_snapshot: 'открытая лента',
                            dataset_evidence: 'фрагменты из базы и жалоб',
                            sheets_sites_claude: 'таблицы + сайты + Claude',
+                           invite_manual_sheets_sites: 'таблицы + сайты по названию + Claude (инвайт)',
                            github_actions: 'очередь проверок',
                            scam_base: 'наша база жалоб',
                            channels_watch: 'мониторинг',
@@ -1268,7 +1269,30 @@
                        var hum = ab.sources_used.map(function (s) { return map[s] || s; }).join(', ');
                        parts.push('Откуда взялись данные: ' + hum);
                    }
-                   return parts.join('. ');
+                   if (ab && ab.elapsed_ms != null && !isNaN(Number(ab.elapsed_ms))) {
+                       parts.push('Сборка ответа заняла ~' + Math.max(1, Math.round(Number(ab.elapsed_ms) / 1000)) + ' с.');
+                   }
+                   if (data && data.analysis_completed_at_iso) {
+                       parts.push('Метка времени ответа (UTC): ' + String(data.analysis_completed_at_iso));
+                   }
+                   var le = data && data.live_evidence && typeof data.live_evidence === 'object' ? data.live_evidence : null;
+                   if (le && le.live_pass === true && le.reason) {
+                       parts.push('Telegram: ' + String(le.reason).slice(0, 220));
+                   } else if (le && le.live_pass !== true && le.reason) {
+                       parts.push('Лента в этом ответе: ' + String(le.reason).slice(0, 220));
+                   }
+                   return parts.filter(Boolean).join('. ');
+               }
+               function kroTrustChecklistFlatStrings(tr) {
+                   var chk = tr && Array.isArray(tr.checklist) ? tr.checklist : [];
+                   return chk.map(function (row) {
+                       if (!row || typeof row !== 'object') return '';
+                       var q = row.label ? String(row.label).trim() : '';
+                       var w = row.what_we_saw ? String(row.what_we_saw).trim() : '';
+                       var v = row.verdict_ru ? String(row.verdict_ru).trim() : '';
+                       var line = (q ? q : 'Пункт') + (w ? ': ' + w : '') + (v ? ' — ' + v : '');
+                       return line.trim();
+                   }).filter(Boolean);
                }
                function kroTrustVerdictClass(verdictRu) {
                    var v = String(verdictRu || '').trim().toLowerCase();
@@ -2679,6 +2703,8 @@
                        var ur = data.user_report && typeof data.user_report === 'object' ? data.user_report : null;
                        var citations = Array.isArray(data.citations) ? data.citations.map(function (x) { return String(x || '').trim(); }).filter(Boolean) : [];
                        var trInline = data.trust_report && typeof data.trust_report === 'object' ? data.trust_report : null;
+                       var umQ = trInline && trInline.ui_modes && trInline.ui_modes.quick ? trInline.ui_modes.quick : {};
+                       var umD = trInline && trInline.ui_modes && trInline.ui_modes.detailed ? trInline.ui_modes.detailed : {};
                        var compactFlow = trInline && Number(trInline.v) >= 4;
                        var ridx = data.risk_index;
                        var __kSeed = kroStrHash(String(displayLabel || '') + String((data && data.channel_key) || ''));
@@ -2874,7 +2900,7 @@
                           analysisPathEl.innerHTML = '';
                       }
 
-                       kroRenderFindingsBlock(compactFlow ? { flags: [] } : data, displayLabel);
+                       kroRenderFindingsBlock(data, displayLabel);
 
                        if (!compactFlow) {
                        if (reasonsTitleEl) {
@@ -2921,6 +2947,25 @@
                                rw.hidden = true;
                            }
                        }
+                       } else if (reasonsEl && trInline && trInline.ui_modes && trInline.ui_modes.quick && Array.isArray(trInline.ui_modes.quick.reasons_ru) && trInline.ui_modes.quick.reasons_ru.length) {
+                           if (reasonsTitleEl) {
+                               reasonsTitleEl.hidden = false;
+                               reasonsTitleEl.classList.remove('hidden');
+                               reasonsTitleEl.textContent = 'Откуда взялся итог';
+                           }
+                           reasonsEl.hidden = false;
+                           reasonsEl.classList.remove('hidden');
+                           reasonsEl.innerHTML = trInline.ui_modes.quick.reasons_ru.slice(0, 5).map(function (r) {
+                               return '<li>' + esc(String(r || '').trim()) + '</li>';
+                           }).join('');
+                       }
+
+                       var secWrapEl = document.querySelector('.kro-inline-sections');
+                       if (secWrapEl) {
+                           secWrapEl.hidden = false;
+                           secWrapEl.classList.remove('hidden');
+                       }
+
                        var s1 = document.getElementById('kro-inline-s1');
                        var s2 = document.getElementById('kro-inline-s2');
                        var s3 = document.getElementById('kro-inline-s3');
@@ -2931,7 +2976,8 @@
                        var h3 = document.querySelector('#kro-inline-sec3 .kro-inline-sec-h');
                        var h4 = document.querySelector('#kro-inline-sec4 .kro-inline-sec-h');
                        var h5 = document.querySelector('#kro-inline-sec5 .kro-inline-sec-h');
-                       if (ur) {
+                       var useDetectivePath = ur && !compactFlow;
+                       if (useDetectivePath) {
                            var det = ur.detective && typeof ur.detective === 'object' ? ur.detective : null;
                            if (h1) h1.textContent = 'Суть';
                            if (h2) h2.textContent = det ? 'Первое, что бросилось в глаза' : 'Три важных факта';
@@ -2979,8 +3025,15 @@
                        if (h4) h4.textContent = 'На что обратили внимание';
                        if (h5) h5.textContent = 'Вывод простыми словами';
                        var s1lines = Array.isArray(a.basic_info) ? a.basic_info.slice() : [];
+                       if (!s1lines.length && data.analysis_completed_at_iso) {
+                           s1lines.push('Канал: ' + displayLabel);
+                           s1lines.push('Метка времени ответа (UTC): ' + String(data.analysis_completed_at_iso));
+                       }
                        if (ab && ab.posts_read != null && !isNaN(Number(ab.posts_read))) {
                            s1lines.push('По выборке прочитано сообщений: ' + Number(ab.posts_read) + '.');
+                       }
+                       if (ab && ab.label && s1lines.indexOf(ab.label) === -1) {
+                           s1lines.push(String(ab.label));
                        }
                        if (s1) s1.innerHTML = homeRenderBullets(s1lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        var s2lines = Array.isArray(a.content_behavior) ? a.content_behavior.slice() : [];
@@ -2988,9 +3041,33 @@
                            var extraQuotes = citations.map(function (x) { return 'Цитата из ленты: «' + String(x).slice(0, 220) + '»'; });
                            s2lines = s2lines.concat(extraQuotes);
                        }
+                       if (!s2lines.length && umD.example_quote_ru) {
+                           s2lines.push('Фрагмент для примера: «' + String(umD.example_quote_ru).slice(0, 220) + '»');
+                       }
+                       if (!s2lines.length && umQ.subline_ru) {
+                           s2lines.push(String(umQ.subline_ru));
+                       }
+                       if (!s2lines.length && le && le.reason) {
+                           s2lines.push('Что известно о тексте ленты в этом ответе: ' + String(le.reason).slice(0, 280));
+                       }
                        if (s2) s2.innerHTML = homeRenderBullets(s2lines.slice(0, 10)) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
-                       if (s3) s3.innerHTML = homeRenderBullets(a.external_reports) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
-                       if (s4) s4.innerHTML = homeRenderBullets(a.ties_risk_factors) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                       var extRep = Array.isArray(a.external_reports) ? a.external_reports.slice() : [];
+                       if (!extRep.length && umD && umD.impact_hook_ru) {
+                           extRep.push(String(umD.impact_hook_ru));
+                       }
+                       if (s3) s3.innerHTML = homeRenderBullets(extRep.length ? extRep : ['В этом ответе опираемся на сводку сервиса и доступные записи по каналу; отдельных строк жалоб в блок не попало.']) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
+                       var tiesLines = Array.isArray(a.ties_risk_factors) ? a.ties_risk_factors.slice() : [];
+                       var chkFlat = kroTrustChecklistFlatStrings(trInline);
+                       if (chkFlat.length) {
+                           tiesLines = tiesLines.concat(chkFlat.slice(0, 5));
+                       }
+                       if (!tiesLines.length && umD.why_score_ru) {
+                           tiesLines.push(String(umD.why_score_ru));
+                       }
+                       if (!tiesLines.length && umQ.for_you_ru) {
+                           tiesLines.push(String(umQ.for_you_ru));
+                       }
+                       if (s4) s4.innerHTML = homeRenderBullets(tiesLines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        var s5lines = [];
                        if (st && st !== '—') s5lines.push('Итоговый статус: ' + st);
                        if (ridx != null && ridx !== '' && !isNaN(Number(ridx))) {
@@ -2998,12 +3075,18 @@
                            s5lines.push('Оценка по быстрому разбору: ' + Number(ridx) + ' из ' + mx2 + '.');
                        }
                        if (data.message) s5lines.push(String(data.message));
-                       if (Array.isArray(c.reasons)) s5lines = s5lines.concat(c.reasons.slice(0, 2));
+                       if (Array.isArray(c.reasons)) s5lines = s5lines.concat(c.reasons.slice(0, 3));
+                       if (!s5lines.length && umQ.recommendation_ru) {
+                           s5lines.push(String(umQ.recommendation_ru));
+                       }
+                       if (!s5lines.length && umD.recommendation_ru) {
+                           s5lines.push(String(umD.recommendation_ru));
+                       }
                        if (s5) s5.innerHTML = homeRenderBullets(s5lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        }
-                       }
                        if (doneBanner) {
-                          var summaryText = (ur && ur.simple_conclusion) ? ur.simple_conclusion : (data.message || '');
+                          var qkH = umQ.risk_headline_ru ? String(umQ.risk_headline_ru).trim() : '';
+                          var summaryText = (ur && ur.simple_conclusion) ? ur.simple_conclusion : (data.message || qkH || (umQ.subline_ru ? String(umQ.subline_ru).trim() : ''));
                           if (summaryText) {
                               doneBanner.hidden = false;
                               doneBanner.classList.remove('hidden');
@@ -3016,7 +3099,7 @@
                           }
                       }
                       if (footEl) {
-                          var footText = kroHumanizeAnalysisFoot(ab);
+                          var footText = kroHumanizeAnalysisFoot(ab, data);
                           if (footText) {
                               footEl.hidden = false;
                               footEl.textContent = footText;
@@ -3024,35 +3107,6 @@
                               footEl.hidden = true;
                               footEl.textContent = '';
                           }
-                       } else {
-                           if (reasonsTitleEl) {
-                               reasonsTitleEl.textContent = '';
-                               reasonsTitleEl.hidden = true;
-                               reasonsTitleEl.classList.add('hidden');
-                           }
-                           if (reasonsEl) {
-                               reasonsEl.innerHTML = '';
-                               reasonsEl.hidden = true;
-                               reasonsEl.classList.add('hidden');
-                           }
-                           if (rw && riv) {
-                               riv.textContent = '';
-                               rw.hidden = true;
-                           }
-                           var secWrap = document.querySelector('.kro-inline-sections');
-                           if (secWrap) {
-                               secWrap.hidden = true;
-                               secWrap.classList.add('hidden');
-                           }
-                           if (doneBanner) {
-                               doneBanner.hidden = true;
-                               doneBanner.classList.add('hidden');
-                               doneBanner.textContent = '';
-                           }
-                           if (footEl) {
-                               footEl.hidden = true;
-                               footEl.textContent = '';
-                           }
                        }
                    } catch (eFill) {
                        if (typeof console !== 'undefined' && console.error) console.error('fillInlineReport', eFill);
