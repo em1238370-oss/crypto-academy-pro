@@ -276,12 +276,13 @@
                        </div>
                    </div>
                    <div class="kro-feature1-check-row" id="kro-check-form-row" aria-busy="false">
-                       <label class="kro-report-label" for="kro-check-channel">@username или ссылка на канал <input type="text" id="kro-check-channel" placeholder="@channel, t.me/… или telegram.me/…" autocomplete="off"></label>
+                       <label class="kro-report-label" for="kro-check-channel">Публичный @username канала (не название в шапке и не имя автора) <input type="text" id="kro-check-channel" placeholder="@ник из ссылки t.me/ник — не заголовок канала" autocomplete="off"></label>
                        <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить гуру</button>
                    </div>
                    <div class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Дополнительные пояснения">
                        <p class="kro-check-user-explainer-title">Если нужно чуть больше деталей</p>
                        <ul class="kro-check-user-explainer-list">
+                           <li><strong>Важно:</strong> нужен именно ник из адреса канала (<span class="kro-check-user-explainer-code">t.me/<strong>ник</strong></span>), а не красивое название или ФИО основателя — иначе система обратится не к тому каналу или вообще не найдёт ленту.</li>
                            <li><strong>Здесь</strong> — жалобы, мониторинг и при возможности чтение ленты (ориентир до ~30 дней) плюс открытая страница; до 7 минут на запрос, без «канцелярских» отписок.</li>
                            <li><strong>Глубокий разбор</strong> — на странице <span class="kro-check-user-explainer-code">/channel/имя</span>, кнопка «Глубокий анализ ленты».</li>
                            <li><strong>Не заставляем сидеть часами</strong>: при очереди покажем позицию и примерное время; если очередь слишком длинная — честно скажем зайти позже. Быстрый отчёт при этом уже у вас.</li>

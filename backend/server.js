@@ -5389,8 +5389,9 @@ function kroHomeBuildAnalysisDimensions(criteriaRows, flagArr, complaintsCount) 
 
 /**
  * Элементы для вкладки «Доказательства»: цитаты из флагов + при необходимости жалобы.
+ * Если шаблоны не сработали, но выборка постов есть — показываем отрывки из тех же постов (честная иллюстрация тона).
  */
-function kroHomeBuildEvidenceItems(flagArr, complaintsCount) {
+function kroHomeBuildEvidenceItems(flagArr, complaintsCount, citationFallbacks) {
   const out = [];
   const flags = Array.isArray(flagArr) ? flagArr : [];
   for (const f of flags) {
@@ -5415,6 +5416,22 @@ function kroHomeBuildEvidenceItems(flagArr, complaintsCount) {
       source_ru: 'Лист reports в Google Sheets (сервис)',
       why_ru: `Зафиксировано жалоб: ${comp}. Откройте карточку канала для формулировок и дат.`,
     });
+  }
+  const cites = Array.isArray(citationFallbacks) ? citationFallbacks : [];
+  if (out.length === 0 && cites.length) {
+    for (const raw of cites) {
+      const q = kroHomeFilterStructuredQuote(String(raw || ''));
+      if (!q) continue;
+      out.push({
+        kind: 'feed_sample',
+        title: 'Фрагмент из выборки постов',
+        quote_ru: q,
+        source_ru: 'Текст постов в выборке',
+        why_ru:
+          'Это не «улика» по шаблону VIP/гарантий, а реальный отрывок из прочитанной ленты — чтобы было видно формат и тон.',
+      });
+      if (out.length >= 4) break;
+    }
   }
   return out.slice(0, 6);
 }
@@ -5454,6 +5471,7 @@ function kroHomeBuildTrustReportBundle(opts) {
     voice,
     readPathOut,
     editor_voice_prefix_ru,
+    citationFallbacks,
   } = opts || {};
   const readPath = String(readPathOut || '').trim();
   const feedSample = kroHomeReadPathIsChannelFeedSample(readPath);
@@ -5484,7 +5502,7 @@ function kroHomeBuildTrustReportBundle(opts) {
   const checklistFull = kroHomeCriteriaToChecklist(criteriaRows);
   const checklist = checklistFull.slice(0, 3).map((row) => ({
     ...row,
-    what_we_saw: kroHomeTrustClip(String(row.what_we_saw || '').trim(), 160),
+    what_we_saw: kroHomeTrustClip(String(row.what_we_saw || '').trim(), 220),
   }));
 
   const bestEv = kroHomeBestEvidenceQuoteFromFlags(flagArr);
@@ -5603,7 +5621,7 @@ function kroHomeBuildTrustReportBundle(opts) {
     'Если вы устали от обещаний и потерь — это нормально. Сначала короткий вывод; ниже можно открыть «Подробно» или «Доказательства», если нужны детали.';
 
   const analysisDimensions = kroHomeBuildAnalysisDimensions(criteriaRows, flagArr, complaintsCount);
-  const evidenceItems = kroHomeBuildEvidenceItems(flagArr, complaintsCount);
+  const evidenceItems = kroHomeBuildEvidenceItems(flagArr, complaintsCount, citationFallbacks);
 
   const uiModes = {
     quick: {
@@ -8643,6 +8661,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       complaintsCount: complaintsFormCount,
       criteriaRows: fastHuman.criteria,
       readPathOut,
+      citationFallbacks: Array.isArray(fastHuman.citations) ? fastHuman.citations : [],
       voice: {
         topicLine: fastHuman.topicLine,
         channelType: fastHuman.channelType,
