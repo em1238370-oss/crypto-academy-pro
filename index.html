@@ -352,6 +352,15 @@
                    </div>
                    <div class="kro-inline-report hidden" id="kro-inline-report" aria-live="polite" hidden>
                        <div class="kro-result-card kro-inline-report-card kro-inline-report-card--document">
+                           <div class="kro-inline-at-a-glance" id="kro-inline-at-a-glance">
+                               <h2 class="kro-inline-verdict-hero" id="kro-inline-verdict-hero" aria-live="assertive"></h2>
+                               <p class="kro-inline-channel-sub" id="kro-inline-channel-sub"></p>
+                               <ul class="kro-inline-top-facts" id="kro-inline-top-facts"></ul>
+                               <p class="kro-inline-one-advice" id="kro-inline-one-advice"></p>
+                           </div>
+                           <details class="kro-inline-tech-details" id="kro-inline-tech-details">
+                               <summary class="kro-inline-tech-details-sum">Подробнее</summary>
+                               <div class="kro-inline-tech-details-inner">
                            <p class="kro-inline-report-eyebrow" id="kro-inline-eyebrow">Проверка канала</p>
                            <h3 class="kro-inline-report-title" id="kro-inline-title">—</h3>
                            <p class="kro-inline-report-meta" id="kro-inline-meta"></p>
@@ -447,6 +456,8 @@
                            <p class="kro-inline-foot" id="kro-inline-foot"></p>
                            <div class="kro-inline-deep-panel hidden" id="kro-inline-deep-panel" hidden></div>
                            <p class="kro-inline-deep-demo hidden" id="kro-inline-deep-demo" hidden></p>
+                               </div>
+                           </details>
                            <div class="kro-inline-tg-modal hidden" id="kro-inline-tg-modal" hidden role="dialog" aria-modal="true" aria-labelledby="kro-inline-tg-modal-kicker">
                                <div class="kro-inline-tg-modal-backdrop" tabindex="-1"></div>
                                <div class="kro-inline-tg-modal-sheet">
@@ -2687,6 +2698,157 @@
                            byoteleNote;
                    }
                }
+               /** Возраст канала в днях из строк разбора (если есть). */
+               function kroExtractAgeDaysInBi(analysis) {
+                   var bi = analysis && Array.isArray(analysis.basic_info) ? analysis.basic_info : [];
+                   for (var i = 0; i < bi.length; i++) {
+                       var s = String(bi[i] || '');
+                       var m = s.match(/Возраст канала\s*\(оценка\)\s*:\s*(\d+)/i);
+                       if (m && m[1]) return parseInt(m[1], 10);
+                   }
+                   return null;
+               }
+               function kroExtractPromotedCount(analysis) {
+                   var pools = [];
+                   if (analysis && Array.isArray(analysis.ties_risk_factors)) pools = pools.concat(analysis.ties_risk_factors);
+                   if (analysis && Array.isArray(analysis.basic_info)) pools = pools.concat(analysis.basic_info);
+                   for (var i = 0; i < pools.length; i++) {
+                       var m = String(pools[i] || '').match(/(\d+)\s+упоминаний/i);
+                       if (m && m[1]) return parseInt(m[1], 10);
+                   }
+                   return null;
+               }
+               function kroScanLossMention(analysis) {
+                   var cb = analysis && Array.isArray(analysis.content_behavior) ? analysis.content_behavior : [];
+                   for (var j = 0; j < cb.length; j++) {
+                       var t = String(cb[j] || '').toLowerCase();
+                       if (/убыт|минус|убыточ|loss|просадк/.test(t)) return true;
+                   }
+                   return false;
+               }
+               /** Один из трёх уровней: деньги не доверять / осторожно / выглядит спокойнее. */
+               function kroMoneyTrustTier(data) {
+                   var code = String(data.status_code || '').toUpperCase();
+                   var a = data.analysis || {};
+                   var c = a.conclusion && typeof a.conclusion === 'object' ? String(a.conclusion.status || '') : '';
+                   var risk = data.risk_index != null && !isNaN(Number(data.risk_index)) ? Number(data.risk_index) : null;
+                   var tr = data.trust_report || {};
+                   var trIns = tr.insufficient_feed === true;
+                   if (c.indexOf('подтвержд') !== -1 && c.indexOf('скам') !== -1) return 'danger';
+                   if (code === 'DANGER' || (risk != null && risk >= 9)) return 'danger';
+                   if (code === 'SUSPICIOUS' || c.indexOf('в риске') !== -1 || (risk != null && risk >= 5 && risk < 9)) return 'warn';
+                   if (code === 'INSUFFICIENT_FEED' || code === 'UNAVAILABLE' || trIns) return 'warn';
+                   if (c.indexOf('под наблюдением') !== -1 || (risk != null && risk >= 4 && risk < 5)) return 'warn';
+                   if (code === 'SAFE' || c.indexOf('нарушений не видно') !== -1 || c.indexOf('текущий момент') !== -1) return 'clean';
+                   if (risk != null && risk <= 3) return 'clean';
+                   return 'warn';
+               }
+               function kroFillAtAGlance(data, displayLabel) {
+                   var hero = document.getElementById('kro-inline-verdict-hero');
+                   var sub = document.getElementById('kro-inline-channel-sub');
+                   var ul = document.getElementById('kro-inline-top-facts');
+                   var adv = document.getElementById('kro-inline-one-advice');
+                   var det = document.getElementById('kro-inline-tech-details');
+                   if (!hero || !ul || !adv) return;
+                   var tier = kroMoneyTrustTier(data);
+                   var phrases = {
+                       danger: 'НЕ ДОВЕРЯЙ ДЕНЬГИ — есть серьёзные признаки мошенничества',
+                       warn: 'БУДЬ ОСТОРОЖЕН — есть подозрительные моменты',
+                       clean: 'ПОКА ВЫГЛЯДИТ ЧИСТО — явных признаков мошенничества не найдено',
+                   };
+                   hero.textContent = phrases[tier] || phrases.warn;
+                   hero.className = 'kro-inline-verdict-hero kro-inline-verdict-hero--' + (tier === 'clean' ? 'ok' : tier === 'danger' ? 'danger' : 'warn');
+                   if (sub) {
+                       sub.textContent = displayLabel ? 'Канал: ' + displayLabel : '';
+                       sub.hidden = !displayLabel;
+                   }
+                   var a = data.analysis || {};
+                   var lm = data.live_metrics || {};
+                   var flags = Array.isArray(data.flags) ? data.flags : [];
+                   var complaints = lm.complaints_count != null && !isNaN(Number(lm.complaints_count)) ? Number(lm.complaints_count) : null;
+                   var ageDays = kroExtractAgeDaysInBi(a);
+                   var promN = kroExtractPromotedCount(a);
+                   var hasLoss = kroScanLossMention(a);
+                   var facts = [];
+                   var pushUnique = function (line) {
+                       var t = String(line || '').trim();
+                       if (!t || facts.indexOf(t) !== -1) return;
+                       facts.push(t);
+                   };
+                   if (tier === 'clean') {
+                       if (ageDays != null && ageDays >= 365) {
+                           pushUnique('Работает больше года — хороший знак.');
+                       } else if (ageDays != null && ageDays >= 180) {
+                           pushUnique('Канал существует около ' + ageDays + ' дн. — уже можно оценивать историю, но не спеши с крупной суммой.');
+                       }
+                       if (hasLoss) pushUnique('В тексте встречаются убыточные сделки или минусы — более честный подход, чем «одни профиты».');
+                       if (complaints === 0) pushUnique('Жалоб по этому каналу в базе сервиса сейчас нет.');
+                       else if (complaints === 1) pushUnique('В базе есть хотя бы одна жалоба по каналу — крупным переводам это противопоказано.');
+                       else if (complaints != null && complaints > 1) pushUnique('В базе несколько жалоб по каналу — к переводу относись холодно.');
+                   } else {
+                       if (ageDays != null && ageDays < 120) {
+                           pushUnique('Канал существует около ' + ageDays + ' дн. — для крупных сумм это очень мало времени.');
+                       }
+                       if (promN != null && promN >= 2) {
+                           pushUnique('Рекламирует много других каналов (ориентир ' + promN + '+ упоминаний) — типичный признак «сетки» или перекрёстной рекламы.');
+                       }
+                       if (flags.length && facts.length < 3) {
+                           var f0 = flags[0];
+                           var ft = f0 && f0.title ? String(f0.title).trim() : '';
+                           var fx = f0 && f0.explanation ? String(f0.explanation).trim().replace(/\s+/g, ' ') : '';
+                           if (fx.length > 160) fx = fx.slice(0, 157) + '…';
+                           if (ft || fx) pushUnique(ft ? (ft + (fx ? ': ' + fx : '')) : fx);
+                       }
+                       if (complaints != null && complaints >= 2) pushUnique('Несколько жалоб в базе сервиса — это отдельный сигнал перед любым переводом.');
+                       else if (complaints === 1) pushUnique('В базе зафиксирована жалоба по каналу — имеет смысл перепроверить историю.');
+                       var rs = a.conclusion && Array.isArray(a.conclusion.reasons) ? a.conclusion.reasons : [];
+                       for (var ri = 0; ri < rs.length && facts.length < 3; ri++) {
+                           var one = String(rs[ri] || '').trim();
+                           if (one.length > 15 && one.length < 220) pushUnique(one);
+                       }
+                       var ties = Array.isArray(a.ties_risk_factors) ? a.ties_risk_factors : [];
+                       for (var ti = 0; ti < ties.length && facts.length < 3; ti++) {
+                           var tx = String(ties[ti] || '').trim();
+                           if (tx.length > 15 && tx.length < 220) pushUnique(tx);
+                       }
+                   }
+                   var padClean = [
+                       'Рынок всегда рискует капиталом — не вкладывай больше, чем готов потерять полностью.',
+                       'Не увеличивай сумму спешно после пары удачных сделок подряд.',
+                       'Перепроверь канал по отзывам снаружи Telegram, не только по постам внутри.',
+                   ];
+                   var padDanger = [
+                       'Перевод незнакомому человеку или «под сигналы» без договора — почти всегда худший сценарий.',
+                       'Не поддавайся на срочность и «последние места» в закрытых чатах.',
+                       'Сохрани переписку и реквизиты — при споре это важно.',
+                   ];
+                   var padWarn = [
+                       'Мало данных по ленте — решение о деньгах лучше отложить и перепроверить канал снаружи.',
+                       'Любая «гарантия» прибыли в переписке — повод остановиться.',
+                       'Не переводи крупную сумму с первого контакта.',
+                   ];
+                   var pad = tier === 'clean' ? padClean : tier === 'danger' ? padDanger : padWarn;
+                   for (var pi = 0; pi < pad.length && facts.length < 3; pi++) pushUnique(pad[pi]);
+                   facts = facts.slice(0, 3);
+                   ul.innerHTML = facts.map(function (line) { return '<li>' + esc(line) + '</li>'; }).join('');
+                   var tr = data.trust_report || {};
+                   var umQ = tr.ui_modes && tr.ui_modes.quick ? tr.ui_modes.quick : {};
+                   var umD = tr.ui_modes && tr.ui_modes.detailed ? tr.ui_modes.detailed : {};
+                   var rec =
+                       String(umQ.recommendation_ru || '').trim() ||
+                       String(umD.recommendation_ru || '').trim();
+                   if (!rec || rec.length < 12) {
+                       if (tier === 'danger') {
+                           rec = 'Не переводи деньги в ближайшие 48 часов. Поищи отзывы живых людей вне этого канала.';
+                       } else if (tier === 'warn') {
+                           rec = 'Начни с минимальной суммы, которую не жалко потерять полностью.';
+                       } else {
+                           rec = 'Спроси у автора показать убыточные сделки и правила риска — честный трейдер не откажет.';
+                       }
+                   }
+                   adv.textContent = rec;
+                   if (det) det.open = false;
+               }
               function fillInlineReport(data, queryU, displayLabel, checkStartedAt) {
                    var doneBanner = document.getElementById('kro-inline-done-banner');
                   var liveGateEl = document.getElementById('kro-inline-live-gate');
@@ -3085,18 +3247,9 @@
                        if (s5) s5.innerHTML = homeRenderBullets(s5lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        }
                        if (doneBanner) {
-                          var qkH = umQ.risk_headline_ru ? String(umQ.risk_headline_ru).trim() : '';
-                          var summaryText = (ur && ur.simple_conclusion) ? ur.simple_conclusion : (data.message || qkH || (umQ.subline_ru ? String(umQ.subline_ru).trim() : ''));
-                          if (summaryText) {
-                              doneBanner.hidden = false;
-                              doneBanner.classList.remove('hidden');
-                              doneBanner.className = 'kro-inline-done-banner';
-                              doneBanner.textContent = summaryText;
-                          } else {
-                              doneBanner.hidden = true;
-                              doneBanner.classList.add('hidden');
-                              doneBanner.textContent = '';
-                          }
+                          doneBanner.hidden = true;
+                          doneBanner.classList.add('hidden');
+                          doneBanner.textContent = '';
                       }
                       if (footEl) {
                           var footText = kroHumanizeAnalysisFoot(ab, data);
@@ -3108,14 +3261,25 @@
                               footEl.textContent = '';
                           }
                        }
+                       kroFillAtAGlance(data, displayLabel);
                    } catch (eFill) {
                        if (typeof console !== 'undefined' && console.error) console.error('fillInlineReport', eFill);
                        if (doneBanner) {
-                           doneBanner.hidden = false;
-                           doneBanner.classList.remove('hidden');
-                           doneBanner.className = 'kro-inline-done-banner kro-inline-done-banner--warn';
-                           doneBanner.textContent = 'Часть блока отчёта не отобразилась. Обновите страницу (Cmd+Shift+R) или откройте карточку канала — быстрый анализ там же.';
+                           doneBanner.hidden = true;
+                           doneBanner.classList.add('hidden');
+                           doneBanner.textContent = '';
                        }
+                       var heroErr = document.getElementById('kro-inline-verdict-hero');
+                       var advErr = document.getElementById('kro-inline-one-advice');
+                       if (heroErr) {
+                           heroErr.textContent = 'БУДЬ ОСТОРОЖЕН — есть подозрительные моменты';
+                           heroErr.className = 'kro-inline-verdict-hero kro-inline-verdict-hero--warn';
+                       }
+                       if (advErr) {
+                           advErr.textContent = 'Полный блок отчёта не отобразился. Раскройте «Подробнее» ниже или обновите страницу (Cmd+Shift+R).';
+                       }
+                       var detErr = document.getElementById('kro-inline-tech-details');
+                       if (detErr) detErr.open = true;
                    }
                    try {
                        if (data) {
@@ -3462,6 +3626,18 @@
                            db.classList.add('hidden');
                            db.textContent = '';
                        }
+                       var ktd = document.getElementById('kro-inline-tech-details');
+                       if (ktd) {
+                           ktd.open = false;
+                       }
+                       var vh = document.getElementById('kro-inline-verdict-hero');
+                       var vs = document.getElementById('kro-inline-channel-sub');
+                       var vf = document.getElementById('kro-inline-top-facts');
+                       var va = document.getElementById('kro-inline-one-advice');
+                       if (vh) { vh.textContent = ''; vh.className = 'kro-inline-verdict-hero'; }
+                       if (vs) { vs.textContent = ''; vs.hidden = true; }
+                       if (vf) vf.innerHTML = '';
+                       if (va) va.textContent = '';
                        var lg = document.getElementById('kro-inline-live-gate');
                        if (lg) {
                            lg.hidden = true;

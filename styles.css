@@ -2161,6 +2161,89 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-inline-report-card {
    color: rgba(255, 255, 255, 0.9);
 }
+
+/* «Проверь гуру» на главной: главный ответ + 3 факта + один совет; остальное в «Подробнее» */
+.kro-inline-at-a-glance {
+   margin-bottom: 22px;
+   padding-bottom: 18px;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.kro-inline-verdict-hero {
+   font-family: var(--kro-font-heading);
+   font-size: clamp(1rem, 3.8vw, 1.45rem);
+   font-weight: 800;
+   line-height: 1.28;
+   letter-spacing: 0.03em;
+   text-transform: uppercase;
+   margin: 0 0 10px 0;
+}
+.kro-inline-verdict-hero--danger {
+   color: #fecaca;
+   text-shadow: 0 2px 20px rgba(239, 68, 68, 0.35);
+}
+.kro-inline-verdict-hero--warn {
+   color: #fde68a;
+   text-shadow: 0 2px 18px rgba(245, 158, 11, 0.25);
+}
+.kro-inline-verdict-hero--ok {
+   color: #bbf7d0;
+   text-shadow: 0 2px 18px rgba(34, 197, 94, 0.22);
+}
+.kro-inline-channel-sub {
+   font-size: 0.9rem;
+   color: rgba(255, 255, 255, 0.62);
+   margin: 0 0 14px 0;
+}
+.kro-inline-top-facts {
+   list-style: none;
+   margin: 0 0 14px 0;
+   padding: 0;
+}
+.kro-inline-top-facts li {
+   position: relative;
+   padding-left: 1.1em;
+   margin-bottom: 8px;
+   font-size: 0.95rem;
+   line-height: 1.45;
+   color: rgba(255, 255, 255, 0.88);
+}
+.kro-inline-top-facts li::before {
+   content: '•';
+   position: absolute;
+   left: 0;
+   color: rgba(253, 224, 127, 0.75);
+   font-weight: 700;
+}
+.kro-inline-one-advice {
+   margin: 0;
+   padding: 14px 16px;
+   border-radius: 12px;
+   background: rgba(255, 255, 255, 0.06);
+   border: 1px solid rgba(255, 255, 255, 0.1);
+   font-size: 0.98rem;
+   line-height: 1.5;
+   font-weight: 500;
+   color: rgba(255, 255, 255, 0.92);
+}
+.kro-inline-tech-details {
+   margin-top: 8px;
+}
+.kro-inline-tech-details-sum {
+   cursor: pointer;
+   font-weight: 600;
+   font-size: 0.95rem;
+   color: rgba(253, 224, 127, 0.9);
+   list-style: none;
+}
+.kro-inline-tech-details-sum::-webkit-details-marker {
+   display: none;
+}
+.kro-inline-tech-details[open] .kro-inline-tech-details-sum {
+   margin-bottom: 12px;
+}
+.kro-inline-tech-details-inner {
+   padding-top: 4px;
+}
 .kro-inline-report-eyebrow {
    font-size: 0.65rem;
    font-weight: 600;
