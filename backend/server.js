@@ -4680,7 +4680,8 @@ function normalizeChannel(channel) {
   if (!s) return '';
   const lower = s.toLowerCase();
   if (lower.startsWith('http://') || lower.startsWith('https://')) {
-    const tgRef = kroTelegramRefFromHttpUrl(lower);
+    /* Инвайт-хеш t.me/+… чувствителен к регистру — не lowercasить URL целиком. */
+    const tgRef = kroTelegramRefFromHttpUrl(s);
     if (tgRef !== null) return tgRef;
     try {
       const u = new URL(lower);
@@ -4728,9 +4729,35 @@ function channelMatchKey(channel) {
   return s.startsWith('@') ? s.slice(1) : s;
 }
 
+/** Подпись канала в UI analyze-channel: инвайт-ссылки без ложного «@ник». */
+function kroAnalyzeChannelUiLabel(normalized, key) {
+  const kn = String(key || '').trim().toLowerCase();
+  if (kn.startsWith('t.me/+')) {
+    const n = String(normalized || '').trim();
+    let h = '';
+    if (/^https?:\/\//i.test(n)) {
+      try {
+        const u = new URL(n);
+        const p = (u.pathname || '').replace(/^\//, '');
+        if (p.startsWith('+')) h = p.slice(1);
+      } catch {
+        h = '';
+      }
+    } else {
+      h = n.replace(/^t\.me\/\+/i, '');
+    }
+    const vis = h.length > 22 ? `${h.slice(0, 14)}…${h.slice(-6)}` : h;
+    return vis ? `Приватный канал (инвайт …${vis})` : 'Приватный канал (инвайт-ссылка)';
+  }
+  const n = String(normalized || '').trim();
+  return n.startsWith('@') ? n : `@${key}`;
+}
+
 function kroExtractTelegramPublicSlug(channelRef) {
   const raw = String(channelRef || '').trim();
   if (!raw) return '';
+  /* Публичная страница t.me/s недоступна для приватных инвайт-ссылок. */
+  if (/t\.me\/\+/i.test(raw)) return '';
   const m = raw.match(/(?:https?:\/\/)?t\.me\/(?:s\/)?([^/?#\s]+)/i);
   if (m && m[1]) return String(m[1]).replace(/^@+/, '').trim().toLowerCase();
   return raw.replace(/^@+/, '').replace(/^t\.me\//i, '').replace(/^s\//i, '').trim().toLowerCase();
@@ -8475,6 +8502,13 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     trustReportExtra,
     claudeOverlay,
   } = opts || {};
+  const inviteVoiceRu =
+    String(key || '').trim().toLowerCase().startsWith('t.me/+')
+      ? 'Приватный канал по инвайт-ссылке: лента читается после join через аккаунт Telegram на сервере; публичная веб-страница без входа недоступна — опора на Telethon, не на t.me/s.'
+      : '';
+  const trustVoicePrefix = [inviteVoiceRu, trustReportExtra && trustReportExtra.editor_voice_prefix_ru
+    ? String(trustReportExtra.editor_voice_prefix_ru).trim()
+    : ''].filter(Boolean).join(' ');
   const analysis = kroV0BuildAnalysisFromLiveParsed(parsedForFast, key);
   if (watchRow) kroV0EnrichAnalysisWithWatch(analysis, watchRow);
   let signal = kroCollectSuspiciousFlagsFromTexts(sampleForFast);
@@ -8667,9 +8701,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
         channelType: fastHuman.channelType,
         leadLine: fastHuman.summaryLine,
       },
-      editor_voice_prefix_ru: trustReportExtra && trustReportExtra.editor_voice_prefix_ru
-        ? String(trustReportExtra.editor_voice_prefix_ru).trim()
-        : '',
+      editor_voice_prefix_ru: trustVoicePrefix,
     }),
     live_evidence: {
       live_pass: homeLivePass,
@@ -8706,7 +8738,7 @@ async function kroAnalyzeChannelQuickSheetsSitesHandler(req, res, opts) {
   const { t0, key, normalized, analyzeLogId } = opts;
   const quickBudgetMs = KRO_HOME_QUICK_MS;
   const deadline = t0 + quickBudgetMs;
-  const channelDisplay = normalized.startsWith('@') ? normalized : `@${key}`;
+  const channelDisplay = kroAnalyzeChannelUiLabel(normalized, key);
   const withQueueMeta = (payload) => ({
     ...payload,
     request_id: null,
@@ -8840,12 +8872,15 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
   const normalized = normalizeChannel(rawInput);
   const key = channelMatchKey(normalized);
   if (!key) {
-    return res.status(400).json({ error: 'bad_request', message_ru: 'Передайте username канала (t.me/username или @username).' });
+    return res.status(400).json({
+      error: 'bad_request',
+      message_ru: 'Укажите @username, t.me/username или полную инвайт-ссылку приватного канала (https://t.me/+…).',
+    });
   }
 
   const t0 = Date.now();
   const analyzeLogId = `${key}:${Date.now().toString(36)}`;
-  const channelDisplay = normalized.startsWith('@') ? normalized : `@${key}`;
+  const channelDisplay = kroAnalyzeChannelUiLabel(normalized, key);
   const channelForOnce = (() => {
     const k = String(key || '');
     if (k.startsWith('t.me/')) return normalized.startsWith('t.me/') ? normalized : k;
