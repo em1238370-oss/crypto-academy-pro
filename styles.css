@@ -1284,26 +1284,24 @@ body.kro-hero-scrolled .kro-floating-nav {
    position: absolute;
    inset: 0;
    z-index: -1;
-   /* Фон Фишки 1: фиолетовый «студийный» слой + тёплый акцент (sitelove-like) */
-   background: radial-gradient(ellipse 75% 58% at 82% 18%, rgba(167, 139, 250, 0.09) 0%, transparent 56%),
-               radial-gradient(ellipse 68% 52% at 18% 72%, rgba(240, 188, 60, 0.055) 0%, transparent 58%),
-               radial-gradient(ellipse 80% 70% at 50% 45%, rgba(100, 45, 45, 0.16) 0%, transparent 55%),
-               radial-gradient(ellipse 70% 50% at 50% 35%, rgba(72, 48, 62, 0.12) 0%, transparent 55%),
-               radial-gradient(ellipse 100% 80% at 50% 50%, rgba(40, 28, 48, 0.1) 0%, transparent 65%),
-               linear-gradient(185deg, #140f18 0%, #100c16 38%, #0c0814 100%);
+   /* Фон Фишки 1: нейтральный slate / стекло (таблицы, как sitelove.io) — без доминирующего фиолета */
+   background: radial-gradient(ellipse 72% 56% at 78% 16%, rgba(148, 163, 184, 0.07) 0%, transparent 58%),
+               radial-gradient(ellipse 68% 52% at 14% 78%, rgba(30, 41, 59, 0.38) 0%, transparent 56%),
+               radial-gradient(ellipse 88% 72% at 48% 48%, rgba(15, 23, 42, 0.28) 0%, transparent 62%),
+               linear-gradient(185deg, #0a0c10 0%, #0d1118 40%, #080a0e 100%);
 }
 
-/* Лёгкая UI-сетка + «туман» по краям — глубина как на премиум SaaS */
+/* Лёгкая UI-сетка + мягкий свет сверху */
 .kro-feature1-bg::after {
    content: '';
    position: absolute;
    inset: 0;
    pointer-events: none;
-   opacity: 0.055;
+   opacity: 0.032;
    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-      radial-gradient(ellipse 55% 40% at 50% 0%, rgba(240, 188, 60, 0.06) 0%, transparent 55%);
+      linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      radial-gradient(ellipse 55% 40% at 50% 0%, rgba(148, 163, 184, 0.05) 0%, transparent 55%);
    background-size: 52px 52px, 52px 52px, 100% 100%;
    mask-image: radial-gradient(ellipse 85% 75% at 50% 42%, #000 20%, transparent 72%);
    -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 42%, #000 20%, transparent 72%);
@@ -4505,7 +4503,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 .kro-main {
    background:
-      radial-gradient(ellipse 90% 55% at 50% -8%, rgba(167, 139, 250, 0.06) 0%, transparent 45%),
+      radial-gradient(ellipse 92% 52% at 50% -10%, rgba(148, 163, 184, 0.045) 0%, transparent 46%),
       linear-gradient(188deg, var(--kro-bg) 0%, var(--kro-bg-mid) 32%, var(--kro-bg-soft) 100%);
    min-height: 100vh;
    position: relative;
@@ -4516,7 +4514,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    -moz-osx-font-smoothing: grayscale;
 }
 
-/* Виньетка + мягкий «студийный» свет сверху (воздух, без перебива акцента) */
+/* Виньетка: нейтральный slate / холодный свет (без фиолетового «бокса» по краям) */
 .kro-main::before {
    content: '';
    position: fixed;
@@ -4524,10 +4522,10 @@ body.kro-hero-scrolled .kro-floating-nav {
    z-index: 0;
    pointer-events: none;
    background:
-      radial-gradient(ellipse 85% 48% at 88% 8%, rgba(240, 188, 60, 0.07) 0%, transparent 48%),
-      radial-gradient(ellipse 120% 55% at 50% -15%, var(--kro-light-key-strong) 0%, transparent 52%),
-      radial-gradient(ellipse 75% 52% at 12% 28%, rgba(167, 139, 250, 0.09) 0%, transparent 56%),
-      radial-gradient(ellipse 100% 80% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.22) 100%);
+      radial-gradient(ellipse 88% 50% at 88% 6%, rgba(148, 163, 184, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 115% 52% at 50% -14%, rgba(226, 232, 240, 0.06) 0%, transparent 52%),
+      radial-gradient(ellipse 78% 54% at 10% 30%, rgba(51, 65, 85, 0.18) 0%, transparent 58%),
+      radial-gradient(ellipse 100% 80% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.24) 100%);
    animation: kro-main-ambient-drift 34s ease-in-out infinite;
    will-change: transform, opacity;
 }
@@ -4538,19 +4536,19 @@ body.kro-hero-scrolled .kro-floating-nav {
    66% { opacity: 0.97; transform: translate3d(-0.8%, 0.5%, 0) scale(1.012); }
 }
 
-/* Зерно: лёгкая текстура (атмосфера, не копируя medvedevart 1:1) */
+/* Зерно едва заметное — без «шумных» краёв у вьюпорта */
 .kro-main::after {
    content: '';
    position: fixed;
    inset: 0;
    z-index: 0;
    pointer-events: none;
-   opacity: 0.035;
+   opacity: 0.018;
    background-image:
-      radial-gradient(circle at 10% 20%, rgba(255,255,255,0.4) 0.5px, transparent 0.5px),
-      radial-gradient(circle at 90% 80%, rgba(255,255,255,0.35) 0.5px, transparent 0.5px),
-      radial-gradient(circle at 40% 60%, rgba(255,255,255,0.3) 0.5px, transparent 0.5px),
-      radial-gradient(circle at 70% 30%, rgba(255,255,255,0.35) 0.5px, transparent 0.5px);
+      radial-gradient(circle at 10% 20%, rgba(255,255,255,0.22) 0.5px, transparent 0.5px),
+      radial-gradient(circle at 90% 80%, rgba(255,255,255,0.18) 0.5px, transparent 0.5px),
+      radial-gradient(circle at 40% 60%, rgba(255,255,255,0.14) 0.5px, transparent 0.5px),
+      radial-gradient(circle at 70% 30%, rgba(255,255,255,0.18) 0.5px, transparent 0.5px);
    background-size: 3px 3px, 4px 4px, 5px 5px, 3px 4px;
    background-position: 0 0, 1px 1px, 2px 0, 0 2px;
 }
@@ -9730,15 +9728,15 @@ body.kro-modal-open {
       box-shadow:
          0 0 0 1px rgba(255, 255, 255, 0.045),
          0 12px 48px rgba(0, 0, 0, 0.5),
-         0 0 64px rgba(167, 139, 250, 0.07),
-         0 0 48px rgba(240, 188, 60, 0.04);
+         0 0 56px rgba(51, 65, 85, 0.12),
+         0 0 40px rgba(148, 163, 184, 0.05);
    }
    50% {
       box-shadow:
          0 0 0 1px rgba(255, 255, 255, 0.07),
          0 18px 58px rgba(0, 0, 0, 0.55),
-         0 0 88px rgba(167, 139, 250, 0.14),
-         0 0 72px rgba(240, 188, 60, 0.09);
+         0 0 72px rgba(51, 65, 85, 0.18),
+         0 0 52px rgba(148, 163, 184, 0.08);
    }
 }
 
@@ -9786,4 +9784,25 @@ body.kro-modal-open {
    .kro-hero-spark,
    .kro-hero-arc { animation: none; }
    .kro-f1-math-slider-wrap.kro-visible .kro-f1-math-slider { animation: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Главная (body.kro-main): убираем глобальную сетку/PNG фона body и лишние слои,
+   из‑за которых по краям вьюпорта были видны «полоски». Дубликаты body ниже по
+   файлу перебиваются за счёт более специфичного селектора и порядка каскада.
+   --------------------------------------------------------------------------- */
+body.kro-main {
+   background-image: none !important;
+   background-color: var(--kro-bg) !important;
+   background-size: auto !important;
+   background-attachment: scroll !important;
+}
+
+body.kro-main::before {
+   display: none !important;
+}
+
+body.kro-main::after {
+   opacity: 0 !important;
+   background: transparent !important;
 }
