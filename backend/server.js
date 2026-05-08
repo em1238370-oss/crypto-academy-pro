@@ -6160,7 +6160,7 @@ async function kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, min
     }
     return out.length >= need;
   };
-  for (let pass = 1; pass <= 3; pass++) {
+  for (let pass = 1; pass <= 5; pass++) {
     const remain = deadline - Date.now();
     if (remain < 400) break;
     const pubBudget = Math.min(60000, Math.max(1500, remain - 500));
@@ -6260,7 +6260,9 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
 
   const urls = [
     `https://t.me/s/${encodeURIComponent(slug)}`,
+    `https://t.me/${encodeURIComponent(slug)}`,
     `https://r.jina.ai/http://t.me/s/${encodeURIComponent(slug)}`,
+    `https://r.jina.ai/http://t.me/${encodeURIComponent(slug)}`,
   ];
   const deadline = Date.now() + budgetMs;
   for (const url of urls) {
@@ -8918,16 +8920,16 @@ function kroGreedyParsedTextScore(p) {
 }
 
 /**
- * До двух проходов home_greedy: если первый обрезан spawn-таймаутом или дал мало текста — повторяем с оставшимся окном.
+ * До трёх проходов home_greedy: повторяем, если обрезало по таймауту или мало текста — пока есть окно sync.
  */
 function kroRunHomeGreedyTelethonBestEffort(channelForOnce, deadline, telethonReserveMs, analyzeLogId, minPostsHint) {
   const need = Math.max(1, Number(minPostsHint) || 1);
   let parsed = null;
   let budgetMs = 0;
   let wallMs = 0;
-  for (let pass = 1; pass <= 2; pass++) {
+  for (let pass = 1; pass <= 3; pass++) {
     const remain = deadline - Date.now();
-    if (remain < 7000) break;
+    if (remain < (pass === 3 ? 8000 : 7000)) break;
     const slice = Math.min(Number(telethonReserveMs) || 0, Math.max(5000, remain - 900));
     const tel = kroRunHomeGreedyTelethonOnce(channelForOnce, deadline, slice, `${analyzeLogId}:greedy${pass}`);
     budgetMs += tel.budgetMs;
@@ -8938,8 +8940,8 @@ function kroRunHomeGreedyTelethonBestEffort(channelForOnce, deadline, telethonRe
     const sc = kroGreedyParsedTextScore(parsed);
     const timedOut = parsed && parsed.check_once_timed_out === true;
     if (parsed && sc >= need && !timedOut) break;
-    if (pass >= 2) break;
-    if (deadline - Date.now() < 12000) break;
+    if (pass >= 3) break;
+    if (deadline - Date.now() < (pass === 1 ? 12000 : 10000)) break;
   }
   const finalParsed = parsed || kroNormalizeCheckOnceForAnalysis({ ok: false, parsed: null, error: 'telethon_not_run' });
   console.log(
@@ -9992,7 +9994,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         ? kroBuildParsedFromPublicSnapshotOnly({ snippets: harvestedSnippets }, channelDisplay, minReadablePosts)
         : kroBuildParsedFromPublicSnapshotOnly(
             await kroFetchTelegramPublicSnapshot(channelForOnce, {
-              timeoutMs: Math.min(60000, Math.max(1500, deadline - Date.now() - 400)),
+              timeoutMs: Math.min(60000, Math.max(4000, deadline - Date.now() - 400)),
               logLabel: `${analyzeLogId}:pub_fallback`,
             }),
             channelDisplay,
@@ -10019,6 +10021,69 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           telegramUsernameResolve,
         }),
       );
+    }
+
+    // Последняя попытка открыть публичную ленту по HTTP перед fallback на базу (медленная сеть / временный отказ t.me).
+    if (deadline - Date.now() > 3500) {
+      const pubRetryFetch = await kroFetchTelegramPublicSnapshot(channelForOnce, {
+        timeoutMs: Math.min(90000, Math.max(8000, deadline - Date.now() - 900)),
+        logLabel: `${analyzeLogId}:pub_fallback_retry`,
+      });
+      const pubRetry = kroBuildParsedFromPublicSnapshotOnly(pubRetryFetch, channelDisplay, minReadablePosts);
+      if (pubRetry) {
+        const pR = pubRetry;
+        const sR = Array.isArray(pR.sample_posts) ? pR.sample_posts.filter(Boolean) : [];
+        console.log(`[KRO analyze-channel ${analyzeLogId}] public_snapshot_retry posts_read=${sR.length}`);
+        return res.status(200).json(
+          kroBuildAnalyzeChannelLiveSuccessBundle({
+            withQueueMeta,
+            channelDisplay,
+            key,
+            watchRow,
+            reports,
+            parsedForFast: pR,
+            sampleForFast: sR,
+            postsRead: sR.length,
+            readPathOut: 'public_snapshot',
+            telBudgetMs: telBest.budgetMs,
+            t0,
+            telegramUsernameResolve,
+          }),
+        );
+      }
+    }
+    if (deadline - Date.now() > 2500) {
+      const lateHarvest = await kroHarvestPublicSnippetsUntilEnough(
+        channelForOnce,
+        deadline,
+        minReadablePosts,
+        `${analyzeLogId}:pre_dataset_harvest`,
+      );
+      const pubLate =
+        lateHarvest && lateHarvest.length >= minReadablePosts
+          ? kroBuildParsedFromPublicSnapshotOnly({ snippets: lateHarvest }, channelDisplay, minReadablePosts)
+          : null;
+      if (pubLate) {
+        const pL = pubLate;
+        const sL = Array.isArray(pL.sample_posts) ? pL.sample_posts.filter(Boolean) : [];
+        console.log(`[KRO analyze-channel ${analyzeLogId}] public_snapshot_pre_dataset posts_read=${sL.length}`);
+        return res.status(200).json(
+          kroBuildAnalyzeChannelLiveSuccessBundle({
+            withQueueMeta,
+            channelDisplay,
+            key,
+            watchRow,
+            reports,
+            parsedForFast: pL,
+            sampleForFast: sL,
+            postsRead: sL.length,
+            readPathOut: 'public_snapshot',
+            telBudgetMs: telBest.budgetMs,
+            t0,
+            telegramUsernameResolve,
+          }),
+        );
+      }
     }
 
     const evidenceSnips = kroBuildEvidenceSnippetsFromDataset({
