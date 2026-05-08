@@ -277,6 +277,7 @@
                    </div>
                    <div class="kro-feature1-check-row" id="kro-check-form-row" aria-busy="false">
                        <label class="kro-report-label" for="kro-check-channel">Публичный @username или приватный инвайт <input type="text" id="kro-check-channel" placeholder="@ник, t.me/… или https://t.me/+… (приватный)" autocomplete="off"></label>
+                       <label class="kro-report-label kro-report-label-sub" for="kro-check-channel-name-hint">Название канала для поиска на сайтах (необязательно, полезно для приватных каналов) <input type="text" id="kro-check-channel-name-hint" placeholder="Как в шапке Telegram или как на vklader / forteck" maxlength="160" autocomplete="off"></label>
                        <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить гуру</button>
                    </div>
                    <div class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Дополнительные пояснения">
@@ -286,7 +287,15 @@
                            <li><strong>Здесь</strong> — жалобы, мониторинг и при возможности чтение ленты (ориентир до ~30 дней) плюс открытая страница; до 7 минут на запрос, без «канцелярских» отписок.</li>
                            <li><strong>Глубокий разбор</strong> — на странице <span class="kro-check-user-explainer-code">/channel/имя</span>, кнопка «Глубокий анализ ленты».</li>
                            <li><strong>Не заставляем сидеть часами</strong>: при очереди покажем позицию и примерное время; если очередь слишком длинная — честно скажем зайти позже. Быстрый отчёт при этом уже у вас.</li>
+                           <li><strong>Приватный канал (t.me/+…):</strong> укажите <strong>название</strong> во втором поле — тогда проверим упоминания на vklader и forteck по имени; саму ленту по инвайту сервер часто не читает — ниже можно отправить скрины постов.</li>
                        </ul>
+                   </div>
+                   <div class="kro-check-screenshot-row" id="kro-check-screenshot-row">
+                       <p class="kro-check-screenshot-lead">Скрин постов из канала (узнаём @ или ссылку):</p>
+                       <div class="kro-check-screenshot-actions">
+                           <input type="file" id="kro-check-screenshot" accept="image/*" aria-label="Выберите скриншот постов канала">
+                           <button type="button" class="kro-report-submit" id="kro-check-screenshot-btn">Разобрать скрин</button>
+                       </div>
                    </div>
                    <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
                    <div class="kro-check-progress hidden" id="kro-check-progress" aria-busy="true" aria-live="polite" hidden>
@@ -3132,15 +3141,56 @@
                       window.__kroDeepUpgradeTimer = setTimeout(deepPoll, 20000);
                   };
 
+                  function buildKroInviteBannerHtml(d) {
+                      if (!d || d.private_invite_channel !== true) return '';
+                      var msg = esc(String(d.closed_channel_notice_ru || ''));
+                      var h = d.screenshot_help && typeof d.screenshot_help === 'object' ? d.screenshot_help : {};
+                      var bot = h.telegram_bot_url ? String(h.telegram_bot_url).trim() : '';
+                      var formU = h.form_url ? String(h.form_url).trim() : '';
+                      var anchor = h.upload_anchor ? String(h.upload_anchor).trim() : '#kro-check-screenshot-row';
+                      var parts = '<p class="kro-inline-invite-text">' + msg + '</p><div class="kro-inline-invite-actions">';
+                      if (bot) {
+                          parts += '<a class="kro-report-submit" href="' + esc(bot) + '" target="_blank" rel="noopener noreferrer">Отправить скриншоты (Telegram)</a>';
+                      }
+                      parts += '<a class="kro-report-submit kro-invite-screenshot-anchor" href="' + esc(anchor) + '">Загрузить скрин на сайте</a>';
+                      if (formU) {
+                          parts += '<a class="kro-report-submit" href="' + esc(formU) + '" target="_blank" rel="noopener noreferrer">Форма для скринов</a>';
+                      }
+                      parts += '</div>';
+                      return parts;
+                  }
+
                   var renderHomeCheckSuccess = function (data) {
                       if (!data || typeof data !== 'object' || !data.analysis || typeof data.analysis !== 'object') throw new Error('no_analysis');
                       window.__kroHomeCheckT0 = null;
                       hideCheckBusy();
                       ensureKroCheckPanelVisible();
+                      var oldHost = document.getElementById('kro-inline-invite-banner-host');
+                      if (oldHost && oldHost.parentNode) oldHost.parentNode.removeChild(oldHost);
                       fillInlineReport(data, queryU, displayLabel, __kroCheckStarted);
                       if (inlineReport) {
                           inlineReport.classList.remove('hidden');
                           inlineReport.hidden = false;
+                      }
+                      if (inlineReport && data && data.private_invite_channel === true && data.closed_channel_notice_ru) {
+                          var host = document.createElement('div');
+                          host.id = 'kro-inline-invite-banner-host';
+                          host.className = 'kro-inline-invite-banner-host';
+                          host.innerHTML = buildKroInviteBannerHtml(data);
+                          var first = inlineReport.firstChild;
+                          if (first) inlineReport.insertBefore(host, first);
+                          else inlineReport.appendChild(host);
+                          host.querySelectorAll('a.kro-invite-screenshot-anchor').forEach(function (a) {
+                              a.addEventListener('click', function (ev) {
+                                  var href = a.getAttribute('href') || '';
+                                  var sel = href.charAt(0) === '#' ? href.slice(1) : '';
+                                  var row = sel ? document.getElementById(sel) : document.getElementById('kro-check-screenshot-row');
+                                  if (row) {
+                                      ev.preventDefault();
+                                      try { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (eSc) { /* ignore */ }
+                                  }
+                              });
+                          });
                       }
                       var wrapScroll = document.getElementById('kro-f1-cta-check-wrap');
                       try {
@@ -3217,7 +3267,11 @@
                           });
                   };
 
-                  var fetchOpts = { method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store', body: JSON.stringify({ username: queryU }) };
+                  var postBody = { username: queryU };
+                  var hintInp = document.getElementById('kro-check-channel-name-hint');
+                  var hintVal = hintInp ? String(hintInp.value || '').trim() : '';
+                  if (hintVal) postBody.channel_name_hint = hintVal;
+                  var fetchOpts = { method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store', body: JSON.stringify(postBody) };
                   try {
                       if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function' && __KRO_HOME_FETCH_MS > 0) {
                           fetchOpts.signal = AbortSignal.timeout(__KRO_HOME_FETCH_MS);
@@ -3372,6 +3426,8 @@
                        checkResult.classList.add('hidden');
                        checkResult.innerHTML = '';
                        checkInput.value = '';
+                       var hintReset = document.getElementById('kro-check-channel-name-hint');
+                       if (hintReset) hintReset.value = '';
                        checkInput.focus();
                    });
                }

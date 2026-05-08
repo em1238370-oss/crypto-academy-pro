@@ -2883,6 +2883,59 @@ body.kro-hero-scrolled .kro-floating-nav {
    border-color: rgba(139, 92, 246, 0.5);
    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.4);
 }
+.kro-feature1-check-row .kro-report-label-sub {
+   font-size: 0.9rem;
+   font-weight: 500;
+   opacity: 0.95;
+   color: rgba(255, 255, 255, 0.88);
+}
+.kro-check-screenshot-row {
+   margin-top: 0.4rem;
+   padding: 14px 16px;
+   border-radius: 16px;
+   background: rgba(0, 0, 0, 0.2);
+   border: 1px solid rgba(255, 255, 255, 0.1);
+   width: 100%;
+   box-sizing: border-box;
+}
+.kro-check-screenshot-lead {
+   margin: 0 0 10px;
+   font-size: 0.95rem;
+   line-height: 1.45;
+   color: rgba(255, 255, 255, 0.9);
+}
+.kro-check-screenshot-actions {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   gap: 10px 12px;
+}
+.kro-inline-invite-banner-host {
+   margin-bottom: 16px;
+   padding: 14px 16px;
+   border-radius: 16px;
+   background: rgba(251, 191, 36, 0.1);
+   border: 1px solid rgba(251, 191, 36, 0.35);
+   box-sizing: border-box;
+}
+.kro-inline-invite-text {
+   margin: 0 0 4px;
+   line-height: 1.5;
+   font-size: 0.98rem;
+   color: rgba(255, 255, 255, 0.95);
+}
+.kro-inline-invite-actions {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 10px;
+   margin-top: 10px;
+}
+.kro-inline-invite-actions .kro-report-submit {
+   text-decoration: none;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+}
 .kro-period-prompt {
    color: #fff;
    margin-top: 0.25cm;

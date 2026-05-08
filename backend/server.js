@@ -1374,6 +1374,13 @@ const KRO_HOME_ANALYZE_MIN_POSTS =
   Number.isFinite(kroHomeAnalyzeMinPostsParsed) && kroHomeAnalyzeMinPostsParsed >= 5 && kroHomeAnalyzeMinPostsParsed <= 40
     ? kroHomeAnalyzeMinPostsParsed
     : 15;
+/** Инвайт t.me/+: `manual_first` (по умолчанию) — без Telethon, быстрый слой + честный CTA со скриншотами; `try_telethon_first` — сначала живой разбор как у публичных каналов. */
+const kroInviteClosedChannelMode = (process.env.KRO_INVITE_CLOSED_CHANNEL_MODE || 'manual_first').trim().toLowerCase();
+const kroScreenshotHelpBotUrl = String(process.env.KRO_SCREENSHOT_HELP_BOT_URL || '').trim();
+const kroScreenshotHelpFormUrl = String(process.env.KRO_SCREENSHOT_HELP_FORM_URL || '').trim();
+const KRO_CLOSED_INVITE_NOTICE_RU =
+  String(process.env.KRO_CLOSED_INVITE_NOTICE_RU || '').trim() ||
+  'Это закрытый канал. Мы не можем прочитать его автоматически. Но ты можешь помочь — перешли нам 5–10 скриншотов постов из этого канала (бот или форма ниже), и мы доразберём и риски вручную по фактам.';
 /** Глубокий анализ ленты: верхняя граница ~30 мин, горизонт до 6 мес. (periodDays 180 в вызове). */
 const kroDeepCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_DEEP_CHECK_ONCE_TIMEOUT_MS || '1800000', 10);
 const kroDeepCheckOnceTimeoutMs =
@@ -7608,6 +7615,70 @@ async function kroFetchMentionPathPage(host, slug, timeoutMs) {
   }
 }
 
+/** GET страницы по slug с кириллицей/пробелами (упоминание канала по названию на vklader/forteck). */
+async function kroFetchMentionPathPageUnicode(host, pathSegment, timeoutMs) {
+  const cleanHost = String(host || '').replace(/^https?:\/\//i, '').replace(/\/+$/, '').trim();
+  const raw = String(pathSegment || '').replace(/^@+/, '').trim();
+  if (!cleanHost || raw.length < 2) return { url: '', ok: false, preview: '', mentioned: false, error: 'bad_url' };
+  const segEnc = raw.split('/').map((p) => encodeURIComponent(p)).join('/');
+  const url = `https://${cleanHost}/${segEnc}`;
+  const budget = Math.min(15000, Math.max(800, Number(timeoutMs) || 8000));
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), budget);
+  try {
+    const r = await fetch(url, {
+      signal: ctl.signal,
+      headers: {
+        'user-agent': 'Mozilla/5.0 (compatible; KRO-HomeQuick/1.0)',
+        accept: 'text/html,text/plain,*/*',
+      },
+    });
+    const txt = await r.text();
+    const body = (txt || '').slice(0, 4000);
+    const low = body.toLowerCase();
+    const needle = raw.slice(0, 90).toLowerCase();
+    let mentioned = needle.length >= 3 && low.includes(needle);
+    if (!mentioned && needle.length >= 3) {
+      const parts = raw.split(/\s+/).filter((x) => x.length >= 4);
+      mentioned = parts.some((w) => low.includes(w.toLowerCase()));
+    }
+    return { url, ok: r.ok, http_status: r.status, mentioned, preview: body.slice(0, 1200) };
+  } catch (e) {
+    return {
+      url,
+      ok: false,
+      mentioned: false,
+      preview: '',
+      error: (e && e.message) ? String(e.message).slice(0, 120) : 'fetch_error',
+    };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function kroSanitizeChannelNameHint(raw) {
+  return String(raw || '').trim().slice(0, 160);
+}
+
+/** Сегмент пути для сайтов: латиница или компактное имя с пробелами→дефис. */
+function kroChannelNameHintPathSegment(hint) {
+  const t = kroSanitizeChannelNameHint(hint);
+  if (!t || t.length < 2) return '';
+  const ascii = t.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
+  if (ascii.length >= 3) return ascii.toLowerCase();
+  try {
+    const compact = t.replace(/\s+/g, '-').replace(/[^\p{L}\p{N}_-]/gu, '').slice(0, 90);
+    return compact.replace(/^-+|-+$/g, '') || '';
+  } catch {
+    const fb = t.replace(/\s+/g, '-').replace(/[^a-zA-Zа-яА-ЯёЁ0-9_-]/g, '').slice(0, 90);
+    return fb.replace(/^-+|-+$/g, '') || '';
+  }
+}
+
+function kroInviteManualFirstEnabled() {
+  return !/^try_telethon/i.test(kroInviteClosedChannelMode);
+}
+
 function kroMapRuRiskLabelToConclusion(ru) {
   const s = String(ru || '').toLowerCase();
   if (s.includes('опасн') || s.includes('скам')) return KRO_V0_STATUS.scam;
@@ -8503,7 +8574,8 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     claudeOverlay,
   } = opts || {};
   const inviteVoiceRu =
-    String(key || '').trim().toLowerCase().startsWith('t.me/+')
+    String(key || '').trim().toLowerCase().startsWith('t.me/+') &&
+    readPathOut !== 'invite_manual_sheets_sites'
       ? 'Приватный канал по инвайт-ссылке: лента читается после join через аккаунт Telegram на сервере; публичная веб-страница без входа недоступна — опора на Telethon, не на t.me/s.'
       : '';
   const trustVoicePrefix = [inviteVoiceRu, trustReportExtra && trustReportExtra.editor_voice_prefix_ru
@@ -8521,7 +8593,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
   let risk = kroHomeCalmScoreIfNoStructuralTriggers(fastHuman.score10, fastHuman.criteria);
   let statusObj = kroMapFastRisk10ToUiStatus(risk);
   const co = claudeOverlay && typeof claudeOverlay === 'object' ? claudeOverlay : null;
-  if (readPathOut === 'sheets_sites_claude' && co) {
+  if ((readPathOut === 'sheets_sites_claude' || readPathOut === 'invite_manual_sheets_sites') && co) {
     const r100 = Number(co.risk_index);
     if (Number.isFinite(r100)) {
       const r10 = Math.max(0, Math.min(10, Math.round(r100 / 10)));
@@ -8589,7 +8661,9 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
   analysis.basic_info = [
     `Канал: ${channelDisplay}`,
     `Чем занимается канал: ${fastHuman.topicLine}`,
-    readPathOut === 'sheets_sites_claude'
+    readPathOut === 'invite_manual_sheets_sites'
+      ? `Быстрый разбор: таблицы и жалобы (при указании названия канала — по совпадению текста) + страницы vklader.com и forteck.net по имени + Claude. Ленту Telegram не запрашивали.`
+      : readPathOut === 'sheets_sites_claude'
       ? `Быстрый разбор (~30 с): таблицы сервиса + страницы vklader.com и forteck.net + Claude. Посты Telegram не запрашивали.`
       : readPathOut === 'dataset_evidence'
         ? `Разобрано ${postsRead} фрагментов текста из базы и жалоб (посты Telegram в этом запуске с сервера не подтянулись).`
@@ -8597,7 +8671,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     ...(Array.isArray(analysis.basic_info) ? analysis.basic_info.slice(1, 3) : []),
   ].filter(Boolean).slice(0, 6);
   const citeLab =
-    readPathOut === 'dataset_evidence' || readPathOut === 'sheets_sites_claude'
+    readPathOut === 'dataset_evidence' || readPathOut === 'sheets_sites_claude' || readPathOut === 'invite_manual_sheets_sites'
       ? 'Фрагмент из данных'
       : 'Пример из ленты';
   analysis.content_behavior = [
@@ -8641,7 +8715,9 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
   const complaintsFormCount = reports.filter((r) => (r.source || '').toLowerCase() === 'form').length;
   const telSec = Math.max(0, Math.round(Number(telBudgetMs || 0) / 1000));
   const liveReason =
-    readPathOut === 'sheets_sites_claude'
+    readPathOut === 'invite_manual_sheets_sites'
+      ? `Приватный инвайт: scam_base, жалобы и при необходимости GET vklader.com и forteck.net по названию канала, затем Claude. Telegram не использовали.`
+      : readPathOut === 'sheets_sites_claude'
       ? `За один ответ: scam_base, channels_watch, reports, GET vklader.com/${key} и forteck.net/${key}, затем Claude. Telegram не использовали.`
       : readPathOut === 'dataset_evidence'
         ? `Собрано ${postsRead} фрагментов из базы и жалоб — посты Telegram с сервера в этом запуске не прочитаны (сеть/API).`
@@ -8651,7 +8727,9 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
           ? `Считано ${postsRead} фрагментов с текстом: чтение в Telegram до ~${telSec} с плюс открытая страница.`
           : `Считано ${postsRead} фрагментов с текстом (чтение в Telegram, до ~${telSec} с).`;
   const basisLabel =
-    readPathOut === 'sheets_sites_claude'
+    readPathOut === 'invite_manual_sheets_sites'
+      ? 'Оценка по данным из Google Sheets и внешних страниц (при указании названия — поиск по имени); лента Telegram по инвайту здесь не читается.'
+      : readPathOut === 'sheets_sites_claude'
       ? 'Оценка по данным из Google Sheets, двух внешних страниц и Claude; лента Telegram не читалась.'
       : readPathOut === 'dataset_evidence'
         ? 'Оценка по реальным строкам из базы и жалоб; лента Telegram в этом запросе недоступна.'
@@ -8661,7 +8739,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
           ? 'Вывод по тексту из Telegram; при нехватке объёма добавлены фрагменты с открытой страницы.'
           : 'Вывод по тексту сообщений из Telegram.';
   const basisSources =
-    readPathOut === 'sheets_sites_claude'
+    readPathOut === 'sheets_sites_claude' || readPathOut === 'invite_manual_sheets_sites'
       ? ['scam_base', 'channels_watch', 'reports', 'vklader.com', 'forteck.net', 'claude']
       : readPathOut === 'dataset_evidence'
         ? ['scam_base', 'channels_watch', 'reports']
@@ -8727,6 +8805,214 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       elapsed_ms: Date.now() - t0,
     },
     message: `${channelDisplay}: ${riskLine} ${fastHuman.summaryLine}`,
+  });
+}
+
+/**
+ * Приватный канал t.me/+… в режиме manual_first: без Telethon, таблицы + vklader/forteck по названию + Claude + честный CTA со скриншотами.
+ */
+async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
+  const { t0, key, normalized, analyzeLogId, channelNameHint } = opts;
+  const hintRaw = kroSanitizeChannelNameHint(channelNameHint || '');
+  const channelDisplay = kroAnalyzeChannelUiLabel(normalized, key);
+  const quickBudgetMs = KRO_HOME_QUICK_MS;
+  const deadline = t0 + quickBudgetMs;
+
+  const withQueueMeta = (payload) => ({
+    ...payload,
+    request_id: null,
+    deep_pending: false,
+    deep_status: 'off',
+    deep_note:
+      'Приватный канал по инвайт-ссылке: автоматическое чтение ленты на этом деплое недоступно. Используем базу и сайты (если указано название канала). Пришлите скриншоты постов для ручного разбора.',
+  });
+
+  console.log(
+    `[KRO analyze-channel ${analyzeLogId}] invite_manual channel=${channelDisplay} hint_len=${hintRaw.length}`,
+  );
+
+  const sheetsClient = await getKroSheetsClient();
+  if (!sheetsClient || !kroSheetId) {
+    return res.status(503).json({ error: 'sheets_unavailable', message_ru: 'Google Sheets недоступен.' });
+  }
+
+  const rawRows = await kroFetchScamBaseValuesCached(sheetsClient);
+  const parsedRows = rawRows.slice(1).map(parseScamBaseRow).filter((r) => r.username);
+  const scamRowsInvite = parsedRows.filter((r) => channelMatchKey(r.username) === key);
+  const hl = hintRaw.length >= 3 ? hintRaw.toLowerCase() : '';
+  let scamRowsHint = [];
+  if (hl) {
+    scamRowsHint = parsedRows.filter((r) => {
+      const u = String(r.username || '').toLowerCase();
+      const q = String(r.quote || '').toLowerCase();
+      const sp = String(r.source_primary || '').toLowerCase();
+      return u.includes(hl) || q.includes(hl) || sp.includes(hl);
+    });
+  }
+  let latestProfile = null;
+  if (scamRowsInvite.length) {
+    latestProfile = scamRowsInvite.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
+  } else if (scamRowsHint.length) {
+    latestProfile = scamRowsHint.reduce((a, b) => (parseScamDetectedAtMs(a) >= parseScamDetectedAtMs(b) ? a : b));
+  }
+  if (latestProfile) latestProfile = enrichScamBaseContentAnalysisForMonitor(latestProfile);
+
+  const watchRow = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
+
+  let reports = [];
+  if (hl) {
+    const reportRows = await kroFetchReportsRowsCached(sheetsClient);
+    reports = reportRows
+      .filter((row) => String(row[1] || '').toLowerCase().includes(hl))
+      .map((r) => ({
+        date: (r[0] || '').toString().trim(),
+        channel: (r[1] || '').toString().trim(),
+        sum: parseInt((r[2] || '0').toString().replace(/\s/g, ''), 10) || 0,
+        source: (r[3] || '').toString().trim(),
+        status: (r[4] || '').toString().trim(),
+        reporter: (r[5] || '').toString().trim(),
+        description: (r[6] || '').toString().trim(),
+        proof_url: (r[7] || '').toString().trim(),
+        object_type: (r[8] || '').toString().trim(),
+      }));
+  }
+
+  const displayCh = (latestProfile && latestProfile.username) ? latestProfile.username : channelDisplay;
+
+  const nameSeg = kroChannelNameHintPathSegment(hintRaw);
+  const perSite = Math.floor(Math.max(2500, deadline - Date.now() - 9000) / 2);
+
+  async function kroBestMentionFetch(host, segment, budget) {
+    const [a, u] = await Promise.all([
+      kroFetchMentionPathPage(host, segment, budget),
+      kroFetchMentionPathPageUnicode(host, segment, budget),
+    ]);
+    const pa = String(a.preview || '').length;
+    const pu = String(u.preview || '').length;
+    return pu > pa ? u : a;
+  }
+
+  let vkPage = { url: '', ok: false, mentioned: false, preview: '', http_status: undefined };
+  let ftPage = { url: '', ok: false, mentioned: false, preview: '', http_status: undefined };
+  if (nameSeg) {
+    [vkPage, ftPage] = await Promise.all([
+      kroBestMentionFetch('vklader.com', nameSeg, perSite),
+      kroBestMentionFetch('forteck.net', nameSeg, perSite),
+    ]);
+  }
+
+  const claudePayload = {
+    mode: 'invite_closed_manual',
+    channel: channelDisplay,
+    slug: key,
+    channel_name_hint: hintRaw || null,
+    invite_only: true,
+    scam_base: latestProfile
+      ? {
+          status: latestProfile.status,
+          verdict: latestProfile.verdict,
+          risk_score: latestProfile.risk_score,
+          complaints: latestProfile.complaints,
+          source_primary: latestProfile.source_primary,
+          quote: latestProfile.quote,
+        }
+      : null,
+    channels_watch: watchRow
+      ? {
+          status: watchRow.status,
+          activity_summary: watchRow.activity_summary,
+          reviews_summary: watchRow.reviews_summary,
+          status_reason: watchRow.status_reason,
+        }
+      : null,
+    reports: reports.slice(0, 24).map((r) => ({
+      date: r.date,
+      description: (r.description || '').slice(0, 400),
+      status: r.status,
+      source: r.source,
+    })),
+    site_pages: [
+      {
+        host: 'vklader.com',
+        url: vkPage.url,
+        http_status: vkPage.http_status,
+        ok: vkPage.ok,
+        mentioned: vkPage.mentioned,
+        preview: String(vkPage.preview || '').slice(0, 2000),
+      },
+      {
+        host: 'forteck.net',
+        url: ftPage.url,
+        http_status: ftPage.http_status,
+        ok: ftPage.ok,
+        mentioned: ftPage.mentioned,
+        preview: String(ftPage.preview || '').slice(0, 2000),
+      },
+    ],
+  };
+
+  const claudeRemain = Math.max(2000, deadline - Date.now() - 300);
+  const claudeJson = await kroAnalyzeChannelWithClaudeFast(claudePayload, claudeRemain);
+  console.log(
+    `[KRO analyze-channel ${analyzeLogId}] invite_manual claude_ok=${!!claudeJson} vk_ok=${vkPage.ok} ft_ok=${ftPage.ok}`,
+  );
+
+  const evidenceSnips = kroBuildEvidenceSnippetsFromDataset({
+    latestProfile,
+    reports,
+    channelDisplay: displayCh,
+  });
+  const pathSnips = [];
+  if (vkPage.preview) {
+    pathSnips.push(
+      `[HTML vklader по названию «${hintRaw || nameSeg || key}», http ${vkPage.http_status || '—'}] ${String(vkPage.preview).slice(0, 700)}`,
+    );
+  }
+  if (ftPage.preview) {
+    pathSnips.push(
+      `[HTML forteck по названию «${hintRaw || nameSeg || key}», http ${ftPage.http_status || '—'}] ${String(ftPage.preview).slice(0, 700)}`,
+    );
+  }
+  const mergedSnips = [...evidenceSnips, ...pathSnips];
+  const parsedSimple = kroBuildParsedFromDatasetSnippets(mergedSnips, displayCh);
+  parsedSimple.read_path = 'invite_manual_sheets_sites';
+  const sampleArr = Array.isArray(parsedSimple.sample_posts)
+    ? parsedSimple.sample_posts.filter(Boolean)
+    : [];
+  const postsN = sampleArr.length || Number(parsedSimple.posts_fetched || 0) || 0;
+
+  const voicePrefix =
+    `Приватный канал по инвайт-ссылке: ленту Telegram здесь не читаем. За ~${Math.round(quickBudgetMs / 1000)} с: scam_base${hintRaw ? ' (поиск по названию)' : ''}, жалобы, GET страниц vklader/forteck${nameSeg ? ` по сегменту «${nameSeg}»` : ' (без названия — страницы не запрашивали)'}, затем Claude.`;
+  const trustBundle = kroBuildAnalyzeChannelLiveSuccessBundle({
+    withQueueMeta,
+    channelDisplay,
+    key,
+    watchRow,
+    reports,
+    parsedForFast: parsedSimple,
+    sampleForFast: sampleArr,
+    postsRead: postsN,
+    readPathOut: 'invite_manual_sheets_sites',
+    telBudgetMs: 0,
+    t0,
+    trustReportExtra: { editor_voice_prefix_ru: voicePrefix },
+    claudeOverlay: claudeJson,
+  });
+
+  const screenshotHelp = {
+    telegram_bot_url: kroScreenshotHelpBotUrl || null,
+    form_url: kroScreenshotHelpFormUrl || null,
+    upload_anchor: '#kro-check-screenshot-row',
+  };
+
+  return res.status(200).json({
+    ...trustBundle,
+    claude_home_quick: claudeJson,
+    private_invite_channel: true,
+    closed_channel_notice_ru: KRO_CLOSED_INVITE_NOTICE_RU,
+    screenshot_help: screenshotHelp,
+    invite_channel_name_hint_used: hintRaw || null,
+    invite_site_lookup_segment: nameSeg || null,
   });
 }
 
@@ -8887,6 +9173,31 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     if (/^joinchat\//i.test(k)) return `t.me/${k}`;
     return normalized.startsWith('@') || normalized.startsWith('t.me/') ? normalized : `@${k}`;
   })();
+
+  const channelNameHint = kroSanitizeChannelNameHint(
+    (req.body && (req.body.channel_name_hint || req.body.channel_title_hint || req.body.display_name)) || '',
+  );
+  const inviteKeyEarly = String(key || '').toLowerCase().startsWith('t.me/+');
+
+  if (inviteKeyEarly && kroInviteManualFirstEnabled()) {
+    try {
+      return await kroAnalyzeClosedInviteChannelHandler(req, res, {
+        t0,
+        key,
+        normalized,
+        analyzeLogId,
+        channelNameHint,
+      });
+    } catch (e) {
+      console.error(`KRO analyze-channel invite_manual error [${analyzeLogId}]:`, e);
+      return res.status(500).json({
+        error: 'internal_error',
+        message_ru: 'Не удалось собрать данные по приватному каналу.',
+        message: 'Invite-channel analysis failed.',
+        queue_status: 'failed',
+      });
+    }
+  }
 
   if (kroHomeAnalyzeMode === 'quick_sheets_only') {
     try {

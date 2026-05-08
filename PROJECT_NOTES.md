@@ -18,6 +18,7 @@
 ---
 
 ## ✅ Сделано
+- 2026-05-08 — KRO приватный инвайт `t.me/+…`: по умолчанию `KRO_INVITE_CLOSED_CHANNEL_MODE=manual_first` — без Telethon на главном запросе; быстрый слой Google Sheets + при `channel_name_hint` поиск scam_base/reports и GET vklader/forteck по имени + Claude; ответ с `private_invite_channel`, текст `closed_channel_notice_ru`, `screenshot_help` (бот `KRO_SCREENSHOT_HELP_BOT_URL`, форма `KRO_SCREENSHOT_HELP_FORM_URL`). UI: поле названия, блок загрузки скрина, баннер с кнопками «Отправить скриншоты» / «Загрузить скрин на сайте». Обход manual: `KRO_INVITE_CLOSED_CHANNEL_MODE=try_telethon_first`.
 - 2026-05-08 — KRO `POST /api/kro/analyze-channel`: инвайт `https://t.me/+…` — сохраняем регистр хеша; лейбл «приватный канал»; не дергаем публичный HTML snapshot для `t.me/+`; префикс в trust_report про Telethon/join.
 - 2026-05-08 — KRO `trust_report`: если нет срабатывания «флагов» с цитатой, вкладка «Доказательства» заполняется отрывками из той же выборки постов (`citations`); чеклист чуть длиннее (220 симв.); подсказка в `#kro-check-channel`.
 - 2026-05-06 — Главная: исправлен синтаксис `fillInlineReport` в `index.html` (лишняя/недостающая `}` в ветке `compactFlow` / `!compactFlow`) — из-за этого весь inline-скрипт не выполнялся и кнопка «Проверить гуру» не реагировала; обновлён query `styles.css` для сброса кэша.
