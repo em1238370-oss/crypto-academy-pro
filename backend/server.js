@@ -5691,23 +5691,30 @@ function kroHomeBuildTrustReportBundle(opts) {
     readPathOut,
     editor_voice_prefix_ru,
     citationFallbacks,
+    trustSampleMaxChars,
   } = opts || {};
   const readPath = String(readPathOut || '').trim();
   const feedSample = kroHomeReadPathIsChannelFeedSample(readPath);
   const postsN = Number(postsRead) || 0;
+  const maxSam = Number(trustSampleMaxChars) || 0;
   const flagArr = Array.isArray(flags) ? flags : [];
   const hasStrongEvidence = flagArr.some((f) => {
     const sn = f && f.evidence_snippet ? String(f.evidence_snippet).trim() : '';
     return kroHomeFilterStructuredQuote(sn).length >= 16;
   });
-  const weakFeed = feedSample && postsN === 1 && !hasStrongEvidence;
+  /** Один пост, но длинный фрагмент из ленты — не считаем «пустой лентой». */
+  const weakFeed =
+    feedSample &&
+    postsN === 1 &&
+    !hasStrongEvidence &&
+    maxSam < 140;
 
   const r10raw = Number(risk10);
   const r10 = Number.isFinite(r10raw) ? Math.max(1, Math.min(10, r10raw)) : null;
   let outStatusCode = String(statusCode || 'UNAVAILABLE').toUpperCase();
   let outRisk100 = r10 == null ? null : Math.round(r10 * 10);
 
-  if (weakFeed && !hasStrongEvidence) {
+  if (weakFeed) {
     outStatusCode = 'INSUFFICIENT_FEED';
     outRisk100 = null;
   } else if (r10 != null) {
@@ -5760,7 +5767,9 @@ function kroHomeBuildTrustReportBundle(opts) {
   const prefix = String(editor_voice_prefix_ru || '').trim();
   if (prefix) editorVoice.push(prefix);
   if (!livePass) {
-    editorVoice.push('В этом ответе лента Telegram не участвовала — опирайтесь на блок ниже и при необходимости глубокую проверку.');
+    editorVoice.push(
+      'Здесь использованы строки из базы сервиса и жалоб; свежие посты канала в этот ответ не подключали — при возможности сверьте формулировки на странице канала.',
+    );
   }
 
   const comp = Number(complaintsCount);
@@ -8988,11 +8997,11 @@ function kroPadEvidenceSnippetsToMin(snippets, minN, channelDisplay) {
   const arr = Array.isArray(snippets) ? [...snippets] : [];
   const ch = String(channelDisplay || '').trim() || 'канал';
   const honest = [
-    `${ch}: посты Telegram с сервера в этом запросе не прочитаны (сеть или блокировка).`,
-    'Что делаем дальше: оценка ниже строится только по строкам из базы и жалоб — без выдуманных «цитат из ленты».',
-    'Если канал публичный — откройте его вручную и сравните формулировки с тем, что мы показали из наших данных.',
-    'Полное чтение ленты до 6 месяцев — на странице канала (глубокий режим) или через BYO StringSession, если не хотите ждать общую очередь.',
-    'Повторите проверку позже: иногда доступ к Telegram восстанавливается после деплоя или смены сети.',
+    `${ch}: в этом запуске не удалось получить текст постов с открытой страницы или через клиент Telegram на сервере.`,
+    'Ниже — только реальные строки из нашей базы и жалоб; мы не подставляем выдуманные посты.',
+    'Если канал открытый — можно свериться глазами на t.me рядом с этим ответом.',
+    'Более полный разбор ленты — на странице канала (глубокий режим), когда доступна очередь.',
+    'Повторите проверку через некоторое время, если был временный сбой сети.',
   ];
   let hi = 0;
   while (arr.length < n) {
@@ -9018,7 +9027,7 @@ function kroBuildParsedFromDatasetSnippets(snippets, channelDisplay) {
     ads_ratio: null,
     risk_verdict: null,
     data_feed_note_ru:
-      'Посты Telegram в этом запуске не прочитаны (сеть/API). Ниже — реальные фрагменты из нашей базы и жалоб; это не подмена ленты канала, но даёт опорные цитаты и риск по тексту.',
+      'Открытая страница канала или клиент Telegram на сервере в этом запуске не вернули текст постов. Ниже — реальные фрагменты из базы и жалоб; это опора для осторожности, не замена живой ленты.',
   };
 }
 
@@ -9117,12 +9126,20 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
   }
   const feedSample = kroHomeReadPathIsChannelFeedSample(readPathOut);
   const postsReadN = Number(postsRead) || 0;
+  const trustSampleMaxChars = Math.max(
+    0,
+    ...(Array.isArray(sampleForFast) ? sampleForFast.map((s) => String(s || '').trim().length) : []),
+  );
   const strongPostEvidence = (signal.flags || []).some((f) => {
     const sn = f && f.evidence_snippet ? String(f.evidence_snippet).trim() : '';
     return kroHomeFilterStructuredQuote(sn).length >= 16;
   });
-  const weakFeedNoScore = feedSample && postsReadN === 1 && !strongPostEvidence
-    && String(parsedForFast.risk_verdict || '').toLowerCase() !== 'scam';
+  const weakFeedNoScore =
+    feedSample &&
+    postsReadN === 1 &&
+    !strongPostEvidence &&
+    trustSampleMaxChars < 140 &&
+    String(parsedForFast.risk_verdict || '').toLowerCase() !== 'scam';
 
   analysis.basic_info = [
     `Канал: ${channelDisplay}`,
@@ -9132,7 +9149,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       :     readPathOut === 'sheets_sites_claude'
       ? `Быстрый разбор (~30 с): таблицы сервиса + страницы vklader.com и forteck.net (прямой путь и поиск ?s=, если запрос достаточно длинный) + Claude. Посты Telegram не запрашивали.`
       : readPathOut === 'dataset_evidence'
-        ? `Разобрано ${postsRead} фрагментов текста из базы и жалоб (посты Telegram в этом запуске с сервера не подтянулись).`
+        ? `Разобрано ${postsRead} фрагментов из базы и жалоб; текст постов с открытой страницы или через клиент Telegram в этом запуске не собрали — используйте блок ниже как дополнение к просмотру канала вручную.`
         : `Прочитано ${postsRead} сообщений с текстом за период до ${Number(parsedForFast.analysis_window_days || 30)} дней.`,
     ...(Array.isArray(analysis.basic_info) ? analysis.basic_info.slice(1, 3) : []),
   ].filter(Boolean).slice(0, 6);
@@ -9187,7 +9204,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       : readPathOut === 'sheets_sites_claude'
       ? `За один ответ: scam_base, channels_watch, объединённые reports, GET vklader.com/${key} и forteck.net/${key}, при возможности поиск ?s= на тех же сайтах, затем Claude. Telegram не использовали.`
       : readPathOut === 'dataset_evidence'
-        ? `Собрано ${postsRead} фрагментов из базы и жалоб — посты Telegram с сервера в этом запуске не прочитаны (сеть/API).`
+        ? `Собрано ${postsRead} фрагментов из базы и жалоб; открытая лента или клиент Telegram на сервере в этом запросе не вернули текст — см. также страницу канала.`
         : readPathOut === 'public_snapshot'
         ? `Считано ${postsRead} фрагментов с текстом с открытой страницы канала (t.me/s); API Telegram на сервере в этом запуске не использовали.`
         : readPathOut === 'telethon+public_snapshot'
@@ -9199,7 +9216,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       : readPathOut === 'sheets_sites_claude'
       ? 'Оценка по данным из Google Sheets, двух внешних страниц и Claude; лента Telegram не читалась.'
       : readPathOut === 'dataset_evidence'
-        ? 'Оценка по реальным строкам из базы и жалоб; лента Telegram в этом запросе недоступна.'
+        ? 'Оценка по строкам из базы и жалоб; живые посты канала в этот ответ не подключали — при открытом канале сверьтесь с t.me.'
         : readPathOut === 'public_snapshot'
         ? 'Вывод по тексту с открытой страницы канала (публичные фрагменты ленты).'
         : readPathOut === 'telethon+public_snapshot'
@@ -9247,6 +9264,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       criteriaRows: fastHuman.criteria,
       readPathOut,
       citationFallbacks: Array.isArray(fastHuman.citations) ? fastHuman.citations : [],
+      trustSampleMaxChars,
       voice: {
         topicLine: fastHuman.topicLine,
         channelType: fastHuman.channelType,
@@ -9869,9 +9887,30 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     const minReadablePosts = 1;
     const minTelethonPosts = minReadablePosts;
 
+    /** Для публичного username — сначала быстро тянем t.me/s (до ~24 с), чтобы лента попала в ответ даже если Telethon задержится. */
+    let harvestedBootstrap = null;
+    const pubSlugBootstrap = kroExtractTelegramPublicSlug(channelForOnce);
+    if (pubSlugBootstrap && deadline - Date.now() > 6000) {
+      const bootUntil = Math.min(deadline - 1200, Date.now() + 24000);
+      harvestedBootstrap = await kroHarvestPublicSnippetsUntilEnough(
+        channelForOnce,
+        bootUntil,
+        1,
+        `${analyzeLogId}:bootstrap_http`,
+      );
+      if (harvestedBootstrap && harvestedBootstrap.length) {
+        console.log(
+          `[KRO analyze-channel ${analyzeLogId}] bootstrap_http snippets=${harvestedBootstrap.length}`,
+        );
+      }
+    }
+
     const telethonReserveMs = Math.min(330000, Math.max(120000, Math.floor(KRO_ANALYZE_CHANNEL_SYNC_MS * 0.78)));
     const telBest = kroRunHomeGreedyTelethonBestEffort(channelForOnce, deadline, telethonReserveMs, analyzeLogId, minTelethonPosts);
     let parsed = telBest.parsed;
+    if (harvestedBootstrap && harvestedBootstrap.length) {
+      parsed = kroMergeSnippetsIntoParsedBase(parsed, harvestedBootstrap, channelDisplay);
+    }
     const telethonOnlySnippetCount = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean).length : 0;
     const mergedSample = kroHomeGreedyMergeSamplesFromParsed(parsed, minTelethonPosts);
     let postsRead = mergedSample.length ? mergedSample.length : Number(parsed.posts_fetched || 0);
@@ -10052,7 +10091,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         );
       }
     }
-    if (deadline - Date.now() > 2500) {
+    if (deadline - Date.now() > 1800) {
       const lateHarvest = await kroHarvestPublicSnippetsUntilEnough(
         channelForOnce,
         deadline,
@@ -10095,7 +10134,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     const sampleDs = Array.isArray(parsedDs.sample_posts) ? parsedDs.sample_posts.filter(Boolean) : [];
     const postsDs = sampleDs.length || Number(parsedDs.posts_fetched || 0) || 0;
     const dsNote =
-      'Прямое чтение ленты Telegram с сервера в этом запросе не удалось (сеть/API или закрытый канал). Ниже — разбор по строкам из базы и жалоб; это не замена ленты. Для полного чтения используйте страницу канала / BYO.';
+      'В этом запросе не удалось собрать текст постов с открытой страницы или через клиент Telegram; ниже — только данные из базы и жалоб. Для живой ленты откройте канал в браузере или повторите проверку позже.';
 
     console.log(
       `[KRO analyze-channel ${analyzeLogId}] dataset_evidence_fallback posts=${postsDs}`,
