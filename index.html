@@ -2750,17 +2750,24 @@
                    var adv = document.getElementById('kro-inline-one-advice');
                    var det = document.getElementById('kro-inline-tech-details');
                    if (!hero || !ul || !adv) return;
-                   var tier = kroMoneyTrustTier(data);
+                   var mv = data.money_verdict;
+                   var tier = (mv && mv.tier) ? mv.tier : kroMoneyTrustTier(data);
                    var phrases = {
                        danger: 'НЕ ДОВЕРЯЙ ДЕНЬГИ — есть серьёзные признаки мошенничества',
                        warn: 'БУДЬ ОСТОРОЖЕН — есть подозрительные моменты',
                        clean: 'ПОКА ВЫГЛЯДИТ ЧИСТО — явных признаков мошенничества не найдено',
                    };
-                   hero.textContent = phrases[tier] || phrases.warn;
+                   hero.textContent = (mv && mv.headline_ru) ? mv.headline_ru : (phrases[tier] || phrases.warn);
                    hero.className = 'kro-inline-verdict-hero kro-inline-verdict-hero--' + (tier === 'clean' ? 'ok' : tier === 'danger' ? 'danger' : 'warn');
                    if (sub) {
-                       sub.textContent = displayLabel ? 'Канал: ' + displayLabel : '';
-                       sub.hidden = !displayLabel;
+                       var parts = [];
+                       if (displayLabel) parts.push('Канал: ' + displayLabel);
+                       var ce = data.complaint_evidence;
+                       if (ce && ce.invite_channel_title_auto_ru && ce.invite_title_extract_source === 'telegram_invite_html') {
+                           parts.push('Название со страницы приглашения: ' + ce.invite_channel_title_auto_ru);
+                       }
+                       sub.textContent = parts.join(' · ');
+                       sub.hidden = parts.length === 0;
                    }
                    var a = data.analysis || {};
                    var lm = data.live_metrics || {};
@@ -2775,6 +2782,12 @@
                        if (!t || facts.indexOf(t) !== -1) return;
                        facts.push(t);
                    };
+                   var ceSn = data.complaint_evidence && Array.isArray(data.complaint_evidence.snippet_lines_ru)
+                       ? data.complaint_evidence.snippet_lines_ru
+                       : [];
+                   for (var sx = 0; sx < ceSn.length && facts.length < 2; sx++) {
+                       pushUnique(ceSn[sx]);
+                   }
                    if (tier === 'clean') {
                        if (ageDays != null && ageDays >= 365) {
                            pushUnique('Работает больше года — хороший знак.');

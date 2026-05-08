@@ -1381,6 +1381,10 @@ const kroScreenshotHelpFormUrl = String(process.env.KRO_SCREENSHOT_HELP_FORM_URL
 const KRO_CLOSED_INVITE_NOTICE_RU =
   String(process.env.KRO_CLOSED_INVITE_NOTICE_RU || '').trim() ||
   'Это закрытый канал. Мы не можем прочитать его автоматически. Но ты можешь помочь — перешли нам 5–10 скриншотов постов из этого канала (бот или форма ниже), и мы доразберём и риски вручную по фактам.';
+/** Инвайт: один GET к HTML Google (часто блокируется). Включить явно: KRO_INVITE_GOOGLE_SITE_SEARCH=1 */
+const KRO_INVITE_GOOGLE_SITE_SEARCH = String(process.env.KRO_INVITE_GOOGLE_SITE_SEARCH || '').trim() === '1';
+/** Инвайт: доп. один запрос к HTML DuckDuckGo (по умолчанию вкл.; отключить: KRO_INVITE_DDG_HTML_SEARCH=0) */
+const KRO_INVITE_DDG_HTML_SEARCH = String(process.env.KRO_INVITE_DDG_HTML_SEARCH || '1').trim() !== '0';
 /** Глубокий анализ ленты: верхняя граница ~30 мин, горизонт до 6 мес. (periodDays 180 в вызове). */
 const kroDeepCheckOnceTimeoutMsParsed = parseInt(process.env.KRO_DEEP_CHECK_ONCE_TIMEOUT_MS || '1800000', 10);
 const kroDeepCheckOnceTimeoutMs =
@@ -7635,6 +7639,228 @@ async function kroFetchSiteSearchMentionsQuery(queryRaw, budgetMs) {
   return out;
 }
 
+function kroDecodeBasicHtmlEntities(s) {
+  return String(s || '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&#(\d+);/g, (_, n) => {
+      const code = parseInt(n, 10);
+      return Number.isFinite(code) ? String.fromCharCode(code) : '';
+    })
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>');
+}
+
+/** Полный https URL страницы инвайта (регистр хеша сохраняем). */
+function kroTelegramInviteHttpsUrl(normalized, key) {
+  const k = String(key || '').trim();
+  if (!k.toLowerCase().startsWith('t.me/+')) return '';
+  const n = String(normalized || '').trim();
+  if (/^https?:\/\//i.test(n)) {
+    try {
+      const u = new URL(n);
+      const host = (u.hostname || '').toLowerCase();
+      if (host === 't.me' || host === 'telegram.me') {
+        const path = (u.pathname || '').replace(/^\//, '');
+        if (path.startsWith('+')) return `https://t.me/${path}`;
+      }
+    } catch {
+      /* fallthrough */
+    }
+  }
+  return `https://${k}`;
+}
+
+/** og:title / og:description со страницы t.me/+… (без аккаунта Telegram). */
+function kroParseTelegramInviteOgFromHtml(html) {
+  const h = String(html || '');
+  const ogOne = (prop) => {
+    const reA = new RegExp(`<meta[^>]*property=["']${prop}["'][^>]*content=["']([^"']*)["']`, 'i');
+    let m = h.match(reA);
+    if (m) return kroDecodeBasicHtmlEntities(m[1]);
+    const reB = new RegExp(`<meta[^>]*content=["']([^"']*)["'][^>]*property=["']${prop}["']`, 'i');
+    m = h.match(reB);
+    return m ? kroDecodeBasicHtmlEntities(m[1]) : '';
+  };
+  let title = String(ogOne('og:title') || '').trim();
+  if (!title || /^telegram$/i.test(title)) {
+    const tm = h.match(/<title[^>]*>([^<]{2,400})<\/title>/i);
+    title = tm ? kroDecodeBasicHtmlEntities(tm[1]).trim() : '';
+  }
+  title = title
+    .replace(/^Telegram:\s*/i, '')
+    .replace(/\s+on Telegram\s*$/i, '')
+    .replace(/\s*\|\s*Telegram\s*$/i, '')
+    .replace(/\s*\u2014\s*Telegram\s*$/i, '')
+    .trim();
+  const description = String(ogOne('og:description') || '').trim();
+  if (!title || title.length < 2 || /^telegram\s*$/i.test(title)) return null;
+  return {
+    title: title.slice(0, 200),
+    description: description.slice(0, 480),
+  };
+}
+
+async function kroFetchChannelMetaFromInvitePage(inviteUrl, timeoutMs) {
+  const url = String(inviteUrl || '').trim();
+  if (!/^https:\/\/(t\.me|telegram\.me)\//i.test(url)) return null;
+  const ms = Math.min(12000, Math.max(1500, Number(timeoutMs) || 8000));
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
+      },
+      timeout: ms,
+      maxRedirects: 5,
+      validateStatus: (st) => st >= 200 && st < 400,
+      responseType: 'text',
+    });
+    const html = typeof response.data === 'string' ? response.data : String(response.data || '');
+    return kroParseTelegramInviteOgFromHtml(html);
+  } catch (e) {
+    console.warn(`kroFetchChannelMetaFromInvitePage: ${(e && e.message) ? String(e.message).slice(0, 120) : 'error'}`);
+    return null;
+  }
+}
+
+async function kroInviteFetchDuckDuckGoHtmlSnippet(queryRaw, timeoutMs) {
+  const q = String(queryRaw || '').trim();
+  if (q.length < 2) return { ok: false, preview: '', url: '' };
+  const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(`${q} telegram`)}`;
+  const budget = Math.min(11000, Math.max(1200, Number(timeoutMs) || 4500));
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), budget);
+  try {
+    const r = await fetch(url, {
+      signal: ctl.signal,
+      headers: {
+        'user-agent': 'Mozilla/5.0 (compatible; KRO-InviteSearch/1.0)',
+        accept: 'text/html,text/plain,*/*',
+      },
+    });
+    const txt = await r.text();
+    const plain = kroStripHtmlToText(txt.slice(0, 14000)).replace(/\s+/g, ' ').trim();
+    return { ok: r.ok, preview: plain.slice(0, 1400), url };
+  } catch (e) {
+    return { ok: false, preview: '', url, error: (e && e.message) ? String(e.message).slice(0, 80) : 'fetch_error' };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function kroInviteFetchGoogleHtmlSnippet(queryRaw, timeoutMs) {
+  const q = String(queryRaw || '').trim();
+  if (q.length < 2) return { ok: false, preview: '', url: '' };
+  const url = `https://www.google.com/search?q=${encodeURIComponent(`${q} telegram канал`)}&hl=ru&num=8`;
+  const budget = Math.min(11000, Math.max(1200, Number(timeoutMs) || 4500));
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), budget);
+  try {
+    const r = await fetch(url, {
+      signal: ctl.signal,
+      headers: {
+        'user-agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
+        'accept-language': 'ru-RU,ru;q=0.9',
+      },
+    });
+    const txt = await r.text();
+    const plain = kroStripHtmlToText(txt.slice(0, 16000)).replace(/\s+/g, ' ').trim();
+    return { ok: r.ok, preview: plain.slice(0, 1400), url };
+  } catch (e) {
+    return { ok: false, preview: '', url, error: (e && e.message) ? String(e.message).slice(0, 80) : 'fetch_error' };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function kroInviteCollectExternalWebHints(channelName, budgetMs) {
+  const items = [];
+  let duck_ok = false;
+  let google_ok = false;
+  const cap = Math.min(9000, Math.max(600, Number(budgetMs) || 3500));
+  const t0 = Date.now();
+  if (KRO_INVITE_DDG_HTML_SEARCH) {
+    const left = cap - (Date.now() - t0);
+    if (left > 500) {
+      const d = await kroInviteFetchDuckDuckGoHtmlSnippet(channelName, left - 80);
+      duck_ok = d.ok === true && String(d.preview || '').length > 40;
+      if (String(d.preview || '').trim()) {
+        items.push({ source: 'duckduckgo_html', preview: String(d.preview).slice(0, 900), url: d.url });
+      }
+    }
+  }
+  if (KRO_INVITE_GOOGLE_SITE_SEARCH) {
+    const left = cap - (Date.now() - t0);
+    if (left > 500) {
+      const g = await kroInviteFetchGoogleHtmlSnippet(channelName, left - 80);
+      google_ok = g.ok === true && String(g.preview || '').length > 40;
+      if (String(g.preview || '').trim()) {
+        items.push({ source: 'google_html', preview: String(g.preview).slice(0, 900), url: g.url });
+      }
+    }
+  }
+  return { items, duck_ok, google_ok };
+}
+
+function kroBuildComplaintEvidenceSnippetLinesRu({ reports, siteSearchPages, extWeb }) {
+  const lines = [];
+  const nRep = Array.isArray(reports) ? reports.length : 0;
+  if (nRep > 0) lines.push(`В таблице жалоб сервиса найдено записей: ${nRep}.`);
+  const ssRich = (siteSearchPages || []).some((p) => p && String(p.preview || '').length > 140);
+  if (ssRich) lines.push('На vklader/forteck есть страницы выдачи поиска по названию — см. превью в «Подробнее».');
+  for (const it of (extWeb && extWeb.items) || []) {
+    const pv = String(it.preview || '').replace(/\s+/g, ' ').trim();
+    if (pv.length > 50 && lines.length < 8) {
+      lines.push(`${String(it.source || 'web')}: ${pv.slice(0, 220)}`);
+    }
+  }
+  return lines.slice(0, 8);
+}
+
+/** Три фразы как на главной — чтобы фронт совпадал с серверной шкалой. */
+function kroBuildMoneyVerdictFromAnalyzePayload(bundle) {
+  if (!bundle || typeof bundle !== 'object') {
+    return {
+      tier: 'warn',
+      headline_ru: 'БУДЬ ОСТОРОЖЕН — есть подозрительные моменты',
+      status_code: null,
+      risk_index: null,
+    };
+  }
+  const code = String(bundle.status_code || '').toUpperCase();
+  const risk = bundle.risk_index != null ? Number(bundle.risk_index) : null;
+  const c =
+    bundle.analysis && bundle.analysis.conclusion && typeof bundle.analysis.conclusion.status === 'string'
+      ? String(bundle.analysis.conclusion.status || '')
+      : '';
+  const trIns = bundle.trust_report && bundle.trust_report.insufficient_feed === true;
+  let tier = 'warn';
+  if (c.includes('подтвержд') && c.includes('скам')) tier = 'danger';
+  else if (code === 'DANGER' || (risk != null && Number.isFinite(risk) && risk >= 9)) tier = 'danger';
+  else if (code === 'INSUFFICIENT_FEED' || code === 'UNAVAILABLE' || trIns) tier = 'warn';
+  else if (code === 'SAFE' || c.includes('нарушений не видно') || (risk != null && Number.isFinite(risk) && risk <= 3 && code !== 'SUSPICIOUS'))
+    tier = 'clean';
+  else if (code === 'SUSPICIOUS' || (risk != null && Number.isFinite(risk) && risk >= 5)) tier = 'warn';
+  const headlines = {
+    danger: 'НЕ ДОВЕРЯЙ ДЕНЬГИ — есть серьёзные признаки мошенничества',
+    warn: 'БУДЬ ОСТОРОЖЕН — есть подозрительные моменты',
+    clean: 'ПОКА ВЫГЛЯДИТ ЧИСТО — явных признаков мошенничества не найдено',
+  };
+  return {
+    tier,
+    headline_ru: headlines[tier] || headlines.warn,
+    status_code: bundle.status_code ?? null,
+    risk_index: risk != null && Number.isFinite(risk) ? risk : null,
+  };
+}
+
 /** GET https://host/username — быстрая проверка упоминаний (без Telegram). */
 async function kroFetchMentionPathPage(host, slug, timeoutMs) {
   const cleanHost = String(host || '').replace(/^https?:\/\//i, '').replace(/\/+$/, '').trim();
@@ -8877,10 +9103,26 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
  */
 async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
   const { t0, key, normalized, analyzeLogId, channelNameHint } = opts;
-  const hintRaw = kroSanitizeChannelNameHint(channelNameHint || '');
-  const channelDisplay = kroAnalyzeChannelUiLabel(normalized, key);
+  const inviteUrl = kroTelegramInviteHttpsUrl(normalized, key);
+  let hintWorking = kroSanitizeChannelNameHint(channelNameHint || '');
+  let inviteOgMeta = null;
+  /** @type {'user_hint' | 'telegram_invite_html' | null} */
+  let inviteTitleSource = hintWorking.length >= 3 ? 'user_hint' : null;
+
   const quickBudgetMs = KRO_HOME_QUICK_MS;
   const deadline = t0 + quickBudgetMs;
+
+  if (hintWorking.length < 3 && inviteUrl && deadline - Date.now() > 2500) {
+    const ogBudget = Math.min(8500, Math.max(2200, deadline - Date.now() - 1500));
+    inviteOgMeta = await kroFetchChannelMetaFromInvitePage(inviteUrl, ogBudget);
+    if (inviteOgMeta && inviteOgMeta.title) {
+      hintWorking = kroSanitizeChannelNameHint(inviteOgMeta.title);
+      inviteTitleSource = 'telegram_invite_html';
+    }
+  }
+
+  const hintRaw = hintWorking;
+  const channelDisplay = kroAnalyzeChannelUiLabel(normalized, key);
 
   const withQueueMeta = (payload) => ({
     ...payload,
@@ -8892,7 +9134,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
   });
 
   console.log(
-    `[KRO analyze-channel ${analyzeLogId}] invite_manual channel=${channelDisplay} hint_len=${hintRaw.length}`,
+    `[KRO analyze-channel ${analyzeLogId}] invite_manual channel=${channelDisplay} hint_len=${hintRaw.length} og_title=${inviteTitleSource === 'telegram_invite_html' ? 'yes' : 'no'}`,
   );
 
   const sheetsClient = await getKroSheetsClient();
@@ -8930,6 +9172,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
   const emptyPage = { url: '', ok: false, mentioned: false, preview: '', http_status: undefined };
   const perSite = Math.floor(Math.max(2500, deadline - Date.now() - 9000) / 2);
   const searchBudget = Math.min(5000, Math.max(1200, deadline - Date.now() - perSite * 2 - 6500));
+  const extBudget = Math.min(4500, Math.max(700, deadline - Date.now() - perSite * 2 - 7800));
   const searchQuery =
     (hintRaw && hintRaw.length >= 3)
       ? hintRaw
@@ -8957,7 +9200,16 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
       ? kroFetchSiteSearchMentionsQuery(searchQuery, searchBudget)
       : Promise.resolve([]);
 
-  const [[vkPage, ftPage], siteSearchPages] = await Promise.all([pathPairPromise, searchPromise]);
+  const externalPromise =
+    searchQuery.length >= 3 && (KRO_INVITE_DDG_HTML_SEARCH || KRO_INVITE_GOOGLE_SITE_SEARCH) && deadline - Date.now() > 4200
+      ? kroInviteCollectExternalWebHints(searchQuery, extBudget)
+      : Promise.resolve({ items: [], duck_ok: false, google_ok: false });
+
+  const [[vkPage, ftPage], siteSearchPages, extWeb] = await Promise.all([
+    pathPairPromise,
+    searchPromise,
+    externalPromise,
+  ]);
 
   const claudePayload = {
     mode: 'invite_closed_manual',
@@ -8965,6 +9217,15 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
     slug: key,
     channel_name_hint: hintRaw || null,
     invite_only: true,
+    invite_meta_from_telegram_html: inviteOgMeta
+      ? {
+          title: inviteOgMeta.title,
+          description: String(inviteOgMeta.description || '').slice(0, 420),
+        }
+      : null,
+    invite_title_extract_source: inviteTitleSource,
+    invite_page_url: inviteUrl || null,
+    external_web_hints: (extWeb.items || []).slice(0, 4),
     scam_base: latestProfile
       ? {
           status: latestProfile.status,
@@ -9022,7 +9283,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
   const claudeRemain = Math.max(2000, deadline - Date.now() - 300);
   const claudeJson = await kroAnalyzeChannelWithClaudeFast(claudePayload, claudeRemain);
   console.log(
-    `[KRO analyze-channel ${analyzeLogId}] invite_manual claude_ok=${!!claudeJson} vk_ok=${vkPage.ok} ft_ok=${ftPage.ok} site_search_n=${(siteSearchPages || []).length}`,
+    `[KRO analyze-channel ${analyzeLogId}] invite_manual claude_ok=${!!claudeJson} vk_ok=${vkPage.ok} ft_ok=${ftPage.ok} site_search_n=${(siteSearchPages || []).length} ext_web=${(extWeb.items || []).length} duck=${extWeb.duck_ok} google=${extWeb.google_ok}`,
   );
 
   const evidenceSnips = kroBuildEvidenceSnippetsFromDataset({
@@ -9050,6 +9311,15 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
       }
     }
   }
+  if (Array.isArray(extWeb.items)) {
+    for (const ew of extWeb.items) {
+      if (ew.preview) {
+        pathSnips.push(
+          `[${String(ew.source || 'web')}] ${String(ew.preview).slice(0, 700)}`,
+        );
+      }
+    }
+  }
   const mergedSnips = [...evidenceSnips, ...pathSnips];
   const parsedSimple = kroBuildParsedFromDatasetSnippets(mergedSnips, displayCh);
   parsedSimple.read_path = 'invite_manual_sheets_sites';
@@ -9059,7 +9329,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
   const postsN = sampleArr.length || Number(parsedSimple.posts_fetched || 0) || 0;
 
   const voicePrefix =
-    `Приватный канал по инвайт-ссылке: ленту Telegram здесь не читаем. За ~${Math.round(quickBudgetMs / 1000)} с: scam_base${hintRaw ? ' (поиск по названию)' : ''}, объединённые жалобы (reports), GET vklader/forteck${nameSeg ? ` по пути «${nameSeg}»` : ' (без названия — прямой путь не запрашивали)'}${searchQuery.length >= 3 ? `, поиск на сайтах ?s= («${searchQuery.slice(0, 80)}»)` : ''}, затем Claude.`;
+    `Приватный канал по инвайт-ссылке: ленту Telegram здесь не читаем. За ~${Math.round(quickBudgetMs / 1000)} с: ${inviteTitleSource === 'telegram_invite_html' ? 'название из HTML страницы инвайта (og:title), ' : ''}scam_base${hintRaw ? ' (поиск по названию)' : ''}, объединённые жалобы (reports), GET vklader/forteck${nameSeg ? ` по пути «${nameSeg}»` : ' (без названия — прямой путь не запрашивали)'}${searchQuery.length >= 3 ? `, поиск на сайтах ?s= («${searchQuery.slice(0, 80)}»)` : ''}${(extWeb.items || []).length ? ', доп. веб-поиск (DuckDuckGo/Google по env)' : ''}, затем Claude.`;
   const trustBundle = kroBuildAnalyzeChannelLiveSuccessBundle({
     withQueueMeta,
     channelDisplay,
@@ -9082,6 +9352,19 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
     upload_anchor: '#kro-check-screenshot-row',
   };
 
+  const money_verdict = kroBuildMoneyVerdictFromAnalyzePayload(trustBundle);
+  const complaint_evidence = {
+    invite_channel_title_auto_ru: inviteOgMeta && inviteOgMeta.title ? inviteOgMeta.title : null,
+    invite_title_extract_source: inviteTitleSource,
+    invite_description_snippet_ru: inviteOgMeta && inviteOgMeta.description ? inviteOgMeta.description.slice(0, 280) : null,
+    invite_page_url: inviteUrl || null,
+    reports_sheet_rows: reports.length,
+    site_search_used: searchQuery.length >= 3,
+    external_web_duck_ok: extWeb.duck_ok === true,
+    external_web_google_ok: extWeb.google_ok === true,
+    snippet_lines_ru: kroBuildComplaintEvidenceSnippetLinesRu({ reports, siteSearchPages, extWeb }),
+  };
+
   return res.status(200).json({
     ...trustBundle,
     claude_home_quick: claudeJson,
@@ -9090,6 +9373,8 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
     screenshot_help: screenshotHelp,
     invite_channel_name_hint_used: hintRaw || null,
     invite_site_lookup_segment: nameSeg || null,
+    money_verdict,
+    complaint_evidence,
   });
 }
 
