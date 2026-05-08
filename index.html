@@ -275,9 +275,10 @@
                            <p class="kro-flow-simple-foot">Популярные каналы часто уже в кэше — глубокий отчёт может открыться сразу, без очереди.</p>
                        </div>
                    </div>
+                   <p class="kro-check-combined-lead" id="kro-check-combined-lead">Укажите <strong>канал в Telegram</strong> и при необходимости <strong>название для поиска на сайтах</strong> в одной связке: первое поле — публичный <strong>@username</strong>, ссылка <span class="kro-check-user-explainer-code">t.me/…</span>, текст для автоподбора ника или <strong>инвайт</strong> приватного канала (<span class="kro-check-user-explainer-code">https://t.me/+…</span>); второе — как канал назван в шапке или как его ищут на vklader / forteck в жалобах (для закрытых каналов особенно полезно).</p>
                    <div class="kro-feature1-check-row" id="kro-check-form-row" aria-busy="false">
-                       <label class="kro-report-label" for="kro-check-channel">Публичный @username или приватный инвайт <input type="text" id="kro-check-channel" placeholder="@ник, t.me/… или https://t.me/+… (приватный)" autocomplete="off"></label>
-                       <label class="kro-report-label kro-report-label-sub" for="kro-check-channel-name-hint">Название канала для поиска на сайтах (необязательно, полезно для приватных каналов) <input type="text" id="kro-check-channel-name-hint" placeholder="Как в шапке Telegram или как на vklader / forteck" maxlength="160" autocomplete="off"></label>
+                       <label class="kro-report-label" for="kro-check-channel"><span class="kro-check-field-inline-title">@ник, ссылка или инвайт</span><input type="text" id="kro-check-channel" placeholder="@ник · t.me/… · https://t.me/+…" autocomplete="off" aria-label="Публичный username, ссылка или инвайт"></label>
+                       <label class="kro-report-label kro-report-label-sub" for="kro-check-channel-name-hint"><span class="kro-check-field-inline-title">Название для поиска на сайтах</span><input type="text" id="kro-check-channel-name-hint" placeholder="Необязательно — шапка канала или имя для vklader / forteck" maxlength="160" autocomplete="off" aria-label="Название канала для поиска на сторонних сайтах"></label>
                        <button type="button" class="kro-report-submit" id="kro-check-btn">Проверить гуру</button>
                    </div>
                    <div class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Дополнительные пояснения">
@@ -287,7 +288,7 @@
                            <li><strong>Здесь</strong> — жалобы, мониторинг и при возможности чтение ленты (ориентир до ~30 дней) плюс открытая страница; до 7 минут на запрос, без «канцелярских» отписок.</li>
                            <li><strong>Глубокий разбор</strong> — на странице <span class="kro-check-user-explainer-code">/channel/имя</span>, кнопка «Глубокий анализ ленты».</li>
                            <li><strong>Не заставляем сидеть часами</strong>: при очереди покажем позицию и примерное время; если очередь слишком длинная — честно скажем зайти позже. Быстрый отчёт при этом уже у вас.</li>
-                           <li><strong>Приватный канал (t.me/+…):</strong> укажите <strong>название</strong> во втором поле — тогда проверим упоминания на vklader и forteck по имени; саму ленту по инвайту сервер часто не читает — ниже можно отправить скрины постов.</li>
+                           <li><strong>Приватный канал (t.me/+…):</strong> ленту по инвайту сервер часто не читает — добавьте название во второе поле (см. блок вводов выше) и при необходимости скрины постов ниже.</li>
                        </ul>
                    </div>
                    <div class="kro-check-screenshot-row" id="kro-check-screenshot-row">
@@ -2862,7 +2863,7 @@
                    adv.textContent = rec;
                    if (det) det.open = false;
                }
-              function fillInlineReport(data, queryU, displayLabel, checkStartedAt) {
+              function fillInlineReport(data, queryU, displayLabel, checkStartedAt, channelNameHintForMeta) {
                    var doneBanner = document.getElementById('kro-inline-done-banner');
                   var liveGateEl = document.getElementById('kro-inline-live-gate');
                   var analysisPathEl = document.getElementById('kro-inline-analysis-path');
@@ -2948,10 +2949,36 @@
                                metaParts.push('Жалоб в отчётах: ' + lm.complaints_count);
                            }
                        }
-                       if (data.telegram_username_resolve && data.telegram_username_resolve.resolved_slug) {
-                           metaParts.push(
-                               'Определён публичный адрес: @' + String(data.telegram_username_resolve.resolved_slug || '').replace(/^@+/, '')
-                           );
+                       var hintElMeta = document.getElementById('kro-check-channel-name-hint');
+                       var hintSites =
+                           (typeof channelNameHintForMeta === 'string' && channelNameHintForMeta.trim())
+                               ? channelNameHintForMeta.trim()
+                               : (hintElMeta ? String(hintElMeta.value || '').trim() : '');
+                       var turMeta = data.telegram_username_resolve;
+                       var slugMeta =
+                           turMeta && turMeta.resolved_slug
+                               ? '@' + String(turMeta.resolved_slug || '').replace(/^@+/, '')
+                               : '';
+                       if (slugMeta || hintSites) {
+                           var combinedChanMeta = '';
+                           if (slugMeta && hintSites) {
+                               combinedChanMeta =
+                                   'Канал ' +
+                                   slugMeta +
+                                   ' · поиск на сайтах по «' +
+                                   hintSites.slice(0, 96) +
+                                   (hintSites.length > 96 ? '…' : '') +
+                                   '»';
+                           } else if (slugMeta) {
+                               combinedChanMeta = 'Определён публичный канал ' + slugMeta;
+                           } else {
+                               combinedChanMeta =
+                                   'Поиск на сайтах по названию «' +
+                                   hintSites.slice(0, 96) +
+                                   (hintSites.length > 96 ? '…' : '') +
+                                   '»';
+                           }
+                           metaParts.push(combinedChanMeta);
                        }
                        if (metaEl) {
                            var liveBadge = '';

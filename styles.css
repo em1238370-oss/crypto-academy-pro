@@ -2923,6 +2923,24 @@ body.kro-hero-scrolled .kro-floating-nav {
    color: #fff;
 }
 
+.kro-check-combined-lead {
+   margin: 0 0 14px;
+   padding: 0;
+   font-size: 0.94rem;
+   line-height: 1.5;
+   color: rgba(248, 250, 255, 0.9);
+   max-width: 52rem;
+}
+.kro-check-field-inline-title {
+   display: block;
+   font-size: 0.78rem;
+   font-weight: 600;
+   letter-spacing: 0.03em;
+   text-transform: uppercase;
+   margin-bottom: 7px;
+   opacity: 0.88;
+}
+
 .kro-feature1-check-row {
    display: flex;
    flex-direction: column;
