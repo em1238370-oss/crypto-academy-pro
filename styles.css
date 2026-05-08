@@ -9075,3 +9075,104 @@ body.kro-modal-open {
       animation: kro-check-btc-coin-spin 1.6s ease-in-out infinite !important;
    }
 }
+
+/* ============================================
+   ЖИВЫЕ АНИМАЦИИ — ГЛУБИНА И МЯГКОСТЬ
+   ============================================ */
+
+/* Плавное появление секций при скролле */
+.kro-feature1,
+.kro-f1-loh-card,
+.kro-feature1-stat,
+.kro-feature1-dashboard,
+.kro-feature1-check {
+   opacity: 0;
+   transform: translateY(32px);
+   transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+               transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kro-feature1.kro-visible,
+.kro-f1-loh-card.kro-visible,
+.kro-feature1-stat.kro-visible,
+.kro-feature1-dashboard.kro-visible,
+.kro-feature1-check.kro-visible {
+   opacity: 1;
+   transform: translateY(0);
+}
+
+/* Stagger для карточек лох-типов */
+.kro-f1-loh-card:nth-child(1) { transition-delay: 0s; }
+.kro-f1-loh-card:nth-child(2) { transition-delay: 0.12s; }
+.kro-f1-loh-card:nth-child(3) { transition-delay: 0.24s; }
+
+/* Stagger для стат-карточек */
+.kro-feature1-stat:nth-child(1) { transition-delay: 0s; }
+.kro-feature1-stat:nth-child(2) { transition-delay: 0.1s; }
+.kro-feature1-stat:nth-child(3) { transition-delay: 0.2s; }
+
+/* 3D поворот карточек при hover */
+.kro-f1-loh-card {
+   transform-style: preserve-3d;
+   perspective: 800px;
+   transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+               box-shadow 0.4s ease,
+               border-color 0.3s ease;
+}
+
+.kro-f1-loh-card:hover {
+   transform: translateY(-10px) rotateX(3deg) rotateY(-2deg) scale(1.02);
+   box-shadow: 0 28px 64px rgba(0,0,0,0.55),
+               0 0 0 1px rgba(139, 92, 246, 0.15),
+               0 0 40px rgba(139, 92, 246, 0.06);
+}
+
+/* Плавающий hero — еле заметное покачивание */
+.kro-step1-inner {
+   animation: kro-float 7s ease-in-out infinite;
+}
+
+@keyframes kro-float {
+   0%, 100% { transform: translateY(0px); }
+   50%       { transform: translateY(-6px); }
+}
+
+.kro-step1-inner:hover {
+   animation-play-state: paused;
+}
+
+/* Dashboard — пульс живых данных */
+.kro-feature1-dashboard {
+   animation: kro-dashboard-breathe 6s ease-in-out infinite;
+}
+
+@keyframes kro-dashboard-breathe {
+   0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 12px 48px rgba(0,0,0,0.5), 0 0 60px rgba(184, 74, 74, 0.07); }
+   50%       { box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 16px 56px rgba(0,0,0,0.55), 0 0 80px rgba(184, 74, 74, 0.13); }
+}
+
+/* Эмодзи — покачивание при hover */
+.kro-f1-loh-avatar {
+   display: inline-block;
+   transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kro-f1-loh-card:hover .kro-f1-loh-avatar {
+   transform: scale(1.4) rotate(-10deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .kro-feature1,
+   .kro-f1-loh-card,
+   .kro-feature1-stat,
+   .kro-feature1-dashboard,
+   .kro-feature1-check {
+      opacity: 1;
+      transform: none;
+      transition: none;
+   }
+
+   .kro-step1-inner { animation: none; }
+   .kro-feature1-dashboard { animation: none; }
+   .kro-f1-loh-card:hover { transform: translateY(-4px); }
+}
