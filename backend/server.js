@@ -5059,12 +5059,78 @@ function kroNormalizePublicSnapshotLine(text, slug) {
   return s;
 }
 
+function kroStripMarkdownToText(markdown) {
+  return String(markdown || '')
+    .replace(/\\([_*\[\]()~`>#+\-=|{}.!])/g, '$1')
+    .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)]\((?:https?:\/\/|tg:\/\/)[^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')
+    .replace(/[*_`~]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function kroIsJinaTelegramMarkdownMetaLine(line, slug) {
+  const s = String(line || '').trim();
+  if (!s) return true;
+  const low = s.toLowerCase();
+  const slugLow = String(slug || '').toLowerCase();
+  if (/^(title|url source|markdown content):/i.test(s)) return true;
+  if (/^\[?_?!?\[image\s+\d+]/i.test(s) || /^!\[image\s+\d+]/i.test(s)) return true;
+  if (/^this media is not supported/i.test(s)) return true;
+  if (/^view in telegram$/i.test(s)) return true;
+  if (/^(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}$/i.test(s)) return true;
+  if (/^\d+(?:[.,]\d+)?[km]?\s+views?\b/i.test(s)) return true;
+  if (slugLow && low.includes(`t.me/${slugLow}/`) && /\bviews?\b/i.test(s)) return true;
+  if (/^\d+(?:[.,]\d+)?[km]?(?:\s+|\S*!\[image\s+\d+])/.test(low) && low.includes('blob:http://localhost')) return true;
+  if (/^https?:\/\//i.test(s) && s.length < 140) return true;
+  return false;
+}
+
+function kroExtractJinaTelegramMarkdownSnippets(body, slug) {
+  const raw = String(body || '');
+  if (!/^Title:/m.test(raw) && raw.indexOf('Markdown Content:') === -1) return null;
+  const titleM = raw.match(/^Title:\s*(.+)$/m);
+  const title = titleM ? kroStripMarkdownToText(titleM[1]).slice(0, 120) : '';
+  const content = raw.includes('Markdown Content:')
+    ? raw.slice(raw.indexOf('Markdown Content:') + 'Markdown Content:'.length)
+    : raw;
+  const groups = [];
+  let cur = [];
+  const flush = () => {
+    const joined = cur.join(' ').replace(/\s+/g, ' ').trim();
+    cur = [];
+    if (joined.length >= 20) groups.push(joined);
+  };
+
+  for (const lineRaw of content.split(/\r?\n/)) {
+    const original = String(lineRaw || '').trim();
+    if (!original) continue;
+    if (/\bviews?\b/i.test(original) && /https?:\/\/t\.me\//i.test(original)) {
+      flush();
+      continue;
+    }
+    const cleaned = kroStripMarkdownToText(original);
+    if (kroIsJinaTelegramMarkdownMetaLine(original, slug) || kroIsJinaTelegramMarkdownMetaLine(cleaned, slug)) {
+      if (/^(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}$/i.test(cleaned)) flush();
+      continue;
+    }
+    if (!cleaned || cleaned.length < 12) continue;
+    cur.push(cleaned);
+    if (cur.join(' ').length >= 700 || cur.length >= 6) flush();
+  }
+  flush();
+
+  const snippets = kroFilterPublicSnapshotSnippets(groups, slug);
+  return snippets.length ? { slug, title, snippets, fetched_at: new Date().toISOString(), source: 'r.jina.ai' } : null;
+}
+
 function kroFilterPublicSnapshotSnippets(lines, slug) {
   return (Array.isArray(lines) ? lines : [])
     .map((x) => kroNormalizePublicSnapshotLine(x, slug))
     .filter(Boolean)
     .filter((x, i, a) => a.indexOf(x) === i)
-    .slice(0, 14)
+    .slice(0, 24)
     .map((x) => (x.length > 260 ? `${x.slice(0, 257)}...` : x));
 }
 
@@ -6240,6 +6306,8 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
   const logPrefix = logLabel ? `[KRO public-snapshot ${logLabel}]` : '[KRO public-snapshot]';
   const parseHtml = (html) => {
     if (!html || html.length < 100) return null;
+    const jinaParsed = kroExtractJinaTelegramMarkdownSnippets(html, slug);
+    if (jinaParsed) return jinaParsed;
     const titleM = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) || html.match(/<title>([^<]+)<\/title>/i);
     const title = titleM ? kroStripHtmlToText(titleM[1]).slice(0, 120) : '';
     const textRegexes = [
