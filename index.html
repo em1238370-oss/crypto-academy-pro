@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260508-kro-neutral-main-bg">
+   <link rel="stylesheet" href="styles.css?v=20260510-kro-result-clarity">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -377,29 +377,15 @@
                                </div>
                                <p class="kro-inline-verdict-secondary" id="kro-inline-verdict-secondary" hidden></p>
                                <p class="kro-inline-channel-sub" id="kro-inline-channel-sub"></p>
-                               <h3 class="kro-glance-h">Почему система так считает</h3>
+                               <h3 class="kro-glance-h">Три факта</h3>
                                <ul class="kro-inline-top-facts kro-glance-reason-list" id="kro-inline-top-facts"></ul>
-                               <div class="kro-glance-stack-card" id="kro-glance-quote-wrap">
-                                   <h3 class="kro-glance-h">Пример из канала</h3>
-                                   <blockquote class="kro-glance-quote" id="kro-glance-quote"></blockquote>
-                                   <p class="kro-glance-quote-note" id="kro-glance-quote-note"></p>
-                               </div>
-                               <div class="kro-glance-stack-card" id="kro-glance-meaning-wrap">
-                                   <h3 class="kro-glance-h">Что это значит для вас</h3>
-                                   <p class="kro-glance-meaning" id="kro-glance-meaning"></p>
-                               </div>
                                <div class="kro-glance-stack-card kro-glance-do-card" id="kro-glance-do-wrap">
-                                   <h3 class="kro-glance-h">Что делать</h3>
+                                   <h3 class="kro-glance-h">Совет</h3>
                                    <p class="kro-inline-one-advice" id="kro-inline-one-advice"></p>
-                               </div>
-                               <div class="kro-glance-stack-card kro-glance-manip-wrap" id="kro-glance-manip-wrap">
-                                   <h3 class="kro-glance-h">Как тебя могут манипулировать</h3>
-                                   <p class="kro-glance-manip-hook" id="kro-glance-manip-hook"></p>
-                                   <ul class="kro-glance-manip-list" id="kro-glance-manip-list"></ul>
                                </div>
                            </div>
                            <details class="kro-inline-tech-details" id="kro-inline-tech-details">
-                               <summary class="kro-inline-tech-details-sum">Подробнее</summary>
+                               <summary class="kro-inline-tech-details-sum">Показать полный анализ ▼</summary>
                                <div class="kro-inline-tech-details-inner">
                            <p class="kro-inline-report-eyebrow" id="kro-inline-eyebrow">Проверка канала</p>
                            <h3 class="kro-inline-report-title" id="kro-inline-title">—</h3>
@@ -2846,46 +2832,21 @@
                    return kroMoneyTrustTier(data);
                }
                function kroGlanceRiskLabel(tier) {
-                   if (tier === 'danger') return '🔴 Риск: Высокий';
-                   if (tier === 'clean') return '🟢 Риск: Низкий';
-                   if (tier === 'insufficient') return '⚪ Риск: мало данных для уверенности';
-                   return '🟡 Риск: Средний';
+                   if (tier === 'danger') return '🚨 Серьёзные признаки мошенничества';
+                   if (tier === 'clean') return '✅ Явных признаков мошенничества не найдено';
+                   return '⚠️ Есть вопросы — не спеши с деньгами';
                }
-               function kroGlanceFormatReasonLi(line) {
-                   var s = String(line || '').trim();
-                   if (!s) return '';
-                   var sep = '';
-                   var sepLen = 0;
-                   var cand = [': ', ' — ', ' – ', ' - '];
-                   for (var ci = 0; ci < cand.length; ci++) {
-                       var ix = s.indexOf(cand[ci]);
-                       if (ix > 4 && ix < 140) {
-                           sep = cand[ci];
-                           sepLen = cand[ci].length;
-                           var title = s.slice(0, ix).trim();
-                           var why = s.slice(ix + sepLen).trim();
-                           if (why.length > 6) {
-                               return (
-                                   '<li class="kro-glance-reason-item">' +
-                                   '<span class="kro-glance-reason-mark" aria-hidden="true">❗️</span>' +
-                                   '<span class="kro-glance-reason-body">' +
-                                   '<strong class="kro-glance-reason-title">' +
-                                   esc(title) +
-                                   '</strong>' +
-                                   '<span class="kro-glance-reason-arrow"> → </span>' +
-                                   '<span class="kro-glance-reason-why">' +
-                                   esc(why) +
-                                   '</span></span></li>'
-                               );
-                           }
-                           break;
-                       }
-                   }
+               function kroGlanceFormatReasonLi(fact) {
+                   var f = fact && typeof fact === 'object' ? fact : { icon: '•', title: String(fact || ''), why: '' };
+                   var title = String(f.title || '').trim();
+                   var why = String(f.why || '').trim();
+                   if (!title && !why) return '';
                    return (
                        '<li class="kro-glance-reason-item">' +
-                       '<span class="kro-glance-reason-mark" aria-hidden="true">❗️</span>' +
-                       '<span class="kro-glance-reason-one">' +
-                       esc(s) +
+                       '<span class="kro-glance-reason-mark" aria-hidden="true">' + esc(String(f.icon || '•')) + '</span>' +
+                       '<span class="kro-glance-reason-body">' +
+                       (title ? '<strong class="kro-glance-reason-title">' + esc(title) + '</strong>' : '') +
+                       (why ? '<span class="kro-glance-reason-why">' + esc(why) + '</span>' : '') +
                        '</span></li>'
                    );
                }
@@ -2925,6 +2886,205 @@
                    }
                    return 'Фраза из доступного текста — проверьте, есть ли рядом правила входа, стопы и прозрачный риск.';
                }
+               function kroFormatCheckedDateRu(iso) {
+                   var d = iso ? new Date(String(iso)) : new Date();
+                   if (isNaN(d.getTime())) d = new Date();
+                   return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+               }
+               function kroGlanceReadMeta(data) {
+                   var lm = data && data.live_metrics ? data.live_metrics : {};
+                   var le = data && data.live_evidence && typeof data.live_evidence === 'object' ? data.live_evidence : {};
+                   var ab = data && data.analysis_basis && typeof data.analysis_basis === 'object' ? data.analysis_basis : {};
+                   var posts = null;
+                   [le.posts_fetched, ab.posts_read, lm.posts_fetched, data && data.posts_read].some(function (v) {
+                       if (v != null && v !== '' && !isNaN(Number(v))) {
+                           posts = Math.max(0, Math.round(Number(v)));
+                           return true;
+                       }
+                       return false;
+                   });
+                   var days = null;
+                   [le.analysis_window_days, lm.analysis_window_days, ab.period_days, data && data.period_days].some(function (v) {
+                       if (v != null && v !== '' && !isNaN(Number(v))) {
+                           days = Math.max(1, Math.round(Number(v)));
+                           return true;
+                       }
+                       return false;
+                   });
+                   return { posts: posts, days: days };
+               }
+               function kroGlanceStatusMetaText(data) {
+                   var m = kroGlanceReadMeta(data);
+                   var parts = ['Проверено ' + kroFormatCheckedDateRu(data && data.analysis_completed_at_iso)];
+                   parts.push('Прочитано ' + (m.posts != null ? m.posts : 0) + ' постов за ' + (m.days != null ? m.days : 30) + ' дней');
+                   return parts.join(' · ');
+               }
+               function kroFactKey(fact) {
+                   return String((fact && fact.title) || '').toLowerCase().replace(/\s+/g, ' ').trim();
+               }
+               function kroPushFactUnique(list, fact) {
+                   if (!fact || !fact.title) return;
+                   var key = kroFactKey(fact);
+                   if (!key || list.some(function (x) { return kroFactKey(x) === key; })) return;
+                   list.push({
+                       icon: fact.icon || '•',
+                       title: String(fact.title || '').trim(),
+                       why: String(fact.why || '').trim(),
+                   });
+               }
+               function kroBuildThreeFacts(data, tier) {
+                   var facts = [];
+                   var a = data.analysis || {};
+                   var lm = data.live_metrics || {};
+                   var flags = Array.isArray(data.flags) ? data.flags : [];
+                   var complaints = lm.complaints_count != null && !isNaN(Number(lm.complaints_count)) ? Number(lm.complaints_count) : null;
+                   var readMeta = kroGlanceReadMeta(data);
+                   var firstFlag = flags[0] || null;
+                   var flagTitle = firstFlag && firstFlag.title ? String(firstFlag.title).trim() : '';
+                   var flagWhy = firstFlag && firstFlag.explanation ? String(firstFlag.explanation).replace(/\s+/g, ' ').trim() : '';
+                   if (flagWhy.length > 150) flagWhy = flagWhy.slice(0, 147) + '…';
+                   var joined = [
+                       flagTitle,
+                       flagWhy,
+                       Array.isArray(a.content_behavior) ? a.content_behavior.join(' ') : '',
+                       Array.isArray(a.ties_risk_factors) ? a.ties_risk_factors.join(' ') : '',
+                   ].join(' ').toLowerCase();
+                   if (/vip|вип|платн|подписк|закрыт|доступ/.test(joined)) {
+                       kroPushFactUnique(facts, {
+                           icon: '⚠️',
+                           title: 'Платный закрытый формат',
+                           why: 'Каналы которые прячут контент за оплату сложнее проверить заранее.',
+                       });
+                   } else if (flagTitle) {
+                       kroPushFactUnique(facts, {
+                           icon: tier === 'danger' ? '🚨' : '⚠️',
+                           title: flagTitle,
+                           why: flagWhy || 'Это влияет на решение о деньгах, потому что повышает неопределённость.',
+                       });
+                   }
+                   if (complaints == null || complaints === 0) {
+                       kroPushFactUnique(facts, {
+                           icon: '✅',
+                           title: 'Жалоб в нашей базе нет',
+                           why: 'Это хороший знак — но не гарантия.',
+                       });
+                   } else {
+                       kroPushFactUnique(facts, {
+                           icon: complaints >= 2 || tier === 'danger' ? '🚨' : '⚠️',
+                           title: complaints === 1 ? 'Есть жалоба в нашей базе' : 'Есть жалобы в нашей базе',
+                           why: complaints === 1
+                               ? 'Один сигнал ещё не доказывает мошенничество, но деньги лучше не переводить без перепроверки.'
+                               : 'Несколько жалоб — серьёзный повод остановиться перед оплатой.',
+                       });
+                   }
+                   kroPushFactUnique(facts, {
+                       icon: '📊',
+                       title: 'Прочитано ' + (readMeta.posts != null ? readMeta.posts : 0) + ' постов',
+                       why: readMeta.posts != null && readMeta.posts >= 15
+                           ? 'Выборка достаточна для короткого вывода, но не заменяет личную проверку.'
+                           : 'Небольшая выборка — вывод предварительный.',
+                   });
+                   if (facts.length < 3 && tier === 'danger') {
+                       kroPushFactUnique(facts, {
+                           icon: '🚨',
+                           title: 'Есть красные флаги в тексте',
+                           why: 'Перед переводом денег нужны внешние отзывы и подтверждения, не только посты канала.',
+                       });
+                   }
+                   if (facts.length < 3 && tier === 'clean') {
+                       kroPushFactUnique(facts, {
+                           icon: '✅',
+                           title: 'Красных флагов не видно',
+                           why: 'Мы не увидели явных признаков обмана в доступных данных.',
+                       });
+                   }
+                   if (facts.length < 3) {
+                       kroPushFactUnique(facts, {
+                           icon: '⚠️',
+                           title: 'Решение о деньгах остаётся за тобой',
+                           why: 'Даже спокойный отчёт не убирает рыночный риск и риск ошибки.',
+                       });
+                   }
+                   return facts.slice(0, 3);
+               }
+               function kroAdviceForTier(tier) {
+                   if (tier === 'danger') return 'Не переводи деньги. Поищи отзывы живых людей в Google.';
+                   if (tier === 'clean') return 'Начинай с суммы которую не страшно потерять полностью.';
+                   return 'Понаблюдай за каналом 2 недели бесплатно перед тем как платить.';
+               }
+               function kroIsMeaningfulDetailQuote(s) {
+                   var t = kroSanitizeChannelSnippet(String(s || '').trim());
+                   if (t.length < 28) return false;
+                   var low = t.toLowerCase();
+                   if (low.indexOf('подождал бы ещё чуть') !== -1) return false;
+                   if (/^(канал|проверено|статус|итоговый статус|метка времени)/i.test(t)) return false;
+                   return true;
+               }
+               function kroCollectDetailQuotes(data) {
+                   var out = [];
+                   var push = function (s) {
+                       var t = kroSanitizeChannelSnippet(String(s || '').trim());
+                       if (!kroIsMeaningfulDetailQuote(t)) return;
+                       if (out.some(function (x) { return x.slice(0, 90) === t.slice(0, 90); })) return;
+                       out.push(t.length > 260 ? t.slice(0, 257) + '…' : t);
+                   };
+                   var rows = typeof kroBuildFindingsRows === 'function' ? kroBuildFindingsRows(data) : (window.__kroFindingsLastRows || []);
+                   rows.forEach(function (row) { if (row && row.snippet) push(row.snippet); });
+                   var le = data && data.live_evidence && typeof data.live_evidence === 'object' ? data.live_evidence : null;
+                   (le && Array.isArray(le.sample_posts) ? le.sample_posts : []).forEach(push);
+                   (Array.isArray(data && data.citations) ? data.citations : []).forEach(push);
+                   var tr = data && data.trust_report && typeof data.trust_report === 'object' ? data.trust_report : null;
+                   if (tr && tr.ui_modes && tr.ui_modes.detailed && tr.ui_modes.detailed.example_quote_ru) {
+                       push(tr.ui_modes.detailed.example_quote_ru);
+                   }
+                   return out.slice(0, 5);
+               }
+               function kroHumanSourcesList(ab) {
+                   var map = {
+                       telethon: 'чтение Telegram',
+                       't.me/s': 'открытая лента t.me/s',
+                       public_snapshot: 'открытая лента',
+                       dataset_evidence: 'база и жалобы',
+                       scam_base: 'база жалоб',
+                       channels_watch: 'мониторинг',
+                       reports: 'отчёты пользователей',
+                       site_search: 'поиск по сайтам',
+                       claude: 'дополнительный разбор',
+                   };
+                   var src = ab && Array.isArray(ab.sources_used) ? ab.sources_used : [];
+                   return src.map(function (s) { return map[s] || String(s); }).filter(Boolean);
+               }
+               function kroRenderFullAnalysisDetails(data, displayLabel) {
+                   var det = document.getElementById('kro-inline-tech-details');
+                   if (!det) return;
+                   var inner = det.querySelector('.kro-inline-tech-details-inner');
+                   if (!inner) return;
+                   var ab = data.analysis_basis && typeof data.analysis_basis === 'object' ? data.analysis_basis : null;
+                   var readMeta = kroGlanceReadMeta(data);
+                   var quotes = kroCollectDetailQuotes(data);
+                   var sources = kroHumanSourcesList(ab);
+                   var tech = [
+                       'Канал: ' + (displayLabel || '—'),
+                       'Дата проверки: ' + kroFormatCheckedDateRu(data.analysis_completed_at_iso),
+                       'Постов с текстом: ' + (readMeta.posts != null ? readMeta.posts : 0),
+                       'Окно анализа: ' + (readMeta.days != null ? readMeta.days : 30) + ' дней',
+                   ];
+                   if (ab && ab.read_path) tech.push('Путь чтения: ' + String(ab.read_path));
+                   inner.innerHTML =
+                       '<div class="kro-full-analysis">' +
+                       '<h4 class="kro-full-analysis-h">Цитаты из постов</h4>' +
+                       (quotes.length
+                           ? '<ul class="kro-full-analysis-quotes">' + quotes.map(function (q) { return '<li>«' + esc(q) + '»</li>'; }).join('') + '</ul>'
+                           : '<p class="kro-full-analysis-muted">Значимых цитат из постов в ответе нет. Мы не подставляем случайные или выдуманные фразы.</p>') +
+                       '<h4 class="kro-full-analysis-h">Технические детали</h4>' +
+                       '<ul class="kro-full-analysis-list">' + tech.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
+                       '<h4 class="kro-full-analysis-h">Источники</h4>' +
+                       (sources.length
+                           ? '<ul class="kro-full-analysis-list">' + sources.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'
+                           : '<p class="kro-full-analysis-muted">Источники в ответе не перечислены.</p>') +
+                       '</div>';
+                   det.open = false;
+               }
                function kroFillAtAGlance(data, displayLabel) {
                    var riskCard = document.getElementById('kro-glance-risk-card');
                    var riskLab = document.getElementById('kro-glance-risk-label');
@@ -2933,56 +3093,18 @@
                    var sub = document.getElementById('kro-inline-channel-sub');
                    var ul = document.getElementById('kro-inline-top-facts');
                    var adv = document.getElementById('kro-inline-one-advice');
-                   var qWrap = document.getElementById('kro-glance-quote-wrap');
-                   var qEl = document.getElementById('kro-glance-quote');
-                   var qNote = document.getElementById('kro-glance-quote-note');
-                   var meanEl = document.getElementById('kro-glance-meaning');
-                   var meanWrap = document.getElementById('kro-glance-meaning-wrap');
-                   var hookEl = document.getElementById('kro-glance-manip-hook');
-                   var manipList = document.getElementById('kro-glance-manip-list');
-                   var det = document.getElementById('kro-inline-tech-details');
                    if (!riskLab || !riskBlurb || !ul || !adv) return;
-                   var mv = data.money_verdict;
                    var glanceTier = kroGlanceRiskTier(data);
-                   var moneyTier = (mv && mv.tier) ? mv.tier : kroMoneyTrustTier(data);
-                   var phrases = {
-                       danger: 'НЕ ДОВЕРЯЙ ДЕНЬГИ — есть серьёзные признаки мошенничества',
-                       warn: 'БУДЬ ОСТОРОЖЕН — есть подозрительные моменты',
-                       clean: 'ПОКА ВЫГЛЯДИТ ЧИСТО — явных признаков мошенничества не найдено',
-                   };
-                   var secondaryLine = (mv && mv.headline_ru) ? String(mv.headline_ru).trim() : (phrases[moneyTier] || phrases.warn);
                    riskLab.textContent = kroGlanceRiskLabel(glanceTier);
                    if (riskCard) {
                        riskCard.className =
                            'kro-glance-risk-card kro-glance-risk-card--' +
                            (glanceTier === 'clean' ? 'low' : glanceTier === 'danger' ? 'high' : glanceTier === 'insufficient' ? 'muted' : 'mid');
                    }
-                   var tr = data.trust_report && typeof data.trust_report === 'object' ? data.trust_report : {};
-                   var umQ = tr.ui_modes && tr.ui_modes.quick ? tr.ui_modes.quick : {};
-                   var umD = tr.ui_modes && tr.ui_modes.detailed ? tr.ui_modes.detailed : {};
-                   var blurb =
-                       String(umQ.summary_ru || '').trim() ||
-                       String(tr.short_take_ru || '').trim();
-                   if (!blurb) blurb = String(data.message || '').trim();
-                   if (!blurb && glanceTier === 'insufficient') {
-                       blurb =
-                           'Лента в этот ответ почти не попала — опираемся на карточку канала, жалобы и внешние упоминания. Решение о деньгах лучше отложить, пока не будет текста постов.';
-                   }
-                   if (!blurb) {
-                       blurb =
-                           glanceTier === 'danger'
-                               ? 'Есть серьёзные сигналы перед переводом денег или подписке на «сигналы».'
-                               : glanceTier === 'clean'
-                                   ? 'Явных красных флагов в доступных данных не видно — это не «гарантия», а текущая картина.'
-                                   : 'Есть поводы перепроверить канал и не спешить с суммой.';
-                   }
-                   riskBlurb.textContent = blurb;
+                   riskBlurb.textContent = kroGlanceStatusMetaText(data);
                    if (sec) {
-                       sec.textContent = secondaryLine;
-                       sec.hidden = !secondaryLine || secondaryLine === blurb;
-                       sec.className =
-                           'kro-inline-verdict-secondary kro-inline-verdict-secondary--' +
-                           (moneyTier === 'clean' ? 'ok' : moneyTier === 'danger' ? 'danger' : 'warn');
+                       sec.textContent = '';
+                       sec.hidden = true;
                    }
                    if (sub) {
                        var parts = [];
@@ -2994,151 +3116,10 @@
                        sub.textContent = parts.join(' · ');
                        sub.hidden = parts.length === 0;
                    }
-                   var a = data.analysis || {};
-                   var lm = data.live_metrics || {};
-                   var flags = Array.isArray(data.flags) ? data.flags : [];
-                   var complaints = lm.complaints_count != null && !isNaN(Number(lm.complaints_count)) ? Number(lm.complaints_count) : null;
-                   var ageDays = kroExtractAgeDaysInBi(a);
-                   var promN = kroExtractPromotedCount(a);
-                   var hasLoss = kroScanLossMention(a);
-                   var facts = [];
-                   var pushUnique = function (line) {
-                       var t = String(line || '').trim();
-                       if (!t || facts.indexOf(t) !== -1) return;
-                       facts.push(t);
-                   };
-                   var ceSn = data.complaint_evidence && Array.isArray(data.complaint_evidence.snippet_lines_ru)
-                       ? data.complaint_evidence.snippet_lines_ru
-                       : [];
-                   if (glanceTier !== 'insufficient') {
-                       for (var sx = 0; sx < ceSn.length && facts.length < 2; sx++) {
-                           pushUnique(ceSn[sx]);
-                       }
-                   }
-                   if (glanceTier === 'insufficient') {
-                       pushUnique('Мало текста из Telegram в этом ответе — вывод сдержанный; опираемся на жалобы, мониторинг и открытые страницы.');
-                       if (complaints != null && complaints > 0) {
-                           pushUnique('Жалобы в базе сервиса: ' + complaints + ' — это отдельный сигнал, даже без полной ленты.');
-                       }
-                       pushUnique('Не воспринимайте числовую шкалу как точный прогноз — без постов она условная.');
-                   } else if (moneyTier === 'clean') {
-                       if (ageDays != null && ageDays >= 365) {
-                           pushUnique('Канал работает больше года — время для оценки истории, не для импульсивного входа крупной суммой.');
-                       } else if (ageDays != null && ageDays >= 180) {
-                           pushUnique('Канал существует около ' + ageDays + ' дн. — можно смотреть историю, но крупную сумму не спешите.');
-                       }
-                       if (hasLoss) pushUnique('В тексте встречаются убыточные сделки или минусы — честнее, чем «одни профиты».');
-                       if (complaints === 0) pushUnique('Жалоб по этому каналу в базе сервиса сейчас нет.');
-                       else if (complaints === 1) pushUnique('В базе есть жалоба по каналу — крупным переводам это противопоказано.');
-                       else if (complaints != null && complaints > 1) pushUnique('Несколько жалоб в базе — относитесь к переводу холодно.');
-                   } else {
-                       if (ageDays != null && ageDays < 120) {
-                           pushUnique('Молодой канал (около ' + ageDays + ' дн.) — для крупных сумм времени мало, чтобы оценить честность.');
-                       }
-                       if (promN != null && promN >= 2) {
-                           pushUnique('Много перекрёстной рекламы других каналов (ориентир ' + promN + '+) — частый признак сетки или отъёма трафика.');
-                       }
-                       if (flags.length && facts.length < 3) {
-                           var f0 = flags[0];
-                           var ft = f0 && f0.title ? String(f0.title).trim() : '';
-                           var fx = f0 && f0.explanation ? String(f0.explanation).trim().replace(/\s+/g, ' ') : '';
-                           if (fx.length > 180) fx = fx.slice(0, 177) + '…';
-                           if (ft || fx) pushUnique(ft ? ft + (fx ? ': ' + fx : '') : fx);
-                       }
-                       if (complaints != null && complaints >= 2) pushUnique('Несколько жалоб в базе сервиса — отдельный сигнал перед любым переводом.');
-                       else if (complaints === 1) pushUnique('В базе зафиксирована жалоба по каналу — перепроверьте историю снаружи Telegram.');
-                       var rs = a.conclusion && Array.isArray(a.conclusion.reasons) ? a.conclusion.reasons : [];
-                       for (var ri = 0; ri < rs.length && facts.length < 3; ri++) {
-                           var one = String(rs[ri] || '').trim();
-                           if (one.length > 15 && one.length < 220) pushUnique(one);
-                       }
-                       var ties = Array.isArray(a.ties_risk_factors) ? a.ties_risk_factors : [];
-                       for (var ti = 0; ti < ties.length && facts.length < 3; ti++) {
-                           var tx = String(ties[ti] || '').trim();
-                           if (tx.length > 15 && tx.length < 220) pushUnique(tx);
-                       }
-                   }
-                   var padClean = [
-                       'Рынок всегда рискует капиталом — не вкладывайте больше, чем готовы потерять полностью.',
-                       'Не увеличивайте сумму спешно после пары удачных сделок подряд.',
-                       'Перепроверьте канал по отзывам вне Telegram, не только по постам внутри.',
-                   ];
-                   var padDanger = [
-                       'Перевод незнакомому человеку или «под сигналы» без договора — почти всегда худший сценарий.',
-                       'Не поддавайтесь на срочность и «последние места» в закрытых чатах.',
-                       'Сохраняйте переписку и реквизиты — при споре это важно.',
-                   ];
-                   var padWarn = [
-                       'Мало данных по ленте — решение о деньгах лучше отложить и перепроверить канал снаружи.',
-                       'Любая «гарантия» прибыли в переписке — повод остановиться.',
-                       'Не переводите крупную сумму с первого контакта.',
-                   ];
-                   var pad = moneyTier === 'clean' ? padClean : moneyTier === 'danger' ? padDanger : padWarn;
-                   for (var pi = 0; pi < pad.length && facts.length < 3; pi++) pushUnique(pad[pi]);
-                   facts = facts.slice(0, 3);
+                   var facts = kroBuildThreeFacts(data, glanceTier);
                    ul.innerHTML = facts.map(kroGlanceFormatReasonLi).join('');
-                   var rec =
-                       String(umQ.recommendation_ru || '').trim() ||
-                       String(umD.recommendation_ru || '').trim();
-                   if (!rec || rec.length < 12) {
-                       if (moneyTier === 'danger') {
-                           rec = 'Не переводите деньги в ближайшие 48 часов. Найдите отзывы живых людей вне этого канала.';
-                       } else if (moneyTier === 'warn' || glanceTier === 'insufficient') {
-                           rec = 'Начните с суммы, которую не жалко потерять полностью, или отложите вход, пока не будет больше фактов.';
-                       } else {
-                           rec = 'Попросите автора показать убыточные сделки и правила риска — честный трейдер не откажет.';
-                       }
-                   }
-                   adv.textContent = rec;
-                   var quoteText = kroGlancePickQuoteText(data);
-                   if (qWrap && qEl && qNote) {
-                       if (quoteText) {
-                           qWrap.hidden = false;
-                           qWrap.classList.remove('hidden');
-                           qEl.textContent = '«' + quoteText + '»';
-                           qNote.textContent = kroGlanceQuoteExplain(data, quoteText);
-                       } else {
-                           qWrap.hidden = true;
-                           qWrap.classList.add('hidden');
-                           qEl.textContent = '';
-                           qNote.textContent = '';
-                       }
-                   }
-                   var meaning =
-                       String(umD.empathy_ru || '').trim() ||
-                       String(umQ.for_you_ru || '').trim();
-                   if (!meaning) {
-                       meaning =
-                           glanceTier === 'danger'
-                               ? 'Новичку или при эмоциональном входе легко потерять быстрее, чем кажется из красивых постов.'
-                               : glanceTier === 'clean'
-                                   ? 'Спокойный тон в ответе не отменяет рыночный риск — решайте сумму и правила заранее.'
-                                   : 'Пока картина неоднозначна, безопаснее уменьшить сумму или подождать больше фактов.';
-                   }
-                   if (meanEl) meanEl.textContent = meaning;
-                   if (meanWrap) meanWrap.hidden = false;
-                   var dn = tr.deception_narrative && typeof tr.deception_narrative === 'object' ? tr.deception_narrative : null;
-                   var defBullets = [
-                       'создают срочность («только сегодня», «последние места»)',
-                       'показывают большие проценты без реальных сумм и просадок',
-                       'продают VIP как «спасение» после серии минусов',
-                       'заставляют действовать быстро в личке или чате оплаты',
-                   ];
-                   if (hookEl) {
-                       hookEl.textContent = dn && String(dn.hook || '').trim()
-                           ? String(dn.hook).trim()
-                           : 'Не про запугивание — про то, чтобы узнавать приёмы и не действовать на автомате.';
-                   }
-                   if (manipList) {
-                       var bl = dn && Array.isArray(dn.bullets) && dn.bullets.length ? dn.bullets : defBullets;
-                       manipList.innerHTML = bl
-                           .slice(0, 6)
-                           .map(function (x) {
-                               return '<li>' + esc(String(x || '').trim()) + '</li>';
-                           })
-                           .join('');
-                   }
-                   if (det) det.open = false;
+                   adv.textContent = kroAdviceForTier(glanceTier);
+                   kroRenderFullAnalysisDetails(data, displayLabel);
                }
               function fillInlineReport(data, queryU, displayLabel, checkStartedAt, channelNameHintForMeta) {
                    var doneBanner = document.getElementById('kro-inline-done-banner');
