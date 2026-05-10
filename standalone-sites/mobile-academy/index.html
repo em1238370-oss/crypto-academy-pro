@@ -3,184 +3,206 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0d0f18">
-  <title>Private Academy | Mobile Landing</title>
-  <meta name="description" content="Мобильный лендинг академии в стиле community-продукта: обложка, профиль, вкладки, продукт и кнопка вступления.">
+  <meta name="theme-color" content="#ffffff">
+  <title>Jing Chen Academy | Mobile Draft</title>
+  <meta name="description" content="Mobile-only Whop-style academy storefront draft with product card and Russian payment block.">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <div class="desktop-note" aria-hidden="true">
-    Mobile-first preview. Откройте страницу с телефона или сузьте окно.
-  </div>
-
-  <main class="phone-page" aria-label="Мобильный лендинг академии">
-    <header class="top-bar">
-      <button class="icon-button" type="button" aria-label="Назад">
-        <span aria-hidden="true">←</span>
-      </button>
-      <div class="top-brand">
-        <span class="top-logo">PA</span>
-        <span>Private Academy</span>
-      </div>
-      <button class="icon-button" type="button" aria-label="Поделиться">
-        <span aria-hidden="true">↗</span>
-      </button>
+  <main class="mobile-shell" aria-label="Jing Chen Academy mobile storefront draft">
+    <header class="app-header">
+      <a class="brand-mark" href="#" aria-label="Whop home">
+        <span class="whop-dot"></span>
+      </a>
+      <nav class="header-links" aria-label="Top navigation">
+        <a href="#">Home</a>
+        <a href="#">Discover</a>
+      </nav>
+      <button class="ghost-link" type="button">Sign in</button>
     </header>
 
-    <section class="hero-card" aria-labelledby="academy-title">
-      <div class="cover-art">
-        <div class="cover-grid" aria-hidden="true"></div>
-        <div class="cover-copy">
-          <span class="eyebrow">invite-only learning club</span>
-          <strong>Build skills. Join the room.</strong>
+    <aside class="mini-sidebar" aria-label="Academy navigation">
+      <div class="mini-avatar">JA</div>
+      <div>
+        <strong>Jing Chen Academy</strong>
+        <span>0 online</span>
+      </div>
+      <nav>
+        <a class="is-active" href="#">Home</a>
+        <a href="#">Contact support</a>
+      </nav>
+    </aside>
+
+    <section class="hero">
+      <div class="cover-image" aria-label="Jing Chen Academy cover">
+        <div class="cover-noise" aria-hidden="true"></div>
+        <div class="cover-title">
+          <span>Jing Chen</span>
+          <strong>Academy</strong>
         </div>
       </div>
 
-      <div class="profile-block">
-        <div class="avatar-wrap">
-          <div class="avatar" aria-hidden="true">PA</div>
-          <span class="live-dot" aria-label="Сейчас онлайн"></span>
+      <div class="profile-card">
+        <div class="profile-top">
+          <div class="profile-avatar" aria-hidden="true">JA</div>
+          <button class="primary-join" type="button" data-open-join>Join</button>
         </div>
 
-        <div class="title-row">
-          <div>
-            <p class="micro-label">0 online</p>
-            <h1 id="academy-title">Private Academy</h1>
-          </div>
-          <button class="join-mini" type="button" data-open-join>Join</button>
-        </div>
-
-        <p class="subtitle">
-          Эстетичная мобильная витрина для закрытого обучения, комьюнити и цифрового продукта.
-          Структура как у Whop-страницы: профиль, вкладки, продукт и быстрый вход.
+        <p class="online">0 online</p>
+        <h1>Jing Chen Academy</h1>
+        <p class="description">
+          Master wealth building with Jing Chen. Actionable coaching and courses on investing,
+          personal finance, and building generational wealth.
         </p>
 
-        <div class="meta-row" aria-label="Информация об академии">
-          <span>Private access</span>
-          <span>•</span>
-          <span>Created by Founder</span>
+        <div class="profile-meta">
+          <span>Location hidden</span>
+          <span aria-hidden="true">•</span>
+          <a href="#" aria-label="Facebook">f</a>
+          <a href="#" aria-label="Instagram">ig</a>
+          <a href="#" aria-label="TikTok">tt</a>
+          <a href="#" aria-label="YouTube">yt</a>
         </div>
 
-        <div class="stats-grid" aria-label="Статистика">
-          <article>
-            <strong>293</strong>
-            <span>joined</span>
-          </article>
-          <article>
-            <strong>4.9</strong>
-            <span>rating</span>
-          </article>
-          <article>
-            <strong>12</strong>
-            <span>lessons</span>
-          </article>
+        <div class="creator-row">
+          <span aria-hidden="true">•</span>
+          <span>Created by</span>
+          <span class="creator-avatar">JC</span>
+          <a href="#">Jing Chen</a>
         </div>
+
+        <div class="joined-count">293 joined</div>
       </div>
     </section>
 
-    <nav class="tabs" aria-label="Разделы страницы">
+    <nav class="tabs" aria-label="Page tabs">
       <button class="tab is-active" type="button" data-tab="home">Home</button>
       <button class="tab" type="button" data-tab="chats">Chats</button>
       <button class="tab" type="button" data-tab="apps">Apps</button>
+      <button class="tab" type="button" data-tab="products">Products</button>
       <button class="tab" type="button" data-tab="about">About</button>
     </nav>
 
     <section class="panel is-active" data-panel="home">
-      <div class="section-heading">
-        <div>
-          <p class="micro-label">Products</p>
-          <h2>Start here</h2>
-        </div>
-        <a href="#all-products">See all</a>
+      <div class="section-title">
+        <h2>Products</h2>
+        <a href="#products">See all</a>
       </div>
 
-      <article class="product-card" id="all-products">
+      <article class="product-card" id="products">
         <div class="product-cover">
-          <span>Blueprint</span>
-        </div>
-        <div class="product-body">
           <div>
-            <h3>The Mobile Academy Blueprint</h3>
-            <p>Короткий курс, закрытый чат, еженедельные разборы и понятный план действий.</p>
+            <span>The Family</span>
+            <strong>Wealth Blueprint</strong>
           </div>
-          <div class="product-footer">
+        </div>
+        <div class="product-copy">
+          <h3>The Family Wealth Blueprint</h3>
+          <div class="product-meta">
             <strong>$19.99</strong>
-            <span>256 members</span>
+            <span>256</span>
           </div>
         </div>
       </article>
 
-      <div class="feature-list">
-        <article>
-          <span class="feature-icon">01</span>
-          <div>
-            <h3>Clean onboarding</h3>
-            <p>Первый экран сразу объясняет, что это за клуб и зачем нажимать Join.</p>
-          </div>
-        </article>
-        <article>
-          <span class="feature-icon">02</span>
-          <div>
-            <h3>Mobile only</h3>
-            <p>Ширина, отступы, карточки и нижняя кнопка оптимизированы под телефон.</p>
-          </div>
-        </article>
+      <article class="russian-checkout">
+        <div class="checkout-label">Book checkout for Russia</div>
+        <h2>Покупка книги</h2>
+        <p>
+          Черновой блок под российскую оплату: YooKassa / Robokassa / CloudPayments.
+          После подключения человек сможет оплатить картой, через СБП, SberPay или банк.
+        </p>
+        <div class="checkout-price">
+          <span>Цена книги</span>
+          <strong>1 990 ₽</strong>
+        </div>
+        <button class="pay-button" type="button" data-payment-button>
+          Оплатить Сбер / картой / СБП
+        </button>
+        <p class="payment-note">
+          Сейчас кнопка в демо-режиме. Реальную ссылку оплаты нужно вставить в
+          <code>scripts/app.js</code> в переменную <code>RUSSIAN_PAYMENT_URL</code>.
+        </p>
+      </article>
+
+      <label class="search-box">
+        <span>Search Jing Chen Academy</span>
+        <kbd>⌘K</kbd>
+      </label>
+
+      <a class="affiliate-card" href="#">
+        <div>
+          <strong>Affiliate dashboard</strong>
+          <span>Earn by referring others</span>
+        </div>
+        <em>New</em>
+      </a>
+
+      <div class="people-row">
+        <strong>People</strong>
+        <span>293</span>
+        <a href="#">See all</a>
       </div>
     </section>
 
     <section class="panel" data-panel="chats">
-      <div class="empty-card">
-        <span class="empty-icon">💬</span>
-        <h2>Community chat</h2>
-        <p>Здесь можно показать закрытые каналы, расписание созвонов или список тем внутри комьюнити.</p>
-      </div>
+      <article class="placeholder-card">
+        <h2>Chats</h2>
+        <p>Private member chats will appear here after joining.</p>
+      </article>
     </section>
 
     <section class="panel" data-panel="apps">
-      <div class="app-card">
-        <div class="app-icon">A</div>
-        <div>
-          <h2>Member dashboard</h2>
-          <p>Место для будущего личного кабинета, ссылок на уроки и материалов.</p>
+      <article class="placeholder-card">
+        <h2>Apps</h2>
+        <p>Course tools, member dashboard and book materials can be shown here.</p>
+      </article>
+    </section>
+
+    <section class="panel" data-panel="products">
+      <article class="product-card compact">
+        <div class="product-cover">
+          <div>
+            <span>The Family</span>
+            <strong>Wealth Blueprint</strong>
+          </div>
         </div>
-      </div>
-      <div class="app-card">
-        <div class="app-icon dark">C</div>
-        <div>
-          <h2>Course library</h2>
-          <p>Карточка библиотеки курса с быстрым доступом после оплаты или заявки.</p>
+        <div class="product-copy">
+          <h3>The Family Wealth Blueprint</h3>
+          <div class="product-meta">
+            <strong>$19.99</strong>
+            <span>256</span>
+          </div>
         </div>
-      </div>
+      </article>
     </section>
 
     <section class="panel" data-panel="about">
-      <article class="about-card">
-        <p class="micro-label">About</p>
-        <h2>Premium community page without heavy backend</h2>
+      <article class="placeholder-card">
+        <h2>About</h2>
         <p>
-          Это самостоятельный статический сайт. Его можно перенести на отдельный домен,
-          заменить тексты, подключить оплату или форму заявки позже.
+          Master wealth building with Jing Chen. Actionable coaching and courses on investing,
+          personal finance, and building generational wealth.
         </p>
       </article>
     </section>
 
-    <div class="bottom-cta" role="region" aria-label="Вступить">
+    <div class="bottom-buy">
       <div>
-        <span>Membership</span>
-        <strong>$19.99</strong>
+        <span>The Family Wealth Blueprint</span>
+        <strong>$19.99 · 1 990 ₽</strong>
       </div>
-      <button type="button" data-open-join>Join now</button>
+      <button type="button" data-payment-button>Buy book</button>
     </div>
 
-    <dialog class="join-dialog" id="joinDialog" aria-labelledby="join-title">
-      <button class="dialog-close" type="button" data-close-join aria-label="Закрыть">×</button>
-      <span class="dialog-badge">Private Academy</span>
-      <h2 id="join-title">Готово для подключения</h2>
+    <dialog class="join-dialog" id="joinDialog" aria-labelledby="joinTitle">
+      <button class="dialog-close" type="button" data-close-join aria-label="Close">×</button>
+      <h2 id="joinTitle">Join Jing Chen Academy</h2>
       <p>
-        Сейчас кнопка показывает демо-окно. Позже сюда можно поставить ссылку на оплату,
-        Telegram, форму заявки или отдельный checkout.
+        Для покупки книги лучше вести кнопку не в демо-окно, а на платёжную ссылку YooKassa,
+        Robokassa или CloudPayments с включёнными картами, СБП и SberPay.
       </p>
-      <a class="dialog-action" href="mailto:hello@example.com">Request access</a>
+      <button class="pay-button" type="button" data-payment-button>Перейти к оплате</button>
     </dialog>
   </main>
 
