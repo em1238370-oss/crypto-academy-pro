@@ -18,6 +18,7 @@
 ---
 
 ## ✅ Сделано
+- 2026-05-11 — `don-ricco/` заново сверстан ближе к Whop product-page по присланному референсу: возвращены верхняя навигация, ресурсы, строка академии, product image, цена, доступ, members, автор, полный переведённый sales-copy, FAQ, нижняя карточка продукта, Powered/Pay-подобные CTA; визуал возвращён к светлому минимальному Whop-стилю.
 - 2026-05-11 — `don-ricco/` переведён на качественный русский и визуально переоформлен в мягкий итальянский стиль: бежево-коричневая палитра, ореховое дерево, карамель/терракота, декоративные орнаменты, serif-заголовки; все CTA/FAQ/sales-copy на русском, оплата РФ сохранена через `RUSSIAN_PAYMENT_URL`.
 - 2026-05-11 — `don-ricco/` переделан из academy-витрины в mobile Whop-style product page по референсу The Family Wealth Blueprint: крупная карточка продукта, цена `$19.99`, Get access, members, автор, длинный sales-copy, FAQ, блок российской оплаты и sticky CTA; JS упрощён до payment-link.
 - 2026-05-11 — Создано отдельное приложение `don-ricco/` вместо подсайта текущего проекта: независимые `index.html`, `styles.css`, `scripts/app.js`, README; название и тексты переведены на Don Ricco, сохранена mobile Whop-витрина с Home/Chats/Apps/Products/About, карточкой The Family Wealth Blueprint и блоком «Покупка книги Don Ricco» под payment-link (`RUSSIAN_PAYMENT_URL`) для YooKassa/Robokassa/CloudPayments.
