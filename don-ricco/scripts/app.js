@@ -54,7 +54,7 @@ paymentButtons.forEach((button) => {
     }
 
     alert(
-      'Демо-режим оплаты. Вставьте ссылку YooKassa, Robokassa или CloudPayments в RUSSIAN_PAYMENT_URL внутри scripts/app.js.'
+      'Демо-режим оплаты. Вставьте ссылку YooKassa, Robokassa или CloudPayments в RUSSIAN_PAYMENT_URL внутри don-ricco/scripts/app.js.'
     );
   });
 });
