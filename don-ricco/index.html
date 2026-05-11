@@ -4,206 +4,172 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
-  <title>Don Ricco | Mobile Storefront</title>
-  <meta name="description" content="Don Ricco — отдельное мобильное приложение-витрина для академии, продукта и покупки книги.">
+  <title>Don Ricco | The Family Wealth Blueprint</title>
+  <meta name="description" content="Don Ricco product page draft inspired by Whop: book offer, access button, sales copy, FAQ and Russian checkout link.">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <main class="mobile-shell" aria-label="Don Ricco mobile storefront">
-    <header class="app-header">
-      <a class="brand-mark" href="#" aria-label="Don Ricco home">
-        <span class="brand-dot"></span>
+  <main class="product-shell" aria-label="Don Ricco product page">
+    <header class="site-header">
+      <a class="whop-mark" href="#" aria-label="Don Ricco home">
+        <span></span>
       </a>
-      <nav class="header-links" aria-label="Top navigation">
+      <nav class="top-nav" aria-label="Navigation">
         <a href="#">Home</a>
         <a href="#">Discover</a>
       </nav>
-      <button class="ghost-link" type="button">Sign in</button>
+      <button class="signin-button" type="button">Sign in</button>
     </header>
 
-    <aside class="mini-sidebar" aria-label="Don Ricco navigation">
-      <div class="mini-avatar">DR</div>
-      <div>
+    <a class="academy-strip" href="#" aria-label="Don Ricco Academy">
+      <span class="avatar avatar-small">DR</span>
+      <span>
+        <small>Don Ricco Academy</small>
         <strong>Don Ricco</strong>
-        <span>0 online</span>
-      </div>
-      <nav>
-        <a class="is-active" href="#">Home</a>
-        <a href="#">Contact support</a>
-      </nav>
-    </aside>
+      </span>
+    </a>
 
-    <section class="hero">
-      <div class="cover-image" aria-label="Don Ricco cover">
-        <div class="cover-noise" aria-hidden="true"></div>
-        <div class="cover-title">
-          <span>Don</span>
-          <strong>Ricco</strong>
+    <section class="product-hero" aria-labelledby="productTitle">
+      <div class="product-image" role="img" aria-label="The Family Wealth Blueprint product image">
+        <div class="image-grid" aria-hidden="true"></div>
+        <div class="image-copy">
+          <span>The Family</span>
+          <strong>Wealth Blueprint</strong>
         </div>
+        <div class="image-badge">160 page system</div>
       </div>
 
-      <div class="profile-card">
-        <div class="profile-top">
-          <div class="profile-avatar" aria-hidden="true">DR</div>
-          <button class="primary-join" type="button" data-open-join>Join</button>
+      <div class="summary-card">
+        <p class="crumb">Don Ricco Academy</p>
+        <h1 id="productTitle">The Family Wealth Blueprint</h1>
+        <p class="price">$19.99</p>
+        <button class="access-button" type="button" data-payment-button>Get access</button>
+
+        <div class="quick-stats">
+          <span>$19.99</span>
+          <span>258 members</span>
         </div>
 
-        <p class="online">0 online</p>
-        <h1>Don Ricco</h1>
-        <p class="description">
-          Master wealth building with Don Ricco. Actionable coaching and courses on investing,
-          personal finance, and building generational wealth.
-        </p>
-
-        <div class="profile-meta">
-          <span>Location hidden</span>
-          <span aria-hidden="true">•</span>
-          <a href="#" aria-label="Facebook">f</a>
-          <a href="#" aria-label="Instagram">ig</a>
-          <a href="#" aria-label="TikTok">tt</a>
-          <a href="#" aria-label="YouTube">yt</a>
+        <div class="creator">
+          <span class="avatar">DR</span>
+          <span>By <strong>Don Ricco</strong></span>
         </div>
-
-        <div class="creator-row">
-          <span aria-hidden="true">•</span>
-          <span>Created by</span>
-          <span class="creator-avatar">DR</span>
-          <a href="#">Don Ricco</a>
-        </div>
-
-        <div class="joined-count">293 joined</div>
       </div>
     </section>
 
-    <nav class="tabs" aria-label="Page tabs">
-      <button class="tab is-active" type="button" data-tab="home">Home</button>
-      <button class="tab" type="button" data-tab="chats">Chats</button>
-      <button class="tab" type="button" data-tab="apps">Apps</button>
-      <button class="tab" type="button" data-tab="products">Products</button>
-      <button class="tab" type="button" data-tab="about">About</button>
-    </nav>
+    <section class="sales-copy">
+      <h2>Build generational wealth through strategic family planning</h2>
 
-    <section class="panel is-active" data-panel="home">
-      <div class="section-title">
-        <h2>Products</h2>
-        <a href="#products">See all</a>
+      <div class="copy-block">
+        <p class="overline">DON RICCO</p>
+        <p class="book-title">THE FAMILY WEALTH BLUEPRINT</p>
+        <p class="dash">—</p>
+        <p>If your income stopped today, how long would your money last?</p>
+        <p class="dash">—</p>
+        <p>Most people don’t stay broke because they lack income.</p>
+        <p>They stay fragile because they lack structure.</p>
+        <p class="dash">—</p>
+        <p>Wealth isn’t built by working harder. It’s built by structuring better.</p>
+        <p class="dash">—</p>
+        <p>This is not motivation.</p>
+        <p>This is a system designed to make your money last and grow.</p>
+        <p class="dash">—</p>
       </div>
 
-      <article class="product-card" id="products">
-        <div class="product-cover">
-          <div>
-            <span>The Family</span>
-            <strong>Wealth Blueprint</strong>
-          </div>
-        </div>
-        <div class="product-copy">
-          <h3>The Family Wealth Blueprint</h3>
-          <div class="product-meta">
-            <strong>$19.99</strong>
-            <span>256</span>
-          </div>
-        </div>
-      </article>
+      <div class="learn-card">
+        <h3>Inside, you’ll learn:</h3>
+        <ul>
+          <li>How to control your cash flow with precision</li>
+          <li>How to eliminate financial leaks permanently</li>
+          <li>How to structure money so it actually compounds</li>
+          <li>How to increase income with direction, not guesswork</li>
+          <li>How to transition from income into real assets</li>
+        </ul>
+      </div>
 
-      <article class="russian-checkout">
-        <div class="checkout-label">Book checkout for Russia</div>
-        <h2>Покупка книги Don Ricco</h2>
-        <p>
-          Блок под российскую оплату: YooKassa / Robokassa / CloudPayments.
-          После подключения человек сможет оплатить картой, через СБП, SberPay или банк.
-        </p>
-        <div class="checkout-price">
-          <span>Цена книги</span>
-          <strong>1 990 ₽</strong>
-        </div>
-        <button class="pay-button" type="button" data-payment-button>
-          Оплатить Сбер / картой / СБП
-        </button>
-        <p class="payment-note">
-          Сейчас кнопка в демо-режиме. Реальную ссылку оплаты нужно вставить в
-          <code>scripts/app.js</code> в переменную <code>RUSSIAN_PAYMENT_URL</code>.
-        </p>
-      </article>
-
-      <label class="search-box">
-        <span>Search Don Ricco</span>
-        <kbd>⌘K</kbd>
-      </label>
-
-      <a class="affiliate-card" href="#">
-        <div>
-          <strong>Affiliate dashboard</strong>
-          <span>Earn by referring others</span>
-        </div>
-        <em>New</em>
-      </a>
-
-      <div class="people-row">
-        <strong>People</strong>
-        <span>293</span>
-        <a href="#">See all</a>
+      <div class="copy-block">
+        <p class="dash">—</p>
+        <p>This is a 160 page system built for execution, not information.</p>
+        <p class="dash">—</p>
+        <p>You’ll follow a clear 12 month path</p>
+        <p>so you always know what to do next.</p>
+        <p>No guessing.</p>
+        <p>No confusion.</p>
+        <p class="dash">—</p>
+        <p>This is for people who want durable wealth,</p>
+        <p>not temporary wins.</p>
+        <p class="dash">—</p>
+        <p>Real wealth isn’t loud.</p>
+        <p>It’s structured.</p>
+        <p class="dash">—</p>
+        <p>Once the structure is in place,</p>
+        <p>everything compounds.</p>
+        <p class="dash">—</p>
+        <p>Over 400 people are already using this system to build real wealth.</p>
+        <p>This is where you start.</p>
       </div>
     </section>
 
-    <section class="panel" data-panel="chats">
-      <article class="placeholder-card">
-        <h2>Chats</h2>
-        <p>Private member chats will appear here after joining.</p>
-      </article>
+    <section class="checkout-panel" aria-labelledby="checkoutTitle">
+      <span class="checkout-tag">Russian checkout</span>
+      <h2 id="checkoutTitle">Покупка книги Don Ricco</h2>
+      <p>
+        Здесь будет российская платёжка. Лучше подключить YooKassa payment link:
+        карта, СБП, SberPay и банки. Ссылка вставляется в <code>RUSSIAN_PAYMENT_URL</code>.
+      </p>
+      <div class="rub-price">
+        <span>Цена для РФ</span>
+        <strong>1 990 ₽</strong>
+      </div>
+      <button class="access-button" type="button" data-payment-button>Оплатить Сбер / картой / СБП</button>
     </section>
 
-    <section class="panel" data-panel="apps">
-      <article class="placeholder-card">
-        <h2>Apps</h2>
-        <p>Course tools, member dashboard and book materials can be shown here.</p>
-      </article>
+    <section class="faq" aria-labelledby="faqTitle">
+      <h2 id="faqTitle">Frequently asked questions</h2>
+
+      <details>
+        <summary>Is this actually worth it?</summary>
+        <p>Yes. The value is in the structure, the steps and the execution path.</p>
+      </details>
+
+      <details>
+        <summary>Is this something I can realistically follow?</summary>
+        <p>The system is designed as a clear 12 month path, so every step has a next action.</p>
+      </details>
+
+      <details>
+        <summary>How is this different from other finance content?</summary>
+        <p>It focuses on structure and durable wealth instead of quick motivation.</p>
+      </details>
+
+      <details>
+        <summary>Will this still help if my situation is different?</summary>
+        <p>The framework can be adapted to different income levels and starting points.</p>
+      </details>
+
+      <details>
+        <summary>What happens if I don’t get this?</summary>
+        <p>You can still move forward, but you may keep guessing without a simple structure.</p>
+      </details>
     </section>
 
-    <section class="panel" data-panel="products">
-      <article class="product-card compact">
-        <div class="product-cover">
-          <div>
-            <span>The Family</span>
-            <strong>Wealth Blueprint</strong>
-          </div>
-        </div>
-        <div class="product-copy">
-          <h3>The Family Wealth Blueprint</h3>
-          <div class="product-meta">
-            <strong>$19.99</strong>
-            <span>256</span>
-          </div>
-        </div>
-      </article>
+    <section class="academy-footer">
+      <div class="footer-cover" aria-hidden="true"></div>
+      <div>
+        <h2>The Family Wealth Blueprint</h2>
+        <p>$19.99</p>
+      </div>
+      <button class="access-button" type="button" data-payment-button>Get access</button>
+      <small>Powered by Don Ricco</small>
     </section>
 
-    <section class="panel" data-panel="about">
-      <article class="placeholder-card">
-        <h2>About</h2>
-        <p>
-          Master wealth building with Don Ricco. Actionable coaching and courses on investing,
-          personal finance, and building generational wealth.
-        </p>
-      </article>
-    </section>
-
-    <div class="bottom-buy">
+    <div class="sticky-buy" aria-label="Buy product">
       <div>
         <span>The Family Wealth Blueprint</span>
         <strong>$19.99 · 1 990 ₽</strong>
       </div>
-      <button type="button" data-payment-button>Buy book</button>
+      <button type="button" data-payment-button>Get access</button>
     </div>
-
-    <dialog class="join-dialog" id="joinDialog" aria-labelledby="joinTitle">
-      <button class="dialog-close" type="button" data-close-join aria-label="Close">×</button>
-      <h2 id="joinTitle">Join Don Ricco</h2>
-      <p>
-        Для покупки книги лучше вести кнопку не в демо-окно, а на платёжную ссылку YooKassa,
-        Robokassa или CloudPayments с включёнными картами, СБП и SberPay.
-      </p>
-      <button class="pay-button" type="button" data-payment-button>Перейти к оплате</button>
-    </dialog>
   </main>
 
   <script src="./scripts/app.js"></script>

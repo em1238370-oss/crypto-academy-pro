@@ -18,6 +18,7 @@
 ---
 
 ## ✅ Сделано
+- 2026-05-11 — `don-ricco/` переделан из academy-витрины в mobile Whop-style product page по референсу The Family Wealth Blueprint: крупная карточка продукта, цена `$19.99`, Get access, members, автор, длинный sales-copy, FAQ, блок российской оплаты и sticky CTA; JS упрощён до payment-link.
 - 2026-05-11 — Создано отдельное приложение `don-ricco/` вместо подсайта текущего проекта: независимые `index.html`, `styles.css`, `scripts/app.js`, README; название и тексты переведены на Don Ricco, сохранена mobile Whop-витрина с Home/Chats/Apps/Products/About, карточкой The Family Wealth Blueprint и блоком «Покупка книги Don Ricco» под payment-link (`RUSSIAN_PAYMENT_URL`) для YooKassa/Robokassa/CloudPayments.
 - 2026-05-08 — Главная (CSS): без «полосок» по краям экрана — для страницы с `body.kro-main` отключены глобальная сетка и PNG из общего правила `body`; фон ниже hero — нейтральный slate/стекло (`.kro-main`, `.kro-feature1-bg`), пульс дашборда без лаванды/золота; cache-bust `styles.css`.
 - 2026-05-08 — Главная hero: тексты как раньше — «Антискам · Проверка каналов», заголовок «Крипта: не верь — проверь», подзаголовок «Ваш гуру уже на Lambo…»; подпись к CTA сухая («Факты и сверка…»). Визуально только первый экран: темнее, холоднее (сине-стальной фон, блики и акценты без золота), стекло карточки slate; блок счётчика «Последнее подтверждённое обновление» не трогали; cache-bust CSS.
