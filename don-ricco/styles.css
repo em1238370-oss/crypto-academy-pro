@@ -69,8 +69,7 @@ button {
 }
 
 button,
-a,
-summary {
+a {
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -227,7 +226,6 @@ summary {
 .product-card,
 .sales-section,
 .faq-section,
-.russian-payment,
 .bottom-product-card {
   position: relative;
   overflow: hidden;
@@ -241,8 +239,7 @@ summary {
 
 .product-card::before,
 .sales-section::before,
-.faq-section::before,
-.russian-payment::before {
+.faq-section::before {
   content: "";
   position: absolute;
   top: 0;
@@ -482,15 +479,13 @@ h3 {
 
 .sales-section,
 .faq-section,
-.russian-payment,
 .bottom-product-card,
 .pay-strip {
   margin-top: 14px;
 }
 
 .sales-section,
-.faq-section,
-.russian-payment {
+.faq-section {
   padding: 18px;
 }
 
@@ -566,15 +561,15 @@ h3 {
   font-size: 25px;
 }
 
-details {
+.faq-row {
   border-top: 1px solid var(--line);
 }
 
-details:first-of-type {
+.faq-row:first-of-type {
   border-top: 0;
 }
 
-summary {
+.faq-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -583,78 +578,19 @@ summary {
   color: var(--espresso);
   font-size: 15px;
   font-weight: 850;
-  cursor: pointer;
-  list-style: none;
 }
 
-summary::-webkit-details-marker {
-  display: none;
-}
-
-summary::after {
+.faq-row::after {
   content: "+";
   color: var(--terracotta);
   font-size: 22px;
   font-weight: 500;
 }
 
-details[open] summary::after {
-  content: "–";
-}
-
-details p {
-  margin: -4px 0 15px;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.russian-payment {
-  background:
-    radial-gradient(circle at 100% 0%, rgba(125, 136, 99, 0.16), transparent 12rem),
-    linear-gradient(180deg, rgba(255, 249, 239, 0.98), rgba(243, 226, 204, 0.98));
-}
-
-.russian-payment > span {
-  display: inline-flex;
-  margin: 9px 0 12px;
-  padding: 8px 11px;
-  border-radius: 999px;
-  background: rgba(125, 136, 99, 0.14);
-  color: #59613f;
-  font-size: 12px;
-  font-weight: 950;
-}
-
-.russian-payment p,
 .bottom-copy p {
   color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
-}
-
-.rub-price {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin: 15px 0;
-  padding: 13px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: rgba(255, 250, 242, 0.86);
-}
-
-.rub-price span {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.rub-price strong {
-  color: var(--walnut);
-  font-size: 24px;
-  letter-spacing: -0.04em;
 }
 
 .bottom-product-card {
