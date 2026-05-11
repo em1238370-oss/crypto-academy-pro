@@ -86,6 +86,32 @@ a {
   padding: max(10px, env(safe-area-inset-top)) 12px calc(98px + env(safe-area-inset-bottom));
 }
 
+.page-shell::before,
+.page-shell::after {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  width: 132px;
+  height: 132px;
+  pointer-events: none;
+  opacity: 0.2;
+  background:
+    radial-gradient(circle at center, transparent 0 31px, var(--black-cherry) 32px 34px, transparent 35px),
+    conic-gradient(from 0deg, transparent 0 11%, var(--turf-green) 11% 14%, transparent 14% 25%, var(--ruby-red) 25% 28%, transparent 28% 50%, var(--dark-coffee) 50% 53%, transparent 53% 100%);
+}
+
+.page-shell::before {
+  left: max(8px, calc(50% - 246px));
+  top: 118px;
+  transform: rotate(12deg);
+}
+
+.page-shell::after {
+  right: max(8px, calc(50% - 246px));
+  top: 468px;
+  transform: rotate(-18deg) scale(0.82);
+}
+
 .global-header {
   position: sticky;
   top: max(8px, env(safe-area-inset-top));
@@ -294,11 +320,12 @@ a {
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-xl);
   background:
-    linear-gradient(180deg, rgba(255, 250, 242, 0.97), rgba(248, 236, 219, 0.96)),
+    linear-gradient(180deg, rgba(246, 216, 174, 0.98), rgba(246, 216, 174, 0.78)),
     var(--surface);
   box-shadow: var(--shadow);
 }
 
+.product-card::after,
 .sales-section::after,
 .faq-section::after,
 .bottom-product-card::after {
@@ -308,12 +335,22 @@ a {
   bottom: -22px;
   width: 112px;
   height: 112px;
-  opacity: 0.16;
+  opacity: 0.18;
   pointer-events: none;
   background:
     radial-gradient(circle at center, transparent 0 26px, var(--black-cherry) 27px 29px, transparent 30px),
     conic-gradient(from 45deg, transparent 0 14%, var(--ruby-red) 14% 18%, transparent 18% 32%, var(--turf-green) 32% 36%, transparent 36% 50%, var(--dark-coffee) 50% 54%, transparent 54% 100%);
   transform: rotate(18deg);
+}
+
+.product-card::after {
+  right: auto;
+  left: -26px;
+  bottom: 120px;
+  width: 126px;
+  height: 126px;
+  opacity: 0.14;
+  transform: rotate(-24deg);
 }
 
 .product-card::before,
@@ -345,7 +382,7 @@ a {
     radial-gradient(circle at 82% 18%, rgba(165, 28, 40, 0.48), transparent 8rem),
     radial-gradient(circle at 16% 86%, rgba(12, 124, 89, 0.3), transparent 8rem),
     linear-gradient(90deg, transparent 0 70%, rgba(12, 124, 89, 0.24) 70% 100%),
-    repeating-linear-gradient(105deg, rgba(255, 255, 255, 0.035) 0 8px, rgba(0, 0, 0, 0.035) 8px 16px),
+    repeating-linear-gradient(105deg, rgba(246, 216, 174, 0.04) 0 8px, rgba(65, 39, 34, 0.035) 8px 16px),
     linear-gradient(135deg, var(--black-cherry) 0%, var(--dark-coffee) 44%, var(--ruby-red) 76%, var(--apricot-cream) 100%);
 }
 
@@ -398,7 +435,7 @@ a {
   border-radius: 70px 70px 0 0;
   opacity: 0.72;
   box-shadow:
-    inset 0 0 0 12px rgba(255, 229, 191, 0.035),
+    inset 0 0 0 12px rgba(246, 216, 174, 0.04),
     0 0 0 12px rgba(246, 216, 174, 0.05),
     0 0 0 22px rgba(12, 124, 89, 0.08);
 }
@@ -451,7 +488,7 @@ a {
   z-index: 2;
   max-width: 325px;
   text-transform: uppercase;
-  text-shadow: 0 12px 30px rgba(31, 14, 7, 0.34);
+  text-shadow: 0 12px 30px rgba(65, 39, 34, 0.34);
 }
 
 .product-image-title span,
@@ -632,6 +669,17 @@ h3 {
     rgba(246, 216, 174, 0.56);
 }
 
+.inside-section::after {
+  content: "";
+  display: block;
+  height: 10px;
+  margin-top: 14px;
+  border-radius: 999px;
+  background:
+    repeating-linear-gradient(90deg, var(--dark-coffee) 0 14px, var(--black-cherry) 14px 28px, var(--ruby-red) 28px 42px, var(--turf-green) 42px 56px, var(--apricot-cream) 56px 70px);
+  opacity: 0.34;
+}
+
 .inside-section ul {
   display: grid;
   gap: 10px;
@@ -706,7 +754,7 @@ h3 {
   background:
     radial-gradient(circle at 78% 18%, rgba(165, 28, 40, 0.4), transparent 7rem),
     radial-gradient(circle at 14% 86%, rgba(12, 124, 89, 0.26), transparent 7rem),
-    repeating-linear-gradient(105deg, rgba(255, 255, 255, 0.035) 0 8px, rgba(0, 0, 0, 0.03) 8px 16px),
+    repeating-linear-gradient(105deg, rgba(246, 216, 174, 0.04) 0 8px, rgba(65, 39, 34, 0.03) 8px 16px),
     linear-gradient(135deg, var(--black-cherry) 0%, var(--dark-coffee) 52%, var(--apricot-cream) 100%);
 }
 
