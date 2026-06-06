@@ -5033,6 +5033,104 @@ function kroExtractPublicChannelDescriptionFromHtml(html) {
   return '';
 }
 
+function kroExtractSocialLinksFromHtml(html) {
+  if (!html) return [];
+  const links = [];
+  const seen = new Set();
+  const PATTERNS = [
+    { re: /https?:\/\/(?:www\.)?instagram\.com\/(?!p\/|reel\/|explore\/)[a-zA-Z0-9_.]{3,}/gi, label: 'Instagram' },
+    { re: /https?:\/\/(?:www\.)?youtube\.com\/(?:@|c\/|channel\/|user\/)[a-zA-Z0-9_\-]+/gi, label: 'YouTube' },
+    { re: /https?:\/\/youtu\.be\/[a-zA-Z0-9_\-]+/gi, label: 'YouTube' },
+    { re: /https?:\/\/(?:x|twitter)\.com\/[a-zA-Z0-9_]{1,15}/gi, label: 'Twitter/X' },
+    { re: /https?:\/\/(?:www\.)?tiktok\.com\/@[a-zA-Z0-9_.]+/gi, label: 'TikTok' },
+    { re: /https?:\/\/(?:www\.)?vk\.com\/[a-zA-Z0-9_]+/gi, label: 'ВКонтакте' },
+    { re: /https?:\/\/(?:www\.)?linkedin\.com\/in\/[a-zA-Z0-9_\-]+/gi, label: 'LinkedIn' },
+    { re: /https?:\/\/t\.me\/\+[a-zA-Z0-9_\-]+/gi, label: 'Telegram VIP' },
+  ];
+  const SKIP = /t\.me\/(?!\+)|telegram\.|google\.|fonts\.|cdn\.|cloudflare\.|apple\.|gstatic\./i;
+  const allText = html + ' ' + html.replace(/<[^>]+>/g, ' ');
+  for (const { re, label } of PATTERNS) {
+    for (const url of (allText.match(re) || [])) {
+      const clean = url.replace(/['")\s<>]+$/, '').replace(/&amp;/g, '&');
+      if (!seen.has(clean) && clean.length < 200 && !SKIP.test(clean)) {
+        seen.add(clean);
+        links.push({ url: clean, label });
+      }
+    }
+  }
+  const SOCIAL = /instagram\.|youtube\.|youtu\.be|twitter\.|x\.com|tiktok\.|vk\.com|linkedin\.|t\.me|telegram\.|google\.|fonts\.|cloudflare\.|cdn\.|apple\./i;
+  for (const h of (allText.match(/href="(https?:\/\/[^"]{4,180})"/gi) || [])) {
+    const m = h.match(/href="(https?:\/\/[^"]+)"/i);
+    if (!m) continue;
+    const url = m[1].replace(/&amp;/g, '&');
+    if (!SOCIAL.test(url) && !seen.has(url)) {
+      seen.add(url);
+      links.push({ url, label: 'Сайт' });
+    }
+  }
+  return links.slice(0, 8);
+}
+
+async function kroAnalyzePersonBehind(channelName, description, socialLinks) {
+  const key = process.env.MISTRAL_API_KEY;
+  if (!key || !description) return null;
+  const socialStr = (socialLinks || []).map((l) => `${l.label}: ${l.url}`).join(', ') || 'не найдено';
+  const prompt = `Ты аналитик крипто-каналов. Разбери кто стоит за каналом по описанию и соцсетям.
+Канал: ${channelName}
+Описание: ${description.slice(0, 600)}
+Соцсети: ${socialStr}
+Ответь ТОЛЬКО JSON без markdown:
+{"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт/образование или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"VIP/курсы/реклама/другое","red_flags":"громкие заявления о себе или Явных нет","verdict":"одно предложение — кто реально за каналом и зачем"}`;
+  try {
+    const r = await axios.post(
+      'https://api.mistral.ai/v1/chat/completions',
+      {
+        model: 'mistral-small-latest',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2,
+        max_tokens: 400,
+      },
+      {
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        timeout: 14000,
+      },
+    );
+    const text = r.data?.choices?.[0]?.message?.content || '';
+    const m = text.match(/\{[\s\S]*\}/);
+    return m ? JSON.parse(m[0]) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Собирает person_behind из HTML публичной страницы t.me (snap.html). */
+async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelForOnce, deadline, analyzeLogId) {
+  const slug = kroExtractTelegramPublicSlug(channelForOnce);
+  if (!slug || deadline - Date.now() < 1500) return null;
+  const snap = await kroFetchTelegramPublicSnapshot(channelForOnce, {
+    timeoutMs: Math.min(14000, Math.max(3000, deadline - Date.now() - 600)),
+    logLabel: `${analyzeLogId}:person_behind`,
+  });
+  if (!snap || !snap.html) return null;
+  const desc = kroExtractPublicChannelDescriptionFromHtml(snap.html);
+  const socialLinks = kroExtractSocialLinksFromHtml(snap.html);
+  if (!desc && !socialLinks.length) return null;
+  const aiProfile = desc ? await kroAnalyzePersonBehind(channelDisplay, desc, socialLinks) : null;
+  if (!aiProfile && !socialLinks.length) return null;
+  return {
+    ...(aiProfile || {
+      who: 'Аноним',
+      claimed_background: 'Не упоминается',
+      claimed_path: 'Не упоминается',
+      business_model: '',
+      red_flags: 'Явных нет',
+      verdict: desc ? desc.slice(0, 220) : '',
+    }),
+    social_links: socialLinks,
+    description: desc || '',
+  };
+}
+
 function kroNormalizePublicSnapshotLine(text, slug) {
   let s = kroStripHtmlToText(text)
     .replace(/^\s*<title>\s*/i, '')
@@ -6238,7 +6336,7 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
   const budgetMs = Math.min(180000, Math.max(3000, Number(optObj.timeoutMs) || 15000));
   const logLabel = optObj.logLabel ? String(optObj.logLabel) : '';
   const logPrefix = logLabel ? `[KRO public-snapshot ${logLabel}]` : '[KRO public-snapshot]';
-  const parseHtml = (html) => {
+  const parseHtml = (html, rawHtml) => {
     if (!html || html.length < 100) return null;
     const titleM = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) || html.match(/<title>([^<]+)<\/title>/i);
     const title = titleM ? kroStripHtmlToText(titleM[1]).slice(0, 120) : '';
@@ -6264,7 +6362,7 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
       if (desc) snippets = kroFilterPublicSnapshotSnippets([desc], slug);
     }
     if (!snippets.length) return null;
-    return { slug, title, snippets, fetched_at: new Date().toISOString() };
+    return { slug, title, snippets, fetched_at: new Date().toISOString(), html: rawHtml };
   };
 
   const urls = [
@@ -6295,12 +6393,20 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
       }
       const body = await r.text();
       const htmlLen = body ? body.length : 0;
-      let parsed = parseHtml(body);
+      let parsed = parseHtml(body, body);
       if (!parsed || !parsed.snippets || !parsed.snippets.length) {
         const descOnly = kroExtractPublicChannelDescriptionFromHtml(body);
         if (descOnly) {
           const sn = kroFilterPublicSnapshotSnippets([descOnly], slug);
-          if (sn.length) parsed = { slug, title: '', snippets: sn, fetched_at: new Date().toISOString() };
+          if (sn.length) {
+            parsed = {
+              slug,
+              title: '',
+              snippets: sn,
+              fetched_at: new Date().toISOString(),
+              html: body,
+            };
+          }
         }
       }
       if (!parsed || !parsed.snippets || !parsed.snippets.length) {
@@ -9047,6 +9153,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     trustReportExtra,
     claudeOverlay,
     telegramUsernameResolve,
+    personBehind,
   } = opts || {};
   const inviteVoiceRu =
     String(key || '').trim().toLowerCase().startsWith('t.me/+') &&
@@ -9297,6 +9404,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       elapsed_ms: Date.now() - t0,
     },
     message: `${channelDisplay}: ${riskLine} ${fastHuman.summaryLine}`,
+    person_behind: personBehind || undefined,
     ...(telegramUsernameResolve && telegramUsernameResolve.resolved_slug
       ? {
           telegram_username_resolve: {
@@ -9999,6 +10107,26 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     let parsedForFast = parsed;
     let sampleForFast = sample;
     let readPathOut = 'telethon';
+    let personBehind = null;
+    if (pubSlugBootstrap) {
+      try {
+        personBehind = await kroBuildPersonBehindFromPublicSnapshot(
+          channelDisplay,
+          channelForOnce,
+          deadline,
+          analyzeLogId,
+        );
+        if (personBehind) {
+          console.log(
+            `[KRO analyze-channel ${analyzeLogId}] person_behind ok links=${(personBehind.social_links || []).length} verdict=${String(personBehind.verdict || '').slice(0, 80)}`,
+          );
+        }
+      } catch (ePb) {
+        console.warn(
+          `[KRO analyze-channel ${analyzeLogId}] person_behind error=${ePb && ePb.message ? String(ePb.message) : 'failed'}`,
+        );
+      }
+    }
     if (enough) {
       const hadTelethonText = telethonOnlySnippetCount > 0;
       const usedPublicHarvest = !!(harvestedSnippets && harvestedSnippets.length);
@@ -10024,6 +10152,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           telBudgetMs: telBest.budgetMs,
           t0,
           telegramUsernameResolve,
+          personBehind,
         }),
       );
     }
@@ -10058,6 +10187,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           telBudgetMs: telBest.budgetMs,
           t0,
           telegramUsernameResolve,
+          personBehind,
         }),
       );
     }
@@ -10087,6 +10217,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
             telBudgetMs: telBest.budgetMs,
             t0,
             telegramUsernameResolve,
+            personBehind,
           }),
         );
       }
@@ -10120,6 +10251,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
             telBudgetMs: telBest.budgetMs,
             t0,
             telegramUsernameResolve,
+            personBehind,
           }),
         );
       }
@@ -10154,6 +10286,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         t0,
         trustReportExtra: { editor_voice_prefix_ru: dsNote },
         telegramUsernameResolve,
+        personBehind,
       }),
     );
   } catch (e) {
