@@ -397,6 +397,12 @@
                                    <p class="kro-glance-manip-hook" id="kro-glance-manip-hook"></p>
                                    <ul class="kro-glance-manip-list" id="kro-glance-manip-list"></ul>
                                </div>
+                               <div class="kro-glance-stack-card kro-glance-person-wrap" id="kro-glance-person-wrap" style="display:none">
+                                   <h3 class="kro-glance-h">👤 Кто за каналом</h3>
+                                   <p id="kro-glance-person-verdict" style="font-weight:600;margin-bottom:8px"></p>
+                                   <div id="kro-glance-person-links" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+                                   <ul id="kro-glance-person-facts" style="list-style:none;padding:0;margin:0;font-size:0.85rem"></ul>
+                               </div>
                            </div>
                            <details class="kro-inline-tech-details" id="kro-inline-tech-details">
                                <summary class="kro-inline-tech-details-sum">Подробнее</summary>
@@ -3140,6 +3146,33 @@
                    }
                    if (det) det.open = false;
                }
+               function kroFillPersonBehind(data) {
+                   var wrap = document.getElementById('kro-glance-person-wrap');
+                   if (!wrap) return;
+                   var pb = data && data.person_behind;
+                   if (!pb) { wrap.style.display = 'none'; return; }
+                   wrap.style.display = '';
+                   var verdictEl = document.getElementById('kro-glance-person-verdict');
+                   if (verdictEl) verdictEl.textContent = pb.verdict || '';
+                   var linksEl = document.getElementById('kro-glance-person-links');
+                   if (linksEl && pb.social_links && pb.social_links.length) {
+                       linksEl.innerHTML = pb.social_links.map(function(l) {
+                           return '<a href="' + l.url.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener" style="display:inline-block;padding:3px 10px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;font-size:0.75rem;color:rgba(255,255,255,0.7);text-decoration:none">' + l.label + '</a>';
+                       }).join('');
+                   }
+                   var factsEl = document.getElementById('kro-glance-person-facts');
+                   if (factsEl) {
+                       var rows = [];
+                       if (pb.who && pb.who !== 'Аноним') rows.push(['Кто', pb.who]);
+                       if (pb.claimed_background && pb.claimed_background !== 'Не упоминается') rows.push(['Фон', pb.claimed_background]);
+                       if (pb.claimed_path && pb.claimed_path !== 'Не упоминается') rows.push(['Путь', pb.claimed_path]);
+                       if (pb.business_model) rows.push(['Бизнес', pb.business_model]);
+                       if (pb.red_flags && pb.red_flags !== 'Явных нет') rows.push(['🚩', pb.red_flags]);
+                       factsEl.innerHTML = rows.map(function(r) {
+                           return '<li style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span style="color:rgba(255,255,255,0.4);min-width:60px;flex-shrink:0">' + r[0] + '</span><span>' + r[1] + '</span></li>';
+                       }).join('');
+                   }
+               }
               function fillInlineReport(data, queryU, displayLabel, checkStartedAt, channelNameHintForMeta) {
                    var doneBanner = document.getElementById('kro-inline-done-banner');
                   var liveGateEl = document.getElementById('kro-inline-live-gate');
@@ -3586,6 +3619,7 @@
                           }
                        }
                        kroFillAtAGlance(data, displayLabel);
+                       kroFillPersonBehind(data);
                    } catch (eFill) {
                        if (typeof console !== 'undefined' && console.error) console.error('fillInlineReport', eFill);
                        if (doneBanner) {
