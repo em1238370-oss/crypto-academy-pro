@@ -5071,14 +5071,87 @@ function kroExtractSocialLinksFromHtml(html) {
   return links.slice(0, 8);
 }
 
-async function kroAnalyzePersonBehind(channelName, description, socialLinks) {
+function kroSerperSearchEndpoint() {
+  return String(process.env.SERPER_API_URL || 'https://api.serper.dev/search').trim();
+}
+
+/** Один запрос Serper; без SERPER_API_KEY — пустой массив. */
+async function kroSerperWebSearch(query) {
+  const key = process.env.SERPER_API_KEY;
+  if (!key) return [];
+  const q = String(query || '').trim();
+  if (!q) return [];
+  try {
+    const r = await axios.post(
+      kroSerperSearchEndpoint(),
+      { q, num: 5 },
+      {
+        headers: { 'Content-Type': 'application/json', 'X-API-KEY': key },
+        timeout: 10000,
+      },
+    );
+    const organic = Array.isArray(r.data?.organic) ? r.data.organic : [];
+    return organic
+      .slice(0, 5)
+      .map((item) => ({
+        title: String(item.title || '').trim(),
+        link: String(item.link || '').trim(),
+        snippet: String(item.snippet || '').trim(),
+      }))
+      .filter((x) => x.title || x.snippet);
+  } catch {
+    return [];
+  }
+}
+
+function kroFormatSerperHits(label, hits) {
+  if (!hits.length) return '';
+  return (
+    `${label}:\n`
+    + hits
+      .map((h, i) => {
+        const head = `${i + 1}. ${h.title || '—'}${h.link ? ` — ${h.link}` : ''}`;
+        const body = h.snippet ? `\n   ${h.snippet.slice(0, 220)}` : '';
+        return head + body;
+      })
+      .join('\n')
+  );
+}
+
+/** Два поисковых запроса для блока «Кто за каналом»; без ключа — пустая строка. */
+async function kroFetchPersonBehindWebContext(channelName, username) {
+  if (!process.env.SERPER_API_KEY) return '';
+  const name = String(channelName || '').trim();
+  const user = String(username || '').replace(/^@/, '').trim();
+  const queries = [];
+  if (name) {
+    queries.push(`"${name}" site:reddit.com OR "отзывы" OR "скам" OR "мошенник"`);
+  }
+  if (user) {
+    queries.push(`${user} telegram`);
+  }
+  if (!queries.length) return '';
+  const parts = [];
+  for (const q of queries) {
+    const hits = await kroSerperWebSearch(q);
+    const block = kroFormatSerperHits(`Запрос: ${q}`, hits);
+    if (block) parts.push(block);
+  }
+  return parts.join('\n\n').slice(0, 2400);
+}
+
+async function kroAnalyzePersonBehind(channelName, description, socialLinks, username) {
   const key = process.env.MISTRAL_API_KEY;
   if (!key || !description) return null;
   const socialStr = (socialLinks || []).map((l) => `${l.label}: ${l.url}`).join(', ') || 'не найдено';
+  const webContext = await kroFetchPersonBehindWebContext(channelName, username);
+  const webBlock = webContext
+    ? `\nВеб-поиск (Serper, только как контекст — не выдумывай факты сверх сниппетов):\n${webContext}\nУчти результаты веб-поиска только если они явно про этот канал; иначе игнорируй.`
+    : '';
   const prompt = `Ты аналитик крипто-каналов. Разбери кто стоит за каналом по описанию и соцсетям.
 Канал: ${channelName}
 Описание: ${description.slice(0, 600)}
-Соцсети: ${socialStr}
+Соцсети: ${socialStr}${webBlock}
 Ответь ТОЛЬКО JSON без markdown:
 {"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт/образование или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"VIP/курсы/реклама/другое","red_flags":"громкие заявления о себе или Явных нет","verdict":"одно предложение — кто реально за каналом и зачем"}`;
   try {
@@ -5115,7 +5188,7 @@ async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelFor
   const desc = kroExtractPublicChannelDescriptionFromHtml(snap.html);
   const socialLinks = kroExtractSocialLinksFromHtml(snap.html);
   if (!desc && !socialLinks.length) return null;
-  const aiProfile = desc ? await kroAnalyzePersonBehind(channelDisplay, desc, socialLinks) : null;
+  const aiProfile = desc ? await kroAnalyzePersonBehind(channelDisplay, desc, socialLinks, slug) : null;
   if (!aiProfile && !socialLinks.length) return null;
   return {
     ...(aiProfile || {
