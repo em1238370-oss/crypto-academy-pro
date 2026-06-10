@@ -3153,14 +3153,44 @@
                    if (!pb) { wrap.style.display = 'none'; return; }
                    wrap.style.display = '';
                    var verdictEl = document.getElementById('kro-glance-person-verdict');
-                   if (verdictEl) verdictEl.textContent = pb.verdict || '';
                    var linksEl = document.getElementById('kro-glance-person-links');
-                   if (linksEl && pb.social_links && pb.social_links.length) {
-                       linksEl.innerHTML = pb.social_links.map(function(l) {
-                           return '<a href="' + l.url.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener" style="display:inline-block;padding:3px 10px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;font-size:0.75rem;color:rgba(255,255,255,0.7);text-decoration:none">' + l.label + '</a>';
-                       }).join('');
-                   }
                    var factsEl = document.getElementById('kro-glance-person-facts');
+                   if (pb.who === 'anonymous_hidden') {
+                       wrap.className = 'kro-glance-stack-card kro-glance-person-wrap kro-glance-person-wrap--hidden';
+                       wrap.style.background = 'rgba(185, 28, 28, 0.35)';
+                       wrap.style.border = '1px solid rgba(248, 113, 113, 0.55)';
+                       wrap.style.borderRadius = '10px';
+                       wrap.style.padding = '12px 14px';
+                       if (verdictEl) {
+                           verdictEl.textContent = pb.verdict || '';
+                           verdictEl.style.fontWeight = '600';
+                           verdictEl.style.color = '#fecaca';
+                           verdictEl.style.marginBottom = '0';
+                       }
+                       if (linksEl) { linksEl.innerHTML = ''; linksEl.style.display = 'none'; }
+                       if (factsEl) factsEl.innerHTML = '';
+                       return;
+                   }
+                   wrap.className = 'kro-glance-stack-card kro-glance-person-wrap';
+                   wrap.style.background = '';
+                   wrap.style.border = '';
+                   wrap.style.borderRadius = '';
+                   wrap.style.padding = '';
+                   if (verdictEl) {
+                       verdictEl.textContent = pb.verdict || '';
+                       verdictEl.style.color = '';
+                       verdictEl.style.marginBottom = '8px';
+                   }
+                   if (linksEl) {
+                       linksEl.style.display = '';
+                       if (pb.social_links && pb.social_links.length) {
+                           linksEl.innerHTML = pb.social_links.map(function(l) {
+                               return '<a href="' + l.url.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener" style="display:inline-block;padding:3px 10px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;font-size:0.75rem;color:rgba(255,255,255,0.7);text-decoration:none">' + l.label + '</a>';
+                           }).join('');
+                       } else {
+                           linksEl.innerHTML = '';
+                       }
+                   }
                    if (factsEl) {
                        var rows = [];
                        if (pb.who && pb.who !== 'Аноним') rows.push(['Кто', pb.who]);

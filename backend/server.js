@@ -5140,18 +5140,69 @@ async function kroFetchPersonBehindWebContext(channelName, username) {
   return parts.join('\n\n').slice(0, 2400);
 }
 
+const KRO_PERSON_BEHIND_ANONYMOUS_HIDDEN_VERDICT =
+  'Автор намеренно скрывает личность. Ни имени, ни соцсетей, ни следа в интернете. Анонимность = невозможность проверить и привлечь к ответственности. Это главный красный флаг.';
+
+function kroCollectDuckDuckGoRelatedTexts(topics, out, limit) {
+  if (!Array.isArray(topics) || out.length >= limit) return;
+  for (const item of topics) {
+    if (out.length >= limit) break;
+    const row = item && typeof item === 'object' ? item : null;
+    if (!row) continue;
+    const text = String(row.Text || '').trim();
+    if (text) out.push(text);
+    if (Array.isArray(row.Topics)) kroCollectDuckDuckGoRelatedTexts(row.Topics, out, limit);
+  }
+}
+
+/** DuckDuckGo Instant Answer API — быстрый контекст перед Mistral (таймаут 4 с). */
+async function kroFetchDuckDuckGoPersonContext(channelName) {
+  const name = String(channelName || '').trim();
+  if (!name) return '';
+  const q = `${name} telegram`;
+  try {
+    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1`;
+    const r = await axios.get(url, { timeout: 4000 });
+    const data = r.data && typeof r.data === 'object' ? r.data : {};
+    const parts = [];
+    const abstract = String(data.AbstractText || data.Abstract || '').trim();
+    if (abstract) parts.push(abstract);
+    const related = [];
+    kroCollectDuckDuckGoRelatedTexts(data.RelatedTopics, related, 6);
+    for (const line of related) parts.push(line);
+    return parts.filter(Boolean).slice(0, 8).join('\n').slice(0, 1800);
+  } catch {
+    return '';
+  }
+}
+
 async function kroAnalyzePersonBehind(channelName, description, socialLinks, username) {
+  const desc = String(description || '').trim();
+  const links = Array.isArray(socialLinks) ? socialLinks : [];
+  const ddgContext = await kroFetchDuckDuckGoPersonContext(channelName);
+  const ddgHasContent = ddgContext.length > 0;
+
+  if (!ddgHasContent && links.length === 0 && desc.length < 50) {
+    return {
+      who: 'anonymous_hidden',
+      verdict: KRO_PERSON_BEHIND_ANONYMOUS_HIDDEN_VERDICT,
+    };
+  }
+
   const key = process.env.MISTRAL_API_KEY;
-  if (!key || !description) return null;
-  const socialStr = (socialLinks || []).map((l) => `${l.label}: ${l.url}`).join(', ') || 'не найдено';
+  if (!key || (!desc && !ddgHasContent && links.length === 0)) return null;
+  const socialStr = links.map((l) => `${l.label}: ${l.url}`).join(', ') || 'не найдено';
   const webContext = await kroFetchPersonBehindWebContext(channelName, username);
+  const ddgBlock = ddgHasContent
+    ? `\nНайдено в интернете: ${ddgContext}`
+    : '';
   const webBlock = webContext
     ? `\nВеб-поиск (Serper, только как контекст — не выдумывай факты сверх сниппетов):\n${webContext}\nУчти результаты веб-поиска только если они явно про этот канал; иначе игнорируй.`
     : '';
   const prompt = `Ты аналитик крипто-каналов. Разбери кто стоит за каналом по описанию и соцсетям.
 Канал: ${channelName}
-Описание: ${description.slice(0, 600)}
-Соцсети: ${socialStr}${webBlock}
+Описание: ${desc.slice(0, 600) || 'не указано'}
+Соцсети: ${socialStr}${ddgBlock}${webBlock}
 Ответь ТОЛЬКО JSON без markdown:
 {"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт/образование или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"VIP/курсы/реклама/другое","red_flags":"громкие заявления о себе или Явных нет","verdict":"одно предложение — кто реально за каналом и зачем"}`;
   try {
@@ -5187,9 +5238,8 @@ async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelFor
   if (!snap || !snap.html) return null;
   const desc = kroExtractPublicChannelDescriptionFromHtml(snap.html);
   const socialLinks = kroExtractSocialLinksFromHtml(snap.html);
-  if (!desc && !socialLinks.length) return null;
-  const aiProfile = desc ? await kroAnalyzePersonBehind(channelDisplay, desc, socialLinks, slug) : null;
-  if (!aiProfile && !socialLinks.length) return null;
+  const aiProfile = await kroAnalyzePersonBehind(channelDisplay, desc || '', socialLinks, slug);
+  if (!aiProfile && !socialLinks.length && !desc) return null;
   return {
     ...(aiProfile || {
       who: 'Аноним',
