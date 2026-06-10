@@ -5176,13 +5176,34 @@ async function kroFetchDuckDuckGoPersonContext(channelName) {
   }
 }
 
-async function kroAnalyzePersonBehind(channelName, description, socialLinks, username) {
+function kroNormalizePersonBehindPostTexts(postTexts) {
+  const raw = Array.isArray(postTexts) ? postTexts : [];
+  const seen = new Set();
+  const out = [];
+  for (const item of raw) {
+    const t = String(item || '').replace(/\s+/g, ' ').trim();
+    if (!t || t.length < 8 || seen.has(t)) continue;
+    seen.add(t);
+    out.push(t.slice(0, 500));
+    if (out.length >= 8) break;
+  }
+  return out;
+}
+
+function kroFormatPersonBehindPostsBlock(postTexts) {
+  const posts = kroNormalizePersonBehindPostTexts(postTexts);
+  if (!posts.length) return '';
+  return `\nРеальные посты канала (последние):\n${posts.map((p, i) => `[пост ${i + 1}] ${p}`).join('\n')}\n`;
+}
+
+async function kroAnalyzePersonBehind(channelName, description, socialLinks, username, postTexts) {
   const desc = String(description || '').trim();
   const links = Array.isArray(socialLinks) ? socialLinks : [];
+  const posts = kroNormalizePersonBehindPostTexts(postTexts);
   const ddgContext = await kroFetchDuckDuckGoPersonContext(channelName);
   const ddgHasContent = ddgContext.length > 0;
 
-  if (!ddgHasContent && links.length === 0 && desc.length < 50) {
+  if (!ddgHasContent && links.length === 0 && desc.length < 50 && posts.length === 0) {
     return {
       who: 'anonymous_hidden',
       verdict: KRO_PERSON_BEHIND_ANONYMOUS_HIDDEN_VERDICT,
@@ -5190,7 +5211,7 @@ async function kroAnalyzePersonBehind(channelName, description, socialLinks, use
   }
 
   const key = process.env.MISTRAL_API_KEY;
-  if (!key || (!desc && !ddgHasContent && links.length === 0)) return null;
+  if (!key || (!desc && !ddgHasContent && links.length === 0 && posts.length === 0)) return null;
   const socialStr = links.map((l) => `${l.label}: ${l.url}`).join(', ') || 'не найдено';
   const webContext = await kroFetchPersonBehindWebContext(channelName, username);
   const ddgBlock = ddgHasContent
@@ -5199,12 +5220,19 @@ async function kroAnalyzePersonBehind(channelName, description, socialLinks, use
   const webBlock = webContext
     ? `\nВеб-поиск (Serper, только как контекст — не выдумывай факты сверх сниппетов):\n${webContext}\nУчти результаты веб-поиска только если они явно про этот канал; иначе игнорируй.`
     : '';
-  const prompt = `Ты аналитик крипто-каналов. Разбери кто стоит за каналом по описанию и соцсетям.
+  const postsBlock = kroFormatPersonBehindPostsBlock(posts);
+  const prompt = `Ты аналитик крипто-каналов. Разбери кто стоит за каналом по описанию, соцсетям и реальным постам.
 Канал: ${channelName}
 Описание: ${desc.slice(0, 600) || 'не указано'}
-Соцсети: ${socialStr}${ddgBlock}${webBlock}
+Соцсети: ${socialStr}${ddgBlock}${webBlock}${postsBlock}
+Обязательно проанализируй посты (если есть) и найди:
+- конкретные обещания прибыли с цифрами (проценты, x2/x10, суммы);
+- фразы давления и срочности («успей», «последний шанс», «завтра поздно»);
+- упоминания себя («я заработал», «мои клиенты», «мой опыт»);
+- признаки: автор торгует сам (скрины сделок, «вошёл в лонг») или только продаёт информацию (VIP, курс, подписка).
+Ответ должен быть конкретным с дословными цитатами из постов в red_flags и verdict. Без постов — не выдумывай цитаты.
 Ответь ТОЛЬКО JSON без markdown:
-{"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт/образование или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"VIP/курсы/реклама/другое","red_flags":"громкие заявления о себе или Явных нет","verdict":"одно предложение — кто реально за каналом и зачем"}`;
+{"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт/образование или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"VIP/курсы/реклама/свой трейдинг/другое","red_flags":"красные флаги с цитатами из постов или Явных нет","verdict":"1-2 предложения — кто за каналом, зачем, с цитатами из постов если есть"}`;
   try {
     const r = await axios.post(
       'https://api.mistral.ai/v1/chat/completions',
@@ -5212,7 +5240,7 @@ async function kroAnalyzePersonBehind(channelName, description, socialLinks, use
         model: 'mistral-small-latest',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.2,
-        max_tokens: 400,
+        max_tokens: 550,
       },
       {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
@@ -5227,8 +5255,8 @@ async function kroAnalyzePersonBehind(channelName, description, socialLinks, use
   }
 }
 
-/** Собирает person_behind из HTML публичной страницы t.me (snap.html). */
-async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelForOnce, deadline, analyzeLogId) {
+/** Собирает person_behind из HTML публичной страницы t.me (snap.html) + тексты постов из ленты. */
+async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelForOnce, deadline, analyzeLogId, postTexts) {
   const slug = kroExtractTelegramPublicSlug(channelForOnce);
   if (!slug || deadline - Date.now() < 1500) return null;
   const snap = await kroFetchTelegramPublicSnapshot(channelForOnce, {
@@ -5238,8 +5266,9 @@ async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelFor
   if (!snap || !snap.html) return null;
   const desc = kroExtractPublicChannelDescriptionFromHtml(snap.html);
   const socialLinks = kroExtractSocialLinksFromHtml(snap.html);
-  const aiProfile = await kroAnalyzePersonBehind(channelDisplay, desc || '', socialLinks, slug);
-  if (!aiProfile && !socialLinks.length && !desc) return null;
+  const posts = kroNormalizePersonBehindPostTexts(postTexts);
+  const aiProfile = await kroAnalyzePersonBehind(channelDisplay, desc || '', socialLinks, slug, posts);
+  if (!aiProfile && !socialLinks.length && !desc && !posts.length) return null;
   return {
     ...(aiProfile || {
       who: 'Аноним',
@@ -5252,6 +5281,39 @@ async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelFor
     social_links: socialLinks,
     description: desc || '',
   };
+}
+
+async function kroFetchPersonBehindForAnalyzeChannel(opts) {
+  const {
+    pubSlugBootstrap,
+    channelDisplay,
+    channelForOnce,
+    deadline,
+    analyzeLogId,
+    postTexts,
+  } = opts || {};
+  if (!pubSlugBootstrap) return null;
+  try {
+    const personBehind = await kroBuildPersonBehindFromPublicSnapshot(
+      channelDisplay,
+      channelForOnce,
+      deadline,
+      analyzeLogId,
+      postTexts,
+    );
+    if (personBehind) {
+      const postsN = kroNormalizePersonBehindPostTexts(postTexts).length;
+      console.log(
+        `[KRO analyze-channel ${analyzeLogId}] person_behind ok posts=${postsN} links=${(personBehind.social_links || []).length} verdict=${String(personBehind.verdict || '').slice(0, 80)}`,
+      );
+    }
+    return personBehind;
+  } catch (ePb) {
+    console.warn(
+      `[KRO analyze-channel ${analyzeLogId}] person_behind error=${ePb && ePb.message ? String(ePb.message) : 'failed'}`,
+    );
+    return null;
+  }
 }
 
 function kroNormalizePublicSnapshotLine(text, slug) {
@@ -10230,26 +10292,6 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     let parsedForFast = parsed;
     let sampleForFast = sample;
     let readPathOut = 'telethon';
-    let personBehind = null;
-    if (pubSlugBootstrap) {
-      try {
-        personBehind = await kroBuildPersonBehindFromPublicSnapshot(
-          channelDisplay,
-          channelForOnce,
-          deadline,
-          analyzeLogId,
-        );
-        if (personBehind) {
-          console.log(
-            `[KRO analyze-channel ${analyzeLogId}] person_behind ok links=${(personBehind.social_links || []).length} verdict=${String(personBehind.verdict || '').slice(0, 80)}`,
-          );
-        }
-      } catch (ePb) {
-        console.warn(
-          `[KRO analyze-channel ${analyzeLogId}] person_behind error=${ePb && ePb.message ? String(ePb.message) : 'failed'}`,
-        );
-      }
-    }
     if (enough) {
       const hadTelethonText = telethonOnlySnippetCount > 0;
       const usedPublicHarvest = !!(harvestedSnippets && harvestedSnippets.length);
@@ -10261,6 +10303,14 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         readPathOut = 'telethon';
       }
       console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=${readPathOut} posts_read=${postsRead}`);
+      const personBehind = await kroFetchPersonBehindForAnalyzeChannel({
+        pubSlugBootstrap,
+        channelDisplay,
+        channelForOnce,
+        deadline,
+        analyzeLogId,
+        postTexts: sampleForFast,
+      });
       return res.status(200).json(
         kroBuildAnalyzeChannelLiveSuccessBundle({
           withQueueMeta,
@@ -10296,6 +10346,14 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       const sPub = Array.isArray(pPub.sample_posts) ? pPub.sample_posts.filter(Boolean) : [];
       const nPub = sPub.length;
       console.log(`[KRO analyze-channel ${analyzeLogId}] public_snapshot_only posts_read=${nPub}`);
+      const personBehindPub = await kroFetchPersonBehindForAnalyzeChannel({
+        pubSlugBootstrap,
+        channelDisplay,
+        channelForOnce,
+        deadline,
+        analyzeLogId,
+        postTexts: sPub,
+      });
       return res.status(200).json(
         kroBuildAnalyzeChannelLiveSuccessBundle({
           withQueueMeta,
@@ -10310,7 +10368,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           telBudgetMs: telBest.budgetMs,
           t0,
           telegramUsernameResolve,
-          personBehind,
+          personBehind: personBehindPub,
         }),
       );
     }
@@ -10326,6 +10384,14 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         const pR = pubRetry;
         const sR = Array.isArray(pR.sample_posts) ? pR.sample_posts.filter(Boolean) : [];
         console.log(`[KRO analyze-channel ${analyzeLogId}] public_snapshot_retry posts_read=${sR.length}`);
+        const personBehindRetry = await kroFetchPersonBehindForAnalyzeChannel({
+          pubSlugBootstrap,
+          channelDisplay,
+          channelForOnce,
+          deadline,
+          analyzeLogId,
+          postTexts: sR,
+        });
         return res.status(200).json(
           kroBuildAnalyzeChannelLiveSuccessBundle({
             withQueueMeta,
@@ -10340,7 +10406,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
             telBudgetMs: telBest.budgetMs,
             t0,
             telegramUsernameResolve,
-            personBehind,
+            personBehind: personBehindRetry,
           }),
         );
       }
@@ -10360,6 +10426,14 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         const pL = pubLate;
         const sL = Array.isArray(pL.sample_posts) ? pL.sample_posts.filter(Boolean) : [];
         console.log(`[KRO analyze-channel ${analyzeLogId}] public_snapshot_pre_dataset posts_read=${sL.length}`);
+        const personBehindLate = await kroFetchPersonBehindForAnalyzeChannel({
+          pubSlugBootstrap,
+          channelDisplay,
+          channelForOnce,
+          deadline,
+          analyzeLogId,
+          postTexts: sL,
+        });
         return res.status(200).json(
           kroBuildAnalyzeChannelLiveSuccessBundle({
             withQueueMeta,
@@ -10374,7 +10448,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
             telBudgetMs: telBest.budgetMs,
             t0,
             telegramUsernameResolve,
-            personBehind,
+            personBehind: personBehindLate,
           }),
         );
       }
@@ -10394,6 +10468,14 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     console.log(
       `[KRO analyze-channel ${analyzeLogId}] dataset_evidence_fallback posts=${postsDs}`,
     );
+    const personBehindDs = await kroFetchPersonBehindForAnalyzeChannel({
+      pubSlugBootstrap,
+      channelDisplay,
+      channelForOnce,
+      deadline,
+      analyzeLogId,
+      postTexts: sampleDs,
+    });
     return res.status(200).json(
       kroBuildAnalyzeChannelLiveSuccessBundle({
         withQueueMeta,
@@ -10409,7 +10491,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         t0,
         trustReportExtra: { editor_voice_prefix_ru: dsNote },
         telegramUsernameResolve,
-        personBehind,
+        personBehind: personBehindDs,
       }),
     );
   } catch (e) {
