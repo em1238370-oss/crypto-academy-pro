@@ -3348,11 +3348,19 @@
                                'Этому каналу пока статус «наблюдать»: бесплатный контент — да, деньги — после фактов.',
                            ], seed >> 3);
                    }
-                   // Дедуп с главным экраном: не повторяем вердикт/next_action дословно.
+                   // Дедуп с главным экраном: убираем только дословные повторы длинных фраз (>= 50 символов).
+                   // Подстрочный деdup здесь не используем — иначе куски про схемы удаляются из-за коротких
+                   // совпадений с буллетами («Платный доступ…» уже в буллете → весь кусок итога удалялся).
+                   var mainScreenLong = (excludeTexts || []).map(function (t) {
+                       return kroGlanceNormKey(t);
+                   }).filter(function (k) { return k.length >= 50; });
                    chunks = chunks.filter(function (c) {
-                       var plain = c.replace(/<[^>]+>/g, '');
-                       if (dedup.has(plain)) return false;
-                       dedup.add(plain);
+                       var plain = kroGlanceNormKey(c.replace(/<[^>]+>/g, ''));
+                       if (!plain || plain.length < 12) return false;
+                       for (var mi = 0; mi < mainScreenLong.length; mi++) {
+                           // Блокируем только если chunk полностью идентичен длинной фразе с главного экрана
+                           if (plain === mainScreenLong[mi]) return false;
+                       }
                        return true;
                    });
                    if (!chunks.length && !finalLine) {
