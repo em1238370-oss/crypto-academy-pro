@@ -8,6 +8,10 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1
+# Все Python-команды внутри venv
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 WORKDIR /app
 COPY . .
@@ -17,9 +21,8 @@ RUN npm ci --omit=dev --no-audit --no-fund 2>/dev/null \
   || npm install --omit=dev --no-audit --no-fund
 
 # Telethon и зависимости kro-worker (обязательно для /api/kro/channel-profile).
-RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel \
-  && (pip3 install --no-cache-dir --break-system-packages -r kro-worker/requirements.txt \
-    || pip3 install --no-cache-dir -r kro-worker/requirements.txt)
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+  && pip install --no-cache-dir -r kro-worker/requirements.txt
 
 WORKDIR /app/backend
 EXPOSE 4000
