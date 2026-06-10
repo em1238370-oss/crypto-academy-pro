@@ -1,6 +1,6 @@
 /**
  * Плавный скролл для /monitor (колёсико + тач).
- * На ≤640px: syncTouch, touchMultiplier 1.0 (медленнее 1.4), lerp ~0.105 и мягкая инерция — плавно и спокойно.
+ * На ≤640px: syncTouch, touchMultiplier 1.1 (медленнее 1.6), lerp ~0.125 и мягкая инерция — плавно и спокойно.
  */
 (function () {
   'use strict';
@@ -12,10 +12,10 @@
 
   var isNarrowPhone =
     typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches;
-  var touchMultiplier = isNarrowPhone ? 1.0 : 1.4;
+  var touchMultiplier = isNarrowPhone ? 1.1 : 1.6;
   /* Чуть ниже lerp на десктопе — более «шёлковая» инерция (§5 плавный скролл) */
-  var lenisLerp = isNarrowPhone ? 0.105 : 0.048;
-  var lenisSyncTouchLerp = isNarrowPhone ? 0.095 : 0.34;
+  var lenisLerp = isNarrowPhone ? 0.125 : 0.065;
+  var lenisSyncTouchLerp = isNarrowPhone ? 0.11 : 0.38;
   var lenisTouchInertia = isNarrowPhone ? 1.42 : 1.58;
 
   function maxScrollY() {
@@ -25,8 +25,8 @@
   function initWheelSmoothFallback() {
     var targetY = window.pageYOffset || 0;
     var running = false;
-    var wheelGain = 0.52;
-    var smooth = 0.15;
+    var wheelGain = 0.65;
+    var smooth = 0.19;
 
     function clamp() {
       var m = maxScrollY();
@@ -83,7 +83,7 @@
     gestureOrientation: 'vertical',
     smoothWheel: true,
     syncTouch: isNarrowPhone,
-    wheelMultiplier: 0.4,
+    wheelMultiplier: 0.52,
     touchMultiplier: touchMultiplier,
     lerp: lenisLerp,
     autoRaf: false,
