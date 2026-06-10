@@ -3211,6 +3211,60 @@
                        }
                    }
                }
+               function kroPersonBehindEscHtml(s) {
+                   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+               }
+               function kroPersonBehindLinkLabel(url) {
+                   var raw = String(url || '').trim();
+                   if (!raw) return '';
+                   try {
+                       var u = new URL(raw);
+                       var host = u.hostname.replace(/^www\./i, '');
+                       var path = (u.pathname || '') + (u.search || '');
+                       if (!path || path === '/') path = '';
+                       else if (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
+                       var out = host + path;
+                       return out.length > 52 ? out.slice(0, 49) + '…' : out;
+                   } catch (e) {
+                       return raw.replace(/^https?:\/\//i, '').slice(0, 52);
+                   }
+               }
+               function kroPersonBehindDedupeSocialLinks(links) {
+                   var seenHost = {};
+                   var seenUrl = {};
+                   var out = [];
+                   (Array.isArray(links) ? links : []).forEach(function(l) {
+                       if (!l || !l.url) return;
+                       var url = String(l.url).trim();
+                       if (!url || seenUrl[url]) return;
+                       seenUrl[url] = true;
+                       var host = '';
+                       try { host = new URL(url).hostname.replace(/^www\./i, '').toLowerCase(); } catch (e2) { host = url.toLowerCase(); }
+                       if (seenHost[host]) return;
+                       seenHost[host] = true;
+                       out.push({ url: url, label: kroPersonBehindLinkLabel(url) });
+                   });
+                   return out;
+               }
+               function kroPersonBehindSplitRedFlags(text) {
+                   var s = String(text || '').trim();
+                   if (!s || s === 'Явных нет') return [];
+                   var parts = s.split(/[.,](?:\s+|$)|\n+/).map(function(x) { return x.trim().replace(/^[,.\s]+|[,.\s]+$/g, ''); }).filter(function(x) { return x.length >= 4; });
+                   return parts.length ? parts : [s];
+               }
+               function kroPersonBehindVerdictHtml(text) {
+                   var s = String(text || '').trim();
+                   if (!s) return '';
+                   var m = s.match(/^(.+?[.!?…])(?:\s+|$)/);
+                   var first = m ? m[1].trim() : s;
+                   var rest = m ? s.slice(m[0].length).trim() : '';
+                   var html = '<strong>' + kroPersonBehindEscHtml(first) + '</strong>';
+                   if (rest) html += ' ' + kroPersonBehindEscHtml(rest);
+                   return html;
+               }
+               function kroPersonBehindRedFlagLi(text) {
+                   return '<li style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);align-items:flex-start"><span style="flex-shrink:0;line-height:1.35">🚩</span><span style="color:rgba(254,202,202,0.95)">' + kroPersonBehindEscHtml(text) + '</span></li>';
+               }
                function kroFillPersonBehind(data) {
                    var wrap = document.getElementById('kro-glance-person-wrap');
                    if (!wrap) return;
@@ -3243,8 +3297,8 @@
                        wrap.style.borderRadius = '10px';
                        wrap.style.padding = '12px 14px';
                        if (verdictEl) {
-                           verdictEl.textContent = pb.verdict || '';
-                           verdictEl.style.fontWeight = '600';
+                           verdictEl.innerHTML = kroPersonBehindVerdictHtml(pb.verdict || '');
+                           verdictEl.style.fontWeight = '400';
                            verdictEl.style.color = '#fecaca';
                            verdictEl.style.marginBottom = '0';
                        }
@@ -3258,15 +3312,18 @@
                    wrap.style.borderRadius = '';
                    wrap.style.padding = '';
                    if (verdictEl) {
-                       verdictEl.textContent = pb.verdict || '';
+                       verdictEl.innerHTML = kroPersonBehindVerdictHtml(pb.verdict || '');
+                       verdictEl.style.fontWeight = '400';
                        verdictEl.style.color = '';
                        verdictEl.style.marginBottom = '8px';
                    }
                    if (linksEl) {
                        linksEl.style.display = '';
-                       if (pb.social_links && pb.social_links.length) {
-                           linksEl.innerHTML = pb.social_links.map(function(l) {
-                               return '<a href="' + l.url.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener" style="display:inline-block;padding:3px 10px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;font-size:0.75rem;color:rgba(255,255,255,0.7);text-decoration:none">' + l.label + '</a>';
+                       var dedupedLinks = kroPersonBehindDedupeSocialLinks(pb.social_links);
+                       if (dedupedLinks.length) {
+                           linksEl.innerHTML = dedupedLinks.map(function(l) {
+                               var href = l.url.replace(/"/g, '&quot;');
+                               return '<a href="' + href + '" target="_blank" rel="noopener" style="display:inline-block;padding:3px 10px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;font-size:0.75rem;color:rgba(255,255,255,0.7);text-decoration:none">' + kroPersonBehindEscHtml(l.label) + '</a>';
                            }).join('');
                        } else {
                            linksEl.innerHTML = '';
@@ -3278,10 +3335,19 @@
                        if (pb.claimed_background && pb.claimed_background !== 'Не упоминается') rows.push(['Фон', pb.claimed_background]);
                        if (pb.claimed_path && pb.claimed_path !== 'Не упоминается') rows.push(['Путь', pb.claimed_path]);
                        if (pb.business_model) rows.push(['Бизнес', pb.business_model]);
-                       if (pb.red_flags && pb.red_flags !== 'Явных нет') rows.push(['🚩', pb.red_flags]);
-                       factsEl.innerHTML = rows.map(function(r) {
-                           return '<li style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span style="color:rgba(255,255,255,0.4);min-width:60px;flex-shrink:0">' + r[0] + '</span><span>' + r[1] + '</span></li>';
+                       var html = rows.map(function(r) {
+                           return '<li style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span style="color:rgba(255,255,255,0.4);min-width:60px;flex-shrink:0">' + kroPersonBehindEscHtml(r[0]) + '</span><span>' + kroPersonBehindEscHtml(r[1]) + '</span></li>';
                        }).join('');
+                       var flagParts = kroPersonBehindSplitRedFlags(pb.red_flags);
+                       if (flagParts.length) {
+                           var visibleFlags = flagParts.slice(0, 4);
+                           var hiddenFlags = flagParts.slice(4);
+                           html += visibleFlags.map(kroPersonBehindRedFlagLi).join('');
+                           if (hiddenFlags.length) {
+                               html += '<li style="list-style:none;padding:6px 0 2px;border-bottom:none"><details class="kro-person-flags-more"><summary style="cursor:pointer;color:rgba(255,255,255,0.55);font-size:0.8rem;user-select:none">Показать ещё (' + hiddenFlags.length + ')</summary><ul style="list-style:none;padding:6px 0 0;margin:0">' + hiddenFlags.map(kroPersonBehindRedFlagLi).join('') + '</ul></details></li>';
+                           }
+                       }
+                       factsEl.innerHTML = html;
                    }
                }
               function fillInlineReport(data, queryU, displayLabel, checkStartedAt, channelNameHintForMeta) {
