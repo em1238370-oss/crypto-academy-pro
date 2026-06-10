@@ -370,64 +370,57 @@
                    </div>
                    <div class="kro-inline-report hidden" id="kro-inline-report" aria-live="polite" hidden>
                        <div class="kro-result-card kro-inline-report-card kro-inline-report-card--document">
-                           <div class="kro-inline-at-a-glance" id="kro-inline-at-a-glance">
-                               <div class="kro-glance-hero" id="kro-glance-hero" aria-live="assertive">
-                                   <div class="kro-glance-hero-row">
-                                       <h2 class="kro-glance-hero-name" id="kro-glance-hero-name"></h2>
-                                       <span class="kro-glance-hero-badge" id="kro-glance-hero-badge" aria-hidden="true"></span>
-                                       <span class="kro-glance-hero-score" id="kro-glance-hero-score"></span>
-                                   </div>
+                           <div class="kro-result-main-card" id="kro-result-main-card" aria-live="assertive">
+                               <div class="kro-result-header">
+                                   <span class="kro-result-score" id="kro-result-score"></span>
+                                   <span class="kro-result-channel" id="kro-result-channel"></span>
+                                   <span class="kro-result-risk-badge" id="kro-result-risk-badge"></span>
                                </div>
-                               <p class="kro-glance-person-oneline" id="kro-glance-person-oneline"></p>
-                               <ul class="kro-glance-bullets" id="kro-glance-bullets"></ul>
+                               <p class="kro-result-verdict" id="kro-result-verdict"></p>
+                               <hr class="kro-result-sep" aria-hidden="true">
+                               <ul class="kro-result-bullets" id="kro-result-bullets"></ul>
+                               <hr class="kro-result-sep" aria-hidden="true">
+                               <div class="kro-result-person" id="kro-result-person-block">
+                                   <h3 class="kro-result-person-h">Кто за каналом</h3>
+                                   <div class="kro-result-person-anon" id="kro-result-person-anon" hidden>Автор скрывает личность. Ни имени, ни соцсетей, ни следа в интернете. Если продукт ценный — зачем прятаться?</div>
+                                   <dl class="kro-result-person-grid" id="kro-result-person-grid"></dl>
+                                   <div class="kro-result-person-chips" id="kro-result-person-chips"></div>
+                               </div>
+                               <button type="button" class="kro-result-more-btn" id="kro-result-more-btn" aria-expanded="false" aria-controls="kro-result-details-panel">Подробнее — сигналы, цитаты, доказательства</button>
                            </div>
-                           <details class="kro-inline-tech-details" id="kro-inline-tech-details">
-                               <summary class="kro-inline-tech-details-sum">Подробнее</summary>
-                               <div class="kro-inline-tech-details-inner">
-                           <div class="kro-glance-details-stack" id="kro-glance-details-stack">
-                               <div class="kro-glance-risk-card kro-glance-risk-card--detail" id="kro-glance-risk-card" hidden>
-                                   <p class="kro-glance-risk-label" id="kro-glance-risk-label"></p>
-                                   <p class="kro-glance-risk-blurb" id="kro-glance-risk-blurb"></p>
-                               </div>
-                               <p class="kro-inline-verdict-secondary" id="kro-inline-verdict-secondary" hidden></p>
-                               <p class="kro-inline-channel-sub" id="kro-inline-channel-sub" hidden></p>
-                               <h3 class="kro-glance-h">Почему система так считает</h3>
-                               <ul class="kro-inline-top-facts kro-glance-reason-list" id="kro-inline-top-facts"></ul>
-                               <div class="kro-glance-stack-card" id="kro-glance-quote-wrap">
-                                   <h3 class="kro-glance-h">Пример из канала</h3>
-                                   <blockquote class="kro-glance-quote" id="kro-glance-quote"></blockquote>
-                                   <p class="kro-glance-quote-note" id="kro-glance-quote-note"></p>
-                               </div>
-                               <div class="kro-glance-stack-card" id="kro-glance-meaning-wrap">
-                                   <h3 class="kro-glance-h">Что это значит для вас</h3>
-                                   <p class="kro-glance-meaning" id="kro-glance-meaning"></p>
-                               </div>
-                               <div class="kro-glance-stack-card kro-glance-do-card" id="kro-glance-do-wrap">
-                                   <h3 class="kro-glance-h">Что делать</h3>
-                                   <p class="kro-inline-one-advice" id="kro-inline-one-advice"></p>
-                               </div>
-                               <div class="kro-glance-stack-card kro-glance-manip-wrap" id="kro-glance-manip-wrap">
-                                   <h3 class="kro-glance-h">Как тебя могут манипулировать</h3>
-                                   <p class="kro-glance-manip-hook" id="kro-glance-manip-hook"></p>
-                                   <ul class="kro-glance-manip-list" id="kro-glance-manip-list"></ul>
-                               </div>
-                               <div class="kro-glance-stack-card kro-glance-person-wrap" id="kro-glance-person-wrap" style="display:none">
-                                   <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px">
-                                       <h3 class="kro-glance-h" style="margin:0">👤 Кто за каналом</h3>
-                                       <span id="kro-glance-person-confidence" style="display:none;font-size:0.72rem;padding:3px 9px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.75);white-space:nowrap"></span>
+                           <div class="kro-result-details-panel hidden" id="kro-result-details-panel" hidden>
+                               <section class="kro-detail-card" id="kro-detail-card-person">
+                                   <h4 class="kro-detail-card-h">Кто за каналом — подробно</h4>
+                                   <div class="kro-detail-person-anon" id="kro-detail-person-anon" hidden>Автор скрывает личность. Ни имени, ни соцсетей, ни следа в интернете. Если продукт ценный — зачем прятаться?</div>
+                                   <dl class="kro-detail-person-grid" id="kro-detail-person-grid"></dl>
+                                   <div class="kro-detail-person-chips" id="kro-detail-person-chips"></div>
+                               </section>
+                               <section class="kro-detail-card" id="kro-detail-card-flags">
+                                   <h4 class="kro-detail-card-h">Красные флаги — с цитатами</h4>
+                                   <div class="kro-detail-flags-list" id="kro-detail-flags-list"></div>
+                               </section>
+                               <section class="kro-detail-card" id="kro-detail-card-signals">
+                                   <h4 class="kro-detail-card-h">Проверка сигналов</h4>
+                                   <p class="kro-detail-signals-empty" id="kro-detail-signals-empty" hidden>Явных торговых входов в постах не найдено — проверить историю сигналов по ценам не удалось.</p>
+                                   <div class="kro-detail-signals-table-wrap" id="kro-detail-signals-table-wrap" hidden>
+                                       <table class="kro-detail-signals-table" id="kro-detail-signals-table">
+                                           <thead>
+                                               <tr>
+                                                   <th scope="col">Сигнал</th>
+                                                   <th scope="col">Цитата</th>
+                                                   <th scope="col">Результат</th>
+                                               </tr>
+                                           </thead>
+                                           <tbody id="kro-detail-signals-tbody"></tbody>
+                                       </table>
                                    </div>
-                                   <p id="kro-glance-person-verdict" style="font-weight:600;margin-bottom:8px"></p>
-                                   <div id="kro-glance-person-links" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
-                                   <ul id="kro-glance-person-facts" style="list-style:none;padding:0;margin:0;font-size:0.85rem"></ul>
-                               </div>
-                               <div class="kro-glance-stack-card kro-glance-signal-accuracy-wrap" id="kro-glance-signal-accuracy-wrap" style="display:none">
-                                   <h3 class="kro-glance-h" style="margin:0 0 8px">📈 Сработали ли сигналы</h3>
-                                   <p id="kro-glance-signal-accuracy-summary" style="font-weight:600;margin-bottom:8px"></p>
-                                   <p id="kro-glance-signal-accuracy-loss-flag" style="font-size:0.85rem;margin-bottom:8px"></p>
-                                   <ul id="kro-glance-signal-accuracy-items" style="list-style:none;padding:0;margin:0;font-size:0.8rem"></ul>
-                               </div>
-                           </div>
-                           <p class="kro-inline-report-eyebrow" id="kro-inline-eyebrow">Проверка канала</p>
+                               </section>
+                               <section class="kro-detail-card" id="kro-detail-card-summary">
+                                   <h4 class="kro-detail-card-h">Итог</h4>
+                                   <p class="kro-detail-summary-text" id="kro-detail-summary-text"></p>
+                               </section>
+                               <div class="kro-result-legacy" id="kro-result-legacy">
+                           <p class="kro-inline-report-eyebrow" id="kro-inline-eyebrow" hidden>Проверка канала</p>
                            <h3 class="kro-inline-report-title" id="kro-inline-title">—</h3>
                            <p class="kro-inline-report-meta" id="kro-inline-meta"></p>
                            <p class="kro-inline-done-banner hidden" id="kro-inline-done-banner" hidden role="status"></p>
@@ -523,7 +516,7 @@
                            <div class="kro-inline-deep-panel hidden" id="kro-inline-deep-panel" hidden></div>
                            <p class="kro-inline-deep-demo hidden" id="kro-inline-deep-demo" hidden></p>
                                </div>
-                           </details>
+                           </div>
                            <div class="kro-inline-actions">
                                <button type="button" class="kro-report-submit" id="kro-inline-reset">Проверить другой канал</button>
                            </div>
@@ -2877,10 +2870,167 @@
                    if (tier === 'insufficient') return '⚪ Риск: мало данных для уверенности';
                    return '🟡 Риск: Средний';
                }
-               function kroGlanceRiskBadgeEmoji(tier) {
-                   if (tier === 'danger') return '🔴';
-                   if (tier === 'clean') return '🟢';
-                   return '🟡';
+               function kroResultRiskBadge(tier) {
+                   if (tier === 'danger') return '🔴 высокий риск';
+                   if (tier === 'clean') return '🟢 низкий риск';
+                   return '🟡 осторожно';
+               }
+               function kroResultScoreText(data) {
+                   var glanceTier = kroGlanceRiskTier(data);
+                   var trIns = data.trust_report && data.trust_report.insufficient_feed === true;
+                   var hideScore =
+                       trIns ||
+                       String(data.status_code || '').toUpperCase() === 'INSUFFICIENT_FEED' ||
+                       glanceTier === 'insufficient';
+                   var ridx = data.risk_index;
+                   if (!hideScore && ridx != null && ridx !== '' && !isNaN(Number(ridx))) {
+                       var mx = data.risk_index_max != null ? Number(data.risk_index_max) : 10;
+                       return Number(ridx) + '/' + mx;
+                   }
+                   return '—/10';
+               }
+               function kroResultFirstSentence(text) {
+                   var s = String(text || '').trim().replace(/\s+/g, ' ');
+                   if (!s) return '';
+                   var m = s.match(/^(.+?[.!?…])(?:\s|$)/);
+                   if (m) return m[1].trim();
+                   return s.length > 160 ? s.slice(0, 157) + '…' : s;
+               }
+               function kroResultVerdictLine(data) {
+                   var pb = data.person_behind;
+                   if (pb && pb.business_model) {
+                       var biz = String(pb.business_model).trim();
+                       if (biz) return kroResultFirstSentence(biz);
+                   }
+                   if (pb && pb.verdict) {
+                       var v = String(pb.verdict).trim();
+                       if (v) return kroResultFirstSentence(v);
+                   }
+                   var tr = data.trust_report || {};
+                   var umQ = tr.ui_modes && tr.ui_modes.quick ? tr.ui_modes.quick : {};
+                   var sum = String(umQ.summary_ru || tr.short_take_ru || data.message || '').trim();
+                   return kroResultFirstSentence(sum) || 'Вывод сформирован по доступным данным о канале.';
+               }
+               function kroResultExtractQuotes(text) {
+                   var s = String(text || '');
+                   var out = [];
+                   var re = /«([^»]+)»/g;
+                   var m;
+                   while ((m = re.exec(s)) !== null) {
+                       var q = String(m[1] || '').trim();
+                       if (q.length >= 6) out.push(q);
+                   }
+                   return out;
+               }
+               function kroResultStripQuotes(text) {
+                   return String(text || '')
+                       .replace(/«[^»]+»/g, '')
+                       .replace(/\s+/g, ' ')
+                       .trim();
+               }
+               function kroResultPbField(pb, key) {
+                   if (!pb) return '—';
+                   var v = String(pb[key] || '').trim();
+                   if (!v || v === 'Не упоминается' || v === 'Аноним') return '—';
+                   return v;
+               }
+               function kroResultRenderGridRows(gridEl, rows) {
+                   if (!gridEl) return;
+                   gridEl.innerHTML = rows
+                       .map(function (r) {
+                           return (
+                               '<div class="kro-result-grid-row"><dt>' +
+                               esc(r[0]) +
+                               '</dt><dd>' +
+                               esc(r[1]) +
+                               '</dd></div>'
+                           );
+                       })
+                       .join('');
+               }
+               function kroResultRenderLinkChips(chipsEl, pb) {
+                   if (!chipsEl) return;
+                   if (!pb || !Array.isArray(pb.social_links) || !pb.social_links.length) {
+                       chipsEl.innerHTML = '';
+                       chipsEl.hidden = true;
+                       return;
+                   }
+                   var links = kroPersonBehindDedupeSocialLinks(pb.social_links);
+                   if (!links.length) {
+                       chipsEl.innerHTML = '';
+                       chipsEl.hidden = true;
+                       return;
+                   }
+                   chipsEl.hidden = false;
+                   chipsEl.innerHTML = links
+                       .map(function (l) {
+                           var href = l.url.replace(/"/g, '&quot;');
+                           return (
+                               '<a class="kro-result-link-chip" href="' +
+                               href +
+                               '" target="_blank" rel="noopener">' +
+                               kroPersonBehindEscHtml(l.label) +
+                               '</a>'
+                           );
+                       })
+                       .join('');
+               }
+               function kroResultBulletIcon(kind) {
+                   if (kind === 'good') return '✓';
+                   if (kind === 'danger') return '✗';
+                   return '⚠';
+               }
+               function kroPersonBehindEscHtml(s) {
+                   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+               }
+               function kroPersonBehindLinkLabel(url) {
+                   var raw = String(url || '').trim();
+                   if (!raw) return '';
+                   try {
+                       var u = new URL(raw);
+                       var host = u.hostname.replace(/^www\./i, '');
+                       var path = (u.pathname || '') + (u.search || '');
+                       if (!path || path === '/') path = '';
+                       else if (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
+                       var out = host + path;
+                       return out.length > 52 ? out.slice(0, 49) + '…' : out;
+                   } catch (e) {
+                       return raw.replace(/^https?:\/\//i, '').slice(0, 52);
+                   }
+               }
+               function kroPersonBehindDedupeSocialLinks(links) {
+                   var seenHost = {};
+                   var seenUrl = {};
+                   var out = [];
+                   (Array.isArray(links) ? links : []).forEach(function (l) {
+                       if (!l || !l.url) return;
+                       var url = String(l.url).trim();
+                       if (!url || seenUrl[url]) return;
+                       seenUrl[url] = true;
+                       var host = '';
+                       try {
+                           host = new URL(url).hostname.replace(/^www\./i, '').toLowerCase();
+                       } catch (e2) {
+                           host = url.toLowerCase();
+                       }
+                       if (seenHost[host]) return;
+                       seenHost[host] = true;
+                       out.push({ url: url, label: kroPersonBehindLinkLabel(url) });
+                   });
+                   return out;
+               }
+               function kroPersonBehindSplitRedFlags(text) {
+                   var s = String(text || '').trim();
+                   if (!s || s === 'Явных нет') return [];
+                   var parts = s
+                       .split(/[.,](?:\s+|$)|\n+/)
+                       .map(function (x) {
+                           return x.trim().replace(/^[,.\s]+|[,.\s]+$/g, '');
+                       })
+                       .filter(function (x) {
+                           return x.length >= 4;
+                       });
+                   return parts.length ? parts : [s];
                }
                function kroGlanceNormKey(s) {
                    return String(s || '')
@@ -2910,27 +3060,6 @@
                    }
                    return { has: has, add: add };
                }
-               function kroGlancePersonOneLine(data) {
-                   var pb = data && data.person_behind;
-                   if (!pb) return '';
-                   if (pb.who === 'anonymous_hidden') {
-                       var v = String(pb.verdict || '').trim();
-                       var short = v ? v.split(/[.!?]/)[0].trim() : 'автор скрыт';
-                       return 'Кто за каналом: аноним — ' + short;
-                   }
-                   var parts = [];
-                   var who = String(pb.who || '').trim();
-                   if (who && who !== 'Аноним') parts.push(who);
-                   var occ = String(pb.claimed_path || '').trim();
-                   if (!occ || occ === 'Не упоминается') {
-                       occ = String(pb.claimed_background || '').trim();
-                   }
-                   if (occ && occ !== 'Не упоминается') parts.push(occ);
-                   var biz = String(pb.business_model || '').trim();
-                   if (biz) parts.push(biz);
-                   if (!parts.length) return '';
-                   return 'Кто за каналом: ' + parts.join(' · ');
-               }
                function kroGlanceBuildBullets(data, excludeTexts) {
                    var dedup = kroGlanceDedupTracker(excludeTexts);
                    var glanceTier = kroGlanceRiskTier(data);
@@ -2950,41 +3079,38 @@
                    var rs = Array.isArray(umQ.reasons_ru) ? umQ.reasons_ru : [];
                    var bads = [];
                    var goods = [];
+                   var dangers = [];
                    var push = function (kind, text) {
                        var t = String(text || '').trim();
-                       if (!t || t.length < 12 || dedup.has(t)) return;
+                       if (t.length > 120) t = t.slice(0, 117) + '…';
+                       if (!t || t.length < 8 || dedup.has(t)) return;
                        dedup.add(t);
                        if (kind === 'good') goods.push({ kind: 'good', text: t });
-                       else bads.push({ kind: 'bad', text: t });
+                       else if (kind === 'danger') dangers.push({ kind: 'danger', text: t });
+                       else bads.push({ kind: 'warn', text: t });
                    };
                    if (glanceTier === 'insufficient') {
-                       push('bad', 'Мало текста из Telegram — вывод сдержанный, без выдуманных цитат.');
+                       push('warn', 'Мало текста из Telegram — вывод сдержанный.');
                    }
                    if (complaints != null && complaints >= 2) {
-                       push('bad', 'Несколько жалоб в базе сервиса — отдельный сигнал перед переводом.');
+                       push('danger', 'Несколько жалоб в базе сервиса.');
                    } else if (complaints === 1) {
-                       push('bad', 'В базе зафиксирована жалоба по каналу.');
+                       push('warn', 'В базе зафиксирована жалоба по каналу.');
                    }
                    if (ageDays != null && ageDays < 120 && moneyTier !== 'clean') {
-                       push('bad', 'Молодой канал (около ' + ageDays + ' дн.) — мало истории для крупной суммы.');
+                       push('warn', 'Молодой канал — мало истории для крупной суммы.');
                    }
                    if (promN != null && promN >= 2) {
-                       push('bad', 'Много перекрёстной рекламы других каналов — признак сетки или отъёма трафика.');
+                       push('warn', 'Много перекрёстной рекламы других каналов.');
                    }
                    if (flags.length) {
                        var f0 = flags[0];
                        var ft = f0 && f0.title ? String(f0.title).trim() : '';
-                       var fx = f0 && f0.explanation ? String(f0.explanation).trim().replace(/\s+/g, ' ') : '';
-                       if (fx.length > 180) fx = fx.slice(0, 177) + '…';
-                       if (ft || fx) push('bad', ft ? ft + (fx ? ': ' + fx : '') : fx);
+                       var kind0 = moneyTier === 'danger' ? 'danger' : 'warn';
+                       if (ft) push(kind0, ft);
                    }
-                   var pb = data.person_behind;
-                   if (pb && pb.red_flags) {
-                       var flagParts = kroPersonBehindSplitRedFlags(pb.red_flags);
-                       if (flagParts.length) push('bad', flagParts[0].slice(0, 200));
-                   }
-                   for (var ri = 0; ri < rs.length && bads.length < 3; ri++) {
-                       push('bad', rs[ri]);
+                   for (var ri = 0; ri < rs.length && (bads.length + dangers.length) < 3; ri++) {
+                       push(moneyTier === 'danger' ? 'danger' : 'warn', rs[ri]);
                    }
                    if (hasLoss) {
                        push('good', 'В тексте встречаются убыточные сделки — честнее, чем «одни профиты».');
@@ -2995,612 +3121,348 @@
                    if (ageDays != null && ageDays >= 365) {
                        push('good', 'Канал работает больше года — можно смотреть историю.');
                    }
-                   var sa = data.signal_accuracy;
-                   if (sa && sa.warns_about_losses && sa.loss_warning_ru) {
-                       push('good', String(sa.loss_warning_ru).slice(0, 200));
-                   }
-                   var ceSn =
-                       data.complaint_evidence && Array.isArray(data.complaint_evidence.snippet_lines_ru)
-                           ? data.complaint_evidence.snippet_lines_ru
-                           : [];
-                   for (var sx = 0; sx < ceSn.length && bads.length < 4; sx++) {
-                       push('bad', ceSn[sx]);
-                   }
-                   if (!bads.length && !goods.length) {
+                   if (!bads.length && !goods.length && !dangers.length) {
                        if (moneyTier === 'danger') {
-                           push('bad', 'Есть серьёзные сигналы перед переводом денег или подписке на «сигналы».');
+                           push('danger', 'Серьёзные сигналы перед переводом денег или подпиской.');
                        } else if (moneyTier === 'clean') {
-                           push('good', 'Явных красных флагов в доступных данных не видно — это не «гарантия», а текущая картина.');
+                           push('good', 'Явных красных флагов в данных не видно.');
                        } else {
-                           push('bad', 'Есть поводы перепроверить канал и не спешить с суммой.');
+                           push('warn', 'Есть поводы перепроверить канал перед суммой.');
                        }
                    }
-                   var result = [];
-                   if (moneyTier === 'danger') {
-                       for (var bi = 0; bi < bads.length && result.length < 3; bi++) result.push(bads[bi]);
-                       for (var gi = 0; gi < goods.length && result.length < 3; gi++) result.push(goods[gi]);
-                   } else if (moneyTier === 'clean') {
-                       for (var g2 = 0; g2 < goods.length && result.length < 3; g2++) result.push(goods[g2]);
-                       for (var b2 = 0; b2 < bads.length && result.length < 3; b2++) result.push(bads[b2]);
-                   } else {
-                       var bix = 0;
-                       var gix = 0;
-                       while (result.length < 3 && (bix < bads.length || gix < goods.length)) {
-                           if (bix < bads.length) {
-                               result.push(bads[bix]);
-                               bix++;
-                           }
-                           if (result.length < 3 && gix < goods.length) {
-                               result.push(goods[gix]);
-                               gix++;
-                           }
-                       }
-                   }
-                   return result.slice(0, 3);
+                   var pool = dangers.concat(bads).concat(goods);
+                   if (moneyTier === 'clean') pool = goods.concat(bads).concat(dangers);
+                   else if (moneyTier !== 'danger') pool = bads.concat(goods).concat(dangers);
+                   return pool.slice(0, 3);
                }
-               function kroGlanceFormatReasonLi(line) {
-                   var s = String(line || '').trim();
-                   if (!s) return '';
-                   var sep = '';
-                   var sepLen = 0;
-                   var cand = [': ', ' — ', ' – ', ' - '];
-                   for (var ci = 0; ci < cand.length; ci++) {
-                       var ix = s.indexOf(cand[ci]);
-                       if (ix > 4 && ix < 140) {
-                           sep = cand[ci];
-                           sepLen = cand[ci].length;
-                           var title = s.slice(0, ix).trim();
-                           var why = s.slice(ix + sepLen).trim();
-                           if (why.length > 6) {
-                               return (
-                                   '<li class="kro-glance-reason-item">' +
-                                   '<span class="kro-glance-reason-mark" aria-hidden="true">❗️</span>' +
-                                   '<span class="kro-glance-reason-body">' +
-                                   '<strong class="kro-glance-reason-title">' +
-                                   esc(title) +
-                                   '</strong>' +
-                                   '<span class="kro-glance-reason-arrow"> → </span>' +
-                                   '<span class="kro-glance-reason-why">' +
-                                   esc(why) +
-                                   '</span></span></li>'
-                               );
-                           }
-                           break;
-                       }
-                   }
-                   return (
-                       '<li class="kro-glance-reason-item">' +
-                       '<span class="kro-glance-reason-mark" aria-hidden="true">❗️</span>' +
-                       '<span class="kro-glance-reason-one">' +
-                       esc(s) +
-                       '</span></li>'
-                   );
-               }
-               /** Короткая цитата из ленты или списка цитат API (без выдумок). */
-               function kroGlancePickQuoteText(data) {
-                   var le = data.live_evidence && typeof data.live_evidence === 'object' ? data.live_evidence : null;
-                   var samples = le && Array.isArray(le.sample_posts) ? le.sample_posts : [];
-                   var i;
-                   for (i = 0; i < samples.length; i++) {
-                       var s = kroSanitizeChannelSnippet(String(samples[i] || '').trim());
-                       if (s && s.length >= 10) return s.slice(0, 280);
-                   }
-                   var citations = Array.isArray(data.citations) ? data.citations : [];
-                   for (i = 0; i < citations.length; i++) {
-                       var c = kroSanitizeChannelSnippet(String(citations[i] || '').trim());
-                       if (c && c.length >= 10) return c.slice(0, 280);
-                   }
-                   return '';
-               }
-               function kroGlanceQuoteExplain(data, quote) {
-                   if (!quote) return '';
-                   var tr = data.trust_report && data.trust_report.ui_modes && data.trust_report.ui_modes.quick
-                       ? data.trust_report.ui_modes.quick
-                       : {};
-                   var sum = String(tr.summary_ru || '').trim();
-                   if (sum.length > 24 && sum.length < 320) return sum;
-                   var a = data.analysis || {};
-                   var cb = Array.isArray(a.content_behavior) ? a.content_behavior : [];
-                   for (var i = 0; i < cb.length; i++) {
-                       var line = String(cb[i] || '').trim();
-                       if (line.length > 24 && line.length < 260) return line;
-                   }
+               function kroResultBuildFlagItems(data) {
+                   var items = [];
+                   var seen = {};
+                   var add = function (title, quotes) {
+                       var t = String(title || '').trim();
+                       if (!t) return;
+                       var k = kroGlanceNormKey(t);
+                       if (!k || seen[k]) return;
+                       seen[k] = true;
+                       items.push({ title: t, quotes: Array.isArray(quotes) ? quotes : [] });
+                   };
                    var flags = Array.isArray(data.flags) ? data.flags : [];
-                   if (flags[0] && flags[0].explanation) {
-                       var ex = String(flags[0].explanation).trim().replace(/\s+/g, ' ');
-                       if (ex.length > 20 && ex.length < 260) return ex;
+                   var fi;
+                   for (fi = 0; fi < flags.length; fi++) {
+                       var f = flags[fi];
+                       var title = String(f.title || f.code || '').trim();
+                       var expl = String(f.explanation || '').trim();
+                       var quotes = kroResultExtractQuotes(expl);
+                       var rest = kroResultStripQuotes(expl);
+                       if (!title && rest) title = rest.slice(0, 100);
+                       if (!quotes.length && rest) quotes = [rest.slice(0, 220)];
+                       add(title, quotes);
                    }
-                   return 'Фраза из доступного текста — проверьте, есть ли рядом правила входа, стопы и прозрачный риск.';
+                   var pb = data.person_behind;
+                   if (pb && pb.red_flags) {
+                       var parts = kroPersonBehindSplitRedFlags(pb.red_flags);
+                       for (var pi = 0; pi < parts.length; pi++) {
+                           var p = parts[pi];
+                           var pq = kroResultExtractQuotes(p);
+                           var pt = kroResultStripQuotes(p);
+                           add(pt.slice(0, 100) || 'Красный флаг', pq.length ? pq : (pt ? [pt.slice(0, 220)] : []));
+                       }
+                   }
+                   return items;
                }
-               /** Главный экран: имя, бейдж, оценка, одна строка «Кто за каналом», до 3 буллетов. */
-               function kroFillAtAGlance(data, displayLabel) {
-                   var heroName = document.getElementById('kro-glance-hero-name');
-                   var heroBadge = document.getElementById('kro-glance-hero-badge');
-                   var heroScore = document.getElementById('kro-glance-hero-score');
-                   var heroWrap = document.getElementById('kro-glance-hero');
-                   var personLine = document.getElementById('kro-glance-person-oneline');
-                   var bulletsEl = document.getElementById('kro-glance-bullets');
-                   var det = document.getElementById('kro-inline-tech-details');
-                   if (!heroName || !heroBadge || !heroScore || !bulletsEl) return;
+               function kroResultBuildSummaryHtml(data, excludeTexts) {
+                   var dedup = kroGlanceDedupTracker(excludeTexts || []);
+                   var tr = data.trust_report || {};
+                   var umQ = tr.ui_modes && tr.ui_modes.quick ? tr.ui_modes.quick : {};
+                   var umD = tr.ui_modes && tr.ui_modes.detailed ? tr.ui_modes.detailed : {};
+                   var candidates = [
+                       String(umD.empathy_ru || umQ.for_you_ru || '').trim(),
+                       String(umQ.recommendation_ru || umD.recommendation_ru || '').trim(),
+                       String(umD.why_score_ru || '').trim(),
+                   ];
+                   var a = data.analysis || {};
+                   var c = a.conclusion || {};
+                   if (Array.isArray(c.reasons)) {
+                       for (var ri = 0; ri < c.reasons.length && candidates.length < 6; ri++) {
+                           candidates.push(String(c.reasons[ri] || '').trim());
+                       }
+                   }
+                   var sentences = [];
+                   var ci;
+                   for (ci = 0; ci < candidates.length; ci++) {
+                       var block = String(candidates[ci] || '').trim();
+                       if (!block || dedup.has(block)) continue;
+                       var parts = block.split(/(?<=[.!?…])\s+/);
+                       for (var si = 0; si < parts.length && sentences.length < 4; si++) {
+                           var one = parts[si].trim();
+                           if (one.length < 12 || dedup.has(one)) continue;
+                           dedup.add(one);
+                           sentences.push(one);
+                       }
+                   }
+                   if (sentences.length < 2) {
+                       var fb = String(umQ.summary_ru || tr.short_take_ru || data.message || '').trim();
+                       if (fb && !dedup.has(fb)) sentences.unshift(kroResultFirstSentence(fb));
+                   }
+                   if (!sentences.length) return '<span>Итог сформирован по доступным данным о канале.</span>';
+                   sentences = sentences.slice(0, 4);
+                   var last = sentences.pop();
+                   var html = sentences.map(function (s) {
+                       return '<span>' + esc(s) + ' </span>';
+                   }).join('');
+                   html += '<strong>' + esc(last) + '</strong>';
+                   return html;
+               }
+               function kroEnsureResultMoreBtnWired() {
+                   var btn = document.getElementById('kro-result-more-btn');
+                   var panel = document.getElementById('kro-result-details-panel');
+                   if (!btn || !panel || btn.dataset.kroBound) return;
+                   btn.dataset.kroBound = '1';
+                   btn.addEventListener('click', function () {
+                       var open = panel.hidden;
+                       panel.hidden = !open;
+                       panel.classList.toggle('hidden', !open);
+                       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                   });
+               }
+               function kroFillMainCard(data, displayLabel) {
+                   kroEnsureResultMoreBtnWired();
+                   var scoreEl = document.getElementById('kro-result-score');
+                   var channelEl = document.getElementById('kro-result-channel');
+                   var badgeEl = document.getElementById('kro-result-risk-badge');
+                   var verdictEl = document.getElementById('kro-result-verdict');
+                   var bulletsEl = document.getElementById('kro-result-bullets');
+                   var anonEl = document.getElementById('kro-result-person-anon');
+                   var gridEl = document.getElementById('kro-result-person-grid');
+                   var chipsEl = document.getElementById('kro-result-person-chips');
+                   var panel = document.getElementById('kro-result-details-panel');
+                   var moreBtn = document.getElementById('kro-result-more-btn');
+                   if (!scoreEl || !channelEl || !badgeEl || !bulletsEl) return;
                    var profile = data.profile;
                    var channelName =
                        profile && profile.username
                            ? String(profile.username).trim()
                            : String(displayLabel || '').trim() || 'Канал';
                    var glanceTier = kroGlanceRiskTier(data);
-                   heroName.textContent = channelName;
-                   heroBadge.textContent = kroGlanceRiskBadgeEmoji(glanceTier);
-                   heroBadge.className =
-                       'kro-glance-hero-badge kro-glance-hero-badge--' +
+                   scoreEl.textContent = kroResultScoreText(data);
+                   channelEl.textContent = channelName;
+                   badgeEl.textContent = kroResultRiskBadge(glanceTier);
+                   badgeEl.className =
+                       'kro-result-risk-badge kro-result-risk-badge--' +
                        (glanceTier === 'clean' ? 'low' : glanceTier === 'danger' ? 'high' : 'mid');
-                   var ridx = data.risk_index;
-                   var trIns = data.trust_report && data.trust_report.insufficient_feed === true;
-                   var hideScore =
-                       trIns ||
-                       String(data.status_code || '').toUpperCase() === 'INSUFFICIENT_FEED' ||
-                       glanceTier === 'insufficient';
-                   if (!hideScore && ridx != null && ridx !== '' && !isNaN(Number(ridx))) {
-                       var mx = data.risk_index_max != null ? Number(data.risk_index_max) : 10;
-                       heroScore.textContent = Number(ridx) + '/' + mx;
-                   } else {
-                       heroScore.textContent = '—/10';
-                   }
-                   if (heroWrap) {
-                       heroWrap.className =
-                           'kro-glance-hero kro-glance-hero--' +
-                           (glanceTier === 'clean'
-                               ? 'low'
-                               : glanceTier === 'danger'
-                                   ? 'high'
-                                   : glanceTier === 'insufficient'
-                                       ? 'muted'
-                                       : 'mid');
-                   }
-                   var pLine = kroGlancePersonOneLine(data);
-                   if (personLine) {
-                       personLine.textContent = pLine;
-                       personLine.hidden = !pLine;
-                   }
-                   var exclude = [];
-                   if (pLine) exclude.push(pLine);
-                   var trEx = data.trust_report || {};
-                   var umEx = trEx.ui_modes && trEx.ui_modes.quick ? trEx.ui_modes.quick : {};
-                   if (umEx.summary_ru) exclude.push(String(umEx.summary_ru).trim());
-                   if (trEx.short_take_ru) exclude.push(String(trEx.short_take_ru).trim());
-                   if (data.message) exclude.push(String(data.message).trim());
+                   var verdict = kroResultVerdictLine(data);
+                   if (verdictEl) verdictEl.textContent = verdict;
+                   var exclude = [verdict];
                    var bullets = kroGlanceBuildBullets(data, exclude);
                    bulletsEl.innerHTML = bullets
                        .map(function (b) {
                            return (
-                               '<li class="kro-glance-bullet kro-glance-bullet--' +
-                               (b.kind === 'good' ? 'good' : 'bad') +
-                               '"><span class="kro-glance-bullet-mark" aria-hidden="true">' +
-                               (b.kind === 'good' ? '✓' : '⚠') +
-                               '</span><span class="kro-glance-bullet-text">' +
+                               '<li class="kro-result-bullet kro-result-bullet--' +
+                               b.kind +
+                               '"><span class="kro-result-bullet-mark" aria-hidden="true">' +
+                               kroResultBulletIcon(b.kind) +
+                               '</span><span class="kro-result-bullet-text">' +
                                esc(b.text) +
                                '</span></li>'
                            );
                        })
                        .join('');
-                   window.__kroGlanceMainTexts = exclude.concat(bullets.map(function (b) {
+                   window.__kroResultMainTexts = exclude.concat(bullets.map(function (b) {
                        return b.text;
                    }));
-                   if (det) det.open = false;
-               }
-               /** Блоки под «Подробнее»: развёрнутый вердикт, цитаты, советы. */
-               function kroFillGlanceDetails(data, displayLabel) {
-                   var riskCard = document.getElementById('kro-glance-risk-card');
-                   var riskLab = document.getElementById('kro-glance-risk-label');
-                   var riskBlurb = document.getElementById('kro-glance-risk-blurb');
-                   var sec = document.getElementById('kro-inline-verdict-secondary');
-                   var sub = document.getElementById('kro-inline-channel-sub');
-                   var ul = document.getElementById('kro-inline-top-facts');
-                   var adv = document.getElementById('kro-inline-one-advice');
-                   var qWrap = document.getElementById('kro-glance-quote-wrap');
-                   var qEl = document.getElementById('kro-glance-quote');
-                   var qNote = document.getElementById('kro-glance-quote-note');
-                   var meanEl = document.getElementById('kro-glance-meaning');
-                   var meanWrap = document.getElementById('kro-glance-meaning-wrap');
-                   var hookEl = document.getElementById('kro-glance-manip-hook');
-                   var manipList = document.getElementById('kro-glance-manip-list');
-                   if (!riskLab || !riskBlurb || !ul || !adv) return;
-                   var detailDedup = kroGlanceDedupTracker(window.__kroGlanceMainTexts || []);
-                   var mv = data.money_verdict;
-                   var glanceTier = kroGlanceRiskTier(data);
-                   var moneyTier = (mv && mv.tier) ? mv.tier : kroMoneyTrustTier(data);
-                   var phrases = {
-                       danger: 'НЕ ДОВЕРЯЙ ДЕНЬГИ — есть серьёзные признаки мошенничества',
-                       warn: 'БУДЬ ОСТОРОЖЕН — есть подозрительные моменты',
-                       clean: 'ПОКА ВЫГЛЯДИТ ЧИСТО — явных признаков мошенничества не найдено',
-                   };
-                   var secondaryLine = (mv && mv.headline_ru) ? String(mv.headline_ru).trim() : (phrases[moneyTier] || phrases.warn);
-                   riskLab.textContent = kroGlanceRiskLabel(glanceTier);
-                   if (riskCard) {
-                       riskCard.className =
-                           'kro-glance-risk-card kro-glance-risk-card--' +
-                           (glanceTier === 'clean' ? 'low' : glanceTier === 'danger' ? 'high' : glanceTier === 'insufficient' ? 'muted' : 'mid');
-                   }
-                   var tr = data.trust_report && typeof data.trust_report === 'object' ? data.trust_report : {};
-                   var umQ = tr.ui_modes && tr.ui_modes.quick ? tr.ui_modes.quick : {};
-                   var umD = tr.ui_modes && tr.ui_modes.detailed ? tr.ui_modes.detailed : {};
-                   var blurb =
-                       String(umQ.summary_ru || '').trim() ||
-                       String(tr.short_take_ru || '').trim();
-                   if (!blurb) blurb = String(data.message || '').trim();
-                   if (!blurb && glanceTier === 'insufficient') {
-                       blurb =
-                           'Лента в этот ответ почти не попала — опираемся на карточку канала, жалобы и внешние упоминания. Решение о деньгах лучше отложить, пока не будет текста постов.';
-                   }
-                   if (!blurb) {
-                       blurb =
-                           glanceTier === 'danger'
-                               ? 'Есть серьёзные сигналы перед переводом денег или подписке на «сигналы».'
-                               : glanceTier === 'clean'
-                                   ? 'Явных красных флагов в доступных данных не видно — это не «гарантия», а текущая картина.'
-                                   : 'Есть поводы перепроверить канал и не спешить с суммой.';
-                   }
-                   riskBlurb.textContent = blurb;
-                   if (sec) {
-                       sec.textContent = secondaryLine;
-                       sec.hidden = !secondaryLine || secondaryLine === blurb;
-                       sec.className =
-                           'kro-inline-verdict-secondary kro-inline-verdict-secondary--' +
-                           (moneyTier === 'clean' ? 'ok' : moneyTier === 'danger' ? 'danger' : 'warn');
-                   }
-                   if (sub) {
-                       var parts = [];
-                       if (displayLabel) parts.push('Канал: ' + displayLabel);
-                       var ce = data.complaint_evidence;
-                       if (ce && ce.invite_channel_title_auto_ru && ce.invite_title_extract_source === 'telegram_invite_html') {
-                           parts.push('Название со страницы приглашения: ' + ce.invite_channel_title_auto_ru);
+                   var pb = data.person_behind;
+                   if (pb && pb.who === 'anonymous_hidden') {
+                       if (anonEl) {
+                           anonEl.hidden = false;
+                           anonEl.classList.remove('hidden');
                        }
-                       sub.textContent = parts.join(' · ');
-                       sub.hidden = parts.length === 0;
-                   }
-                   var a = data.analysis || {};
-                   var lm = data.live_metrics || {};
-                   var flags = Array.isArray(data.flags) ? data.flags : [];
-                   var complaints = lm.complaints_count != null && !isNaN(Number(lm.complaints_count)) ? Number(lm.complaints_count) : null;
-                   var ageDays = kroExtractAgeDaysInBi(a);
-                   var promN = kroExtractPromotedCount(a);
-                   var hasLoss = kroScanLossMention(a);
-                   var facts = [];
-                   var pushUnique = function (line) {
-                       var t = String(line || '').trim();
-                       if (!t || facts.indexOf(t) !== -1 || detailDedup.has(t)) return;
-                       detailDedup.add(t);
-                       facts.push(t);
-                   };
-                   var ceSn = data.complaint_evidence && Array.isArray(data.complaint_evidence.snippet_lines_ru)
-                       ? data.complaint_evidence.snippet_lines_ru
-                       : [];
-                   if (glanceTier !== 'insufficient') {
-                       for (var sx = 0; sx < ceSn.length && facts.length < 2; sx++) {
-                           pushUnique(ceSn[sx]);
+                       if (gridEl) {
+                           gridEl.innerHTML = '';
+                           gridEl.hidden = true;
                        }
-                   }
-                   if (glanceTier === 'insufficient') {
-                       pushUnique('Мало текста из Telegram в этом ответе — вывод сдержанный; опираемся на жалобы, мониторинг и открытые страницы.');
-                       if (complaints != null && complaints > 0) {
-                           pushUnique('Жалобы в базе сервиса: ' + complaints + ' — это отдельный сигнал, даже без полной ленты.');
+                       if (chipsEl) {
+                           chipsEl.innerHTML = '';
+                           chipsEl.hidden = true;
                        }
-                       pushUnique('Не воспринимайте числовую шкалу как точный прогноз — без постов она условная.');
-                   } else if (moneyTier === 'clean') {
-                       if (ageDays != null && ageDays >= 365) {
-                           pushUnique('Канал работает больше года — время для оценки истории, не для импульсивного входа крупной суммой.');
-                       } else if (ageDays != null && ageDays >= 180) {
-                           pushUnique('Канал существует около ' + ageDays + ' дн. — можно смотреть историю, но крупную сумму не спешите.');
+                   } else if (pb) {
+                       if (anonEl) {
+                           anonEl.hidden = true;
+                           anonEl.classList.add('hidden');
                        }
-                       if (hasLoss) pushUnique('В тексте встречаются убыточные сделки или минусы — честнее, чем «одни профиты».');
-                       if (complaints === 0) pushUnique('Жалоб по этому каналу в базе сервиса сейчас нет.');
-                       else if (complaints === 1) pushUnique('В базе есть жалоба по каналу — крупным переводам это противопоказано.');
-                       else if (complaints != null && complaints > 1) pushUnique('Несколько жалоб в базе — относитесь к переводу холодно.');
+                       if (gridEl) {
+                           gridEl.hidden = false;
+                           kroResultRenderGridRows(gridEl, [
+                               ['Имя', kroResultPbField(pb, 'who')],
+                               ['Путь', kroResultPbField(pb, 'claimed_path')],
+                               ['Бизнес', kroResultBizGridValue(pb, verdict, false)],
+                           ]);
+                       }
+                       kroResultRenderLinkChips(chipsEl, pb);
                    } else {
-                       if (ageDays != null && ageDays < 120) {
-                           pushUnique('Молодой канал (около ' + ageDays + ' дн.) — для крупных сумм времени мало, чтобы оценить честность.');
+                       if (anonEl) anonEl.hidden = true;
+                       if (gridEl) {
+                           gridEl.hidden = false;
+                           kroResultRenderGridRows(gridEl, [
+                               ['Имя', '—'],
+                               ['Путь', '—'],
+                               ['Бизнес', '—'],
+                           ]);
                        }
-                       if (promN != null && promN >= 2) {
-                           pushUnique('Много перекрёстной рекламы других каналов (ориентир ' + promN + '+) — частый признак сетки или отъёма трафика.');
-                       }
-                       if (flags.length && facts.length < 3) {
-                           var f0 = flags[0];
-                           var ft = f0 && f0.title ? String(f0.title).trim() : '';
-                           var fx = f0 && f0.explanation ? String(f0.explanation).trim().replace(/\s+/g, ' ') : '';
-                           if (fx.length > 180) fx = fx.slice(0, 177) + '…';
-                           if (ft || fx) pushUnique(ft ? ft + (fx ? ': ' + fx : '') : fx);
-                       }
-                       if (complaints != null && complaints >= 2) pushUnique('Несколько жалоб в базе сервиса — отдельный сигнал перед любым переводом.');
-                       else if (complaints === 1) pushUnique('В базе зафиксирована жалоба по каналу — перепроверьте историю снаружи Telegram.');
-                       var rs = a.conclusion && Array.isArray(a.conclusion.reasons) ? a.conclusion.reasons : [];
-                       for (var ri = 0; ri < rs.length && facts.length < 3; ri++) {
-                           var one = String(rs[ri] || '').trim();
-                           if (one.length > 15 && one.length < 220) pushUnique(one);
-                       }
-                       var ties = Array.isArray(a.ties_risk_factors) ? a.ties_risk_factors : [];
-                       for (var ti = 0; ti < ties.length && facts.length < 3; ti++) {
-                           var tx = String(ties[ti] || '').trim();
-                           if (tx.length > 15 && tx.length < 220) pushUnique(tx);
+                       if (chipsEl) {
+                           chipsEl.innerHTML = '';
+                           chipsEl.hidden = true;
                        }
                    }
-                   var padClean = [
-                       'Рынок всегда рискует капиталом — не вкладывайте больше, чем готовы потерять полностью.',
-                       'Не увеличивайте сумму спешно после пары удачных сделок подряд.',
-                       'Перепроверьте канал по отзывам вне Telegram, не только по постам внутри.',
-                   ];
-                   var padDanger = [
-                       'Перевод незнакомому человеку или «под сигналы» без договора — почти всегда худший сценарий.',
-                       'Не поддавайтесь на срочность и «последние места» в закрытых чатах.',
-                       'Сохраняйте переписку и реквизиты — при споре это важно.',
-                   ];
-                   var padWarn = [
-                       'Мало данных по ленте — решение о деньгах лучше отложить и перепроверить канал снаружи.',
-                       'Любая «гарантия» прибыли в переписке — повод остановиться.',
-                       'Не переводите крупную сумму с первого контакта.',
-                   ];
-                   var pad = moneyTier === 'clean' ? padClean : moneyTier === 'danger' ? padDanger : padWarn;
-                   for (var pi = 0; pi < pad.length && facts.length < 3; pi++) pushUnique(pad[pi]);
-                   facts = facts.slice(0, 3);
-                   ul.innerHTML = facts.map(kroGlanceFormatReasonLi).join('');
-                   var rec =
-                       String(umQ.recommendation_ru || '').trim() ||
-                       String(umD.recommendation_ru || '').trim();
-                   if (!rec || rec.length < 12) {
-                       if (moneyTier === 'danger') {
-                           rec = 'Не переводите деньги в ближайшие 48 часов. Найдите отзывы живых людей вне этого канала.';
-                       } else if (moneyTier === 'warn' || glanceTier === 'insufficient') {
-                           rec = 'Начните с суммы, которую не жалко потерять полностью, или отложите вход, пока не будет больше фактов.';
-                       } else {
-                           rec = 'Попросите автора показать убыточные сделки и правила риска — честный трейдер не откажет.';
-                       }
+                   if (panel) {
+                       panel.hidden = true;
+                       panel.classList.add('hidden');
                    }
-                   adv.textContent = rec;
-                   var quoteText = kroGlancePickQuoteText(data);
-                   if (qWrap && qEl && qNote) {
-                       if (quoteText) {
-                           qWrap.hidden = false;
-                           qWrap.classList.remove('hidden');
-                           qEl.textContent = '«' + quoteText + '»';
-                           qNote.textContent = kroGlanceQuoteExplain(data, quoteText);
-                       } else {
-                           qWrap.hidden = true;
-                           qWrap.classList.add('hidden');
-                           qEl.textContent = '';
-                           qNote.textContent = '';
-                       }
-                   }
-                   var meaning =
-                       String(umD.empathy_ru || '').trim() ||
-                       String(umQ.for_you_ru || '').trim();
-                   if (!meaning) {
-                       meaning =
-                           glanceTier === 'danger'
-                               ? 'Новичку или при эмоциональном входе легко потерять быстрее, чем кажется из красивых постов.'
-                               : glanceTier === 'clean'
-                                   ? 'Спокойный тон в ответе не отменяет рыночный риск — решайте сумму и правила заранее.'
-                                   : 'Пока картина неоднозначна, безопаснее уменьшить сумму или подождать больше фактов.';
-                   }
-                   if (meanEl) meanEl.textContent = meaning;
-                   if (meanWrap) meanWrap.hidden = false;
-                   var dn = tr.deception_narrative && typeof tr.deception_narrative === 'object' ? tr.deception_narrative : null;
-                   var defBullets = [
-                       'создают срочность («только сегодня», «последние места»)',
-                       'показывают большие проценты без реальных сумм и просадок',
-                       'продают VIP как «спасение» после серии минусов',
-                       'заставляют действовать быстро в личке или чате оплаты',
-                   ];
-                   if (hookEl) {
-                       hookEl.textContent = dn && String(dn.hook || '').trim()
-                           ? String(dn.hook).trim()
-                           : 'Не про запугивание — про то, чтобы узнавать приёмы и не действовать на автомате.';
-                   }
-                   if (manipList) {
-                       var bl = dn && Array.isArray(dn.bullets) && dn.bullets.length ? dn.bullets : defBullets;
-                       manipList.innerHTML = bl
-                           .slice(0, 6)
-                           .map(function (x) {
-                               return '<li>' + esc(String(x || '').trim()) + '</li>';
-                           })
-                           .join('');
-                   }
-                   if (riskCard) {
-                       riskCard.hidden = false;
-                       riskCard.classList.remove('hidden');
-                   }
+                   if (moreBtn) moreBtn.setAttribute('aria-expanded', 'false');
                }
-               function kroPersonBehindConfidenceUi(conf) {
-                   var c = String(conf || '').trim().toLowerCase();
-                   if (c === 'high') return { label: 'Высокая уверенность', hint: 'Посты канала и соцсети', color: '#86efac', border: 'rgba(134,239,172,0.45)', bg: 'rgba(22,101,52,0.25)' };
-                   if (c === 'medium') return { label: 'Средняя уверенность', hint: 'В основном описание канала', color: '#fde68a', border: 'rgba(253,230,138,0.45)', bg: 'rgba(120,83,9,0.25)' };
-                   if (c === 'low') return { label: 'Низкая уверенность', hint: 'Мало данных для вывода', color: '#fecaca', border: 'rgba(254,202,202,0.45)', bg: 'rgba(127,29,29,0.25)' };
-                   return null;
-               }
-               function kroFillSignalAccuracy(data) {
-                   var wrap = document.getElementById('kro-glance-signal-accuracy-wrap');
-                   if (!wrap) return;
-                   var sa = data && data.signal_accuracy;
-                   if (!sa) { wrap.style.display = 'none'; return; }
-                   var hasSignals = Number(sa.total_signals) > 0;
-                   var hasLossNote = !!(sa.loss_warning_ru && String(sa.loss_warning_ru).trim());
-                   if (!hasSignals && !hasLossNote) { wrap.style.display = 'none'; return; }
-                   wrap.style.display = '';
-                   var sumEl = document.getElementById('kro-glance-signal-accuracy-summary');
-                   var flagEl = document.getElementById('kro-glance-signal-accuracy-loss-flag');
-                   var itemsEl = document.getElementById('kro-glance-signal-accuracy-items');
-                   if (sumEl) {
-                       sumEl.textContent = hasSignals
-                           ? (sa.summary_ru || ('Из ' + sa.total_signals + ' сигналов: ' + (sa.hit_count || 0) + ' сработали, ' + (sa.loss_count || 0) + ' — убыток'))
-                           : 'Явных торговых входов в постах не найдено.';
-                   }
-                   if (flagEl) {
-                       if (hasLossNote) {
-                           flagEl.style.display = '';
-                           var tone = sa.only_profits_tone ? 'rgba(254, 202, 202, 0.95)' : 'rgba(187, 247, 208, 0.95)';
-                           if (sa.warns_about_losses) tone = 'rgba(187, 247, 208, 0.95)';
-                           else if (sa.only_profits_tone) tone = 'rgba(254, 202, 202, 0.95)';
-                           flagEl.style.color = tone;
-                           flagEl.textContent = sa.loss_warning_ru;
-                       } else {
-                           flagEl.style.display = 'none';
-                           flagEl.textContent = '';
+               function kroFillDetailCards(data, displayLabel) {
+                   var detailDedup = kroGlanceDedupTracker(window.__kroResultMainTexts || []);
+                   var pb = data.person_behind;
+                   var anonMain = document.getElementById('kro-detail-person-anon');
+                   var gridMain = document.getElementById('kro-detail-person-grid');
+                   var chipsMain = document.getElementById('kro-detail-person-chips');
+                   if (pb && pb.who === 'anonymous_hidden') {
+                       if (anonMain) {
+                           anonMain.hidden = false;
+                           anonMain.classList.remove('hidden');
+                       }
+                       if (gridMain) {
+                           gridMain.innerHTML = '';
+                           gridMain.hidden = true;
+                       }
+                       if (chipsMain) {
+                           chipsMain.innerHTML = '';
+                           chipsMain.hidden = true;
+                       }
+                   } else if (pb) {
+                       if (anonMain) {
+                           anonMain.hidden = true;
+                           anonMain.classList.add('hidden');
+                       }
+                       if (gridMain) {
+                           gridMain.hidden = false;
+                           var detailVerdict =
+                               window.__kroResultMainTexts && window.__kroResultMainTexts[0]
+                                   ? String(window.__kroResultMainTexts[0])
+                                   : kroResultVerdictLine(data);
+                           kroResultRenderGridRows(gridMain, [
+                               ['Имя', kroResultPbField(pb, 'who')],
+                               ['Метод', kroResultPbField(pb, 'claimed_path')],
+                               ['Бизнес', kroResultBizGridValue(pb, detailVerdict, true)],
+                               ['Фон', kroResultPbField(pb, 'claimed_background')],
+                           ]);
+                       }
+                       kroResultRenderLinkChips(chipsMain, pb);
+                   } else {
+                       if (anonMain) anonMain.hidden = true;
+                       if (gridMain) {
+                           gridMain.hidden = false;
+                           kroResultRenderGridRows(gridMain, [
+                               ['Имя', '—'],
+                               ['Метод', '—'],
+                               ['Бизнес', '—'],
+                               ['Фон', '—'],
+                           ]);
+                       }
+                       if (chipsMain) {
+                           chipsMain.innerHTML = '';
+                           chipsMain.hidden = true;
                        }
                    }
-                   if (itemsEl) {
-                       var items = Array.isArray(sa.items) ? sa.items : [];
-                       if (!items.length) {
-                           itemsEl.innerHTML = '';
+                   var flagsList = document.getElementById('kro-detail-flags-list');
+                   if (flagsList) {
+                       var flagItems = kroResultBuildFlagItems(data);
+                       if (!flagItems.length) {
+                           flagsList.innerHTML =
+                               '<p class="kro-detail-empty">Явных красных флагов с цитатами в доступных данных не найдено.</p>';
                        } else {
-                           itemsEl.innerHTML = items.slice(0, 5).map(function(it) {
-                               var outLabel = it.outcome === 'hit' ? '✓ сработал' : (it.outcome === 'loss' ? '✗ убыток' : '— нет данных');
-                               var outColor = it.outcome === 'hit' ? '#86efac' : (it.outcome === 'loss' ? '#fca5a5' : 'rgba(255,255,255,0.5)');
-                               var line = (it.side === 'short' ? 'Шорт ' : 'Лонг ') + (it.symbol || '');
-                               if (it.entry) line += ', вход ' + it.entry;
-                               if (it.target) line += ', цель ' + it.target;
-                               if (it.price_at_signal && it.price_after_7d) {
-                                   line += ' — $' + Number(it.price_at_signal).toFixed(2) + ' → $' + Number(it.price_after_7d).toFixed(2);
+                           flagsList.innerHTML = flagItems
+                               .map(function (item, idx) {
+                                   var quotesHtml = item.quotes
+                                       .slice(0, 3)
+                                       .map(function (q) {
+                                           return '<p class="kro-detail-flag-quote">«' + esc(q) + '»</p>';
+                                       })
+                                       .join('');
+                                   var sep =
+                                       idx < flagItems.length - 1
+                                           ? '<hr class="kro-detail-flag-sep" aria-hidden="true">'
+                                           : '';
+                                   return (
+                                       '<div class="kro-detail-flag-item">' +
+                                       '<div class="kro-detail-flag-head"><span aria-hidden="true">🚩</span> ' +
+                                       esc(item.title) +
+                                       '</div>' +
+                                       quotesHtml +
+                                       sep +
+                                       '</div>'
+                                   );
+                               })
+                               .join('');
+                       }
+                   }
+                   var sa = data.signal_accuracy;
+                   var sigEmpty = document.getElementById('kro-detail-signals-empty');
+                   var sigWrap = document.getElementById('kro-detail-signals-table-wrap');
+                   var sigBody = document.getElementById('kro-detail-signals-tbody');
+                   var hasSignals = sa && Number(sa.total_signals) > 0 && Array.isArray(sa.items) && sa.items.length;
+                   if (sigEmpty && sigWrap && sigBody) {
+                       if (!hasSignals) {
+                           sigEmpty.hidden = false;
+                           sigEmpty.classList.remove('hidden');
+                           sigWrap.hidden = true;
+                           sigWrap.classList.add('hidden');
+                           sigBody.innerHTML = '';
+                       } else {
+                           sigEmpty.hidden = true;
+                           sigEmpty.classList.add('hidden');
+                           sigWrap.hidden = false;
+                           sigWrap.classList.remove('hidden');
+                           sigBody.innerHTML = sa.items.slice(0, 8).map(function (it) {
+                               var name = (it.side === 'short' ? 'Шорт ' : 'Лонг ') + (it.symbol || '');
+                               if (it.entry) name += ', вход ' + it.entry;
+                               var quote = String(it.snippet || '—').trim();
+                               if (quote.length > 140) quote = quote.slice(0, 137) + '…';
+                               var badgeCls = 'kro-detail-signal-badge--muted';
+                               var badgeTxt = 'нет данных';
+                               if (it.outcome === 'hit') {
+                                   badgeCls = 'kro-detail-signal-badge--hit';
+                                   badgeTxt = 'сработал';
+                               } else if (it.outcome === 'loss') {
+                                   badgeCls = 'kro-detail-signal-badge--loss';
+                                   badgeTxt = 'убыток';
                                }
-                               return '<li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span style="color:' + outColor + ';font-weight:600;margin-right:6px">' + outLabel + '</span><span>' + line + '</span></li>';
+                               return (
+                                   '<tr><td>' +
+                                   esc(name) +
+                                   '</td><td class="kro-detail-signal-quote">' +
+                                   esc(quote) +
+                                   '</td><td><span class="kro-detail-signal-badge ' +
+                                   badgeCls +
+                                   '">' +
+                                   esc(badgeTxt) +
+                                   '</span></td></tr>'
+                               );
                            }).join('');
                        }
                    }
-               }
-               function kroPersonBehindEscHtml(s) {
-                   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-               }
-               function kroPersonBehindLinkLabel(url) {
-                   var raw = String(url || '').trim();
-                   if (!raw) return '';
-                   try {
-                       var u = new URL(raw);
-                       var host = u.hostname.replace(/^www\./i, '');
-                       var path = (u.pathname || '') + (u.search || '');
-                       if (!path || path === '/') path = '';
-                       else if (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
-                       var out = host + path;
-                       return out.length > 52 ? out.slice(0, 49) + '…' : out;
-                   } catch (e) {
-                       return raw.replace(/^https?:\/\//i, '').slice(0, 52);
+                   var sumEl = document.getElementById('kro-detail-summary-text');
+                   if (sumEl) {
+                       sumEl.innerHTML = kroResultBuildSummaryHtml(data, window.__kroResultMainTexts || []);
                    }
                }
-               function kroPersonBehindDedupeSocialLinks(links) {
-                   var seenHost = {};
-                   var seenUrl = {};
-                   var out = [];
-                   (Array.isArray(links) ? links : []).forEach(function(l) {
-                       if (!l || !l.url) return;
-                       var url = String(l.url).trim();
-                       if (!url || seenUrl[url]) return;
-                       seenUrl[url] = true;
-                       var host = '';
-                       try { host = new URL(url).hostname.replace(/^www\./i, '').toLowerCase(); } catch (e2) { host = url.toLowerCase(); }
-                       if (seenHost[host]) return;
-                       seenHost[host] = true;
-                       out.push({ url: url, label: kroPersonBehindLinkLabel(url) });
-                   });
-                   return out;
-               }
-               function kroPersonBehindSplitRedFlags(text) {
-                   var s = String(text || '').trim();
-                   if (!s || s === 'Явных нет') return [];
-                   var parts = s.split(/[.,](?:\s+|$)|\n+/).map(function(x) { return x.trim().replace(/^[,.\s]+|[,.\s]+$/g, ''); }).filter(function(x) { return x.length >= 4; });
-                   return parts.length ? parts : [s];
-               }
-               function kroPersonBehindVerdictHtml(text) {
-                   var s = String(text || '').trim();
-                   if (!s) return '';
-                   var m = s.match(/^(.+?[.!?…])(?:\s+|$)/);
-                   var first = m ? m[1].trim() : s;
-                   var rest = m ? s.slice(m[0].length).trim() : '';
-                   var html = '<strong>' + kroPersonBehindEscHtml(first) + '</strong>';
-                   if (rest) html += ' ' + kroPersonBehindEscHtml(rest);
-                   return html;
-               }
-               function kroPersonBehindRedFlagLi(text) {
-                   return '<li style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);align-items:flex-start"><span style="flex-shrink:0;line-height:1.35">🚩</span><span style="color:rgba(254,202,202,0.95)">' + kroPersonBehindEscHtml(text) + '</span></li>';
-               }
-               function kroFillPersonBehind(data) {
-                   var wrap = document.getElementById('kro-glance-person-wrap');
-                   if (!wrap) return;
-                   var pb = data && data.person_behind;
-                   if (!pb) { wrap.style.display = 'none'; return; }
-                   wrap.style.display = '';
-                   var verdictEl = document.getElementById('kro-glance-person-verdict');
-                   var linksEl = document.getElementById('kro-glance-person-links');
-                   var factsEl = document.getElementById('kro-glance-person-facts');
-                   var confEl = document.getElementById('kro-glance-person-confidence');
-                   var confUi = kroPersonBehindConfidenceUi(pb.data_confidence);
-                   if (confEl) {
-                       if (confUi) {
-                           confEl.style.display = 'inline-block';
-                           confEl.textContent = confUi.label;
-                           confEl.title = confUi.hint;
-                           confEl.style.color = confUi.color;
-                           confEl.style.borderColor = confUi.border;
-                           confEl.style.background = confUi.bg;
-                       } else {
-                           confEl.style.display = 'none';
-                           confEl.textContent = '';
-                           confEl.title = '';
-                       }
-                   }
-                   if (pb.who === 'anonymous_hidden') {
-                       wrap.className = 'kro-glance-stack-card kro-glance-person-wrap kro-glance-person-wrap--hidden';
-                       wrap.style.background = 'rgba(185, 28, 28, 0.35)';
-                       wrap.style.border = '1px solid rgba(248, 113, 113, 0.55)';
-                       wrap.style.borderRadius = '10px';
-                       wrap.style.padding = '12px 14px';
-                       if (verdictEl) {
-                           verdictEl.innerHTML = kroPersonBehindVerdictHtml(pb.verdict || '');
-                           verdictEl.style.fontWeight = '400';
-                           verdictEl.style.color = '#fecaca';
-                           verdictEl.style.marginBottom = '0';
-                       }
-                       if (linksEl) { linksEl.innerHTML = ''; linksEl.style.display = 'none'; }
-                       if (factsEl) factsEl.innerHTML = '';
-                       return;
-                   }
-                   wrap.className = 'kro-glance-stack-card kro-glance-person-wrap';
-                   wrap.style.background = '';
-                   wrap.style.border = '';
-                   wrap.style.borderRadius = '';
-                   wrap.style.padding = '';
-                   if (verdictEl) {
-                       verdictEl.innerHTML = kroPersonBehindVerdictHtml(pb.verdict || '');
-                       verdictEl.style.fontWeight = '400';
-                       verdictEl.style.color = '';
-                       verdictEl.style.marginBottom = '8px';
-                   }
-                   if (linksEl) {
-                       linksEl.style.display = '';
-                       var dedupedLinks = kroPersonBehindDedupeSocialLinks(pb.social_links);
-                       if (dedupedLinks.length) {
-                           linksEl.innerHTML = dedupedLinks.map(function(l) {
-                               var href = l.url.replace(/"/g, '&quot;');
-                               return '<a href="' + href + '" target="_blank" rel="noopener" style="display:inline-block;padding:3px 10px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;font-size:0.75rem;color:rgba(255,255,255,0.7);text-decoration:none">' + kroPersonBehindEscHtml(l.label) + '</a>';
-                           }).join('');
-                       } else {
-                           linksEl.innerHTML = '';
-                       }
-                   }
-                   if (factsEl) {
-                       var rows = [];
-                       if (pb.who && pb.who !== 'Аноним') rows.push(['Кто', pb.who]);
-                       if (pb.claimed_background && pb.claimed_background !== 'Не упоминается') rows.push(['Фон', pb.claimed_background]);
-                       if (pb.claimed_path && pb.claimed_path !== 'Не упоминается') rows.push(['Путь', pb.claimed_path]);
-                       if (pb.business_model) rows.push(['Бизнес', pb.business_model]);
-                       var html = rows.map(function(r) {
-                           return '<li style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span style="color:rgba(255,255,255,0.4);min-width:60px;flex-shrink:0">' + kroPersonBehindEscHtml(r[0]) + '</span><span>' + kroPersonBehindEscHtml(r[1]) + '</span></li>';
-                       }).join('');
-                       var flagParts = kroPersonBehindSplitRedFlags(pb.red_flags);
-                       if (flagParts.length) {
-                           var visibleFlags = flagParts.slice(0, 4);
-                           var hiddenFlags = flagParts.slice(4);
-                           html += visibleFlags.map(kroPersonBehindRedFlagLi).join('');
-                           if (hiddenFlags.length) {
-                               html += '<li style="list-style:none;padding:6px 0 2px;border-bottom:none"><details class="kro-person-flags-more"><summary style="cursor:pointer;color:rgba(255,255,255,0.55);font-size:0.8rem;user-select:none">Показать ещё (' + hiddenFlags.length + ')</summary><ul style="list-style:none;padding:6px 0 0;margin:0">' + hiddenFlags.map(kroPersonBehindRedFlagLi).join('') + '</ul></details></li>';
-                           }
-                       }
-                       factsEl.innerHTML = html;
-                   }
+               function kroResultBizGridValue(pb, verdict, allowFull) {
+                   if (!pb || !pb.business_model) return '—';
+                   var raw = String(pb.business_model).trim();
+                   if (!raw || raw === 'Не упоминается') return '—';
+                   var first = kroResultFirstSentence(raw);
+                   if (!allowFull && kroGlanceNormKey(first) === kroGlanceNormKey(verdict)) return '—';
+                   if (allowFull && kroGlanceNormKey(raw) === kroGlanceNormKey(verdict)) return '—';
+                   return raw;
                }
               function fillInlineReport(data, queryU, displayLabel, checkStartedAt, channelNameHintForMeta) {
                    var doneBanner = document.getElementById('kro-inline-done-banner');
@@ -4053,10 +3915,8 @@
                               footEl.textContent = '';
                           }
                        }
-                       kroFillAtAGlance(data, displayLabel);
-                       kroFillGlanceDetails(data, displayLabel);
-                       kroFillPersonBehind(data);
-                       kroFillSignalAccuracy(data);
+                       kroFillMainCard(data, displayLabel);
+                       kroFillDetailCards(data, displayLabel);
                    } catch (eFill) {
                        if (typeof console !== 'undefined' && console.error) console.error('fillInlineReport', eFill);
                        if (doneBanner) {
@@ -4064,23 +3924,32 @@
                            doneBanner.classList.add('hidden');
                            doneBanner.textContent = '';
                        }
-                       var nameErr = document.getElementById('kro-glance-hero-name');
-                       var badgeErr = document.getElementById('kro-glance-hero-badge');
-                       var scoreErr = document.getElementById('kro-glance-hero-score');
-                       var bulletsErr = document.getElementById('kro-glance-bullets');
-                       var advErr = document.getElementById('kro-inline-one-advice');
-                       if (nameErr) nameErr.textContent = 'Канал';
-                       if (badgeErr) badgeErr.textContent = '🟡';
+                       var scoreErr = document.getElementById('kro-result-score');
+                       var channelErr = document.getElementById('kro-result-channel');
+                       var badgeErr = document.getElementById('kro-result-risk-badge');
+                       var verdictErr = document.getElementById('kro-result-verdict');
+                       var bulletsErr = document.getElementById('kro-result-bullets');
                        if (scoreErr) scoreErr.textContent = '—/10';
+                       if (channelErr) channelErr.textContent = 'Канал';
+                       if (badgeErr) {
+                           badgeErr.textContent = '🟡 осторожно';
+                           badgeErr.className = 'kro-result-risk-badge kro-result-risk-badge--mid';
+                       }
+                       if (verdictErr) {
+                           verdictErr.textContent =
+                               'Полный блок отчёта не отобразился — раскройте «Подробнее» или обновите страницу.';
+                       }
                        if (bulletsErr) {
                            bulletsErr.innerHTML =
-                               '<li class="kro-glance-bullet kro-glance-bullet--bad"><span class="kro-glance-bullet-mark" aria-hidden="true">⚠</span><span class="kro-glance-bullet-text">Полный блок отчёта не отобразился. Раскройте «Подробнее» или обновите страницу.</span></li>';
+                               '<li class="kro-result-bullet kro-result-bullet--warn"><span class="kro-result-bullet-mark" aria-hidden="true">⚠</span><span class="kro-result-bullet-text">Попробуйте ещё раз через минуту.</span></li>';
                        }
-                       if (advErr) {
-                           advErr.textContent = 'Попробуйте ещё раз через минуту или откройте страницу канала для глубокого разбора.';
+                       var panelErr = document.getElementById('kro-result-details-panel');
+                       var moreBtnErr = document.getElementById('kro-result-more-btn');
+                       if (panelErr) {
+                           panelErr.hidden = false;
+                           panelErr.classList.remove('hidden');
                        }
-                       var detErr = document.getElementById('kro-inline-tech-details');
-                       if (detErr) detErr.open = true;
+                       if (moreBtnErr) moreBtnErr.setAttribute('aria-expanded', 'true');
                    }
                    try {
                        if (data) {
@@ -4436,10 +4305,38 @@
                            db.classList.add('hidden');
                            db.textContent = '';
                        }
-                       var ktd = document.getElementById('kro-inline-tech-details');
-                       if (ktd) {
-                           ktd.open = false;
+                       var scoreR = document.getElementById('kro-result-score');
+                       var channelR = document.getElementById('kro-result-channel');
+                       var badgeR = document.getElementById('kro-result-risk-badge');
+                       var verdictR = document.getElementById('kro-result-verdict');
+                       var bulletsR = document.getElementById('kro-result-bullets');
+                       var anonR = document.getElementById('kro-result-person-anon');
+                       var gridR = document.getElementById('kro-result-person-grid');
+                       var chipsR = document.getElementById('kro-result-person-chips');
+                       var panelR = document.getElementById('kro-result-details-panel');
+                       var moreBtnR = document.getElementById('kro-result-more-btn');
+                       if (scoreR) scoreR.textContent = '';
+                       if (channelR) channelR.textContent = '';
+                       if (badgeR) {
+                           badgeR.textContent = '';
+                           badgeR.className = 'kro-result-risk-badge';
                        }
+                       if (verdictR) verdictR.textContent = '';
+                       if (bulletsR) bulletsR.innerHTML = '';
+                       if (anonR) {
+                           anonR.hidden = true;
+                           anonR.classList.add('hidden');
+                       }
+                       if (gridR) gridR.innerHTML = '';
+                       if (chipsR) {
+                           chipsR.innerHTML = '';
+                           chipsR.hidden = true;
+                       }
+                       if (panelR) {
+                           panelR.hidden = true;
+                           panelR.classList.add('hidden');
+                       }
+                       if (moreBtnR) moreBtnR.setAttribute('aria-expanded', 'false');
                        var rl = document.getElementById('kro-glance-risk-label');
                        var rb = document.getElementById('kro-glance-risk-blurb');
                        var rc = document.getElementById('kro-glance-risk-card');
