@@ -1445,6 +1445,19 @@
                    if (v === 'частично') return '🟡';
                    return '🟢';
                }
+               /** Подсвечивает ключевые слова риска в тексте trust-чеклиста. */
+               function kroTrustHighlight(text) {
+                   var s = esc(text);
+                   var danger = ['гарантия','гарантирован','100%','x2','x5','x10','x20','анонимн','vip','платн','мошен','обман','скам','развод','сигнал без стопа','стоп','депозит','перевод'];
+                   var warn = ['осторожно','риск','не видно','нет правил','без стопа','без правил','нет стопа','мало данных','ограничен','закрытый'];
+                   danger.forEach(function (w) {
+                       s = s.replace(new RegExp('(' + w + ')', 'gi'), '<mark class="kro-trust-mark--danger">$1</mark>');
+                   });
+                   warn.forEach(function (w) {
+                       s = s.replace(new RegExp('(' + w + ')', 'gi'), '<mark class="kro-trust-mark--warn">$1</mark>');
+                   });
+                   return s;
+               }
                function kroRenderTrustReportBlock(data) {
                    var tr = data && data.trust_report && typeof data.trust_report === 'object' ? data.trust_report : null;
                    var stack = document.getElementById('kro-inline-trust-stack');
@@ -1563,7 +1576,7 @@
                                    .map(function (ln) {
                                        return (
                                            '<li class="kro-inline-trust-reason-li"><span class="kro-inline-trust-reason-mark" aria-hidden="true">•</span> ' +
-                                           esc(String(ln || '').trim()) +
+                                           kroTrustHighlight(String(ln || '').trim()) +
                                            '</li>'
                                        );
                                    })
@@ -4035,6 +4048,17 @@
                        if (ab && ab.label && s1lines.indexOf(ab.label) === -1) {
                            s1lines.push(String(ab.label));
                        }
+                       // Убрать технические строки — балласт, не нужный пользователю
+                       s1lines = s1lines.filter(function (line) {
+                           var l = String(line || '').toLowerCase();
+                           return l.indexOf('прочитано') === -1
+                               && l.indexOf('по выборке') === -1
+                               && l.indexOf('ответ сформирован') === -1
+                               && l.indexOf('метка времени') === -1
+                               && l.indexOf('поведение за период') === -1
+                               && l.indexOf('ограничение данных') === -1;
+                       });
+                       s1lines = s1lines.slice(0, 4);
                        if (s1) s1.innerHTML = homeRenderBullets(s1lines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        var s2lines = Array.isArray(a.content_behavior) ? a.content_behavior.slice() : [];
                        if (citations.length) {
@@ -4067,6 +4091,11 @@
                        if (!tiesLines.length && umQ.for_you_ru) {
                            tiesLines.push(String(umQ.for_you_ru));
                        }
+                       // Обрезать длинные абзацы, max 4 пункта
+                       tiesLines = tiesLines.map(function (l) {
+                           var s = String(l || '').trim();
+                           return s.length > 130 ? s.slice(0, 127) + '…' : s;
+                       }).slice(0, 4);
                        if (s4) s4.innerHTML = homeRenderBullets(tiesLines) || '<p class="kro-inline-sec-skip">Нет отдельных пунктов.</p>';
                        var s5lines = [];
                        if (st && st !== '—') s5lines.push('Итоговый статус: ' + st);

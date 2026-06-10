@@ -2872,6 +2872,34 @@ body.kro-hero-scrolled .kro-floating-nav {
    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Скрыть секции, которые дублируют новые карточки выше */
+.kro-result-legacy .kro-inline-report-summary { display: none !important; }
+.kro-result-legacy #kro-inline-reasons-title,
+.kro-result-legacy #kro-inline-reasons { display: none !important; }
+.kro-result-legacy #kro-inline-sec3,
+.kro-result-legacy #kro-inline-sec5 { display: none !important; }
+
+/* Одна колонка — вместо двух — в legacy */
+.kro-result-legacy .kro-inline-sections {
+   grid-template-columns: 1fr !important;
+}
+
+/* Визуальные акценты в trust checklist */
+.kro-trust-mark--danger {
+   background: rgba(239, 68, 68, 0.18);
+   color: #fecaca;
+   padding: 1px 5px;
+   border-radius: 4px;
+   font-weight: 600;
+}
+.kro-trust-mark--warn {
+   background: rgba(245, 158, 11, 0.15);
+   color: #fde68a;
+   padding: 1px 5px;
+   border-radius: 4px;
+   font-weight: 600;
+}
+
 /* Главная проверка канала: компактный экран + «Подробнее» (legacy) */
 .kro-inline-at-a-glance {
    margin-bottom: 14px;
