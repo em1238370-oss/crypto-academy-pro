@@ -3215,47 +3215,153 @@
                    }
                    return items;
                }
+               function kroResultSumMark(text, tone) {
+                   return '<mark class="kro-sum-mark kro-sum-mark--' + tone + '">' + esc(text) + '</mark>';
+               }
+               /** Названия найденных схем/флагов этого канала (без цитат). */
+               function kroResultSchemeNames(pb, flags) {
+                   var names = [];
+                   var seen = {};
+                   var add = function (n) {
+                       var t = String(n || '').trim().replace(/^[«\[\s]+|[»\]\s]+$/g, '');
+                       if (!t || t.length < 3 || t.length > 48) return;
+                       var k = kroGlanceNormKey(t);
+                       if (!k || seen[k]) return;
+                       seen[k] = true;
+                       names.push(t);
+                   };
+                   var raw = pb && pb.red_flags ? String(pb.red_flags) : '';
+                   if (raw && raw !== 'Явных нет' && raw.indexOf('не найдено') === -1) {
+                       var re = /[«\[]([^:«»\[\]]{3,48})[»\]]?\s*:/g;
+                       var m;
+                       while ((m = re.exec(raw)) !== null && names.length < 4) add(m[1]);
+                   }
+                   var fl = Array.isArray(flags) ? flags : [];
+                   for (var fi = 0; fi < fl.length && names.length < 4; fi++) {
+                       if (fl[fi] && fl[fi].title) add(fl[fi].title);
+                   }
+                   return names;
+               }
+               /**
+                * Итог собирается из данных ЭТОГО канала (модель, автор, схемы, жалобы),
+                * с визуальными акцентами; общие фразы — только короткой рамкой про риск-менеджмент.
+                */
                function kroResultBuildSummaryHtml(data, excludeTexts) {
                    var dedup = kroGlanceDedupTracker(excludeTexts || []);
-                   var tr = data.trust_report || {};
-                   var umQ = tr.ui_modes && tr.ui_modes.quick ? tr.ui_modes.quick : {};
-                   var umD = tr.ui_modes && tr.ui_modes.detailed ? tr.ui_modes.detailed : {};
-                   var candidates = [
-                       String(umD.empathy_ru || umQ.for_you_ru || '').trim(),
-                       String(umQ.recommendation_ru || umD.recommendation_ru || '').trim(),
-                       String(umD.why_score_ru || '').trim(),
-                   ];
-                   var a = data.analysis || {};
-                   var c = a.conclusion || {};
-                   if (Array.isArray(c.reasons)) {
-                       for (var ri = 0; ri < c.reasons.length && candidates.length < 6; ri++) {
-                           candidates.push(String(c.reasons[ri] || '').trim());
+                   var seed = kroStrHash(
+                       String((data && data.channel_key) || '') +
+                       String((data.profile && data.profile.username) || '')
+                   );
+                   var pb = data.person_behind || null;
+                   var tier = kroMoneyTrustTier(data);
+                   var flags = Array.isArray(data.flags) ? data.flags : [];
+                   var lm = data.live_metrics || {};
+                   var complaints =
+                       lm.complaints_count != null && !isNaN(Number(lm.complaints_count))
+                           ? Number(lm.complaints_count)
+                           : null;
+                   var chunks = [];
+                   // 1) Конкретика: кто и какая модель — именно у этого канала.
+                   if (pb && pb.who === 'anonymous_hidden') {
+                       chunks.push(
+                           'Этот канал ведёт ' +
+                           kroResultSumMark('анонимный автор', 'danger') +
+                           ' — ни имени, ни соцсетей, проверить опыт невозможно.'
+                       );
+                   } else if (pb) {
+                       var who = String(pb.who || '').trim();
+                       var biz = String(pb.business_model || '').trim();
+                       var hasWho = who && who !== 'Аноним' && who !== '—';
+                       var hasBiz = biz && biz !== 'Не упоминается';
+                       if (hasWho && hasBiz) {
+                           chunks.push(
+                               'За каналом — ' + esc(kroResultFirstSentence(who)) +
+                               ', модель — ' + kroResultSumMark(kroResultFirstSentence(biz), 'warn') + '.'
+                           );
+                       } else if (hasBiz) {
+                           chunks.push('Модель этого канала — ' + kroResultSumMark(kroResultFirstSentence(biz), 'warn') + '.');
+                       } else if (hasWho) {
+                           chunks.push('За каналом — ' + esc(kroResultFirstSentence(who)) + '.');
                        }
                    }
-                   var sentences = [];
-                   var ci;
-                   for (ci = 0; ci < candidates.length; ci++) {
-                       var block = String(candidates[ci] || '').trim();
-                       if (!block || dedup.has(block)) continue;
-                       var parts = block.split(/(?<=[.!?…])\s+/);
-                       for (var si = 0; si < parts.length && sentences.length < 4; si++) {
-                           var one = parts[si].trim();
-                           if (one.length < 12 || dedup.has(one)) continue;
-                           dedup.add(one);
-                           sentences.push(one);
-                       }
+                   // 2) Главные минусы этого канала: найденные схемы/флаги с подсветкой.
+                   var schemes = kroResultSchemeNames(pb, flags);
+                   if (schemes.length) {
+                       var schemeTone = tier === 'danger' ? 'danger' : 'warn';
+                       var schemeHtml = schemes.slice(0, 3).map(function (s) {
+                           return kroResultSumMark('«' + s + '»', schemeTone);
+                       }).join(', ');
+                       chunks.push(
+                           kroPickVariant([
+                               'В постах видны приёмы: ',
+                               'Основные минусы, которые нашли именно здесь: ',
+                               'На что обратить внимание в этой ленте: ',
+                           ], seed) + schemeHtml + ' — это не приговор, но повод не спешить.'
+                       );
+                   } else if (tier === 'clean') {
+                       chunks.push(
+                           'Явных манипулятивных схем в доступных постах ' +
+                           kroResultSumMark('не нашли', 'good') +
+                           ' — но выборка ограничена тем, что видно публично.'
+                       );
                    }
-                   if (sentences.length < 2) {
-                       var fb = String(umQ.summary_ru || tr.short_take_ru || data.message || '').trim();
-                       if (fb && !dedup.has(fb)) sentences.unshift(kroResultFirstSentence(fb));
+                   if (complaints != null && complaints >= 1) {
+                       chunks.push(
+                           'Плюс в базе сервиса ' +
+                           kroResultSumMark(
+                               complaints === 1 ? 'есть жалоба' : 'несколько жалоб (' + complaints + ')',
+                               'danger'
+                           ) + ' по этому каналу.'
+                       );
                    }
-                   if (!sentences.length) return '<span>Итог сформирован по доступным данным о канале.</span>';
-                   sentences = sentences.slice(0, 4);
-                   var last = sentences.pop();
-                   var html = sentences.map(function (s) {
-                       return '<span>' + esc(s) + ' </span>';
+                   // 3) Рамка осторожности: риск-менеджмент как база, коротко.
+                   chunks.push(
+                       kroPickVariant([
+                           'Какой бы ни была подача — будьте осторожны и ни в коем случае не нарушайте <u>риск-менеджмент</u>: сумма на сделку и стопы важнее любых обещаний.',
+                           'Будьте осторожны: <u>риск-менеджмент</u> — база, которую не отменяет ни один канал; не входите суммой, которую не готовы потерять.',
+                           'Осторожность здесь не про страх, а про правила: <u>риск-менеджмент</u> и заранее заданный размер позиции — независимо от того, что пишут в ленте.',
+                       ], seed >> 2)
+                   );
+                   // 4) Финальная черта — персональный вывод по этому каналу, жирным.
+                   var finalLine = '';
+                   if (pb && pb.who === 'anonymous_hidden') {
+                       finalLine = kroPickVariant([
+                           'Пока автор прячется, этот канал — источник идей для наблюдения, но не место для ваших денег.',
+                           'Без лица и истории автора этому каналу нельзя доверить деньги — наблюдайте, но не платите.',
+                       ], seed >> 3);
+                   } else if (tier === 'danger') {
+                       finalLine = kroPickVariant([
+                           'По сумме найденного этот канал — про продажу вам, а не про ваш заработок: деньги сюда не несите.',
+                           'Слишком много тревожных совпадений именно у этого канала — решение о деньгах отложите.',
+                       ], seed >> 3);
+                   } else if (tier === 'clean') {
+                       finalLine = kroPickVariant([
+                           'Этот канал выглядит спокойнее многих, но проверяйте идеи на малых суммах — репутация не заменяет стопы.',
+                           'Здесь явного криминала не видно — пользуйтесь бесплатной частью и держите собственные правила риска.',
+                       ], seed >> 3);
+                   } else {
+                       var topScheme = schemes.length ? schemes[0] : '';
+                       finalLine = topScheme
+                           ? 'Главное по этому каналу: пока в ленте есть «' + topScheme + '», платить и заносить крупную сумму рано.'
+                           : kroPickVariant([
+                               'По этому каналу вывод сдержанный: смотреть можно, платить и рисковать крупным — пока нет.',
+                               'Этому каналу пока статус «наблюдать»: бесплатный контент — да, деньги — после фактов.',
+                           ], seed >> 3);
+                   }
+                   // Дедуп с главным экраном: не повторяем вердикт/next_action дословно.
+                   chunks = chunks.filter(function (c) {
+                       var plain = c.replace(/<[^>]+>/g, '');
+                       if (dedup.has(plain)) return false;
+                       dedup.add(plain);
+                       return true;
+                   });
+                   if (!chunks.length && !finalLine) {
+                       return '<span>Итог сформирован по доступным данным о канале.</span>';
+                   }
+                   var html = chunks.slice(0, 4).map(function (c) {
+                       return '<span>' + c + ' </span>';
                    }).join('');
-                   html += '<strong>' + esc(last) + '</strong>';
+                   html += '<strong>' + esc(finalLine) + '</strong>';
                    return html;
                }
                function kroEnsureResultMoreBtnWired() {
