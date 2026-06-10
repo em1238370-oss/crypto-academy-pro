@@ -406,6 +406,12 @@
                                    <div id="kro-glance-person-links" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
                                    <ul id="kro-glance-person-facts" style="list-style:none;padding:0;margin:0;font-size:0.85rem"></ul>
                                </div>
+                               <div class="kro-glance-stack-card kro-glance-signal-accuracy-wrap" id="kro-glance-signal-accuracy-wrap" style="display:none">
+                                   <h3 class="kro-glance-h" style="margin:0 0 8px">📈 Сработали ли сигналы</h3>
+                                   <p id="kro-glance-signal-accuracy-summary" style="font-weight:600;margin-bottom:8px"></p>
+                                   <p id="kro-glance-signal-accuracy-loss-flag" style="font-size:0.85rem;margin-bottom:8px"></p>
+                                   <ul id="kro-glance-signal-accuracy-items" style="list-style:none;padding:0;margin:0;font-size:0.8rem"></ul>
+                               </div>
                            </div>
                            <details class="kro-inline-tech-details" id="kro-inline-tech-details">
                                <summary class="kro-inline-tech-details-sum">Подробнее</summary>
@@ -3156,6 +3162,55 @@
                    if (c === 'low') return { label: 'Низкая уверенность', hint: 'Мало данных для вывода', color: '#fecaca', border: 'rgba(254,202,202,0.45)', bg: 'rgba(127,29,29,0.25)' };
                    return null;
                }
+               function kroFillSignalAccuracy(data) {
+                   var wrap = document.getElementById('kro-glance-signal-accuracy-wrap');
+                   if (!wrap) return;
+                   var sa = data && data.signal_accuracy;
+                   if (!sa) { wrap.style.display = 'none'; return; }
+                   var hasSignals = Number(sa.total_signals) > 0;
+                   var hasLossNote = !!(sa.loss_warning_ru && String(sa.loss_warning_ru).trim());
+                   if (!hasSignals && !hasLossNote) { wrap.style.display = 'none'; return; }
+                   wrap.style.display = '';
+                   var sumEl = document.getElementById('kro-glance-signal-accuracy-summary');
+                   var flagEl = document.getElementById('kro-glance-signal-accuracy-loss-flag');
+                   var itemsEl = document.getElementById('kro-glance-signal-accuracy-items');
+                   if (sumEl) {
+                       sumEl.textContent = hasSignals
+                           ? (sa.summary_ru || ('Из ' + sa.total_signals + ' сигналов: ' + (sa.hit_count || 0) + ' сработали, ' + (sa.loss_count || 0) + ' — убыток'))
+                           : 'Явных торговых входов в постах не найдено.';
+                   }
+                   if (flagEl) {
+                       if (hasLossNote) {
+                           flagEl.style.display = '';
+                           var tone = sa.only_profits_tone ? 'rgba(254, 202, 202, 0.95)' : 'rgba(187, 247, 208, 0.95)';
+                           if (sa.warns_about_losses) tone = 'rgba(187, 247, 208, 0.95)';
+                           else if (sa.only_profits_tone) tone = 'rgba(254, 202, 202, 0.95)';
+                           flagEl.style.color = tone;
+                           flagEl.textContent = sa.loss_warning_ru;
+                       } else {
+                           flagEl.style.display = 'none';
+                           flagEl.textContent = '';
+                       }
+                   }
+                   if (itemsEl) {
+                       var items = Array.isArray(sa.items) ? sa.items : [];
+                       if (!items.length) {
+                           itemsEl.innerHTML = '';
+                       } else {
+                           itemsEl.innerHTML = items.slice(0, 5).map(function(it) {
+                               var outLabel = it.outcome === 'hit' ? '✓ сработал' : (it.outcome === 'loss' ? '✗ убыток' : '— нет данных');
+                               var outColor = it.outcome === 'hit' ? '#86efac' : (it.outcome === 'loss' ? '#fca5a5' : 'rgba(255,255,255,0.5)');
+                               var line = (it.side === 'short' ? 'Шорт ' : 'Лонг ') + (it.symbol || '');
+                               if (it.entry) line += ', вход ' + it.entry;
+                               if (it.target) line += ', цель ' + it.target;
+                               if (it.price_at_signal && it.price_after_7d) {
+                                   line += ' — $' + Number(it.price_at_signal).toFixed(2) + ' → $' + Number(it.price_after_7d).toFixed(2);
+                               }
+                               return '<li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span style="color:' + outColor + ';font-weight:600;margin-right:6px">' + outLabel + '</span><span>' + line + '</span></li>';
+                           }).join('');
+                       }
+                   }
+               }
                function kroFillPersonBehind(data) {
                    var wrap = document.getElementById('kro-glance-person-wrap');
                    if (!wrap) return;
@@ -3676,6 +3731,7 @@
                        }
                        kroFillAtAGlance(data, displayLabel);
                        kroFillPersonBehind(data);
+                       kroFillSignalAccuracy(data);
                    } catch (eFill) {
                        if (typeof console !== 'undefined' && console.error) console.error('fillInlineReport', eFill);
                        if (doneBanner) {

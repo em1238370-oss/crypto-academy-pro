@@ -750,6 +750,7 @@ async def run_check_home_greedy(channel_id, period_days=30):
             snippet = (t or '').strip().replace('\n', ' ')[:220]
             if len(snippet) >= 12:
                 sample_posts.append(snippet)
+        sample_posts_dated = _build_sample_posts_dated(messages_with_dates)
 
         deep_metrics = _build_deep_channel_metrics(texts, messages_with_dates)
         language_word_hits = _build_language_word_hits(texts)
@@ -792,6 +793,7 @@ async def run_check_home_greedy(channel_id, period_days=30):
             'channel_age_days': channel_age_days,
             'has_signal_offer': has_signal_offer,
             'sample_posts': sample_posts,
+            'sample_posts_dated': sample_posts_dated,
             'language_word_hits': language_word_hits,
             'first_impression_posts': first_impression_posts,
             'deep_metrics': deep_metrics,
@@ -830,6 +832,29 @@ def analyze_messages(texts):
     risk_pct = round((matches / total) * 100)
     risk = min(100, int(risk_pct * 1.2))
     return risk, matches, total, risk_pct
+
+
+def _build_sample_posts_dated(messages_with_dates, cap=120):
+    """Тексты постов с датами для проверки торговых сигналов (CoinGecko)."""
+    out = []
+    for text, msg_date in messages_with_dates or []:
+        snippet = (text or '').strip().replace('\n', ' ')[:220]
+        if len(snippet) < 12:
+            continue
+        date_iso = None
+        if msg_date is not None:
+            try:
+                if getattr(msg_date, 'tzinfo', None) is None:
+                    msg_date = msg_date.replace(tzinfo=timezone.utc)
+                date_iso = msg_date.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+            except Exception:
+                date_iso = None
+        if not date_iso:
+            continue
+        out.append({'text': snippet, 'date_iso': date_iso})
+        if len(out) >= cap:
+            break
+    return out
 
 
 def count_ads_last_7_days(messages_with_dates):
@@ -1431,6 +1456,7 @@ async def run_check(channel_id, period_days=30):
             snippet = (t or '').strip().replace('\n', ' ')[:200]
             if snippet:
                 sample_posts.append(snippet)
+        sample_posts_dated = _build_sample_posts_dated(messages_with_dates)
         deep_metrics = _build_deep_channel_metrics(texts, messages_with_dates)
         language_word_hits = _build_language_word_hits(texts)
         first_impression_posts = _first_impression_snippets_from_messages(messages, 3)
@@ -1472,6 +1498,7 @@ async def run_check(channel_id, period_days=30):
             'has_signal_offer': has_signal_offer,
             '_sample_texts': texts[:20],
             'sample_posts': sample_posts,
+            'sample_posts_dated': sample_posts_dated,
             'language_word_hits': language_word_hits,
             'first_impression_posts': first_impression_posts,
             'deep_metrics': deep_metrics,
