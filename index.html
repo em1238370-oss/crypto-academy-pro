@@ -2427,17 +2427,11 @@
                        if (!sn2 && samples.length) sn2 = samples[ti % samples.length];
                        addRow(colon > 0 ? 'watch' : 'info', lab, rest, sn2);
                    }
-                   if (rows.length < 3) {
-                       for (var pi = poolIx; pi < pool.length && rows.length < 8; pi++) {
-                           addRow(
-                               'neutral',
-                               'Фрагмент из ленты',
-                               'Дословный отрывок из публичных постов в момент проверки — он попал в выборку сервера.',
-                               pool[pi],
-                           );
-                       }
-                   }
-                   return rows.slice(0, 14);
+                   // «Фрагмент из ленты» убран — пользователи не понимают что это,
+                   // реальные наблюдения уже есть в строках выше.
+                   return rows.filter(function (r) {
+                       return r && r.label !== 'Фрагмент из ленты';
+                   }).slice(0, 14);
                }
                function kroClipSnippet(s, n) {
                    var t = String(s || '').replace(/\s+/g, ' ').trim();
@@ -2773,9 +2767,13 @@
                    checkInput.disabled = false;
                }
                function fillInlineDeepPanel(data, queryU) {
+                   // BYO-блок убран — пользователи не понимают что это.
                    var panel = document.getElementById('kro-inline-deep-panel');
                    var demo = document.getElementById('kro-inline-deep-demo');
-                   if (!panel || !demo) return;
+                   if (panel) { panel.hidden = true; panel.innerHTML = ''; }
+                   if (demo) { demo.hidden = true; demo.innerHTML = ''; }
+                   return;
+                   if (!panel || !demo) return; // eslint-disable-line no-unreachable
                    var dg =
                        data && data.deep_gate != null && typeof data.deep_gate === 'object' && !Array.isArray(data.deep_gate)
                            ? data.deep_gate
@@ -4153,11 +4151,8 @@
                           doneBanner.textContent = '';
                       }
                       if (footEl) {
-                          var footText = kroHumanizeAnalysisFoot(ab, data);
-                          if (footText) {
-                              footEl.hidden = false;
-                              footEl.textContent = footText;
-                          } else {
+                          // Технический футер скрыт — пользователям не нужна служебная информация
+                          if (footEl) {
                               footEl.hidden = true;
                               footEl.textContent = '';
                           }

@@ -2930,8 +2930,17 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-result-legacy .kro-inline-report-summary { display: none !important; }
 .kro-result-legacy #kro-inline-reasons-title,
 .kro-result-legacy #kro-inline-reasons { display: none !important; }
+.kro-result-legacy #kro-inline-sec2,
 .kro-result-legacy #kro-inline-sec3,
+.kro-result-legacy #kro-inline-sec4,
 .kro-result-legacy #kro-inline-sec5 { display: none !important; }
+/* Технический футер и BYO-блок — скрываем */
+.kro-result-legacy .kro-inline-foot,
+.kro-result-legacy #kro-inline-foot { display: none !important; }
+.kro-result-legacy .kro-inline-deep-panel,
+.kro-result-legacy #kro-inline-deep-panel,
+.kro-result-legacy .kro-inline-deep-demo,
+.kro-result-legacy #kro-inline-deep-demo { display: none !important; }
 
 /* Одна колонка — вместо двух — в legacy */
 .kro-result-legacy .kro-inline-sections {
