@@ -371,12 +371,17 @@
                    <div class="kro-inline-report hidden" id="kro-inline-report" aria-live="polite" hidden>
                        <div class="kro-result-card kro-inline-report-card kro-inline-report-card--document">
                            <div class="kro-result-main-card" id="kro-result-main-card" aria-live="assertive">
+                               <p class="kro-result-hero-verdict" id="kro-result-hero-verdict"></p>
+                               <p class="kro-result-reveal" id="kro-result-reveal" hidden></p>
+                               <div class="kro-result-next-action" id="kro-result-next-action-wrap" hidden>
+                                   <span class="kro-result-next-action-label">Что делать</span>
+                                   <p class="kro-result-next-action-text" id="kro-result-next-action"></p>
+                               </div>
                                <div class="kro-result-header">
                                    <span class="kro-result-score" id="kro-result-score"></span>
                                    <span class="kro-result-channel" id="kro-result-channel"></span>
                                    <span class="kro-result-risk-badge" id="kro-result-risk-badge"></span>
                                </div>
-                               <p class="kro-result-verdict" id="kro-result-verdict"></p>
                                <hr class="kro-result-sep" aria-hidden="true">
                                <ul class="kro-result-bullets" id="kro-result-bullets"></ul>
                                <hr class="kro-result-sep" aria-hidden="true">
@@ -2896,20 +2901,60 @@
                    if (m) return m[1].trim();
                    return s.length > 160 ? s.slice(0, 157) + '…' : s;
                }
-               function kroResultVerdictLine(data) {
+               function kroResultHeroVerdict(data) {
                    var pb = data.person_behind;
-                   if (pb && pb.business_model) {
-                       var biz = String(pb.business_model).trim();
-                       if (biz) return kroResultFirstSentence(biz);
-                   }
                    if (pb && pb.verdict) {
                        var v = String(pb.verdict).trim();
-                       if (v) return kroResultFirstSentence(v);
+                       if (v) return v;
+                   }
+                   if (pb && pb.who === 'anonymous_hidden') {
+                       return 'Опасно — автор скрывает личность. Не плати, пока не знаешь кто за каналом.';
+                   }
+                   var mv = data.money_verdict;
+                   if (mv && mv.headline_ru) {
+                       var h = String(mv.headline_ru).trim();
+                       if (h) return h;
                    }
                    var tr = data.trust_report || {};
                    var umQ = tr.ui_modes && tr.ui_modes.quick ? tr.ui_modes.quick : {};
                    var sum = String(umQ.summary_ru || tr.short_take_ru || data.message || '').trim();
-                   return kroResultFirstSentence(sum) || 'Вывод сформирован по доступным данным о канале.';
+                   return sum || 'Вывод сформирован по доступным данным о канале.';
+               }
+               function kroResultRevealMoment(data) {
+                   var pb = data.person_behind;
+                   if (pb && pb.reveal_moment) {
+                       var r = String(pb.reveal_moment).trim();
+                       if (r) return r;
+                   }
+                   if (pb && pb.who === 'anonymous_hidden') {
+                       return 'Анонимность — способ исчезнуть с твоими деньгами, когда что-то пойдёт не так.';
+                   }
+                   if (pb && pb.business_model) {
+                       var biz = String(pb.business_model).trim();
+                       if (biz && biz !== 'Не упоминается') return kroResultFirstSentence(biz);
+                   }
+                   return '';
+               }
+               function kroResultNextAction(data) {
+                   var pb = data.person_behind;
+                   if (pb && pb.next_action) {
+                       var a = String(pb.next_action).trim();
+                       if (a) return a;
+                   }
+                   if (pb && pb.who === 'anonymous_hidden') {
+                       return 'Не плати VIP и не переводи деньги, пока не знаешь кто автор.';
+                   }
+                   var tr = data.trust_report || {};
+                   var umQ = tr.ui_modes && tr.ui_modes.quick ? tr.ui_modes.quick : {};
+                   var rec = String(umQ.recommendation_ru || '').trim();
+                   if (rec) return rec;
+                   var tier = kroMoneyTrustTier(data);
+                   if (tier === 'danger') return 'Не переводи деньги в ближайшие 48 часов — сначала найди отзывы вне канала.';
+                   if (tier === 'clean') return 'Смотри бесплатный контент, не спеши с VIP-подпиской.';
+                   return 'Начни с суммы, которую не жалко потерять, или отложи вход.';
+               }
+               function kroResultVerdictLine(data) {
+                   return kroResultHeroVerdict(data);
                }
                function kroResultExtractQuotes(text) {
                    var s = String(text || '');
@@ -3021,7 +3066,7 @@
                }
                function kroPersonBehindSplitRedFlags(text) {
                    var s = String(text || '').trim();
-                   if (!s || s === 'Явных нет') return [];
+                   if (!s || s === 'Явных нет' || s === 'Явных манипулятивных схем не найдено') return [];
                    var parts = s
                        .split(/[.,](?:\s+|$)|\n+/)
                        .map(function (x) {
@@ -3227,10 +3272,13 @@
                }
                function kroFillMainCard(data, displayLabel) {
                    kroEnsureResultMoreBtnWired();
+                   var heroVerdictEl = document.getElementById('kro-result-hero-verdict');
+                   var revealEl = document.getElementById('kro-result-reveal');
+                   var nextWrapEl = document.getElementById('kro-result-next-action-wrap');
+                   var nextEl = document.getElementById('kro-result-next-action');
                    var scoreEl = document.getElementById('kro-result-score');
                    var channelEl = document.getElementById('kro-result-channel');
                    var badgeEl = document.getElementById('kro-result-risk-badge');
-                   var verdictEl = document.getElementById('kro-result-verdict');
                    var bulletsEl = document.getElementById('kro-result-bullets');
                    var anonEl = document.getElementById('kro-result-person-anon');
                    var gridEl = document.getElementById('kro-result-person-grid');
@@ -3244,15 +3292,40 @@
                            ? String(profile.username).trim()
                            : String(displayLabel || '').trim() || 'Канал';
                    var glanceTier = kroGlanceRiskTier(data);
+                   var heroVerdict = kroResultHeroVerdict(data);
+                   var reveal = kroResultRevealMoment(data);
+                   var nextAction = kroResultNextAction(data);
+                   if (heroVerdictEl) heroVerdictEl.textContent = heroVerdict;
+                   if (revealEl) {
+                       if (reveal) {
+                           revealEl.textContent = reveal;
+                           revealEl.hidden = false;
+                           revealEl.classList.remove('hidden');
+                       } else {
+                           revealEl.textContent = '';
+                           revealEl.hidden = true;
+                           revealEl.classList.add('hidden');
+                       }
+                   }
+                   if (nextWrapEl && nextEl) {
+                       if (nextAction) {
+                           nextEl.textContent = nextAction;
+                           nextWrapEl.hidden = false;
+                           nextWrapEl.classList.remove('hidden');
+                       } else {
+                           nextEl.textContent = '';
+                           nextWrapEl.hidden = true;
+                           nextWrapEl.classList.add('hidden');
+                       }
+                   }
                    scoreEl.textContent = kroResultScoreText(data);
                    channelEl.textContent = channelName;
                    badgeEl.textContent = kroResultRiskBadge(glanceTier);
                    badgeEl.className =
                        'kro-result-risk-badge kro-result-risk-badge--' +
                        (glanceTier === 'clean' ? 'low' : glanceTier === 'danger' ? 'high' : 'mid');
-                   var verdict = kroResultVerdictLine(data);
-                   if (verdictEl) verdictEl.textContent = verdict;
-                   var exclude = [verdict];
+                   var verdict = heroVerdict;
+                   var exclude = [heroVerdict, reveal, nextAction].filter(Boolean);
                    var bullets = kroGlanceBuildBullets(data, exclude);
                    bulletsEl.innerHTML = bullets
                        .map(function (b) {
@@ -3924,20 +3997,32 @@
                            doneBanner.classList.add('hidden');
                            doneBanner.textContent = '';
                        }
+                       var heroErr = document.getElementById('kro-result-hero-verdict');
+                       var revealErr = document.getElementById('kro-result-reveal');
+                       var nextWrapErr = document.getElementById('kro-result-next-action-wrap');
+                       var nextErr = document.getElementById('kro-result-next-action');
                        var scoreErr = document.getElementById('kro-result-score');
                        var channelErr = document.getElementById('kro-result-channel');
                        var badgeErr = document.getElementById('kro-result-risk-badge');
-                       var verdictErr = document.getElementById('kro-result-verdict');
                        var bulletsErr = document.getElementById('kro-result-bullets');
+                       if (heroErr) {
+                           heroErr.textContent =
+                               'Осторожно — полный блок отчёта не отобразился. Раскройте «Подробнее» или обновите страницу.';
+                       }
+                       if (revealErr) {
+                           revealErr.textContent = '';
+                           revealErr.hidden = true;
+                       }
+                       if (nextWrapErr && nextErr) {
+                           nextErr.textContent = 'Попробуйте ещё раз через минуту.';
+                           nextWrapErr.hidden = false;
+                           nextWrapErr.classList.remove('hidden');
+                       }
                        if (scoreErr) scoreErr.textContent = '—/10';
                        if (channelErr) channelErr.textContent = 'Канал';
                        if (badgeErr) {
                            badgeErr.textContent = '🟡 осторожно';
                            badgeErr.className = 'kro-result-risk-badge kro-result-risk-badge--mid';
-                       }
-                       if (verdictErr) {
-                           verdictErr.textContent =
-                               'Полный блок отчёта не отобразился — раскройте «Подробнее» или обновите страницу.';
                        }
                        if (bulletsErr) {
                            bulletsErr.innerHTML =
@@ -4305,23 +4390,35 @@
                            db.classList.add('hidden');
                            db.textContent = '';
                        }
+                       var heroR = document.getElementById('kro-result-hero-verdict');
+                       var revealR = document.getElementById('kro-result-reveal');
+                       var nextWrapR = document.getElementById('kro-result-next-action-wrap');
+                       var nextR = document.getElementById('kro-result-next-action');
                        var scoreR = document.getElementById('kro-result-score');
                        var channelR = document.getElementById('kro-result-channel');
                        var badgeR = document.getElementById('kro-result-risk-badge');
-                       var verdictR = document.getElementById('kro-result-verdict');
                        var bulletsR = document.getElementById('kro-result-bullets');
                        var anonR = document.getElementById('kro-result-person-anon');
                        var gridR = document.getElementById('kro-result-person-grid');
                        var chipsR = document.getElementById('kro-result-person-chips');
                        var panelR = document.getElementById('kro-result-details-panel');
                        var moreBtnR = document.getElementById('kro-result-more-btn');
+                       if (heroR) heroR.textContent = '';
+                       if (revealR) {
+                           revealR.textContent = '';
+                           revealR.hidden = true;
+                       }
+                       if (nextWrapR) {
+                           nextWrapR.hidden = true;
+                           nextWrapR.classList.add('hidden');
+                       }
+                       if (nextR) nextR.textContent = '';
                        if (scoreR) scoreR.textContent = '';
                        if (channelR) channelR.textContent = '';
                        if (badgeR) {
                            badgeR.textContent = '';
                            badgeR.className = 'kro-result-risk-badge';
                        }
-                       if (verdictR) verdictR.textContent = '';
                        if (bulletsR) bulletsR.innerHTML = '';
                        if (anonR) {
                            anonR.hidden = true;
