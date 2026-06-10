@@ -5353,6 +5353,417 @@ async function kroFetchPersonBehindForAnalyzeChannel(opts) {
   }
 }
 
+/** Кэш цен CoinGecko: ключ coinId:dd-mm-yyyy → USD. */
+const kroCoinGeckoPriceCache = new Map();
+
+const KRO_SIGNAL_SYMBOL_TO_COINGECKO = {
+  BTC: 'bitcoin',
+  ETH: 'ethereum',
+  SOL: 'solana',
+  BNB: 'binancecoin',
+  XRP: 'ripple',
+  ADA: 'cardano',
+  DOGE: 'dogecoin',
+  DOT: 'polkadot',
+  AVAX: 'avalanche-2',
+  MATIC: 'matic-network',
+  LINK: 'chainlink',
+  LTC: 'litecoin',
+  TRX: 'tron',
+  SHIB: 'shiba-inu',
+  TON: 'the-open-network',
+  ATOM: 'cosmos',
+  NEAR: 'near',
+  APT: 'aptos',
+  ARB: 'arbitrum',
+  OP: 'optimism',
+  USDT: 'tether',
+  USDC: 'usd-coin',
+};
+
+const KRO_SIGNAL_KNOWN_SYMBOLS = Object.keys(KRO_SIGNAL_SYMBOL_TO_COINGECKO);
+
+function kroSymbolToCoinGeckoId(symbol) {
+  const s = String(symbol || '').trim().toUpperCase();
+  return KRO_SIGNAL_SYMBOL_TO_COINGECKO[s] || null;
+}
+
+function kroParseSignalPriceNumber(raw) {
+  const s = String(raw || '').trim().replace(/\s/g, '').replace(',', '.');
+  const n = Number(s);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function kroParseTradingSignalsFromText(text) {
+  const src = String(text || '').trim();
+  if (src.length < 8) return [];
+  const symAlt = KRO_SIGNAL_KNOWN_SYMBOLS.join('|');
+  const out = [];
+  const seen = new Set();
+  const push = (sig) => {
+    const key = `${sig.symbol}|${sig.side}|${sig.entry || ''}|${sig.target || ''}|${sig.snippet.slice(0, 80)}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(sig);
+  };
+
+  const reSignalLine = new RegExp(
+    `(?:сигнал|signal)\\s*[:\\-]?\\s*(${symAlt})[^\\d]{0,50}?(?:вход|entry)\\s*([\\d.,]+)(?:[^\\d]{0,80}?(?:цель|target|tp|тейк)\\s*([\\d.,]+))?`,
+    'gi',
+  );
+  let m;
+  while ((m = reSignalLine.exec(src)) !== null) {
+    push({
+      symbol: m[1].toUpperCase(),
+      side: 'long',
+      entry: kroParseSignalPriceNumber(m[2]),
+      target: kroParseSignalPriceNumber(m[3]),
+      snippet: src.length > 180 ? `${src.slice(0, 177)}…` : src,
+    });
+  }
+
+  const reBuy = new RegExp(
+    `(?:купил[аи]?|покупаю|buy(?:ing)?)\\s+(${symAlt})(?:[^\\d]{0,40}?(?:по|@|at)\\s*([\\d.,]+))?`,
+    'gi',
+  );
+  while ((m = reBuy.exec(src)) !== null) {
+    push({
+      symbol: m[1].toUpperCase(),
+      side: 'long',
+      entry: kroParseSignalPriceNumber(m[2]),
+      target: null,
+      snippet: src.length > 180 ? `${src.slice(0, 177)}…` : src,
+    });
+  }
+
+  const reEnter = new RegExp(
+    `(?:вош[ёе]л[аи]?|заш[её]л[аи]?|entered|открыл[аи]?)\\s+(?:в\\s+)?(лонг|long|шорт|short)\\s+(${symAlt})(?:[^\\d]{0,40}?(?:по|@|вход|entry)\\s*([\\d.,]+))?`,
+    'gi',
+  );
+  while ((m = reEnter.exec(src)) !== null) {
+    const sideWord = String(m[1] || '').toLowerCase();
+    push({
+      symbol: m[2].toUpperCase(),
+      side: sideWord.includes('шорт') || sideWord === 'short' ? 'short' : 'long',
+      entry: kroParseSignalPriceNumber(m[3]),
+      target: null,
+      snippet: src.length > 180 ? `${src.slice(0, 177)}…` : src,
+    });
+  }
+
+  const reSide = new RegExp(
+    `(?:лонг|long|шорт|short)\\s+(${symAlt})(?:[^\\d]{0,40}?(?:по|@|вход|entry)\\s*([\\d.,]+))?(?:[^\\d]{0,60}?(?:цель|target|tp)\\s*([\\d.,]+))?`,
+    'gi',
+  );
+  while ((m = reSide.exec(src)) !== null) {
+    const sideWord = m[0].slice(0, 12).toLowerCase();
+    push({
+      symbol: m[1].toUpperCase(),
+      side: sideWord.includes('шорт') || sideWord.includes('short') ? 'short' : 'long',
+      entry: kroParseSignalPriceNumber(m[2]),
+      target: kroParseSignalPriceNumber(m[3]),
+      snippet: src.length > 180 ? `${src.slice(0, 177)}…` : src,
+    });
+  }
+
+  return out.filter((x) => x.symbol && kroSymbolToCoinGeckoId(x.symbol));
+}
+
+function kroExtractDatedPostsFromPublicHtml(html, slug) {
+  if (!html || html.length < 100) return [];
+  const textRe = /<div[^>]*class="[^"]*tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
+  const posts = [];
+  let m;
+  while ((m = textRe.exec(html)) !== null) {
+    const chunk = html.slice(Math.max(0, m.index - 1400), m.index);
+    const dtMatches = [...chunk.matchAll(/datetime="([^"]+)"/g)];
+    const lastDt = dtMatches.length ? dtMatches[dtMatches.length - 1][1] : null;
+    const text = kroStripHtmlToText(m[1]).replace(/\s+/g, ' ').trim();
+    const norm = kroNormalizePublicSnapshotLine(text, slug);
+    if (!norm || norm.length < 12) continue;
+    let date_iso = null;
+    if (lastDt) {
+      try {
+        const d = new Date(lastDt.replace(/\+00:00$/, 'Z'));
+        if (!Number.isNaN(d.getTime())) date_iso = d.toISOString();
+      } catch {
+        /* ignore */
+      }
+    }
+    posts.push({
+      text: norm.length > 220 ? `${norm.slice(0, 217)}…` : norm,
+      date_iso,
+    });
+  }
+  const seen = new Set();
+  return posts.filter((p) => {
+    const k = `${p.date_iso || ''}|${p.text.slice(0, 120)}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  }).slice(0, 120);
+}
+
+function kroNormalizeDatedPostsInput(parsedForFast, sampleForFast) {
+  const dated = Array.isArray(parsedForFast && parsedForFast.sample_posts_dated)
+    ? parsedForFast.sample_posts_dated
+    : [];
+  const out = [];
+  const seen = new Set();
+  for (const row of dated) {
+    const text = String((row && row.text) || '').trim();
+    const date_iso = row && row.date_iso ? String(row.date_iso).trim() : null;
+    if (!text || text.length < 8) continue;
+    const k = `${date_iso || ''}|${text.slice(0, 100)}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push({ text, date_iso: date_iso || null });
+  }
+  if (out.length) return out;
+  if (Array.isArray(sampleForFast)) {
+    for (const raw of sampleForFast) {
+      const text = String(raw || '').trim();
+      if (text.length < 8) continue;
+      const k = text.slice(0, 100);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push({ text, date_iso: null });
+    }
+  }
+  return out;
+}
+
+function kroCoinGeckoDateParam(isoOrDate) {
+  const d = new Date(isoOrDate);
+  if (Number.isNaN(d.getTime())) return null;
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const yyyy = d.getUTCFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+}
+
+function kroAddDaysIso(isoOrDate, days) {
+  const d = new Date(isoOrDate);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString();
+}
+
+async function kroFetchCoinGeckoHistoryPriceUsd(coinId, dateParam) {
+  const cacheKey = `${coinId}:${dateParam}`;
+  if (kroCoinGeckoPriceCache.has(cacheKey)) {
+    return kroCoinGeckoPriceCache.get(cacheKey);
+  }
+  const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(coinId)}/history?date=${encodeURIComponent(dateParam)}&localization=false`;
+  try {
+    const r = await fetch(url, {
+      headers: { accept: 'application/json', 'user-agent': 'KRO-SignalAccuracy/1.0' },
+    });
+    if (!r.ok) {
+      kroCoinGeckoPriceCache.set(cacheKey, null);
+      return null;
+    }
+    const j = await r.json();
+    const usd = j && j.market_data && j.market_data.current_price && j.market_data.current_price.usd;
+    const price = Number(usd);
+    const val = Number.isFinite(price) && price > 0 ? price : null;
+    kroCoinGeckoPriceCache.set(cacheKey, val);
+    return val;
+  } catch {
+    kroCoinGeckoPriceCache.set(cacheKey, null);
+    return null;
+  }
+}
+
+function kroEvaluateSignalOutcome(sig, priceAt, priceAfter7d) {
+  if (!Number.isFinite(priceAt) || !Number.isFinite(priceAfter7d)) return 'inconclusive';
+  const side = sig.side === 'short' ? 'short' : 'long';
+  const entry = Number.isFinite(sig.entry) ? sig.entry : priceAt;
+  const target = Number.isFinite(sig.target) ? sig.target : null;
+  if (side === 'long') {
+    if (target != null && priceAfter7d >= target) return 'hit';
+    if (target != null && priceAfter7d < entry) return 'loss';
+    if (target == null && priceAfter7d >= entry) return 'hit';
+    if (target == null && priceAfter7d < entry) return 'loss';
+    if (priceAfter7d >= entry) return 'hit';
+    return 'loss';
+  }
+  if (target != null && priceAfter7d <= target) return 'hit';
+  if (priceAfter7d > entry) return 'loss';
+  if (priceAfter7d <= entry) return 'hit';
+  return 'loss';
+}
+
+function kroDetectLossWarningsInPostTexts(postTexts) {
+  const kws = [
+    'убыт', 'минус', 'стоп', 'stop loss', 'stop-loss', 'слил', 'потер', 'loss',
+    'убыток', 'просадк', 'закрыл в минус', 'не сработал', 'ошибся', 'ошиблись',
+  ];
+  const joined = (Array.isArray(postTexts) ? postTexts : []).join('\n').toLowerCase();
+  return kws.some((kw) => joined.includes(kw));
+}
+
+function kroBuildSignalAccuracySummaryRu(hit, loss, total, inconclusive) {
+  if (!total) return 'Явных торговых входов в постах не найдено.';
+  const parts = [`Из ${total} сигналов: ${hit} сработали, ${loss} — убыток`];
+  if (inconclusive > 0) parts.push(`${inconclusive} без проверки (нет даты или рано для +7 дней)`);
+  return parts.join('; ') + '.';
+}
+
+async function kroBuildSignalAccuracy(datedPosts, parsedForFast, deadline) {
+  const posts = Array.isArray(datedPosts) ? datedPosts : [];
+  const postTexts = posts.map((p) => p.text).filter(Boolean);
+  const warnsAboutLosses = kroDetectLossWarningsInPostTexts(postTexts);
+  const onlyProfitsFlag = parsedForFast && parsedForFast.only_profits_flag === true;
+  const onlyProfitsTone = onlyProfitsFlag || (!warnsAboutLosses && postTexts.some((t) => /профит|прибыл|\+[\d]|\bx\d\b|закрыл в плюс|take profit|tp hit/i.test(String(t))));
+
+  const found = [];
+  for (const post of posts) {
+    const signals = kroParseTradingSignalsFromText(post.text);
+    for (const sig of signals) {
+      found.push({
+        ...sig,
+        post_date: post.date_iso || null,
+      });
+    }
+  }
+
+  const capped = found.slice(0, 8);
+  const items = [];
+  let hitCount = 0;
+  let lossCount = 0;
+  let inconclusiveCount = 0;
+  let verifiedSignals = 0;
+
+  for (const sig of capped) {
+    const coinId = kroSymbolToCoinGeckoId(sig.symbol);
+    let priceAt = null;
+    let priceAfter7d = null;
+    let outcome = 'inconclusive';
+
+    if (coinId && sig.post_date) {
+      const after7Iso = kroAddDaysIso(sig.post_date, 7);
+      const nowMs = Date.now();
+      const after7Ms = after7Iso ? new Date(after7Iso).getTime() : NaN;
+      if (Number.isFinite(after7Ms) && after7Ms <= nowMs && deadline - Date.now() > 400) {
+        const d0 = kroCoinGeckoDateParam(sig.post_date);
+        const d7 = kroCoinGeckoDateParam(after7Iso);
+        if (d0 && d7) {
+          priceAt = await kroFetchCoinGeckoHistoryPriceUsd(coinId, d0);
+          await new Promise((r) => setTimeout(r, 320));
+          if (deadline - Date.now() > 200) {
+            priceAfter7d = await kroFetchCoinGeckoHistoryPriceUsd(coinId, d7);
+          }
+          if (Number.isFinite(priceAt) && Number.isFinite(priceAfter7d)) {
+            outcome = kroEvaluateSignalOutcome(sig, priceAt, priceAfter7d);
+            verifiedSignals += 1;
+            if (outcome === 'hit') hitCount += 1;
+            else if (outcome === 'loss') lossCount += 1;
+            else inconclusiveCount += 1;
+          } else {
+            inconclusiveCount += 1;
+          }
+        } else {
+          inconclusiveCount += 1;
+        }
+      } else {
+        inconclusiveCount += 1;
+      }
+    } else {
+      inconclusiveCount += 1;
+    }
+
+    items.push({
+      symbol: sig.symbol,
+      side: sig.side,
+      entry: sig.entry,
+      target: sig.target,
+      post_date: sig.post_date,
+      price_at_signal: priceAt,
+      price_after_7d: priceAfter7d,
+      outcome,
+      snippet: sig.snippet,
+    });
+    if (deadline - Date.now() < 300) break;
+  }
+
+  const totalSignals = found.length;
+  const summaryRu = kroBuildSignalAccuracySummaryRu(hitCount, lossCount, totalSignals, inconclusiveCount);
+  let lossWarningRu = '';
+  if (onlyProfitsTone && !warnsAboutLosses) {
+    lossWarningRu = 'В ленте в основном плюсы — автор почти не показывает убыточные сделки.';
+  } else if (warnsAboutLosses) {
+    lossWarningRu = 'Автор иногда пишет об убытках и стопах — это честнее, чем «только профит».';
+  } else if (totalSignals > 0) {
+    lossWarningRu = 'Явных постов об убытках в выборке не видно.';
+  }
+
+  return {
+    total_signals: totalSignals,
+    verified_signals: verifiedSignals,
+    hit_count: hitCount,
+    loss_count: lossCount,
+    inconclusive_count: inconclusiveCount,
+    summary_ru: summaryRu,
+    warns_about_losses: warnsAboutLosses,
+    only_profits_tone: onlyProfitsTone,
+    loss_warning_ru: lossWarningRu,
+    items,
+    data_source: 'coingecko',
+  };
+}
+
+async function kroFetchSignalAccuracyForAnalyzeChannel(opts) {
+  const {
+    parsedForFast,
+    sampleForFast,
+    deadline,
+    analyzeLogId,
+    channelForOnce,
+    pubSlugBootstrap,
+  } = opts || {};
+  if (deadline - Date.now() < 1800) return null;
+  try {
+    let datedPosts = kroNormalizeDatedPostsInput(parsedForFast, sampleForFast);
+    const hasDates = datedPosts.some((p) => p.date_iso);
+    if (!hasDates && pubSlugBootstrap && channelForOnce && deadline - Date.now() > 2500) {
+      const snap = await kroFetchTelegramPublicSnapshot(channelForOnce, {
+        timeoutMs: Math.min(12000, Math.max(3000, deadline - Date.now() - 800)),
+        logLabel: `${analyzeLogId}:signal_accuracy`,
+      });
+      if (snap && Array.isArray(snap.dated_posts) && snap.dated_posts.length) {
+        datedPosts = snap.dated_posts;
+      }
+    }
+    const signalAccuracy = await kroBuildSignalAccuracy(datedPosts, parsedForFast, deadline);
+    if (signalAccuracy && signalAccuracy.total_signals > 0) {
+      console.log(
+        `[KRO analyze-channel ${analyzeLogId}] signal_accuracy total=${signalAccuracy.total_signals} verified=${signalAccuracy.verified_signals} hit=${signalAccuracy.hit_count} loss=${signalAccuracy.loss_count}`,
+      );
+    }
+    if (!signalAccuracy) return null;
+    const show = signalAccuracy.total_signals > 0
+      || signalAccuracy.warns_about_losses
+      || signalAccuracy.only_profits_tone
+      || (signalAccuracy.loss_warning_ru && String(signalAccuracy.loss_warning_ru).trim());
+    return show ? signalAccuracy : null;
+  } catch (eSa) {
+    console.warn(
+      `[KRO analyze-channel ${analyzeLogId}] signal_accuracy error=${eSa && eSa.message ? String(eSa.message) : 'failed'}`,
+    );
+    return null;
+  }
+}
+
+/** Параллельно person_behind и signal_accuracy для ответа analyze-channel. */
+async function kroFetchAnalyzeChannelGlanceExtras(opts) {
+  const [personBehind, signalAccuracy] = await Promise.all([
+    kroFetchPersonBehindForAnalyzeChannel(opts),
+    kroFetchSignalAccuracyForAnalyzeChannel(opts),
+  ]);
+  return { personBehind, signalAccuracy };
+}
+
 function kroNormalizePublicSnapshotLine(text, slug) {
   let s = kroStripHtmlToText(text)
     .replace(/^\s*<title>\s*/i, '')
@@ -6584,7 +6995,15 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
       if (desc) snippets = kroFilterPublicSnapshotSnippets([desc], slug);
     }
     if (!snippets.length) return null;
-    return { slug, title, snippets, fetched_at: new Date().toISOString(), html: rawHtml };
+    const dated_posts = kroExtractDatedPostsFromPublicHtml(html, slug);
+    return {
+      slug,
+      title,
+      snippets,
+      dated_posts,
+      fetched_at: new Date().toISOString(),
+      html: rawHtml,
+    };
   };
 
   const urls = [
@@ -6625,6 +7044,7 @@ async function kroFetchTelegramPublicSnapshot(channelRef, opts = null) {
               slug,
               title: '',
               snippets: sn,
+              dated_posts: kroExtractDatedPostsFromPublicHtml(body, slug),
               fetched_at: new Date().toISOString(),
               html: body,
             };
@@ -9180,12 +9600,17 @@ function kroBuildParsedFromPublicSnapshotOnly(rawSnap, channelDisplay, minPosts)
   }
   if (snippets.length < need) return null;
   const sample_posts = snippets.slice(0, Math.min(120, snippets.length));
+  const datedRaw = Array.isArray(snap.dated_posts) ? snap.dated_posts : [];
+  const sample_posts_dated = datedRaw.length
+    ? datedRaw.slice(0, Math.min(120, datedRaw.length))
+    : sample_posts.map((t) => ({ text: t, date_iso: null }));
   return {
     found: true,
     _check_once_ok: true,
     username: String(channelDisplay || '').trim() || null,
     posts_fetched: sample_posts.length,
     sample_posts,
+    sample_posts_dated,
     analysis_window_days: 30,
     read_path: 'public_snapshot',
     has_signal_offer: false,
@@ -9376,6 +9801,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     claudeOverlay,
     telegramUsernameResolve,
     personBehind,
+    signalAccuracy,
   } = opts || {};
   const inviteVoiceRu =
     String(key || '').trim().toLowerCase().startsWith('t.me/+') &&
@@ -9627,6 +10053,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     },
     message: `${channelDisplay}: ${riskLine} ${fastHuman.summaryLine}`,
     person_behind: personBehind || undefined,
+    signal_accuracy: signalAccuracy || undefined,
     ...(telegramUsernameResolve && telegramUsernameResolve.resolved_slug
       ? {
           telegram_username_resolve: {
@@ -10340,13 +10767,15 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         readPathOut = 'telethon';
       }
       console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=${readPathOut} posts_read=${postsRead}`);
-      const personBehind = await kroFetchPersonBehindForAnalyzeChannel({
+      const { personBehind, signalAccuracy } = await kroFetchAnalyzeChannelGlanceExtras({
         pubSlugBootstrap,
         channelDisplay,
         channelForOnce,
         deadline,
         analyzeLogId,
         postTexts: sampleForFast,
+        parsedForFast,
+        sampleForFast,
       });
       return res.status(200).json(
         kroBuildAnalyzeChannelLiveSuccessBundle({
@@ -10363,6 +10792,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           t0,
           telegramUsernameResolve,
           personBehind,
+          signalAccuracy,
         }),
       );
     }
@@ -10383,13 +10813,15 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       const sPub = Array.isArray(pPub.sample_posts) ? pPub.sample_posts.filter(Boolean) : [];
       const nPub = sPub.length;
       console.log(`[KRO analyze-channel ${analyzeLogId}] public_snapshot_only posts_read=${nPub}`);
-      const personBehindPub = await kroFetchPersonBehindForAnalyzeChannel({
+      const { personBehind: personBehindPub, signalAccuracy: signalAccuracyPub } = await kroFetchAnalyzeChannelGlanceExtras({
         pubSlugBootstrap,
         channelDisplay,
         channelForOnce,
         deadline,
         analyzeLogId,
         postTexts: sPub,
+        parsedForFast: pPub,
+        sampleForFast: sPub,
       });
       return res.status(200).json(
         kroBuildAnalyzeChannelLiveSuccessBundle({
@@ -10406,6 +10838,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           t0,
           telegramUsernameResolve,
           personBehind: personBehindPub,
+          signalAccuracy: signalAccuracyPub,
         }),
       );
     }
@@ -10421,13 +10854,15 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         const pR = pubRetry;
         const sR = Array.isArray(pR.sample_posts) ? pR.sample_posts.filter(Boolean) : [];
         console.log(`[KRO analyze-channel ${analyzeLogId}] public_snapshot_retry posts_read=${sR.length}`);
-        const personBehindRetry = await kroFetchPersonBehindForAnalyzeChannel({
+        const { personBehind: personBehindRetry, signalAccuracy: signalAccuracyRetry } = await kroFetchAnalyzeChannelGlanceExtras({
           pubSlugBootstrap,
           channelDisplay,
           channelForOnce,
           deadline,
           analyzeLogId,
           postTexts: sR,
+          parsedForFast: pR,
+          sampleForFast: sR,
         });
         return res.status(200).json(
           kroBuildAnalyzeChannelLiveSuccessBundle({
@@ -10444,6 +10879,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
             t0,
             telegramUsernameResolve,
             personBehind: personBehindRetry,
+            signalAccuracy: signalAccuracyRetry,
           }),
         );
       }
@@ -10463,13 +10899,15 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         const pL = pubLate;
         const sL = Array.isArray(pL.sample_posts) ? pL.sample_posts.filter(Boolean) : [];
         console.log(`[KRO analyze-channel ${analyzeLogId}] public_snapshot_pre_dataset posts_read=${sL.length}`);
-        const personBehindLate = await kroFetchPersonBehindForAnalyzeChannel({
+        const { personBehind: personBehindLate, signalAccuracy: signalAccuracyLate } = await kroFetchAnalyzeChannelGlanceExtras({
           pubSlugBootstrap,
           channelDisplay,
           channelForOnce,
           deadline,
           analyzeLogId,
           postTexts: sL,
+          parsedForFast: pL,
+          sampleForFast: sL,
         });
         return res.status(200).json(
           kroBuildAnalyzeChannelLiveSuccessBundle({
@@ -10486,6 +10924,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
             t0,
             telegramUsernameResolve,
             personBehind: personBehindLate,
+            signalAccuracy: signalAccuracyLate,
           }),
         );
       }
@@ -10505,13 +10944,15 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     console.log(
       `[KRO analyze-channel ${analyzeLogId}] dataset_evidence_fallback posts=${postsDs}`,
     );
-    const personBehindDs = await kroFetchPersonBehindForAnalyzeChannel({
+    const { personBehind: personBehindDs, signalAccuracy: signalAccuracyDs } = await kroFetchAnalyzeChannelGlanceExtras({
       pubSlugBootstrap,
       channelDisplay,
       channelForOnce,
       deadline,
       analyzeLogId,
       postTexts: sampleDs,
+      parsedForFast: parsedDs,
+      sampleForFast: sampleDs,
     });
     return res.status(200).json(
       kroBuildAnalyzeChannelLiveSuccessBundle({
@@ -10529,6 +10970,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         trustReportExtra: { editor_voice_prefix_ru: dsNote },
         telegramUsernameResolve,
         personBehind: personBehindDs,
+        signalAccuracy: signalAccuracyDs,
       }),
     );
   } catch (e) {
