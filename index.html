@@ -399,6 +399,10 @@
                                    <div class="kro-detail-person-anon" id="kro-detail-person-anon" hidden>Автор скрывает личность. Ни имени, ни соцсетей, ни следа в интернете. Если продукт ценный — зачем прятаться?</div>
                                    <dl class="kro-detail-person-grid" id="kro-detail-person-grid"></dl>
                                    <div class="kro-detail-person-chips" id="kro-detail-person-chips"></div>
+                                   <div class="kro-detail-web-evidence" id="kro-detail-web-evidence" hidden>
+                                       <p class="kro-detail-web-evidence-h">Что нашли в интернете об авторе</p>
+                                       <ul class="kro-detail-web-evidence-list" id="kro-detail-web-evidence-list"></ul>
+                                   </div>
                                </section>
                                <section class="kro-detail-card" id="kro-detail-card-flags">
                                    <h4 class="kro-detail-card-h">Красные флаги — с цитатами</h4>
@@ -3571,6 +3575,33 @@
                        if (chipsMain) {
                            chipsMain.innerHTML = '';
                            chipsMain.hidden = true;
+                       }
+                   }
+                   // Что нашли в интернете об авторе (web_evidence от второго поиска)
+                   var webEvidenceWrap = document.getElementById('kro-detail-web-evidence');
+                   var webEvidenceList = document.getElementById('kro-detail-web-evidence-list');
+                   var webEvidence = pb && Array.isArray(pb.web_evidence) ? pb.web_evidence : [];
+                   if (webEvidenceWrap && webEvidenceList) {
+                       if (webEvidence.length) {
+                           webEvidenceList.innerHTML = webEvidence.map(function (item) {
+                               var snippet = esc(String(item.snippet || '').trim());
+                               var source = String(item.source || '').trim();
+                               var isUrl = source.indexOf('://') !== -1 || source.indexOf('.') !== -1;
+                               var sourceHtml = isUrl
+                                   ? '<a class="kro-web-evidence-link" href="' + esc(source) + '" target="_blank" rel="noopener">' + esc(source.replace(/^https?:\/\/(www\.)?/, '').slice(0, 40)) + '</a>'
+                                   : '<span class="kro-web-evidence-src">' + esc(source) + '</span>';
+                               return (
+                                   '<li class="kro-web-evidence-item">' +
+                                   '<span class="kro-web-evidence-snippet">' + snippet + '</span>' +
+                                   '<br><span class="kro-web-evidence-meta">Источник: </span>' + sourceHtml +
+                                   '</li>'
+                               );
+                           }).join('');
+                           webEvidenceWrap.hidden = false;
+                           webEvidenceWrap.classList.remove('hidden');
+                       } else {
+                           webEvidenceWrap.hidden = true;
+                           webEvidenceWrap.classList.add('hidden');
                        }
                    }
                    var flagsList = document.getElementById('kro-detail-flags-list');

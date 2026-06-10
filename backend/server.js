@@ -5118,6 +5118,54 @@ function kroFormatSerperHits(label, hits) {
   );
 }
 
+/**
+ * Второй проход веб-поиска — по найденному имени/нику автора.
+ * Запускается ПОСЛЕ Mistral, только если who — реальный человек (не Аноним).
+ * Возвращает массив { snippet, source } — до 5 результатов.
+ */
+async function kroSearchByPersonName(who) {
+  const name = String(who || '').trim();
+  if (!name || name.length < 3) return [];
+  const skipValues = ['аноним', 'anonymous_hidden', 'аноним.', '—', '-', 'не упоминается'];
+  if (skipValues.includes(name.toLowerCase())) return [];
+  const results = [];
+  // DDG: ищем имя + телеграм + крипто
+  try {
+    const q = `${name} telegram крипто`;
+    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1`;
+    const r = await axios.get(url, { timeout: 5000 });
+    const data = r.data && typeof r.data === 'object' ? r.data : {};
+    const abstract = String(data.AbstractText || data.Abstract || '').trim();
+    if (abstract && abstract.length > 20) {
+      results.push({ snippet: abstract.slice(0, 280), source: 'DuckDuckGo' });
+    }
+    const related = [];
+    kroCollectDuckDuckGoRelatedTexts(data.RelatedTopics, related, 5);
+    for (const line of related) {
+      if (line && line.length > 20) {
+        results.push({ snippet: line.slice(0, 280), source: 'DuckDuckGo' });
+      }
+      if (results.length >= 3) break;
+    }
+  } catch { /* ignore */ }
+  // Serper: ищем имя + мошенник/отзывы если есть ключ
+  if (process.env.SERPER_API_KEY && results.length < 5) {
+    try {
+      const q = `"${name}" мошенник OR скам OR отзывы telegram`;
+      const hits = await kroSerperWebSearch(q);
+      for (const hit of (hits || [])) {
+        const snippet = String(hit.snippet || hit.title || '').trim();
+        const link = String(hit.link || '').trim();
+        if (snippet && snippet.length > 15) {
+          results.push({ snippet: snippet.slice(0, 280), source: link || 'Serper' });
+        }
+        if (results.length >= 5) break;
+      }
+    } catch { /* ignore */ }
+  }
+  return results.slice(0, 5);
+}
+
 /** Два поисковых запроса для блока «Кто за каналом»; без ключа — пустая строка. */
 async function kroFetchPersonBehindWebContext(channelName, username) {
   if (!process.env.SERPER_API_KEY) return '';
@@ -5309,6 +5357,16 @@ next_action — конкретное действие. Пример: «Смот�
       ddgHasContent,
     });
     parsed.data_confidence = kroNormalizePersonBehindDataConfidence(parsed.data_confidence) || inferred;
+    // Второй поиск по найденному имени/нику — показываем что нашли в интернете
+    const whoFound = String(parsed.who || '').trim();
+    if (whoFound && whoFound !== 'Аноним' && whoFound !== 'anonymous_hidden' && whoFound.length > 3) {
+      try {
+        const webEvidence = await kroSearchByPersonName(whoFound);
+        if (webEvidence.length) {
+          parsed.web_evidence = webEvidence;
+        }
+      } catch { /* не блокируем основной ответ */ }
+    }
     return parsed;
   } catch {
     return null;
@@ -5346,6 +5404,7 @@ async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelFor
       verdict: desc ? desc.slice(0, 220) : '',
       reveal_moment: '',
       next_action: '',
+      web_evidence: [],
       data_confidence: dataConfidence,
     }),
     data_confidence: dataConfidence,
@@ -9688,7 +9747,7 @@ function kroRunHomeGreedyTelethonOnce(channelForOnce, deadline, telethonBudgetMs
   const spawnTimeout = Math.min(1800000, b + spawnSlack);
   const once = kroRunCheckOnce(channelForOnce, {
     readOnly: true,
-    periodDays: 30,
+    periodDays: 180,  // 6 месяцев — читаем всю доступную историю в рамках бюджета
     timeoutMs: spawnTimeout,
     checkOnceEnv: {
       KRO_CHECK_ONCE_MODE: 'home_greedy',
