@@ -5196,6 +5196,24 @@ function kroFormatPersonBehindPostsBlock(postTexts) {
   return `\nРеальные посты канала (последние):\n${posts.map((p, i) => `[пост ${i + 1}] ${p}`).join('\n')}\n`;
 }
 
+function kroNormalizePersonBehindDataConfidence(value) {
+  const v = String(value || '').trim().toLowerCase();
+  if (v === 'high' || v === 'medium' || v === 'low') return v;
+  return '';
+}
+
+/** high — посты + соцсети; medium — в основном описание; low — только DDG или почти ничего. */
+function kroInferPersonBehindDataConfidence({ posts, links, desc, ddgHasContent }) {
+  const hasPosts = Array.isArray(posts) && posts.length > 0;
+  const hasLinks = Array.isArray(links) && links.length > 0;
+  const hasDesc = String(desc || '').trim().length >= 50;
+  if (hasPosts && hasLinks) return 'high';
+  if (hasDesc && !hasPosts && !hasLinks) return 'medium';
+  if (ddgHasContent && !hasPosts && !hasLinks && !hasDesc) return 'low';
+  if (hasDesc) return 'medium';
+  return 'low';
+}
+
 async function kroAnalyzePersonBehind(channelName, description, socialLinks, username, postTexts) {
   const desc = String(description || '').trim();
   const links = Array.isArray(socialLinks) ? socialLinks : [];
@@ -5207,6 +5225,7 @@ async function kroAnalyzePersonBehind(channelName, description, socialLinks, use
     return {
       who: 'anonymous_hidden',
       verdict: KRO_PERSON_BEHIND_ANONYMOUS_HIDDEN_VERDICT,
+      data_confidence: 'low',
     };
   }
 
@@ -5232,15 +5251,15 @@ async function kroAnalyzePersonBehind(channelName, description, socialLinks, use
 - признаки: автор торгует сам (скрины сделок, «вошёл в лонг») или только продаёт информацию (VIP, курс, подписка).
 Ответ должен быть конкретным с дословными цитатами из постов в red_flags и verdict. Без постов — не выдумывай цитаты.
 Ответь ТОЛЬКО JSON без markdown:
-{"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт/образование или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"VIP/курсы/реклама/свой трейдинг/другое","red_flags":"красные флаги с цитатами из постов или Явных нет","verdict":"1-2 предложения — кто за каналом, зачем, с цитатами из постов если есть"}`;
+{"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт/образование или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"VIP/курсы/реклама/свой трейдинг/другое","red_flags":"красные флаги с цитатами из постов или Явных нет","verdict":"1-2 предложения — кто за каналом, зачем, с цитатами из постов если есть","data_confidence":"high/medium/low — насколько уверен анализ: high если были посты + соцсети, medium если только описание, low если только DDG или ничего"}`;
   try {
     const r = await axios.post(
       'https://api.mistral.ai/v1/chat/completions',
       {
-        model: 'mistral-small-latest',
+        model: 'mistral-medium-latest',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.2,
-        max_tokens: 550,
+        max_tokens: 900,
       },
       {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
@@ -5249,7 +5268,16 @@ async function kroAnalyzePersonBehind(channelName, description, socialLinks, use
     );
     const text = r.data?.choices?.[0]?.message?.content || '';
     const m = text.match(/\{[\s\S]*\}/);
-    return m ? JSON.parse(m[0]) : null;
+    if (!m) return null;
+    const parsed = JSON.parse(m[0]);
+    const inferred = kroInferPersonBehindDataConfidence({
+      posts,
+      links,
+      desc,
+      ddgHasContent,
+    });
+    parsed.data_confidence = kroNormalizePersonBehindDataConfidence(parsed.data_confidence) || inferred;
+    return parsed;
   } catch {
     return null;
   }
@@ -5269,6 +5297,13 @@ async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelFor
   const posts = kroNormalizePersonBehindPostTexts(postTexts);
   const aiProfile = await kroAnalyzePersonBehind(channelDisplay, desc || '', socialLinks, slug, posts);
   if (!aiProfile && !socialLinks.length && !desc && !posts.length) return null;
+  const dataConfidence = kroNormalizePersonBehindDataConfidence(aiProfile && aiProfile.data_confidence)
+    || kroInferPersonBehindDataConfidence({
+      posts,
+      links: socialLinks,
+      desc,
+      ddgHasContent: false,
+    });
   return {
     ...(aiProfile || {
       who: 'Аноним',
@@ -5277,7 +5312,9 @@ async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelFor
       business_model: '',
       red_flags: 'Явных нет',
       verdict: desc ? desc.slice(0, 220) : '',
+      data_confidence: dataConfidence,
     }),
+    data_confidence: dataConfidence,
     social_links: socialLinks,
     description: desc || '',
   };

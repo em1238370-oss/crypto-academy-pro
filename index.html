@@ -398,7 +398,10 @@
                                    <ul class="kro-glance-manip-list" id="kro-glance-manip-list"></ul>
                                </div>
                                <div class="kro-glance-stack-card kro-glance-person-wrap" id="kro-glance-person-wrap" style="display:none">
-                                   <h3 class="kro-glance-h">👤 Кто за каналом</h3>
+                                   <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+                                       <h3 class="kro-glance-h" style="margin:0">👤 Кто за каналом</h3>
+                                       <span id="kro-glance-person-confidence" style="display:none;font-size:0.72rem;padding:3px 9px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.75);white-space:nowrap"></span>
+                                   </div>
                                    <p id="kro-glance-person-verdict" style="font-weight:600;margin-bottom:8px"></p>
                                    <div id="kro-glance-person-links" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
                                    <ul id="kro-glance-person-facts" style="list-style:none;padding:0;margin:0;font-size:0.85rem"></ul>
@@ -3146,6 +3149,13 @@
                    }
                    if (det) det.open = false;
                }
+               function kroPersonBehindConfidenceUi(conf) {
+                   var c = String(conf || '').trim().toLowerCase();
+                   if (c === 'high') return { label: 'Высокая уверенность', hint: 'Посты канала и соцсети', color: '#86efac', border: 'rgba(134,239,172,0.45)', bg: 'rgba(22,101,52,0.25)' };
+                   if (c === 'medium') return { label: 'Средняя уверенность', hint: 'В основном описание канала', color: '#fde68a', border: 'rgba(253,230,138,0.45)', bg: 'rgba(120,83,9,0.25)' };
+                   if (c === 'low') return { label: 'Низкая уверенность', hint: 'Мало данных для вывода', color: '#fecaca', border: 'rgba(254,202,202,0.45)', bg: 'rgba(127,29,29,0.25)' };
+                   return null;
+               }
                function kroFillPersonBehind(data) {
                    var wrap = document.getElementById('kro-glance-person-wrap');
                    if (!wrap) return;
@@ -3155,6 +3165,22 @@
                    var verdictEl = document.getElementById('kro-glance-person-verdict');
                    var linksEl = document.getElementById('kro-glance-person-links');
                    var factsEl = document.getElementById('kro-glance-person-facts');
+                   var confEl = document.getElementById('kro-glance-person-confidence');
+                   var confUi = kroPersonBehindConfidenceUi(pb.data_confidence);
+                   if (confEl) {
+                       if (confUi) {
+                           confEl.style.display = 'inline-block';
+                           confEl.textContent = confUi.label;
+                           confEl.title = confUi.hint;
+                           confEl.style.color = confUi.color;
+                           confEl.style.borderColor = confUi.border;
+                           confEl.style.background = confUi.bg;
+                       } else {
+                           confEl.style.display = 'none';
+                           confEl.textContent = '';
+                           confEl.title = '';
+                       }
+                   }
                    if (pb.who === 'anonymous_hidden') {
                        wrap.className = 'kro-glance-stack-card kro-glance-person-wrap kro-glance-person-wrap--hidden';
                        wrap.style.background = 'rgba(185, 28, 28, 0.35)';
