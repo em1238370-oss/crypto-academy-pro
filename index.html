@@ -3021,7 +3021,7 @@
                }
                function kroPersonBehindSplitRedFlags(text) {
                    var s = String(text || '').trim();
-                   if (!s || s === 'Явных нет') return [];
+                   if (!s || s === 'Явных нет' || s === 'Явных манипулятивных схем не найдено') return [];
                    var parts = s
                        .split(/[.,](?:\s+|$)|\n+/)
                        .map(function (x) {
