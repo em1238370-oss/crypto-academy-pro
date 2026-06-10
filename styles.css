@@ -2489,10 +2489,102 @@ body.kro-hero-scrolled .kro-floating-nav {
    color: rgba(255, 255, 255, 0.9);
 }
 
-/* Главная проверка канала: карточки «понятно за 5 секунд» + «Подробнее» */
+/* Главная проверка канала: компактный экран + «Подробнее» */
 .kro-inline-at-a-glance {
-   margin-bottom: 22px;
-   padding-bottom: 18px;
+   margin-bottom: 14px;
+}
+.kro-glance-hero {
+   border-radius: 16px;
+   padding: 16px 18px;
+   margin-bottom: 12px;
+   border: 1px solid rgba(255, 255, 255, 0.12);
+   background: linear-gradient(145deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+.kro-glance-hero--high {
+   border-color: rgba(239, 68, 68, 0.45);
+   background: linear-gradient(145deg, rgba(239, 68, 68, 0.16) 0%, rgba(15, 23, 42, 0.5) 100%);
+}
+.kro-glance-hero--mid {
+   border-color: rgba(245, 158, 11, 0.4);
+   background: linear-gradient(145deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.45) 100%);
+}
+.kro-glance-hero--low {
+   border-color: rgba(34, 197, 94, 0.35);
+   background: linear-gradient(145deg, rgba(34, 197, 94, 0.1) 0%, rgba(15, 23, 42, 0.4) 100%);
+}
+.kro-glance-hero--muted {
+   border-color: rgba(148, 163, 184, 0.35);
+   background: linear-gradient(145deg, rgba(148, 163, 184, 0.1) 0%, rgba(15, 23, 42, 0.5) 100%);
+}
+.kro-glance-hero-row {
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 10px 14px;
+}
+.kro-glance-hero-name {
+   font-family: var(--kro-font-heading);
+   font-size: clamp(1.1rem, 3.4vw, 1.45rem);
+   font-weight: 800;
+   margin: 0;
+   line-height: 1.2;
+   flex: 1 1 auto;
+   min-width: 0;
+   word-break: break-word;
+}
+.kro-glance-hero-badge {
+   font-size: 1.35rem;
+   line-height: 1;
+   flex-shrink: 0;
+}
+.kro-glance-hero-score {
+   font-family: var(--kro-font-heading);
+   font-size: 1.05rem;
+   font-weight: 700;
+   letter-spacing: 0.02em;
+   color: rgba(255, 255, 255, 0.88);
+   flex-shrink: 0;
+   white-space: nowrap;
+}
+.kro-glance-person-oneline {
+   margin: 0 0 12px 0;
+   font-size: 0.9rem;
+   line-height: 1.45;
+   color: rgba(255, 255, 255, 0.78);
+}
+.kro-glance-person-oneline[hidden] {
+   display: none;
+}
+.kro-glance-bullets {
+   list-style: none;
+   margin: 0;
+   padding: 0;
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+}
+.kro-glance-bullet {
+   display: flex;
+   align-items: flex-start;
+   gap: 8px;
+   font-size: 0.9rem;
+   line-height: 1.45;
+   color: rgba(255, 255, 255, 0.9);
+}
+.kro-glance-bullet-mark {
+   flex-shrink: 0;
+   font-size: 0.95rem;
+   line-height: 1.35;
+}
+.kro-glance-bullet--good .kro-glance-bullet-mark {
+   color: #86efac;
+}
+.kro-glance-bullet--bad .kro-glance-bullet-mark {
+   color: #fde68a;
+}
+.kro-glance-details-stack {
+   margin-bottom: 18px;
+   padding-bottom: 14px;
    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .kro-check-trust-row {
