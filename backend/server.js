@@ -9,6 +9,12 @@ import { fileURLToPath } from 'url';
 import { basename, dirname, join, sep } from 'path';
 import { spawn, spawnSync } from 'child_process';
 import Stripe from 'stripe';
+import {
+  kroDetectSchemesInTexts,
+  kroFormatSchemeRedFlags,
+  kroMergeSchemeHits,
+  kroSchemesPromptBlock,
+} from './kro-schemes/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -5071,16 +5077,95 @@ function kroExtractSocialLinksFromHtml(html) {
   return links.slice(0, 8);
 }
 
-async function kroAnalyzePersonBehind(channelName, description, socialLinks) {
+async function kroMistralDetectSchemes(channelName, description, posts, deadline) {
+  const key = process.env.MISTRAL_API_KEY;
+  if (!key || deadline - Date.now() < 2500) return [];
+  const postBlock = (Array.isArray(posts) ? posts : [])
+    .map((p) => String(p || '').trim())
+    .filter((p) => p.length >= 12)
+    .slice(0, 35)
+    .map((p, i) => `[${i + 1}] ${p.slice(0, 380)}`)
+    .join('\n');
+  if (!postBlock && !description) return [];
+  const schemesList = kroSchemesPromptBlock();
+  const prompt = `Ты — умный друг, который объясняет крипто-скам простыми словами. Проверь канал против списка схем.
+Канал: ${channelName}
+Описание: ${String(description || '').slice(0, 500)}
+Посты:
+${postBlock || '(постов нет — только описание)'}
+
+Список схем для проверки:
+${schemesList}
+
+Для каждой найденной схемы — назови её и приведи короткую цитату из текста (дословно, не выдумывай).
+Объясни как автор канала на этом зарабатывает (how_earn) и чем это опасно подписчику (victim_risk).
+Если схем нет — scheme_hits: [].
+
+Ответь ТОЛЬКО JSON без markdown:
+{"scheme_hits":[{"id":"id_схемы","name":"Название","quote":"цитата","how_earn":"как зарабатывает","victim_risk":"чем опасно","severity":"critical|high|medium"}]}`;
+  try {
+    const r = await axios.post(
+      'https://api.mistral.ai/v1/chat/completions',
+      {
+        model: 'mistral-small-latest',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.15,
+        max_tokens: 900,
+      },
+      {
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        timeout: Math.min(16000, Math.max(4000, deadline - Date.now() - 400)),
+      },
+    );
+    const text = r.data?.choices?.[0]?.message?.content || '';
+    const m = text.match(/\{[\s\S]*\}/);
+    if (!m) return [];
+    const parsed = JSON.parse(m[0]);
+    const hits = Array.isArray(parsed.scheme_hits) ? parsed.scheme_hits : [];
+    return hits
+      .filter((h) => h && h.name)
+      .map((h) => ({
+        id: String(h.id || h.name || '').trim() || 'unknown',
+        name: String(h.name || '').trim(),
+        quote: String(h.quote || '').trim().slice(0, 220),
+        how_earn: String(h.how_earn || '').trim().slice(0, 280),
+        victim_risk: String(h.victim_risk || '').trim().slice(0, 280),
+        severity: ['critical', 'high', 'medium', 'low'].includes(String(h.severity || '').toLowerCase())
+          ? String(h.severity).toLowerCase()
+          : 'medium',
+        source: 'mistral',
+      }))
+      .slice(0, 8);
+  } catch {
+    return [];
+  }
+}
+
+async function kroAnalyzePersonBehind(channelName, description, socialLinks, posts) {
   const key = process.env.MISTRAL_API_KEY;
   if (!key || !description) return null;
   const socialStr = (socialLinks || []).map((l) => `${l.label}: ${l.url}`).join(', ') || 'не найдено';
-  const prompt = `Ты аналитик крипто-каналов. Разбери кто стоит за каналом по описанию и соцсетям.
+  const postBlock = (Array.isArray(posts) ? posts : [])
+    .map((p) => String(p || '').trim())
+    .filter((p) => p.length >= 12)
+    .slice(0, 20)
+    .map((p) => p.slice(0, 300))
+    .join('\n---\n');
+  const schemesList = kroSchemesPromptBlock();
+  const prompt = `Ты — умный друг, который помогает не попасть в крипто-скам. Дай решение, не отчёт.
 Канал: ${channelName}
 Описание: ${description.slice(0, 600)}
 Соцсети: ${socialStr}
+${postBlock ? `Фрагменты постов:\n${postBlock.slice(0, 3500)}` : ''}
+
+Проверь посты против этих схем. Для каждой найденной — назови схему и цитату.
+${schemesList}
+
+В поле red_flags перечисли найденные схемы: «[Название схемы]: цитата». Если схем нет — «Явных манипулятивных схем не найдено».
+verdict — одно предложение с решением: начни с «Не плати» / «Уйди» / «Смотри бесплатно» / «Опасно» / «Можно смотреть осторожно» — что уместно.
+
 Ответь ТОЛЬКО JSON без markdown:
-{"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт/образование или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"VIP/курсы/реклама/другое","red_flags":"громкие заявления о себе или Явных нет","verdict":"одно предложение — кто реально за каналом и зачем"}`;
+{"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"VIP/курсы/сигналы/реклама/другое","red_flags":"схемы с цитатами или Явных манипулятивных схем не найдено","verdict":"решение одним предложением","reveal_moment":"что бросилось в глаза — 1 фраза","next_action":"конкретный следующий шаг для человека"}`;
   try {
     const r = await axios.post(
       'https://api.mistral.ai/v1/chat/completions',
@@ -5088,11 +5173,11 @@ async function kroAnalyzePersonBehind(channelName, description, socialLinks) {
         model: 'mistral-small-latest',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.2,
-        max_tokens: 400,
+        max_tokens: 1100,
       },
       {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-        timeout: 14000,
+        timeout: 18000,
       },
     );
     const text = r.data?.choices?.[0]?.message?.content || '';
@@ -5101,6 +5186,50 @@ async function kroAnalyzePersonBehind(channelName, description, socialLinks) {
   } catch {
     return null;
   }
+}
+
+/** Обогащает person_behind детекцией схем по постам (keyword + Mistral). */
+async function kroEnrichPersonBehindWithSchemes(personBehind, channelDisplay, posts, deadline, logId) {
+  const pb = personBehind && typeof personBehind === 'object' ? { ...personBehind } : null;
+  const texts = (Array.isArray(posts) ? posts : [])
+    .map((p) => String(p || '').trim())
+    .filter((p) => p.length >= 8);
+  const desc = pb && pb.description ? String(pb.description).trim() : '';
+  const combined = desc ? [desc, ...texts] : texts;
+  if (!combined.length && !pb) return pb;
+
+  const keywordHits = kroDetectSchemesInTexts(combined);
+  let aiHits = [];
+  if (deadline - Date.now() > 3500 && combined.length) {
+    try {
+      aiHits = await kroMistralDetectSchemes(channelDisplay, desc, texts, deadline);
+    } catch (eAi) {
+      console.warn(
+        `[KRO analyze-channel ${logId}] scheme_mistral error=${eAi && eAi.message ? String(eAi.message) : 'failed'}`,
+      );
+    }
+  }
+  const schemeHits = kroMergeSchemeHits(keywordHits, aiHits);
+  const redFromSchemes = kroFormatSchemeRedFlags(schemeHits);
+
+  if (!pb) {
+    return schemeHits.length
+      ? { scheme_hits: schemeHits, red_flags: redFromSchemes }
+      : null;
+  }
+
+  pb.scheme_hits = schemeHits;
+  if (schemeHits.length) {
+    pb.red_flags = redFromSchemes;
+    pb.schemes_summary = schemeHits
+      .slice(0, 3)
+      .map((h) => `${h.name}: ${h.victim_risk || h.how_earn || ''}`.trim())
+      .join(' ');
+  }
+  console.log(
+    `[KRO analyze-channel ${logId}] schemes keyword=${keywordHits.length} mistral=${aiHits.length} merged=${schemeHits.length}`,
+  );
+  return pb;
 }
 
 /** Собирает person_behind из HTML публичной страницы t.me (snap.html). */
@@ -9007,7 +9136,7 @@ function kroRunHomeGreedyTelethonOnce(channelForOnce, deadline, telethonBudgetMs
   const spawnTimeout = Math.min(1800000, b + spawnSlack);
   const once = kroRunCheckOnce(channelForOnce, {
     readOnly: true,
-    periodDays: 30,
+    periodDays: 180,
     timeoutMs: spawnTimeout,
     checkOnceEnv: {
       KRO_CHECK_ONCE_MODE: 'home_greedy',
@@ -9361,24 +9490,42 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     read_path: readPathOut,
     flags: signal.flags,
     citations: fastHuman.citations.slice(0, 3),
-    trust_report: kroHomeBuildTrustReportBundle({
-      risk10: risk,
-      statusCode: statusObj.code,
-      flags: signal.flags,
-      livePass: homeLivePass,
-      postsRead,
-      complaintsCount: complaintsRowsTotal,
-      criteriaRows: fastHuman.criteria,
-      readPathOut,
-      citationFallbacks: Array.isArray(fastHuman.citations) ? fastHuman.citations : [],
-      trustSampleMaxChars,
-      voice: {
-        topicLine: fastHuman.topicLine,
-        channelType: fastHuman.channelType,
-        leadLine: fastHuman.summaryLine,
-      },
-      editor_voice_prefix_ru: trustVoicePrefix,
-    }),
+    trust_report: (() => {
+      const tr = kroHomeBuildTrustReportBundle({
+        risk10: risk,
+        statusCode: statusObj.code,
+        flags: signal.flags,
+        livePass: homeLivePass,
+        postsRead,
+        complaintsCount: complaintsRowsTotal,
+        criteriaRows: fastHuman.criteria,
+        readPathOut,
+        citationFallbacks: Array.isArray(fastHuman.citations) ? fastHuman.citations : [],
+        trustSampleMaxChars,
+        voice: {
+          topicLine: fastHuman.topicLine,
+          channelType: fastHuman.channelType,
+          leadLine: fastHuman.summaryLine,
+        },
+        editor_voice_prefix_ru: trustVoicePrefix,
+      });
+      const sh = personBehind && Array.isArray(personBehind.scheme_hits) ? personBehind.scheme_hits : [];
+      if (sh.length && tr && tr.deception_narrative) {
+        const schemeBullets = sh.slice(0, 5).map((h) => {
+          const risk = h.victim_risk ? ` — ${h.victim_risk}` : '';
+          const earn = h.how_earn ? ` Заработок автора: ${h.how_earn}` : '';
+          const q = h.quote ? ` «${String(h.quote).slice(0, 100)}»` : '';
+          return `${h.name}${q}${risk}${earn}`.trim();
+        });
+        tr.deception_narrative.title = 'Схемы в этом канале';
+        tr.deception_narrative.hook = personBehind.schemes_summary
+          || 'В тексте канала нашли признаки типичных крипто-схем — ниже что именно и чем это грозит.';
+        tr.deception_narrative.bullets = schemeBullets.length
+          ? schemeBullets
+          : tr.deception_narrative.bullets;
+      }
+      return tr;
+    })(),
     live_evidence: {
       live_pass: homeLivePass,
       mode: readPathOut,
@@ -9405,6 +9552,13 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     },
     message: `${channelDisplay}: ${riskLine} ${fastHuman.summaryLine}`,
     person_behind: personBehind || undefined,
+    scheme_detection: personBehind && Array.isArray(personBehind.scheme_hits) && personBehind.scheme_hits.length
+      ? {
+          hits: personBehind.scheme_hits,
+          count: personBehind.scheme_hits.length,
+          summary: personBehind.schemes_summary || '',
+        }
+      : undefined,
     ...(telegramUsernameResolve && telegramUsernameResolve.resolved_slug
       ? {
           telegram_username_resolve: {
@@ -10138,6 +10292,19 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         readPathOut = 'telethon';
       }
       console.log(`[KRO analyze-channel ${analyzeLogId}] completed read_path=${readPathOut} posts_read=${postsRead}`);
+      try {
+        personBehind = await kroEnrichPersonBehindWithSchemes(
+          personBehind,
+          channelDisplay,
+          sampleForFast,
+          deadline,
+          analyzeLogId,
+        );
+      } catch (eSch) {
+        console.warn(
+          `[KRO analyze-channel ${analyzeLogId}] schemes_enrich error=${eSch && eSch.message ? String(eSch.message) : 'failed'}`,
+        );
+      }
       return res.status(200).json(
         kroBuildAnalyzeChannelLiveSuccessBundle({
           withQueueMeta,
@@ -10173,6 +10340,19 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       const sPub = Array.isArray(pPub.sample_posts) ? pPub.sample_posts.filter(Boolean) : [];
       const nPub = sPub.length;
       console.log(`[KRO analyze-channel ${analyzeLogId}] public_snapshot_only posts_read=${nPub}`);
+      try {
+        personBehind = await kroEnrichPersonBehindWithSchemes(
+          personBehind,
+          channelDisplay,
+          sPub,
+          deadline,
+          analyzeLogId,
+        );
+      } catch (eSch) {
+        console.warn(
+          `[KRO analyze-channel ${analyzeLogId}] schemes_enrich error=${eSch && eSch.message ? String(eSch.message) : 'failed'}`,
+        );
+      }
       return res.status(200).json(
         kroBuildAnalyzeChannelLiveSuccessBundle({
           withQueueMeta,
@@ -10203,6 +10383,19 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         const pR = pubRetry;
         const sR = Array.isArray(pR.sample_posts) ? pR.sample_posts.filter(Boolean) : [];
         console.log(`[KRO analyze-channel ${analyzeLogId}] public_snapshot_retry posts_read=${sR.length}`);
+        try {
+          personBehind = await kroEnrichPersonBehindWithSchemes(
+            personBehind,
+            channelDisplay,
+            sR,
+            deadline,
+            analyzeLogId,
+          );
+        } catch (eSch) {
+          console.warn(
+            `[KRO analyze-channel ${analyzeLogId}] schemes_enrich error=${eSch && eSch.message ? String(eSch.message) : 'failed'}`,
+          );
+        }
         return res.status(200).json(
           kroBuildAnalyzeChannelLiveSuccessBundle({
             withQueueMeta,
@@ -10237,6 +10430,19 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         const pL = pubLate;
         const sL = Array.isArray(pL.sample_posts) ? pL.sample_posts.filter(Boolean) : [];
         console.log(`[KRO analyze-channel ${analyzeLogId}] public_snapshot_pre_dataset posts_read=${sL.length}`);
+        try {
+          personBehind = await kroEnrichPersonBehindWithSchemes(
+            personBehind,
+            channelDisplay,
+            sL,
+            deadline,
+            analyzeLogId,
+          );
+        } catch (eSch) {
+          console.warn(
+            `[KRO analyze-channel ${analyzeLogId}] schemes_enrich error=${eSch && eSch.message ? String(eSch.message) : 'failed'}`,
+          );
+        }
         return res.status(200).json(
           kroBuildAnalyzeChannelLiveSuccessBundle({
             withQueueMeta,
@@ -10271,6 +10477,19 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     console.log(
       `[KRO analyze-channel ${analyzeLogId}] dataset_evidence_fallback posts=${postsDs}`,
     );
+    try {
+      personBehind = await kroEnrichPersonBehindWithSchemes(
+        personBehind,
+        channelDisplay,
+        sampleDs,
+        deadline,
+        analyzeLogId,
+      );
+    } catch (eSch) {
+      console.warn(
+        `[KRO analyze-channel ${analyzeLogId}] schemes_enrich error=${eSch && eSch.message ? String(eSch.message) : 'failed'}`,
+      );
+    }
     return res.status(200).json(
       kroBuildAnalyzeChannelLiveSuccessBundle({
         withQueueMeta,

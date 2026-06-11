@@ -392,6 +392,11 @@
                                    <h3 class="kro-glance-h">Что делать</h3>
                                    <p class="kro-inline-one-advice" id="kro-inline-one-advice"></p>
                                </div>
+                               <div class="kro-glance-stack-card kro-glance-schemes-wrap" id="kro-glance-schemes-wrap" hidden>
+                                   <h3 class="kro-glance-h">⚠️ Схемы, которые заметили в канале</h3>
+                                   <p class="kro-glance-schemes-lead" id="kro-glance-schemes-lead"></p>
+                                   <ul class="kro-glance-schemes-list" id="kro-glance-schemes-list"></ul>
+                               </div>
                                <div class="kro-glance-stack-card kro-glance-manip-wrap" id="kro-glance-manip-wrap">
                                    <h3 class="kro-glance-h">Как тебя могут манипулировать</h3>
                                    <p class="kro-glance-manip-hook" id="kro-glance-manip-hook"></p>
@@ -1279,6 +1284,60 @@
                    return String(s == null ? '' : s)
                        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                }
+               /** Визуальные акценты: жирный, курсив, цвет, подчёркивание для ключевых слов скама. */
+               function kroTextHighlight(text) {
+                   var s = esc(String(text || '').trim());
+                   if (!s) return '';
+                   var rules = [
+                       { re: /(\b(?:памп|дамп|pump|dump|rug pull|rug)\b)/gi, cls: 'kro-hl--danger' },
+                       { re: /(\b(?:vip|вип|премиум|premium|подписк[аи]?|платн\w*)\b)/gi, cls: 'kro-hl--warn' },
+                       { re: /(\b(?:гарант\w*|100%|без риска|безубыточ\w*|guaranteed)\b)/gi, cls: 'kro-hl--danger' },
+                       { re: /(\b(?:срочно|последн\w+ шанс|успей|fomo|дедлайн|только сегодня)\b)/gi, cls: 'kro-hl--urgent' },
+                       { re: /(\b(?:x\d+|икс\w*|30x|100x|1000x|\+\d+%)\b)/gi, cls: 'kro-hl--warn' },
+                       { re: /(\b(?:депозит|инвест\w*|стейкинг|staking|% в день|пассивн\w* доход)\b)/gi, cls: 'kro-hl--warn' },
+                       { re: /(\b(?:обменник|бирж[аи]|exchange|вывод|комисси\w* за вывод|налог на прибыль)\b)/gi, cls: 'kro-hl--danger' },
+                       { re: /(\b(?:кошел[её]к|seed|сид.?фраз|приватн\w+ ключ|approve|апрув|connect wallet)\b)/gi, cls: 'kro-hl--danger' },
+                       { re: /(\b(?:реферал\w*|mlm|пригласи|инвайт)\b)/gi, cls: 'kro-hl--warn' },
+                       { re: /(\b(?:скам|мошенн\w*|развод|обман)\b)/gi, cls: 'kro-hl--danger' },
+                       { re: /(\b(?:не плати|уйди|опасно|осторожн\w*|dyor|не переводи)\b)/gi, cls: 'kro-hl--good' },
+                   ];
+                   for (var ri = 0; ri < rules.length; ri++) {
+                       var rule = rules[ri];
+                       s = s.replace(rule.re, function (m) {
+                           return '<mark class="kro-hl ' + rule.cls + '">' + m + '</mark>';
+                       });
+                   }
+                   return s;
+               }
+               function kroSchemeSeverityClass(sev) {
+                   var s = String(sev || '').toLowerCase();
+                   if (s === 'critical') return 'kro-scheme-item--critical';
+                   if (s === 'high') return 'kro-scheme-item--high';
+                   return 'kro-scheme-item--medium';
+               }
+               function kroCollectSchemeHits(data) {
+                   var pb = data && data.person_behind;
+                   var hits = pb && Array.isArray(pb.scheme_hits) ? pb.scheme_hits : [];
+                   if (!hits.length && data && data.scheme_detection && Array.isArray(data.scheme_detection.hits)) {
+                       hits = data.scheme_detection.hits;
+                   }
+                   return hits;
+               }
+               function kroRenderSchemeHitsList(hits) {
+                   return hits.slice(0, 6).map(function (h) {
+                       var name = esc(String(h.name || '').trim());
+                       var quote = h.quote ? '<blockquote class="kro-scheme-quote">«' + kroTextHighlight(h.quote) + '»</blockquote>' : '';
+                       var earn = h.how_earn ? '<p class="kro-scheme-earn"><em>Как зарабатывает:</em> ' + kroTextHighlight(h.how_earn) + '</p>' : '';
+                       var risk = h.victim_risk ? '<p class="kro-scheme-risk"><strong>Чем опасно:</strong> ' + kroTextHighlight(h.victim_risk) + '</p>' : '';
+                       var link = h.channel_link ? '<p class="kro-scheme-link">' + kroTextHighlight(h.channel_link) + '</p>' : '';
+                       return (
+                           '<li class="kro-scheme-item ' + kroSchemeSeverityClass(h.severity) + '">' +
+                           '<span class="kro-scheme-name">' + name + '</span>' +
+                           quote + earn + risk + link +
+                           '</li>'
+                       );
+                   }).join('');
+               }
                function statusClass(s) {
                    var v = (s || '').toLowerCase();
                    if (v.indexOf('мало текста') !== -1 || v.indexOf('недостаточно данных') !== -1) return 'watch';
@@ -1545,7 +1604,7 @@
                                    .map(function (ln) {
                                        return (
                                            '<li class="kro-inline-trust-reason-li"><span class="kro-inline-trust-reason-mark" aria-hidden="true">•</span> ' +
-                                           esc(String(ln || '').trim()) +
+                                           kroTextHighlight(String(ln || '').trim()) +
                                            '</li>'
                                        );
                                    })
@@ -1557,13 +1616,13 @@
                        if (sumQuick) {
                            var fyq = String(qk.for_you_ru || tr.for_you_ru || '').trim();
                            sumQuick.innerHTML = fyq
-                               ? '<p class="kro-inline-trust-for-you"><strong>Что это значит для вас:</strong> ' + esc(fyq) + '</p>'
+                               ? '<p class="kro-inline-trust-for-you"><strong>Что это значит для вас:</strong> ' + kroTextHighlight(fyq) + '</p>'
                                : '';
                        }
                        if (recQuick) {
                            var rq = String(qk.recommendation_ru || tr.recommendation_ru || '').trim();
                            recQuick.innerHTML = rq
-                               ? '<p class="kro-inline-trust-action"><strong>Следующий шаг:</strong> ' + esc(rq) + '</p>'
+                               ? '<p class="kro-inline-trust-action"><strong>Следующий шаг:</strong> ' + kroTextHighlight(rq) + '</p>'
                                : '';
                        }
 
@@ -2265,11 +2324,11 @@
                        var dh = document.getElementById('kro-inline-deception-hook');
                        var db = document.getElementById('kro-inline-deception-bullets');
                        if (dt) dt.textContent = String(dn.title || 'Как тебя могут пытаться обмануть');
-                       if (dh) dh.textContent = String(dn.hook || '');
+                       if (dh) dh.innerHTML = kroTextHighlight(String(dn.hook || ''));
                        if (db) {
                            var bl = Array.isArray(dn.bullets) ? dn.bullets : [];
                            db.innerHTML = bl.length
-                               ? bl.map(function (x) { return '<li>' + esc(String(x || '').trim()) + '</li>'; }).join('')
+                               ? bl.map(function (x) { return '<li>' + kroTextHighlight(String(x || '').trim()) + '</li>'; }).join('')
                                : '<li>Давление часто переносят в личные сообщения — держите паузу перед оплатой.</li>';
                        }
                        dec.hidden = false;
@@ -2880,7 +2939,7 @@
                                    '</strong>' +
                                    '<span class="kro-glance-reason-arrow"> → </span>' +
                                    '<span class="kro-glance-reason-why">' +
-                                   esc(why) +
+                                   kroTextHighlight(why) +
                                    '</span></span></li>'
                                );
                            }
@@ -2891,7 +2950,7 @@
                        '<li class="kro-glance-reason-item">' +
                        '<span class="kro-glance-reason-mark" aria-hidden="true">❗️</span>' +
                        '<span class="kro-glance-reason-one">' +
-                       esc(s) +
+                       kroTextHighlight(s) +
                        '</span></li>'
                    );
                }
@@ -2982,7 +3041,7 @@
                                    ? 'Явных красных флагов в доступных данных не видно — это не «гарантия», а текущая картина.'
                                    : 'Есть поводы перепроверить канал и не спешить с суммой.';
                    }
-                   riskBlurb.textContent = blurb;
+                   riskBlurb.innerHTML = kroTextHighlight(blurb);
                    if (sec) {
                        sec.textContent = secondaryLine;
                        sec.hidden = !secondaryLine || secondaryLine === blurb;
@@ -3095,14 +3154,14 @@
                            rec = 'Попросите автора показать убыточные сделки и правила риска — честный трейдер не откажет.';
                        }
                    }
-                   adv.textContent = rec;
+                   adv.innerHTML = kroTextHighlight(rec);
                    var quoteText = kroGlancePickQuoteText(data);
                    if (qWrap && qEl && qNote) {
                        if (quoteText) {
                            qWrap.hidden = false;
                            qWrap.classList.remove('hidden');
                            qEl.textContent = '«' + quoteText + '»';
-                           qNote.textContent = kroGlanceQuoteExplain(data, quoteText);
+                           qNote.innerHTML = kroTextHighlight(kroGlanceQuoteExplain(data, quoteText));
                        } else {
                            qWrap.hidden = true;
                            qWrap.classList.add('hidden');
@@ -3121,7 +3180,7 @@
                                    ? 'Спокойный тон в ответе не отменяет рыночный риск — решайте сумму и правила заранее.'
                                    : 'Пока картина неоднозначна, безопаснее уменьшить сумму или подождать больше фактов.';
                    }
-                   if (meanEl) meanEl.textContent = meaning;
+                   if (meanEl) meanEl.innerHTML = kroTextHighlight(meaning);
                    if (meanWrap) meanWrap.hidden = false;
                    var dn = tr.deception_narrative && typeof tr.deception_narrative === 'object' ? tr.deception_narrative : null;
                    var defBullets = [
@@ -3130,17 +3189,43 @@
                        'продают VIP как «спасение» после серии минусов',
                        'заставляют действовать быстро в личке или чате оплаты',
                    ];
+                   var schemeHits = kroCollectSchemeHits(data);
+                   var schemesWrap = document.getElementById('kro-glance-schemes-wrap');
+                   var schemesLead = document.getElementById('kro-glance-schemes-lead');
+                   var schemesList = document.getElementById('kro-glance-schemes-list');
+                   if (schemesWrap && schemesList) {
+                       if (schemeHits.length) {
+                           schemesWrap.hidden = false;
+                           schemesWrap.classList.remove('hidden');
+                           if (schemesLead) {
+                               schemesLead.innerHTML = kroTextHighlight(
+                                   (data.person_behind && data.person_behind.schemes_summary)
+                                       ? data.person_behind.schemes_summary
+                                       : 'В тексте канала нашли признаки типичных крипто-схем — ниже что именно и чем это грозит вам.'
+                               );
+                           }
+                           schemesList.innerHTML = kroRenderSchemeHitsList(schemeHits);
+                       } else {
+                           schemesWrap.hidden = true;
+                           schemesWrap.classList.add('hidden');
+                           schemesList.innerHTML = '';
+                           if (schemesLead) schemesLead.innerHTML = '';
+                       }
+                   }
                    if (hookEl) {
-                       hookEl.textContent = dn && String(dn.hook || '').trim()
+                       var hookText = dn && String(dn.hook || '').trim()
                            ? String(dn.hook).trim()
-                           : 'Не про запугивание — про то, чтобы узнавать приёмы и не действовать на автомате.';
+                           : schemeHits.length
+                               ? 'Это не запугивание — мы сопоставили посты канала с базой из 27 типичных крипто-схем.'
+                               : 'Не про запугивание — про то, чтобы узнавать приёмы и не действовать на автомате.';
+                       hookEl.innerHTML = kroTextHighlight(hookText);
                    }
                    if (manipList) {
                        var bl = dn && Array.isArray(dn.bullets) && dn.bullets.length ? dn.bullets : defBullets;
                        manipList.innerHTML = bl
                            .slice(0, 6)
                            .map(function (x) {
-                               return '<li>' + esc(String(x || '').trim()) + '</li>';
+                               return '<li>' + kroTextHighlight(String(x || '').trim()) + '</li>';
                            })
                            .join('');
                    }
@@ -3153,7 +3238,13 @@
                    if (!pb) { wrap.style.display = 'none'; return; }
                    wrap.style.display = '';
                    var verdictEl = document.getElementById('kro-glance-person-verdict');
-                   if (verdictEl) verdictEl.textContent = pb.verdict || '';
+                   if (verdictEl) {
+                       var vParts = [];
+                       if (pb.verdict) vParts.push('<strong class="kro-person-verdict-main">' + kroTextHighlight(pb.verdict) + '</strong>');
+                       if (pb.reveal_moment) vParts.push('<span class="kro-person-reveal"><em>' + kroTextHighlight(pb.reveal_moment) + '</em></span>');
+                       if (pb.next_action) vParts.push('<span class="kro-person-next">' + kroTextHighlight(pb.next_action) + '</span>');
+                       verdictEl.innerHTML = vParts.join('<br>');
+                   }
                    var linksEl = document.getElementById('kro-glance-person-links');
                    if (linksEl && pb.social_links && pb.social_links.length) {
                        linksEl.innerHTML = pb.social_links.map(function(l) {
@@ -3167,9 +3258,11 @@
                        if (pb.claimed_background && pb.claimed_background !== 'Не упоминается') rows.push(['Фон', pb.claimed_background]);
                        if (pb.claimed_path && pb.claimed_path !== 'Не упоминается') rows.push(['Путь', pb.claimed_path]);
                        if (pb.business_model) rows.push(['Бизнес', pb.business_model]);
-                       if (pb.red_flags && pb.red_flags !== 'Явных нет') rows.push(['🚩', pb.red_flags]);
+                       if (pb.red_flags && pb.red_flags !== 'Явных нет' && pb.red_flags !== 'Явных манипулятивных схем не найдено') {
+                           rows.push(['🚩', pb.red_flags]);
+                       }
                        factsEl.innerHTML = rows.map(function(r) {
-                           return '<li style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><span style="color:rgba(255,255,255,0.4);min-width:60px;flex-shrink:0">' + r[0] + '</span><span>' + r[1] + '</span></li>';
+                           return '<li class="kro-person-fact-row"><span class="kro-person-fact-label">' + esc(r[0]) + '</span><span class="kro-person-fact-val">' + kroTextHighlight(r[1]) + '</span></li>';
                        }).join('');
                    }
                }
