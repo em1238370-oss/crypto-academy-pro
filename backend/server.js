@@ -5071,6 +5071,96 @@ function kroExtractSocialLinksFromHtml(html) {
   return links.slice(0, 8);
 }
 
+// ============================================================
+// КАСКАДНАЯ СИСТЕМА ВЕБ-ПОИСКА
+// Уровень 1: Tavily     (TAVILY_API_KEY)    — 1 000 бесплатных/мес
+// Уровень 2: Google CSE (GOOGLE_CSE_KEY +   — 3 000 бесплатных/мес
+//                        GOOGLE_CSE_ID)
+// Уровень 3: Serper     (SERPER_API_KEY)    — платный, резерв
+// Уровень 4: DuckDuckGo                    — всегда бесплатно, слабее
+// Настроен хоть один ключ — поиск работает.
+// ============================================================
+
+/** Tavily: 1000 бесплатных запросов/мес. Регистрация: app.tavily.com */
+async function kroTavilySearch(query) {
+  const key = process.env.TAVILY_API_KEY;
+  if (!key) return [];
+  const q = String(query || '').trim();
+  if (!q) return [];
+  try {
+    const r = await axios.post(
+      'https://api.tavily.com/search',
+      { api_key: key, query: q, max_results: 5, search_depth: 'basic' },
+      { headers: { 'Content-Type': 'application/json' }, timeout: 10000 },
+    );
+    const items = Array.isArray(r.data?.results) ? r.data.results : [];
+    return items.slice(0, 5).map((item) => ({
+      title: String(item.title || '').trim(),
+      link: String(item.url || '').trim(),
+      snippet: String(item.content || item.snippet || '').trim().slice(0, 300),
+    })).filter((x) => x.title || x.snippet);
+  } catch (e) {
+    console.warn('[KRO search] tavily error:', e && e.message ? e.message : 'failed');
+    return [];
+  }
+}
+
+/** Google Custom Search: 100 запросов/день = 3000/мес бесплатно.
+ *  Настройка: programmablesearchengine.google.com → console.cloud.google.com → Custom Search JSON API
+ *  Env: GOOGLE_CSE_KEY (API ключ) + GOOGLE_CSE_ID (Search Engine ID) */
+async function kroGoogleCseSearch(query) {
+  const key = process.env.GOOGLE_CSE_KEY;
+  const cx = process.env.GOOGLE_CSE_ID;
+  if (!key || !cx) return [];
+  const q = String(query || '').trim();
+  if (!q) return [];
+  try {
+    const r = await axios.get('https://www.googleapis.com/customsearch/v1', {
+      params: { key, cx, q, num: 5 },
+      timeout: 10000,
+    });
+    const items = Array.isArray(r.data?.items) ? r.data.items : [];
+    return items.slice(0, 5).map((item) => ({
+      title: String(item.title || '').trim(),
+      link: String(item.link || '').trim(),
+      snippet: String(item.snippet || '').trim().slice(0, 300),
+    })).filter((x) => x.title || x.snippet);
+  } catch (e) {
+    console.warn('[KRO search] google_cse error:', e && e.message ? e.message : 'failed');
+    return [];
+  }
+}
+
+/**
+ * kroUnifiedWebSearch — единая точка входа для всех поисковых запросов.
+ * Пробует источники по порядку, переключается автоматически при ошибке/пустом ответе.
+ * Tier 1 → Tavily → Tier 2 → Google CSE → Tier 3 → Serper → []
+ */
+async function kroUnifiedWebSearch(query) {
+  const q = String(query || '').trim();
+  if (!q) return [];
+
+  if (process.env.TAVILY_API_KEY) {
+    const hits = await kroTavilySearch(q);
+    if (hits.length) { console.log(`[KRO search] source=tavily q="${q.slice(0, 50)}"`); return hits; }
+    console.warn('[KRO search] tavily returned empty → trying Google CSE');
+  }
+
+  if (process.env.GOOGLE_CSE_KEY && process.env.GOOGLE_CSE_ID) {
+    const hits = await kroGoogleCseSearch(q);
+    if (hits.length) { console.log(`[KRO search] source=google_cse q="${q.slice(0, 50)}"`); return hits; }
+    console.warn('[KRO search] google_cse returned empty → trying Serper');
+  }
+
+  if (process.env.SERPER_API_KEY) {
+    const hits = await kroSerperWebSearch(q);
+    if (hits.length) { console.log(`[KRO search] source=serper q="${q.slice(0, 50)}"`); return hits; }
+  }
+
+  console.warn('[KRO search] all sources exhausted for query:', q.slice(0, 60));
+  return [];
+}
+
 function kroSerperSearchEndpoint() {
   return String(process.env.SERPER_API_URL || 'https://api.serper.dev/search').trim();
 }
@@ -5148,16 +5238,16 @@ async function kroSearchByPersonName(who) {
       if (results.length >= 3) break;
     }
   } catch { /* ignore */ }
-  // Serper: ищем имя + мошенник/отзывы если есть ключ
-  if (process.env.SERPER_API_KEY && results.length < 5) {
+  // Уровень 2: каскадный поиск (Tavily → Google CSE → Serper) если нужно больше результатов
+  if (results.length < 5) {
     try {
       const q = `"${name}" мошенник OR скам OR отзывы telegram`;
-      const hits = await kroSerperWebSearch(q);
+      const hits = await kroUnifiedWebSearch(q);
       for (const hit of (hits || [])) {
         const snippet = String(hit.snippet || hit.title || '').trim();
         const link = String(hit.link || '').trim();
         if (snippet && snippet.length > 15) {
-          results.push({ snippet: snippet.slice(0, 280), source: link || 'Serper' });
+          results.push({ snippet: snippet.slice(0, 280), source: link || 'Поиск' });
         }
         if (results.length >= 5) break;
       }
@@ -5166,22 +5256,28 @@ async function kroSearchByPersonName(who) {
   return results.slice(0, 5);
 }
 
-/** Два поисковых запроса для блока «Кто за каналом»; без ключа — пустая строка. */
+/** Два поисковых запроса для блока «Кто за каналом».
+ *  Работает если настроен хотя бы один ключ: TAVILY_API_KEY, GOOGLE_CSE_KEY или SERPER_API_KEY. */
 async function kroFetchPersonBehindWebContext(channelName, username) {
-  if (!process.env.SERPER_API_KEY) return '';
+  const hasAnySearch = !!(
+    process.env.TAVILY_API_KEY ||
+    (process.env.GOOGLE_CSE_KEY && process.env.GOOGLE_CSE_ID) ||
+    process.env.SERPER_API_KEY
+  );
+  if (!hasAnySearch) return '';
   const name = String(channelName || '').trim();
   const user = String(username || '').replace(/^@/, '').trim();
   const queries = [];
   if (name) {
-    queries.push(`"${name}" site:reddit.com OR "отзывы" OR "скам" OR "мошенник"`);
+    queries.push(`"${name}" отзывы OR скам OR мошенник OR telegram`);
   }
   if (user) {
-    queries.push(`${user} telegram`);
+    queries.push(`@${user} telegram крипто отзывы`);
   }
   if (!queries.length) return '';
   const parts = [];
   for (const q of queries) {
-    const hits = await kroSerperWebSearch(q);
+    const hits = await kroUnifiedWebSearch(q);
     const block = kroFormatSerperHits(`Запрос: ${q}`, hits);
     if (block) parts.push(block);
   }
