@@ -10048,3 +10048,138 @@ body.kro-main::after {
    opacity: 0 !important;
    background: transparent !important;
 }
+
+/* === SCHEME CARDS === */
+.kro-scheme-section {
+  margin-top: 18px;
+}
+.kro-scheme-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+  margin-bottom: 10px;
+}
+.kro-scheme-card {
+  border-radius: 10px;
+  padding: 13px 15px;
+  margin-bottom: 9px;
+  border: 1px solid;
+}
+.kro-scheme-card--danger {
+  background: rgba(184,74,74,0.1);
+  border-color: rgba(184,74,74,0.28);
+}
+.kro-scheme-card--warn {
+  background: rgba(245,158,11,0.09);
+  border-color: rgba(245,158,11,0.3);
+}
+.kro-scheme-card--good {
+  background: rgba(34,197,94,0.08);
+  border-color: rgba(34,197,94,0.25);
+}
+.kro-scheme-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.kro-scheme-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.kro-scheme-card--danger .kro-scheme-badge {
+  background: rgba(184,74,74,0.25);
+  color: #fca5a5;
+}
+.kro-scheme-card--warn .kro-scheme-badge {
+  background: rgba(245,158,11,0.2);
+  color: #fde68a;
+}
+.kro-scheme-card--good .kro-scheme-badge {
+  background: rgba(34,197,94,0.15);
+  color: #86efac;
+}
+.kro-scheme-card-type {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.35);
+}
+.kro-scheme-how {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.55);
+  margin: 0 0 9px 0;
+}
+.kro-scheme-how strong {
+  color: rgba(255,255,255,0.82);
+  font-weight: 600;
+}
+.kro-scheme-trap {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 9px;
+}
+.kro-scheme-trap-step {
+  font-size: 0.77rem;
+  padding: 4px 9px;
+  border-radius: 6px;
+  line-height: 1.4;
+}
+.kro-scheme-trap-step--write {
+  background: rgba(184,74,74,0.18);
+  color: #fca5a5;
+}
+.kro-scheme-trap-step--think {
+  background: rgba(245,158,11,0.15);
+  color: #fde68a;
+}
+.kro-scheme-trap-step--result {
+  background: rgba(184,74,74,0.22);
+  color: #fca5a5;
+}
+.kro-scheme-trap-arrow {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.25);
+  padding-top: 4px;
+}
+.kro-scheme-quote {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 9px;
+  margin: 0;
+}
+.kro-scheme-quote-label {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 4px;
+}
+.kro-scheme-quote-text {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.5;
+  border-left: 2px solid rgba(255,255,255,0.15);
+  padding-left: 10px;
+  margin: 0;
+}
+.kro-scheme-card--danger .kro-scheme-quote-text {
+  border-left-color: rgba(184,74,74,0.55);
+}
+.kro-scheme-card--warn .kro-scheme-quote-text {
+  border-left-color: rgba(245,158,11,0.45);
+}
+.kro-scheme-card--good .kro-scheme-quote-text {
+  border-left-color: rgba(34,197,94,0.45);
+}
+.kro-glance-risk-label.kro-result-risk-badge--high { color: #fca5a5; }
+.kro-glance-risk-label.kro-result-risk-badge--mid { color: #fde68a; }
+.kro-glance-risk-label.kro-result-risk-badge--low { color: #86efac; }
+.kro-inline-schemes-body { margin: 14px 0 18px; }

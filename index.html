@@ -19,8 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260508-kro-neutral-main-bg">
-   <link rel="stylesheet" href="monitor.css?v=20260611-kro-schemes">
+   <link rel="stylesheet" href="styles.css?v=20260611-kro-scheme-cards">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -416,7 +415,7 @@
                            </div>
                            <details class="kro-inline-tech-details" id="kro-inline-tech-details">
                                <summary class="kro-inline-tech-details-sum">Подробнее</summary>
-                               <div class="kro-inline-tech-details-inner">
+                               <div class="kro-inline-tech-details-inner" id="kro-result-details-panel">
                            <p class="kro-inline-report-eyebrow" id="kro-inline-eyebrow">Проверка канала</p>
                            <h3 class="kro-inline-report-title" id="kro-inline-title">—</h3>
                            <p class="kro-inline-report-meta" id="kro-inline-meta"></p>
@@ -514,10 +513,7 @@
                                <div id="kro-inline-person-verdict" class="kro-inline-person-verdict"></div>
                                <div id="kro-inline-person-fields" class="kro-inline-person-fields"></div>
                            </section>
-                           <section class="kro-inline-schemes-section hidden" id="kro-inline-schemes-wrap" hidden>
-                               <h4 class="kro-inline-schemes-title">Найденные схемы</h4>
-                               <div class="kro-inline-schemes-body" id="kro-inline-schemes-body"></div>
-                           </section>
+                           <div class="kro-inline-schemes-body" id="kro-inline-schemes-body"></div>
                            <div class="honest-signals hidden" id="kro-honest-signals" hidden>
                                <p class="honest-signals-title">Что здесь честно</p>
                                <ul class="honest-signals-list" id="kro-honest-signals-list"></ul>
@@ -1413,26 +1409,6 @@
                        '</span></div>'
                    );
                }
-               var SCHEME_EXPLANATIONS = {
-                   fomo: 'Создаёт искусственную срочность — чтобы ты не думал, а сразу платил',
-                   'воронка продаж': 'Бесплатный контент — только приманка. Настоящая цель — продать тебе курс или VIP',
-                   'ложный авторитет': 'Заявляет опыт без единого доказательства — верь на слово',
-                   'только плюсы': 'Показывает только прибыльные сделки — убытки прячет или не упоминает',
-                   'социальное доказательство': 'Цифры учеников и участников ничем не подтверждены',
-                   'личное участие': 'Говорит «я сам вошёл» чтобы ты чувствовал что он рискует вместе с тобой — но это не так',
-                   зависимость: 'Внушает что без него ты потеряешь деньги — создаёт эмоциональную привязку',
-                   'реферальная ловушка': 'Бесплатный доступ только если приведёшь друга — ты становишься продавцом',
-                   'стадный эффект': 'Все уже зарабатывают — только ты нет. Классическое давление толпой',
-                   'неверифицируемые результаты': 'Скрины без даты, счёта и контекста — проверить невозможно',
-               };
-               function kroSchemeExplanationForName(name) {
-                   var low = String(name || '').toLowerCase();
-                   var keys = Object.keys(SCHEME_EXPLANATIONS);
-                   for (var ki = 0; ki < keys.length; ki++) {
-                       if (low.indexOf(keys[ki]) !== -1) return SCHEME_EXPLANATIONS[keys[ki]];
-                   }
-                   return 'Типичный приём давления — перепроверьте, не торопит ли автор на деньги.';
-               }
                function kroNormalizeRedFlagsInput(redFlags) {
                    if (Array.isArray(redFlags)) {
                        return redFlags
@@ -1477,40 +1453,193 @@
                    }
                    return out;
                }
-               function kroRenderSchemeCardsFromRedFlags(redFlags) {
-                   var schemes = kroParseRedFlagsSchemes(redFlags);
-                   if (!schemes.length) {
-                       return '<div class="scheme-card scheme-card--ok">✓ Явных манипулятивных схем не обнаружено</div>';
+               function kroResultBuildGlanceItems(data) {
+                   var pb = data && data.person_behind;
+                   var parsed = [];
+                   if (pb && pb.red_flags != null) {
+                       parsed = kroParseRedFlagsSchemes(pb.red_flags);
                    }
-                   return schemes
-                       .map(function (s) {
-                           var how = kroSchemeExplanationForName(s.name);
-                           var nameLow = String(s.name || '').toLowerCase();
-                           var cardClass =
-                               nameLow.indexOf('fomo') !== -1 ||
-                               nameLow.indexOf('воронка') !== -1 ||
-                               nameLow.indexOf('гарант') !== -1 ||
-                               nameLow.indexOf('скам') !== -1
-                                   ? 'scheme-card--danger'
-                                   : 'scheme-card--warning';
-                           var quote = s.quote
-                               ? '<blockquote class="scheme-quote">«' + kroTextHighlight(s.quote) + '»</blockquote>'
-                               : '';
-                           return (
-                               '<div class="scheme-card ' +
-                               cardClass +
-                               '">' +
-                               '<span class="scheme-name">' +
-                               esc(s.name) +
-                               '</span>' +
-                               '<span class="scheme-how">' +
-                               esc(how) +
-                               '</span>' +
-                               quote +
-                               '</div>'
-                           );
-                       })
-                       .join('');
+                   if (!parsed.length && pb && Array.isArray(pb.scheme_hits)) {
+                       parsed = pb.scheme_hits.map(function (h) {
+                           return { name: h.name, quote: h.quote || '' };
+                       });
+                   }
+                   if (!parsed.length) {
+                       var hits = kroCollectSchemeHits(data);
+                       parsed = hits.map(function (h) {
+                           return { name: h.name, quote: h.quote || '' };
+                       });
+                   }
+                   return parsed.map(function (s) {
+                       return {
+                           title: s.name,
+                           quotes: s.quote ? [s.quote] : [],
+                       };
+                   });
+               }
+               function kroResultSchemeNames(data) {
+                   return kroResultBuildGlanceItems(data).map(function (item) {
+                       return String(item.title || '').trim();
+                   }).filter(Boolean);
+               }
+               var KRO_SCHEME_META = {
+                   fomo: {
+                       type: 'давление',
+                       how: 'Создаёт <strong>искусственную срочность</strong> — чтобы ты не думал, а сразу платил.',
+                       trap: ['Пишут: «Последние места!»', '→', 'Ты думаешь: «Все войдут, я упущу»', '→', 'Платишь не думая'],
+                   },
+                   'воронка продаж': {
+                       type: 'манипуляция',
+                       how: 'Бесплатный контент — <strong>только приманка</strong>. Настоящая цель — продать тебе курс или VIP.',
+                       trap: ['Бесплатный канал', '→', 'VIP за деньги', '→', 'Курс дороже', '→', 'Коучинг'],
+                   },
+                   'только плюсы': {
+                       type: 'скрытие убытков',
+                       how: 'Публикует только прибыльные сделки. <strong>Убытки удаляет или не упоминает</strong> — выглядит лучше чем есть.',
+                       trap: ['Показывает +340%', '→', 'Прячет -85%', '→', 'Ты видишь только победы'],
+                   },
+                   'ложный авторитет': {
+                       type: 'доверие',
+                       how: 'Заявляет опыт без единого доказательства. <strong>«10 лет в трейдинге»</strong> — верь на слово.',
+                       trap: ['Пишет: «10 лет опыта»', '→', 'Нет ни одного подтверждения', '→', 'Ты веришь'],
+                   },
+                   'социальное доказательство': {
+                       type: 'манипуляция',
+                       how: '«<strong>5000 учеников</strong>» — цифры ничем не подтверждены. Аудиторию накручивают.',
+                       trap: ['«5000 довольных»', '→', 'Проверить невозможно', '→', 'Создаёт иллюзию успеха'],
+                   },
+                   'личное участие': {
+                       type: 'доверие',
+                       how: 'Говорит «я сам вошёл» чтобы казалось — он рискует вместе с тобой. <strong>Но это не так.</strong>',
+                       trap: ['«Я сам взял позицию»', '→', 'Ты чувствуешь: «он как я»', '→', 'Доверяешь'],
+                   },
+                   зависимость: {
+                       type: 'давление',
+                       how: 'Внушает что <strong>без него потеряешь деньги</strong> — создаёт эмоциональную привязку.',
+                       trap: ['«Без меня пропустишь»', '→', 'Страх потерять', '→', 'Продолжаешь платить'],
+                   },
+                   'неверифицируемые результаты': {
+                       type: 'скрытие',
+                       how: '<strong>Скрины без даты, счёта и контекста</strong> — проверить невозможно. Рисуются на ходу.',
+                       trap: ['Скрин +450%', '→', 'Нет даты и счёта', '→', 'Не проверить'],
+                   },
+                   'стадный эффект': {
+                       type: 'давление',
+                       how: '«Все уже зарабатывают — только ты нет». <strong>Классическое давление толпой.</strong>',
+                       trap: ['«Все в профите»', '→', 'Ты чувствуешь себя отстающим', '→', 'Платишь чтобы «догнать»'],
+                   },
+                   'реферальная ловушка': {
+                       type: 'рост аудитории',
+                       how: 'Доступ только если приведёшь друга. <strong>Ты становишься их продавцом</strong> — бесплатно.',
+                       trap: ['«Приведи друга — получи доступ»', '→', 'Ты работаешь на них', '→', 'Они растут'],
+                   },
+                   'закрытый клуб': {
+                       type: 'манипуляция',
+                       how: 'Бесплатная часть — витрина. <strong>«Настоящее» — только за деньги.</strong> Всегда.',
+                       trap: ['Бесплатный контент', '→', 'Намёк на «закрытое»', '→', 'Ты платишь за «настоящее»'],
+                   },
+               };
+               function kroFindSchemeMeta(rawName) {
+                   var n = String(rawName || '').toLowerCase().trim().replace(/[«»\[\]]/g, '').trim();
+                   for (var key in KRO_SCHEME_META) {
+                       if (n.indexOf(key) !== -1 || key.indexOf(n) !== -1) return KRO_SCHEME_META[key];
+                   }
+                   return null;
+               }
+               function kroRenderSchemeCards(data) {
+                   var pb = data.person_behind;
+                   var items = kroResultBuildGlanceItems(data);
+                   if (!items.length && (!pb || !pb.red_flags)) return '';
+
+                   var html = '<div class="kro-scheme-section">';
+                   html += '<p class="kro-scheme-section-title">Найденные схемы</p>';
+
+                   var hasAnyScheme = false;
+
+                   items.forEach(function (item) {
+                       var name = String(item.title || '').trim();
+                       if (!name || name.indexOf('не найдено') !== -1 || name.indexOf('Явных') !== -1) return;
+                       hasAnyScheme = true;
+                       var meta = kroFindSchemeMeta(name);
+                       var quote = item.quotes && item.quotes[0] ? String(item.quotes[0]).trim() : '';
+                       var tone = 'danger';
+
+                       html += '<div class="kro-scheme-card kro-scheme-card--' + tone + '">';
+                       html += '<div class="kro-scheme-card-header">';
+                       html += '<span class="kro-scheme-badge">' + esc(name) + '</span>';
+                       if (meta) html += '<span class="kro-scheme-card-type">' + esc(meta.type) + '</span>';
+                       html += '</div>';
+
+                       if (meta) {
+                           html += '<p class="kro-scheme-how">' + meta.how + '</p>';
+                           if (meta.trap && meta.trap.length) {
+                               html += '<div class="kro-scheme-trap">';
+                               meta.trap.forEach(function (step) {
+                                   if (step === '→') {
+                                       html += '<span class="kro-scheme-trap-arrow">→</span>';
+                                   } else if (
+                                       step.indexOf('Пишут') === 0 ||
+                                       step.indexOf('Показывает') === 0 ||
+                                       step.indexOf('Бесплатный') === 0 ||
+                                       step.indexOf('Скрин') === 0 ||
+                                       step.indexOf('«') === 0
+                                   ) {
+                                       html += '<span class="kro-scheme-trap-step kro-scheme-trap-step--write">' + esc(step) + '</span>';
+                                   } else if (
+                                       step.indexOf('Ты') === 0 ||
+                                       step.indexOf('Нет') === 0 ||
+                                       step.indexOf('Прячет') === 0
+                                   ) {
+                                       html += '<span class="kro-scheme-trap-step kro-scheme-trap-step--think">' + esc(step) + '</span>';
+                                   } else {
+                                       html += '<span class="kro-scheme-trap-step kro-scheme-trap-step--result">' + esc(step) + '</span>';
+                                   }
+                               });
+                               html += '</div>';
+                           }
+                       }
+
+                       if (quote) {
+                           html += '<div class="kro-scheme-quote">';
+                           html += '<span class="kro-scheme-quote-label">Цитата из канала</span>';
+                           html += '<p class="kro-scheme-quote-text">' + esc(quote) + '</p>';
+                           html += '</div>';
+                       }
+                       html += '</div>';
+                   });
+
+                   if (!hasAnyScheme) {
+                       html += '<div class="kro-scheme-card kro-scheme-card--good">';
+                       html += '<div class="kro-scheme-card-header"><span class="kro-scheme-badge">Чисто</span></div>';
+                       html += '<p class="kro-scheme-how">Явных манипулятивных схем в доступных постах <strong>не обнаружено</strong>.</p>';
+                       html += '</div>';
+                   }
+
+                   html += '</div>';
+                   return html;
+               }
+               function kroResolveBadge(riskScore, verdictText) {
+                   var v = String(verdictText || '').toLowerCase();
+                   if (['уйди', 'не плати', 'опасно', 'немедленно', 'скам', 'мошен'].some(function (w) {
+                       return v.indexOf(w) !== -1;
+                   })) {
+                       return { cls: 'kro-result-risk-badge--high', text: 'Высокий риск' };
+                   }
+                   if (['смотри бесплатно', 'можно', 'честный'].some(function (w) {
+                       return v.indexOf(w) !== -1;
+                   })) {
+                       return { cls: 'kro-result-risk-badge--low', text: 'Низкий риск' };
+                   }
+                   var score = riskScore != null && !isNaN(Number(riskScore)) ? Number(riskScore) : 0;
+                   if (score >= 7) return { cls: 'kro-result-risk-badge--high', text: 'Высокий риск' };
+                   if (score >= 4) return { cls: 'kro-result-risk-badge--mid', text: 'Осторожно' };
+                   return { cls: 'kro-result-risk-badge--low', text: 'Низкий риск' };
+               }
+               function kroBadgeClsToTier(cls) {
+                   if (cls === 'kro-result-risk-badge--high') return 'high';
+                   if (cls === 'kro-result-risk-badge--low') return 'low';
+                   if (cls === 'kro-result-risk-badge--mid') return 'medium';
+                   return 'medium';
                }
                function kroCollectResultBulletText(data) {
                    var chunks = [];
@@ -1604,22 +1733,30 @@
                    }
                }
                function kroFillDetailsSchemes(data) {
-                   var wrap = document.getElementById('kro-inline-schemes-wrap');
                    var body = document.getElementById('kro-inline-schemes-body');
-                   if (!wrap || !body) return;
-                   var pb = data && data.person_behind;
-                   var redFlags = pb && pb.red_flags != null ? pb.red_flags : '';
-                   if (!redFlags && pb && Array.isArray(pb.scheme_hits) && pb.scheme_hits.length) {
-                       redFlags = pb.scheme_hits
-                           .map(function (h) {
-                               var q = h.quote ? ': «' + h.quote + '»' : '';
-                               return '[' + h.name + ']' + q;
-                           })
-                           .join('; ');
+                   var detailsPanel = document.getElementById('kro-result-details-panel');
+                   var schemeCardsHtml = kroRenderSchemeCards(data);
+                   if (!schemeCardsHtml) {
+                       if (body) {
+                           body.innerHTML = '';
+                           body.hidden = true;
+                           body.classList.add('hidden');
+                       }
+                       if (detailsPanel) {
+                           var stale = detailsPanel.querySelector('.kro-scheme-section');
+                           if (stale) stale.remove();
+                       }
+                       return;
                    }
-                   body.innerHTML = kroRenderSchemeCardsFromRedFlags(redFlags);
-                   wrap.hidden = false;
-                   wrap.classList.remove('hidden');
+                   if (body) {
+                       body.innerHTML = schemeCardsHtml;
+                       body.hidden = false;
+                       body.classList.remove('hidden');
+                   } else if (detailsPanel) {
+                       var existing = detailsPanel.querySelector('.kro-scheme-section');
+                       if (existing) existing.remove();
+                       detailsPanel.insertAdjacentHTML('beforeend', schemeCardsHtml);
+                   }
                }
                function kroFillPersonBehindDetails(data) {
                    var wrap = document.getElementById('kro-inline-person-wrap');
@@ -3343,7 +3480,13 @@
                    var manipList = document.getElementById('kro-glance-manip-list');
                    var det = document.getElementById('kro-inline-tech-details');
                    if (!riskLab || !riskBlurb || !ul || !adv) return;
+                   var numericScore = data.risk_index != null && !isNaN(Number(data.risk_index)) ? Number(data.risk_index) : 0;
+                   var verdictText = data.person_behind && data.person_behind.verdict ? data.person_behind.verdict : '';
+                   var resolvedBadge = kroResolveBadge(numericScore, verdictText);
                    var unifiedTier = kroResolveUnifiedTierForData(data);
+                   if (unifiedTier !== 'insufficient') {
+                       unifiedTier = kroBadgeClsToTier(resolvedBadge.cls);
+                   }
                    var mv = data.money_verdict;
                    var moneyTier = unifiedTier === 'insufficient'
                        ? 'warn'
@@ -3358,6 +3501,7 @@
                    };
                    var secondaryLine = (mv && mv.headline_ru) ? String(mv.headline_ru).trim() : (phrases[moneyTier] || phrases.warn);
                    riskLab.textContent = kroUnifiedRiskBadgeLabel(unifiedTier, data.risk_index, data.risk_index_max);
+                   riskLab.className = 'kro-glance-risk-label ' + resolvedBadge.cls;
                    if (riskCard) {
                        riskCard.className =
                            'kro-glance-risk-card kro-glance-risk-card--' + kroUnifiedRiskCardClass(unifiedTier);
