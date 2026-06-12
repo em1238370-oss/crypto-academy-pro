@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260508-kro-neutral-main-bg">
+   <link rel="stylesheet" href="styles.css?v=20260611-kro-scheme-viz">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -2890,7 +2890,14 @@
                    if (tier === 'insufficient') return '⚪ Риск: мало данных для уверенности';
                    return '🟡 Риск: Средний';
                }
-               function kroResultRiskBadge(tier) {
+               function kroResultRiskBadge(tier, verdictText) {
+                   var v = String(verdictText || '').toLowerCase();
+                   var dangerWords = ['уйди', 'не плати', 'опасно', 'немедленно', 'скам', 'мошен'];
+                   var safeWords = ['смотри бесплатно', 'можно', 'честный', 'низкий риск'];
+                   var hasDanger = dangerWords.some(function (w) { return v.indexOf(w) !== -1; });
+                   var hasSafe = safeWords.some(function (w) { return v.indexOf(w) !== -1; });
+                   if (hasDanger) return '🔴 высокий риск';
+                   if (hasSafe) return '🟢 низкий риск';
                    if (tier === 'danger') return '🔴 высокий риск';
                    if (tier === 'clean') return '🟢 низкий риск';
                    return '🟡 осторожно';
@@ -2996,7 +3003,12 @@
                }
                function kroResultRenderGridRows(gridEl, rows) {
                    if (!gridEl) return;
+                   var EMPTY_VALUES = ['—', '', 'не упоминается', 'аноним', 'не указано', 'anonymous_hidden'];
                    gridEl.innerHTML = rows
+                       .filter(function (r) {
+                           var val = String(r[1] || '').trim().toLowerCase();
+                           return val && EMPTY_VALUES.indexOf(val) === -1;
+                       })
                        .map(function (r) {
                            return (
                                '<div class="kro-result-grid-row"><dt>' +
@@ -3194,6 +3206,243 @@
                    if (moneyTier === 'clean') pool = goods.concat(bads).concat(dangers);
                    else if (moneyTier !== 'danger') pool = bads.concat(goods).concat(dangers);
                    return pool.slice(0, 3);
+               }
+               function kroResultBuildGlanceItems(data) {
+                   var items = [];
+                   var seen = {};
+                   var add = function (title, quotes) {
+                       var t = String(title || '').trim();
+                       if (!t) return;
+                       var k = kroGlanceNormKey(t);
+                       if (!k || seen[k]) return;
+                       seen[k] = true;
+                       items.push({ title: t, quotes: Array.isArray(quotes) ? quotes : [] });
+                   };
+                   var pb = data.person_behind;
+                   if (pb && pb.red_flags) {
+                       if (Array.isArray(pb.red_flags)) {
+                           for (var ri = 0; ri < pb.red_flags.length; ri++) {
+                               var line = String(pb.red_flags[ri] || '').trim();
+                               if (!line) continue;
+                               var colon = line.indexOf(':');
+                               var rTitle = colon > 0 ? line.slice(0, colon).trim() : line;
+                               var rQuote = colon > 0 ? line.slice(colon + 1).trim() : '';
+                               add(rTitle, rQuote ? [rQuote] : []);
+                           }
+                       } else {
+                           var raw = String(pb.red_flags).trim();
+                           var splitParts = raw.split(/»,\s*«/);
+                           if (splitParts.length > 1) {
+                               for (var si = 0; si < splitParts.length; si++) {
+                                   var chunk = splitParts[si].replace(/^[«\[\s]+|[»\]\s]+$/g, '').trim();
+                                   var ci = chunk.indexOf(':');
+                                   var nm = ci > 0 ? chunk.slice(0, ci).trim() : chunk;
+                                   var qt = ci > 0 ? chunk.slice(ci + 1).trim() : '';
+                                   add(nm, qt ? [qt] : []);
+                               }
+                           } else {
+                               var parts = kroPersonBehindSplitRedFlags(pb.red_flags);
+                               for (var pi = 0; pi < parts.length; pi++) {
+                                   var p = parts[pi];
+                                   var pq = kroResultExtractQuotes(p);
+                                   var pt = kroResultStripQuotes(p);
+                                   var pci = pt.indexOf(':');
+                                   if (pci > 0) {
+                                       add(pt.slice(0, pci).trim(), [pt.slice(pci + 1).trim()]);
+                                   } else {
+                                       add(pt.slice(0, 100) || 'Красный флаг', pq.length ? pq : (pt ? [pt.slice(0, 220)] : []));
+                                   }
+                               }
+                           }
+                       }
+                   }
+                   var flags = Array.isArray(data.flags) ? data.flags : [];
+                   for (var fi = 0; fi < flags.length; fi++) {
+                       var f = flags[fi];
+                       var fTitle = String(f.title || f.code || '').trim();
+                       var expl = String(f.explanation || '').trim();
+                       var fQuotes = kroResultExtractQuotes(expl);
+                       if (!fQuotes.length && expl) fQuotes = [expl.slice(0, 220)];
+                       add(fTitle, fQuotes);
+                   }
+                   return items;
+               }
+               var KRO_SCHEME_META = {
+                   fomo: {
+                       label: 'FOMO', type: 'схема давления',
+                       how: 'Создаёт <strong>искусственную срочность</strong> — чтобы ты не думал, а сразу платил.',
+                       trap: [
+                           { cls: 'write', text: 'Пишут: «Последние 3 места!»' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'think', text: 'Думаешь: «Все войдут, я упущу»' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'result', text: 'Платишь не думая' },
+                       ],
+                   },
+                   'воронка продаж': {
+                       label: 'Воронка продаж', type: 'манипуляция',
+                       how: 'Бесплатный контент — <strong>только приманка</strong>. Цель — продать VIP, потом курс, потом коучинг.',
+                       trap: [
+                           { cls: 'write', text: 'Бесплатный канал' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'think', text: 'VIP 2500₽/мес' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'result', text: 'Курс 47 000₽' },
+                       ],
+                   },
+                   'только плюсы': {
+                       label: 'Только плюсы', type: 'скрытие убытков',
+                       how: 'Публикует только прибыльные сделки. <strong>Убытки удаляет</strong> или не упоминает — выглядит лучше чем есть.',
+                       trap: [
+                           { cls: 'write', text: 'Скрин +340%' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'think', text: 'Убытки удалены' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'result', text: 'Ты видишь только победы' },
+                       ],
+                   },
+                   'ложный авторитет': {
+                       label: 'Ложный авторитет', type: 'схема доверия',
+                       how: 'Заявляет опыт без единого доказательства. <strong>«10 лет в трейдинге»</strong> — просто слова.',
+                       trap: [
+                           { cls: 'write', text: '«10 лет опыта»' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'think', text: 'Нет ни одного подтверждения' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'result', text: 'Ты веришь на слово' },
+                       ],
+                   },
+                   'социальное доказательство': {
+                       label: 'Соц. доказательство', type: 'манипуляция',
+                       how: '«<strong>5000 учеников зарабатывают</strong>» — цифры ничем не подтверждены и накручены.',
+                       trap: [
+                           { cls: 'write', text: '«5000 довольных»' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'think', text: 'Проверить невозможно' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'result', text: 'Иллюзия успеха' },
+                       ],
+                   },
+                   'личное участие': {
+                       label: 'Личное участие', type: 'схема доверия',
+                       how: 'Говорит «я сам вошёл» — <strong>создаёт ощущение что рискует вместе с тобой</strong>. Но это не так.',
+                       trap: [
+                           { cls: 'write', text: '«Я сам взял позицию»' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'think', text: 'Кажется: «он как я»' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'result', text: 'Доверяешь без проверки' },
+                       ],
+                   },
+                   зависимость: {
+                       label: 'Зависимость', type: 'давление',
+                       how: 'Внушает что <strong>без него потеряешь деньги</strong> — создаёт эмоциональную ловушку.',
+                       trap: [
+                           { cls: 'write', text: '«Без меня пропустишь»' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'think', text: 'Страх потерять' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'result', text: 'Продолжаешь платить' },
+                       ],
+                   },
+                   'неверифицируемые результаты': {
+                       label: 'Фейковые результаты', type: 'скрытие',
+                       how: '<strong>Скрины без даты, счёта и контекста</strong> — невозможно проверить. Рисуются постфактум.',
+                       trap: [
+                           { cls: 'write', text: 'Скрин +450%' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'think', text: 'Нет даты и счёта' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'result', text: 'Не проверить' },
+                       ],
+                   },
+                   'стадный эффект': {
+                       label: 'Стадный эффект', type: 'давление',
+                       how: '«Все уже зарабатывают — только ты нет». <strong>Классическое давление через зависть.</strong>',
+                       trap: [
+                           { cls: 'write', text: '«Все в профите»' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'think', text: 'Чувствуешь себя отстающим' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'result', text: 'Платишь чтобы «догнать»' },
+                       ],
+                   },
+                   'реферальная ловушка': {
+                       label: 'Реф. ловушка', type: 'рост аудитории',
+                       how: 'Доступ только если приведёшь друга. <strong>Ты становишься их продавцом</strong> — бесплатно.',
+                       trap: [
+                           { cls: 'write', text: '«Приведи друга — получи доступ»' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'think', text: 'Ты работаешь на них' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'result', text: 'Они растут за твой счёт' },
+                       ],
+                   },
+                   'закрытый клуб': {
+                       label: 'Закрытый клуб', type: 'манипуляция',
+                       how: 'Бесплатная часть — витрина. <strong>«Настоящее» — только за деньги.</strong> Всегда.',
+                       trap: [
+                           { cls: 'write', text: 'Бесплатный контент' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'think', text: 'Намёк на «закрытое»' },
+                           { cls: 'arrow', text: '→' },
+                           { cls: 'result', text: 'Ты платишь за «настоящее»' },
+                       ],
+                   },
+               };
+               function kroFindSchemeMeta(rawName) {
+                   var n = String(rawName || '').toLowerCase().replace(/[«»\[\]"']/g, '').trim();
+                   for (var key in KRO_SCHEME_META) {
+                       if (n.indexOf(key) !== -1 || key.indexOf(n) !== -1) {
+                           return KRO_SCHEME_META[key];
+                       }
+                   }
+                   return null;
+               }
+               function kroRenderSchemeCard(item, isGood) {
+                   var name = String(item.title || '').trim();
+                   var quotes = Array.isArray(item.quotes) ? item.quotes : [];
+                   var meta = !isGood ? kroFindSchemeMeta(name) : null;
+                   var tone = isGood ? 'good' : 'danger';
+
+                   var html = '<div class="kro-scheme-card kro-scheme-card--' + tone + '">';
+
+                   html += '<div class="kro-scheme-card-header">';
+                   html += '<span class="kro-scheme-badge">' + esc(meta ? meta.label : name) + '</span>';
+                   if (meta) {
+                       html += '<span class="kro-scheme-card-type">' + esc(meta.type) + '</span>';
+                   }
+                   html += '</div>';
+
+                   if (meta && meta.how) {
+                       html += '<p class="kro-scheme-how">' + meta.how + '</p>';
+                   } else if (isGood) {
+                       html += '<p class="kro-scheme-how">Честный признак — <strong>улучшает качество</strong> канала.</p>';
+                   }
+
+                   if (meta && meta.trap && meta.trap.length) {
+                       html += '<div class="kro-scheme-trap">';
+                       meta.trap.forEach(function (step) {
+                           if (step.cls === 'arrow') {
+                               html += '<span class="kro-scheme-trap-arrow">' + esc(step.text) + '</span>';
+                           } else {
+                               html += '<span class="kro-scheme-trap-step kro-scheme-trap-step--' + step.cls + '">' + esc(step.text) + '</span>';
+                           }
+                       });
+                       html += '</div>';
+                   }
+
+                   if (quotes.length) {
+                       html += '<div class="kro-scheme-quote">';
+                       html += '<span class="kro-scheme-quote-label">Цитата из канала</span>';
+                       quotes.slice(0, 2).forEach(function (q) {
+                           html += '<p class="kro-scheme-quote-text">' + esc(q) + '</p>';
+                       });
+                       html += '</div>';
+                   }
+
+                   html += '</div>';
+                   return html;
                }
                function kroResultBuildFlagItems(data) {
                    var items = [];
@@ -3449,10 +3698,19 @@
                    }
                    scoreEl.textContent = kroResultScoreText(data);
                    channelEl.textContent = channelName;
-                   badgeEl.textContent = kroResultRiskBadge(glanceTier);
+                   var pbVerdict = data.person_behind && data.person_behind.verdict ? data.person_behind.verdict : '';
+                   var resolvedBadgeTier = (function () {
+                       var v = pbVerdict.toLowerCase();
+                       var dangerWords = ['уйди', 'не плати', 'опасно', 'немедленно', 'скам', 'мошен'];
+                       var safeWords = ['смотри бесплатно', 'можно', 'честный'];
+                       if (dangerWords.some(function (w) { return v.indexOf(w) !== -1; })) return 'danger';
+                       if (safeWords.some(function (w) { return v.indexOf(w) !== -1; })) return 'clean';
+                       return glanceTier;
+                   })();
+                   badgeEl.textContent = kroResultRiskBadge(resolvedBadgeTier, pbVerdict);
                    badgeEl.className =
                        'kro-result-risk-badge kro-result-risk-badge--' +
-                       (glanceTier === 'clean' ? 'low' : glanceTier === 'danger' ? 'high' : 'mid');
+                       (resolvedBadgeTier === 'clean' ? 'low' : resolvedBadgeTier === 'danger' ? 'high' : 'mid');
                    var verdict = heroVerdict;
                    var exclude = [heroVerdict, reveal, nextAction].filter(Boolean);
                    var bullets = kroGlanceBuildBullets(data, exclude);
@@ -3604,35 +3862,44 @@
                    }
                    var flagsList = document.getElementById('kro-detail-flags-list');
                    if (flagsList) {
-                       var flagItems = kroResultBuildFlagItems(data);
-                       if (!flagItems.length) {
-                           flagsList.innerHTML =
-                               '<p class="kro-detail-empty">Явных красных флагов с цитатами в доступных данных не найдено.</p>';
+                       var glanceItems = kroResultBuildGlanceItems(data);
+
+                       var schemeItems = [];
+                       var goodItems = [];
+                       glanceItems.forEach(function (item) {
+                           var t = String(item.title || '').toLowerCase();
+                           var isGood = t.indexOf('убыточ') !== -1 || t.indexOf('правила риска') !== -1
+                               || t.indexOf('честн') !== -1 || t.indexOf('жалоб нет') !== -1
+                               || t.indexOf('не найдено') !== -1;
+                           if (isGood) {
+                               goodItems.push(item);
+                           } else if (t && t !== 'явных нет') {
+                               schemeItems.push(item);
+                           }
+                       });
+
+                       var html = '';
+
+                       if (schemeItems.length) {
+                           html += '<p class="kro-scheme-section-title">Найденные манипулятивные схемы</p>';
+                           schemeItems.forEach(function (item) {
+                               html += kroRenderSchemeCard(item, false);
+                           });
                        } else {
-                           flagsList.innerHTML = flagItems
-                               .map(function (item, idx) {
-                                   var quotesHtml = item.quotes
-                                       .slice(0, 3)
-                                       .map(function (q) {
-                                           return '<p class="kro-detail-flag-quote">«' + esc(q) + '»</p>';
-                                       })
-                                       .join('');
-                                   var sep =
-                                       idx < flagItems.length - 1
-                                           ? '<hr class="kro-detail-flag-sep" aria-hidden="true">'
-                                           : '';
-                                   return (
-                                       '<div class="kro-detail-flag-item">' +
-                                       '<div class="kro-detail-flag-head"><span aria-hidden="true">🚩</span> ' +
-                                       esc(item.title) +
-                                       '</div>' +
-                                       quotesHtml +
-                                       sep +
-                                       '</div>'
-                                   );
-                               })
-                               .join('');
+                           html += '<div class="kro-scheme-card kro-scheme-card--good">';
+                           html += '<div class="kro-scheme-card-header"><span class="kro-scheme-badge">Схем не найдено</span></div>';
+                           html += '<p class="kro-scheme-how">Явных манипулятивных схем в доступных постах <strong>не обнаружено</strong>.</p>';
+                           html += '</div>';
                        }
+
+                       if (goodItems.length) {
+                           html += '<p class="kro-scheme-section-title" style="margin-top:16px;">Что здесь честно</p>';
+                           goodItems.forEach(function (item) {
+                               html += kroRenderSchemeCard(item, true);
+                           });
+                       }
+
+                       flagsList.innerHTML = html || '<p class="kro-detail-empty">Данных для анализа схем недостаточно.</p>';
                    }
                    var sa = data.signal_accuracy;
                    var sigEmpty = document.getElementById('kro-detail-signals-empty');
