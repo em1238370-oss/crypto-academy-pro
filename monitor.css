@@ -5858,3 +5858,25 @@ body.ch-page > main.mon-container {
     transform: none !important;
   }
 }
+
+/* KRO главная (index.html): дубли ключевых классов — основной файл styles.css */
+.kro-inline-riskidx--high { color: #fecaca; font-weight: 800; }
+.kro-inline-riskidx--medium { color: #fde68a; font-weight: 700; }
+.kro-inline-riskidx--low { color: #bbf7d0; font-weight: 700; }
+.kro-scheme-card--danger {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(127, 29, 29, 0.2);
+}
+.kro-scheme-card--warn {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(120, 53, 15, 0.16);
+}
+.kro-schemes-none--ok {
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.12);
+  color: #bbf7d0;
+}
+.kro-inline-honest-wrap {
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  background: rgba(34, 197, 94, 0.06);
+}

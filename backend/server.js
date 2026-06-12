@@ -5163,9 +5163,10 @@ ${schemesList}
 
 В поле red_flags перечисли найденные схемы: «[Название схемы]: цитата». Если схем нет — «Явных манипулятивных схем не найдено».
 verdict — одно предложение с решением: начни с «Не плати» / «Уйди» / «Смотри бесплатно» / «Опасно» / «Можно смотреть осторожно» — что уместно.
+honest_signals — позитивные признаки честности (убыточные сделки, указание рисков, реальная личность) через «; » или «—» если нет.
 
 Ответь ТОЛЬКО JSON без markdown:
-{"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"VIP/курсы/сигналы/реклама/другое","red_flags":"схемы с цитатами или Явных манипулятивных схем не найдено","verdict":"решение одним предложением","reveal_moment":"что бросилось в глаза — 1 фраза","next_action":"конкретный следующий шаг для человека"}`;
+{"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"VIP/курсы/сигналы/реклама/другое","red_flags":"схемы с цитатами или Явных манипулятивных схем не найдено","honest_signals":"позитив через ; или —","verdict":"решение одним предложением","reveal_moment":"что бросилось в глаза — 1 фраза","next_action":"конкретный следующий шаг для человека"}`;
   try {
     const r = await axios.post(
       'https://api.mistral.ai/v1/chat/completions',
@@ -8251,6 +8252,44 @@ function kroBuildComplaintEvidenceSnippetLinesRu({ reports, siteSearchPages, ext
   return lines.slice(0, 8);
 }
 
+/** Уровень риска из вердикта Mistral (person_behind.verdict). */
+function kroVerdictTierFromText(verdictText) {
+  const v = String(verdictText || '').trim();
+  if (!v) return null;
+  const low = v.toLowerCase();
+  const highStarts = ['уйди', 'не плати', 'опасно', 'осторожно'];
+  for (const p of highStarts) {
+    if (low.startsWith(p)) return 'high';
+  }
+  if (low.startsWith('смотри бесплатно')) return 'medium';
+  if (low.startsWith('можно смотреть осторожно')) return 'medium';
+  const lowStarts = ['можно', 'нормально', 'спокойно', 'честн', 'доверя', 'выглядит чист'];
+  for (const p of lowStarts) {
+    if (low.startsWith(p)) return 'low';
+  }
+  if (v.length > 8) return 'medium';
+  return null;
+}
+
+/**
+ * Итоговый уровень риска: high / medium / low.
+ * Вердикт Mistral приоритетнее формального скора по флагам.
+ */
+function resolveUnifiedRisk(riskScore, verdictText) {
+  const verdictTier = kroVerdictTierFromText(verdictText);
+  let scoreTier = 'medium';
+  if (riskScore != null && riskScore !== '' && Number.isFinite(Number(riskScore))) {
+    const r = Number(riskScore);
+    if (r >= 7) scoreTier = 'high';
+    else if (r >= 4) scoreTier = 'medium';
+    else scoreTier = 'low';
+  }
+  if (verdictTier === 'high') return 'high';
+  if (verdictTier === 'low') return 'low';
+  if (verdictTier === 'medium') return 'medium';
+  return scoreTier;
+}
+
 /** Три фразы как на главной — чтобы фронт совпадал с серверной шкалой. */
 function kroBuildMoneyVerdictFromAnalyzePayload(bundle) {
   if (!bundle || typeof bundle !== 'object') {
@@ -8259,17 +8298,27 @@ function kroBuildMoneyVerdictFromAnalyzePayload(bundle) {
       headline_ru: 'БУДЬ ОСТОРОЖЕН — есть подозрительные моменты',
       status_code: null,
       risk_index: null,
+      unified_risk_level: 'medium',
     };
   }
   const code = String(bundle.status_code || '').toUpperCase();
   const risk = bundle.risk_index != null ? Number(bundle.risk_index) : null;
+  const pbVerdict =
+    bundle.person_behind && bundle.person_behind.verdict
+      ? String(bundle.person_behind.verdict)
+      : '';
+  const unified = resolveUnifiedRisk(risk, pbVerdict);
   const c =
     bundle.analysis && bundle.analysis.conclusion && typeof bundle.analysis.conclusion.status === 'string'
       ? String(bundle.analysis.conclusion.status || '')
       : '';
   const trIns = bundle.trust_report && bundle.trust_report.insufficient_feed === true;
   let tier = 'warn';
-  if (c.includes('подтвержд') && c.includes('скам')) tier = 'danger';
+  if (pbVerdict) {
+    if (unified === 'high') tier = 'danger';
+    else if (unified === 'low') tier = 'clean';
+    else tier = 'warn';
+  } else if (c.includes('подтвержд') && c.includes('скам')) tier = 'danger';
   else if (code === 'DANGER' || (risk != null && Number.isFinite(risk) && risk >= 9)) tier = 'danger';
   else if (code === 'INSUFFICIENT_FEED' || code === 'UNAVAILABLE' || trIns) tier = 'warn';
   else if (code === 'SAFE' || c.includes('нарушений не видно') || (risk != null && Number.isFinite(risk) && risk <= 3 && code !== 'SUSPICIOUS'))
@@ -8285,6 +8334,7 @@ function kroBuildMoneyVerdictFromAnalyzePayload(bundle) {
     headline_ru: headlines[tier] || headlines.warn,
     status_code: bundle.status_code ?? null,
     risk_index: risk != null && Number.isFinite(risk) ? risk : null,
+    unified_risk_level: unified,
   };
 }
 
@@ -9477,7 +9527,10 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
   if (Array.isArray(analysis.basic_info)) {
     analysis.basic_info.push(`Ответ сформирован на сервере: ${completedIso} (UTC).`);
   }
-  return withQueueMeta({
+  const pbVerdictUnified =
+    personBehind && personBehind.verdict ? String(personBehind.verdict) : '';
+  const unifiedRiskLevel = resolveUnifiedRisk(risk, pbVerdictUnified);
+  const bundleCore = {
     queue_status: 'done_sync',
     analysis_completed_at_iso: completedIso,
     analysis,
@@ -9485,6 +9538,7 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
     status_code: statusObj.code,
     risk_index: risk,
     risk_index_max: 10,
+    unified_risk_level: unifiedRiskLevel,
     posts_read: postsRead,
     period_days: Number(parsedForFast.analysis_window_days || 30),
     read_path: readPathOut,
@@ -9570,7 +9624,12 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
           },
         }
       : {}),
+  };
+  bundleCore.money_verdict = kroBuildMoneyVerdictFromAnalyzePayload({
+    ...bundleCore,
+    person_behind: personBehind || undefined,
   });
+  return withQueueMeta(bundleCore);
 }
 
 /**

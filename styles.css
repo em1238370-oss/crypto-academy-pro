@@ -2752,6 +2752,121 @@ body.kro-hero-scrolled .kro-floating-nav {
    padding: 4px 0;
    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
+/* Согласованная оценка по шкале в «Подробнее» */
+.kro-inline-riskidx--high {
+   color: #fecaca;
+   font-weight: 800;
+}
+.kro-inline-riskidx--medium {
+   color: #fde68a;
+   font-weight: 700;
+}
+.kro-inline-riskidx--low {
+   color: #bbf7d0;
+   font-weight: 700;
+}
+.kro-inline-riskidx--insufficient {
+   color: rgba(255, 255, 255, 0.55);
+}
+/* Найденные схемы в «Подробнее» */
+.kro-inline-schemes-section {
+   margin: 18px 0 14px;
+   padding: 14px 16px;
+   border-radius: 12px;
+   background: rgba(255, 255, 255, 0.03);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.kro-inline-schemes-title {
+   margin: 0 0 12px 0;
+   font-family: var(--kro-font-heading);
+   font-size: 0.82rem;
+   font-weight: 700;
+   letter-spacing: 0.06em;
+   text-transform: uppercase;
+   color: rgba(255, 255, 255, 0.62);
+}
+.kro-inline-schemes-body {
+   display: flex;
+   flex-direction: column;
+   gap: 10px;
+}
+.kro-scheme-card {
+   border-radius: 10px;
+   padding: 12px 14px;
+   border: 1px solid rgba(255, 255, 255, 0.1);
+   background: rgba(0, 0, 0, 0.2);
+}
+.kro-scheme-card--danger {
+   border-color: rgba(239, 68, 68, 0.45);
+   background: rgba(127, 29, 29, 0.2);
+}
+.kro-scheme-card--warn {
+   border-color: rgba(245, 158, 11, 0.4);
+   background: rgba(120, 53, 15, 0.16);
+}
+.kro-scheme-card-name {
+   margin: 0 0 6px 0;
+   font-size: 0.98rem;
+   font-weight: 800;
+   color: #fff;
+}
+.kro-scheme-card-how {
+   margin: 0 0 8px 0;
+   font-size: 0.88rem;
+   line-height: 1.45;
+   color: rgba(255, 255, 255, 0.86);
+}
+.kro-scheme-card-how-label {
+   font-weight: 700;
+   color: rgba(255, 255, 255, 0.62);
+}
+.kro-scheme-card-quote {
+   margin: 0;
+   padding: 8px 10px;
+   border-left: 2px solid rgba(255, 255, 255, 0.28);
+   font-size: 0.84rem;
+   font-style: italic;
+   color: rgba(255, 255, 255, 0.78);
+}
+.kro-schemes-none {
+   padding: 12px 14px;
+   border-radius: 10px;
+   font-size: 0.9rem;
+   line-height: 1.45;
+}
+.kro-schemes-none--ok {
+   border: 1px solid rgba(34, 197, 94, 0.35);
+   background: rgba(34, 197, 94, 0.12);
+   color: #bbf7d0;
+}
+/* Что здесь честно */
+.kro-glance-honest-wrap,
+.kro-inline-honest-wrap {
+   border-left: 3px solid rgba(34, 197, 94, 0.45);
+}
+.kro-inline-honest-wrap {
+   margin: 0 0 16px;
+   padding: 14px 16px;
+   border-radius: 12px;
+   background: rgba(34, 197, 94, 0.06);
+   border: 1px solid rgba(34, 197, 94, 0.22);
+}
+.kro-inline-honest-title,
+.kro-glance-honest-wrap .kro-glance-h {
+   color: #bbf7d0;
+}
+.kro-glance-honest-list,
+.kro-inline-honest-list {
+   margin: 0;
+   padding-left: 1.15em;
+   font-size: 0.9rem;
+   line-height: 1.5;
+   color: rgba(255, 255, 255, 0.88);
+}
+.kro-glance-honest-list li,
+.kro-inline-honest-list li {
+   margin-bottom: 6px;
+}
 .kro-person-fact-label {
    color: rgba(255, 255, 255, 0.4);
    min-width: 60px;
