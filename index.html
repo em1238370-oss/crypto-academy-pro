@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260612-kro-modal-center">
+   <link rel="stylesheet" href="styles.css?v=20260612-kro-modal-purple">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -543,6 +543,9 @@
                                    <p class="kro-inline-tg-bubble-text" id="kro-inline-tg-bubble-text"></p>
                                    <span class="kro-inline-tg-bubble-cap">текст из открытой ленты канала</span>
                                </div>
+                           </div>
+                           <div class="kro-inline-tg-modal-actions" id="kro-inline-tg-modal-actions" hidden>
+                               <a class="kro-inline-tg-modal-link" id="kro-inline-tg-modal-link" href="#" target="_blank" rel="noopener noreferrer">Открыть пост в Telegram</a>
                            </div>
                            <div class="kro-inline-tg-modal-why" id="kro-inline-tg-modal-why"></div>
                        </div>
@@ -2362,10 +2365,56 @@
                    if (t.length >= 40 && letters / t.length < 0.2 && /[{}\[\];]/.test(t)) return '';
                    return t;
                }
+               function kroFindingsChannelFeedUrl(data, displayLabel) {
+                   var le = data && data.live_evidence && typeof data.live_evidence === 'object' ? data.live_evidence : null;
+                   if (le && le.channel_feed_url) return String(le.channel_feed_url).trim();
+                   var slug = '';
+                   if (data && data.channel_key) {
+                       slug = String(data.channel_key).replace(/^@+/, '').replace(/^t\.me\//i, '').split('/')[0];
+                   }
+                   if (!slug && displayLabel) {
+                       slug = String(displayLabel).replace(/^@+/, '').replace(/^https?:\/\/t\.me\//i, '').split(/[/?#]/)[0];
+                   }
+                   if (slug && /^[a-zA-Z0-9_]{3,64}$/.test(slug)) return 'https://t.me/s/' + slug;
+                   return '';
+               }
+               function kroExtractTelegramPostUrl(text) {
+                   var m = String(text || '').match(/https?:\/\/t\.me\/[a-zA-Z0-9_]+\/\d+/i);
+                   return m ? m[0].split('?')[0] : '';
+               }
+               function kroMatchFindingPostUrl(snippet, datedPosts, channelFeedUrl) {
+                   var sn = String(snippet || '').trim().toLowerCase();
+                   if (!sn) return channelFeedUrl || '';
+                   var posts = Array.isArray(datedPosts) ? datedPosts : [];
+                   var bestUrl = '';
+                   var bestScore = 0;
+                   for (var i = 0; i < posts.length; i++) {
+                       var p = posts[i] || {};
+                       var pt = String(p.text || '').trim().toLowerCase();
+                       if (!pt) continue;
+                       var score = 0;
+                       if (pt === sn) score = 100;
+                       else if (pt.indexOf(sn.slice(0, 48)) !== -1 || sn.indexOf(pt.slice(0, 48)) !== -1) score = 72;
+                       else if (pt.slice(0, 24) === sn.slice(0, 24)) score = 55;
+                       if (score > bestScore && p.url) {
+                           bestScore = score;
+                           bestUrl = String(p.url).trim();
+                       }
+                   }
+                   return bestUrl || channelFeedUrl || '';
+               }
+               function kroFindingWhyIntro(severity) {
+                   if (severity === 'high') return 'Это серьёзный сигнал — такие формулировки часто встречаются у каналов, где давят на деньги или обещают «гарантированный» профит.';
+                   if (severity === 'med') return 'На это стоит обратить внимание: один пост не приговор, но повторяющиеся приёмы из этой категории повышают риск.';
+                   if (severity === 'watch' || severity === 'info') return 'Мы отметили это в отчёте, чтобы вы видели контекст канала — не обязательно скам, но полезно сверить с обещаниями автора.';
+                   return 'Эта строка попала в отчёт, потому что похожа на типичные приёмы в крипто-каналах — смотрите цитату и решайте сами.';
+               }
                function kroBuildFindingsRows(data) {
                    var rows = [];
                    var seen = {};
                    var le = data.live_evidence && typeof data.live_evidence === 'object' ? data.live_evidence : null;
+                   var datedPosts = le && Array.isArray(le.sample_posts_dated) ? le.sample_posts_dated : [];
+                   var channelFeedUrl = kroFindingsChannelFeedUrl(data, '');
                    var samples = le && Array.isArray(le.sample_posts)
                        ? le.sample_posts.map(function (x) { return kroSanitizeChannelSnippet(String(x || '').trim()); }).filter(Boolean)
                        : [];
@@ -2384,36 +2433,55 @@
                            if (qq) quotesFromContent.push(qq);
                        }
                    }
-                   var pool = samples.slice();
-                   for (var cj = 0; cj < citations.length; cj++) pool.push(citations[cj]);
-                   for (var qi = 0; qi < quotesFromContent.length; qi++) pool.push(quotesFromContent[qi]);
+                   var pool = [];
+                   function pushPool(text, url) {
+                       var sn = kroSanitizeChannelSnippet(String(text || '').trim());
+                       if (!sn) return;
+                       pool.push({ text: sn, url: url ? String(url).trim() : '' });
+                   }
+                   for (var di = 0; di < datedPosts.length; di++) {
+                       var dp = datedPosts[di] || {};
+                       pushPool(dp.text, dp.url);
+                   }
+                   for (var si = 0; si < samples.length; si++) pushPool(samples[si], '');
+                   for (var cj = 0; cj < citations.length; cj++) pushPool(citations[cj], '');
+                   for (var qi = 0; qi < quotesFromContent.length; qi++) pushPool(quotesFromContent[qi], '');
                    var poolIx = 0;
                    function takeSnippet() {
                        if (poolIx < pool.length) return pool[poolIx++];
-                       return '';
+                       return { text: '', url: '' };
                    }
-                   function addRow(sev, label, explain, snippet) {
+                   function addRow(sev, label, explain, snippet, postUrl) {
                        var lab = String(label || '').trim();
                        if (!lab) return;
                        var sn = kroSanitizeChannelSnippet(String(snippet || '').trim());
                        var k = lab + '|' + sn.slice(0, 48);
                        if (seen[k]) return;
                        seen[k] = true;
-                       rows.push({ severity: sev, label: lab, explain: String(explain || '').trim(), snippet: sn });
+                       var url = postUrl || kroMatchFindingPostUrl(sn, datedPosts, channelFeedUrl) || kroExtractTelegramPostUrl(explain);
+                       rows.push({
+                           severity: sev,
+                           label: lab,
+                           explain: String(explain || '').trim(),
+                           snippet: sn,
+                           postUrl: url,
+                       });
                    }
                    for (var fi = 0; fi < flags.length; fi++) {
                        var f = flags[fi] || {};
                        var title = String(f.title || f.code || 'Маркер в тексте').trim();
                        var expl = String(f.explanation || '').trim();
                        var code = String(f.code || '').toLowerCase();
-                       var sn = takeSnippet();
+                       var snItem = takeSnippet();
+                       var sn = snItem.text || '';
                        if (!sn && samples.length) sn = samples[fi % samples.length];
-                       if (!sn && pool.length) sn = pool[Math.min(fi, pool.length - 1)];
+                       if (!sn && pool.length) sn = pool[Math.min(fi, pool.length - 1)].text;
                        addRow(
                            kroSeverityFromFlagCode(code),
                            title,
                            expl || 'Совпадение с типичными формулировками, которые нередко встречаются в навязчивом крипто-продвижении.',
                            sn,
+                           snItem.url || kroExtractTelegramPostUrl(expl),
                        );
                    }
                    var ties = Array.isArray(a.ties_risk_factors) ? a.ties_risk_factors : [];
@@ -2423,9 +2491,10 @@
                        var colon = rawT.indexOf(':');
                        var lab = colon > 0 ? rawT.slice(0, colon).trim() : 'Фактор';
                        var rest = colon > 0 ? rawT.slice(colon + 1).trim() : rawT;
-                       var sn2 = takeSnippet();
+                       var snItem2 = takeSnippet();
+                       var sn2 = snItem2.text || '';
                        if (!sn2 && samples.length) sn2 = samples[ti % samples.length];
-                       addRow(colon > 0 ? 'watch' : 'info', lab, rest, sn2);
+                       addRow(colon > 0 ? 'watch' : 'info', lab, rest, sn2, snItem2.url);
                    }
                    // «Фрагмент из ленты» убран — пользователи не понимают что это,
                    // реальные наблюдения уже есть в строках выше.
@@ -2447,6 +2516,7 @@
                    var rows = kroBuildFindingsRows(data);
                    window.__kroFindingsLastRows = rows;
                    window.__kroFindingsChannelLabel = String(displayLabel || '');
+                   window.__kroFindingsChannelFeedUrl = kroFindingsChannelFeedUrl(data, displayLabel);
                    if (!rows.length) {
                        wrap.classList.add('hidden');
                        wrap.hidden = true;
@@ -2510,17 +2580,35 @@
                    var ch = document.getElementById('kro-inline-tg-modal-channel');
                    var bub = document.getElementById('kro-inline-tg-bubble-text');
                    var why = document.getElementById('kro-inline-tg-modal-why');
+                   var linkWrap = document.getElementById('kro-inline-tg-modal-actions');
+                   var linkEl = document.getElementById('kro-inline-tg-modal-link');
                    var label = window.__kroFindingsChannelLabel || '';
+                   var feedUrl = window.__kroFindingsChannelFeedUrl || '';
+                   var postUrl = row.postUrl || feedUrl || '';
                    if (kick) kick.textContent = row.label;
                    if (ch) ch.textContent = label ? 'Канал: ' + label : '';
                    if (bub) {
                        var cleanB = row.snippet ? kroSanitizeChannelSnippet(String(row.snippet)) : '';
                        bub.textContent = cleanB || 'Фрагмент поста сюда не попал. Откройте канал в Telegram и сверьте текст сами.';
                    }
+                   if (linkWrap && linkEl) {
+                       if (postUrl) {
+                           linkEl.href = postUrl;
+                           linkEl.textContent = row.postUrl && row.postUrl !== feedUrl
+                               ? 'Открыть этот пост в Telegram →'
+                               : 'Открыть ленту канала в Telegram →';
+                           linkWrap.hidden = false;
+                           linkWrap.classList.remove('hidden');
+                       } else {
+                           linkWrap.hidden = true;
+                           linkWrap.classList.add('hidden');
+                       }
+                   }
                    if (why) {
                        var w = row.explain ? String(row.explain) : '';
                        why.innerHTML =
-                           '<p class="kro-inline-tg-why-title">Зачем это в отчёте</p>' +
+                           '<p class="kro-inline-tg-why-title">Почему это важно</p>' +
+                           '<p class="kro-inline-tg-why-intro">' + esc(kroFindingWhyIntro(row.severity)) + '</p>' +
                            '<p class="kro-inline-tg-why-body">' +
                            esc(w || 'Один пост не решает всё, но по нескольким строкам видно тон канала и повторяющиеся приёмы.') +
                            '</p>';

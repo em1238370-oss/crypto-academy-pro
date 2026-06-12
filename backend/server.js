@@ -5564,14 +5564,15 @@ function kroParseTradingSignalsFromText(text) {
 
 function kroExtractDatedPostsFromPublicHtml(html, slug) {
   if (!html || html.length < 100) return [];
-  const textRe = /<div[^>]*class="[^"]*tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
+  const blocks = html.split('tgme_widget_message').slice(1);
   const posts = [];
-  let m;
-  while ((m = textRe.exec(html)) !== null) {
-    const chunk = html.slice(Math.max(0, m.index - 1400), m.index);
-    const dtMatches = [...chunk.matchAll(/datetime="([^"]+)"/g)];
+  for (const block of blocks) {
+    const dp = block.match(/data-post="([^"]+)"/i);
+    const textM = block.match(/tgme_widget_message_text[^>]*>([\s\S]*?)<\/div>/i);
+    if (!textM) continue;
+    const dtMatches = [...block.matchAll(/datetime="([^"]+)"/g)];
     const lastDt = dtMatches.length ? dtMatches[dtMatches.length - 1][1] : null;
-    const text = kroStripHtmlToText(m[1]).replace(/\s+/g, ' ').trim();
+    const text = kroStripHtmlToText(textM[1]).replace(/\s+/g, ' ').trim();
     const norm = kroNormalizePublicSnapshotLine(text, slug);
     if (!norm || norm.length < 12) continue;
     let date_iso = null;
@@ -5583,9 +5584,19 @@ function kroExtractDatedPostsFromPublicHtml(html, slug) {
         /* ignore */
       }
     }
+    let url = null;
+    if (dp && dp[1]) {
+      const postRef = String(dp[1]).trim();
+      if (/^[a-zA-Z0-9_]+\/\d+$/.test(postRef)) url = `https://t.me/${postRef}`;
+    }
+    if (!url) {
+      const hrefM = block.match(/tgme_widget_message_date[^>]*href="(https?:\/\/t\.me\/[^"]+)"/i);
+      if (hrefM && hrefM[1]) url = hrefM[1].split('?')[0];
+    }
     posts.push({
       text: norm.length > 220 ? `${norm.slice(0, 217)}…` : norm,
       date_iso,
+      url,
     });
   }
   const seen = new Set();
@@ -5606,11 +5617,12 @@ function kroNormalizeDatedPostsInput(parsedForFast, sampleForFast) {
   for (const row of dated) {
     const text = String((row && row.text) || '').trim();
     const date_iso = row && row.date_iso ? String(row.date_iso).trim() : null;
+    const url = row && row.url ? String(row.url).trim() : null;
     if (!text || text.length < 8) continue;
     const k = `${date_iso || ''}|${text.slice(0, 100)}`;
     if (seen.has(k)) continue;
     seen.add(k);
-    out.push({ text, date_iso: date_iso || null });
+    out.push({ text, date_iso: date_iso || null, url: url || null });
   }
   if (out.length) return out;
   if (Array.isArray(sampleForFast)) {
@@ -5620,7 +5632,7 @@ function kroNormalizeDatedPostsInput(parsedForFast, sampleForFast) {
       const k = text.slice(0, 100);
       if (seen.has(k)) continue;
       seen.add(k);
-      out.push({ text, date_iso: null });
+      out.push({ text, date_iso: null, url: null });
     }
   }
   return out;
@@ -6980,7 +6992,9 @@ function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
 async function kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, minPosts, analyzeLogId) {
   const need = Math.max(1, Number(minPosts) || 1);
   const seen = new Set();
+  const datedSeen = new Set();
   const out = [];
+  const datedOut = [];
   const pushSnips = (arr) => {
     for (const raw of arr || []) {
       const t = String(raw || '').trim();
@@ -6993,6 +7007,20 @@ async function kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, min
     }
     return out.length >= need;
   };
+  const pushDated = (rows) => {
+    for (const row of rows || []) {
+      const text = String((row && row.text) || '').trim();
+      if (text.length < 8) continue;
+      const k = `${row.date_iso || ''}|${text.slice(0, 100)}`;
+      if (datedSeen.has(k)) continue;
+      datedSeen.add(k);
+      datedOut.push({
+        text,
+        date_iso: row.date_iso || null,
+        url: row.url ? String(row.url).trim() : null,
+      });
+    }
+  };
   for (let pass = 1; pass <= 5; pass++) {
     const remain = deadline - Date.now();
     if (remain < 400) break;
@@ -7001,9 +7029,19 @@ async function kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, min
       timeoutMs: pubBudget,
       logLabel: `${analyzeLogId}:pub_harvest${pass}`,
     });
+    if (snap && Array.isArray(snap.dated_posts) && snap.dated_posts.length) pushDated(snap.dated_posts);
     if (snap && Array.isArray(snap.snippets) && snap.snippets.length && pushSnips(snap.snippets)) break;
   }
-  return out.length ? out : null;
+  return out.length ? { snippets: out, dated_posts: datedOut } : null;
+}
+
+function kroUnwrapPublicHarvest(harvest) {
+  if (!harvest) return { snippets: [], dated_posts: [] };
+  if (Array.isArray(harvest)) return { snippets: harvest, dated_posts: [] };
+  return {
+    snippets: Array.isArray(harvest.snippets) ? harvest.snippets : [],
+    dated_posts: Array.isArray(harvest.dated_posts) ? harvest.dated_posts : [],
+  };
 }
 
 /**
@@ -7036,16 +7074,22 @@ async function kroHomeHarvestUntilTargetPosts(opts) {
       batchNeed,
       `${analyzeLogId}:fill${iter}`,
     );
-    if (!more || !more.length) break;
+    const moreHarvest = kroUnwrapPublicHarvest(more);
+    if (!moreHarvest.snippets.length) break;
     if (!harvestedAgg) harvestedAgg = [];
-    for (const s of more) {
+    for (const s of moreHarvest.snippets) {
       const t = String(s || '').trim();
       if (!t) continue;
       if (harvestedAgg.some((x) => x.slice(0, 280) === t.slice(0, 280))) continue;
       harvestedAgg.push(t);
       if (harvestedAgg.length >= 220) break;
     }
-    curParsed = kroMergeSnippetsIntoParsedBase(curParsed, more, channelDisplay || channelForOnce);
+    curParsed = kroMergeSnippetsIntoParsedBase(
+      curParsed,
+      moreHarvest.snippets,
+      channelDisplay || channelForOnce,
+      moreHarvest.dated_posts,
+    );
     const merged2 = kroHomeGreedyMergeSamplesFromParsed(curParsed, minR);
     curParsed = { ...curParsed, sample_posts: merged2, posts_fetched: merged2.length };
     if (Array.isArray(curParsed._sample_texts)) delete curParsed._sample_texts;
@@ -9653,7 +9697,7 @@ function kroBuildAnalyzeFastTimeoutResponse(requestId, username, elapsedMs) {
   };
 }
 
-function kroMergeSnippetsIntoParsedBase(parsedBase, extraSnippets, channelDisplay) {
+function kroMergeSnippetsIntoParsedBase(parsedBase, extraSnippets, channelDisplay, extraDatedPosts) {
   const b = parsedBase && typeof parsedBase === 'object' ? { ...parsedBase } : {};
   const cur = Array.isArray(b.sample_posts) ? b.sample_posts.map((x) => String(x || '').trim()).filter(Boolean) : [];
   const seen = new Set(cur.map((x) => x.slice(0, 400)));
@@ -9669,6 +9713,12 @@ function kroMergeSnippetsIntoParsedBase(parsedBase, extraSnippets, channelDispla
   b.sample_posts = out;
   b.posts_fetched = out.length;
   b.username = b.username || String(channelDisplay || '').trim() || null;
+  if (Array.isArray(extraDatedPosts) && extraDatedPosts.length) {
+    b.sample_posts_dated = kroNormalizeDatedPostsInput(
+      { sample_posts_dated: [...(Array.isArray(b.sample_posts_dated) ? b.sample_posts_dated : []), ...extraDatedPosts] },
+      out,
+    );
+  }
   if (out.length >= 1) {
     b.found = true;
     b._check_once_ok = true;
@@ -10125,6 +10175,10 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       mode: readPathOut,
       reason: liveReason,
       sample_posts: sampleForFast.slice(0, 3),
+      sample_posts_dated: kroNormalizeDatedPostsInput(parsedForFast, sampleForFast).slice(0, 14),
+      channel_feed_url: kroExtractTelegramPublicSlug(channelDisplay || key)
+        ? `https://t.me/s/${kroExtractTelegramPublicSlug(channelDisplay || key)}`
+        : null,
       posts_fetched: postsRead,
       analysis_window_days: Number(parsedForFast.analysis_window_days || 30),
     },
@@ -10748,18 +10802,25 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         1,
         `${analyzeLogId}:bootstrap_http`,
       );
-      if (harvestedBootstrap && harvestedBootstrap.length) {
+      const bootHarvest = kroUnwrapPublicHarvest(harvestedBootstrap);
+      if (bootHarvest.snippets.length) {
         console.log(
-          `[KRO analyze-channel ${analyzeLogId}] bootstrap_http snippets=${harvestedBootstrap.length}`,
+          `[KRO analyze-channel ${analyzeLogId}] bootstrap_http snippets=${bootHarvest.snippets.length}`,
         );
       }
+      harvestedBootstrap = bootHarvest.snippets.length ? bootHarvest : null;
     }
 
     const telethonReserveMs = Math.min(330000, Math.max(120000, Math.floor(KRO_ANALYZE_CHANNEL_SYNC_MS * 0.78)));
     const telBest = kroRunHomeGreedyTelethonBestEffort(channelForOnce, deadline, telethonReserveMs, analyzeLogId, minTelethonPosts);
     let parsed = telBest.parsed;
-    if (harvestedBootstrap && harvestedBootstrap.length) {
-      parsed = kroMergeSnippetsIntoParsedBase(parsed, harvestedBootstrap, channelDisplay);
+    if (harvestedBootstrap && harvestedBootstrap.snippets && harvestedBootstrap.snippets.length) {
+      parsed = kroMergeSnippetsIntoParsedBase(
+        parsed,
+        harvestedBootstrap.snippets,
+        channelDisplay,
+        harvestedBootstrap.dated_posts,
+      );
     }
     const telethonOnlySnippetCount = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean).length : 0;
     const mergedSample = kroHomeGreedyMergeSamplesFromParsed(parsed, minTelethonPosts);
@@ -10788,9 +10849,15 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       parsed.check_once_timed_out === true ||
       postsRead < minTelethonPosts;
     if ((telethonWeak || !enough) && deadline - Date.now() > 400) {
-      harvestedSnippets = await kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, minReadablePosts, analyzeLogId);
-      if (harvestedSnippets && harvestedSnippets.length) {
-        parsed = kroMergeSnippetsIntoParsedBase(parsed, harvestedSnippets, channelDisplay);
+      const harvestRaw = await kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, minReadablePosts, analyzeLogId);
+      harvestedSnippets = kroUnwrapPublicHarvest(harvestRaw);
+      if (harvestedSnippets.snippets.length) {
+        parsed = kroMergeSnippetsIntoParsedBase(
+          parsed,
+          harvestedSnippets.snippets,
+          channelDisplay,
+          harvestedSnippets.dated_posts,
+        );
         const mergedAfterHarvest = kroHomeGreedyMergeSamplesFromParsed(parsed, minTelethonPosts);
         postsRead = mergedAfterHarvest.length ? mergedAfterHarvest.length : Number(parsed.posts_fetched || 0);
         sample = mergedAfterHarvest.length ? mergedAfterHarvest : (Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : []);
@@ -10804,9 +10871,9 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         enough =
           postsRead >= minTelethonPosts &&
           sample.length >= 1 &&
-          (parsed.found === true || (harvestedSnippets && harvestedSnippets.length >= minReadablePosts));
+          (parsed.found === true || (harvestedSnippets && harvestedSnippets.snippets.length >= minReadablePosts));
         console.log(
-          `[KRO analyze-channel ${analyzeLogId}] after_public_harvest snippets=${harvestedSnippets.length} posts_read=${postsRead} enough=${enough}`,
+          `[KRO analyze-channel ${analyzeLogId}] after_public_harvest snippets=${harvestedSnippets.snippets.length} posts_read=${postsRead} enough=${enough}`,
         );
       }
     }
@@ -10833,14 +10900,19 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         delete parsed._sample_texts;
       }
       if (fill.harvestedExtra && fill.harvestedExtra.length) {
-        harvestedSnippets = harvestedSnippets && harvestedSnippets.length
-          ? [...harvestedSnippets, ...fill.harvestedExtra]
-          : fill.harvestedExtra.slice();
+        if (!harvestedSnippets || !harvestedSnippets.snippets) {
+          harvestedSnippets = { snippets: fill.harvestedExtra.slice(), dated_posts: [] };
+        } else {
+          harvestedSnippets = {
+            snippets: [...harvestedSnippets.snippets, ...fill.harvestedExtra],
+            dated_posts: harvestedSnippets.dated_posts || [],
+          };
+        }
       }
       enough =
         postsRead >= minTelethonPosts &&
         sample.length >= 1 &&
-        (parsed.found === true || (harvestedSnippets && harvestedSnippets.length >= minReadablePosts));
+        (parsed.found === true || (harvestedSnippets && harvestedSnippets.snippets.length >= minReadablePosts));
       console.log(
         `[KRO analyze-channel ${analyzeLogId}] after_target_fill posts_read=${postsRead} target=${KRO_HOME_ANALYZE_MIN_POSTS} enough=${enough}`,
       );
@@ -10851,7 +10923,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     let readPathOut = 'telethon';
     if (enough) {
       const hadTelethonText = telethonOnlySnippetCount > 0;
-      const usedPublicHarvest = !!(harvestedSnippets && harvestedSnippets.length);
+      const usedPublicHarvest = !!(harvestedSnippets && harvestedSnippets.snippets && harvestedSnippets.snippets.length);
       if (!hadTelethonText && usedPublicHarvest) {
         readPathOut = 'public_snapshot';
       } else if (usedPublicHarvest) {
@@ -10891,8 +10963,12 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     }
 
     const pubOnly =
-      harvestedSnippets && harvestedSnippets.length >= minReadablePosts
-        ? kroBuildParsedFromPublicSnapshotOnly({ snippets: harvestedSnippets }, channelDisplay, minReadablePosts)
+      harvestedSnippets && harvestedSnippets.snippets && harvestedSnippets.snippets.length >= minReadablePosts
+        ? kroBuildParsedFromPublicSnapshotOnly(
+          { snippets: harvestedSnippets.snippets, dated_posts: harvestedSnippets.dated_posts },
+          channelDisplay,
+          minReadablePosts,
+        )
         : kroBuildParsedFromPublicSnapshotOnly(
             await kroFetchTelegramPublicSnapshot(channelForOnce, {
               timeoutMs: Math.min(60000, Math.max(4000, deadline - Date.now() - 400)),
@@ -10978,15 +11054,20 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       }
     }
     if (deadline - Date.now() > 1800) {
-      const lateHarvest = await kroHarvestPublicSnippetsUntilEnough(
+      const lateHarvestRaw = await kroHarvestPublicSnippetsUntilEnough(
         channelForOnce,
         deadline,
         minReadablePosts,
         `${analyzeLogId}:pre_dataset_harvest`,
       );
+      const lateHarvest = kroUnwrapPublicHarvest(lateHarvestRaw);
       const pubLate =
-        lateHarvest && lateHarvest.length >= minReadablePosts
-          ? kroBuildParsedFromPublicSnapshotOnly({ snippets: lateHarvest }, channelDisplay, minReadablePosts)
+        lateHarvest.snippets.length >= minReadablePosts
+          ? kroBuildParsedFromPublicSnapshotOnly(
+            { snippets: lateHarvest.snippets, dated_posts: lateHarvest.dated_posts },
+            channelDisplay,
+            minReadablePosts,
+          )
           : null;
       if (pubLate) {
         const pL = pubLate;

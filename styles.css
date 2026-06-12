@@ -9483,11 +9483,11 @@ body.kro-modal-open {
    display: inline-flex;
    align-items: center;
    justify-content: center;
-   padding: 8px 12px;
+   padding: 8px 14px;
    border-radius: 12px;
-   border: 1px solid rgba(56, 189, 248, 0.35);
-   background: linear-gradient(180deg, rgba(14, 165, 233, 0.2) 0%, rgba(2, 132, 199, 0.12) 100%);
-   color: #e0f2fe;
+   border: 1px solid var(--kro-violet-border);
+   background: linear-gradient(180deg, rgba(167, 139, 250, 0.22) 0%, rgba(124, 58, 237, 0.12) 100%);
+   color: #f3e8ff;
    font-size: 0.75rem;
    font-weight: 600;
    cursor: pointer;
@@ -9495,12 +9495,12 @@ body.kro-modal-open {
    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
 .kro-finding-explain-btn:hover {
-   border-color: rgba(125, 211, 252, 0.55);
-   box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+   border-color: rgba(240, 188, 60, 0.55);
+   box-shadow: 0 0 22px rgba(167, 139, 250, 0.28), 0 0 12px rgba(240, 188, 60, 0.12);
    transform: translateY(-1px);
 }
 .kro-finding-explain-btn:focus-visible {
-   outline: 2px solid rgba(56, 189, 248, 0.7);
+   outline: 2px solid rgba(240, 188, 60, 0.7);
    outline-offset: 2px;
 }
 
@@ -9521,9 +9521,9 @@ body.kro-modal-open {
    position: absolute;
    inset: 0;
    display: block;
-   background: rgba(6, 10, 18, 0.78);
-   backdrop-filter: blur(6px);
-   -webkit-backdrop-filter: blur(6px);
+   background: rgba(7, 5, 20, 0.84);
+   backdrop-filter: blur(8px);
+   -webkit-backdrop-filter: blur(8px);
 }
 .kro-inline-tg-modal-sheet {
    position: relative;
@@ -9537,14 +9537,14 @@ body.kro-modal-open {
    flex-shrink: 0;
    animation: kro-tg-modal-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
    background:
-      radial-gradient(110% 120% at 0% 0%, rgba(34, 211, 238, 0.15) 0%, rgba(34, 211, 238, 0) 45%),
-      radial-gradient(120% 130% at 100% 100%, rgba(168, 85, 247, 0.16) 0%, rgba(168, 85, 247, 0) 45%),
-      linear-gradient(185deg, rgba(20, 26, 39, 0.96) 0%, rgba(11, 14, 23, 0.96) 100%);
-   border: 1px solid rgba(255, 255, 255, 0.14);
+      radial-gradient(120% 130% at 0% 0%, rgba(167, 139, 250, 0.22) 0%, rgba(167, 139, 250, 0) 48%),
+      radial-gradient(120% 130% at 100% 100%, rgba(240, 188, 60, 0.14) 0%, rgba(240, 188, 60, 0) 50%),
+      linear-gradient(185deg, rgba(22, 16, 44, 0.98) 0%, rgba(11, 8, 24, 0.98) 100%);
+   border: 1px solid var(--kro-violet-border);
    box-shadow:
-      0 34px 96px rgba(2, 6, 23, 0.62),
-      0 8px 36px rgba(56, 189, 248, 0.1),
-      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      0 34px 96px rgba(2, 6, 23, 0.72),
+      0 8px 36px rgba(167, 139, 250, 0.16),
+      0 0 0 1px rgba(240, 188, 60, 0.08) inset;
    backdrop-filter: blur(12px) saturate(130%);
    -webkit-backdrop-filter: blur(12px) saturate(130%);
 }
@@ -9577,19 +9577,20 @@ body.kro-modal-open {
    margin: 2px 52px 8px 0;
    line-height: 1.2;
    letter-spacing: -0.01em;
+   text-shadow: 0 0 24px rgba(167, 139, 250, 0.25);
 }
 .kro-inline-tg-modal-channel {
    font-size: 0.95rem;
-   color: rgba(214, 228, 255, 0.78);
+   color: rgba(237, 233, 254, 0.78);
    margin: 0 0 20px 0;
 }
 .kro-inline-tg-phone {
    padding: 18px 14px 20px;
    border-radius: 22px;
-   background: linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.015) 100%);
-   border: 1px solid rgba(255, 255, 255, 0.1);
+   background: linear-gradient(180deg, rgba(167, 139, 250, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+   border: 1px solid var(--kro-violet-border);
    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 30px rgba(2, 6, 23, 0.36);
-   margin-bottom: 20px;
+   margin-bottom: 16px;
 }
 .kro-inline-tg-bubble-out {
    margin-left: auto;
@@ -9597,12 +9598,12 @@ body.kro-modal-open {
    border-radius: 22px 22px 10px 22px;
    padding: 16px 18px 12px;
    background:
-      linear-gradient(165deg, rgba(70, 203, 255, 0.96) 0%, rgba(53, 146, 247, 0.96) 50%, rgba(37, 99, 235, 0.96) 100%);
-   border: 1px solid rgba(255, 255, 255, 0.26);
+      linear-gradient(165deg, rgba(167, 139, 250, 0.95) 0%, rgba(124, 58, 237, 0.95) 52%, rgba(88, 28, 135, 0.96) 100%);
+   border: 1px solid rgba(240, 188, 60, 0.35);
    box-shadow:
-      0 18px 40px rgba(14, 165, 233, 0.33),
-      inset 0 1px 0 rgba(255, 255, 255, 0.42),
-      inset 0 -18px 32px rgba(0, 38, 92, 0.2);
+      0 18px 40px rgba(124, 58, 237, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      inset 0 -18px 32px rgba(46, 16, 101, 0.22);
 }
 .kro-inline-tg-bubble-text {
    margin: 0;
@@ -9619,21 +9620,55 @@ body.kro-modal-open {
    font-size: 0.78rem;
    letter-spacing: 0.06em;
    text-transform: uppercase;
-   color: rgba(233, 245, 255, 0.88);
+   color: rgba(255, 244, 214, 0.9);
+}
+.kro-inline-tg-modal-actions {
+   margin: 0 0 18px 0;
+}
+.kro-inline-tg-modal-link {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   gap: 8px;
+   width: 100%;
+   padding: 12px 16px;
+   border-radius: 14px;
+   border: 1px solid rgba(240, 188, 60, 0.45);
+   background: linear-gradient(180deg, rgba(240, 188, 60, 0.22) 0%, rgba(240, 188, 60, 0.1) 100%);
+   color: #fff8e7;
+   font-size: 0.92rem;
+   font-weight: 700;
+   text-decoration: none;
+   text-align: center;
+   box-shadow: 0 10px 28px rgba(240, 188, 60, 0.12);
+   transition: border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.kro-inline-tg-modal-link:hover {
+   border-color: rgba(255, 215, 106, 0.75);
+   box-shadow: 0 12px 32px rgba(240, 188, 60, 0.22);
+   transform: translateY(-1px);
 }
 .kro-inline-tg-modal-why {
-   padding-top: 6px;
+   padding: 16px 16px 14px;
+   border-radius: 18px;
    font-size: 1rem;
    line-height: 1.58;
    color: rgba(235, 243, 255, 0.92);
+   background: linear-gradient(180deg, rgba(167, 139, 250, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+   border: 1px solid rgba(167, 139, 250, 0.22);
 }
 .kro-inline-tg-why-title {
    font-weight: 700;
    font-size: 0.9rem;
    letter-spacing: 0.06em;
    text-transform: uppercase;
-   color: rgba(210, 226, 255, 0.68);
+   color: var(--kro-accent);
    margin: 0 0 10px 0;
+}
+.kro-inline-tg-why-intro {
+   margin: 0 0 10px 0;
+   color: rgba(237, 233, 254, 0.88);
+   font-size: 0.95rem;
 }
 .kro-inline-tg-why-body {
    margin: 0;
