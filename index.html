@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260611-kro-scheme-viz">
+   <link rel="stylesheet" href="styles.css?v=20260612-kro-modal-center">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -2488,16 +2488,21 @@
                    wrap.classList.remove('hidden');
                    wrap.hidden = false;
                }
+               function kroMountFindingModal() {
+                   var mod = document.getElementById('kro-inline-tg-modal');
+                   if (mod && mod.parentNode !== document.body) {
+                       document.body.appendChild(mod);
+                   }
+               }
                function kroCloseFindingModal() {
                    var mod = document.getElementById('kro-inline-tg-modal');
                    if (!mod) return;
                    mod.classList.add('hidden');
                    mod.hidden = true;
-                  mod.style.left = '';
-                  mod.style.top = '';
-                  mod.style.width = '';
+                   document.body.classList.remove('kro-modal-open');
                }
-              function kroOpenFindingModal(row, triggerEl) {
+              function kroOpenFindingModal(row) {
+                   kroMountFindingModal();
                    var mod = document.getElementById('kro-inline-tg-modal');
                    if (!mod || !row) return;
                   var sheet = mod.querySelector('.kro-inline-tg-modal-sheet');
@@ -2524,24 +2529,7 @@
                    mod.hidden = false;
                   mod.scrollTop = 0;
                   if (sheet) sheet.scrollTop = 0;
-                  try {
-                      var vw = window.innerWidth || document.documentElement.clientWidth || 0;
-                      var vh = window.innerHeight || document.documentElement.clientHeight || 0;
-                      var modalW = Math.min(700, Math.max(320, vw - 24));
-                      var left = Math.round((vw - modalW) / 2);
-                      var top = 18;
-                      if (triggerEl && triggerEl.getBoundingClientRect) {
-                          var r = triggerEl.getBoundingClientRect();
-                          left = Math.round(r.left + (r.width / 2) - (modalW / 2));
-                          left = Math.max(12, Math.min(left, Math.max(12, vw - modalW - 12)));
-                          top = Math.round(r.top - 16);
-                          if (top < 12) top = Math.round(r.bottom + 10);
-                          top = Math.max(10, Math.min(top, Math.max(10, vh - 120)));
-                      }
-                      mod.style.width = String(modalW) + 'px';
-                      mod.style.left = String(left) + 'px';
-                      mod.style.top = String(top) + 'px';
-                  } catch (ePos) { /* ignore */ }
+                  document.body.classList.add('kro-modal-open');
                    try {
                        var closer = mod.querySelector('.kro-inline-tg-modal-close');
                       if (closer) closer.focus({ preventScroll: true });
@@ -2550,6 +2538,7 @@
                function kroEnsureFindingsModalWired() {
                    if (window.__kroFindingsModalWired) return;
                    window.__kroFindingsModalWired = true;
+                   kroMountFindingModal();
                    document.addEventListener('click', function (ev) {
                        var rep = document.getElementById('kro-inline-report');
                        var t = ev.target;
@@ -2557,7 +2546,7 @@
                        if (btn && rep && rep.contains(btn)) {
                            var idx = parseInt(btn.getAttribute('data-finding-idx'), 10);
                            var row = window.__kroFindingsLastRows && window.__kroFindingsLastRows[idx];
-                           if (row) kroOpenFindingModal(row, btn);
+                           if (row) kroOpenFindingModal(row);
                            return;
                        }
                        if (t.closest && t.closest('.kro-inline-tg-modal-backdrop')) kroCloseFindingModal();

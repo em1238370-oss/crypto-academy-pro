@@ -9506,26 +9506,36 @@ body.kro-modal-open {
 
 .kro-inline-tg-modal {
    position: fixed;
-   inset: auto;
+   inset: 0;
    z-index: 12000;
-   display: block;
-   padding: 0;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+   box-sizing: border-box;
 }
 .kro-inline-tg-modal.hidden {
    display: none !important;
 }
 .kro-inline-tg-modal-backdrop {
-   display: none;
+   position: absolute;
+   inset: 0;
+   display: block;
+   background: rgba(6, 10, 18, 0.78);
+   backdrop-filter: blur(6px);
+   -webkit-backdrop-filter: blur(6px);
 }
 .kro-inline-tg-modal-sheet {
    position: relative;
    z-index: 1;
-   width: 100%;
-   max-width: none;
+   width: min(700px, 100%);
+   max-width: 100%;
    max-height: min(86vh, 680px);
    overflow: auto;
    padding: 24px 24px 26px;
    border-radius: 26px;
+   flex-shrink: 0;
+   animation: kro-tg-modal-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
    background:
       radial-gradient(110% 120% at 0% 0%, rgba(34, 211, 238, 0.15) 0%, rgba(34, 211, 238, 0) 45%),
       radial-gradient(120% 130% at 100% 100%, rgba(168, 85, 247, 0.16) 0%, rgba(168, 85, 247, 0) 45%),
@@ -9629,6 +9639,21 @@ body.kro-modal-open {
    margin: 0;
    color: rgba(235, 243, 255, 0.92);
 }
+@keyframes kro-tg-modal-in {
+   from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.97);
+   }
+   to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+   }
+}
+@media (prefers-reduced-motion: reduce) {
+   .kro-inline-tg-modal-sheet {
+      animation: none;
+   }
+}
 
 @media (max-width: 720px) {
    .kro-inline-findings-table thead {
@@ -9662,6 +9687,15 @@ body.kro-modal-open {
    }
    .kro-finding-explain-btn {
       width: 100%;
+   }
+   .kro-inline-tg-modal {
+      padding: 12px;
+      align-items: center;
+   }
+   .kro-inline-tg-modal-sheet {
+      max-height: min(90vh, 720px);
+      padding: 20px 18px 22px;
+      border-radius: 22px;
    }
 }
 
