@@ -20,6 +20,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="styles.css?v=20260508-kro-neutral-main-bg">
+   <link rel="stylesheet" href="monitor.css?v=20260611-kro-schemes">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -410,7 +411,7 @@
                                    <h3 class="kro-glance-h">👤 Кто за каналом</h3>
                                    <p id="kro-glance-person-verdict" style="font-weight:600;margin-bottom:8px"></p>
                                    <div id="kro-glance-person-links" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
-                                   <ul id="kro-glance-person-facts" style="list-style:none;padding:0;margin:0;font-size:0.85rem"></ul>
+                                   <div id="kro-glance-person-facts" class="kro-glance-person-fields" style="font-size:0.85rem"></div>
                                </div>
                            </div>
                            <details class="kro-inline-tech-details" id="kro-inline-tech-details">
@@ -425,14 +426,6 @@
                            <div class="kro-inline-report-summary">
                                <div class="kro-inline-summary-item"><span class="kro-inline-summary-label">Краткий итог</span><span id="kro-inline-status" class="kro-inline-status-pill">—</span></div>
                                <div class="kro-inline-summary-item" id="kro-inline-riskidx-wrap" hidden><span class="kro-inline-summary-label">Оценка по шкале</span><span id="kro-inline-riskidx" class="kro-inline-summary-value">—</span></div>
-                           </div>
-                           <div class="kro-inline-schemes-section hidden" id="kro-inline-schemes-wrap" hidden>
-                               <h4 class="kro-inline-schemes-title">Найденные схемы</h4>
-                               <div class="kro-inline-schemes-body" id="kro-inline-schemes-body"></div>
-                           </div>
-                           <div class="kro-inline-honest-wrap hidden" id="kro-inline-honest-wrap" hidden>
-                               <h4 class="kro-inline-honest-title">Что здесь честно</h4>
-                               <ul class="kro-inline-honest-list" id="kro-inline-honest-list"></ul>
                            </div>
                            <div class="kro-inline-trust-stack hidden" id="kro-inline-trust-stack" hidden>
                                <p class="kro-inline-trust-eyebrow" id="kro-inline-trust-eyebrow">Почему этому можно доверять</p>
@@ -515,6 +508,19 @@
                                <section class="kro-inline-sec" id="kro-inline-sec3"><h4 class="kro-inline-sec-h">Жалобы и база</h4><div id="kro-inline-s3" class="kro-inline-sec-body"></div></section>
                                <section class="kro-inline-sec" id="kro-inline-sec4"><h4 class="kro-inline-sec-h">На что обратили внимание</h4><div id="kro-inline-s4" class="kro-inline-sec-body"></div></section>
                                <section class="kro-inline-sec" id="kro-inline-sec5"><h4 class="kro-inline-sec-h">Вывод простыми словами</h4><div id="kro-inline-s5" class="kro-inline-sec-body"></div></section>
+                           </div>
+                           <section class="kro-inline-person-section hidden" id="kro-inline-person-wrap" hidden>
+                               <h4 class="kro-inline-sec-h">Кто за каналом</h4>
+                               <div id="kro-inline-person-verdict" class="kro-inline-person-verdict"></div>
+                               <div id="kro-inline-person-fields" class="kro-inline-person-fields"></div>
+                           </section>
+                           <section class="kro-inline-schemes-section hidden" id="kro-inline-schemes-wrap" hidden>
+                               <h4 class="kro-inline-schemes-title">Найденные схемы</h4>
+                               <div class="kro-inline-schemes-body" id="kro-inline-schemes-body"></div>
+                           </section>
+                           <div class="honest-signals hidden" id="kro-honest-signals" hidden>
+                               <p class="honest-signals-title">Что здесь честно</p>
+                               <ul class="honest-signals-list" id="kro-honest-signals-list"></ul>
                            </div>
                            <p class="kro-inline-foot" id="kro-inline-foot"></p>
                            <div class="kro-inline-deep-panel hidden" id="kro-inline-deep-panel" hidden></div>
@@ -1355,42 +1361,21 @@
                    }
                    return false;
                }
-               /** Уровень риска из текста вердикта Mistral. */
-               function kroVerdictTierFromText(verdictText) {
-                   var v = String(verdictText || '').trim();
-                   if (!v) return null;
-                   var low = v.toLowerCase();
-                   var highStarts = ['уйди', 'не плати', 'опасно', 'осторожно'];
-                   var hi;
-                   for (hi = 0; hi < highStarts.length; hi++) {
-                       if (low.indexOf(highStarts[hi]) === 0) return 'high';
-                   }
-                   if (low.indexOf('смотри бесплатно') === 0) return 'medium';
-                   if (low.indexOf('можно смотреть осторожно') === 0) return 'medium';
-                   var lowStarts = ['можно', 'нормально', 'спокойно', 'честн', 'доверя', 'выглядит чист'];
-                   for (hi = 0; hi < lowStarts.length; hi++) {
-                       if (low.indexOf(lowStarts[hi]) === 0) return 'low';
-                   }
-                   if (v.length > 8) return 'medium';
-                   return null;
-               }
-               /**
-                * Итоговый уровень риска: high / medium / low.
-                * Вердикт Mistral приоритетнее формального скора.
-                */
                function resolveUnifiedRisk(riskScore, verdictText) {
-                   var verdictTier = kroVerdictTierFromText(verdictText);
-                   var scoreTier = 'medium';
-                   if (riskScore != null && riskScore !== '' && !isNaN(Number(riskScore))) {
-                       var r = Number(riskScore);
-                       if (r >= 7) scoreTier = 'high';
-                       else if (r >= 4) scoreTier = 'medium';
-                       else scoreTier = 'low';
+                   var v = String(verdictText || '').toLowerCase();
+                   var highWords = ['уйди', 'не плати', 'опасно', 'немедленно', 'скам', 'мошен'];
+                   var lowWords = ['смотри бесплатно', 'можно', 'честный', 'проверен'];
+                   var hw;
+                   for (hw = 0; hw < highWords.length; hw++) {
+                       if (v.indexOf(highWords[hw]) !== -1) return 'high';
                    }
-                   if (verdictTier === 'high') return 'high';
-                   if (verdictTier === 'low') return 'low';
-                   if (verdictTier === 'medium') return 'medium';
-                   return scoreTier;
+                   for (hw = 0; hw < lowWords.length; hw++) {
+                       if (v.indexOf(lowWords[hw]) !== -1) return 'low';
+                   }
+                   var score = riskScore != null && riskScore !== '' && !isNaN(Number(riskScore)) ? Number(riskScore) : 0;
+                   if (score >= 7) return 'high';
+                   if (score >= 4) return 'medium';
+                   return 'low';
                }
                function kroUnifiedRiskBadgeLabel(tier, riskScore, riskMax) {
                    var scorePart = '';
@@ -1413,96 +1398,193 @@
                    var tr = data.trust_report && typeof data.trust_report === 'object' ? data.trust_report : {};
                    var code = String(data.status_code || '').toUpperCase();
                    if (code === 'INSUFFICIENT_FEED' || tr.insufficient_feed === true) return 'insufficient';
-                   if (data.unified_risk_level === 'high' || data.unified_risk_level === 'medium' || data.unified_risk_level === 'low') {
-                       return data.unified_risk_level;
-                   }
                    var pbVerdict = data.person_behind && data.person_behind.verdict ? String(data.person_behind.verdict) : '';
                    return resolveUnifiedRisk(data.risk_index, pbVerdict);
+               }
+               function renderField(label, value) {
+                   var empty = ['—', '', null, undefined, 'не упоминается', 'не указано'];
+                   var norm = String(value == null ? '' : value).toLowerCase().trim();
+                   if (empty.indexOf(norm) !== -1 || empty.indexOf(value) !== -1) return '';
+                   return (
+                       '<div class="kro-field"><span class="kro-field-label">' +
+                       esc(label) +
+                       '</span><span class="kro-field-value">' +
+                       kroTextHighlight(value) +
+                       '</span></div>'
+                   );
+               }
+               var SCHEME_EXPLANATIONS = {
+                   fomo: 'Создаёт искусственную срочность — чтобы ты не думал, а сразу платил',
+                   'воронка продаж': 'Бесплатный контент — только приманка. Настоящая цель — продать тебе курс или VIP',
+                   'ложный авторитет': 'Заявляет опыт без единого доказательства — верь на слово',
+                   'только плюсы': 'Показывает только прибыльные сделки — убытки прячет или не упоминает',
+                   'социальное доказательство': 'Цифры учеников и участников ничем не подтверждены',
+                   'личное участие': 'Говорит «я сам вошёл» чтобы ты чувствовал что он рискует вместе с тобой — но это не так',
+                   зависимость: 'Внушает что без него ты потеряешь деньги — создаёт эмоциональную привязку',
+                   'реферальная ловушка': 'Бесплатный доступ только если приведёшь друга — ты становишься продавцом',
+                   'стадный эффект': 'Все уже зарабатывают — только ты нет. Классическое давление толпой',
+                   'неверифицируемые результаты': 'Скрины без даты, счёта и контекста — проверить невозможно',
+               };
+               function kroSchemeExplanationForName(name) {
+                   var low = String(name || '').toLowerCase();
+                   var keys = Object.keys(SCHEME_EXPLANATIONS);
+                   for (var ki = 0; ki < keys.length; ki++) {
+                       if (low.indexOf(keys[ki]) !== -1) return SCHEME_EXPLANATIONS[keys[ki]];
+                   }
+                   return 'Типичный приём давления — перепроверьте, не торопит ли автор на деньги.';
+               }
+               function kroNormalizeRedFlagsInput(redFlags) {
+                   if (Array.isArray(redFlags)) {
+                       return redFlags
+                           .map(function (item) {
+                               var s = String(item || '').trim();
+                               if (!s) return '';
+                               var colon = s.indexOf(':');
+                               if (colon > 0) {
+                                   return (
+                                       '«' +
+                                       s.slice(0, colon).trim() +
+                                       ': ' +
+                                       s.slice(colon + 1).trim() +
+                                       '»'
+                                   );
+                               }
+                               return '«' + s + '»';
+                           })
+                           .filter(Boolean)
+                           .join('», «');
+                   }
+                   return String(redFlags == null ? '' : redFlags).trim();
+               }
+               function kroParseRedFlagsSchemes(redFlagsText) {
+                   var raw = kroNormalizeRedFlagsInput(redFlagsText);
+                   if (!raw || /не найдено/i.test(raw)) return [];
+                   var parts = raw.split(/»,\s*«/);
+                   if (parts.length === 1) parts = raw.split(/;\s*/);
+                   var out = [];
+                   for (var pi = 0; pi < parts.length; pi++) {
+                       var p = String(parts[pi] || '')
+                           .replace(/^[«\[\s]+/g, '')
+                           .replace(/[»\]\s]+$/g, '')
+                           .trim();
+                       if (!p) continue;
+                       var colonIdx = p.indexOf(':');
+                       var name = colonIdx > 0 ? p.slice(0, colonIdx).replace(/^\[/, '').replace(/\]$/, '').trim() : p;
+                       var quote = colonIdx > 0
+                           ? p.slice(colonIdx + 1).replace(/^[«\s]+|[»\s]+$/g, '').trim()
+                           : '';
+                       if (name) out.push({ name: name, quote: quote });
+                   }
+                   return out;
+               }
+               function kroRenderSchemeCardsFromRedFlags(redFlags) {
+                   var schemes = kroParseRedFlagsSchemes(redFlags);
+                   if (!schemes.length) {
+                       return '<div class="scheme-card scheme-card--ok">✓ Явных манипулятивных схем не обнаружено</div>';
+                   }
+                   return schemes
+                       .map(function (s) {
+                           var how = kroSchemeExplanationForName(s.name);
+                           var nameLow = String(s.name || '').toLowerCase();
+                           var cardClass =
+                               nameLow.indexOf('fomo') !== -1 ||
+                               nameLow.indexOf('воронка') !== -1 ||
+                               nameLow.indexOf('гарант') !== -1 ||
+                               nameLow.indexOf('скам') !== -1
+                                   ? 'scheme-card--danger'
+                                   : 'scheme-card--warning';
+                           var quote = s.quote
+                               ? '<blockquote class="scheme-quote">«' + kroTextHighlight(s.quote) + '»</blockquote>'
+                               : '';
+                           return (
+                               '<div class="scheme-card ' +
+                               cardClass +
+                               '">' +
+                               '<span class="scheme-name">' +
+                               esc(s.name) +
+                               '</span>' +
+                               '<span class="scheme-how">' +
+                               esc(how) +
+                               '</span>' +
+                               quote +
+                               '</div>'
+                           );
+                       })
+                       .join('');
+               }
+               function kroCollectResultBulletText(data) {
+                   var chunks = [];
+                   var a = data && data.analysis ? data.analysis : {};
+                   var lists = [
+                       a.basic_info,
+                       a.content_behavior,
+                       a.external_reports,
+                       a.ties_risk_factors,
+                       a.conclusion && a.conclusion.reasons,
+                   ];
+                   for (var li = 0; li < lists.length; li++) {
+                       if (Array.isArray(lists[li])) chunks = chunks.concat(lists[li]);
+                   }
+                   var ul = document.getElementById('kro-inline-top-facts');
+                   if (ul) chunks.push(ul.textContent || '');
+                   return chunks.join(' ').toLowerCase();
                }
                function kroUnifiedTierToMoneyTier(unifiedTier) {
                    if (unifiedTier === 'high') return 'danger';
                    if (unifiedTier === 'low') return 'clean';
                    return 'warn';
                }
-               function kroSchemePlainHow(h) {
-                   var risk = String((h && h.victim_risk) || '').trim();
-                   if (risk.length > 16) return risk;
-                   var earn = String((h && h.how_earn) || '').trim();
-                   if (earn.length > 16) return earn;
-                   return 'Автор подталкивает к быстрому решению или платному доступу — не спешите с деньгами.';
-               }
-               function kroSchemeDetailCardClass(sev) {
-                   var s = String(sev || '').toLowerCase();
-                   if (s === 'critical' || s === 'high') return 'kro-scheme-card--danger';
-                   return 'kro-scheme-card--warn';
-               }
-               function kroRenderSchemeDetailCards(hits) {
-                   if (!hits || !hits.length) {
-                       return '<div class="kro-schemes-none kro-schemes-none--ok">Явных манипулятивных схем не обнаружено</div>';
-                   }
-                   return hits.slice(0, 8).map(function (h) {
-                       var name = esc(String(h.name || '').trim());
-                       var how = kroSchemePlainHow(h);
-                       var quote = h.quote
-                           ? '<blockquote class="kro-scheme-card-quote">«' + kroTextHighlight(h.quote) + '»</blockquote>'
-                           : '';
-                       return (
-                           '<article class="kro-scheme-card ' + kroSchemeDetailCardClass(h.severity) + '">' +
-                           '<h5 class="kro-scheme-card-name">' + name + '</h5>' +
-                           '<p class="kro-scheme-card-how"><span class="kro-scheme-card-how-label">Как работает:</span> ' + kroTextHighlight(how) + '</p>' +
-                           quote +
-                           '</article>'
-                       );
-                   }).join('');
-               }
                function kroCollectHonestSignals(data) {
+                   var pb = (data && data.person_behind) || {};
+                   var redRaw = kroNormalizeRedFlagsInput(pb.red_flags).toLowerCase();
+                   var noSchemes = redRaw.indexOf('не найдено') !== -1 || (Array.isArray(pb.red_flags) && pb.red_flags.length === 0);
+                   var blob = kroCollectResultBulletText(data);
                    var out = [];
                    var seen = {};
                    var push = function (line) {
                        var t = String(line || '').trim();
-                       if (!t || kroIsEmptyPersonField(t) || seen[t]) return;
+                       if (!t || seen[t]) return;
                        seen[t] = true;
                        out.push(t);
                    };
-                   var pb = data && data.person_behind;
-                   if (pb && pb.honest_signals && !kroIsEmptyPersonField(pb.honest_signals)) {
-                       String(pb.honest_signals)
-                           .split(/[;•\n]+/)
-                           .forEach(function (part) {
-                               push(part);
-                           });
-                   }
-                   var a = data && data.analysis ? data.analysis : {};
-                   if (kroScanLossMention(a)) {
+                   if (blob.indexOf('убыточные сделки') !== -1 || blob.indexOf('убыточ') !== -1) {
                        push('В канале встречаются убыточные сделки — честнее, чем показывать только профиты.');
                    }
-                   if (pb && pb.who && !kroIsEmptyPersonField(pb.who) && String(pb.who).toLowerCase() !== 'аноним') {
-                       push('За каналом видна конкретная личность или публичный псевдоним — проще проверить репутацию снаружи Telegram.');
+                   if (blob.indexOf('правила риска') !== -1 || blob.indexOf('стоп') !== -1) {
+                       push('Автор упоминает правила риска или стопы — это признак ответственного подхода.');
                    }
-                   var tr = data.trust_report && data.trust_report.ui_modes && data.trust_report.ui_modes.quick
-                       ? data.trust_report.ui_modes.quick
-                       : {};
-                   if (tr.when_ok_ru && String(tr.when_ok_ru).trim().length > 20) {
-                       push(String(tr.when_ok_ru).trim());
+                   if (blob.indexOf('жалоб нет') !== -1 || blob.indexOf('жалоб по этому каналу в базе сервиса сейчас нет') !== -1) {
+                       push('Жалоб по каналу в базе сервиса нет.');
                    }
-                   return out.slice(0, 5);
+                   if (pb.honest_signals && !kroIsEmptyPersonField(pb.honest_signals)) {
+                       String(pb.honest_signals).split(/[;•\n]+/).forEach(function (part) {
+                           push(part);
+                       });
+                   }
+                   if (noSchemes && !out.length) {
+                       push('Явных манипулятивных схем в тексте не видно.');
+                   }
+                   if (!noSchemes && !out.length) return [];
+                   return out.slice(0, 6);
                }
                function kroFillHonestBlocks(data) {
                    var signals = kroCollectHonestSignals(data);
                    var glanceWrap = document.getElementById('kro-glance-honest-wrap');
                    var glanceList = document.getElementById('kro-glance-honest-list');
-                   var detWrap = document.getElementById('kro-inline-honest-wrap');
-                   var detList = document.getElementById('kro-inline-honest-list');
+                   var detWrap = document.getElementById('kro-honest-signals');
+                   var detList = document.getElementById('kro-honest-signals-list');
                    var html = signals
                        .map(function (s) {
-                           return '<li>' + kroTextHighlight(s) + '</li>';
+                           return '<li>✓ ' + kroTextHighlight(s) + '</li>';
                        })
                        .join('');
                    if (glanceWrap && glanceList) {
                        if (signals.length) {
                            glanceWrap.hidden = false;
                            glanceWrap.classList.remove('hidden');
-                           glanceList.innerHTML = html;
+                           glanceList.innerHTML = signals.map(function (s) {
+                               return '<li>' + kroTextHighlight(s) + '</li>';
+                           }).join('');
                        } else {
                            glanceWrap.hidden = true;
                            glanceWrap.classList.add('hidden');
@@ -1525,10 +1607,57 @@
                    var wrap = document.getElementById('kro-inline-schemes-wrap');
                    var body = document.getElementById('kro-inline-schemes-body');
                    if (!wrap || !body) return;
-                   var hits = kroCollectSchemeHits(data);
-                   body.innerHTML = kroRenderSchemeDetailCards(hits);
+                   var pb = data && data.person_behind;
+                   var redFlags = pb && pb.red_flags != null ? pb.red_flags : '';
+                   if (!redFlags && pb && Array.isArray(pb.scheme_hits) && pb.scheme_hits.length) {
+                       redFlags = pb.scheme_hits
+                           .map(function (h) {
+                               var q = h.quote ? ': «' + h.quote + '»' : '';
+                               return '[' + h.name + ']' + q;
+                           })
+                           .join('; ');
+                   }
+                   body.innerHTML = kroRenderSchemeCardsFromRedFlags(redFlags);
                    wrap.hidden = false;
                    wrap.classList.remove('hidden');
+               }
+               function kroFillPersonBehindDetails(data) {
+                   var wrap = document.getElementById('kro-inline-person-wrap');
+                   if (!wrap) return;
+                   var pb = data && data.person_behind;
+                   if (!pb) {
+                       wrap.hidden = true;
+                       wrap.classList.add('hidden');
+                       return;
+                   }
+                   var verdictEl = document.getElementById('kro-inline-person-verdict');
+                   var fieldsEl = document.getElementById('kro-inline-person-fields');
+                   var hasContent = false;
+                   if (verdictEl) {
+                       var vHtml = '';
+                       if (pb.verdict) vHtml += renderField('Вердикт', pb.verdict);
+                       if (pb.reveal_moment) vHtml += renderField('Что бросилось в глаза', pb.reveal_moment);
+                       if (pb.next_action) vHtml += renderField('Следующий шаг', pb.next_action);
+                       verdictEl.innerHTML = vHtml;
+                       hasContent = hasContent || !!vHtml;
+                   }
+                   if (fieldsEl) {
+                       var fHtml =
+                           renderField('Кто', pb.who) +
+                           renderField('Фон', pb.claimed_background) +
+                           renderField('Путь', pb.claimed_path) +
+                           renderField('Метод', pb.business_model) +
+                           renderField('Уверенность в данных', pb.data_confidence);
+                       fieldsEl.innerHTML = fHtml;
+                       hasContent = hasContent || !!fHtml;
+                   }
+                   if (hasContent) {
+                       wrap.hidden = false;
+                       wrap.classList.remove('hidden');
+                   } else {
+                       wrap.hidden = true;
+                       wrap.classList.add('hidden');
+                   }
                }
                function kroRenderSchemeHitsList(hits) {
                    return hits.slice(0, 6).map(function (h) {
@@ -3484,23 +3613,15 @@
                    }
                    var factsEl = document.getElementById('kro-glance-person-facts');
                    if (factsEl) {
-                       var rows = [];
-                       if (pb.who && !kroIsEmptyPersonField(pb.who) && String(pb.who).toLowerCase() !== 'аноним') {
-                           rows.push(['Кто', pb.who]);
-                       }
-                       if (pb.claimed_background && !kroIsEmptyPersonField(pb.claimed_background)) {
-                           rows.push(['Фон', pb.claimed_background]);
-                       }
-                       if (pb.claimed_path && !kroIsEmptyPersonField(pb.claimed_path)) {
-                           rows.push(['Путь', pb.claimed_path]);
-                       }
-                       if (pb.business_model && !kroIsEmptyPersonField(pb.business_model)) {
-                           rows.push(['Метод', pb.business_model]);
-                       }
-                       factsEl.innerHTML = rows.map(function(r) {
-                           return '<li class="kro-person-fact-row"><span class="kro-person-fact-label">' + esc(r[0]) + '</span><span class="kro-person-fact-val">' + kroTextHighlight(r[1]) + '</span></li>';
-                       }).join('');
-                       factsEl.hidden = rows.length === 0;
+                       var whoVal = pb.who && String(pb.who).toLowerCase() === 'аноним' ? '' : pb.who;
+                       var fieldsHtml =
+                           renderField('Кто', whoVal) +
+                           renderField('Фон', pb.claimed_background) +
+                           renderField('Путь', pb.claimed_path) +
+                           renderField('Метод', pb.business_model) +
+                           renderField('Уверенность в данных', pb.data_confidence);
+                       factsEl.innerHTML = fieldsHtml;
+                       factsEl.hidden = !fieldsHtml;
                    }
                }
               function fillInlineReport(data, queryU, displayLabel, checkStartedAt, channelNameHintForMeta) {
@@ -3953,8 +4074,9 @@
                        }
                        kroFillAtAGlance(data, displayLabel);
                        kroFillPersonBehind(data);
-                       kroFillHonestBlocks(data);
+                       kroFillPersonBehindDetails(data);
                        kroFillDetailsSchemes(data);
+                       kroFillHonestBlocks(data);
                    } catch (eFill) {
                        if (typeof console !== 'undefined' && console.error) console.error('fillInlineReport', eFill);
                        if (doneBanner) {
