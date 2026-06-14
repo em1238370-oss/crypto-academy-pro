@@ -1063,6 +1063,11 @@ section[id^="feature"] {
 
 /* Footer */
 .kro-main .news-footer.kro-footer {
+   position: static !important;
+   clear: both;
+   width: 100%;
+   margin-top: 2rem;
+   z-index: auto !important;
    border-top: 1px solid var(--kro-border-subtle);
    padding: var(--kro-section-pad-y) 1.5rem 4rem;
    background: #000;
@@ -1117,29 +1122,31 @@ section[id^="feature"] {
 }
 
 /* --- Global overflow & containment --- */
-html,
+html {
+   overflow-x: hidden;
+   overflow-y: scroll;
+}
+
 body.kro-main {
-   overflow-x: clip;
+   overflow-x: hidden !important;
+   overflow-y: auto !important;
+   min-height: 100%;
    max-width: 100%;
 }
 
 .kro-main .page,
-.kro-main .content,
-.kro-step1,
-.kro-feature1,
-.kro-f1-blocks,
-.kro-f1-content-card,
-.kro-feature1-check,
-.kro-f1-cta-check-wrap {
-   overflow: visible !important;
+.kro-main .content {
+   width: 100%;
    max-width: 100%;
+   overflow: visible;
    box-sizing: border-box;
 }
 
-.kro-step1 {
+.kro-step1,
+.kro-feature1 {
    overflow: visible !important;
-   padding: clamp(5.5rem, 12vw, 7rem) clamp(1rem, 4vw, 2rem) clamp(3rem, 6vw, 5rem) !important;
-   min-height: auto !important;
+   width: 100%;
+   max-width: 100%;
 }
 
 .kro-main .page .content {
@@ -1147,10 +1154,15 @@ body.kro-main {
    padding-inline: clamp(1rem, 4vw, 3rem);
 }
 
-/* Текст нигде не вылезает за край */
-.kro-main,
-.kro-main * {
-   overflow-wrap: anywhere;
+/* Текст переносится, но не ломает layout */
+.kro-main p,
+.kro-main li,
+.kro-main h1,
+.kro-main h2,
+.kro-main h3,
+.kro-main span,
+.kro-main label {
+   overflow-wrap: break-word;
    word-break: break-word;
 }
 
@@ -1233,6 +1245,44 @@ body.kro-main {
    transform: none !important;
 }
 
+.kro-step1 {
+   overflow: visible !important;
+   padding: clamp(5.5rem, 12vw, 7rem) clamp(1rem, 4vw, 2rem) clamp(3rem, 6vw, 5rem) !important;
+   min-height: auto !important;
+}
+
+/* Блок «Сообщить о разводе» — после формы, до футера */
+.kro-feature1-report {
+   position: static !important;
+   max-width: min(42rem, 100%) !important;
+   width: 100% !important;
+   margin: 0 auto 2.5rem !important;
+   padding: clamp(1.25rem, 3vw, 2rem) !important;
+   background: rgba(255, 255, 255, 0.04) !important;
+   border: 1px solid rgba(255, 255, 255, 0.1) !important;
+   border-radius: 24px !important;
+   box-shadow: none !important;
+   transform: none !important;
+   z-index: auto !important;
+}
+
+.kro-feature1-report:hover {
+   transform: none !important;
+}
+
+/* Scroll-in: не схлопывать блоки до появления */
+.kro-f1-cta-check-wrap.kro-scroll-in,
+.kro-feature1-check.kro-scroll-in {
+   opacity: 1 !important;
+   transform: none !important;
+}
+
+.kro-f1-blocks,
+.kro-f1-content-card {
+   overflow: visible !important;
+   max-width: min(56rem, 100%) !important;
+}
+
 .kro-f1-blocks {
    padding: 0 !important;
    margin-bottom: 2.5rem !important;
@@ -1246,28 +1296,46 @@ body.kro-main {
    box-shadow: none !important;
 }
 
-/* Форма проверки — всегда видна, не в overlay */
+/* Форма проверки — в потоке документа (перебивает styles.css !important absolute) */
 .kro-f1-cta-check-wrap {
-   display: flex !important;
-   flex-direction: column !important;
-   gap: 0 !important;
+   display: block !important;
+   grid-template-columns: none !important;
+   grid-template-rows: none !important;
+   grid-auto-rows: auto !important;
+   position: static !important;
    max-width: min(42rem, 100%) !important;
-   min-height: auto !important;
-   margin-bottom: 2.5rem !important;
+   width: 100% !important;
+   height: auto !important;
+   min-height: 0 !important;
+   margin: 0 auto 2.5rem !important;
 }
 
 .kro-f1-cta-check-wrap > .kro-f1-cta-block {
    display: none !important;
+   position: static !important;
+   inset: auto !important;
+   height: 0 !important;
+   overflow: hidden !important;
+   padding: 0 !important;
+   margin: 0 !important;
+   border: none !important;
 }
 
 .kro-f1-cta-check-wrap > .kro-feature1-check,
-.kro-f1-cta-check-wrap.kro-f1-show-check > .kro-feature1-check {
-   position: relative !important;
+.kro-f1-cta-check-wrap > .kro-feature1-check.kro-f1-check-reveal,
+.kro-f1-cta-check-wrap.kro-f1-show-check > .kro-feature1-check,
+.kro-f1-cta-check-wrap.kro-f1-show-check > .kro-feature1-check.kro-f1-check-reveal {
+   position: static !important;
    inset: auto !important;
+   grid-area: auto !important;
    opacity: 1 !important;
    transform: none !important;
    pointer-events: auto !important;
    width: 100% !important;
+   height: auto !important;
+   min-height: 0 !important;
+   perspective: none !important;
+   transform-style: flat !important;
 }
 
 .kro-feature1-check {

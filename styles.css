@@ -9229,9 +9229,17 @@ button:not(.chat-button):not(.send-button):focus {
 }
 
 .kro-f1-cta-check-wrap {
+   display: block !important;
+   grid-template-rows: none !important;
    align-items: start !important;
    min-height: 0 !important;
+   height: auto !important;
    position: relative !important;
+}
+
+.kro-f1-cta-check-wrap > .kro-f1-cta-block,
+.kro-f1-cta-check-wrap > .kro-feature1-check {
+   grid-area: auto !important;
 }
 
 .kro-f1-cta-check-wrap > .kro-f1-cta-block {
@@ -9239,8 +9247,12 @@ button:not(.chat-button):not(.send-button):focus {
 }
 
 .kro-f1-cta-check-wrap > .kro-feature1-check.kro-f1-check-reveal {
-   position: absolute !important;
-   inset: 0 !important;
+   position: static !important;
+   inset: auto !important;
+   opacity: 1 !important;
+   pointer-events: auto !important;
+   transform: none !important;
+   height: auto !important;
 }
 
 .kro-f1-cta-check-wrap.kro-f1-show-check > .kro-f1-cta-block {
