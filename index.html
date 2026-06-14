@@ -20,7 +20,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="styles.css?v=20260614-kro-simple-volume">
-   <link rel="stylesheet" href="duoviewpro-theme.css?v=20260614-duoview">
+   <link rel="stylesheet" href="duoviewpro-theme.css?v=20260614-duoview-layout">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -85,33 +85,31 @@
                <span class="kro-hero-arc" aria-hidden="true"></span>
            </div>
            <div class="kro-step1-inner">
-               <div class="kro-step1-left">
-                   <p class="kro-step1-role">Антискам · Проверка каналов</p>
-                   <h1 class="kro-step1-title">Крипта: не верь — проверь</h1>
-                   <div class="kro-hero-cases" id="kro-hero-cases" aria-label="Реальные случаи из базы">
-                       <article class="kro-hero-case-card">
-                           <a class="kro-hero-case-channel" id="kro-hero-case-1-link" href="#kro-check-form-row">—</a>
-                           <span class="kro-hero-case-status" id="kro-hero-case-1-status">—</span>
-                           <span class="kro-hero-case-sum" id="kro-hero-case-1-sum">—</span>
-                       </article>
-                       <article class="kro-hero-case-card">
-                           <a class="kro-hero-case-channel" id="kro-hero-case-2-link" href="#kro-check-form-row">—</a>
-                           <span class="kro-hero-case-status" id="kro-hero-case-2-status">—</span>
-                           <span class="kro-hero-case-sum" id="kro-hero-case-2-sum">—</span>
-                       </article>
-                       <article class="kro-hero-case-card">
-                           <a class="kro-hero-case-channel" id="kro-hero-case-3-link" href="#kro-check-form-row">—</a>
-                           <span class="kro-hero-case-status" id="kro-hero-case-3-status">—</span>
-                           <span class="kro-hero-case-sum" id="kro-hero-case-3-sum">—</span>
-                       </article>
-                   </div>
-                   <p class="kro-hero-live-stats" id="kro-hero-live-stats" aria-live="polite">Уже проверено — · —</p>
-                   <p class="kro-step1-subtitle">Ваш гуру уже на Lambo. <span class="kro-step1-subtitle-em">На ваши деньги</span></p>
-               </div>
-               <div class="kro-step1-right">
+               <p class="kro-step1-role">Антискам · Проверка каналов</p>
+               <h1 class="kro-step1-title">Крипта: не верь — проверь</h1>
+               <p class="kro-step1-subtitle">Ваш гуру уже на Lambo. <span class="kro-step1-subtitle-em">На ваши деньги</span></p>
+               <div class="kro-step1-actions">
                    <a href="#kro-check-form-row" class="kro-step1-cta">Проверить канал</a>
                    <p class="kro-step1-cta-note"><span class="kro-cta-note-desktop">Факты и сверка с базой — без украшений.</span><span class="kro-cta-note-mobile">По делу, без шума.</span></p>
                </div>
+               <div class="kro-hero-cases" id="kro-hero-cases" aria-label="Реальные случаи из базы">
+                   <article class="kro-hero-case-card">
+                       <a class="kro-hero-case-channel" id="kro-hero-case-1-link" href="#kro-check-form-row">—</a>
+                       <span class="kro-hero-case-status" id="kro-hero-case-1-status">—</span>
+                       <span class="kro-hero-case-sum" id="kro-hero-case-1-sum">—</span>
+                   </article>
+                   <article class="kro-hero-case-card">
+                       <a class="kro-hero-case-channel" id="kro-hero-case-2-link" href="#kro-check-form-row">—</a>
+                       <span class="kro-hero-case-status" id="kro-hero-case-2-status">—</span>
+                       <span class="kro-hero-case-sum" id="kro-hero-case-2-sum">—</span>
+                   </article>
+                   <article class="kro-hero-case-card">
+                       <a class="kro-hero-case-channel" id="kro-hero-case-3-link" href="#kro-check-form-row">—</a>
+                       <span class="kro-hero-case-status" id="kro-hero-case-3-status">—</span>
+                       <span class="kro-hero-case-sum" id="kro-hero-case-3-sum">—</span>
+                   </article>
+               </div>
+               <p class="kro-hero-live-stats" id="kro-hero-live-stats" aria-live="polite">Уже проверено — · —</p>
            </div>
        </section>
 
@@ -168,13 +166,13 @@
            <div class="kro-f1-blocks kro-f1-content-card">
                <!-- Блок 1: Шок-цифры -->
                <div class="kro-f1-block kro-f1-shock">
-                   <p class="kro-f1-shock-heading">ПО ВСЕЙ ПОДТВЕРЖДЁННОЙ БАЗЕ:</p>
+                   <p class="kro-f1-shock-heading">По всей подтверждённой базе</p>
                    <p class="kro-f1-shock-text" id="kro-f1-shock-text">Загрузка сводки по базе…</p>
                    <p class="kro-f1-shock-total" id="kro-f1-shock-total">ИТОГО: —</p>
                </div>
                <!-- Блок 2: Твой тип лоха -->
                <div class="kro-f1-block kro-f1-loh">
-                   <h2 class="kro-f1-loh-title">ВОТ КТО ТЫ ПРЯМО СЕЙЧАС:</h2>
+                   <h2 class="kro-f1-loh-title">Три типичных сценария</h2>
                    <div class="kro-f1-loh-types">
                        <div class="kro-f1-loh-card">
                            <span class="kro-f1-loh-avatar" aria-hidden="true">🐑</span>
@@ -199,7 +197,7 @@
                </div>
                <!-- Блок 3: Реальная математика одного скрина -->
                <div class="kro-f1-block kro-f1-math">
-                   <h2 class="kro-f1-math-title">ВОТ ЧТО ТЫ БЫ УВИДЕЛ НА СВОЁМ ДЕПОЗИТЕ:</h2>
+                   <h2 class="kro-f1-math-title">Математика одного скрина на вашем депозите</h2>
                    <div class="kro-f1-math-slider-wrap">
                        <div class="kro-f1-math-slider" id="kro-f1-math-slider">
                            <div class="kro-f1-math-track" id="kro-f1-math-track">
@@ -299,8 +297,8 @@
                        <span class="kro-check-trust-item">✔️ Без регистрации</span>
                        <span class="kro-check-trust-item">✔️ Простое объяснение без сложных терминов</span>
                    </p>
-                   <div class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Дополнительные пояснения">
-                       <p class="kro-check-user-explainer-title">Если нужно чуть больше деталей</p>
+                   <details class="kro-check-user-explainer" id="kro-check-user-explainer" aria-label="Дополнительные пояснения">
+                       <summary class="kro-check-user-explainer-title">Если нужно чуть больше деталей</summary>
                        <ul class="kro-check-user-explainer-list">
                            <li><strong>Важно:</strong> если знаете адрес канала — лучше вставить <span class="kro-check-user-explainer-code">t.me/<strong>ник</strong></span> или @ник; если есть только название в шапке — вставьте его в это же поле, система попробует сопоставить и найти жалобы.</li>
                            <li><strong>Здесь</strong> — жалобы, мониторинг и при возможности чтение ленты (ориентир до ~30 дней) плюс открытая страница; до 7 минут на запрос, без «канцелярских» отписок.</li>
@@ -308,7 +306,7 @@
                            <li><strong>Не заставляем сидеть часами</strong>: при очереди покажем позицию и примерное время; если очередь слишком длинная — честно скажем зайти позже. Быстрый отчёт при этом уже у вас.</li>
                            <li><strong>Приватный канал (t.me/+…):</strong> ленту по инвайту сервер часто не читает — допишите название канала в том же поле после ссылки или на следующей строке; при необходимости приложите скрины постов ниже.</li>
                        </ul>
-                   </div>
+                   </details>
                    <div class="kro-check-screenshot-row" id="kro-check-screenshot-row">
                        <p class="kro-check-screenshot-lead">Скрины постов из канала — можно выбрать до <strong>25</strong> фото; разбор по очереди до первого найденного @ или t.me.</p>
                        <div class="kro-check-screenshot-actions">

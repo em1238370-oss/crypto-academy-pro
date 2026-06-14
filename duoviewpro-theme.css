@@ -252,9 +252,50 @@ body.kro-hero-scrolled .kro-step1 {
 }
 
 .kro-step1-left,
-.kro-step1-right {
+.kro-step1-right,
+.kro-step1-actions {
    width: 100%;
    max-width: none;
+}
+
+.kro-step1-actions {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   gap: 0.75rem;
+   margin: 1.5rem 0 2rem;
+}
+
+/* Всегда одна колонка — не режем hero на десктопе */
+.kro-step1-inner {
+   display: flex !important;
+   flex-direction: column !important;
+   align-items: center !important;
+   text-align: center !important;
+   width: 100% !important;
+   max-width: min(48rem, 100%) !important;
+   min-width: 0 !important;
+   box-sizing: border-box !important;
+   animation: none !important;
+   transform: none !important;
+}
+
+.kro-step1-inner:hover {
+   transform: none !important;
+}
+
+@media (min-width: 900px) {
+   .kro-step1-inner {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0 !important;
+      text-align: center !important;
+   }
+   .kro-step1-right {
+      border-left: none !important;
+      padding-left: 0 !important;
+      align-items: center !important;
+   }
 }
 
 .kro-step1-role {
@@ -268,22 +309,25 @@ body.kro-hero-scrolled .kro-step1 {
 
 .kro-step1-title {
    font-family: var(--kro-font-heading);
-   font-size: clamp(2.5rem, 7vw, 4rem);
+   font-size: clamp(2rem, 5.5vw, 3.25rem) !important;
    font-weight: 700;
-   line-height: 1.05;
+   line-height: 1.08 !important;
    letter-spacing: -0.02em;
    color: #fff;
-   text-shadow: none;
-   animation: none;
-   margin-bottom: 1rem;
+   text-shadow: none !important;
+   animation: none !important;
+   margin-bottom: 0.75rem;
+   max-width: 100%;
 }
 
 .kro-step1-subtitle {
-   font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+   font-size: clamp(1rem, 2vw, 1.2rem);
    font-weight: 400;
    line-height: 1.55;
    color: rgba(255, 255, 255, 0.7);
-   margin-top: 1rem;
+   margin: 0 0 0.25rem;
+   max-width: 36rem;
+   margin-inline: auto;
 }
 
 .kro-step1-subtitle-em {
@@ -293,10 +337,11 @@ body.kro-hero-scrolled .kro-step1 {
 
 .kro-hero-cases {
    display: grid;
-   grid-template-columns: repeat(3, 1fr);
+   grid-template-columns: repeat(3, minmax(0, 1fr));
    gap: 12px;
-   margin: 2rem 0 1.25rem;
-   max-width: 42rem;
+   margin: 1.5rem 0 1rem;
+   width: 100%;
+   max-width: 100%;
    margin-inline: auto;
 }
 
@@ -1071,7 +1116,342 @@ section[id^="feature"] {
    background: rgba(0, 0, 0, 0.75);
 }
 
+/* --- Global overflow & containment --- */
+html,
+body.kro-main {
+   overflow-x: clip;
+   max-width: 100%;
+}
+
+.kro-main .page,
+.kro-main .content,
+.kro-step1,
+.kro-feature1,
+.kro-f1-blocks,
+.kro-f1-content-card,
+.kro-feature1-check,
+.kro-f1-cta-check-wrap {
+   overflow: visible !important;
+   max-width: 100%;
+   box-sizing: border-box;
+}
+
+.kro-step1 {
+   overflow: visible !important;
+   padding: clamp(5.5rem, 12vw, 7rem) clamp(1rem, 4vw, 2rem) clamp(3rem, 6vw, 5rem) !important;
+   min-height: auto !important;
+}
+
+.kro-main .page .content {
+   width: 100%;
+   padding-inline: clamp(1rem, 4vw, 3rem);
+}
+
+/* Текст нигде не вылезает за край */
+.kro-main,
+.kro-main * {
+   overflow-wrap: anywhere;
+   word-break: break-word;
+}
+
+.kro-hero-case-channel,
+.kro-top3-channel,
+.kro-result-channel {
+   word-break: break-all;
+}
+
+/* --- Типографика: спокойная иерархия --- */
+.kro-f1-shock-heading,
+.kro-f1-loh-title,
+.kro-f1-math-title,
+.kro-feature1-heading,
+.kro-f1-cta-heading,
+.kro-feature1-check-heading {
+   font-size: clamp(1.35rem, 3.2vw, 2rem) !important;
+   font-weight: 700 !important;
+   line-height: 1.2 !important;
+   letter-spacing: -0.01em !important;
+   text-transform: none !important;
+   text-align: center;
+   margin-bottom: 0.75rem !important;
+}
+
+.kro-f1-shock-total {
+   font-size: clamp(1.75rem, 4vw, 2.5rem) !important;
+   font-weight: 700 !important;
+   color: #00d9ff !important;
+   text-shadow: none !important;
+}
+
+.kro-feature1-hero-monitor,
+.kro-f1-metrics-sub,
+.kro-feature1-source-caption,
+.kro-f1-system-note {
+   font-size: 0.8125rem !important;
+   line-height: 1.55 !important;
+   color: rgba(255, 255, 255, 0.55) !important;
+   max-width: 42rem;
+   margin-inline: auto;
+   text-align: center;
+   white-space: normal !important;
+   overflow: visible !important;
+}
+
+.kro-feature1-date {
+   font-size: 0.75rem !important;
+   letter-spacing: 0.06em !important;
+   text-transform: none !important;
+   padding: 6px 14px !important;
+   margin-bottom: 1.25rem !important;
+   border-color: rgba(255, 255, 255, 0.12) !important;
+   background: rgba(255, 255, 255, 0.04) !important;
+   color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.kro-feature1-dashboard {
+   max-width: min(56rem, 100%) !important;
+   padding: clamp(1.25rem, 3vw, 2rem) !important;
+   margin-bottom: 2.5rem !important;
+   background: rgba(255, 255, 255, 0.04) !important;
+   border: 1px solid rgba(255, 255, 255, 0.1) !important;
+   box-shadow: none !important;
+   border-radius: 20px !important;
+}
+
+.kro-f1-content-card {
+   max-width: min(56rem, 100%) !important;
+   padding: clamp(1.25rem, 3vw, 2rem) !important;
+   overflow: visible !important;
+   background: rgba(255, 255, 255, 0.04) !important;
+   border: 1px solid rgba(255, 255, 255, 0.1) !important;
+   box-shadow: none !important;
+   border-radius: 20px !important;
+   transform: none !important;
+}
+
+.kro-f1-content-card:hover {
+   transform: none !important;
+}
+
+.kro-f1-blocks {
+   padding: 0 !important;
+   margin-bottom: 2.5rem !important;
+}
+
+.kro-f1-block.kro-f1-shock {
+   padding: 1.25rem 1.5rem !important;
+   margin-bottom: 2rem !important;
+   background: rgba(255, 255, 255, 0.03) !important;
+   border: 1px solid rgba(255, 255, 255, 0.08) !important;
+   box-shadow: none !important;
+}
+
+/* Форма проверки — всегда видна, не в overlay */
+.kro-f1-cta-check-wrap {
+   display: flex !important;
+   flex-direction: column !important;
+   gap: 0 !important;
+   max-width: min(42rem, 100%) !important;
+   min-height: auto !important;
+   margin-bottom: 2.5rem !important;
+}
+
+.kro-f1-cta-check-wrap > .kro-f1-cta-block {
+   display: none !important;
+}
+
+.kro-f1-cta-check-wrap > .kro-feature1-check,
+.kro-f1-cta-check-wrap.kro-f1-show-check > .kro-feature1-check {
+   position: relative !important;
+   inset: auto !important;
+   opacity: 1 !important;
+   transform: none !important;
+   pointer-events: auto !important;
+   width: 100% !important;
+}
+
+.kro-feature1-check {
+   max-width: 100% !important;
+   width: 100% !important;
+   padding: clamp(1.25rem, 3vw, 2rem) !important;
+   background: rgba(255, 255, 255, 0.04) !important;
+   border: 1px solid rgba(255, 255, 255, 0.1) !important;
+   box-shadow: none !important;
+   border-radius: 24px !important;
+   transform: none !important;
+}
+
+.kro-feature1-check:hover {
+   transform: none !important;
+}
+
+.kro-feature1-check-kicker {
+   font-size: 0.72rem !important;
+   letter-spacing: 0.08em !important;
+   color: rgba(255, 255, 255, 0.5) !important;
+   text-align: center;
+}
+
+.kro-feature1-check-heading {
+   margin-bottom: 0.5rem !important;
+}
+
+.kro-feature1-check-lead {
+   font-size: 0.95rem !important;
+   line-height: 1.55 !important;
+   color: rgba(255, 255, 255, 0.6) !important;
+   text-align: center;
+   margin-bottom: 1.25rem !important;
+}
+
+/* Три шага — вертикально, всё читается */
+.kro-feature1-check .kro-flow-simple {
+   padding: 1.25rem !important;
+   margin: 0 0 1.25rem !important;
+}
+
+.kro-feature1-check .kro-flow-simple-track {
+   display: flex !important;
+   flex-direction: column !important;
+   gap: 0.75rem !important;
+   transform: none !important;
+}
+
+.kro-feature1-check .kro-flow-arrow {
+   display: none !important;
+}
+
+.kro-feature1-check .kro-flow-step {
+   flex: none !important;
+   width: 100% !important;
+   min-width: 0 !important;
+   text-align: left;
+   padding: 1rem 1.125rem !important;
+   background: rgba(255, 255, 255, 0.04) !important;
+   border: 1px solid rgba(255, 255, 255, 0.08) !important;
+   box-shadow: none !important;
+}
+
+.kro-feature1-check .kro-flow-step-num {
+   background: rgba(0, 217, 255, 0.2) !important;
+   color: #00d9ff !important;
+}
+
+.kro-feature1-check .kro-flow-step-text {
+   font-size: 0.875rem !important;
+   line-height: 1.5 !important;
+}
+
+/* Топ-3 — вертикальный список */
+.kro-feature1-top3 {
+   max-width: min(42rem, 100%);
+   margin-inline: auto;
+   padding: 0;
+   list-style: none;
+}
+
+.kro-feature1-top3 li,
+.kro-top3-item {
+   display: flex !important;
+   flex-wrap: wrap !important;
+   align-items: center !important;
+   gap: 0.35rem 0.5rem !important;
+   padding: 0.875rem 1rem !important;
+   margin-bottom: 0.5rem !important;
+   white-space: normal !important;
+   overflow: visible !important;
+   text-overflow: unset !important;
+}
+
+.kro-top3-status {
+   white-space: normal !important;
+}
+
+/* Сворачиваемый блок деталей */
+.kro-check-user-explainer {
+   margin-top: 1rem;
+   padding: 0;
+   border: none;
+   background: transparent;
+}
+
+.kro-check-user-explainer summary {
+   list-style: none;
+   cursor: pointer;
+   padding: 0.75rem 1rem;
+   border-radius: 12px;
+   background: rgba(255, 255, 255, 0.04);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   font-size: 0.875rem;
+   font-weight: 600;
+   color: rgba(255, 255, 255, 0.75);
+}
+
+.kro-check-user-explainer summary::-webkit-details-marker {
+   display: none;
+}
+
+.kro-check-user-explainer[open] summary {
+   margin-bottom: 0.75rem;
+   border-color: rgba(0, 217, 255, 0.25);
+}
+
+.kro-check-user-explainer-list {
+   padding: 0 0.25rem 0.5rem;
+}
+
+.kro-feature1-stat-value {
+   white-space: normal !important;
+   overflow: visible !important;
+   text-overflow: unset !important;
+   font-size: clamp(1.35rem, 3vw, 2rem) !important;
+}
+
+.kro-f1-choice {
+   display: grid !important;
+   grid-template-columns: 1fr 1fr !important;
+   gap: 0.75rem !important;
+}
+
+.kro-f1-badges-row {
+   flex-wrap: wrap;
+   justify-content: center;
+   gap: 0.35rem 0.75rem;
+   margin-bottom: 1.5rem;
+   padding: 0 0.5rem;
+   text-align: center;
+}
+
+/* Навбар виден сразу */
+body.kro-main .kro-floating-nav {
+   opacity: 1 !important;
+   visibility: visible !important;
+   pointer-events: auto !important;
+   transform: none !important;
+}
+
+.kro-floating-nav-links {
+   flex-wrap: wrap;
+   justify-content: flex-end;
+   gap: 0.5rem 1rem;
+}
+
 /* --- Responsive --- */
+@media (max-width: 900px) {
+   .kro-hero-cases {
+      grid-template-columns: 1fr !important;
+      max-width: 100% !important;
+   }
+
+   .kro-f1-loh-types {
+      grid-template-columns: 1fr !important;
+   }
+
+   .kro-f1-choice {
+      grid-template-columns: 1fr !important;
+   }
+}
+
 @media (max-width: 768px) {
    .kro-hero-cases,
    .kro-f1-loh-types,
