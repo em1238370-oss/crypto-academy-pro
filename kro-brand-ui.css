@@ -1,62 +1,59 @@
 /* ==========================================================================
-   KRO Brand UI — уникальная визуальная тема Crypto Academy Pro
-   Палитра: индиго-ночь, золото (#c5a059), лаванда; шрифты Fraunces + Source Sans 3
+   KRO Brand UI — строгий технический стиль (антискам, без декора)
+   Палитра: графит, сталь, янтарный акцент; шрифты IBM Plex Sans + Mono
    ========================================================================== */
 
 /* --- Design tokens --- */
 .kro-main,
 .kro-step1,
 .kro-feature1 {
-   --kro-bg: #0c0a12;
-   --kro-bg-mid: #100e18;
-   --kro-bg-soft: #16131f;
-   --kro-accent: #c5a059;
-   --kro-accent-hover: #d4b06a;
-   --kro-glow: rgba(197, 160, 89, 0.14);
-   --kro-glow-soft: rgba(197, 160, 89, 0.07);
-   --kro-text: #f3efe6;
-   --kro-text-muted: rgba(243, 239, 230, 0.62);
-   --kro-violet: #8b7ec8;
-   --kro-violet-soft: rgba(139, 126, 200, 0.18);
-   --kro-violet-border: rgba(139, 126, 200, 0.38);
-   --kro-cyan: #9d8fd9;
-   --kro-cyan-soft: rgba(157, 143, 217, 0.12);
-   --kro-cyan-border: rgba(157, 143, 217, 0.32);
-   --kro-gray-mid: rgba(243, 239, 230, 0.55);
-   --kro-gray-soft: rgba(243, 239, 230, 0.78);
-   --kro-light-key: rgba(243, 239, 230, 0.04);
-   --kro-light-key-strong: rgba(243, 239, 230, 0.08);
-   --kro-rim-lavender: rgba(139, 126, 200, 0.22);
-   --kro-rim-cyan: rgba(197, 160, 89, 0.16);
-   --kro-glass-edge: rgba(243, 239, 230, 0.1);
-   --kro-card-bg: rgba(22, 19, 31, 0.72);
-   --kro-card-border: rgba(243, 239, 230, 0.1);
-   --kro-border-subtle: rgba(243, 239, 230, 0.07);
+   --kro-bg: #09090b;
+   --kro-bg-mid: #0c0e12;
+   --kro-bg-soft: #111318;
+   --kro-accent: #f59e0b;
+   --kro-accent-hover: #fbbf24;
+   --kro-glow: rgba(245, 158, 11, 0.1);
+   --kro-glow-soft: rgba(245, 158, 11, 0.05);
+   --kro-text: #e8eaed;
+   --kro-text-muted: rgba(232, 234, 237, 0.58);
+   --kro-violet: #64748b;
+   --kro-violet-soft: rgba(100, 116, 139, 0.14);
+   --kro-violet-border: rgba(100, 116, 139, 0.32);
+   --kro-cyan: #94a3b8;
+   --kro-cyan-soft: rgba(148, 163, 184, 0.1);
+   --kro-cyan-border: rgba(148, 163, 184, 0.28);
+   --kro-gray-mid: rgba(232, 234, 237, 0.55);
+   --kro-gray-soft: rgba(232, 234, 237, 0.78);
+   --kro-light-key: rgba(255, 255, 255, 0.03);
+   --kro-light-key-strong: rgba(255, 255, 255, 0.06);
+   --kro-rim-lavender: rgba(100, 116, 139, 0.18);
+   --kro-rim-cyan: rgba(245, 158, 11, 0.12);
+   --kro-glass-edge: rgba(255, 255, 255, 0.08);
+   --kro-card-bg: #111318;
+   --kro-card-border: rgba(255, 255, 255, 0.09);
+   --kro-border-subtle: rgba(255, 255, 255, 0.06);
    --kro-section-pad-y: clamp(4rem, 8vw, 6rem);
    --kro-container-max: 1180px;
-   --kro-font-heading: 'Fraunces', 'Georgia', 'Times New Roman', serif;
-   --kro-font-body: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   --kro-font-heading: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   --kro-font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
    --kro-font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Monaco, monospace;
-   --kro-radius-lg: 20px;
-   --kro-radius-md: 14px;
-   --kro-radius-sm: 10px;
+   --kro-radius-lg: 8px;
+   --kro-radius-md: 6px;
+   --kro-radius-sm: 4px;
 }
 
 .kro-feature1 {
-   --kro-accent-muted: #a8894a;
-   --kro-danger: #e07a7a;
-   --kro-protection: #6bc49a;
-   --kro-gold: #c5a059;
-   --kro-card-border-accent: rgba(197, 160, 89, 0.28);
+   --kro-accent-muted: #d97706;
+   --kro-danger: #ef4444;
+   --kro-protection: #22c55e;
+   --kro-gold: #f59e0b;
+   --kro-card-border-accent: rgba(245, 158, 11, 0.22);
 }
 
 /* --- Global base --- */
 body.kro-main {
    background-color: var(--kro-bg) !important;
-   background-image:
-      radial-gradient(ellipse 80% 55% at 12% -8%, rgba(139, 126, 200, 0.22), transparent 55%),
-      radial-gradient(ellipse 70% 50% at 92% 8%, rgba(197, 160, 89, 0.14), transparent 50%),
-      radial-gradient(ellipse 60% 40% at 50% 100%, rgba(22, 19, 31, 0.9), transparent 70%) !important;
+   background-image: none !important;
    color: var(--kro-text);
    font-family: var(--kro-font-body);
    -webkit-font-smoothing: antialiased;
@@ -65,13 +62,7 @@ body.kro-main {
 }
 
 body.kro-main::before {
-   display: block !important;
-   content: '';
-   position: fixed;
-   inset: 0;
-   z-index: 0;
-   pointer-events: none;
-   background: radial-gradient(ellipse at center, transparent 40%, rgba(8, 6, 14, 0.55) 100%);
+   display: none !important;
 }
 
 body.kro-main::after {
@@ -81,10 +72,10 @@ body.kro-main::after {
    inset: 0;
    z-index: 55;
    pointer-events: none;
-   opacity: 0.04 !important;
-   mix-blend-mode: soft-light;
-   background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.9'/></svg>");
-   background-size: 200px 200px;
+   opacity: 0.025 !important;
+   mix-blend-mode: overlay;
+   background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+   background-size: 120px 120px;
 }
 
 /* Hide crypto-decorative layers */
@@ -114,10 +105,10 @@ body.kro-main::-webkit-scrollbar-track {
 }
 body.kro-main::-webkit-scrollbar-thumb {
    background: #666;
-   border-radius: 999px;
+   border-radius: 4px;
 }
 body.kro-main::-webkit-scrollbar-thumb:hover {
-   background: #c5a059;
+   background: #f59e0b;
 }
 
 a:focus-visible,
@@ -147,23 +138,24 @@ button:focus-visible {
 
 body.kro-hero-scrolled .kro-floating-nav {
    transform: none;
-   background: rgba(12, 10, 18, 0.88);
-   backdrop-filter: blur(12px);
-   -webkit-backdrop-filter: blur(12px);
+   background: rgba(9, 9, 11, 0.94);
+   backdrop-filter: none;
+   -webkit-backdrop-filter: none;
    border-bottom-color: var(--kro-border-subtle);
    box-shadow: none;
 }
 
 .kro-floating-nav-brand {
    font-family: var(--kro-font-heading);
-   font-size: 15px;
-   font-weight: 600;
-   letter-spacing: -0.02em;
-   color: rgba(243, 239, 230, 0.94);
+   font-size: 14px;
+   font-weight: 700;
+   letter-spacing: 0.04em;
+   text-transform: uppercase;
+   color: rgba(232, 234, 237, 0.92);
 }
 
 .kro-floating-nav-icon {
-   background: #c5a059;
+   background: #f59e0b;
    border-radius: 6px;
    mask-size: 12px 12px;
    -webkit-mask-size: 12px 12px;
@@ -201,21 +193,23 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-floating-nav-cta {
-   padding: 10px 20px;
-   font-size: 13px;
-   font-weight: 600;
-   letter-spacing: -0.025em;
-   color: #0c0a12;
-   background: #c5a059;
-   border: none;
-   border-radius: 999px;
-   transition: background 0.2s ease, transform 0.2s ease;
+   padding: 9px 16px;
+   font-size: 12px;
+   font-weight: 700;
+   letter-spacing: 0.05em;
+   text-transform: uppercase;
+   color: #09090b;
+   background: #f59e0b;
+   border: 1px solid #f59e0b;
+   border-radius: 4px;
+   transition: background 0.15s ease;
 }
 
 .kro-floating-nav-cta:hover {
-   background: rgba(197, 160, 89, 0.9);
-   color: #0c0a12;
-   transform: translateY(-2px);
+   background: #fbbf24;
+   border-color: #fbbf24;
+   color: #09090b;
+   transform: none;
 }
 
 /* --- Hero --- */
@@ -230,9 +224,7 @@ body.kro-hero-scrolled .kro-floating-nav {
    content: '';
    position: absolute;
    inset: 0;
-   background:
-      radial-gradient(ellipse 55% 45% at 50% 0%, rgba(139, 126, 200, 0.18) 0%, transparent 62%),
-      radial-gradient(ellipse 40% 35% at 80% 70%, rgba(197, 160, 89, 0.1) 0%, transparent 55%);
+   background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 40%);
    pointer-events: none;
 }
 
@@ -308,54 +300,53 @@ body.kro-hero-scrolled .kro-step1 {
 }
 
 .kro-step1-role {
-   display: inline-flex;
-   align-items: center;
-   gap: 0.5rem;
-   font-size: 0.72rem;
-   font-weight: 600;
-   letter-spacing: 0.14em;
+   display: inline-block;
+   font-family: var(--kro-font-mono);
+   font-size: 0.68rem;
+   font-weight: 500;
+   letter-spacing: 0.16em;
    text-transform: uppercase;
-   color: var(--kro-accent);
-   margin-bottom: 1.5rem;
-   padding: 0.45rem 1rem;
-   border-radius: 999px;
-   border: 1px solid rgba(197, 160, 89, 0.35);
-   background: rgba(197, 160, 89, 0.08);
+   color: var(--kro-cyan);
+   margin-bottom: 1.25rem;
+   padding: 0;
+   border: none;
+   border-radius: 0;
+   background: transparent;
 }
 
 .kro-step1-title {
    font-family: var(--kro-font-heading);
-   font-size: clamp(2.15rem, 5.8vw, 3.5rem) !important;
-   font-weight: 600;
-   font-variation-settings: 'SOFT' 50, 'WONK' 0;
-   line-height: 1.06 !important;
-   letter-spacing: -0.03em;
-   color: #faf7f0;
+   font-size: clamp(2rem, 5.5vw, 3.25rem) !important;
+   font-weight: 700;
+   line-height: 1.08 !important;
+   letter-spacing: -0.02em;
+   color: #fff;
    text-shadow: none !important;
    animation: none !important;
-   margin-bottom: 0.85rem;
+   margin-bottom: 0.75rem;
    max-width: 100%;
+   text-transform: uppercase;
 }
 
 .kro-step1-title em {
-   font-style: italic;
+   font-style: normal;
    color: var(--kro-accent);
 }
 
 .kro-step1-subtitle {
-   font-size: clamp(1rem, 2vw, 1.2rem);
+   font-size: clamp(1rem, 2vw, 1.15rem);
    font-weight: 400;
-   line-height: 1.55;
-   color: rgba(255, 255, 255, 0.7);
+   line-height: 1.5;
+   color: rgba(232, 234, 237, 0.65);
    margin: 0 0 0.25rem;
    max-width: 36rem;
    margin-inline: auto;
 }
 
 .kro-step1-subtitle-em {
-   color: var(--kro-violet);
-   font-weight: 600;
-   font-style: italic;
+   color: #fff;
+   font-weight: 700;
+   font-style: normal;
 }
 
 .kro-hero-cases {
@@ -370,13 +361,13 @@ body.kro-hero-scrolled .kro-step1 {
 
 .kro-hero-case-card {
    position: relative;
-   padding: 14px 16px 14px 20px;
+   padding: 12px 14px;
    border-radius: var(--kro-radius-md);
    background: var(--kro-card-bg);
    border: 1px solid var(--kro-card-border);
-   box-shadow: 0 8px 28px rgba(8, 6, 14, 0.35);
+   box-shadow: none;
    text-align: left;
-   transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+   transition: border-color 0.15s ease;
    overflow: hidden;
 }
 
@@ -386,15 +377,15 @@ body.kro-hero-scrolled .kro-step1 {
    left: 0;
    top: 0;
    bottom: 0;
-   width: 3px;
-   background: linear-gradient(180deg, var(--kro-accent), var(--kro-violet));
-   border-radius: 3px 0 0 3px;
+   width: 2px;
+   background: var(--kro-accent);
+   border-radius: 0;
 }
 
 .kro-hero-case-card:hover {
-   border-color: rgba(197, 160, 89, 0.35);
-   transform: translateY(-2px);
-   box-shadow: 0 12px 32px rgba(8, 6, 14, 0.45);
+   border-color: rgba(245, 158, 11, 0.35);
+   transform: none;
+   box-shadow: none;
 }
 
 .kro-hero-case-channel {
@@ -419,27 +410,28 @@ body.kro-hero-scrolled .kro-step1 {
    align-items: center;
    justify-content: center;
    max-width: none;
-   padding: 1rem 2.5rem;
+   padding: 0.9rem 2rem;
    font-family: var(--kro-font-body);
-   font-size: 1rem;
+   font-size: 0.9rem;
    font-weight: 700;
-   letter-spacing: 0.02em;
-   text-transform: none;
-   color: #0c0a12;
-   background: linear-gradient(135deg, #d4b06a 0%, #c5a059 48%, #a8894a 100%);
-   border: 1px solid rgba(255, 255, 255, 0.12);
+   letter-spacing: 0.06em;
+   text-transform: uppercase;
+   color: #09090b;
+   background: var(--kro-accent);
+   border: 1px solid var(--kro-accent);
    border-radius: var(--kro-radius-sm);
-   box-shadow: 0 4px 24px rgba(197, 160, 89, 0.28);
+   box-shadow: none;
    animation: none !important;
-   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .kro-step1-cta:hover {
-   background: linear-gradient(135deg, #e0c07a 0%, #d4b06a 50%, #b89555 100%);
-   color: #0c0a12;
-   transform: translateY(-2px);
-   box-shadow: 0 8px 32px rgba(197, 160, 89, 0.38);
-   filter: brightness(1.03);
+   background: var(--kro-accent-hover);
+   border-color: var(--kro-accent-hover);
+   color: #09090b;
+   transform: none;
+   box-shadow: none;
+   filter: none;
 }
 
 .kro-step1-cta-note {
@@ -568,7 +560,7 @@ section[id^="feature"] {
 }
 
 .kro-f1-source-doc-link {
-   color: #c5a059;
+   color: #f59e0b;
    text-decoration: none;
    font-weight: 500;
 }
@@ -629,7 +621,7 @@ section[id^="feature"] {
 
 .kro-f1-loh-card {
    padding: 1.5rem 1.25rem;
-   border-radius: 16px;
+   border-radius: 6px;
    background: rgba(255, 255, 255, 0.04);
    border: 1px solid rgba(255, 255, 255, 0.1);
    box-shadow: none;
@@ -644,12 +636,12 @@ section[id^="feature"] {
 }
 
 .kro-f1-loh-card-popular {
-   border-color: rgba(197, 160, 89, 0.35);
+   border-color: rgba(245, 158, 11, 0.35);
 }
 
 .kro-f1-badge-on-card {
-   background: rgba(197, 160, 89, 0.15);
-   color: #c5a059;
+   background: rgba(245, 158, 11, 0.15);
+   color: #f59e0b;
    border: none;
    font-size: 0.7rem;
    letter-spacing: 0.06em;
@@ -672,7 +664,7 @@ section[id^="feature"] {
 .kro-f1-math-slider-wrap {
    margin-top: 2rem;
    padding: 1.5rem;
-   border-radius: 16px;
+   border-radius: 6px;
    background: rgba(255, 255, 255, 0.04);
    border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -698,7 +690,7 @@ section[id^="feature"] {
 }
 
 .kro-f1-choice-btn {
-   border-radius: 16px;
+   border-radius: 6px;
    padding: 1.25rem 1.5rem;
    border: 1px solid rgba(255, 255, 255, 0.1);
    background: rgba(255, 255, 255, 0.04);
@@ -712,8 +704,8 @@ section[id^="feature"] {
 }
 
 .kro-f1-choice-green {
-   border-color: rgba(197, 160, 89, 0.35);
-   background: rgba(197, 160, 89, 0.08);
+   border-color: rgba(245, 158, 11, 0.35);
+   background: rgba(245, 158, 11, 0.08);
 }
 
 .kro-f1-choice-main {
@@ -726,7 +718,7 @@ section[id^="feature"] {
 }
 
 .kro-f1-badge-top3 {
-   color: #8b7ec8;
+   color: #64748b;
    font-size: 0.75rem;
    font-weight: 600;
    letter-spacing: 0.28em;
@@ -735,7 +727,7 @@ section[id^="feature"] {
 
 .kro-top3-item {
    padding: 1rem 1.25rem;
-   border-radius: 12px;
+   border-radius: 4px;
    background: rgba(255, 255, 255, 0.04);
    border: 1px solid rgba(255, 255, 255, 0.08);
    box-shadow: none;
@@ -754,16 +746,16 @@ section[id^="feature"] {
    font-size: 1rem;
    font-weight: 600;
    letter-spacing: -0.025em;
-   color: #0c0a12;
-   background: #c5a059;
+   color: #09090b;
+   background: #f59e0b;
    border: none;
-   border-radius: 999px;
+   border-radius: 4px;
    cursor: pointer;
    transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .kro-f1-cta-btn:hover {
-   background: rgba(197, 160, 89, 0.9);
+   background: rgba(245, 158, 11, 0.9);
    transform: translateY(-2px);
 }
 
@@ -784,10 +776,9 @@ section[id^="feature"] {
 .kro-flow-simple {
    margin: 2rem 0;
    padding: 1.75rem;
-   border-radius: 24px;
+   border-radius: 8px;
    background: rgba(255, 255, 255, 0.04);
    border: 1px solid rgba(255, 255, 255, 0.1);
-   backdrop-filter: blur(8px);
 }
 
 .kro-flow-simple-title {
@@ -802,9 +793,9 @@ section[id^="feature"] {
 }
 
 .kro-flow-step-num {
-   background: rgba(197, 160, 89, 0.15);
-   color: #c5a059;
-   border: 1px solid rgba(197, 160, 89, 0.3);
+   background: rgba(245, 158, 11, 0.15);
+   color: #f59e0b;
+   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .kro-flow-step-label {
@@ -830,7 +821,7 @@ section[id^="feature"] {
    flex-direction: column;
    gap: 0.75rem;
    padding: 1.5rem 1.75rem;
-   border-radius: 24px;
+   border-radius: 8px;
    background: rgba(255, 255, 255, 0.04);
    border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -843,14 +834,14 @@ section[id^="feature"] {
    color: #fff;
    background: rgba(255, 255, 255, 0.07);
    border: 1px solid rgba(255, 255, 255, 0.15);
-   border-radius: 12px;
+   border-radius: 4px;
    outline: none;
    transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .kro-report-label input:focus,
 #kro-check-channel:focus {
-   border-color: rgba(197, 160, 89, 0.6);
+   border-color: rgba(245, 158, 11, 0.6);
    background: rgba(255, 255, 255, 0.1);
 }
 
@@ -867,10 +858,10 @@ section[id^="feature"] {
    font-size: 1.0625rem;
    font-weight: 600;
    letter-spacing: -0.01em;
-   color: #0c0a12;
-   background: #c5a059;
+   color: #09090b;
+   background: #f59e0b;
    border: none;
-   border-radius: 12px;
+   border-radius: 4px;
    cursor: pointer;
    transition: background 0.2s ease;
 }
@@ -878,7 +869,7 @@ section[id^="feature"] {
 .kro-report-submit:hover,
 #kro-check-btn:hover,
 #kro-check-screenshot-btn:hover {
-   background: rgba(197, 160, 89, 0.85);
+   background: rgba(245, 158, 11, 0.85);
    transform: none;
    box-shadow: none;
 }
@@ -897,7 +888,7 @@ section[id^="feature"] {
 .kro-check-user-explainer {
    margin-top: 1.5rem;
    padding: 1.25rem 1.5rem;
-   border-radius: 16px;
+   border-radius: 6px;
    background: rgba(255, 255, 255, 0.03);
    border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -915,13 +906,13 @@ section[id^="feature"] {
 }
 
 .kro-check-user-explainer-code {
-   color: #c5a059;
+   color: #f59e0b;
 }
 
 /* --- KRO result (main screen) --- */
 .kro-result-main-card {
    padding: 2rem;
-   border-radius: 24px;
+   border-radius: 8px;
    background: rgba(255, 255, 255, 0.04);
    border: 1px solid rgba(255, 255, 255, 0.1);
    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
@@ -936,7 +927,7 @@ section[id^="feature"] {
 
 .kro-result-reveal {
    padding: 1rem 1.125rem;
-   border-radius: 12px;
+   border-radius: 4px;
    background: rgba(255, 255, 255, 0.05);
    border: 1px solid rgba(255, 255, 255, 0.08);
    color: rgba(255, 255, 255, 0.75);
@@ -944,13 +935,13 @@ section[id^="feature"] {
 
 .kro-result-next-action {
    padding: 1.125rem 1.25rem;
-   border-radius: 16px;
-   background: rgba(197, 160, 89, 0.08);
-   border: 1px solid rgba(197, 160, 89, 0.25);
+   border-radius: 6px;
+   background: rgba(245, 158, 11, 0.08);
+   border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .kro-result-next-action-label {
-   color: #c5a059;
+   color: #f59e0b;
 }
 
 .kro-result-next-action-text {
@@ -964,9 +955,9 @@ section[id^="feature"] {
 }
 
 .kro-result-risk-badge--mid {
-   background: rgba(197, 160, 89, 0.12);
-   border-color: rgba(197, 160, 89, 0.3);
-   color: #c5a059;
+   background: rgba(245, 158, 11, 0.12);
+   border-color: rgba(245, 158, 11, 0.3);
+   color: #f59e0b;
 }
 
 .kro-result-risk-badge--low {
@@ -977,7 +968,7 @@ section[id^="feature"] {
 
 .kro-result-bullet {
    padding: 0.875rem 1rem;
-   border-radius: 12px;
+   border-radius: 4px;
    background: rgba(255, 255, 255, 0.04);
    border: 1px solid rgba(255, 255, 255, 0.08);
    box-shadow: none;
@@ -987,7 +978,7 @@ section[id^="feature"] {
 .kro-inline-report-card--document {
    background: rgba(255, 255, 255, 0.04);
    border: 1px solid rgba(255, 255, 255, 0.1);
-   border-radius: 20px;
+   border-radius: 8px;
    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
 }
 
@@ -997,28 +988,28 @@ section[id^="feature"] {
 }
 
 .kro-result-period-banner {
-   color: #c5a059;
-   border-bottom-color: rgba(197, 160, 89, 0.35);
+   color: #f59e0b;
+   border-bottom-color: rgba(245, 158, 11, 0.35);
 }
 
 .kro-result-minicard {
    background: rgba(255, 255, 255, 0.04);
    border: 1px solid rgba(255, 255, 255, 0.08);
-   border-radius: 16px;
+   border-radius: 6px;
    box-shadow: none;
 }
 
 .kro-result-minicard-icon {
-   background: rgba(197, 160, 89, 0.12);
-   border-color: rgba(197, 160, 89, 0.3);
-   color: #c5a059;
+   background: rgba(245, 158, 11, 0.12);
+   border-color: rgba(245, 158, 11, 0.3);
+   color: #f59e0b;
    box-shadow: none;
 }
 
 /* Details / findings / schemes */
 .kro-detail-card,
 .kro-inline-findings-wrap {
-   border-radius: 20px;
+   border-radius: 8px;
    background: rgba(255, 255, 255, 0.04);
    border: 1px solid rgba(255, 255, 255, 0.1);
    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
@@ -1035,12 +1026,12 @@ section[id^="feature"] {
    background: rgba(255, 255, 255, 0.06);
    border: 1px solid rgba(255, 255, 255, 0.12);
    color: rgba(255, 255, 255, 0.9);
-   border-radius: 12px;
+   border-radius: 4px;
 }
 
 .kro-finding-explain-btn:hover {
-   background: rgba(197, 160, 89, 0.12);
-   border-color: rgba(197, 160, 89, 0.35);
+   background: rgba(245, 158, 11, 0.12);
+   border-color: rgba(245, 158, 11, 0.35);
 }
 
 .kro-scheme-card {
@@ -1049,48 +1040,48 @@ section[id^="feature"] {
 }
 
 .kro-scheme-card--warn {
-   background: rgba(197, 160, 89, 0.06);
-   border-color: rgba(197, 160, 89, 0.2);
+   background: rgba(245, 158, 11, 0.06);
+   border-color: rgba(245, 158, 11, 0.2);
 }
 
 .kro-scheme-card--warn .kro-scheme-badge {
-   background: rgba(197, 160, 89, 0.15);
-   color: #c5a059;
+   background: rgba(245, 158, 11, 0.15);
+   color: #f59e0b;
 }
 
 /* Modal */
 .kro-inline-tg-modal-panel {
    padding: 1.75rem;
-   border-radius: 24px;
+   border-radius: 8px;
    background: var(--kro-bg-soft);
    border: 1px solid rgba(255, 255, 255, 0.1);
    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.55);
 }
 
 .kro-inline-tg-bubble-out {
-   background: rgba(139, 126, 200, 0.85);
+   background: rgba(100, 116, 139, 0.85);
    border: 1px solid rgba(255, 255, 255, 0.12);
    box-shadow: none;
 }
 
 .kro-inline-tg-modal-link {
-   background: rgba(197, 160, 89, 0.12);
-   border: 1px solid rgba(197, 160, 89, 0.35);
+   background: rgba(245, 158, 11, 0.12);
+   border: 1px solid rgba(245, 158, 11, 0.35);
    color: #fff;
-   border-radius: 12px;
+   border-radius: 4px;
 }
 
 .kro-inline-tg-modal-link:hover {
-   background: rgba(197, 160, 89, 0.2);
+   background: rgba(245, 158, 11, 0.2);
 }
 
 .kro-inline-tg-why-title {
-   color: #c5a059;
+   color: #f59e0b;
 }
 
 /* Progress */
 .kro-check-progress-inner {
-   border-radius: 20px;
+   border-radius: 8px;
    background: rgba(255, 255, 255, 0.04);
    border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -1134,8 +1125,8 @@ section[id^="feature"] {
 }
 
 .kro-main .news-footer.kro-footer .news-footer-cta {
-   color: #0c0a12;
-   background: #c5a059;
+   color: #09090b;
+   background: #f59e0b;
    border: none;
    font-weight: 600;
    letter-spacing: -0.025em;
@@ -1143,8 +1134,8 @@ section[id^="feature"] {
 }
 
 .kro-main .news-footer.kro-footer .news-footer-cta:hover {
-   background: rgba(197, 160, 89, 0.9);
-   color: #0c0a12;
+   background: rgba(245, 158, 11, 0.9);
+   color: #09090b;
    transform: translateY(-2px);
    box-shadow: none;
 }
@@ -1225,7 +1216,7 @@ body.kro-main {
 .kro-f1-shock-total {
    font-size: clamp(1.75rem, 4vw, 2.5rem) !important;
    font-weight: 700 !important;
-   color: #c5a059 !important;
+   color: #f59e0b !important;
    text-shadow: none !important;
 }
 
@@ -1261,7 +1252,7 @@ body.kro-main {
    background: rgba(255, 255, 255, 0.04) !important;
    border: 1px solid rgba(255, 255, 255, 0.1) !important;
    box-shadow: none !important;
-   border-radius: 20px !important;
+   border-radius: 8px !important;
 }
 
 .kro-f1-content-card {
@@ -1271,7 +1262,7 @@ body.kro-main {
    background: rgba(255, 255, 255, 0.04) !important;
    border: 1px solid rgba(255, 255, 255, 0.1) !important;
    box-shadow: none !important;
-   border-radius: 20px !important;
+   border-radius: 8px !important;
    transform: none !important;
 }
 
@@ -1294,7 +1285,7 @@ body.kro-main {
    padding: clamp(1.25rem, 3vw, 2rem) !important;
    background: rgba(255, 255, 255, 0.04) !important;
    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-   border-radius: 24px !important;
+   border-radius: 8px !important;
    box-shadow: none !important;
    transform: none !important;
    z-index: auto !important;
@@ -1379,7 +1370,7 @@ body.kro-main {
    background: rgba(255, 255, 255, 0.04) !important;
    border: 1px solid rgba(255, 255, 255, 0.1) !important;
    box-shadow: none !important;
-   border-radius: 24px !important;
+   border-radius: 8px !important;
    transform: none !important;
 }
 
@@ -1435,8 +1426,8 @@ body.kro-main {
 }
 
 .kro-feature1-check .kro-flow-step-num {
-   background: rgba(197, 160, 89, 0.2) !important;
-   color: #c5a059 !important;
+   background: rgba(245, 158, 11, 0.2) !important;
+   color: #f59e0b !important;
 }
 
 .kro-feature1-check .kro-flow-step-text {
@@ -1481,7 +1472,7 @@ body.kro-main {
    list-style: none;
    cursor: pointer;
    padding: 0.75rem 1rem;
-   border-radius: 12px;
+   border-radius: 4px;
    background: rgba(255, 255, 255, 0.04);
    border: 1px solid rgba(255, 255, 255, 0.08);
    font-size: 0.875rem;
@@ -1495,7 +1486,7 @@ body.kro-main {
 
 .kro-check-user-explainer[open] summary {
    margin-bottom: 0.75rem;
-   border-color: rgba(197, 160, 89, 0.25);
+   border-color: rgba(245, 158, 11, 0.25);
 }
 
 .kro-check-user-explainer-list {
@@ -1584,10 +1575,10 @@ body.kro-main .kro-floating-nav {
 }
 
 /* ==========================================================================
-   KRO Brand — формы, таблицы, кнопки, иерархия (уникальная импровизация)
+   KRO Brand — формы, таблицы, кнопки (строгий техно-стиль)
    ========================================================================== */
 
-/* Кнопки — золотой градиент, скругление «печать», не pill */
+/* Кнопки — плоский янтарь, без градиентов и теней */
 .kro-floating-nav-cta,
 .kro-f1-cta-btn,
 .kro-report-submit,
@@ -1595,18 +1586,19 @@ body.kro-main .kro-floating-nav {
 #kro-check-screenshot-btn {
    font-family: var(--kro-font-body) !important;
    font-weight: 700 !important;
-   letter-spacing: 0.02em !important;
-   color: #0c0a12 !important;
-   background: linear-gradient(135deg, #d4b06a 0%, #c5a059 50%, #a8894a 100%) !important;
-   border: 1px solid rgba(255, 255, 255, 0.14) !important;
+   font-size: 0.875rem !important;
+   letter-spacing: 0.05em !important;
+   text-transform: uppercase !important;
+   color: #09090b !important;
+   background: var(--kro-accent) !important;
+   border: 1px solid var(--kro-accent) !important;
    border-radius: var(--kro-radius-sm) !important;
-   box-shadow: 0 4px 20px rgba(197, 160, 89, 0.25) !important;
-   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease !important;
+   box-shadow: none !important;
+   transition: background 0.15s ease, border-color 0.15s ease !important;
 }
 
 .kro-floating-nav-cta {
-   border-radius: var(--kro-radius-sm) !important;
-   padding: 10px 18px !important;
+   padding: 9px 16px !important;
 }
 
 .kro-floating-nav-cta:hover,
@@ -1614,13 +1606,14 @@ body.kro-main .kro-floating-nav {
 .kro-report-submit:hover,
 #kro-check-btn:hover,
 #kro-check-screenshot-btn:hover {
-   background: linear-gradient(135deg, #e0c07a 0%, #d4b06a 55%, #b89555 100%) !important;
-   color: #0c0a12 !important;
-   transform: translateY(-2px) !important;
-   box-shadow: 0 8px 28px rgba(197, 160, 89, 0.35) !important;
+   background: var(--kro-accent-hover) !important;
+   border-color: var(--kro-accent-hover) !important;
+   color: #09090b !important;
+   transform: none !important;
+   box-shadow: none !important;
 }
 
-/* Заголовки секций — Fraunces, подчёркивание золотом */
+/* Заголовки — IBM Plex Sans, uppercase где уместно */
 .kro-f1-shock-heading,
 .kro-f1-loh-title,
 .kro-f1-math-title,
@@ -1629,9 +1622,9 @@ body.kro-main .kro-floating-nav {
 .kro-feature1-check-heading,
 .kro-result-hero-verdict {
    font-family: var(--kro-font-heading) !important;
-   font-weight: 600 !important;
-   font-variation-settings: 'SOFT' 40, 'WONK' 0;
-   color: #faf7f0 !important;
+   font-weight: 700 !important;
+   letter-spacing: -0.02em !important;
+   color: #fff !important;
 }
 
 .kro-feature1-hero-value,
@@ -1639,201 +1632,222 @@ body.kro-main .kro-floating-nav {
    font-family: var(--kro-font-mono) !important;
    font-weight: 500 !important;
    color: var(--kro-accent) !important;
-   letter-spacing: -0.03em !important;
+   letter-spacing: -0.02em !important;
 }
 
-/* Форма проверки — «досье» с лавандовой рамкой */
+/* Форма — плоская панель, стальная рамка */
 .kro-feature1-check,
 .kro-feature1-check-row {
-   backdrop-filter: blur(14px);
-   -webkit-backdrop-filter: blur(14px);
+   backdrop-filter: none;
+   -webkit-backdrop-filter: none;
 }
 
 .kro-feature1-check {
-   border-color: rgba(139, 126, 200, 0.22) !important;
-   box-shadow:
-      0 0 0 1px rgba(197, 160, 89, 0.08),
-      0 20px 50px rgba(8, 6, 14, 0.45) !important;
+   border-color: rgba(255, 255, 255, 0.1) !important;
+   box-shadow: none !important;
+   border-radius: var(--kro-radius-lg) !important;
 }
 
 .kro-feature1-check-row {
-   border-color: rgba(139, 126, 200, 0.18) !important;
-   background: rgba(16, 14, 24, 0.65) !important;
+   border-color: rgba(255, 255, 255, 0.08) !important;
+   background: var(--kro-bg-soft) !important;
+   border-radius: var(--kro-radius-md) !important;
 }
 
 .kro-report-label input,
 #kro-check-channel {
-   font-family: var(--kro-font-body) !important;
+   font-family: var(--kro-font-mono) !important;
    border-radius: var(--kro-radius-sm) !important;
-   background: rgba(8, 6, 14, 0.55) !important;
-   border: 1px solid rgba(243, 239, 230, 0.12) !important;
-   box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.25);
+   background: var(--kro-bg) !important;
+   border: 1px solid rgba(255, 255, 255, 0.12) !important;
+   box-shadow: none;
 }
 
 .kro-report-label input:focus,
 #kro-check-channel:focus {
-   border-color: rgba(197, 160, 89, 0.55) !important;
-   box-shadow:
-      inset 0 2px 8px rgba(0, 0, 0, 0.2),
-      0 0 0 3px rgba(197, 160, 89, 0.15) !important;
-   background: rgba(12, 10, 18, 0.75) !important;
+   border-color: var(--kro-accent) !important;
+   box-shadow: none !important;
+   background: var(--kro-bg) !important;
+   outline: none;
 }
 
 .kro-feature1-check .kro-flow-step-num {
    font-family: var(--kro-font-mono) !important;
-   font-size: 0.75rem !important;
-   font-weight: 500 !important;
-   background: rgba(197, 160, 89, 0.15) !important;
+   font-size: 0.7rem !important;
+   font-weight: 600 !important;
+   background: rgba(245, 158, 11, 0.12) !important;
    color: var(--kro-accent) !important;
-   border: 1px solid rgba(197, 160, 89, 0.35) !important;
-   border-radius: 6px !important;
+   border: 1px solid rgba(245, 158, 11, 0.3) !important;
+   border-radius: var(--kro-radius-sm) !important;
 }
 
-/* Таблицы находок — карточка с золотой шапкой */
+/* Таблицы — терминальный вид */
 .kro-inline-findings-table-scroll,
 .kro-detail-signals-table-wrap {
    border-radius: var(--kro-radius-md);
-   border: 1px solid rgba(139, 126, 200, 0.2);
-   background: rgba(12, 10, 18, 0.6);
+   border: 1px solid rgba(255, 255, 255, 0.1);
+   background: var(--kro-bg);
    overflow: hidden;
 }
 
 .kro-inline-findings-table thead th,
 .kro-detail-signals-table th {
-   font-family: var(--kro-font-body) !important;
-   font-size: 0.68rem !important;
-   letter-spacing: 0.1em !important;
-   color: var(--kro-accent) !important;
-   background: linear-gradient(180deg, rgba(197, 160, 89, 0.12) 0%, rgba(139, 126, 200, 0.06) 100%);
-   border-bottom: 2px solid rgba(197, 160, 89, 0.35) !important;
-   padding: 12px 14px !important;
+   font-family: var(--kro-font-mono) !important;
+   font-size: 0.65rem !important;
+   letter-spacing: 0.12em !important;
+   color: var(--kro-cyan) !important;
+   background: rgba(255, 255, 255, 0.03);
+   border-bottom: 1px solid rgba(245, 158, 11, 0.35) !important;
+   padding: 10px 12px !important;
 }
 
 .kro-inline-findings-table tbody td,
 .kro-detail-signals-table td {
    font-family: var(--kro-font-body) !important;
-   padding: 12px 14px !important;
-   border-bottom: 1px solid rgba(243, 239, 230, 0.05) !important;
-   color: rgba(243, 239, 230, 0.88) !important;
+   padding: 10px 12px !important;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+   color: rgba(232, 234, 237, 0.9) !important;
 }
 
 .kro-inline-findings-table tbody tr:nth-child(even) td,
 .kro-detail-signals-table tbody tr:nth-child(even) td {
-   background: rgba(139, 126, 200, 0.04);
+   background: rgba(255, 255, 255, 0.02);
 }
 
 .kro-inline-findings-table tbody tr:hover td,
 .kro-detail-signals-table tbody tr:hover td {
-   background: rgba(197, 160, 89, 0.06);
+   background: rgba(245, 158, 11, 0.04);
 }
 
 .kro-finding-chip--high {
-   background: rgba(224, 122, 122, 0.14) !important;
-   border-color: rgba(224, 122, 122, 0.35) !important;
+   background: rgba(239, 68, 68, 0.14) !important;
+   border-color: rgba(239, 68, 68, 0.35) !important;
 }
 
 .kro-finding-chip--med {
-   background: rgba(197, 160, 89, 0.14) !important;
-   border-color: rgba(197, 160, 89, 0.35) !important;
-   color: #f5e6c8 !important;
+   background: rgba(245, 158, 11, 0.12) !important;
+   border-color: rgba(245, 158, 11, 0.32) !important;
+   color: #fde68a !important;
 }
 
 .kro-finding-chip--info {
-   background: rgba(139, 126, 200, 0.14) !important;
-   border-color: rgba(139, 126, 200, 0.35) !important;
+   background: rgba(100, 116, 139, 0.14) !important;
+   border-color: rgba(100, 116, 139, 0.32) !important;
+   color: #cbd5e1 !important;
 }
 
-/* Карточки результатов — лавандовое свечение */
+/* Карточки результатов — без blur и свечения */
 .kro-result-main-card,
 .kro-result-card,
 .kro-inline-report-card--document,
 .kro-detail-card,
 .kro-inline-findings-wrap {
-   backdrop-filter: blur(12px);
-   -webkit-backdrop-filter: blur(12px);
-   border-color: rgba(139, 126, 200, 0.18) !important;
-   box-shadow:
-      0 0 0 1px rgba(197, 160, 89, 0.06),
-      0 24px 60px rgba(8, 6, 14, 0.5) !important;
+   backdrop-filter: none;
+   -webkit-backdrop-filter: none;
+   border-color: rgba(255, 255, 255, 0.1) !important;
+   box-shadow: none !important;
+   border-radius: var(--kro-radius-lg) !important;
 }
 
 .kro-result-next-action {
-   background: rgba(139, 126, 200, 0.1) !important;
-   border-color: rgba(139, 126, 200, 0.28) !important;
+   background: rgba(245, 158, 11, 0.08) !important;
+   border-color: rgba(245, 158, 11, 0.25) !important;
+   border-radius: var(--kro-radius-md) !important;
 }
 
 .kro-result-next-action-label {
-   color: var(--kro-violet) !important;
-   font-weight: 700;
-   letter-spacing: 0.04em;
+   color: var(--kro-accent) !important;
+   font-family: var(--kro-font-mono) !important;
+   font-weight: 600;
+   letter-spacing: 0.1em;
    text-transform: uppercase;
-   font-size: 0.72rem;
+   font-size: 0.68rem;
 }
 
 .kro-result-period-banner {
    color: var(--kro-accent) !important;
-   border-bottom-color: rgba(197, 160, 89, 0.4) !important;
-   font-family: var(--kro-font-heading);
+   border-bottom-color: rgba(245, 158, 11, 0.35) !important;
+   font-family: var(--kro-font-mono);
 }
 
 .kro-result-risk-badge--mid {
-   background: rgba(197, 160, 89, 0.12) !important;
-   border-color: rgba(197, 160, 89, 0.32) !important;
-   color: #f5e6c8 !important;
+   background: rgba(245, 158, 11, 0.1) !important;
+   border-color: rgba(245, 158, 11, 0.28) !important;
+   color: #fde68a !important;
 }
 
 /* Дашборд и контент-карточки */
 .kro-feature1-dashboard,
 .kro-f1-content-card,
 .kro-feature1-report {
-   backdrop-filter: blur(10px);
-   -webkit-backdrop-filter: blur(10px);
-   border-color: rgba(139, 126, 200, 0.16) !important;
-   box-shadow: 0 16px 40px rgba(8, 6, 14, 0.35) !important;
+   backdrop-filter: none;
+   -webkit-backdrop-filter: none;
+   border-color: rgba(255, 255, 255, 0.09) !important;
+   box-shadow: none !important;
+   border-radius: var(--kro-radius-lg) !important;
 }
 
 .kro-f1-loh-card-popular {
-   border-color: rgba(197, 160, 89, 0.45) !important;
-   box-shadow: 0 0 24px rgba(197, 160, 89, 0.12) !important;
+   border-color: rgba(245, 158, 11, 0.4) !important;
+   box-shadow: none !important;
 }
 
 .kro-f1-badge-top3 {
-   color: var(--kro-violet) !important;
+   color: var(--kro-cyan) !important;
    font-family: var(--kro-font-mono) !important;
-   letter-spacing: 0.2em !important;
+   letter-spacing: 0.22em !important;
 }
 
 /* Футер */
 .kro-main .news-footer.kro-footer .news-footer-text {
    font-family: var(--kro-font-heading) !important;
-   font-weight: 600 !important;
-   color: #faf7f0 !important;
+   font-weight: 700 !important;
+   color: #fff !important;
+   letter-spacing: -0.02em;
 }
 
 .kro-main .news-footer.kro-footer .news-footer-cta {
    border-radius: var(--kro-radius-sm) !important;
+   text-transform: uppercase;
+   letter-spacing: 0.05em;
 }
 
-/* Ссылки — золото, не cyan */
+/* Ссылки */
 .kro-f1-source-doc-link,
-.kro-check-user-explainer-code,
-.kro-finding-explain-btn:hover {
+.kro-check-user-explainer-code {
    color: var(--kro-accent) !important;
 }
 
 .kro-finding-explain-btn {
    border-radius: var(--kro-radius-sm) !important;
    font-weight: 600 !important;
+   font-size: 0.8rem !important;
+   text-transform: uppercase;
+   letter-spacing: 0.04em;
 }
 
 .kro-finding-explain-btn:hover {
-   background: rgba(197, 160, 89, 0.1) !important;
-   border-color: rgba(197, 160, 89, 0.35) !important;
+   background: rgba(245, 158, 11, 0.08) !important;
+   border-color: rgba(245, 158, 11, 0.3) !important;
+   color: var(--kro-accent) !important;
 }
 
-/* Иконка бренда в навбаре */
+/* Иконка бренда */
 .kro-floating-nav-icon {
-   background: linear-gradient(135deg, #d4b06a, #c5a059) !important;
-   border-radius: 8px !important;
+   background: var(--kro-accent) !important;
+   border-radius: var(--kro-radius-sm) !important;
 }
+
+/* Плавные скругления → острые углы по всей теме */
+.kro-flow-simple,
+.kro-feature1-check-row,
+.kro-f1-loh-card,
+.kro-f1-math-slider-wrap,
+.kro-f1-choice-btn,
+.kro-top3-item,
+.kro-result-main-card,
+.kro-inline-tg-modal-panel {
+   border-radius: var(--kro-radius-md) !important;
+}
+
 
