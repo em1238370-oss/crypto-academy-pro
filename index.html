@@ -19,7 +19,7 @@
    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260612-kro-modal-purple">
+   <link rel="stylesheet" href="styles.css?v=20260612-kro-strategy-ui">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -371,20 +371,21 @@
                    <div class="kro-inline-report hidden" id="kro-inline-report" aria-live="polite" hidden>
                        <div class="kro-result-card kro-inline-report-card kro-inline-report-card--document">
                            <div class="kro-result-main-card" id="kro-result-main-card" aria-live="assertive">
+                               <div class="kro-result-topline">
+                                   <span class="kro-result-risk-badge" id="kro-result-risk-badge"></span>
+                                   <span class="kro-result-channel" id="kro-result-channel"></span>
+                               </div>
                                <p class="kro-result-hero-verdict" id="kro-result-hero-verdict"></p>
                                <p class="kro-result-reveal" id="kro-result-reveal" hidden></p>
                                <div class="kro-result-next-action" id="kro-result-next-action-wrap" hidden>
                                    <span class="kro-result-next-action-label">Что делать</span>
                                    <p class="kro-result-next-action-text" id="kro-result-next-action"></p>
                                </div>
-                               <div class="kro-result-header">
+                               <div class="kro-result-meta">
                                    <span class="kro-result-score" id="kro-result-score"></span>
-                                   <span class="kro-result-channel" id="kro-result-channel"></span>
-                                   <span class="kro-result-risk-badge" id="kro-result-risk-badge"></span>
+                                   <span class="kro-result-meta-caption">оценка по тексту ленты</span>
                                </div>
-                               <hr class="kro-result-sep" aria-hidden="true">
                                <ul class="kro-result-bullets" id="kro-result-bullets"></ul>
-                               <hr class="kro-result-sep" aria-hidden="true">
                                <div class="kro-result-person" id="kro-result-person-block">
                                    <h3 class="kro-result-person-h">Кто за каналом</h3>
                                    <div class="kro-result-person-anon" id="kro-result-person-anon" hidden>Автор скрывает личность. Ни имени, ни соцсетей, ни следа в интернете. Если продукт ценный — зачем прятаться?</div>
