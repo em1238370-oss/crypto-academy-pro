@@ -1884,16 +1884,8 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-f1-math-slider-wrap::after {
-   content: '';
-   position: absolute;
-   left: 14%;
-   right: 14%;
-   top: 12px;
-   height: 2px;
-   border-radius: 999px;
-   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), rgba(240, 188, 60, 0.35), transparent);
-   opacity: 0.45;
-   pointer-events: none;
+   display: none;
+   content: none;
 }
 
 .kro-f1-math-slider-wrap::before {
