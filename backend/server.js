@@ -4161,17 +4161,38 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
   };
   if (_kro_watch_baked) out._kro_watch_baked = true;
 
-  // ---- AI upgrade: t.me/s + Mistral → v:0 → v:1 ----
+  // ---- AI upgrade: жалобы из интернета + t.me/s + Mistral → v:0 → v:1 ----
   if (channelKey) {
     try {
       const aiDeadline = Date.now() + 22000;
-      const pb = await kroBuildPersonBehindFromPublicSnapshot(
-        displayCh,
-        `https://t.me/s/${channelKey}`,
-        aiDeadline,
-        `fast-${channelKey}`,
-        [],
-      );
+      // Запускаем поиск жалоб и AI анализ ПАРАЛЛЕЛЬНО — экономим время
+      const [complaintsSettled, pbSettled] = await Promise.allSettled([
+        kroFetchChannelComplaintsFromWeb(channelKey),
+        kroBuildPersonBehindFromPublicSnapshot(
+          displayCh,
+          `https://t.me/s/${channelKey}`,
+          aiDeadline,
+          `fast-${channelKey}`,
+          [],
+        ),
+      ]);
+
+      const complaints = complaintsSettled.status === 'fulfilled' ? (complaintsSettled.value || []) : [];
+      const pb = pbSettled.status === 'fulfilled' ? pbSettled.value : null;
+
+      // --- Жалобы из интернета ---
+      if (complaints.length > 0) {
+        out.web_complaints = complaints;
+        // Добавляем в external_reports текстовые выжимки
+        const webLines = complaints.slice(0, 3).map((c) => {
+          const src = c.link ? ` (${c.link.replace(/^https?:\/\//, '').split('/')[0]})` : '';
+          return `Интернет${src}: ${String(c.snippet || c.title || '').slice(0, 200)}`;
+        });
+        out.external_reports = [...webLines, ...out.external_reports].slice(0, 5);
+        out.sources = [...(out.sources || []), 'веб-поиск жалоб'];
+        console.log(`[KRO fast-ai ${channelKey}] complaints_found=${complaints.length}`);
+      }
+
       if (pb && (pb.verdict || pb.who)) {
         // basic_info: кто за каналом
         const pbInfo = [];
@@ -5323,6 +5344,44 @@ async function kroUnifiedWebSearch(query) {
     return await kroSerperWebSearch(query);
   }
   return [];
+}
+
+/**
+ * Целевой поиск жалоб на канал в интернете.
+ * Ищет скам/мошенник/жалобы по трём запросам на mmgp.ru, pikabu, общий поиск.
+ * Работает для ЛЮБОГО канала. Возвращает до 6 дедуплицированных сниппетов.
+ */
+async function kroFetchChannelComplaintsFromWeb(channelKey) {
+  const hasAnySearch =
+    process.env.TAVILY_API_KEY || process.env.GOOGLE_CSE_KEY || process.env.SERPER_API_KEY;
+  if (!hasAnySearch || !channelKey) return [];
+  const slug = String(channelKey).trim().replace(/^@/, '').replace(/^t\.me\//i, '');
+  if (!slug) return [];
+
+  const queries = [
+    `"@${slug}" скам мошенник жалоба развод потерял деньги`,
+    `"${slug}" отзывы мошенник криптовалюта telegram`,
+    `${slug} site:mmgp.ru`,
+  ];
+
+  const seen = new Set();
+  const allResults = [];
+  for (const q of queries) {
+    if (allResults.length >= 6) break;
+    try {
+      const r = await kroUnifiedWebSearch(q);
+      for (const item of r) {
+        const key = (item.link || item.title || '').trim();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        allResults.push(item);
+        if (allResults.length >= 6) break;
+      }
+    } catch {
+      // не блокируем — продолжаем со следующим запросом
+    }
+  }
+  return allResults;
 }
 
 /** Два поисковых запроса для блока «Кто за каналом»; без ключа — пустая строка. */
