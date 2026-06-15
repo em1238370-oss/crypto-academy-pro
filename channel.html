@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260615-ch-web-complaints">
+  <link rel="stylesheet" href="/monitor.css?v=20260615-ch-verdict-unified">
 </head>
 <body class="mon-page ch-page">
 
@@ -67,14 +67,26 @@
     </div>
   </div>
   <article id="ch-content" class="ch-card" hidden>
-    <div id="ch-live-banner" class="ch-live-banner" hidden></div>
-    <div id="ch-verdict-hero" class="ch-verdict-hero" hidden aria-live="polite">
-      <div class="ch-verdict-hero-inner">
-        <span class="ch-verdict-hero-icon" id="ch-verdict-hero-icon" aria-hidden="true"></span>
-        <span class="ch-verdict-hero-label" id="ch-verdict-hero-label"></span>
+
+    <section id="ch-at-a-glance" class="ch-at-a-glance" aria-label="Итог проверки">
+      <div id="ch-verdict-hero" class="ch-verdict-hero" hidden aria-live="polite">
+        <div class="ch-verdict-hero-inner">
+          <span class="ch-verdict-hero-icon" id="ch-verdict-hero-icon" aria-hidden="true"></span>
+          <span class="ch-verdict-hero-label" id="ch-verdict-hero-label"></span>
+        </div>
+        <p class="ch-verdict-hero-counter" id="ch-verdict-hero-counter" hidden></p>
       </div>
-      <p class="ch-verdict-hero-counter" id="ch-verdict-hero-counter" hidden></p>
-    </div>
+      <p class="ch-verdict-summary" id="ch-verdict-summary" hidden></p>
+      <div class="ch-next-action" id="ch-next-action" hidden>
+        <span class="ch-next-action-label">Что делать</span>
+        <p class="ch-next-action-text" id="ch-next-action-text"></p>
+      </div>
+    </section>
+
+    <div class="ch-fold-divider" aria-hidden="true"><span>Подробности проверки</span></div>
+
+    <div id="ch-details-below" class="ch-details-below">
+    <div id="ch-live-banner" class="ch-live-banner" hidden></div>
     <p class="ch-eyebrow" id="ch-eyebrow">Проверка Telegram‑канала</p>
     <h1 class="ch-title" id="ch-heading">—</h1>
     <p class="ch-meta" id="ch-subhead" hidden></p>
@@ -88,6 +100,12 @@
     <section class="ch-block ch-block--sources" id="ch-sources-section" aria-labelledby="ch-sources-h" hidden>
       <h2 id="ch-sources-h" class="ch-h2">Как мы анализируем</h2>
       <div id="ch-sources-badges" class="ch-sources-badges"></div>
+    </section>
+
+    <section class="ch-block" id="ch-web-evidence-section" aria-labelledby="ch-web-evidence-h" hidden>
+      <h2 id="ch-web-evidence-h" class="ch-h2">Что нашли в интернете об авторе</h2>
+      <p class="ch-web-evidence-disclaimer">Результаты интернет-поиска по названию канала — могут включать общие статьи</p>
+      <div id="ch-web-evidence-list" class="ch-web-evidence-list"></div>
     </section>
 
     <section class="ch-block" aria-labelledby="ch-s1-h">
@@ -191,6 +209,7 @@
       <button type="button" class="ch-false-positive-btn" id="ch-fp-btn">Этот канал честный — сообщить об ошибке</button>
       <p class="ch-fp-msg" id="ch-fp-msg" hidden></p>
     </section>
+    </div>
   </article>
 </main>
 
@@ -266,6 +285,143 @@
     if (!t) return '';
     if (t.length <= max) return t;
     return t.slice(0, Math.max(1, max - 1)).trim() + '…';
+  }
+
+  function conclusionStatusTier(status) {
+    var v = String(status || '').toLowerCase();
+    if (v.includes('подтвержд') && v.includes('скам')) return 'high';
+    if (v.includes('в риске') || (v.includes('риск') && !v.includes('наблю'))) return 'high';
+    if (v.includes('без нарушений') || v.includes('без риска')) return 'low';
+    return 'watch';
+  }
+
+  function lineLooksLikeNumericRisk(line) {
+    var s = String(line || '');
+    if (/индекс риска/i.test(s)) return true;
+    if (/🟢|🟡|🔴/.test(s) && /риск/i.test(s)) return true;
+    if (/риск:\s*\d+\s*\/\s*10/i.test(s)) return true;
+    if (/оценка.*\d+\s*из\s*10/i.test(s)) return true;
+    if (/сводка по ленте:\s*\d+\s*из\s*100/i.test(s)) return true;
+    if (/сводный балл.*\d+\s*из\s*100/i.test(s)) return true;
+    if (/оценка риска:\s*\d+/i.test(s)) return true;
+    if (/в старой сводке указан риск:\s*\d+/i.test(s)) return true;
+    return false;
+  }
+
+  function extractRiskScore100(line) {
+    var s = String(line || '');
+    var m10 = s.match(/(\d+)\s*\/\s*10/);
+    if (m10) return Number(m10[1]) * 10;
+    var m100 = s.match(/(\d+)\s*из\s*100/);
+    if (m100) return Number(m100[1]);
+    var mIdx = s.match(/индекс риска:\s*(\d+)/i);
+    if (mIdx) return Number(mIdx[1]);
+    return null;
+  }
+
+  function scoreContradictsStatus(score100, tier) {
+    if (score100 == null || !Number.isFinite(score100)) return false;
+    if (tier === 'high') return score100 < 45;
+    if (tier === 'low') return score100 >= 45;
+    return false;
+  }
+
+  function filterContradictoryLines(lines, status) {
+    var tier = conclusionStatusTier(status);
+    return (lines || []).filter(function (line) {
+      if (!lineLooksLikeNumericRisk(line)) return true;
+      return !scoreContradictsStatus(extractRiskScore100(line), tier);
+    });
+  }
+
+  function parseConclusionParts(c) {
+    c = c || {};
+    var reasons = (c.reasons || []).map(function (x) {
+      return String(x == null ? '' : x).trim();
+    }).filter(Boolean);
+    var verdict = '';
+    var nextAction = '';
+    var detailReasons = [];
+    for (var i = 0; i < reasons.length; i++) {
+      var r = reasons[i];
+      if (/^рекомендация:/i.test(r)) {
+        nextAction = r.replace(/^рекомендация:\s*/i, '').trim();
+      } else if (!verdict) {
+        verdict = r;
+      } else {
+        detailReasons.push(r);
+      }
+    }
+    return { verdict: verdict, nextAction: nextAction, detailReasons: detailReasons };
+  }
+
+  function defaultNextAction(status) {
+    var tier = conclusionStatusTier(status);
+    if (tier === 'high') {
+      return 'Не переводите деньги и не оплачивайте VIP без независимой проверки. Не копируйте сделки без своих стопов.';
+    }
+    if (tier === 'low') {
+      return 'Держите свои правила риска — даже «спокойный» канал не гарантия безопасности.';
+    }
+    return 'Не спешите с оплатой — при сомнениях запустите глубокий анализ ленты или подождите больше данных.';
+  }
+
+  function applyAtAGlance(a) {
+    var c = (a && a.conclusion) || {};
+    applyVerdictHero(c, a && a.web_complaints);
+    var parts = parseConclusionParts(c);
+    var sumEl = document.getElementById('ch-verdict-summary');
+    if (sumEl) {
+      if (parts.verdict) {
+        sumEl.hidden = false;
+        sumEl.textContent = parts.verdict;
+      } else {
+        sumEl.hidden = true;
+        sumEl.textContent = '';
+      }
+    }
+    var actWrap = document.getElementById('ch-next-action');
+    var actText = document.getElementById('ch-next-action-text');
+    var action = parts.nextAction || defaultNextAction(c.status);
+    if (actWrap && actText) {
+      if (action) {
+        actWrap.hidden = false;
+        actText.textContent = action;
+      } else {
+        actWrap.hidden = true;
+        actText.textContent = '';
+      }
+    }
+  }
+
+  function renderWebEvidenceSection(a) {
+    var sec = document.getElementById('ch-web-evidence-section');
+    var box = document.getElementById('ch-web-evidence-list');
+    if (!sec || !box) return;
+    var items = (a && Array.isArray(a._web_evidence) ? a._web_evidence : []).filter(function (x) {
+      return x && (x.snippet || x.source);
+    });
+    if (!items.length) {
+      sec.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    sec.hidden = false;
+    box.innerHTML = '<ul class="ch-web-evidence-items">' + items.map(function (item) {
+      var snippet = truncateText(item.snippet || '', 200);
+      var source = String(item.source || '').trim();
+      var isUrl = /^https?:\/\//i.test(source);
+      var sourceHtml = isUrl
+        ? '<a class="ch-web-evidence-link" href="' + esc(source) + '" target="_blank" rel="noopener noreferrer">' +
+          esc(truncateText(source.replace(/^https?:\/\/(www\.)?/, ''), 48)) + externalIcon() + '</a>'
+        : '<span class="ch-web-evidence-src">' + esc(source) + '</span>';
+      return (
+        '<li class="ch-web-evidence-card">' +
+        (snippet ? '<p class="ch-web-evidence-snippet">' + esc(snippet) + '</p>' : '') +
+        (source ? '<p class="ch-web-evidence-meta">' + sourceHtml + '</p>' : '') +
+        '</li>'
+      );
+    }).join('') + '</ul>';
   }
 
   function verdictHeroMeta(status) {
@@ -399,38 +555,40 @@
     );
   }
 
-  function renderExternalReportsSection(a) {
+  function renderExternalReportsSection(a, status) {
     a = a || {};
-    return renderBulletList(a.external_reports) + renderWebComplaints(a.web_complaints);
+    var st = status || (a.conclusion && a.conclusion.status) || '';
+    return renderBulletList(filterContradictoryLines(a.external_reports, st)) + renderWebComplaints(a.web_complaints);
   }
 
   function applyAnalysisToMainSections(a) {
     if (!a || typeof a !== 'object') return;
-    document.getElementById('ch-s1').innerHTML = renderBulletList(a.basic_info);
-    document.getElementById('ch-s2').innerHTML = renderBulletList(a.content_behavior);
-    document.getElementById('ch-s3').innerHTML = renderExternalReportsSection(a);
-    document.getElementById('ch-s4').innerHTML = renderBulletList(a.ties_risk_factors);
     var c = a.conclusion || {};
-    applyVerdictHero(c, a.web_complaints);
-    document.getElementById('ch-conclusion-reasons').innerHTML = renderBulletList(c.reasons || []);
+    var status = c.status || '';
+    window.__chLastConclusionStatus = status;
+    applyAtAGlance(a);
+    document.getElementById('ch-s1').innerHTML = renderBulletList(filterContradictoryLines(a.basic_info, status));
+    document.getElementById('ch-s2').innerHTML = renderBulletList(filterContradictoryLines(a.content_behavior, status));
+    document.getElementById('ch-s3').innerHTML = renderExternalReportsSection(a, status);
+    document.getElementById('ch-s4').innerHTML = renderBulletList(filterContradictoryLines(a.ties_risk_factors, status));
+    var parts = parseConclusionParts(c);
+    document.getElementById('ch-conclusion-reasons').innerHTML = renderBulletList(parts.detailReasons);
+    renderWebEvidenceSection(a);
     renderSourceBadges(a.sources);
   }
 
   function renderDeepAnalysisBlock(a) {
     if (!a || typeof a !== 'object') return '';
     var c = a.conclusion || {};
-    var reasons = (c.reasons || []).map(function (r) { return String(r == null ? '' : r).trim(); }).filter(Boolean);
-    var s5lines = [];
-    if (c.status && String(c.status).trim() && String(c.status).trim() !== '—') {
-      s5lines.push('Итоговый статус (глубокий): ' + c.status);
-    }
-    s5lines = s5lines.concat(reasons.slice(0, 8));
+    var status = c.status || '';
+    var parts = parseConclusionParts(c);
+    var s5lines = parts.detailReasons.slice(0, 8);
     return (
       '<h3 class="ch-deep-results-title">Результат глубокого анализа ленты (Telegram)</h3>' +
-      '<div class="ch-deep-subsec"><h3 class="ch-h3">Базовая информация</h3><div class="ch-body">' + renderBulletList(a.basic_info) + '</div></div>' +
-      '<div class="ch-deep-subsec"><h3 class="ch-h3">Контент и поведение</h3><div class="ch-body">' + renderBulletList(a.content_behavior) + '</div></div>' +
-      '<div class="ch-deep-subsec"><h3 class="ch-h3">Жалобы и база</h3><div class="ch-body">' + renderExternalReportsSection(a) + '</div></div>' +
-      '<div class="ch-deep-subsec"><h3 class="ch-h3">Связи и риск‑факторы</h3><div class="ch-body">' + renderBulletList(a.ties_risk_factors) + '</div></div>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Базовая информация</h3><div class="ch-body">' + renderBulletList(filterContradictoryLines(a.basic_info, status)) + '</div></div>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Контент и поведение</h3><div class="ch-body">' + renderBulletList(filterContradictoryLines(a.content_behavior, status)) + '</div></div>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Жалобы и база</h3><div class="ch-body">' + renderExternalReportsSection(a, status) + '</div></div>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Связи и риск‑факторы</h3><div class="ch-body">' + renderBulletList(filterContradictoryLines(a.ties_risk_factors, status)) + '</div></div>' +
       '<div class="ch-deep-subsec"><h3 class="ch-h3">Итоговый вывод</h3><div class="ch-body">' + renderBulletList(s5lines) + '</div></div>'
     );
   }
@@ -748,9 +906,17 @@
     var ri = document.getElementById('ch-risk-index');
     var rim = data.risk_index_max != null ? Number(data.risk_index_max) : 100;
     var riv = data.risk_index != null && data.risk_index !== '' ? Number(data.risk_index) : null;
-    ri.textContent = riv != null && !isNaN(riv)
-      ? ('Индекс риска: ' + riv + '/' + rim)
-      : 'Индекс риска: —';
+    var conclusionStatus = window.__chLastConclusionStatus || '';
+    var hideRiskIdx = riv != null && !isNaN(riv) && scoreContradictsStatus(riv, conclusionStatusTier(conclusionStatus));
+    if (hideRiskIdx) {
+      ri.hidden = true;
+      ri.textContent = '';
+    } else {
+      ri.hidden = false;
+      ri.textContent = riv != null && !isNaN(riv)
+        ? ('Индекс риска: ' + riv + '/' + rim)
+        : 'Индекс риска: —';
+    }
 
     document.getElementById('ch-risk').innerHTML = renderRisk(r);
 
@@ -794,18 +960,11 @@
               return res2.json();
             }).then(function (data2) {
               var r2 = data2.profile;
-              if (r2 && r2.username) {
-                st.textContent = r2.status || '—';
-                st.className = 'mon-status ' + statusClass(r2.status);
-                var riv2 = data2.risk_index != null ? Number(data2.risk_index) : null;
-                var rim2 = data2.risk_index_max != null ? Number(data2.risk_index_max) : 100;
-                document.getElementById('ch-risk-index').textContent = riv2 != null && !isNaN(riv2)
-                  ? ('Индекс риска: ' + riv2 + '/' + rim2)
-                  : 'Индекс риска: —';
-                document.getElementById('ch-risk').innerHTML = renderRisk(r2);
-              }
               if (data2.analysis) {
                 applyAnalysisToMainSections(data2.analysis);
+              }
+              if (r2 && r2.username) {
+                renderDbCard(r2, data2);
               }
             });
           }
@@ -1742,12 +1901,19 @@
       }
 
       if (r && r.username) {
-        document.getElementById('ch-eyebrow').textContent = dualDeepOk
+        renderDbCard(r, data);
+      }
+
+      var eyebrowEl = document.getElementById('ch-eyebrow');
+      var hasVerdict = mainA && mainA.conclusion && String(mainA.conclusion.status || '').trim();
+      if (hasVerdict) {
+        eyebrowEl.textContent = 'Разбор канала';
+      } else if (r && r.username) {
+        eyebrowEl.textContent = dualDeepOk
           ? 'Публичная запись scam_base: базовый снимок + глубокий анализ ниже'
           : 'Публичная запись scam_base + отчёт';
-        renderDbCard(r, data);
       } else {
-        document.getElementById('ch-eyebrow').textContent = dualDeepOk
+        eyebrowEl.textContent = dualDeepOk
           ? 'Без записи в scam_base: базовый отчёт сверху + глубокий блок ниже'
           : apiMode === 'deep'
             ? 'Отчёт без записи в scam_base (глубокая проверка ленты)'

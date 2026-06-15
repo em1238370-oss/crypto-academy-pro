@@ -5180,9 +5180,13 @@ body.ch-page > main.mon-container {
   background: linear-gradient(135deg, rgba(90, 40, 18, 0.55) 0%, rgba(18, 20, 32, 0.72) 100%);
 }
 
-/* Вердикт канала — крупный блок вверху карточки */
+/* Первый экран: вердикт + что делать */
+.ch-at-a-glance {
+  margin-bottom: 0;
+}
+
 .ch-verdict-hero {
-  margin: 0 0 22px;
+  margin: 0 0 16px;
   padding: 18px 20px;
   border-radius: 14px;
   border: 1px solid rgba(148, 163, 184, 0.28);
@@ -5250,6 +5254,114 @@ body.ch-page > main.mon-container {
 }
 .ch-verdict-hero--clean .ch-verdict-hero-label { color: #bbf7d0; }
 .ch-verdict-hero--clean .ch-verdict-hero-counter { color: #86efac; }
+
+.ch-verdict-summary {
+  margin: 0 0 18px;
+  font-size: clamp(1.05rem, 2.8vw, 1.28rem);
+  font-weight: 600;
+  line-height: 1.45;
+  color: rgba(241, 245, 249, 0.96);
+}
+
+.ch-next-action {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.38) 0%, rgba(14, 20, 28, 0.82) 100%);
+}
+
+.ch-next-action-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(110, 231, 183, 0.92);
+}
+
+.ch-next-action-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #ecfdf5;
+}
+
+.ch-fold-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 28px 0 24px;
+  color: rgba(148, 163, 184, 0.65);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ch-fold-divider::before,
+.ch-fold-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.35), transparent);
+}
+
+.ch-details-below .ch-block:first-child,
+.ch-details-below .ch-block--sources {
+  margin-top: 0;
+}
+
+.ch-web-evidence-disclaimer {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(148, 163, 184, 0.82);
+}
+
+.ch-web-evidence-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ch-web-evidence-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(18, 22, 32, 0.72);
+}
+
+.ch-web-evidence-snippet {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(226, 232, 240, 0.92);
+}
+
+.ch-web-evidence-meta {
+  margin: 0;
+  font-size: 12px;
+}
+
+.ch-web-evidence-link {
+  color: #6ee7b7;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ch-web-evidence-link:hover {
+  color: #a7f3d0;
+  text-decoration: underline;
+}
+
+.ch-web-evidence-src {
+  color: rgba(148, 163, 184, 0.9);
+}
 
 /* Источники анализа — бейджи */
 .ch-block--sources {
