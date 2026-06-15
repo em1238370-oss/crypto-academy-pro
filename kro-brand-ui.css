@@ -230,29 +230,32 @@ body.kro-hero-scrolled .kro-step1 {
 }
 
 .kro-step1-inner {
-   max-width: 48rem;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   text-align: center;
+   width: 100%;
+   max-width: min(48rem, 100%);
    margin: 0 auto;
    padding: 0;
+   min-width: 0;
+   box-sizing: border-box;
    background: transparent;
    border: none;
    box-shadow: none;
    border-radius: 0;
+   animation: none !important;
+   transform: none !important;
 }
 
 .kro-step1-inner:hover {
    box-shadow: none;
    border-color: transparent;
+   transform: none !important;
 }
 
 .kro-step1-inner::before {
    display: none;
-}
-
-.kro-step1-left,
-.kro-step1-right,
-.kro-step1-actions {
-   width: 100%;
-   max-width: none;
 }
 
 .kro-step1-actions {
@@ -261,48 +264,31 @@ body.kro-hero-scrolled .kro-step1 {
    align-items: center;
    gap: 0.75rem;
    margin: 1.5rem 0 2rem;
+   width: 100%;
 }
 
-.kro-step1-inner {
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-   text-align: center;
+#hero .kro-step1-role,
+#hero .kro-step1-title,
+#hero .kro-step1-subtitle,
+#hero .kro-step1-cta-note,
+#hero .kro-hero-live-stats {
+   word-break: normal;
+   overflow-wrap: normal;
+   white-space: normal;
    width: 100%;
-   max-width: min(48rem, 100%);
-   min-width: 0;
-   box-sizing: border-box;
-   animation: none !important;
-   transform: none !important;
+   max-width: 100%;
 }
 
 @media (min-width: 900px) {
    .kro-step1-inner {
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      gap: 3rem;
-      max-width: min(64rem, 100%);
-      text-align: left;
-   }
-
-   .kro-step1-left {
-      flex: 1;
-      max-width: 520px;
-      text-align: left;
-   }
-
-   .kro-step1-right {
-      flex: 0 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      padding-left: 3rem;
-      border-left: 1px solid rgba(255, 255, 255, 0.12);
+      flex-direction: column !important;
+      align-items: center !important;
+      text-align: center !important;
+      max-width: min(48rem, 100%) !important;
    }
 
    .kro-step1 {
-      text-align: left;
+      text-align: center !important;
    }
 }
 

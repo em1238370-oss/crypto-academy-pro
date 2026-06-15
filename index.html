@@ -13,8 +13,8 @@
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260615-copy-restore">
-   <link rel="stylesheet" href="kro-brand-ui.css?v=20260615-copy-restore">
+   <link rel="stylesheet" href="styles.css?v=20260615-hero-layout-fix">
+   <link rel="stylesheet" href="kro-brand-ui.css?v=20260615-hero-layout-fix">
    <style id="kro-f1-flat-black">
    /* Чёрный фон у Фишки 1 — без жёлтого ореола; hero не скрываем. */
    html, body.kro-main, .page, .content { background: #000 !important; background-image: none !important; }
@@ -137,33 +137,31 @@
                <span class="kro-hero-arc" aria-hidden="true"></span>
            </div>
            <div class="kro-step1-inner">
-               <div class="kro-step1-left">
-                   <p class="kro-step1-role">Антискам · Проверка каналов</p>
-                   <h1 class="kro-step1-title">Крипта: не верь — проверь</h1>
-                   <div class="kro-hero-cases" id="kro-hero-cases" aria-label="Реальные случаи из базы">
-                       <article class="kro-hero-case-card">
-                           <a class="kro-hero-case-channel" id="kro-hero-case-1-link" href="#kro-check-form-row">—</a>
-                           <span class="kro-hero-case-status" id="kro-hero-case-1-status">—</span>
-                           <span class="kro-hero-case-sum" id="kro-hero-case-1-sum">—</span>
-                       </article>
-                       <article class="kro-hero-case-card">
-                           <a class="kro-hero-case-channel" id="kro-hero-case-2-link" href="#kro-check-form-row">—</a>
-                           <span class="kro-hero-case-status" id="kro-hero-case-2-status">—</span>
-                           <span class="kro-hero-case-sum" id="kro-hero-case-2-sum">—</span>
-                       </article>
-                       <article class="kro-hero-case-card">
-                           <a class="kro-hero-case-channel" id="kro-hero-case-3-link" href="#kro-check-form-row">—</a>
-                           <span class="kro-hero-case-status" id="kro-hero-case-3-status">—</span>
-                           <span class="kro-hero-case-sum" id="kro-hero-case-3-sum">—</span>
-                       </article>
-                   </div>
-                   <p class="kro-hero-live-stats" id="kro-hero-live-stats" aria-live="polite">Уже проверено — · —</p>
-                   <p class="kro-step1-subtitle">Ваш гуру уже на Lambo. <span class="kro-step1-subtitle-em">На ваши деньги</span></p>
-               </div>
-               <div class="kro-step1-right">
+               <p class="kro-step1-role">Антискам · Проверка каналов</p>
+               <h1 class="kro-step1-title">Крипта: не верь — проверь</h1>
+               <p class="kro-step1-subtitle">Ваш гуру уже на Lambo. <span class="kro-step1-subtitle-em">На ваши деньги</span></p>
+               <div class="kro-step1-actions">
                    <a href="#kro-check-form-row" class="kro-step1-cta">Проверить канал</a>
                    <p class="kro-step1-cta-note"><span class="kro-cta-note-desktop">Факты и сверка с базой — без украшений.</span><span class="kro-cta-note-mobile">По делу, без шума.</span></p>
                </div>
+               <div class="kro-hero-cases" id="kro-hero-cases" aria-label="Реальные случаи из базы">
+                   <article class="kro-hero-case-card">
+                       <a class="kro-hero-case-channel" id="kro-hero-case-1-link" href="#kro-check-form-row">—</a>
+                       <span class="kro-hero-case-status" id="kro-hero-case-1-status">—</span>
+                       <span class="kro-hero-case-sum" id="kro-hero-case-1-sum">—</span>
+                   </article>
+                   <article class="kro-hero-case-card">
+                       <a class="kro-hero-case-channel" id="kro-hero-case-2-link" href="#kro-check-form-row">—</a>
+                       <span class="kro-hero-case-status" id="kro-hero-case-2-status">—</span>
+                       <span class="kro-hero-case-sum" id="kro-hero-case-2-sum">—</span>
+                   </article>
+                   <article class="kro-hero-case-card">
+                       <a class="kro-hero-case-channel" id="kro-hero-case-3-link" href="#kro-check-form-row">—</a>
+                       <span class="kro-hero-case-status" id="kro-hero-case-3-status">—</span>
+                       <span class="kro-hero-case-sum" id="kro-hero-case-3-sum">—</span>
+                   </article>
+               </div>
+               <p class="kro-hero-live-stats" id="kro-hero-live-stats" aria-live="polite">Уже проверено — · —</p>
            </div>
        </section>
 
