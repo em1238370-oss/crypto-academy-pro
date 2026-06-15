@@ -263,35 +263,46 @@ body.kro-hero-scrolled .kro-step1 {
    margin: 1.5rem 0 2rem;
 }
 
-/* Всегда одна колонка — не режем hero на десктопе */
 .kro-step1-inner {
-   display: flex !important;
-   flex-direction: column !important;
-   align-items: center !important;
-   text-align: center !important;
-   width: 100% !important;
-   max-width: min(48rem, 100%) !important;
-   min-width: 0 !important;
-   box-sizing: border-box !important;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   text-align: center;
+   width: 100%;
+   max-width: min(48rem, 100%);
+   min-width: 0;
+   box-sizing: border-box;
    animation: none !important;
-   transform: none !important;
-}
-
-.kro-step1-inner:hover {
    transform: none !important;
 }
 
 @media (min-width: 900px) {
    .kro-step1-inner {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 0 !important;
-      text-align: center !important;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 3rem;
+      max-width: min(64rem, 100%);
+      text-align: left;
    }
+
+   .kro-step1-left {
+      flex: 1;
+      max-width: 520px;
+      text-align: left;
+   }
+
    .kro-step1-right {
-      border-left: none !important;
-      padding-left: 0 !important;
-      align-items: center !important;
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding-left: 3rem;
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+   }
+
+   .kro-step1 {
+      text-align: left;
    }
 }
 

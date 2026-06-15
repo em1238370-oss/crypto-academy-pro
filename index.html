@@ -13,8 +13,8 @@
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260615-f1-hero-black">
-   <link rel="stylesheet" href="kro-brand-ui.css?v=20260615-f1-hero-black">
+   <link rel="stylesheet" href="styles.css?v=20260615-copy-restore">
+   <link rel="stylesheet" href="kro-brand-ui.css?v=20260615-copy-restore">
    <style id="kro-f1-flat-black">
    /* Чёрный фон у Фишки 1 — без жёлтого ореола; hero не скрываем. */
    html, body.kro-main, .page, .content { background: #000 !important; background-image: none !important; }
@@ -137,31 +137,33 @@
                <span class="kro-hero-arc" aria-hidden="true"></span>
            </div>
            <div class="kro-step1-inner">
-               <p class="kro-step1-role">Антискам · проверка каналов</p>
-               <h1 class="kro-step1-title">Крипта: не верь — проверь</h1>
-               <p class="kro-step1-subtitle">Ваш гуру уже на Lambo. <span class="kro-step1-subtitle-em">На ваши деньги.</span></p>
-               <div class="kro-step1-actions">
+               <div class="kro-step1-left">
+                   <p class="kro-step1-role">Антискам · Проверка каналов</p>
+                   <h1 class="kro-step1-title">Крипта: не верь — проверь</h1>
+                   <div class="kro-hero-cases" id="kro-hero-cases" aria-label="Реальные случаи из базы">
+                       <article class="kro-hero-case-card">
+                           <a class="kro-hero-case-channel" id="kro-hero-case-1-link" href="#kro-check-form-row">—</a>
+                           <span class="kro-hero-case-status" id="kro-hero-case-1-status">—</span>
+                           <span class="kro-hero-case-sum" id="kro-hero-case-1-sum">—</span>
+                       </article>
+                       <article class="kro-hero-case-card">
+                           <a class="kro-hero-case-channel" id="kro-hero-case-2-link" href="#kro-check-form-row">—</a>
+                           <span class="kro-hero-case-status" id="kro-hero-case-2-status">—</span>
+                           <span class="kro-hero-case-sum" id="kro-hero-case-2-sum">—</span>
+                       </article>
+                       <article class="kro-hero-case-card">
+                           <a class="kro-hero-case-channel" id="kro-hero-case-3-link" href="#kro-check-form-row">—</a>
+                           <span class="kro-hero-case-status" id="kro-hero-case-3-status">—</span>
+                           <span class="kro-hero-case-sum" id="kro-hero-case-3-sum">—</span>
+                       </article>
+                   </div>
+                   <p class="kro-hero-live-stats" id="kro-hero-live-stats" aria-live="polite">Уже проверено — · —</p>
+                   <p class="kro-step1-subtitle">Ваш гуру уже на Lambo. <span class="kro-step1-subtitle-em">На ваши деньги</span></p>
+               </div>
+               <div class="kro-step1-right">
                    <a href="#kro-check-form-row" class="kro-step1-cta">Проверить канал</a>
                    <p class="kro-step1-cta-note"><span class="kro-cta-note-desktop">Факты и сверка с базой — без украшений.</span><span class="kro-cta-note-mobile">По делу, без шума.</span></p>
                </div>
-               <div class="kro-hero-cases" id="kro-hero-cases" aria-label="Реальные случаи из базы">
-                   <article class="kro-hero-case-card">
-                       <a class="kro-hero-case-channel" id="kro-hero-case-1-link" href="#kro-check-form-row">—</a>
-                       <span class="kro-hero-case-status" id="kro-hero-case-1-status">—</span>
-                       <span class="kro-hero-case-sum" id="kro-hero-case-1-sum">—</span>
-                   </article>
-                   <article class="kro-hero-case-card">
-                       <a class="kro-hero-case-channel" id="kro-hero-case-2-link" href="#kro-check-form-row">—</a>
-                       <span class="kro-hero-case-status" id="kro-hero-case-2-status">—</span>
-                       <span class="kro-hero-case-sum" id="kro-hero-case-2-sum">—</span>
-                   </article>
-                   <article class="kro-hero-case-card">
-                       <a class="kro-hero-case-channel" id="kro-hero-case-3-link" href="#kro-check-form-row">—</a>
-                       <span class="kro-hero-case-status" id="kro-hero-case-3-status">—</span>
-                       <span class="kro-hero-case-sum" id="kro-hero-case-3-sum">—</span>
-                   </article>
-               </div>
-               <p class="kro-hero-live-stats" id="kro-hero-live-stats" aria-live="polite">Уже проверено — · —</p>
            </div>
        </section>
 
@@ -171,14 +173,14 @@
               <header class="kro-f1-terminal-rail" aria-label="Статус мониторинга">
                   <div class="kro-f1-terminal-rail-left">
                       <span class="kro-f1-live-pill">Данные обновляются</span>
-                      <span class="kro-f1-rail-tag">Цикл 12 ч</span>
+                      <span class="kro-f1-rail-tag">Обновление каждые 12 ч</span>
                   </div>
                   <p class="kro-f1-rail-note">Факты · не выдумки из ленты</p>
               </header>
               <div class="kro-feature1-dashboard kro-f1-terminal-panel">
                   <div class="kro-f1-terminal-grid">
                       <aside class="kro-f1-terminal-aside">
-                          <p class="kro-feature1-date" id="kro-feature1-date">Обновление <span id="kro-live-datetime">—</span></p>
+                          <p class="kro-feature1-date" id="kro-feature1-date">Последнее подтверждённое обновление: <span id="kro-live-datetime">—</span></p>
                           <ul class="kro-f1-status-chips kro-scroll-in" id="kro-feature1-status-summary" aria-label="Статусы по всей подтверждённой базе">
                               <li class="kro-f1-status-chip">
                                   <span class="kro-f1-status-chip-label">В риске</span>
@@ -195,7 +197,6 @@
                           </ul>
                       </aside>
                       <div class="kro-f1-terminal-main">
-                          <p class="kro-f1-terminal-kicker">Подтверждённая база</p>
                           <div class="kro-feature1-hero-number">
                               <span class="kro-feature1-hero-value" id="kro-stat-channels-today">—</span>
                               <span class="kro-feature1-hero-label" id="kro-feature1-hero-label">всего в подтверждённой базе</span>
@@ -230,13 +231,13 @@
            <div class="kro-f1-blocks kro-f1-content-card">
                <!-- Блок 1: Шок-цифры -->
                <div class="kro-f1-block kro-f1-shock">
-                   <p class="kro-f1-shock-heading">По всей подтверждённой базе</p>
+                   <p class="kro-f1-shock-heading">ПО ВСЕЙ ПОДТВЕРЖДЁННОЙ БАЗЕ:</p>
                    <p class="kro-f1-shock-text" id="kro-f1-shock-text">Загрузка сводки по базе…</p>
                    <p class="kro-f1-shock-total" id="kro-f1-shock-total">ИТОГО: —</p>
                </div>
                <!-- Блок 2: Твой тип лоха -->
                <div class="kro-f1-block kro-f1-loh">
-                   <h2 class="kro-f1-loh-title">Три типичных сценария</h2>
+                   <h2 class="kro-f1-loh-title">ВОТ КТО ТЫ ПРЯМО СЕЙЧАС:</h2>
                    <div class="kro-f1-loh-types">
                        <div class="kro-f1-loh-card">
                            <span class="kro-f1-loh-avatar" aria-hidden="true">🐑</span>
@@ -261,7 +262,7 @@
                </div>
                <!-- Блок 3: Реальная математика одного скрина -->
                <div class="kro-f1-block kro-f1-math">
-                   <h2 class="kro-f1-math-title">Математика одного скрина на вашем депозите</h2>
+                   <h2 class="kro-f1-math-title">ВОТ ЧТО ТЫ БЫ УВИДЕЛ НА СВОЁМ ДЕПОЗИТЕ:</h2>
                    <div class="kro-f1-math-slider-wrap">
                        <div class="kro-f1-math-slider" id="kro-f1-math-slider">
                            <div class="kro-f1-math-track" id="kro-f1-math-track">
