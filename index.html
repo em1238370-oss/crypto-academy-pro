@@ -13,12 +13,25 @@
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260615-f1-flat-black">
-   <link rel="stylesheet" href="kro-brand-ui.css?v=20260615-f1-flat-black">
+   <link rel="stylesheet" href="styles.css?v=20260615-f1-fullbleed">
+   <link rel="stylesheet" href="kro-brand-ui.css?v=20260615-f1-fullbleed">
    <style id="kro-f1-flat-black">
-   /* Критично: жёлтый/золотой ореол у таблицы — убиваем в HTML, не зависит от кэша CSS */
-   html, body.kro-main { background: #000 !important; background-image: none !important; }
+   /* Жёлтая полоса слева = зазор между секцией и таблицей + hero под низом. Фикс в HTML. */
+   html, body.kro-main, .page, .content { background: #000 !important; background-image: none !important; }
    body.kro-main::before, body.kro-main::after { display: none !important; content: none !important; }
+   body.kro-hero-scrolled #hero,
+   body.kro-hero-scrolled .kro-step1 { display: none !important; visibility: hidden !important; height: 0 !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; }
+   #feature1 {
+      width: 100vw !important;
+      max-width: 100vw !important;
+      margin-left: calc(50% - 50vw) !important;
+      margin-right: calc(50% - 50vw) !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      background: #000 !important;
+      isolation: auto !important;
+      overflow: hidden !important;
+   }
    #feature1, #feature1 * { text-shadow: none !important; }
    #feature1 .kro-f1-terminal,
    #feature1 .kro-f1-terminal-rail,
@@ -39,6 +52,15 @@
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
    }
+   #feature1 .kro-f1-terminal {
+      max-width: 100% !important;
+      width: 100% !important;
+      margin: 0 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      outline: none !important;
+   }
    #feature1 .kro-f1-terminal::before, #feature1 .kro-f1-terminal::after,
    #feature1 .kro-f1-terminal-rail::before, #feature1 .kro-f1-terminal-rail::after,
    #feature1 .kro-feature1-dashboard::before, #feature1 .kro-feature1-dashboard::after,
@@ -46,7 +68,6 @@
    #feature1 .kro-f1-math-slider-wrap::before, #feature1 .kro-f1-math-slider-wrap::after {
       display: none !important; content: none !important; opacity: 0 !important;
    }
-   #feature1 .kro-f1-terminal { border: 1px solid rgba(255,255,255,0.05) !important; }
    #feature1 .kro-f1-live-pill { color: rgba(255,255,255,0.55) !important; }
    #feature1 .kro-f1-live-dot { display: none !important; }
    </style>

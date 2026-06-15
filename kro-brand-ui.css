@@ -3470,8 +3470,9 @@ body.kro-main .kro-floating-nav {
 }
 
 .kro-f1-terminal {
-   max-width: min(72rem, 100%);
-   margin: 0 auto 2.5rem;
+   max-width: 100%;
+   width: 100%;
+   margin: 0 0 2.5rem;
 }
 
 .kro-f1-terminal-rail {
@@ -3775,7 +3776,7 @@ body.kro-main .kro-floating-nav {
    --kro-glow-amber-soft: transparent !important;
    --kro-light-key: transparent !important;
    --kro-light-key-strong: transparent !important;
-   isolation: isolate;
+   --kro-accent: #10b981 !important;
 }
 
 .kro-feature1-bg,
@@ -3820,8 +3821,8 @@ body.kro-main .kro-floating-nav {
 
 .kro-f1-terminal {
    background: #000000 !important;
-   border: 1px solid rgba(255, 255, 255, 0.06) !important;
-   border-radius: var(--kro-radius-lg) !important;
+   border: none !important;
+   border-radius: 0 !important;
    overflow: hidden;
    outline: none !important;
 }

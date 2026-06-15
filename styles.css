@@ -159,8 +159,14 @@ button:focus-visible {
 }
 
 body.kro-hero-scrolled .kro-step1 {
-   opacity: 0.65;
-   transform: translateY(-32px);
+   display: none !important;
+   visibility: hidden;
+   height: 0;
+   overflow: hidden;
+   margin: 0;
+   padding: 0;
+   opacity: 0;
+   pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -5079,18 +5085,8 @@ body.kro-hero-scrolled .kro-floating-nav {
 
 /* Виньетка: нейтральный slate / холодный свет (без фиолетового «бокса» по краям) */
 .kro-main::before {
-   content: '';
-   position: fixed;
-   inset: 0;
-   z-index: 0;
-   pointer-events: none;
-   background:
-      radial-gradient(ellipse 88% 50% at 88% 6%, rgba(148, 163, 184, 0.06) 0%, transparent 50%),
-      radial-gradient(ellipse 115% 52% at 50% -14%, rgba(226, 232, 240, 0.06) 0%, transparent 52%),
-      radial-gradient(ellipse 78% 54% at 10% 30%, rgba(51, 65, 85, 0.18) 0%, transparent 58%),
-      radial-gradient(ellipse 100% 80% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.24) 100%);
-   animation: kro-main-ambient-drift 34s ease-in-out infinite;
-   will-change: transform, opacity;
+   display: none !important;
+   content: none !important;
 }
 
 @keyframes kro-main-ambient-drift {
