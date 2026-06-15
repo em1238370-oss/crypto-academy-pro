@@ -12,9 +12,9 @@
    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2310b981'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23fff' stroke-width='2'/%3E%3Cline x1='7' y1='7' x2='25' y2='25' stroke='%23fff' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" type="image/svg+xml">
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260615-hero-layout-fix">
-   <link rel="stylesheet" href="kro-brand-ui.css?v=20260615-hero-layout-fix">
+   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+   <link rel="stylesheet" href="styles.css?v=20260615-hero-premium">
+   <link rel="stylesheet" href="kro-brand-ui.css?v=20260615-hero-premium">
    <style id="kro-f1-flat-black">
    /* Чёрный фон у Фишки 1 — без жёлтого ореола; hero не скрываем. */
    html, body.kro-main, .page, .content { background: #000 !important; background-image: none !important; }
@@ -129,16 +129,38 @@
        <div class="content">
        <!-- Шаг 1: Удар правды (Крипта без розовых очков — в духе Artem OSO) -->
        <section class="kro-step1 kro-reveal" id="hero">
-           <div class="kro-step1-bg" aria-hidden="true"></div>
-           <div class="kro-hero-float-layer" aria-hidden="true">
-               <span class="kro-hero-spark kro-hero-spark--1"></span>
-               <span class="kro-hero-spark kro-hero-spark--2"></span>
-               <span class="kro-hero-spark kro-hero-spark--3"></span>
-               <span class="kro-hero-arc" aria-hidden="true"></span>
+           <div class="kro-hero-scene" aria-hidden="true">
+               <div class="kro-hero-grid"></div>
+               <div class="kro-hero-glow kro-hero-glow--left"></div>
+               <div class="kro-hero-glow kro-hero-glow--right"></div>
+               <div class="kro-hero-ring"></div>
+               <svg class="kro-hero-chart" viewBox="0 0 400 80" preserveAspectRatio="none" aria-hidden="true">
+                   <defs>
+                       <linearGradient id="kro-hero-chart-fill" x1="0" y1="0" x2="0" y2="1">
+                           <stop offset="0%" stop-color="rgba(16,185,129,0.35)" />
+                           <stop offset="100%" stop-color="rgba(16,185,129,0)" />
+                       </linearGradient>
+                   </defs>
+                   <path class="kro-hero-chart-glow" d="M0,60 L40,52 L80,58 L120,35 L160,42 L200,22 L240,30 L280,18 L320,28 L360,12 L400,8 L400,80 L0,80 Z" />
+                   <path class="kro-hero-chart-line" d="M0,60 L40,52 L80,58 L120,35 L160,42 L200,22 L240,30 L280,18 L320,28 L360,12 L400,8" />
+               </svg>
+               <div class="kro-hero-coins">
+                   <span class="kro-hero-coin kro-hero-coin--1" data-symbol="₿">₿</span>
+                   <span class="kro-hero-coin kro-hero-coin--2" data-symbol="Ξ">Ξ</span>
+                   <span class="kro-hero-coin kro-hero-coin--3" data-symbol="₮">₮</span>
+                   <span class="kro-hero-coin kro-hero-coin--4" data-symbol="◎">◎</span>
+                   <span class="kro-hero-coin kro-hero-coin--5" data-symbol="◈">◈</span>
+                   <span class="kro-hero-coin kro-hero-coin--6" data-symbol="⬡">⬡</span>
+               </div>
+               <div class="kro-hero-rail kro-hero-rail--left"></div>
+               <div class="kro-hero-rail kro-hero-rail--right"></div>
            </div>
-           <div class="kro-step1-inner">
+           <div class="kro-step1-inner kro-hero-panel">
                <p class="kro-step1-role">Антискам · Проверка каналов</p>
-               <h1 class="kro-step1-title">Крипта: не верь — проверь</h1>
+               <h1 class="kro-step1-title">
+                   <span class="kro-step1-title-main">Крипта: не верь —</span>
+                   <span class="kro-step1-title-accent">проверь</span>
+               </h1>
                <p class="kro-step1-subtitle">Ваш гуру уже на Lambo. <span class="kro-step1-subtitle-em">На ваши деньги</span></p>
                <div class="kro-step1-actions">
                    <a href="#kro-check-form-row" class="kro-step1-cta">Проверить канал</a>
@@ -5232,7 +5254,7 @@
            function initHeroParallax() {
                if (prefersReducedMotion) return;
                var heroEl = document.getElementById('hero');
-               var bg = heroEl && heroEl.querySelector('.kro-step1-bg');
+               var bg = heroEl && heroEl.querySelector('.kro-hero-grid');
                if (!bg) return;
                var ticking = false;
                function updateParallax() {
