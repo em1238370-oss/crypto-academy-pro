@@ -2642,8 +2642,8 @@ body.kro-main .kro-floating-nav {
 }
 
 .kro-scheme-card--danger {
-   border-left-color: rgba(229, 231, 235, 0.65) !important;
-   background: rgba(229, 231, 235, 0.04) !important;
+   border-left-color: #84cc16 !important;
+   background: rgba(132, 204, 22, 0.06) !important;
 }
 
 .kro-scheme-card--warn {
@@ -3425,6 +3425,352 @@ body.kro-main .kro-floating-nav {
 
 @media (prefers-reduced-motion: reduce) {
    .kro-report-dossier::after {
+      animation: none !important;
+   }
+}
+
+/* ==========================================================================
+   Фишка 1 — «Терминал мониторинга»: новая иерархия, без жёлтого свечения
+   ========================================================================== */
+
+.kro-feature1 {
+   background: var(--kro-bg) !important;
+   background-image: none !important;
+   overflow: visible !important;
+   text-align: left !important;
+   padding: var(--kro-section-pad-y) clamp(1rem, 4vw, 2rem) !important;
+}
+
+.kro-feature1-bg,
+.kro-f1-ambient,
+.kro-feature1-bg::after,
+.kro-f1-orb,
+.kro-f1-orb--a,
+.kro-f1-orb--b,
+.kro-f1-orb--c {
+   display: none !important;
+}
+
+.kro-f1-badges-row {
+   display: none !important;
+}
+
+.kro-f1-badge {
+   animation: none !important;
+   background: transparent !important;
+   border: 1px solid rgba(255, 255, 255, 0.1) !important;
+   box-shadow: none !important;
+}
+
+.kro-f1-content-card::before {
+   display: none !important;
+}
+
+.kro-feature1-date:hover {
+   transform: none !important;
+}
+
+.kro-feature1-status-summary {
+   display: none !important;
+}
+
+.kro-f1-terminal {
+   max-width: min(72rem, 100%);
+   margin: 0 auto 2.5rem;
+}
+
+.kro-f1-terminal-rail {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   justify-content: space-between;
+   gap: 0.75rem 1.5rem;
+   padding: 0.65rem 1rem;
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   border-bottom: none;
+   border-radius: var(--kro-radius-lg) var(--kro-radius-lg) 0 0;
+   background: #0a100e;
+   font-family: var(--kro-font-mono);
+   font-size: 0.68rem;
+   letter-spacing: 0.12em;
+   text-transform: uppercase;
+}
+
+.kro-f1-terminal-rail-left {
+   display: flex;
+   align-items: center;
+   gap: 0.75rem;
+   flex-wrap: wrap;
+}
+
+.kro-f1-live-pill {
+   display: inline-flex;
+   align-items: center;
+   gap: 0.45rem;
+   color: var(--kro-accent);
+   font-weight: 600;
+}
+
+.kro-f1-live-dot {
+   width: 6px;
+   height: 6px;
+   border-radius: 50%;
+   background: var(--kro-accent);
+   box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+   animation: kro-f1-live-blink 2s ease-in-out infinite;
+}
+
+@keyframes kro-f1-live-blink {
+   0%, 100% { opacity: 1; }
+   50% { opacity: 0.35; }
+}
+
+.kro-f1-rail-tag {
+   color: rgba(236, 253, 245, 0.45);
+   padding: 0.2rem 0.55rem;
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   border-radius: 3px;
+}
+
+.kro-f1-rail-note {
+   margin: 0;
+   color: rgba(236, 253, 245, 0.42);
+   font-size: 0.68rem;
+   letter-spacing: 0.08em;
+}
+
+.kro-f1-terminal-panel.kro-feature1-dashboard {
+   max-width: 100% !important;
+   margin: 0 !important;
+   padding: 0 !important;
+   text-align: left !important;
+   border-radius: 0 0 var(--kro-radius-lg) var(--kro-radius-lg) !important;
+   border-top: none !important;
+   background: #0c1210 !important;
+   box-shadow: none !important;
+   overflow: hidden;
+}
+
+.kro-feature1.kro-reveal .kro-feature1-dashboard,
+.kro-feature1.kro-reveal-visible .kro-feature1-dashboard {
+   opacity: 1 !important;
+   transform: none !important;
+}
+
+.kro-f1-terminal-grid {
+   display: grid;
+   grid-template-columns: minmax(200px, 280px) 1fr;
+   gap: 0;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kro-f1-terminal-aside {
+   padding: 1.25rem 1.1rem;
+   border-right: 1px solid rgba(255, 255, 255, 0.08);
+   background: rgba(0, 0, 0, 0.2);
+}
+
+.kro-f1-terminal-panel .kro-feature1-date {
+   display: block !important;
+   margin: 0 0 1rem !important;
+   padding: 0 !important;
+   border: none !important;
+   background: transparent !important;
+   box-shadow: none !important;
+   font-family: var(--kro-font-mono) !important;
+   font-size: 0.7rem !important;
+   font-weight: 500 !important;
+   letter-spacing: 0.06em !important;
+   text-transform: uppercase !important;
+   color: rgba(236, 253, 245, 0.5) !important;
+   text-align: left !important;
+}
+
+.kro-f1-status-chips {
+   list-style: none;
+   margin: 0;
+   padding: 0;
+   display: flex;
+   flex-direction: column;
+   gap: 0.5rem;
+}
+
+.kro-f1-status-chip {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 0.75rem;
+   padding: 0.55rem 0.65rem;
+   border: 1px solid rgba(255, 255, 255, 0.07);
+   border-radius: var(--kro-radius-sm);
+   background: rgba(255, 255, 255, 0.02);
+}
+
+.kro-f1-status-chip--accent {
+   border-color: rgba(16, 185, 129, 0.22);
+   background: rgba(16, 185, 129, 0.05);
+}
+
+.kro-f1-status-chip-label {
+   font-size: 0.72rem;
+   color: rgba(236, 253, 245, 0.5);
+   line-height: 1.3;
+}
+
+.kro-f1-status-chip-value {
+   font-family: var(--kro-font-mono);
+   font-size: 1.1rem;
+   font-weight: 600;
+   color: var(--kro-accent);
+   font-variant-numeric: tabular-nums;
+}
+
+.kro-f1-terminal-main {
+   padding: 1.5rem 1.75rem;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   min-height: 200px;
+}
+
+.kro-f1-terminal-kicker {
+   margin: 0 0 0.5rem;
+   font-family: var(--kro-font-mono);
+   font-size: 0.68rem;
+   font-weight: 500;
+   letter-spacing: 0.14em;
+   text-transform: uppercase;
+   color: #84cc16;
+}
+
+.kro-f1-terminal-panel .kro-feature1-hero-number {
+   margin: 0 !important;
+   text-align: left !important;
+}
+
+.kro-f1-terminal-panel .kro-feature1-hero-value {
+   font-size: clamp(3.5rem, 10vw, 5.5rem) !important;
+   font-weight: 600 !important;
+   line-height: 0.95 !important;
+   color: var(--kro-accent) !important;
+   text-shadow: none !important;
+}
+
+.kro-f1-terminal-panel .kro-feature1-dashboard:hover .kro-feature1-hero-value {
+   transform: none !important;
+}
+
+.kro-f1-terminal-panel .kro-feature1-hero-label {
+   margin-top: 0.5rem !important;
+   font-size: 0.9rem !important;
+   color: rgba(236, 253, 245, 0.55) !important;
+   text-align: left !important;
+}
+
+.kro-f1-terminal-panel .kro-feature1-hero-monitor {
+   margin: 0.85rem 0 0 !important;
+   padding: 0 !important;
+   max-width: none !important;
+   text-align: left !important;
+   font-family: var(--kro-font-mono) !important;
+   font-size: 0.75rem !important;
+   line-height: 1.55 !important;
+   color: rgba(236, 253, 245, 0.42) !important;
+}
+
+.kro-f1-metrics-strip.kro-feature1-stats {
+   display: grid !important;
+   grid-template-columns: repeat(3, 1fr) !important;
+   gap: 0 !important;
+   max-width: 100% !important;
+   margin: 0 !important;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kro-f1-metrics-strip .kro-feature1-stat {
+   padding: 1.1rem 1.25rem !important;
+   text-align: left !important;
+   background: transparent !important;
+   border: none !important;
+   border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+   box-shadow: none !important;
+   border-radius: 0 !important;
+}
+
+.kro-f1-metrics-strip .kro-feature1-stat:last-child {
+   border-right: none !important;
+}
+
+.kro-f1-metrics-strip .kro-feature1-stat:hover {
+   background: rgba(16, 185, 129, 0.04) !important;
+   transform: none !important;
+   box-shadow: none !important;
+}
+
+.kro-f1-metrics-strip .kro-feature1-stat-value {
+   font-size: clamp(1.5rem, 3vw, 2rem) !important;
+   text-align: left !important;
+}
+
+.kro-f1-metrics-strip .kro-feature1-stat-label {
+   margin-top: 0.35rem !important;
+   font-size: 0.72rem !important;
+   text-align: left !important;
+   color: rgba(236, 253, 245, 0.45) !important;
+}
+
+.kro-f1-terminal-foot {
+   padding: 0.85rem 1.25rem 1rem;
+   display: flex;
+   flex-wrap: wrap;
+   align-items: baseline;
+   gap: 0.35rem 1.25rem;
+   background: rgba(0, 0, 0, 0.15);
+}
+
+.kro-f1-terminal-foot .kro-feature1-dashboard-sub,
+.kro-f1-terminal-foot .kro-f1-source-doc-wrap,
+.kro-f1-terminal-foot .kro-feature1-source-caption,
+.kro-f1-terminal-foot .kro-f1-system-note {
+   margin: 0 !important;
+   text-align: left !important;
+   max-width: none !important;
+}
+
+.kro-f1-terminal-foot .kro-f1-system-note {
+   color: rgba(236, 253, 245, 0.45) !important;
+}
+
+@media (max-width: 768px) {
+   .kro-f1-terminal-grid {
+      grid-template-columns: 1fr;
+   }
+
+   .kro-f1-terminal-aside {
+      border-right: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+   }
+
+   .kro-f1-metrics-strip.kro-feature1-stats {
+      grid-template-columns: 1fr !important;
+   }
+
+   .kro-f1-metrics-strip .kro-feature1-stat {
+      border-right: none !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+   }
+
+   .kro-f1-metrics-strip .kro-feature1-stat:last-child {
+      border-bottom: none !important;
+   }
+
+   .kro-f1-terminal-panel .kro-feature1-hero-value {
+      font-size: clamp(2.75rem, 14vw, 4rem) !important;
+   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .kro-f1-live-dot {
       animation: none !important;
    }
 }

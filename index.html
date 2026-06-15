@@ -14,7 +14,7 @@
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="styles.css?v=20260614-layout-flow-fix">
-   <link rel="stylesheet" href="kro-brand-ui.css?v=20260614-kro-jade-palette">
+   <link rel="stylesheet" href="kro-brand-ui.css?v=20260614-kro-f1-terminal">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -115,48 +115,66 @@
                <span class="kro-f1-orb kro-f1-orb--b"></span>
                <span class="kro-f1-orb kro-f1-orb--c"></span>
            </div>
-           <div class="kro-f1-badges-row" aria-hidden="true">
-               <span class="kro-f1-badge">Данные обновляются</span>
-               <span class="kro-f1-badge-sep" aria-hidden="true">·</span>
-               <span class="kro-f1-badge">Обновление каждые 12 ч</span>
-               <span class="kro-f1-badge-sep" aria-hidden="true">·</span>
-               <span class="kro-f1-badge">Факты · не выдумки из ленты</span>
-           </div>
-           <div class="kro-feature1-dashboard">
-               <p class="kro-feature1-date" id="kro-feature1-date">Последнее подтверждённое обновление: <span id="kro-live-datetime">—</span></p>
-               <div class="kro-feature1-hero-number">
-                   <span class="kro-feature1-hero-value" id="kro-stat-channels-today">—</span>
-                  <span class="kro-feature1-hero-label" id="kro-feature1-hero-label">всего в подтверждённой базе</span>
-                  <p class="kro-feature1-hero-monitor" id="kro-feature1-hero-monitor" aria-live="polite"></p>
-               </div>
-               <p class="kro-feature1-status-summary kro-scroll-in" id="kro-feature1-status-summary" aria-label="Статусы по всей подтверждённой базе">
-                   <span>В риске: <strong id="kro-stat-at-risk">—</strong></span>
-                   <span class="kro-feature1-status-sep" aria-hidden="true">·</span>
-                   <span>Под наблюдением: <strong id="kro-stat-under-watch">—</strong></span>
-                   <span class="kro-feature1-status-sep" aria-hidden="true">·</span>
-                   <span>Подтверждённый скам: <strong id="kro-stat-confirmed-scam">—</strong></span>
-               </p>
-               <div class="kro-feature1-stats">
-                   <div class="kro-feature1-stat kro-card">
-                   <span class="kro-feature1-stat-value" id="kro-stat-lost">—</span>
-                   <span class="kro-feature1-stat-label">Потеряно ₽ всего</span>
-               </div>
-               <div class="kro-feature1-stat kro-card">
-                  <span class="kro-feature1-stat-value" id="kro-stat-channels">—</span>
-                  <span class="kro-feature1-stat-label" id="kro-stat-channels-label">Проверено за цикл</span>
-               </div>
-               <div class="kro-feature1-stat kro-card">
-                   <span class="kro-feature1-stat-value" id="kro-stat-courses">—</span>
-                   <span class="kro-feature1-stat-label">Курсы / сайты за 12 ч</span>
-               </div>
-               </div>
-               <p class="kro-feature1-dashboard-sub kro-scroll-in">Цифры обновляются автоматически</p>
-               <p class="kro-f1-source-doc-wrap kro-scroll-in" id="kro-f1-source-doc-wrap">
-                   <a href="https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit" id="kro-f1-source-doc-link" target="_blank" rel="noopener" class="kro-f1-source-doc-link">Источники и методология (Sources and Data)</a>
-               </p>
-               <p class="kro-f1-metrics-sub kro-scroll-in kro-feature1-source-caption" id="kro-f1-source-caption"></p>
-               <p class="kro-f1-system-note kro-scroll-in" id="kro-f1-system-note" hidden></p>
-           </div>
+          <div class="kro-f1-terminal">
+              <header class="kro-f1-terminal-rail" aria-label="Статус мониторинга">
+                  <div class="kro-f1-terminal-rail-left">
+                      <span class="kro-f1-live-pill"><span class="kro-f1-live-dot" aria-hidden="true"></span>Данные обновляются</span>
+                      <span class="kro-f1-rail-tag">Цикл 12 ч</span>
+                  </div>
+                  <p class="kro-f1-rail-note">Факты · не выдумки из ленты</p>
+              </header>
+              <div class="kro-feature1-dashboard kro-f1-terminal-panel">
+                  <div class="kro-f1-terminal-grid">
+                      <aside class="kro-f1-terminal-aside">
+                          <p class="kro-feature1-date" id="kro-feature1-date">Обновление <span id="kro-live-datetime">—</span></p>
+                          <ul class="kro-f1-status-chips kro-scroll-in" id="kro-feature1-status-summary" aria-label="Статусы по всей подтверждённой базе">
+                              <li class="kro-f1-status-chip">
+                                  <span class="kro-f1-status-chip-label">В риске</span>
+                                  <strong class="kro-f1-status-chip-value" id="kro-stat-at-risk">—</strong>
+                              </li>
+                              <li class="kro-f1-status-chip">
+                                  <span class="kro-f1-status-chip-label">Под наблюдением</span>
+                                  <strong class="kro-f1-status-chip-value" id="kro-stat-under-watch">—</strong>
+                              </li>
+                              <li class="kro-f1-status-chip kro-f1-status-chip--accent">
+                                  <span class="kro-f1-status-chip-label">Подтверждённый скам</span>
+                                  <strong class="kro-f1-status-chip-value" id="kro-stat-confirmed-scam">—</strong>
+                              </li>
+                          </ul>
+                      </aside>
+                      <div class="kro-f1-terminal-main">
+                          <p class="kro-f1-terminal-kicker">Подтверждённая база</p>
+                          <div class="kro-feature1-hero-number">
+                              <span class="kro-feature1-hero-value" id="kro-stat-channels-today">—</span>
+                              <span class="kro-feature1-hero-label" id="kro-feature1-hero-label">всего в подтверждённой базе</span>
+                              <p class="kro-feature1-hero-monitor" id="kro-feature1-hero-monitor" aria-live="polite"></p>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="kro-feature1-stats kro-f1-metrics-strip">
+                      <div class="kro-feature1-stat">
+                          <span class="kro-feature1-stat-value" id="kro-stat-lost">—</span>
+                          <span class="kro-feature1-stat-label">Потеряно ₽ всего</span>
+                      </div>
+                      <div class="kro-feature1-stat">
+                          <span class="kro-feature1-stat-value" id="kro-stat-channels">—</span>
+                          <span class="kro-feature1-stat-label" id="kro-stat-channels-label">Проверено за цикл</span>
+                      </div>
+                      <div class="kro-feature1-stat">
+                          <span class="kro-feature1-stat-value" id="kro-stat-courses">—</span>
+                          <span class="kro-feature1-stat-label">Курсы / сайты за 12 ч</span>
+                      </div>
+                  </div>
+                  <footer class="kro-f1-terminal-foot">
+                      <p class="kro-feature1-dashboard-sub kro-scroll-in">Цифры обновляются автоматически</p>
+                      <p class="kro-f1-source-doc-wrap kro-scroll-in" id="kro-f1-source-doc-wrap">
+                          <a href="https://docs.google.com/document/d/1VA3Vrt6sak_TXypqBqQalOWeOJHdQm20gz80s6rfi58/edit" id="kro-f1-source-doc-link" target="_blank" rel="noopener" class="kro-f1-source-doc-link">Источники и методология (Sources and Data)</a>
+                      </p>
+                      <p class="kro-f1-metrics-sub kro-scroll-in kro-feature1-source-caption" id="kro-f1-source-caption"></p>
+                      <p class="kro-f1-system-note kro-scroll-in" id="kro-f1-system-note" hidden></p>
+                  </footer>
+              </div>
+          </div>
            <div class="kro-f1-blocks kro-f1-content-card">
                <!-- Блок 1: Шок-цифры -->
                <div class="kro-f1-block kro-f1-shock">
