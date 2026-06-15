@@ -5180,6 +5180,198 @@ body.ch-page > main.mon-container {
   background: linear-gradient(135deg, rgba(90, 40, 18, 0.55) 0%, rgba(18, 20, 32, 0.72) 100%);
 }
 
+/* Вердикт канала — крупный блок вверху карточки */
+.ch-verdict-hero {
+  margin: 0 0 22px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(135deg, rgba(30, 32, 48, 0.92) 0%, rgba(14, 16, 24, 0.88) 100%);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.ch-verdict-hero-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ch-verdict-hero-icon {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.ch-verdict-hero-label {
+  font-family: var(--mon-font-display);
+  font-size: clamp(1.1rem, 3.2vw, 1.45rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.ch-verdict-hero-counter {
+  margin: 10px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
+.ch-verdict-hero--scam {
+  border-color: rgba(248, 113, 113, 0.55);
+  background: linear-gradient(135deg, rgba(127, 29, 29, 0.72) 0%, rgba(40, 12, 18, 0.9) 55%, rgba(18, 16, 24, 0.92) 100%);
+  box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.12), 0 16px 40px rgba(220, 38, 38, 0.22);
+}
+.ch-verdict-hero--scam .ch-verdict-hero-label { color: #fecaca; }
+.ch-verdict-hero--scam .ch-verdict-hero-counter { color: #fca5a5; }
+
+.ch-verdict-hero--risk {
+  border-color: rgba(251, 146, 60, 0.5);
+  background: linear-gradient(135deg, rgba(124, 45, 18, 0.65) 0%, rgba(38, 24, 14, 0.88) 55%, rgba(18, 16, 24, 0.9) 100%);
+  box-shadow: 0 0 0 1px rgba(251, 146, 60, 0.1), 0 16px 40px rgba(234, 88, 12, 0.18);
+}
+.ch-verdict-hero--risk .ch-verdict-hero-label { color: #fed7aa; }
+.ch-verdict-hero--risk .ch-verdict-hero-counter { color: #fdba74; }
+
+.ch-verdict-hero--watch {
+  border-color: rgba(250, 204, 21, 0.42);
+  background: linear-gradient(135deg, rgba(113, 63, 18, 0.55) 0%, rgba(32, 28, 14, 0.85) 55%, rgba(18, 16, 24, 0.9) 100%);
+  box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.08), 0 16px 40px rgba(202, 138, 4, 0.14);
+}
+.ch-verdict-hero--watch .ch-verdict-hero-label { color: #fde68a; }
+.ch-verdict-hero--watch .ch-verdict-hero-counter { color: #fcd34d; }
+
+.ch-verdict-hero--clean {
+  border-color: rgba(74, 222, 128, 0.38);
+  background: linear-gradient(135deg, rgba(20, 83, 45, 0.5) 0%, rgba(14, 28, 20, 0.85) 55%, rgba(18, 16, 24, 0.9) 100%);
+  box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.08), 0 16px 40px rgba(34, 197, 94, 0.12);
+}
+.ch-verdict-hero--clean .ch-verdict-hero-label { color: #bbf7d0; }
+.ch-verdict-hero--clean .ch-verdict-hero-counter { color: #86efac; }
+
+/* Источники анализа — бейджи */
+.ch-block--sources {
+  margin-top: 20px;
+  padding-top: 18px;
+}
+
+.ch-sources-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ch-source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.55);
+  color: rgba(226, 232, 240, 0.92);
+}
+
+.ch-source-badge--web {
+  border-color: rgba(167, 139, 250, 0.45);
+  background: rgba(76, 29, 149, 0.28);
+  color: #ddd6fe;
+}
+
+.ch-source-badge--feed {
+  border-color: rgba(96, 165, 250, 0.4);
+  background: rgba(30, 58, 138, 0.28);
+  color: #bfdbfe;
+}
+
+.ch-source-badge--ai {
+  border-color: rgba(52, 211, 153, 0.42);
+  background: rgba(6, 78, 59, 0.32);
+  color: #a7f3d0;
+}
+
+.ch-source-badge--monitor {
+  border-color: rgba(245, 197, 120, 0.38);
+  background: rgba(68, 48, 18, 0.35);
+  color: rgba(253, 224, 127, 0.92);
+}
+
+/* Жалобы из веб-поиска */
+.ch-web-complaints {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.22);
+}
+
+.ch-web-complaints-title {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: rgba(253, 224, 127, 0.88);
+}
+
+.ch-web-complaints-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ch-web-complaint-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(167, 139, 250, 0.22);
+  background: linear-gradient(145deg, rgba(46, 32, 72, 0.45) 0%, rgba(18, 20, 30, 0.72) 100%);
+}
+
+.ch-web-complaint-icon {
+  font-size: 1.15rem;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.ch-web-complaint-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ch-web-complaint-snippet {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(226, 232, 240, 0.94);
+}
+
+.ch-web-complaint-meta {
+  margin: 0;
+  font-size: 12px;
+}
+
+.ch-web-complaint-link {
+  color: #6ee7b7;
+  text-decoration: none;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.ch-web-complaint-link:hover {
+  color: #a7f3d0;
+  text-decoration: underline;
+}
+
+.ch-web-complaint-link .mon-link-arrow {
+  opacity: 0.85;
+}
+
 /* Глубокий анализ: акцентная кнопка (Crypto Academy — тёмный фон + лайм) */
 .ch-deep-intro {
   max-width: 56ch;

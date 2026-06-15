@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260417-ch-fast-7m-retry">
+  <link rel="stylesheet" href="/monitor.css?v=20260615-ch-web-complaints">
 </head>
 <body class="mon-page ch-page">
 
@@ -68,6 +68,13 @@
   </div>
   <article id="ch-content" class="ch-card" hidden>
     <div id="ch-live-banner" class="ch-live-banner" hidden></div>
+    <div id="ch-verdict-hero" class="ch-verdict-hero" hidden aria-live="polite">
+      <div class="ch-verdict-hero-inner">
+        <span class="ch-verdict-hero-icon" id="ch-verdict-hero-icon" aria-hidden="true"></span>
+        <span class="ch-verdict-hero-label" id="ch-verdict-hero-label"></span>
+      </div>
+      <p class="ch-verdict-hero-counter" id="ch-verdict-hero-counter" hidden></p>
+    </div>
     <p class="ch-eyebrow" id="ch-eyebrow">Проверка Telegram‑канала</p>
     <h1 class="ch-title" id="ch-heading">—</h1>
     <p class="ch-meta" id="ch-subhead" hidden></p>
@@ -77,6 +84,11 @@
       <p class="ch-flow-simple-foot">Проверяется тот канал, который вы указали. Сразу — быстрый отчёт (секунды). Глубокий анализ ленты — отдельно: до ~6 месяцев истории, на сервере верхний предел ожидания ответа ~30 минут (часто быстрее); можно через ваш Telegram (BYO). Пока идёт запрос — сверху таймер и короткий статус.</p>
     </aside>
     <p class="ch-merged" id="ch-merged-note" hidden></p>
+
+    <section class="ch-block ch-block--sources" id="ch-sources-section" aria-labelledby="ch-sources-h" hidden>
+      <h2 id="ch-sources-h" class="ch-h2">Как мы анализируем</h2>
+      <div id="ch-sources-badges" class="ch-sources-badges"></div>
+    </section>
 
     <section class="ch-block" aria-labelledby="ch-s1-h">
       <h2 id="ch-s1-h" class="ch-h2">Базовая информация</h2>
@@ -89,7 +101,7 @@
     </section>
 
     <section class="ch-block" aria-labelledby="ch-s3-h">
-      <h2 id="ch-s3-h" class="ch-h2">Внешние источники и жалобы</h2>
+      <h2 id="ch-s3-h" class="ch-h2">Жалобы и база</h2>
       <div id="ch-s3" class="ch-body"></div>
     </section>
 
@@ -100,7 +112,6 @@
 
     <section class="ch-block" aria-labelledby="ch-s5-h">
       <h2 id="ch-s5-h" class="ch-h2">Итоговый вывод</h2>
-      <p class="ch-status-wrap"><span id="ch-conclusion-status" class="mon-status watch">—</span></p>
       <div id="ch-conclusion-reasons" class="ch-body"></div>
     </section>
 
@@ -250,17 +261,159 @@
     return Number.isFinite(left) && left > 0 ? left : 0;
   }
 
+  function truncateText(s, max) {
+    var t = String(s == null ? '' : s).trim();
+    if (!t) return '';
+    if (t.length <= max) return t;
+    return t.slice(0, Math.max(1, max - 1)).trim() + '…';
+  }
+
+  function verdictHeroMeta(status) {
+    var v = String(status || '').toLowerCase();
+    if (v.includes('подтвержд') && v.includes('скам')) {
+      return { cls: 'scam', icon: '🚨', label: 'ПОДТВЕРЖДЁННЫЙ СКАМ' };
+    }
+    if (v.includes('в риске') || (v.includes('риск') && !v.includes('наблю'))) {
+      return { cls: 'risk', icon: '⚠️', label: 'ВЫСОКИЙ РИСК' };
+    }
+    if (v.includes('без нарушений') || v.includes('без риска')) {
+      return { cls: 'clean', icon: '✓', label: 'БЕЗ НАРУШЕНИЙ' };
+    }
+    return { cls: 'watch', icon: '👁', label: 'НЕТ ДАННЫХ / ПОД НАБЛЮДЕНИЕМ' };
+  }
+
+  function applyVerdictHero(c, webComplaints) {
+    var hero = document.getElementById('ch-verdict-hero');
+    var iconEl = document.getElementById('ch-verdict-hero-icon');
+    var labelEl = document.getElementById('ch-verdict-hero-label');
+    var counterEl = document.getElementById('ch-verdict-hero-counter');
+    if (!hero || !iconEl || !labelEl) return;
+    c = c || {};
+    var status = String(c.status || '').trim();
+    if (!status || status === '—') {
+      hero.hidden = true;
+      hero.className = 'ch-verdict-hero';
+      if (counterEl) {
+        counterEl.hidden = true;
+        counterEl.textContent = '';
+      }
+      return;
+    }
+    var meta = verdictHeroMeta(status);
+    hero.hidden = false;
+    hero.className = 'ch-verdict-hero ch-verdict-hero--' + meta.cls;
+    iconEl.textContent = meta.icon;
+    labelEl.textContent = meta.label;
+    var wc = Array.isArray(webComplaints) ? webComplaints : [];
+    if (counterEl) {
+      if (wc.length > 0) {
+        var n = wc.length;
+        counterEl.hidden = false;
+        counterEl.textContent =
+          'Найдено ' + n + ' ' + ruPlural(n, 'жалоба', 'жалобы', 'жалоб') + ' в интернете';
+      } else {
+        counterEl.hidden = true;
+        counterEl.textContent = '';
+      }
+    }
+  }
+
+  function sourceBadgeMeta(src) {
+    var s = String(src || '').trim();
+    var low = s.toLowerCase();
+    if (low.indexOf('веб-поиск') >= 0 || low.indexOf('web') >= 0) {
+      return { cls: 'web', label: s || 'веб-поиск жалоб' };
+    }
+    if (low.indexOf('t.me/s') >= 0 || low.indexOf('публичная лента') >= 0) {
+      return { cls: 'feed', label: s || 't.me/s публичная лента' };
+    }
+    if (low.indexOf('mistral') >= 0 || low.indexOf('claude') >= 0 || low.indexOf(' ai') >= 0) {
+      return { cls: 'ai', label: s };
+    }
+    if (low.indexOf('мониторинг') >= 0) {
+      return { cls: 'monitor', label: s };
+    }
+    return { cls: 'default', label: s };
+  }
+
+  function renderSourceBadges(sources) {
+    var sec = document.getElementById('ch-sources-section');
+    var box = document.getElementById('ch-sources-badges');
+    if (!sec || !box) return;
+    var arr = (sources || []).map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
+    var seen = {};
+    arr = arr.filter(function (s) {
+      var k = s.toLowerCase();
+      if (seen[k]) return false;
+      seen[k] = true;
+      return true;
+    });
+    if (!arr.length) {
+      sec.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    sec.hidden = false;
+    box.innerHTML = arr.map(function (src) {
+      var m = sourceBadgeMeta(src);
+      return '<span class="ch-source-badge ch-source-badge--' + esc(m.cls) + '">' + esc(m.label) + '</span>';
+    }).join('');
+  }
+
+  function hostFromUrl(url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch (e) {
+      return String(url || '').replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
+    }
+  }
+
+  function renderWebComplaints(list) {
+    var items = (list || []).filter(function (x) {
+      return x && (x.snippet || x.link || x.title);
+    });
+    if (!items.length) return '';
+    return (
+      '<div class="ch-web-complaints">' +
+      '<h3 class="ch-h3 ch-web-complaints-title">Найдено в интернете</h3>' +
+      '<ul class="ch-web-complaints-list">' +
+      items.map(function (item) {
+        var snippet = truncateText(item.snippet || item.title || '', 200);
+        var link = String(item.link || '').trim();
+        var title = String(item.title || '').trim();
+        var linkLabel = link ? hostFromUrl(link) : (title || 'Источник');
+        var linkHtml = link
+          ? '<a class="ch-web-complaint-link" href="' + esc(link) + '" target="_blank" rel="noopener noreferrer">' +
+            esc(truncateText(linkLabel, 48)) + externalIcon() + '</a>'
+          : '';
+        return (
+          '<li class="ch-web-complaint-card">' +
+          '<span class="ch-web-complaint-icon" aria-hidden="true">⚠️</span>' +
+          '<div class="ch-web-complaint-body">' +
+          (snippet ? '<p class="ch-web-complaint-snippet">' + esc(snippet) + '</p>' : '') +
+          (linkHtml ? '<p class="ch-web-complaint-meta">' + linkHtml + '</p>' : '') +
+          '</div></li>'
+        );
+      }).join('') +
+      '</ul></div>'
+    );
+  }
+
+  function renderExternalReportsSection(a) {
+    a = a || {};
+    return renderBulletList(a.external_reports) + renderWebComplaints(a.web_complaints);
+  }
+
   function applyAnalysisToMainSections(a) {
     if (!a || typeof a !== 'object') return;
     document.getElementById('ch-s1').innerHTML = renderBulletList(a.basic_info);
     document.getElementById('ch-s2').innerHTML = renderBulletList(a.content_behavior);
-    document.getElementById('ch-s3').innerHTML = renderBulletList(a.external_reports);
+    document.getElementById('ch-s3').innerHTML = renderExternalReportsSection(a);
     document.getElementById('ch-s4').innerHTML = renderBulletList(a.ties_risk_factors);
     var c = a.conclusion || {};
-    var cst = document.getElementById('ch-conclusion-status');
-    cst.textContent = c.status || '—';
-    cst.className = 'mon-status ' + statusClass(c.status);
+    applyVerdictHero(c, a.web_complaints);
     document.getElementById('ch-conclusion-reasons').innerHTML = renderBulletList(c.reasons || []);
+    renderSourceBadges(a.sources);
   }
 
   function renderDeepAnalysisBlock(a) {
@@ -276,7 +429,7 @@
       '<h3 class="ch-deep-results-title">Результат глубокого анализа ленты (Telegram)</h3>' +
       '<div class="ch-deep-subsec"><h3 class="ch-h3">Базовая информация</h3><div class="ch-body">' + renderBulletList(a.basic_info) + '</div></div>' +
       '<div class="ch-deep-subsec"><h3 class="ch-h3">Контент и поведение</h3><div class="ch-body">' + renderBulletList(a.content_behavior) + '</div></div>' +
-      '<div class="ch-deep-subsec"><h3 class="ch-h3">Внешние источники и жалобы</h3><div class="ch-body">' + renderBulletList(a.external_reports) + '</div></div>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Жалобы и база</h3><div class="ch-body">' + renderExternalReportsSection(a) + '</div></div>' +
       '<div class="ch-deep-subsec"><h3 class="ch-h3">Связи и риск‑факторы</h3><div class="ch-body">' + renderBulletList(a.ties_risk_factors) + '</div></div>' +
       '<div class="ch-deep-subsec"><h3 class="ch-h3">Итоговый вывод</h3><div class="ch-body">' + renderBulletList(s5lines) + '</div></div>'
     );
@@ -652,15 +805,7 @@
                 document.getElementById('ch-risk').innerHTML = renderRisk(r2);
               }
               if (data2.analysis) {
-                document.getElementById('ch-s1').innerHTML = renderBulletList(data2.analysis.basic_info);
-                document.getElementById('ch-s2').innerHTML = renderBulletList(data2.analysis.content_behavior);
-                document.getElementById('ch-s3').innerHTML = renderBulletList(data2.analysis.external_reports);
-                document.getElementById('ch-s4').innerHTML = renderBulletList(data2.analysis.ties_risk_factors);
-                var c2 = data2.analysis.conclusion || {};
-                var st2 = document.getElementById('ch-conclusion-status');
-                st2.textContent = c2.status || '—';
-                st2.className = 'mon-status ' + statusClass(c2.status);
-                document.getElementById('ch-conclusion-reasons').innerHTML = renderBulletList(c2.reasons || []);
+                applyAnalysisToMainSections(data2.analysis);
               }
             });
           }
