@@ -3774,3 +3774,93 @@ body.kro-main .kro-floating-nav {
       animation: none !important;
    }
 }
+
+/* ==========================================================================
+   Фишка 1 — жёсткое отключение жёлтого/янтарного свечения (styles.css)
+   ========================================================================== */
+
+.kro-feature1 {
+   --kro-glow: transparent !important;
+   --kro-glow-soft: transparent !important;
+   --kro-glow-amber-soft: transparent !important;
+   --kro-light-key: transparent !important;
+   --kro-light-key-strong: transparent !important;
+   isolation: isolate;
+}
+
+.kro-feature1-bg,
+.kro-f1-ambient,
+.kro-feature1-bg::before,
+.kro-feature1-bg::after,
+.kro-f1-orb,
+.kro-f1-orb--a,
+.kro-f1-orb--b,
+.kro-f1-orb--c {
+   display: none !important;
+   visibility: hidden !important;
+   opacity: 0 !important;
+   pointer-events: none !important;
+}
+
+.kro-f1-terminal,
+.kro-f1-terminal-rail,
+.kro-f1-terminal-panel,
+.kro-feature1-dashboard,
+.kro-f1-terminal-aside,
+.kro-f1-terminal-foot,
+.kro-f1-metrics-strip .kro-feature1-stat {
+   animation: none !important;
+   box-shadow: none !important;
+   filter: none !important;
+   backdrop-filter: none !important;
+   -webkit-backdrop-filter: none !important;
+   background-image: none !important;
+   text-shadow: none !important;
+}
+
+.kro-f1-terminal::before,
+.kro-f1-terminal::after,
+.kro-feature1-dashboard::before,
+.kro-feature1-dashboard::after,
+.kro-f1-terminal-rail::before,
+.kro-f1-terminal-rail::after {
+   display: none !important;
+   content: none !important;
+}
+
+.kro-f1-terminal {
+   background: #080c0a !important;
+   border: 1px solid rgba(255, 255, 255, 0.08) !important;
+   border-radius: var(--kro-radius-lg) !important;
+   overflow: hidden;
+}
+
+.kro-f1-terminal-rail {
+   background: #080c0a !important;
+   border: none !important;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+   border-radius: 0 !important;
+}
+
+.kro-f1-terminal-panel.kro-feature1-dashboard,
+.kro-feature1-dashboard {
+   background: #080c0a !important;
+   border: none !important;
+   border-radius: 0 !important;
+}
+
+.kro-f1-terminal-aside,
+.kro-f1-terminal-foot {
+   background: #080c0a !important;
+}
+
+.kro-f1-live-dot {
+   box-shadow: none !important;
+}
+
+.kro-feature1-dashboard:hover .kro-feature1-hero-value,
+.kro-f1-metrics-strip .kro-feature1-stat:hover {
+   transform: none !important;
+   box-shadow: none !important;
+   background: #080c0a !important;
+}
