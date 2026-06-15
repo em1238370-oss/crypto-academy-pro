@@ -7,7 +7,7 @@
 .kro-main,
 .kro-step1,
 .kro-feature1 {
-   --kro-bg: #080c0a;
+   --kro-bg: #000000;
    --kro-bg-mid: #0c1210;
    --kro-bg-soft: #101814;
    --kro-accent: #10b981;
@@ -52,7 +52,7 @@
 
 /* --- Global base --- */
 body.kro-main {
-   background-color: var(--kro-bg) !important;
+   background-color: #000000 !important;
    background-image: none !important;
    color: var(--kro-text);
    font-family: var(--kro-font-body);
@@ -3481,10 +3481,10 @@ body.kro-main .kro-floating-nav {
    justify-content: space-between;
    gap: 0.75rem 1.5rem;
    padding: 0.65rem 1rem;
-   border: 1px solid rgba(255, 255, 255, 0.08);
-   border-bottom: none;
-   border-radius: var(--kro-radius-lg) var(--kro-radius-lg) 0 0;
-   background: #0a100e;
+   border: none;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+   border-radius: 0;
+   background: #000000;
    font-family: var(--kro-font-mono);
    font-size: 0.68rem;
    letter-spacing: 0.12em;
@@ -3502,17 +3502,12 @@ body.kro-main .kro-floating-nav {
    display: inline-flex;
    align-items: center;
    gap: 0.45rem;
-   color: var(--kro-accent);
-   font-weight: 600;
+   color: rgba(255, 255, 255, 0.55);
+   font-weight: 500;
 }
 
 .kro-f1-live-dot {
-   width: 6px;
-   height: 6px;
-   border-radius: 50%;
-   background: var(--kro-accent);
-   box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
-   animation: kro-f1-live-blink 2s ease-in-out infinite;
+   display: none !important;
 }
 
 @keyframes kro-f1-live-blink {
@@ -3539,9 +3534,9 @@ body.kro-main .kro-floating-nav {
    margin: 0 !important;
    padding: 0 !important;
    text-align: left !important;
-   border-radius: 0 0 var(--kro-radius-lg) var(--kro-radius-lg) !important;
+   border-radius: 0 !important;
    border-top: none !important;
-   background: #0c1210 !important;
+   background: #000000 !important;
    box-shadow: none !important;
    overflow: hidden;
 }

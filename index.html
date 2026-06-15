@@ -13,8 +13,43 @@
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260615-kill-yellow-glow">
-   <link rel="stylesheet" href="kro-brand-ui.css?v=20260615-kill-yellow-glow">
+   <link rel="stylesheet" href="styles.css?v=20260615-f1-flat-black">
+   <link rel="stylesheet" href="kro-brand-ui.css?v=20260615-f1-flat-black">
+   <style id="kro-f1-flat-black">
+   /* Критично: жёлтый/золотой ореол у таблицы — убиваем в HTML, не зависит от кэша CSS */
+   html, body.kro-main { background: #000 !important; background-image: none !important; }
+   body.kro-main::before, body.kro-main::after { display: none !important; content: none !important; }
+   #feature1, #feature1 * { text-shadow: none !important; }
+   #feature1 .kro-f1-terminal,
+   #feature1 .kro-f1-terminal-rail,
+   #feature1 .kro-feature1-dashboard,
+   #feature1 .kro-f1-terminal-aside,
+   #feature1 .kro-f1-terminal-foot,
+   #feature1 .kro-f1-content-card,
+   #feature1 .kro-f1-block,
+   #feature1 .kro-f1-loh-card,
+   #feature1 .kro-f1-math-slider-wrap,
+   #feature1 .kro-f1-math-slider,
+   #feature1 .kro-feature1-top3 li {
+      background: #000 !important;
+      background-image: none !important;
+      box-shadow: none !important;
+      filter: none !important;
+      animation: none !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+   }
+   #feature1 .kro-f1-terminal::before, #feature1 .kro-f1-terminal::after,
+   #feature1 .kro-f1-terminal-rail::before, #feature1 .kro-f1-terminal-rail::after,
+   #feature1 .kro-feature1-dashboard::before, #feature1 .kro-feature1-dashboard::after,
+   #feature1 .kro-f1-content-card::before, #feature1 .kro-f1-content-card::after,
+   #feature1 .kro-f1-math-slider-wrap::before, #feature1 .kro-f1-math-slider-wrap::after {
+      display: none !important; content: none !important; opacity: 0 !important;
+   }
+   #feature1 .kro-f1-terminal { border: 1px solid rgba(255,255,255,0.05) !important; }
+   #feature1 .kro-f1-live-pill { color: rgba(255,255,255,0.55) !important; }
+   #feature1 .kro-f1-live-dot { display: none !important; }
+   </style>
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -112,7 +147,7 @@
           <div class="kro-f1-terminal">
               <header class="kro-f1-terminal-rail" aria-label="Статус мониторинга">
                   <div class="kro-f1-terminal-rail-left">
-                      <span class="kro-f1-live-pill"><span class="kro-f1-live-dot" aria-hidden="true"></span>Данные обновляются</span>
+                      <span class="kro-f1-live-pill">Данные обновляются</span>
                       <span class="kro-f1-rail-tag">Цикл 12 ч</span>
                   </div>
                   <p class="kro-f1-rail-note">Факты · не выдумки из ленты</p>
