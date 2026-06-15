@@ -211,7 +211,8 @@ body.kro-hero-scrolled .kro-floating-nav {
 .kro-step1 {
    min-height: 100vh;
    padding: 7rem 0 5rem;
-   background: var(--kro-bg) !important;
+   background: #000000 !important;
+   background-image: none !important;
    text-align: center;
 }
 
@@ -1268,7 +1269,7 @@ body.kro-main {
 .kro-step1 {
    overflow: visible !important;
    padding: clamp(5.5rem, 12vw, 7rem) clamp(1rem, 4vw, 2rem) clamp(3rem, 6vw, 5rem) !important;
-   min-height: auto !important;
+   min-height: 100vh !important;
 }
 
 /* Блок «Сообщить о разводе» — после формы, до футера */
@@ -3434,6 +3435,26 @@ body.kro-main .kro-floating-nav {
    overflow: visible !important;
    text-align: left !important;
    padding: var(--kro-section-pad-y) clamp(1rem, 4vw, 2rem) !important;
+   position: relative;
+   isolation: isolate;
+}
+
+.kro-feature1::before {
+   content: '';
+   position: absolute;
+   z-index: 0;
+   top: 0;
+   bottom: 0;
+   left: 50%;
+   width: 100vw;
+   margin-left: -50vw;
+   background: #000000;
+   pointer-events: none;
+}
+
+.kro-feature1 > *:not(.kro-feature1-bg):not(.kro-f1-ambient) {
+   position: relative;
+   z-index: 1;
 }
 
 .kro-feature1-bg,

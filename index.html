@@ -13,15 +13,36 @@
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="styles.css?v=20260615-f1-layout-restore">
-   <link rel="stylesheet" href="kro-brand-ui.css?v=20260615-f1-layout-restore">
+   <link rel="stylesheet" href="styles.css?v=20260615-f1-hero-black">
+   <link rel="stylesheet" href="kro-brand-ui.css?v=20260615-f1-hero-black">
    <style id="kro-f1-flat-black">
-   /* Без жёлтого ореола: чёрный фон + скрыть hero при скролле; иерархия — из CSS (центр, max-width). */
+   /* Чёрный фон у Фишки 1 — без жёлтого ореола; hero не скрываем. */
    html, body.kro-main, .page, .content { background: #000 !important; background-image: none !important; }
    body.kro-main::before, body.kro-main::after { display: none !important; content: none !important; }
-   body.kro-hero-scrolled #hero,
-   body.kro-hero-scrolled .kro-step1 { display: none !important; visibility: hidden !important; height: 0 !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; }
-   #feature1 { background: #000 !important; background-image: none !important; }
+   #feature1 {
+      position: relative !important;
+      isolation: isolate !important;
+      background: #000 !important;
+      background-image: none !important;
+      --kro-glow: transparent !important;
+      --kro-glow-soft: transparent !important;
+      --kro-glow-amber-soft: transparent !important;
+      --kro-light-key: transparent !important;
+      --kro-light-key-strong: transparent !important;
+   }
+   #feature1::before {
+      content: '' !important;
+      position: absolute !important;
+      z-index: 0 !important;
+      top: 0 !important;
+      bottom: 0 !important;
+      left: 50% !important;
+      width: 100vw !important;
+      margin-left: -50vw !important;
+      background: #000 !important;
+      pointer-events: none !important;
+   }
+   #feature1 > * { position: relative !important; z-index: 1 !important; }
    #feature1, #feature1 * { text-shadow: none !important; }
    #feature1 .kro-f1-terminal,
    #feature1 .kro-f1-terminal-rail,

@@ -159,14 +159,9 @@ button:focus-visible {
 }
 
 body.kro-hero-scrolled .kro-step1 {
-   display: none !important;
-   visibility: hidden;
-   height: 0;
-   overflow: hidden;
-   margin: 0;
-   padding: 0;
-   opacity: 0;
-   pointer-events: none;
+   opacity: 1;
+   transform: none;
+   pointer-events: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
