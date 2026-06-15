@@ -14,7 +14,7 @@
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="styles.css?v=20260614-layout-flow-fix">
-   <link rel="stylesheet" href="kro-brand-ui.css?v=20260614-kro-progress-radar">
+   <link rel="stylesheet" href="kro-brand-ui.css?v=20260614-kro-progress-centered">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -310,49 +310,75 @@
                    </div>
                    <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
                    <div class="kro-check-progress hidden" id="kro-check-progress" aria-busy="true" aria-live="polite" hidden>
-                       <div class="kro-check-progress-inner">
-                           <div class="kro-check-progress-radar" aria-hidden="true">
-                               <span class="kro-check-radar-corner kro-check-radar-corner--tl"></span>
-                               <span class="kro-check-radar-corner kro-check-radar-corner--tr"></span>
-                               <span class="kro-check-radar-corner kro-check-radar-corner--bl"></span>
-                               <span class="kro-check-radar-corner kro-check-radar-corner--br"></span>
-                               <span class="kro-check-radar-sweep"></span>
-                               <span class="kro-check-radar-core"></span>
+                       <div class="kro-check-progress-frame">
+                           <div class="kro-check-progress-rail kro-check-progress-rail--left" aria-hidden="true">
+                               <span class="kro-check-rail-line"></span>
+                               <span class="kro-check-rail-line"></span>
+                               <span class="kro-check-rail-line"></span>
+                               <span class="kro-check-rail-line"></span>
+                               <span class="kro-check-rail-line"></span>
+                               <span class="kro-check-rail-line"></span>
                            </div>
-                           <div class="kro-check-progress-main">
-                               <p class="kro-check-progress-status-tag">СИСТЕМА · АНАЛИЗ КАНАЛА</p>
-                               <p class="kro-check-progress-title" id="kro-check-progress-title"></p>
-                               <p class="kro-check-progress-activity" id="kro-check-progress-activity" aria-live="polite"></p>
-                               <div class="kro-check-elapsed-row" aria-live="polite">
-                                   <div class="kro-check-elapsed-showcase">
-                                       <span class="kro-check-elapsed-label" id="kro-check-timer-caption">Идёт проверка канала · прошло</span>
-                                       <div class="kro-check-elapsed-clock">
-                                           <span class="kro-check-elapsed-digits" id="kro-check-elapsed">0:00</span>
-                                           <div class="kro-check-scan-track" aria-hidden="true">
-                                               <span class="kro-check-scan-grid"></span>
-                                               <span class="kro-check-scan-beam"></span>
-                                               <span class="kro-check-scan-pulse"></span>
+                           <div class="kro-check-progress-inner">
+                               <header class="kro-check-progress-head">
+                                   <div class="kro-check-progress-radar" aria-hidden="true">
+                                       <span class="kro-check-radar-corner kro-check-radar-corner--tl"></span>
+                                       <span class="kro-check-radar-corner kro-check-radar-corner--tr"></span>
+                                       <span class="kro-check-radar-corner kro-check-radar-corner--bl"></span>
+                                       <span class="kro-check-radar-corner kro-check-radar-corner--br"></span>
+                                       <span class="kro-check-radar-sweep"></span>
+                                       <span class="kro-check-radar-core"></span>
+                                   </div>
+                                   <p class="kro-check-progress-status-tag">СИСТЕМА · АНАЛИЗ КАНАЛА</p>
+                               </header>
+                               <div class="kro-check-progress-main">
+                                   <p class="kro-check-progress-title" id="kro-check-progress-title"></p>
+                                   <p class="kro-check-progress-activity" id="kro-check-progress-activity" aria-live="polite"></p>
+                                   <div class="kro-check-progress-grid">
+                                       <div class="kro-check-progress-panel kro-check-progress-panel--metrics">
+                                           <div class="kro-check-elapsed-row" aria-live="polite">
+                                               <div class="kro-check-elapsed-showcase">
+                                                   <span class="kro-check-elapsed-label" id="kro-check-timer-caption">Идёт проверка канала · прошло</span>
+                                                   <div class="kro-check-elapsed-clock">
+                                                       <span class="kro-check-elapsed-digits" id="kro-check-elapsed">0:00</span>
+                                                       <div class="kro-check-scan-track" aria-hidden="true">
+                                                           <span class="kro-check-scan-grid"></span>
+                                                           <span class="kro-check-scan-beam"></span>
+                                                           <span class="kro-check-scan-pulse"></span>
+                                                       </div>
+                                                   </div>
+                                               </div>
                                            </div>
+                                           <div class="kro-check-pipeline" id="kro-check-pipeline" aria-hidden="true">
+                                               <span class="kro-check-pipeline-node" data-kro-pipe="0"><span class="kro-check-pipe-num">01</span>Канал</span>
+                                               <span class="kro-check-pipeline-arrow" aria-hidden="true"></span>
+                                               <span class="kro-check-pipeline-node" data-kro-pipe="1"><span class="kro-check-pipe-num">02</span>Жалобы</span>
+                                               <span class="kro-check-pipeline-arrow" aria-hidden="true"></span>
+                                               <span class="kro-check-pipeline-node" data-kro-pipe="2"><span class="kro-check-pipe-num">03</span>Лента</span>
+                                               <span class="kro-check-pipeline-arrow" aria-hidden="true"></span>
+                                               <span class="kro-check-pipeline-node" data-kro-pipe="3"><span class="kro-check-pipe-num">04</span>Вывод</span>
+                                           </div>
+                                       </div>
+                                       <div class="kro-check-progress-panel kro-check-progress-panel--log">
+                                           <p class="kro-check-progress-human" id="kro-check-progress-human"></p>
+                                           <p class="kro-check-progress-note" id="kro-check-progress-note">Смотрим этот канал: жалобы, мониторинг и при доступности чтение ленты в Telegram (до ~30 дней) плюс открытая страница. До 7 минут на один запрос — не закрывайте вкладку, таймер идёт в реальном времени.</p>
+                                           <ol class="kro-check-progress-track" aria-label="Этапы проверки канала">
+                                               <li class="kro-check-progress-step" id="kro-progress-step-0">Канал принят, запрос уходит на сервер</li>
+                                               <li class="kro-check-progress-step" id="kro-progress-step-1">Сверяем жалобы и мониторинг по этому каналу</li>
+                                               <li class="kro-check-progress-step" id="kro-progress-step-2">Читаем публичную ленту канала (если Telegram не режет доступ)</li>
+                                               <li class="kro-check-progress-step" id="kro-progress-step-3">Собираем разделы отчёта и итоговый вывод</li>
+                                           </ol>
                                        </div>
                                    </div>
                                </div>
-                               <div class="kro-check-pipeline" id="kro-check-pipeline" aria-hidden="true">
-                                   <span class="kro-check-pipeline-node" data-kro-pipe="0"><span class="kro-check-pipe-num">01</span>Канал</span>
-                                   <span class="kro-check-pipeline-arrow" aria-hidden="true"></span>
-                                   <span class="kro-check-pipeline-node" data-kro-pipe="1"><span class="kro-check-pipe-num">02</span>Жалобы</span>
-                                   <span class="kro-check-pipeline-arrow" aria-hidden="true"></span>
-                                   <span class="kro-check-pipeline-node" data-kro-pipe="2"><span class="kro-check-pipe-num">03</span>Лента</span>
-                                   <span class="kro-check-pipeline-arrow" aria-hidden="true"></span>
-                                   <span class="kro-check-pipeline-node" data-kro-pipe="3"><span class="kro-check-pipe-num">04</span>Вывод</span>
-                               </div>
-                               <p class="kro-check-progress-human" id="kro-check-progress-human"></p>
-                               <p class="kro-check-progress-note" id="kro-check-progress-note">Смотрим этот канал: жалобы, мониторинг и при доступности чтение ленты в Telegram (до ~30 дней) плюс открытая страница. До 7 минут на один запрос — не закрывайте вкладку, таймер идёт в реальном времени.</p>
-                               <ol class="kro-check-progress-track" aria-label="Этапы проверки канала">
-                                   <li class="kro-check-progress-step" id="kro-progress-step-0">Канал принят, запрос уходит на сервер</li>
-                                   <li class="kro-check-progress-step" id="kro-progress-step-1">Сверяем жалобы и мониторинг по этому каналу</li>
-                                   <li class="kro-check-progress-step" id="kro-progress-step-2">Читаем публичную ленту канала (если Telegram не режет доступ)</li>
-                                   <li class="kro-check-progress-step" id="kro-progress-step-3">Собираем разделы отчёта и итоговый вывод</li>
-                               </ol>
+                           </div>
+                           <div class="kro-check-progress-rail kro-check-progress-rail--right" aria-hidden="true">
+                               <span class="kro-check-rail-line"></span>
+                               <span class="kro-check-rail-line"></span>
+                               <span class="kro-check-rail-line"></span>
+                               <span class="kro-check-rail-line"></span>
+                               <span class="kro-check-rail-line"></span>
+                               <span class="kro-check-rail-line"></span>
                            </div>
                        </div>
                    </div>

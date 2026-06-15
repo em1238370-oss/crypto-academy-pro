@@ -1856,14 +1856,28 @@ body.kro-main .kro-floating-nav {
 
 .kro-check-progress {
    position: relative;
-   max-width: 720px !important;
-   margin: 16px auto 0 !important;
+   max-width: min(920px, 100%) !important;
+   width: 100% !important;
+   margin: 20px auto 0 !important;
    padding: 0 !important;
    border-radius: var(--kro-radius-md) !important;
    background: var(--kro-bg-soft) !important;
    border: 1px solid rgba(255, 255, 255, 0.1) !important;
    box-shadow: none !important;
    overflow: hidden;
+}
+
+.kro-check-progress::after {
+   content: '';
+   position: absolute;
+   inset: 0;
+   pointer-events: none;
+   background:
+      linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px),
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+   background-size: 24px 24px;
+   mask-image: radial-gradient(ellipse 85% 75% at 50% 45%, #000 20%, transparent 100%);
+   opacity: 0.55;
 }
 
 /* Бегущая полоса данных по верхней кромке */
@@ -1881,22 +1895,84 @@ body.kro-main .kro-floating-nav {
    pointer-events: none;
 }
 
-.kro-check-progress-inner {
-   display: flex !important;
-   gap: 18px !important;
-   align-items: flex-start !important;
-   padding: 20px 22px !important;
-   background: transparent !important;
-   border: none !important;
+/* Рамка: боковые рельсы + центр */
+.kro-check-progress-frame {
+   position: relative;
+   z-index: 1;
+   display: grid;
+   grid-template-columns: minmax(0, 1fr) minmax(0, 640px) minmax(0, 1fr);
+   align-items: stretch;
+   min-height: 100%;
 }
 
-/* Радар слева — повторяющееся вращение */
+.kro-check-progress-rail {
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   gap: 10px;
+   padding: 24px 12px;
+   overflow: hidden;
+}
+
+.kro-check-rail-line {
+   display: block;
+   height: 1px;
+   background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.35), transparent);
+   opacity: 0.35;
+   animation: kro-rail-pulse 2.4s ease-in-out infinite;
+}
+
+.kro-check-progress-rail--left .kro-check-rail-line:nth-child(odd) {
+   animation-name: kro-rail-pulse-left;
+}
+
+.kro-check-progress-rail--right .kro-check-rail-line:nth-child(even) {
+   animation-name: kro-rail-pulse-right;
+}
+
+.kro-check-progress-rail--left .kro-check-rail-line:nth-child(1) { animation-delay: 0s; }
+.kro-check-progress-rail--left .kro-check-rail-line:nth-child(2) { animation-delay: 0.25s; }
+.kro-check-progress-rail--left .kro-check-rail-line:nth-child(3) { animation-delay: 0.5s; }
+.kro-check-progress-rail--left .kro-check-rail-line:nth-child(4) { animation-delay: 0.75s; }
+.kro-check-progress-rail--left .kro-check-rail-line:nth-child(5) { animation-delay: 1s; }
+.kro-check-progress-rail--left .kro-check-rail-line:nth-child(6) { animation-delay: 1.25s; }
+
+.kro-check-progress-rail--right .kro-check-rail-line:nth-child(1) { animation-delay: 0.15s; }
+.kro-check-progress-rail--right .kro-check-rail-line:nth-child(2) { animation-delay: 0.4s; }
+.kro-check-progress-rail--right .kro-check-rail-line:nth-child(3) { animation-delay: 0.65s; }
+.kro-check-progress-rail--right .kro-check-rail-line:nth-child(4) { animation-delay: 0.9s; }
+.kro-check-progress-rail--right .kro-check-rail-line:nth-child(5) { animation-delay: 1.15s; }
+.kro-check-progress-rail--right .kro-check-rail-line:nth-child(6) { animation-delay: 1.4s; }
+
+.kro-check-progress-inner {
+   display: flex !important;
+   flex-direction: column !important;
+   gap: 0 !important;
+   align-items: center !important;
+   text-align: center !important;
+   padding: 24px 20px 22px !important;
+   background: transparent !important;
+   border: none !important;
+   border-left: 1px solid rgba(255, 255, 255, 0.05);
+   border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.kro-check-progress-head {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   gap: 10px;
+   margin-bottom: 16px;
+   width: 100%;
+}
+
+/* Радар — по центру сверху */
 .kro-check-progress-radar {
    flex-shrink: 0;
    position: relative;
-   width: 52px;
-   height: 52px;
-   margin-top: 2px;
+   width: 56px;
+   height: 56px;
+   margin: 0;
 }
 
 .kro-check-radar-corner {
@@ -1932,11 +2008,12 @@ body.kro-main .kro-floating-nav {
 
 .kro-check-progress-main {
    flex: 1;
+   width: 100%;
    min-width: 0;
 }
 
 .kro-check-progress-status-tag {
-   margin: 0 0 8px;
+   margin: 0;
    font-family: var(--kro-font-mono);
    font-size: 0.62rem;
    font-weight: 600;
@@ -1953,29 +2030,73 @@ body.kro-main .kro-floating-nav {
 }
 
 .kro-check-progress-title {
-   margin: 0 0 8px !important;
+   margin: 0 auto 10px !important;
+   max-width: 38rem;
    font-size: clamp(14px, 2vw, 16px) !important;
    font-weight: 600 !important;
-   line-height: 1.45 !important;
+   line-height: 1.5 !important;
    color: rgba(232, 234, 237, 0.92) !important;
+   text-align: center !important;
 }
 
 .kro-check-progress-activity {
-   margin: 0 0 12px !important;
-   padding: 6px 10px !important;
+   margin: 0 auto 16px !important;
+   max-width: 36rem;
+   padding: 8px 14px !important;
    font-family: var(--kro-font-mono) !important;
    font-size: 0.72rem !important;
    font-weight: 500 !important;
    letter-spacing: 0.04em !important;
    color: var(--kro-accent) !important;
    background: rgba(245, 158, 11, 0.06) !important;
-   border-left: 2px solid var(--kro-accent) !important;
+   border: 1px solid rgba(245, 158, 11, 0.2) !important;
+   border-left: none !important;
+   border-right: none !important;
    min-height: auto !important;
+   text-align: center !important;
+}
+
+/* Две колонки — заполняем ширину */
+.kro-check-progress-grid {
+   display: grid;
+   grid-template-columns: 1fr 1fr;
+   gap: 14px;
+   width: 100%;
+   text-align: left;
+}
+
+.kro-check-progress-panel {
+   padding: 14px;
+   border-radius: var(--kro-radius-sm);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   background: rgba(9, 9, 11, 0.55);
+   min-width: 0;
+}
+
+.kro-check-progress-panel--metrics {
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+}
+
+.kro-check-progress-panel--log {
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
 }
 
 /* Таймер — цифровой табло */
 .kro-check-progress .kro-check-elapsed-row {
-   margin: 0 0 14px !important;
+   margin: 0 !important;
+   width: 100%;
+}
+
+.kro-check-elapsed-showcase {
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+   align-items: center;
+   width: 100%;
 }
 
 .kro-check-elapsed-label {
@@ -1984,14 +2105,16 @@ body.kro-main .kro-floating-nav {
    letter-spacing: 0.12em !important;
    text-transform: uppercase !important;
    color: rgba(148, 163, 184, 0.9) !important;
+   text-align: center !important;
+   width: 100%;
 }
 
 .kro-check-elapsed-clock {
    position: relative;
    margin-top: 8px;
-   padding: 14px 16px 12px !important;
+   padding: 16px 18px 14px !important;
    border-radius: var(--kro-radius-sm) !important;
-   text-align: left !important;
+   text-align: center !important;
    overflow: hidden !important;
    background: var(--kro-bg) !important;
    border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -2063,8 +2186,9 @@ body.kro-main .kro-floating-nav {
    grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr !important;
    align-items: center !important;
    gap: 0 !important;
-   margin: 0 0 14px !important;
+   margin: 0 !important;
    padding: 0 !important;
+   width: 100%;
    border: none !important;
    background: transparent !important;
    box-shadow: none !important;
@@ -2136,18 +2260,20 @@ body.kro-main .kro-floating-nav {
 }
 
 .kro-check-progress-human {
-   margin: 0 0 6px !important;
-   font-size: 0.9rem !important;
-   font-weight: 500 !important;
-   color: rgba(232, 234, 237, 0.85) !important;
+   margin: 0 !important;
+   font-size: 0.92rem !important;
+   font-weight: 600 !important;
+   color: rgba(232, 234, 237, 0.9) !important;
+   text-align: center;
 }
 
 .kro-check-progress-note {
-   margin: 0 0 12px !important;
+   margin: 0 !important;
    font-family: var(--kro-font-mono) !important;
-   font-size: 0.7rem !important;
+   font-size: 0.68rem !important;
    line-height: 1.5 !important;
    color: rgba(148, 163, 184, 0.85) !important;
+   text-align: center;
 }
 
 /* Журнал этапов — терминальный лог */
@@ -2258,15 +2384,43 @@ body.kro-main .kro-floating-nav {
    50% { opacity: 0.35; }
 }
 
-@media (max-width: 600px) {
+@keyframes kro-rail-pulse {
+   0%, 100% { opacity: 0.2; transform: scaleX(0.6); }
+   50% { opacity: 0.75; transform: scaleX(1); }
+}
+
+@keyframes kro-rail-pulse-left {
+   0%, 100% { opacity: 0.15; transform: scaleX(0.5); transform-origin: right center; }
+   50% { opacity: 0.7; transform: scaleX(1); transform-origin: right center; }
+}
+
+@keyframes kro-rail-pulse-right {
+   0%, 100% { opacity: 0.15; transform: scaleX(0.5); transform-origin: left center; }
+   50% { opacity: 0.7; transform: scaleX(1); transform-origin: left center; }
+}
+
+@media (max-width: 760px) {
+   .kro-check-progress-frame {
+      grid-template-columns: 1fr;
+   }
+
+   .kro-check-progress-rail {
+      display: none;
+   }
+
    .kro-check-progress-inner {
-      flex-direction: column !important;
-      gap: 12px !important;
+      border-left: none;
+      border-right: none;
+      padding: 20px 16px 18px !important;
+   }
+
+   .kro-check-progress-grid {
+      grid-template-columns: 1fr;
    }
 
    .kro-check-progress-radar {
-      width: 44px;
-      height: 44px;
+      width: 48px;
+      height: 48px;
    }
 
    .kro-check-pipeline {
@@ -2279,6 +2433,13 @@ body.kro-main .kro-floating-nav {
    }
 }
 
+@media (max-width: 600px) {
+   .kro-check-progress-inner {
+      flex-direction: column !important;
+      gap: 12px !important;
+   }
+}
+
 @media (prefers-reduced-motion: reduce) {
    .kro-check-progress::before,
    .kro-check-radar-sweep,
@@ -2288,7 +2449,8 @@ body.kro-main .kro-floating-nav {
    .kro-check-scan-beam,
    .kro-check-scan-pulse,
    .kro-check-pipeline-node--on,
-   .kro-check-progress-step--active::before {
+   .kro-check-progress-step--active::before,
+   .kro-check-rail-line {
       animation: none !important;
    }
 }
