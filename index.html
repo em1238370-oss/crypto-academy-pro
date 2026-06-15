@@ -14,7 +14,7 @@
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="styles.css?v=20260614-layout-flow-fix">
-   <link rel="stylesheet" href="kro-brand-ui.css?v=20260614-kro-brand-stark">
+   <link rel="stylesheet" href="kro-brand-ui.css?v=20260614-kro-progress-radar">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -311,8 +311,16 @@
                    <div class="kro-check-result hidden" id="kro-check-result" aria-live="polite"></div>
                    <div class="kro-check-progress hidden" id="kro-check-progress" aria-busy="true" aria-live="polite" hidden>
                        <div class="kro-check-progress-inner">
-                           <span class="kro-check-progress-spinner" aria-hidden="true"></span>
+                           <div class="kro-check-progress-radar" aria-hidden="true">
+                               <span class="kro-check-radar-corner kro-check-radar-corner--tl"></span>
+                               <span class="kro-check-radar-corner kro-check-radar-corner--tr"></span>
+                               <span class="kro-check-radar-corner kro-check-radar-corner--bl"></span>
+                               <span class="kro-check-radar-corner kro-check-radar-corner--br"></span>
+                               <span class="kro-check-radar-sweep"></span>
+                               <span class="kro-check-radar-core"></span>
+                           </div>
                            <div class="kro-check-progress-main">
+                               <p class="kro-check-progress-status-tag">СИСТЕМА · АНАЛИЗ КАНАЛА</p>
                                <p class="kro-check-progress-title" id="kro-check-progress-title"></p>
                                <p class="kro-check-progress-activity" id="kro-check-progress-activity" aria-live="polite"></p>
                                <div class="kro-check-elapsed-row" aria-live="polite">
@@ -320,35 +328,22 @@
                                        <span class="kro-check-elapsed-label" id="kro-check-timer-caption">Идёт проверка канала · прошло</span>
                                        <div class="kro-check-elapsed-clock">
                                            <span class="kro-check-elapsed-digits" id="kro-check-elapsed">0:00</span>
-                                           <div class="kro-check-mascot-lane" aria-hidden="true">
-                                               <span class="kro-check-mascot-lane-glow"></span>
-                                              <span class="kro-check-mascot">
-                                                  <svg class="kro-check-mascot-svg" width="40" height="24" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
-                                                      <defs>
-                                                          <linearGradient id="kro-check-btc-grad" x1="9" y1="4" x2="31" y2="26" gradientUnits="userSpaceOnUse">
-                                                              <stop stop-color="#fef3c7" />
-                                                              <stop offset="1" stop-color="#f59e0b" />
-                                                          </linearGradient>
-                                                      </defs>
-                                                      <g class="kro-check-coin">
-                                                          <circle class="kro-check-coin-core" cx="20" cy="14" r="10.5" />
-                                                          <circle class="kro-check-coin-ring" cx="20" cy="14" r="10.5" />
-                                                          <text class="kro-check-coin-symbol" x="20" y="17.6">₿</text>
-                                                      </g>
-                                                  </svg>
-                                              </span>
+                                           <div class="kro-check-scan-track" aria-hidden="true">
+                                               <span class="kro-check-scan-grid"></span>
+                                               <span class="kro-check-scan-beam"></span>
+                                               <span class="kro-check-scan-pulse"></span>
                                            </div>
                                        </div>
                                    </div>
                                </div>
                                <div class="kro-check-pipeline" id="kro-check-pipeline" aria-hidden="true">
-                                   <span class="kro-check-pipeline-node" data-kro-pipe="0">Канал</span>
-                                   <span class="kro-check-pipeline-arrow" aria-hidden="true">→</span>
-                                   <span class="kro-check-pipeline-node" data-kro-pipe="1">Жалобы</span>
-                                   <span class="kro-check-pipeline-arrow" aria-hidden="true">→</span>
-                                   <span class="kro-check-pipeline-node" data-kro-pipe="2">Лента</span>
-                                   <span class="kro-check-pipeline-arrow" aria-hidden="true">→</span>
-                                   <span class="kro-check-pipeline-node" data-kro-pipe="3">Вывод</span>
+                                   <span class="kro-check-pipeline-node" data-kro-pipe="0"><span class="kro-check-pipe-num">01</span>Канал</span>
+                                   <span class="kro-check-pipeline-arrow" aria-hidden="true"></span>
+                                   <span class="kro-check-pipeline-node" data-kro-pipe="1"><span class="kro-check-pipe-num">02</span>Жалобы</span>
+                                   <span class="kro-check-pipeline-arrow" aria-hidden="true"></span>
+                                   <span class="kro-check-pipeline-node" data-kro-pipe="2"><span class="kro-check-pipe-num">03</span>Лента</span>
+                                   <span class="kro-check-pipeline-arrow" aria-hidden="true"></span>
+                                   <span class="kro-check-pipeline-node" data-kro-pipe="3"><span class="kro-check-pipe-num">04</span>Вывод</span>
                                </div>
                                <p class="kro-check-progress-human" id="kro-check-progress-human"></p>
                                <p class="kro-check-progress-note" id="kro-check-progress-note">Смотрим этот канал: жалобы, мониторинг и при доступности чтение ленты в Telegram (до ~30 дней) плюс открытая страница. До 7 минут на один запрос — не закрывайте вкладку, таймер идёт в реальном времени.</p>
