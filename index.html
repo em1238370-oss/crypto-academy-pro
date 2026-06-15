@@ -14,7 +14,7 @@
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="styles.css?v=20260614-layout-flow-fix">
-   <link rel="stylesheet" href="kro-brand-ui.css?v=20260614-kro-audit-protocol">
+   <link rel="stylesheet" href="kro-brand-ui.css?v=20260614-kro-report-flat">
    <link rel="stylesheet" href="scripts/vendor/lenis-1.3.17.css?v=1">
 </head>
 <body class="kro-main" style="margin: 0; padding: 0; position: relative;">
@@ -489,19 +489,7 @@
                            <div class="kro-inline-findings-wrap hidden" id="kro-inline-findings-wrap" hidden>
                                <h4 class="kro-inline-findings-heading" id="kro-inline-findings-heading">Находки</h4>
                                <p class="kro-inline-findings-lead" id="kro-inline-findings-lead"></p>
-                               <div class="kro-inline-findings-table-scroll">
-                                   <table class="kro-inline-findings-table" id="kro-inline-findings-table" aria-describedby="kro-inline-findings-lead">
-                                       <thead>
-                                           <tr>
-                                               <th scope="col">Важность</th>
-                                               <th scope="col">Суть</th>
-                                               <th scope="col">Цитата из поста</th>
-                                               <th scope="col"><span class="kro-sr-only">Открыть</span></th>
-                                           </tr>
-                                       </thead>
-                                       <tbody id="kro-inline-findings-tbody"></tbody>
-                                   </table>
-                               </div>
+                               <div class="kro-findings-list" id="kro-inline-findings-list" role="list" aria-describedby="kro-inline-findings-lead"></div>
                            </div>
                            <div class="kro-inline-deep-status hidden" id="kro-inline-deep-status" hidden aria-live="polite"></div>
                            <p class="kro-inline-reasons-title" id="kro-inline-reasons-title">Откуда взялся итог</p>
@@ -2503,8 +2491,8 @@
                    var wrap = document.getElementById('kro-inline-findings-wrap');
                    var theadHint = document.getElementById('kro-inline-findings-heading');
                    var lead = document.getElementById('kro-inline-findings-lead');
-                   var tbody = document.getElementById('kro-inline-findings-tbody');
-                   if (!wrap || !tbody) return;
+                   var list = document.getElementById('kro-inline-findings-list');
+                   if (!wrap || !list) return;
                    var rows = kroBuildFindingsRows(data);
                    window.__kroFindingsLastRows = rows;
                    window.__kroFindingsChannelLabel = String(displayLabel || '');
@@ -2512,7 +2500,7 @@
                    if (!rows.length) {
                        wrap.classList.add('hidden');
                        wrap.hidden = true;
-                       tbody.innerHTML = '';
+                       list.innerHTML = '';
                        return;
                    }
                    var seed = kroStrHash(String(displayLabel || '') + String((data && data.channel_key) || ''));
@@ -2520,30 +2508,27 @@
                        theadHint.textContent = kroPickVariant([
                            'Что заметили по каналу',
                            'Кратко: факты и цитаты',
-                           'Таблица с выдержками из постов',
                            'Строка за строкой — что нашли',
                        ], seed);
                    }
                    if (lead) {
                        lead.textContent = kroPickVariant([
                            'Нажмите «Подробнее» — откроется цитата и короткое пояснение.',
-                           'Цитаты из реальных постов в момент проверки. Пояснение — во всплывающем окне.',
+                           'Цитаты из реальных постов в момент проверки.',
                            'Каждая строка — наблюдение по тексту канала.',
                        ], seed + 2);
                    }
-                   tbody.innerHTML = rows
+                   list.innerHTML = rows
                        .map(function (row, idx) {
                            var chip = '<span class="' + kroFindingChipClass(row.severity) + '">' + esc(kroFindingChipLabel(row.severity)) + '</span>';
-                           var sn = row.snippet ? kroClipSnippet(row.snippet, 86) : '—';
+                           var sn = row.snippet ? kroClipSnippet(row.snippet, 120) : '—';
                            return (
-                               '<tr class="kro-finding-row">' +
-                               '<td data-label="Важность">' + chip + '</td>' +
-                               '<td data-label="Суть">' + esc(row.label) + '</td>' +
-                               '<td data-label="Цитата"><span class="kro-finding-snippet-preview">' + esc(sn) + '</span></td>' +
-                               '<td data-label="Ещё"><button type="button" class="kro-finding-explain-btn" data-finding-idx="' +
-                               idx +
-                               '">Подробнее</button></td>' +
-                               '</tr>'
+                               '<article class="kro-finding-item kro-finding-item--' + (row.severity || 'info') + '" role="listitem">' +
+                               '<div class="kro-finding-item-top">' + chip +
+                               '<p class="kro-finding-item-label">' + esc(row.label) + '</p></div>' +
+                               '<p class="kro-finding-item-quote">' + esc(sn) + '</p>' +
+                               '<button type="button" class="kro-finding-explain-btn" data-finding-idx="' + idx + '">Подробнее</button>' +
+                               '</article>'
                            );
                        })
                        .join('');
@@ -4982,7 +4967,7 @@
                            lg.className = 'kro-inline-live-gate hidden';
                        }
                        var fw = document.getElementById('kro-inline-findings-wrap');
-                       var ft = document.getElementById('kro-inline-findings-tbody');
+                       var ft = document.getElementById('kro-inline-findings-list');
                        if (fw) {
                            fw.hidden = true;
                            fw.classList.add('hidden');

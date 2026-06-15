@@ -2367,3 +2367,649 @@ body.kro-main .kro-floating-nav {
       animation: none !important;
    }
 }
+
+/* ==========================================================================
+   Отчёт после проверки — плоский стиль KRO Brand (без «таблиц в таблицах»)
+   ========================================================================== */
+
+.kro-inline-report {
+   width: 100%;
+   max-width: min(960px, 100%);
+   margin: 20px auto 0;
+}
+
+.kro-inline-report .kro-inline-report-card--document,
+.kro-inline-report .kro-result-card.kro-inline-report-card--document {
+   position: relative !important;
+   overflow: visible !important;
+   isolation: auto !important;
+   padding: 0 !important;
+   border-radius: 6px !important;
+   background: linear-gradient(165deg, #111318 0%, #09090b 100%) !important;
+   border: 1px solid rgba(255, 255, 255, 0.1) !important;
+   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4) !important;
+   transform: none !important;
+   perspective: none !important;
+}
+
+.kro-inline-report .kro-inline-report-card--document::before,
+.kro-inline-report .kro-inline-report-card--document::after {
+   display: none !important;
+}
+
+.kro-inline-report .kro-inline-report-card--document:hover {
+   transform: none !important;
+   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4) !important;
+   border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Служебная полоса как у протокола анализа */
+.kro-inline-report .kro-inline-report-card--document::before {
+   display: block !important;
+   content: 'ОТЧЁТ · РЕЗУЛЬТАТ ПРОВЕРКИ' !important;
+   position: static !important;
+   inset: auto !important;
+   padding: 10px 20px !important;
+   font-family: var(--kro-font-mono) !important;
+   font-size: 0.6rem !important;
+   font-weight: 600 !important;
+   letter-spacing: 0.2em !important;
+   color: rgba(148, 163, 184, 0.9) !important;
+   background: rgba(0, 0, 0, 0.35) !important;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+   opacity: 1 !important;
+   pointer-events: auto !important;
+   z-index: auto !important;
+}
+
+.kro-result-main-card {
+   margin: 0 !important;
+   padding: 22px 22px 18px !important;
+   border: none !important;
+   border-radius: 0 !important;
+   background: transparent !important;
+   box-shadow: none !important;
+}
+
+.kro-result-topline {
+   margin-bottom: 14px !important;
+}
+
+.kro-result-risk-badge {
+   border-radius: 4px !important;
+   padding: 6px 10px !important;
+   font-family: var(--kro-font-mono) !important;
+   font-size: 0.68rem !important;
+   letter-spacing: 0.08em !important;
+   text-transform: uppercase !important;
+}
+
+.kro-result-channel {
+   font-family: var(--kro-font-mono) !important;
+   font-size: 0.8rem !important;
+   color: rgba(148, 163, 184, 0.85) !important;
+}
+
+.kro-result-hero-verdict {
+   font-family: var(--kro-font-heading) !important;
+   font-size: clamp(1.25rem, 3.5vw, 1.65rem) !important;
+   font-weight: 700 !important;
+   line-height: 1.35 !important;
+   letter-spacing: -0.02em !important;
+   color: #fff !important;
+   margin-bottom: 14px !important;
+}
+
+.kro-result-reveal {
+   margin-bottom: 14px !important;
+   padding: 12px 14px !important;
+   border-radius: 4px !important;
+   border: none !important;
+   border-left: 3px solid rgba(148, 163, 184, 0.5) !important;
+   background: rgba(255, 255, 255, 0.03) !important;
+   box-shadow: none !important;
+   font-size: 0.92rem !important;
+   color: rgba(232, 234, 237, 0.82) !important;
+}
+
+.kro-result-next-action {
+   margin-bottom: 16px !important;
+   padding: 14px 16px !important;
+   border-radius: 4px !important;
+   background: rgba(245, 158, 11, 0.08) !important;
+   border: 1px solid rgba(245, 158, 11, 0.28) !important;
+   box-shadow: none !important;
+}
+
+.kro-result-next-action-label {
+   font-family: var(--kro-font-mono) !important;
+   font-size: 0.62rem !important;
+   letter-spacing: 0.14em !important;
+   color: var(--kro-accent) !important;
+}
+
+.kro-result-next-action-text {
+   font-size: 1rem !important;
+   color: #fff !important;
+}
+
+.kro-result-meta {
+   margin-bottom: 16px !important;
+   padding-bottom: 14px !important;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.kro-result-score {
+   font-family: var(--kro-font-mono) !important;
+   font-size: 1.25rem !important;
+   color: var(--kro-accent) !important;
+}
+
+.kro-result-meta-caption {
+   font-family: var(--kro-font-mono) !important;
+   font-size: 0.62rem !important;
+   letter-spacing: 0.12em !important;
+   color: rgba(148, 163, 184, 0.75) !important;
+}
+
+/* Буллеты — простые строки, не карточки */
+.kro-result-bullets {
+   gap: 0 !important;
+   margin-bottom: 18px !important;
+   border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.kro-result-bullet {
+   padding: 11px 0 11px 28px !important;
+   border-radius: 0 !important;
+   background: transparent !important;
+   border: none !important;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+   box-shadow: none !important;
+   font-size: 0.9rem !important;
+   position: relative;
+}
+
+.kro-result-bullet-mark {
+   position: absolute;
+   left: 0;
+   top: 11px;
+   width: 18px;
+   text-align: center;
+}
+
+/* Кто за каналом */
+.kro-result-person {
+   margin-bottom: 16px !important;
+   padding: 14px 0 0 !important;
+   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kro-result-person-h,
+.kro-detail-card-h,
+.kro-inline-findings-heading,
+.kro-scheme-section-title {
+   font-family: var(--kro-font-mono) !important;
+   font-size: 0.62rem !important;
+   font-weight: 600 !important;
+   letter-spacing: 0.16em !important;
+   text-transform: uppercase !important;
+   color: rgba(148, 163, 184, 0.9) !important;
+   margin-bottom: 10px !important;
+}
+
+.kro-result-person-grid,
+.kro-detail-person-grid {
+   gap: 4px 16px !important;
+   margin-bottom: 8px !important;
+}
+
+.kro-result-grid-row dt,
+.kro-result-person-grid dt,
+.kro-detail-person-grid dt {
+   font-family: var(--kro-font-mono) !important;
+   font-size: 0.65rem !important;
+   letter-spacing: 0.08em !important;
+   text-transform: uppercase !important;
+   color: rgba(148, 163, 184, 0.65) !important;
+}
+
+.kro-result-grid-row dd,
+.kro-result-person-grid dd,
+.kro-detail-person-grid dd {
+   font-size: 0.88rem !important;
+   color: rgba(232, 234, 237, 0.9) !important;
+}
+
+.kro-result-more-btn {
+   width: 100%;
+   margin-top: 4px;
+   padding: 12px 16px !important;
+   font-family: var(--kro-font-body) !important;
+   font-size: 0.8rem !important;
+   font-weight: 700 !important;
+   letter-spacing: 0.06em !important;
+   text-transform: uppercase !important;
+   color: rgba(232, 234, 237, 0.9) !important;
+   background: rgba(255, 255, 255, 0.04) !important;
+   border: 1px solid rgba(255, 255, 255, 0.12) !important;
+   border-radius: 4px !important;
+   box-shadow: none !important;
+   cursor: pointer;
+   transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.kro-result-more-btn:hover {
+   background: rgba(245, 158, 11, 0.08) !important;
+   border-color: rgba(245, 158, 11, 0.35) !important;
+   color: #fff !important;
+   transform: none !important;
+}
+
+/* Детали — секции-разделители, без вложенных карточек */
+.kro-result-details-panel {
+   display: flex !important;
+   flex-direction: column !important;
+   gap: 0 !important;
+   padding: 0 22px 22px !important;
+   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kro-detail-card {
+   padding: 18px 0 !important;
+   margin: 0 !important;
+   border: none !important;
+   border-radius: 0 !important;
+   background: transparent !important;
+   box-shadow: none !important;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.kro-detail-card:last-child {
+   border-bottom: none !important;
+}
+
+/* Схемы — плоские блоки с полосой слева */
+.kro-detail-flags-list .kro-scheme-card,
+.kro-scheme-card {
+   margin-bottom: 10px !important;
+   padding: 12px 12px 12px 16px !important;
+   border-radius: 4px !important;
+   border: none !important;
+   border-left: 3px solid rgba(148, 163, 184, 0.35) !important;
+   background: rgba(255, 255, 255, 0.02) !important;
+   box-shadow: none !important;
+}
+
+.kro-scheme-card--danger {
+   border-left-color: rgba(239, 68, 68, 0.65) !important;
+   background: rgba(239, 68, 68, 0.04) !important;
+}
+
+.kro-scheme-card--warn {
+   border-left-color: var(--kro-accent) !important;
+   background: rgba(245, 158, 11, 0.04) !important;
+}
+
+.kro-scheme-card--good {
+   border-left-color: rgba(34, 197, 94, 0.55) !important;
+   background: rgba(34, 197, 94, 0.04) !important;
+}
+
+.kro-scheme-badge {
+   border-radius: 3px !important;
+   font-family: var(--kro-font-mono) !important;
+   font-size: 0.6rem !important;
+   letter-spacing: 0.1em !important;
+}
+
+.kro-scheme-trap {
+   gap: 6px !important;
+   margin: 8px 0 !important;
+}
+
+.kro-scheme-trap-step {
+   border-radius: 3px !important;
+   font-size: 0.72rem !important;
+   padding: 4px 8px !important;
+}
+
+.kro-scheme-quote {
+   border-top: 1px dashed rgba(255, 255, 255, 0.1) !important;
+   padding-top: 8px !important;
+   margin-top: 8px !important;
+}
+
+.kro-scheme-quote-text {
+   font-size: 0.85rem !important;
+   line-height: 1.5 !important;
+   color: rgba(232, 234, 237, 0.75) !important;
+   border-left: 2px solid rgba(245, 158, 11, 0.4) !important;
+   padding-left: 10px !important;
+}
+
+/* Таблица сигналов → список строк */
+.kro-detail-signals-table-wrap {
+   border: none !important;
+   background: transparent !important;
+   overflow: visible !important;
+}
+
+.kro-detail-signals-table thead {
+   display: none !important;
+}
+
+.kro-detail-signals-table tbody tr {
+   display: block;
+   padding: 12px 0;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.kro-detail-signals-table tbody tr:last-child {
+   border-bottom: none;
+}
+
+.kro-detail-signals-table td {
+   display: block;
+   padding: 2px 0 !important;
+   border: none !important;
+   font-size: 0.85rem !important;
+}
+
+.kro-detail-signals-table td:first-child {
+   font-weight: 600;
+   color: #fff;
+   margin-bottom: 4px;
+}
+
+.kro-detail-signal-quote {
+   font-style: normal !important;
+   font-size: 0.8rem !important;
+   color: rgba(148, 163, 184, 0.85) !important;
+   max-width: none !important;
+   border-left: 2px solid rgba(255, 255, 255, 0.1);
+   padding-left: 10px;
+   margin: 4px 0;
+}
+
+.kro-web-evidence-item {
+   padding: 10px 0 10px 12px !important;
+   border: none !important;
+   border-left: 2px solid rgba(255, 255, 255, 0.1) !important;
+   border-radius: 0 !important;
+   background: transparent !important;
+}
+
+/* Legacy блок внутри отчёта — уплощение */
+.kro-result-legacy {
+   padding-top: 8px;
+}
+
+.kro-inline-report-summary {
+   display: flex !important;
+   flex-wrap: wrap !important;
+   gap: 16px 24px !important;
+   margin: 14px 0 !important;
+   padding: 12px 0 !important;
+   border-top: 1px solid rgba(255, 255, 255, 0.06);
+   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.kro-inline-summary-item {
+   min-height: 0 !important;
+   padding: 0 !important;
+   border: none !important;
+   border-radius: 0 !important;
+   background: transparent !important;
+   box-shadow: none !important;
+   transform: none !important;
+   flex: 1 1 140px;
+}
+
+.kro-inline-summary-item:hover {
+   transform: none !important;
+   box-shadow: none !important;
+}
+
+.kro-inline-summary-item:nth-child(1),
+.kro-inline-summary-item:nth-child(2) {
+   background: transparent !important;
+}
+
+.kro-inline-trust-stack {
+   padding: 14px 0 !important;
+   border: none !important;
+   background: transparent !important;
+   box-shadow: none !important;
+}
+
+.kro-inline-trust-modes {
+   display: flex !important;
+   gap: 6px !important;
+   margin: 12px 0 !important;
+   padding: 0 !important;
+   border: none !important;
+   background: transparent !important;
+}
+
+.kro-inline-trust-mode-btn {
+   flex: 1;
+   padding: 8px 10px !important;
+   border-radius: 4px !important;
+   font-size: 0.72rem !important;
+   font-weight: 700 !important;
+   letter-spacing: 0.06em !important;
+   text-transform: uppercase !important;
+   border: 1px solid rgba(255, 255, 255, 0.1) !important;
+   background: transparent !important;
+   color: rgba(148, 163, 184, 0.85) !important;
+}
+
+.kro-inline-trust-mode-btn.is-active {
+   border-color: rgba(245, 158, 11, 0.4) !important;
+   background: rgba(245, 158, 11, 0.1) !important;
+   color: var(--kro-accent) !important;
+   box-shadow: none !important;
+}
+
+.kro-inline-trust-mode-panel {
+   padding: 12px 0 !important;
+   border: none !important;
+   background: transparent !important;
+   box-shadow: none !important;
+   border-radius: 0 !important;
+}
+
+.kro-inline-trust-checklist,
+.kro-inline-trust-patterns,
+.kro-inline-trust-dimensions,
+.kro-inline-trust-evidence-list,
+.kro-inline-reasons {
+   padding: 0 !important;
+   margin: 10px 0 !important;
+   border: none !important;
+   border-radius: 0 !important;
+   background: transparent !important;
+   box-shadow: none !important;
+   list-style: none;
+}
+
+.kro-inline-trust-checklist li,
+.kro-inline-trust-patterns li,
+.kro-inline-reasons li {
+   padding: 8px 0 8px 16px !important;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+   position: relative;
+}
+
+.kro-inline-reasons li::before {
+   width: 4px !important;
+   height: 4px !important;
+   border-radius: 0 !important;
+   background: var(--kro-accent) !important;
+   box-shadow: none !important;
+   top: 1em !important;
+}
+
+.kro-inline-sections {
+   display: block !important;
+   gap: 0 !important;
+}
+
+.kro-inline-sec {
+   padding: 14px 0 !important;
+   margin: 0 !important;
+   border: none !important;
+   border-radius: 0 !important;
+   background: transparent !important;
+   box-shadow: none !important;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.kro-inline-sec:hover {
+   transform: none !important;
+   box-shadow: none !important;
+}
+
+.kro-inline-sec:nth-child(n) {
+   background: transparent !important;
+}
+
+.kro-inline-live-gate {
+   padding: 12px 14px !important;
+   border-radius: 4px !important;
+   border: 1px solid rgba(255, 255, 255, 0.1) !important;
+   background: rgba(255, 255, 255, 0.02) !important;
+   box-shadow: none !important;
+}
+
+.kro-inline-live-gate::before {
+   display: none !important;
+}
+
+/* Находки — список вместо таблицы */
+.kro-inline-findings-wrap {
+   margin: 18px 0 10px !important;
+   padding: 16px 0 0 !important;
+   border: none !important;
+   border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+   border-radius: 0 !important;
+   background: transparent !important;
+   box-shadow: none !important;
+}
+
+.kro-inline-findings-lead {
+   font-size: 0.78rem !important;
+   color: rgba(148, 163, 184, 0.8) !important;
+   margin-bottom: 12px !important;
+}
+
+.kro-findings-list {
+   display: flex;
+   flex-direction: column;
+   gap: 0;
+}
+
+.kro-finding-item {
+   padding: 14px 0;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.kro-finding-item:last-child {
+   border-bottom: none;
+}
+
+.kro-finding-item-top {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   gap: 8px 12px;
+   margin-bottom: 6px;
+}
+
+.kro-finding-item-label {
+   margin: 0;
+   flex: 1 1 200px;
+   font-size: 0.9rem;
+   font-weight: 600;
+   line-height: 1.4;
+   color: rgba(232, 234, 237, 0.92);
+}
+
+.kro-finding-item-quote {
+   margin: 0 0 10px;
+   padding-left: 12px;
+   border-left: 2px solid rgba(255, 255, 255, 0.1);
+   font-size: 0.8rem;
+   line-height: 1.5;
+   color: rgba(148, 163, 184, 0.85);
+}
+
+.kro-finding-chip {
+   border-radius: 3px !important;
+   padding: 3px 8px !important;
+   font-family: var(--kro-font-mono) !important;
+   font-size: 0.58rem !important;
+   letter-spacing: 0.08em !important;
+   text-transform: uppercase !important;
+}
+
+.kro-finding-chip--info {
+   background: rgba(100, 116, 139, 0.14) !important;
+   border-color: rgba(100, 116, 139, 0.3) !important;
+   color: #cbd5e1 !important;
+}
+
+.kro-finding-explain-btn {
+   padding: 7px 12px !important;
+   border-radius: 4px !important;
+   font-size: 0.68rem !important;
+   font-weight: 700 !important;
+   letter-spacing: 0.06em !important;
+   text-transform: uppercase !important;
+   border: 1px solid rgba(255, 255, 255, 0.12) !important;
+   background: rgba(255, 255, 255, 0.04) !important;
+   color: rgba(232, 234, 237, 0.9) !important;
+}
+
+.kro-finding-explain-btn:hover {
+   border-color: rgba(245, 158, 11, 0.35) !important;
+   background: rgba(245, 158, 11, 0.08) !important;
+   color: var(--kro-accent) !important;
+}
+
+.kro-inline-actions {
+   padding: 16px 22px 22px !important;
+   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kro-inline-actions .kro-report-submit,
+#kro-inline-reset {
+   width: 100%;
+}
+
+/* Модалка — в стиле бренда */
+.kro-inline-tg-modal-sheet {
+   border-radius: 6px !important;
+   background: #111318 !important;
+   border: 1px solid rgba(255, 255, 255, 0.12) !important;
+   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55) !important;
+}
+
+.kro-inline-tg-bubble-out {
+   background: rgba(245, 158, 11, 0.12) !important;
+   border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+
+@media (max-width: 640px) {
+   .kro-result-main-card,
+   .kro-result-details-panel {
+      padding-left: 16px !important;
+      padding-right: 16px !important;
+   }
+
+   .kro-inline-report .kro-inline-report-card--document::before {
+      padding-left: 16px !important;
+      padding-right: 16px !important;
+   }
+}
