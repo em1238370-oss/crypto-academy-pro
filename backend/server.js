@@ -4180,17 +4180,41 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
       const complaints = complaintsSettled.status === 'fulfilled' ? (complaintsSettled.value || []) : [];
       const pb = pbSettled.status === 'fulfilled' ? pbSettled.value : null;
 
+      // --- Если AI нашёл имя автора — ищем жалобы ещё и по нему ---
+      if (pb && pb.who && pb.who !== 'Аноним' && pb.who !== 'anonymous_hidden') {
+        try {
+          const personComplaints = await kroFetchChannelComplaintsFromWeb(channelKey, pb.who);
+          const existingKeys = new Set(complaints.map((c) => (c.link || c.title || '').trim()));
+          for (const c of personComplaints) {
+            const k = (c.link || c.title || '').trim();
+            if (k && !existingKeys.has(k)) {
+              existingKeys.add(k);
+              complaints.push(c);
+            }
+          }
+          // Пересортируем: специфичные для канала — первыми
+          complaints.sort((a, b) => (b._channel_specific ? 1 : 0) - (a._channel_specific ? 1 : 0));
+          console.log(`[KRO fast-ai ${channelKey}] complaints_after_person_search=${complaints.length}`);
+        } catch { /* продолжаем */ }
+      }
+
       // --- Жалобы из интернета ---
       if (complaints.length > 0) {
-        out.web_complaints = complaints;
-        // Добавляем в external_reports текстовые выжимки
-        const webLines = complaints.slice(0, 3).map((c) => {
+        // Помечаем каждую жалобу: специфична для канала или общая статья
+        out.web_complaints = complaints.map((c) => ({
+          ...c,
+          _is_general: !c._channel_specific, // фронтенд может показать по-другому
+        }));
+        // Для external_reports берём только те что про этот канал; если таких нет — берём любые
+        const specificOnes = complaints.filter((c) => c._channel_specific);
+        const forReport = specificOnes.length > 0 ? specificOnes : complaints;
+        const webLines = forReport.slice(0, 3).map((c) => {
           const src = c.link ? ` (${c.link.replace(/^https?:\/\//, '').split('/')[0]})` : '';
           return `Интернет${src}: ${String(c.snippet || c.title || '').slice(0, 200)}`;
         });
         out.external_reports = [...webLines, ...out.external_reports].slice(0, 5);
         out.sources = [...(out.sources || []), 'веб-поиск жалоб'];
-        console.log(`[KRO fast-ai ${channelKey}] complaints_found=${complaints.length}`);
+        console.log(`[KRO fast-ai ${channelKey}] complaints_found=${complaints.length} specific=${complaints.filter((c) => c._channel_specific).length}`);
       }
 
       if (pb && (pb.verdict || pb.who)) {
@@ -5351,7 +5375,7 @@ async function kroUnifiedWebSearch(query) {
  * Ищет скам/мошенник/жалобы по трём запросам на mmgp.ru, pikabu, общий поиск.
  * Работает для ЛЮБОГО канала. Возвращает до 6 дедуплицированных сниппетов.
  */
-async function kroFetchChannelComplaintsFromWeb(channelKey) {
+async function kroFetchChannelComplaintsFromWeb(channelKey, personName) {
   const hasAnySearch =
     process.env.TAVILY_API_KEY || process.env.GOOGLE_CSE_KEY || process.env.SERPER_API_KEY;
   if (!hasAnySearch || !channelKey) return [];
@@ -5361,26 +5385,46 @@ async function kroFetchChannelComplaintsFromWeb(channelKey) {
   const queries = [
     `"@${slug}" скам мошенник жалоба развод потерял деньги`,
     `"${slug}" отзывы мошенник криптовалюта telegram`,
-    `${slug} site:mmgp.ru`,
+    `${slug} site:mmgp.ru OR site:pikabu.ru OR site:otzovik.com`,
+    `"@${slug}" обман кинул не выплатил`,
   ];
+
+  // Если знаем имя/ник автора — ищем жалобы и по нему
+  if (personName && typeof personName === 'string' && personName.length > 3
+      && personName !== 'Аноним' && personName !== 'anonymous_hidden') {
+    // берём первое слово — обычно никнейм или имя
+    const cleanName = personName.replace(/\(.*?\)/g, '').trim().split(/[\s,]+/)[0];
+    if (cleanName && cleanName.length > 3) {
+      queries.push(`"${cleanName}" скам мошенник крипта telegram жалоба`);
+      queries.push(`"${cleanName}" site:mmgp.ru OR site:pikabu.ru`);
+    }
+  }
 
   const seen = new Set();
   const allResults = [];
   for (const q of queries) {
-    if (allResults.length >= 6) break;
+    if (allResults.length >= 8) break;
     try {
       const r = await kroUnifiedWebSearch(q);
       for (const item of r) {
         const key = (item.link || item.title || '').trim();
         if (!key || seen.has(key)) continue;
         seen.add(key);
+        // Помечаем: упоминает ли результат именно этот канал (не общая статья)
+        const textLow = `${item.title || ''} ${item.snippet || ''}`.toLowerCase();
+        item._channel_specific =
+          textLow.includes(slug.toLowerCase()) ||
+          textLow.includes(`@${slug}`.toLowerCase()) ||
+          (personName && textLow.includes(personName.toLowerCase().split(/[\s,]+/)[0]));
         allResults.push(item);
-        if (allResults.length >= 6) break;
+        if (allResults.length >= 8) break;
       }
     } catch {
       // не блокируем — продолжаем со следующим запросом
     }
   }
+  // Специфичные для канала — первыми; общие статьи — в конце
+  allResults.sort((a, b) => (b._channel_specific ? 1 : 0) - (a._channel_specific ? 1 : 0));
   return allResults;
 }
 
@@ -5546,12 +5590,12 @@ ${KRO_PERSON_BEHIND_MANIP_SCHEMES_PROMPT}
 Если схем нет — напиши «Явных манипулятивных схем не найдено».
 Без постов — не выдумывай цитаты; тогда red_flags: «Явных манипулятивных схем не найдено».
 
-verdict ОБЯЗАТЕЛЬНО начинается с решения: «Не плати», «Уйди», «Смотри бесплатно», «Опасно» или близкий вариант — и только потом короткое объяснение (1-2 предложения).
-reveal_moment — скрытая механика которую человек не видит сам. Одна фраза. Пример: «Их настоящий заработок — твой переход в Bybit. Ты продукт, не клиент.»
-next_action — ТОЛЬКО на основе того, что реально найдено в постах/описании. Не придумывай функции канала (VIP, курсы, платный контент), которых нет в тексте. Если VIP/курсы не упоминались — не пиши «не плати VIP». Пример если есть VIP: «Смотри бесплатно, не плати за закрытый канал». Пример если VIP не найден: «Проверяй сигналы на малых суммах, не копируй вслепую».
-business_model — опиши что канал реально продаёт или зарабатывает, основываясь ТОЛЬКО на постах и описании. Если платного контента не найдено — пиши «публичный канал» или «реклама/партнёрки» если есть реклама. НЕ пиши «VIP» или «курсы» если их нет в тексте.
+⚠️ ГЛАВНОЕ ПРАВИЛО: Пиши ТОЛЬКО то, что реально нашёл в постах и описании. Не выдумывай. Не предполагай. Если VIP, курсы, платный контент не упоминались в тексте — НЕ ПИШИ о них нигде: ни в verdict, ни в reveal_moment, ни в next_action, ни в business_model. Ошибка хуже чем «не знаю» — ложная информация уничтожает доверие.
 
-⚠️ ВАЖНО: Не выдумывай факты. Если в постах нет VIP, курсов, платного контента — не упоминай их нигде. Пиши только то, что реально есть в тексте постов и описания.
+verdict — начинается с решения («Не плати», «Уйди», «Смотри бесплатно», «Опасно» или похожее), затем 1-2 предложения ТОЛЬКО на основе найденных фактов. Если нет доказательств платного контента — не упоминай его. Если нет схем манипуляций — не придумывай. Пиши что реально нашёл.
+reveal_moment — скрытая механика которую человек не видит сам, ТОЛЬКО если реально нашёл её в постах. Если не нашёл — пиши пустую строку "". Пример когда есть: «Их настоящий заработок — твой переход в Bybit. Ты продукт, не клиент.»
+next_action — конкретное действие ТОЛЬКО на основе реальных фактов. Если VIP/курсы не упоминались — не пиши «не плати VIP». Пример без VIP: «Проверяй сигналы на малых суммах, не копируй вслепую». Пример с VIP: «Смотри бесплатно, не плати за закрытый канал».
+business_model — что реально найдено в постах: «реклама», «партнёрские ссылки», «VIP-канал» (только если упоминается), «курсы» (только если упоминаются), «публичный контент без монетизации». НЕ угадывай.
 
 Ответь ТОЛЬКО JSON без markdown:
 {"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт/образование или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"что реально найдено: реклама / партнёрские ссылки / VIP (если есть) / курсы (если есть) / публичный контент без продаж","red_flags":"найденные схемы в формате «[Название]: цитата» или Явных манипулятивных схем не найдено","verdict":"решение первым словом + объяснение","reveal_moment":"одна фраза — скрытая механика","next_action":"конкретное действие ТОЛЬКО на основе реальных фактов из постов","data_confidence":"high/medium/low — насколько уверен анализ: high если были посты + соцсети, medium если только описание, low если только DDG или ничего"}`;
