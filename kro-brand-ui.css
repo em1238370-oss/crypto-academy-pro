@@ -3013,3 +3013,418 @@ body.kro-main .kro-floating-nav {
       padding-right: 16px !important;
    }
 }
+
+/* ==========================================================================
+   Отчёт v2 — сильный «досье» стиль (перекрывает плоский v1)
+   ========================================================================== */
+
+.kro-report-dossier {
+   position: relative;
+   overflow: hidden !important;
+   border: 1px solid rgba(245, 158, 11, 0.22) !important;
+   border-radius: 8px !important;
+   background:
+      linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, transparent 18%),
+      linear-gradient(165deg, #14161c 0%, #09090b 48%, #0c0e14 100%) !important;
+   box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+      0 28px 72px rgba(0, 0, 0, 0.55) !important;
+}
+
+.kro-report-dossier::after {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: 0;
+   right: 0;
+   height: 3px;
+   background: linear-gradient(90deg, transparent, var(--kro-accent), transparent);
+   background-size: 200% 100%;
+   animation: kro-report-edge-scan 3s linear infinite;
+   pointer-events: none;
+   z-index: 3;
+}
+
+.kro-report-dossier .kro-inline-report-card--document::before {
+   display: none !important;
+}
+
+/* Шапка досье */
+.kro-report-bar {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 12px;
+   padding: 12px 24px;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+   background: rgba(0, 0, 0, 0.45);
+}
+
+.kro-report-bar-id {
+   font-family: var(--kro-font-mono);
+   font-size: 0.62rem;
+   font-weight: 700;
+   letter-spacing: 0.22em;
+   text-transform: uppercase;
+   color: rgba(232, 234, 237, 0.88);
+}
+
+.kro-report-bar-status {
+   font-family: var(--kro-font-mono);
+   font-size: 0.58rem;
+   font-weight: 700;
+   letter-spacing: 0.16em;
+   text-transform: uppercase;
+   color: #22c55e;
+   padding: 4px 10px;
+   border: 1px solid rgba(34, 197, 94, 0.35);
+   background: rgba(34, 197, 94, 0.1);
+   border-radius: 3px;
+}
+
+/* Герой: вердикт + крупная оценка */
+.kro-result-main-card {
+   padding: 26px 24px 22px !important;
+}
+
+.kro-result-hero-grid {
+   display: grid;
+   grid-template-columns: minmax(0, 1fr) minmax(120px, 168px);
+   gap: 20px 24px;
+   align-items: start;
+   margin-bottom: 20px;
+   padding-bottom: 20px;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.kro-result-topline {
+   margin-bottom: 16px !important;
+   gap: 10px 14px !important;
+}
+
+.kro-result-risk-badge {
+   padding: 8px 14px !important;
+   font-size: 0.72rem !important;
+   font-weight: 800 !important;
+   letter-spacing: 0.1em !important;
+   border-radius: 4px !important;
+   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.kro-result-risk-badge--high {
+   background: rgba(239, 68, 68, 0.22) !important;
+   border: 1px solid rgba(248, 113, 113, 0.5) !important;
+   color: #fecaca !important;
+}
+
+.kro-result-risk-badge--mid {
+   background: rgba(245, 158, 11, 0.18) !important;
+   border: 1px solid rgba(245, 158, 11, 0.45) !important;
+   color: #fde68a !important;
+}
+
+.kro-result-risk-badge--low {
+   background: rgba(34, 197, 94, 0.16) !important;
+   border: 1px solid rgba(74, 222, 128, 0.4) !important;
+   color: #bbf7d0 !important;
+}
+
+.kro-result-channel {
+   font-size: 0.85rem !important;
+   font-weight: 600 !important;
+   color: rgba(232, 234, 237, 0.75) !important;
+}
+
+.kro-result-hero-verdict {
+   font-size: clamp(1.45rem, 4.2vw, 2.15rem) !important;
+   font-weight: 800 !important;
+   line-height: 1.22 !important;
+   letter-spacing: -0.03em !important;
+   color: #fff !important;
+   margin-bottom: 16px !important;
+   text-wrap: balance;
+}
+
+.kro-result-reveal {
+   margin-bottom: 16px !important;
+   padding: 14px 16px !important;
+   font-size: 0.95rem !important;
+   font-weight: 500 !important;
+   border-left: 4px solid rgba(148, 163, 184, 0.55) !important;
+   background: rgba(0, 0, 0, 0.35) !important;
+   color: rgba(232, 234, 237, 0.88) !important;
+}
+
+.kro-result-next-action {
+   margin-bottom: 0 !important;
+   padding: 16px 18px !important;
+   border-radius: 6px !important;
+   border: 1px solid rgba(245, 158, 11, 0.4) !important;
+   border-left: 4px solid var(--kro-accent) !important;
+   background: rgba(245, 158, 11, 0.12) !important;
+   box-shadow: 0 8px 24px rgba(245, 158, 11, 0.08) !important;
+}
+
+.kro-result-next-action-label {
+   font-size: 0.65rem !important;
+   font-weight: 800 !important;
+   letter-spacing: 0.18em !important;
+   margin-bottom: 6px !important;
+}
+
+.kro-result-next-action-text {
+   font-size: clamp(1.05rem, 2.5vw, 1.2rem) !important;
+   font-weight: 800 !important;
+   line-height: 1.4 !important;
+   color: #fff !important;
+}
+
+/* Панель оценки — крупное табло */
+.kro-result-score-panel {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+   gap: 6px;
+   min-height: 132px;
+   padding: 16px 12px;
+   text-align: center;
+   border-radius: 6px;
+   border: 1px solid rgba(245, 158, 11, 0.35);
+   background:
+      linear-gradient(180deg, rgba(245, 158, 11, 0.14) 0%, rgba(0, 0, 0, 0.35) 100%);
+   box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+      0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.kro-result-score-panel .kro-result-score {
+   font-size: clamp(2rem, 5vw, 2.75rem) !important;
+   font-weight: 800 !important;
+   line-height: 1 !important;
+   letter-spacing: -0.02em !important;
+   color: var(--kro-accent) !important;
+}
+
+.kro-result-score-panel .kro-result-meta-caption {
+   font-size: 0.55rem !important;
+   line-height: 1.35 !important;
+   max-width: 9rem;
+   color: rgba(148, 163, 184, 0.85) !important;
+}
+
+.kro-result-meta {
+   display: none !important;
+}
+
+/* Факты — полосы с акцентом */
+.kro-result-bullets {
+   margin-bottom: 22px !important;
+   border: 1px solid rgba(255, 255, 255, 0.08) !important;
+   border-radius: 6px !important;
+   background: rgba(0, 0, 0, 0.28) !important;
+   overflow: hidden;
+}
+
+.kro-result-bullet {
+   padding: 14px 16px 14px 44px !important;
+   font-size: 0.92rem !important;
+   font-weight: 500 !important;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.kro-result-bullet:last-child {
+   border-bottom: none !important;
+}
+
+.kro-result-bullet::before {
+   content: '';
+   position: absolute;
+   left: 0;
+   top: 0;
+   bottom: 0;
+   width: 4px;
+   background: rgba(148, 163, 184, 0.4);
+}
+
+.kro-result-bullet--good::before {
+   background: #22c55e;
+}
+
+.kro-result-bullet--warn::before {
+   background: var(--kro-accent);
+}
+
+.kro-result-bullet--danger::before {
+   background: #ef4444;
+}
+
+.kro-result-bullet-mark {
+   left: 14px !important;
+   top: 14px !important;
+   font-size: 1rem !important;
+   font-weight: 700 !important;
+}
+
+/* Кто за каналом */
+.kro-result-person {
+   padding: 18px 0 0 !important;
+   margin-bottom: 18px !important;
+   border-top: none !important;
+}
+
+.kro-result-person-h,
+.kro-detail-card-h,
+.kro-inline-findings-heading {
+   font-size: 0.65rem !important;
+   font-weight: 800 !important;
+   letter-spacing: 0.2em !important;
+   color: var(--kro-accent) !important;
+   padding-bottom: 8px;
+   margin-bottom: 12px !important;
+   border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.kro-result-more-btn {
+   padding: 14px 18px !important;
+   font-size: 0.78rem !important;
+   border-color: rgba(245, 158, 11, 0.35) !important;
+   background: rgba(245, 158, 11, 0.08) !important;
+   color: #fff !important;
+}
+
+.kro-result-more-btn:hover {
+   background: rgba(245, 158, 11, 0.18) !important;
+   border-color: var(--kro-accent) !important;
+}
+
+/* Детали */
+.kro-result-details-panel {
+   padding: 8px 24px 24px !important;
+   background: rgba(0, 0, 0, 0.2);
+   border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.kro-detail-card {
+   padding: 20px 0 !important;
+}
+
+.kro-detail-flags-list .kro-scheme-card,
+.kro-scheme-card {
+   padding: 14px 14px 14px 18px !important;
+   margin-bottom: 12px !important;
+   border-left-width: 4px !important;
+   background: rgba(0, 0, 0, 0.32) !important;
+}
+
+.kro-scheme-how {
+   font-size: 0.9rem !important;
+   color: rgba(232, 234, 237, 0.78) !important;
+}
+
+.kro-scheme-how strong {
+   color: #fff !important;
+}
+
+/* Находки — карточки-строки */
+.kro-inline-findings-wrap {
+   margin-top: 20px !important;
+   padding-top: 18px !important;
+}
+
+.kro-findings-list {
+   gap: 10px !important;
+}
+
+.kro-finding-item {
+   padding: 14px 16px !important;
+   border: 1px solid rgba(255, 255, 255, 0.08) !important;
+   border-radius: 6px !important;
+   background: rgba(0, 0, 0, 0.32) !important;
+   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.kro-finding-item--high,
+.kro-finding-item--watch {
+   border-left: 4px solid #ef4444 !important;
+}
+
+.kro-finding-item--med {
+   border-left: 4px solid var(--kro-accent) !important;
+}
+
+.kro-finding-item-label {
+   font-size: 0.95rem !important;
+   font-weight: 700 !important;
+}
+
+.kro-finding-item-quote {
+   font-size: 0.82rem !important;
+   border-left-color: rgba(245, 158, 11, 0.35) !important;
+   color: rgba(232, 234, 237, 0.72) !important;
+}
+
+/* Trust tabs */
+.kro-inline-trust-mode-btn.is-active {
+   background: rgba(245, 158, 11, 0.16) !important;
+   border-color: rgba(245, 158, 11, 0.5) !important;
+   color: #fff !important;
+}
+
+.kro-inline-trust-headline {
+   font-size: 1.05rem !important;
+   font-weight: 700 !important;
+   color: #fff !important;
+}
+
+.kro-inline-actions {
+   padding: 20px 24px 24px !important;
+   background: rgba(0, 0, 0, 0.25);
+}
+
+.kro-inline-actions .kro-report-submit,
+#kro-inline-reset {
+   padding: 16px 20px !important;
+   font-size: 0.85rem !important;
+   font-weight: 800 !important;
+   letter-spacing: 0.08em !important;
+   box-shadow: 0 8px 28px rgba(245, 158, 11, 0.25) !important;
+}
+
+@keyframes kro-report-edge-scan {
+   0% { background-position: 200% 0; }
+   100% { background-position: -200% 0; }
+}
+
+@media (max-width: 720px) {
+   .kro-result-hero-grid {
+      grid-template-columns: 1fr;
+   }
+
+   .kro-result-score-panel {
+      flex-direction: row;
+      justify-content: space-between;
+      min-height: 0;
+      padding: 14px 16px;
+      text-align: left;
+   }
+
+   .kro-result-score-panel .kro-result-meta-caption {
+      max-width: none;
+      text-align: right;
+   }
+
+   .kro-report-bar,
+   .kro-result-main-card,
+   .kro-result-details-panel,
+   .kro-inline-actions {
+      padding-left: 16px !important;
+      padding-right: 16px !important;
+   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .kro-report-dossier::after {
+      animation: none !important;
+   }
+}
