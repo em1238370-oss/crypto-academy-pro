@@ -1226,13 +1226,9 @@ body.kro-hero-scrolled .kro-floating-nav {
    overflow: hidden;
 }
 
-/* Декоративные «орбы» — лёгкая глубина (как ambient UI на sitelove), без текста */
+/* Декоративные «орбы» — отключены (дают жёлтое свечение) */
 .kro-f1-ambient {
-   position: absolute;
-   inset: 0;
-   z-index: 0;
-   pointer-events: none;
-   overflow: hidden;
+   display: none !important;
 }
 .kro-f1-orb {
    position: absolute;
@@ -1281,14 +1277,7 @@ body.kro-hero-scrolled .kro-floating-nav {
 }
 
 .kro-feature1-bg {
-   position: absolute;
-   inset: 0;
-   z-index: -1;
-   /* Фон Фишки 1: нейтральный slate / стекло (таблицы, как sitelove.io) — без доминирующего фиолета */
-   background: radial-gradient(ellipse 72% 56% at 78% 16%, rgba(148, 163, 184, 0.07) 0%, transparent 58%),
-               radial-gradient(ellipse 68% 52% at 14% 78%, rgba(30, 41, 59, 0.38) 0%, transparent 56%),
-               radial-gradient(ellipse 88% 72% at 48% 48%, rgba(15, 23, 42, 0.28) 0%, transparent 62%),
-               linear-gradient(185deg, #0a0c10 0%, #0d1118 40%, #080a0e 100%);
+   display: none !important;
 }
 
 /* Лёгкая UI-сетка + мягкий свет сверху */
@@ -1307,15 +1296,16 @@ body.kro-hero-scrolled .kro-floating-nav {
    -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 42%, #000 20%, transparent 72%);
 }
 
-/* Дашборд: LIVE + большая цифра + 3 карточки (тёплый контрастный фон, без сияния) */
+/* Дашборд: плоский графит, без тёплого свечения */
 .kro-feature1-dashboard {
    max-width: calc(680px + 4cm);
    margin: 0 auto 48px;
    padding: 38px 30px 42px;
-   border-radius: 28px;
-   background: linear-gradient(165deg, rgba(34, 28, 30, 0.88) 0%, rgba(22, 19, 21, 0.94) 100%);
-   border: 1px solid rgba(184, 74, 74, 0.14);
-   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.055), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+   border-radius: 8px;
+   background: #000000;
+   border: 1px solid rgba(255, 255, 255, 0.07);
+   box-shadow: none;
+   animation: none;
 }
 
 .kro-feature1.kro-reveal .kro-feature1-dashboard {
@@ -10379,26 +10369,10 @@ body.kro-modal-open {
    50%       { transform: translateY(-6px); }
 }
 
-/* Dashboard — пульс живых данных */
+/* Dashboard — без пульсирующего свечения */
 .kro-feature1-dashboard {
-   animation: kro-dashboard-breathe 6s ease-in-out infinite;
-}
-
-@keyframes kro-dashboard-breathe {
-   0%, 100% {
-      box-shadow:
-         0 0 0 1px rgba(255, 255, 255, 0.045),
-         0 12px 48px rgba(0, 0, 0, 0.5),
-         0 0 56px rgba(51, 65, 85, 0.12),
-         0 0 40px rgba(148, 163, 184, 0.05);
-   }
-   50% {
-      box-shadow:
-         0 0 0 1px rgba(255, 255, 255, 0.07),
-         0 18px 58px rgba(0, 0, 0, 0.55),
-         0 0 72px rgba(51, 65, 85, 0.18),
-         0 0 52px rgba(148, 163, 184, 0.08);
-   }
+   animation: none !important;
+   box-shadow: none !important;
 }
 
 /* Эмодзи — покачивание при hover */
