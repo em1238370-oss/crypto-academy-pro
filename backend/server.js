@@ -4160,6 +4160,83 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
     conclusion: { status, reasons: reasons.slice(0, KRO_V0_MAX_CONCLUSION_REASONS) },
   };
   if (_kro_watch_baked) out._kro_watch_baked = true;
+
+  // ---- AI upgrade: t.me/s + Mistral → v:0 → v:1 ----
+  if (channelKey) {
+    try {
+      const aiDeadline = Date.now() + 22000;
+      const pb = await kroBuildPersonBehindFromPublicSnapshot(
+        displayCh,
+        `https://t.me/s/${channelKey}`,
+        aiDeadline,
+        `fast-${channelKey}`,
+        [],
+      );
+      if (pb && (pb.verdict || pb.who)) {
+        // basic_info: кто за каналом
+        const pbInfo = [];
+        if (pb.who && pb.who !== 'anonymous_hidden') pbInfo.push(`Автор / кто за каналом: ${pb.who}.`);
+        if (pb.claimed_background && pb.claimed_background !== 'Не упоминается') {
+          pbInfo.push(`Заявленный опыт: ${pb.claimed_background}.`);
+        }
+        if (pb.claimed_path && pb.claimed_path !== 'Не упоминается') {
+          pbInfo.push(`Путь в крипте: ${pb.claimed_path}.`);
+        }
+        if (pb.description) pbInfo.push(`Описание канала: ${String(pb.description).slice(0, 200)}`);
+        out.basic_info = [...pbInfo, ...out.basic_info].slice(0, 5);
+
+        // content_behavior: business_model + red_flags
+        const pbContent = [];
+        if (pb.business_model) pbContent.push(`Бизнес-модель: ${pb.business_model}.`);
+        if (pb.red_flags && pb.red_flags !== 'Явных манипулятивных схем не найдено') {
+          pbContent.push(`Схемы манипуляций: ${String(pb.red_flags).slice(0, 300)}`);
+        }
+        if (pbContent.length) out.content_behavior = [...pbContent, ...out.content_behavior].slice(0, 4);
+
+        // ties_risk_factors: reveal_moment + соцсети
+        const pbTies = [];
+        if (pb.reveal_moment) pbTies.push(`Скрытая механика: ${pb.reveal_moment}`);
+        const pbLinks = (pb.social_links || []).map((l) => `${l.label}: ${l.url}`).join(', ');
+        if (pbLinks) pbTies.push(`Соцсети из описания: ${pbLinks}`);
+        if (pbTies.length) out.ties_risk_factors = [...pbTies, ...out.ties_risk_factors].slice(0, 4);
+
+        // conclusion: статус + причины из Mistral
+        if (pb.verdict) {
+          const vl = pb.verdict.toLowerCase();
+          let aiStatus = out.conclusion.status;
+          if (vl.startsWith('не плати') || vl.startsWith('уйди') || vl.startsWith('опасно')) {
+            aiStatus = KRO_V0_STATUS.risk;
+          } else if (vl.startsWith('скам') || vl.startsWith('подтверждённый')) {
+            aiStatus = KRO_V0_STATUS.scam;
+          } else if (vl.startsWith('смотри бесплатно')) {
+            aiStatus = KRO_V0_STATUS.watch;
+          }
+          const aiReasons = [pb.verdict];
+          if (pb.next_action) aiReasons.push(`Рекомендация: ${pb.next_action}`);
+          out.conclusion = {
+            status: aiStatus,
+            reasons: [...aiReasons, ...out.conclusion.reasons].slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
+          };
+        }
+
+        out.v = 1;
+        out.sources = [...(out.sources || []), 't.me/s публичная лента', 'Mistral AI'];
+        if (pb.data_confidence) out._data_confidence = pb.data_confidence;
+        if (Array.isArray(pb.web_evidence) && pb.web_evidence.length) {
+          out._web_evidence = pb.web_evidence;
+        }
+        console.log(
+          `[KRO fast-ai ${channelKey}] upgraded to v:1 verdict=${String(pb.verdict || '').slice(0, 80)}`,
+        );
+      }
+    } catch (eFast) {
+      console.warn(
+        `[KRO fast-ai ${channelKey}] error=${eFast && eFast.message ? String(eFast.message) : 'failed'}`,
+      );
+    }
+  }
+  // ---- конец AI upgrade ----
+
   return out;
 }
 

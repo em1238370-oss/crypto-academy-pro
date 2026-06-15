@@ -82,6 +82,19 @@
 
 ## История изменений
 
+### 2026-06-15 — Сессия 4
+
+**AI upgrade для fast mode (каналы не в базе):**
+- **Проблема:** `kroV0BuildFastAnalysisNoLive` возвращала только шаблонный текст без AI (v:0)
+- **Фикс:** После сборки стаба — вызываем `kroBuildPersonBehindFromPublicSnapshot` с дедлайном 22 сек
+  - Скрейпит t.me/s без Telethon → извлекает описание + соцсети
+  - Запускает Mistral (`mistral-medium-latest`) + веб-поиск через Tavily/CSE
+  - Если успевает — апгрейдит `basic_info`, `content_behavior`, `ties_risk_factors`, `conclusion`
+  - Выставляет `v:1`, добавляет в `sources`: `['t.me/s публичная лента', 'Mistral AI']`
+  - Если ошибка/таймаут — тихо возвращает v:0 стаб (без краша)
+- **Файл:** `backend/server.js`, вставлено перед `return out;` в `kroV0BuildFastAnalysisNoLive` (~строка 4163)
+- **Статус:** ✅ написано, нужен пуш
+
 ### 2026-06-15 — Сессия 3
 
 **Исправлен критический баг в channel.html:**
@@ -124,11 +137,11 @@
 
 ## Приоритеты — что делаем по порядку
 
-### 🔴 Сейчас (сессия 3, ждёт пуша):
+### 🔴 Сейчас (сессия 4):
 - [x] Фикс краша `channel.html` при `profile: null`
 - [x] Каскадный веб-поиск в `server.js`
+- [x] AI upgrade v:0→v:1 в `kroV0BuildFastAnalysisNoLive` (строка ~4162)
 - [ ] **Пушнуть в GitHub**
-- [ ] **Добавить TAVILY_API_KEY на Render**
 
 ### 🟡 Фаза 2:
 - [ ] Проверка точности сигналов (CoinGecko исторические цены)
