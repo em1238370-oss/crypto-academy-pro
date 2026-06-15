@@ -1573,7 +1573,7 @@
 
       var oldTg = document.querySelector('.ch-tg-line');
       if (oldTg) oldTg.remove();
-      var tgHref = canonicalTelegramHttps(normalizeHttpHref((r.link || '').trim()) || '');
+      var tgHref = canonicalTelegramHttps(normalizeHttpHref(((r && r.link) || '').trim()) || '');
       if (!tgHref) {
         var sl = label.replace(/^@+/, '').replace(/^%40+/i, '').split(/[/?#]/)[0];
         if (/^[a-zA-Z0-9_]{3,64}$/.test(sl)) tgHref = 'https://t.me/' + sl;

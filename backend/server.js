@@ -5148,16 +5148,18 @@ async function kroSearchByPersonName(who) {
       if (results.length >= 3) break;
     }
   } catch { /* ignore */ }
-  // Serper: ищем имя + мошенник/отзывы если есть ключ
-  if (process.env.SERPER_API_KEY && results.length < 5) {
+  // Веб-поиск: ищем имя + мошенник/отзывы (Tavily → Google CSE → Serper)
+  const hasAnySearch =
+    process.env.TAVILY_API_KEY || process.env.GOOGLE_CSE_KEY || process.env.SERPER_API_KEY;
+  if (hasAnySearch && results.length < 5) {
     try {
       const q = `"${name}" мошенник OR скам OR отзывы telegram`;
-      const hits = await kroSerperWebSearch(q);
+      const hits = await kroUnifiedWebSearch(q);
       for (const hit of (hits || [])) {
         const snippet = String(hit.snippet || hit.title || '').trim();
         const link = String(hit.link || '').trim();
         if (snippet && snippet.length > 15) {
-          results.push({ snippet: snippet.slice(0, 280), source: link || 'Serper' });
+          results.push({ snippet: snippet.slice(0, 280), source: link || 'web' });
         }
         if (results.length >= 5) break;
       }
@@ -5166,9 +5168,91 @@ async function kroSearchByPersonName(who) {
   return results.slice(0, 5);
 }
 
+/**
+ * Поиск через Tavily API (1000 бесплатных/мес).
+ * Требует env TAVILY_API_KEY.
+ */
+async function kroTavilySearch(query) {
+  const key = process.env.TAVILY_API_KEY;
+  if (!key) return [];
+  const q = String(query || '').trim();
+  if (!q) return [];
+  try {
+    const r = await axios.post(
+      'https://api.tavily.com/search',
+      { query: q, max_results: 5, search_depth: 'basic' },
+      {
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        timeout: 10000,
+      },
+    );
+    const items = Array.isArray(r.data?.results) ? r.data.results : [];
+    return items
+      .slice(0, 5)
+      .map((item) => ({
+        title: String(item.title || '').trim(),
+        link: String(item.url || '').trim(),
+        snippet: String(item.content || '').trim().slice(0, 300),
+      }))
+      .filter((x) => x.title || x.snippet);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Поиск через Google Custom Search API (3000 бесплатных/мес).
+ * Требует env GOOGLE_CSE_KEY + GOOGLE_CSE_ID.
+ */
+async function kroGoogleCseSearch(query) {
+  const key = process.env.GOOGLE_CSE_KEY;
+  const cx = process.env.GOOGLE_CSE_ID;
+  if (!key || !cx) return [];
+  const q = String(query || '').trim();
+  if (!q) return [];
+  try {
+    const r = await axios.get('https://www.googleapis.com/customsearch/v1', {
+      params: { key, cx, q, num: 5 },
+      timeout: 10000,
+    });
+    const items = Array.isArray(r.data?.items) ? r.data.items : [];
+    return items
+      .slice(0, 5)
+      .map((item) => ({
+        title: String(item.title || '').trim(),
+        link: String(item.link || '').trim(),
+        snippet: String(item.snippet || '').trim(),
+      }))
+      .filter((x) => x.title || x.snippet);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Единая точка веб-поиска: Tavily → Google CSE → Serper.
+ * Использует первый доступный ключ.
+ */
+async function kroUnifiedWebSearch(query) {
+  if (process.env.TAVILY_API_KEY) {
+    const r = await kroTavilySearch(query);
+    if (r.length > 0) return r;
+  }
+  if (process.env.GOOGLE_CSE_KEY && process.env.GOOGLE_CSE_ID) {
+    const r = await kroGoogleCseSearch(query);
+    if (r.length > 0) return r;
+  }
+  if (process.env.SERPER_API_KEY) {
+    return await kroSerperWebSearch(query);
+  }
+  return [];
+}
+
 /** Два поисковых запроса для блока «Кто за каналом»; без ключа — пустая строка. */
 async function kroFetchPersonBehindWebContext(channelName, username) {
-  if (!process.env.SERPER_API_KEY) return '';
+  const hasAnySearch =
+    process.env.TAVILY_API_KEY || process.env.GOOGLE_CSE_KEY || process.env.SERPER_API_KEY;
+  if (!hasAnySearch) return '';
   const name = String(channelName || '').trim();
   const user = String(username || '').replace(/^@/, '').trim();
   const queries = [];
@@ -5181,7 +5265,7 @@ async function kroFetchPersonBehindWebContext(channelName, username) {
   if (!queries.length) return '';
   const parts = [];
   for (const q of queries) {
-    const hits = await kroSerperWebSearch(q);
+    const hits = await kroUnifiedWebSearch(q);
     const block = kroFormatSerperHits(`Запрос: ${q}`, hits);
     if (block) parts.push(block);
   }
