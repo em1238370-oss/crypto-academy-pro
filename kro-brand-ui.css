@@ -1305,7 +1305,7 @@ body.kro-main {
 
 .kro-f1-blocks {
    padding: 0 !important;
-   margin-bottom: 2.5rem !important;
+   margin: 0 auto 2.5rem !important;
 }
 
 .kro-f1-block.kro-f1-shock {
@@ -3470,9 +3470,8 @@ body.kro-main .kro-floating-nav {
 }
 
 .kro-f1-terminal {
-   max-width: 100%;
-   width: 100%;
-   margin: 0 0 2.5rem;
+   max-width: min(72rem, 100%);
+   margin: 0 auto 2.5rem;
 }
 
 .kro-f1-terminal-rail {
@@ -3821,8 +3820,8 @@ body.kro-main .kro-floating-nav {
 
 .kro-f1-terminal {
    background: #000000 !important;
-   border: none !important;
-   border-radius: 0 !important;
+   border: 1px solid rgba(255, 255, 255, 0.06) !important;
+   border-radius: var(--kro-radius-lg) !important;
    overflow: hidden;
    outline: none !important;
 }
