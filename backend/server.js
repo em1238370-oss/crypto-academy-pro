@@ -4199,22 +4199,22 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
       }
 
       // --- Жалобы из интернета ---
+      // ВАЖНО: показываем ТОЛЬКО жалобы, которые реально упоминают именно этот канал/автора
+      // (_channel_specific). Общие статьи про скам в Telegram НИКОГДА не должны попадать
+      // в отчёт как будто это найдено про конкретный канал — это клевета на человека.
+      // Если специфичных жалоб нет — просто ничего не показываем (не пишем общие как fallback).
       if (complaints.length > 0) {
-        // Помечаем каждую жалобу: специфична для канала или общая статья
-        out.web_complaints = complaints.map((c) => ({
-          ...c,
-          _is_general: !c._channel_specific, // фронтенд может показать по-другому
-        }));
-        // Для external_reports берём только те что про этот канал; если таких нет — берём любые
         const specificOnes = complaints.filter((c) => c._channel_specific);
-        const forReport = specificOnes.length > 0 ? specificOnes : complaints;
-        const webLines = forReport.slice(0, 3).map((c) => {
-          const src = c.link ? ` (${c.link.replace(/^https?:\/\//, '').split('/')[0]})` : '';
-          return `Интернет${src}: ${String(c.snippet || c.title || '').slice(0, 200)}`;
-        });
-        out.external_reports = [...webLines, ...out.external_reports].slice(0, 5);
-        out.sources = [...(out.sources || []), 'веб-поиск жалоб'];
-        console.log(`[KRO fast-ai ${channelKey}] complaints_found=${complaints.length} specific=${complaints.filter((c) => c._channel_specific).length}`);
+        if (specificOnes.length > 0) {
+          out.web_complaints = specificOnes;
+          const webLines = specificOnes.slice(0, 3).map((c) => {
+            const src = c.link ? ` (${c.link.replace(/^https?:\/\//, '').split('/')[0]})` : '';
+            return `Интернет${src}: ${String(c.snippet || c.title || '').slice(0, 200)}`;
+          });
+          out.external_reports = [...webLines, ...out.external_reports].slice(0, 5);
+          out.sources = [...(out.sources || []), 'веб-поиск жалоб'];
+        }
+        console.log(`[KRO fast-ai ${channelKey}] complaints_found=${complaints.length} specific=${specificOnes.length}`);
       }
 
       if (pb && (pb.verdict || pb.who)) {
@@ -5241,8 +5241,42 @@ function kroFormatSerperHits(label, hits) {
 }
 
 /**
+ * Значимые токены имени/ника для проверки релевантности (длина >= 3).
+ * Если имя слишком общее/короткое (нет токенов) — считаем его непроверяемым.
+ */
+function kroNameTokens(name) {
+  return String(name || '')
+    .replace(/\(.*?\)/g, ' ')
+    .split(/[^a-zA-Zа-яА-ЯёЁ0-9_]+/)
+    .map((t) => t.trim().toLowerCase())
+    .filter((t) => t.length >= 3);
+}
+
+/** true только если ВСЕ значимые токены имени реально встречаются в тексте как подстрока. */
+function kroTextMentionsPerson(text, nameTokens) {
+  if (!Array.isArray(nameTokens) || !nameTokens.length) return false;
+  const low = String(text || '').toLowerCase();
+  return nameTokens.every((t) => low.includes(t));
+}
+
+/** true если в тексте есть хоть один контекстный маркер (телеграм/крипто/скам и т.п.). */
+const KRO_CONTEXT_KEYWORDS = [
+  'telegram', 'телеграм', 'крипто', 'crypto', 'скам', 'мошен', 'обман',
+  'отзыв', 'канал', 'трейд', 'инвест', 'развод', 'кинул',
+];
+function kroTextHasContext(text) {
+  const low = String(text || '').toLowerCase();
+  return KRO_CONTEXT_KEYWORDS.some((k) => low.includes(k));
+}
+
+/**
  * Второй проход веб-поиска — по найденному имени/нику автора.
  * Запускается ПОСЛЕ Mistral, только если who — реальный человек (не Аноним).
+ * ВАЖНО: каждый результат проверяется на реальное упоминание имени — иначе
+ * на странице показывались общие статьи про скам в Telegram как будто это
+ * «найдено про автора», что является клеветой на конкретного человека/канал.
+ * Если имя слишком общее (нет проверяемых токенов) или ни один результат не
+ * прошёл проверку — возвращается пустой массив, и блок просто не показывается.
  * Возвращает массив { snippet, source } — до 5 результатов.
  */
 async function kroSearchByPersonName(who) {
@@ -5250,6 +5284,8 @@ async function kroSearchByPersonName(who) {
   if (!name || name.length < 3) return [];
   const skipValues = ['аноним', 'anonymous_hidden', 'аноним.', '—', '-', 'не упоминается'];
   if (skipValues.includes(name.toLowerCase())) return [];
+  const nameTokens = kroNameTokens(name);
+  if (!nameTokens.length) return []; // имя слишком общее — нельзя безопасно проверить релевантность
   const results = [];
   // DDG: ищем имя + телеграм + крипто
   try {
@@ -5258,13 +5294,21 @@ async function kroSearchByPersonName(who) {
     const r = await axios.get(url, { timeout: 5000 });
     const data = r.data && typeof r.data === 'object' ? r.data : {};
     const abstract = String(data.AbstractText || data.Abstract || '').trim();
-    if (abstract && abstract.length > 20) {
+    if (
+      abstract && abstract.length > 20
+      && kroTextMentionsPerson(abstract, nameTokens)
+      && kroTextHasContext(abstract)
+    ) {
       results.push({ snippet: abstract.slice(0, 280), source: 'DuckDuckGo' });
     }
     const related = [];
-    kroCollectDuckDuckGoRelatedTexts(data.RelatedTopics, related, 5);
+    kroCollectDuckDuckGoRelatedTexts(data.RelatedTopics, related, 8);
     for (const line of related) {
-      if (line && line.length > 20) {
+      if (
+        line && line.length > 20
+        && kroTextMentionsPerson(line, nameTokens)
+        && kroTextHasContext(line)
+      ) {
         results.push({ snippet: line.slice(0, 280), source: 'DuckDuckGo' });
       }
       if (results.length >= 3) break;
@@ -5280,7 +5324,11 @@ async function kroSearchByPersonName(who) {
       for (const hit of (hits || [])) {
         const snippet = String(hit.snippet || hit.title || '').trim();
         const link = String(hit.link || '').trim();
-        if (snippet && snippet.length > 15) {
+        const combined = `${hit.title || ''} ${snippet}`;
+        if (
+          snippet && snippet.length > 15
+          && kroTextMentionsPerson(combined, nameTokens)
+        ) {
           results.push({ snippet: snippet.slice(0, 280), source: link || 'web' });
         }
         if (results.length >= 5) break;
@@ -5410,12 +5458,18 @@ async function kroFetchChannelComplaintsFromWeb(channelKey, personName) {
         const key = (item.link || item.title || '').trim();
         if (!key || seen.has(key)) continue;
         seen.add(key);
-        // Помечаем: упоминает ли результат именно этот канал (не общая статья)
+        // Помечаем: упоминает ли результат именно этот канал (не общая статья).
+        // Требуем минимальную длину токена — иначе короткий/общий slug или имя
+        // ложно «совпадёт» с любой генерической статьёй про скам в Telegram.
         const textLow = `${item.title || ''} ${item.snippet || ''}`.toLowerCase();
-        item._channel_specific =
-          textLow.includes(slug.toLowerCase()) ||
-          textLow.includes(`@${slug}`.toLowerCase()) ||
-          (personName && textLow.includes(personName.toLowerCase().split(/[\s,]+/)[0]));
+        const slugLow = slug.toLowerCase();
+        const personFirst = personName
+          ? String(personName).toLowerCase().split(/[\s,]+/)[0]
+          : '';
+        item._channel_specific = Boolean(
+          (slugLow.length >= 4 && (textLow.includes(slugLow) || textLow.includes(`@${slugLow}`)))
+          || (personFirst.length >= 4 && textLow.includes(personFirst)),
+        );
         allResults.push(item);
         if (allResults.length >= 8) break;
       }
