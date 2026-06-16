@@ -3363,16 +3363,22 @@
                function kroResultBuildGlanceItems(data) {
                    var items = [];
                    var seen = {};
-                   var add = function (title, quotes) {
+                   var add = function (title, quotes, why) {
                        var t = String(title || '').trim();
                        if (!t) return;
                        var k = kroGlanceNormKey(t);
                        if (!k || seen[k]) return;
                        seen[k] = true;
-                       items.push({ title: t, quotes: Array.isArray(quotes) ? quotes : [] });
+                       items.push({ title: t, quotes: Array.isArray(quotes) ? quotes : [], why: why ? String(why).trim() : '' });
                    };
                    var pb = data.person_behind;
-                   if (pb && pb.red_flags) {
+                   if (pb && Array.isArray(pb.red_flags_list) && pb.red_flags_list.length) {
+                       for (var li = 0; li < pb.red_flags_list.length; li++) {
+                           var rf = pb.red_flags_list[li];
+                           if (!rf || !rf.name) continue;
+                           add(rf.name, rf.quote ? [rf.quote] : [], rf.why || '');
+                       }
+                   } else if (pb && pb.red_flags) {
                        if (Array.isArray(pb.red_flags)) {
                            for (var ri = 0; ri < pb.red_flags.length; ri++) {
                                var line = String(pb.red_flags[ri] || '').trim();
@@ -3591,6 +3597,14 @@
                        quotes.slice(0, 2).forEach(function (q) {
                            html += '<p class="kro-scheme-quote-text">' + esc(q) + '</p>';
                        });
+                       html += '</div>';
+                   }
+
+                   var why = String(item.why || '').trim();
+                   if (!isGood && why) {
+                       html += '<div class="kro-scheme-why">';
+                       html += '<span class="kro-scheme-why-label">Почему это риск</span>';
+                       html += '<p class="kro-scheme-why-text">' + esc(why) + '</p>';
                        html += '</div>';
                    }
 
@@ -4039,9 +4053,14 @@
                                html += kroRenderSchemeCard(item, false);
                            });
                        } else {
+                           var pbCov = data.person_behind || {};
+                           var covNote = String(pbCov.coverage_note_ru || '').trim();
                            html += '<div class="kro-scheme-card kro-scheme-card--good">';
                            html += '<div class="kro-scheme-card-header"><span class="kro-scheme-badge">Схем не найдено</span></div>';
                            html += '<p class="kro-scheme-how">Явных манипулятивных схем в доступных постах <strong>не обнаружено</strong>.</p>';
+                           if (covNote) {
+                               html += '<p class="kro-scheme-coverage-note">' + esc(covNote) + ' — явных манипулятивных схем не найдено. Это не гарантия чистоты канала: проверяй риск-менеджмент и не вкладывай больше, чем готов потерять.</p>';
+                           }
                            html += '</div>';
                        }
 

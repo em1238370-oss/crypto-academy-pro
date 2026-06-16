@@ -120,3 +120,115 @@ export function kroFormatSchemeRedFlags(hits) {
     })
     .join('; ');
 }
+
+/**
+ * Найти схему по неточному совпадению названия (для AI-флагов без точного id).
+ * Сравнивает по словам (>=3 символа), порог совпадения 0.5 от меньшего набора слов.
+ * @param {string} rawName
+ * @returns {object|null}
+ */
+export function kroFindSchemeByName(rawName) {
+  const { schemes } = kroLoadSchemes();
+  const norm = String(rawName || '')
+    .toLowerCase()
+    .replace(/[«»"'.,!?()/\\]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!norm) return null;
+  const words = new Set(norm.split(' ').filter((w) => w.length >= 3));
+  if (!words.size) return null;
+  let best = null;
+  let bestScore = 0;
+  for (const s of schemes) {
+    const sn = String(s.name || '')
+      .toLowerCase()
+      .replace(/[«»"'.,!?()/\\]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const sWords = sn.split(' ').filter((w) => w.length >= 3);
+    if (!sWords.length) continue;
+    let overlap = 0;
+    for (const w of sWords) if (words.has(w)) overlap += 1;
+    const score = overlap / Math.min(words.size, sWords.length);
+    if (score > bestScore) {
+      bestScore = score;
+      best = s;
+    }
+  }
+  return bestScore >= 0.5 ? best : null;
+}
+
+/** Преобразует хиты схем в структурированный список {name, quote, why} для фронта. */
+export function kroSchemeHitsToRedFlagsList(hits) {
+  const arr = Array.isArray(hits) ? hits : [];
+  return arr
+    .slice(0, 8)
+    .map((h) => ({
+      name: h.name || '',
+      quote: h.quote ? String(h.quote).slice(0, 220) : '',
+      why: h.victim_risk || '',
+    }))
+    .filter((x) => x.name);
+}
+
+/**
+ * Эвристические "мягкие" сигналы — в отличие от kroDetectSchemesInTexts (ищет присутствие
+ * конкретного ключевого слова одной схемы), эти сигналы считаются по статистике ПО ВСЕМ
+ * полученным постам: что упоминается часто, а что не упоминается вообще. Это страховка на
+ * случай, когда ни одна схема из списка не сматчилась явным ключевым словом, но за месяц
+ * данных видна типичная для скам-каналов картина (только прибыль без единого убытка, нет
+ * предупреждений о риске, канал в основном продаёт доступ, а не даёт ценность).
+ * Срабатывает только при >=5 реальных постах — на малом объёме данных выводов не делает.
+ * Не выдумывает фактов: считает реальные слова в реальных текстах, а где сигнал — это
+ * отсутствие чего-то (нет дисклеймера о риске), quote оставляет пустым, потому что
+ * "отсутствие" невозможно процитировать.
+ * @param {string[]} texts
+ * @returns {Array<{name: string, quote: string, why: string}>}
+ */
+export function kroDetectSoftPatternSignals(texts) {
+  const posts = (Array.isArray(texts) ? texts : [])
+    .map((t) => String(t || '').trim())
+    .filter(Boolean);
+  if (posts.length < 5) return [];
+
+  const lowerPosts = posts.map((p) => p.toLowerCase());
+  const joinedLower = lowerPosts.join('\n');
+  const out = [];
+
+  const profitWords = ['прибыль', 'профит', 'заработали', 'успешн', 'take profit', 'тейк профит', 'win', 'profit', 'иксы', 'x2', 'x5', 'x10'];
+  const lossWords = ['убыток', 'минус', 'слил', 'stop loss', 'стоп сработал', 'просадк', 'потерял', 'loss', 'минусов'];
+  const hasProfitTalk = profitWords.some((w) => joinedLower.includes(w));
+  const hasLossTalk = lossWords.some((w) => joinedLower.includes(w));
+  if (hasProfitTalk && !hasLossTalk) {
+    const exIdx = lowerPosts.findIndex((p) => profitWords.some((w) => p.includes(w)));
+    out.push({
+      name: 'Видны только прибыльные сделки',
+      quote: exIdx >= 0 ? posts[exIdx].slice(0, 220) : '',
+      why: `Из ${posts.length} проверенных постов про прибыль пишут регулярно, а про убыточные сделки — ни разу. У реальной торговли почти всегда есть потери; их полное отсутствие в ленте — признак того, что показывают не всю картину.`,
+    });
+  }
+
+  const riskWords = ['не финсовет', 'не финансовый совет', 'dyor', 'риск потери', 'торгуйте на свой риск', 'без гарантий', 'не гарантия', 'на свой риск'];
+  const hasRiskDisclaimer = riskWords.some((w) => joinedLower.includes(w));
+  if (!hasRiskDisclaimer) {
+    out.push({
+      name: 'Нет предупреждений о риске',
+      quote: '',
+      why: `За ${posts.length} проверенных постов канал ни разу не написал, что результаты не гарантированы и можно потерять деньги. Это не доказывает обман сам по себе, но снимает с автора любую ответственность за твои потери.`,
+    });
+  }
+
+  const ctaWords = ['vip', 'оплат', 'тариф', 'купить доступ', 'по ссылке в био', 'подключ', 'цена за месяц', 'стоимость доступа'];
+  const ctaPostsCount = lowerPosts.filter((p) => ctaWords.some((w) => p.includes(w))).length;
+  const ctaRatio = ctaPostsCount / posts.length;
+  if (ctaRatio >= 0.25) {
+    const exIdx = lowerPosts.findIndex((p) => ctaWords.some((w) => p.includes(w)));
+    out.push({
+      name: 'Высокая доля продающих постов',
+      quote: exIdx >= 0 ? posts[exIdx].slice(0, 220) : '',
+      why: `${ctaPostsCount} из ${posts.length} проверенных постов (~${Math.round(ctaRatio * 100)}%) — это призывы оплатить доступ, а не разбор рынка или сделок. Канал тратит больше внимания на продажу подписки, чем на пользу для подписчика.`,
+    });
+  }
+
+  return out.slice(0, 3);
+}
