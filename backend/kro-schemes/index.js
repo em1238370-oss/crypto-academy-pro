@@ -120,3 +120,62 @@ export function kroFormatSchemeRedFlags(hits) {
     })
     .join('; ');
 }
+
+/**
+ * Нечёткий поиск схемы по названию (word-overlap ≥ 0.5).
+ * Используется для сопоставления AI-ответа со схемами из schemes.json.
+ * @param {string} rawName
+ * @returns {{ id, name, victim_risk, how_earn, severity } | null}
+ */
+export function kroFindSchemeByName(rawName) {
+  const { schemes } = kroLoadSchemes();
+  const normalize = (s) =>
+    String(s || '')
+      .toLowerCase()
+      .replace(/[«»\[\]"'„"]/g, '')
+      .trim();
+  const words = (s) => normalize(s).split(/\s+/).filter((w) => w.length >= 3);
+
+  const query = words(rawName);
+  if (!query.length) return null;
+
+  let best = null;
+  let bestScore = 0;
+
+  for (const scheme of schemes) {
+    const sWords = words(scheme.name);
+    if (!sWords.length) continue;
+    const intersection = query.filter((w) => sWords.includes(w)).length;
+    const union = new Set([...query, ...sWords]).size;
+    const score = union > 0 ? intersection / union : 0;
+    if (score > bestScore) {
+      bestScore = score;
+      best = scheme;
+    }
+  }
+
+  if (bestScore >= 0.5) {
+    return {
+      id: best.id,
+      name: best.name,
+      victim_risk: best.victim_risk || '',
+      how_earn: best.how_earn || '',
+      severity: best.severity || 'medium',
+    };
+  }
+  return null;
+}
+
+/**
+ * Преобразует keyword-хиты в структурированный red_flags_list [{name, quote, why}].
+ * why берётся из victim_risk схемы.
+ * @param {Array} hits — результат kroDetectSchemesInTexts
+ * @returns {Array<{name: string, quote: string, why: string}>}
+ */
+export function kroSchemeHitsToRedFlagsList(hits) {
+  return (Array.isArray(hits) ? hits : []).slice(0, 6).map((h) => ({
+    name: String(h.name || '').trim(),
+    quote: String(h.quote || '').trim().slice(0, 220),
+    why: String(h.victim_risk || '').trim(),
+  }));
+}

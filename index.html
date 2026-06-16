@@ -3372,7 +3372,18 @@
                        items.push({ title: t, quotes: Array.isArray(quotes) ? quotes : [] });
                    };
                    var pb = data.person_behind;
-                   if (pb && pb.red_flags) {
+                   // Приоритет 1: структурированный red_flags_list [{name, quote, why}]
+                   if (pb && Array.isArray(pb.red_flags_list) && pb.red_flags_list.length) {
+                       for (var rfi = 0; rfi < pb.red_flags_list.length; rfi++) {
+                           var rfItem = pb.red_flags_list[rfi];
+                           if (!rfItem || !rfItem.name) continue;
+                           var rfQuotes = rfItem.quote ? [rfItem.quote] : [];
+                           items.push({ title: rfItem.name, quotes: rfQuotes, why: rfItem.why || '' });
+                           var seen_key = kroGlanceNormKey(rfItem.name);
+                           if (seen_key) seen[seen_key] = true;
+                       }
+                   } else if (pb && pb.red_flags) {
+                       // Fallback: легаси парсинг строки red_flags
                        if (Array.isArray(pb.red_flags)) {
                            for (var ri = 0; ri < pb.red_flags.length; ri++) {
                                var line = String(pb.red_flags[ri] || '').trim();
@@ -3591,6 +3602,19 @@
                        quotes.slice(0, 2).forEach(function (q) {
                            html += '<p class="kro-scheme-quote-text">' + esc(q) + '</p>';
                        });
+                       html += '</div>';
+                   }
+
+                   // Блок «Почему это риск» — только для плохих флагов, только если why не пустой
+                   var why = !isGood ? String(item.why || '').trim() : '';
+                   if (!why && !isGood && meta && meta.how) {
+                       // Запасной вариант: берём how из KRO_SCHEME_META, очищаем HTML-теги
+                       why = meta.how.replace(/<[^>]+>/g, '').trim();
+                   }
+                   if (!isGood && why) {
+                       html += '<div class="kro-scheme-why">';
+                       html += '<span class="kro-scheme-why-label">Почему это риск</span>';
+                       html += '<p class="kro-scheme-why-text">' + esc(why) + '</p>';
                        html += '</div>';
                    }
 

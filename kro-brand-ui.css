@@ -2926,6 +2926,32 @@ body.kro-main .kro-floating-nav {
    padding-left: 10px !important;
 }
 
+/* Блок «Почему это риск» — янтарный акцент */
+.kro-scheme-why {
+   border-top: 1px dashed rgba(245, 158, 11, 0.25) !important;
+   padding-top: 8px !important;
+   margin-top: 8px !important;
+}
+
+.kro-scheme-why-label {
+   display: block !important;
+   font-size: 0.72rem !important;
+   font-weight: 700 !important;
+   letter-spacing: 0.07em !important;
+   text-transform: uppercase !important;
+   color: rgba(245, 158, 11, 0.85) !important;
+   margin-bottom: 4px !important;
+}
+
+.kro-scheme-why-text {
+   font-size: 0.85rem !important;
+   line-height: 1.5 !important;
+   color: rgba(232, 234, 237, 0.88) !important;
+   border-left: 2px solid rgba(245, 158, 11, 0.5) !important;
+   padding-left: 10px !important;
+   margin: 0 !important;
+}
+
 /* Таблица сигналов → список строк */
 .kro-detail-signals-table-wrap {
    border: none !important;

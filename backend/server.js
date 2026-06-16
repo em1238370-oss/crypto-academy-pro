@@ -9,6 +9,13 @@ import { fileURLToPath } from 'url';
 import { basename, dirname, join, sep } from 'path';
 import { spawn, spawnSync } from 'child_process';
 import Stripe from 'stripe';
+import {
+  kroFormatSchemeRedFlags,
+  kroFindSchemeByName,
+  kroSchemeHitsToRedFlagsList,
+  kroDetectSchemesInTexts,
+} from './kro-schemes/index.js';
+const kroSchemesModule = { kroFindSchemeByName, kroSchemeHitsToRedFlagsList };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -5771,6 +5778,98 @@ async function kroFetchDuckDuckGoPersonContext(channelName) {
   }
 }
 
+/**
+ * Проверяет, присутствует ли цитата буквально в одном из текстов постов.
+ * Если нет — возвращает пустую строку (не удаляет элемент, только обнуляет цитату).
+ */
+function kroVerifyQuoteInPosts(quote, postTexts) {
+  const q = String(quote || '').trim();
+  if (!q || q.length < 8) return '';
+  const posts = Array.isArray(postTexts) ? postTexts : [];
+  const qLow = q.toLowerCase().replace(/\s+/g, ' ');
+  for (const t of posts) {
+    const tLow = String(t || '').toLowerCase().replace(/\s+/g, ' ');
+    if (tLow.includes(qLow)) return q;
+    // частичное совпадение: первые 40 символов цитаты встречаются в посте
+    if (qLow.length > 15 && tLow.includes(qLow.slice(0, 40))) return q;
+  }
+  return '';
+}
+
+/**
+ * Нормализует red_flags_list: гарантирует наличие all {name, quote, why},
+ * верифицирует цитаты через kroVerifyQuoteInPosts,
+ * подставляет why из schemes.json если AI не дал.
+ */
+function kroNormalizeRedFlagsList(list, postTexts) {
+  if (!Array.isArray(list)) return [];
+  const { kroFindSchemeByName } = kroSchemesModule;
+  return list
+    .filter((item) => item && typeof item === 'object' && String(item.name || '').trim())
+    .map((item) => {
+      const name = String(item.name || '').trim();
+      const rawQuote = String(item.quote || '').trim();
+      const verifiedQuote = rawQuote
+        ? kroVerifyQuoteInPosts(rawQuote, postTexts)
+        : '';
+      let why = String(item.why || '').trim();
+      // Если AI не дал why — берём victim_risk из schemes.json
+      if (!why && kroFindSchemeByName) {
+        const found = kroFindSchemeByName(name);
+        if (found && found.victim_risk) why = found.victim_risk;
+      }
+      return { name, quote: verifiedQuote, why };
+    })
+    .slice(0, 8);
+}
+
+/**
+ * Форматирует red_flags_list обратно в строку для обратной совместимости.
+ * Строка «Явных манипулятивных схем не найдено» не меняется — на неё завязана
+ * проверка в kroV0BuildFastAnalysisNoLive.
+ */
+function kroFormatRedFlagsListToString(list) {
+  const arr = Array.isArray(list) ? list.filter((x) => x && x.name) : [];
+  if (!arr.length) return 'Явных манипулятивных схем не найдено';
+  return arr
+    .slice(0, 6)
+    .map((h) => {
+      const q = h.quote ? `: «${String(h.quote).slice(0, 120)}»` : '';
+      return `[${h.name}]${q}`;
+    })
+    .join('; ');
+}
+
+/**
+ * Объединяет AI red_flags_list с keyword-хитами, дедуплицируя по названию.
+ * AI-элементы с цитатами приоритетнее.
+ */
+function kroMergeRedFlagsListWithKeywordHits(aiList, keywordHits, postTexts) {
+  const { kroSchemeHitsToRedFlagsList } = kroSchemesModule;
+  const aiNorm = kroNormalizeRedFlagsList(Array.isArray(aiList) ? aiList : [], postTexts);
+  const kwList = kroSchemeHitsToRedFlagsList
+    ? kroSchemeHitsToRedFlagsList(Array.isArray(keywordHits) ? keywordHits : [])
+    : [];
+
+  const seen = new Set();
+  const out = [];
+  const normalKey = (s) => String(s || '').toLowerCase().replace(/[«»\[\]"'\s]/g, '');
+
+  for (const item of aiNorm) {
+    const k = normalKey(item.name);
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    out.push(item);
+  }
+  for (const item of kwList) {
+    const k = normalKey(item.name);
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    out.push(item);
+  }
+  return out.slice(0, 8);
+}
+
 function kroNormalizePersonBehindPostTexts(postTexts) {
   const raw = Array.isArray(postTexts) ? postTexts : [];
   const seen = new Set();
@@ -5825,6 +5924,7 @@ async function kroAnalyzePersonBehind(channelName, description, socialLinks, use
         'Анонимность — не «загадка гуру», а способ исчезнуть с твоими деньгами, когда что-то пойдёт не так.',
       next_action: 'Не плати VIP и не переводи деньги, пока не знаешь кто стоит за каналом.',
       data_confidence: 'low',
+      red_flags_list: [],
     };
   }
 
@@ -5847,10 +5947,13 @@ async function kroAnalyzePersonBehind(channelName, description, socialLinks, use
 Соцсети: ${socialStr}${ddgBlock}${webBlock}${postsBlock}
 ${KRO_PERSON_BEHIND_MANIP_SCHEMES_PROMPT}
 
-В поле red_flags перечисли найденные схемы в формате:
-«[Название схемы]: цитата из поста»
-Если схем нет — напиши «Явных манипулятивных схем не найдено».
-Без постов — не выдумывай цитаты; тогда red_flags: «Явных манипулятивных схем не найдено».
+В поле red_flags_list перечисли найденные схемы. Для каждой:
+- name: название схемы (одним словосочетанием, например «FOMO», «Только плюсы», «Воронка продаж»)
+- quote: дословная цитата из поста, подтверждающая схему (не более 150 символов). ТОЛЬКО если нашёл буквально в тексте — иначе пустая строка "".
+- why: 1-2 предложения — чем именно эта схема опасна для подписчика (почему это риск для него).
+
+Если схем не найдено — red_flags_list: [].
+Без постов — не выдумывай цитаты: quote: "".
 
 ⚠️ ГЛАВНОЕ ПРАВИЛО: Пиши ТОЛЬКО то, что реально нашёл в постах и описании. Не выдумывай. Не предполагай. Если VIP, курсы, платный контент не упоминались в тексте — НЕ ПИШИ о них нигде: ни в verdict, ни в reveal_moment, ни в next_action, ни в business_model. Ошибка хуже чем «не знаю» — ложная информация уничтожает доверие.
 
@@ -5860,7 +5963,7 @@ next_action — конкретное действие ТОЛЬКО на осно
 business_model — что реально найдено в постах: «реклама», «партнёрские ссылки», «VIP-канал» (только если упоминается), «курсы» (только если упоминаются), «публичный контент без монетизации». НЕ угадывай.
 
 Ответь ТОЛЬКО JSON без markdown:
-{"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт/образование или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"что реально найдено: реклама / партнёрские ссылки / VIP (если есть) / курсы (если есть) / публичный контент без продаж","red_flags":"найденные схемы в формате «[Название]: цитата» или Явных манипулятивных схем не найдено","verdict":"решение первым словом + объяснение","reveal_moment":"одна фраза — скрытая механика","next_action":"конкретное действие ТОЛЬКО на основе реальных фактов из постов","data_confidence":"high/medium/low — насколько уверен анализ: high если были посты + соцсети, medium если только описание, low если только DDG или ничего"}`;
+{"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт/образование или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"что реально найдено","red_flags_list":[{"name":"Название схемы","quote":"цитата или пустая строка","why":"почему это риск для подписчика"}],"verdict":"решение первым словом + объяснение","reveal_moment":"одна фраза — скрытая механика или пустая строка","next_action":"конкретное действие ТОЛЬКО на основе реальных фактов","data_confidence":"high/medium/low"}`;
   try {
     const r = await axios.post(
       'https://api.mistral.ai/v1/chat/completions',
@@ -5868,7 +5971,7 @@ business_model — что реально найдено в постах: «ре�
         model: 'mistral-medium-latest',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.2,
-        max_tokens: 1100,
+        max_tokens: 1700,
       },
       {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
@@ -5886,6 +5989,19 @@ business_model — что реально найдено в постах: «ре�
       ddgHasContent,
     });
     parsed.data_confidence = kroNormalizePersonBehindDataConfidence(parsed.data_confidence) || inferred;
+
+    // Обработка структурированного red_flags_list (новый формат)
+    // Верифицируем цитаты, подставляем why из schemes.json если AI не дал
+    const keywordHits = kroDetectSchemesInTexts(posts);
+    parsed.red_flags_list = kroMergeRedFlagsListWithKeywordHits(
+      parsed.red_flags_list,
+      keywordHits,
+      posts,
+    );
+    // Строковое поле red_flags — для обратной совместимости (kroV0BuildFastAnalysisNoLive
+    // проверяет точную строку «Явных манипулятивных схем не найдено»)
+    parsed.red_flags = kroFormatRedFlagsListToString(parsed.red_flags_list);
+
     // Второй поиск по найденному имени/нику — показываем что нашли в интернете
     const whoFound = String(parsed.who || '').trim();
     if (whoFound && whoFound !== 'Аноним' && whoFound !== 'anonymous_hidden' && whoFound.length > 3) {
@@ -5930,6 +6046,7 @@ async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelFor
       claimed_path: 'Не упоминается',
       business_model: '',
       red_flags: 'Явных манипулятивных схем не найдено',
+      red_flags_list: [],
       verdict: desc ? desc.slice(0, 220) : '',
       reveal_moment: '',
       next_action: '',
