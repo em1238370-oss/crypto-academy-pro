@@ -5482,6 +5482,214 @@ async function kroFetchChannelComplaintsFromWeb(channelKey, personName) {
   return allResults;
 }
 
+/**
+ * История канала: получить сигналы из публичной ленты t.me/s.
+ * Возвращает { slug, earliest_date_iso, latest_date_iso, early_sample, recent_sample, used_jump }
+ * или null, если датированных постов не найдено — никогда не выдумывает данные.
+ */
+async function kroFetchChannelHistorySignals(channelKey, opts) {
+  try {
+    const slug = kroExtractTelegramPublicSlug(channelKey);
+    if (!slug) return null;
+
+    const optObj = opts && typeof opts === 'object' ? opts : {};
+    const timeoutMs = optObj.timeoutMs || 12000;
+
+    // Запрос 1: обычная лента (последние посты) — через kroFetchTelegramPublicSnapshot
+    const recentSnapPromise = kroFetchTelegramPublicSnapshot(slug, {
+      timeoutMs,
+      logLabel: `hist-${slug}:recent`,
+    });
+
+    // Запрос 2: ?before=50 — пытаемся получить ранние посты.
+    // kroExtractTelegramPublicSlug срезает query-params, поэтому делаем прямой fetch.
+    const earlyFetchPromise = (async () => {
+      const url = `https://t.me/s/${encodeURIComponent(slug)}?before=50`;
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), timeoutMs);
+      try {
+        const r = await fetch(url, {
+          signal: ctl.signal,
+          headers: {
+            'user-agent': 'Mozilla/5.0 (compatible; KRO-Analyze/1.0)',
+            accept: 'text/html,application/xhtml+xml,text/plain',
+          },
+        });
+        if (!r.ok) return null;
+        const html = await r.text();
+        return kroExtractDatedPostsFromPublicHtml(html, slug);
+      } catch (e) {
+        console.warn(`[KRO history] ?before=50 error: ${e && e.message ? String(e.message) : 'failed'}`);
+        return null;
+      } finally {
+        clearTimeout(timer);
+      }
+    })();
+
+    const [recentSnap, earlyDatedPosts] = await Promise.all([recentSnapPromise, earlyFetchPromise]);
+
+    const recentDated = recentSnap && Array.isArray(recentSnap.dated_posts) ? recentSnap.dated_posts : [];
+    const earlyDated = Array.isArray(earlyDatedPosts) ? earlyDatedPosts : [];
+
+    // Объединяем, дедуплицируем по url или date+text
+    const allDated = [];
+    const seenKeys = new Set();
+    const addPosts = (posts) => {
+      for (const p of posts) {
+        if (!p.date_iso) continue;
+        const k = p.url || `${p.date_iso}|${(p.text || '').slice(0, 60)}`;
+        if (seenKeys.has(k)) continue;
+        seenKeys.add(k);
+        allDated.push(p);
+      }
+    };
+    addPosts(recentDated);
+    addPosts(earlyDated);
+
+    if (!allDated.length) return null;
+
+    // Сортируем: ранние → новые
+    allDated.sort((a, b) => new Date(a.date_iso).getTime() - new Date(b.date_iso).getTime());
+
+    const earliest_date_iso = allDated[0].date_iso;
+    const latest_date_iso = allDated[allDated.length - 1].date_iso;
+
+    // Валидация: не принимаем будущие или невалидные даты
+    const earliestMs = new Date(earliest_date_iso).getTime();
+    if (!Number.isFinite(earliestMs) || earliestMs > Date.now()) return null;
+
+    // early_sample: до 5 самых старых постов с непустым текстом
+    const earlyPosts = allDated.filter((p) => p.text && p.text.length >= 10).slice(0, 5);
+    // recent_sample: до 5 самых новых постов с непустым текстом
+    const recentPosts = allDated.filter((p) => p.text && p.text.length >= 10).slice(-5).reverse();
+
+    // used_jump=true если ?before= вернул хотя бы один пост старше самого раннего из обычного запроса
+    const recentEarliestMs = recentDated.length
+      ? Math.min(...recentDated.filter((p) => p.date_iso).map((p) => new Date(p.date_iso).getTime()).filter(Number.isFinite))
+      : Infinity;
+    const used_jump = Number.isFinite(recentEarliestMs) && earliestMs < recentEarliestMs;
+
+    console.log(`[KRO history] ${slug} earliest=${earliest_date_iso} total_dated=${allDated.length} used_jump=${used_jump}`);
+    return {
+      slug,
+      earliest_date_iso,
+      latest_date_iso,
+      early_sample: earlyPosts.map((p) => p.text),
+      recent_sample: recentPosts.map((p) => p.text),
+      used_jump,
+    };
+  } catch (e) {
+    console.warn(`[KRO history] fetch error: ${e && e.message ? String(e.message) : 'failed'}`);
+    return null;
+  }
+}
+
+/**
+ * Смена темы канала: спрашивает Mistral, есть ли явная смена тематики между старыми и новыми постами.
+ * Возвращает { shift_detected: true, explanation } только при явном "yes" с объяснением.
+ * При любой неопределённости или ошибке — null. Никогда не выдумывает факты.
+ */
+async function kroDetectChannelTopicShift(channelDisplay, earlySample, recentSample) {
+  if (!process.env.MISTRAL_API_KEY) return null;
+  if (!Array.isArray(earlySample) || earlySample.length < 2) return null;
+  if (!Array.isArray(recentSample) || recentSample.length < 2) return null;
+
+  const earlyText = earlySample.slice(0, 4).map((t, i) => `[${i + 1}] ${String(t).slice(0, 200)}`).join('\n');
+  const recentText = recentSample.slice(0, 4).map((t, i) => `[${i + 1}] ${String(t).slice(0, 200)}`).join('\n');
+
+  const prompt = `Ты аналитик безопасности. Проверь, изменилась ли тематика Telegram-канала «${channelDisplay}» между старыми и новыми постами.
+
+СТАРЫЕ ПОСТЫ (ранние):
+${earlyText}
+
+НОВЫЕ ПОСТЫ (последние):
+${recentText}
+
+Ответь ТОЛЬКО в формате JSON (без текста вне JSON):
+{"shift_detected":"yes"|"no","explanation":"конкретное описание что изменилось, или пустая строка если нет смены"}
+
+Правила:
+- "yes" ТОЛЬКО если тематика явно и конкретно изменилась (например: ранние посты про путешествия, новые про крипто-сигналы).
+- Если тематика одна и та же, или данных недостаточно для вывода — строго "no".
+- explanation при "yes" должен объяснять ЧТО именно изменилось конкретными словами, без домыслов.
+- Запрещено угадывать или предполагать без прямых доказательств из текстов выше.`;
+
+  try {
+    const r = await axios.post(
+      'https://api.mistral.ai/v1/chat/completions',
+      {
+        model: 'mistral-medium-latest',
+        max_tokens: 250,
+        temperature: 0,
+        messages: [{ role: 'user', content: prompt }],
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.MISTRAL_API_KEY}`,
+        },
+        timeout: 12000,
+      },
+    );
+    const raw = (r.data?.choices?.[0]?.message?.content || '').trim();
+    // Извлекаем JSON из ответа (модель иногда оборачивает в ```json ... ```)
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (parsed.shift_detected !== 'yes') return null;
+    const explanation = String(parsed.explanation || '').trim();
+    if (!explanation || explanation.length < 10) return null;
+    console.log(`[KRO history shift] ${channelDisplay} shift=yes explanation=${explanation.slice(0, 80)}`);
+    return { shift_detected: true, explanation };
+  } catch (e) {
+    console.warn(`[KRO history shift] error: ${e && e.message ? String(e.message) : 'failed'}`);
+    return null;
+  }
+}
+
+/**
+ * Обогащает объект analysis данными истории канала (channel_history).
+ * Вызывается из channel-profile и analyze-channel.
+ * Мутирует analysis на месте; при отсутствии данных ничего не добавляет.
+ */
+async function kroEnrichAnalysisWithChannelHistory(analysis, channelKey, channelDisplay) {
+  if (!channelKey || !analysis || typeof analysis !== 'object') return;
+  try {
+    const hist = await kroFetchChannelHistorySignals(channelKey);
+    if (!hist || !hist.earliest_date_iso) return;
+
+    let shift = null;
+    if (hist.early_sample.length >= 2 && hist.recent_sample.length >= 2) {
+      shift = await kroDetectChannelTopicShift(channelDisplay || channelKey, hist.early_sample, hist.recent_sample);
+    }
+
+    analysis.channel_history = {
+      earliest_post_date: hist.earliest_date_iso,
+      latest_post_date: hist.latest_date_iso || null,
+      used_jump: hist.used_jump || false,
+      shift_detected: !!(shift && shift.shift_detected),
+      shift_explanation: (shift && shift.explanation) || null,
+    };
+
+    if (!Array.isArray(analysis.sources)) analysis.sources = [];
+    if (!analysis.sources.includes('история постов t.me/s')) {
+      analysis.sources = [...analysis.sources, 'история постов t.me/s'];
+    }
+
+    // Добавляем предупреждение про смену темы в ties_risk_factors (формат «Заголовок: пояснение»
+    // совместим с kroHomeTiesLinesToTrustFlags)
+    if (shift && shift.explanation) {
+      const shiftLine = `Возможная смена тематики: ${shift.explanation}`;
+      const existingTies = Array.isArray(analysis.ties_risk_factors) ? analysis.ties_risk_factors : [];
+      analysis.ties_risk_factors = [shiftLine, ...existingTies].slice(0, 5);
+    }
+
+    console.log(`[KRO history] enriched ${channelKey} earliest=${hist.earliest_date_iso} shift=${analysis.channel_history.shift_detected}`);
+  } catch (e) {
+    console.warn(`[KRO history] enrich error: ${e && e.message ? String(e.message) : 'failed'}`);
+  }
+}
+
 /** Два поисковых запроса для блока «Кто за каналом»; без ключа — пустая строка. */
 async function kroFetchPersonBehindWebContext(channelName, username) {
   const hasAnySearch =
@@ -11993,6 +12201,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       }
       if (analysis._kro_watch_baked) delete analysis._kro_watch_baked;
       if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
+      await kroEnrichAnalysisWithChannelHistory(analysis, key, `@${decoded}`);
       return res.status(200).json({
         mode: responseMode,
         byo_deep: byoDeepActive,
@@ -12070,6 +12279,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       const watchRowCp1 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
       if (watchRowCp1) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp1);
       if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
+      await kroEnrichAnalysisWithChannelHistory(analysis, key, `@${decoded}`);
       return res.status(200).json({
         mode: responseMode,
         byo_deep: byoDeepActive,
@@ -12152,6 +12362,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     const watchRowCp2 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
     if (watchRowCp2) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp2);
     if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
+    await kroEnrichAnalysisWithChannelHistory(analysis, key, `@${decoded}`);
     return res.json({
       mode: responseMode,
       byo_deep: byoDeepActive,

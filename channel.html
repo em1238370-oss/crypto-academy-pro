@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=20260615-ch-verdict-unified">
+  <link rel="stylesheet" href="/monitor.css?v=20260615-ch-verdict-v2">
 </head>
 <body class="mon-page ch-page">
 
@@ -104,13 +104,18 @@
 
     <section class="ch-block" id="ch-web-evidence-section" aria-labelledby="ch-web-evidence-h" hidden>
       <h2 id="ch-web-evidence-h" class="ch-h2">Что нашли в интернете об авторе</h2>
-      <p class="ch-web-evidence-disclaimer">Показаны только результаты, где упоминается именно этот человек/канал — общие статьи без упоминания отфильтрованы</p>
+      <p class="ch-web-evidence-disclaimer">Результаты интернет-поиска по названию канала — могут включать общие статьи</p>
       <div id="ch-web-evidence-list" class="ch-web-evidence-list"></div>
     </section>
 
     <section class="ch-block" aria-labelledby="ch-s1-h">
       <h2 id="ch-s1-h" class="ch-h2">Базовая информация</h2>
       <div id="ch-s1" class="ch-body"></div>
+    </section>
+
+    <section class="ch-block" id="ch-history-section" aria-labelledby="ch-history-h" hidden>
+      <h2 id="ch-history-h" class="ch-h2">История канала</h2>
+      <div id="ch-history-body" class="ch-body"></div>
     </section>
 
     <section class="ch-block" aria-labelledby="ch-s2-h">
@@ -295,43 +300,103 @@
     return 'watch';
   }
 
+  function normalizeAnalysisLine(line) {
+    return String(line || '')
+      .replace(/в базе сервиса/gi, 'в открытых источниках')
+      .replace(/базе сервиса/gi, 'открытых источниках')
+      .replace(/в сервисе (\d+) записей/gi, 'в открытых источниках: $1 упоминаний')
+      .trim();
+  }
+
   function lineLooksLikeNumericRisk(line) {
     var s = String(line || '');
     if (/индекс риска/i.test(s)) return true;
-    if (/🟢|🟡|🔴/.test(s) && /риск/i.test(s)) return true;
+    if (/🟢|🟡|🔴|⚪/.test(s) && /риск/i.test(s)) return true;
     if (/риск:\s*\d+\s*\/\s*10/i.test(s)) return true;
+    if (/^риск\s+\d+\s*\/\s*10/i.test(s)) return true;
     if (/оценка.*\d+\s*из\s*10/i.test(s)) return true;
+    if (/оценка по тексту\s*\d+\s*\/\s*10/i.test(s)) return true;
     if (/сводка по ленте:\s*\d+\s*из\s*100/i.test(s)) return true;
     if (/сводный балл.*\d+\s*из\s*100/i.test(s)) return true;
     if (/оценка риска:\s*\d+/i.test(s)) return true;
     if (/в старой сводке указан риск:\s*\d+/i.test(s)) return true;
+    if (/смысловой индекс:\s*\d+\s*\/\s*10/i.test(s)) return true;
+    if (/балл риска\s+\d+\s*\/\s*10/i.test(s)) return true;
+    if (/ниже среднего|средне-высокий/i.test(s) && /риск/i.test(s)) return true;
     return false;
   }
 
-  function extractRiskScore100(line) {
-    var s = String(line || '');
-    var m10 = s.match(/(\d+)\s*\/\s*10/);
-    if (m10) return Number(m10[1]) * 10;
-    var m100 = s.match(/(\d+)\s*из\s*100/);
-    if (m100) return Number(m100[1]);
-    var mIdx = s.match(/индекс риска:\s*(\d+)/i);
-    if (mIdx) return Number(mIdx[1]);
+  function lineLooksLikeLegacyComplaintStatus(line) {
+    var s = String(line || '').toLowerCase();
+    return /жалоб по каналу в базе/i.test(s)
+      || /✓\s*жалоб.*базе/i.test(s)
+      || /жалоб.*в базе нет/i.test(s)
+      || /жалоб.*в открытых источниках не найдено/i.test(s);
+  }
+
+  function filterAnalysisLines(lines, status) {
+    var hasStatus = String(status || '').trim() && String(status || '').trim() !== '—';
+    return (lines || []).filter(function (line) {
+      var s = String(line || '').trim();
+      if (!s) return false;
+      if (lineLooksLikeLegacyComplaintStatus(s)) return false;
+      if (hasStatus && lineLooksLikeNumericRisk(s)) return false;
+      return true;
+    }).map(normalizeAnalysisLine);
+  }
+
+  function isCleanStatus(status) {
+    return conclusionStatusTier(status) === 'low';
+  }
+
+  function highlightCardFromLine(line) {
+    var s = String(line || '').trim();
+    if (!s) return null;
+    var low = s.toLowerCase();
+    if (/правила риска|риск-менеджмент/i.test(low)) {
+      var body = s
+        .replace(/^⚠\s*/i, '')
+        .replace(/^правила риска\s*[—–-]\s*(да|частично|нет)\.?\s*/i, '')
+        .trim();
+      if (!body || body.toLowerCase() === s.toLowerCase()) body = s.replace(/^⚠\s*/i, '').trim();
+      return { cls: 'risk-mgmt', title: 'Есть правила риск-менеджмента', body: body };
+    }
+    if (/объяснения логики|объяснение логики|логик[аи]\s+(сделк|вход)/i.test(low)) {
+      var body2 = s
+        .replace(/^⚠\s*/i, '')
+        .replace(/^логика\s*[—–-]\s*(да|частично|нет)\.?\s*/i, '')
+        .trim();
+      if (!body2 || body2.toLowerCase() === s.toLowerCase()) body2 = s.replace(/^⚠\s*/i, '').trim();
+      return { cls: 'logic', title: 'Канал объясняет логику входов', body: body2 };
+    }
     return null;
   }
 
-  function scoreContradictsStatus(score100, tier) {
-    if (score100 == null || !Number.isFinite(score100)) return false;
-    if (tier === 'high') return score100 < 45;
-    if (tier === 'low') return score100 >= 45;
-    return false;
+  function renderHighlightCard(card) {
+    if (!card) return '';
+    return (
+      '<div class="ch-highlight-card ch-highlight-card--' + esc(card.cls) + '">' +
+      '<p class="ch-highlight-card-title">' + esc(card.title) + '</p>' +
+      '<p class="ch-highlight-card-body">' + esc(card.body) + '</p>' +
+      '</div>'
+    );
   }
 
-  function filterContradictoryLines(lines, status) {
-    var tier = conclusionStatusTier(status);
-    return (lines || []).filter(function (line) {
-      if (!lineLooksLikeNumericRisk(line)) return true;
-      return !scoreContradictsStatus(extractRiskScore100(line), tier);
-    });
+  function renderSmartSection(lines, status) {
+    var filtered = filterAnalysisLines(lines, status);
+    var cards = [];
+    var bullets = [];
+    for (var i = 0; i < filtered.length; i++) {
+      var card = highlightCardFromLine(filtered[i]);
+      if (card) cards.push(card);
+      else bullets.push(filtered[i]);
+    }
+    var html = cards.map(renderHighlightCard).join('');
+    html += renderBulletList(bullets);
+    if (!html.trim()) {
+      return '<div class="mon-evidence-empty">Нет данных в этом блоке.</div>';
+    }
+    return html;
   }
 
   function parseConclusionParts(c) {
@@ -346,6 +411,8 @@
       var r = reasons[i];
       if (/^рекомендация:/i.test(r)) {
         nextAction = r.replace(/^рекомендация:\s*/i, '').trim();
+      } else if (/^риск\s+\d+\s*\/\s*10/i.test(r) || lineLooksLikeNumericRisk(r)) {
+        continue;
       } else if (!verdict) {
         verdict = r;
       } else {
@@ -462,16 +529,158 @@
     labelEl.textContent = meta.label;
     var wc = Array.isArray(webComplaints) ? webComplaints : [];
     if (counterEl) {
-      if (wc.length > 0) {
-        var n = wc.length;
-        counterEl.hidden = false;
-        counterEl.textContent =
-          'Найдено ' + n + ' ' + ruPlural(n, 'жалоба', 'жалобы', 'жалоб') + ' в интернете';
-      } else {
-        counterEl.hidden = true;
-        counterEl.textContent = '';
-      }
+      counterEl.hidden = true;
+      counterEl.textContent = '';
     }
+  }
+
+  function hostFromUrl(url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch (e) {
+      return String(url || '').replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
+    }
+  }
+
+  function scoreContradictsStatus(score100, tier) {
+    if (score100 == null || !Number.isFinite(score100)) return false;
+    if (tier === 'high') return score100 < 45;
+    if (tier === 'low') return score100 >= 45;
+    return false;
+  }
+
+  function renderWebComplaints(list, status) {
+    var items = (list || []).filter(function (x) {
+      return x && (x.snippet || x.link || x.title);
+    });
+    if (!items.length) {
+      var ok = isCleanStatus(status);
+      return (
+        '<div class="ch-complaints-status">' +
+        '<p class="ch-complaints-empty ' + (ok ? 'ch-complaints-empty--ok' : 'ch-complaints-empty--neutral') + '">' +
+        (ok ? '✓ ' : '') + 'Жалоб в открытых источниках не найдено</p>' +
+        '</div>'
+      );
+    }
+    var specific = items.filter(function (x) { return x._is_general !== true; });
+    var general = items.filter(function (x) { return x._is_general === true; });
+    var counterHtml = '';
+    if (specific.length > 0) {
+      counterHtml = '<p class="ch-web-complaints-counter">Найдено ' + specific.length + ' ' +
+        ruPlural(specific.length, 'жалоба', 'жалобы', 'жалоб') + ' именно про этот канал</p>';
+    }
+    function renderItem(item, isGeneral) {
+      var snippet = truncateText(item.snippet || item.title || '', 200);
+      var link = String(item.link || '').trim();
+      var domain = link ? hostFromUrl(link) : '';
+      var linkHtml = link
+        ? '<a class="ch-web-complaint-link" href="' + esc(link) + '" target="_blank" rel="noopener noreferrer">' +
+          esc(truncateText(domain || 'Источник', 48)) + externalIcon() + '</a>'
+        : '';
+      var cls = isGeneral ? 'ch-web-complaint-card--general' : 'ch-web-complaint-card--specific';
+      return (
+        '<li class="ch-web-complaint-card ' + cls + '">' +
+        '<div class="ch-web-complaint-body">' +
+        (snippet ? '<p class="ch-web-complaint-snippet">' + esc(snippet) + '</p>' : '') +
+        (linkHtml ? '<p class="ch-web-complaint-meta">' + linkHtml + '</p>' : '') +
+        (isGeneral ? '<p class="ch-web-complaint-general-tag">общая статья — не про этот канал</p>' : '') +
+        '</div></li>'
+      );
+    }
+    var html = '<div class="ch-web-complaints">' + counterHtml + '<ul class="ch-web-complaints-list">';
+    for (var i = 0; i < specific.length; i++) html += renderItem(specific[i], false);
+    for (var j = 0; j < general.length; j++) html += renderItem(general[j], true);
+    html += '</ul></div>';
+    return html;
+  }
+
+  function renderExternalReportsSection(a, status) {
+    a = a || {};
+    var st = status || (a.conclusion && a.conclusion.status) || '';
+    return renderBulletList(filterAnalysisLines(a.external_reports, st)) + renderWebComplaints(a.web_complaints, st);
+  }
+
+  function fmtHistoryDate(iso) {
+    if (!iso) return '';
+    try {
+      var d = new Date(iso);
+      if (!Number.isFinite(d.getTime()) || d.getTime() > Date.now()) return '';
+      return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function renderChannelHistorySection(a) {
+    var sec = document.getElementById('ch-history-section');
+    var body = document.getElementById('ch-history-body');
+    if (!sec || !body) return;
+    var ch = a && a.channel_history;
+    if (!ch || !ch.earliest_post_date) {
+      sec.hidden = true;
+      body.innerHTML = '';
+      return;
+    }
+    var earliestFmt = fmtHistoryDate(ch.earliest_post_date);
+    if (!earliestFmt) {
+      sec.hidden = true;
+      body.innerHTML = '';
+      return;
+    }
+    sec.hidden = false;
+    var lines = [];
+    lines.push(
+      'Самый ранний найденный пост: ' + earliestFmt +
+      '. Это нижняя граница — реальная дата создания канала может быть раньше, если старые посты удалялись.'
+    );
+    if (ch.latest_post_date && ch.latest_post_date !== ch.earliest_post_date) {
+      var latestFmt = fmtHistoryDate(ch.latest_post_date);
+      if (latestFmt) lines.push('Последний найденный пост в открытой ленте: ' + latestFmt + '.');
+    }
+    var html = '<ul class="mon-evidence-list">' +
+      lines.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') +
+      '</ul>';
+    if (ch.shift_detected && ch.shift_explanation) {
+      html += renderHighlightCard({
+        cls: 'risk-mgmt',
+        title: 'Возможно — перекупленный канал',
+        body: ch.shift_explanation,
+      });
+    }
+    body.innerHTML = html;
+  }
+
+  function applyAnalysisToMainSections(a) {
+    if (!a || typeof a !== 'object') return;
+    var c = a.conclusion || {};
+    var status = c.status || '';
+    window.__chLastConclusionStatus = status;
+    applyAtAGlance(a);
+    document.getElementById('ch-s1').innerHTML = renderSmartSection(a.basic_info, status);
+    renderChannelHistorySection(a);
+    document.getElementById('ch-s2').innerHTML = renderSmartSection(a.content_behavior, status);
+    document.getElementById('ch-s3').innerHTML = renderExternalReportsSection(a, status);
+    document.getElementById('ch-s4').innerHTML = renderSmartSection(a.ties_risk_factors, status);
+    var parts = parseConclusionParts(c);
+    document.getElementById('ch-conclusion-reasons').innerHTML = renderBulletList(filterAnalysisLines(parts.detailReasons, status));
+    renderWebEvidenceSection(a);
+    renderSourceBadges(a.sources);
+  }
+
+  function renderDeepAnalysisBlock(a) {
+    if (!a || typeof a !== 'object') return '';
+    var c = a.conclusion || {};
+    var status = c.status || '';
+    var parts = parseConclusionParts(c);
+    var s5lines = filterAnalysisLines(parts.detailReasons, status).slice(0, 8);
+    return (
+      '<h3 class="ch-deep-results-title">Результат глубокого анализа ленты (Telegram)</h3>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Базовая информация</h3><div class="ch-body">' + renderSmartSection(a.basic_info, status) + '</div></div>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Контент и поведение</h3><div class="ch-body">' + renderSmartSection(a.content_behavior, status) + '</div></div>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Жалобы и база</h3><div class="ch-body">' + renderExternalReportsSection(a, status) + '</div></div>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Связи и риск‑факторы</h3><div class="ch-body">' + renderSmartSection(a.ties_risk_factors, status) + '</div></div>' +
+      '<div class="ch-deep-subsec"><h3 class="ch-h3">Итоговый вывод</h3><div class="ch-body">' + renderBulletList(s5lines) + '</div></div>'
+    );
   }
 
   function sourceBadgeMeta(src) {
@@ -514,83 +723,6 @@
       var m = sourceBadgeMeta(src);
       return '<span class="ch-source-badge ch-source-badge--' + esc(m.cls) + '">' + esc(m.label) + '</span>';
     }).join('');
-  }
-
-  function hostFromUrl(url) {
-    try {
-      return new URL(url).hostname.replace(/^www\./, '');
-    } catch (e) {
-      return String(url || '').replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
-    }
-  }
-
-  function renderWebComplaints(list) {
-    var items = (list || []).filter(function (x) {
-      return x && (x.snippet || x.link || x.title);
-    });
-    if (!items.length) return '';
-    return (
-      '<div class="ch-web-complaints">' +
-      '<h3 class="ch-h3 ch-web-complaints-title">Найдено в интернете</h3>' +
-      '<ul class="ch-web-complaints-list">' +
-      items.map(function (item) {
-        var snippet = truncateText(item.snippet || item.title || '', 200);
-        var link = String(item.link || '').trim();
-        var title = String(item.title || '').trim();
-        var linkLabel = link ? hostFromUrl(link) : (title || 'Источник');
-        var linkHtml = link
-          ? '<a class="ch-web-complaint-link" href="' + esc(link) + '" target="_blank" rel="noopener noreferrer">' +
-            esc(truncateText(linkLabel, 48)) + externalIcon() + '</a>'
-          : '';
-        return (
-          '<li class="ch-web-complaint-card">' +
-          '<span class="ch-web-complaint-icon" aria-hidden="true">⚠️</span>' +
-          '<div class="ch-web-complaint-body">' +
-          (snippet ? '<p class="ch-web-complaint-snippet">' + esc(snippet) + '</p>' : '') +
-          (linkHtml ? '<p class="ch-web-complaint-meta">' + linkHtml + '</p>' : '') +
-          '</div></li>'
-        );
-      }).join('') +
-      '</ul></div>'
-    );
-  }
-
-  function renderExternalReportsSection(a, status) {
-    a = a || {};
-    var st = status || (a.conclusion && a.conclusion.status) || '';
-    return renderBulletList(filterContradictoryLines(a.external_reports, st)) + renderWebComplaints(a.web_complaints);
-  }
-
-  function applyAnalysisToMainSections(a) {
-    if (!a || typeof a !== 'object') return;
-    var c = a.conclusion || {};
-    var status = c.status || '';
-    window.__chLastConclusionStatus = status;
-    applyAtAGlance(a);
-    document.getElementById('ch-s1').innerHTML = renderBulletList(filterContradictoryLines(a.basic_info, status));
-    document.getElementById('ch-s2').innerHTML = renderBulletList(filterContradictoryLines(a.content_behavior, status));
-    document.getElementById('ch-s3').innerHTML = renderExternalReportsSection(a, status);
-    document.getElementById('ch-s4').innerHTML = renderBulletList(filterContradictoryLines(a.ties_risk_factors, status));
-    var parts = parseConclusionParts(c);
-    document.getElementById('ch-conclusion-reasons').innerHTML = renderBulletList(parts.detailReasons);
-    renderWebEvidenceSection(a);
-    renderSourceBadges(a.sources);
-  }
-
-  function renderDeepAnalysisBlock(a) {
-    if (!a || typeof a !== 'object') return '';
-    var c = a.conclusion || {};
-    var status = c.status || '';
-    var parts = parseConclusionParts(c);
-    var s5lines = parts.detailReasons.slice(0, 8);
-    return (
-      '<h3 class="ch-deep-results-title">Результат глубокого анализа ленты (Telegram)</h3>' +
-      '<div class="ch-deep-subsec"><h3 class="ch-h3">Базовая информация</h3><div class="ch-body">' + renderBulletList(filterContradictoryLines(a.basic_info, status)) + '</div></div>' +
-      '<div class="ch-deep-subsec"><h3 class="ch-h3">Контент и поведение</h3><div class="ch-body">' + renderBulletList(filterContradictoryLines(a.content_behavior, status)) + '</div></div>' +
-      '<div class="ch-deep-subsec"><h3 class="ch-h3">Жалобы и база</h3><div class="ch-body">' + renderExternalReportsSection(a, status) + '</div></div>' +
-      '<div class="ch-deep-subsec"><h3 class="ch-h3">Связи и риск‑факторы</h3><div class="ch-body">' + renderBulletList(filterContradictoryLines(a.ties_risk_factors, status)) + '</div></div>' +
-      '<div class="ch-deep-subsec"><h3 class="ch-h3">Итоговый вывод</h3><div class="ch-body">' + renderBulletList(s5lines) + '</div></div>'
-    );
   }
 
   function z2(n) { return (n < 10 ? '0' : '') + n; }
