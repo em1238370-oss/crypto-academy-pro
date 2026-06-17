@@ -1652,7 +1652,7 @@
                        var um = tr.ui_modes && typeof tr.ui_modes === 'object' ? tr.ui_modes : {};
                        var qk = um.quick && typeof um.quick === 'object' ? um.quick : {};
                        if (eyeb) eyeb.textContent = 'Разбор канала';
-                       if (hl) hl.textContent = String(qk.risk_headline_ru || tr.headline_ru || '').trim() || 'Итог';
+                       if (hl) hl.textContent = kroSafeHeadline(qk.risk_headline_ru || tr.headline_ru, 'Итог');
                        if (sub) sub.textContent = String(qk.subline_ru || tr.subline_ru || '').trim() || '';
                        if (chkTitle) chkTitle.textContent = 'Главные риски';
                        if (chkUl) {
@@ -1907,7 +1907,7 @@
                        if (recQuick) recQuick.innerHTML = '';
                        if (chkTitle) chkTitle.textContent = 'Почему это риск';
                        if (eyeb) eyeb.textContent = 'Разбор канала';
-                       if (hl) hl.textContent = String(tr.headline_ru || '').trim() || 'Итог';
+                       if (hl) hl.textContent = kroSafeHeadline(tr.headline_ru, 'Итог');
                        if (sub) sub.textContent = String(tr.subline_ru || '').trim() || '';
                        if (empathEl) {
                            var em4 = String(tr.empath_intro_ru || '').trim();
@@ -2078,7 +2078,7 @@
                            howInline.hidden = true;
                        }
                        if (eyeb) eyeb.textContent = 'Быстрый вердикт';
-                       if (hl) hl.textContent = String(tr.headline_ru || '').trim() || 'Итог';
+                       if (hl) hl.textContent = kroSafeHeadline(tr.headline_ru, 'Итог');
                        if (sub) sub.textContent = String(tr.subline_ru || '').trim() || '';
                        if (empathEl) {
                            empathEl.textContent = '';
@@ -2497,9 +2497,6 @@
                    var samples = le && Array.isArray(le.sample_posts)
                        ? le.sample_posts.map(function (x) { return kroSanitizeChannelSnippet(String(x || '').trim()); }).filter(Boolean)
                        : [];
-                   var citations = Array.isArray(data.citations)
-                       ? data.citations.map(function (x) { return kroSanitizeChannelSnippet(String(x || '').trim()); }).filter(Boolean)
-                       : [];
                    var flags = Array.isArray(data.flags) ? data.flags : [];
                    var a = data.analysis || {};
                    var cb = Array.isArray(a.content_behavior) ? a.content_behavior : [];
@@ -2523,7 +2520,6 @@
                        pushPool(dp.text, dp.url);
                    }
                    for (var si = 0; si < samples.length; si++) pushPool(samples[si], '');
-                   for (var cj = 0; cj < citations.length; cj++) pushPool(citations[cj], '');
                    for (var qi = 0; qi < quotesFromContent.length; qi++) pushPool(quotesFromContent[qi], '');
                    var poolIx = 0;
                    function takeSnippet() {
@@ -2551,16 +2547,27 @@
                        var title = String(f.title || f.code || 'Маркер в тексте').trim();
                        var expl = String(f.explanation || '').trim();
                        var code = String(f.code || '').toLowerCase();
-                       var snItem = takeSnippet();
-                       var sn = snItem.text || '';
-                       if (!sn && samples.length) sn = samples[fi % samples.length];
-                       if (!sn && pool.length) sn = pool[Math.min(fi, pool.length - 1)].text;
+                       var sn = '';
+                       var snUrl = '';
+                       var evSn = f.evidence_snippet
+                           ? kroSanitizeChannelSnippet(String(f.evidence_snippet).trim())
+                           : '';
+                       if (evSn) {
+                           sn = evSn;
+                           snUrl = kroMatchFindingPostUrl(sn, datedPosts, channelFeedUrl);
+                       } else {
+                           var snItem = takeSnippet();
+                           sn = snItem.text || '';
+                           snUrl = snItem.url || '';
+                           if (!sn && samples.length) sn = samples[fi % samples.length];
+                           if (!sn && pool.length) sn = pool[Math.min(fi, pool.length - 1)].text;
+                       }
                        addRow(
                            kroSeverityFromFlagCode(code),
                            title,
                            expl || 'Совпадение с типичными формулировками, которые нередко встречаются в навязчивом крипто-продвижении.',
                            sn,
-                           snItem.url || kroExtractTelegramPostUrl(expl),
+                           snUrl || kroExtractTelegramPostUrl(expl),
                        );
                    }
                    var ties = Array.isArray(a.ties_risk_factors) ? a.ties_risk_factors : [];
@@ -3244,6 +3251,40 @@
                    });
                    return out;
                }
+               /** Отсекает мусорные «названия» схем (хэштеги, тайм-фреймы, слишком короткие/длинные строки). */
+               function kroLooksLikeJunkFlagName(name) {
+                   var t = String(name || '').trim().replace(/^[«\[\s]+|[»\]\s]+$/g, '');
+                   if (!t || t.length < 3 || t.length > 48) return true;
+                   if (/^#/.test(t) || /#[A-Z0-9]{2,}/i.test(t)) return true;
+                   if (/^\d+\s*[hmdw](?:\s*tf)?\.?$/i.test(t)) return true;
+                   if (/^\d+[hmdw]\s+tf\b/i.test(t)) return true;
+                   if (!/[a-zа-яёії]/i.test(t)) return true;
+                   return false;
+               }
+               /** Парсит red_flags-строку вида [СХЕМА]: «цитата»; … по границам скобок и кавычек. */
+               function kroParseBracketRedFlagsString(text) {
+                   var s = String(text || '').trim();
+                   if (!s || s === 'Явных нет' || s.indexOf('не найдено') !== -1) return [];
+                   var out = [];
+                   var re = /\[([^\]]+)\](?:\s*:\s*(?:(?:«([^»]*)»)|(?:"([^"]*)")|([^;]*?)))?/g;
+                   var m;
+                   while ((m = re.exec(s)) !== null) {
+                       var nm = String(m[1] || '').trim();
+                       var qt = String(m[2] || m[3] || m[4] || '').trim();
+                       if (kroLooksLikeJunkFlagName(nm)) continue;
+                       out.push({ name: nm, quote: qt });
+                   }
+                   return out;
+               }
+               /** Короткий заголовок для блока доверия: первое предложение, макс. 140 символов. */
+               function kroSafeHeadline(raw, fallback) {
+                   var t = String(raw || '').trim();
+                   if (!t) return String(fallback || 'Итог').trim() || 'Итог';
+                   var first = t.split(/[.!?…](?:\s|$)|\n/)[0].trim();
+                   if (first.length >= 12) t = first;
+                   if (t.length > 140) t = t.slice(0, 139).trim() + '…';
+                   return t;
+               }
                function kroPersonBehindSplitRedFlags(text) {
                    var s = String(text || '').trim();
                    if (!s || s === 'Явных нет' || s === 'Явных манипулятивных схем не найдено') return [];
@@ -3389,29 +3430,10 @@
                                add(rTitle, rQuote ? [rQuote] : []);
                            }
                        } else {
-                           var raw = String(pb.red_flags).trim();
-                           var splitParts = raw.split(/»,\s*«/);
-                           if (splitParts.length > 1) {
-                               for (var si = 0; si < splitParts.length; si++) {
-                                   var chunk = splitParts[si].replace(/^[«\[\s]+|[»\]\s]+$/g, '').trim();
-                                   var ci = chunk.indexOf(':');
-                                   var nm = ci > 0 ? chunk.slice(0, ci).trim() : chunk;
-                                   var qt = ci > 0 ? chunk.slice(ci + 1).trim() : '';
-                                   add(nm, qt ? [qt] : []);
-                               }
-                           } else {
-                               var parts = kroPersonBehindSplitRedFlags(pb.red_flags);
-                               for (var pi = 0; pi < parts.length; pi++) {
-                                   var p = parts[pi];
-                                   var pq = kroResultExtractQuotes(p);
-                                   var pt = kroResultStripQuotes(p);
-                                   var pci = pt.indexOf(':');
-                                   if (pci > 0) {
-                                       add(pt.slice(0, pci).trim(), [pt.slice(pci + 1).trim()]);
-                                   } else {
-                                       add(pt.slice(0, 100) || 'Красный флаг', pq.length ? pq : (pt ? [pt.slice(0, 220)] : []));
-                                   }
-                               }
+                           var parsedFlags = kroParseBracketRedFlagsString(pb.red_flags);
+                           for (var pi = 0; pi < parsedFlags.length; pi++) {
+                               var entry = parsedFlags[pi];
+                               add(entry.name, entry.quote ? [entry.quote] : []);
                            }
                        }
                    }
@@ -3655,17 +3677,22 @@
                    var seen = {};
                    var add = function (n) {
                        var t = String(n || '').trim().replace(/^[«\[\s]+|[»\]\s]+$/g, '');
-                       if (!t || t.length < 3 || t.length > 48) return;
+                       if (kroLooksLikeJunkFlagName(t)) return;
                        var k = kroGlanceNormKey(t);
                        if (!k || seen[k]) return;
                        seen[k] = true;
                        names.push(t);
                    };
-                   var raw = pb && pb.red_flags ? String(pb.red_flags) : '';
-                   if (raw && raw !== 'Явных нет' && raw.indexOf('не найдено') === -1) {
-                       var re = /[«\[]([^:«»\[\]]{3,48})[»\]]?\s*:/g;
-                       var m;
-                       while ((m = re.exec(raw)) !== null && names.length < 4) add(m[1]);
+                   if (pb && Array.isArray(pb.red_flags_list) && pb.red_flags_list.length) {
+                       for (var li = 0; li < pb.red_flags_list.length && names.length < 4; li++) {
+                           var rf = pb.red_flags_list[li];
+                           if (rf && rf.name) add(rf.name);
+                       }
+                   } else if (pb && pb.red_flags) {
+                       var parsed = kroParseBracketRedFlagsString(String(pb.red_flags));
+                       for (var pi = 0; pi < parsed.length && names.length < 4; pi++) {
+                           add(parsed[pi].name);
+                       }
                    }
                    var fl = Array.isArray(flags) ? flags : [];
                    for (var fi = 0; fi < fl.length && names.length < 4; fi++) {
