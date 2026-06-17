@@ -1,0 +1,5 @@
+#!/bin/sh
+# Снимаем протухшие lock перед коммитом (гонка Cursor / GitHub Desktop / IDE).
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+[ -x "$ROOT/scripts/git-unlock.sh" ] && "$ROOT/scripts/git-unlock.sh" || true
+exit 0

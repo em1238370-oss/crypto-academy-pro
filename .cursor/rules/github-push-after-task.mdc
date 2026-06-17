@@ -11,6 +11,7 @@ alwaysApply: true
 
 ## Порядок (каждый раз, без исключений!)
 
+0. **`bash scripts/git-unlock.sh --force`** — снять зависший `.git/index.lock` (иначе на Mac GitHub Desktop: «A lock file already exists…»). Если скрипта ещё нет: `rm -f .git/index.lock .git/refs/**/*.lock 2>/dev/null`
 1. `git add -A` (или конкретные файлы)
 2. **Всегда** `git commit -m "краткое описание изменений"` — **никогда не делать коммит без `-m`**, иначе откроется Vim и пользователь застрянет.
 3. `git push origin main`
@@ -33,6 +34,7 @@ alwaysApply: true
 
 ## Если push отклонился (rejected / non-fast-forward)
 
+0. Снять lock: `bash scripts/git-unlock.sh --force` (или `rm -f .git/index.lock`)
 1. Удалить старый rebase, если есть: `rm -rf .git/rebase-merge .git/rebase-apply`
 2. Убедиться, что на ветке main: `git checkout main`
 3. Если был коммит в detached HEAD — влить его в main: `git merge <hash>` (hash из сообщения "leaving 1 commit behind"). При конфликтах оставить наши правки: `git checkout --theirs <файл>` по каждому конфликтному файлу, затем `git add` и `git commit -m "Merge: ..."`
