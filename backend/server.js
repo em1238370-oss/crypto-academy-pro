@@ -10916,11 +10916,23 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
   });
 }
 
-/** Собирает ответ analyze-channel и добавляет channel_history (история постов t.me/s). */
+/** Пути analyze-channel, где чтение t.me/s уже заложено в дизайн — можно добавлять channel_history. */
+function kroAnalyzeReadPathIncludesChannelHistory(readPathOut) {
+  const p = String(readPathOut || '').trim();
+  return p === 'telethon' || p === 'telethon+public_snapshot' || p === 'public_snapshot';
+}
+
+/** Собирает ответ analyze-channel; channel_history — только на live-путях с чтением ленты. */
 async function kroBuildAnalyzeChannelLiveSuccessBundleAsync(opts) {
   const bundle = kroBuildAnalyzeChannelLiveSuccessBundle(opts);
   const o = opts && typeof opts === 'object' ? opts : {};
-  if (bundle && bundle.analysis && o.key) {
+  if (
+    o.withChannelHistory !== false &&
+    kroAnalyzeReadPathIncludesChannelHistory(o.readPathOut) &&
+    bundle &&
+    bundle.analysis &&
+    o.key
+  ) {
     await kroEnrichAnalysisWithChannelHistory(bundle.analysis, o.key, o.channelDisplay || o.key);
   }
   return bundle;
@@ -11163,7 +11175,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
 
   const voicePrefix =
     `Приватный канал по инвайт-ссылке: ленту Telegram здесь не читаем. За ~${Math.round(quickBudgetMs / 1000)} с: ${inviteTitleSource === 'telegram_invite_html' ? 'название из HTML страницы инвайта (og:title), ' : ''}scam_base${hintRaw ? ' (поиск по названию)' : ''}, объединённые жалобы (reports), GET vklader/forteck${nameSeg ? ` по пути «${nameSeg}»` : ' (без названия — прямой путь не запрашивали)'}${searchQueriesList.length ? `, поиск на сайтах ?s= (${searchQueriesList.slice(0, 4).map((q) => `«${String(q).slice(0, 48)}»`).join(', ')})` : ''}${(extWeb.items || []).length ? ', доп. веб-поиск (DuckDuckGo/Google по env)' : ''}, затем Claude.`;
-  const trustBundle = await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
+  const trustBundle = kroBuildAnalyzeChannelLiveSuccessBundle({
     withQueueMeta,
     channelDisplay,
     key,
@@ -11362,7 +11374,7 @@ async function kroAnalyzeChannelQuickSheetsSitesHandler(req, res, opts) {
   const voicePrefix =
     `За ~${Math.round(quickBudgetMs / 1000)} с собрали: scam_base, channels_watch, объединённые reports, GET https://vklader.com/${key} и https://forteck.net/${key}${searchQueriesList.length ? `, поиск на сайтах ?s= (${searchQueriesList.slice(0, 4).map((q) => `«${String(q).slice(0, 48)}»`).join(', ')})` : ''}, затем Claude. Посты Telegram и t.me не читали — только эти источники.`;
 
-  const bundle = await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
+  const bundle = kroBuildAnalyzeChannelLiveSuccessBundle({
     withQueueMeta,
     channelDisplay,
     key,
@@ -11840,7 +11852,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       sampleForFast: sampleDs,
     });
     return res.status(200).json(
-      await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
+      kroBuildAnalyzeChannelLiveSuccessBundle({
         withQueueMeta,
         channelDisplay,
         key,
