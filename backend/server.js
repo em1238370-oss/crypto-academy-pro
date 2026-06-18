@@ -10916,6 +10916,16 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
   });
 }
 
+/** Собирает ответ analyze-channel и добавляет channel_history (история постов t.me/s). */
+async function kroBuildAnalyzeChannelLiveSuccessBundleAsync(opts) {
+  const bundle = kroBuildAnalyzeChannelLiveSuccessBundle(opts);
+  const o = opts && typeof opts === 'object' ? opts : {};
+  if (bundle && bundle.analysis && o.key) {
+    await kroEnrichAnalysisWithChannelHistory(bundle.analysis, o.key, o.channelDisplay || o.key);
+  }
+  return bundle;
+}
+
 /**
  * Приватный канал t.me/+… в режиме manual_first: без Telethon, таблицы + vklader/forteck по названию + Claude + честный CTA со скриншотами.
  */
@@ -11153,7 +11163,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
 
   const voicePrefix =
     `Приватный канал по инвайт-ссылке: ленту Telegram здесь не читаем. За ~${Math.round(quickBudgetMs / 1000)} с: ${inviteTitleSource === 'telegram_invite_html' ? 'название из HTML страницы инвайта (og:title), ' : ''}scam_base${hintRaw ? ' (поиск по названию)' : ''}, объединённые жалобы (reports), GET vklader/forteck${nameSeg ? ` по пути «${nameSeg}»` : ' (без названия — прямой путь не запрашивали)'}${searchQueriesList.length ? `, поиск на сайтах ?s= (${searchQueriesList.slice(0, 4).map((q) => `«${String(q).slice(0, 48)}»`).join(', ')})` : ''}${(extWeb.items || []).length ? ', доп. веб-поиск (DuckDuckGo/Google по env)' : ''}, затем Claude.`;
-  const trustBundle = kroBuildAnalyzeChannelLiveSuccessBundle({
+  const trustBundle = await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
     withQueueMeta,
     channelDisplay,
     key,
@@ -11352,7 +11362,7 @@ async function kroAnalyzeChannelQuickSheetsSitesHandler(req, res, opts) {
   const voicePrefix =
     `За ~${Math.round(quickBudgetMs / 1000)} с собрали: scam_base, channels_watch, объединённые reports, GET https://vklader.com/${key} и https://forteck.net/${key}${searchQueriesList.length ? `, поиск на сайтах ?s= (${searchQueriesList.slice(0, 4).map((q) => `«${String(q).slice(0, 48)}»`).join(', ')})` : ''}, затем Claude. Посты Telegram и t.me не читали — только эти источники.`;
 
-  const bundle = kroBuildAnalyzeChannelLiveSuccessBundle({
+  const bundle = await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
     withQueueMeta,
     channelDisplay,
     key,
@@ -11644,7 +11654,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         sampleForFast,
       });
       return res.status(200).json(
-        kroBuildAnalyzeChannelLiveSuccessBundle({
+        await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
           withQueueMeta,
           channelDisplay,
           key,
@@ -11694,7 +11704,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         sampleForFast: sPub,
       });
       return res.status(200).json(
-        kroBuildAnalyzeChannelLiveSuccessBundle({
+        await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
           withQueueMeta,
           channelDisplay,
           key,
@@ -11735,7 +11745,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           sampleForFast: sR,
         });
         return res.status(200).json(
-          kroBuildAnalyzeChannelLiveSuccessBundle({
+          await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
             withQueueMeta,
             channelDisplay,
             key,
@@ -11785,7 +11795,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           sampleForFast: sL,
         });
         return res.status(200).json(
-          kroBuildAnalyzeChannelLiveSuccessBundle({
+          await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
             withQueueMeta,
             channelDisplay,
             key,
@@ -11830,7 +11840,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       sampleForFast: sampleDs,
     });
     return res.status(200).json(
-      kroBuildAnalyzeChannelLiveSuccessBundle({
+      await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
         withQueueMeta,
         channelDisplay,
         key,
