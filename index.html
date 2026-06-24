@@ -409,25 +409,21 @@
                                    <div class="kro-detail-flags-list" id="kro-detail-flags-list"></div>
                                </section>
                                <section class="kro-detail-card" id="kro-detail-card-signals">
-                                   <h4 class="kro-detail-card-h">Проверка сигналов</h4>
-                                   <p class="kro-detail-signals-empty" id="kro-detail-signals-empty" hidden>Явных торговых входов в постах не найдено — проверить историю сигналов по ценам не удалось.</p>
-                                   <div class="kro-detail-signals-table-wrap" id="kro-detail-signals-table-wrap" hidden>
-                                       <table class="kro-detail-signals-table" id="kro-detail-signals-table">
-                                           <thead>
-                                               <tr>
-                                                   <th scope="col">Сигнал</th>
-                                                   <th scope="col">Цитата</th>
-                                                   <th scope="col">Результат</th>
-                                               </tr>
-                                           </thead>
-                                           <tbody id="kro-detail-signals-tbody"></tbody>
-                                       </table>
-                                   </div>
+                                   <h4 class="kro-detail-card-h">Проверка сигналов по реальным ценам</h4>
+                                   <div id="kro-detail-signals-summary" hidden></div>
+                                   <div id="kro-detail-signals-reveal" hidden></div>
+                                   <p class="kro-detail-signals-empty" id="kro-detail-signals-empty" hidden>Явных торговых сигналов с ценой входа в постах не найдено — проверить результаты по CoinGecko не удалось.</p>
+                                   <div id="kro-detail-signals-cards" hidden></div>
                                </section>
                                <section class="kro-detail-card" id="kro-detail-card-summary">
                                    <h4 class="kro-detail-card-h">Итог</h4>
                                    <p class="kro-detail-summary-text" id="kro-detail-summary-text"></p>
                                </section>
+                               <!-- Компактная сводка сигналов — видна сразу, без Подробнее -->
+                               <div id="kro-signals-widget" hidden>
+                                   <div id="kro-signals-widget-reveal" hidden></div>
+                                   <div id="kro-signals-widget-body"></div>
+                               </div>
                                <div class="kro-result-legacy" id="kro-result-legacy">
                            <p class="kro-inline-report-eyebrow" id="kro-inline-eyebrow" hidden>Проверка канала</p>
                            <h3 class="kro-inline-report-title" id="kro-inline-title">—</h3>
@@ -3521,6 +3517,158 @@
                    }
                    if (moreBtn) moreBtn.setAttribute('aria-expanded', 'false');
                }
+               function kroRenderSignalAccuracyBlock(sa) {
+                   var sigEmpty = document.getElementById('kro-detail-signals-empty');
+                   var sigSummary = document.getElementById('kro-detail-signals-summary');
+                   var sigReveal = document.getElementById('kro-detail-signals-reveal');
+                   var sigCards = document.getElementById('kro-detail-signals-cards');
+                   var widget = document.getElementById('kro-signals-widget');
+                   var widgetReveal = document.getElementById('kro-signals-widget-reveal');
+                   var widgetBody = document.getElementById('kro-signals-widget-body');
+
+                   var hasData = sa && typeof sa === 'object';
+                   var totalSig = hasData ? (Number(sa.total_signals) || 0) : 0;
+                   var verifiedSig = hasData ? (Number(sa.verified_signals) || 0) : 0;
+                   var hitCount = hasData ? (Number(sa.hit_count) || 0) : 0;
+                   var lossCount = hasData ? (Number(sa.loss_count) || 0) : 0;
+                   var inconclusiveCount = hasData ? (Number(sa.inconclusive_count) || 0) : 0;
+                   var hitRate = hasData ? Number(sa.verified_hit_rate_pct) : NaN;
+                   var lossRate = hasData ? Number(sa.verified_loss_rate_pct) : NaN;
+                   var hiddenLosses = hasData && sa.hidden_losses_detected === true && lossCount > 0 && verifiedSig > 0;
+                   var items = hasData && Array.isArray(sa.items) ? sa.items : [];
+
+                   // Виджет на главном экране (компактный)
+                   if (widget) {
+                       if (!hasData || totalSig === 0) {
+                           widget.hidden = true;
+                       } else {
+                           widget.hidden = false;
+                           // Красный блок разоблачения — приоритет
+                           if (widgetReveal) {
+                               if (hiddenLosses && sa.loss_warning_ru) {
+                                   widgetReveal.innerHTML =
+                                       '<div class="kro-sig-reveal-banner">' +
+                                       '<span class="kro-sig-reveal-icon">⚠️</span>' +
+                                       '<div><strong class="kro-sig-reveal-title">Разоблачение: скрытые убытки</strong>' +
+                                       '<p class="kro-sig-reveal-desc">' + esc(String(sa.loss_warning_ru)) + '</p></div>' +
+                                       '</div>';
+                                   widgetReveal.hidden = false;
+                               } else {
+                                   widgetReveal.hidden = true;
+                                   widgetReveal.innerHTML = '';
+                               }
+                           }
+                           // Мини-статистика
+                           if (widgetBody) {
+                               var statsHtml = '<div class="kro-sig-stats">';
+                               statsHtml += '<div class="kro-sig-stat kro-sig-stat--total"><span class="kro-sig-stat-num">' + esc(String(totalSig)) + '</span><span class="kro-sig-stat-label">сигналов<br>найдено</span></div>';
+                               statsHtml += '<div class="kro-sig-stat kro-sig-stat--verified"><span class="kro-sig-stat-num">' + esc(String(verifiedSig)) + '</span><span class="kro-sig-stat-label">проверено<br>по ценам</span></div>';
+                               if (verifiedSig > 0) {
+                                   statsHtml += '<div class="kro-sig-stat kro-sig-stat--hit"><span class="kro-sig-stat-num">✅ ' + esc(String(hitCount)) + '</span><span class="kro-sig-stat-label">сработали</span></div>';
+                                   statsHtml += '<div class="kro-sig-stat kro-sig-stat--loss"><span class="kro-sig-stat-num">❌ ' + esc(String(lossCount)) + '</span><span class="kro-sig-stat-label">убыток</span></div>';
+                               }
+                               if (inconclusiveCount > 0) {
+                                   statsHtml += '<div class="kro-sig-stat kro-sig-stat--muted"><span class="kro-sig-stat-num">' + esc(String(inconclusiveCount)) + '</span><span class="kro-sig-stat-label">без<br>данных</span></div>';
+                               }
+                               statsHtml += '</div>';
+                               if (verifiedSig > 0 && isFinite(hitRate) && isFinite(lossRate)) {
+                                   var barHtml = '<div class="kro-sig-bar-wrap"><div class="kro-sig-bar"><div class="kro-sig-bar-hit" style="width:' + Math.round(hitRate) + '%"></div><div class="kro-sig-bar-loss" style="width:' + Math.round(lossRate) + '%"></div></div><p class="kro-sig-bar-label">Из проверенных: ' + esc(String(hitRate)) + '% в плюс, ' + esc(String(lossRate)) + '% в минус</p></div>';
+                                   statsHtml += barHtml;
+                               }
+                               widgetBody.innerHTML = statsHtml;
+                           }
+                       }
+                   }
+
+                   // Блок в Подробнее — сводка
+                   if (sigSummary) {
+                       if (!hasData || totalSig === 0) {
+                           sigSummary.hidden = true;
+                       } else {
+                           var metricBits = [
+                               '<span><strong>' + esc(String(totalSig)) + '</strong> найдено</span>',
+                               '<span><strong>' + esc(String(verifiedSig)) + '</strong> проверено по CoinGecko</span>',
+                           ];
+                           if (verifiedSig > 0 && isFinite(hitRate) && isFinite(lossRate)) {
+                               metricBits.push('<span>винрейт <strong>' + esc(String(hitRate)) + '%</strong></span>');
+                               metricBits.push('<span>убытки <strong>' + esc(String(lossRate)) + '%</strong></span>');
+                           }
+                           if (inconclusiveCount > 0) metricBits.push('<span><strong>' + esc(String(inconclusiveCount)) + '</strong> без вывода</span>');
+                           sigSummary.innerHTML =
+                               '<p class="kro-detail-signals-summary-text">' + esc(String(sa.summary_ru || '')) + '</p>' +
+                               '<div class="kro-detail-signals-metrics">' + metricBits.join('') + '</div>';
+                           sigSummary.hidden = false;
+                       }
+                   }
+
+                   // Разоблачение в Подробнее
+                   if (sigReveal) {
+                       if (hiddenLosses && sa.loss_warning_ru) {
+                           sigReveal.innerHTML =
+                               '<p class="kro-detail-signals-reveal-kicker">Разоблачение «только профит»</p>' +
+                               '<p class="kro-detail-signals-reveal-text">' + esc(String(sa.loss_warning_ru)) + '</p>';
+                           sigReveal.hidden = false;
+                       } else {
+                           sigReveal.hidden = true;
+                       }
+                   }
+
+                   // Карточки сигналов в Подробнее
+                   if (sigEmpty && sigCards) {
+                       if (!hasData || !items.length) {
+                           sigEmpty.hidden = false;
+                           sigCards.hidden = true;
+                           sigCards.innerHTML = '';
+                       } else {
+                           sigEmpty.hidden = true;
+                           sigCards.hidden = false;
+                           sigCards.innerHTML = items.slice(0, 16).map(function (it) {
+                               var isSide = String(it.side || '').toLowerCase();
+                               var sideLabel = isSide === 'short' ? 'ШОРТ' : 'ЛОНГ';
+                               var sideCls = isSide === 'short' ? 'kro-sig-card--short' : 'kro-sig-card--long';
+                               var outcomeIcon = it.outcome === 'hit' ? '↑' : it.outcome === 'loss' ? '↓' : '?';
+                               var outcomeCls = it.outcome === 'hit' ? 'kro-sig-card-outcome--hit' : it.outcome === 'loss' ? 'kro-sig-card-outcome--loss' : 'kro-sig-card-outcome--muted';
+                               var outcomeLabel = it.outcome === 'hit' ? 'СРАБОТАЛ' : it.outcome === 'loss' ? 'УБЫТОК' : 'НЕТ ДАННЫХ';
+                               var entry = it.entry != null ? '$' + it.entry : '—';
+                               var target = it.target != null ? '$' + it.target : '—';
+                               var priceAt = it.price_at_signal != null ? '$' + Number(it.price_at_signal).toFixed(2) : '—';
+                               var priceAfter = it.price_after_7d != null ? '$' + Number(it.price_after_7d).toFixed(2) : '—';
+                               var dateStr = it.post_date ? String(it.post_date).slice(0, 10) : '';
+                               var quote = String(it.snippet || '').trim();
+                               if (quote.length > 160) quote = quote.slice(0, 157) + '…';
+                               var pnlHtml = '';
+                               if (it.price_at_signal != null && it.price_after_7d != null) {
+                                   var pnlPct = ((it.price_after_7d - it.price_at_signal) / it.price_at_signal * 100);
+                                   if (isSide === 'short') pnlPct = -pnlPct;
+                                   var pnlSign = pnlPct >= 0 ? '+' : '';
+                                   var pnlCls = pnlPct >= 0 ? 'kro-sig-pnl--pos' : 'kro-sig-pnl--neg';
+                                   pnlHtml = '<span class="kro-sig-pnl ' + pnlCls + '">' + esc(pnlSign + pnlPct.toFixed(1) + '%') + ' за 7 дн.</span>';
+                               }
+                               return (
+                                   '<div class="kro-sig-card ' + sideCls + '">' +
+                                   '<div class="kro-sig-card-head">' +
+                                   '<span class="kro-sig-card-coin">' + esc(it.symbol || '—') + '</span>' +
+                                   '<span class="kro-sig-card-side">' + sideLabel + '</span>' +
+                                   (dateStr ? '<span class="kro-sig-card-date">' + esc(dateStr) + '</span>' : '') +
+                                   '<span class="kro-sig-card-outcome ' + outcomeCls + '">' + outcomeIcon + ' ' + outcomeLabel + '</span>' +
+                                   '</div>' +
+                                   '<div class="kro-sig-card-prices">' +
+                                   '<div class="kro-sig-price-block"><span class="kro-sig-price-label">Вход</span><span class="kro-sig-price-val">' + esc(entry) + '</span></div>' +
+                                   '<span class="kro-sig-arrow">→</span>' +
+                                   '<div class="kro-sig-price-block"><span class="kro-sig-price-label">Цена на сигнал</span><span class="kro-sig-price-val">' + esc(priceAt) + '</span></div>' +
+                                   '<span class="kro-sig-arrow">→</span>' +
+                                   '<div class="kro-sig-price-block"><span class="kro-sig-price-label">Цена +7 дн.</span><span class="kro-sig-price-val">' + esc(priceAfter) + '</span></div>' +
+                                   (target !== '—' ? '<div class="kro-sig-price-block"><span class="kro-sig-price-label">Цель</span><span class="kro-sig-price-val">' + esc(target) + '</span></div>' : '') +
+                                   pnlHtml +
+                                   '</div>' +
+                                   (quote ? '<p class="kro-sig-card-quote">«' + esc(quote) + '»</p>' : '') +
+                                   '</div>'
+                               );
+                           }).join('');
+                       }
+                   }
+               }
+
                function kroFillDetailCards(data, displayLabel) {
                    var detailDedup = kroGlanceDedupTracker(window.__kroResultMainTexts || []);
                    var pb = data.person_behind;
@@ -3635,50 +3783,7 @@
                        }
                    }
                    var sa = data.signal_accuracy;
-                   var sigEmpty = document.getElementById('kro-detail-signals-empty');
-                   var sigWrap = document.getElementById('kro-detail-signals-table-wrap');
-                   var sigBody = document.getElementById('kro-detail-signals-tbody');
-                   var hasSignals = sa && Number(sa.total_signals) > 0 && Array.isArray(sa.items) && sa.items.length;
-                   if (sigEmpty && sigWrap && sigBody) {
-                       if (!hasSignals) {
-                           sigEmpty.hidden = false;
-                           sigEmpty.classList.remove('hidden');
-                           sigWrap.hidden = true;
-                           sigWrap.classList.add('hidden');
-                           sigBody.innerHTML = '';
-                       } else {
-                           sigEmpty.hidden = true;
-                           sigEmpty.classList.add('hidden');
-                           sigWrap.hidden = false;
-                           sigWrap.classList.remove('hidden');
-                           sigBody.innerHTML = sa.items.slice(0, 8).map(function (it) {
-                               var name = (it.side === 'short' ? 'Шорт ' : 'Лонг ') + (it.symbol || '');
-                               if (it.entry) name += ', вход ' + it.entry;
-                               var quote = String(it.snippet || '—').trim();
-                               if (quote.length > 140) quote = quote.slice(0, 137) + '…';
-                               var badgeCls = 'kro-detail-signal-badge--muted';
-                               var badgeTxt = 'нет данных';
-                               if (it.outcome === 'hit') {
-                                   badgeCls = 'kro-detail-signal-badge--hit';
-                                   badgeTxt = 'сработал';
-                               } else if (it.outcome === 'loss') {
-                                   badgeCls = 'kro-detail-signal-badge--loss';
-                                   badgeTxt = 'убыток';
-                               }
-                               return (
-                                   '<tr><td>' +
-                                   esc(name) +
-                                   '</td><td class="kro-detail-signal-quote">' +
-                                   esc(quote) +
-                                   '</td><td><span class="kro-detail-signal-badge ' +
-                                   badgeCls +
-                                   '">' +
-                                   esc(badgeTxt) +
-                                   '</span></td></tr>'
-                               );
-                           }).join('');
-                       }
-                   }
+                   kroRenderSignalAccuracyBlock(sa);
                    var sumEl = document.getElementById('kro-detail-summary-text');
                    if (sumEl) {
                        sumEl.innerHTML = kroResultBuildSummaryHtml(data, window.__kroResultMainTexts || []);
@@ -4159,6 +4264,7 @@
                        }
                        kroFillMainCard(data, displayLabel);
                        kroFillDetailCards(data, displayLabel);
+                       kroRenderSignalAccuracyBlock(data.signal_accuracy);
                    } catch (eFill) {
                        if (typeof console !== 'undefined' && console.error) console.error('fillInlineReport', eFill);
                        if (doneBanner) {

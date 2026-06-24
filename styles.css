@@ -10372,3 +10372,142 @@ body.kro-main::after {
    opacity: 0 !important;
    background: transparent !important;
 }
+
+/* ─── Виджет проверки сигналов ─── */
+#kro-signals-widget {
+   margin: 16px 0 0;
+}
+.kro-sig-reveal-banner {
+   display: flex;
+   gap: 10px;
+   align-items: flex-start;
+   padding: 12px 14px;
+   border-radius: 12px;
+   border: 1px solid rgba(248, 113, 113, 0.45);
+   background: linear-gradient(135deg, rgba(127,29,29,0.28), rgba(239,68,68,0.08));
+   margin-bottom: 12px;
+}
+.kro-sig-reveal-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+.kro-sig-reveal-title {
+   display: block;
+   font-size: 0.8rem;
+   font-weight: 800;
+   letter-spacing: 0.07em;
+   text-transform: uppercase;
+   color: #fecaca;
+   margin-bottom: 4px;
+}
+.kro-sig-reveal-desc {
+   margin: 0;
+   font-size: 0.85rem;
+   line-height: 1.45;
+   color: rgba(255,255,255,0.88);
+}
+.kro-sig-stats {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 8px;
+   margin-bottom: 10px;
+}
+.kro-sig-stat {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   padding: 10px 12px;
+   border-radius: 12px;
+   background: rgba(255,255,255,0.05);
+   border: 1px solid rgba(255,255,255,0.08);
+   min-width: 64px;
+   flex: 1;
+}
+.kro-sig-stat--hit { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.07); }
+.kro-sig-stat--loss { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.07); }
+.kro-sig-stat-num {
+   font-size: 1.1rem;
+   font-weight: 800;
+   color: #fff;
+   line-height: 1.2;
+}
+.kro-sig-stat-label {
+   font-size: 0.68rem;
+   color: rgba(255,255,255,0.5);
+   text-align: center;
+   line-height: 1.3;
+   margin-top: 3px;
+}
+.kro-sig-bar-wrap { margin: 4px 0 8px; }
+.kro-sig-bar {
+   display: flex;
+   height: 8px;
+   border-radius: 999px;
+   overflow: hidden;
+   background: rgba(255,255,255,0.08);
+}
+.kro-sig-bar-hit { background: #22c55e; transition: width 0.6s; }
+.kro-sig-bar-loss { background: #ef4444; transition: width 0.6s; }
+.kro-sig-bar-label { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin: 4px 0 0; }
+
+/* Карточки сигналов в Подробнее */
+.kro-sig-card {
+   padding: 12px;
+   border-radius: 12px;
+   border: 1px solid rgba(255,255,255,0.08);
+   background: rgba(255,255,255,0.03);
+   margin-bottom: 10px;
+}
+.kro-sig-card--long { border-left: 3px solid rgba(34,197,94,0.5); }
+.kro-sig-card--short { border-left: 3px solid rgba(239,68,68,0.5); }
+.kro-sig-card-head {
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 6px;
+   margin-bottom: 8px;
+}
+.kro-sig-card-coin {
+   font-size: 1rem;
+   font-weight: 800;
+   color: #fff;
+}
+.kro-sig-card-side {
+   font-size: 0.68rem;
+   font-weight: 700;
+   padding: 2px 7px;
+   border-radius: 6px;
+   background: rgba(255,255,255,0.1);
+   color: rgba(255,255,255,0.7);
+   letter-spacing: 0.05em;
+}
+.kro-sig-card-date { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-left: auto; }
+.kro-sig-card-outcome { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+.kro-sig-card-outcome--hit { background: rgba(34,197,94,0.15); color: #86efac; }
+.kro-sig-card-outcome--loss { background: rgba(239,68,68,0.15); color: #fca5a5; }
+.kro-sig-card-outcome--muted { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.5); }
+.kro-sig-card-prices {
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 6px;
+   margin-bottom: 6px;
+}
+.kro-sig-price-block { display: flex; flex-direction: column; }
+.kro-sig-price-label { font-size: 0.65rem; color: rgba(255,255,255,0.4); line-height: 1.2; }
+.kro-sig-price-val { font-size: 0.85rem; font-weight: 700; color: #fff; }
+.kro-sig-arrow { font-size: 0.8rem; color: rgba(255,255,255,0.25); }
+.kro-sig-pnl {
+   font-size: 0.8rem;
+   font-weight: 700;
+   padding: 2px 8px;
+   border-radius: 6px;
+   margin-left: auto;
+}
+.kro-sig-pnl--pos { background: rgba(34,197,94,0.12); color: #86efac; }
+.kro-sig-pnl--neg { background: rgba(239,68,68,0.12); color: #fca5a5; }
+.kro-sig-card-quote {
+   font-size: 0.78rem;
+   color: rgba(148,163,184,0.8);
+   border-left: 2px solid rgba(255,255,255,0.1);
+   padding-left: 8px;
+   margin: 4px 0 0;
+   line-height: 1.4;
+}
