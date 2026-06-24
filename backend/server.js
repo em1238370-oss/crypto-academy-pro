@@ -12521,6 +12521,30 @@ app.get('/api/kro/channel-profile', async (req, res) => {
 
     const responseMode = deepMode ? 'deep' : 'fast';
 
+    let channelProfileSignalAccuracy = null;
+    try {
+      const cpSlug = kroExtractTelegramPublicSlug(channelForOnce);
+      if (cpSlug) {
+        const cpDeadline = Date.now() + 25000;
+        const cpSnap = await kroFetchTelegramPublicSnapshot(channelForOnce, {
+          timeoutMs: Math.min(18000, cpDeadline - Date.now() - 2000),
+          logLabel: `channel-profile:${key}:signal_accuracy`,
+        });
+        if (cpSnap && Array.isArray(cpSnap.dated_posts) && cpSnap.dated_posts.length) {
+          channelProfileSignalAccuracy = await kroFetchSignalAccuracyForAnalyzeChannel({
+            parsedForFast: { sample_posts_dated: cpSnap.dated_posts },
+            sampleForFast: cpSnap.snippets || [],
+            deadline: cpDeadline,
+            analyzeLogId: `cp-${key}`,
+            channelForOnce,
+            pubSlugBootstrap: true,
+          });
+        }
+      }
+    } catch (eCpSa) {
+      console.warn(`[KRO channel-profile] signal_accuracy error: ${eCpSa && eCpSa.message ? eCpSa.message : 'failed'}`);
+    }
+
     if (!matches.length) {
       const watchRowCp0 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
       let analysis;
@@ -12571,6 +12595,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         false_positive_count: 0,
         analysis,
         live_metrics: liveMetrics,
+        signal_accuracy: channelProfileSignalAccuracy || undefined,
       });
     }
     const bestAny = matches.reduce((best, cur) =>
@@ -12649,6 +12674,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
         false_positive_count: 0,
         analysis,
         live_metrics: liveMetrics,
+        signal_accuracy: channelProfileSignalAccuracy || undefined,
       });
     }
     const profile = liveMatches.reduce((best, cur) =>
@@ -12732,6 +12758,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       false_positive_count,
       analysis,
       live_metrics: liveMetrics,
+      signal_accuracy: channelProfileSignalAccuracy || undefined,
     });
   } catch (e) {
     console.error('KRO channel-profile error:', e);

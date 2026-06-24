@@ -104,6 +104,25 @@
       <div id="ch-conclusion-reasons" class="ch-body"></div>
     </section>
 
+    <section class="ch-block" aria-labelledby="ch-signals-h" id="ch-signals-section" hidden>
+      <h2 id="ch-signals-h" class="ch-h2">Проверка сигналов</h2>
+      <div id="ch-signals-stats" class="kro-detail-signals-summary"></div>
+      <div id="ch-signals-reveal" class="kro-detail-signals-reveal" hidden></div>
+      <div id="ch-signals-table-wrap" class="kro-detail-signals-table-wrap" hidden>
+        <table class="kro-detail-signals-table" id="ch-signals-table">
+          <thead>
+            <tr>
+              <th scope="col">Монета</th>
+              <th scope="col">Цитата из поста</th>
+              <th scope="col">Результат</th>
+            </tr>
+          </thead>
+          <tbody id="ch-signals-tbody"></tbody>
+        </table>
+      </div>
+      <p id="ch-signals-empty" class="kro-detail-signals-empty" hidden>Явных торговых входов в постах не нашли — проверить историю сигналов по ценам не удалось.</p>
+    </section>
+
     <section class="ch-block" aria-labelledby="ch-db-h" id="ch-db-section" hidden>
       <h2 id="ch-db-h" class="ch-h2">Запись в scam_base (детали)</h2>
       <p class="ch-status-wrap"><span id="ch-status" class="mon-status watch">—</span></p>
@@ -1251,6 +1270,93 @@
     };
   }
 
+  function kroRenderChannelProfileSignals(sa) {
+    var section = document.getElementById('ch-signals-section');
+    if (!section) return;
+    if (!sa || typeof sa !== 'object') {
+      section.hidden = true;
+      return;
+    }
+    section.hidden = false;
+
+    var statsEl = document.getElementById('ch-signals-stats');
+    if (statsEl) {
+      var totalSig = Number(sa.total_signals) || 0;
+      var verifiedSig = Number(sa.verified_signals) || 0;
+      var hitCount = Number(sa.hit_count) || 0;
+      var lossCount = Number(sa.loss_count) || 0;
+      var inconclusiveCount = Number(sa.inconclusive_count) || 0;
+      var hitRate = Number(sa.verified_hit_rate_pct);
+      var lossRate = Number(sa.verified_loss_rate_pct);
+      var metricBits = [
+        '<span><strong>' + esc(String(totalSig)) + '</strong> найдено</span>',
+        '<span><strong>' + esc(String(verifiedSig)) + '</strong> проверено по CoinGecko</span>',
+      ];
+      if (verifiedSig > 0 && isFinite(hitRate) && isFinite(lossRate)) {
+        metricBits.push('<span>винрейт <strong>' + esc(String(hitRate)) + '%</strong></span>');
+        metricBits.push('<span>убытки <strong>' + esc(String(lossRate)) + '%</strong></span>');
+      }
+      if (inconclusiveCount > 0) {
+        metricBits.push('<span><strong>' + esc(String(inconclusiveCount)) + '</strong> без вывода</span>');
+      }
+      statsEl.innerHTML =
+        '<p class="kro-detail-signals-summary-text">' +
+        esc(String(sa.summary_ru || 'Проверили торговые сигналы по историческим ценам.')) +
+        '</p><div class="kro-detail-signals-metrics">' +
+        metricBits.join('') +
+        '</div>';
+    }
+
+    var revealEl = document.getElementById('ch-signals-reveal');
+    if (revealEl) {
+      var hiddenLosses = sa.hidden_losses_detected === true && Number(sa.loss_count) > 0 && Number(sa.verified_signals) > 0;
+      if (hiddenLosses && sa.loss_warning_ru) {
+        revealEl.innerHTML =
+          '<p class="kro-detail-signals-reveal-kicker">Разоблачение «только профит»</p>' +
+          '<p class="kro-detail-signals-reveal-text">' + esc(String(sa.loss_warning_ru)) + '</p>';
+        revealEl.hidden = false;
+      } else {
+        revealEl.hidden = true;
+      }
+    }
+
+    var tableWrap = document.getElementById('ch-signals-table-wrap');
+    var tbody = document.getElementById('ch-signals-tbody');
+    var emptyEl = document.getElementById('ch-signals-empty');
+    var hasItems = sa.items && Array.isArray(sa.items) && sa.items.length > 0;
+    if (!hasItems) {
+      if (emptyEl) emptyEl.hidden = false;
+      if (tableWrap) tableWrap.hidden = true;
+      return;
+    }
+    if (emptyEl) emptyEl.hidden = true;
+    if (tableWrap) tableWrap.hidden = false;
+    if (tbody) {
+      tbody.innerHTML = '';
+      for (var i = 0; i < Math.min(sa.items.length, 30); i++) {
+        var it = sa.items[i];
+        var name = (it.side === 'short' ? 'Шорт ' : 'Лонг ') + (it.symbol || '');
+        if (it.entry != null) name += ', вход ' + it.entry;
+        var quote = String(it.snippet || '—').trim();
+        if (quote.length > 140) quote = quote.slice(0, 137) + '…';
+        var badgeCls = 'kro-detail-signal-badge--muted';
+        var badgeTxt = 'нет данных';
+        if (it.outcome === 'hit') { badgeCls = 'kro-detail-signal-badge--hit'; badgeTxt = 'сработал'; }
+        else if (it.outcome === 'loss') { badgeCls = 'kro-detail-signal-badge--loss'; badgeTxt = 'убыток'; }
+        var dateStr = it.post_date ? String(it.post_date).slice(0, 10) : '—';
+        var dateTd = it.url
+          ? '<a href="' + esc(it.url) + '" target="_blank" rel="noopener noreferrer">' + esc(dateStr) + '</a>'
+          : esc(dateStr);
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + esc(name) + '</td>' +
+          '<td class="kro-detail-signal-quote">' + esc(quote) + '</td>' +
+          '<td><span class="kro-detail-signal-badge ' + badgeCls + '">' + esc(badgeTxt) + '</span></td>';
+        tbody.appendChild(tr);
+      }
+    }
+  }
+
   function loadChannelReport(attemptNum, opts) {
     attemptNum = attemptNum || 1;
     opts = opts || {};
@@ -1595,6 +1701,8 @@
         mn.textContent = 'В базе несколько строк с этим объектом — показана запись с самой поздней датой обнаружения (' +
           data.merged_rows + ' совпадений).';
       }
+
+      kroRenderChannelProfileSignals(data.signal_accuracy);
 
       if (r && r.username) {
         document.getElementById('ch-eyebrow').textContent = dualDeepOk

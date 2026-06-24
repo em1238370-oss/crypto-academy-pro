@@ -5858,3 +5858,120 @@ body.ch-page > main.mon-container {
     transform: none !important;
   }
 }
+
+/* ─── Проверка сигналов (channel.html) ─── */
+.kro-detail-signals-summary {
+  margin: 0 0 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(20, 184, 166, 0.22);
+  background: rgba(20, 184, 166, 0.06);
+}
+.kro-detail-signals-summary-text {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.82);
+}
+.kro-detail-signals-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.kro-detail-signals-metrics span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.kro-detail-signals-reveal {
+  margin: 0 0 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.38);
+  background: linear-gradient(135deg, rgba(127, 29, 29, 0.26), rgba(239, 68, 68, 0.08));
+}
+.kro-detail-signals-reveal-kicker {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fecaca;
+}
+.kro-detail-signals-reveal-text {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+}
+.kro-detail-signals-empty {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.48);
+}
+.kro-detail-signals-table-wrap {
+  overflow-x: auto;
+  border: none;
+  background: transparent;
+}
+.kro-detail-signals-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.kro-detail-signals-table thead {
+  display: none;
+}
+.kro-detail-signals-table tbody tr {
+  display: block;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.kro-detail-signals-table tbody tr:last-child {
+  border-bottom: none;
+}
+.kro-detail-signals-table td {
+  display: block;
+  padding: 2px 0;
+  border: none;
+  font-size: 0.85rem;
+}
+.kro-detail-signals-table td:first-child {
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.kro-detail-signal-quote {
+  font-size: 0.8rem;
+  color: rgba(148, 163, 184, 0.85);
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  padding-left: 10px;
+  margin: 4px 0;
+}
+.kro-detail-signal-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.kro-detail-signal-badge--hit {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+}
+.kro-detail-signal-badge--loss {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+.kro-detail-signal-badge--muted {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+}
