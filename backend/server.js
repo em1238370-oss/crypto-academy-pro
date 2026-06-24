@@ -6209,6 +6209,7 @@ async function kroFetchPersonBehindForAnalyzeChannel(opts) {
 const kroCoinGeckoPriceCache = new Map();
 
 const KRO_SIGNAL_SYMBOL_TO_COINGECKO = {
+  // Топ-монеты
   BTC: 'bitcoin',
   ETH: 'ethereum',
   SOL: 'solana',
@@ -6219,6 +6220,7 @@ const KRO_SIGNAL_SYMBOL_TO_COINGECKO = {
   DOT: 'polkadot',
   AVAX: 'avalanche-2',
   MATIC: 'matic-network',
+  POL: 'matic-network',
   LINK: 'chainlink',
   LTC: 'litecoin',
   TRX: 'tron',
@@ -6231,13 +6233,135 @@ const KRO_SIGNAL_SYMBOL_TO_COINGECKO = {
   OP: 'optimism',
   USDT: 'tether',
   USDC: 'usd-coin',
+  // DeFi
+  UNI: 'uniswap',
+  AAVE: 'aave',
+  CRV: 'curve-dao-token',
+  MKR: 'maker',
+  COMP: 'compound-governance-token',
+  SNX: 'havven',
+  LDO: 'lido-dao',
+  GMX: 'gmx',
+  DYDX: 'dydx',
+  // Layer 2 / новые L1
+  SUI: 'sui',
+  SEI: 'sei-network',
+  INJ: 'injective-protocol',
+  TIA: 'celestia',
+  STRK: 'starknet',
+  ZK: 'zksync',
+  BLAST: 'blast',
+  FTM: 'fantom',
+  HBAR: 'hedera-hashgraph',
+  ALGO: 'algorand',
+  VET: 'vechain',
+  ICP: 'internet-computer',
+  FIL: 'filecoin',
+  // Мемкоины (частая цель скам-каналов)
+  PEPE: 'pepe',
+  FLOKI: 'floki',
+  BONK: 'bonk',
+  WIF: 'dogwifcoin',
+  BOME: 'book-of-meme',
+  MEME: 'memecoin-2',
+  POPCAT: 'popcat',
+  MOG: 'mog-coin',
+  BRETT: 'brett',
+  // Telegram-нативные токены (актуальны для РУ-аудитории)
+  NOT: 'notcoin',
+  HMSTR: 'hamster-kombat',
+  DOGS: 'dogs-2',
+  CATI: 'catizen',
+  // Биржевые токены
+  OKB: 'okb',
+  CRO: 'cronos',
+  KCS: 'kucoin-shares',
+  GT: 'gatechain-token',
+  // Прочие популярные
+  XLM: 'stellar',
+  XMR: 'monero',
+  BCH: 'bitcoin-cash',
+  ETC: 'ethereum-classic',
+  SAND: 'the-sandbox',
+  MANA: 'decentraland',
+  AXS: 'axie-infinity',
+  GALA: 'gala',
+  IMX: 'immutable-x',
+  RUNE: 'thorchain',
+  EGLD: 'elrond-erd-2',
+  KAVA: 'kava',
+  ZIL: 'zilliqa',
+  IOTA: 'iota',
+  ONE: 'harmony',
+  CHZ: 'chiliz',
+  ENJ: 'enjincoin',
+  BAT: 'basic-attention-token',
+  ZRX: '0x',
+  GRT: 'the-graph',
+  FLOW: 'flow',
+  STX: 'blockstack',
+  CFX: 'conflux-token',
+  ROSE: 'oasis-network',
+  JASMY: 'jasmycoin',
+  MAGIC: 'magic',
+  PENDLE: 'pendle',
+  PYTH: 'pyth-network',
+  JTO: 'jito-governance-token',
+  JUP: 'jupiter-exchange-solana',
+  W: 'wormhole',
+  ETHFI: 'ether-fi',
+  ENA: 'ethena',
+  EIGEN: 'eigenlayer',
+  IO: 'io-net',
+  ZRO: 'layerzero',
 };
 
 const KRO_SIGNAL_KNOWN_SYMBOLS = Object.keys(KRO_SIGNAL_SYMBOL_TO_COINGECKO);
 
+/** Кэш динамического поиска тикеров через CoinGecko Search API. */
+const kroCoinGeckoSearchCache = new Map();
+
+/**
+ * Динамический поиск CoinGecko ID для неизвестного тикера.
+ * Запрашивает CoinGecko Search API и берёт первое точное совпадение по symbol.
+ * Результат кэшируется на время жизни процесса.
+ */
+async function kroSearchCoinGeckoIdBySymbol(symbol) {
+  const s = String(symbol || '').trim().toUpperCase();
+  if (!s || s.length > 12) return null;
+  if (kroCoinGeckoSearchCache.has(s)) return kroCoinGeckoSearchCache.get(s);
+  try {
+    const url = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(s)}`;
+    const r = await fetch(url, {
+      headers: { accept: 'application/json', 'user-agent': 'KRO-SignalAccuracy/1.0' },
+      signal: AbortSignal.timeout ? AbortSignal.timeout(6000) : undefined,
+    });
+    if (!r.ok) { kroCoinGeckoSearchCache.set(s, null); return null; }
+    const j = await r.json();
+    const coins = Array.isArray(j && j.coins) ? j.coins : [];
+    const exact = coins.find((c) => String(c.symbol || '').toUpperCase() === s);
+    const id = exact ? String(exact.id || '').trim() : null;
+    kroCoinGeckoSearchCache.set(s, id);
+    return id;
+  } catch {
+    kroCoinGeckoSearchCache.set(s, null);
+    return null;
+  }
+}
+
 function kroSymbolToCoinGeckoId(symbol) {
   const s = String(symbol || '').trim().toUpperCase();
   return KRO_SIGNAL_SYMBOL_TO_COINGECKO[s] || null;
+}
+
+/**
+ * Возвращает CoinGecko ID: сначала из статической карты,
+ * потом через динамический поиск. Async.
+ */
+async function kroResolveCoinGeckoId(symbol) {
+  const staticId = kroSymbolToCoinGeckoId(symbol);
+  if (staticId) return staticId;
+  return kroSearchCoinGeckoIdBySymbol(symbol);
 }
 
 function kroParseSignalPriceNumber(raw) {
@@ -6318,7 +6442,7 @@ function kroParseTradingSignalsFromText(text) {
     });
   }
 
-  return out.filter((x) => x.symbol && kroSymbolToCoinGeckoId(x.symbol));
+  return out.filter((x) => x.symbol);
 }
 
 function kroExtractDatedPostsFromPublicHtml(html, slug) {
@@ -6540,7 +6664,7 @@ async function kroBuildSignalAccuracy(datedPosts, parsedForFast, deadline) {
   let verifiedSignals = 0;
 
   for (const sig of capped) {
-    const coinId = kroSymbolToCoinGeckoId(sig.symbol);
+    const coinId = await kroResolveCoinGeckoId(sig.symbol);
     let priceAt = null;
     let priceAfter7d = null;
     let outcome = 'inconclusive';
