@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import { basename, dirname, join, sep } from 'path';
 import { spawn, spawnSync } from 'child_process';
 import Stripe from 'stripe';
+import { kroDetectSchemesInTexts, kroFindSchemeByName, kroDetectSoftPatternSignals } from './kro-schemes/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -1379,7 +1380,7 @@ const kroHomeAnalyzeMinPostsParsed = parseInt(process.env.KRO_HOME_ANALYZE_MIN_P
 const KRO_HOME_ANALYZE_MIN_POSTS =
   Number.isFinite(kroHomeAnalyzeMinPostsParsed) && kroHomeAnalyzeMinPostsParsed >= 5 && kroHomeAnalyzeMinPostsParsed <= 40
     ? kroHomeAnalyzeMinPostsParsed
-    : 15;
+    : 25;
 /** Инвайт t.me/+: `manual_first` (по умолчанию) — без Telethon, быстрый слой + честный CTA со скриншотами; `try_telethon_first` — сначала живой разбор как у публичных каналов. */
 const kroInviteClosedChannelMode = (process.env.KRO_INVITE_CLOSED_CHANNEL_MODE || 'manual_first').trim().toLowerCase();
 const kroScreenshotHelpBotUrl = String(process.env.KRO_SCREENSHOT_HELP_BOT_URL || '').trim();
@@ -4160,6 +4161,128 @@ async function kroV0BuildFastAnalysisNoLive(client, channelKey, decodedQuery, wa
     conclusion: { status, reasons: reasons.slice(0, KRO_V0_MAX_CONCLUSION_REASONS) },
   };
   if (_kro_watch_baked) out._kro_watch_baked = true;
+
+  // ---- AI upgrade: жалобы из интернета + t.me/s + Mistral → v:0 → v:1 ----
+  if (channelKey) {
+    try {
+      const aiDeadline = Date.now() + 22000;
+      // Запускаем поиск жалоб и AI анализ ПАРАЛЛЕЛЬНО — экономим время
+      const [complaintsSettled, pbSettled] = await Promise.allSettled([
+        kroFetchChannelComplaintsFromWeb(channelKey),
+        kroBuildPersonBehindFromPublicSnapshot(
+          displayCh,
+          `https://t.me/s/${channelKey}`,
+          aiDeadline,
+          `fast-${channelKey}`,
+          [],
+        ),
+      ]);
+
+      const complaints = complaintsSettled.status === 'fulfilled' ? (complaintsSettled.value || []) : [];
+      const pb = pbSettled.status === 'fulfilled' ? pbSettled.value : null;
+
+      // --- Если AI нашёл имя автора — ищем жалобы ещё и по нему ---
+      if (pb && pb.who && pb.who !== 'Аноним' && pb.who !== 'anonymous_hidden') {
+        try {
+          const personComplaints = await kroFetchChannelComplaintsFromWeb(channelKey, pb.who);
+          const existingKeys = new Set(complaints.map((c) => (c.link || c.title || '').trim()));
+          for (const c of personComplaints) {
+            const k = (c.link || c.title || '').trim();
+            if (k && !existingKeys.has(k)) {
+              existingKeys.add(k);
+              complaints.push(c);
+            }
+          }
+          // Пересортируем: специфичные для канала — первыми
+          complaints.sort((a, b) => (b._channel_specific ? 1 : 0) - (a._channel_specific ? 1 : 0));
+          console.log(`[KRO fast-ai ${channelKey}] complaints_after_person_search=${complaints.length}`);
+        } catch { /* продолжаем */ }
+      }
+
+      // --- Жалобы из интернета ---
+      // ВАЖНО: показываем ТОЛЬКО жалобы, которые реально упоминают именно этот канал/автора
+      // (_channel_specific). Общие статьи про скам в Telegram НИКОГДА не должны попадать
+      // в отчёт как будто это найдено про конкретный канал — это клевета на человека.
+      // Если специфичных жалоб нет — просто ничего не показываем (не пишем общие как fallback).
+      if (complaints.length > 0) {
+        const specificOnes = complaints.filter((c) => c._channel_specific);
+        if (specificOnes.length > 0) {
+          out.web_complaints = specificOnes;
+          const webLines = specificOnes.slice(0, 3).map((c) => {
+            const src = c.link ? ` (${c.link.replace(/^https?:\/\//, '').split('/')[0]})` : '';
+            return `Интернет${src}: ${String(c.snippet || c.title || '').slice(0, 200)}`;
+          });
+          out.external_reports = [...webLines, ...out.external_reports].slice(0, 5);
+          out.sources = [...(out.sources || []), 'веб-поиск жалоб'];
+        }
+        console.log(`[KRO fast-ai ${channelKey}] complaints_found=${complaints.length} specific=${specificOnes.length}`);
+      }
+
+      if (pb && (pb.verdict || pb.who)) {
+        // basic_info: кто за каналом
+        const pbInfo = [];
+        if (pb.who && pb.who !== 'anonymous_hidden') pbInfo.push(`Автор / кто за каналом: ${pb.who}.`);
+        if (pb.claimed_background && pb.claimed_background !== 'Не упоминается') {
+          pbInfo.push(`Заявленный опыт: ${pb.claimed_background}.`);
+        }
+        if (pb.claimed_path && pb.claimed_path !== 'Не упоминается') {
+          pbInfo.push(`Путь в крипте: ${pb.claimed_path}.`);
+        }
+        if (pb.description) pbInfo.push(`Описание канала: ${String(pb.description).slice(0, 200)}`);
+        out.basic_info = [...pbInfo, ...out.basic_info].slice(0, 5);
+
+        // content_behavior: business_model + red_flags
+        const pbContent = [];
+        if (pb.business_model) pbContent.push(`Бизнес-модель: ${pb.business_model}.`);
+        if (pb.red_flags && pb.red_flags !== 'Явных манипулятивных схем не найдено') {
+          pbContent.push(`Схемы манипуляций: ${String(pb.red_flags).slice(0, 300)}`);
+        }
+        if (pbContent.length) out.content_behavior = [...pbContent, ...out.content_behavior].slice(0, 4);
+
+        // ties_risk_factors: reveal_moment + соцсети
+        const pbTies = [];
+        if (pb.reveal_moment) pbTies.push(`Скрытая механика: ${pb.reveal_moment}`);
+        const pbLinks = (pb.social_links || []).map((l) => `${l.label}: ${l.url}`).join(', ');
+        if (pbLinks) pbTies.push(`Соцсети из описания: ${pbLinks}`);
+        if (pbTies.length) out.ties_risk_factors = [...pbTies, ...out.ties_risk_factors].slice(0, 4);
+
+        // conclusion: статус + причины из Mistral
+        if (pb.verdict) {
+          const vl = pb.verdict.toLowerCase();
+          let aiStatus = out.conclusion.status;
+          if (vl.startsWith('не плати') || vl.startsWith('уйди') || vl.startsWith('опасно')) {
+            aiStatus = KRO_V0_STATUS.risk;
+          } else if (vl.startsWith('скам') || vl.startsWith('подтверждённый')) {
+            aiStatus = KRO_V0_STATUS.scam;
+          } else if (vl.startsWith('смотри бесплатно')) {
+            aiStatus = KRO_V0_STATUS.watch;
+          }
+          const aiReasons = [pb.verdict];
+          if (pb.next_action) aiReasons.push(`Рекомендация: ${pb.next_action}`);
+          out.conclusion = {
+            status: aiStatus,
+            reasons: [...aiReasons, ...out.conclusion.reasons].slice(0, KRO_V0_MAX_CONCLUSION_REASONS),
+          };
+        }
+
+        out.v = 1;
+        out.sources = [...(out.sources || []), 't.me/s публичная лента', 'Mistral AI'];
+        if (pb.data_confidence) out._data_confidence = pb.data_confidence;
+        if (Array.isArray(pb.web_evidence) && pb.web_evidence.length) {
+          out._web_evidence = pb.web_evidence;
+        }
+        console.log(
+          `[KRO fast-ai ${channelKey}] upgraded to v:1 verdict=${String(pb.verdict || '').slice(0, 80)}`,
+        );
+      }
+    } catch (eFast) {
+      console.warn(
+        `[KRO fast-ai ${channelKey}] error=${eFast && eFast.message ? String(eFast.message) : 'failed'}`,
+      );
+    }
+  }
+  // ---- конец AI upgrade ----
+
   return out;
 }
 
@@ -5071,96 +5194,6 @@ function kroExtractSocialLinksFromHtml(html) {
   return links.slice(0, 8);
 }
 
-// ============================================================
-// КАСКАДНАЯ СИСТЕМА ВЕБ-ПОИСКА
-// Уровень 1: Tavily     (TAVILY_API_KEY)    — 1 000 бесплатных/мес
-// Уровень 2: Google CSE (GOOGLE_CSE_KEY +   — 3 000 бесплатных/мес
-//                        GOOGLE_CSE_ID)
-// Уровень 3: Serper     (SERPER_API_KEY)    — платный, резерв
-// Уровень 4: DuckDuckGo                    — всегда бесплатно, слабее
-// Настроен хоть один ключ — поиск работает.
-// ============================================================
-
-/** Tavily: 1000 бесплатных запросов/мес. Регистрация: app.tavily.com */
-async function kroTavilySearch(query) {
-  const key = process.env.TAVILY_API_KEY;
-  if (!key) return [];
-  const q = String(query || '').trim();
-  if (!q) return [];
-  try {
-    const r = await axios.post(
-      'https://api.tavily.com/search',
-      { api_key: key, query: q, max_results: 5, search_depth: 'basic' },
-      { headers: { 'Content-Type': 'application/json' }, timeout: 10000 },
-    );
-    const items = Array.isArray(r.data?.results) ? r.data.results : [];
-    return items.slice(0, 5).map((item) => ({
-      title: String(item.title || '').trim(),
-      link: String(item.url || '').trim(),
-      snippet: String(item.content || item.snippet || '').trim().slice(0, 300),
-    })).filter((x) => x.title || x.snippet);
-  } catch (e) {
-    console.warn('[KRO search] tavily error:', e && e.message ? e.message : 'failed');
-    return [];
-  }
-}
-
-/** Google Custom Search: 100 запросов/день = 3000/мес бесплатно.
- *  Настройка: programmablesearchengine.google.com → console.cloud.google.com → Custom Search JSON API
- *  Env: GOOGLE_CSE_KEY (API ключ) + GOOGLE_CSE_ID (Search Engine ID) */
-async function kroGoogleCseSearch(query) {
-  const key = process.env.GOOGLE_CSE_KEY;
-  const cx = process.env.GOOGLE_CSE_ID;
-  if (!key || !cx) return [];
-  const q = String(query || '').trim();
-  if (!q) return [];
-  try {
-    const r = await axios.get('https://www.googleapis.com/customsearch/v1', {
-      params: { key, cx, q, num: 5 },
-      timeout: 10000,
-    });
-    const items = Array.isArray(r.data?.items) ? r.data.items : [];
-    return items.slice(0, 5).map((item) => ({
-      title: String(item.title || '').trim(),
-      link: String(item.link || '').trim(),
-      snippet: String(item.snippet || '').trim().slice(0, 300),
-    })).filter((x) => x.title || x.snippet);
-  } catch (e) {
-    console.warn('[KRO search] google_cse error:', e && e.message ? e.message : 'failed');
-    return [];
-  }
-}
-
-/**
- * kroUnifiedWebSearch — единая точка входа для всех поисковых запросов.
- * Пробует источники по порядку, переключается автоматически при ошибке/пустом ответе.
- * Tier 1 → Tavily → Tier 2 → Google CSE → Tier 3 → Serper → []
- */
-async function kroUnifiedWebSearch(query) {
-  const q = String(query || '').trim();
-  if (!q) return [];
-
-  if (process.env.TAVILY_API_KEY) {
-    const hits = await kroTavilySearch(q);
-    if (hits.length) { console.log(`[KRO search] source=tavily q="${q.slice(0, 50)}"`); return hits; }
-    console.warn('[KRO search] tavily returned empty → trying Google CSE');
-  }
-
-  if (process.env.GOOGLE_CSE_KEY && process.env.GOOGLE_CSE_ID) {
-    const hits = await kroGoogleCseSearch(q);
-    if (hits.length) { console.log(`[KRO search] source=google_cse q="${q.slice(0, 50)}"`); return hits; }
-    console.warn('[KRO search] google_cse returned empty → trying Serper');
-  }
-
-  if (process.env.SERPER_API_KEY) {
-    const hits = await kroSerperWebSearch(q);
-    if (hits.length) { console.log(`[KRO search] source=serper q="${q.slice(0, 50)}"`); return hits; }
-  }
-
-  console.warn('[KRO search] all sources exhausted for query:', q.slice(0, 60));
-  return [];
-}
-
 function kroSerperSearchEndpoint() {
   return String(process.env.SERPER_API_URL || 'https://api.serper.dev/search').trim();
 }
@@ -5209,8 +5242,42 @@ function kroFormatSerperHits(label, hits) {
 }
 
 /**
+ * Значимые токены имени/ника для проверки релевантности (длина >= 3).
+ * Если имя слишком общее/короткое (нет токенов) — считаем его непроверяемым.
+ */
+function kroNameTokens(name) {
+  return String(name || '')
+    .replace(/\(.*?\)/g, ' ')
+    .split(/[^a-zA-Zа-яА-ЯёЁ0-9_]+/)
+    .map((t) => t.trim().toLowerCase())
+    .filter((t) => t.length >= 3);
+}
+
+/** true только если ВСЕ значимые токены имени реально встречаются в тексте как подстрока. */
+function kroTextMentionsPerson(text, nameTokens) {
+  if (!Array.isArray(nameTokens) || !nameTokens.length) return false;
+  const low = String(text || '').toLowerCase();
+  return nameTokens.every((t) => low.includes(t));
+}
+
+/** true если в тексте есть хоть один контекстный маркер (телеграм/крипто/скам и т.п.). */
+const KRO_CONTEXT_KEYWORDS = [
+  'telegram', 'телеграм', 'крипто', 'crypto', 'скам', 'мошен', 'обман',
+  'отзыв', 'канал', 'трейд', 'инвест', 'развод', 'кинул',
+];
+function kroTextHasContext(text) {
+  const low = String(text || '').toLowerCase();
+  return KRO_CONTEXT_KEYWORDS.some((k) => low.includes(k));
+}
+
+/**
  * Второй проход веб-поиска — по найденному имени/нику автора.
  * Запускается ПОСЛЕ Mistral, только если who — реальный человек (не Аноним).
+ * ВАЖНО: каждый результат проверяется на реальное упоминание имени — иначе
+ * на странице показывались общие статьи про скам в Telegram как будто это
+ * «найдено про автора», что является клеветой на конкретного человека/канал.
+ * Если имя слишком общее (нет проверяемых токенов) или ни один результат не
+ * прошёл проверку — возвращается пустой массив, и блок просто не показывается.
  * Возвращает массив { snippet, source } — до 5 результатов.
  */
 async function kroSearchByPersonName(who) {
@@ -5218,6 +5285,8 @@ async function kroSearchByPersonName(who) {
   if (!name || name.length < 3) return [];
   const skipValues = ['аноним', 'anonymous_hidden', 'аноним.', '—', '-', 'не упоминается'];
   if (skipValues.includes(name.toLowerCase())) return [];
+  const nameTokens = kroNameTokens(name);
+  if (!nameTokens.length) return []; // имя слишком общее — нельзя безопасно проверить релевантность
   const results = [];
   // DDG: ищем имя + телеграм + крипто
   try {
@@ -5226,28 +5295,42 @@ async function kroSearchByPersonName(who) {
     const r = await axios.get(url, { timeout: 5000 });
     const data = r.data && typeof r.data === 'object' ? r.data : {};
     const abstract = String(data.AbstractText || data.Abstract || '').trim();
-    if (abstract && abstract.length > 20) {
+    if (
+      abstract && abstract.length > 20
+      && kroTextMentionsPerson(abstract, nameTokens)
+      && kroTextHasContext(abstract)
+    ) {
       results.push({ snippet: abstract.slice(0, 280), source: 'DuckDuckGo' });
     }
     const related = [];
-    kroCollectDuckDuckGoRelatedTexts(data.RelatedTopics, related, 5);
+    kroCollectDuckDuckGoRelatedTexts(data.RelatedTopics, related, 8);
     for (const line of related) {
-      if (line && line.length > 20) {
+      if (
+        line && line.length > 20
+        && kroTextMentionsPerson(line, nameTokens)
+        && kroTextHasContext(line)
+      ) {
         results.push({ snippet: line.slice(0, 280), source: 'DuckDuckGo' });
       }
       if (results.length >= 3) break;
     }
   } catch { /* ignore */ }
-  // Уровень 2: каскадный поиск (Tavily → Google CSE → Serper) если нужно больше результатов
-  if (results.length < 5) {
+  // Веб-поиск: ищем имя + мошенник/отзывы (Tavily → Google CSE → Serper)
+  const hasAnySearch =
+    process.env.TAVILY_API_KEY || process.env.GOOGLE_CSE_KEY || process.env.SERPER_API_KEY;
+  if (hasAnySearch && results.length < 5) {
     try {
       const q = `"${name}" мошенник OR скам OR отзывы telegram`;
       const hits = await kroUnifiedWebSearch(q);
       for (const hit of (hits || [])) {
         const snippet = String(hit.snippet || hit.title || '').trim();
         const link = String(hit.link || '').trim();
-        if (snippet && snippet.length > 15) {
-          results.push({ snippet: snippet.slice(0, 280), source: link || 'Поиск' });
+        const combined = `${hit.title || ''} ${snippet}`;
+        if (
+          snippet && snippet.length > 15
+          && kroTextMentionsPerson(combined, nameTokens)
+        ) {
+          results.push({ snippet: snippet.slice(0, 280), source: link || 'web' });
         }
         if (results.length >= 5) break;
       }
@@ -5256,23 +5339,371 @@ async function kroSearchByPersonName(who) {
   return results.slice(0, 5);
 }
 
-/** Два поисковых запроса для блока «Кто за каналом».
- *  Работает если настроен хотя бы один ключ: TAVILY_API_KEY, GOOGLE_CSE_KEY или SERPER_API_KEY. */
+/**
+ * Поиск через Tavily API (1000 бесплатных/мес).
+ * Требует env TAVILY_API_KEY.
+ */
+async function kroTavilySearch(query) {
+  const key = process.env.TAVILY_API_KEY;
+  if (!key) return [];
+  const q = String(query || '').trim();
+  if (!q) return [];
+  try {
+    const r = await axios.post(
+      'https://api.tavily.com/search',
+      { query: q, max_results: 5, search_depth: 'basic' },
+      {
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        timeout: 10000,
+      },
+    );
+    const items = Array.isArray(r.data?.results) ? r.data.results : [];
+    return items
+      .slice(0, 5)
+      .map((item) => ({
+        title: String(item.title || '').trim(),
+        link: String(item.url || '').trim(),
+        snippet: String(item.content || '').trim().slice(0, 300),
+      }))
+      .filter((x) => x.title || x.snippet);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Поиск через Google Custom Search API (3000 бесплатных/мес).
+ * Требует env GOOGLE_CSE_KEY + GOOGLE_CSE_ID.
+ */
+async function kroGoogleCseSearch(query) {
+  const key = process.env.GOOGLE_CSE_KEY;
+  const cx = process.env.GOOGLE_CSE_ID;
+  if (!key || !cx) return [];
+  const q = String(query || '').trim();
+  if (!q) return [];
+  try {
+    const r = await axios.get('https://www.googleapis.com/customsearch/v1', {
+      params: { key, cx, q, num: 5 },
+      timeout: 10000,
+    });
+    const items = Array.isArray(r.data?.items) ? r.data.items : [];
+    return items
+      .slice(0, 5)
+      .map((item) => ({
+        title: String(item.title || '').trim(),
+        link: String(item.link || '').trim(),
+        snippet: String(item.snippet || '').trim(),
+      }))
+      .filter((x) => x.title || x.snippet);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Единая точка веб-поиска: Tavily → Google CSE → Serper.
+ * Использует первый доступный ключ.
+ */
+async function kroUnifiedWebSearch(query) {
+  if (process.env.TAVILY_API_KEY) {
+    const r = await kroTavilySearch(query);
+    if (r.length > 0) return r;
+  }
+  if (process.env.GOOGLE_CSE_KEY && process.env.GOOGLE_CSE_ID) {
+    const r = await kroGoogleCseSearch(query);
+    if (r.length > 0) return r;
+  }
+  if (process.env.SERPER_API_KEY) {
+    return await kroSerperWebSearch(query);
+  }
+  return [];
+}
+
+/**
+ * Целевой поиск жалоб на канал в интернете.
+ * Ищет скам/мошенник/жалобы по трём запросам на mmgp.ru, pikabu, общий поиск.
+ * Работает для ЛЮБОГО канала. Возвращает до 6 дедуплицированных сниппетов.
+ */
+async function kroFetchChannelComplaintsFromWeb(channelKey, personName) {
+  const hasAnySearch =
+    process.env.TAVILY_API_KEY || process.env.GOOGLE_CSE_KEY || process.env.SERPER_API_KEY;
+  if (!hasAnySearch || !channelKey) return [];
+  const slug = String(channelKey).trim().replace(/^@/, '').replace(/^t\.me\//i, '');
+  if (!slug) return [];
+
+  const queries = [
+    `"@${slug}" скам мошенник жалоба развод потерял деньги`,
+    `"${slug}" отзывы мошенник криптовалюта telegram`,
+    `${slug} site:mmgp.ru OR site:pikabu.ru OR site:otzovik.com`,
+    `"@${slug}" обман кинул не выплатил`,
+  ];
+
+  // Если знаем имя/ник автора — ищем жалобы и по нему
+  if (personName && typeof personName === 'string' && personName.length > 3
+      && personName !== 'Аноним' && personName !== 'anonymous_hidden') {
+    // берём первое слово — обычно никнейм или имя
+    const cleanName = personName.replace(/\(.*?\)/g, '').trim().split(/[\s,]+/)[0];
+    if (cleanName && cleanName.length > 3) {
+      queries.push(`"${cleanName}" скам мошенник крипта telegram жалоба`);
+      queries.push(`"${cleanName}" site:mmgp.ru OR site:pikabu.ru`);
+    }
+  }
+
+  const seen = new Set();
+  const allResults = [];
+  for (const q of queries) {
+    if (allResults.length >= 8) break;
+    try {
+      const r = await kroUnifiedWebSearch(q);
+      for (const item of r) {
+        const key = (item.link || item.title || '').trim();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        // Помечаем: упоминает ли результат именно этот канал (не общая статья).
+        // Требуем минимальную длину токена — иначе короткий/общий slug или имя
+        // ложно «совпадёт» с любой генерической статьёй про скам в Telegram.
+        const textLow = `${item.title || ''} ${item.snippet || ''}`.toLowerCase();
+        const slugLow = slug.toLowerCase();
+        const personFirst = personName
+          ? String(personName).toLowerCase().split(/[\s,]+/)[0]
+          : '';
+        item._channel_specific = Boolean(
+          (slugLow.length >= 4 && (textLow.includes(slugLow) || textLow.includes(`@${slugLow}`)))
+          || (personFirst.length >= 4 && textLow.includes(personFirst)),
+        );
+        allResults.push(item);
+        if (allResults.length >= 8) break;
+      }
+    } catch {
+      // не блокируем — продолжаем со следующим запросом
+    }
+  }
+  // Специфичные для канала — первыми; общие статьи — в конце
+  allResults.sort((a, b) => (b._channel_specific ? 1 : 0) - (a._channel_specific ? 1 : 0));
+  return allResults;
+}
+
+/**
+ * История канала: получить сигналы из публичной ленты t.me/s.
+ * Возвращает { slug, earliest_date_iso, latest_date_iso, early_sample, recent_sample, used_jump }
+ * или null, если датированных постов не найдено — никогда не выдумывает данные.
+ */
+async function kroFetchChannelHistorySignals(channelKey, opts) {
+  try {
+    const slug = kroExtractTelegramPublicSlug(channelKey);
+    if (!slug) return null;
+
+    const optObj = opts && typeof opts === 'object' ? opts : {};
+    const timeoutMs = optObj.timeoutMs || 12000;
+
+    // Запрос 1: обычная лента (последние посты) — через kroFetchTelegramPublicSnapshot
+    const recentSnapPromise = kroFetchTelegramPublicSnapshot(slug, {
+      timeoutMs,
+      logLabel: `hist-${slug}:recent`,
+    });
+
+    // Запрос 2: ?before=50 — пытаемся получить ранние посты.
+    // kroExtractTelegramPublicSlug срезает query-params, поэтому делаем прямой fetch.
+    const earlyFetchPromise = (async () => {
+      const url = `https://t.me/s/${encodeURIComponent(slug)}?before=50`;
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), timeoutMs);
+      try {
+        const r = await fetch(url, {
+          signal: ctl.signal,
+          headers: {
+            'user-agent': 'Mozilla/5.0 (compatible; KRO-Analyze/1.0)',
+            accept: 'text/html,application/xhtml+xml,text/plain',
+          },
+        });
+        if (!r.ok) return null;
+        const html = await r.text();
+        return kroExtractDatedPostsFromPublicHtml(html, slug);
+      } catch (e) {
+        console.warn(`[KRO history] ?before=50 error: ${e && e.message ? String(e.message) : 'failed'}`);
+        return null;
+      } finally {
+        clearTimeout(timer);
+      }
+    })();
+
+    const [recentSnap, earlyDatedPosts] = await Promise.all([recentSnapPromise, earlyFetchPromise]);
+
+    const recentDated = recentSnap && Array.isArray(recentSnap.dated_posts) ? recentSnap.dated_posts : [];
+    const earlyDated = Array.isArray(earlyDatedPosts) ? earlyDatedPosts : [];
+
+    // Объединяем, дедуплицируем по url или date+text
+    const allDated = [];
+    const seenKeys = new Set();
+    const addPosts = (posts) => {
+      for (const p of posts) {
+        if (!p.date_iso) continue;
+        const k = p.url || `${p.date_iso}|${(p.text || '').slice(0, 60)}`;
+        if (seenKeys.has(k)) continue;
+        seenKeys.add(k);
+        allDated.push(p);
+      }
+    };
+    addPosts(recentDated);
+    addPosts(earlyDated);
+
+    if (!allDated.length) return null;
+
+    // Сортируем: ранние → новые
+    allDated.sort((a, b) => new Date(a.date_iso).getTime() - new Date(b.date_iso).getTime());
+
+    const earliest_date_iso = allDated[0].date_iso;
+    const latest_date_iso = allDated[allDated.length - 1].date_iso;
+
+    // Валидация: не принимаем будущие или невалидные даты
+    const earliestMs = new Date(earliest_date_iso).getTime();
+    if (!Number.isFinite(earliestMs) || earliestMs > Date.now()) return null;
+
+    // early_sample: до 5 самых старых постов с непустым текстом
+    const earlyPosts = allDated.filter((p) => p.text && p.text.length >= 10).slice(0, 5);
+    // recent_sample: до 5 самых новых постов с непустым текстом
+    const recentPosts = allDated.filter((p) => p.text && p.text.length >= 10).slice(-5).reverse();
+
+    // used_jump=true если ?before= вернул хотя бы один пост старше самого раннего из обычного запроса
+    const recentEarliestMs = recentDated.length
+      ? Math.min(...recentDated.filter((p) => p.date_iso).map((p) => new Date(p.date_iso).getTime()).filter(Number.isFinite))
+      : Infinity;
+    const used_jump = Number.isFinite(recentEarliestMs) && earliestMs < recentEarliestMs;
+
+    console.log(`[KRO history] ${slug} earliest=${earliest_date_iso} total_dated=${allDated.length} used_jump=${used_jump}`);
+    return {
+      slug,
+      earliest_date_iso,
+      latest_date_iso,
+      early_sample: earlyPosts.map((p) => p.text),
+      recent_sample: recentPosts.map((p) => p.text),
+      used_jump,
+    };
+  } catch (e) {
+    console.warn(`[KRO history] fetch error: ${e && e.message ? String(e.message) : 'failed'}`);
+    return null;
+  }
+}
+
+/**
+ * Смена темы канала: спрашивает Mistral, есть ли явная смена тематики между старыми и новыми постами.
+ * Возвращает { shift_detected: true, explanation } только при явном "yes" с объяснением.
+ * При любой неопределённости или ошибке — null. Никогда не выдумывает факты.
+ */
+async function kroDetectChannelTopicShift(channelDisplay, earlySample, recentSample) {
+  if (!process.env.MISTRAL_API_KEY) return null;
+  if (!Array.isArray(earlySample) || earlySample.length < 2) return null;
+  if (!Array.isArray(recentSample) || recentSample.length < 2) return null;
+
+  const earlyText = earlySample.slice(0, 4).map((t, i) => `[${i + 1}] ${String(t).slice(0, 200)}`).join('\n');
+  const recentText = recentSample.slice(0, 4).map((t, i) => `[${i + 1}] ${String(t).slice(0, 200)}`).join('\n');
+
+  const prompt = `Ты аналитик безопасности. Проверь, изменилась ли тематика Telegram-канала «${channelDisplay}» между старыми и новыми постами.
+
+СТАРЫЕ ПОСТЫ (ранние):
+${earlyText}
+
+НОВЫЕ ПОСТЫ (последние):
+${recentText}
+
+Ответь ТОЛЬКО в формате JSON (без текста вне JSON):
+{"shift_detected":"yes"|"no","explanation":"конкретное описание что изменилось, или пустая строка если нет смены"}
+
+Правила:
+- "yes" ТОЛЬКО если тематика явно и конкретно изменилась (например: ранние посты про путешествия, новые про крипто-сигналы).
+- Если тематика одна и та же, или данных недостаточно для вывода — строго "no".
+- explanation при "yes" должен объяснять ЧТО именно изменилось конкретными словами, без домыслов.
+- Запрещено угадывать или предполагать без прямых доказательств из текстов выше.`;
+
+  try {
+    const r = await axios.post(
+      'https://api.mistral.ai/v1/chat/completions',
+      {
+        model: 'mistral-medium-latest',
+        max_tokens: 250,
+        temperature: 0,
+        messages: [{ role: 'user', content: prompt }],
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.MISTRAL_API_KEY}`,
+        },
+        timeout: 12000,
+      },
+    );
+    const raw = (r.data?.choices?.[0]?.message?.content || '').trim();
+    // Извлекаем JSON из ответа (модель иногда оборачивает в ```json ... ```)
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (parsed.shift_detected !== 'yes') return null;
+    const explanation = String(parsed.explanation || '').trim();
+    if (!explanation || explanation.length < 10) return null;
+    console.log(`[KRO history shift] ${channelDisplay} shift=yes explanation=${explanation.slice(0, 80)}`);
+    return { shift_detected: true, explanation };
+  } catch (e) {
+    console.warn(`[KRO history shift] error: ${e && e.message ? String(e.message) : 'failed'}`);
+    return null;
+  }
+}
+
+/**
+ * Обогащает объект analysis данными истории канала (channel_history).
+ * Вызывается из channel-profile и analyze-channel.
+ * Мутирует analysis на месте; при отсутствии данных ничего не добавляет.
+ */
+async function kroEnrichAnalysisWithChannelHistory(analysis, channelKey, channelDisplay) {
+  if (!channelKey || !analysis || typeof analysis !== 'object') return;
+  try {
+    const hist = await kroFetchChannelHistorySignals(channelKey);
+    if (!hist || !hist.earliest_date_iso) return;
+
+    let shift = null;
+    if (hist.early_sample.length >= 2 && hist.recent_sample.length >= 2) {
+      shift = await kroDetectChannelTopicShift(channelDisplay || channelKey, hist.early_sample, hist.recent_sample);
+    }
+
+    analysis.channel_history = {
+      earliest_post_date: hist.earliest_date_iso,
+      latest_post_date: hist.latest_date_iso || null,
+      used_jump: hist.used_jump || false,
+      shift_detected: !!(shift && shift.shift_detected),
+      shift_explanation: (shift && shift.explanation) || null,
+    };
+
+    if (!Array.isArray(analysis.sources)) analysis.sources = [];
+    if (!analysis.sources.includes('история постов t.me/s')) {
+      analysis.sources = [...analysis.sources, 'история постов t.me/s'];
+    }
+
+    // Добавляем предупреждение про смену темы в ties_risk_factors (формат «Заголовок: пояснение»
+    // совместим с kroHomeTiesLinesToTrustFlags)
+    if (shift && shift.explanation) {
+      const shiftLine = `Возможная смена тематики: ${shift.explanation}`;
+      const existingTies = Array.isArray(analysis.ties_risk_factors) ? analysis.ties_risk_factors : [];
+      analysis.ties_risk_factors = [shiftLine, ...existingTies].slice(0, 5);
+    }
+
+    console.log(`[KRO history] enriched ${channelKey} earliest=${hist.earliest_date_iso} shift=${analysis.channel_history.shift_detected}`);
+  } catch (e) {
+    console.warn(`[KRO history] enrich error: ${e && e.message ? String(e.message) : 'failed'}`);
+  }
+}
+
+/** Два поисковых запроса для блока «Кто за каналом»; без ключа — пустая строка. */
 async function kroFetchPersonBehindWebContext(channelName, username) {
-  const hasAnySearch = !!(
-    process.env.TAVILY_API_KEY ||
-    (process.env.GOOGLE_CSE_KEY && process.env.GOOGLE_CSE_ID) ||
-    process.env.SERPER_API_KEY
-  );
+  const hasAnySearch =
+    process.env.TAVILY_API_KEY || process.env.GOOGLE_CSE_KEY || process.env.SERPER_API_KEY;
   if (!hasAnySearch) return '';
   const name = String(channelName || '').trim();
   const user = String(username || '').replace(/^@/, '').trim();
   const queries = [];
   if (name) {
-    queries.push(`"${name}" отзывы OR скам OR мошенник OR telegram`);
+    queries.push(`"${name}" site:reddit.com OR "отзывы" OR "скам" OR "мошенник"`);
   }
   if (user) {
-    queries.push(`@${user} telegram крипто отзывы`);
+    queries.push(`${user} telegram`);
   }
   if (!queries.length) return '';
   const parts = [];
@@ -5349,10 +5780,202 @@ function kroNormalizePersonBehindPostTexts(postTexts) {
     const t = String(item || '').replace(/\s+/g, ' ').trim();
     if (!t || t.length < 8 || seen.has(t)) continue;
     seen.add(t);
-    out.push(t.slice(0, 500));
+    out.push(t.slice(0, 700));
+    if (out.length >= 30) break;
+  }
+  return out;
+}
+
+/**
+ * Честная статистика охвата: сколько постов реально прочитано и за какой период (по датам, если есть).
+ * Никогда не выдумывает — если дат нет, просто считает посты.
+ */
+function kroComputePersonBehindCoverage(postTexts, datedPosts) {
+  const postsAnalyzed = kroNormalizePersonBehindPostTexts(postTexts).length;
+  const dated = Array.isArray(datedPosts) ? datedPosts : [];
+  const times = dated
+    .map((p) => (p && p.date_iso ? new Date(p.date_iso).getTime() : NaN))
+    .filter((t) => Number.isFinite(t));
+  let daysSpan = null;
+  if (times.length >= 2) {
+    const spanMs = Math.max(...times) - Math.min(...times);
+    daysSpan = Math.max(1, Math.round(spanMs / 86400000));
+  }
+  let note = '';
+  if (postsAnalyzed > 0) {
+    note = daysSpan
+      ? `Проверено ${postsAnalyzed} ${kroPluralPostsRu(postsAnalyzed)} за ${daysSpan} ${kroPluralDaysRu(daysSpan)}`
+      : `Проверено ${postsAnalyzed} ${kroPluralPostsRu(postsAnalyzed)}`;
+  }
+  return { posts_analyzed: postsAnalyzed, days_span: daysSpan, coverage_note_ru: note };
+}
+
+function kroPluralPostsRu(n) {
+  const v = Math.abs(n) % 100;
+  const v1 = v % 10;
+  if (v > 10 && v < 20) return 'постов';
+  if (v1 === 1) return 'пост';
+  if (v1 >= 2 && v1 <= 4) return 'поста';
+  return 'постов';
+}
+
+function kroPluralDaysRu(n) {
+  const v = Math.abs(n) % 100;
+  const v1 = v % 10;
+  if (v > 10 && v < 20) return 'дней';
+  if (v1 === 1) return 'день';
+  if (v1 >= 2 && v1 <= 4) return 'дня';
+  return 'дней';
+}
+
+/**
+ * Проверяет, что цитата реально встречается в текстах постов (анти-выдумка: никогда не показываем
+ * как «настоящую» цитату то, чего нет в реальных данных).
+ */
+function kroVerifyQuoteInPosts(quote, posts) {
+  const q = String(quote || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  if (!q || q.length < 6) return false;
+  const arr = Array.isArray(posts) ? posts : [];
+  const needle = q.slice(0, 80);
+  return arr.some((p) => String(p || '').replace(/\s+/g, ' ').trim().toLowerCase().includes(needle));
+}
+
+/**
+ * Нормализует red_flags_list от Mistral в формат [{name, quote, why}]:
+ * — цитату, которую не получилось найти в реальных постах, стираем (пункт остаётся, если есть why) —
+ *   так фейковая цитата никогда не покажется пользователю как настоящая;
+ * — без постов цитат не бывает по определению;
+ * — если AI не дал объяснение (why) — ищем схему по названию в schemes.json и берём её victim_risk.
+ * Это не выдумывает новые факты — только дополняет уже найденный AI пункт готовой формулировкой риска.
+ */
+function kroNormalizeRedFlagsList(rawList, posts) {
+  const arr = Array.isArray(rawList) ? rawList : [];
+  const hasPosts = Array.isArray(posts) && posts.length > 0;
+  const out = [];
+  for (const item of arr) {
+    if (!item || typeof item !== 'object') continue;
+    const name = String(item.name || '').trim();
+    if (!name) continue;
+    let quote = String(item.quote || '').trim();
+    if (!hasPosts) {
+      quote = '';
+    } else if (quote && !kroVerifyQuoteInPosts(quote, posts)) {
+      quote = '';
+    }
+    let why = String(item.why || '').trim();
+    if (!why) {
+      try {
+        const matched = kroFindSchemeByName(name);
+        if (matched && matched.victim_risk) why = matched.victim_risk;
+      } catch { /* нет схемы — оставляем why пустым, не выдумываем */ }
+    }
+    out.push({ name, quote: quote.slice(0, 220), why: why.slice(0, 300) });
     if (out.length >= 8) break;
   }
   return out;
+}
+
+/** Ключ для сравнения цитат на дубликаты: нижний регистр, без кавычек, схлопнутые пробелы,
+ *  сравниваем по первым 60 символам — достаточно, чтобы поймать повторное использование
+ *  одного и того же фрагмента текста как «доказательства» в разных карточках схем. */
+function kroQuoteDedupeKey(quote) {
+  const q = String(quote || '')
+    .toLowerCase()
+    .replace(/[«»"'`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return q.slice(0, 60);
+}
+
+/**
+ * Один и тот же кусок текста не может быть «доказательством» сразу двух разных схем —
+ * это выглядит как переиспользование улик и подрывает доверие к отчёту. Идём по списку
+ * по порядку: первый флаг, которому реально досталась цитата, её сохраняет; у всех
+ * последующих флагов с совпадающей (по нормализованному ключу) цитатой — цитату стираем.
+ * Сам флаг (name/why) не удаляем — это отдельная классификация, просто без повторной цитаты.
+ */
+function kroDedupeRedFlagQuotes(list) {
+  const arr = Array.isArray(list) ? list : [];
+  const seenQuotes = new Set();
+  return arr.map((item) => {
+    if (!item || !item.quote) return item;
+    const key = kroQuoteDedupeKey(item.quote);
+    if (!key || key.length < 6) return item;
+    if (seenQuotes.has(key)) {
+      return { ...item, quote: '' };
+    }
+    seenQuotes.add(key);
+    return item;
+  });
+}
+
+/** Строковый red_flags (обратная совместимость со старыми потребителями) из структурированного списка. */
+function kroFormatRedFlagsListToString(list) {
+  const arr = Array.isArray(list) ? list : [];
+  if (!arr.length) return 'Явных манипулятивных схем не найдено';
+  return arr
+    .slice(0, 8)
+    .map((h) => `[${h.name}]${h.quote ? `: «${h.quote}»` : ''}`)
+    .join('; ');
+}
+
+/**
+ * Объединяет red_flags_list от AI с находками keyword-детектора (kro-schemes) без дублей по названию.
+ * Keyword-хиты добавляют только то, чего AI не назвал, и только с реальными цитатами из постов.
+ *
+ * Страховка от пустого «Схем не найдено»: если после AI+keyword слоёв список всё ещё почти
+ * пустой (<2 флага), но реальных постов достаточно (>=5) для статистических выводов —
+ * добавляем kroDetectSoftPatternSignals: эвристики по всей ленте (только прибыль без единого
+ * убытка, нет предупреждений о риске, высокая доля продающих постов). Это не выдумка: каждый
+ * сигнал считается из реально полученных текстов, а где сигнал — это отсутствие чего-то,
+ * quote оставляем пустым (отсутствие нельзя процитировать), но why объясняет, на чём вывод.
+ */
+function kroMergeRedFlagsListWithKeywordHits(aiList, postTexts) {
+  const posts = kroNormalizePersonBehindPostTexts(postTexts);
+  const normalizedAi = kroNormalizeRedFlagsList(aiList, posts);
+  let kwHits = [];
+  if (posts.length) {
+    try {
+      kwHits = kroDetectSchemesInTexts(posts);
+    } catch {
+      kwHits = [];
+    }
+  }
+  const seenNames = new Set(normalizedAi.map((x) => x.name.toLowerCase()));
+  const merged = normalizedAi.slice();
+  for (const h of kwHits) {
+    const nameLow = String(h.name || '').toLowerCase();
+    if (!nameLow || seenNames.has(nameLow)) continue;
+    seenNames.add(nameLow);
+    merged.push({
+      name: h.name,
+      quote: h.quote ? String(h.quote).slice(0, 220) : '',
+      why: h.victim_risk || '',
+    });
+    if (merged.length >= 8) break;
+  }
+
+  if (merged.length < 2 && posts.length >= 5) {
+    let softHits = [];
+    try {
+      softHits = kroDetectSoftPatternSignals(posts);
+    } catch {
+      softHits = [];
+    }
+    for (const h of softHits) {
+      const nameLow = String(h.name || '').toLowerCase();
+      if (!nameLow || seenNames.has(nameLow)) continue;
+      seenNames.add(nameLow);
+      merged.push({
+        name: h.name,
+        quote: h.quote ? String(h.quote).slice(0, 220) : '',
+        why: h.why || '',
+      });
+      if (merged.length >= 8) break;
+    }
+  }
+
+  return kroDedupeRedFlagQuotes(merged);
 }
 
 function kroFormatPersonBehindPostsBlock(postTexts) {
@@ -5387,14 +6010,18 @@ async function kroAnalyzePersonBehind(channelName, description, socialLinks, use
   const ddgHasContent = ddgContext.length > 0;
 
   if (!ddgHasContent && links.length === 0 && desc.length < 50 && posts.length === 0) {
+    // Раньше здесь стоял жёсткий вердикт "Опасно" просто из-за отсутствия данных.
+    // Это нечестно: нет данных — значит мы не знаем, а не значит "точно мошенник".
     return {
       who: 'anonymous_hidden',
       verdict:
-        'Опасно — автор намеренно скрывает личность. Ни имени, ни соцсетей, ни следа в интернете — проверить и привлечь к ответственности невозможно.',
+        'Недостаточно данных, чтобы сказать, кто стоит за каналом — нет имени, нет соцсетей, нет следов в открытом поиске. Сама по себе анонимность не означает, что автор обманывает (так делают многие), но и проверить автора нечем — если что-то пойдёт не так, спросить будет не с кого.',
       reveal_moment:
-        'Анонимность — не «загадка гуру», а способ исчезнуть с твоими деньгами, когда что-то пойдёт не так.',
-      next_action: 'Не плати VIP и не переводи деньги, пока не знаешь кто стоит за каналом.',
+        'Анонимность — не приговор, но и не нейтральный факт: она ничего не говорит о честности автора, зато убирает единственный способ его проверить.',
+      next_action: 'Перед тем как платить за VIP или переводить деньги, поищи отзывы об авторе и канале отдельно — раз самостоятельно проверить личность не получилось.',
       data_confidence: 'low',
+      red_flags_list: [],
+      good_signals_list: [],
     };
   }
 
@@ -5417,17 +6044,28 @@ async function kroAnalyzePersonBehind(channelName, description, socialLinks, use
 Соцсети: ${socialStr}${ddgBlock}${webBlock}${postsBlock}
 ${KRO_PERSON_BEHIND_MANIP_SCHEMES_PROMPT}
 
-В поле red_flags перечисли найденные схемы в формате:
-«[Название схемы]: цитата из поста»
-Если схем нет — напиши «Явных манипулятивных схем не найдено».
-Без постов — не выдумывай цитаты; тогда red_flags: «Явных манипулятивных схем не найдено».
+В поле red_flags_list перечисли найденные схемы как массив объектов:
+{"name":"точное название схемы из списка выше","quote":"точная цитата из поста — скопируй буквально, не перефразируй","why":"1 короткое предложение конкретно ПОЧЕМУ это рискует читателю деньгами или доверием"}
+Каждая найденная схема — отдельный объект. Поле why ОБЯЗАТЕЛЬНО для каждого флага — без него флаг бесполезен.
+Если схем нет — верни пустой массив: "red_flags_list":[].
+Без постов цитату не пиши — оставь quote пустой строкой "", но если схема видна по описанию/соцсетям — всё равно укажи name и why.
+Не выдумывай цитаты: если не уверен, что текст реально есть в посте — оставь quote пустым, а не приблизительным пересказом.
 
-verdict ОБЯЗАТЕЛЬНО начинается с решения: «Не плати», «Уйди», «Смотри бесплатно», «Опасно» или близкий вариант — и только потом короткое объяснение (1-2 предложения).
-reveal_moment — скрытая механика которую человек не видит сам. Одна фраза. Пример: «Их настоящий заработок — твой переход в Bybit. Ты продукт, не клиент.»
-next_action — конкретное действие. Пример: «Смотри YouTube бесплатно, не плати VIP.»
+В поле good_signals_list перечисли то, что реально нашёл В ПОЛЬЗУ канала — в том же формате, что red_flags_list:
+{"name":"короткое название находки, например «Честно предупреждает о риске», «Не продаёт VIP/сигналы/курсы», «Объясняет логику сделки, а не только зовёт купить», «Признаёт убыточные сделки, а не только победы»","quote":"точная цитата из поста, если есть — иначе пустая строка ''","why":"1 короткое предложение, почему это говорит в пользу канала"}
+Ищи это так же внимательно, как ищешь красные флаги — а не для галочки. Если ничего такого не нашёл — верни пустой массив: "good_signals_list":[]. Не выдумывай: пустой список — нормальный честный ответ, если в постах и описании реально нет ничего обнадёживающего.
+
+⚠️ ГЛАВНОЕ ПРАВИЛО: Пиши ТОЛЬКО то, что реально нашёл в постах и описании. Не выдумывай. Не предполагай. Если VIP, курсы, платный контент не упоминались в тексте — НЕ ПИШИ о них нигде: ни в verdict, ни в reveal_moment, ни в next_action, ни в business_model. Ошибка хуже чем «не знаю» — ложная информация уничтожает доверие.
+
+⚠️ ВАЖНО ПРО БАЛАНС: одно упоминание крипты, прогноза или сигнала — это НЕ автоматически обман. Перед тем как писать verdict, сравни red_flags_list и good_signals_list целиком. Если красных флагов нет или они единичные и слабые, а good_signals_list показывает честные предупреждения о риске, отсутствие навязывания VIP/срочности или признание убытков — verdict НЕ должен начинаться с «Опасно»/«Не плати»/«Уйди» только потому что тема канала — крипта или сигналы. Тон вывода должен соответствовать тому, что реально нашёл, а не настораживаться по умолчанию.
+
+verdict — начинается с решения («Не плати», «Уйди», «Смотри бесплатно», «Опасно» или похожее, а если факты спокойные — «Смотреть можно» или похожее), затем 1-2 предложения ТОЛЬКО на основе найденных фактов, с учётом и red_flags_list, и good_signals_list. Если нет доказательств платного контента — не упоминай его. Если нет схем манипуляций — не придумывай. Пиши что реально нашёл.
+reveal_moment — скрытая механика которую человек не видит сам, ТОЛЬКО если реально нашёл её в постах. Если не нашёл — пиши пустую строку "". Пример когда есть: «Их настоящий заработок — твой переход в Bybit. Ты продукт, не клиент.»
+next_action — конкретное действие ТОЛЬКО на основе реальных фактов. Если VIP/курсы не упоминались — не пиши «не плати VIP». Пример без VIP: «Проверяй сигналы на малых суммах, не копируй вслепую». Пример с VIP: «Смотри бесплатно, не плати за закрытый канал».
+business_model — что реально найдено в постах: «реклама», «партнёрские ссылки», «VIP-канал» (только если упоминается), «курсы» (только если упоминаются), «публичный контент без монетизации». НЕ угадывай.
 
 Ответь ТОЛЬКО JSON без markdown:
-{"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт/образование или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"VIP/курсы/реклама/свой трейдинг/другое","red_flags":"найденные схемы в формате «[Название]: цитата» или Явных манипулятивных схем не найдено","verdict":"решение первым словом + объяснение","reveal_moment":"одна фраза — скрытая механика","next_action":"конкретное действие для пользователя","data_confidence":"high/medium/low — насколько уверен анализ: high если были посты + соцсети, medium если только описание, low если только DDG или ничего"}`;
+{"who":"имя/псевдоним или Аноним","claimed_background":"заявленный опыт/образование или Не упоминается","claimed_path":"путь в крипте или Не упоминается","business_model":"что реально найдено: реклама / партнёрские ссылки / VIP (если есть) / курсы (если есть) / публичный контент без продаж","red_flags_list":[{"name":"...","quote":"...","why":"..."}],"good_signals_list":[{"name":"...","quote":"...","why":"..."}],"verdict":"решение первым словом + объяснение","reveal_moment":"одна фраза — скрытая механика","next_action":"конкретное действие ТОЛЬКО на основе реальных фактов из постов","data_confidence":"high/medium/low — насколько уверен анализ: high если были посты + соцсети, medium если только описание, low если только DDG или ничего"}`;
   try {
     const r = await axios.post(
       'https://api.mistral.ai/v1/chat/completions',
@@ -5435,11 +6073,11 @@ next_action — конкретное действие. Пример: «Смот�
         model: 'mistral-medium-latest',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.2,
-        max_tokens: 1100,
+        max_tokens: 1700,
       },
       {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-        timeout: 14000,
+        timeout: 20000,
       },
     );
     const text = r.data?.choices?.[0]?.message?.content || '';
@@ -5453,6 +6091,22 @@ next_action — конкретное действие. Пример: «Смот�
       ddgHasContent,
     });
     parsed.data_confidence = kroNormalizePersonBehindDataConfidence(parsed.data_confidence) || inferred;
+    parsed.red_flags_list = kroMergeRedFlagsListWithKeywordHits(parsed.red_flags_list, posts);
+    parsed.red_flags = kroFormatRedFlagsListToString(parsed.red_flags_list);
+    // Симметрично red_flags_list: то, что говорит В ПОЛЬЗУ канала — чтобы вывод не строился
+    // только на поиске плохого. Если модель не вернула поле или вернула не массив — честно пустой список,
+    // а не выдумываем "хорошее" сами.
+    parsed.good_signals_list = Array.isArray(parsed.good_signals_list)
+      ? parsed.good_signals_list
+        .filter((g) => g && (g.name || g.why))
+        .map((g) => ({
+          name: String(g.name || '').trim(),
+          quote: String(g.quote || '').trim(),
+          why: String(g.why || '').trim(),
+        }))
+        .filter((g) => g.name)
+        .slice(0, 6)
+      : [];
     // Второй поиск по найденному имени/нику — показываем что нашли в интернете
     const whoFound = String(parsed.who || '').trim();
     if (whoFound && whoFound !== 'Аноним' && whoFound !== 'anonymous_hidden' && whoFound.length > 3) {
@@ -5480,7 +6134,9 @@ async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelFor
   if (!snap || !snap.html) return null;
   const desc = kroExtractPublicChannelDescriptionFromHtml(snap.html);
   const socialLinks = kroExtractSocialLinksFromHtml(snap.html);
-  const posts = kroNormalizePersonBehindPostTexts(postTexts);
+  // Если вызвали с пустым postTexts (напр. v0→v1 апгрейд) — не теряем уже собранные снэпшотом посты.
+  const hasPassedPosts = Array.isArray(postTexts) && postTexts.length > 0;
+  const posts = kroNormalizePersonBehindPostTexts(hasPassedPosts ? postTexts : snap.snippets);
   const aiProfile = await kroAnalyzePersonBehind(channelDisplay, desc || '', socialLinks, slug, posts);
   if (!aiProfile && !socialLinks.length && !desc && !posts.length) return null;
   const dataConfidence = kroNormalizePersonBehindDataConfidence(aiProfile && aiProfile.data_confidence)
@@ -5490,13 +6146,17 @@ async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelFor
       desc,
       ddgHasContent: false,
     });
+  const coverage = kroComputePersonBehindCoverage(posts, snap.dated_posts);
+  const fallbackRedFlagsList = aiProfile ? [] : kroMergeRedFlagsListWithKeywordHits([], posts);
   return {
     ...(aiProfile || {
       who: 'Аноним',
       claimed_background: 'Не упоминается',
       claimed_path: 'Не упоминается',
       business_model: '',
-      red_flags: 'Явных манипулятивных схем не найдено',
+      red_flags: kroFormatRedFlagsListToString(fallbackRedFlagsList),
+      red_flags_list: fallbackRedFlagsList,
+      good_signals_list: [],
       verdict: desc ? desc.slice(0, 220) : '',
       reveal_moment: '',
       next_action: '',
@@ -5506,6 +6166,9 @@ async function kroBuildPersonBehindFromPublicSnapshot(channelDisplay, channelFor
     data_confidence: dataConfidence,
     social_links: socialLinks,
     description: desc || '',
+    posts_analyzed: coverage.posts_analyzed,
+    days_span: coverage.days_span,
+    coverage_note_ru: coverage.coverage_note_ru,
   };
 }
 
@@ -5660,14 +6323,27 @@ function kroParseTradingSignalsFromText(text) {
 
 function kroExtractDatedPostsFromPublicHtml(html, slug) {
   if (!html || html.length < 100) return [];
-  const textRe = /<div[^>]*class="[^"]*tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
-  const posts = [];
+  // Анкорируемся по позициям data-post="..." вместо split по префиксу класса.
+  // split('tgme_widget_message') ломал regex внутри блоков — префикс потреблялся
+  // и 'tgme_widget_message_text' никогда не находился. Теперь каждый блок —
+  // slice от одного data-post до следующего, классы внутри остаются нетронутыми.
+  const anchorRe = /data-post="([^"]+)"/g;
+  const positions = [];
   let m;
-  while ((m = textRe.exec(html)) !== null) {
-    const chunk = html.slice(Math.max(0, m.index - 1400), m.index);
-    const dtMatches = [...chunk.matchAll(/datetime="([^"]+)"/g)];
+  while ((m = anchorRe.exec(html)) !== null) {
+    positions.push({ pos: m.index, postRef: m[1] });
+  }
+  if (!positions.length) return [];
+  const posts = [];
+  for (let i = 0; i < positions.length; i++) {
+    const start = positions[i].pos;
+    const end = i + 1 < positions.length ? positions[i + 1].pos : html.length;
+    const block = html.slice(start, end);
+    const textM = block.match(/tgme_widget_message_text[^>]*>([\s\S]*?)<\/div>/i);
+    if (!textM) continue;
+    const dtMatches = [...block.matchAll(/datetime="([^"]+)"/g)];
     const lastDt = dtMatches.length ? dtMatches[dtMatches.length - 1][1] : null;
-    const text = kroStripHtmlToText(m[1]).replace(/\s+/g, ' ').trim();
+    const text = kroStripHtmlToText(textM[1]).replace(/\s+/g, ' ').trim();
     const norm = kroNormalizePublicSnapshotLine(text, slug);
     if (!norm || norm.length < 12) continue;
     let date_iso = null;
@@ -5679,9 +6355,17 @@ function kroExtractDatedPostsFromPublicHtml(html, slug) {
         /* ignore */
       }
     }
+    let url = null;
+    const postRef = String(positions[i].postRef).trim();
+    if (/^[a-zA-Z0-9_]+\/\d+$/.test(postRef)) url = `https://t.me/${postRef}`;
+    if (!url) {
+      const hrefM = block.match(/tgme_widget_message_date[^>]*href="(https?:\/\/t\.me\/[^"]+)"/i);
+      if (hrefM && hrefM[1]) url = hrefM[1].split('?')[0];
+    }
     posts.push({
       text: norm.length > 220 ? `${norm.slice(0, 217)}…` : norm,
       date_iso,
+      url,
     });
   }
   const seen = new Set();
@@ -5702,11 +6386,12 @@ function kroNormalizeDatedPostsInput(parsedForFast, sampleForFast) {
   for (const row of dated) {
     const text = String((row && row.text) || '').trim();
     const date_iso = row && row.date_iso ? String(row.date_iso).trim() : null;
+    const url = row && row.url ? String(row.url).trim() : null;
     if (!text || text.length < 8) continue;
     const k = `${date_iso || ''}|${text.slice(0, 100)}`;
     if (seen.has(k)) continue;
     seen.add(k);
-    out.push({ text, date_iso: date_iso || null });
+    out.push({ text, date_iso: date_iso || null, url: url || null });
   }
   if (out.length) return out;
   if (Array.isArray(sampleForFast)) {
@@ -5716,7 +6401,7 @@ function kroNormalizeDatedPostsInput(parsedForFast, sampleForFast) {
       const k = text.slice(0, 100);
       if (seen.has(k)) continue;
       seen.add(k);
-      out.push({ text, date_iso: null });
+      out.push({ text, date_iso: null, url: null });
     }
   }
   return out;
@@ -5792,10 +6477,40 @@ function kroDetectLossWarningsInPostTexts(postTexts) {
   return kws.some((kw) => joined.includes(kw));
 }
 
-function kroBuildSignalAccuracySummaryRu(hit, loss, total, inconclusive) {
+function kroPercentInt(part, total) {
+  const p = Number(part);
+  const t = Number(total);
+  if (!Number.isFinite(p) || !Number.isFinite(t) || t <= 0) return null;
+  return Math.max(0, Math.min(100, Math.round((p / t) * 100)));
+}
+
+function kroBuildSignalAccuracySummaryRu(stats) {
+  const total = Number(stats && stats.total) || 0;
   if (!total) return 'Явных торговых входов в постах не найдено.';
-  const parts = [`Из ${total} сигналов: ${hit} сработали, ${loss} — убыток`];
-  if (inconclusive > 0) parts.push(`${inconclusive} без проверки (нет даты или рано для +7 дней)`);
+  const checked = Number(stats && stats.checked) || 0;
+  const verified = Number(stats && stats.verified) || 0;
+  const hit = Number(stats && stats.hit) || 0;
+  const loss = Number(stats && stats.loss) || 0;
+  const inconclusive = Number(stats && stats.inconclusive) || 0;
+  const unchecked = Math.max(0, Number(stats && stats.unchecked) || 0);
+  const hitRate = kroPercentInt(hit, verified);
+  const lossRate = kroPercentInt(loss, verified);
+  const parts = [`Найдено торговых сигналов: ${total}`];
+  if (verified > 0) {
+    const rateText =
+      hitRate != null && lossRate != null
+        ? `; винрейт по проверенным ${hitRate}%, убыточных ${lossRate}%`
+        : '';
+    parts.push(`по CoinGecko проверено ${verified}: ${hit} сработали, ${loss} ушли в минус${rateText}`);
+  } else if (checked > 0) {
+    parts.push('по CoinGecko не удалось надёжно подтвердить результат ни одного сигнала');
+  }
+  if (inconclusive > 0) {
+    parts.push(`${inconclusive} без вывода (нет даты, нет цены или ещё рано для +7 дней)`);
+  }
+  if (unchecked > 0) {
+    parts.push(`${unchecked} не проверяли из-за лимита ответа`);
+  }
   return parts.join('; ') + '.';
 }
 
@@ -5817,7 +6532,7 @@ async function kroBuildSignalAccuracy(datedPosts, parsedForFast, deadline) {
     }
   }
 
-  const capped = found.slice(0, 8);
+  const capped = found.slice(0, 16);
   const items = [];
   let hitCount = 0;
   let lossCount = 0;
@@ -5877,22 +6592,63 @@ async function kroBuildSignalAccuracy(datedPosts, parsedForFast, deadline) {
   }
 
   const totalSignals = found.length;
-  const summaryRu = kroBuildSignalAccuracySummaryRu(hitCount, lossCount, totalSignals, inconclusiveCount);
+  const checkedSignals = items.length;
+  const uncheckedSignals = Math.max(0, totalSignals - checkedSignals);
+  const verifiedHitRatePct = kroPercentInt(hitCount, verifiedSignals);
+  const verifiedLossRatePct = kroPercentInt(lossCount, verifiedSignals);
+  const hiddenLossesDetected =
+    onlyProfitsTone &&
+    !warnsAboutLosses &&
+    verifiedSignals > 0 &&
+    lossCount > 0;
+  const summaryRu = kroBuildSignalAccuracySummaryRu({
+    hit: hitCount,
+    loss: lossCount,
+    total: totalSignals,
+    checked: checkedSignals,
+    verified: verifiedSignals,
+    inconclusive: inconclusiveCount,
+    unchecked: uncheckedSignals,
+  });
   let lossWarningRu = '';
-  if (onlyProfitsTone && !warnsAboutLosses) {
-    lossWarningRu = 'В ленте в основном плюсы — автор почти не показывает убыточные сделки.';
+  if (hiddenLossesDetected) {
+    lossWarningRu =
+      `Канал выглядит как «только профит», но проверка по CoinGecko нашла ${lossCount} из ${verifiedSignals} проверенных сигналов, которые ушли в минус (${verifiedLossRatePct}%). Это числовой признак скрытых убыточных сделок.`;
+  } else if (onlyProfitsTone && !warnsAboutLosses && verifiedSignals > 0) {
+    lossWarningRu =
+      `В ленте в основном плюсы. Среди ${verifiedSignals} проверенных по CoinGecko сигналов убытков не найдено, но это не доказывает всю историю канала.`;
+  } else if (onlyProfitsTone && !warnsAboutLosses) {
+    lossWarningRu = 'В ленте в основном плюсы — автор почти не показывает убыточные сделки, но численно проверить результат сигналов сейчас не удалось.';
   } else if (warnsAboutLosses) {
     lossWarningRu = 'Автор иногда пишет об убытках и стопах — это честнее, чем «только профит».';
   } else if (totalSignals > 0) {
     lossWarningRu = 'Явных постов об убытках в выборке не видно.';
   }
 
+  // Честный охват: сколько дней и постов реально проанализировали
+  const datedWithDate = posts.filter((p) => p.date_iso);
+  let coverageDays = null;
+  if (datedWithDate.length >= 2) {
+    const dates = datedWithDate.map((p) => new Date(p.date_iso).getTime()).filter(Number.isFinite);
+    if (dates.length >= 2) {
+      const span = Math.max(...dates) - Math.min(...dates);
+      coverageDays = Math.max(1, Math.round(span / (1000 * 60 * 60 * 24)));
+    }
+  }
+
   return {
     total_signals: totalSignals,
+    checked_signals: checkedSignals,
     verified_signals: verifiedSignals,
     hit_count: hitCount,
     loss_count: lossCount,
     inconclusive_count: inconclusiveCount,
+    unchecked_signals: uncheckedSignals,
+    verified_hit_rate_pct: verifiedHitRatePct,
+    verified_loss_rate_pct: verifiedLossRatePct,
+    hidden_losses_detected: hiddenLossesDetected,
+    coverage_days: coverageDays,
+    posts_scanned: posts.length,
     summary_ru: summaryRu,
     warns_about_losses: warnsAboutLosses,
     only_profits_tone: onlyProfitsTone,
@@ -7076,7 +7832,9 @@ function kroBuildUserFacingLiveReport(payload, fastHuman, opts = null) {
 async function kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, minPosts, analyzeLogId) {
   const need = Math.max(1, Number(minPosts) || 1);
   const seen = new Set();
+  const datedSeen = new Set();
   const out = [];
+  const datedOut = [];
   const pushSnips = (arr) => {
     for (const raw of arr || []) {
       const t = String(raw || '').trim();
@@ -7089,6 +7847,20 @@ async function kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, min
     }
     return out.length >= need;
   };
+  const pushDated = (rows) => {
+    for (const row of rows || []) {
+      const text = String((row && row.text) || '').trim();
+      if (text.length < 8) continue;
+      const k = `${row.date_iso || ''}|${text.slice(0, 100)}`;
+      if (datedSeen.has(k)) continue;
+      datedSeen.add(k);
+      datedOut.push({
+        text,
+        date_iso: row.date_iso || null,
+        url: row.url ? String(row.url).trim() : null,
+      });
+    }
+  };
   for (let pass = 1; pass <= 5; pass++) {
     const remain = deadline - Date.now();
     if (remain < 400) break;
@@ -7097,9 +7869,19 @@ async function kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, min
       timeoutMs: pubBudget,
       logLabel: `${analyzeLogId}:pub_harvest${pass}`,
     });
+    if (snap && Array.isArray(snap.dated_posts) && snap.dated_posts.length) pushDated(snap.dated_posts);
     if (snap && Array.isArray(snap.snippets) && snap.snippets.length && pushSnips(snap.snippets)) break;
   }
-  return out.length ? out : null;
+  return out.length ? { snippets: out, dated_posts: datedOut } : null;
+}
+
+function kroUnwrapPublicHarvest(harvest) {
+  if (!harvest) return { snippets: [], dated_posts: [] };
+  if (Array.isArray(harvest)) return { snippets: harvest, dated_posts: [] };
+  return {
+    snippets: Array.isArray(harvest.snippets) ? harvest.snippets : [],
+    dated_posts: Array.isArray(harvest.dated_posts) ? harvest.dated_posts : [],
+  };
 }
 
 /**
@@ -7132,16 +7914,22 @@ async function kroHomeHarvestUntilTargetPosts(opts) {
       batchNeed,
       `${analyzeLogId}:fill${iter}`,
     );
-    if (!more || !more.length) break;
+    const moreHarvest = kroUnwrapPublicHarvest(more);
+    if (!moreHarvest.snippets.length) break;
     if (!harvestedAgg) harvestedAgg = [];
-    for (const s of more) {
+    for (const s of moreHarvest.snippets) {
       const t = String(s || '').trim();
       if (!t) continue;
       if (harvestedAgg.some((x) => x.slice(0, 280) === t.slice(0, 280))) continue;
       harvestedAgg.push(t);
       if (harvestedAgg.length >= 220) break;
     }
-    curParsed = kroMergeSnippetsIntoParsedBase(curParsed, more, channelDisplay || channelForOnce);
+    curParsed = kroMergeSnippetsIntoParsedBase(
+      curParsed,
+      moreHarvest.snippets,
+      channelDisplay || channelForOnce,
+      moreHarvest.dated_posts,
+    );
     const merged2 = kroHomeGreedyMergeSamplesFromParsed(curParsed, minR);
     curParsed = { ...curParsed, sample_posts: merged2, posts_fetched: merged2.length };
     if (Array.isArray(curParsed._sample_texts)) delete curParsed._sample_texts;
@@ -9109,12 +9897,14 @@ async function kroAnalyzeChannelWithClaudeFast(payload, timeoutMs) {
   const t = setTimeout(() => ctl.abort(), budget);
   const prompt = [
     'Ты аналитик по crypto Telegram-каналам. По JSON ниже о канале дай краткий вывод по признакам мошенничества.',
+    'Смотри на данные целиком и непредвзято: ищи не только то, что говорит ПРОТИВ канала (flags), но и то, что говорит ЗА него (good_signals) — честные предупреждения о риске, отсутствие навязчивого VIP/срочности, признание убыточных сделок, понятные объяснения логики. Одно слабое или спорное упоминание — это НЕ повод сразу писать ОПАСНО: status_ru и risk_index должны отражать баланс найденного, а не худшее предположение.',
     'Ответь ТОЛЬКО одним JSON-объектом без markdown и без пояснений вне JSON. Поля:',
     '{"risk_index":0-100,"status_ru":"ОПАСНО|ПОДОЗРИТЕЛЬНО|БЕЗОПАСНО|ПОД НАБЛЮДЕНИЕМ",',
     '"flags":[{"code":"","title":"","explanation":""}],',
+    '"good_signals":[{"code":"","title":"","explanation":""}],',
     '"citations":["короткие выписки из данных"],',
     '"basic_info_lines":["2-4 строки фактов"],',
-    '"conclusion_reasons":["1-3 причины вывода"]}',
+    '"conclusion_reasons":["1-3 причины вывода, с учётом и flags, и good_signals"]}',
     '',
     'Данные:',
     JSON.stringify(payload).slice(0, 28000),
@@ -9749,7 +10539,7 @@ function kroBuildAnalyzeFastTimeoutResponse(requestId, username, elapsedMs) {
   };
 }
 
-function kroMergeSnippetsIntoParsedBase(parsedBase, extraSnippets, channelDisplay) {
+function kroMergeSnippetsIntoParsedBase(parsedBase, extraSnippets, channelDisplay, extraDatedPosts) {
   const b = parsedBase && typeof parsedBase === 'object' ? { ...parsedBase } : {};
   const cur = Array.isArray(b.sample_posts) ? b.sample_posts.map((x) => String(x || '').trim()).filter(Boolean) : [];
   const seen = new Set(cur.map((x) => x.slice(0, 400)));
@@ -9765,6 +10555,12 @@ function kroMergeSnippetsIntoParsedBase(parsedBase, extraSnippets, channelDispla
   b.sample_posts = out;
   b.posts_fetched = out.length;
   b.username = b.username || String(channelDisplay || '').trim() || null;
+  if (Array.isArray(extraDatedPosts) && extraDatedPosts.length) {
+    b.sample_posts_dated = kroNormalizeDatedPostsInput(
+      { sample_posts_dated: [...(Array.isArray(b.sample_posts_dated) ? b.sample_posts_dated : []), ...extraDatedPosts] },
+      out,
+    );
+  }
   if (out.length >= 1) {
     b.found = true;
     b._check_once_ok = true;
@@ -10039,6 +10835,20 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       const ties = co.flags.map((f) => `${String(f.title || f.code || 'флаг').trim()}: ${String(f.explanation || '').trim()}`.trim()).filter(Boolean);
       if (ties.length) analysis.ties_risk_factors = ties.slice(0, 8);
     }
+    // Симметрично flags: что Claude нашёл В ПОЛЬЗУ канала. Кладём в conclusion.reasons —
+    // это уже видимый пользователю блок "Откуда взялся итог", так что плюсы не теряются молча.
+    if (Array.isArray(co.good_signals) && co.good_signals.length) {
+      const goodLines = co.good_signals
+        .map((g) => `В пользу канала: ${String(g.title || g.code || 'плюс').trim()}${g.explanation ? ` — ${String(g.explanation).trim()}` : ''}`)
+        .filter((l) => l && l !== 'В пользу канала:');
+      if (goodLines.length) {
+        analysis.conclusion = analysis.conclusion && typeof analysis.conclusion === 'object' ? analysis.conclusion : { status: KRO_V0_STATUS.watch, reasons: [] };
+        analysis.conclusion.reasons = [
+          ...(analysis.conclusion.reasons || []),
+          ...goodLines.slice(0, 2),
+        ].slice(0, KRO_V0_MAX_CONCLUSION_REASONS);
+      }
+    }
     const claudeCites = Array.isArray(co.citations)
       ? co.citations.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 8)
       : [];
@@ -10221,6 +11031,10 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
       mode: readPathOut,
       reason: liveReason,
       sample_posts: sampleForFast.slice(0, 3),
+      sample_posts_dated: kroNormalizeDatedPostsInput(parsedForFast, sampleForFast).slice(0, 14),
+      channel_feed_url: kroExtractTelegramPublicSlug(channelDisplay || key)
+        ? `https://t.me/s/${kroExtractTelegramPublicSlug(channelDisplay || key)}`
+        : null,
       posts_fetched: postsRead,
       analysis_window_days: Number(parsedForFast.analysis_window_days || 30),
     },
@@ -10255,6 +11069,28 @@ function kroBuildAnalyzeChannelLiveSuccessBundle(opts) {
         }
       : {}),
   });
+}
+
+/** Пути analyze-channel, где чтение t.me/s уже заложено в дизайн — можно добавлять channel_history. */
+function kroAnalyzeReadPathIncludesChannelHistory(readPathOut) {
+  const p = String(readPathOut || '').trim();
+  return p === 'telethon' || p === 'telethon+public_snapshot' || p === 'public_snapshot';
+}
+
+/** Собирает ответ analyze-channel; channel_history — только на live-путях с чтением ленты. */
+async function kroBuildAnalyzeChannelLiveSuccessBundleAsync(opts) {
+  const bundle = kroBuildAnalyzeChannelLiveSuccessBundle(opts);
+  const o = opts && typeof opts === 'object' ? opts : {};
+  if (
+    o.withChannelHistory !== false &&
+    kroAnalyzeReadPathIncludesChannelHistory(o.readPathOut) &&
+    bundle &&
+    bundle.analysis &&
+    o.key
+  ) {
+    await kroEnrichAnalysisWithChannelHistory(bundle.analysis, o.key, o.channelDisplay || o.key);
+  }
+  return bundle;
 }
 
 /**
@@ -10494,7 +11330,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
 
   const voicePrefix =
     `Приватный канал по инвайт-ссылке: ленту Telegram здесь не читаем. За ~${Math.round(quickBudgetMs / 1000)} с: ${inviteTitleSource === 'telegram_invite_html' ? 'название из HTML страницы инвайта (og:title), ' : ''}scam_base${hintRaw ? ' (поиск по названию)' : ''}, объединённые жалобы (reports), GET vklader/forteck${nameSeg ? ` по пути «${nameSeg}»` : ' (без названия — прямой путь не запрашивали)'}${searchQueriesList.length ? `, поиск на сайтах ?s= (${searchQueriesList.slice(0, 4).map((q) => `«${String(q).slice(0, 48)}»`).join(', ')})` : ''}${(extWeb.items || []).length ? ', доп. веб-поиск (DuckDuckGo/Google по env)' : ''}, затем Claude.`;
-  const trustBundle = kroBuildAnalyzeChannelLiveSuccessBundle({
+  const trustBundle = await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
     withQueueMeta,
     channelDisplay,
     key,
@@ -10509,6 +11345,7 @@ async function kroAnalyzeClosedInviteChannelHandler(req, res, opts) {
     trustReportExtra: { editor_voice_prefix_ru: voicePrefix },
     claudeOverlay: claudeJson,
     telegramUsernameResolve,
+    withChannelHistory: false,
   });
 
   const screenshotHelp = {
@@ -10693,7 +11530,7 @@ async function kroAnalyzeChannelQuickSheetsSitesHandler(req, res, opts) {
   const voicePrefix =
     `За ~${Math.round(quickBudgetMs / 1000)} с собрали: scam_base, channels_watch, объединённые reports, GET https://vklader.com/${key} и https://forteck.net/${key}${searchQueriesList.length ? `, поиск на сайтах ?s= (${searchQueriesList.slice(0, 4).map((q) => `«${String(q).slice(0, 48)}»`).join(', ')})` : ''}, затем Claude. Посты Telegram и t.me не читали — только эти источники.`;
 
-  const bundle = kroBuildAnalyzeChannelLiveSuccessBundle({
+  const bundle = await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
     withQueueMeta,
     channelDisplay,
     key,
@@ -10708,6 +11545,7 @@ async function kroAnalyzeChannelQuickSheetsSitesHandler(req, res, opts) {
     trustReportExtra: { editor_voice_prefix_ru: voicePrefix },
     claudeOverlay: claudeJson,
     telegramUsernameResolve,
+    withChannelHistory: false,
   });
   return res.status(200).json({
     ...bundle,
@@ -10844,18 +11682,25 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         1,
         `${analyzeLogId}:bootstrap_http`,
       );
-      if (harvestedBootstrap && harvestedBootstrap.length) {
+      const bootHarvest = kroUnwrapPublicHarvest(harvestedBootstrap);
+      if (bootHarvest.snippets.length) {
         console.log(
-          `[KRO analyze-channel ${analyzeLogId}] bootstrap_http snippets=${harvestedBootstrap.length}`,
+          `[KRO analyze-channel ${analyzeLogId}] bootstrap_http snippets=${bootHarvest.snippets.length}`,
         );
       }
+      harvestedBootstrap = bootHarvest.snippets.length ? bootHarvest : null;
     }
 
     const telethonReserveMs = Math.min(330000, Math.max(120000, Math.floor(KRO_ANALYZE_CHANNEL_SYNC_MS * 0.78)));
     const telBest = kroRunHomeGreedyTelethonBestEffort(channelForOnce, deadline, telethonReserveMs, analyzeLogId, minTelethonPosts);
     let parsed = telBest.parsed;
-    if (harvestedBootstrap && harvestedBootstrap.length) {
-      parsed = kroMergeSnippetsIntoParsedBase(parsed, harvestedBootstrap, channelDisplay);
+    if (harvestedBootstrap && harvestedBootstrap.snippets && harvestedBootstrap.snippets.length) {
+      parsed = kroMergeSnippetsIntoParsedBase(
+        parsed,
+        harvestedBootstrap.snippets,
+        channelDisplay,
+        harvestedBootstrap.dated_posts,
+      );
     }
     const telethonOnlySnippetCount = Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean).length : 0;
     const mergedSample = kroHomeGreedyMergeSamplesFromParsed(parsed, minTelethonPosts);
@@ -10884,9 +11729,15 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       parsed.check_once_timed_out === true ||
       postsRead < minTelethonPosts;
     if ((telethonWeak || !enough) && deadline - Date.now() > 400) {
-      harvestedSnippets = await kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, minReadablePosts, analyzeLogId);
-      if (harvestedSnippets && harvestedSnippets.length) {
-        parsed = kroMergeSnippetsIntoParsedBase(parsed, harvestedSnippets, channelDisplay);
+      const harvestRaw = await kroHarvestPublicSnippetsUntilEnough(channelForOnce, deadline, minReadablePosts, analyzeLogId);
+      harvestedSnippets = kroUnwrapPublicHarvest(harvestRaw);
+      if (harvestedSnippets.snippets.length) {
+        parsed = kroMergeSnippetsIntoParsedBase(
+          parsed,
+          harvestedSnippets.snippets,
+          channelDisplay,
+          harvestedSnippets.dated_posts,
+        );
         const mergedAfterHarvest = kroHomeGreedyMergeSamplesFromParsed(parsed, minTelethonPosts);
         postsRead = mergedAfterHarvest.length ? mergedAfterHarvest.length : Number(parsed.posts_fetched || 0);
         sample = mergedAfterHarvest.length ? mergedAfterHarvest : (Array.isArray(parsed.sample_posts) ? parsed.sample_posts.filter(Boolean) : []);
@@ -10900,9 +11751,9 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         enough =
           postsRead >= minTelethonPosts &&
           sample.length >= 1 &&
-          (parsed.found === true || (harvestedSnippets && harvestedSnippets.length >= minReadablePosts));
+          (parsed.found === true || (harvestedSnippets && harvestedSnippets.snippets.length >= minReadablePosts));
         console.log(
-          `[KRO analyze-channel ${analyzeLogId}] after_public_harvest snippets=${harvestedSnippets.length} posts_read=${postsRead} enough=${enough}`,
+          `[KRO analyze-channel ${analyzeLogId}] after_public_harvest snippets=${harvestedSnippets.snippets.length} posts_read=${postsRead} enough=${enough}`,
         );
       }
     }
@@ -10929,14 +11780,19 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         delete parsed._sample_texts;
       }
       if (fill.harvestedExtra && fill.harvestedExtra.length) {
-        harvestedSnippets = harvestedSnippets && harvestedSnippets.length
-          ? [...harvestedSnippets, ...fill.harvestedExtra]
-          : fill.harvestedExtra.slice();
+        if (!harvestedSnippets || !harvestedSnippets.snippets) {
+          harvestedSnippets = { snippets: fill.harvestedExtra.slice(), dated_posts: [] };
+        } else {
+          harvestedSnippets = {
+            snippets: [...harvestedSnippets.snippets, ...fill.harvestedExtra],
+            dated_posts: harvestedSnippets.dated_posts || [],
+          };
+        }
       }
       enough =
         postsRead >= minTelethonPosts &&
         sample.length >= 1 &&
-        (parsed.found === true || (harvestedSnippets && harvestedSnippets.length >= minReadablePosts));
+        (parsed.found === true || (harvestedSnippets && harvestedSnippets.snippets.length >= minReadablePosts));
       console.log(
         `[KRO analyze-channel ${analyzeLogId}] after_target_fill posts_read=${postsRead} target=${KRO_HOME_ANALYZE_MIN_POSTS} enough=${enough}`,
       );
@@ -10947,7 +11803,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     let readPathOut = 'telethon';
     if (enough) {
       const hadTelethonText = telethonOnlySnippetCount > 0;
-      const usedPublicHarvest = !!(harvestedSnippets && harvestedSnippets.length);
+      const usedPublicHarvest = !!(harvestedSnippets && harvestedSnippets.snippets && harvestedSnippets.snippets.length);
       if (!hadTelethonText && usedPublicHarvest) {
         readPathOut = 'public_snapshot';
       } else if (usedPublicHarvest) {
@@ -10967,7 +11823,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         sampleForFast,
       });
       return res.status(200).json(
-        kroBuildAnalyzeChannelLiveSuccessBundle({
+        await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
           withQueueMeta,
           channelDisplay,
           key,
@@ -10987,8 +11843,12 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
     }
 
     const pubOnly =
-      harvestedSnippets && harvestedSnippets.length >= minReadablePosts
-        ? kroBuildParsedFromPublicSnapshotOnly({ snippets: harvestedSnippets }, channelDisplay, minReadablePosts)
+      harvestedSnippets && harvestedSnippets.snippets && harvestedSnippets.snippets.length >= minReadablePosts
+        ? kroBuildParsedFromPublicSnapshotOnly(
+          { snippets: harvestedSnippets.snippets, dated_posts: harvestedSnippets.dated_posts },
+          channelDisplay,
+          minReadablePosts,
+        )
         : kroBuildParsedFromPublicSnapshotOnly(
             await kroFetchTelegramPublicSnapshot(channelForOnce, {
               timeoutMs: Math.min(60000, Math.max(4000, deadline - Date.now() - 400)),
@@ -11013,7 +11873,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         sampleForFast: sPub,
       });
       return res.status(200).json(
-        kroBuildAnalyzeChannelLiveSuccessBundle({
+        await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
           withQueueMeta,
           channelDisplay,
           key,
@@ -11054,7 +11914,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           sampleForFast: sR,
         });
         return res.status(200).json(
-          kroBuildAnalyzeChannelLiveSuccessBundle({
+          await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
             withQueueMeta,
             channelDisplay,
             key,
@@ -11074,15 +11934,20 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       }
     }
     if (deadline - Date.now() > 1800) {
-      const lateHarvest = await kroHarvestPublicSnippetsUntilEnough(
+      const lateHarvestRaw = await kroHarvestPublicSnippetsUntilEnough(
         channelForOnce,
         deadline,
         minReadablePosts,
         `${analyzeLogId}:pre_dataset_harvest`,
       );
+      const lateHarvest = kroUnwrapPublicHarvest(lateHarvestRaw);
       const pubLate =
-        lateHarvest && lateHarvest.length >= minReadablePosts
-          ? kroBuildParsedFromPublicSnapshotOnly({ snippets: lateHarvest }, channelDisplay, minReadablePosts)
+        lateHarvest.snippets.length >= minReadablePosts
+          ? kroBuildParsedFromPublicSnapshotOnly(
+            { snippets: lateHarvest.snippets, dated_posts: lateHarvest.dated_posts },
+            channelDisplay,
+            minReadablePosts,
+          )
           : null;
       if (pubLate) {
         const pL = pubLate;
@@ -11099,7 +11964,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
           sampleForFast: sL,
         });
         return res.status(200).json(
-          kroBuildAnalyzeChannelLiveSuccessBundle({
+          await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
             withQueueMeta,
             channelDisplay,
             key,
@@ -11144,7 +12009,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
       sampleForFast: sampleDs,
     });
     return res.status(200).json(
-      kroBuildAnalyzeChannelLiveSuccessBundle({
+      await kroBuildAnalyzeChannelLiveSuccessBundleAsync({
         withQueueMeta,
         channelDisplay,
         key,
@@ -11160,6 +12025,7 @@ app.post('/api/kro/analyze-channel', express.json({ limit: '20000' }), async (re
         telegramUsernameResolve,
         personBehind: personBehindDs,
         signalAccuracy: signalAccuracyDs,
+        withChannelHistory: false,
       }),
     );
   } catch (e) {
@@ -11687,6 +12553,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       }
       if (analysis._kro_watch_baked) delete analysis._kro_watch_baked;
       if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
+      await kroEnrichAnalysisWithChannelHistory(analysis, key, `@${decoded}`);
       return res.status(200).json({
         mode: responseMode,
         byo_deep: byoDeepActive,
@@ -11764,6 +12631,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
       const watchRowCp1 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
       if (watchRowCp1) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp1);
       if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
+      await kroEnrichAnalysisWithChannelHistory(analysis, key, `@${decoded}`);
       return res.status(200).json({
         mode: responseMode,
         byo_deep: byoDeepActive,
@@ -11846,6 +12714,7 @@ app.get('/api/kro/channel-profile', async (req, res) => {
     const watchRowCp2 = await fetchLatestChannelsWatchRowForKey(sheetsClient, key);
     if (watchRowCp2) kroV0EnrichAnalysisWithWatch(analysis, watchRowCp2);
     if (homeQuickParsed) kroV0MergeHomeQuickLiveIntoFastAnalysis(analysis, homeQuickParsed, key);
+    await kroEnrichAnalysisWithChannelHistory(analysis, key, `@${decoded}`);
     return res.json({
       mode: responseMode,
       byo_deep: byoDeepActive,
